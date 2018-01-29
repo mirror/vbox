@@ -534,7 +534,44 @@ VMM_INT_DECL(bool) HMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
         fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
     else
         fEFlags.u = pCtx->eflags.u;
-
     return fEFlags.Bits.u1IF;
+}
+
+
+/**
+ * Checks whether the SVM nested-guest is in a state to receive virtual (setup
+ * for injection by VMRUN instruction) interrupts.
+ *
+ * @returns true if it's ready, false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        The guest-CPU context.
+ *
+ * @remarks This function looks at the VMCB cache rather than directly at the
+ *          nested-guest VMCB. The latter may have been modified for executing
+ *          using hardware-assisted SVM.
+ *
+ * @sa      CPUMCanSvmNstGstTakeVirtIntr.
+ */
+VMM_INT_DECL(bool) HMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+#ifdef IN_RC
+    RT_NOREF2(pVCpu, pCtx);
+    AssertReleaseFailedReturn(false);
+#else
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+
+    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
+        &&  pVmcbCtrl->IntCtrl.n.u4VIntrPrio <= pVmcbCtrl->IntCtrl.n.u8VTPR)
+        return false;
+
+    X86EFLAGS fEFlags;
+    if (pVmcbNstGstCache->fVIntrMasking)
+        fEFlags.u = pCtx->eflags.u;
+    else
+        fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
+    return fEFlags.Bits.u1IF;
+#endif
 }
 

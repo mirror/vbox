@@ -3504,10 +3504,12 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
              * interrupt injection. The virtual interrupt injection itself, if any, will be done
              * by the physical CPU.
              */
+            /** @todo later explore this for performance reasons. Right now the hardware
+             *        takes care of virtual interrupt injection for nested-guest. */
 #if 0
             if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
                 && (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
-                && CPUMCanSvmNstGstTakeVirtIntr(pCtx))
+                && CPUMCanSvmNstGstTakeVirtIntr(pVCpu, pCtx))
             {
                 Log4(("Intercepting virtual interrupt -> #VMEXIT\n"));
                 return IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
@@ -3640,8 +3642,12 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
     bool       fAllowInt  = fGif;
     if (fGif)
     {
+        /*
+         * For nested-guests we have no way to determine if we're injecting a physical or virtual
+         * interrupt at this point. Hence the partial verification below.
+         */
         if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            fAllowInt = CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx);
+            fAllowInt = CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx) || CPUMCanSvmNstGstTakeVirtIntr(pVCpu, pCtx);
         else
             fAllowInt = RT_BOOL(pCtx->eflags.u32 & X86_EFL_IF);
     }
@@ -3680,20 +3686,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmc
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
     }
     else
-    {
-#ifdef VBOX_WITH_NESTED_HWVIRT
-        /*
-         * If IEM emulated VMRUN and injected an event, it would not clear the EVENTINJ::Valid bit
-         * as a physical CPU clears it in the VMCB as part of the #VMEXIT (if the AMD spec. is to
-         * believed, real behavior might differ). Regardless, IEM does it only on #VMEXIT for now
-         * and since we are continuing nested-guest execution using hardware-assisted SVM, we need
-         * to clear this field otherwise we will inject the event twice, see @bugref{7243#78}.
-         */
-        if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            pVmcb->ctrl.EventInject.n.u1Valid = 0;
-#endif
         Assert(pVmcb->ctrl.EventInject.n.u1Valid == 0);
-    }
 
     /*
      * Update the guest interrupt shadow in the guest or nested-guest VMCB.

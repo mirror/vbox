@@ -2584,32 +2584,47 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 
 
 /**
- * Checks whether the SVM nested-guest is in a state to receive virtual
- * (injected by VMRUN) interrupts.
+ * Checks whether the SVM nested-guest is in a state to receive virtual (setup
+ * for injection by VMRUN instruction) interrupts.
  *
  * @returns VBox status code.
  * @retval  true if it's ready, false otherwise.
  *
- * @param   pCtx        The guest-CPU context.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    The guest-CPU context.
  */
-VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
-    RT_NOREF(pCtx);
+    RT_NOREF2(pVCpu, pCtx);
     AssertReleaseFailedReturn(false);
 #else
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
     Assert(pCtx->hwvirt.fGif);
+    Assert(pCtx->hwvirt.fGif);
 
-    PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-    if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
-        &&  pVmcbCtrl->IntCtrl.n.u4VIntrPrio <= pVmcbCtrl->IntCtrl.n.u8VTPR)
-        return false;
+    /*
+     * Although at present, the V_TPR and V_INTR_PRIO fields are not modified
+     * by SVM R0 code and we could inspect them directly here, we play it
+     * safe and ask HM if it has cached the VMCB.
+     */
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+    {
+        PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+        if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
+            &&  pVmcbCtrl->IntCtrl.n.u4VIntrPrio <= pVmcbCtrl->IntCtrl.n.u8VTPR)
+            return false;
 
-    if (!pCtx->rflags.Bits.u1IF)
-        return false;
+        X86EFLAGS fEFlags;
+        if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
+            fEFlags.u = pCtx->eflags.u;
+        else
+            fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
 
-    return true;
+        return fEFlags.Bits.u1IF;
+    }
+
+    return HMCanSvmNstGstTakeVirtIntr(pVCpu, pCtx);
 #endif
 }
 

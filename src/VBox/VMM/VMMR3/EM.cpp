@@ -1640,6 +1640,107 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     return rc;
 }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Helper for emR3ForcedActions() for injecting interrupts into the
+ * nested-guest.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the nested-guest CPU context.
+ * @param   pfResched   Where to store whether a reschedule is required.
+ * @param   pfInject    Where to store whether an interrupt was injected (and if
+ *                      a wake up is pending).
+ */
+static int emR3NstGstInjectIntr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfResched, bool *pfInject)
+{
+    *pfResched = false;
+    *pfInject  = false;
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        PVM  pVM  = pVCpu->CTX_SUFF(pVM);
+        bool fGif = pCtx->hwvirt.fGif;
+#ifdef VBOX_WITH_RAW_MODE
+        fGif &= !PATMIsPatchGCAddr(pVM, pCtx->eip);
+#endif
+        if (fGif)
+        {
+            if (CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx))
+            {
+                Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
+                if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                {
+                    if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_INTR))
+                    {
+                        VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
+                        if (RT_SUCCESS(rcStrict))
+                        {
+                            /** @todo r=ramshankar: Do we need to signal a wakeup here? If a nested-guest
+                             *        doesn't intercept HLT but intercepts INTR? */
+                            *pfResched = true;
+                            return VINF_EM_RESCHEDULE;
+                        }
+
+                        AssertMsgFailed(("INTR #VMEXIT failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                        return VINF_EM_TRIPLE_FAULT;
+                    }
+
+                    /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
+                    /** @todo this really isn't nice, should properly handle this */
+                    int rc = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
+                    if (pVM->em.s.fIemExecutesAll && (   rc == VINF_EM_RESCHEDULE_REM
+                                                      || rc == VINF_EM_RESCHEDULE_HM
+                                                      || rc == VINF_EM_RESCHEDULE_RAW))
+                    {
+                        rc = VINF_EM_RESCHEDULE;
+                    }
+
+                    *pfResched = true;
+                    *pfInject  = true;
+                    return rc;
+                }
+            }
+
+            if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
+                && CPUMCanSvmNstGstTakeVirtIntr(pVCpu, pCtx))
+            {
+                if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_VINTR))
+                {
+                    VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
+                    if (RT_SUCCESS(rcStrict))
+                    {
+                        /** @todo r=ramshankar: Do we need to signal a wakeup here? If a nested-guest
+                         *        doesn't intercept HLT but intercepts VINTR? */
+                        *pfResched = true;
+                        return VINF_EM_RESCHEDULE;
+                    }
+
+                    AssertMsgFailed(("VINTR #VMEXIT failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                    return VINF_EM_TRIPLE_FAULT;
+                }
+
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
+                uint8_t const uNstGstVector = CPUMGetSvmNstGstInterrupt(pCtx);
+                AssertMsg(uNstGstVector > 0 && uNstGstVector <= X86_XCPT_LAST, ("Invalid VINTR vector %#x\n", uNstGstVector));
+                TRPMAssertTrap(pVCpu, uNstGstVector, TRPM_HARDWARE_INT);
+                Log(("EM: Asserting nested-guest virt. hardware intr: %#x\n", uNstGstVector));
+
+                *pfResched = true;
+                *pfInject  = true;
+                return VINF_EM_RESCHEDULE;
+            }
+        }
+        return VINF_SUCCESS;
+    }
+
+    if (CPUMIsGuestInVmxNestedHwVirtMode(pCtx))
+    { /** @todo Nested VMX. */ }
+
+    /* Shouldn't really get here. */
+    AssertMsgFailed(("Unrecognized nested hwvirt. arch!\n"));
+    return VERR_EM_INTERNAL_ERROR;
+}
+#endif
 
 /**
  * Executes all pending forced actions.
@@ -1950,7 +2051,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Interrupts.
          */
-        /** @todo this can be optimized a bit. later.   */
         bool fWakeupPending = false;
         if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
             &&  (!rc || rc >= VINF_EM_RESCHEDULE_HM))
@@ -1958,102 +2058,52 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             if (   !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                 && !TRPMHasTrap(pVCpu)) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             {
+                Assert(!HMR3IsEventPending(pVCpu));
                 PCPUMCTX pCtx = pVCpu->em.s.pCtx;
-                bool fGif     = pCtx->hwvirt.fGif;
-#ifdef VBOX_WITH_RAW_MODE
-                /* We cannot just inspect EFLAGS when nested hw.virt is enabled (see e.g. CPUMCanSvmNstGstTakePhysIntr). */
-                fGif &= !PATMIsPatchGCAddr(pVM, pCtx->eip);
-#endif
-                if (fGif)
+#ifdef VBOX_WITH_NESTED_HWVIRT
+                if (CPUMIsGuestInNestedHwVirtMode(pCtx))
                 {
-                    bool fIntrEnabled;
-#ifdef VBOX_WITH_NESTED_HWVIRT
-                    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-                        fIntrEnabled = CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx);
-                    else
-                        fIntrEnabled = pCtx->eflags.Bits.u1IF;
-#else
-                    fIntrEnabled = pCtx->eflags.Bits.u1IF;
-#endif
-                    if (fIntrEnabled)
+                    bool fResched, fInject;
+                    rc2 = emR3NstGstInjectIntr(pVCpu, pCtx, &fResched, &fInject);
+                    if (fInject)
                     {
-                        Assert(!HMR3IsEventPending(pVCpu));
-                        Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
-                        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
-                        {
-#ifdef VBOX_WITH_NESTED_HWVIRT
-                            if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_INTR))
-                            {
-                                VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
-                                if (RT_SUCCESS(rcStrict))
-                                    rc2 = VINF_EM_RESCHEDULE;
-                                else
-                                {
-                                    AssertMsgFailed(("INTR #VMEXIT failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-                                    Log(("EM: SVM Nested-guest INTR #VMEXIT failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-                                    /** @todo should we call iemInitiateCpuShutdown? Should this
-                                     *        result in trapping triple-fault intercepts? */
-                                    rc2 = VINF_EM_TRIPLE_FAULT;
-                                }
-                            }
-                            else
-#endif
-                            {
-                                /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
-                                /** @todo this really isn't nice, should properly handle this */
-                                rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
-                                if (pVM->em.s.fIemExecutesAll && (   rc2 == VINF_EM_RESCHEDULE_REM
-                                                                  || rc2 == VINF_EM_RESCHEDULE_HM
-                                                                  || rc2 == VINF_EM_RESCHEDULE_RAW))
-                                    rc2 = VINF_EM_RESCHEDULE;
+                        fWakeupPending = true;
 #ifdef VBOX_STRICT
-                                rcIrq = rc2;
+                        rcIrq = rc2;
 #endif
-                            }
-                            UPDATE_RC();
-                            /* Reschedule required: We must not miss the wakeup below! */
-                            fWakeupPending = true;
-                        }
                     }
+                    if (fResched)
+                        UPDATE_RC();
+                }
+                else
+#endif
+                {
+                    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
 #ifdef VBOX_WITH_NESTED_HWVIRT
-                    /*
-                     * Check nested-guest virtual interrupts.
-                     */
-                    else if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
-                             && CPUMCanSvmNstGstTakeVirtIntr(pCtx))
+                        && pCtx->hwvirt.fGif
+#endif
+#ifdef VBOX_WITH_RAW_MODE
+                        && !PATMIsPatchGCAddr(pVM, pCtx->eip)
+#endif
+                        && pCtx->eflags.Bits.u1IF)
                     {
-                        if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_VINTR))
+                        Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
+                        /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
+                        /** @todo this really isn't nice, should properly handle this */
+                        rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
+                        if (pVM->em.s.fIemExecutesAll && (   rc2 == VINF_EM_RESCHEDULE_REM
+                                                          || rc2 == VINF_EM_RESCHEDULE_HM
+                                                          || rc2 == VINF_EM_RESCHEDULE_RAW))
                         {
-                            VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
-                            if (RT_SUCCESS(rcStrict))
-                                rc2 = VINF_EM_RESCHEDULE;
-                            else
-                            {
-                                AssertMsgFailed(("VINTR #VMEXIT failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-                                Log(("EM: SVM Nested-guest VINTR #VMEXIT failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-                                /** @todo should we call iemInitiateCpuShutdown? Should this
-                                 *        result in trapping triple-fault intercepts? */
-                                rc2 = VINF_EM_TRIPLE_FAULT;
-                            }
-                        }
-                        else
-                        {
-                            /*
-                             * Prepare the nested-guest interrupt for injection.
-                             */
-                            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
-                            uint8_t uNstGstVector = CPUMGetSvmNstGstInterrupt(pCtx);
-                            TRPMAssertTrap(pVCpu, uNstGstVector, TRPM_HARDWARE_INT);
-                            Log(("EM: Asserting nested-guest virt. hardware intr: %#x\n", uNstGstVector));
-                            /** @todo reschedule to HM/REM later, when the HMR0 nested-guest execution is
-                             *  done. For now just reschedule to IEM. */
                             rc2 = VINF_EM_RESCHEDULE;
                         }
+#ifdef VBOX_STRICT
+                        rcIrq = rc2;
+#endif
                         UPDATE_RC();
                         /* Reschedule required: We must not miss the wakeup below! */
                         fWakeupPending = true;
                     }
-#endif  /* VBOX_WITH_NESTED_HWVIRT */
                 }
             }
         }
