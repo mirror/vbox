@@ -3489,6 +3489,11 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         pCurLeaf->uEax = pCurLeaf->uEbx = pCurLeaf->uEcx = 0;
         if (pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
         {
+            /*
+             * Older 64-bit linux kernels blindly assume that the AMD performance counters work
+             * if X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR is set, see @bugref{7243#c85}. Exposing this
+             * bit is now configurable.
+             */
             pCurLeaf->uEdx &= 0
                            //| X86_CPUID_AMD_ADVPOWER_EDX_TS
                            //| X86_CPUID_AMD_ADVPOWER_EDX_FID
@@ -3498,15 +3503,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            //| X86_CPUID_AMD_ADVPOWER_EDX_STC
                            //| X86_CPUID_AMD_ADVPOWER_EDX_MC
                            //| X86_CPUID_AMD_ADVPOWER_EDX_HWPSTATE
-#if 0   /*
-         * We don't expose X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR, because newer
-         * Linux kernels blindly assume that the AMD performance counters work
-         * if this is set for 64 bits guests. (Can't really find a CPUID feature
-         * bit for them though.)
-         */
-        /** @todo need to recheck this with new MSR emulation. */
-                           | X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR
-#endif
+                             | X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR
                            //| X86_CPUID_AMD_ADVPOWER_EDX_CPB       RT_BIT(9)
                            //| X86_CPUID_AMD_ADVPOWER_EDX_EFRO      RT_BIT(10)
                            //| X86_CPUID_AMD_ADVPOWER_EDX_PFI       RT_BIT(11)
@@ -3515,8 +3512,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         }
         else
             pCurLeaf->uEdx &= X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR;
-        if (pConfig->fInvariantTsc)
-            pCurLeaf->uEdx |= X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR;
+        if (!pConfig->fInvariantTsc)
+            pCurLeaf->uEdx &= ~X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR;
         uSubLeaf++;
     }
 
@@ -3873,13 +3870,13 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = CFGMR3QueryBoolDef(pCpumCfg, "NT4LeafLimit", &pConfig->fNt4LeafLimit, false);
     AssertLogRelRCReturn(rc, rc);
 
-    /** @cfgm{/CPUM/InvariantTsc, boolean, complicated}
-     * Set the invariant TSC flag in 0x80000007 if true, otherwas take default
-     * action.  By default the flag is passed thru as is from the host CPU, except
-     * on AMD CPUs where it's suppressed to avoid trouble from linux assuming we
-     * virtualize performance counters.
+    /** @cfgm{/CPUM/InvariantTsc, boolean, true}
+     * Pass-through the invariant TSC flag in 0x80000007 if available on the host
+     * CPU. On AMD CPUs, users may wish to suppress it to avoid trouble from older
+     * 64-bit linux guests which assume the presence of AMD performance counters
+     * that we do not virtualize.
      */
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "InvariantTsc", &pConfig->fInvariantTsc, false);
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "InvariantTsc", &pConfig->fInvariantTsc, true);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/ForceVme, boolean, false}
