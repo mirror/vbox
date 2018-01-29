@@ -2910,12 +2910,13 @@ static void hmR0SvmUpdateTscOffsettingNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
 {
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
-    bool                 fParavirtTsc;
-    uint64_t             uTscOffset;
-    bool fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &uTscOffset, &fParavirtTsc);
+    bool       fParavirtTsc;
+    uint64_t   uTscOffset;
+    bool const fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &uTscOffset, &fParavirtTsc);
 
-    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     PSVMVMCBCTRL         pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
 
     /*
      * Only avoid intercepting if we determined the host TSC (++) is stable enough
@@ -2936,7 +2937,7 @@ static void hmR0SvmUpdateTscOffsettingNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     }
 
     /* Apply the nested-guest VMCB's TSC offset over the guest one. */
-    uTscOffset = CPUMApplyNestedGuestTscOffset(pVCpu, uTscOffset);
+    uTscOffset = HMSvmNstGstApplyTscOffset(pVCpu, uTscOffset);
 
     /* Update the nested-guest VMCB with the combined TSC offset (of guest and nested-guest). */
     pVmcbNstGstCtrl->u64TSCOffset = uTscOffset;

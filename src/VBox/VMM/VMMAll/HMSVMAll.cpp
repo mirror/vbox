@@ -201,6 +201,31 @@ VMM_INT_DECL(bool) HMSvmIsVGifActive(PVM pVM)
 
     return HMIsEnabled(pVM) && fVGif && fUseVGif;
 }
+
+
+/**
+ * Applies the TSC offset of an SVM nested-guest if any and returns the new TSC
+ * value for the nested-guest.
+ *
+ * @returns The TSC offset after applying any nested-guest TSC offset.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   uTicks      The guest TSC.
+ *
+ * @remarks This function looks at the VMCB cache rather than directly at the
+ *          nested-guest VMCB. The latter may have been modified for executing
+ *          using hardware-assisted SVM.
+ *
+ * @sa      CPUMApplyNestedGuestTscOffset.
+ */
+VMM_INT_DECL(uint64_t) HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks)
+{
+    PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
+    NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return uTicks + pVmcbNstGstCache->u64TSCOffset;
+}
 #endif /* !IN_RC */
 
 

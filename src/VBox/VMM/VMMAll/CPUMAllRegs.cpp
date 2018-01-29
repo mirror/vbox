@@ -2714,20 +2714,26 @@ VMM_INT_DECL(void) CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr)
 
 /**
  * Applies the TSC offset of a nested-guest if any and returns the new TSC
- * value for the guest.
+ * value for the guest (or nested-guest).
  *
  * @returns The TSC offset after applying any nested-guest TSC offset.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   uTicks      The guest TSC.
+ *
+ * @sa      HMSvmNstGstApplyTscOffset.
  */
 VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks)
 {
 #ifndef IN_RC
-    PCCPUMCTX pCtx  = &pVCpu->cpum.s.Guest;
+    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
-        PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-        return uTicks + pVmcb->ctrl.u64TSCOffset;
+        if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        {
+            PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+            return uTicks + pVmcb->ctrl.u64TSCOffset;
+        }
+        return HMSvmNstGstApplyTscOffset(pVCpu, uTicks);
     }
 
     /** @todo Intel. */

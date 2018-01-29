@@ -178,6 +178,7 @@ VMM_INT_DECL(bool)              HMAreMsrBitmapsAvailable(PVM pVM);
 VMM_INT_DECL(PGMMODE)           HMGetShwPagingMode(PVM pVM);
 VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(bool)              HMSvmIsVGifActive(PVM pVM);
+VMM_INT_DECL(uint64_t)          HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 #else /* Nops in RC: */
 # define HMFlushTLB(pVCpu)                              do { } while (0)
 # define HMIsNestedPagingActive(pVM)                    false
@@ -187,6 +188,7 @@ VMM_INT_DECL(bool)              HMSvmIsVGifActive(PVM pVM);
 # define HMFlushTLBOnAllVCpus(pVM)                      do { } while (0)
 # define HMSvmNstGstVmExitNotify(pVCpu, pCtx)           do { } while (0)
 # define HMSvmIsVGifActive(pVM)                         false
+# define HMSvmNstGstApplyTscOffset(pVCpu, uTicks)       (uTicks)
 #endif
 
 #ifdef IN_RING0
