@@ -812,6 +812,27 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   endif
  endif
 
+ if defined(VBOX_WITH_NEW_DRVHOSTSERIAL)
+  VBoxDD_SOURCES.linux := \
+ 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.linux)) \
+ 	Serial/DrvHostSerialNew.cpp
+
+  VBoxDD_SOURCES.darwin := \
+ 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.darwin)) \
+ 	Serial/DrvHostSerialNew.cpp
+
+  VBoxDD_SOURCES.win := \
+ 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.win)) \
+ 	Serial/DrvHostSerialNew.cpp
+
+  VBoxDD_SOURCES.freebsd := \
+ 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.freebsd)) \
+ 	Serial/DrvHostSerialNew.cpp
+
+  VBoxDD_SOURCES.solaris := \
+ 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.solaris)) \
+ 	Serial/DrvHostSerialNew.cpp
+ endif
 
  # --- Final bits, mostly libraries for order dependant linkers. ---
 
