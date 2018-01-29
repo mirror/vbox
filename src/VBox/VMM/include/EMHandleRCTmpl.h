@@ -236,35 +236,45 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          */
         case VINF_GIM_R3_HYPERCALL:
         {
-            /* Currently hypercall instruction (vmcall/vmmcall) emulation is compiled
-               only when Nested Hw. virt feature is enabled in IEM (for easier IEM backports). */
+            /*
+             * Currently hypercall instruction (vmmcall) emulation is compiled and
+             * implemented only when nested hw. virt feature is enabled in IEM.
+             *
+             * On Intel or when nested hardware virtualization support isn't compiled
+             * we still need to implement hypercalls rather than throw a #UD.
+             */
 #ifdef VBOX_WITH_NESTED_HWVIRT
-            rc = emR3ExecuteInstruction(pVM, pVCpu, "Hypercall");
-            break;
-#else
-            /** @todo IEM/REM need to handle VMCALL/VMMCALL, see
-             *        @bugref{7270#c168}. */
-            uint8_t cbInstr = 0;
-            VBOXSTRICTRC rcStrict = GIMExecHypercallInstr(pVCpu, pCtx, &cbInstr);
-            if (rcStrict == VINF_SUCCESS)
+            if (pVM->cpum.ro.GuestFeatures.fSvm)
             {
-                Assert(cbInstr);
-                pCtx->rip += cbInstr;
-                /* Update interrupt inhibition. */
-                if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-                    && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
-                    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-                rc = VINF_SUCCESS;
+                rc = emR3ExecuteInstruction(pVM, pVCpu, "Hypercall");
+                break;
             }
-            else if (rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
-                rc = VINF_SUCCESS;
             else
-            {
-                Assert(rcStrict != VINF_GIM_R3_HYPERCALL);
-                rc = VBOXSTRICTRC_VAL(rcStrict);
-            }
-            break;
 #endif
+            {
+                /** @todo IEM/REM need to handle VMCALL/VMMCALL, see
+                 *        @bugref{7270#c168}. */
+                uint8_t cbInstr = 0;
+                VBOXSTRICTRC rcStrict = GIMExecHypercallInstr(pVCpu, pCtx, &cbInstr);
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    Assert(cbInstr);
+                    pCtx->rip += cbInstr;
+                    /* Update interrupt inhibition. */
+                    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                        && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
+                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+                    rc = VINF_SUCCESS;
+                }
+                else if (rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    Assert(rcStrict != VINF_GIM_R3_HYPERCALL);
+                    rc = VBOXSTRICTRC_VAL(rcStrict);
+                }
+                break;
+            }
         }
 
 #ifdef EMHANDLERC_WITH_HM
