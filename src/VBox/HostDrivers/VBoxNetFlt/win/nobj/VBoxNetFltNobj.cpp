@@ -663,7 +663,7 @@ AdHocRegKey *AdHocRegKey::create(LPCWSTR pcwszSubkey, LPCWSTR pcwszDefaultValue)
 void AdHocRegKey::setValue(LPCWSTR pcwszName, LPCWSTR pcwszValue)
 {
     LSTATUS rc = RegSetValueExW(m_hKey, pcwszName, 0, REG_SZ, (const BYTE *)pcwszValue,
-                                (wcslen(pcwszValue) + 1) * sizeof(WCHAR));
+                                (DWORD)((wcslen(pcwszValue) + 1) * sizeof(WCHAR)));
     if (rc != ERROR_SUCCESS)
         throw AdHocRegError(rc);
 }
