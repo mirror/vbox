@@ -146,7 +146,8 @@ UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType enmDeviceType)
     }
 
     /* Setup connections: */
-    connect(m_pFormatButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SIGNAL(completeChanged()));
+    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardCloneVDPageBasic2::completeChanged);
 
     /* Register classes: */
     qRegisterMetaType<CMediumFormat>();

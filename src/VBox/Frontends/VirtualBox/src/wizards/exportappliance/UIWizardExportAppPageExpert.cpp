@@ -170,15 +170,15 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     }
 
     /* Setup connections: */
-    connect(m_pVMSelector, SIGNAL(itemSelectionChanged()), this, SLOT(sltVMSelectionChangeHandler()));
-    connect(m_pTypeLocalFilesystem, SIGNAL(clicked()), this, SLOT(sltStorageTypeChangeHandler()));
-    connect(m_pTypeSunCloud, SIGNAL(clicked()), this, SLOT(sltStorageTypeChangeHandler()));
-    connect(m_pTypeSimpleStorageSystem, SIGNAL(clicked()), this, SLOT(sltStorageTypeChangeHandler()));
-    connect(m_pUsernameEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pPasswordEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pHostnameEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pBucketEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pFileSelector, SIGNAL(pathChanged(const QString &)), this, SIGNAL(completeChanged()));
+    connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
+    connect(m_pTypeLocalFilesystem, &QRadioButton::clicked,         this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
+    connect(m_pTypeSunCloud, &QRadioButton::clicked,                this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
+    connect(m_pTypeSimpleStorageSystem, &QRadioButton::clicked,     this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
+    connect(m_pUsernameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageExpert::completeChanged);
+    connect(m_pPasswordEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageExpert::completeChanged);
+    connect(m_pHostnameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageExpert::completeChanged);
+    connect(m_pBucketEditor, &QLineEdit::textChanged,               this, &UIWizardExportAppPageExpert::completeChanged);
+    connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageExpert::completeChanged);
 
     /* Register classes: */
     qRegisterMetaType<StorageType>();

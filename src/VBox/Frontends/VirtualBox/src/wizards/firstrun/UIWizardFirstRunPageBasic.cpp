@@ -90,8 +90,10 @@ UIWizardFirstRunPageBasic::UIWizardFirstRunPageBasic(const QString &strMachineId
     }
 
     /* Setup connections: */
-    connect(m_pMediaSelector, SIGNAL(currentIndexChanged(int)), this, SIGNAL(completeChanged()));
-    connect(m_pSelectMediaButton, SIGNAL(clicked()), this, SLOT(sltOpenMediumWithFileOpenDialog()));
+    connect(m_pMediaSelector, static_cast<void(VBoxMediaComboBox::*)(int)>(&VBoxMediaComboBox::currentIndexChanged),
+            this, &UIWizardFirstRunPageBasic::completeChanged);
+    connect(m_pSelectMediaButton, &QIToolButton::clicked,
+            this, &UIWizardFirstRunPageBasic::sltOpenMediumWithFileOpenDialog);
 
     /* Register fields: */
     registerField("source", this, "source");

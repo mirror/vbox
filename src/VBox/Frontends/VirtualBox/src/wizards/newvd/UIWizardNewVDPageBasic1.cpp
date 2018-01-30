@@ -140,7 +140,8 @@ UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
     }
 
     /* Setup connections: */
-    connect(m_pFormatButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SIGNAL(completeChanged()));
+    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardNewVDPageBasic1::completeChanged);
 
     /* Register classes: */
     qRegisterMetaType<CMediumFormat>();

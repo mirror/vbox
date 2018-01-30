@@ -246,8 +246,8 @@ void UIApplianceUnverifiedCertificateViewer::prepare()
             pButtonBox->setStandardButtons(QDialogButtonBox::Yes | QDialogButtonBox::No);
             pButtonBox->button(QDialogButtonBox::Yes)->setShortcut(Qt::Key_Enter);
             //pButtonBox->button(QDialogButtonBox::No)->setShortcut(Qt::Key_Esc);
-            connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-            connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
+            connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIApplianceUnverifiedCertificateViewer::accept);
+            connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIApplianceUnverifiedCertificateViewer::reject);
             /* Add button-box into layout: */
             pLayout->addWidget(pButtonBox);
         }

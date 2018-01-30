@@ -100,8 +100,10 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
     }
 
     /* Setup connections: */
-    connect(m_pNameEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SLOT(sltButtonClicked(QAbstractButton *)));
+    connect(m_pNameEditor, &QLineEdit::textChanged,
+            this, &UIWizardCloneVMPageExpert::completeChanged);
+    connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardCloneVMPageExpert::sltButtonClicked);
 
     /* Register classes: */
     qRegisterMetaType<KCloneMode>();

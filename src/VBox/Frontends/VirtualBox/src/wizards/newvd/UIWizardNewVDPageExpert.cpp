@@ -158,12 +158,18 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
     }
 
     /* Setup connections: */
-    connect(m_pFormatButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(sltMediumFormatChanged()));
-    connect(m_pVariantButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SIGNAL(completeChanged()));
-    connect(m_pSplitBox, SIGNAL(stateChanged(int)), this, SIGNAL(completeChanged()));
-    connect(m_pLocationEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pLocationOpenButton, SIGNAL(clicked()), this, SLOT(sltSelectLocationButtonClicked()));
-    connect(m_pEditorSize, &UIMediumSizeEditor::sigSizeChanged, this, &UIWizardNewVDPageExpert::completeChanged);
+    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardNewVDPageExpert::sltMediumFormatChanged);
+    connect(m_pVariantButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardNewVDPageExpert::completeChanged);
+    connect(m_pSplitBox, &QCheckBox::stateChanged,
+            this, &UIWizardNewVDPageExpert::completeChanged);
+    connect(m_pLocationEditor, &QLineEdit::textChanged,
+            this, &UIWizardNewVDPageExpert::completeChanged);
+    connect(m_pLocationOpenButton, &QIToolButton::clicked,
+            this, &UIWizardNewVDPageExpert::sltSelectLocationButtonClicked);
+    connect(m_pEditorSize, &UIMediumSizeEditor::sigSizeChanged,
+            this, &UIWizardNewVDPageExpert::completeChanged);
 
     /* Register classes: */
     qRegisterMetaType<CMediumFormat>();

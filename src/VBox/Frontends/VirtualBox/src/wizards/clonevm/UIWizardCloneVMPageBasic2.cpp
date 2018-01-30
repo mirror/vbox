@@ -70,7 +70,8 @@ UIWizardCloneVMPageBasic2::UIWizardCloneVMPageBasic2(bool fAdditionalInfo)
     }
 
     /* Setup connections: */
-    connect(m_pButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SLOT(sltButtonClicked(QAbstractButton *)));
+    connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardCloneVMPageBasic2::sltButtonClicked);
 
     /* Register fields: */
     registerField("linkedClone", this, "linkedClone");

@@ -130,7 +130,7 @@ UIWizardExportAppPageBasic1::UIWizardExportAppPageBasic1(const QStringList &sele
     }
 
     /* Setup connections: */
-    connect(m_pVMSelector, SIGNAL(itemSelectionChanged()), this, SIGNAL(completeChanged()));
+    connect(m_pVMSelector, &QListWidget::itemSelectionChanged, this, &UIWizardExportAppPageBasic1::completeChanged);
 
     /* Register fields: */
     registerField("machineNames", this, "machineNames");

@@ -113,8 +113,10 @@ UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
     }
 
     /* Setup connections: */
-    connect(m_pVariantButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SIGNAL(completeChanged()));
-    connect(m_pSplitBox, SIGNAL(stateChanged(int)), this, SIGNAL(completeChanged()));
+    connect(m_pVariantButtonGroup,static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardNewVDPageBasic2::completeChanged);
+    connect(m_pSplitBox, &QCheckBox::stateChanged,
+            this, &UIWizardNewVDPageBasic2::completeChanged);
 
     /* Register fields: */
     registerField("mediumVariant", this, "mediumVariant");

@@ -95,9 +95,9 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
     }
 
     /* Setup connections: */
-    connect(m_pTypeLocalFilesystem, SIGNAL(clicked()), this, SIGNAL(completeChanged()));
-    connect(m_pTypeSunCloud, SIGNAL(clicked()), this, SIGNAL(completeChanged()));
-    connect(m_pTypeSimpleStorageSystem, SIGNAL(clicked()), this, SIGNAL(completeChanged()));
+    connect(m_pTypeLocalFilesystem, &QRadioButton::clicked,     this, &UIWizardExportAppPageBasic2::completeChanged);
+    connect(m_pTypeSunCloud, &QRadioButton::clicked,            this, &UIWizardExportAppPageBasic2::completeChanged);
+    connect(m_pTypeSimpleStorageSystem, &QRadioButton::clicked, this, &UIWizardExportAppPageBasic2::completeChanged);
 
     /* Register classes: */
     qRegisterMetaType<StorageType>();

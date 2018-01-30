@@ -57,7 +57,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
     }
 
     /* Setup connections: */
-    connect(m_pFileSelector, SIGNAL(pathChanged(const QString&)), this, SIGNAL(completeChanged()));
+    connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardImportAppPageBasic1::completeChanged);
 }
 
 void UIWizardImportAppPageBasic1::retranslateUi()

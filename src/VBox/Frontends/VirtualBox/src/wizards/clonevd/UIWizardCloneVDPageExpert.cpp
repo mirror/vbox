@@ -164,13 +164,20 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVir
     }
 
     /* Setup connections: */
-    connect(m_pSourceDiskSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleSourceDiskChange()));
-    connect(m_pSourceDiskOpenButton, SIGNAL(clicked()), this, SLOT(sltHandleOpenSourceDiskClick()));
-    connect(m_pFormatButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(sltMediumFormatChanged()));
-    connect(m_pVariantButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SIGNAL(completeChanged()));
-    connect(m_pSplitBox, SIGNAL(stateChanged(int)), this, SIGNAL(completeChanged()));
-    connect(m_pDestinationDiskEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pDestinationDiskOpenButton, SIGNAL(clicked()), this, SLOT(sltSelectLocationButtonClicked()));
+    connect(m_pSourceDiskSelector, static_cast<void(VBoxMediaComboBox::*)(int)>(&VBoxMediaComboBox::currentIndexChanged),
+            this, &UIWizardCloneVDPageExpert::sltHandleSourceDiskChange);
+    connect(m_pSourceDiskOpenButton, &QIToolButton::clicked,
+            this, &UIWizardCloneVDPageExpert::sltHandleOpenSourceDiskClick);
+    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardCloneVDPageExpert::sltMediumFormatChanged);
+    connect(m_pVariantButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardCloneVDPageExpert::completeChanged);
+    connect(m_pSplitBox, &QCheckBox::stateChanged,
+            this, &UIWizardCloneVDPageExpert::completeChanged);
+    connect(m_pDestinationDiskEditor, &QLineEdit::textChanged,
+            this, &UIWizardCloneVDPageExpert::completeChanged);
+    connect(m_pDestinationDiskOpenButton, &QIToolButton::clicked,
+            this, &UIWizardCloneVDPageExpert::sltSelectLocationButtonClicked);
 
     /* Register classes: */
     qRegisterMetaType<CMedium>();

@@ -71,7 +71,7 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
     }
 
     /* Setup connections: */
-    connect(m_pNameEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
+    connect(m_pNameEditor, &QLineEdit::textChanged, this, &UIWizardCloneVMPageBasic1::completeChanged);
 
     /* Register fields: */
     registerField("cloneName", this, "cloneName");

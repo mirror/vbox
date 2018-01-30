@@ -73,10 +73,10 @@ public:
         retranslateUi();
 
         /* Setup connections: */
-        connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
-        connect(m_pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-        connect(m_pPrintButton, SIGNAL(clicked()), this, SLOT(sltPrint()));
-        connect(m_pSaveButton, SIGNAL(clicked()), this, SLOT(sltSave()));
+        connect(m_pButtonBox, &QDialogButtonBox::rejected, this, &UIImportLicenseViewer::reject);
+        connect(m_pButtonBox, &QDialogButtonBox::accepted, this, &UIImportLicenseViewer::accept);
+        connect(m_pPrintButton, &QPushButton::clicked,     this, &UIImportLicenseViewer::sltPrint);
+        connect(m_pSaveButton,  &QPushButton::clicked,     this, &UIImportLicenseViewer::sltSave);
     }
 
     /* Content setter: */

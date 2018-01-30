@@ -167,11 +167,16 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
     }
 
     /* Setup connections: */
-    connect(m_pDiskSkip, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
-    connect(m_pDiskCreate, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
-    connect(m_pDiskPresent, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
-    connect(m_pDiskSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltVirtualDiskSourceChanged()));
-    connect(m_pVMMButton, SIGNAL(clicked()), this, SLOT(sltGetWithFileOpenDialog()));
+    connect(m_pDiskSkip, &QRadioButton::toggled,
+            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
+    connect(m_pDiskCreate, &QRadioButton::toggled,
+            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
+    connect(m_pDiskPresent, &QRadioButton::toggled,
+            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
+    connect(m_pDiskSelector, static_cast<void(VBoxMediaComboBox::*)(int)>(&VBoxMediaComboBox::currentIndexChanged),
+            this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
+    connect(m_pVMMButton, &QIToolButton::clicked,
+            this, &UIWizardNewVMPageBasic3::sltGetWithFileOpenDialog);
 
     /* Register classes: */
     qRegisterMetaType<CMedium>();

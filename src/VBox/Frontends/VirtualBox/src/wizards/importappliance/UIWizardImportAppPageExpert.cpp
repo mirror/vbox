@@ -72,7 +72,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
     }
 
     /* Setup connections: */
-    connect(m_pFileSelector, SIGNAL(pathChanged(const QString&)), this, SLOT(sltFilePathChangeHandler()));
+    connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardImportAppPageExpert::sltFilePathChangeHandler);
 
     /* Register classes: */
     qRegisterMetaType<ImportAppliancePointer>();

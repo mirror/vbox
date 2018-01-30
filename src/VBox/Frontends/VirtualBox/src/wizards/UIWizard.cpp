@@ -97,8 +97,8 @@ UIWizard::UIWizard(QWidget *pParent, WizardType type, WizardMode mode /* = Wizar
     setWindowModality(Qt::WindowModal);
 
     /* Setup connections: */
-    connect(this, SIGNAL(currentIdChanged(int)), this, SLOT(sltCurrentIdChanged(int)));
-    connect(this, SIGNAL(customButtonClicked(int)), this, SLOT(sltCustomButtonClicked(int)));
+    connect(this, &UIWizard::currentIdChanged,    this, &UIWizard::sltCurrentIdChanged);
+    connect(this, &UIWizard::customButtonClicked, this, &UIWizard::sltCustomButtonClicked);
 }
 
 void UIWizard::retranslateUi()

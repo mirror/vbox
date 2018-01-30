@@ -311,11 +311,11 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     }
 
     /* Setup connections: */
-    connect(m_pUsernameEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pPasswordEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pHostnameEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pBucketEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
-    connect(m_pFileSelector, SIGNAL(pathChanged(const QString &)), this, SIGNAL(completeChanged()));
+    connect(m_pUsernameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageBasic3::completeChanged);
+    connect(m_pPasswordEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageBasic3::completeChanged);
+    connect(m_pHostnameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageBasic3::completeChanged);
+    connect(m_pBucketEditor, &QLineEdit::textChanged,               this, &UIWizardExportAppPageBasic3::completeChanged);
+    connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic3::completeChanged);
 
     /* Register fields: */
     registerField("format", this, "format");

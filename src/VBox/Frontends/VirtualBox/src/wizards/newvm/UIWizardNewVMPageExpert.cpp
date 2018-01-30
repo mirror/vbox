@@ -135,15 +135,24 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     }
 
     /* Setup connections: */
-    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
-    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(sltOsTypeChanged()));
-    connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(sltRamSliderValueChanged()));
-    connect(m_pRamEditor, SIGNAL(valueChanged(int)), this, SLOT(sltRamEditorValueChanged()));
-    connect(m_pDiskSkip, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
-    connect(m_pDiskCreate, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
-    connect(m_pDiskPresent, SIGNAL(toggled(bool)), this, SLOT(sltVirtualDiskSourceChanged()));
-    connect(m_pDiskSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltVirtualDiskSourceChanged()));
-    connect(m_pVMMButton, SIGNAL(clicked()), this, SLOT(sltGetWithFileOpenDialog()));
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
+            this, &UIWizardNewVMPageExpert::sltNameChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
+            this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
+    connect(m_pRamSlider, &VBoxGuestRAMSlider::valueChanged,
+            this, &UIWizardNewVMPageExpert::sltRamSliderValueChanged);
+    connect(m_pRamEditor, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, &UIWizardNewVMPageExpert::sltRamEditorValueChanged);
+    connect(m_pDiskSkip, &QRadioButton::toggled,
+            this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+    connect(m_pDiskCreate, &QRadioButton::toggled,
+            this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+    connect(m_pDiskPresent, &QRadioButton::toggled,
+            this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+    connect(m_pDiskSelector, static_cast<void(VBoxMediaComboBox::*)(int)>(&VBoxMediaComboBox::currentIndexChanged),
+            this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
+    connect(m_pVMMButton, &QIToolButton::clicked,
+            this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);
 
     /* Register classes: */
     qRegisterMetaType<CMedium>();

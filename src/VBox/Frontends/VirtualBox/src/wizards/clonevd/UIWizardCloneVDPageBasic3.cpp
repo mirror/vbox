@@ -120,8 +120,10 @@ UIWizardCloneVDPageBasic3::UIWizardCloneVDPageBasic3(KDeviceType enmDeviceType)
     }
 
     /* Setup connections: */
-    connect(m_pVariantButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SIGNAL(completeChanged()));
-    connect(m_pSplitBox, SIGNAL(stateChanged(int)), this, SIGNAL(completeChanged()));
+    connect(m_pVariantButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardCloneVDPageBasic3::completeChanged);
+    connect(m_pSplitBox, &QCheckBox::stateChanged,
+            this, &UIWizardCloneVDPageBasic3::completeChanged);
 
     /* Register fields: */
     registerField("mediumVariant", this, "mediumVariant");
