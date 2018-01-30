@@ -2676,6 +2676,9 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-stack-protector   ?= $(call VBOX_GCC_CHECK_CC,-fno-stack-protector,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fno-dwarf2-cfi-asm    ?= $(call VBOX_GCC_CHECK_CC,-fno-dwarf2-cfi-asm,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_m64                   ?= $(call VBOX_GCC_CHECK_CC,-m64,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_msse4.1               ?= $(call VBOX_GCC_CHECK_CC,-msse4.1,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mavx                  ?= $(call VBOX_GCC_CHECK_CC,-mavx,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mavx2                 ?= $(call VBOX_GCC_CHECK_CC,-mavx2,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_no-pie                ?= $(call VBOX_GCC_CHECK_CC,-no-pie,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_fdiagnostics-show-option ?= $(call VBOX_GCC_CHECK_CC,-fdiagnostics-show-option,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wa_cma_nocompress_debug_sections ?= $(call VBOX_GCC_CHECK_CC,-Wa$(COMMA)--nocompress-debug-sections,)'
@@ -3871,10 +3874,9 @@ endif
 TOOL_VBoxTpG = The VirtualBox Tracepoint Generator
 TOOL_VBoxTpG_DTRACE_DEPORD          = $(VBOX_VBOXTPG)
 TOOL_VBoxTpG_DTRACE_HDR_FLAGS      := \
-		$(if-expr $(intersects $(KBUILD_TARGET_ARCH),$(KBUILD_ARCHES_64)),-64,-32) \
 		-h --host-$(VBOX_HC_ARCH_BITS)-bit #-vvv
 define TOOL_VBoxTpG_DTRACE_HDR_CMDS
-	$(QUIET)$(VBOX_VBOXTPG) $(flags) -o "$(out)" -s "$(source)"
+	$(QUIET)$(VBOX_VBOXTPG) $(if-expr $(intersects $(bld_trg_arch),$(KBUILD_ARCHES_64)),-64,-32) $(flags) -o "$(out)" -s "$(source)"
 endef
 TOOL_VBoxTpG_DTRACE_OBJ_NOT_NEEDED :=
 TOOL_VBoxTpG_DTRACE_OBJ_FLAGS      := -G --host-$(VBOX_HC_ARCH_BITS)-bit #-vvv
