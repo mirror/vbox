@@ -22,7 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 DLLS += VBoxHook
-VBoxHook_TEMPLATE = VBoxGuestR3Dll
+VBoxHook_TEMPLATE = VBoxGuestR3DllMinW2K
 VBoxHook_INCS     = ../include
 VBoxHook_SOURCES  = \
 	dllmain.cpp \
