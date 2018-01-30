@@ -77,14 +77,14 @@ class tdApi1(vbox.TestDriver):
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    oTstDrv = tdApi1()
+    oTD = tdApi1()
     from tdPython1 import SubTstDrvPython1
-    oTstDrv.addSubTestDriver(SubTstDrvPython1(oTstDrv))
+    oTD.addSubTestDriver(SubTstDrvPython1(oTD))
     from tdAppliance1 import SubTstDrvAppliance1
-    oTstDrv.addSubTestDriver(SubTstDrvAppliance1(oTstDrv))
+    oTD.addSubTestDriver(SubTstDrvAppliance1(oTD))
     from tdMoveMedium1 import SubTstDrvMoveMedium1
-    oTstDrv.addSubTestDriver(SubTstDrvMoveMedium1(oTstDrv))
+    oTD.addSubTestDriver(SubTstDrvMoveMedium1(oTD))
     from tdTreeDepth1 import SubTstDrvTreeDepth1
-    oTstDrv.addSubTestDriver(SubTstDrvTreeDepth1(oTstDrv))
-    sys.exit(oTstDrv.main(sys.argv))
+    oTD.addSubTestDriver(SubTstDrvTreeDepth1(oTD))
+    sys.exit(oTD.main(sys.argv))
 
