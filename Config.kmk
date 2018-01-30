@@ -6590,6 +6590,18 @@ else ifndef VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE
 endif
 
 #
+# Variant of VBoxGuestR3Dll that requires Windows 2000 or later for x86, and W2K3 for AMD64.
+#
+TEMPLATE_VBoxGuestR3DllMinW2K = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
+TEMPLATE_VBoxGuestR3DllMinW2K_EXTENDS  = VBoxGuestR3Dll
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxGuestR3DllMinW2K_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
+ TEMPLATE_VBoxGuestR3DllMinW2K_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --w2k,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
+ TEMPLATE_VBoxGuestR3DllMinW2K_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --w2k3 $(out)$$(NLTAB)$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.amd64))
+ TEMPLATE_VBoxGuestR3DllMinW2K_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxGuestR3Dll_LNK_DEPS.win.amd64)
+endif
+
+#
 # Variant of VBoxGuestR3Dll that requires Windows Vista or later.
 #
 TEMPLATE_VBoxGuestR3DllMinVista = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
@@ -6597,8 +6609,8 @@ TEMPLATE_VBoxGuestR3DllMinVista_EXTENDS  = VBoxGuestR3Dll
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
  TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
- TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS))
- TEMPLATE_VBoxGuestR3DllMinVista_LNK_DEPS  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxGuestR3Dll_LNK_DEPS)
+ TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.amd64))
+ TEMPLATE_VBoxGuestR3DllMinVista_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxGuestR3Dll_LNK_DEPS.win.amd64)
 endif
 
 #
@@ -6834,7 +6846,7 @@ TEMPLATE_VBOXCROGLR3HOSTLIB_INST    = $(INST_LIB)
 #
 TEMPLATE_VBOXCROGLR3GUESTDLL                  = VBox OpenGL Guest DLLs
 if "$(KBUILD_TARGET)" == "win" || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) || defined(VBOX_WITH_NO_GCC_WARNING_POLICY) ## @todo use VBoxGuestR3Dll everywhere
-TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS          = VBoxGuestR3Dll
+TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS          = VBoxGuestR3DllMinW2K
 else
 TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS          = VBOXGUESTR3NPDLL
 endif
@@ -6873,6 +6885,7 @@ TEMPLATE_VBOXCROGLR3GUESTDLL_LDFLAGS.darwin   = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-compatibility_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 TEMPLATE_VBOXCROGLR3GUESTDLL_BLDDIRS          = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3GUESTDLL_EXTENDS)_BLDDIRS) $(VBOX_PATH_CROGL_GENFILES)/
+
 
 #
 # Template for building OpenGL guest libraries.
