@@ -207,7 +207,5 @@ class SubTstDrvPython1(base.SubTestDriverBase):
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from tdApi1 import tdApi1
-    oTD = tdApi1()
-    oTD.addSubTestDriver(SubTstDrvPython1(oTD))
-    sys.exit(oTD.main(sys.argv))
+    sys.exit(tdApi1([SubTstDrvPython1]).main(sys.argv))
 
