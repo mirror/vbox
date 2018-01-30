@@ -82,11 +82,7 @@ if defined(VBOX_WITH_MAIN) \
  # VPX for video capture.
  if defined(VBOX_WITH_LIBVPX) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) \
    && ("$(SDK_VBOX_VPX_INCS)" == "$(SDK_VBOX_VPX_DEFAULT_INCS)")
-  if1of ($(KBUILD_TARGET), darwin)
-   include $(PATH_SUB_CURRENT)/libvpx-1.1.0/Makefile.kmk
-  else  
-   include $(PATH_SUB_CURRENT)/libvpx-1.6.1/Makefile.kmk
-  endif
+  include $(PATH_SUB_CURRENT)/libvpx-1.6.1/Makefile.kmk
  endif
 
  # Opus for supporting audio when doing video capturing.

@@ -3823,11 +3823,7 @@ endif
 
 ifdef VBOX_WITH_LIBVPX
  SDK_VBOX_VPX       = .
- if1of ($(KBUILD_TARGET), darwin)
-  SDK_VBOX_VPX_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libvpx-1.1.0
- else 
-  SDK_VBOX_VPX_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libvpx-1.6.1 
- endif
+ SDK_VBOX_VPX_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libvpx-1.6.1
  SDK_VBOX_VPX_INCS ?= $(SDK_VBOX_VPX_DEFAULT_INCS)
  SDK_VBOX_VPX_LIBS ?= $(PATH_STAGE_LIB)/VBox-libvpx$(VBOX_SUFF_LIB)
 endif
