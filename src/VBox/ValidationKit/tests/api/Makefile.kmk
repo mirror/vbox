@@ -37,6 +37,9 @@ ValidationKitTestsApi_EXEC_SOURCES := \
 	$(PATH_SUB_CURRENT)/tdMoveMedium1.py \
 	$(PATH_SUB_CURRENT)/tdPython1.py \
 	$(PATH_SUB_CURRENT)/tdTreeDepth1.py
+ValidationKitTestsApi_SOURCES := \
+	$(PATH_SUB_CURRENT)/*.ova \
+	$(PATH_SUB_CURRENT)/*.pem
 
 VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsApi_EXEC_SOURCES)
 
