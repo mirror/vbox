@@ -3822,7 +3822,7 @@ SDK_VBOX_LIBCURL-x86_DEFS     ?= BUILDING_LIBCURL
 endif
 
 ifdef VBOX_WITH_LIBVPX
- SDK_VBOX_VPX       = 
+ SDK_VBOX_VPX       = .
  if1of ($(KBUILD_TARGET), darwin)
   SDK_VBOX_VPX_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libvpx-1.1.0
  else 
