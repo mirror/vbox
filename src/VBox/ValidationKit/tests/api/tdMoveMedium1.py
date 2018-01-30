@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# $Id: tdMoveMedium.py
+# $Id$
 
 """
-VirtualBox Validation Kit - Medium Move Test
+VirtualBox Validation Kit - Medium Move Test #1
 """
 
 __copyright__ = \
@@ -27,7 +27,8 @@ CDDL are applicable instead of those of the GPL.
 You may elect to license modified versions of this file under the
 terms and conditions of either the GPL or the CDDL or both.
 """
-__version__ = ""
+__version__ = "$Revision$"
+
 
 # Standard Python imports.
 import os
@@ -40,62 +41,50 @@ g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.a
 sys.path.append(g_ksValidationKitDir)
 
 # Validation Kit imports.
-from common     import utils
+from testdriver import base
 from testdriver import reporter
-from testdriver import vbox
-from testdriver import vboxwrappers;
+from testdriver import vboxwrappers
 
-class tdMoveMedium(vbox.TestDriver):
+
+class SubTstDrvMoveMedium1(base.SubTestDriverBase):
     """
-    Medium moving Test.
+    Sub-test driver for Medium Move Test #1.
     """
 
-    # Suffix exclude list.
+    # List of suffixes to append.
     suffixes = [
         '.vdi',
-    ];
+    ]
 
-    def __init__(self):
-        vbox.TestDriver.__init__(self)
-        self.asRsrcs            = None
+    def __init__(self, oTstDrv):
+        base.SubTestDriverBase.__init__(self, 'move-medium', oTstDrv)
 
-    #
-    # Overridden methods.
-    #
-
-    def actionConfig(self):
+    def testIt(self):
         """
-        Import the API.
-        """
-        if not self.importVBoxApi():
-            return False
-        return True
-
-    def actionExecute(self):
-        """
-        Execute the testcase.
+        Execute the sub-testcase.
         """
         return  self.testMediumMove()
 
     #
     # Test execution helpers.
     #
+
     def setLocation(self, sLocation, aListOfAttach):
         for attachment in aListOfAttach:
             try:
-                oMedium = attachment.medium;
+                oMedium = attachment.medium
                 reporter.log('Move medium ' + oMedium.name + ' to the ' + sLocation)
             except:
-                reporter.errorXcpt('failed to get the medium from the IMediumAttachment "%s"' % (attachment));
+                reporter.errorXcpt('failed to get the medium from the IMediumAttachment "%s"' % (attachment))
 
             try:
-                oProgress = vboxwrappers.ProgressWrapper(oMedium.setLocation(sLocation), self.oVBoxMgr, self, 'move "%s"' % (oMedium.name,));
+                oProgress = vboxwrappers.ProgressWrapper(oMedium.setLocation(sLocation), self.oTstDrv.oVBoxMgr, self.oTstDrv, 'move "%s"' % (oMedium.name,))
             except:
-                return reporter.errorXcpt('Medium::setLocation("%s") for medium "%s" failed' % (sLocation, oMedium.name,));
+                return reporter.errorXcpt('Medium::setLocation("%s") for medium "%s" failed' % (sLocation, oMedium.name,))
 
-            oProgress.wait();
+            oProgress.wait()
             if oProgress.logResult() is False:
-                return False;
+                return False
 
     # Test with VDI image
     # move medium to a new location.
@@ -112,15 +101,15 @@ class tdMoveMedium(vbox.TestDriver):
         reporter.testStart('medium moving')
 
         try:
-            oVM = self.createTestVM('test-medium-move', 1, None, 4)
+            oVM = self.oTstDrv.createTestVM('test-medium-move', 1, None, 4)
             assert oVM is not None
 
             # create virtual disk image vdi
             fRc = True
             c = 0
-            oSession = self.openSession(oVM)
+            oSession = self.oTstDrv.openSession(oVM)
             for i in self.suffixes:
-                sHddPath = os.path.join(self.sScratchPath, 'Test' + str(c) + i)
+                sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'Test' + str(c) + i)
                 oHd = oSession.createBaseHd(sHddPath, cb=1024*1024)
                 if oHd is None:
                     fRc = False
@@ -132,10 +121,10 @@ class tdMoveMedium(vbox.TestDriver):
                 fRc = fRc and oSession.saveSettings()
 
             #create temporary subdirectory in the current working directory
-            sOrigLoc = self.sScratchPath
+            sOrigLoc = self.oTstDrv.sScratchPath
             sNewLoc = os.path.join(sOrigLoc, 'newLocation/')
 
-            os.makedirs(sNewLoc, 0o775);
+            os.makedirs(sNewLoc, 0o775)
 
             aListOfAttach = oVM.getMediumAttachmentsOfController(sController)
             #case 1. Only path without file name
@@ -169,6 +158,11 @@ class tdMoveMedium(vbox.TestDriver):
 
         return reporter.testDone()[1] == 0
 
+
 if __name__ == '__main__':
-    sys.exit(tdMoveMedium().main(sys.argv))
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from tdApi1 import tdApi1
+    oTstDrv = tdApi1()
+    oTstDrv.addSubTestDriver(SubTstDrvMoveMedium1(oTstDrv))
+    sys.exit(oTstDrv.main(sys.argv))
 
