@@ -25,6 +25,9 @@
 #include "VirtualBoxImpl.h"
 #include "Logging.h"
 
+/* This variable is global and used in the different places so it must be cleared each time before usage to avoid failure */
+std::vector< ComObjPtr<Machine> > machineList;
+
 typedef std::multimap<Utf8Str, Utf8Str> list_t;
 typedef std::multimap<Utf8Str, Utf8Str>::const_iterator cit_t;
 typedef std::multimap<Utf8Str, Utf8Str>::iterator it_t;
@@ -226,12 +229,12 @@ HRESULT MachineMoveVM::init()
         /* Actual file list */
         fileList_t actualFileList;
         Utf8Str strTargetImageName;
-        std::vector< ComObjPtr<Machine> > machineList;
 
 //      if (m_pMachine->i_isSnapshotMachine())
 //          Guid snapshotId = m_pMachine->i_getSnapshotId();
 
-        /* Include current state? */
+        /* Global variable (defined at the beginning of file), so clear it before usage */
+        machineList.clear();
         machineList.push_back(m_pMachine);
 
         {
@@ -279,15 +282,17 @@ HRESULT MachineMoveVM::init()
                         rc = plMedium->COMGETTER(Size)(&cbSize);
                         if (FAILED(rc)) throw rc;
 
-                        totalMediumsSize += cbSize;
-
                         std::pair<std::map<Utf8Str, MEDIUMTASK>::iterator,bool> ret;
                         ret = finalMediumsMap.insert(std::make_pair(name, mtc.chain[a - 1]));
                         if (ret.second == true)
+                        {
+                            totalMediumsSize += cbSize;
                             RTPrintf("Image %s was added into the moved list\n", name.c_str());
+                        }
                     }
                 }
             }
+            RTPrintf("totalMediumsSize is %lld\n", totalMediumsSize);
             neededFreeSpace += totalMediumsSize;
         }
 
@@ -974,6 +979,55 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
              * retrieve the error info from there, or it'll be lost. */
             if (FAILED(iRc))
                 throw machine->setError(ProgressErrorInfo(moveDiskProgress));
+
+            /* Update saved state path machine->mSSData->strStateFilePath */
+            {
+                Utf8Str configDir, newConfigDir;
+                Utf8Str strStateFileName;
+                Utf8Str strTargetSettingsFilePath;
+                if (strTargetFolder != NULL && !strTargetFolder->isEmpty())
+                {
+                    /* normal logic.*/
+                    newConfigDir = *strTargetFolder;
+                    configDir = vmFolders[VBox_SettingFolder];
+                }
+                else
+                {
+                    /* for restoration logic */
+                    newConfigDir = vmFolders[VBox_SettingFolder];
+                    /* Can't use strTargetFolder in this case because strTargetFolder is NULL in this case */
+                    configDir = m_targetPath;
+                    com::Utf8Str mName;
+                    machine->getName(mName);
+                    configDir.append(mName);
+                }
+
+                /* create a full state file path */
+                if (RTPathStartsWith(machine->mSSData->strStateFilePath.c_str(), configDir.c_str()))
+                {
+                    strStateFileName = machine->mSSData->strStateFilePath.c_str() + configDir.length();
+                    machine->mSSData->strStateFilePath = newConfigDir + strStateFileName;
+                }
+
+                for (size_t i = 0; i < machineList.size(); ++i)
+                {
+                    const ComObjPtr<Machine> &aMachine = machineList.at(i);
+
+                    com::Guid guidMachine = aMachine->i_getSnapshotId();
+                    if (guidMachine != Guid::Empty)
+                    {
+                        Utf8Str strGuidMachine = guidMachine.toString();
+                        ComObjPtr<Snapshot> snapshotMachineObj;
+
+                        rc = machine->i_findSnapshotById(guidMachine, snapshotMachineObj, true);
+                        if (SUCCEEDED(rc) && !snapshotMachineObj.isNull())
+                        {
+                            snapshotMachineObj->i_updateSavedStatePaths(configDir.c_str(),
+                                                                        newConfigDir.c_str());
+                        }
+                    }
+                }
+            }
 
             ++itMedium;
         }
