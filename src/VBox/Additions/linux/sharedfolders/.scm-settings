@@ -16,5 +16,6 @@
 #
 
 
+/*.c|/*.h:     --no-convert-tabs
 /Makefile.module: --treat-as Makefile
 
