@@ -602,7 +602,7 @@ static int scmSvnRunAndGetOutput(PSCMRWSTATE pState, const char **papszArgs, boo
     {
         if (fNormalFailureOk || Status.enmReason != RTPROCEXITREASON_NORMAL)
             RTMsgError("%s: %s -> %s %u\n",
-                       pState->pszFilename, pszCmdLine,
+                       pState ? pState->pszFilename : "<NONE>", pszCmdLine,
                        Status.enmReason == RTPROCEXITREASON_NORMAL   ? "exit code"
                        : Status.enmReason == RTPROCEXITREASON_SIGNAL ? "signal"
                        : Status.enmReason == RTPROCEXITREASON_ABEND  ? "abnormal end"
