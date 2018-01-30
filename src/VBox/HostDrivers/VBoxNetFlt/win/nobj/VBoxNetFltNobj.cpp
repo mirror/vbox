@@ -735,7 +735,7 @@ STDAPI DllUnregisterServer()
         keyTypeLib.remove(L"{2A0C94D1-40E1-439C-8FE8-24107CAB0840}");
     }
     catch (AdHocRegError) { return SELFREG_E_TYPELIB; }
-    
+
     try {
         AdHocRegKey keyCLSID(L"CLSID");
         keyCLSID.remove(L"{f374d1a0-bf08-4bdc-9cb2-c15ddaeef955}");
