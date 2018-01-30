@@ -73,6 +73,9 @@ static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *p
 {
     /*
      * Locate and read the PE header.
+     *
+     * Note! We'll be reading the 64-bit size even for 32-bit since the difference
+     *       is 16 bytes, which is less than a section header, so it won't be a problem.
      */
     unsigned long offNtHdrs;
     {
@@ -86,56 +89,87 @@ static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *p
 
     if (fseek(pFile, offNtHdrs, SEEK_SET) != 0)
         return Error("Failed to seek to PE header at %#lx: %s", offNtHdrs, strerror(errno));
-    IMAGE_NT_HEADERS32 NtHdrs;
+    union
+    {
+        IMAGE_NT_HEADERS32 x32;
+        IMAGE_NT_HEADERS64 x64;
+    }   NtHdrs,
+        NtHdrsNew;
     if (fread(&NtHdrs, sizeof(NtHdrs), 1, pFile) != 1)
         return Error("Failed to read PE header at %#lx: %s", offNtHdrs, strerror(errno));
 
     /*
      * Validate it a little bit.
      */
-    if (NtHdrs.Signature != IMAGE_NT_SIGNATURE)
-        return Error("Invalid PE signature: %#x", NtHdrs.Signature);
-    if (NtHdrs.FileHeader.Machine != IMAGE_FILE_MACHINE_I386)
-        return Error("Not I386 machine: %#x", NtHdrs.FileHeader.Machine);
-    if (NtHdrs.FileHeader.SizeOfOptionalHeader != sizeof(NtHdrs.OptionalHeader))
-        return Error("Invalid optional header size: %#x", NtHdrs.FileHeader.SizeOfOptionalHeader);
-    if (NtHdrs.OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC)
-        return Error("Invalid optional header magic: %#x", NtHdrs.OptionalHeader.Magic);
+    if (NtHdrs.x32.Signature != IMAGE_NT_SIGNATURE)
+        return Error("Invalid PE signature: %#x", NtHdrs.x32.Signature);
+    uint32_t cbNewHdrs;
+    if (NtHdrs.x32.FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64)
+    {
+        if (NtHdrs.x64.FileHeader.SizeOfOptionalHeader != sizeof(NtHdrs.x64.OptionalHeader))
+            return Error("Invalid optional header size: %#x", NtHdrs.x64.FileHeader.SizeOfOptionalHeader);
+        if (NtHdrs.x64.OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+            return Error("Invalid optional header magic: %#x", NtHdrs.x64.OptionalHeader.Magic);
+        if (!uNtVersion)
+            uNtVersion = MK_VER(5, 2);
+        else if (uNtVersion < MK_VER(5, 2))
+            return Error("Selected version is too old for AMD64: %u.%u", uNtVersion >> 8, uNtVersion & 0xff);
+        cbNewHdrs = sizeof(NtHdrsNew.x64);
+    }
+    else if (NtHdrs.x32.FileHeader.Machine != IMAGE_FILE_MACHINE_I386)
+        return Error("Not I386 or AMD64 machine: %#x", NtHdrs.x32.FileHeader.Machine);
+    else
+    {
+        if (NtHdrs.x32.FileHeader.SizeOfOptionalHeader != sizeof(NtHdrs.x32.OptionalHeader))
+            return Error("Invalid optional header size: %#x", NtHdrs.x32.FileHeader.SizeOfOptionalHeader);
+        if (NtHdrs.x32.OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+            return Error("Invalid optional header magic: %#x", NtHdrs.x32.OptionalHeader.Magic);
+        if (!uNtVersion)
+            uNtVersion = MK_VER(3, 10);
+        cbNewHdrs = sizeof(NtHdrsNew.x32);
+    }
 
     /*
      * Do the header modifications.
      */
-    IMAGE_NT_HEADERS32 NtHdrsNew = NtHdrs;
-    NtHdrsNew.OptionalHeader.MajorOperatingSystemVersion = uNtVersion >> 8;
-    NtHdrsNew.OptionalHeader.MinorOperatingSystemVersion = uNtVersion & 0xff;
-    NtHdrsNew.OptionalHeader.MajorSubsystemVersion       = uNtVersion >> 8;
-    NtHdrsNew.OptionalHeader.MinorSubsystemVersion       = uNtVersion & 0xff;
+    memcpy(&NtHdrsNew, &NtHdrs, sizeof(NtHdrsNew));
+    NtHdrsNew.x32.OptionalHeader.MajorOperatingSystemVersion = uNtVersion >> 8;
+    NtHdrsNew.x32.OptionalHeader.MinorOperatingSystemVersion = uNtVersion & 0xff;
+    NtHdrsNew.x32.OptionalHeader.MajorSubsystemVersion       = uNtVersion >> 8;
+    NtHdrsNew.x32.OptionalHeader.MinorSubsystemVersion       = uNtVersion & 0xff;
+    AssertCompileMembersAtSameOffset(IMAGE_NT_HEADERS32, OptionalHeader.MajorOperatingSystemVersion,  IMAGE_NT_HEADERS64, OptionalHeader.MajorOperatingSystemVersion);
+    AssertCompileMembersAtSameOffset(IMAGE_NT_HEADERS32, OptionalHeader.MinorOperatingSystemVersion,  IMAGE_NT_HEADERS64, OptionalHeader.MinorOperatingSystemVersion);
+    AssertCompileMembersAtSameOffset(IMAGE_NT_HEADERS32, OptionalHeader.MajorSubsystemVersion,        IMAGE_NT_HEADERS64, OptionalHeader.MajorSubsystemVersion);
+    AssertCompileMembersAtSameOffset(IMAGE_NT_HEADERS32, OptionalHeader.MinorSubsystemVersion,        IMAGE_NT_HEADERS64, OptionalHeader.MinorSubsystemVersion);
 
     if (uNtVersion <= MK_VER(3, 50))
     {
-        NtHdrsNew.OptionalHeader.MajorOperatingSystemVersion = 1;
-        NtHdrsNew.OptionalHeader.MinorOperatingSystemVersion = 0;
+        NtHdrsNew.x32.OptionalHeader.MajorOperatingSystemVersion = 1;
+        NtHdrsNew.x32.OptionalHeader.MinorOperatingSystemVersion = 0;
+        AssertCompileMembersAtSameOffset(IMAGE_NT_HEADERS32, OptionalHeader.MajorOperatingSystemVersion, IMAGE_NT_HEADERS64, OptionalHeader.MajorOperatingSystemVersion);
+        AssertCompileMembersAtSameOffset(IMAGE_NT_HEADERS32, OptionalHeader.MinorOperatingSystemVersion, IMAGE_NT_HEADERS64, OptionalHeader.MinorOperatingSystemVersion);
     }
 
     if (memcmp(&NtHdrsNew, &NtHdrs, sizeof(NtHdrs)))
     {
         /** @todo calc checksum. */
-        NtHdrsNew.OptionalHeader.CheckSum = 0;
+        NtHdrsNew.x32.OptionalHeader.CheckSum = 0;
+        AssertCompileMembersAtSameOffset(IMAGE_NT_HEADERS32, OptionalHeader.MinorOperatingSystemVersion, IMAGE_NT_HEADERS64, OptionalHeader.MinorOperatingSystemVersion);
 
-        if (   NtHdrsNew.OptionalHeader.MajorOperatingSystemVersion != NtHdrs.OptionalHeader.MajorOperatingSystemVersion
-            || NtHdrsNew.OptionalHeader.MinorOperatingSystemVersion != NtHdrs.OptionalHeader.MinorOperatingSystemVersion)
+        if (   NtHdrsNew.x32.OptionalHeader.MajorOperatingSystemVersion != NtHdrs.x32.OptionalHeader.MajorOperatingSystemVersion
+            || NtHdrsNew.x32.OptionalHeader.MinorOperatingSystemVersion != NtHdrs.x32.OptionalHeader.MinorOperatingSystemVersion)
             Info(1,"OperatingSystemVersion %u.%u -> %u.%u",
-                 NtHdrs.OptionalHeader.MajorOperatingSystemVersion, NtHdrs.OptionalHeader.MinorOperatingSystemVersion,
-                 NtHdrsNew.OptionalHeader.MajorOperatingSystemVersion, NtHdrsNew.OptionalHeader.MinorOperatingSystemVersion);
-        if (   NtHdrsNew.OptionalHeader.MajorSubsystemVersion != NtHdrs.OptionalHeader.MajorSubsystemVersion
-            || NtHdrsNew.OptionalHeader.MinorSubsystemVersion != NtHdrs.OptionalHeader.MinorSubsystemVersion)
+                 NtHdrs.x32.OptionalHeader.MajorOperatingSystemVersion, NtHdrs.x32.OptionalHeader.MinorOperatingSystemVersion,
+                 NtHdrsNew.x32.OptionalHeader.MajorOperatingSystemVersion, NtHdrsNew.x32.OptionalHeader.MinorOperatingSystemVersion);
+        if (   NtHdrsNew.x32.OptionalHeader.MajorSubsystemVersion != NtHdrs.x32.OptionalHeader.MajorSubsystemVersion
+            || NtHdrsNew.x32.OptionalHeader.MinorSubsystemVersion != NtHdrs.x32.OptionalHeader.MinorSubsystemVersion)
             Info(1,"SubsystemVersion %u.%u -> %u.%u",
-                 NtHdrs.OptionalHeader.MajorSubsystemVersion, NtHdrs.OptionalHeader.MinorSubsystemVersion,
-                 NtHdrsNew.OptionalHeader.MajorSubsystemVersion, NtHdrsNew.OptionalHeader.MinorSubsystemVersion);
+                 NtHdrs.x32.OptionalHeader.MajorSubsystemVersion, NtHdrs.x32.OptionalHeader.MinorSubsystemVersion,
+                 NtHdrsNew.x32.OptionalHeader.MajorSubsystemVersion, NtHdrsNew.x32.OptionalHeader.MinorSubsystemVersion);
 
         if (fseek(pFile, offNtHdrs, SEEK_SET) != 0)
             return Error("Failed to seek to PE header at %#lx: %s", offNtHdrs, strerror(errno));
-        if (fwrite(&NtHdrsNew, sizeof(NtHdrsNew), 1, pFile) != 1)
+        if (fwrite(&NtHdrsNew, cbNewHdrs, 1, pFile) != 1)
             return Error("Failed to write PE header at %#lx: %s", offNtHdrs, strerror(errno));
     }
 
@@ -147,9 +181,9 @@ static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *p
      * if it's not zero padded in the file.  This seemed simpler than adding zero padding.
      */
     if (   uNtVersion <= MK_VER(3, 10)
-        && NtHdrsNew.FileHeader.NumberOfSections > 0)
+        && NtHdrsNew.x32.FileHeader.NumberOfSections > 0)
     {
-        uint32_t              cbShdrs = sizeof(IMAGE_SECTION_HEADER) * NtHdrsNew.FileHeader.NumberOfSections;
+        uint32_t              cbShdrs = sizeof(IMAGE_SECTION_HEADER) * NtHdrsNew.x32.FileHeader.NumberOfSections;
         PIMAGE_SECTION_HEADER paShdrs = (PIMAGE_SECTION_HEADER)calloc(1, cbShdrs);
         if (!paShdrs)
             return Error("Out of memory");
@@ -157,17 +191,17 @@ static int UpdateFile(FILE *pFile, unsigned uNtVersion, PIMAGE_SECTION_HEADER *p
 
         unsigned long offShdrs = offNtHdrs
                                + RT_UOFFSETOF(IMAGE_NT_HEADERS32,
-                                              OptionalHeader.DataDirectory[NtHdrsNew.OptionalHeader.NumberOfRvaAndSizes]);
+                                              OptionalHeader.DataDirectory[NtHdrsNew.x32.OptionalHeader.NumberOfRvaAndSizes]);
         if (fseek(pFile, offShdrs, SEEK_SET) != 0)
             return Error("Failed to seek to section headers at %#lx: %s", offShdrs, strerror(errno));
         if (fread(paShdrs, cbShdrs, 1, pFile) != 1)
             return Error("Failed to read section headers at %#lx: %s", offShdrs, strerror(errno));
 
         bool     fFoundBss = false;
-        uint32_t uRvaEnd   = NtHdrsNew.OptionalHeader.SizeOfImage;
-        uint32_t uRvaIat   = NtHdrsNew.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size > 0
-                           ? NtHdrsNew.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress : UINT32_MAX;
-        uint32_t i         = NtHdrsNew.FileHeader.NumberOfSections;
+        uint32_t uRvaEnd   = NtHdrsNew.x32.OptionalHeader.SizeOfImage;
+        uint32_t uRvaIat   = NtHdrsNew.x32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size > 0
+                           ? NtHdrsNew.x32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress : UINT32_MAX;
+        uint32_t i         = NtHdrsNew.x32.FileHeader.NumberOfSections;
         while (i-- > 0)
             if (!(paShdrs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
             {
@@ -239,7 +273,7 @@ int main(int argc, char **argv)
      * Parse arguments.
      * This stucks
      */
-    unsigned    uNtVersion     = MK_VER(3,10);
+    unsigned    uNtVersion     = 0;
     const char *pszFilename    = NULL;
     bool        fAcceptOptions = true;
     for (int i = 1; i < argc; i++)

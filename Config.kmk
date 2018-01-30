@@ -6590,6 +6590,18 @@ else ifndef VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE
 endif
 
 #
+# Variant of VBoxGuestR3Dll that requires Windows Vista or later.
+#
+TEMPLATE_VBoxGuestR3DllMinVista = VBox Guest User Dynamic Libraries w/ IPRT and VBGL.
+TEMPLATE_VBoxGuestR3DllMinVista_EXTENDS  = VBoxGuestR3Dll
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
+ TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
+ TEMPLATE_VBoxGuestR3DllMinVista_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS))
+ TEMPLATE_VBoxGuestR3DllMinVista_LNK_DEPS  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxGuestR3Dll_LNK_DEPS)
+endif
+
+#
 # Template for building normal R3 (dynamic) libraries for the guest additions with Visual C++ 2013 or later, strict.
 #
 TEMPLATE_NewerVccVBoxGuestR3Dll          = VBoxGuestR3Dll with the newer Visual C++ version (2013 or later).

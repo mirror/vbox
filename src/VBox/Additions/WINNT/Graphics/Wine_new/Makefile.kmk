@@ -56,25 +56,39 @@ if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
   # -wd4133: swapchain.c(384) : warning C4133: 'function' : incompatible types - from 'IDirect3DSwapChain9 *' to 'IDirect3DSwapChain9Ex *'
  TEMPLATE_VBoxGuestWineDLL_CFLAGS += -wd4005 -wd4133
 endif
+TEMPLATE_VBoxGuestWineDLL_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
+TEMPLATE_VBoxGuestWineDLL_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --w2k,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
+
+#
+# WDDM version of VBoxGuestWineDll.
+#
+TEMPLATE_VBoxGuestWineWddmDLL = WDDM version of VBoxGuestWineDLL.
+TEMPLATE_VBoxGuestWineWddmDLL_EXTENDS = VBoxGuestWineDLL
+TEMPLATE_VBoxGuestWineWddmDLL_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION) --w2k, $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxGuestWineDLL_POST_CMDS.win.x86))
+TEMPLATE_VBoxGuestWineWddmDLL_POST_CMDS = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxGuestWineDLL_POST_CMDS))
+TEMPLATE_VBoxGuestWineWddmDLL_LNK_DEPS  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxGuestWineDLL_LNK_DEPS)
+
 
 #
 # Template for building the D3D[89] stuff.
 #
 TEMPLATE_VBoxGuestWineD3DxDLL = Template for building the D3D8/9 stuff.
 TEMPLATE_VBoxGuestWineD3DxDLL_EXTENDS    = VBoxGuestR3Dll
-TEMPLATE_VBoxGuestWineD3DxDLL_EXTENDS_BY = appending
-TEMPLATE_VBoxGuestWineD3DxDLL_SDKS = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
-TEMPLATE_VBoxGuestWineD3DxDLL_DEFS = VBOX_USING_WINDDK_W7_OR_LATER
-TEMPLATE_VBoxGuestWineD3DxDLL_DEFS.x86   = __i386__
-#TEMPLATE_VBoxGuestWineD3DxDLL_INCS.x86   = vbox/libWineStub/include
-TEMPLATE_VBoxGuestWineD3DxDLL_DEFS = VBOX_WINE_WITH_IPRT
-TEMPLATE_VBoxGuestWineD3DxDLL_CFLAGS = -wd4100  -wd4204 -wd4245 -wd4305
+TEMPLATE_VBoxGuestWineD3DxDLL_SDKS = $(TEMPLATE_VBoxGuestR3Dll_SDKS) ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
+TEMPLATE_VBoxGuestWineD3DxDLL_DEFS = $(TEMPLATE_VBoxGuestR3Dll_DEFS) VBOX_USING_WINDDK_W7_OR_LATER ## @todo TODO FIXME BUGBUG! THIS LINE IS NOT USED!!
+TEMPLATE_VBoxGuestWineD3DxDLL_DEFS.x86   = $(TEMPLATE_VBoxGuestR3Dll_DEFS.x86) __i386__
+#TEMPLATE_VBoxGuestWineD3DxDLL_INCS.x86   = $(TEMPLATE_VBoxGuestR3Dll_INCS.x86) vbox/libWineStub/include
+TEMPLATE_VBoxGuestWineD3DxDLL_DEFS = $(TEMPLATE_VBoxGuestR3Dll_DEFS) VBOX_WINE_WITH_IPRT
+TEMPLATE_VBoxGuestWineD3DxDLL_CFLAGS = $(TEMPLATE_VBoxGuestR3Dll_CFLAGS) -wd4100  -wd4204 -wd4245 -wd4305
 if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
  TEMPLATE_VBoxGuestWineD3DxDLL_CFLAGS += -wd4005
 endif
-TEMPLATE_VBoxGuestWineD3DxDLL_LIBS = \
+TEMPLATE_VBoxGuestWineD3DxDLL_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxGuestR3Dll_LDFLAGS.win.x86))
+TEMPLATE_VBoxGuestWineD3DxDLL_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --w2k,$(TEMPLATE_VBoxGuestR3Dll_POST_CMDS.win.x86))
+TEMPLATE_VBoxGuestWineD3DxDLL_LIBS = $(TEMPLATE_VBoxGuestR3Dll_LIBS)  \
  	$(VBOX_LIB_IPRT_GUEST_R3) \
  	$(VBOX_LIB_VBGL_R3)
+
 
 
 if 0
@@ -247,6 +261,7 @@ ifdef VBOX_WITH_WDDM
  #
  DLLS += wined3dwddm
  wined3dwddm_EXTENDS        = wined3d
+ wined3dwddm_TEMPLATE       = VBoxGuestWineWddmDLL
  if defined(VBOX_SIGNING_MODE)
   wined3dwddm_INSTTYPE.win  = none
   wined3dwddm_DEBUG_INSTTYPE.win = both
@@ -364,6 +379,7 @@ ifdef VBOX_WITH_WDDM
  #
  DLLS += VBoxD3D9wddm
  VBoxD3D9wddm_EXTENDS  = VBoxD3D9
+ VBoxD3D9wddm_TEMPLATE = VBoxGuestWineWddmDLL
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
   VBoxD3D9wddm_INSTTYPE = none
   VBoxD3D9wddm_DEBUG_INSTTYPE = both
