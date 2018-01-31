@@ -898,7 +898,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetVersion(void *pvUser, PCDBGFREGDESC pDe
 static DECLCALLBACK(int) ioapicDbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     RT_NOREF(pvUser, pDesc);
-    pValue->u32 = ioapicGetArb(PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC));
+    pValue->u32 = ioapicGetArb();
     return VINF_SUCCESS;
 }
 #endif
