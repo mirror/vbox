@@ -436,17 +436,27 @@ static HRESULT directSoundPlayLock(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     AssertCompile(DRV_DSOUND_RESTORE_ATTEMPTS_MAX > 0);
     for (unsigned i = 0; i < DRV_DSOUND_RESTORE_ATTEMPTS_MAX; i++)
     {
-        *ppv1 = *ppv2 = NULL;
-        *pcb1 = *pcb2 = 0;
-        hr = IDirectSoundBuffer8_Lock(pStreamDS->Out.pDSB, dwOffset, dwBytes, ppv1, pcb1, ppv2, pcb2, dwFlags);
+        PVOID pv1, pv2;
+        DWORD cb1, cb2;
+        hr = IDirectSoundBuffer8_Lock(pStreamDS->Out.pDSB, dwOffset, dwBytes, &pv1, &cb1, &pv2, &cb2, dwFlags);
         if (SUCCEEDED(hr))
         {
-            if (   (!*ppv1 || !(*pcb1 & pStreamDS->uAlign))
-                && (!*ppv2 || !(*pcb2 & pStreamDS->uAlign)) )
+            if (   (!pv1 || !(cb1 & pStreamDS->uAlign))
+                && (!pv2 || !(cb2 & pStreamDS->uAlign)))
+            {
+                if (ppv1)
+                    *ppv1 = pv1;
+                if (ppv2)
+                    *ppv2 = pv2;
+                if (pcb1)
+                    *pcb1 = cb1;
+                if (pcb2)
+                    *pcb2 = cb2;
                 return S_OK;
+            }
             DSLOGREL(("DSound: Locking playback buffer returned misaligned buffer: cb1=%#RX32, cb2=%#RX32 (alignment: %#RX32)\n",
                       *pcb1, *pcb2, pStreamDS->uAlign));
-            directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, *ppv1, *ppv2, *pcb1, *pcb2);
+            directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, pv1, pv2, cb1, cb2);
             return E_FAIL;
         }
 
