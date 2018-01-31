@@ -257,6 +257,7 @@ ifdef VBOX_WITH_PYTHON
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(call MSG_TOOL,xsltproc,Python constants,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_PATH_MAIN_SRC)/glue/constants-python.xsl $(VBOX_XIDL_FILE)
 endif # VBOX_WITH_PYTHON
 
@@ -1255,11 +1256,13 @@ glue/xpcom/helpers.cpp: $(VBOX_IDL_TYPELIB.XPCOM)
 $(call KB_FN_AUTO_CMD_DEPS_EX,$(VBOX_IDL_FILE.XPCOM),$(PATH_OUT)/VBOX_IDL_FILE.XPCOM.vbox-dep)
 $(VBOX_IDL_FILE.XPCOM): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS_EX,$(PATH_OUT)/VBOX_IDL_FILE.XPCOM.vbox-dep)
+	$(call MSG_TOOL,xsltproc,VBoxSVC,$(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(VBOX_XIDL_FILE)
 
 $(call KB_FN_AUTO_CMD_DEPS_EX,$(VBOX_IDL_TYPELIB.XPCOM),$(PATH_OUT)/VBOX_IDL_TYPELIB.XPCOM.vbox-dep)
 $(VBOX_IDL_TYPELIB.XPCOM): $(VBOX_IDL_FILE.XPCOM) |  $$(dir $$@) $(VBOX_XPIDL)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS_EX,$(PATH_OUT)/VBOX_IDL_TYPELIB.XPCOM.vbox-dep)
+	$(call MSG_TOOL,xpidl,VBoxSVC,$(VBOX_IDL_FILE.XPCOM),$@)
 	$(QUIET)$(VBOX_XPIDL_ENV)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $(VBOX_IDL_FILE.XPCOM)
 	$(CHMOD) 0644 $@
 ## @todo ^^^^^^^^^^^^ fix horrible hack
@@ -1267,7 +1270,10 @@ $(VBOX_IDL_TYPELIB.XPCOM): $(VBOX_IDL_FILE.XPCOM) |  $$(dir $$@) $(VBOX_XPIDL)
 $(call KB_FN_AUTO_CMD_DEPS_EX,$(VBOX_IDL_HEADER.XPCOM),$(PATH_OUT)/VBOX_IDL_HEADER.XPCOM.vbox-dep)
 $(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $$(dir $$@) $(VBOX_XPIDL)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS_EX,$(PATH_OUT)/VBOX_IDL_HEADER.XPCOM.vbox-dep)
+	$(call MSG_TOOL,xpidl,VBoxSVC,$(VBOX_IDL_FILE.XPCOM),$@)
 	$(QUIET)$(VBOX_XPIDL_ENV)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $(VBOX_IDL_FILE.XPCOM)
+
+KB_FN_AUTO_CMD_DEPS_EX = $(eval includedep $2)$(eval _DEPFILES_INCLUDED += $2)$1: .MUST_MAKE = $$(warning PREV=$$(AUTO_CMD_DEP_$(translate $1,:,_)_PREV_CMDS))$$(warning CURR=$$(commands $1))$$(comp-cmds-ex $$(AUTO_CMD_DEP_$(translate $1,:,_)_PREV_CMDS),$$(commands $1),FORCE)
 
 $(call KB_FN_AUTO_CMD_DEPS_EX,$(VBOX_IDL_FILE.MSCOM),$(PATH_OUT)/VBOX_IDL_FILE.MSCOM.vbox-dep)
 $(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
@@ -1486,6 +1492,7 @@ $(VBoxAPIWrap_VBOX_KMK_FILE).ts \
 		$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server-filelist.xsl \
 		$(VBOX_PATH_MAIN_SRC)/Makefile.kmk
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(call MSG_GENERATE,,$(VBoxAPIWrap_VBOX_KMK_FILE))
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam KBUILD_HOST $(KBUILD_HOST) \
