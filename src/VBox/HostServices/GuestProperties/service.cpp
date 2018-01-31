@@ -275,7 +275,13 @@ private:
      */
     bool checkHostReserved(const char *pszName)
     {
-        if (RTStrStartsWith(pszName, "/VirtualBox/GuestAdd/"))
+        if (RTStrStartsWith(pszName, "/VirtualBox/GuestAdd/VBoxService/"))
+            return true;
+        if (RTStrStartsWith(pszName, "/VirtualBox/GuestAdd/PAM/"))
+            return true;
+        if (RTStrStartsWith(pszName, "/VirtualBox/GuestAdd/Greeter/"))
+            return true;
+        if (RTStrStartsWith(pszName, "/VirtualBox/GuestAdd/SharedFolders/"))
             return true;
         if (RTStrStartsWith(pszName, "/VirtualBox/HostInfo/"))
             return true;
