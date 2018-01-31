@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VBoxVersion class declaration.
+ * VBox Qt GUI - UIVersion class declaration/implementation.
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,19 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxVersion_h___
-#define ___VBoxVersion_h___
+#ifndef ___UIVersion_h___
+#define ___UIVersion_h___
 
 /**
  *  Represents VirtualBox version wrapper
  */
-class VBoxVersion
+class UIVersion
 {
 public:
 
-    VBoxVersion() : m_x(-1), m_y(-1), m_z(-1) {}
+    UIVersion() : m_x(-1), m_y(-1), m_z(-1) {}
 
-    VBoxVersion(const QString &strVersion)
+    UIVersion(const QString &strVersion)
         : m_x(-1), m_y(-1), m_z(-1)
     {
         QStringList versionStack = strVersion.split('.');
@@ -39,21 +39,21 @@ public:
             m_z = versionStack[2].toInt();
     }
 
-    VBoxVersion& operator=(const VBoxVersion &other) { m_x = other.x(); m_y = other.y(); m_z = other.z(); return *this; }
+    UIVersion& operator=(const UIVersion &other) { m_x = other.x(); m_y = other.y(); m_z = other.z(); return *this; }
 
     bool isValid() const { return m_x != -1 && m_y != -1 && m_z != -1; }
 
-    bool equal(const VBoxVersion &other) const { return (m_x == other.m_x) && (m_y == other.m_y) && (m_z == other.m_z); }
-    bool operator==(const VBoxVersion &other) const { return equal(other); }
-    bool operator!=(const VBoxVersion &other) const { return !equal(other); }
+    bool equal(const UIVersion &other) const { return (m_x == other.m_x) && (m_y == other.m_y) && (m_z == other.m_z); }
+    bool operator==(const UIVersion &other) const { return equal(other); }
+    bool operator!=(const UIVersion &other) const { return !equal(other); }
 
-    bool operator<(const VBoxVersion &other) const
+    bool operator<(const UIVersion &other) const
     {
         return (m_x <  other.m_x) ||
                (m_x == other.m_x && m_y <  other.m_y) ||
                (m_x == other.m_x && m_y == other.m_y && m_z <  other.m_z);
     }
-    bool operator>(const VBoxVersion &other) const
+    bool operator>(const UIVersion &other) const
     {
         return (m_x >  other.m_x) ||
                (m_x == other.m_x && m_y >  other.m_y) ||
@@ -76,5 +76,5 @@ private:
     int m_z;
 };
 
-#endif // !___VBoxVersion_h___
+#endif /* !___UIVersion_h___ */
 

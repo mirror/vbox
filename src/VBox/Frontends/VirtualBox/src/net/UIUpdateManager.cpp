@@ -367,7 +367,7 @@ private slots:
         /* Get VirtualBox version: */
         QString strVBoxVersion(vboxGlobal().vboxVersionStringNormalized());
         QByteArray abVBoxVersion = strVBoxVersion.toUtf8();
-        VBoxVersion vboxVersion(strVBoxVersion);
+        UIVersion vboxVersion(strVBoxVersion);
 
         /* Get extension pack version: */
         QString strExtPackVersion(extPack.GetVersion());
