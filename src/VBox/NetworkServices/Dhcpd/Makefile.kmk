@@ -1,0 +1,81 @@
+# $Id$
+## @file
+# Sub-makefile for the DHCP server
+#
+
+#
+# Copyright (C) 2006-2017 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+# ifdef VBOX_WITH_...
+
+ VBOX_PATH_Dhcpd_SRC := $(PATH_SUB_CURRENT)
+
+ # XXX: do not depend on order
+ ifndef LWIP_SOURCES
+  include $(PATH_SUB_CURRENT)/../../Devices/Network/lwip-new/Config.kmk
+ endif
+
+ ifdef VBOX_WITH_HARDENING
+  PROGRAMS += VBoxNetDhcpdHardened
+  VBoxNetDhcpdHardened_TEMPLATE = VBOXR3HARDENEDEXE
+  VBoxNetDhcpdHardened_NAME     = VBoxNetDhcpd
+  VBoxNetDhcpdHardened_DEFS     = SERVICE_NAME=\"VBoxNetDhcpd\"
+  VBoxNetDhcpdHardened_SOURCES  = VBoxNetDhcpdHardened.cpp
+  VBoxNetDhcpdHardened_SOURCES.win = $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetDhcpd-icon.rc
+  VBoxNetDhcpdHardened_LDFLAGS.win = /SUBSYSTEM:windows
+ else
+  PROGRAMS += VBoxNetDhcpd
+ endif
+
+ VBoxNetDhcpd_TEMPLATE := $(if-expr defined(VBOX_WITH_HARDENING),VBOXMAINDLL,VBOXMAINCLIENTEXE)
+ VBoxNetDhcpd_NAME     := VBoxNetDhcpd
+ # VBoxNetDhcpd_DEFS      = IPv6
+ # VBoxNetLwipNAT_DEFS.linux = WITH_VALGRIND
+ VBoxNetDhcpd_DEFS.win  = VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
+
+ # (current dir is for for lwipopts.h)
+ VBoxNetDhcpd_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
+
+ VBoxNetDhcpd_SOURCES  =
+ VBoxNetDhcpd_SOURCES += ClientId.cpp
+ VBoxNetDhcpd_SOURCES += Config.cpp
+ VBoxNetDhcpd_SOURCES += DHCPD.cpp
+ VBoxNetDhcpd_SOURCES += Db.cpp
+ VBoxNetDhcpd_SOURCES += DhcpMessage.cpp
+ VBoxNetDhcpd_SOURCES += DhcpOptions.cpp
+ VBoxNetDhcpd_SOURCES += IPv4Pool.cpp
+ VBoxNetDhcpd_SOURCES += TimeStamp.cpp
+ VBoxNetDhcpd_SOURCES += VBoxNetDhcpd.cpp
+ VBoxNetDhcpd_SOURCES += $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES))
+
+ VBoxNetLwipNAT_LIBS = $(LIB_RUNTIME)
+
+ VBoxNetLwipNAT_LIBS.solaris += socket nsl
+ VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
+
+ ifeq ($(KBUILD_TARGET),win)
+  # Icon include file.
+  VBoxNetDhcpd_SOURCES  += VBoxNetDhcpd.rc
+  VBoxNetDhcpd.rc_INCS       = $(VBoxNetDhcpd_0_OUTDIR)
+  VBoxNetDhcpd.rc_DEPS       = $(VBoxNetDhcpd_0_OUTDIR)/VBoxNetDhcpd-icon.rc
+  VBoxNetDhcpd.rc_CLEAN      = $(VBoxNetDhcpd_0_OUTDIR)/VBoxNetDhcpd-icon.rc
+
+  $$(VBoxNetDhcpd_0_OUTDIR)/VBoxNetDhcpd-icon.rc: $(VBOX_WINDOWS_ICON_FILE) \
+						  $$(VBoxNetDhcpd_DEFPATH)/Makefile.kmk | $$(dir $$@)
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+ endif # win
+
+# endif # VBOX_WITH_...
+include $(FILE_KBUILD_SUB_FOOTER)
