@@ -521,21 +521,19 @@ int hdaStreamEnable(PHDASTREAM pStream, bool fEnable)
 
         if (fEnable)
         {
-            int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileStream, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
-                                          &pStream->State.Cfg.Props);
-            AssertRC(rc2);
+            if (!DrvAudioHlpFileIsOpen(pStream->Dbg.Runtime.pFileStream))
+            {
+                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileStream, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                              &pStream->State.Cfg.Props);
+                AssertRC(rc2);
+            }
 
-            rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMA, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
-                                      &pStream->State.Cfg.Props);
-            AssertRC(rc2);
-        }
-        else
-        {
-            int rc2 = DrvAudioHlpFileClose(pStream->Dbg.Runtime.pFileStream);
-            AssertRC(rc2);
-
-            rc2 = DrvAudioHlpFileClose(pStream->Dbg.Runtime.pFileDMA);
-            AssertRC(rc2);
+            if (!DrvAudioHlpFileIsOpen(pStream->Dbg.Runtime.pFileDMA))
+            {
+                int rc2 = DrvAudioHlpFileOpen(pStream->Dbg.Runtime.pFileDMA, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS,
+                                              &pStream->State.Cfg.Props);
+                AssertRC(rc2);
+            }
         }
     }
 
