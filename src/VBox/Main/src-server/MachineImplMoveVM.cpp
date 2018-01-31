@@ -970,9 +970,6 @@ HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATE
     while (itState != listOfFiles.end())
     {
         const SAVESTATETASK &sst = itState->second;
-        const Utf8Str &strTargetSaveStateFilePath = Utf8StrFmt("%s%c%s", targetPath.c_str(),
-                                                           RTPATH_DELIMITER,
-                                                           RTPathFilename(sst.strSaveStateFile.c_str()));
 
         Utf8Str strGuidMachine = sst.snapshotUuid.toString();
         ComObjPtr<Snapshot> snapshotMachineObj;
