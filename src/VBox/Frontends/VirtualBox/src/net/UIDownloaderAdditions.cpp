@@ -30,6 +30,7 @@
 # include "VBoxGlobal.h"
 # include "UIMessageCenter.h"
 # include "UIModalWindowManager.h"
+# include "UIVersion.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -60,27 +61,8 @@ UIDownloaderAdditions::UIDownloaderAdditions()
     if (!m_spInstance)
         m_spInstance = this;
 
-    /* Get version number and adjust it for test and trunk builds,
-     * both have odd build numbers. The server only has official releases. */
-    QString strVersion = vboxGlobal().vboxVersionStringNormalized();
-    const QChar qchLastDigit = strVersion[strVersion.length() - 1];
-    if (   qchLastDigit == '1'
-        || qchLastDigit == '3'
-        || qchLastDigit == '5'
-        || qchLastDigit == '7'
-        || qchLastDigit == '9')
-    {
-        if (   !strVersion.endsWith(".51")
-            && !strVersion.endsWith(".53")
-            && !strVersion.endsWith(".97")
-            && !strVersion.endsWith(".99"))
-            strVersion[strVersion.length() - 1] = qchLastDigit.toLatin1() - 1;
-        else
-        {
-            strVersion.chop(2);
-            strVersion += "6"; /* Current for 5.2.x */
-        }
-    }
+    /* Get version number and adjust it for test and trunk builds. The server only has official releases. */
+    const QString strVersion = UIVersion(vboxGlobal().vboxVersionStringNormalized()).effectiveRelasedVersion().toString();
 
     /* Prepare source/target: */
     const QString strSourceName = QString("%1_%2.iso").arg(GUI_GuestAdditionsName, strVersion);
