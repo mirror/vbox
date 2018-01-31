@@ -181,7 +181,7 @@ HRESULT MachineMoveVM::init()
         Bstr bstr_logFolder;
         m_pMachine->COMGETTER(LogFolder)(bstr_logFolder.asOutParam());
         strLogFolder = bstr_logFolder;
-        if (   m_type.equals("full")
+        if (   m_type.equals("basic")
             && strLogFolder.contains(strSettingsFilePath))
         {
             vmFolders.insert(std::make_pair(VBox_LogFolder, strLogFolder));
@@ -197,7 +197,7 @@ HRESULT MachineMoveVM::init()
             m_pMachine->COMGETTER(StateFilePath)(bstr_stateFilePath.asOutParam());
             strStateFilePath = bstr_stateFilePath;
             strStateFilePath.stripFilename();
-            if (   m_type.equals("full")
+            if (   m_type.equals("basic")
                 && strStateFilePath.contains(strSettingsFilePath))
                 vmFolders.insert(std::make_pair(VBox_StateFolder, strStateFilePath));//Utf8Str(bstr_stateFilePath)));
         }
@@ -206,7 +206,7 @@ HRESULT MachineMoveVM::init()
         Bstr bstr_snapshotFolder;
         m_pMachine->COMGETTER(SnapshotFolder)(bstr_snapshotFolder.asOutParam());
         strSnapshotFolder = bstr_snapshotFolder;
-        if (   m_type.equals("full")
+        if (   m_type.equals("basic")
             && strSnapshotFolder.contains(strSettingsFilePath))
             vmFolders.insert(std::make_pair(VBox_SnapshotFolder, strSnapshotFolder));
 
@@ -229,9 +229,6 @@ HRESULT MachineMoveVM::init()
         /* Actual file list */
         fileList_t actualFileList;
         Utf8Str strTargetImageName;
-
-//      if (m_pMachine->i_isSnapshotMachine())
-//          Guid snapshotId = m_pMachine->i_getSnapshotId();
 
         /* Global variable (defined at the beginning of file), so clear it before usage */
         machineList.clear();
@@ -419,46 +416,6 @@ HRESULT MachineMoveVM::init()
     return rc;
 }
 
-void MachineMoveVM::updateStateFile(settings::MachineConfigFile *snl, const Guid &id, const Utf8Str &strFile)
-{
-    settings::SnapshotsList::iterator it;
-    for (it = (*snl).llFirstSnapshot.begin(); it != (*snl).llFirstSnapshot.end(); ++it)
-    {
-        settings::Snapshot snap = (settings::Snapshot)(*it);
-        RTPrintf("it->uuid = %s , id = %s\n", snap.uuid.toStringCurly().c_str(), id.toStringCurly().c_str());
-        RTPrintf("it->strStateFile = %s , strFile = %s\n", it->strStateFile.c_str(), strFile.c_str());
-        if (it->uuid == id)
-        {
-            it->strStateFile = strFile;
-            RTPrintf("Modified it->strStateFile = %s\n", it->strStateFile.c_str());
-        }
-        else if (!it->llChildSnapshots.empty())
-            updateStateFile(it->llChildSnapshots, id, strFile);
-    }
-}
-
-void MachineMoveVM::updateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile)
-{
-    settings::SnapshotsList::iterator it;
-    for (it = snl.begin(); it != snl.end(); ++it)
-    {
-        if (it->uuid == id)
-        {
-            settings::Snapshot snap = (settings::Snapshot)(*it);
-            RTPrintf("it->uuid = %s , id = %s\n", snap.uuid.toStringCurly().c_str(), id.toStringCurly().c_str());
-            RTPrintf("it->strStateFile = %s , strFile = %s\n", snap.strStateFile.c_str(), strFile.c_str());
-            it->strStateFile = strFile;
-
-            RTPrintf("Modified it->strStateFile = %s\n", it->strStateFile.c_str());
-            m_pMachine->mSSData->strStateFilePath = strFile;
-            RTPrintf("Modified m_pMachine->mSSData->strStateFilePath = %s\n",
-                   m_pMachine->mSSData->strStateFilePath.c_str());
-        }
-        else if (!it->llChildSnapshots.empty())
-            updateStateFile(it->llChildSnapshots, id, strFile);
-    }
-}
-
 void MachineMoveVM::printStateFile(settings::SnapshotsList &snl)
 {
     settings::SnapshotsList::iterator it;
@@ -629,8 +586,10 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
             }
         }
 
-        /* Update XML settings. */
-        rc = taskMoveVM->updateStateFilesXMLSettings(taskMoveVM->finalSaveStateFilesMap, strTrgSnapshotFolder);
+        /* Update state file path */
+        rc = taskMoveVM->updatePathsToStateFiles(taskMoveVM->finalSaveStateFilesMap,
+                                                 taskMoveVM->vmFolders[VBox_SettingFolder],
+                                                 strTargetFolder);
         if (FAILED(rc))
             throw rc;
 
@@ -754,7 +713,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
             strTargetSettingsFilePath.append(RTPATH_DELIMITER).append(Utf8Str(bstrMachineName)).append(".vbox");
             machineData->m_strConfigFileFull = strTargetSettingsFilePath;
             taskMoveVM->m_pMachine->mParent->i_copyPathRelativeToConfig(strTargetSettingsFilePath, machineData->m_strConfigFile);
-//          machineData->m_strConfigFile = strTargetSettingsFilePath;
+
             RTPrintf("\nmachineData->m_strConfigFileFull = %s\n", machineData->m_strConfigFileFull.c_str());
             RTPrintf("\nmachineData->m_strConfigFile = %s\n", machineData->m_strConfigFile.c_str());
             taskMoveVM->printStateFile(taskMoveVM->m_pMachine->mData->pMachineConfigFile->llFirstSnapshot);
@@ -795,27 +754,6 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
     {
         /* ! Apparently we should update the Progress object !*/
 
-        /* Restore the original XML settings. */
-        rc = taskMoveVM->updateStateFilesXMLSettings(taskMoveVM->finalSaveStateFilesMap,
-                                                     taskMoveVM->vmFolders[VBox_StateFolder]);
-        if (FAILED(rc))
-            throw rc;
-
-        {
-            RTPrintf("\nFailed: Print all state files\n");
-            Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
-            RTPrintf("\nmachineData->m_strConfigFileFull = %s\n", machineData->m_strConfigFileFull.c_str());
-            RTPrintf("\nmachineData->m_strConfigFile = %s\n", machineData->m_strConfigFile.c_str());
-            taskMoveVM->printStateFile(taskMoveVM->m_pMachine->mData->pMachineConfigFile->llFirstSnapshot);
-        }
-
-        /* Delete all created files. */
-        rc = taskMoveVM->deleteFiles(newFiles);
-        if (FAILED(rc))
-            RTPrintf("Can't delete all new files.");
-
-        RTDirRemove(strTargetFolder.c_str());
-
         /* Restoring the original mediums */
         try
         {
@@ -834,6 +772,28 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
             rc = VirtualBoxBase::handleUnexpectedExceptions(taskMoveVM->m_pMachine, RT_SRC_POS);
             taskMoveVM->result = rc;
         }
+
+        /* Revert original paths to the state files */
+        rc = taskMoveVM->updatePathsToStateFiles(taskMoveVM->finalSaveStateFilesMap,
+                                                 strTargetFolder,
+                                                 taskMoveVM->vmFolders[VBox_SettingFolder]);
+        if (FAILED(rc))
+            throw rc;
+
+        {
+            RTPrintf("\nFailed: Print all state files\n");
+            Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
+            RTPrintf("\nmachineData->m_strConfigFileFull = %s\n", machineData->m_strConfigFileFull.c_str());
+            RTPrintf("\nmachineData->m_strConfigFile = %s\n", machineData->m_strConfigFile.c_str());
+            taskMoveVM->printStateFile(taskMoveVM->m_pMachine->mData->pMachineConfigFile->llFirstSnapshot);
+        }
+
+        /* Delete all created files. */
+        rc = taskMoveVM->deleteFiles(newFiles);
+        if (FAILED(rc))
+            RTPrintf("Can't delete all new files.");
+
+        RTDirRemove(strTargetFolder.c_str());
 
         /* save all VM data */
         {
@@ -980,55 +940,6 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
             if (FAILED(iRc))
                 throw machine->setError(ProgressErrorInfo(moveDiskProgress));
 
-            /* Update saved state path machine->mSSData->strStateFilePath */
-            {
-                Utf8Str configDir, newConfigDir;
-                Utf8Str strStateFileName;
-                Utf8Str strTargetSettingsFilePath;
-                if (strTargetFolder != NULL && !strTargetFolder->isEmpty())
-                {
-                    /* normal logic.*/
-                    newConfigDir = *strTargetFolder;
-                    configDir = vmFolders[VBox_SettingFolder];
-                }
-                else
-                {
-                    /* for restoration logic */
-                    newConfigDir = vmFolders[VBox_SettingFolder];
-                    /* Can't use strTargetFolder in this case because strTargetFolder is NULL in this case */
-                    configDir = m_targetPath;
-                    com::Utf8Str mName;
-                    machine->getName(mName);
-                    configDir.append(mName);
-                }
-
-                /* create a full state file path */
-                if (RTPathStartsWith(machine->mSSData->strStateFilePath.c_str(), configDir.c_str()))
-                {
-                    strStateFileName = machine->mSSData->strStateFilePath.c_str() + configDir.length();
-                    machine->mSSData->strStateFilePath = newConfigDir + strStateFileName;
-                }
-
-                for (size_t i = 0; i < machineList.size(); ++i)
-                {
-                    const ComObjPtr<Machine> &aMachine = machineList.at(i);
-
-                    com::Guid guidMachine = aMachine->i_getSnapshotId();
-                    if (guidMachine != Guid::Empty)
-                    {
-                        Utf8Str strGuidMachine = guidMachine.toString();
-                        ComObjPtr<Snapshot> snapshotMachineObj;
-
-                        rc = machine->i_findSnapshotById(guidMachine, snapshotMachineObj, true);
-                        if (SUCCEEDED(rc) && !snapshotMachineObj.isNull())
-                        {
-                            snapshotMachineObj->i_updateSavedStatePaths(configDir.c_str(),
-                                                                        newConfigDir.c_str());
-                        }
-                    }
-                }
-            }
-
             ++itMedium;
         }
 
@@ -1050,12 +961,10 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
     return rc;
 }
 
-HRESULT MachineMoveVM::updateStateFilesXMLSettings(const std::map<Utf8Str, SAVESTATETASK>& listOfFiles,
-                                                    const Utf8Str& targetPath)
+HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATETASK>& listOfFiles,
+                                               const Utf8Str& sourcePath, const Utf8Str& targetPath)
 {
     HRESULT rc = S_OK;
-    Machine::Data *machineData = m_pMachine->mData.data();
-    settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
 
     std::map<Utf8Str, SAVESTATETASK>::const_iterator itState = listOfFiles.begin();
     while (itState != listOfFiles.end())
@@ -1065,16 +974,14 @@ HRESULT MachineMoveVM::updateStateFilesXMLSettings(const std::map<Utf8Str, SAVES
                                                            RTPATH_DELIMITER,
                                                            RTPathFilename(sst.strSaveStateFile.c_str()));
 
-        /* Update the path in the configuration either for the current
-         * machine state or the snapshots. */
-        if (!sst.snapshotUuid.isValid() || sst.snapshotUuid.isZero())
+        Utf8Str strGuidMachine = sst.snapshotUuid.toString();
+        ComObjPtr<Snapshot> snapshotMachineObj;
+
+        rc = m_pMachine->i_findSnapshotById(sst.snapshotUuid, snapshotMachineObj, true);
+        if (SUCCEEDED(rc) && !snapshotMachineObj.isNull())
         {
-            (*machineConfFile).strStateFile = strTargetSaveStateFilePath;
-        }
-        else
-        {
-            updateStateFile(m_pMachine->mData->pMachineConfigFile->llFirstSnapshot,
-                            sst.snapshotUuid, strTargetSaveStateFilePath);
+            snapshotMachineObj->i_updateSavedStatePaths(sourcePath.c_str(),
+                                                        targetPath.c_str());
         }
 
         ++itState;
@@ -1182,7 +1089,7 @@ HRESULT MachineMoveVM::getFolderSize(const Utf8Str& strRootFolder, uint64_t& siz
                                  fullPath.c_str(), vrc);
             ++it;
         }
-//      RTPrintf("Total folder %s size %llu\n", strRootFolder.c_str(), totalFolderSize);
+
         size = totalFolderSize;
     }
     else

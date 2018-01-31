@@ -112,13 +112,12 @@ public:
     HRESULT queryMediasForAllStates(const std::vector<ComObjPtr<Machine> > &aMachineList, ULONG &uCount, ULONG &uTotalWeight);
     void updateProgressStats(MEDIUMTASKCHAIN &mtc, ULONG &uCount, ULONG &uTotalWeight) const;
     HRESULT addSaveState(const ComObjPtr<Machine> &machine, ULONG &uCount, ULONG &uTotalWeight);
-    void updateStateFile(settings::MachineConfigFile *snl, const Guid &id, const Utf8Str &strFile);
-    void updateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile);
     void printStateFile(settings::SnapshotsList &snl);
     HRESULT getFilesList(const Utf8Str& strRootFolder, fileList_t &filesList);
     HRESULT getFolderSize(const Utf8Str& strRootFolder, uint64_t& size);
     HRESULT deleteFiles(const RTCList<Utf8Str>& listOfFiles);
-    HRESULT updateStateFilesXMLSettings(const std::map<Utf8Str, SAVESTATETASK>& listOfFiles, const Utf8Str& targetPath);
+    HRESULT updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATETASK>& listOfFiles, 
+                                    const Utf8Str& sourcePath, const Utf8Str& targetPath);
     HRESULT moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfDisks, const Utf8Str* strTargetFolder = NULL);
     HRESULT restoreAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfDisks);
 };
