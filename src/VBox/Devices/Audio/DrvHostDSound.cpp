@@ -802,30 +802,33 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 }
 
 
-static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
+static void dsoundPlayClearBuffer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
     AssertPtrReturnVoid(pStreamDS);
 
     AssertPtr(pStreamDS->pCfg);
     PPDMAUDIOPCMPROPS pProps = &pStreamDS->pCfg->Props;
 
-    PVOID pv1, pv2;
-    DWORD cb1, cb2;
-    HRESULT hr = directSoundPlayLock(pThis, pStreamDS,
-                                     0 /* dwOffset */, pStreamDS->Out.cbBufSize,
-                                     &pv1, &pv2, &cb1, &cb2, DSBLOCK_ENTIREBUFFER);
+    HRESULT hr = IDirectSoundBuffer_SetCurrentPosition(pStreamDS->Out.pDSB, 0 /* Position */);
+    if (FAILED(hr))
+        DSLOGREL(("DSound: Setting current position to 0 when clearing buffer failed with %Rhrc\n", hr));
+
+    PVOID pv1;
+    hr = directSoundPlayLock(pThis, pStreamDS,
+                             0 /* dwOffset */, pStreamDS->Out.cbBufSize,
+                             &pv1, NULL, 0, 0, DSBLOCK_ENTIREBUFFER);
     if (SUCCEEDED(hr))
     {
-        DWORD len1 = PDMAUDIOPCMPROPS_B2F(pProps, cb1);
-        DWORD len2 = PDMAUDIOPCMPROPS_B2F(pProps, cb2);
+        DrvAudioHlpClearBuf(pProps, pv1, pStreamDS->Out.cbBufSize, PDMAUDIOPCMPROPS_B2F(pProps, pStreamDS->Out.cbBufSize));
 
-        if (pv1 && len1)
-            DrvAudioHlpClearBuf(pProps, pv1, cb1, len1);
+        directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, pv1, NULL, 0, 0);
 
-        if (pv2 && len2)
-            DrvAudioHlpClearBuf(pProps, pv2, cb2, len2);
-
-        directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, pv1, pv2, cb1, cb2);
+        /* Make sure to get the last playback position and current write position from DirectSound again.
+         * Those positions in theory could have changed, re-fetch them to be sure. */
+        hr = IDirectSoundBuffer_GetCurrentPosition(pStreamDS->Out.pDSB,
+                                                   &pStreamDS->Out.offPlayCursorLastPlayed, &pStreamDS->Out.offWritePos);
+        if (FAILED(hr))
+            DSLOGREL(("DSound: Re-fetching current position when clearing buffer failed with %Rhrc\n", hr));
     }
 }
 
@@ -916,7 +919,7 @@ static HRESULT directSoundPlayStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamD
             }
             else
             {
-                dsoundPlayClearSamples(pThis, pStreamDS);
+                dsoundPlayClearBuffer(pThis, pStreamDS);
 
                 pStreamDS->Out.fRestartPlayback = true;
                 pStreamDS->fEnabled             = true;
