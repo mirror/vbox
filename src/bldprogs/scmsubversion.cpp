@@ -1435,6 +1435,44 @@ int ScmSvnQueryProperty(PSCMRWSTATE pState, const char *pszName, char **ppszValu
 
 
 /**
+ * Queries the value of an SVN property on the parent dir/whatever.
+ *
+ * This will not adjust for scheduled changes to the parent!
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_STATE if not a SVN WC file.
+ * @retval  VERR_NOT_FOUND if the property wasn't found.
+ * @param   pState              The rewrite state to work on.
+ * @param   pszName             The property name.
+ * @param   ppszValue           Where to return the property value.  Free this
+ *                              using RTStrFree.  Optional.
+ */
+int ScmSvnQueryParentProperty(PSCMRWSTATE pState, const char *pszName, char **ppszValue)
+{
+    /*
+     * Strip the filename and use ScmSvnQueryProperty.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = RTStrCopy(szPath, sizeof(szPath), pState->pszFilename);
+    if (RT_SUCCESS(rc))
+    {
+        RTPathStripFilename(szPath);
+        SCMRWSTATE ParentState;
+        ParentState.pszFilename         = szPath;
+        ParentState.fFirst              = false;
+        ParentState.fIsInSvnWorkingCopy = true;
+        ParentState.cSvnPropChanges     = 0;
+        ParentState.paSvnPropChanges    = NULL;
+        ParentState.rc                  = VINF_SUCCESS;
+        rc = ScmSvnQueryProperty(&ParentState, pszName, ppszValue);
+        if (RT_SUCCESS(rc))
+            rc = ParentState.rc;
+    }
+    return rc;
+}
+
+
+/**
  * Schedules the setting of a property.
  *
  * @returns IPRT status code.

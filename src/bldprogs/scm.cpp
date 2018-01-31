@@ -100,6 +100,8 @@ typedef enum SCMOPT
     SCMOPT_DONT_SET_SVN_EXECUTABLE,
     SCMOPT_SET_SVN_KEYWORDS,
     SCMOPT_DONT_SET_SVN_KEYWORDS,
+    SCMOPT_SKIP_SVN_SYNC_PROCESS,
+    SCMOPT_DONT_SKIP_SVN_SYNC_PROCESS,
     SCMOPT_TAB_SIZE,
     SCMOPT_WIDTH,
     SCMOPT_FILTER_OUT_DIRS,
@@ -180,6 +182,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fSetSvnEol = */                             false,
     /* .fSetSvnExecutable = */                      false,
     /* .fSetSvnKeywords = */                        false,
+    /* .fSkipSvnSyncProcess = */                    false,
     /* .cchTab = */                                 8,
     /* .cchWidth = */                               130,
     /* .fFreeTreatAs = */                           false,
@@ -229,6 +232,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--dont-set-svn-executable",          SCMOPT_DONT_SET_SVN_EXECUTABLE,         RTGETOPT_REQ_NOTHING },
     { "--set-svn-keywords",                 SCMOPT_SET_SVN_KEYWORDS,                RTGETOPT_REQ_NOTHING },
     { "--dont-set-svn-keywords",            SCMOPT_DONT_SET_SVN_KEYWORDS,           RTGETOPT_REQ_NOTHING },
+    { "--skip-svn-sync-process",            SCMOPT_SKIP_SVN_SYNC_PROCESS,           RTGETOPT_REQ_NOTHING },
+    { "--dont-skip-svn-sync-process",       SCMOPT_DONT_SKIP_SVN_SYNC_PROCESS,      RTGETOPT_REQ_NOTHING },
     { "--tab-size",                         SCMOPT_TAB_SIZE,                        RTGETOPT_REQ_UINT8   },
     { "--width",                            SCMOPT_WIDTH,                           RTGETOPT_REQ_UINT8   },
 
@@ -267,6 +272,7 @@ SCM_REWRITER_CFG(g_SvnNoKeywords,                   "svn-no-keywords",          
 SCM_REWRITER_CFG(g_SvnNoEolStyle,                   "svn-no-eol-style",             rewrite_SvnNoEolStyle);
 SCM_REWRITER_CFG(g_SvnBinary,                       "svn-binary",                   rewrite_SvnBinary);
 SCM_REWRITER_CFG(g_SvnKeywords,                     "svn-keywords",                 rewrite_SvnKeywords);
+SCM_REWRITER_CFG(g_SvnSyncProcess,                  "svn-sync-process",             rewrite_SvnSyncProcess);
 SCM_REWRITER_CFG(g_Copyright_CstyleComment,         "copyright-c-style",            rewrite_Copyright_CstyleComment);
 SCM_REWRITER_CFG(g_Copyright_HashComment,           "copyright-hash-style",         rewrite_Copyright_HashComment);
 SCM_REWRITER_CFG(g_Copyright_PythonComment,         "copyright-python-style",       rewrite_Copyright_PythonComment);
@@ -294,6 +300,7 @@ static PCSCMREWRITERCFG const g_papRewriterActions[] =
     &g_SvnNoEolStyle,
     &g_SvnBinary,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_CstyleComment,
     &g_Copyright_HashComment,
     &g_Copyright_PythonComment,
@@ -312,6 +319,7 @@ static PCSCMREWRITERCFG const g_papRewriterActions[] =
 static PCSCMREWRITERCFG const g_apRewritersFor_Makefile_kup[] =
 {
     &g_SvnNoExecutable,
+    &g_SvnSyncProcess,
     &g_Makefile_kup
 };
 
@@ -322,6 +330,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Makefile_kmk[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_HashComment,
     &g_Makefile_kmk
 };
@@ -333,6 +342,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_OtherMakefiles[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_HashComment,
 };
 
@@ -344,6 +354,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_C_and_CPP[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_CstyleComment,
     &g_FixFlowerBoxMarkers,
     &g_Fix_C_and_CPP_Todos,
@@ -358,6 +369,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_H_and_HPP[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_CstyleComment,
     &g_C_and_CPP
 };
@@ -370,6 +382,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_RC[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_CstyleComment,
 };
 
@@ -380,6 +393,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_DTrace[] =
     &g_StripTrailingBlanks,
     &g_AdjustTrailingLines,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_CstyleComment,
 };
 
@@ -391,6 +405,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_DSL[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_CstyleComment,
 };
 
@@ -402,6 +417,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_ASM[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_SemicolonComment,
 };
 
@@ -413,6 +429,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_DEF[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_SemicolonComment,
 };
 
@@ -421,6 +438,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_ShellScripts[] =
     &g_ForceLF,
     &g_ExpandTabs,
     &g_StripTrailingBlanks,
+    &g_SvnSyncProcess,
     &g_Copyright_HashComment,
 };
 
@@ -429,6 +447,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_BatchFiles[] =
     &g_ForceCRLF,
     &g_ExpandTabs,
     &g_StripTrailingBlanks,
+    &g_SvnSyncProcess,
     &g_Copyright_RemComment,
 };
 
@@ -437,6 +456,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_BasicScripts[] =
     &g_ForceCRLF,
     &g_ExpandTabs,
     &g_StripTrailingBlanks,
+    &g_SvnSyncProcess,
     &g_Copyright_TickComment,
 };
 
@@ -445,6 +465,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_SedScripts[] =
     &g_ForceLF,
     &g_ExpandTabs,
     &g_StripTrailingBlanks,
+    &g_SvnSyncProcess,
     &g_Copyright_HashComment,
 };
 
@@ -455,6 +476,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Python[] =
     &g_StripTrailingBlanks,
     &g_AdjustTrailingLines,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_PythonComment,
 };
 
@@ -465,6 +487,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Perl[] =
     &g_StripTrailingBlanks,
     &g_AdjustTrailingLines,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_HashComment,
 };
 
@@ -476,6 +499,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_DriverInfFiles[] =
     &g_AdjustTrailingLines,
     &g_SvnKeywords,
     &g_SvnNoExecutable,
+    &g_SvnSyncProcess,
     &g_Copyright_SemicolonComment,
 };
 
@@ -487,6 +511,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_NsisFiles[] =
     &g_AdjustTrailingLines,
     &g_SvnKeywords,
     &g_SvnNoExecutable,
+    &g_SvnSyncProcess,
     &g_Copyright_SemicolonComment,
 };
 
@@ -498,6 +523,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Java[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_CstyleComment,
     &g_FixFlowerBoxMarkers,
     &g_Fix_C_and_CPP_Todos,
@@ -511,6 +537,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_ScmSettings[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_HashComment,
 };
 
@@ -518,6 +545,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Images[] =
 {
     &g_SvnNoExecutable,
     &g_SvnBinary,
+    &g_SvnSyncProcess,
 };
 
 static PCSCMREWRITERCFG const g_apRewritersFor_Xslt[] =
@@ -528,6 +556,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Xslt[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     /** @todo copyright is in an XML comment. */
 };
 
@@ -539,6 +568,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Xml[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     /** @todo copyright is in an XML comment. */
 };
 
@@ -550,6 +580,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_Wix[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     /** @todo copyright is in an XML comment. */
 };
 
@@ -560,6 +591,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_QtProject[] =
     &g_AdjustTrailingLines,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     &g_Copyright_HashComment,
 };
 
@@ -568,6 +600,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_QtResourceFiles[] =
     &g_ForceNativeEol,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     /** @todo figure out copyright for Qt resource XML files. */
 };
 
@@ -582,6 +615,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_QtUiFiles[] =
     &g_ForceNativeEol,
     &g_SvnNoExecutable,
     &g_SvnKeywords,
+    &g_SvnSyncProcess,
     /** @todo copyright is in an XML 'comment' element. */
 };
 
@@ -593,6 +627,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_SifFiles[] =
     &g_AdjustTrailingLines,
     &g_SvnKeywords,
     &g_SvnNoExecutable,
+    &g_SvnSyncProcess,
     &g_Copyright_SemicolonComment,
 };
 
@@ -604,6 +639,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_SqlFiles[] =
     &g_AdjustTrailingLines,
     &g_SvnKeywords,
     &g_SvnNoExecutable,
+    &g_SvnSyncProcess,
     &g_Copyright_SqlComment,
 };
 
@@ -615,6 +651,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_GnuAsm[] =
     &g_AdjustTrailingLines,
     &g_SvnKeywords,
     &g_SvnNoExecutable,
+    &g_SvnSyncProcess,
     &g_Copyright_CstyleComment,
 };
 
@@ -624,6 +661,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_TextFiles[] =
     &g_StripTrailingBlanks,
     &g_SvnKeywords,
     &g_SvnNoExecutable,
+    &g_SvnSyncProcess,
     /** @todo check for plain copyright + license in text files. */
 };
 
@@ -633,11 +671,13 @@ static PCSCMREWRITERCFG const g_apRewritersFor_PlainTextFiles[] =
     &g_StripTrailingBlanks,
     &g_SvnKeywords,
     &g_SvnNoExecutable,
+    &g_SvnSyncProcess,
 };
 
 static PCSCMREWRITERCFG const g_apRewritersFor_BinaryFiles[] =
 {
     &g_SvnBinary,
+    &g_SvnSyncProcess,
 };
 
 static PCSCMREWRITERCFG const g_apRewritersFor_FileLists[] = /* both makefile and shell script */
@@ -646,6 +686,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_FileLists[] = /* both makefile an
     &g_ExpandTabs,
     &g_StripTrailingBlanks,
     &g_AdjustTrailingLines,
+    &g_SvnSyncProcess,
     &g_Copyright_HashComment,
 };
 
@@ -1037,6 +1078,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_DONT_SET_SVN_KEYWORDS:
             pSettings->fSetSvnKeywords = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_SKIP_SVN_SYNC_PROCESS:
+            pSettings->fSkipSvnSyncProcess = true;
+            return VINF_SUCCESS;
+        case SCMOPT_DONT_SKIP_SVN_SYNC_PROCESS:
+            pSettings->fSkipSvnSyncProcess = false;
             return VINF_SUCCESS;
 
         case SCMOPT_TAB_SIZE:
@@ -2628,6 +2676,7 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
             case SCMOPT_SET_SVN_EOL:            RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnEol); break;
             case SCMOPT_SET_SVN_EXECUTABLE:     RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnExecutable); break;
             case SCMOPT_SET_SVN_KEYWORDS:       RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnKeywords); break;
+            case SCMOPT_SKIP_SVN_SYNC_PROCESS:  RTPrintf("      Default: %RTbool\n", g_Defaults.fSkipSvnSyncProcess); break;
             case SCMOPT_TAB_SIZE:               RTPrintf("      Default: %u\n", g_Defaults.cchTab); break;
             case SCMOPT_WIDTH:                  RTPrintf("      Default: %u\n", g_Defaults.cchWidth); break;
 

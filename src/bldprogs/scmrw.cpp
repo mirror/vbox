@@ -990,6 +990,52 @@ bool rewrite_SvnKeywords(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PC
 }
 
 /**
+ * Checks the svn:sync-process value and that parent is exported too.
+ *
+ * @returns false - the state carries these kinds of changes.
+ * @param   pState              The rewriter state.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_SvnSyncProcess(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    RT_NOREF2(pIn, pOut);
+    if (   pSettings->fSkipSvnSyncProcess
+        || !ScmSvnIsInWorkingCopy(pState))
+        return false;
+
+    char *pszSyncProcess;
+    int rc = ScmSvnQueryProperty(pState, "svn:sync-process", &pszSyncProcess);
+    if (RT_SUCCESS(rc))
+    {
+        if (strcmp(pszSyncProcess, "export") == 0)
+        {
+            char *pszParentSyncProcess;
+            rc = ScmSvnQueryParentProperty(pState, "svn:sync-process", &pszParentSyncProcess);
+            if (RT_SUCCESS(rc))
+            {
+                if (strcmp(pszSyncProcess, "export") != 0)
+                    ScmError(pState, VERR_INVALID_STATE,
+                             "svn:sync-process=export, but parent directory differs: %s\n", pszParentSyncProcess);
+                RTStrFree(pszParentSyncProcess);
+            }
+            else if (rc == VERR_NOT_FOUND)
+                ScmError(pState, VERR_NOT_FOUND, "svn:sync-process=export, but parent directory is not exported!\n");
+            else
+                ScmError(pState, rc, "ScmSvnQueryParentProperty: %Rrc\n", rc);
+        }
+        else if (strcmp(pszSyncProcess, "ignore") != 0)
+            ScmError(pState, VERR_INVALID_NAME, "Bad sync-process value: %s\n", pszSyncProcess);
+        RTStrFree(pszSyncProcess);
+    }
+    else if (rc != VERR_NOT_FOUND)
+        ScmError(pState, rc, "ScmSvnQueryProperty: %Rrc\n", rc);
+
+    return false;
+}
+
+/**
  * Compares two strings word-by-word, ignoring spaces, punctuation and case.
  *
  * Assumes ASCII strings.

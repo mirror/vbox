@@ -55,6 +55,7 @@ void ScmSvnTerm(void);
 bool ScmSvnIsDirInWorkingCopy(const char *pszDir);
 bool ScmSvnIsInWorkingCopy(PSCMRWSTATE pState);
 int  ScmSvnQueryProperty(PSCMRWSTATE pState, const char *pszName, char **ppszValue);
+int  ScmSvnQueryParentProperty(PSCMRWSTATE pState, const char *pszName, char **ppszValue);
 int  ScmSvnSetProperty(PSCMRWSTATE pState, const char *pszName, const char *pszValue);
 int  ScmSvnDelProperty(PSCMRWSTATE pState, const char *pszName);
 int  ScmSvnDisplayChanges(PSCMRWSTATE pState);
@@ -201,6 +202,7 @@ FNSCMREWRITER rewrite_SvnNoKeywords;
 FNSCMREWRITER rewrite_SvnNoEolStyle;
 FNSCMREWRITER rewrite_SvnBinary;
 FNSCMREWRITER rewrite_SvnKeywords;
+FNSCMREWRITER rewrite_SvnSyncProcess;
 FNSCMREWRITER rewrite_Copyright_CstyleComment;
 FNSCMREWRITER rewrite_Copyright_HashComment;
 FNSCMREWRITER rewrite_Copyright_PythonComment;
@@ -305,6 +307,8 @@ typedef struct SCMSETTINGSBASE
     bool            fSetSvnExecutable;
     /** Set svn:keyword if completely or partially missing. */
     bool            fSetSvnKeywords;
+    /** Skip checking svn:sync-process. */
+    bool            fSkipSvnSyncProcess;
     /** Tab size. */
     uint8_t         cchTab;
     /** Optimal source code width. */
