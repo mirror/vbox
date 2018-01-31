@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1432,6 +1432,20 @@ size_t DrvAudioHlpFileGetDataSize(PPDMAUDIOFILE pFile)
     }
 
     return cbSize;
+}
+
+/**
+ * Returns whether the given audio file is open and in use or not.
+ *
+ * @return  bool                True if open, false if not.
+ * @param   pFile               Audio file handle to check open status for.
+ */
+bool DrvAudioHlpFileIsOpen(PPDMAUDIOFILE pFile)
+{
+    if (!pFile)
+        return false;
+
+    return RTFileIsValid(pFile->hFile);
 }
 
 /**
