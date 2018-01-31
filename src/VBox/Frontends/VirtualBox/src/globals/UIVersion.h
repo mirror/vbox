@@ -18,15 +18,15 @@
 #ifndef ___UIVersion_h___
 #define ___UIVersion_h___
 
-/**
- *  Represents VirtualBox version wrapper
- */
+/** Represents VirtualBox version wrapper. */
 class UIVersion
 {
 public:
 
+    /** Constructs default object. */
     UIVersion() : m_x(-1), m_y(-1), m_z(-1) {}
 
+    /** Constructs object based on parsed @a strVersion. */
     UIVersion(const QString &strVersion)
         : m_x(-1), m_y(-1), m_z(-1)
     {
@@ -39,20 +39,27 @@ public:
             m_z = versionStack[2].toInt();
     }
 
+    /** Assigns this object with value of @a other. */
     UIVersion& operator=(const UIVersion &other) { m_x = other.x(); m_y = other.y(); m_z = other.z(); return *this; }
 
+    /** Returns whether this object is valid. */
     bool isValid() const { return m_x != -1 && m_y != -1 && m_z != -1; }
 
+    /** Returns whether this object is equal to @a other. */
     bool equal(const UIVersion &other) const { return (m_x == other.m_x) && (m_y == other.m_y) && (m_z == other.m_z); }
+    /** Checks whether this object is equal to @a other. */
     bool operator==(const UIVersion &other) const { return equal(other); }
+    /** Checks whether this object is NOT equal to @a other. */
     bool operator!=(const UIVersion &other) const { return !equal(other); }
 
+    /** Checks whether this object is lass than @a other. */
     bool operator<(const UIVersion &other) const
     {
         return (m_x <  other.m_x) ||
                (m_x == other.m_x && m_y <  other.m_y) ||
                (m_x == other.m_x && m_y == other.m_y && m_z <  other.m_z);
     }
+    /** Checks whether this object is more than @a other. */
     bool operator>(const UIVersion &other) const
     {
         return (m_x >  other.m_x) ||
@@ -60,19 +67,26 @@ public:
                (m_x == other.m_x && m_y == other.m_y && m_z >  other.m_z);
     }
 
+    /** Returns object string representation. */
     QString toString() const
     {
         return QString("%1.%2.%3").arg(m_x).arg(m_y).arg(m_z);
     }
 
+    /** Returns the object X value. */
     int x() const { return m_x; }
+    /** Returns the object Y value. */
     int y() const { return m_y; }
+    /** Returns the object Z value. */
     int z() const { return m_z; }
 
 private:
 
+    /** Holds the object X value. */
     int m_x;
+    /** Holds the object Y value. */
     int m_y;
+    /** Holds the object Z value. */
     int m_z;
 };
 
