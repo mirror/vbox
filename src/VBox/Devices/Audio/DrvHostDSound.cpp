@@ -324,12 +324,36 @@ static int dsoundGetFreeOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, DWORD
     /* Get the current play position which is used for calculating the free space in the buffer. */
     for (unsigned i = 0; i < DRV_DSOUND_RESTORE_ATTEMPTS_MAX; i++)
     {
-        DWORD cbPlayCursor;
-        hr = IDirectSoundBuffer8_GetCurrentPosition(pDSB, &cbPlayCursor, NULL /* cbWriteCursor */);
+        DWORD cbPlayCursor, cbWriteCursor;
+        hr = IDirectSoundBuffer8_GetCurrentPosition(pDSB, &cbPlayCursor, &cbWriteCursor);
         if (SUCCEEDED(hr))
         {
-            *pdwFree = pStreamDS->Out.cbBufSize
-                     - dsoundRingDistance(pStreamDS->Out.offWritePos, cbPlayCursor, pStreamDS->Out.cbBufSize);
+            int32_t cbDiff = cbWriteCursor - cbPlayCursor;
+            if (cbDiff < 0)
+                cbDiff += pStreamDS->Out.cbBufSize;
+
+            int32_t cbFree = cbPlayCursor - pStreamDS->Out.offWritePos;
+            if (cbFree < 0)
+                cbFree += pStreamDS->Out.cbBufSize;
+
+            if (cbFree > (int32_t)pStreamDS->Out.cbBufSize - cbDiff)
+            {
+                pStreamDS->Out.offWritePos = cbWriteCursor;
+                cbFree = pStreamDS->Out.cbBufSize - cbDiff;
+            }
+
+            /* When starting to use a DirectSound buffer, cbPlayCursor and cbWriteCursor
+             * both point at position 0, so we won't be able to detect how many bytes
+             * are writable that way.
+             *
+             * So use our per-stream written indicator to see if we just started a stream. */
+            if (pStreamDS->Out.cbWritten == 0)
+                cbFree = pStreamDS->Out.cbBufSize;
+
+            DSLOGREL(("DSound: cbPlayCursor=%RU32, cbWriteCursor=%RU32, offWritePos=%RU32 -> cbFree=%RI32\n",
+                      cbPlayCursor, cbWriteCursor, pStreamDS->Out.offWritePos, cbFree));
+
+            *pdwFree = cbFree;
 
             return VINF_SUCCESS;
         }
