@@ -195,9 +195,6 @@ protected slots:
     /** Handles host-screen available-area change. */
     virtual void sltHostScreenAvailableAreaChange();
 
-    /** Handles close signal from the log viewer dialog. */
-    void sltCloseLogViewerWindow();
-
 protected:
 
     /* Constructor: */
@@ -312,6 +309,8 @@ private slots:
     void sltShowDebugCommandLine();
     void sltLoggingToggled(bool);
     void sltShowLogDialog();
+    /** Handles close signal from the log viewer dialog. */
+    void sltCloseLogViewerWindow();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef RT_OS_DARWIN /* Something is *really* broken in regards of the moc here */
@@ -430,4 +429,3 @@ private:
 };
 
 #endif /* !___UIMachineLogic_h___ */
-
