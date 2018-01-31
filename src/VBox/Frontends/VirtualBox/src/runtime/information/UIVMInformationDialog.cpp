@@ -226,7 +226,7 @@ void UIVMInformationDialog::prepareTabWidget()
         /* Create Configuration Details tab: */
         UIInformationConfiguration *pInformationConfigurationWidget =
             new UIInformationConfiguration(this, m_pMachineWindow->machine(), m_pMachineWindow->console());
-        AssertPtrReturnVoid(pInformationConfigurationWidget);
+        if (pInformationConfigurationWidget)
         {
             m_tabs.insert(0, pInformationConfigurationWidget);
             m_pTabWidget->addTab(m_tabs.value(0), QString());
@@ -235,7 +235,7 @@ void UIVMInformationDialog::prepareTabWidget()
         /* Create Runtime Information tab: */
         UIInformationRuntime *pInformationRuntimeWidget =
             new UIInformationRuntime(this, m_pMachineWindow->machine(), m_pMachineWindow->console());
-        AssertPtrReturnVoid(pInformationRuntimeWidget);
+        if (pInformationRuntimeWidget)
         {
             m_tabs.insert(1, pInformationRuntimeWidget);
             m_pTabWidget->addTab(m_tabs.value(1), QString());
@@ -301,4 +301,3 @@ void UIVMInformationDialog::cleanup()
     /* Save settings: */
     saveSettings();
 }
-

@@ -505,6 +505,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.h \
 	src/runtime/information/UIInformationConfiguration.h \
 	src/runtime/information/UIInformationDataItem.h \
+	src/runtime/information/UIInformationGuestSession.h \
 	src/runtime/information/UIInformationItem.h \
 	src/runtime/information/UIInformationModel.h \
 	src/runtime/information/UIInformationRuntime.h \
@@ -832,6 +833,7 @@ VirtualBox_SOURCES = \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp \
 	src/runtime/information/UIInformationConfiguration.cpp \
 	src/runtime/information/UIInformationDataItem.cpp \
+	src/runtime/information/UIInformationGuestSession.cpp \
 	src/runtime/information/UIInformationItem.cpp \
 	src/runtime/information/UIInformationModel.cpp \
 	src/runtime/information/UIInformationRuntime.cpp \
