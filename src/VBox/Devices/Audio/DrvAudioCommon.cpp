@@ -1395,8 +1395,11 @@ int DrvAudioHlpFileDelete(PPDMAUDIOFILE pFile)
     AssertPtrReturn(pFile, VERR_INVALID_POINTER);
 
     int rc = RTFileDelete(pFile->szName);
-
-    if (rc == VERR_FILE_NOT_FOUND) /* Don't bitch if the file is not around (anymore). */
+    if (RT_SUCCESS(rc))
+    {
+        LogRel2(("Audio: Deleted file '%s'\n", pFile->szName));
+    }
+    else if (rc == VERR_FILE_NOT_FOUND) /* Don't bitch if the file is not around (anymore). */
         rc = VINF_SUCCESS;
 
     if (RT_FAILURE(rc))
