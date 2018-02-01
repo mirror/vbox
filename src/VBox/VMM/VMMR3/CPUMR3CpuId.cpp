@@ -6134,6 +6134,29 @@ static DBGFREGSUBFIELD const g_aExtLeaf1EcxSubFields[] =
     DBGFREGSUBFIELD_RO("NodeId\0"       "NodeId in MSR C001_100C",                      19, 1, 0),
     DBGFREGSUBFIELD_RO("TBM\0"          "Trailing Bit Manipulation instructions",       21, 1, 0),
     DBGFREGSUBFIELD_RO("TOPOEXT\0"      "Topology Extensions",                          22, 1, 0),
+    DBGFREGSUBFIELD_RO("PRFEXTCORE\0"   "Performance Counter Extensions support",       23, 1, 0),
+    DBGFREGSUBFIELD_RO("PRFEXTNB\0"     "NB Performance Counter Extensions support",    24, 1, 0),
+    DBGFREGSUBFIELD_RO("DATABPEXT\0"    "Data-access Breakpoint Extension",             26, 1, 0),
+    DBGFREGSUBFIELD_RO("PERFTSC\0"      "Performance Time Stamp Counter",               27, 1, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+/** CPUID(0x80000007,0).EDX field descriptions.   */
+static DBGFREGSUBFIELD const g_aExtLeaf7EdxSubFields[] =
+{
+    DBGFREGSUBFIELD_RO("TS\0"           "Temperature Sensor",                            0, 1, 0),
+    DBGFREGSUBFIELD_RO("FID\0"          "Frequency ID control",                          1, 1, 0),
+    DBGFREGSUBFIELD_RO("VID\0"          "Voltage ID control",                            2, 1, 0),
+    DBGFREGSUBFIELD_RO("VID\0"          "Voltage ID control",                            2, 1, 0),
+    DBGFREGSUBFIELD_RO("TTP\0"          "Thermal Trip",                                  3, 1, 0),
+    DBGFREGSUBFIELD_RO("TM\0"           "Hardware Thermal Control (HTC)",                4, 1, 0),
+    DBGFREGSUBFIELD_RO("100MHzSteps\0"  "100 MHz Multiplier control",                    6, 1, 0),
+    DBGFREGSUBFIELD_RO("HwPstate\0"     "Hardware P-state control",                      7, 1, 0),
+    DBGFREGSUBFIELD_RO("TscInvariant\0" "Invariant Time Stamp Counter",                  8, 1, 0),
+    DBGFREGSUBFIELD_RO("CBP\0"          "Core Performance Boost",                        9, 1, 0),
+    DBGFREGSUBFIELD_RO("EffFreqRO\0"    "Read-only Effective Frequency Interface",      10, 1, 0),
+    DBGFREGSUBFIELD_RO("ProcFdbkIf\0"   "Processor Feedback Interface",                 11, 1, 0),
+    DBGFREGSUBFIELD_RO("ProcPwrRep\0"   "Core power reporting interface support",       12, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
@@ -6817,31 +6840,14 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
         if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000007), 0)) != NULL)
         {
-            uint32_t uEDX = pCurLeaf->uEdx;
-
-            pHlp->pfnPrintf(pHlp, "APM Features:                   ");
-            if (uEDX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " TS");
-            if (uEDX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " FID");
-            if (uEDX & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " VID");
-            if (uEDX & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " TTP");
-            if (uEDX & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " TM");
-            if (uEDX & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " STC");
-            if (uEDX & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " MC");
-            if (uEDX & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " HWPSTATE");
-            if (uEDX & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " TscInvariant");
-            if (uEDX & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " CPB");
-            if (uEDX & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " EffFreqRO");
-            if (uEDX & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " PFI");
-            if (uEDX & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " PA");
-            for (unsigned iBit = 13; iBit < 32; iBit++)
-                if (uEDX & RT_BIT(iBit))
-                    pHlp->pfnPrintf(pHlp, " %d", iBit);
-            pHlp->pfnPrintf(pHlp, "\n");
-
             ASMCpuIdExSlow(UINT32_C(0x80000007), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-            pHlp->pfnPrintf(pHlp, "Host Invariant-TSC support:      %RTbool\n",
-                            cHstMax >= UINT32_C(0x80000007) && (Host.uEdx & RT_BIT(8)));
-
+            if (pCurLeaf->uEdx || (Host.uEdx && iVerbosity))
+            {
+                if (iVerbosity < 1)
+                    cpumR3CpuIdInfoMnemonicListU32(pHlp, pCurLeaf->uEdx, g_aExtLeaf7EdxSubFields, "APM Features EDX:", 34);
+                else
+                    cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEdx, Host.uEdx, g_aExtLeaf7EdxSubFields, 56);
+            }
         }
 
         pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000008), 0);
