@@ -6847,6 +6847,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
         pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000008), 0);
         if (pCurLeaf != NULL)
         {
+            ASMCpuIdExSlow(UINT32_C(0x80000008), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
             if (pCurLeaf->uEbx || (Host.uEbx && iVerbosity))
             {
                 if (iVerbosity < 1)
