@@ -75,7 +75,7 @@ class SubTstDrvAppliance1(base.SubTestDriverBase):
             # t4 is a VM with with two gzipped disk, SHA256 and a (self) signed manifest (--privateKey=./tdAppliance1-t4.pem).
             'tdAppliance1-t4.ova',
             'tdAppliance1-t4-ovftool-4.1.0.ova',
-            # t5 is a VM with with one gzipped disk, SHA1 and a manifest signed by a valid (2016) DigiCert code signing certificate.
+            # t5 is a VM with with one gzipped disk, SHA1 and a manifest signed by a valid (2016) DigiCert code signing cert.
             'tdAppliance1-t5.ova',
             'tdAppliance1-t5-ovftool-4.1.0.ova',
             # t6 is a VM with with one gzipped disk, SHA1 and a manifest signed by a certificate issued by the t4 certificate,
@@ -116,7 +116,8 @@ class SubTstDrvAppliance1(base.SubTestDriverBase):
             return reporter.errorXcpt('IVirtualBox::createAppliance failed')
 
         try:
-            oProgress = vboxwrappers.ProgressWrapper(oAppliance.read(sOva), self.oTstDrv.oVBoxMgr, self.oTstDrv, 'read "%s"' % (sOva,))
+            oProgress = vboxwrappers.ProgressWrapper(oAppliance.read(sOva), self.oTstDrv.oVBoxMgr, self.oTstDrv,
+                                                     'read "%s"' % (sOva,))
         except:
             return reporter.errorXcpt('IAppliance::read("%s") failed' % (sOva,))
         oProgress.wait()
@@ -174,7 +175,8 @@ class SubTstDrvAppliance1(base.SubTestDriverBase):
             return reporter.errorXcpt('IVirtualBox::createAppliance failed (#2)')
 
         try:
-            oProgress = vboxwrappers.ProgressWrapper(oAppliance2.read(sOvf), self.oTstDrv.oVBoxMgr, self.oTstDrv, 'read "%s"' % (sOvf,))
+            oProgress = vboxwrappers.ProgressWrapper(oAppliance2.read(sOvf), self.oTstDrv.oVBoxMgr, self.oTstDrv,
+                                                     'read "%s"' % (sOvf,))
         except:
             return reporter.errorXcpt('IAppliance::read("%s") failed' % (sOvf,))
         oProgress.wait()
