@@ -65,13 +65,13 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
     # Test execution helpers.
     #
 
-    def setLocation(self, sLocation, aListOfAttach):
-        for attachment in aListOfAttach:
+    def setLocation(self, sLocation, aoMediumAttachments):
+        for oAttachment in aoMediumAttachments:
             try:
-                oMedium = attachment.medium
-                reporter.log('Move medium ' + oMedium.name + ' to the ' + sLocation)
+                oMedium = oAttachment.medium
+                reporter.log('Move medium "%s" to "%s"' % (oMedium.name, sLocation,))
             except:
-                reporter.errorXcpt('failed to get the medium from the IMediumAttachment "%s"' % (attachment))
+                reporter.errorXcpt('failed to get the medium from the IMediumAttachment "%s"' % (oAttachment))
 
             try:
                 oProgress = vboxwrappers.ProgressWrapper(oMedium.setLocation(sLocation), self.oTstDrv.oVBoxMgr, self.oTstDrv,
@@ -82,14 +82,20 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             oProgress.wait()
             if oProgress.logResult() is False:
                 return False
+        return True
 
-    # Test with VDI image
-    # move medium to a new location.
-    # case 1. Only path without file name
-    # case 2. Only path without file name without '\' or '/' at the end
-    # case 3. Path with file name
-    # case 4. Only file name
-    # case 5. Move snapshot
+    def checkLocation(self, sLocation, aoMediumAttachments, asFiles):
+        fRc = True
+        for oAttachment in aoMediumAttachments:
+            sFilePath = os.path.join(sLocation, asFiles[oAttachment.port])
+            sActualFilePath = oAttachment.medium.location
+            if not os.path.samefile(sFilePath, sActualFilePath):
+                reporter.log('medium location expected to be "%s" but is "%s"', (sFilePath, sActualFilePath))
+                fRc = False;
+            if not os.path.exists(sFilePath):
+                reporter.log('medium file does not exist at "%s"', (sFilePath))
+                fRc = False;
+        return fRc
 
     def testMediumMove(self):
         """
@@ -101,11 +107,11 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             oVM = self.oTstDrv.createTestVM('test-medium-move', 1, None, 4)
             assert oVM is not None
 
-            # create disk images
+            # create hard disk images, one for each file-based backend, using the first applicable extension
             fRc = True
-            c = 0
             oSession = self.oTstDrv.openSession(oVM)
             aoDskFmts = self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox.systemProperties, 'mediumFormats')
+            asFiles = []
             for oDskFmt in aoDskFmts:
                 aoDskFmtCaps = self.oTstDrv.oVBoxMgr.getArray(oDskFmt, 'capabilities')
                 if vboxcon.MediumFormatCapabilities_File not in aoDskFmtCaps \
@@ -119,7 +125,8 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
                 if sExt is None:
                     fRc = False
                     break
-                sHddPath = os.path.join(self.oTstDrv.sScratchPath, 'Test' + str(c) + sExt)
+                sFile = 'Test' + str(len(asFiles)) + sExt
+                sHddPath = os.path.join(self.oTstDrv.sScratchPath, sFile)
                 oHd = oSession.createBaseHd(sHddPath, sFmt=oDskFmt.id, cb=1024*1024)
                 if oHd is None:
                     fRc = False
@@ -127,41 +134,50 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
 
                 # attach HDD, IDE controller exists by default, but we use SATA just in case
                 sController='SATA Controller'
-                fRc = fRc and oSession.attachHd(sHddPath, sController, iPort = c, fImmutable=False, fForceResource=False)
+                fRc = fRc and oSession.attachHd(sHddPath, sController, iPort = len(asFiles), fImmutable=False, fForceResource=False)
                 if fRc:
-                    c += 1
+                    asFiles.append(sFile)
 
             fRc = fRc and oSession.saveSettings()
 
             #create temporary subdirectory in the current working directory
             sOrigLoc = self.oTstDrv.sScratchPath
-            sNewLoc = os.path.join(sOrigLoc, 'newLocation/')
-
+            sNewLoc = os.path.join(sOrigLoc, 'newLocation')
             os.mkdir(sNewLoc, 0o775)
 
-            aListOfAttach = oVM.getMediumAttachmentsOfController(sController)
-            #case 1. Only path without file name
-            sLocation = sNewLoc
-            self.setLocation(sLocation, aListOfAttach)
+            aoMediumAttachments = oVM.getMediumAttachmentsOfController(sController)
+            #case 1. Only path without file name, with trailing separator
+            fRc = self.setLocation(sNewLoc + os.sep, aoMediumAttachments) and fRc
+            fRc = self.checkLocation(sNewLoc, aoMediumAttachments, asFiles) and fRc
 
-            #case 2. Only path without file name without '\' or '/' at the end
-            sLocation = sOrigLoc
-            self.setLocation(sLocation, aListOfAttach)
+            #case 2. Only path without file name, without trailing separator
+            fRc = self.setLocation(sOrigLoc, aoMediumAttachments) and fRc
+            fRc = self.checkLocation(sOrigLoc, aoMediumAttachments, asFiles) and fRc
 
             #case 3. Path with file name
-            sLocation = sNewLoc + 'newName'
-            self.setLocation(sLocation, aListOfAttach)
+            fRc = self.setLocation(os.path.join(sNewLoc, 'newName'), aoMediumAttachments) and fRc
+            asNewFiles = list(map(lambda s: 'newName' + os.path.splitext(s)[1], asFiles))
+            fRc = self.checkLocation(os.path.join(sNewLoc, 'newName'), aoMediumAttachments, asFiles) and fRc
+            # BUG! the check above succeeds, but it actually should be the one below which does
+            #fRc = self.checkLocation(sNewLoc, aoMediumAttachments, asNewFiles) and fRc
 
             #case 4. Only file name
-            sLocation = 'onlyMediumName'
-            self.setLocation(sLocation, aListOfAttach)
+            fRc = self.setLocation('onlyMediumName', aoMediumAttachments) and fRc
+            asNewFiles = list(map(lambda s: 'onlyMediumName' + os.path.splitext(s)[1], asFiles))
+            fRc = self.checkLocation(os.path.join(sNewLoc, 'newName'), aoMediumAttachments,
+                                     list(map(lambda s: s.replace('.hdd', '.parallels'), asNewFiles))) and fRc
+            # BUG! due to the above path mishandling the check above succeeds, the directory issue is
+            # a consequence of the bug in case 3, but the extension is also picked incorrectly, it is
+            # not correct to just pick the backend id as the extension, it needs looking at the ext list.
+            #fRc = self.checkLocation(sNewLoc, aoMediumAttachments, asNewFiles) and fRc
 
-            #case 5. Move snapshot
+            #case 5. Move all files from a snapshot
             fRc = fRc and oSession.takeSnapshot('Snapshot1')
-            sLocation = sOrigLoc
-            #get fresh attachments after snapshot
-            aListOfAttach = oVM.getMediumAttachmentsOfController(sController)
-            self.setLocation(sLocation, aListOfAttach)
+            if fRc:
+                aoMediumAttachments = oVM.getMediumAttachmentsOfController(sController)
+                asSnapFiles = list(map(lambda o: os.path.basename(o.medium.name), aoMediumAttachments))
+                fRc = self.setLocation(sOrigLoc, aoMediumAttachments) and fRc
+                fRc = self.checkLocation(sOrigLoc, aoMediumAttachments, asSnapFiles) and fRc
 
             fRc = oSession.close() and fRc
 
