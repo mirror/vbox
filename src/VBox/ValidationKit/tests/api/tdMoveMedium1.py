@@ -90,10 +90,10 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             sFilePath = os.path.join(sLocation, asFiles[oAttachment.port])
             sActualFilePath = oAttachment.medium.location
             if not os.path.samefile(sFilePath, sActualFilePath):
-                reporter.log('medium location expected to be "%s" but is "%s"', (sFilePath, sActualFilePath))
+                reporter.log('medium location expected to be "%s" but is "%s"' % (sFilePath, sActualFilePath))
                 fRc = False;
             if not os.path.exists(sFilePath):
-                reporter.log('medium file does not exist at "%s"', (sFilePath))
+                reporter.log('medium file does not exist at "%s"' % (sFilePath,))
                 fRc = False;
         return fRc
 
@@ -134,7 +134,8 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
 
                 # attach HDD, IDE controller exists by default, but we use SATA just in case
                 sController='SATA Controller'
-                fRc = fRc and oSession.attachHd(sHddPath, sController, iPort = len(asFiles), fImmutable=False, fForceResource=False)
+                fRc = fRc and oSession.attachHd(sHddPath, sController, iPort = len(asFiles),
+                                                fImmutable=False, fForceResource=False)
                 if fRc:
                     asFiles.append(sFile)
 
@@ -156,16 +157,16 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
 
             #case 3. Path with file name
             fRc = self.setLocation(os.path.join(sNewLoc, 'newName'), aoMediumAttachments) and fRc
-            asNewFiles = list(map(lambda s: 'newName' + os.path.splitext(s)[1], asFiles))
+            asNewFiles = ['newName' + os.path.splitext(s)[1] for s in asFiles]
             fRc = self.checkLocation(os.path.join(sNewLoc, 'newName'), aoMediumAttachments, asFiles) and fRc
             # BUG! the check above succeeds, but it actually should be the one below which does
             #fRc = self.checkLocation(sNewLoc, aoMediumAttachments, asNewFiles) and fRc
 
             #case 4. Only file name
             fRc = self.setLocation('onlyMediumName', aoMediumAttachments) and fRc
-            asNewFiles = list(map(lambda s: 'onlyMediumName' + os.path.splitext(s)[1], asFiles))
+            asNewFiles = ['onlyMediumName' + os.path.splitext(s)[1] for s in asFiles]
             fRc = self.checkLocation(os.path.join(sNewLoc, 'newName'), aoMediumAttachments,
-                                     list(map(lambda s: s.replace('.hdd', '.parallels'), asNewFiles))) and fRc
+                                     [s.replace('.hdd', '.parallels') for s in asNewFiles]) and fRc
             # BUG! due to the above path mishandling the check above succeeds, the directory issue is
             # a consequence of the bug in case 3, but the extension is also picked incorrectly, it is
             # not correct to just pick the backend id as the extension, it needs looking at the ext list.
@@ -175,7 +176,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             fRc = fRc and oSession.takeSnapshot('Snapshot1')
             if fRc:
                 aoMediumAttachments = oVM.getMediumAttachmentsOfController(sController)
-                asSnapFiles = list(map(lambda o: os.path.basename(o.medium.name), aoMediumAttachments))
+                asSnapFiles = [os.path.basename(o.medium.name) for o in aoMediumAttachments]
                 fRc = self.setLocation(sOrigLoc, aoMediumAttachments) and fRc
                 fRc = self.checkLocation(sOrigLoc, aoMediumAttachments, asSnapFiles) and fRc
 
