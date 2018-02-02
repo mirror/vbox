@@ -3723,14 +3723,24 @@ bool UIExtraDataManager::usePixelFormatAYUV(const QString &strID)
 
 bool UIExtraDataManager::useUnscaledHiDPIOutput(const QString &strID)
 {
+#ifdef VBOX_WS_MAC
     /* 'False' unless feature allowed: */
     return isFeatureAllowed(GUI_HiDPI_UnscaledOutput, strID);
+#else
+    /* 'True' unless feature restricted: */
+    return !isFeatureRestricted(GUI_HiDPI_UnscaledOutput, strID);
+#endif
 }
 
 void UIExtraDataManager::setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput, const QString &strID)
 {
+#ifdef VBOX_WS_MAC
     /* 'True' if feature allowed, null-string otherwise: */
-    return setExtraDataString(GUI_HiDPI_UnscaledOutput, toFeatureAllowed(fUseUnscaledHiDPIOutput), strID);
+    setExtraDataString(GUI_HiDPI_UnscaledOutput, toFeatureAllowed(fUseUnscaledHiDPIOutput), strID);
+#else
+    /* 'False' if feature restricted, null-string otherwise: */
+    setExtraDataString(GUI_HiDPI_UnscaledOutput, toFeatureRestricted(!fUseUnscaledHiDPIOutput), strID);
+#endif
 }
 
 HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &strID)
