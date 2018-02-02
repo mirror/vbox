@@ -115,14 +115,11 @@
 /** @def FBO
  * Disable this to see how the output is without the FBO in the middle of the processing chain. */
 #define FBO 1
-/** @def CR_RENDER_FORCE_PRESENT_MAIN_THREAD
- * Force present schedule to main thread. */
 /** @def SHOW_WINDOW_BACKGROUND
  * Define this to see the window background even if the window is clipped. */
 /** @def DEBUG_VERBOSE
  * Define this to get some debug info about the messages flow. */
 #if 0 || defined(DOXYGEN_RUNNING)
-# define CR_RENDER_FORCE_PRESENT_MAIN_THREAD
 # define SHOW_WINDOW_BACKGROUND 1
 # define DEBUG_VERBOSE
 #endif
