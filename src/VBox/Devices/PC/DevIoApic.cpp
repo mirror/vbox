@@ -55,7 +55,9 @@ Controller" */
 /** The number of interrupt input pins. */
 #define IOAPIC_NUM_INTR_PINS                    24
 /** Maximum redirection entires. */
-#define IOAPIC_MAX_REDIR_ENTRIES                (IOAPIC_NUM_INTR_PINS - 1)
+#define IOAPIC_MAX_RTE_INDEX                    (IOAPIC_NUM_INTR_PINS - 1)
+/** Reduced RTEs used by SIO.A (82379AB). */
+#define IOAPIC_REDUCED_MAX_RTE_INDEX            (16 - 1)
 
 /** Version register - Gets the version. */
 #define IOAPIC_VER_GET_VER(a_Reg)               ((a_Reg) & 0xff)
@@ -153,8 +155,9 @@ Controller" */
 #define IOAPIC_INDIRECT_INDEX_ID                0x0
 #define IOAPIC_INDIRECT_INDEX_VERSION           0x1
 #define IOAPIC_INDIRECT_INDEX_ARB               0x2     /* Older I/O APIC only. */
-#define IOAPIC_INDIRECT_INDEX_REDIR_TBL_START   0x10
-#define IOAPIC_INDIRECT_INDEX_REDIR_TBL_END     0x3F
+#define IOAPIC_INDIRECT_INDEX_REDIR_TBL_START   0x10    /* First valid RTE register index. */
+#define IOAPIC_INDIRECT_INDEX_RTE_END           0x3F    /* Last valid RTE register index (24 RTEs). */
+#define IOAPIC_REDUCED_INDIRECT_INDEX_RTE_END   0x2F    /* Last valid RTE register index (16 RTEs). */
 
 /** Offset of direct registers in the I/O APIC MMIO space. */
 #define IOAPIC_DIRECT_OFF_INDEX                 0x00
@@ -205,8 +208,12 @@ typedef struct IOAPIC
     uint8_t                 u8ApicVer;
     /** I/O APIC ID mask. */
     uint8_t                 u8IdMask;
+    /** Maximum Redirection Table Entry (RTE) Entry. */
+    uint8_t                 u8MaxRte;
+    /** Last valid RTE indirect register index. */
+    uint8_t                 u8LastRteRegIdx;
     /* Alignment padding. */
-    uint8_t                 u8Padding0[3];
+    uint8_t                 u8Padding0[1];
     /** Redirection table entry - Valid write mask. */
     uint64_t                u64RteWriteMask;
     /** Redirection table entry - Valid read mask. */
@@ -292,7 +299,7 @@ DECLINLINE(uint32_t) ioapicGetArb(void)
  */
 DECLINLINE(uint32_t) ioapicGetVersion(PCIOAPIC pThis)
 {
-    uint32_t uValue = RT_MAKE_U32(pThis->u8ApicVer, IOAPIC_MAX_REDIR_ENTRIES);
+    uint32_t uValue = RT_MAKE_U32(pThis->u8ApicVer, pThis->u8MaxRte);
     Log2(("IOAPIC: ioapicGetVersion: returns %#RX32\n", uValue));
     return uValue;
 }
@@ -520,7 +527,7 @@ static uint32_t ioapicGetData(PCIOAPIC pThis)
 {
     uint8_t const uIndex = pThis->u8Index;
     if (   uIndex >= IOAPIC_INDIRECT_INDEX_REDIR_TBL_START
-        && uIndex <= IOAPIC_INDIRECT_INDEX_REDIR_TBL_END)
+        && uIndex <= pThis->u8LastRteRegIdx)
         return ioapicGetRedirTableEntry(pThis, uIndex);
 
     uint32_t uValue;
@@ -563,7 +570,7 @@ static int ioapicSetData(PIOAPIC pThis, uint32_t uValue)
     LogFlow(("IOAPIC: ioapicSetData: uIndex=%#x uValue=%#RX32\n", uIndex, uValue));
 
     if (   uIndex >= IOAPIC_INDIRECT_INDEX_REDIR_TBL_START
-        && uIndex <= IOAPIC_INDIRECT_INDEX_REDIR_TBL_END)
+        && uIndex <= pThis->u8LastRteRegIdx)
         return ioapicSetRedirTableEntry(pThis, uIndex, uValue);
 
     if (uIndex == IOAPIC_INDIRECT_INDEX_ID)
@@ -998,7 +1005,7 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
     pHlp->pfnPrintf(pHlp, "  I/O Redirection Table and IRR:\n");
     pHlp->pfnPrintf(pHlp, "  idx dst_mode dst_addr mask irr trigger rirr polar dlvr_st dlvr_mode vector\n");
 
-    for (uint8_t idxRte = 0; idxRte < RT_ELEMENTS(pThis->au64RedirTable); idxRte++)
+    for (uint8_t idxRte = 0; idxRte <= pThis->u8MaxRte; idxRte++)
     {
         static const char * const s_apszDeliveryModes[] =
         {
@@ -1198,14 +1205,29 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         /* Newer 2007-ish I/O APIC integrated into ICH southbridges. */
         pThis->u8ApicVer       = IOAPIC_VERSION_ICH9;
         pThis->u8IdMask        = 0xff;
+        pThis->u8MaxRte        = IOAPIC_MAX_RTE_INDEX;
+        pThis->u8LastRteRegIdx = IOAPIC_INDIRECT_INDEX_RTE_END;
         pThis->u64RteWriteMask = IOAPIC_RTE_VALID_WRITE_MASK_ICH9;
         pThis->u64RteReadMask  = IOAPIC_RTE_VALID_READ_MASK_ICH9;
     }
     else if (!strcmp(szChipType, "82093AA"))
     {
-        /* Older 1996-ish discrete I/O APIC, used in P6 class systems. */
+        /* Older 1995-ish discrete I/O APIC, used in P6 class systems. */
         pThis->u8ApicVer       = IOAPIC_VERSION_82093AA;
         pThis->u8IdMask        = 0x0f;
+        pThis->u8MaxRte        = IOAPIC_MAX_RTE_INDEX;
+        pThis->u8LastRteRegIdx = IOAPIC_INDIRECT_INDEX_RTE_END;
+        pThis->u64RteWriteMask = IOAPIC_RTE_VALID_WRITE_MASK_82093AA;
+        pThis->u64RteReadMask  = IOAPIC_RTE_VALID_READ_MASK_82093AA;
+    }
+    else if (!strcmp(szChipType, "82379AB"))
+    {
+        /* Even older 1993-ish I/O APIC built into SIO.A, used in EISA and early PCI systems. */
+        /* Exact same version and behavior as 82093AA, only the number of RTEs is different. */
+        pThis->u8ApicVer       = IOAPIC_VERSION_82093AA;
+        pThis->u8IdMask        = 0x0f;
+        pThis->u8MaxRte        = IOAPIC_REDUCED_MAX_RTE_INDEX;
+        pThis->u8LastRteRegIdx = IOAPIC_REDUCED_INDIRECT_INDEX_RTE_END;
         pThis->u64RteWriteMask = IOAPIC_RTE_VALID_WRITE_MASK_82093AA;
         pThis->u64RteReadMask  = IOAPIC_RTE_VALID_READ_MASK_82093AA;
     }
