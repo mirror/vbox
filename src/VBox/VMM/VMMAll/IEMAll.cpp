@@ -15447,14 +15447,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
             pVCpu->iem.s.cLongJumps++;
-#  ifdef VBOX_WITH_NESTED_HWVIRT
-            /*
-             * When a nested-guest causes an exception intercept when fetching memory
-             * (e.g. IEM_MC_FETCH_MEM_U16) as part of instruction execution, we need this
-             * to fix-up VINF_SVM_VMEXIT on the longjmp way out, otherwise we will guru.
-             */
-            rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
-#  endif
         }
         pVCpu->iem.s.CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
 # endif
