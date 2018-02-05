@@ -264,33 +264,11 @@ static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
 
     pFmt->wFormatTag      = WAVE_FORMAT_PCM;
     pFmt->nChannels       = pCfg->Props.cChannels;
+    pFmt->wBitsPerSample  = pCfg->Props.cBits;
     pFmt->nSamplesPerSec  = pCfg->Props.uHz;
-    pFmt->nAvgBytesPerSec = pCfg->Props.uHz << (pCfg->Props.cChannels == 2 ? 1: 0);
-    pFmt->nBlockAlign     = 1 << (pCfg->Props.cChannels == 2 ? 1 : 0);
+    pFmt->nBlockAlign     = pFmt->nChannels * pFmt->wBitsPerSample / 8;
+    pFmt->nAvgBytesPerSec = pFmt->nSamplesPerSec * pFmt->nBlockAlign;
     pFmt->cbSize          = 0; /* No extra data specified. */
-
-    switch (pCfg->Props.cBits)
-    {
-        case 8:
-            pFmt->wBitsPerSample = 8;
-            break;
-
-        case 16:
-            pFmt->wBitsPerSample = 16;
-            pFmt->nAvgBytesPerSec <<= 1;
-            pFmt->nBlockAlign <<= 1;
-            break;
-
-        case 32:
-            pFmt->wBitsPerSample = 32;
-            pFmt->nAvgBytesPerSec <<= 2;
-            pFmt->nBlockAlign <<= 2;
-            break;
-
-        default:
-            AssertMsgFailed(("Wave format for %RU8 bits not supported\n", pCfg->Props.cBits));
-            return VERR_NOT_SUPPORTED;
-    }
 
     return VINF_SUCCESS;
 }
