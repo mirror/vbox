@@ -636,6 +636,22 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
     if (RT_FAILURE(rc))
         return E_INVALIDARG;
 
+    DSLOG(("DSound: Requested playback format:\n"
+           "  wFormatTag      = %RI16\n"
+           "  nChannels       = %RI16\n"
+           "  nSamplesPerSec  = %RU32\n"
+           "  nAvgBytesPerSec = %RU32\n"
+           "  nBlockAlign     = %RI16\n"
+           "  wBitsPerSample  = %RI16\n"
+           "  cbSize          = %RI16\n",
+           wfx.wFormatTag,
+           wfx.nChannels,
+           wfx.nSamplesPerSec,
+           wfx.nAvgBytesPerSec,
+           wfx.nBlockAlign,
+           wfx.wBitsPerSample,
+           wfx.cbSize));
+
     dsoundUpdateStatusInternal(pThis);
 
     HRESULT hr = directSoundPlayInterfaceCreate(pThis);
@@ -687,8 +703,10 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
         }
 
         /*
-         * Query the actual parameters.
+         * Query the actual parameters set for this stream.
+         * Those might be different than the initially requested parameters.
          */
+        RT_ZERO(wfx);
         hr = IDirectSoundBuffer8_GetFormat(pStreamDS->Out.pDSB, &wfx, sizeof(wfx), NULL);
         if (FAILED(hr))
         {
@@ -707,7 +725,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
             break;
         }
 
-        DSLOG(("DSound: Playback format:\n"
+        DSLOG(("DSound: Acquired playback format:\n"
                "  dwBufferBytes   = %RI32\n"
                "  dwFlags         = 0x%x\n"
                "  wFormatTag      = %RI16\n"
