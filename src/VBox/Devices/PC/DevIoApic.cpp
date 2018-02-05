@@ -882,7 +882,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetVersion(void *pvUser, PCDBGFREGDESC pDe
 }
 
 
-/** @interface_method_impl{DBGFREGDESC,pfnGetArb} */
+/** @interface_method_impl{DBGFREGDESC,pfnGet} */
 static DECLCALLBACK(int) ioapicDbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     RT_NOREF(pvUser, pDesc);
