@@ -2916,7 +2916,7 @@ static void hmR0SvmUpdateTscOffsettingNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
 
     PSVMVMCBCTRL         pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-    Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); RT_NOREF(pCtx);
 
     /*
      * Only avoid intercepting if we determined the host TSC (++) is stable enough
