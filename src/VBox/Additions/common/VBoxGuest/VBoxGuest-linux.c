@@ -51,11 +51,15 @@
 #endif
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+# include <linux/tty.h>
+#endif
 #include <VBox/version.h>
 #include "revision-generated.h"
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
@@ -745,6 +749,22 @@ DECLINLINE(RTUID) vgdrvLinuxGetUid(void)
 
 
 /**
+ * Checks if the given group number is zero or not.
+ *
+ * @returns true / false.
+ * @param   gid                 The group to check for.
+ */
+DECLINLINE(bool) vgdrvLinuxIsGroupZero(kgid_t gid)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+    return from_kgid(current_user_ns(), gid);
+#else
+    return gid == 0;
+#endif
+}
+
+
+/**
  * Searches the effective group and supplementary groups for @a gid.
  *
  * @returns true if member, false if not.
@@ -769,7 +789,7 @@ static uint32_t vgdrvLinuxRequestorOnConsole(void)
 {
     uint32_t           fRet = VMMDEV_REQUESTOR_CON_DONT_KNOW;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28) /* First with tty_kref_put(). */
     /*
      * Check for tty0..63, ASSUMING that these are only used for the physical console.
      */
@@ -790,7 +810,7 @@ static uint32_t vgdrvLinuxRequestorOnConsole(void)
             && (   pszName[4] == '\0'
                 || (   RT_C_IS_DIGIT(pszName[4])
                     && pszName[5] == '\0'
-                    && (pszName[3] - '0') * 10 + (pszName[4] - '0') <= 63))
+                    && (pszName[3] - '0') * 10 + (pszName[4] - '0') <= 63)) )
                fRet = VMMDEV_REQUESTOR_CON_YES;
         tty_kref_put(pTty);
     }
@@ -824,8 +844,8 @@ static int vgdrvLinuxOpen(struct inode *pInode, struct file *pFilp)
         fRequestor |= VMMDEV_REQUESTOR_USR_USER;
     if (MINOR(pInode->i_rdev) == g_MiscDeviceUser.minor)
     {
-        fRequestor |= VMMDEV_REQUESTOR_UNTRUSTED_DEVICE;
-        if (pInode->i_gid && vgdrvLinuxIsInGroupEff(pInode->i_gid))
+        fRequestor |= VMMDEV_REQUESTOR_USER_DEVICE;
+        if (vgdrvLinuxIsGroupZero(pInode->i_gid) && vgdrvLinuxIsInGroupEff(pInode->i_gid))
             fRequestor |= VMMDEV_REQUESTOR_GRP_VBOX;
     }
     fRequestor |= vgdrvLinuxRequestorOnConsole();
