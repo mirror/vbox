@@ -67,10 +67,12 @@ template<> bool canConvert<MachineCloseAction>() { return true; }
 template<> bool canConvert<MouseCapturePolicy>() { return true; }
 template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
 template<> bool canConvert<ScalingOptimizationType>() { return true; }
+#ifdef VBOX_WS_MAC
 template<> bool canConvert<HiDPIOptimizationType>() { return true; }
+#endif
 #ifndef VBOX_WS_MAC
 template<> bool canConvert<MiniToolbarAlignment>() { return true; }
-#endif /* !VBOX_WS_MAC */
+#endif
 template<> bool canConvert<InformationElementType>() { return true; }
 template<> bool canConvert<MaxGuestResolutionPolicy>() { return true; }
 
@@ -1648,6 +1650,7 @@ template<> ScalingOptimizationType fromInternalString<ScalingOptimizationType>(c
     return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
 }
 
+#ifdef VBOX_WS_MAC
 /* QString <= HiDPIOptimizationType: */
 template<> QString toInternalString(const HiDPIOptimizationType &optimizationType)
 {
@@ -1679,6 +1682,7 @@ template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
 }
+#endif /* VBOX_WS_MAC */
 
 #ifndef VBOX_WS_MAC
 /* QString <= MiniToolbarAlignment: */

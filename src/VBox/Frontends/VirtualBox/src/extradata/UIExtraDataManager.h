@@ -84,8 +84,10 @@ signals:
     /** Notifies about the scaling optimization type change. */
     void sigScalingOptimizationTypeChange(const QString &strMachineID);
 
+#ifdef VBOX_WS_MAC
     /** Notifies about the HiDPI optimization type change. */
     void sigHiDPIOptimizationTypeChange(const QString &strMachineID);
+#endif
 
     /** Notifies about unscaled HiDPI output mode change. */
     void sigUnscaledHiDPIOutputModeChange(const QString &strMachineID);
@@ -532,8 +534,10 @@ public:
         /** Defines whether Runtime UI should @a fUseUnscaledHiDPIOutput. */
         void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput, const QString &strID);
 
+#ifdef VBOX_WS_MAC
         /** Returns Runtime UI HiDPI optimization type. */
         HiDPIOptimizationType hiDPIOptimizationType(const QString &strID);
+#endif
 
 #ifndef VBOX_WS_MAC
         /** Returns whether mini-toolbar is enabled for full and seamless screens. */

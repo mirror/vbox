@@ -167,10 +167,12 @@ public:
     /** Defines frame-buffer scaling optimization type: */
     void setScalingOptimizationType(ScalingOptimizationType type) { m_enmScalingOptimizationType = type; }
 
+#ifdef VBOX_WS_MAC
     /** Returns HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
     /** Defines HiDPI frame-buffer optimization type: */
     void setHiDPIOptimizationType(HiDPIOptimizationType type) { m_hiDPIOptimizationType = type; }
+#endif
 
     DECLARE_NOT_AGGREGATABLE(UIFrameBufferPrivate)
 
@@ -299,13 +301,17 @@ protected:
     /** Erases corresponding @a rect with @a painter. */
     static void eraseImageRect(QPainter &painter, const QRect &rect,
                                bool fUseUnscaledHiDPIOutput,
+#ifdef VBOX_WS_MAC
                                HiDPIOptimizationType hiDPIOptimizationType,
+#endif
                                double dDevicePixelRatio);
     /** Draws corresponding @a rect of passed @a image with @a painter. */
     static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                               int iContentsShiftX, int iContentsShiftY,
                               bool fUseUnscaledHiDPIOutput,
+#ifdef VBOX_WS_MAC
                               HiDPIOptimizationType hiDPIOptimizationType,
+#endif
                               double dDevicePixelRatio);
 
     /** Holds the screen-id. */
@@ -385,8 +391,10 @@ protected:
     double m_dDevicePixelRatio;
     /** Holds whether frame-buffer should use unscaled HiDPI output. */
     bool m_fUseUnscaledHiDPIOutput;
+#ifdef VBOX_WS_MAC
     /** Holds HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType m_hiDPIOptimizationType;
+#endif
     /** @} */
 
 private:
@@ -537,7 +545,9 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
     , m_enmScalingOptimizationType(ScalingOptimizationType_None)
     , m_dDevicePixelRatio(1.0)
     , m_fUseUnscaledHiDPIOutput(false)
+#ifdef VBOX_WS_MAC
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
+#endif
 {
     /* Update coordinate-system: */
     updateCoordinateSystem();
@@ -1398,7 +1408,11 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), devicePixelRatio());
+                  useUnscaledHiDPIOutput(),
+#ifdef VBOX_WS_MAC
+                  hiDPIOptimizationType(),
+#endif
+                  devicePixelRatio());
 }
 
 void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
@@ -1457,7 +1471,11 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     painter.setCompositionMode(QPainter::CompositionMode_Clear);
     /* Erase rectangle: */
     eraseImageRect(painter, paintRect,
-                   useUnscaledHiDPIOutput(), hiDPIOptimizationType(), devicePixelRatio());
+                   useUnscaledHiDPIOutput(),
+#ifdef VBOX_WS_MAC
+                   hiDPIOptimizationType(),
+#endif
+                   devicePixelRatio());
 
     /* Apply painter clipping for painting: */
     painter.setClipRegion(paintRegion);
@@ -1482,7 +1500,11 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), devicePixelRatio());
+                  useUnscaledHiDPIOutput(),
+#ifdef VBOX_WS_MAC
+                  hiDPIOptimizationType(),
+#endif
+                  devicePixelRatio());
 }
 
 /* static */
@@ -1501,17 +1523,19 @@ Qt::TransformationMode UIFrameBufferPrivate::transformationMode(ScalingOptimizat
 /* static */
 void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
                                           bool fUseUnscaledHiDPIOutput,
+#ifdef VBOX_WS_MAC
                                           HiDPIOptimizationType hiDPIOptimizationType,
+#endif
                                           double dDevicePixelRatio)
 {
     /* Prepare sub-pixmap: */
     QPixmap subPixmap = QPixmap(rect.width(), rect.height());
 
+#ifdef VBOX_WS_MAC
     /* If HiDPI 'device-pixel-ratio' defined: */
     if (dDevicePixelRatio > 1.0)
     {
-        /* Should we
-         * perform logical HiDPI scaling and optimize it for performance? */
+        /* Should we perform logical HiDPI scaling and optimize it for performance? */
         if (!fUseUnscaledHiDPIOutput && hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Adjust sub-pixmap: */
@@ -1519,15 +1543,29 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
                                 (int)(rect.height() * dDevicePixelRatio));
         }
 
-        /* Should we
-         * not perform logical HiDPI scaling or
-         * perform logical HiDPI scaling and optimize it for performance? */
+        /* Should we not perform logical HiDPI scaling or perform logical HiDPI scaling and optimize it for performance? */
         if (fUseUnscaledHiDPIOutput || hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dDevicePixelRatio);
         }
     }
+#else /* !VBOX_WS_MAC */
+    /* If HiDPI 'device-pixel-ratio' defined: */
+    if (dDevicePixelRatio > 1.0)
+    {
+        /* In auto-scale mode: */
+        if (!fUseUnscaledHiDPIOutput)
+        {
+            /* Adjust sub-pixmap: */
+            subPixmap = QPixmap((int)(rect.width() * dDevicePixelRatio),
+                                (int)(rect.height() * dDevicePixelRatio));
+        }
+
+        /* Mark sub-pixmap HiDPI: */
+        subPixmap.setDevicePixelRatio(dDevicePixelRatio);
+    }
+#endif /* !VBOX_WS_MAC */
 
     /* Which point we should draw corresponding sub-pixmap? */
     QPointF paintPoint = rect.topLeft();
@@ -1544,7 +1582,9 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
 void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                                          int iContentsShiftX, int iContentsShiftY,
                                          bool fUseUnscaledHiDPIOutput,
+#ifdef VBOX_WS_MAC
                                          HiDPIOptimizationType hiDPIOptimizationType,
+#endif
                                          double dDevicePixelRatio)
 {
     /* Calculate offset: */
@@ -1563,11 +1603,11 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
     /* Create sub-pixmap on the basis of sub-image above (1st copy involved): */
     QPixmap subPixmap = QPixmap::fromImage(subImage);
 
+#ifdef VBOX_WS_MAC
     /* If HiDPI 'device-pixel-ratio' defined: */
     if (dDevicePixelRatio > 1.0)
     {
-        /* Should we
-         * perform logical HiDPI scaling and optimize it for performance? */
+        /* Should we perform logical HiDPI scaling and optimize it for performance? */
         if (!fUseUnscaledHiDPIOutput && hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Fast scale sub-pixmap (2nd copy involved): */
@@ -1575,15 +1615,29 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
                                          Qt::IgnoreAspectRatio, Qt::FastTransformation);
         }
 
-        /* Should we
-         * not perform logical HiDPI scaling or
-         * perform logical HiDPI scaling and optimize it for performance? */
+        /* Should we not perform logical HiDPI scaling or perform logical HiDPI scaling and optimize it for performance? */
         if (fUseUnscaledHiDPIOutput || hiDPIOptimizationType == HiDPIOptimizationType_Performance)
         {
             /* Mark sub-pixmap as HiDPI: */
             subPixmap.setDevicePixelRatio(dDevicePixelRatio);
         }
     }
+#else /* !VBOX_WS_MAC */
+    /* If HiDPI 'device-pixel-ratio' defined: */
+    if (dDevicePixelRatio > 1.0)
+    {
+        /* In auto-scale mode: */
+        if (!fUseUnscaledHiDPIOutput)
+        {
+            /* Fast scale sub-pixmap (2nd copy involved): */
+            subPixmap = subPixmap.scaled(subPixmap.size() * dDevicePixelRatio,
+                                         Qt::IgnoreAspectRatio, Qt::FastTransformation);
+        }
+
+        /* Mark sub-pixmap HiDPI: */
+        subPixmap.setDevicePixelRatio(dDevicePixelRatio);
+    }
+#endif /* !VBOX_WS_MAC */
 
     /* Which point we should draw corresponding sub-pixmap? */
     QPointF paintPoint = rect.topLeft();
@@ -1748,6 +1802,7 @@ void UIFrameBuffer::setScalingOptimizationType(ScalingOptimizationType type)
     m_pFrameBuffer->setScalingOptimizationType(type);
 }
 
+#ifdef VBOX_WS_MAC
 HiDPIOptimizationType UIFrameBuffer::hiDPIOptimizationType() const
 {
     return m_pFrameBuffer->hiDPIOptimizationType();
@@ -1757,6 +1812,7 @@ void UIFrameBuffer::setHiDPIOptimizationType(HiDPIOptimizationType type)
 {
     m_pFrameBuffer->setHiDPIOptimizationType(type);
 }
+#endif
 
 void UIFrameBuffer::handleNotifyChange(int iWidth, int iHeight)
 {

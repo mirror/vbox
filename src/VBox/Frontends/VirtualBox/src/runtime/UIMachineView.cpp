@@ -539,6 +539,7 @@ void UIMachineView::sltHandleScalingOptimizationChange(const QString &strMachine
     viewport()->update();
 }
 
+#ifdef VBOX_WS_MAC
 void UIMachineView::sltHandleHiDPIOptimizationChange(const QString &strMachineID)
 {
     /* Skip unrelated machine IDs: */
@@ -551,6 +552,7 @@ void UIMachineView::sltHandleHiDPIOptimizationChange(const QString &strMachineID
     /* Update viewport: */
     viewport()->update();
 }
+#endif /* VBOX_WS_MAC */
 
 void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID)
 {
@@ -716,8 +718,10 @@ void UIMachineView::prepareFrameBuffer()
         m_pFrameBuffer->init(this);
 #endif /* !VBOX_WITH_VIDEOHWACCEL */
 
+#ifdef VBOX_WS_MAC
         /* Take HiDPI optimization type into account: */
         m_pFrameBuffer->setHiDPIOptimizationType(gEDataManager->hiDPIOptimizationType(vboxGlobal().managedVMUuid()));
+#endif
 
         /* Take scaling optimization type into account: */
         m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
@@ -845,9 +849,11 @@ void UIMachineView::prepareConnections()
     /* Scaling-optimization change: */
     connect(gEDataManager, SIGNAL(sigScalingOptimizationTypeChange(const QString&)),
             this, SLOT(sltHandleScalingOptimizationChange(const QString&)));
+#ifdef VBOX_WS_MAC
     /* HiDPI-optimization change: */
     connect(gEDataManager, SIGNAL(sigHiDPIOptimizationTypeChange(const QString&)),
             this, SLOT(sltHandleHiDPIOptimizationChange(const QString&)));
+#endif
     /* Unscaled HiDPI output mode change: */
     connect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
             this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));

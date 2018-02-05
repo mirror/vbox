@@ -120,10 +120,12 @@ public:
     /** Defines the frame-buffer scaling optimization type. */
     void setScalingOptimizationType(ScalingOptimizationType type);
 
+#ifdef VBOX_WS_MAC
     /** Returns HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType hiDPIOptimizationType() const;
     /** Defines HiDPI frame-buffer optimization type: */
     void setHiDPIOptimizationType(HiDPIOptimizationType type);
+#endif
 
     /** Handles frame-buffer notify-change-event. */
     void handleNotifyChange(int iWidth, int iHeight);

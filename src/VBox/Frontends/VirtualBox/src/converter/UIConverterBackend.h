@@ -99,10 +99,12 @@ template<> bool canConvert<MachineCloseAction>();
 template<> bool canConvert<MouseCapturePolicy>();
 template<> bool canConvert<GuruMeditationHandlerType>();
 template<> bool canConvert<ScalingOptimizationType>();
+#ifdef VBOX_WS_MAC
 template<> bool canConvert<HiDPIOptimizationType>();
+#endif
 #ifndef VBOX_WS_MAC
 template<> bool canConvert<MiniToolbarAlignment>();
-#endif /* !VBOX_WS_MAC */
+#endif
 template<> bool canConvert<InformationElementType>();
 template<> bool canConvert<MaxGuestResolutionPolicy>();
 
@@ -196,12 +198,14 @@ template<> QString toInternalString(const GuruMeditationHandlerType &guruMeditat
 template<> GuruMeditationHandlerType fromInternalString<GuruMeditationHandlerType>(const QString &strGuruMeditationHandlerType);
 template<> QString toInternalString(const ScalingOptimizationType &optimizationType);
 template<> ScalingOptimizationType fromInternalString<ScalingOptimizationType>(const QString &strOptimizationType);
+#ifdef VBOX_WS_MAC
 template<> QString toInternalString(const HiDPIOptimizationType &optimizationType);
 template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const QString &strOptimizationType);
+#endif
 #ifndef VBOX_WS_MAC
 template<> QString toInternalString(const MiniToolbarAlignment &miniToolbarAlignment);
 template<> MiniToolbarAlignment fromInternalString<MiniToolbarAlignment>(const QString &strMiniToolbarAlignment);
-#endif /* !VBOX_WS_MAC */
+#endif
 template<> QString toString(const InformationElementType &informationElementType);
 template<> InformationElementType fromString<InformationElementType>(const QString &strInformationElementType);
 template<> QString toInternalString(const InformationElementType &informationElementType);
