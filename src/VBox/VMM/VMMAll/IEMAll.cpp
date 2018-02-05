@@ -15275,7 +15275,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
 # endif
 
     /** @todo Maybe someday we can centralize this under CPUMCanInjectInterrupt()? */
-#if defined(VBOX_WITH_NESTED_HWVIRT)
+# if defined(VBOX_WITH_NESTED_HWVIRT)
     bool fIntrEnabled = pCtx->hwvirt.Gif;
     if (fIntrEnabled)
     {
@@ -15284,9 +15284,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
         else
             fIntrEnabled = pCtx->eflags.Bits.u1IF;
     }
-#else
+# else
     bool fIntrEnabled = pCtx->eflags.Bits.u1IF;
-#endif
+# endif
     if (   fIntrEnabled
         && TRPMHasTrap(pVCpu)
         && EMGetInhibitInterruptsPC(pVCpu) != pCtx->rip)
@@ -15341,7 +15341,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
 # endif
 
     /** @todo Can we centralize this under CPUMCanInjectInterrupt()? */
-#if defined(VBOX_WITH_NESTED_HWVIRT)
+# if defined(VBOX_WITH_NESTED_HWVIRT)
     bool fIntrEnabled = pCtx->hwvirt.fGif;
     if (fIntrEnabled)
     {
@@ -15350,9 +15350,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
         else
             fIntrEnabled = pCtx->eflags.Bits.u1IF;
     }
-#else
+# else
     bool fIntrEnabled = pCtx->eflags.Bits.u1IF;
-#endif
+# endif
     if (   fIntrEnabled
         && TRPMHasTrap(pVCpu)
         && EMGetInhibitInterruptsPC(pVCpu) != pCtx->rip)
@@ -15471,7 +15471,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &IEM_GET_CTX(pVCpu)->gs));
 # endif
     }
-#  ifdef VBOX_WITH_NESTED_HWVIRT
+# ifdef VBOX_WITH_NESTED_HWVIRT
     else
     {
         /*
@@ -15480,7 +15480,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
          */
         rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
     }
-#  endif
+# endif
 
     /*
      * Maybe re-enter raw-mode and log.
