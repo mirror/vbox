@@ -192,7 +192,7 @@ typedef struct VMMDevState
      * Until this information is reported the VMMDev refuses any other requests.
      */
     VBoxGuestInfo guestInfo;
-    /** Information report \#2, chewed a litte. */
+    /** Information report \#2, chewed a little. */
     struct
     {
         uint32_t uFullVersion; /**< non-zero if info is present. */
