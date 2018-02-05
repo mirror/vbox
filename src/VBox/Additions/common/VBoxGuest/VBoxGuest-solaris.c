@@ -38,6 +38,7 @@
 #include <sys/sunddi.h>
 #include <sys/open.h>
 #include <sys/sunldi.h>
+#include <sys/policy.h>
 #include <sys/file.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
@@ -524,9 +525,25 @@ static int vgdrvSolarisOpen(dev_t *pDev, int fFlags, int fType, cred_t *pCred)
 
     /*
      * Create a new session.
+     *
+     * Note! The devfs inode with the gid isn't readily available here, so we cannot easily
+     *       to the vbox group detection like on linux.  Read config instead?
      */
     if (!(fFlags & FKLYR))
-        rc = VGDrvCommonCreateUserSession(&g_DevExt, VMMDEV_REQUESTOR_USERMODE, &pSession);
+    {
+        uint32_t fRequestor = VMMDEV_REQUESTOR_USERMODE | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN;
+        if (crgetruid(pCred) == 0)
+            fRequestor |= VMMDEV_REQUESTOR_USR_ROOT;
+        else
+            fRequestor |= VMMDEV_REQUESTOR_USR_USER;
+        if (secpolicy_coreadm(pCred) == 0)
+            fRequestor |= VMMDEV_REQUESTOR_GRP_WHEEL;
+        /** @todo is there any way of detecting that the process belongs to someone on the physical console?
+         * secpolicy_console() [== PRIV_SYS_DEVICES] doesn't look quite right, or does it? */
+        fRequestor |= VMMDEV_REQUESTOR_CON_DONT_KNOW;
+
+        rc = VGDrvCommonCreateUserSession(&g_DevExt, fRequestor, &pSession);
+    }
     else
         rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
