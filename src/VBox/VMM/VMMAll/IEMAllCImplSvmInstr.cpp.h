@@ -260,7 +260,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
                 rcStrict = VINF_SVM_VMEXIT;
             else if (RT_SUCCESS(rcStrict))
             {
-                LogFlow(("iemSvmVmexit: Setting passup status from iemSvmWorldSwitch %Rrc\n", rcStrict));
+                LogFlow(("iemSvmVmexit: Setting passup status from iemSvmWorldSwitch %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
                 iemSetPassUpStatus(pVCpu, rcStrict);
                 rcStrict = VINF_SVM_VMEXIT;
             }
