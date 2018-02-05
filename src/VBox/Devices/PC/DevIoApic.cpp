@@ -1186,14 +1186,12 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     bool fRZEnabled;
     rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &fRZEnabled, true);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"RZEnabled\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query boolean value \"RZEnabled\""));
 
     char szChipType[16];
     rc = CFGMR3QueryStringDef(pCfg, "ChipType", &szChipType[0], sizeof(szChipType), "ICH9");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query string value \"ChipType\""));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query string value \"ChipType\""));
 
     if (!strcmp(szChipType, "ICH9"))
     {
@@ -1206,8 +1204,8 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     else if (!strcmp(szChipType, "82093AA"))
     {
         /* Older 1996-ish discrete I/O APIC, used in P6 class systems. */
-        pThis->u8ApicVer = IOAPIC_VERSION_82093AA;
-        pThis->u8IdMask  = 0x0f;
+        pThis->u8ApicVer       = IOAPIC_VERSION_82093AA;
+        pThis->u8IdMask        = 0x0f;
         pThis->u64RteWriteMask = IOAPIC_RTE_VALID_WRITE_MASK_82093AA;
         pThis->u64RteReadMask  = IOAPIC_RTE_VALID_READ_MASK_82093AA;
     }
@@ -1338,7 +1336,7 @@ static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Init. the device state.
      */
-    LogRel(("IOAPIC: Using implementation 2.0!\n"));
+    LogRel(("IOAPIC: Using implementation 2.0! Chipset type %s\n", szChipType));
     ioapicR3Reset(pDevIns);
 
     return VINF_SUCCESS;
