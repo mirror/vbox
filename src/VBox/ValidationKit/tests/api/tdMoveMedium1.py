@@ -89,9 +89,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
         for oAttachment in aoMediumAttachments:
             sFilePath = os.path.join(sLocation, asFiles[oAttachment.port])
             sActualFilePath = oAttachment.medium.location
-            # @todo os.path.samefile() is not available on Windows in python 2.x
-            if     sys.platform != 'win32' \
-               and not os.path.samefile(sFilePath, sActualFilePath):
+            if os.path.abspath(sFilePath) != os.path.abspath(sActualFilePath):
                 reporter.log('medium location expected to be "%s" but is "%s"' % (sFilePath, sActualFilePath))
                 fRc = False;
             if not os.path.exists(sFilePath):
