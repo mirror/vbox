@@ -63,7 +63,8 @@ typedef struct VBGLREQHDR
     /** IN: The output size.  This is optional - set to zero to use cbIn as the
      * output size. */
     uint32_t        cbOut;
-    /** Reserved, MBZ. */
+    /** Reserved / filled in by kernel, MBZ.
+     * @sa VMMDevRequestHeader::fRequestor */
     uint32_t        uReserved;
 } VBGLREQHDR;
 AssertCompileSize(VBGLREQHDR, 24);

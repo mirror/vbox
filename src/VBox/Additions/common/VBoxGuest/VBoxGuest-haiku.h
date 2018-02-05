@@ -194,7 +194,7 @@ struct vboxguest_module_info
     int (*_RTErrConvertToErrno)(int iErr);
     int (*_VGDrvCommonIoCtl)(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                              void *pvData, size_t cbData, size_t *pcbDataReturned);
-    int (*_VGDrvCommonCreateUserSession)(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
+    int (*_VGDrvCommonCreateUserSession)(PVBOXGUESTDEVEXT pDevExt, uint32_t fRequestor, PVBOXGUESTSESSION *ppSession);
     void (*_VGDrvCommonCloseSession)(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
     void* (*_VBoxGuestIDCOpen)(uint32_t *pu32Version);
     int (*_VBoxGuestIDCClose)(void *pvSession);

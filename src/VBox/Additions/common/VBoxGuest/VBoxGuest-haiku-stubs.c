@@ -359,9 +359,9 @@ int VGDrvCommonIoCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
 {
     return g_VBoxGuest->_VGDrvCommonIoCtl(iFunction, pDevExt, pSession, pvData, cbData, pcbDataReturned);
 }
-int VGDrvCommonCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession)
+int VGDrvCommonCreateUserSession(PVBOXGUESTDEVEXT pDevExt, uint32_t fRequestor, PVBOXGUESTSESSION *ppSession)
 {
-    return g_VBoxGuest->_VGDrvCommonCreateUserSession(pDevExt, ppSession);
+    return g_VBoxGuest->_VGDrvCommonCreateUserSession(pDevExt, fRequestor, ppSession);
 }
 void VGDrvCommonCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {

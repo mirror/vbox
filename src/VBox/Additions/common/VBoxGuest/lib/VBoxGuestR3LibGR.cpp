@@ -51,7 +51,7 @@ int vbglR3GRAlloc(VMMDevRequestHeader **ppReq, size_t cb, VMMDevRequestType enmR
         pReq->requestType = enmReqType;
         pReq->rc          = VERR_GENERAL_FAILURE;
         pReq->reserved1   = 0;
-        pReq->reserved2   = 0;
+        pReq->fRequestor  = 0;
 
         *ppReq = pReq;
 

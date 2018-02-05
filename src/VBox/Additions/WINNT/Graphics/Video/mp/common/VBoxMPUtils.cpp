@@ -151,7 +151,6 @@ bool VBoxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint3
             req->header.requestType = VMMDevReq_VideoModeSupported;
             req->header.rc          = VERR_GENERAL_FAILURE;
             req->header.reserved1   = 0;
-            req->header.reserved2   = 0;
             req->width  = width;
             req->height = height;
             req->bpp    = bpp;

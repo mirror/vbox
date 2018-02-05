@@ -234,21 +234,106 @@ typedef struct VMMDevRequestHeader
      * @note VBGLREQHDR uses this for optional output size, however never for a
      *       real VMMDev request, only in the I/O control interface. */
     uint32_t reserved1;
-    /** Reserved field no.2. MBZ. */
-    uint32_t reserved2;
+    /** IN: Requestor information (VMMDEV_REQUESTOR_XXX) when
+     * VBOXGSTINFO2_F_REQUESTOR_INFO is set, otherwise ignored by the host. */
+    uint32_t fRequestor;
 } VMMDevRequestHeader;
 AssertCompileSize(VMMDevRequestHeader, 24);
+
+/** @name VMMDEV_REQUESTOR_XXX - Requestor information.
+ *
+ * This is information provided to the host by the VBoxGuest device driver, so
+ * the host can implemented fine grained access to functionality if it likes.
+ * @bugref{9105}
+ *
+ * @{ */
+/** Requestor user not given. */
+#define VMMDEV_REQUESTOR_USR_NOT_GIVEN              UINT32_C(0x00000000)
+/** The kernel driver (VBoxGuest) is the requestor. */
+#define VMMDEV_REQUESTOR_USR_DRV                    UINT32_C(0x00000001)
+/** Some other kernel driver is the requestor. */
+#define VMMDEV_REQUESTOR_USR_DRV_OTHER              UINT32_C(0x00000002)
+/** The root or a admin user is the requestor. */
+#define VMMDEV_REQUESTOR_USR_ROOT                   UINT32_C(0x00000003)
+/** Requestor is the windows system user (SID S-1-5-18). */
+#define VMMDEV_REQUESTOR_USR_SYSTEM                 UINT32_C(0x00000004)
+/** Reserved requestor user \#1, treat like VMMDEV_REQUESTOR_USR_USER. */
+#define VMMDEV_REQUESTOR_USR_RESERVED1              UINT32_C(0x00000005)
+/** Regular joe user is making the request. */
+#define VMMDEV_REQUESTOR_USR_USER                   UINT32_C(0x00000006)
+/** Requestor is a guest user (or in a guest user group). */
+#define VMMDEV_REQUESTOR_USR_GUEST                  UINT32_C(0x00000007)
+/** User classification mask. */
+#define VMMDEV_REQUESTOR_USR_MASK                   UINT32_C(0x00000007)
+
+/** Kernel mode request.
+ * @note This is zero, so test for VMMDEV_REQUESTOR_USERMODE instead.  */
+#define VMMDEV_REQUESTOR_KERNEL                     UINT32_C(0x00000000)
+/** User mode request. */
+#define VMMDEV_REQUESTOR_USERMODE                   UINT32_C(0x00000008)
+
+/** Don't know the physical console association of the requestor. */
+#define VMMDEV_REQUESTOR_CON_DONT_KNOW              UINT32_C(0x00000000)
+/** The request originates with a process that is NOT associated with the
+ * physical console. */
+#define VMMDEV_REQUESTOR_CON_NO                     UINT32_C(0x00000010)
+/** Requestor process DOES is associated with the physical console. */
+#define VMMDEV_REQUESTOR_CON_YES                    UINT32_C(0x00000020)
+/** Requestor process belongs to user on the physical console, but cannot
+ * ascertain that it is associated with that login. */
+#define VMMDEV_REQUESTOR_CON_USER                   UINT32_C(0x00000030)
+/** Requestor process belongs to user on the physical console, but cannot
+ * ascertain that it is associated with that login. */
+#define VMMDEV_REQUESTOR_CON_MASK                   UINT32_C(0x00000040)
+
+/** Requestor is member of special VirtualBox user group (not on windows). */
+#define VMMDEV_REQUESTOR_GRP_VBOX                   UINT32_C(0x00000080)
+/** Requestor is member of wheel / administrators group (SID S-1-5-32-544). */
+#define VMMDEV_REQUESTOR_GRP_WHEEL                  UINT32_C(0x00000100)
+
+/** Requestor trust level: Unspecified */
+#define VMMDEV_REQUESTOR_TRUST_NOT_GIVEN            UINT32_C(0x00000000)
+/** Requestor trust level: Untrusted (SID S-1-16-0) */
+#define VMMDEV_REQUESTOR_TRUST_UNTRUSTED            UINT32_C(0x00001000)
+/** Requestor trust level: Untrusted (SID S-1-16-4096) */
+#define VMMDEV_REQUESTOR_TRUST_LOW                  UINT32_C(0x00002000)
+/** Requestor trust level: Medium (SID S-1-16-8192) */
+#define VMMDEV_REQUESTOR_TRUST_MEDIUM               UINT32_C(0x00003000)
+/** Requestor trust level: Medium plus (SID S-1-16-8448) */
+#define VMMDEV_REQUESTOR_TRUST_MEDIUM_PLUS          UINT32_C(0x00004000)
+/** Requestor trust level: High (SID S-1-16-12288) */
+#define VMMDEV_REQUESTOR_TRUST_HIGH                 UINT32_C(0x00005000)
+/** Requestor trust level: System (SID S-1-16-16384) */
+#define VMMDEV_REQUESTOR_TRUST_SYSTEM               UINT32_C(0x00006000)
+/** Requestor trust level: Protected or higher (SID S-1-16-20480, S-1-16-28672)
+ * @note To avoid wasting an unnecessary bit, we combine the two top most
+ *       mandatory security labels on Windows (protected and secure). */
+#define VMMDEV_REQUESTOR_TRUST_PROTECTED            UINT32_C(0x00007000)
+/** Requestor trust level mask.
+ * The higher the value, the more the guest trusts the process. */
+#define VMMDEV_REQUESTOR_TRUST_MASK                 UINT32_C(0x00007000)
+
+/** Requestor is using the less trusted user device node (/dev/vboxuser).
+ * @note Currently only Linux sets this.  */
+#define VMMDEV_REQUESTOR_USER_DEVICE                UINT32_C(0x00008000)
+
+/** Legacy value for when VBOXGSTINFO2_F_REQUESTOR_INFO is clear.
+ * @internal Host only. */
+#define VMMDEV_REQUESTOR_LEGACY                     UINT32_MAX
+/** Used on the host to check whether a requestor value is present or not. */
+#define VMMDEV_REQUESTOR_IS_PRESENT(a_fRequestor)   ((a_fRequestor) != VMMDEV_REQUESTOR_LEGACY)
+/** @} */
 
 /** Initialize a VMMDevRequestHeader structure.
  * Same as VBGLREQHDR_INIT_VMMDEV(). */
 #define VMMDEV_REQ_HDR_INIT(a_pHdr, a_cb, a_enmType) \
     do { \
-        (a_pHdr)->size        = (a_cb); \
-        (a_pHdr)->version     = VMMDEV_REQUEST_HEADER_VERSION; \
-        (a_pHdr)->requestType = (a_enmType); \
-        (a_pHdr)->rc          = VERR_INTERNAL_ERROR; \
-        (a_pHdr)->reserved1   = 0; \
-        (a_pHdr)->reserved2   = 0; \
+        (a_pHdr)->size         = (a_cb); \
+        (a_pHdr)->version      = VMMDEV_REQUEST_HEADER_VERSION; \
+        (a_pHdr)->requestType  = (a_enmType); \
+        (a_pHdr)->rc           = VERR_INTERNAL_ERROR; \
+        (a_pHdr)->reserved1    = 0; \
+        (a_pHdr)->fRequestor   = 0; \
     } while (0)
 
 
@@ -650,7 +735,7 @@ typedef struct VBoxGuestInfo2
     uint32_t additionsBuild;
     /** SVN revision. */
     uint32_t additionsRevision;
-    /** Feature mask, currently unused. */
+    /** Feature mask, VBOXGSTINFO2_F_XXX. */
     uint32_t additionsFeatures;
     /** The intentional meaning of this field was:
      * Some additional information, for example 'Beta 1' or something like that.
@@ -664,6 +749,13 @@ typedef struct VBoxGuestInfo2
     char     szName[128];
 } VBoxGuestInfo2;
 AssertCompileSize(VBoxGuestInfo2, 144);
+
+/** @name VBOXGSTINFO2_F_XXX - Features
+ * @{ */
+/** Request header carries requestor information. */
+#define VBOXGSTINFO2_F_REQUESTOR_INFO       RT_BIT_32(0)
+/** @} */
+
 
 /**
  * Guest information report, version 2.
@@ -1700,7 +1792,7 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
     req->requestType = type;
     req->rc          = VERR_GENERAL_FAILURE;
     req->reserved1   = 0;
-    req->reserved2   = 0;
+    req->fRequestor  = 0;
     return VINF_SUCCESS;
 }
 

@@ -83,7 +83,7 @@ struct VbglR0ParmInfo
 
 /* These functions can be only used by VBoxGuest. */
 
-DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, HGCMCLIENTID *pidClient,
+DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, uint32_t fRequestor, HGCMCLIENTID *pidClient,
                                           PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     int rc;
@@ -97,6 +97,8 @@ DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, HGCMC
         if (RT_SUCCESS(rc))
         {
             /* Initialize request memory */
+            pHGCMConnect->header.header.fRequestor = fRequestor;
+
             pHGCMConnect->header.fu32Flags = 0;
 
             memcpy(&pHGCMConnect->loc, pLoc, sizeof(pHGCMConnect->loc));
@@ -126,7 +128,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, HGCMC
 }
 
 
-DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient,
+DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient, uint32_t fRequestor,
                                              PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     int rc;
@@ -139,6 +141,8 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient,
         if (RT_SUCCESS(rc))
         {
             /* Initialize request memory */
+            pHGCMDisconnect->header.header.fRequestor = fRequestor;
+
             pHGCMDisconnect->header.fu32Flags = 0;
 
             pHGCMDisconnect->u32ClientID = idClient;
@@ -470,12 +474,13 @@ static uint32_t vbglR0HGCMInternalLinAddrTypeToPageListFlags(HGCMFunctionParamet
  *
  * @param   pCallInfo       The call info.
  * @param   cbCallInfo      The size of the call info structure.
+ * @param   fRequestor      VMMDEV_REQUESTOR_XXX.
  * @param   fIsUser         Is it a user request or kernel request.
  * @param   pcbExtra        Where to return the extra request space needed for
  *                          physical page lists.
  */
 static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, PCVBGLIOCHGCMCALL pCallInfo,
-                                       uint32_t cbCallInfo, bool fIsUser, struct VbglR0ParmInfo *pParmInfo)
+                                       uint32_t cbCallInfo, uint32_t fRequestor, bool fIsUser, struct VbglR0ParmInfo *pParmInfo)
 {
     HGCMFunctionParameter const *pSrcParm = VBGL_HGCM_GET_CALL_PARMS(pCallInfo);
     HGCMFunctionParameter       *pDstParm = VMMDEV_HGCM_CALL_PARMS(pHGCMCall);
@@ -491,6 +496,10 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, PCVBGLIOCHGCMC
     /*
      * The call request headers.
      */
+    pHGCMCall->header.header.fRequestor = !fIsUser || (fRequestor & VMMDEV_REQUESTOR_USERMODE) ? fRequestor
+                                        :   VMMDEV_REQUESTOR_USERMODE        | VMMDEV_REQUESTOR_USR_NOT_GIVEN
+                                          | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN | VMMDEV_REQUESTOR_CON_DONT_KNOW;
+
     pHGCMCall->header.fu32Flags = 0;
     pHGCMCall->header.result    = VINF_SUCCESS;
 
@@ -854,7 +863,7 @@ static int vbglR0HGCMInternalCopyBackResult(PVBGLIOCHGCMCALL pCallInfo, VMMDevHG
 }
 
 
-DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
+DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCallInfo, uint32_t fFlags, uint32_t fRequestor,
                                        PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     bool                    fIsUser = (fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER;
@@ -895,7 +904,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCa
         if (RT_SUCCESS(rc))
         {
             bool fLeakIt;
-            vbglR0HGCMInternalInitCall(pHGCMCall, pCallInfo, cbCallInfo, fIsUser, &ParmInfo);
+            vbglR0HGCMInternalInitCall(pHGCMCall, pCallInfo, cbCallInfo, fRequestor, fIsUser, &ParmInfo);
 
             /*
              * Perform the call.
@@ -943,7 +952,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCa
 
 
 #if ARCH_BITS == 64
-DECLR0VBGL(int) VbglR0HGCMInternalCall32(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
+DECLR0VBGL(int) VbglR0HGCMInternalCall32(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCallInfo, uint32_t fFlags, uint32_t fRequestor,
                                          PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     PVBGLIOCHGCMCALL         pCallInfo64 = NULL;
@@ -1017,7 +1026,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(PVBGLIOCHGCMCALL pCallInfo, uint32_t cb
     if (RT_SUCCESS(rc))
     {
         rc = VbglR0HGCMInternalCall(pCallInfo64, sizeof(*pCallInfo64) + cParms * sizeof(HGCMFunctionParameter), fFlags,
-                                    pfnAsyncCallback, pvAsyncData, u32AsyncData);
+                                    fRequestor, pfnAsyncCallback, pvAsyncData, u32AsyncData);
 
         if (RT_SUCCESS(rc))
         {

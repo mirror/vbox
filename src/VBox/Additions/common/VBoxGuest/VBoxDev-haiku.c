@@ -104,7 +104,7 @@ static status_t vgdrvHaikuOpen(const char *name, uint32 flags, void **cookie)
     /*
      * Create a new session.
      */
-    rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, VMMDEV_REQUESTOR_USERMODE, &pSession);
     if (RT_SUCCESS(rc))
     {
         Log((DRIVER_NAME ":vgdrvHaikuOpen success: g_DevExt=%p pSession=%p rc=%d pid=%d\n",&g_DevExt, pSession, rc,(int)RTProcSelf()));

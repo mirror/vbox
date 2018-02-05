@@ -726,6 +726,81 @@ static void __exit vgdrvLinuxModExit(void)
 
 
 /**
+ * Get the process user ID.
+ *
+ * @returns UID.
+ */
+DECLINLINE(RTUID) vgdrvLinuxGetUid(void)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+    return from_kuid(current_user_ns(), current->cred->uid);
+# else
+    return current->cred->uid;
+# endif
+#else
+    return current->uid;
+#endif
+}
+
+
+/**
+ * Searches the effective group and supplementary groups for @a gid.
+ *
+ * @returns true if member, false if not.
+ * @param   gid                 The group to check for.
+ */
+DECLINLINE(RTGID) vgdrvLinuxIsInGroupEff(kgid_t gid)
+{
+    return in_egroup_p(gid) != 0;
+}
+
+
+/**
+ * Check if we can positively or negatively determine that the process is
+ * running under a login on the physical machine console.
+ *
+ * Havne't found a good way to figure this out for graphical sessions, so this
+ * is mostly pointless.  But let us try do what we can do.
+ *
+ * @returns VMMDEV_REQUESTOR_CON_XXX.
+ */
+static uint32_t vgdrvLinuxRequestorOnConsole(void)
+{
+    uint32_t           fRet = VMMDEV_REQUESTOR_CON_DONT_KNOW;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+    /*
+     * Check for tty0..63, ASSUMING that these are only used for the physical console.
+     */
+    struct tty_struct *pTty = get_current_tty();
+    if (pTty)
+    {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+        const char *pszName = tty_name(pTty);
+# else
+        char szBuf[64];
+        const char *pszName = tty_name(pTty, buf);
+# endif
+        if (   pszName
+            && pszName[0] == 't'
+            && pszName[1] == 't'
+            && pszName[2] == 'y'
+            && RT_C_IS_DIGIT(pszName[3])
+            && (   pszName[4] == '\0'
+                || (   RT_C_IS_DIGIT(pszName[4])
+                    && pszName[5] == '\0'
+                    && (pszName[3] - '0') * 10 + (pszName[4] - '0') <= 63))
+               fRet = VMMDEV_REQUESTOR_CON_YES;
+        tty_kref_put(pTty);
+    }
+#endif
+
+    return fRet;
+}
+
+
+/**
  * Device open. Called on open /dev/vboxdrv
  *
  * @param   pInode      Pointer to inode info structure.
@@ -735,19 +810,33 @@ static int vgdrvLinuxOpen(struct inode *pInode, struct file *pFilp)
 {
     int                 rc;
     PVBOXGUESTSESSION   pSession;
+    uint32_t            fRequestor;
     Log((DEVICE_NAME ": pFilp=%p pid=%d/%d %s\n", pFilp, RTProcSelf(), current->pid, current->comm));
+
+    /*
+     * Figure out the requestor flags.
+     * ASSUMES that the gid of /dev/vboxuser is what we should consider the special vbox group.
+     */
+    fRequestor = VMMDEV_REQUESTOR_USERMODE | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN;
+    if (vgdrvLinuxGetUid() == 0)
+        fRequestor |= VMMDEV_REQUESTOR_USR_ROOT;
+    else
+        fRequestor |= VMMDEV_REQUESTOR_USR_USER;
+    if (MINOR(pInode->i_rdev) == g_MiscDeviceUser.minor)
+    {
+        fRequestor |= VMMDEV_REQUESTOR_UNTRUSTED_DEVICE;
+        if (pInode->i_gid && vgdrvLinuxIsInGroupEff(pInode->i_gid))
+            fRequestor |= VMMDEV_REQUESTOR_GRP_VBOX;
+    }
+    fRequestor |= vgdrvLinuxRequestorOnConsole();
 
     /*
      * Call common code to create the user session. Associate it with
      * the file so we can access it in the other methods.
      */
-    rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, fRequestor, &pSession);
     if (RT_SUCCESS(rc))
-    {
         pFilp->private_data = pSession;
-        if (MINOR(pInode->i_rdev) == g_MiscDeviceUser.minor)
-            pSession->fUserSession = true;
-    }
 
     Log(("vgdrvLinuxOpen: g_DevExt=%p pSession=%p rc=%d/%d (pid=%d/%d %s)\n",
          &g_DevExt, pSession, rc, vgdrvLinuxConvertToNegErrno(rc), RTProcSelf(), current->pid, current->comm));

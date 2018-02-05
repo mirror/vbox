@@ -228,6 +228,7 @@ typedef FNVBGLHGCMCALLBACK *PFNVBGLHGCMCALLBACK;
  * @note This function can NOT handle cancelled requests!
  *
  * @param   pLoc                The service to connect to.
+ * @param   fRequestor          VMMDEV_REQUESTOR_XXX.
  * @param   pidClient           Where to return the client ID on success.
  * @param   pfnAsyncCallback    Required pointer to function that is calledwhen
  *                              host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
@@ -237,7 +238,7 @@ typedef FNVBGLHGCMCALLBACK *PFNVBGLHGCMCALLBACK;
  *
  * @return  VBox status code.
  */
-DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, HGCMCLIENTID *pidClient,
+DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, uint32_t fRequestor, HGCMCLIENTID *pidClient,
                                           PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 
@@ -249,6 +250,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, HGCMC
  * @note This function can NOT handle cancelled requests!
  *
  * @param   idClient            The client ID to disconnect.
+ * @param   fRequestor          VMMDEV_REQUESTOR_XXX.
  * @param   pfnAsyncCallback    Required pointer to function that is called when
  *                              host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
  *                              implements waiting for an IRQ in this function.
@@ -259,7 +261,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalConnect(HGCMServiceLocation const *pLoc, HGCMC
  * @return  VBox status code.
  */
 
-DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient,
+DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient, uint32_t fRequestor,
                                              PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** Call a HGCM service.
@@ -268,6 +270,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient,
  *
  * @param   pCallInfo           The request data.
  * @param   fFlags              Flags, see VBGLR0_HGCMCALL_F_XXX.
+ * @param   fRequestor          VMMDEV_REQUESTOR_XXX.
  * @param   pfnAsyncCallback    Required pointer to function that is called when
  *                              host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
  *                              implements waiting for an IRQ in this function.
@@ -276,7 +279,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect(HGCMCLIENTID idClient,
  *
  * @return VBox status code.
  */
-DECLR0VBGL(int) VbglR0HGCMInternalCall(struct VBGLIOCHGCMCALL *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
+DECLR0VBGL(int) VbglR0HGCMInternalCall(struct VBGLIOCHGCMCALL *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags, uint32_t fRequestor,
                                        PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** Call a HGCM service. (32 bits packet structure in a 64 bits guest)
@@ -285,6 +288,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(struct VBGLIOCHGCMCALL *pCallInfo, uint32
  *
  * @param   pCallInfo           The request data.
  * @param   fFlags              Flags, see VBGLR0_HGCMCALL_F_XXX.
+ * @param   fRequestor          VMMDEV_REQUESTOR_XXX.
  * @param   pfnAsyncCallback    Required pointer to function that is called when
  *                              host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
  *                              implements waiting for an IRQ in this function.
@@ -293,7 +297,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(struct VBGLIOCHGCMCALL *pCallInfo, uint32
  *
  * @return  VBox status code.
  */
-DECLR0VBGL(int) VbglR0HGCMInternalCall32(struct VBGLIOCHGCMCALL *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
+DECLR0VBGL(int) VbglR0HGCMInternalCall32(struct VBGLIOCHGCMCALL *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags, uint32_t fRequestor,
                                          PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** @name VbglR0HGCMInternalCall flags

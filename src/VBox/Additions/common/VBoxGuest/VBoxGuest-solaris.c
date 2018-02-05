@@ -526,7 +526,7 @@ static int vgdrvSolarisOpen(dev_t *pDev, int fFlags, int fType, cred_t *pCred)
      * Create a new session.
      */
     if (!(fFlags & FKLYR))
-        rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
+        rc = VGDrvCommonCreateUserSession(&g_DevExt, VMMDEV_REQUESTOR_USERMODE, &pSession);
     else
         rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))

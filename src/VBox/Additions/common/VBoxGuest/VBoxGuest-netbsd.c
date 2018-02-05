@@ -650,7 +650,7 @@ static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pro
     /*
      * Create a new session.
      */
-    rc = VGDrvCommonCreateUserSession(&g_DevExt, &fdata->session);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, VMMDEV_REQUESTOR_USERMODE, &fdata->session);
     if (! RT_SUCCESS(rc))
     {
         aprint_error_dev(sc->sc_dev, "VBox session creation failed\n");

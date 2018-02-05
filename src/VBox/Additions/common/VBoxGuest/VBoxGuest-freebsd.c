@@ -244,7 +244,7 @@ static int vgdrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd)
     /*
      * Create a new session.
      */
-    rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, VMMDEV_REQUESTOR_USERMODE, &pSession);
     if (RT_SUCCESS(rc))
     {
         if (ASMAtomicCmpXchgPtr(&pDev->si_drv1, pSession, (void *)0x42))

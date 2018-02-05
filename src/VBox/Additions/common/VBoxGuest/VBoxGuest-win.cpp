@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SUP_DRV
-#include <iprt/nt/ntddk.h>
+#include <iprt/nt/nt.h>
 
 #include "VBoxGuestInternal.h"
 #include <VBox/VBoxGuestLib.h>
@@ -41,6 +41,7 @@
 #include <iprt/dbg.h>
 #include <iprt/initterm.h>
 #include <iprt/memobj.h>
+#include <iprt/mem.h>
 #include <iprt/mp.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
@@ -2287,6 +2288,366 @@ DECLINLINE(NTSTATUS) vgdrvNtCompleteRequest(NTSTATUS rcNt, PIRP pIrp)
 
 
 /**
+ * Checks if NT authority rev 1 SID (SECURITY_NT_AUTHORITY).
+ *
+ * @returns true / false.
+ * @param   pSid                The SID to check.
+ */
+DECLINLINE(bool) vgdrvNtIsSidNtAuth(struct _SID const *pSid)
+{
+    return pSid != NULL
+        && pSid->Revision == 1
+        && pSid->IdentifierAuthority.Value[5] == 5
+        && pSid->IdentifierAuthority.Value[4] == 0
+        && pSid->IdentifierAuthority.Value[3] == 0
+        && pSid->IdentifierAuthority.Value[2] == 0
+        && pSid->IdentifierAuthority.Value[1] == 0
+        && pSid->IdentifierAuthority.Value[0] == 0;
+}
+
+
+/**
+ * Matches SID with local system user (S-1-5-18 / SECURITY_LOCAL_SYSTEM_RID).
+ */
+DECLINLINE(bool) vgdrvNtIsSidLocalSystemUser(SID const *pSid)
+{
+    return vgdrvNtIsSidNtAuth(pSid)
+        && pSid->SubAuthorityCount == 1
+        && pSid->SubAuthority[0]   == SECURITY_LOCAL_SYSTEM_RID;
+}
+
+
+/**
+ * Matches SID with NT system admin user (S-1-5-*-500 / DOMAIN_USER_RID_ADMIN).
+ */
+DECLINLINE(bool) vgdrvNtIsSidAdminUser(SID const *pSid)
+{
+    /** @todo restrict to SECURITY_NT_NON_UNIQUE? */
+    return vgdrvNtIsSidNtAuth(pSid)
+        && pSid->SubAuthorityCount >= 2
+        && pSid->SubAuthorityCount <= SID_MAX_SUB_AUTHORITIES
+        && pSid->SubAuthority[pSid->SubAuthorityCount - 1] == DOMAIN_USER_RID_ADMIN;
+}
+
+
+/**
+ * Matches SID with NT system guest user (S-1-5-*-501 / DOMAIN_USER_RID_GUEST).
+ */
+DECLINLINE(bool) vgdrvNtIsSidGuestUser(SID const *pSid)
+{
+    /** @todo restrict to SECURITY_NT_NON_UNIQUE? */
+    return vgdrvNtIsSidNtAuth(pSid)
+        && pSid->SubAuthorityCount >= 2
+        && pSid->SubAuthorityCount <= SID_MAX_SUB_AUTHORITIES
+        && pSid->SubAuthority[pSid->SubAuthorityCount - 1] == DOMAIN_USER_RID_GUEST;
+}
+
+
+/**
+ * Matches SID with NT system admins group (S-1-5-32-544, S-1-5-*-512).
+ */
+DECLINLINE(bool) vgdrvNtIsSidAdminsGroup(SID const *pSid)
+{
+    return vgdrvNtIsSidNtAuth(pSid)
+        && (   (   pSid->SubAuthorityCount == 2
+                && pSid->SubAuthority[0] == SECURITY_BUILTIN_DOMAIN_RID
+                && pSid->SubAuthority[1] == DOMAIN_ALIAS_RID_ADMINS)
+#if 0
+            /** @todo restrict to SECURITY_NT_NON_UNIQUE? */
+            || (   pSid->SubAuthorityCount >= 2
+                && pSid->SubAuthorityCount <= SID_MAX_SUB_AUTHORITIES
+                && pSid->SubAuthority[pSid->SubAuthorityCount - 1] == DOMAIN_GROUP_RID_ADMINS)
+#endif
+           );
+}
+
+
+/**
+ * Matches SID with NT system users group (S-1-5-32-545, S-1-5-32-547, S-1-5-*-512).
+ */
+DECLINLINE(bool) vgdrvNtIsSidUsersGroup(SID const *pSid)
+{
+    return vgdrvNtIsSidNtAuth(pSid)
+        && (   (   pSid->SubAuthorityCount == 2
+                && pSid->SubAuthority[0] == SECURITY_BUILTIN_DOMAIN_RID
+                && (   pSid->SubAuthority[1] == DOMAIN_ALIAS_RID_USERS
+                    || pSid->SubAuthority[1] == DOMAIN_ALIAS_RID_POWER_USERS) )
+#if 0
+           /** @todo restrict to SECURITY_NT_NON_UNIQUE? */
+           || (   pSid->SubAuthorityCount >= 2
+               && pSid->SubAuthorityCount <= SID_MAX_SUB_AUTHORITIES
+               && pSid->SubAuthority[pSid->SubAuthorityCount - 1] == DOMAIN_GROUP_RID_USERS)
+#endif
+           );
+}
+
+
+/**
+ * Matches SID with NT system guests group (S-1-5-32-546, S-1-5-*-512).
+ */
+DECLINLINE(bool) vgdrvNtIsSidGuestsGroup(SID const *pSid)
+{
+    return vgdrvNtIsSidNtAuth(pSid)
+        && (   (   pSid->SubAuthorityCount == 2
+                && pSid->SubAuthority[0] == SECURITY_BUILTIN_DOMAIN_RID
+                && pSid->SubAuthority[1] == DOMAIN_ALIAS_RID_GUESTS)
+#if 0
+           /** @todo restrict to SECURITY_NT_NON_UNIQUE? */
+           || (   pSid->SubAuthorityCount >= 2
+               && pSid->SubAuthorityCount <= SID_MAX_SUB_AUTHORITIES
+               && pSid->SubAuthority[pSid->SubAuthorityCount - 1] == DOMAIN_GROUP_RID_GUESTS)
+#endif
+           );
+}
+
+
+/**
+ * Checks if local authority rev 1 SID (SECURITY_LOCAL_SID_AUTHORITY).
+ *
+ * @returns true / false.
+ * @param   pSid                The SID to check.
+ */
+DECLINLINE(bool) vgdrvNtIsSidLocalAuth(struct _SID const *pSid)
+{
+    return pSid != NULL
+        && pSid->Revision == 1
+        && pSid->IdentifierAuthority.Value[5] == 2
+        && pSid->IdentifierAuthority.Value[4] == 0
+        && pSid->IdentifierAuthority.Value[3] == 0
+        && pSid->IdentifierAuthority.Value[2] == 0
+        && pSid->IdentifierAuthority.Value[1] == 0
+        && pSid->IdentifierAuthority.Value[0] == 0;
+}
+
+
+/**
+ * Matches SID with console logon group (S-1-2-1 / SECURITY_LOCAL_LOGON_RID).
+ */
+DECLINLINE(bool) vgdrvNtIsSidConsoleLogonGroup(SID const *pSid)
+{
+    return vgdrvNtIsSidLocalAuth(pSid)
+        && pSid->SubAuthorityCount == 1
+        && pSid->SubAuthority[0] == SECURITY_LOCAL_LOGON_RID;
+}
+
+
+/**
+ * Checks if mandatory label authority rev 1 SID (SECURITY_MANDATORY_LABEL_AUTHORITY).
+ *
+ * @returns true / false.
+ * @param   pSid                The SID to check.
+ */
+DECLINLINE(bool) vgdrvNtIsSidMandatoryLabelAuth(struct _SID const *pSid)
+{
+    return pSid != NULL
+        && pSid->Revision == 1
+        && pSid->IdentifierAuthority.Value[5] == 16
+        && pSid->IdentifierAuthority.Value[4] == 0
+        && pSid->IdentifierAuthority.Value[3] == 0
+        && pSid->IdentifierAuthority.Value[2] == 0
+        && pSid->IdentifierAuthority.Value[1] == 0
+        && pSid->IdentifierAuthority.Value[0] == 0;
+}
+
+
+#ifdef LOG_ENABLED
+/** Format an SID for logging.  */
+static const char *vgdrvNtFormatSid(char *pszBuf, size_t cbBuf, struct _SID const *pSid)
+{
+    uint64_t uAuth = RT_MAKE_U64_FROM_U8(pSid->IdentifierAuthority.Value[5], pSid->IdentifierAuthority.Value[4],
+                                         pSid->IdentifierAuthority.Value[3], pSid->IdentifierAuthority.Value[2],
+                                         pSid->IdentifierAuthority.Value[1], pSid->IdentifierAuthority.Value[0],
+                                         0,                                  0);
+    ssize_t offCur = RTStrPrintf2(pszBuf, cbBuf, "S-%u-%RU64", pSid->Revision, uAuth);
+    ULONG const *puSubAuth = &pSid->SubAuthority[0];
+    unsigned     cSubAuths = pSid->SubAuthorityCount;
+    while (cSubAuths > 0 && (size_t)offCur < cbBuf)
+    {
+        ssize_t cchThis = RTStrPrintf2(&pszBuf[offCur], cbBuf - (size_t)offCur, "-%u", *puSubAuth);
+        if (cchThis > 0)
+        {
+            offCur += cchThis;
+            puSubAuth++;
+            cSubAuths--;
+        }
+        else
+        {
+            Assert(cbBuf >= 5);
+            pszBuf[cbBuf - 4] = '.';
+            pszBuf[cbBuf - 3] = '.';
+            pszBuf[cbBuf - 2] = '.';
+            pszBuf[cbBuf - 1] = '\0';
+            break;
+        }
+    }
+    return pszBuf;
+}
+#endif
+
+
+/**
+ * Calculate requestor flags for the current process.
+ *
+ * ASSUMES vgdrvNtCreate is executed in the context of the process and thread
+ * doing the NtOpenFile call.
+ *
+ * @returns VMMDEV_REQUESTOR_XXX
+ */
+static uint32_t vgdrvNtCalcRequestorFlags(void)
+{
+    uint32_t fRequestor = VMMDEV_REQUESTOR_USERMODE
+                        | VMMDEV_REQUESTOR_USR_NOT_GIVEN
+                        | VMMDEV_REQUESTOR_CON_DONT_KNOW
+                        | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN;
+    HANDLE   hToken = NULL;
+    NTSTATUS rcNt = ZwOpenProcessToken(NtCurrentProcess(), TOKEN_QUERY, &hToken);
+    if (NT_SUCCESS(rcNt))
+    {
+        union
+        {
+            TOKEN_USER      CurUser;
+            TOKEN_GROUPS    CurGroups;
+            uint8_t         abPadding[256];
+        } Buf;
+#ifdef LOG_ENABLED
+        char szSid[200];
+#endif
+
+        /*
+         * Get the user SID and see if it's a standard one.
+         */
+        RT_ZERO(Buf.CurUser);
+        ULONG cbReturned = 0;
+        rcNt = ZwQueryInformationToken(hToken, TokenUser, &Buf.CurUser, sizeof(Buf), &cbReturned);
+        if (NT_SUCCESS(rcNt))
+        {
+            struct _SID const *pSid = (struct _SID const *)Buf.CurUser.User.Sid;
+            Log5(("vgdrvNtCalcRequestorFlags: TokenUser: %#010x %s\n",
+                  Buf.CurUser.User.Attributes, vgdrvNtFormatSid(szSid, sizeof(szSid), pSid)));
+
+            if (vgdrvNtIsSidLocalSystemUser(pSid))
+                fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_USR_MASK) | VMMDEV_REQUESTOR_USR_SYSTEM;
+            else if (vgdrvNtIsSidAdminUser(pSid))
+                fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_USR_MASK) | VMMDEV_REQUESTOR_USR_ROOT;
+            else if (vgdrvNtIsSidGuestUser(pSid))
+                fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_USR_MASK) | VMMDEV_REQUESTOR_USR_GUEST;
+        }
+        else
+            LogRel(("vgdrvNtCalcRequestorFlags: TokenUser query failed: %#x\n", rcNt));
+
+        /*
+         * Get the groups.
+         */
+        TOKEN_GROUPS *pCurGroupsFree = NULL;
+        TOKEN_GROUPS *pCurGroups     = &Buf.CurGroups;
+        uint32_t      cbCurGroups    = sizeof(Buf);
+        cbReturned = 0;
+        RT_ZERO(Buf);
+        rcNt = ZwQueryInformationToken(hToken, TokenGroups, pCurGroups, cbCurGroups, &cbReturned);
+        if (rcNt == STATUS_BUFFER_TOO_SMALL)
+        {
+            uint32_t cTries = 8;
+            do
+            {
+                RTMemTmpFree(pCurGroupsFree);
+                if (cbCurGroups < cbReturned)
+                    cbCurGroups = RT_ALIGN_32(cbCurGroups + 32, 64);
+                else
+                    cbCurGroups += 64;
+                pCurGroupsFree = pCurGroups = (TOKEN_GROUPS *)RTMemTmpAllocZ(cbCurGroups);
+                if (pCurGroupsFree)
+                    rcNt = ZwQueryInformationToken(hToken, TokenGroups, pCurGroups, cbCurGroups, &cbReturned);
+                else
+                    rcNt = STATUS_NO_MEMORY;
+            } while (rcNt == STATUS_BUFFER_TOO_SMALL && cTries-- > 0);
+        }
+        if (NT_SUCCESS(rcNt))
+        {
+            bool fGuestsMember = false;
+            bool fUsersMember  = false;
+            if (g_enmVGDrvNtVer >= VGDRVNTVER_WIN7)
+                fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_CON_MASK) | VMMDEV_REQUESTOR_CON_NO;
+
+            for (uint32_t iGrp = 0; iGrp < pCurGroups->GroupCount; iGrp++)
+            {
+                uint32_t const     fAttribs = pCurGroups->Groups[iGrp].Attributes;
+                struct _SID const *pSid     = (struct _SID const *)pCurGroups->Groups[iGrp].Sid;
+                Log5(("vgdrvNtCalcRequestorFlags: TokenGroups[%u]: %#10x %s\n",
+                      iGrp, fAttribs, vgdrvNtFormatSid(szSid, sizeof(szSid), pSid)));
+
+                if (   (fAttribs & SE_GROUP_INTEGRITY_ENABLED)
+                    && vgdrvNtIsSidMandatoryLabelAuth(pSid)
+                    && pSid->SubAuthorityCount == 1
+                    && (fRequestor & VMMDEV_REQUESTOR_TRUST_MASK) == VMMDEV_REQUESTOR_TRUST_NOT_GIVEN)
+                {
+                    fRequestor &= ~VMMDEV_REQUESTOR_TRUST_MASK;
+                    if (pSid->SubAuthority[0] < SECURITY_MANDATORY_LOW_RID)
+                        fRequestor |= VMMDEV_REQUESTOR_TRUST_UNTRUSTED;
+                    else if (pSid->SubAuthority[0] < SECURITY_MANDATORY_MEDIUM_RID)
+                        fRequestor |= VMMDEV_REQUESTOR_TRUST_LOW;
+                    else if (pSid->SubAuthority[0] < SECURITY_MANDATORY_MEDIUM_PLUS_RID)
+                        fRequestor |= VMMDEV_REQUESTOR_TRUST_MEDIUM;
+                    else if (pSid->SubAuthority[0] < SECURITY_MANDATORY_HIGH_RID)
+                        fRequestor |= VMMDEV_REQUESTOR_TRUST_MEDIUM_PLUS;
+                    else if (pSid->SubAuthority[0] < SECURITY_MANDATORY_SYSTEM_RID)
+                        fRequestor |= VMMDEV_REQUESTOR_TRUST_HIGH;
+                    else if (pSid->SubAuthority[0] < SECURITY_MANDATORY_PROTECTED_PROCESS_RID)
+                        fRequestor |= VMMDEV_REQUESTOR_TRUST_SYSTEM;
+                    else
+                        fRequestor |= VMMDEV_REQUESTOR_TRUST_PROTECTED;
+                    Log5(("vgdrvNtCalcRequestorFlags: mandatory label %u: => %#x\n", pSid->SubAuthority[0], fRequestor));
+                }
+                else if (      (fAttribs & (SE_GROUP_ENABLED | SE_GROUP_MANDATORY | SE_GROUP_USE_FOR_DENY_ONLY))
+                            ==             (SE_GROUP_ENABLED | SE_GROUP_MANDATORY)
+                         && vgdrvNtIsSidConsoleLogonGroup(pSid))
+                {
+                    fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_CON_MASK) | VMMDEV_REQUESTOR_CON_YES;
+                    Log5(("vgdrvNtCalcRequestorFlags: console: => %#x\n", fRequestor));
+                }
+                else if (      (fAttribs & (SE_GROUP_ENABLED | SE_GROUP_MANDATORY | SE_GROUP_USE_FOR_DENY_ONLY))
+                            ==             (SE_GROUP_ENABLED | SE_GROUP_MANDATORY)
+                         && vgdrvNtIsSidNtAuth(pSid))
+                {
+                    if (vgdrvNtIsSidAdminsGroup(pSid))
+                    {
+                        fRequestor |= VMMDEV_REQUESTOR_GRP_WHEEL;
+                        Log5(("vgdrvNtCalcRequestorFlags: admins group: => %#x\n", fRequestor));
+                    }
+                    else if (vgdrvNtIsSidUsersGroup(pSid))
+                    {
+                        Log5(("vgdrvNtCalcRequestorFlags: users group\n"));
+                        fUsersMember = true;
+                    }
+                    else if (vgdrvNtIsSidGuestsGroup(pSid))
+                    {
+                        Log5(("vgdrvNtCalcRequestorFlags: guests group\n"));
+                        fGuestsMember = true;
+                    }
+                }
+            }
+            if ((fRequestor & VMMDEV_REQUESTOR_USR_MASK) == VMMDEV_REQUESTOR_USR_NOT_GIVEN)
+            {
+                if (fUsersMember)
+                    fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_USR_MASK) | VMMDEV_REQUESTOR_USR_GUEST;
+                else if (fGuestsMember)
+                    fRequestor = (fRequestor & ~VMMDEV_REQUESTOR_USR_MASK) | VMMDEV_REQUESTOR_USR_GUEST;
+            }
+        }
+        else
+            LogRel(("vgdrvNtCalcRequestorFlags: TokenGroups query failed: %#x\n", rcNt));
+
+        RTMemTmpFree(pCurGroupsFree);
+        ZwClose(hToken);
+    }
+    else
+        LogRel(("vgdrvNtCalcRequestorFlags: NtOpenProcessToken query failed: %#x\n", rcNt));
+
+    Log5(("vgdrvNtCalcRequestorFlags: returns %#x\n", fRequestor));
+    return fRequestor;
+}
+
+
+/**
  * Create (i.e. Open) file entry point.
  *
  * @param   pDevObj     Device object.
@@ -2323,13 +2684,13 @@ static NTSTATUS NTAPI vgdrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             if (pIrp->RequestorMode == KernelMode)
                 rc = VGDrvCommonCreateKernelSession(&pDevExt->Core, &pSession);
             else
-                rc = VGDrvCommonCreateUserSession(&pDevExt->Core, &pSession);
+                rc = VGDrvCommonCreateUserSession(&pDevExt->Core, vgdrvNtCalcRequestorFlags(), &pSession);
             RTCritSectRwLeaveShared(&pDevExt->SessionCreateCritSect);
             if (RT_SUCCESS(rc))
             {
                 pFileObj->FsContext = pSession;
-                Log(("vgdrvNtCreate: Successfully created %s session %p\n",
-                     pIrp->RequestorMode == KernelMode ? "kernel" : "user", pSession));
+                Log(("vgdrvNtCreate: Successfully created %s session %p (fRequestor=%#x)\n",
+                     pIrp->RequestorMode == KernelMode ? "kernel" : "user", pSession, pSession->fRequestor));
 
                 return vgdrvNtCompleteRequestEx(STATUS_SUCCESS, FILE_OPENED, pIrp);
             }

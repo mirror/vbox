@@ -363,7 +363,7 @@ DECLASM(int) vgdrvOS2Open(uint16_t sfn)
     /*
      * Create a new session.
      */
-    rc = VGDrvCommonCreateUserSession(&g_DevExt, &pSession);
+    rc = VGDrvCommonCreateUserSession(&g_DevExt, VMMDEV_REQUESTOR_USERMODE, &pSession);
     if (RT_SUCCESS(rc))
     {
         pSession->sfn = sfn;

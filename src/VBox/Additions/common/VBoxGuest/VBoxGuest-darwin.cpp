@@ -1096,7 +1096,7 @@ bool org_virtualbox_VBoxGuestClient::start(IOService *pProvider)
             /*
              * Create a new session.
              */
-            int rc = VGDrvCommonCreateUserSession(&g_DevExt, &m_pSession);
+            int rc = VGDrvCommonCreateUserSession(&g_DevExt, VMMDEV_REQUESTOR_USERMODE, &m_pSession);
             if (RT_SUCCESS(rc))
             {
                 m_pSession->fOpened = false;
