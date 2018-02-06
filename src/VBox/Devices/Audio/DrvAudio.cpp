@@ -1301,7 +1301,7 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
 
         if (cfToPlay)
         {
-            uint8_t auBuf[_4K]; /** @todo Get rid of this here. */
+            uint8_t auBuf[256]; /** @todo Get rid of this here. */
 
             uint32_t cbLeft  = AUDIOMIXBUF_F2B(&pHstStream->MixBuf, cfToPlay);
             uint32_t cbChunk = sizeof(auBuf);
@@ -1310,40 +1310,37 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
             {
                 uint32_t cfRead = 0;
                 rc = AudioMixBufAcquireReadBlock(&pHstStream->MixBuf, auBuf, RT_MIN(cbChunk, cbLeft), &cfRead);
-                if (   !cfRead
-                    || RT_FAILURE(rc))
-                {
+                if (RT_FAILURE(rc))
                     break;
-                }
 
                 uint32_t cbRead = AUDIOMIXBUF_F2B(&pHstStream->MixBuf, cfRead);
                 Assert(cbRead <= cbChunk);
 
+                uint32_t cfPlayed = 0;
                 uint32_t cbPlayed = 0;
                 rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend,
                                                          auBuf, cbRead, &cbPlayed);
-                if (   RT_FAILURE(rc)
-                    || !cbPlayed)
+                if (   RT_SUCCESS(rc)
+                    && cbPlayed)
                 {
-                    break;
+                    if (pThis->Dbg.fEnabled)
+                        DrvAudioHlpFileWrite(pHstStream->Out.Dbg.pFilePlayNonInterleaved, auBuf, cbPlayed, 0 /* fFlags */);
+
+                    if (cbRead != cbPlayed)
+                        LogRel2(("Audio: Host stream '%s' played wrong amount (%RU32 bytes read but played %RU32 (%RI32), writable was %RU32)\n",
+                                 pHstStream->szName, cbRead, cbPlayed, cbRead - cbPlayed, cbWritable));
+
+                    cfPlayed       = AUDIOMIXBUF_B2F(&pHstStream->MixBuf, cbPlayed);
+                    cfPlayedTotal += cfPlayed;
+
+                    Assert(cbLeft >= cbPlayed);
+                    cbLeft        -= cbPlayed;
                 }
 
-                if (pThis->Dbg.fEnabled)
-                    DrvAudioHlpFileWrite(pHstStream->Out.Dbg.pFilePlayNonInterleaved, auBuf, cbPlayed, 0 /* fFlags */);
-
-                AssertMsg(cbPlayed <= cbRead, ("Played more than available (%RU32 available but got %RU32)\n", cbRead, cbPlayed));
-#if 0 /** @todo Also handle mono channels. Needs fixing */
-                AssertMsg(cbPlayed % 2 == 0,
-                          ("Backend for stream '%s' returned uneven played bytes count (cfRead=%RU32, cbPlayed=%RU32)\n",
-                           pHstStream->szName, cfRead, cbPlayed));*/
-#endif
-                const uint32_t cfPlayed = AUDIOMIXBUF_B2F(&pHstStream->MixBuf, cbPlayed);
-
-                cfPlayedTotal += cfPlayed;
-                Assert(cbLeft >= cbPlayed);
-                cbLeft        -= cbPlayed;
-
                 AudioMixBufReleaseReadBlock(&pHstStream->MixBuf, cfPlayed);
+
+                if (RT_FAILURE(rc))
+                    break;
             }
         }
     }
