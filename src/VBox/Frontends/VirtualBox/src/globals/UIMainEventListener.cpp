@@ -430,7 +430,9 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         case KVBoxEventType_OnGuestSessionRegistered:
         {
             CGuestSessionRegisteredEvent cEvent(pEvent);
-            emit sigGuestSessionRegistered(cEvent.GetSession());
+            CGuestSession guestSession = cEvent.GetSession();
+            emit sigGuestSessionRegistered(guestSession);
+
             break;
         }
         case KVBoxEventType_OnGuestSessionStateChanged:
