@@ -37,9 +37,10 @@
 # include "VBoxGlobal.h"
 # include "VBoxUtils.h"
 # include "UIInformationConfiguration.h"
+# include "UIInformationGuestSession.h"
+# include "UIInformationRuntime.h"
 # include "UIMachine.h"
 # include "UIVMItem.h"
-# include "UIInformationRuntime.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -48,7 +49,6 @@
 # include "CSystemProperties.h"
 # include "CMachineDebugger.h"
 # include "CDisplay.h"
-# include "CGuest.h"
 # include "CStorageController.h"
 # include "CMediumAttachment.h"
 # include "CNetworkAdapter.h"
@@ -117,6 +117,7 @@ void UIVMInformationDialog::retranslateUi()
     /* Translate tabs: */
     m_pTabWidget->setTabText(0, tr("Configuration &Details"));
     m_pTabWidget->setTabText(1, tr("&Runtime Information"));
+    m_pTabWidget->setTabText(2, tr("&Guest Session"));
 }
 
 bool UIVMInformationDialog::event(QEvent *pEvent)
@@ -239,6 +240,14 @@ void UIVMInformationDialog::prepareTabWidget()
         {
             m_tabs.insert(1, pInformationRuntimeWidget);
             m_pTabWidget->addTab(m_tabs.value(1), QString());
+        }
+
+        UIInformationGuestSession *pGuestSessionWidget =
+            new UIInformationGuestSession(this, m_pMachineWindow->machine(), m_pMachineWindow->console());
+        if (pGuestSessionWidget)
+        {
+            m_tabs.insert(2, pGuestSessionWidget);
+            m_pTabWidget->addTab(m_tabs.value(2), QString());
         }
 
         /* Set Runtime Information tab as default: */

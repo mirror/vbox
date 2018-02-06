@@ -32,6 +32,8 @@
 # include "CEvent.h"
 # include "CEventSource.h"
 # include "CEventListener.h"
+# include "CGuestSessionRegisteredEvent.h"
+# include "CGuestSession.h"
 # include "CVBoxSVCAvailabilityChangedEvent.h"
 # include "CVirtualBoxErrorInfo.h"
 # include "CMachineStateChangedEvent.h"
@@ -179,6 +181,7 @@ UIMainEventListener::UIMainEventListener()
     qRegisterMetaType<CUSBDevice>("CUSBDevice");
     qRegisterMetaType<CVirtualBoxErrorInfo>("CVirtualBoxErrorInfo");
     qRegisterMetaType<KGuestMonitorChangedEventType>("KGuestMonitorChangedEventType");
+    qRegisterMetaType<CGuestSession>("CGuestSession");
 }
 
 void UIMainEventListener::registerSource(const CEventSource &source, const CEventListener &listener)
@@ -206,7 +209,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         return S_OK;
 
     CEvent event(pEvent);
-    // printf("Event received: %d\n", event.GetType());
+    //printf("Event received: %d\n", event.GetType());
     switch (event.GetType())
     {
         case KVBoxEventType_OnVBoxSVCAvailabilityChanged:
@@ -424,6 +427,25 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             emit sigProgressTaskComplete(es.GetProgressId());
             break;
         }
+        case KVBoxEventType_OnGuestSessionRegistered:
+        {
+            CGuestSessionRegisteredEvent cEvent(pEvent);
+            emit sigGuestSessionRegistered(cEvent.GetSession());
+            break;
+        }
+        case KVBoxEventType_OnGuestSessionStateChanged:
+        case KVBoxEventType_OnGuestProcessRegistered:
+        case KVBoxEventType_OnGuestProcessStateChanged:
+        case KVBoxEventType_OnGuestProcessInputNotify:
+        case KVBoxEventType_OnGuestProcessOutput:
+        case KVBoxEventType_OnGuestFileRegistered:
+        case KVBoxEventType_OnGuestFileStateChanged:
+        case KVBoxEventType_OnGuestFileOffsetChanged:
+        case KVBoxEventType_OnGuestFileRead:
+        case KVBoxEventType_OnGuestFileWrite:
+        {
+            //CGuestSessionRegisteredEvent ceve(pEvent);
+        }
 
         default: break;
     }
@@ -435,4 +457,3 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
 }
 
 #include "UIMainEventListener.moc"
-

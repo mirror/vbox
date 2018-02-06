@@ -28,9 +28,10 @@
 
 /* Forward declarations: */
 class QVBoxLayout;
+class UIGuestEventHandler;
+class UIGuestSessionEventHandler;
 class UIInformationView;
 class UIInformationModel;
-
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
@@ -38,17 +39,27 @@ class UIInformationGuestSession : public QWidget
 {
     Q_OBJECT;
 
+signals:
+
 public:
 
     UIInformationGuestSession(QWidget *pParent, const CMachine &machine, const CConsole &console);
 
+private slots:
+
+    void sltGuestSessionRegistered(const CGuestSession &guestSession);
+
 private:
 
     void prepareLayout();
+    void prepareWidgets();
+    void prepareEventHandler();
 
-    CMachine      m_machine;
-    CConsole      m_console;
-    QVBoxLayout * m_pMainLayout;
+    CMachine             m_machine;
+    CConsole             m_console;
+    QVBoxLayout         *m_pMainLayout;
+    UIGuestEventHandler *m_pGuestEventHandler;
+    QVector<UIGuestSessionEventHandler*> m_pGuestSessionHandleVector;
 };
 
 #endif /* !___UIInformationGuestSession_h___ */

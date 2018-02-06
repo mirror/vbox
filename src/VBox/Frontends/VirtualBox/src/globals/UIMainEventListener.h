@@ -36,6 +36,7 @@
 class UIMainEventListeningThread;
 class CEventListener;
 class CEventSource;
+class CGuestSession;
 
 
 /* Note: On a first look this may seems a little bit complicated.
@@ -129,6 +130,9 @@ signals:
     /** Notifies about task complete for progress with @a strProgressId. */
     void sigProgressTaskComplete(QString strProgressId);
 
+    /** Notifies about guest session registered event @a is the registed guest session. */
+    void sigGuestSessionRegistered(const CGuestSession &guestSession);
+
 public:
 
     /** Constructs main event listener. */
@@ -155,4 +159,3 @@ public:
 typedef ListenerImpl<UIMainEventListener, QObject*> UIMainEventListenerImpl;
 
 #endif /* !___UIMainEventListener_h___ */
-

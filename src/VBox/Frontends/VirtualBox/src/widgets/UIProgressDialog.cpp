@@ -765,4 +765,3 @@ void UIProgress::timerEvent(QTimerEvent*)
 }
 
 #include "UIProgressDialog.moc"
-
