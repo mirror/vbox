@@ -911,34 +911,52 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
             RTPathChangeToDosSlashes(strTargetImageName.mutableRaw(), false);
             RTPrintf("\nTarget disk %s \n", strTargetImageName.c_str());
 
-            ComPtr<IProgress> moveDiskProgress;
             bstrLocation = strTargetImageName.c_str();
-            rc = pMedium->SetLocation(bstrLocation.raw(), moveDiskProgress.asOutParam());
 
-            /* Wait until the async process has finished. */
-            machineLock.release();
-            if (strTargetFolder != NULL && !strTargetFolder->isEmpty())
+            MediumType_T mediumType;//immutable, shared, passthrough
+            rc = pMedium->COMGETTER(Type)(&mediumType);
+            if (FAILED(rc)) throw rc;
+
+            DeviceType_T deviceType;//floppy, hard, DVD
+            rc = pMedium->COMGETTER(DeviceType)(&deviceType);
+            if (FAILED(rc)) throw rc;
+
+            if (deviceType == DeviceType_Floppy)
             {
-                rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+                //1. no host drive image
+                BOOL fHostDrive = false;
+                rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
+                if (FAILED(rc)) throw rc;
             }
             else
             {
-                rc = m_pRollBackProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+                ComPtr<IProgress> moveDiskProgress;
+                rc = pMedium->SetLocation(bstrLocation.raw(), moveDiskProgress.asOutParam());
+                /* Wait until the async process has finished. */
+                machineLock.release();
+                if (strTargetFolder != NULL && !strTargetFolder->isEmpty())
+                {
+                    rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+                }
+                else
+                {
+                    rc = m_pRollBackProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+                }
+
+                machineLock.acquire();
+                if (FAILED(rc)) throw rc;
+
+                RTPrintf("\nMoving %s has finished\n", strTargetImageName.c_str());
+
+                /* Check the result of the async process. */
+                LONG iRc;
+                rc = moveDiskProgress->COMGETTER(ResultCode)(&iRc);
+                if (FAILED(rc)) throw rc;
+                /* If the thread of the progress object has an error, then
+                 * retrieve the error info from there, or it'll be lost. */
+                if (FAILED(iRc))
+                    throw machine->setError(ProgressErrorInfo(moveDiskProgress));
             }
-
-            machineLock.acquire();
-            if (FAILED(rc)) throw rc;
-
-            RTPrintf("\nMoving %s has finished\n", strTargetImageName.c_str());
-
-            /* Check the result of the async process. */
-            LONG iRc;
-            rc = moveDiskProgress->COMGETTER(ResultCode)(&iRc);
-            if (FAILED(rc)) throw rc;
-            /* If the thread of the progress object has an error, then
-             * retrieve the error info from there, or it'll be lost. */
-            if (FAILED(iRc))
-                throw machine->setError(ProgressErrorInfo(moveDiskProgress));
 
             ++itMedium;
         }
@@ -1152,41 +1170,63 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
         for (size_t a = 0; a < sfaAttachments.size(); ++a)
         {
             const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[a];
-            DeviceType_T type;
-            rc = pAtt->COMGETTER(Type)(&type);
+            DeviceType_T deviceType;//floppy, hard, DVD
+            rc = pAtt->COMGETTER(Type)(&deviceType);
             if (FAILED(rc)) return rc;
-
-            /* Only harddisks and floppies are of interest. */
-            if (   type != DeviceType_HardDisk
-                && type != DeviceType_Floppy)
-                continue;
 
             /* Valid medium attached? */
-            ComPtr<IMedium> pSrcMedium;
-            rc = pAtt->COMGETTER(Medium)(pSrcMedium.asOutParam());
+            ComPtr<IMedium> pMedium;
+            rc = pAtt->COMGETTER(Medium)(pMedium.asOutParam());
             if (FAILED(rc)) return rc;
 
-            if (pSrcMedium.isNull())
+            if (pMedium.isNull())
                 continue;
 
-            MEDIUMTASKCHAIN mtc;
-            mtc.devType       = type;
+            Bstr bstrLocation;
+            rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+            if (FAILED(rc)) throw rc;
 
-            while (!pSrcMedium.isNull())
+            /* some special checks for DVD */
+            if (deviceType == DeviceType_DVD)
+            {
+                //no host drive CD/DVD image
+                BOOL fHostDrive = false;
+                rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
+                if (FAILED(rc)) throw rc;
+
+                if(fHostDrive)
+                    continue;
+
+                //only ISO image is moved
+                Utf8Str ext = bstrLocation;
+                ext.assignEx(RTPathSuffix(ext.c_str()));//returns extension with dot (".iso")
+
+                int equality = ext.compare(".iso", Utf8Str::CaseInsensitive);
+                if (equality != false)
+                    continue;
+            }
+
+            MEDIUMTASKCHAIN mtc;
+            mtc.devType = deviceType;
+
+            while (!pMedium.isNull())
             {
                 /* Refresh the state so that the file size get read. */
                 MediumState_T e;
-                rc = pSrcMedium->RefreshState(&e);
-                if (FAILED(rc)) return rc;
-                LONG64 lSize;
-                rc = pSrcMedium->COMGETTER(Size)(&lSize);
+                rc = pMedium->RefreshState(&e);
                 if (FAILED(rc)) return rc;
 
-                Bstr bstrLocation;
-                rc = pSrcMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+                LONG64 lSize;
+                rc = pMedium->COMGETTER(Size)(&lSize);
+                if (FAILED(rc)) return rc;
+
+                MediumType_T mediumType;//immutable, shared, passthrough
+                rc = pMedium->COMGETTER(Type)(&mediumType);
                 if (FAILED(rc)) throw rc;
 
-                /* Save the current medium, for later cloning. */
+                rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+                if (FAILED(rc)) throw rc;
+
                 MEDIUMTASK mt;
                 mt.strBaseName = bstrLocation;
                 Utf8Str strFolder = vmFolders[VBox_SnapshotFolder];
@@ -1198,12 +1238,12 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
                     mt.fSnapshot = false;
 
                 mt.uIdx    = UINT32_MAX;
-                mt.pMedium = pSrcMedium;
+                mt.pMedium = pMedium;
                 mt.uWeight = (ULONG)((lSize + _1M - 1) / _1M);
                 mtc.chain.append(mt);
 
                 /* Query next parent. */
-                rc = pSrcMedium->COMGETTER(Parent)(pSrcMedium.asOutParam());
+                rc = pMedium->COMGETTER(Parent)(pMedium.asOutParam());
                 if (FAILED(rc)) return rc;
             }
             /* Update the progress info. */
@@ -1242,6 +1282,7 @@ HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine, ULONG &uC
         sst.snapshotUuid = machine->i_getSnapshotId();
         sst.strSaveStateFile = bstrSrcSaveStatePath;
         uint64_t cbSize;
+
         int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &cbSize);
         if (RT_FAILURE(vrc))
             return m_pMachine->setError(VBOX_E_IPRT_ERROR, m_pMachine->tr("Could not query file size of '%s' (%Rrc)"),
