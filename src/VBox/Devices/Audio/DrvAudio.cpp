@@ -1309,7 +1309,7 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
             while (cbLeft)
             {
                 uint32_t cfRead = 0;
-                rc = AudioMixBufReadCirc(&pHstStream->MixBuf, auBuf, RT_MIN(cbChunk, cbLeft), &cfRead);
+                rc = AudioMixBufAcquireReadBlock(&pHstStream->MixBuf, auBuf, RT_MIN(cbChunk, cbLeft), &cfRead);
                 if (   !cfRead
                     || RT_FAILURE(rc))
                 {
@@ -1337,9 +1337,13 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                           ("Backend for stream '%s' returned uneven played bytes count (cfRead=%RU32, cbPlayed=%RU32)\n",
                            pHstStream->szName, cfRead, cbPlayed));*/
 #endif
-                cfPlayedTotal += AUDIOMIXBUF_B2F(&pHstStream->MixBuf, cbPlayed);
+                const uint32_t cfPlayed = AUDIOMIXBUF_B2F(&pHstStream->MixBuf, cbPlayed);
+
+                cfPlayedTotal += cfPlayed;
                 Assert(cbLeft >= cbPlayed);
                 cbLeft        -= cbPlayed;
+
+                AudioMixBufReleaseReadBlock(&pHstStream->MixBuf, cfPlayed);
             }
         }
     }
@@ -2302,8 +2306,8 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
         while (cToRead)
         {
             uint32_t cRead;
-            rc = AudioMixBufReadCirc(&pGstStream->MixBuf, (uint8_t *)pvBuf + AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cReadTotal),
-                                     AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cToRead), &cRead);
+            rc = AudioMixBufAcquireReadBlock(&pGstStream->MixBuf, (uint8_t *)pvBuf + AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cReadTotal),
+                                             AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cToRead), &cRead);
             if (RT_FAILURE(rc))
                 break;
 
@@ -2319,6 +2323,8 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
             cToRead -= cRead;
 
             cReadTotal += cRead;
+
+            AudioMixBufReleaseReadBlock(&pHstStream->MixBuf, cRead);
         }
 
         if (cReadTotal)

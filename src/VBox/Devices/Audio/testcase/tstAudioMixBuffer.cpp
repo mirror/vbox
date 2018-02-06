@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -135,8 +135,9 @@ static int tstSingle(RTTEST hTest)
     uint32_t cToRead = AudioMixBufSize(&mb) - cFramesWrittenAbs - 1;
     for (uint32_t i = 0; i < cToRead; i++)
     {
-        RTTESTI_CHECK_RC_OK(AudioMixBufReadCirc(&mb, &aFrames16, sizeof(aFrames16), &cFramesRead));
+        RTTESTI_CHECK_RC_OK(AudioMixBufAcquireReadBlock(&mb, &aFrames16, sizeof(aFrames16), &cFramesRead));
         RTTESTI_CHECK(cFramesRead == 1);
+        AudioMixBufReleaseReadBlock(&mb, cFramesRead);
         AudioMixBufFinish(&mb, cFramesRead);
     }
     RTTESTI_CHECK(!AudioMixBufIsEmpty(&mb));
@@ -144,8 +145,9 @@ static int tstSingle(RTTEST hTest)
     RTTESTI_CHECK(AudioMixBufFreeBytes(&mb) == AUDIOMIXBUF_F2B(&mb, cBufSize - cFramesWrittenAbs - 1));
     RTTESTI_CHECK(AudioMixBufUsed(&mb) == cBufSize - cToRead);
 
-    RTTESTI_CHECK_RC_OK(AudioMixBufReadCirc(&mb, &aFrames16, sizeof(aFrames16), &cFramesRead));
+    RTTESTI_CHECK_RC_OK(AudioMixBufAcquireReadBlock(&mb, &aFrames16, sizeof(aFrames16), &cFramesRead));
     RTTESTI_CHECK(cFramesRead == 1);
+    AudioMixBufReleaseReadBlock(&mb, cFramesRead);
     AudioMixBufFinish(&mb, cFramesRead);
     RTTESTI_CHECK(AudioMixBufFree(&mb) == cBufSize - cFramesWrittenAbs);
     RTTESTI_CHECK(AudioMixBufFreeBytes(&mb) == AUDIOMIXBUF_F2B(&mb, cBufSize - cFramesWrittenAbs));
@@ -278,10 +280,11 @@ static int tstParentChild(RTTEST hTest)
         uint32_t cParentSamples = AudioMixBufUsed(&parent);
         while (cParentSamples)
         {
-            RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufReadCirc(&parent, pvBuf, cbBuf, &cFramesRead));
+            RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufAcquireReadBlock(&parent, pvBuf, cbBuf, &cFramesRead));
             if (!cFramesRead)
                 break;
 
+            AudioMixBufReleaseReadBlock(&parent, cFramesRead);
             AudioMixBufFinish(&parent, cFramesRead);
 
             RTTESTI_CHECK(cParentSamples >= cFramesRead);
@@ -378,10 +381,11 @@ static int tstConversion8(RTTEST hTest)
 
     for (;;)
     {
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufReadCirc(&parent, achBuf, cbBuf, &cFramesRead));
+        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufAcquireReadBlock(&parent, achBuf, cbBuf, &cFramesRead));
         if (!cFramesRead)
             break;
         cFramesTotalRead += cFramesRead;
+        AudioMixBufReleaseReadBlock(&parent, cFramesRead);
         AudioMixBufFinish(&parent, cFramesRead);
     }
 
@@ -476,10 +480,11 @@ static int tstConversion16(RTTEST hTest)
 
     for (;;)
     {
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufReadCirc(&parent, achBuf, cbBuf, &cFramesRead));
+        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufAcquireReadBlock(&parent, achBuf, cbBuf, &cFramesRead));
         if (!cFramesRead)
             break;
         cFramesTotalRead += cFramesRead;
+        AudioMixBufReleaseReadBlock(&parent, cFramesRead);
         AudioMixBufFinish(&parent, cFramesRead);
     }
     RTTESTI_CHECK_MSG(cFramesTotalRead == cFramesParent, ("Parent: Expected %RU32 mixed frames, got %RU32\n", cFramesParent, cFramesTotalRead));
@@ -566,10 +571,11 @@ static int tstVolume(RTTEST hTest)
     cFramesTotalRead = 0;
     for (;;)
     {
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufReadCirc(&parent, achBuf, cbBuf, &cFramesRead));
+        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufAcquireReadBlock(&parent, achBuf, cbBuf, &cFramesRead));
         if (!cFramesRead)
             break;
         cFramesTotalRead += cFramesRead;
+        AudioMixBufReleaseReadBlock(&parent, cFramesRead);
         AudioMixBufFinish(&parent, cFramesRead);
     }
     RTTESTI_CHECK_MSG(cFramesTotalRead == cFramesParent, ("Parent: Expected %RU32 mixed frames, got %RU32\n", cFramesParent, cFramesTotalRead));
@@ -597,10 +603,11 @@ static int tstVolume(RTTEST hTest)
     cFramesTotalRead = 0;
     for (;;)
     {
-        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufReadCirc(&parent, achBuf, cbBuf, &cFramesRead));
+        RTTESTI_CHECK_RC_OK_BREAK(AudioMixBufAcquireReadBlock(&parent, achBuf, cbBuf, &cFramesRead));
         if (!cFramesRead)
             break;
         cFramesTotalRead += cFramesRead;
+        AudioMixBufReleaseReadBlock(&parent, cFramesRead);
         AudioMixBufFinish(&parent, cFramesRead);
     }
     RTTESTI_CHECK_MSG(cFramesTotalRead == cFramesParent, ("Parent: Expected %RU32 mixed frames, got %RU32\n", cFramesParent, cFramesTotalRead));
