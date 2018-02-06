@@ -1273,8 +1273,6 @@ $(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $$(dir $$@) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$(VBOX_IDL_FILE.XPCOM),$@)
 	$(QUIET)$(VBOX_XPIDL_ENV)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $(VBOX_IDL_FILE.XPCOM)
 
-KB_FN_AUTO_CMD_DEPS_EX = $(eval includedep $2)$(eval _DEPFILES_INCLUDED += $2)$1: .MUST_MAKE = $$(warning PREV=$$(AUTO_CMD_DEP_$(translate $1,:,_)_PREV_CMDS))$$(warning CURR=$$(commands $1))$$(comp-cmds-ex $$(AUTO_CMD_DEP_$(translate $1,:,_)_PREV_CMDS),$$(commands $1),FORCE)
-
 $(call KB_FN_AUTO_CMD_DEPS_EX,$(VBOX_IDL_FILE.MSCOM),$(PATH_OUT)/VBOX_IDL_FILE.MSCOM.vbox-dep)
 $(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS_EX,$(PATH_OUT)/VBOX_IDL_FILE.MSCOM.vbox-dep)
