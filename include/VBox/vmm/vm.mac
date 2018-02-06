@@ -110,10 +110,11 @@ struc VM
     .fHMEnabled             resb 1
     .fHMEnabledFixed        resb 1
     .fHMNeedRawModeCtx      resb 1
+    .fNEMActive             resb 1
     .fFaultTolerantMaster   resb 1
     .fUseLargePages         resb 1
 
-    .uPadding1              resb 2
+    .uPadding1              resb 1
 
     .hTraceBufRC            RTRCPTR_RES 1
     .hTraceBufR3            RTR3PTR_RES 1

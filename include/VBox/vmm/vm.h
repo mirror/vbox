@@ -1021,6 +1021,9 @@ typedef struct VM
     /** Hardware VM support requires a minimal raw-mode context.
      * This is never set on 64-bit hosts, only 32-bit hosts requires it. */
     bool                        fHMNeedRawModeCtx;
+    /** NEM (native execution manager) active flag.
+     * This means we'll use NEM instead of HM when running guest code.  */
+    bool                        fNEMActive;
     /** Set when this VM is the master FT node.
      * @todo This doesn't need to be here, FTM should store it in it's own
      *       structures instead. */
@@ -1032,7 +1035,7 @@ typedef struct VM
     /** @} */
 
     /** Alignment padding. */
-    uint8_t                     uPadding1[2];
+    uint8_t                     uPadding1[1];
 
     /** @name Debugging
      * @{ */
