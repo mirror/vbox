@@ -351,8 +351,10 @@ RTDECL(int) RTDirOpen(RTDIR *phDir, const char *pszPath);
 #define RTDIR_F_NO_SYMLINKS     RT_BIT_32(0)
 /** Deny relative opening of anything above this directory. */
 #define RTDIR_F_DENY_ASCENT     RT_BIT_32(1)
+/** Don't follow symbolic links in the final component. */
+#define RTDIR_F_NO_FOLLOW       RT_BIT_32(2)
 /** Valid flag mask.   */
-#define RTDIR_F_VALID_MASK      UINT32_C(0x00000003)
+#define RTDIR_F_VALID_MASK      UINT32_C(0x00000007)
 /** @} */
 
 /**

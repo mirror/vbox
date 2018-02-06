@@ -107,6 +107,9 @@ int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDi
     bool fObjDir = false;
 #endif
     if (hRelativeDir == ~(uintptr_t)0 && pvNativeRelative == NULL)
+    {
+        AssertMsg(pDir->fFlags & RTDIR_F_NO_FOLLOW /* Add FILE_OPEN_REPARSE_POINT and see how that works out (it better!). Need fallbacks for pre Vista. */,
+                  ("Implement RTDIR_F_NO_FOLLOW!\n"));
         rc = RTNtPathOpenDir(pszPathBuf,
                              FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE,
                              FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -119,7 +122,11 @@ int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDi
                              NULL
 #endif
                              );
+    }
     else if (pvNativeRelative != NULL)
+    {
+        AssertMsg(pDir->fFlags & RTDIR_F_NO_FOLLOW /* Add FILE_OPEN_REPARSE_POINT and see how that works out (it better!). Need fallbacks for pre Vista. */,
+                  ("Implement RTDIR_F_NO_FOLLOW!\n"));
         rc = RTNtPathOpenDirEx((HANDLE)hRelativeDir,
                                (struct _UNICODE_STRING *)pvNativeRelative,
                                FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE,
@@ -134,6 +141,7 @@ int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDi
 #endif
 
                                );
+    }
     else
     {
         pDir->hDir = (HANDLE)hRelativeDir;
