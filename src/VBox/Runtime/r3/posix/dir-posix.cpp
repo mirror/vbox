@@ -277,7 +277,7 @@ int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDi
             { /* likely */ }
             else
             {
-                pfnFdOpenDir = (PFNFDOPENDIR)dlsym(RTLD_DEFAULT, "fdopendir");
+                pfnFdOpenDir = (PFNFDOPENDIR)(uintptr_t)dlsym(RTLD_DEFAULT, "fdopendir");
                 s_pfnFdOpenDir = pfnFdOpenDir;
                 ASMAtomicWriteBool(&s_fInitalized, true);
             }
