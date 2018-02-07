@@ -1958,37 +1958,27 @@ static int hdaAddStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
+    int rc;
 
-    PHDADRIVER pDrv;
-    RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
+    LogFlowFuncEnter();
+
+    switch (pCfg->enmDir)
     {
-        int rc2;
+        case PDMAUDIODIR_OUT:
+            rc = hdaAddStreamOut(pThis, pCfg);
+            break;
 
-        switch (pCfg->enmDir)
-        {
-            case PDMAUDIODIR_OUT:
-                rc2 = hdaAddStreamOut(pThis, pCfg);
-                break;
+        case PDMAUDIODIR_IN:
+            rc = hdaAddStreamIn(pThis, pCfg);
+            break;
 
-            case PDMAUDIODIR_IN:
-                rc2 = hdaAddStreamIn(pThis, pCfg);
-                break;
-
-            default:
-                rc2 = VERR_NOT_SUPPORTED;
-                AssertFailed();
-                break;
-        }
-
-        if (   RT_FAILURE(rc2)
-            && (pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY)) /* We only care about primary drivers here, the rest may fail. */
-        {
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-            /* Keep going. */
-        }
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            AssertFailed();
+            break;
     }
+
+    LogFlowFunc(("Returning %Rrc\n", rc));
 
     return rc;
 }
