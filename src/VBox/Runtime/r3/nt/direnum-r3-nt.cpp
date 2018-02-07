@@ -106,46 +106,89 @@ int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDi
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
     bool fObjDir = false;
 #endif
-    if (hRelativeDir == ~(uintptr_t)0 && pvNativeRelative == NULL)
+    if (hRelativeDir != ~(uintptr_t)0 && pvNativeRelative == NULL)
     {
-        AssertMsg(pDir->fFlags & RTDIR_F_NO_FOLLOW /* Add FILE_OPEN_REPARSE_POINT and see how that works out (it better!). Need fallbacks for pre Vista. */,
-                  ("Implement RTDIR_F_NO_FOLLOW!\n"));
-        rc = RTNtPathOpenDir(pszPathBuf,
-                             FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE,
-                             FILE_SHARE_READ | FILE_SHARE_WRITE,
-                             FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
-                             OBJ_CASE_INSENSITIVE,
-                             &pDir->hDir,
-#ifdef IPRT_WITH_NT_PATH_PASSTHRU
-                             &fObjDir
-#else
-                             NULL
-#endif
-                             );
-    }
-    else if (pvNativeRelative != NULL)
-    {
-        AssertMsg(pDir->fFlags & RTDIR_F_NO_FOLLOW /* Add FILE_OPEN_REPARSE_POINT and see how that works out (it better!). Need fallbacks for pre Vista. */,
-                  ("Implement RTDIR_F_NO_FOLLOW!\n"));
-        rc = RTNtPathOpenDirEx((HANDLE)hRelativeDir,
-                               (struct _UNICODE_STRING *)pvNativeRelative,
-                               FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE,
-                               FILE_SHARE_READ | FILE_SHARE_WRITE,
-                               FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
-                               OBJ_CASE_INSENSITIVE,
-                               &pDir->hDir,
-#ifdef IPRT_WITH_NT_PATH_PASSTHRU
-                               &fObjDir
-#else
-                               NULL
-#endif
-
-                               );
+        /* Caller already opened it, easy! */
+        pDir->hDir = (HANDLE)hRelativeDir;
+        rc = VINF_SUCCESS;
     }
     else
     {
-        pDir->hDir = (HANDLE)hRelativeDir;
-        rc = VINF_SUCCESS;
+        /*
+         * If we have to check for reparse points, this gets complicated!
+         */
+        static int volatile g_fReparsePoints = -1;
+        uint32_t            fOptions         = FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT;
+        int fReparsePoints = g_fReparsePoints;
+        if (fReparsePoints != 0 && (pDir->fFlags & RTDIR_F_NO_FOLLOW))
+            fOptions |= FILE_OPEN_REPARSE_POINT;
+
+        for (;;)
+        {
+            if (pvNativeRelative == NULL)
+                rc = RTNtPathOpenDir(pszPathBuf,
+                                     FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE,
+                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                     fOptions,
+                                     OBJ_CASE_INSENSITIVE,
+                                     &pDir->hDir,
+#ifdef IPRT_WITH_NT_PATH_PASSTHRU
+                                     &fObjDir
+#else
+                                     NULL
+#endif
+                                     );
+            else
+                rc = RTNtPathOpenDirEx((HANDLE)hRelativeDir,
+                                       (struct _UNICODE_STRING *)pvNativeRelative,
+                                       FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE,
+                                       FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                       fOptions,
+                                       OBJ_CASE_INSENSITIVE,
+                                       &pDir->hDir,
+#ifdef IPRT_WITH_NT_PATH_PASSTHRU
+                                       &fObjDir
+#else
+                                       NULL
+#endif
+                                       );
+            if (   !(fOptions & FILE_OPEN_REPARSE_POINT)
+                || (rc != VINF_SUCCESS && rc != VERR_INVALID_PARAMETER) )
+                break;
+            if (rc == VINF_SUCCESS)
+            {
+                if (fReparsePoints == -1)
+                    g_fReparsePoints = 1;
+
+                /*
+                 * We now need to check if we opened a symbolic directory link.
+                 * (These can be enumerated, but contains only '.' and '..'.)
+                 */
+                FILE_ATTRIBUTE_TAG_INFORMATION  TagInfo = { 0, 0 };
+                IO_STATUS_BLOCK                 Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+                NTSTATUS rcNt = NtQueryInformationFile(pDir->hDir, &Ios, &TagInfo, sizeof(TagInfo), FileAttributeTagInformation);
+                AssertMsg(NT_SUCCESS(rcNt), ("%#x\n", rcNt));
+                if (!NT_SUCCESS(rcNt))
+                    TagInfo.FileAttributes = TagInfo.ReparseTag = 0;
+                if (!(TagInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+                    break;
+
+                NtClose(pDir->hDir);
+                pDir->hDir = RTNT_INVALID_HANDLE_VALUE;
+
+                if (TagInfo.ReparseTag == IO_REPARSE_TAG_SYMLINK)
+                {
+                    rc = VERR_IS_A_SYMLINK;
+                    break;
+                }
+
+                /* Reparse point that isn't a symbolic link, try follow the reparsing. */
+            }
+            else if (fReparsePoints == -1)
+                g_fReparsePoints = fReparsePoints = 0;
+            fOptions &= ~FILE_OPEN_REPARSE_POINT;
+        }
+
     }
     if (RT_SUCCESS(rc))
     {
