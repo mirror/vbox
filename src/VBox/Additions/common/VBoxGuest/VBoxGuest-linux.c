@@ -88,6 +88,12 @@
 # define IRQ_RETVAL(n)
 #endif
 
+/* uidgid.h was introduced in 3.5.0. */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0)
+# define kgid_t gid_t
+# define kuid_t uid_t
+#endif
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -800,7 +806,7 @@ static uint32_t vgdrvLinuxRequestorOnConsole(void)
         const char *pszName = tty_name(pTty);
 # else
         char szBuf[64];
-        const char *pszName = tty_name(pTty, buf);
+        const char *pszName = tty_name(pTty, szBuf);
 # endif
         if (   pszName
             && pszName[0] == 't'
