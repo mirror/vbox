@@ -120,7 +120,9 @@ int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDi
         static int volatile g_fReparsePoints = -1;
         uint32_t            fOptions         = FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT;
         int fReparsePoints = g_fReparsePoints;
-        if (fReparsePoints != 0 && (pDir->fFlags & RTDIR_F_NO_FOLLOW))
+        if (   fReparsePoints != 0
+            && (pDir->fFlags & RTDIR_F_NO_FOLLOW)
+            && !pDir->fDirSlash)
             fOptions |= FILE_OPEN_REPARSE_POINT;
 
         for (;;)

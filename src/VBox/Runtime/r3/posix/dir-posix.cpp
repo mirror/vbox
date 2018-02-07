@@ -35,12 +35,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <dlfcn.h>
 #include <stdio.h>
 
 #include <iprt/dir.h>
 #include "internal/iprt.h"
 
 #include <iprt/alloca.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
@@ -232,16 +234,93 @@ int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDi
     /*
      * Convert to a native path and try opendir.
      */
+    char       *pszSlash = NULL;
     char const *pszNativePath;
-    int rc = rtPathToNative(&pszNativePath, pDir->pszPath, NULL);
+    int         rc;
+    if (   !(pDir->fFlags & RTDIR_F_NO_FOLLOW)
+        || pDir->fDirSlash
+        || pDir->cchPath <= 1)
+        rc = rtPathToNative(&pszNativePath, pDir->pszPath, NULL);
+    else
+    {
+        pszSlash = (char *)&pDir->pszPath[pDir->cchPath - 1];
+        *pszSlash = '\0';
+        rc = rtPathToNative(&pszNativePath, pDir->pszPath, NULL);
+    }
     if (RT_SUCCESS(rc))
     {
-        if (!(pDir->fFlags & RTDIR_F_NO_FOLLOW))
+        if (   !(pDir->fFlags & RTDIR_F_NO_FOLLOW)
+            || pDir->fDirSlash)
             pDir->pDir = opendir(pszNativePath);
         else
         {
-            AssertMsgFailed(("implement RTDIR_F_NO_FOLLOW\n"));
-            pDir->pDir = opendir(pszNativePath);
+            /*
+             * If we can get fdopendir() and have both O_NOFOLLOW and O_DIRECTORY,
+             * we will use open() to safely open the directory without following
+             * symlinks in the final component, and then use fdopendir to get a DIR
+             * from the file descriptor.
+             *
+             * If we cannot get that, we will use lstat() + opendir() as a fallback.
+             *
+             * We ASSUME that support for the O_NOFOLLOW and O_DIRECTORY flags is
+             * older than fdopendir().
+             */
+#if defined(O_NOFOLLOW) && defined(O_DIRECTORY)
+            /* Need to resolve fdopendir dynamically. */
+            typedef DIR * (*PFNFDOPENDIR)(int);
+            static PFNFDOPENDIR  s_pfnFdOpenDir = NULL;
+            static bool volatile s_fInitalized = false;
+
+            PFNFDOPENDIR pfnFdOpenDir = s_pfnFdOpenDir;
+            ASMCompilerBarrier();
+            if (s_fInitalized)
+            { /* likely */ }
+            else
+            {
+                pfnFdOpenDir = (PFNFDOPENDIR)dlsym(RTLD_DEFAULT, "fdopendir");
+                s_pfnFdOpenDir = pfnFdOpenDir;
+                ASMAtomicWriteBool(&s_fInitalized, true);
+            }
+
+            if (pfnFdOpenDir)
+            {
+                int fd = open(pszNativePath, O_RDONLY | O_DIRECTORY | O_NOFOLLOW, 0);
+                if (fd >= 0)
+                {
+                    pDir->pDir = pfnFdOpenDir(fd);
+                    if (RT_UNLIKELY(!pDir->pDir))
+                    {
+                        rc = RTErrConvertFromErrno(errno);
+                        close(fd);
+                    }
+                }
+                else
+                {
+                    /* WSL returns ELOOP here, but we take no chances that O_NOFOLLOW
+                       takes precedence over O_DIRECTORY everywhere. */
+                    int iErr = errno;
+                    if (iErr == ELOOP || iErr == ENOTDIR)
+                    {
+                        struct stat St;
+                        if (   lstat(pszNativePath, &St) == 0
+                            && S_ISLNK(St.st_mode))
+                            rc = VERR_IS_A_SYMLINK;
+                        else
+                            rc = RTErrConvertFromErrno(iErr);
+                    }
+                }
+            }
+            else
+#endif
+            {
+                /* Fallback.  This contains a race condition. */
+                struct stat St;
+                if (   lstat(pszNativePath, &St) != 0
+                    || !S_ISLNK(St.st_mode))
+                    pDir->pDir = opendir(pszNativePath);
+                else
+                    rc = VERR_IS_A_SYMLINK;
+            }
         }
         if (pDir->pDir)
         {
@@ -250,12 +329,13 @@ int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDi
              */
             pDir->fDataUnread = false; /* spelling it out */
         }
-        else
+        else if (RT_SUCCESS_NP(rc))
             rc = RTErrConvertFromErrno(errno);
 
         rtPathFreeNative(pszNativePath, pDir->pszPath);
     }
-
+    if (pszSlash)
+        *pszSlash = RTPATH_SLASH;
     return rc;
 }
 

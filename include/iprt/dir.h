@@ -360,12 +360,19 @@ RTDECL(int) RTDirOpen(RTDIR *phDir, const char *pszPath);
 /**
  * Opens a directory with flags and optional filtering.
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
+ * @retval  VERR_IS_A_SYMLINK if RTDIR_F_NO_FOLLOW is set, @a enmFilter is
+ *          RTDIRFILTER_NONE and @a pszPath points to a symbolic link and does
+ *          not end with a slash.  Note that on Windows this does not apply to
+ *          file symlinks, only directory symlinks, for the file variant
+ *          VERR_NOT_A_DIRECTORY will be returned.
+ *
  * @param   phDir       Where to store the open directory handle.
  * @param   pszPath     Path to the directory to search, this must include wildcards.
  * @param   enmFilter   The kind of filter to apply. Setting this to RTDIRFILTER_NONE makes
  *                      this function behave like RTDirOpen.
  * @param   fFlags      Open flags, RTDIR_F_XXX.
+ *
  */
 RTDECL(int) RTDirOpenFiltered(RTDIR *phDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fFlags);
 
@@ -624,6 +631,12 @@ RTDECL(int) RTDirRelDirOpen(RTDIR hDir, const char *pszDir, RTDIR *phDir);
  * Opens a directory relative to @a hDir, with flags and optional filtering.
  *
  * @returns IPRT status code.
+ * @retval  VERR_IS_A_SYMLINK if RTDIR_F_NO_FOLLOW is set, @a enmFilter is
+ *          RTDIRFILTER_NONE and @a pszPath points to a symbolic link and does
+ *          not end with a slash.  Note that on Windows this does not apply to
+ *          file symlinks, only directory symlinks, for the file variant
+ *          VERR_NOT_A_DIRECTORY will be returned.
+ *
  * @param   hDir            The directory to open relative to.
  * @param   pszDirAndFilter The relative path to the directory to search, this
  *                          must include wildcards.

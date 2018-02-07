@@ -526,12 +526,22 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
      * for querying extra information about the objects we list.
      * As a sideeffect we also validate the path here.
      */
-    char szRealPath[RTPATH_MAX + 1];
-    int rc;
+    char   szRealPath[RTPATH_MAX + 1];
+    int    rc;
     size_t cbFilter;                    /* includes '\0' (thus cb and not cch). */
     size_t cucFilter0;                  /* includes U+0. */
+    bool   fDirSlash = false;
     if (!pszFilter)
     {
+        /* Note! RTPathAbs currently strips trailing slashes, so we have
+           to inspect pszPath to figure it out. */
+        if (*pszPath != '\0')
+        {
+            const char *pszLast = strchr(pszPath, '\0') - 1;
+            if (RTPATH_IS_SLASH(*pszLast))
+                fDirSlash = true;
+        }
+
         cbFilter = cucFilter0 = 0;
         rc = RTPathAbs(pszPath, szRealPath, sizeof(szRealPath) - 1);
     }
@@ -552,6 +562,7 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
         }
         else
             rc = RTPathReal(".", szRealPath, sizeof(szRealPath) - 1);
+        fDirSlash = true;
     }
     if (RT_FAILURE(rc))
         return rc;
@@ -617,13 +628,14 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
             pDir->pfnFilter = NULL;
             break;
     }
-    pDir->cchPath = cchRealPath;
-    pDir->pszPath = (char *)memcpy(pb, szRealPath, cchRealPath + 1);
+    pDir->cchPath       = cchRealPath;
+    pDir->pszPath       = (char *)memcpy(pb, szRealPath, cchRealPath + 1);
     Assert(pb - (uint8_t *)pDir + cchRealPath + 1 <= cbAllocated);
-    pDir->pszName = NULL;
-    pDir->cchName = 0;
-    pDir->fFlags  = fFlags;
-    pDir->fDataUnread = false;
+    pDir->pszName       = NULL;
+    pDir->cchName       = 0;
+    pDir->fFlags        = fFlags;
+    pDir->fDirSlash     = fDirSlash;
+    pDir->fDataUnread   = false;
 
     /*
      * Hand it over to the native part.
