@@ -293,13 +293,18 @@ RTDECL(char *) RTPathRealDup(const char *pszPath);
 
 /**
  * Get the absolute path (starts from root, no . or .. components), doesn't have
- * to exist. Note that this method is designed to never perform actual file
- * system access, therefore symlinks are not resolved.
+ * to exist.
+ *
+ * Note that this method is designed to never perform actual file system access,
+ * therefore symlinks are not resolved.
  *
  * @returns iprt status code.
  * @param   pszPath         The path to resolve.
  * @param   pszAbsPath      Where to store the absolute path.
  * @param   cchAbsPath      Size of the buffer.
+ *
+ * @note    Current implementation is buggy and will remove trailing slashes
+ *          that would normally specify a directory.  Don't depend on this.
  */
 RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath);
 
@@ -309,6 +314,9 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath);
  * @returns Pointer to the absolute path. Use RTStrFree() to free this string.
  * @returns NULL if RTPathAbs() or RTStrDup() fails.
  * @param   pszPath         The path to resolve.
+ *
+ * @note    Current implementation is buggy and will remove trailing slashes
+ *          that would normally specify a directory.  Don't depend on this.
  */
 RTDECL(char *) RTPathAbsDup(const char *pszPath);
 
@@ -324,6 +332,9 @@ RTDECL(char *) RTPathAbsDup(const char *pszPath);
  * @param   pszPath         The path to resolve.
  * @param   pszAbsPath      Where to store the absolute path.
  * @param   cchAbsPath      Size of the buffer.
+ *
+ * @note    Current implementation is buggy and will remove trailing slashes
+ *          that would normally specify a directory.  Don't depend on this.
  */
 RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cchAbsPath);
 
@@ -336,6 +347,9 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPa
  *                          When NULL, the actual cwd is used (i.e. the call
  *                          is equivalent to RTPathAbs(pszPath, ...).
  * @param   pszPath         The path to resolve.
+ *
+ * @note    Current implementation is buggy and will remove trailing slashes
+ *          that would normally specify a directory.  Don't depend on this.
  */
 RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath);
 
