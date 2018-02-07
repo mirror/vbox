@@ -28,6 +28,7 @@
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
 #include "CUSBDevice.h"
+#include "CGuestSession.h"
 
 /* Other VBox includes: */
 #include <VBox/com/listeners.h>
@@ -36,7 +37,7 @@
 class UIMainEventListeningThread;
 class CEventListener;
 class CEventSource;
-class CGuestSession;
+
 
 
 /* Note: On a first look this may seems a little bit complicated.
@@ -131,7 +132,7 @@ signals:
     void sigProgressTaskComplete(QString strProgressId);
 
     /** Notifies about guest session registered event @a is the registed guest session. */
-    void sigGuestSessionRegistered(const CGuestSession &guestSession);
+    void sigGuestSessionRegistered(CGuestSession guestSession);
 
 public:
 

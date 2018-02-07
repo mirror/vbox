@@ -33,7 +33,7 @@
 # include "CEventSource.h"
 # include "CEventListener.h"
 # include "CGuestSessionRegisteredEvent.h"
-# include "CGuestSession.h"
+
 # include "CVBoxSVCAvailabilityChangedEvent.h"
 # include "CVirtualBoxErrorInfo.h"
 # include "CMachineStateChangedEvent.h"
@@ -432,7 +432,6 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             CGuestSessionRegisteredEvent cEvent(pEvent);
             CGuestSession guestSession = cEvent.GetSession();
             emit sigGuestSessionRegistered(guestSession);
-
             break;
         }
         case KVBoxEventType_OnGuestSessionStateChanged:

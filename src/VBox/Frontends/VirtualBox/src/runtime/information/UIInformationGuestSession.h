@@ -24,6 +24,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMachine.h"
+#include "CGuestSession.h"
 #include "CConsole.h"
 
 /* Forward declarations: */
@@ -47,7 +48,7 @@ public:
 
 private slots:
 
-    void sltGuestSessionRegistered(const CGuestSession &guestSession);
+    void sltGuestSessionRegistered(CGuestSession guestSession);
 
 private:
 

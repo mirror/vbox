@@ -53,7 +53,7 @@ class UIGuestEventHandler : public QObject
 
 signals:
 
-    void sigGuestSessionRegistered(const CGuestSession &guestSession);
+    void sigGuestSessionRegistered(CGuestSession guestSession);
 
 public:
 
@@ -288,7 +288,7 @@ void UIInformationGuestSession::prepareEventHandler()
             this, &UIInformationGuestSession::sltGuestSessionRegistered);
 }
 
-void UIInformationGuestSession::sltGuestSessionRegistered(const CGuestSession &guestSession)
+void UIInformationGuestSession::sltGuestSessionRegistered(CGuestSession guestSession)
 {
     if(!guestSession.isOk())
         return;
