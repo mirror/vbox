@@ -1558,6 +1558,7 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS,
             if (SUCCEEDED(hr))
             {
                 BOOL fRc = SetEvent(pThis->aEvents[DSOUNDEVENT_OUTPUT]);
+                RT_NOREF(fRc);
                 Assert(fRc);
             }
 
@@ -1636,6 +1637,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
         && RTCircBufUsed(pCircBuf))
     {
         BOOL fRc = SetEvent(pThis->aEvents[DSOUNDEVENT_OUTPUT]);
+        RT_NOREF(fRc);
         Assert(fRc);
 
 //        Log3Func(("cxBuf=%RU32, cbWrittenTotal=%RU32, %RU64ms\n", cxBuf, cbWrittenTotal, tsNow - s_lastplayed));
@@ -1912,6 +1914,7 @@ static int dsoundNotifyThread(PDRVHOSTDSOUND pThis, bool fShutdown)
 
     /* Set the notification event so that the thread is being notified. */
     BOOL fRc = SetEvent(pThis->aEvents[DSOUNDEVENT_NOTIFY]);
+    RT_NOREF(fRc);
     Assert(fRc);
 
     return VINF_SUCCESS;
