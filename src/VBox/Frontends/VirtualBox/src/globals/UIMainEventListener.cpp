@@ -29,39 +29,40 @@
 
 /* COM includes: */
 # include "COMEnums.h"
+# include "CCanShowWindowEvent.h"
+# include "CCursorPositionChangedEvent.h"
 # include "CEvent.h"
 # include "CEventSource.h"
 # include "CEventListener.h"
+# include "CExtraDataCanChangeEvent.h"
+# include "CExtraDataChangedEvent.h"
+# include "CGuestMonitorChangedEvent.h"
+#include  "CGuestProcessRegisteredEvent.h"
 # include "CGuestSessionRegisteredEvent.h"
-
-# include "CVBoxSVCAvailabilityChangedEvent.h"
-# include "CVirtualBoxErrorInfo.h"
+# include "CKeyboardLedsChangedEvent.h"
 # include "CMachineStateChangedEvent.h"
 # include "CMachineDataChangedEvent.h"
 # include "CMachineRegisteredEvent.h"
+# include "CMousePointerShapeChangedEvent.h"
+# include "CMouseCapabilityChangedEvent.h"
+# include "CMediumChangedEvent.h"
+# include "CNetworkAdapterChangedEvent.h"
+# include "CProgressPercentageChangedEvent.h"
+# include "CProgressTaskCompletedEvent.h"
+# include "CRuntimeErrorEvent.h"
 # include "CSessionStateChangedEvent.h"
+# include "CShowWindowEvent.h"
 # include "CSnapshotTakenEvent.h"
 # include "CSnapshotDeletedEvent.h"
 # include "CSnapshotChangedEvent.h"
 # include "CSnapshotRestoredEvent.h"
-# include "CExtraDataCanChangeEvent.h"
-# include "CExtraDataChangedEvent.h"
-# include "CMousePointerShapeChangedEvent.h"
-# include "CMouseCapabilityChangedEvent.h"
-# include "CKeyboardLedsChangedEvent.h"
 # include "CStateChangedEvent.h"
-# include "CNetworkAdapterChangedEvent.h"
 # include "CStorageDeviceChangedEvent.h"
-# include "CMediumChangedEvent.h"
 # include "CUSBDevice.h"
 # include "CUSBDeviceStateChangedEvent.h"
-# include "CGuestMonitorChangedEvent.h"
-# include "CRuntimeErrorEvent.h"
-# include "CCanShowWindowEvent.h"
-# include "CShowWindowEvent.h"
-# include "CProgressPercentageChangedEvent.h"
-# include "CProgressTaskCompletedEvent.h"
-# include "CCursorPositionChangedEvent.h"
+# include "CVBoxSVCAvailabilityChangedEvent.h"
+# include "CVirtualBoxErrorInfo.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -429,23 +430,42 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         }
         case KVBoxEventType_OnGuestSessionRegistered:
         {
+
             CGuestSessionRegisteredEvent cEvent(pEvent);
-            CGuestSession guestSession = cEvent.GetSession();
-            emit sigGuestSessionRegistered(guestSession);
+            if(cEvent.GetRegistered())
+                emit sigGuestSessionRegistered(cEvent.GetSession());
+            else
+                emit sigGuestSessionUnregistered(cEvent.GetSession());
+            break;
+        }
+        case KVBoxEventType_OnGuestProcessRegistered:
+        {
+            CGuestProcessRegisteredEvent cEvent(pEvent);
+            if(cEvent.GetRegistered())
+                emit sigGuestProcessRegistered(cEvent.GetProcess());
+            else
+                emit sigGuestProcessUnregistered(cEvent.GetProcess());
             break;
         }
         case KVBoxEventType_OnGuestSessionStateChanged:
-        case KVBoxEventType_OnGuestProcessRegistered:
+        {
+            emit sigGuestSessionStatedChanged();
+            break;
+        }
         case KVBoxEventType_OnGuestProcessStateChanged:
         case KVBoxEventType_OnGuestProcessInputNotify:
         case KVBoxEventType_OnGuestProcessOutput:
+        {
+            emit sigGuestProcessStateChanged();
+            break;
+        }
         case KVBoxEventType_OnGuestFileRegistered:
         case KVBoxEventType_OnGuestFileStateChanged:
         case KVBoxEventType_OnGuestFileOffsetChanged:
         case KVBoxEventType_OnGuestFileRead:
         case KVBoxEventType_OnGuestFileWrite:
         {
-            //CGuestSessionRegisteredEvent ceve(pEvent);
+            break;
         }
 
         default: break;

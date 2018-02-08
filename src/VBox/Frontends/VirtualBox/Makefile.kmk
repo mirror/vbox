@@ -503,6 +503,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
 	src/wizards/firstrun/UIWizardFirstRun.h \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.h \
+	src/runtime/information/UIGuestSessionsEventHandler.h \
 	src/runtime/information/UIInformationConfiguration.h \
 	src/runtime/information/UIInformationDataItem.h \
 	src/runtime/information/UIInformationGuestSession.h \
@@ -550,7 +551,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
-    src/runtime/information/UIInformationGuestSession.cpp \
+    src/runtime/information/UIGuestSessionsEventHandler.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
@@ -832,6 +833,7 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp \
+	src/runtime/information/UIGuestSessionsEventHandler.cpp \
 	src/runtime/information/UIInformationConfiguration.cpp \
 	src/runtime/information/UIInformationDataItem.cpp \
 	src/runtime/information/UIInformationGuestSession.cpp \

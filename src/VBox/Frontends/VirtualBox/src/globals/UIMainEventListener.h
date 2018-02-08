@@ -24,11 +24,12 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CVirtualBoxErrorInfo.h"
+#include "CGuestProcess.h"
+#include "CGuestSession.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
 #include "CUSBDevice.h"
-#include "CGuestSession.h"
+#include "CVirtualBoxErrorInfo.h"
 
 /* Other VBox includes: */
 #include <VBox/com/listeners.h>
@@ -131,8 +132,18 @@ signals:
     /** Notifies about task complete for progress with @a strProgressId. */
     void sigProgressTaskComplete(QString strProgressId);
 
-    /** Notifies about guest session registered event @a is the registed guest session. */
-    void sigGuestSessionRegistered(CGuestSession guestSession);
+    /** @name Guest Session related signals
+      * @{ */
+        /** Notifies about guest session (un)registered event @a is the (un)registed guest session. */
+        void sigGuestSessionRegistered(CGuestSession guestSession);
+        void sigGuestSessionUnregistered(CGuestSession guestSession);
+
+        /** Notifies about guest process (un)registered event @a is the (un)registed guest process. */
+        void sigGuestProcessRegistered(CGuestProcess guestProcess);
+        void sigGuestProcessUnregistered(CGuestProcess guestProcess);
+        void sigGuestSessionStatedChanged();
+        void sigGuestProcessStateChanged();
+    /** @} */
 
 public:
 

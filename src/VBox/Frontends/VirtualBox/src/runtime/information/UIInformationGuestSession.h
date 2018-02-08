@@ -23,16 +23,12 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CMachine.h"
-#include "CGuestSession.h"
 #include "CConsole.h"
 
 /* Forward declarations: */
+class QITreeWidget;
 class QVBoxLayout;
-class UIGuestEventHandler;
-class UIGuestSessionEventHandler;
-class UIInformationView;
-class UIInformationModel;
+class UIGuestSessionsEventHandler;
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
@@ -44,23 +40,24 @@ signals:
 
 public:
 
-    UIInformationGuestSession(QWidget *pParent, const CMachine &machine, const CConsole &console);
+    UIInformationGuestSession(QWidget *pParent, const CConsole &console);
 
 private slots:
 
-    void sltGuestSessionRegistered(CGuestSession guestSession);
+    void sltGuestSessionsUpdated();
 
 private:
 
     void prepareLayout();
     void prepareWidgets();
     void prepareEventHandler();
+    void updateTreeWidget();
 
-    CMachine             m_machine;
-    CConsole             m_console;
+    CConsole             m_comConsole;
     QVBoxLayout         *m_pMainLayout;
-    UIGuestEventHandler *m_pGuestEventHandler;
-    QVector<UIGuestSessionEventHandler*> m_pGuestSessionHandleVector;
+    UIGuestSessionsEventHandler *m_pGuestSessionsEventHandler;
+    QITreeWidget        *m_pTreeWidget;
+
 };
 
 #endif /* !___UIInformationGuestSession_h___ */

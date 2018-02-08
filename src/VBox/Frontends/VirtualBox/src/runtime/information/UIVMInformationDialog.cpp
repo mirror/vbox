@@ -243,7 +243,7 @@ void UIVMInformationDialog::prepareTabWidget()
         }
 
         UIInformationGuestSession *pGuestSessionWidget =
-            new UIInformationGuestSession(this, m_pMachineWindow->machine(), m_pMachineWindow->console());
+            new UIInformationGuestSession(this, m_pMachineWindow->console());
         if (pGuestSessionWidget)
         {
             m_tabs.insert(2, pGuestSessionWidget);
