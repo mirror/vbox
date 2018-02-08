@@ -137,7 +137,7 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 
 # endif /* unused */
 
-#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
+#ifdef LOG_ENABLED
 /**
  * Converts an audio stream status to a string.
  *
@@ -3121,7 +3121,7 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
     int rc = VINF_SUCCESS;
 
-#ifdef VBOX_STRICT
+#ifdef LOG_ENABLED
     char *pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
     LogFunc(("[%s] fStatus=%s\n", pHstStream->szName, pszHstSts));
     RTStrFree(pszHstSts);
@@ -3137,12 +3137,11 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
         {
             pHstStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
 
-#ifdef VBOX_STRICT
-            pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
-            AssertMsg(pHstStream->fStatus == PDMAUDIOSTREAMSTS_FLAG_NONE,
-                      ("Stream '%s' still has %s set when destroying, must close properly first\n",
-                       pHstStream->szName, pszHstSts));
-            RTStrFree(pszHstSts);
+#ifdef LOG_ENABLED
+            /* This is not fatal, but log it anyway. */
+            if (pHstStream->fStatus != PDMAUDIOSTREAMSTS_FLAG_NONE)
+                LogFunc(("[%s] Warning: Stream still has %s set when destroying, must properly drain first\n",
+                         pHstStream->szName, pszHstSts));
 #endif
         }
     }
