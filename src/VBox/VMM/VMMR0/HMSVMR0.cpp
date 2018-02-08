@@ -2263,7 +2263,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
                ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
-    Log4(("hmR0SvmLoadGuestState: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX32 CR3=%#RX32 CR4=%#RX32 ESP=%#RX32 EBP=%#RX32\n",
+    Log4(("hmR0SvmLoadGuestState: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX64 CR3=%#RX64 CR4=%#RX64 ESP=%#RX32 EBP=%#RX32\n",
           pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4, pCtx->esp, pCtx->ebp));
     Log4(("hmR0SvmLoadGuestState: SS={%04x base=%016RX64 limit=%08x flags=%08x}\n", pCtx->ss.Sel, pCtx->ss.u64Base,
           pCtx->ss.u32Limit, pCtx->ss.Attr.u));
