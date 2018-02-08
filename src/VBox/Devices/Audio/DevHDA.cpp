@@ -271,6 +271,8 @@ static int hdaRegWriteU8(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
  * @{
  */
 #ifdef IN_RING3
+static int                        hdaAddStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg);
+static int                        hdaRemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg);
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 static DECLCALLBACK(VBOXSTRICTRC) hdaDMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
 # endif
@@ -1399,13 +1401,30 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
             hdaStreamLock(pStream);
 
+            int rc2;
+
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+            if (fRun)
+                rc2 = hdaStreamAsyncIOCreate(pStream);
+
             hdaStreamAsyncIOLock(pStream);
-            hdaStreamAsyncIOEnable(pStream, fRun /* fEnable */);
 # endif
-            /* (Re-)initialize the stream with current values. */
-            int rc2 = hdaStreamInit(pStream, pStream->u8SD);
-            AssertRC(rc2);
+            if (fRun)
+            {
+# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+                hdaStreamAsyncIOEnable(pStream, fRun /* fEnable */);
+# endif
+                /* (Re-)initialize the stream with current values. */
+                rc2 = hdaStreamInit(pStream, pStream->u8SD);
+                AssertRC(rc2);
+
+                /* Remove the old stream from the device setup. */
+                hdaRemoveStream(pThis, &pStream->State.Cfg);
+
+                /* Add the stream to the device setup. */
+                rc2 = hdaAddStream(pThis, &pStream->State.Cfg);
+                AssertRC(rc2);
+            }
 
             /* Enable/disable the stream. */
             rc2 = hdaStreamEnable(pStream, fRun /* fEnable */);
@@ -1856,9 +1875,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             pCfg->Props.cChannels = 2;
             pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
-            rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_FRONT);
-            if (RT_SUCCESS(rc))
-                rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
+            rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
         }
 
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
@@ -1873,9 +1890,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             pCfg->Props.cChannels = (fUseCenter && fUseLFE) ? 2 : 1;
             pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
-            rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_CENTER_LFE);
-            if (RT_SUCCESS(rc))
-                rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_CENTER_LFE, pCfg);
+            rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_CENTER_LFE, pCfg);
         }
 
         if (   RT_SUCCESS(rc)
@@ -1889,9 +1904,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             pCfg->Props.cChannels = 2;
             pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
-            rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_REAR);
-            if (RT_SUCCESS(rc))
-                rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
+            rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
         }
 #endif /* VBOX_WITH_AUDIO_HDA_51_SURROUND */
 
@@ -1923,17 +1936,13 @@ static int hdaAddStreamIn(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     {
         case PDMAUDIORECSOURCE_LINE:
         {
-            rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_LINE_IN);
-            if (RT_SUCCESS(rc))
-                rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_LINE_IN, pCfg);
+            rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_LINE_IN, pCfg);
             break;
         }
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         case PDMAUDIORECSOURCE_MIC:
         {
-            rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_MIC_IN);
-            if (RT_SUCCESS(rc))
-                rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_MIC_IN, pCfg);
+            rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_MIC_IN, pCfg);
             break;
         }
 #endif
@@ -1982,6 +1991,71 @@ static int hdaAddStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     return rc;
 }
+
+/**
+ * Removes an audio stream from the device setup using the given configuration.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Device state.
+ * @param   pCfg                Stream configuration to use for removing a stream.
+ */
+static int hdaRemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    PDMAUDIOMIXERCTL enmMixerCtl = PDMAUDIOMIXERCTL_UNKNOWN;
+    switch (pCfg->enmDir)
+    {
+        case PDMAUDIODIR_IN:
+        {
+            LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->DestSource.Source));
+
+            switch (pCfg->DestSource.Source)
+            {
+                case PDMAUDIORECSOURCE_LINE: enmMixerCtl = PDMAUDIOMIXERCTL_LINE_IN; break;
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+                case PDMAUDIORECSOURCE_MIC:  enmMixerCtl = PDMAUDIOMIXERCTL_MIC_IN;  break;
+#endif
+                default:
+                    rc = VERR_NOT_SUPPORTED;
+                    break;
+            }
+
+            break;
+        }
+
+        case PDMAUDIODIR_OUT:
+        {
+            LogFlowFunc(("Stream=%s, Source=%ld\n", pCfg->szName, pCfg->DestSource.Dest));
+
+            switch (pCfg->DestSource.Dest)
+            {
+                case PDMAUDIOPLAYBACKDEST_FRONT:      enmMixerCtl = PDMAUDIOMIXERCTL_FRONT;      break;
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+                case PDMAUDIOPLAYBACKDEST_CENTER_LFE: enmMixerCtl = PDMAUDIOMIXERCTL_CENTER_LFE; break;
+                case PDMAUDIOPLAYBACKDEST_REAR:       enmMixerCtl = PDMAUDIOMIXERCTL_REAR;       break;
+#endif
+                default:
+                    rc = VERR_NOT_SUPPORTED;
+                    break;
+            }
+            break;
+        }
+
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+        rc = hdaCodecRemoveStream(pThis->pCodec, enmMixerCtl);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
 #endif /* IN_RING3 */
 
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -2006,17 +2080,6 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
      * and therefore disabling the device completely. */
     int rc = hdaRegWriteU16(pThis, iReg, u32Value);
     AssertRC(rc);
-
-    rc = hdaStreamInit(pStream, pStream->u8SD);
-    if (RT_SUCCESS(rc))
-    {
-        /* Add the stream to the device setup. */
-        rc = hdaAddStream(pThis, &pStream->State.Cfg);
-# ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-        if (RT_SUCCESS(rc))
-            rc = hdaStreamAsyncIOCreate(pStream);
-# endif
-    }
 
     DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Never return failure. */
