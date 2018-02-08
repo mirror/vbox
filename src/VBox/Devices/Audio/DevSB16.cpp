@@ -2355,9 +2355,13 @@ static void sb16DestroyDrvStream(PSB16STATE pThis, PSB16DRIVER pDrv)
     {
         pDrv->pConnector->pfnStreamRelease(pDrv->pConnector, pDrv->Out.pStream);
 
-        int rc2 = pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
-        if (RT_SUCCESS(rc2))
-            pDrv->Out.pStream = NULL;
+        int rc2 = pDrv->pConnector->pfnStreamControl(pDrv->pConnector, pDrv->Out.pStream, PDMAUDIOSTREAMCMD_DISABLE);
+        AssertRC(rc2);
+
+        rc2 = pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
+        AssertRC(rc2);
+
+        pDrv->Out.pStream = NULL;
     }
 }
 
@@ -2461,16 +2465,7 @@ static DECLCALLBACK(void) sb16PowerOff(PPDMDEVINS pDevIns)
 
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
-    {
-        if (pDrv->Out.pStream)
-        {
-            pDrv->pConnector->pfnStreamRelease(pDrv->pConnector, pDrv->Out.pStream);
-
-            int rc2 = pDrv->pConnector->pfnStreamDestroy(pDrv->pConnector, pDrv->Out.pStream);
-            if (RT_SUCCESS(rc2))
-                pDrv->Out.pStream = NULL;
-        }
-    }
+        sb16DestroyDrvStream(pThis, pDrv);
 }
 
 /**
