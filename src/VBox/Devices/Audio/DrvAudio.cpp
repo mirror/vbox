@@ -2321,7 +2321,7 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 
             cReadTotal += cRead;
 
-            AudioMixBufReleaseReadBlock(&pHstStream->MixBuf, cRead);
+            AudioMixBufReleaseReadBlock(&pGstStream->MixBuf, cRead);
         }
 
         if (cReadTotal)
