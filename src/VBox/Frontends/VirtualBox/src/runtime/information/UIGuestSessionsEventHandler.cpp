@@ -211,10 +211,15 @@ void  UIGuestProcess::cleanupListener()
 
     if (!vboxGlobal().isVBoxSVCAvailable())
         return;
-
-    CEventSource comEventSourceGuestProcess = m_comGuestProcess.GetEventSource();
-    AssertWrapperOk(comEventSourceGuestProcess);
-    comEventSourceGuestProcess.UnregisterListener(m_comEventListener);
+    if(m_comGuestProcess.isOk())
+    {
+        CEventSource comEventSourceGuestProcess = m_comGuestProcess.GetEventSource();
+        if(comEventSourceGuestProcess.isOk())
+        {
+            AssertWrapperOk(comEventSourceGuestProcess);
+            comEventSourceGuestProcess.UnregisterListener(m_comEventListener);
+        }
+    }
 }
 
 QString UIGuestProcess::guestProcessName() const
@@ -356,12 +361,18 @@ void  UIGuestSession::cleanupListener()
     if (!vboxGlobal().isVBoxSVCAvailable())
         return;
 
-    /* Get CGuestSession event source: */
-    CEventSource comEventSourceGuestSession = m_comGuestSession.GetEventSource();
-    AssertWrapperOk(comEventSourceGuestSession);
+    if (m_comGuestSession.isOk())
+    {
+        /* Get CGuestSession event source: */
+        CEventSource comEventSourceGuestSession = m_comGuestSession.GetEventSource();
+        if (comEventSourceGuestSession.isOk())
+        {
+            AssertWrapperOk(comEventSourceGuestSession);
 
-    /* Unregister event listener for CProgress event source: */
-    comEventSourceGuestSession.UnregisterListener(m_comEventListener);
+            /* Unregister event listener for CProgress event source: */
+            comEventSourceGuestSession.UnregisterListener(m_comEventListener);
+        }
+    }
 }
 
 QString UIGuestSession::guestSessionName() const
@@ -607,6 +618,7 @@ void UIGuestSessionsEventHandler::populateGuestSessionsTree(QITreeWidget *pTreeW
     pTreeWidget->setHeaderLabels(headerStrings);
     const GuestSessionMap& guestSessionMap = m_pPrivateImp->getGuestSessionMap();
     QStringList itemStringList;
+
     for (GuestSessionMap::const_iterator iterator = guestSessionMap.begin();
         iterator != guestSessionMap.end(); ++iterator)
     {
