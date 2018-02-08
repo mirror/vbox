@@ -2802,6 +2802,15 @@
 #define VERR_APIC_INTR_DISCARDED                    (-6702)
 /** @} */
 
+/** @name NEM Status Codes
+ * @{
+ */
+/** NEM is not enabled. */
+#define VERR_NEM_NOT_ENABLED                        (-6700)
+/** NEM is not available. */
+#define VERR_NEM_NOT_AVAILABLE                      (-6701)
+/** @} */
+
 /* SED-END */
 
 /** @} */
