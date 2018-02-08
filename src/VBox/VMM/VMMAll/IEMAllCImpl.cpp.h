@@ -5093,7 +5093,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
                 PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
                 if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
                 {
-                    crX = pVmcbCtrl->IntCtrl.n.u8VTPR;
+                    crX = pVmcbCtrl->IntCtrl.n.u8VTPR & 0xf;
                     break;
                 }
             }
@@ -5490,7 +5490,6 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
-            uint8_t const u8Tpr = (uint8_t)uNewCrX << 4;
 #ifdef VBOX_WITH_NESTED_HWVIRT
             if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             {
@@ -5501,7 +5500,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 }
 
                 PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-                pVmcbCtrl->IntCtrl.n.u8VTPR = u8Tpr;
+                pVmcbCtrl->IntCtrl.n.u8VTPR = uNewCrX;
                 if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
                 {
                     rcStrict = VINF_SUCCESS;
@@ -5510,7 +5509,10 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             }
 #endif
             if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
+            {
+                uint8_t const u8Tpr = (uint8_t)uNewCrX << 4;
                 APICSetTpr(pVCpu, u8Tpr);
+            }
             rcStrict = VINF_SUCCESS;
             break;
         }
