@@ -1307,9 +1307,6 @@ static void sb16ResetLegacy(PSB16STATE pThis)
     RTStrPrintf(pCfg->szName, sizeof(pCfg->szName), "Output");
 
     sb16CloseOut(pThis);
-
-    int rc2 = sb16OpenOut(pThis, pCfg);
-    AssertRC(rc2);
 }
 
 static void sb16Reset(PSB16STATE pThis)
