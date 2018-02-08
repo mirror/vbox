@@ -54,6 +54,8 @@ FakeLazyInit_ %+ %1:
         pusha
         call    _FakeResolve_ %+ FAKE_MODULE_NAME
         popa
+global _ %+ %1 %+ @ %+ %2               ; The imported function stub.
+_ %+ %1 %+ @ %+ %2:
         jmp     [_g_pfn %+ %1]
 
 
