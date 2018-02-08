@@ -37,7 +37,7 @@ signals:
 
 public:
 
-    UIGuestSessionsEventHandler(QObject *parent, const CGuest &comGuest);
+    UIGuestSessionsEventHandler(QObject *parent, CGuest comGuest);
     ~UIGuestSessionsEventHandler();
 
     /** Returns the guest session (and processes) hierarchy as a vector of QTreeWidgetItem */

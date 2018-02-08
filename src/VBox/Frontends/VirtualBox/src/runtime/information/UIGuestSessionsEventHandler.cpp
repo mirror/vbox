@@ -19,6 +19,7 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+# include <QSharedPointer>
 /* GUI includes: */
 # include "UIExtraDataManager.h"
 # include "UIGuestSessionsEventHandler.h"
@@ -42,6 +43,75 @@ typedef QMap<ULONG, UIGuestSession*> GuestSessionMap;
 /** Key is PID */
 typedef QMap<ULONG, UIGuestProcess*> GuestProcessMap;
 
+/** A wrapper around (de)registering event listener for COM objects. */
+template <typename T>
+class UIEventWrapper
+{
+
+public:
+    UIEventWrapper(const QVector<KVBoxEventType>& eventTypes, T comObject, QObject* qParent)
+        : m_comObject(comObject)
+        , m_bInitialized(false)
+        , m_pQtListener(0)
+    {
+        /* Check if we have a valid COM object */
+        if (m_comObject.isOk())
+        {
+            m_pQtListener.createObject();
+            m_pQtListener->init(new UIMainEventListener, qParent);
+            m_comEventListener = CEventListener(m_pQtListener);
+            /* Get object event source: */
+            CEventSource comEventSource = m_comObject.GetEventSource();
+            if(comEventSource.isOk())
+            {
+                /* Register event listener for object event source: */
+                comEventSource.RegisterListener(m_comEventListener, eventTypes,
+                                                gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+                m_bInitialized = true;
+                /* If event listener registered as passive one: */
+                if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+                {
+                    m_pQtListener->getWrapped()->registerSource(comEventSource, m_comEventListener);
+                }
+            }
+        }
+    }
+    ~UIEventWrapper()
+    {
+        if (!m_pQtListener)
+            return;
+        if (!vboxGlobal().isVBoxSVCAvailable())
+            return;
+        /* Unregister everything: */
+        if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+            m_pQtListener->getWrapped()->unregisterSources();
+        /* Unregister event listener for object event source: */
+        if(m_comObject.isOk())
+        {
+            CEventSource comEventSourceGuestProcess = m_comObject.GetEventSource();
+            if(comEventSourceGuestProcess.isOk())
+                comEventSourceGuestProcess.UnregisterListener(m_comEventListener);
+        }
+    }
+
+    UIMainEventListener* qtListener()
+    {
+        if(!m_pQtListener)
+            return 0;
+        return m_pQtListener->getWrapped();
+    }
+
+    bool isInitialized() const
+    {
+        return m_bInitialized;
+    }
+
+private:
+    T m_comObject;
+    bool m_bInitialized;
+    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
+    CEventListener m_comEventListener;
+};
 
 /******************************************************************************************************
 *   UIGuestProcess definition.                                                            *
@@ -58,8 +128,7 @@ signals:
 
 public:
 
-    UIGuestProcess(QObject *parent, const CGuestProcess &guestProcess);
-    ~UIGuestProcess();
+    UIGuestProcess(QObject *parent, CGuestProcess guestProcess);
     QString guestProcessName() const;
     ULONG   guestPID() const;
     QString guestProcessStatus() const;
@@ -71,11 +140,9 @@ private slots:
 private:
 
     void  prepareListener();
-    void  cleanupListener();
 
     CGuestProcess  m_comGuestProcess;
-    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
-    CEventListener m_comEventListener;
+    QSharedPointer<UIEventWrapper<CGuestProcess> > m_pEventWrapper;
 };
 
 /******************************************************************************************************
@@ -93,8 +160,7 @@ signals:
 
 public:
 
-    UIGuestSession(QObject *parent, const CGuestSession &guestSession);
-    ~UIGuestSession();
+    UIGuestSession(QObject *parent, CGuestSession guestSession);
     QString guestSessionName() const;
     QString guestSessionStatus() const;
     const GuestProcessMap& guestProcessMap() const;
@@ -107,14 +173,12 @@ private slots:
 private:
 
     void  prepareListener();
-    void  cleanupListener();
     void  initialize();
     void  addGuestProcess(const CGuestProcess &guestProcess);
     void  removeGuestProcess(const CGuestProcess &guestProcess);
 
     CGuestSession  m_comGuestSession;
-    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
-    CEventListener m_comEventListener;
+    QSharedPointer<UIEventWrapper<CGuestSession> > m_pEventWrapper;
     GuestProcessMap m_guestProcessMap;
 };
 
@@ -132,8 +196,7 @@ signals:
 
 public:
 
-    UIGuestSessionsEventHandlerImp(QObject *parent, const CGuest &comGuest);
-    ~UIGuestSessionsEventHandlerImp();
+    UIGuestSessionsEventHandlerImp(QObject *parent, CGuest comGuest);
     const GuestSessionMap& getGuestSessionMap() const;
 
 private slots:
@@ -144,16 +207,13 @@ private slots:
 private:
 
     void  prepareListener();
-    void  cleanupListener();
     void  initialize();
 
     void addGuestSession(const CGuestSession &guestSession);
     void removeGuestSession(const CGuestSession &guestSession);
 
-
     CGuest  m_comGuest;
-    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
-    CEventListener m_comEventListener;
+    QSharedPointer<UIEventWrapper<CGuest> > m_pEventWrapper;
     GuestSessionMap m_guestSessionMap;
 };
 
@@ -161,66 +221,33 @@ private:
 /******************************************************************************************************
 *   UIGuestProcess definition.                                                            *
 ******************************************************************************************************/
-UIGuestProcess::UIGuestProcess(QObject *parent, const CGuestProcess &guestProcess)
+UIGuestProcess::UIGuestProcess(QObject *parent, CGuestProcess guestProcess)
     :QObject(parent)
     , m_comGuestProcess(guestProcess)
+    , m_pEventWrapper(0)
 {
     qRegisterMetaType<CGuestProcess>("CGuestProcess");
     prepareListener();
 }
 
-UIGuestProcess::~UIGuestProcess()
-{
-    cleanupListener();
-}
 
 void  UIGuestProcess::prepareListener()
 {
     if (!m_comGuestProcess.isOk())
         return;
-
-    m_pQtListener.createObject();
-    m_pQtListener->init(new UIMainEventListener, this);
-    m_comEventListener = CEventListener(m_pQtListener);
-    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestProcessStateChanged,
-            this, &UIGuestProcess::sigGuestProcessUpdated);
-
-    CEventSource comEventSourceGuestProcess = m_comGuestProcess.GetEventSource();
-    AssertWrapperOk(comEventSourceGuestProcess);
-
     QVector<KVBoxEventType> eventTypes;
     eventTypes  << KVBoxEventType_OnGuestProcessStateChanged
                 << KVBoxEventType_OnGuestProcessInputNotify
                 << KVBoxEventType_OnGuestProcessOutput;
 
-    comEventSourceGuestProcess.RegisterListener(m_comEventListener, eventTypes,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
-    AssertWrapperOk(comEventSourceGuestProcess);
+    m_pEventWrapper =
+        QSharedPointer<UIEventWrapper<CGuestProcess> >(new UIEventWrapper<CGuestProcess>(eventTypes, m_comGuestProcess, this));
 
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-         m_pQtListener->getWrapped()->registerSource(comEventSourceGuestProcess, m_comEventListener);
-    }
+    if (m_pEventWrapper && m_pEventWrapper->isInitialized() && m_pEventWrapper->qtListener())
+        connect(m_pEventWrapper->qtListener(), &UIMainEventListener::sigGuestProcessStateChanged,
+                this, &UIGuestProcess::sigGuestProcessUpdated);
 }
 
-
-void  UIGuestProcess::cleanupListener()
-{
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-        m_pQtListener->getWrapped()->unregisterSources();
-
-    if (!vboxGlobal().isVBoxSVCAvailable())
-        return;
-    if(m_comGuestProcess.isOk())
-    {
-        CEventSource comEventSourceGuestProcess = m_comGuestProcess.GetEventSource();
-        if(comEventSourceGuestProcess.isOk())
-        {
-            AssertWrapperOk(comEventSourceGuestProcess);
-            comEventSourceGuestProcess.UnregisterListener(m_comEventListener);
-        }
-    }
-}
 
 QString UIGuestProcess::guestProcessName() const
 {
@@ -288,7 +315,7 @@ QString UIGuestProcess::guestProcessStatus() const
 *   UIGuestSession implementation.                                                            *
 ******************************************************************************************************/
 
-UIGuestSession::UIGuestSession(QObject *parent, const CGuestSession &guestSession)
+UIGuestSession::UIGuestSession(QObject *parent, CGuestSession guestSession)
     : QObject(parent)
     , m_comGuestSession(guestSession)
 {
@@ -297,81 +324,25 @@ UIGuestSession::UIGuestSession(QObject *parent, const CGuestSession &guestSessio
     initialize();
 }
 
-UIGuestSession::~UIGuestSession()
-{
-    cleanupListener();
-}
-
 void  UIGuestSession::prepareListener()
 {
     if (!m_comGuestSession.isOk())
         return;
-    /* Create event listener instance: */
-    m_pQtListener.createObject();
-    m_pQtListener->init(new UIMainEventListener, this);
-    m_comEventListener = CEventListener(m_pQtListener);
-
-    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
-            this, &UIGuestSession::sigGuestSessionUpdated);
-    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestProcessRegistered,
-            this, &UIGuestSession::sltGuestProcessRegistered);
-    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestProcessUnregistered,
-            this, &UIGuestSession::sltGuestProcessUnregistered);
-
-    /* Get CGuest event source: */
-    CEventSource comEventSourceGuestSession = m_comGuestSession.GetEventSource();
-    AssertWrapperOk(comEventSourceGuestSession);
-
-    /* Enumerate all the required event-types: */
     QVector<KVBoxEventType> eventTypes;
     eventTypes << KVBoxEventType_OnGuestSessionStateChanged
                << KVBoxEventType_OnGuestProcessRegistered;
-               // << KVBoxEventType_OnGuestProcessStateChanged
-               // << KVBoxEventType_OnGuestProcessInputNotify
-               // << KVBoxEventType_OnGuestProcessOutput
-               // << KVBoxEventType_OnGuestFileRegistered
-               // << KVBoxEventType_OnGuestFileStateChanged
-               // << KVBoxEventType_OnGuestFileOffsetChanged
-               // << KVBoxEventType_OnGuestFileRead
-               // << KVBoxEventType_OnGuestFileWrite;
 
-    /* Register event listener for CGuestSession event source: */
-    comEventSourceGuestSession.RegisterListener(m_comEventListener, eventTypes,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
-    AssertWrapperOk(comEventSourceGuestSession);
+    m_pEventWrapper =
+        QSharedPointer<UIEventWrapper<CGuestSession> >(new UIEventWrapper<CGuestSession>(eventTypes, m_comGuestSession, this));
 
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    if (m_pEventWrapper && m_pEventWrapper->isInitialized() && m_pEventWrapper->qtListener())
     {
-        /* Register event sources in their listeners as well: */
-        m_pQtListener->getWrapped()->registerSource(comEventSourceGuestSession, m_comEventListener);
-    }
-}
-
-void  UIGuestSession::cleanupListener()
-{
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Unregister everything: */
-        m_pQtListener->getWrapped()->unregisterSources();
-    }
-
-    /* Make sure VBoxSVC is available: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
-        return;
-
-    if (m_comGuestSession.isOk())
-    {
-        /* Get CGuestSession event source: */
-        CEventSource comEventSourceGuestSession = m_comGuestSession.GetEventSource();
-        if (comEventSourceGuestSession.isOk())
-        {
-            AssertWrapperOk(comEventSourceGuestSession);
-
-            /* Unregister event listener for CProgress event source: */
-            comEventSourceGuestSession.UnregisterListener(m_comEventListener);
-        }
+        connect(m_pEventWrapper->qtListener(), &UIMainEventListener::sigGuestSessionStatedChanged,
+                this, &UIGuestSession::sigGuestSessionUpdated);
+        connect(m_pEventWrapper->qtListener(), &UIMainEventListener::sigGuestProcessRegistered,
+                this, &UIGuestSession::sltGuestProcessRegistered);
+        connect(m_pEventWrapper->qtListener(), &UIMainEventListener::sigGuestProcessUnregistered,
+                this, &UIGuestSession::sltGuestProcessUnregistered);
     }
 }
 
@@ -476,67 +447,33 @@ const GuestProcessMap& UIGuestSession::guestProcessMap() const
 *   UIGuestSessionsEventHandlerImp implementation.                                                      *
 ******************************************************************************************************/
 
-UIGuestSessionsEventHandlerImp::UIGuestSessionsEventHandlerImp(QObject *parent, const CGuest &comGuest)
+UIGuestSessionsEventHandlerImp::UIGuestSessionsEventHandlerImp(QObject *parent, CGuest comGuest)
     : QObject(parent)
     , m_comGuest(comGuest)
+    , m_pEventWrapper(0)
+
 {
     prepareListener();
     initialize();
 }
 
-UIGuestSessionsEventHandlerImp::~UIGuestSessionsEventHandlerImp()
-{
-    cleanupListener();
-}
-
 void UIGuestSessionsEventHandlerImp::prepareListener()
 {
-    if (!m_comGuest.isOk())
+     if (!m_comGuest.isOk())
         return;
-    /* Create event listener instance: */
-    m_pQtListener.createObject();
-    m_pQtListener->init(new UIMainEventListener, this);
-    m_comEventListener = CEventListener(m_pQtListener);
-    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionRegistered,
-            this, &UIGuestSessionsEventHandlerImp::sltGuestSessionRegistered);
-    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
-            this, &UIGuestSessionsEventHandlerImp::sltGuestSessionUnregistered);
-
-    /* Get CGuest event source: */
-    CEventSource comEventSourceGuest = m_comGuest.GetEventSource();
-    AssertWrapperOk(comEventSourceGuest);
-
-    /* Enumerate all the required event-types: */
     QVector<KVBoxEventType> eventTypes;
     eventTypes << KVBoxEventType_OnGuestSessionRegistered;
 
-    /* Register event listener for CGuest event source: */
-    comEventSourceGuest.RegisterListener(m_comEventListener, eventTypes,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
-    AssertWrapperOk(comEventSourceGuest);
+    m_pEventWrapper =
+        QSharedPointer<UIEventWrapper<CGuest> >(new UIEventWrapper<CGuest>(eventTypes, m_comGuest, this));
 
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    if (m_pEventWrapper && m_pEventWrapper->isInitialized() && m_pEventWrapper->qtListener())
     {
-        /* Register event sources in their listeners as well: */
-        m_pQtListener->getWrapped()->registerSource(comEventSourceGuest, m_comEventListener);
+        connect(m_pEventWrapper->qtListener(), &UIMainEventListener::sigGuestSessionRegistered,
+                this, &UIGuestSessionsEventHandlerImp::sltGuestSessionRegistered);
+        connect(m_pEventWrapper->qtListener(), &UIMainEventListener::sigGuestSessionUnregistered,
+                this, &UIGuestSessionsEventHandlerImp::sltGuestSessionUnregistered);
     }
-}
-
-void UIGuestSessionsEventHandlerImp::cleanupListener()
-{
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        m_pQtListener->getWrapped()->unregisterSources();
-    }
-
-    if (!vboxGlobal().isVBoxSVCAvailable())
-        return;
-
-    CEventSource comEventSourceGuest = m_comGuest.GetEventSource();
-    AssertWrapperOk(comEventSourceGuest);
-
-    comEventSourceGuest.UnregisterListener(m_comEventListener);
 }
 
 
@@ -593,7 +530,7 @@ const GuestSessionMap& UIGuestSessionsEventHandlerImp::getGuestSessionMap() cons
     return m_guestSessionMap;
 }
 
-UIGuestSessionsEventHandler::UIGuestSessionsEventHandler(QObject *parent, const CGuest &comGuest)
+UIGuestSessionsEventHandler::UIGuestSessionsEventHandler(QObject *parent, CGuest comGuest)
     :QObject(parent)
     , m_pPrivateImp(new UIGuestSessionsEventHandlerImp(this, comGuest))
 {
