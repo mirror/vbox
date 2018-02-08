@@ -662,7 +662,9 @@ VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
                 break;
         }
 
-        if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+        if (   (   RT_FAILURE(rc)
+                && rc != VERR_SUPDRV_NO_RAW_MODE_HYPER_V_ROOT)
+            || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) )
         {
             VMMR3FatalDump(pVM, pVCpu, rc);
             if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)

@@ -213,7 +213,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  *
  * @remarks 0x002a0000 is used by 5.1. The next version number must be 0x002b0000.
  */
-#define SUPDRV_IOC_VERSION                              0x00290000
+#define SUPDRV_IOC_VERSION                              0x00290001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1208,7 +1208,7 @@ typedef struct SUPVTCAPS
         struct
         {
             /** The VT capability dword. */
-            uint32_t        Caps;
+            uint32_t        fCaps;
         } Out;
     } u;
 } SUPVTCAPS, *PSUPVTCAPS;
