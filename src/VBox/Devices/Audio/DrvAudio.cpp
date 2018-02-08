@@ -137,7 +137,7 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 
 # endif /* unused */
 
-#ifdef LOG_ENABLED
+#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
 /**
  * Converts an audio stream status to a string.
  *
@@ -188,7 +188,7 @@ static char *dbgAudioStreamStatusToStr(PDMAUDIOSTREAMSTS fStatus)
 
     return pszFlags;
 }
-#endif /* LOG_ENABLED */
+#endif /* defined(VBOX_STRICT) || defined(LOG_ENABLED) */
 
 /**
  * Returns the host stream part of an audio stream pair, or NULL
