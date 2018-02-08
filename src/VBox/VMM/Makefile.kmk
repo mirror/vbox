@@ -185,6 +185,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/MMHyper.cpp \
 	VMMR3/MMPagePool.cpp \
 	VMMR3/MMUkHeap.cpp \
+	VMMR3/NEMR3.cpp \
 	VMMR3/PDM.cpp \
 	VMMR3/PDMBlkCache.cpp \
 	VMMR3/PDMDevice.cpp \
@@ -305,6 +306,9 @@ VBoxVMM_SOURCES.x86 += \
 	VMMSwitcher/X86Stub.asm
 VBoxVMM_SOURCES.amd64 += \
 	VMMSwitcher/AMD64Stub.asm
+
+VBoxVMM_SOURCES.win += VMMR3/NEMR3Native-win.cpp
+VBoxVMM_DEFS.win    += VBOX_WITH_NATIVE_NEM
 
 VBoxVMM_LIBS = \
 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)

@@ -51,6 +51,7 @@
 #include "EMInternal.h"
 #include "IEMInternal.h"
 #include "REMInternal.h"
+#include "NEMInternal.h"
 #ifdef VBOX_WITH_RAW_MODE
 # include "CSAMInternal.h"
 # include "PATMInternal.h"

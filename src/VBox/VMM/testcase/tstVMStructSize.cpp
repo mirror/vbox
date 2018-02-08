@@ -52,6 +52,7 @@
 #include "EMInternal.h"
 #include "IEMInternal.h"
 #include "REMInternal.h"
+#include "NEMInternal.h"
 #include "../VMMR0/GMMR0Internal.h"
 #include "../VMMR0/GVMMR0Internal.h"
 #ifdef VBOX_WITH_RAW_MODE
@@ -226,6 +227,7 @@ int main()
 #endif
     CHECK_PADDING_VM(64, em);
     /*CHECK_PADDING_VM(64, iem);*/
+    CHECK_PADDING_VM(64, nem);
     CHECK_PADDING_VM(64, tm);
     PRINT_OFFSET(VM, tm.s.VirtualSyncLock);
     CHECK_PADDING_VM(64, dbgf);
@@ -242,6 +244,7 @@ int main()
     CHECK_PADDING_VMCPU(64, iem);
     CHECK_PADDING_VMCPU(64, hm);
     CHECK_PADDING_VMCPU(64, em);
+    CHECK_PADDING_VMCPU(64, nem);
     CHECK_PADDING_VMCPU(64, trpm);
     CHECK_PADDING_VMCPU(64, tm);
     CHECK_PADDING_VMCPU(64, vmm);

@@ -81,6 +81,7 @@ AssertCompileSize(RTHCPHYS, 8);
 #include "EMInternal.h"
 #include "IEMInternal.h"
 #include "REMInternal.h"
+#include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/hm_vmx.h>
 #include <VBox/param.h>

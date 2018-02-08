@@ -766,6 +766,7 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/vmm/hm_svm.h \
 	$(PATH_ROOT)/include/VBox/vmm/hm_vmx.h \
 	$(PATH_ROOT)/include/VBox/vmm/iem.h \
+	$(PATH_ROOT)/include/VBox/vmm/nem.h \
 	$(PATH_ROOT)/include/VBox/vmm/pdm.h \
 	$(PATH_ROOT)/include/VBox/vmm/rem.h \
 	$(PATH_ROOT)/include/VBox/vmm/iom.h \
@@ -783,6 +784,7 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/src/VBox/VMM/include/IEMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/IOMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/MMInternal.h \
+	$(PATH_ROOT)/src/VBox/VMM/include/NEMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/PDMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/PGMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/GIMInternal.h \

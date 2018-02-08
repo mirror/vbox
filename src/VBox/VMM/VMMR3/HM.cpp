@@ -50,6 +50,7 @@
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/selm.h>
+#include <VBox/vmm/nem.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
@@ -393,10 +394,16 @@ static int                hmR3TermCPU(PVM pVM);
 /**
  * Initializes the HM.
  *
- * This reads the config and check whether VT-x or AMD-V hardware is available
- * if configured to use it.  This is one of the very first components to be
- * initialized after CFGM, so that we can fall back to raw-mode early in the
- * initialization process.
+ * This is the very first component to really do init after CFGM so that we can
+ * establish the predominat execution engine for the VM prior to initializing
+ * other modules.  It takes care of NEM initialization if needed (HM disabled or
+ * not available in HW).
+ *
+ * If VT-x or AMD-V hardware isn't available, HM will try fall back on a native
+ * hypervisor API via NEM, and then back on raw-mode if that isn't available
+ * either.  The fallback to raw-mode will not happen if /HM/HMForced is set
+ * (like for guest using SMP or 64-bit as well as for complicated guest like OS
+ * X, OS/2 and others).
  *
  * Note that a lot of the set up work is done in ring-0 and thus postponed till
  * the ring-3 and ring-0 callback to HMR3InitCompleted.
@@ -448,6 +455,8 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      */
     rc = CFGMR3ValidateConfig(pCfgHm, "/HM/",
                               "HMForced"
+                              "|UseNEMInstead"
+                              "|FallbackToNEM"
                               "|EnableNestedPaging"
                               "|EnableUX"
                               "|EnableLargePages"
@@ -490,6 +499,23 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     AssertRelease(pVM->fHMEnabled);
     fHMForced = true;
 #endif /* !VBOX_WITH_RAW_MODE */
+
+    /** @cfgm{/HM/UseNEMInstead, bool, true}
+     * Don't use HM, use NEM instead. */
+    bool fUseNEMInstead = false;
+    rc = CFGMR3QueryBoolDef(pCfgHm, "UseNEMInstead", &fUseNEMInstead, false);
+    AssertRCReturn(rc, rc);
+    if (fUseNEMInstead && pVM->fHMEnabled)
+    {
+        LogRel(("HM: Setting fHMEnabled to false because fUseNEMInstead is set.\n"));
+        pVM->fHMEnabled = false;
+    }
+
+    /** @cfgm{/HM/FallbackToNEM, bool, true}
+     * Enables fallback on NEM. */
+    bool fFallbackToNEM = true;
+    rc = CFGMR3QueryBoolDef(pCfgHm, "FallbackToNEM", &fFallbackToNEM, true);
+    AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/EnableNestedPaging, bool, false}
      * Enables nested paging (aka extended page tables). */
@@ -642,7 +668,8 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             }
             else if (fCaps & SUPVTCAPS_VT_X)
             {
-                rc = SUPR3QueryVTxSupported();
+                const char *pszWhy;
+                rc = SUPR3QueryVTxSupported(&pszWhy);
                 if (RT_SUCCESS(rc))
                 {
                     LogRel(("HM: HMR3Init: VT-x%s%s%s\n",
@@ -653,17 +680,26 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                 }
                 else
                 {
-#ifdef RT_OS_LINUX
-                    const char *pszMinReq = " Linux 2.6.13 or newer required!";
-#else
-                    const char *pszMinReq = "";
-#endif
-                    if (fHMForced)
-                        return VMSetError(pVM, rc, RT_SRC_POS, "The host kernel does not support VT-x.%s\n", pszMinReq);
-
-                    /* Fall back to raw-mode. */
-                    LogRel(("HM: HMR3Init: Falling back to raw-mode: The host kernel does not support VT-x.%s\n", pszMinReq));
+                    /*
+                     * Before failing, try fallback to NEM if we're allowed to do that.
+                     */
                     pVM->fHMEnabled = false;
+                    if (fFallbackToNEM)
+                    {
+                        LogRel(("HM: HMR3Init: Attempting fall back to NEM: The host kernel does not support VT-x - %s\n", pszWhy));
+                        int rc2 = NEMR3Init(pVM, true /*fFallback*/, fHMForced);
+                        if (   RT_SUCCESS(rc2)
+                            && pVM->fNEMActive)
+                            rc = VINF_SUCCESS;
+                    }
+                    if (RT_FAILURE(rc))
+                    {
+                        if (fHMForced)
+                            return VMSetError(pVM, rc, RT_SRC_POS, "The host kernel does not support VT-x: %s\n", pszWhy);
+
+                        /* Fall back to raw-mode. */
+                        LogRel(("HM: HMR3Init: Falling back to raw-mode: The host kernel does not support VT-x - %s\n", pszWhy));
+                    }
                 }
             }
             else
@@ -737,18 +773,38 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                     break;
 
                 default:
-                    pszMsg = NULL;
-                    break;
+                    return VMSetError(pVM, rc, RT_SRC_POS, "SUPR3QueryVTCaps failed with %Rrc", rc);
             }
-            if (fHMForced && pszMsg)
-                return VM_SET_ERROR(pVM, rc, pszMsg);
-            if (!pszMsg)
-                return VMSetError(pVM, rc, RT_SRC_POS, "SUPR3QueryVTCaps failed with %Rrc", rc);
 
-            /* Fall back to raw-mode. */
-            LogRel(("HM: HMR3Init: Falling back to raw-mode: %s\n", pszMsg));
+            /*
+             * Before failing, try fallback to NEM if we're allowed to do that.
+             */
             pVM->fHMEnabled = false;
+            if (fFallbackToNEM)
+            {
+                LogRel(("HM: HMR3Init: Attempting fall back to NEM: %s\n", pszMsg));
+                int rc2 = NEMR3Init(pVM, true /*fFallback*/, fHMForced);
+                if (   RT_SUCCESS(rc2)
+                    && pVM->fNEMActive)
+                    rc = VINF_SUCCESS;
+            }
+            if (RT_FAILURE(rc))
+            {
+                if (fHMForced)
+                    return VM_SET_ERROR(pVM, rc, pszMsg);
+
+                LogRel(("HM: HMR3Init: Falling back to raw-mode: %s\n", pszMsg));
+            }
         }
+    }
+    /*
+     * If NEM is supposed to be used instead, initialize it instead.
+     */
+    else if (fUseNEMInstead)
+    {
+        rc = NEMR3Init(pVM, false /*fFallback*/, fHMForced);
+        if (RT_FAILURE(rc))
+            return rc;
     }
 
     /* It's now OK to use the predicate function. */

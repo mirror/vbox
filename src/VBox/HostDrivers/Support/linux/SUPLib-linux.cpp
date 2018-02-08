@@ -259,16 +259,19 @@ int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t cPages)
 }
 
 
-/** Check if the host kernel supports VT-x or not.
+/**
+ * Check if the host kernel supports VT-x or not.
  *
  * Older Linux kernels clear the VMXE bit in the CR4 register (function
  * tlb_flush_all()) leading to a host kernel panic.
+ *
+ * @returns VBox status code (no info).
+ * @param   ppszWhy         Where to return explanatory message.
  */
-int suplibOsQueryVTxSupported(void)
+int suplibOsQueryVTxSupported(const char **ppszWhy)
 {
     char szBuf[256];
     int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szBuf, sizeof(szBuf));
-
     if (RT_SUCCESS(rc))
     {
         char *pszNext;
@@ -298,6 +301,7 @@ int suplibOsQueryVTxSupported(void)
         }
     }
 
+    *ppszWhy = "Linux 2.6.13 or newer required!";
     return VERR_SUPDRV_KERNEL_TOO_OLD_FOR_VTX;
 }
 

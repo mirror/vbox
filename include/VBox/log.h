@@ -679,6 +679,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MM_POOL,
     /** The NAT service group */
     LOG_GROUP_NAT_SERVICE,
+    /** NEM group. */
+    LOG_GROUP_NEM,
     /** The network adaptor driver group. */
     LOG_GROUP_NET_ADP_DRV,
     /** The network filter driver group. */
@@ -1140,6 +1142,7 @@ typedef enum LOGGROUP
     "MM_PHYS",      \
     "MM_POOL",      \
     "NAT_SERVICE",  \
+    "NEM",          \
     "NET_ADP_DRV",  \
     "NET_FLT_DRV",  \
     "NET_SERVICE",  \

@@ -1658,10 +1658,11 @@ SUPR3DECL(int) SUPR3GipGetPhys(PRTHCPHYS pHCPhys)
 }
 
 
-SUPR3DECL(int) SUPR3QueryVTxSupported(void)
+SUPR3DECL(int) SUPR3QueryVTxSupported(const char **ppszWhy)
 {
+    *ppszWhy = NULL;
 #ifdef RT_OS_LINUX
-    return suplibOsQueryVTxSupported();
+    return suplibOsQueryVTxSupported(ppszWhy);
 #else
     return VINF_SUCCESS;
 #endif

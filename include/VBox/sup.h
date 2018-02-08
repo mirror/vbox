@@ -1642,8 +1642,9 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phL
  * Check if the host kernel can run in VMX root mode.
  *
  * @returns VINF_SUCCESS if supported, error code indicating why if not.
+ * @param   ppszWhy         Where to return an explanatory message on failure.
  */
-SUPR3DECL(int) SUPR3QueryVTxSupported(void);
+SUPR3DECL(int) SUPR3QueryVTxSupported(const char **ppszWhy);
 
 /**
  * Return VT-x/AMD-V capabilities.

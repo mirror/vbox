@@ -334,7 +334,8 @@ HRESULT Host::init(VirtualBox *aParent)
                      && (fFeaturesEdx & X86_CPUID_FEATURE_EDX_FXSR)
                    )
                 {
-                    int rc = SUPR3QueryVTxSupported();
+                    const char *pszIgn;
+                    int rc = SUPR3QueryVTxSupported(&pszIgn);
                     if (RT_SUCCESS(rc))
                         m->fVTSupported = true;
                 }

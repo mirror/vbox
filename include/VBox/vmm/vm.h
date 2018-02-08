@@ -167,6 +167,15 @@ typedef struct VMCPU
         uint8_t             padding[1408];      /* multiple of 64 */
     } em;
 
+    /** NEM part. */
+    union VMCPUUNIONNEM
+    {
+#ifdef ___NEMInternal_h
+        struct NEMCPU       s;
+#endif
+        uint8_t             padding[128];       /* multiple of 64 */
+    } nem;
+
     /** TRPM part. */
     union VMCPUUNIONTRPM
     {
@@ -253,7 +262,7 @@ typedef struct VMCPU
     STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[2104];
+    uint8_t                 abAlignment2[1976];
 
     /** PGM part. */
     union VMCPUUNIONPGM
@@ -1185,6 +1194,15 @@ typedef struct VM
         uint8_t     padding[256];       /* multiple of 64 */
     } em;
 
+    /** NEM part. */
+    union
+    {
+#ifdef ___NEMInternal_h
+        struct NEM  s;
+#endif
+        uint8_t     padding[128];       /* multiple of 64 */
+    } nem;
+
     /** TM part. */
     union
     {
@@ -1317,13 +1335,13 @@ typedef struct VM
 
     /** Padding for aligning the cpu array on a page boundary. */
 #if defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[3870];
+    uint8_t         abAlignment2[3742];
 #elif defined(VBOX_WITH_REM) && !defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[1630];
+    uint8_t         abAlignment2[1502];
 #elif !defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[30];
+    uint8_t         abAlignment2[3998];
 #else
-    uint8_t         abAlignment2[1886];
+    uint8_t         abAlignment2[1758];
 #endif
 
     /* ---- end small stuff ---- */

@@ -60,6 +60,7 @@
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
+#include <VBox/vmm/nem.h>
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/stam.h>
@@ -924,9 +925,11 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
 
     /*
      * Init all R3 components, the order here might be important.
-     * HM shall be initialized first!
+     * NEM and HM shall be initialized first!
      */
-    rc = HMR3Init(pVM);
+    rc = NEMR3InitConfig(pVM);
+    if (RT_SUCCESS(rc))
+        rc = HMR3Init(pVM);
     if (RT_SUCCESS(rc))
     {
         rc = MMR3Init(pVM);
@@ -1075,7 +1078,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
         int rc2 = HMR3Term(pVM);
         AssertRC(rc2);
     }
-
+    NEMR3Term(pVM);
 
     LogFlow(("vmR3InitRing3: returns %Rrc\n", rc));
     return rc;
@@ -1167,6 +1170,8 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
     int rc = VMMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
         rc = HMR3InitCompleted(pVM, enmWhat);
+    if (RT_SUCCESS(rc))
+        rc = NEMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
         rc = PGMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
@@ -2515,6 +2520,8 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
 #endif
         rc = HMR3Term(pVM);
         AssertRC(rc);
+        rc = NEMR3Term(pVM);
+        AssertRC(rc);
         rc = PGMR3Term(pVM);
         AssertRC(rc);
         rc = VMMR3Term(pVM); /* Terminates the ring-0 code! */
@@ -2803,6 +2810,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3SoftReset(PVM pVM, PVMCPU pVCpu, void *pvU
         CPUMR3Reset(pVM);               /* This must come *after* PDM (due to APIC base MSR caching). */
         EMR3Reset(pVM);
         HMR3Reset(pVM);                 /* This must come *after* PATM, CSAM, CPUM, SELM and TRPM. */
+        NEMR3Reset(pVM);
 
         /*
          * Since EMT(0) is the last to go thru here, it will advance the state.
@@ -2906,6 +2914,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3HardReset(PVM pVM, PVMCPU pVCpu, void *pvU
         TMR3Reset(pVM);
         EMR3Reset(pVM);
         HMR3Reset(pVM);                 /* This must come *after* PATM, CSAM, CPUM, SELM and TRPM. */
+        NEMR3Reset(pVM);
 
         /*
          * Do memory setup.
@@ -4631,6 +4640,7 @@ static DECLCALLBACK(int) vmR3HotUnplugCpu(PVM pVM, VMCPUID idCpu)
     CPUMR3ResetCpu(pVM, pVCpu);
     EMR3ResetCpu(pVCpu);
     HMR3ResetCpu(pVCpu);
+    NEMR3ResetCpu(pVCpu);
     return VINF_EM_WAIT_SIPI;
 }
 
