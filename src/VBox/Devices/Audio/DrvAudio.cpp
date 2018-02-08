@@ -516,7 +516,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
                                                             PDMAUDIOSTREAMCMD_DISABLE);
                 if (RT_SUCCESS(rc))
                 {
-                    pHstStream->fStatus &= ~(PDMAUDIOSTREAMSTS_FLAG_ENABLED | PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE);
+                    pHstStream->fStatus = PDMAUDIOSTREAMSTS_FLAG_INITIALIZED; /* Reset to initialized state. */
                     AudioMixBufReset(&pHstStream->MixBuf);
                 }
             }
@@ -3136,8 +3136,13 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
         if (RT_SUCCESS(rc))
         {
             pHstStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
-#if 0 /** @todo r=andy Disabled for now -- need to test this on Windows hosts. */
-            Assert(pHstStream->fStatus == PDMAUDIOSTRMSTS_FLAG_NONE);
+
+#ifdef VBOX_STRICT
+            pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+            AssertMsg(pHstStream->fStatus == PDMAUDIOSTREAMSTS_FLAG_NONE,
+                      ("Stream '%s' still has %s set when destroying, must close properly first\n",
+                       pHstStream->szName, pszHstSts));
+            RTStrFree(pszHstSts);
 #endif
         }
     }
@@ -3279,7 +3284,10 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
      * in drvAudioDestruct(). */
     PPDMAUDIOSTREAM pStream;
     RTListForEach(&pThis->lstHstStreams, pStream, PDMAUDIOSTREAM, Node)
+    {
+        drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
         drvAudioStreamDestroyInternalBackend(pThis, pStream);
+    }
 
     /*
      * Last call for the driver below us.
