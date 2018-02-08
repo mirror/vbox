@@ -616,7 +616,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** EDX Bit 27 - IBRS & IBPB - Supports the STIBP flag in IA32_SPEC_CTRL. */
 #define X86_CPUID_STEXT_FEATURE_EDX_STIBP             RT_BIT_32(27)
 
-/** EDX Bit 29 - ARCHCAP - Supports the IA32_ARCH_CAP MSR. */
+/** EDX Bit 29 - ARCHCAP - Supports the IA32_ARCH_CAPABILITIES MSR. */
 #define X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP           RT_BIT_32(29)
 
 /** @} */
@@ -1204,7 +1204,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 
 /** Architecture capabilities (bugfixes).
  * @note May move  */
-#define MSR_IA32_ARCH_CAP                   UINT32_C(0x10a)
+#define MSR_IA32_ARCH_CAPABILITIES          UINT32_C(0x10a)
 /** CPU is no subject to spectre problems. */
 #define MSR_IA32_ARCH_CAP_F_SPECTRE_FIX     RT_BIT_32(0)
 /** CPU has better IBRS and you can leave it on all the time. */

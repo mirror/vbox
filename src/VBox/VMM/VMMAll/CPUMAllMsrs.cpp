@@ -1431,6 +1431,51 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmFunc(PVMCPU pVCpu, uint32_t
 }
 
 
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32SpecCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    *puValue = pVCpu->cpum.s.GuestMsrs.msr.SpecCtrl;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SpecCtrl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+{
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
+
+    /* NB: The STIBP bit can be set even when IBRS is present, regardless of whether STIBP is actually implemented. */
+    if (uValue & ~(MSR_IA32_SPEC_CTRL_F_IBRS | MSR_IA32_SPEC_CTRL_F_STIBP))
+    {
+        Log(("CPUM: Invalid IA32_SPEC_CTRL bits (trying to write %#llx)\n", uValue));
+        return VERR_CPUM_RAISE_GP_0;
+    }
+
+    pVCpu->cpum.s.GuestMsrs.msr.SpecCtrl = uValue;
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMWRMSR} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32PredCmd(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
+{
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ArchCapabilities(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    *puValue = pVCpu->cpum.s.GuestMsrs.msr.ArchCaps;
+    return VINF_SUCCESS;
+}
+
+
+
+
 
 
 
@@ -4998,6 +5043,8 @@ static const PFNCPUMRDMSR g_aCpumRdMsrFns[kCpumMsrRdFn_End] =
     cpumMsrRd_Ia32VmxTrueExitCtls,
     cpumMsrRd_Ia32VmxTrueEntryCtls,
     cpumMsrRd_Ia32VmxVmFunc,
+    cpumMsrRd_Ia32SpecCtrl,
+    cpumMsrRd_Ia32ArchCapabilities,
 
     cpumMsrRd_Amd64Efer,
     cpumMsrRd_Amd64SyscallTarget,
@@ -5241,6 +5288,8 @@ static const PFNCPUMWRMSR g_aCpumWrMsrFns[kCpumMsrWrFn_End] =
     cpumMsrWr_Ia32TscDeadline,
     cpumMsrWr_Ia32X2ApicN,
     cpumMsrWr_Ia32DebugInterface,
+    cpumMsrWr_Ia32SpecCtrl,
+    cpumMsrWr_Ia32PredCmd,
 
     cpumMsrWr_Amd64Efer,
     cpumMsrWr_Amd64SyscallTarget,
@@ -5711,6 +5760,8 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxTrueExitCtls);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxTrueEntryCtls);
     CPUM_ASSERT_RD_MSR_FN(Ia32VmxVmFunc);
+    CPUM_ASSERT_RD_MSR_FN(Ia32SpecCtrl);
+    CPUM_ASSERT_RD_MSR_FN(Ia32ArchCapabilities);
 
     CPUM_ASSERT_RD_MSR_FN(Amd64Efer);
     CPUM_ASSERT_RD_MSR_FN(Amd64SyscallTarget);
@@ -5943,6 +5994,8 @@ int cpumR3MsrStrictInitChecks(void)
     CPUM_ASSERT_WR_MSR_FN(Ia32TscDeadline);
     CPUM_ASSERT_WR_MSR_FN(Ia32X2ApicN);
     CPUM_ASSERT_WR_MSR_FN(Ia32DebugInterface);
+    CPUM_ASSERT_WR_MSR_FN(Ia32SpecCtrl);
+    CPUM_ASSERT_WR_MSR_FN(Ia32PredCmd);
 
     CPUM_ASSERT_WR_MSR_FN(Amd64Efer);
     CPUM_ASSERT_WR_MSR_FN(Amd64SyscallTarget);

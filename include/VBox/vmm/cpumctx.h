@@ -777,6 +777,8 @@ typedef union CPUMCTXMSRS
         uint64_t    MtrrFix4K_F0000;    /**< IA32_MTRR_FIX4K_F0000 */
         uint64_t    MtrrFix4K_F8000;    /**< IA32_MTRR_FIX4K_F8000 */
         uint64_t    PkgCStateCfgCtrl;   /**< MSR_PKG_CST_CONFIG_CONTROL */
+        uint64_t    SpecCtrl;           /**< IA32_SPEC_CTRL */
+        uint64_t    ArchCaps;           /**< IA32_ARCH_CAPABILITIES */
     } msr;
     uint64_t    au64[64];
 } CPUMCTXMSRS;

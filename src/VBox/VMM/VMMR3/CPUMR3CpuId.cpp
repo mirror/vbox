@@ -3142,14 +3142,18 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                 pCurLeaf->uEcx &= 0
                                //| X86_CPUID_STEXT_FEATURE_ECX_PREFETCHWT1 - we do not do vector functions yet.
                                ;
-                pCurLeaf->uEdx &= 0; /** @todo X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB, X86_CPUID_STEXT_FEATURE_EDX_STIBP and X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP */
+                pCurLeaf->uEdx &= 0
+                               //| X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB         RT_BIT(26)
+                               //| X86_CPUID_STEXT_FEATURE_EDX_STIBP             RT_BIT(27)
+                               //| X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP           RT_BIT(29)
+                               ;
 
                 /* Mask out INVPCID unless FSGSBASE is exposed due to a bug in Windows 10 SMP guests, see @bugref{9089#c15}. */
                 if (  !pVM->cpum.s.GuestFeatures.fFsGsBase
                    && (pCurLeaf->uEbx & X86_CPUID_STEXT_FEATURE_EBX_INVPCID))
                 {
                     pCurLeaf->uEbx &= ~X86_CPUID_STEXT_FEATURE_EBX_INVPCID;
-                    LogRel(("CPUM: Disabled INVPCID without FSGSBASE to workaround buggy guests\n"));
+                    LogRel(("CPUM: Disabled INVPCID without FSGSBASE to work around buggy guests\n"));
                 }
 
                 if (pCpum->u8PortableCpuIdLevel > 0)
@@ -4308,6 +4312,12 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM)
         if (fEnable)
             CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
+        /* Check if speculation control is enabled. */
+        rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnableSpecCtrl", &fEnable, false);
+        AssertRCReturn(rc, rc);
+        if (fEnable)
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SPEC_CTRL);
+
         return VINF_SUCCESS;
     }
 
@@ -4588,6 +4598,90 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled MWAIT Extensions.\n"));
             break;
 
+        /*
+         * Set up the speculation control CPUID bits and MSRs. This is quite complicated
+         * on Intel CPUs, and different on AMDs.
+         */
+        case CPUMCPUIDFEATURE_SPEC_CTRL:
+            if (pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL)
+            {
+                pLeaf = cpumR3CpuIdGetExactLeaf(&pVM->cpum.s, UINT32_C(0x00000007), 0);
+                if (   !pLeaf
+                    || !(pVM->cpum.s.HostFeatures.fIbpb || pVM->cpum.s.HostFeatures.fIbrs))
+                {
+                    LogRel(("CPUM: WARNING! Can't turn on Speculation Control when the host doesn't support it!\n"));
+                    return;
+                }
+
+                /* The feature can be enabled. Let's see what we can actually do. */
+                pVM->cpum.s.GuestFeatures.fSpeculationControl = 1;
+
+                /* We will only expose STIBP if IBRS is present to keep things simpler (simple is not an option). */
+                if (pVM->cpum.s.HostFeatures.fIbrs)
+                {
+                    pLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB;
+                    if (pVM->cpum.s.HostFeatures.fStibp)
+                        pLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_STIBP;
+
+                    /* Make sure we have the speculation control MSR... */
+                    pMsrRange = cpumLookupMsrRange(pVM, MSR_IA32_SPEC_CTRL);
+                    if (!pMsrRange)
+                    {
+                        static CPUMMSRRANGE const s_SpecCtrl =
+                        {
+                            /*.uFirst =*/ MSR_IA32_SPEC_CTRL, /*.uLast =*/ MSR_IA32_SPEC_CTRL,
+                            /*.enmRdFn =*/ kCpumMsrRdFn_Ia32SpecCtrl, /*.enmWrFn =*/ kCpumMsrWrFn_Ia32SpecCtrl,
+                            /*.offCpumCpu =*/ UINT16_MAX, /*.fReserved =*/ 0, /*.uValue =*/ 0, /*.fWrIgnMask =*/ 0, /*.fWrGpMask =*/ 0,
+                            /*.szName = */ "IA32_SPEC_CTRL"
+                        };
+                        int rc = CPUMR3MsrRangesInsert(pVM, &s_SpecCtrl);
+                        AssertLogRelRC(rc);
+                    }
+
+                    /* ... and the predictor command MSR. */
+                    pMsrRange = cpumLookupMsrRange(pVM, MSR_IA32_PRED_CMD);
+                    if (!pMsrRange)
+                    {
+                        static CPUMMSRRANGE const s_SpecCtrl =
+                        {
+                            /*.uFirst =*/ MSR_IA32_PRED_CMD, /*.uLast =*/ MSR_IA32_PRED_CMD,
+                            /*.enmRdFn =*/ kCpumMsrRdFn_WriteOnly, /*.enmWrFn =*/ kCpumMsrWrFn_Ia32PredCmd,
+                            /*.offCpumCpu =*/ UINT16_MAX, /*.fReserved =*/ 0, /*.uValue =*/ 0, /*.fWrIgnMask =*/ 0, /*.fWrGpMask =*/ 0,
+                            /*.szName = */ "IA32_PRED_CMD"
+                        };
+                        int rc = CPUMR3MsrRangesInsert(pVM, &s_SpecCtrl);
+                        AssertLogRelRC(rc);
+                    }
+
+                }
+
+                if (pVM->cpum.s.HostFeatures.fArchCap) {
+                    pLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP;
+
+                    /* Install the architectural capabilities MSR. */
+                    pMsrRange = cpumLookupMsrRange(pVM, MSR_IA32_ARCH_CAPABILITIES);
+                    if (!pMsrRange)
+                    {
+                        static CPUMMSRRANGE const s_ArchCaps =
+                        {
+                            /*.uFirst =*/ MSR_IA32_ARCH_CAPABILITIES, /*.uLast =*/ MSR_IA32_ARCH_CAPABILITIES,
+                            /*.enmRdFn =*/ kCpumMsrRdFn_Ia32ArchCapabilities, /*.enmWrFn =*/ kCpumMsrWrFn_ReadOnly,
+                            /*.offCpumCpu =*/ UINT16_MAX, /*.fReserved =*/ 0, /*.uValue =*/ 0, /*.fWrIgnMask =*/ 0, /*.fWrGpMask =*/ UINT64_MAX,
+                            /*.szName = */ "IA32_ARCH_CAPABILITIES"
+                        };
+                        int rc = CPUMR3MsrRangesInsert(pVM, &s_ArchCaps);
+                        AssertLogRelRC(rc);
+                    }
+                }
+
+                LogRel(("CPUM: SetGuestCpuIdFeature: Enabled Speculation Control.\n"));
+            }
+            else if (pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+            {
+                /* The precise details of AMD's implementation are not yet clear. */
+            }
+            break;
+
         default:
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
@@ -4626,6 +4720,7 @@ VMMR3_INT_DECL(bool) CPUMR3GetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
         case CPUMCPUIDFEATURE_RDTSCP:       return pVM->cpum.s.GuestFeatures.fRdTscP;
         case CPUMCPUIDFEATURE_HVP:          return pVM->cpum.s.GuestFeatures.fHypervisorPresent;
         case CPUMCPUIDFEATURE_MWAIT_EXTS:   return pVM->cpum.s.GuestFeatures.fMWaitExtensions;
+        case CPUMCPUIDFEATURE_SPEC_CTRL:    return pVM->cpum.s.GuestFeatures.fSpeculationControl;
 
         case CPUMCPUIDFEATURE_INVALID:
         case CPUMCPUIDFEATURE_32BIT_HACK:
@@ -4736,6 +4831,14 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
                 pVM->cpum.s.aGuestCpuIdPatmStd[5].uEcx = pLeaf->uEcx &= ~(X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0);
             pVM->cpum.s.GuestFeatures.fMWaitExtensions = 0;
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled MWAIT Extensions!\n"));
+            break;
+
+        case CPUMCPUIDFEATURE_SPEC_CTRL:
+            pLeaf = cpumR3CpuIdGetExactLeaf(&pVM->cpum.s, UINT32_C(0x00000007), 0);
+            if (pLeaf)
+                /*pVM->cpum.s.aGuestCpuIdPatmStd[7].uEdx =*/ pLeaf->uEdx &= ~(X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB | X86_CPUID_STEXT_FEATURE_EDX_STIBP | X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP);
+            pVM->cpum.s.GuestFeatures.fSpeculationControl = 0;
+            Log(("CPUM: ClearGuestCpuIdFeature: Disabled speculation control!\n"));
             break;
 
         default:

@@ -73,6 +73,8 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_HVP,
     /** The MWait Extensions bits (Std) */
     CPUMCPUIDFEATURE_MWAIT_EXTS,
+    /** The speculation control feature bits. (StExt) */
+    CPUMCPUIDFEATURE_SPEC_CTRL,
     /** 32bit hackishness. */
     CPUMCPUIDFEATURE_32BIT_HACK = 0x7fffffff
 } CPUMCPUIDFEATURE;
@@ -469,6 +471,8 @@ typedef enum CPUMMSRRDFN
     kCpumMsrRdFn_Ia32VmxTrueExitCtls,       /**< Takes real value as reference. */
     kCpumMsrRdFn_Ia32VmxTrueEntryCtls,      /**< Takes real value as reference. */
     kCpumMsrRdFn_Ia32VmxVmFunc,             /**< Takes real value as reference. */
+    kCpumMsrRdFn_Ia32SpecCtrl,
+    kCpumMsrRdFn_Ia32ArchCapabilities,
 
     kCpumMsrRdFn_Amd64Efer,
     kCpumMsrRdFn_Amd64SyscallTarget,
@@ -721,6 +725,8 @@ typedef enum CPUMMSRWRFN
     kCpumMsrWrFn_Ia32TscDeadline,
     kCpumMsrWrFn_Ia32X2ApicN,
     kCpumMsrWrFn_Ia32DebugInterface,
+    kCpumMsrWrFn_Ia32SpecCtrl,
+    kCpumMsrWrFn_Ia32PredCmd,
 
     kCpumMsrWrFn_Amd64Efer,
     kCpumMsrWrFn_Amd64SyscallTarget,
@@ -1071,8 +1077,13 @@ typedef struct CPUMFEATURES
     /** Support for Intel VMX. */
     uint32_t        fVmx : 1;
 
+    /** Indicates that speculative execution control CPUID bits and
+     *  MSRs are exposed. The details are different for Intel and
+     * AMD but both have similar functionality. */
+    uint32_t        fSpeculationControl : 1;
+
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 16;
+    uint32_t        fPadding : 15;
 
     /** SVM: Supports Nested-paging. */
     uint32_t        fSvmNestedPaging : 1;
