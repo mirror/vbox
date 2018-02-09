@@ -960,42 +960,72 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
             rc = hdaDMARead(pThis, pStream, abChunk, cbChunk, &cbDMA /* pcbRead */);
             if (RT_SUCCESS(rc))
             {
-                uint32_t cbDMARead = pStream->State.cbDMALeft ? pStream->State.cbFrameSize - pStream->State.cbDMALeft : 0;
-                uint32_t cbDMALeft = RT_MIN(cbDMA, (uint32_t)RTCircBufFree(pCircBuf));
-
 #ifndef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
-                /**
-                 * The following code extracts the required audio stream (channel) data
-                 * of non-interleaved *and* interleaved audio streams.
+                /*
+                 * Most guests don't use different stream frame sizes than
+                 * the default one, so save a bit of CPU time and don't go into
+                 * the frame extraction code below.
                  *
-                 * We by default only support 2 channels with 16-bit samples (HDA_FRAME_SIZE),
-                 * but an HDA audio stream can have interleaved audio data of multiple audio
-                 * channels in such a single stream ("AA,AA,AA vs. AA,BB,AA,BB").
-                 *
-                 * So take this into account by just handling the first channel in such a stream ("A")
-                 * and just discard the other channel's data.
-                 *
-                 * @todo Optimize this stuff -- copying only one frame a time is expensive.
+                 * Only macOS guests need the frame extraction branch below at the moment AFAIK.
                  */
-                while (cbDMALeft >= pStream->State.cbFrameSize)
+                if (pStream->State.cbFrameSize == HDA_FRAME_SIZE)
                 {
-                    void *pvBuf; size_t cbBuf;
-                    RTCircBufAcquireWriteBlock(pCircBuf, HDA_FRAME_SIZE, &pvBuf, &cbBuf);
+                    uint32_t cbDMARead = 0;
+                    uint32_t cbDMALeft = RT_MIN(cbDMA, (uint32_t)RTCircBufFree(pCircBuf));
 
-                    AssertBreak(cbDMARead <= sizeof(abChunk));
+                    while (cbDMALeft)
+                    {
+                        void *pvBuf; size_t cbBuf;
+                        RTCircBufAcquireWriteBlock(pCircBuf, cbDMALeft, &pvBuf, &cbBuf);
 
-                    if (cbBuf)
-                        memcpy(pvBuf, abChunk + cbDMARead, cbBuf);
+                        if (cbBuf)
+                        {
+                            memcpy(pvBuf, abChunk + cbDMARead, cbBuf);
+                            cbDMARead += (uint32_t)cbBuf;
+                            cbDMALeft -= (uint32_t)cbBuf;
+                        }
 
-                    RTCircBufReleaseWriteBlock(pCircBuf, cbBuf);
-
-                    Assert(cbDMALeft >= pStream->State.cbFrameSize);
-                    cbDMALeft -= pStream->State.cbFrameSize;
-                    cbDMARead += pStream->State.cbFrameSize;
+                        RTCircBufReleaseWriteBlock(pCircBuf, cbBuf);
+                    }
                 }
+                else
+                {
+                    /**
+                     * The following code extracts the required audio stream (channel) data
+                     * of non-interleaved *and* interleaved audio streams.
+                     *
+                     * We by default only support 2 channels with 16-bit samples (HDA_FRAME_SIZE),
+                     * but an HDA audio stream can have interleaved audio data of multiple audio
+                     * channels in such a single stream ("AA,AA,AA vs. AA,BB,AA,BB").
+                     *
+                     * So take this into account by just handling the first channel in such a stream ("A")
+                     * and just discard the other channel's data.
+                     *
+                     * @todo Optimize this stuff -- copying only one frame a time is expensive.
+                     */
+                    uint32_t cbDMARead = pStream->State.cbDMALeft ? pStream->State.cbFrameSize - pStream->State.cbDMALeft : 0;
+                    uint32_t cbDMALeft = RT_MIN(cbDMA, (uint32_t)RTCircBufFree(pCircBuf));
 
-                pStream->State.cbDMALeft = cbDMALeft;
-                Assert(pStream->State.cbDMALeft < pStream->State.cbFrameSize);
+                    while (cbDMALeft >= pStream->State.cbFrameSize)
+                    {
+                        void *pvBuf; size_t cbBuf;
+                        RTCircBufAcquireWriteBlock(pCircBuf, HDA_FRAME_SIZE, &pvBuf, &cbBuf);
+
+                        AssertBreak(cbDMARead <= sizeof(abChunk));
+
+                        if (cbBuf)
+                            memcpy(pvBuf, abChunk + cbDMARead, cbBuf);
+
+                        RTCircBufReleaseWriteBlock(pCircBuf, cbBuf);
+
+                        Assert(cbDMALeft >= pStream->State.cbFrameSize);
+                        cbDMALeft -= pStream->State.cbFrameSize;
+                        cbDMARead += pStream->State.cbFrameSize;
+                    }
+
+                    pStream->State.cbDMALeft = cbDMALeft;
+                    Assert(pStream->State.cbDMALeft < pStream->State.cbFrameSize);
+                }
 
                 const size_t cbFree = RTCircBufFree(pCircBuf);
                 if (!cbFree)
