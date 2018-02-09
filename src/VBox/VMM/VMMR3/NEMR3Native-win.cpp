@@ -130,7 +130,7 @@ static const struct
  * @param   pVM                 The cross context VM structure.
  * @param   pErrInfo            Where to always return error info.
  */
-static int nemR3NativeInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
+static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
 {
 #define NEM_LOG_REL_CAP_EX(a_szField, a_szFmt, a_Value)     LogRel(("NEM: %-38s= " a_szFmt "\n", a_szField, a_Value))
 #define NEM_LOG_REL_CAP_SUB_EX(a_szField, a_szFmt, a_Value) LogRel(("NEM:   %36s: " a_szFmt "\n", a_szField, a_Value))
@@ -148,8 +148,8 @@ static int nemR3NativeInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
      *        a non-zero value.
      */
     /**
-     * @todo Someone (MS) please explain weird API design:
-     *   1. Caps.CapabilityCode duplication,
+     * @todo Someone at Microsoft please explain weird API design:
+     *   1. Pointless CapabilityCode duplication int the output;
      *   2. No output size.
      */
     WHV_CAPABILITY Caps;
@@ -286,6 +286,9 @@ static int nemR3NativeInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeProcessorClFlushSize failed: %Rhrc", hrc);
     NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorClFlushSize", "2^%u", Caps.ProcessorClFlushSize);
+    if (Caps.ProcessorClFlushSize < 8 && Caps.ProcessorClFlushSize > 9)
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Unsupported cache line flush size: %u", Caps.ProcessorClFlushSize);
+    pVM->nem.s.cCacheLineFlushShift = Caps.ProcessorClFlushSize;
 
     /*
      * See if they've added more properties that we're not aware of.
@@ -320,7 +323,91 @@ static int nemR3NativeInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
 }
 
 
+/**
+ * Creates and sets up a Hyper-V (exo) partition.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pErrInfo            Where to always return error info.
+ */
+static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
+{
+    AssertReturn(!pVM->nem.s.hPartition,       RTErrInfoSet(pErrInfo, VERR_WRONG_ORDER, "Wrong initalization order"));
+    AssertReturn(!pVM->nem.s.hPartitionDevice, RTErrInfoSet(pErrInfo, VERR_WRONG_ORDER, "Wrong initalization order"));
 
+    /*
+     * Create the partition.
+     */
+    WHV_PARTITION_HANDLE hPartition;
+    HRESULT hrc = WHvCreatePartition(&hPartition);
+    if (FAILED(hrc))
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED, "WHvCreatePartition failed with %Rhrc", hrc);
+
+    int rc;
+
+    /*
+     * Set partition properties, most importantly the CPU count.
+     */
+    /**
+     * @todo Someone at microsoft please explain another weird API:
+     *  - Why this API doesn't take the WHV_PARTITION_PROPERTY_CODE value as an
+     *    argument rather than as part of the struct.  That is so weird if you've
+     *    used any other NT or windows API,  including WHvGetCapability().
+     *  - Why use PVOID when WHV_PARTITION_PROPERTY is what's expected.  We
+     *    technically only need 9 bytes for setting/getting
+     *    WHVPartitionPropertyCodeProcessorClFlushSize, but the API insists on 16. */
+    WHV_PARTITION_PROPERTY Property;
+    RT_ZERO(Property);
+    Property.PropertyCode   = WHvPartitionPropertyCodeProcessorCount;
+    Property.ProcessorCount = pVM->cCpus;
+    hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+    if (SUCCEEDED(hrc))
+    {
+        RT_ZERO(Property);
+        Property.PropertyCode                  = WHvPartitionPropertyCodeExtendedVmExits;
+        Property.ExtendedVmExits.X64CpuidExit  = pVM->nem.s.fExtendedCpuIdExit;
+        Property.ExtendedVmExits.X64MsrExit    = pVM->nem.s.fExtendedMsrExit;
+        Property.ExtendedVmExits.ExceptionExit = pVM->nem.s.fExtendedXcptExit;
+        hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+        if (SUCCEEDED(hrc))
+        {
+            /*
+             * We'll continue setup in nemR3NativeInitAfterCPUM.
+             */
+            pVM->nem.s.fCreatedEmts     = false;
+            pVM->nem.s.hPartition       = hPartition;
+            LogRel(("NEM: Created partition %p.\n", hPartition));
+            return VINF_SUCCESS;
+        }
+
+        rc = RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED,
+                           "Failed setting WHvPartitionPropertyCodeExtendedVmExits to %'#RX64: %Rhrc",
+                           Property.ExtendedVmExits.AsUINT64, hrc);
+    }
+    else
+        rc = RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED,
+                           "Failed setting WHvPartitionPropertyCodeProcessorCount to %u: %Rhrc", pVM->cCpus, hrc);
+    WHvDeletePartition(hPartition);
+
+    Assert(!pVM->nem.s.hPartitionDevice);
+    Assert(!pVM->nem.s.hPartition);
+    return rc;
+}
+
+
+/**
+ * Try initialize the native API.
+ *
+ * This may only do part of the job, more can be done in
+ * nemR3NativeInitAfterCPUM() and nemR3NativeInitCompleted().
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   fFallback       Whether we're in fallback mode or use-NEM mode. In
+ *                          the latter we'll fail if we cannot initialize.
+ * @param   fForced         Whether the HMForced flag is set and we should
+ *                          fail if we cannot initialize.
+ */
 int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
 {
     /*
@@ -424,10 +511,18 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                                 /*
                                  * Check the capabilties of the hypervisor, starting with whether it's present.
                                  */
-                                rc = nemR3NativeInitCheckCapabilities(pVM, pErrInfo);
+                                rc = nemR3WinInitCheckCapabilities(pVM, pErrInfo);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = RTErrInfoAddF(pErrInfo, VERR_NOT_IMPLEMENTED, "lazy bugger isn't done yet");
+                                    /*
+                                     * Create and initialize a partition.
+                                     */
+                                    rc = nemR3WinInitCreatePartition(pVM, pErrInfo);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        pVM->fNEMActive = true;
+                                        Log(("NEM: Marked active!\n"));
+                                    }
                                 }
                             }
                             RTLdrClose(ahMods[0]);
@@ -450,10 +545,120 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     Assert(pVM->fNEMActive || RTErrInfoIsSet(pErrInfo));
     if (   (fForced || !fFallback)
         && !pVM->fNEMActive)
-        return VMSetError(pVM, RT_SUCCESS_NP(rc) ? VERR_NEM_NOT_AVAILABLE : rc, RT_SRC_POS, "%s\n", pErrInfo->pszMsg);
+        return VMSetError(pVM, RT_SUCCESS_NP(rc) ? VERR_NEM_NOT_AVAILABLE : rc, RT_SRC_POS, "%s", pErrInfo->pszMsg);
 
     if (RTErrInfoIsSet(pErrInfo))
         LogRel(("NEM: Not available: %s\n", pErrInfo->pszMsg));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * This is called after CPUMR3Init is done.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle..
+ */
+int nemR3NativeInitAfterCPUM(PVM pVM)
+{
+    /*
+     * Validate sanity.
+     */
+    WHV_PARTITION_HANDLE hPartition = pVM->nem.s.hPartition;
+    AssertReturn(hPartition != NULL, VERR_WRONG_ORDER);
+    AssertReturn(!pVM->nem.s.hPartitionDevice, VERR_WRONG_ORDER);
+    AssertReturn(!pVM->nem.s.fCreatedEmts, VERR_WRONG_ORDER);
+    AssertReturn(!pVM->fNEMActive, VERR_WRONG_ORDER);
+
+    /*
+     * Continue setting up the partition now that we've got most of the CPUID feature stuff.
+     */
+
+    /* Not sure if we really need to set the vendor. */
+    WHV_PARTITION_PROPERTY Property;
+    RT_ZERO(Property);
+    Property.PropertyCode    = WHvPartitionPropertyCodeProcessorVendor;
+    Property.ProcessorVendor = pVM->nem.s.enmCpuVendor == CPUMCPUVENDOR_AMD ? WHvProcessorVendorAmd
+                             : WHvProcessorVendorIntel;
+    HRESULT hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+    if (FAILED(hrc))
+        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                          "Failed to set WHvPartitionPropertyCodeProcessorVendor to %u: %Rhrc", Property.ProcessorVendor, hrc);
+
+    /* Not sure if we really need to set the cache line flush size. */
+    RT_ZERO(Property);
+    Property.PropertyCode         = WHvPartitionPropertyCodeProcessorClFlushSize;
+    Property.ProcessorClFlushSize = pVM->nem.s.cCacheLineFlushShift;
+    hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+    if (FAILED(hrc))
+        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                          "Failed to set WHvPartitionPropertyCodeProcessorClFlushSize to %u: %Rhrc",
+                          pVM->nem.s.cCacheLineFlushShift, hrc);
+
+    /*
+     * Sync CPU features with CPUM.
+     */
+    /** @todo sync CPU features with CPUM. */
+
+    /* Set the partition property. */
+    RT_ZERO(Property);
+    Property.PropertyCode               = WHvPartitionPropertyCodeProcessorFeatures;
+    Property.ProcessorFeatures.AsUINT64 = pVM->nem.s.uCpuFeatures.u64;
+    hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+    if (FAILED(hrc))
+        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                          "Failed to set WHvPartitionPropertyCodeProcessorFeatures to %'#RX64: %Rhrc",
+                          pVM->nem.s.uCpuFeatures.u64, hrc);
+
+    /*
+     * Set up the partition and create EMTs.
+     *
+     * Seems like this is where the partition is actually instantiated and we get
+     * a handle to it.
+     */
+    hrc = WHvSetupPartition(hPartition);
+    if (FAILED(hrc))
+        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to WHvSetupPartition failed: %Rhrc", hrc);
+
+    /* Get the handle. */
+    HANDLE hPartitionDevice;
+    __try
+    {
+        hPartitionDevice = ((HANDLE *)hPartition)[1];
+    }
+    __except(EXCEPTION_EXECUTE_HANDLER)
+    {
+        hrc = GetExceptionCode();
+        hPartitionDevice = NULL;
+    }
+    if (   hPartitionDevice == NULL
+        || hPartitionDevice == (HANDLE)(intptr_t)-1)
+        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                          "Failed to get device handle for partition %p: %Rhrc", hPartition, hrc);
+    /** @todo Do a Vid query that uses the handle to check that we've got a
+     *  working value.  */
+    pVM->nem.s.hPartitionDevice = hPartitionDevice;
+
+    /*
+     * Create EMTs.
+     */
+    VMCPUID iCpu;
+    for (iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    {
+        hrc = WHvCreateVirtualProcessor(hPartition, iCpu, 0 /*fFlags*/);
+        if (FAILED(hrc))
+        {
+            while (iCpu-- > 0)
+            {
+                HRESULT hrc2 = WHvDeleteVirtualProcessor(hPartition, iCpu);
+                AssertLogRelMsg(SUCCEEDED(hrc2), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc\n", hPartition, iCpu, hrc2));
+            }
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to WHvSetupPartition failed: %Rhrc", hrc);
+        }
+    }
+    pVM->nem.s.fCreatedEmts = true;
+
+    LogRel(("NEM: Successfully set up partition (device handle %p)\n", hPartitionDevice));
     return VINF_SUCCESS;
 }
 
@@ -467,7 +672,24 @@ int nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 
 int nemR3NativeTerm(PVM pVM)
 {
-    NOREF(pVM);
+    /*
+     * Delete the partition.
+     */
+    WHV_PARTITION_HANDLE hPartition = pVM->nem.s.hPartition;
+    pVM->nem.s.hPartition       = NULL;
+    pVM->nem.s.hPartitionDevice = NULL;
+    if (hPartition != NULL)
+    {
+        VMCPUID iCpu = pVM->nem.s.fCreatedEmts ? pVM->cCpus : 0;
+        LogRel(("NEM: Destroying partition %p with its %u VCpus...\n", hPartition, iCpu));
+        while (iCpu-- > 0)
+        {
+            HRESULT hrc = WHvDeleteVirtualProcessor(hPartition, iCpu);
+            AssertLogRelMsg(SUCCEEDED(hrc), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc\n", hPartition, iCpu, hrc));
+        }
+        WHvDeletePartition(hPartition);
+    }
+    pVM->nem.s.fCreatedEmts = false;
     return VINF_SUCCESS;
 }
 

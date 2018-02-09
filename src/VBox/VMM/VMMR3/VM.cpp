@@ -938,7 +938,9 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
             rc = CPUMR3Init(pVM);
             if (RT_SUCCESS(rc))
             {
-                rc = PGMR3Init(pVM);
+                rc = NEMR3InitAfterCPUM(pVM);
+                if (RT_SUCCESS(rc))
+                    rc = PGMR3Init(pVM);
                 if (RT_SUCCESS(rc))
                 {
 #ifdef VBOX_WITH_REM

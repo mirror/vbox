@@ -38,7 +38,7 @@
  * Always call NEMR3Term after calling this.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
 {
@@ -88,7 +88,7 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
  * Sets VM::fNEMActive if we can use a native hypervisor API to execute the VM.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         The cross context VM structure.
  * @param   fFallback   Whether this is a fallback call.  Cleared if the VM is
  *                      configured to use NEM instead of HM.
  * @param   fForced     Whether /HM/HMForced was set.  If set and we fail to
@@ -131,11 +131,30 @@ VMMR3_INT_DECL(int) NEMR3Init(PVM pVM, bool fFallback, bool fForced)
 
 
 /**
+ * Perform initialization that depends on CPUM working.
+ *
+ * This is a noop if NEM wasn't activated by a previous NEMR3Init() call.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ */
+VMMR3_INT_DECL(int) NEMR3InitAfterCPUM(PVM pVM)
+{
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_NATIVE_NEM
+    if (pVM->fNEMActive)
+        rc = nemR3NativeInitAfterCPUM(pVM);
+#endif
+    return rc;
+}
+
+
+/**
  * Called when a init phase has completed.
  *
  * @returns VBox status code.
- * @param   pVM                 The cross context VM structure.
- * @param   enmWhat             The phase that completed.
+ * @param   pVM         The cross context VM structure.
+ * @param   enmWhat     The phase that completed.
  */
 VMMR3_INT_DECL(int) NEMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
@@ -153,7 +172,7 @@ VMMR3_INT_DECL(int) NEMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 /**
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
+ * @param   pVM         The cross context VM structure.
  */
 VMMR3_INT_DECL(int) NEMR3Term(PVM pVM)
 {

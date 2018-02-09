@@ -45,6 +45,8 @@ typedef struct NEM
     /** Set if enabled. */
     bool                        fEnabled;
 #ifdef RT_OS_WINDOWS
+    /** Set if we've created the EMTs. */
+    bool                        fCreatedEmts;
     /** WHvRunVpExitReasonX64Cpuid is supported. */
     bool                        fExtendedMsrExit;
     /** WHvRunVpExitReasonX64MsrAccess is supported. */
@@ -53,8 +55,8 @@ typedef struct NEM
     bool                        fExtendedXcptExit;
     /** The reported CPU vendor.   */
     CPUMCPUVENDOR               enmCpuVendor;
-    /** Explicit padding. */
-    uint32_t                    u32Padding1;
+    /** Cache line flush size as a power of two. */
+    uint8_t                     cCacheLineFlushShift;
     /** The result of WHvCapabilityCodeProcessorFeatures. */
     union
     {
@@ -65,6 +67,17 @@ typedef struct NEM
         WHV_PROCESSOR_FEATURES  u;
 # endif
     } uCpuFeatures;
+
+    /** The partition handle. */
+# ifdef _WINHVAPIDEFS_H_
+    WHV_PARTITION_HANDLE
+# else
+    RTHCUINTPTR
+# endif
+                                hPartition;
+    /** The device handle for the partition, for use with Vid APIs or direct I/O
+     * controls. */
+    RTR3PTR                     hPartitionDevice;
 #endif
 
 } NEM;
@@ -96,6 +109,7 @@ typedef NEMCPU *PNEMCPU;
 
 #ifdef IN_RING3
 int     nemR3NativeInit(PVM pVM, bool fFallback, bool fForced);
+int     nemR3NativeInitAfterCPUM(PVM pVM);
 int     nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 int     nemR3NativeTerm(PVM pVM);
 void    nemR3NativeReset(PVM pVM);
