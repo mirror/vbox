@@ -29,8 +29,9 @@
 # define _WIN32_WINNT_WIN10_RS1 (_WIN32_WINNT_WIN10 + 1)
 #endif
 #include <sysinfoapi.h>
-#include <fileapi.h>
+#include <debugapi.h>
 #include <errhandlingapi.h>
+#include <fileapi.h>
 #include <winerror.h> /* no api header for this. */
 
 #include <VBox/vmm/nem.h>
@@ -119,6 +120,204 @@ static const struct
 # define WHvGetVirtualProcessorRegisters            g_pfnWHvGetVirtualProcessorRegisters
 # define WHvSetVirtualProcessorRegisters            g_pfnWHvSetVirtualProcessorRegisters
 #endif
+
+
+
+/**
+ * Worker for nemR3NativeInit that gets the hypervisor capabilities.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pErrInfo            Where to always return error info.
+ */
+static int nemR3NativeInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
+{
+#define NEM_LOG_REL_CAP_EX(a_szField, a_szFmt, a_Value)     LogRel(("NEM: %-38s= " a_szFmt "\n", a_szField, a_Value))
+#define NEM_LOG_REL_CAP_SUB_EX(a_szField, a_szFmt, a_Value) LogRel(("NEM:   %36s: " a_szFmt "\n", a_szField, a_Value))
+#define NEM_LOG_REL_CAP_SUB(a_szField, a_Value)             NEM_LOG_REL_CAP_SUB_EX(a_szField, "%d", a_Value)
+
+    /*
+     * Is the hypervisor present with the desired capability?
+     *
+     * In build 17083 this translates into:
+     *      - CPUID[0x00000001].HVP is set
+     *      - CPUID[0x40000000] == "Microsoft Hv"
+     *      - CPUID[0x40000001].eax == "Hv#1"
+     *      - CPUID[0x40000003].ebx[12] is set.
+     *      - VidGetExoPartitionProperty(INVALID_HANDLE_VALUE, 0x60000, &Ignored) returns
+     *        a non-zero value.
+     */
+    /**
+     * @todo Someone (MS) please explain weird API design:
+     *   1. Caps.CapabilityCode duplication,
+     *   2. No output size.
+     */
+    WHV_CAPABILITY Caps;
+    RT_ZERO(Caps);
+    SetLastError(0);
+    HRESULT hrc = WHvGetCapability(WHvCapabilityCodeHypervisorPresent, &Caps, sizeof(Caps));
+    DWORD   rcWin = GetLastError();
+    if (FAILED(hrc))
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeHypervisorPresent failed: %Rhrc", hrc);
+    if (!Caps.HypervisorPresent)
+    {
+        if (!RTPathExists(RTPATH_NT_PASSTHRU_PREFIX "Device\\VidExo"))
+            return RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE,
+                                 "WHvCapabilityCodeHypervisorPresent is FALSE! Make sure you have enabled the 'Windows Hypervisor Platform' feature.");
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE, "WHvCapabilityCodeHypervisorPresent is FALSE! (%u)", rcWin);
+    }
+    LogRel(("NEM: WHvCapabilityCodeHypervisorPresent is TRUE, so this might work...\n"));
+
+
+    /*
+     * Check what extended VM exits are supported.
+     */
+    RT_ZERO(Caps);
+    hrc = WHvGetCapability(WHvCapabilityCodeExtendedVmExits, &Caps, sizeof(Caps));
+    if (FAILED(hrc))
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeExtendedVmExits failed: %Rhrc", hrc);
+    NEM_LOG_REL_CAP_EX("WHvCapabilityCodeExtendedVmExits", "%'#018RX64", Caps.ExtendedVmExits.AsUINT64);
+    pVM->nem.s.fExtendedMsrExit   = RT_BOOL(Caps.ExtendedVmExits.X64MsrExit);
+    pVM->nem.s.fExtendedCpuIdExit = RT_BOOL(Caps.ExtendedVmExits.X64CpuidExit);
+    pVM->nem.s.fExtendedXcptExit  = RT_BOOL(Caps.ExtendedVmExits.ExceptionExit);
+    NEM_LOG_REL_CAP_SUB("fExtendedMsrExit",   pVM->nem.s.fExtendedMsrExit);
+    NEM_LOG_REL_CAP_SUB("fExtendedCpuIdExit", pVM->nem.s.fExtendedCpuIdExit);
+    NEM_LOG_REL_CAP_SUB("fExtendedXcptExit",  pVM->nem.s.fExtendedXcptExit);
+    if (Caps.ExtendedVmExits.AsUINT64 & ~(uint64_t)7)
+        LogRel(("NEM: Warning! Unknown VM exit definitions: %#RX64\n", Caps.ExtendedVmExits.AsUINT64));
+    /** @todo RECHECK: WHV_EXTENDED_VM_EXITS typedef. */
+
+    /*
+     * Check features in case they end up defining any.
+     */
+    RT_ZERO(Caps);
+    hrc = WHvGetCapability(WHvCapabilityCodeFeatures, &Caps, sizeof(Caps));
+    if (FAILED(hrc))
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeFeatures failed: %Rhrc", hrc);
+    if (Caps.Features.AsUINT64 & ~(uint64_t)0)
+        LogRel(("NEM: Warning! Unknown feature definitions: %#RX64\n", Caps.Features.AsUINT64));
+    /** @todo RECHECK: WHV_CAPABILITY_FEATURES typedef. */
+
+    /*
+     * Check that the CPU vendor is supported.
+     */
+    RT_ZERO(Caps);
+    hrc = WHvGetCapability(WHvCapabilityCodeProcessorVendor, &Caps, sizeof(Caps));
+    if (FAILED(hrc))
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeProcessorVendor failed: %Rhrc", hrc);
+    switch (Caps.ProcessorVendor)
+    {
+        /** @todo RECHECK: WHV_PROCESSOR_VENDOR typedef. */
+        case WHvProcessorVendorIntel:
+            NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorVendor", "%d - Intel", Caps.ProcessorVendor);
+            pVM->nem.s.enmCpuVendor = CPUMCPUVENDOR_INTEL;
+            break;
+        case WHvProcessorVendorAmd:
+            NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorVendor", "%d - AMD", Caps.ProcessorVendor);
+            pVM->nem.s.enmCpuVendor = CPUMCPUVENDOR_AMD;
+            break;
+        default:
+            NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorVendor", "%d", Caps.ProcessorVendor);
+            return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Unknown processor vendor: %d", Caps.ProcessorVendor);
+    }
+
+    /*
+     * CPU features, guessing these are virtual CPU features?
+     */
+    RT_ZERO(Caps);
+    hrc = WHvGetCapability(WHvCapabilityCodeProcessorFeatures, &Caps, sizeof(Caps));
+    if (FAILED(hrc))
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeProcessorFeatures failed: %Rhrc", hrc);
+    NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorFeatures", "%'#018RX64", Caps.ProcessorFeatures.AsUINT64);
+#define NEM_LOG_REL_CPU_FEATURE(a_Field)    NEM_LOG_REL_CAP_SUB(#a_Field, Caps.ProcessorFeatures.a_Field)
+    NEM_LOG_REL_CPU_FEATURE(Sse3Support);
+    NEM_LOG_REL_CPU_FEATURE(LahfSahfSupport);
+    NEM_LOG_REL_CPU_FEATURE(Ssse3Support);
+    NEM_LOG_REL_CPU_FEATURE(Sse4_1Support);
+    NEM_LOG_REL_CPU_FEATURE(Sse4_2Support);
+    NEM_LOG_REL_CPU_FEATURE(Sse4aSupport);
+    NEM_LOG_REL_CPU_FEATURE(XopSupport);
+    NEM_LOG_REL_CPU_FEATURE(PopCntSupport);
+    NEM_LOG_REL_CPU_FEATURE(Cmpxchg16bSupport);
+    NEM_LOG_REL_CPU_FEATURE(Altmovcr8Support);
+    NEM_LOG_REL_CPU_FEATURE(LzcntSupport);
+    NEM_LOG_REL_CPU_FEATURE(MisAlignSseSupport);
+    NEM_LOG_REL_CPU_FEATURE(MmxExtSupport);
+    NEM_LOG_REL_CPU_FEATURE(Amd3DNowSupport);
+    NEM_LOG_REL_CPU_FEATURE(ExtendedAmd3DNowSupport);
+    NEM_LOG_REL_CPU_FEATURE(Page1GbSupport);
+    NEM_LOG_REL_CPU_FEATURE(AesSupport);
+    NEM_LOG_REL_CPU_FEATURE(PclmulqdqSupport);
+    NEM_LOG_REL_CPU_FEATURE(PcidSupport);
+    NEM_LOG_REL_CPU_FEATURE(Fma4Support);
+    NEM_LOG_REL_CPU_FEATURE(F16CSupport);
+    NEM_LOG_REL_CPU_FEATURE(RdRandSupport);
+    NEM_LOG_REL_CPU_FEATURE(RdWrFsGsSupport);
+    NEM_LOG_REL_CPU_FEATURE(SmepSupport);
+    NEM_LOG_REL_CPU_FEATURE(EnhancedFastStringSupport);
+    NEM_LOG_REL_CPU_FEATURE(Bmi1Support);
+    NEM_LOG_REL_CPU_FEATURE(Bmi2Support);
+    /* two reserved bits here, see below */
+    NEM_LOG_REL_CPU_FEATURE(MovbeSupport);
+    NEM_LOG_REL_CPU_FEATURE(Npiep1Support);
+    NEM_LOG_REL_CPU_FEATURE(DepX87FPUSaveSupport);
+    NEM_LOG_REL_CPU_FEATURE(RdSeedSupport);
+    NEM_LOG_REL_CPU_FEATURE(AdxSupport);
+    NEM_LOG_REL_CPU_FEATURE(IntelPrefetchSupport);
+    NEM_LOG_REL_CPU_FEATURE(SmapSupport);
+    NEM_LOG_REL_CPU_FEATURE(HleSupport);
+    NEM_LOG_REL_CPU_FEATURE(RtmSupport);
+    NEM_LOG_REL_CPU_FEATURE(RdtscpSupport);
+    NEM_LOG_REL_CPU_FEATURE(ClflushoptSupport);
+    NEM_LOG_REL_CPU_FEATURE(ClwbSupport);
+    NEM_LOG_REL_CPU_FEATURE(ShaSupport);
+    NEM_LOG_REL_CPU_FEATURE(X87PointersSavedSupport);
+#undef NEM_LOG_REL_CPU_FEATURE
+    if (Caps.ProcessorFeatures.AsUINT64 & (~(RT_BIT_64(43) - 1) | RT_BIT_64(27) | RT_BIT_64(28)))
+        LogRel(("NEM: Warning! Unknown CPU features: %#RX64\n", Caps.ProcessorFeatures.AsUINT64));
+    pVM->nem.s.uCpuFeatures.u64 = Caps.ProcessorFeatures.AsUINT64;
+    /** @todo RECHECK: WHV_PROCESSOR_FEATURES typedef. */
+
+    /*
+     * The cache line flush size.
+     */
+    RT_ZERO(Caps);
+    hrc = WHvGetCapability(WHvCapabilityCodeProcessorClFlushSize, &Caps, sizeof(Caps));
+    if (FAILED(hrc))
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeProcessorClFlushSize failed: %Rhrc", hrc);
+    NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorClFlushSize", "2^%u", Caps.ProcessorClFlushSize);
+
+    /*
+     * See if they've added more properties that we're not aware of.
+     */
+    /** @todo RECHECK: WHV_CAPABILITY_CODE typedef. */
+    if (!IsDebuggerPresent()) /* Too noisy when in debugger, so skip. */
+    {
+        static const struct
+        {
+            uint32_t iMin, iMax; } s_aUnknowns[] =
+        {
+            { 0x0003, 0x000f },
+            { 0x1003, 0x100f },
+            { 0x2000, 0x200f },
+            { 0x3000, 0x300f },
+            { 0x4000, 0x400f },
+        };
+        for (uint32_t j = 0; j < RT_ELEMENTS(s_aUnknowns); j++)
+            for (uint32_t i = s_aUnknowns[j].iMin; i <= s_aUnknowns[j].iMax; i++)
+            {
+                RT_ZERO(Caps);
+                hrc = WHvGetCapability((WHV_CAPABILITY_CODE)i, &Caps, sizeof(Caps));
+                if (SUCCEEDED(hrc))
+                    LogRel(("NEM: Warning! Unknown capability %#x returning: %.*Rhxs\n", i, sizeof(Caps), &Caps));
+            }
+    }
+
+#undef NEM_LOG_REL_CAP_EX
+#undef NEM_LOG_REL_CAP_SUB_EX
+#undef NEM_LOG_REL_CAP_SUB
+    return VINF_SUCCESS;
+}
 
 
 
@@ -223,36 +422,11 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                                 Assert(!RTErrInfoIsSet(pErrInfo));
 
                                 /*
-                                 * Check if the hypervisor API is present.
+                                 * Check the capabilties of the hypervisor, starting with whether it's present.
                                  */
-                                /** @todo Someone (MS) please explain weird API design:
-                                 *   1. Caps.CapabilityCode duplication,
-                                 *   2. No output size.
-                                 */
-                                WHV_CAPABILITY Caps;
-                                RT_ZERO(Caps);
-                                SetLastError(0);
-                                HRESULT hrc = WHvGetCapability(WHvCapabilityCodeHypervisorPresent, &Caps, sizeof(Caps));
-                                DWORD   rcWin = GetLastError();
-                                if (FAILED(hrc))
-                                    rc = RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
-                                                       "WHvGetCapability/WHvCapabilityCodeHypervisorPresent failed: %Rhrc", hrc);
-                                else if (!Caps.HypervisorPresent)
+                                rc = nemR3NativeInitCheckCapabilities(pVM, pErrInfo);
+                                if (RT_SUCCESS(rc))
                                 {
-                                    if (!RTPathExists(RTPATH_NT_PASSTHRU_PREFIX "Device\\VidExo"))
-                                        rc = RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE,
-                                                           "WHvCapabilityCodeHypervisorPresent is FALSE! Make sure you have enabled the 'Windows Hypervisor Platform' feature.");
-                                    else
-                                        rc = RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE,
-                                                           "WHvCapabilityCodeHypervisorPresent is FALSE! (%u)", rcWin);
-                                }
-                                else
-                                {
-                                    /*
-                                     * .
-                                     */
-                                    LogRel(("NEM: WHvCapabilityCodeHypervisorPresent is TRUE, so this might work...\n"));
-
                                     rc = RTErrInfoAddF(pErrInfo, VERR_NOT_IMPLEMENTED, "lazy bugger isn't done yet");
                                 }
                             }
