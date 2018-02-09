@@ -23,6 +23,9 @@
 # include <QApplication>
 # include <QDesktopWidget>
 # include <QScreen>
+# ifdef VBOX_WS_WIN
+#  include <QLibrary>
+# endif
 # ifdef VBOX_WS_X11
 #  include <QTimer>
 # endif
@@ -37,7 +40,49 @@
 # include <iprt/assert.h>
 # include <VBox/log.h>
 
+/* Platform includes: */
+# ifdef VBOX_WS_WIN
+#  include <iprt/win/windows.h>
+# endif
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+#ifdef VBOX_WS_WIN
+
+typedef enum _MONITOR_DPI_TYPE // gently stolen from MSDN
+{
+    MDT_EFFECTIVE_DPI  = 0,
+    MDT_ANGULAR_DPI    = 1,
+    MDT_RAW_DPI        = 2,
+    MDT_DEFAULT        = MDT_EFFECTIVE_DPI
+} MONITOR_DPI_TYPE;
+
+bool MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lpClipRect, LPARAM dwData)
+{
+    /* These required for clipped screens only: */
+    RT_NOREF(hdcMonitor, lpClipRect);
+
+    /* Dynamically access Shcore.dll: */
+    QLibrary shcore("Shcore.dll", NULL);
+
+    /* Acquire effective DPI (available since Windows 8.1): */
+    typedef void (*GetDpiForMonitorFP)(HMONITOR hMonitor, MONITOR_DPI_TYPE enmDpiType, uint *puOutX, uint *puOutY);
+    GetDpiForMonitorFP GetDpiForMonitorF = (GetDpiForMonitorFP)shcore.resolve("GetDpiForMonitor");
+    if (GetDpiForMonitorF)
+    {
+        uint uOutX = 0;
+        uint uOutY = 0;
+        GetDpiForMonitorF(hMonitor, MDT_EFFECTIVE_DPI, &uOutX, &uOutY);
+        reinterpret_cast<QList<QPair<int, int> >*>(dwData)->append(qMakePair(uOutX, uOutY));
+        return true;
+    }
+
+    /* False by default: */
+    return false;
+}
+
+#endif /* VBOX_WS_WIN */
 
 
 #ifdef VBOX_WS_X11
@@ -354,13 +399,14 @@ bool UIDesktopWidgetWatchdog::isFakeScreenDetected() const
 }
 #endif /* VBOX_WS_X11 */
 
-double UIDesktopWidgetWatchdog::devicePixelRatio(int iHostScreenIndex)
+double UIDesktopWidgetWatchdog::devicePixelRatio(int iHostScreenIndex /* = -1 */)
 {
     /* First, we should check whether the screen is valid: */
     QScreen *pScreen = iHostScreenIndex == -1
                      ? QGuiApplication::primaryScreen()
                      : QGuiApplication::screens().value(iHostScreenIndex);
     AssertPtrReturn(pScreen, 1.0);
+
     /* Then acquire device-pixel-ratio: */
     return pScreen->devicePixelRatio();
 }
@@ -369,6 +415,47 @@ double UIDesktopWidgetWatchdog::devicePixelRatio(QWidget *pWidget)
 {
     /* Redirect call to wrapper above: */
     return devicePixelRatio(screenNumber(pWidget));
+}
+
+double UIDesktopWidgetWatchdog::devicePixelRatioActual(int iHostScreenIndex /* = -1 */)
+{
+    /* First, we should check whether the screen is valid: */
+    QScreen *pScreen = iHostScreenIndex == -1
+                     ? QGuiApplication::primaryScreen()
+                     : QGuiApplication::screens().value(iHostScreenIndex);
+    AssertPtrReturn(pScreen, 1.0);
+
+#ifdef VBOX_WS_WIN
+
+    /* Dynamically access User32.dll: */
+    QLibrary user32("User32.dll", NULL);
+
+    /* Enumerate available monitors through EnumDisplayMonitors (available since Windows 2k): */
+    typedef bool (*MonitorEnumProcFP)(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lpClipRect, LPARAM dwData);
+    typedef bool (*EnumDisplayMonitorsFP)(HDC hdc, LPCRECT lprcRect, MonitorEnumProcFP lpfnEnum, LPARAM dwData);
+    EnumDisplayMonitorsFP EnumDisplayMonitorsF = (EnumDisplayMonitorsFP)user32.resolve("EnumDisplayMonitors");
+    if (EnumDisplayMonitorsF)
+    {
+        QList<QPair<int, int> > listOfScreenDPI;
+        EnumDisplayMonitorsF(0, 0, MonitorEnumProcF, (LPARAM)&listOfScreenDPI);
+        if (iHostScreenIndex >= 0 && iHostScreenIndex < listOfScreenDPI.size())
+        {
+            const QPair<int, int> dpiPair = listOfScreenDPI.at(iHostScreenIndex);
+            if (dpiPair.first > 0)
+                return (double)dpiPair.first / 96 /* dpi unawarness value */;
+        }
+    }
+
+#endif /* VBOX_WS_WIN */
+
+    /* Then acquire device-pixel-ratio: */
+    return pScreen->devicePixelRatio();
+}
+
+double UIDesktopWidgetWatchdog::devicePixelRatioActual(QWidget *pWidget)
+{
+    /* Redirect call to wrapper above: */
+    return devicePixelRatioActual(screenNumber(pWidget));
 }
 
 void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen *pHostScreen)

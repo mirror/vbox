@@ -110,6 +110,11 @@ public:
     /** Returns device-pixel-ratio of the host-screen which contains @a pWidget. */
     double devicePixelRatio(QWidget *pWidget);
 
+    /** Returns actual device-pixel-ratio of the host-screen with @a iHostScreenIndex. */
+    double devicePixelRatioActual(int iHostScreenIndex = -1);
+    /** Returns actual device-pixel-ratio of the host-screen which contains @a pWidget. */
+    double devicePixelRatioActual(QWidget *pWidget);
+
 private slots:
 
 #if QT_VERSION == 0
