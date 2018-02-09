@@ -6612,6 +6612,18 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 
 #
+# Variant of NewerVccVBoxGuestR3Dll that requires Windows Vista or later.
+#
+TEMPLATE_NewerVccVBoxGuestR3DllMinVista = NewerVccVBoxGuestR3Dll with the newer Visual C++ version (2013 or later).
+TEMPLATE_NewerVccVBoxGuestR3DllMinVista_EXTENDS  = NewerVccVBoxGuestR3Dll
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_NewerVccVBoxGuestR3Dll_LDFLAGS.win.x86))
+ TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.x86))
+ TEMPLATE_NewerVccVBoxGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_NewerVccVBoxGuestR3Dll_POST_CMDS.win.amd64))
+ TEMPLATE_NewerVccVBoxGuestR3DllMinVista_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_NewerVccVBoxGuestR3Dll_LNK_DEPS.win.amd64)
+endif
+
+#
 # Template for building R3 (static) libraries for the guest additions, allows warnings.
 #
 ## @todo rename to VBoxGuestR3LibWarn.
