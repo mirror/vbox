@@ -1693,8 +1693,8 @@ static void vmsvga3dInfoContextWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DCONTEXT pC
                 if (paConsts[i].ctype == SVGA3D_CONST_TYPE_FLOAT)
                     pHlp->pfnPrintf(pHlp, "%s[%#x(%u)] = [" FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR ", " FLOAT_FMT_STR "] ctype=FLOAT\n",
                                     pszName, i, i,
-                                    FLOAT_FMT_ARGS(paConsts[i].value[0]), FLOAT_FMT_ARGS(paConsts[i].value[1]),
-                                    FLOAT_FMT_ARGS(paConsts[i].value[2]), FLOAT_FMT_ARGS(paConsts[i].value[3]));
+                                    FLOAT_FMT_ARGS(*(float *)&paConsts[i].value[0]), FLOAT_FMT_ARGS(*(float *)&paConsts[i].value[1]),
+                                    FLOAT_FMT_ARGS(*(float *)&paConsts[i].value[2]), FLOAT_FMT_ARGS(*(float *)&paConsts[i].value[3]));
                 else
                     pHlp->pfnPrintf(pHlp, "%s[%#x(%u)] = [%#x, %#x, %#x, %#x] ctype=%s\n",
                                     pszName, i, i,

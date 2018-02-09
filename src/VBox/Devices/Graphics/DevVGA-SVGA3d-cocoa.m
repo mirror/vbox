@@ -47,11 +47,11 @@
 
 /**@def FLOAT_FMT_STR
  * Format string bits to go with FLOAT_FMT_ARGS. */
-#define FLOAT_FMT_STR                           "%d.%06d"
+#define FLOAT_FMT_STR                           "%d.%06u"
 /** @def FLOAT_FMT_ARGS
  * Format arguments for a float value, corresponding to FLOAT_FMT_STR.
  * @param   r       The floating point value to format.  */
-#define FLOAT_FMT_ARGS(r)                       (int)(r), ((unsigned)((r) * 1000000) % 1000000U)
+#define FLOAT_FMT_ARGS(r)                       (int)(r), ((unsigned)(RT_ABS(r) * 1000000) % 1000000U)
 
 
 
