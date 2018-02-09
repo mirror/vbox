@@ -144,6 +144,8 @@ VMMR3_INT_DECL(int) NEMR3InitAfterCPUM(PVM pVM)
 #ifdef VBOX_WITH_NATIVE_NEM
     if (pVM->fNEMActive)
         rc = nemR3NativeInitAfterCPUM(pVM);
+#else
+    RT_NOREF(pVM);
 #endif
     return rc;
 }
