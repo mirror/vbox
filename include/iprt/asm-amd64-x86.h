@@ -1507,6 +1507,24 @@ DECLINLINE(bool) ASMIsValidExtRange(uint32_t uEAX)
 
 
 /**
+ * Checks whether ASMCpuId_EAX(0x40000000) indicates a valid range.
+ *
+ * This only succeeds if there are at least two leaves in the range.
+ *
+ * @returns true/false.
+ * @param   uEAX    The EAX value of CPUID leaf 0x40000000.
+ *
+ * @note    Unlike ASMIsValidStdRange() and ASMIsValidExtRange(), a single leaf
+ *          is okay here.  So, you always need to check the range.
+ * @remarks The upper range limit is take from the intel docs.
+ */
+DECLINLINE(bool) ASMIsValidHypervisorRange(uint32_t uEAX)
+{
+    return uEAX >= UINT32_C(0x40000000) && uEAX <= UINT32_C(0x4fffffff);
+}
+
+
+/**
  * Extracts the CPU family from ASMCpuId(1) or ASMCpuId(0x80000001)
  *
  * @returns Family.

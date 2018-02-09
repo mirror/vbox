@@ -2812,6 +2812,8 @@
 #define VERR_NEM_NOT_ENABLED                        (-6800)
 /** NEM is not available. */
 #define VERR_NEM_NOT_AVAILABLE                      (-6801)
+/** NEM init failed. */
+#define VERR_NEM_INIT_FAILED                        (-6802)
 /** @} */
 
 /* SED-END */

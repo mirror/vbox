@@ -307,8 +307,14 @@ VBoxVMM_SOURCES.x86 += \
 VBoxVMM_SOURCES.amd64 += \
 	VMMSwitcher/AMD64Stub.asm
 
-VBoxVMM_SOURCES.win += VMMR3/NEMR3Native-win.cpp
-VBoxVMM_DEFS.win    += VBOX_WITH_NATIVE_NEM
+if1of ($(USERNAME),bird) # experimental.
+ VBoxVMM_SOURCES.win.amd64 += VMMR3/NEMR3Native-win.cpp
+ VBoxVMM_DEFS.win.amd64    += VBOX_WITH_NATIVE_NEM
+ VMMR3/NEMR3Native-win.cpp_DEFS.amd64 = _AMD64_
+ VMMR3/NEMR3Native-win.cpp_INCS = \
+ 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17083.0/include/10.0.17083.0/um \
+ 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17083.0/include/10.0.17083.0/shared
+endif
 
 VBoxVMM_LIBS = \
 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
