@@ -510,7 +510,7 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
                 return rc;
 
             if (RT_FAILURE(rc))
-                rc = VERR_TRY_AGAIN;
+                rc = VINF_TRY_AGAIN;
         }
         else if (   rcNt == STATUS_OBJECT_TYPE_MISMATCH
                  || rcNt == STATUS_OBJECT_NAME_INVALID
@@ -609,6 +609,17 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
                 rc = RTErrConvertFromNtStatus(rcNt);
 
             NtClose(hFile);
+        }
+        /*
+         * Quite possibly a object directory.
+         */
+        else if (   rcNt == STATUS_OBJECT_NAME_INVALID  /* with trailing slash */
+                 || rcNt == STATUS_OBJECT_TYPE_MISMATCH /* without trailing slash */ )
+        {
+            InitializeObjectAttributes(&ObjAttr, pNtName, OBJ_CASE_INSENSITIVE, hRootDir, NULL);
+            rc = rtPathNtQueryInfoInDirectoryObject(&ObjAttr, pObjInfo, enmAddAttr, fFlags, &uBuf, sizeof(uBuf));
+            if (RT_FAILURE(rc))
+                rc = RTErrConvertFromNtStatus(rcNt);
         }
         else
             rc = RTErrConvertFromNtStatus(rcNt);
