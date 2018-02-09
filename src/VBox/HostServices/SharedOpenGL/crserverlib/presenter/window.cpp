@@ -290,12 +290,16 @@ int CrFbWindow::UpdateBegin()
 
     Assert(!mFlags.fForcePresentOnReenable);
 
+    crDebug("CrFbWindow::UpdateBegin ENTER, mSpuWindow(0x%X) fDataPresented(%d)", mSpuWindow, mFlags.fDataPresented);
+
     if (mFlags.fDataPresented)
     {
         Assert(mSpuWindow);
         cr_server.head_spu->dispatch_table.VBoxPresentComposition(mSpuWindow, NULL, NULL);
         mFlags.fForcePresentOnReenable = isPresentNeeded();
     }
+
+    crDebug("CrFbWindow::UpdateBegin LEAVE, fForcePresentOnReenable(%d)", mFlags.fForcePresentOnReenable);
 
     return VINF_SUCCESS;
 }
@@ -308,6 +312,7 @@ void CrFbWindow::UpdateEnd()
     if (mcUpdates)
         return;
 
+    crDebug("CrFbWindow::UpdateEnd ENTER, mSpuWindow(0x%X) mpCompositor(0x%X) fForcePresentOnReenable(%d)", mSpuWindow, mpCompositor, mFlags.fForcePresentOnReenable);
     checkRegions();
 
     if (mSpuWindow)
@@ -369,6 +374,8 @@ int CrFbWindow::Create()
         return VINF_ALREADY_INITIALIZED;
     }
 
+    crDebug("CrFbWindow::Create ENTER, mParentId(0x%X)\n", mParentId);
+
     CRASSERT(cr_server.fVisualBitsDefault);
     renderspuSetWindowId(mParentId);
     mSpuWindow = cr_server.head_spu->dispatch_table.WindowCreate("", cr_server.fVisualBitsDefault);
@@ -396,6 +403,7 @@ int CrFbWindow::Create()
     if (mParentId && mFlags.fVisible)
         cr_server.head_spu->dispatch_table.WindowShow(mSpuWindow, true);
 
+    crDebug("CrFbWindow::Create LEAVE, mParentId(0x%X) mSpuWindow(0x%X)\n", mParentId, mSpuWindow);
     return VINF_SUCCESS;
 }
 
@@ -414,6 +422,9 @@ CrFbWindow::~CrFbWindow()
 
 void CrFbWindow::checkRegions()
 {
+    crDebug("CrFbWindow::checkRegions ENTER, mSpuWindow(0x%X) mpCompositor(0x%X) fCompositoEntriesModified(%d)",
+        mSpuWindow, mpCompositor, mFlags.fCompositoEntriesModified);
+
     if (!mSpuWindow)
         return;
 
@@ -441,6 +452,8 @@ void CrFbWindow::checkRegions()
     cr_server.head_spu->dispatch_table.WindowVisibleRegion(mSpuWindow, cRects, (const GLint*)pRects);
 
     mFlags.fCompositoEntriesModified = 0;
+
+    crDebug("CrFbWindow::checkRegions LEAVE, cRects(%d)", cRects);
 }
 
 
