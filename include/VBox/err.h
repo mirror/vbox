@@ -2814,6 +2814,8 @@
 #define VERR_NEM_NOT_AVAILABLE                      (-6801)
 /** NEM init failed. */
 #define VERR_NEM_INIT_FAILED                        (-6802)
+/** NEM failed to create a native VM instance. */
+#define VERR_NEM_VM_CREATE_FAILED                   (-6803)
 /** @} */
 
 /* SED-END */

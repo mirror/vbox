@@ -42,6 +42,7 @@ RT_C_DECLS_BEGIN
  */
 VMMR3_INT_DECL(int)  NEMR3InitConfig(PVM pVM);
 VMMR3_INT_DECL(int)  NEMR3Init(PVM pVM, bool fFallback, bool fHMForced);
+VMMR3_INT_DECL(int)  NEMR3InitAfterCPUM(PVM pVM);
 #ifdef IN_RING3
 VMMR3_INT_DECL(int)  NEMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 #endif
