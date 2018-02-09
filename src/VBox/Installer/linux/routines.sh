@@ -93,6 +93,15 @@ check_root()
     fi
 }
 
+## Abort if dependencies are not found
+check_deps()
+{
+    for i in ${@}; do
+        type "${i}" >/dev/null 2>&1 ||
+            abort "${i} not found.  Please install: ${*}; and try again."
+    done
+}
+
 ## Abort if a copy of VirtualBox is already running
 check_running()
 {
