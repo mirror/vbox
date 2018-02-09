@@ -26,6 +26,7 @@
 /* GUI includes: */
 # include "QITreeWidget.h"
 # include "UIInformationGuestSession.h"
+# include "UIGuestSessionTreeItem.h"
 # include "UIGuestSessionsEventHandler.h"
 # include "VBoxGlobal.h"
 
