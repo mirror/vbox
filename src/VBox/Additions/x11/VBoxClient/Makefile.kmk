@@ -67,6 +67,21 @@ endif
 VBoxClient_LIBS += \
 	supc++ \
 	gcc_eh
+ifdef VBOX_WITH_OLD_GLIBC_SUPPORT
+ # This has to be in LIBS, so as to be linked in after supc++ and gcc_eh, which
+ # depend on the symbols it provides.  Static supc++ and gcc_eh on at least
+ # Ubuntu 17.04 contain references to __sprintf_chk and __stack_chk_fail.
+ # Furthermore, they contain references to memcpy, which needs to be resolved
+ # to memcpy@GLIBC_2.2.5, which we solve in a not-very-satisfactory way with a
+ # wrapper.
+ ifeq ($(KBUILD_TARGET),linux)
+VBoxClient_LIBS    += \
+	$(PATH_ROOT)/src/VBox/Additions/x11/VBoxClient/chk_stubs.c
+VBoxClient_LDFLAGS.amd64 += \
+	-Wl,--wrap=memcpy
+ endif
+endif
+
 ifdef VBOX_X11_SEAMLESS_GUEST
  VBoxClient_DEFS += SEAMLESS_GUEST DYNAMIC_RESIZE
  VBoxClient_SOURCES += \

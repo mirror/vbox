@@ -4698,6 +4698,15 @@ TEMPLATE_VBOXR3EXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBOXR3EXE_CXXFLAGS         += $(VBOX_GCC_WERR)
  endif
+ ifdef VBOX_WITH_OLD_GLIBC_SUPPORT
+  # Use older versions of APIs which were improved in versions of glibc later
+  # than what we are targetting, and do not use the stack protector, which
+  # needs glibc 2.4 or later.
+  TEMPLATE_VBOXR3EXE_CXXFLAGS.linux    = \
+	-include $(PATH_ROOT)/include/iprt/linux/symvers.h \
+	$(VBOX_GCC_fno-stack-protector)
+  TEMPLATE_VBOXR3EXE_CFLAGS.linux      = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.linux)
+ endif
 TEMPLATE_VBOXR3EXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXR3EXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc32    = -m32
@@ -4729,6 +4738,10 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.amd64       = -m64
 TEMPLATE_VBOXR3EXE_LDFLAGS.sparc32     = -m32
 TEMPLATE_VBOXR3EXE_LDFLAGS.sparc64     = -m64
 TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
+ ifdef VBOX_WITH_OLD_GLIBC_SUPPORT
+  # The GNU_HASH ELF tag is not supported by older systems.
+TEMPLATE_VBOXR3EXE_LDFLAGS.linux      += -Wl,--hash-style=sysv
+ endif
 TEMPLATE_VBOXR3EXE_LDFLAGS.solaris     = -Wl,-z,ignore # same as VBOX_LD_as_needed
 TEMPLATE_VBOXR3EXE_LDFLAGS.debug       = $(VBOX_GCC_SANITIZER_FLAGS)
 
@@ -6688,6 +6701,10 @@ TEMPLATE_VBOXGUESTR3XF86MOD_EXTENDS = VBOXGUESTR3EXE
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TYPE)      = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TARGET)    = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TARGET) = $(NO_SUCH_VARIABLE)
+ifdef VBOX_WITH_OLD_GLIBC_SUPPORT
+# The GNU_HASH ELF tag is not supported by older systems.
+TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.linux = --hash-style=sysv
+endif
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TYPE)   = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS          = -r
 if1of ($(KBUILD_TARGET), dragonfly freebsd linux netbsd openbsd) # the gnu ld guys.
