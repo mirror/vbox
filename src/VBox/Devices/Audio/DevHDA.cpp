@@ -3113,6 +3113,9 @@ static void hdaDoTransfers(PHDASTATE pThis)
     PHDASTREAM pStreamFront   = hdaGetStreamFromSink(pThis, &pThis->SinkFront);
 
     hdaStreamUpdate(pStreamFront,  true /* fInTimer */);
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# error "Implement me!"
+#endif
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     hdaStreamUpdate(pStreamMicIn,  true /* fInTimer */);
 #endif
