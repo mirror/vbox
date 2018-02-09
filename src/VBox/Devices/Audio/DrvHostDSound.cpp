@@ -135,6 +135,8 @@ typedef struct DSOUNDSTREAM
             LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB;
             /** Current read offset (in bytes) within the DSB. */
             DWORD                       offReadPos;
+            /** Number of buffer overruns happened. Used for logging. */
+            uint8_t                     cOverruns;
         } In;
         struct
         {
@@ -153,6 +155,8 @@ typedef struct DSOUNDSTREAM
             bool                        fFirstPlayback;
             /** Timestamp (in ms) of When the last playback has happened. */
             uint64_t                    tsLastPlayMs;
+            /** Number of buffer underruns happened. Used for logging. */
+            uint8_t                     cUnderruns;
         } Out;
     };
 } DSOUNDSTREAM, *PDSOUNDSTREAM;
@@ -921,8 +925,10 @@ static HRESULT directSoundPlayStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamD
 
     Assert(pStreamDS->fEnabled == false);
 
-    pStreamDS->Out.fFirstPlayback = true;
     pStreamDS->fEnabled           = true;
+
+    pStreamDS->Out.fFirstPlayback = true;
+    pStreamDS->Out.cUnderruns     = 0;
 
     DSLOG(("DSound: Playback started\n"));
 
@@ -1316,6 +1322,8 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStre
                 if (SUCCEEDED(hr))
                 {
                     pStreamDS->fEnabled = true;
+
+                    pStreamDS->In.cOverruns = 0;
                 }
                 else
                     DSLOGREL(("DSound: Starting to capture failed with %Rhrc\n", hr));
@@ -1967,8 +1975,12 @@ static DECLCALLBACK(int) dsoundThread(RTTHREAD hThreadSelf, void *pvUser)
                     AssertPtr(pCircBuf);
 
                     uint32_t cbFree = (uint32_t)RTCircBufFree(pCircBuf);
-                    if (!cbFree)
+                    if (   !cbFree
+                        || pStreamDS->In.cOverruns < 32) /** @todo Make this configurable. */
+                    {
                         DSLOG(("DSound: Warning: Capture buffer full, skipping to record data (%RU32 bytes)\n", cbUsed));
+                        pStreamDS->In.cOverruns++;
+                    }
 
                     DWORD cbToCapture = RT_MIN(cbUsed, cbFree);
 
@@ -2065,8 +2077,12 @@ static DECLCALLBACK(int) dsoundThread(RTTHREAD hThreadSelf, void *pvUser)
                     AssertPtr(pCircBuf);
 
                     DWORD cbUsed   = (uint32_t)RTCircBufUsed(pCircBuf);
-                    if (!cbUsed)
+                    if (   !cbUsed
+                        || pStreamDS->Out.cUnderruns < 32) /** @todo Make this configurable. */
+                    {
                         DSLOG(("DSound: Warning: No more playback data available within time (%RU32 bytes free)\n", cbFree));
+                        pStreamDS->Out.cUnderruns++;
+                    }
 
                     DWORD cbToPlay = RT_MIN(cbFree, cbUsed);
 
