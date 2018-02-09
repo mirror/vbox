@@ -183,6 +183,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/runtime/scale \
 	./src/runtime/seamless \
 	./src/runtime/information \
+	./src/runtime/information/guestctrl \
 	./src/selector \
 	./src/selector/graphics/chooser \
 	./src/selector/graphics/details \
@@ -367,6 +368,16 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.h \
 	src/runtime/fullscreen/UIMachineViewFullscreen.h \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
+	src/runtime/information/UIInformationConfiguration.h \
+	src/runtime/information/UIInformationDataItem.h \
+	src/runtime/information/UIInformationItem.h \
+	src/runtime/information/UIInformationModel.h \
+	src/runtime/information/UIInformationRuntime.h \
+	src/runtime/information/UIInformationView.h \
+	src/runtime/information/UIVMInformationDialog.h \
+	src/runtime/information/guestctrl/UIGuestSessionsEventHandler.h \
+	src/runtime/information/guestctrl/UIGuestSessionTreeItem.h \
+	src/runtime/information/guestctrl/UIInformationGuestSession.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
 	src/runtime/normal/UIMachineViewNormal.h \
@@ -502,17 +513,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
 	src/wizards/firstrun/UIWizardFirstRun.h \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.h \
-	src/runtime/information/UIGuestSessionsEventHandler.h \
-	src/runtime/information/UIGuestSessionTreeItem.h \
-	src/runtime/information/UIInformationConfiguration.h \
-	src/runtime/information/UIInformationDataItem.h \
-	src/runtime/information/UIInformationGuestSession.h \
-	src/runtime/information/UIInformationItem.h \
-	src/runtime/information/UIInformationModel.h \
-	src/runtime/information/UIInformationRuntime.h \
-	src/runtime/information/UIInformationView.h \
-	src/runtime/information/UIVMInformationDialog.h
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VirtualBox_QT_MOCHDRS += \
@@ -552,7 +553,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
-    src/runtime/information/UIGuestSessionsEventHandler.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
@@ -563,6 +563,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIStatusBarEditorWindow.cpp \
+       src/runtime/information/guestctrl/UIGuestSessionsEventHandler.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
@@ -696,6 +697,16 @@ VirtualBox_SOURCES = \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.cpp \
 	src/runtime/fullscreen/UIMachineViewFullscreen.cpp \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
+	src/runtime/information/UIInformationConfiguration.cpp \
+	src/runtime/information/UIInformationDataItem.cpp \
+	src/runtime/information/UIInformationItem.cpp \
+	src/runtime/information/UIInformationModel.cpp \
+	src/runtime/information/UIInformationRuntime.cpp \
+	src/runtime/information/UIInformationView.cpp \
+	src/runtime/information/UIVMInformationDialog.cpp \
+	src/runtime/information/guestctrl/UIInformationGuestSession.cpp \
+	src/runtime/information/guestctrl/UIGuestSessionsEventHandler.cpp \
+	src/runtime/information/guestctrl/UIGuestSessionTreeItem.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \
@@ -833,17 +844,7 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp \
-	src/runtime/information/UIGuestSessionsEventHandler.cpp \
-	src/runtime/information/UIGuestSessionTreeItem.cpp \
-	src/runtime/information/UIInformationConfiguration.cpp \
-	src/runtime/information/UIInformationDataItem.cpp \
-	src/runtime/information/UIInformationGuestSession.cpp \
-	src/runtime/information/UIInformationItem.cpp \
-	src/runtime/information/UIInformationModel.cpp \
-	src/runtime/information/UIInformationRuntime.cpp \
-	src/runtime/information/UIInformationView.cpp \
-	src/runtime/information/UIVMInformationDialog.cpp
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 VirtualBox_SOURCES += \
@@ -1315,6 +1316,7 @@ QTGUI_DOXYFILE_INPUT_DIRS := \
 		runtime \
 		runtime/fullscreen \
 		runtime/information \
+		runtime/information/guestctrl \
 		runtime/normal \
 		runtime/scale \
 		runtime/seamless \
