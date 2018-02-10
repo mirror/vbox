@@ -1150,7 +1150,7 @@ VMMR3_INT_DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
 #endif /* #defined(VBOX_WITH_RAW_MODE) || (HC_ARCH_BITS != 64) */
 
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
 /**
  * Gets the switcher to be used for switching to GC.
  *
