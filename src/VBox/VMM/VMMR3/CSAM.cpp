@@ -2515,7 +2515,7 @@ VMMR3_INT_DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bo
 VMMR3_INT_DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTX pCtx, RTRCPTR pInstrGC)
 {
     Assert(VM_IS_RAW_MODE_ENABLED(pVM));
-    if (EMIsRawRing0Enabled(pVM) == false || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
+    if (!EMIsRawRing0Enabled(pVM) || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
     {
         // No use
         return VINF_SUCCESS;
@@ -2545,7 +2545,7 @@ VMMR3_INT_DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
     PCSAMPAGE pPage = NULL;
     Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
-    if (    EMIsRawRing0Enabled(pVM) == false
+    if (    !EMIsRawRing0Enabled(pVM)
         ||  PATMIsPatchGCAddr(pVM, pInstrGC) == true)
     {
         /* Not active. */
@@ -2692,7 +2692,7 @@ VMMR3_INT_DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
     int         rc;
 
     AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_CSAM_HM_IPE);
-    if (EMIsRawRing0Enabled(pVM) == false)
+    if (!EMIsRawRing0Enabled(pVM))
     {
         /* Enabling interrupt gates only works when raw ring 0 is enabled. */
         //AssertFailed();

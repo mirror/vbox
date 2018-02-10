@@ -147,8 +147,8 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVM->em.s.fGuruOnTripleFault = true;
     }
 
-    Log(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool\n",
-         pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault));
+    LogRel(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool\n",
+            pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault));
 
 #ifdef VBOX_WITH_REM
     /*
@@ -659,7 +659,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
                 pVM->fRecompileSupervisor = pArgs->fEnforce;
                 break;
             case EMEXECPOLICY_RECOMPILE_RING3:
-                pVM->fRecompileUser = pArgs->fEnforce;
+                pVM->fRecompileUser       = pArgs->fEnforce;
                 break;
             case EMEXECPOLICY_IEM_ALL:
                 pVM->em.s.fIemExecutesAll = pArgs->fEnforce;
@@ -667,8 +667,8 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
             default:
                 AssertFailedReturn(VERR_INVALID_PARAMETER);
         }
-        Log(("emR3SetExecutionPolicy: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fIemExecutesAll=%RTbool\n",
-              pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->em.s.fIemExecutesAll));
+        LogRel(("emR3SetExecutionPolicy: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fIemExecutesAll=%RTbool\n",
+                pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->em.s.fIemExecutesAll));
     }
 
     /*

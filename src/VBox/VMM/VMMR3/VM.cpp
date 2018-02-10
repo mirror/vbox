@@ -788,13 +788,15 @@ static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
     /*
      * Base EM and HM config properties.
      */
+    /** @todo We don't need to read any of this here.  The relevant modules reads
+     *        them again and will be in a better position to set them correctly. */
     Assert(pVM->fRecompileUser == false); /* ASSUMES all zeros at this point */
-#ifdef VBOX_WITH_RAW_MODE
     bool        fEnabled;
     rc = CFGMR3QueryBoolDef(pRoot, "RawR3Enabled", &fEnabled, false); AssertRCReturn(rc, rc);
     pVM->fRecompileUser       = !fEnabled;
     rc = CFGMR3QueryBoolDef(pRoot, "RawR0Enabled", &fEnabled, false); AssertRCReturn(rc, rc);
     pVM->fRecompileSupervisor = !fEnabled;
+#ifdef VBOX_WITH_RAW_MODE
 # ifdef VBOX_WITH_RAW_RING1
     rc = CFGMR3QueryBoolDef(pRoot, "RawR1Enabled", &pVM->fRawRing1Enabled, false);
 # endif
@@ -808,7 +810,6 @@ static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
             "VM: fRawRing1Enabled=%RTbool CSAM=%RTbool PATM=%RTbool\n",
             pVM->fHMEnabled, pVM->fRecompileUser, pVM->fRecompileSupervisor,
             pVM->fRawRing1Enabled, pVM->fCSAMEnabled, pVM->fPATMEnabled));
-
 
     /*
      * Make sure the CPU count in the config data matches.
