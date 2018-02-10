@@ -44,7 +44,8 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#if defined(VBOX_WITH_RAW_MODE) || (HC_ARCH_BITS != 64)
+#if defined(VBOX_WITH_RAW_MODE) || HC_ARCH_BITS != 64
+
 /** Array of switcher definitions.
  * The type and index shall match!
  */
@@ -92,8 +93,6 @@ static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
     &vmmR3SwitcherAMD64Stub_Def,
 # endif
 };
-#endif /* VBOX_WITH_RAW_MODE || (HC_ARCH_BITS != 64) */
-
 
 /** Array of switcher definitions.
  * The type and index shall match!
@@ -101,7 +100,7 @@ static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
 static PVMMSWITCHERDEF g_apHmSwitchers[VMMSWITCHER_MAX] =
 {
     NULL, /* invalid entry */
-#if HC_ARCH_BITS == 32
+# if HC_ARCH_BITS == 32
     NULL,   //&vmmR3Switcher32BitTo32Bit_Def,
     NULL,   //&vmmR3Switcher32BitToPAE_Def,
     &vmmR3Switcher32BitToAMD64_Def,
@@ -111,7 +110,7 @@ static PVMMSWITCHERDEF g_apHmSwitchers[VMMSWITCHER_MAX] =
     NULL,   //&vmmR3SwitcherPAETo32Bit_Def,
     NULL,   //&vmmR3SwitcherAMD64ToPAE_Def,
     NULL,   //&vmmR3SwitcherAMD64ToAMD64_Def,
-#else  /* !VBOX_WITH_RAW_MODE */
+# else  /* !VBOX_WITH_RAW_MODE */
     NULL,
     NULL,
     NULL,
@@ -121,15 +120,17 @@ static PVMMSWITCHERDEF g_apHmSwitchers[VMMSWITCHER_MAX] =
     NULL,
     NULL,
     NULL,
-#endif /* !VBOX_WITH_RAW_MODE */
-#ifndef RT_ARCH_AMD64
+# endif /* !VBOX_WITH_RAW_MODE */
+# ifndef RT_ARCH_AMD64
     &vmmR3SwitcherX86Stub_Def,
     NULL,
-#else
+# else
     NULL,
     &vmmR3SwitcherAMD64Stub_Def,
-#endif
+# endif
 };
+
+#endif /* VBOX_WITH_RAW_MODE || HC_ARCH_BITS != 64 */
 
 
 # ifdef VBOX_WITH_64ON32_IDT
