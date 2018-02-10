@@ -456,6 +456,7 @@ VMM_INT_DECL(int) VMMPatchHypercall(PVM pVM, void *pvBuf, size_t cbBuf, size_t *
 VMM_INT_DECL(void) VMMHypercallsEnable(PVMCPU pVCpu)
 {
     /* If there is anything to do for raw-mode, do it here. */
+/** @todo NEM: Hypercalls. */
 #ifndef IN_RC
     if (HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
         HMHypercallsEnable(pVCpu);
@@ -473,6 +474,7 @@ VMM_INT_DECL(void) VMMHypercallsEnable(PVMCPU pVCpu)
 VMM_INT_DECL(void) VMMHypercallsDisable(PVMCPU pVCpu)
 {
     /* If there is anything to do for raw-mode, do it here. */
+/** @todo NEM: Hypercalls. */
 #ifndef IN_RC
     if (HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
         HMHypercallsDisable(pVCpu);

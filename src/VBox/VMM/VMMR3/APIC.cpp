@@ -1432,7 +1432,7 @@ static int apicR3InitState(PVM pVM)
     LogFlow(("APIC: apicR3InitState: pVM=%p\n", pVM));
 
     /* With hardware virtualization, we don't need to map the APIC in GC. */
-    bool const fNeedsGCMapping = !HMIsEnabled(pVM);
+    bool const fNeedsGCMapping = VM_IS_RAW_MODE_ENABLED(pVM);
 
     /*
      * Allocate and map the pending-interrupt bitmap (PIB).

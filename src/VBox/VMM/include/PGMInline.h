@@ -1452,12 +1452,12 @@ DECLINLINE(bool) pgmPoolIsPageLocked(PPGMPOOLPAGE pPage)
 DECL_FORCE_INLINE(bool) pgmMapAreMappingsEnabled(PVM pVM)
 {
 #ifdef PGM_WITHOUT_MAPPINGS
-    /* There are no mappings in VT-x and AMD-V mode. */
-    Assert(HMIsEnabled(pVM)); NOREF(pVM);
+    /* Only raw-mode has mappings. */
+    Assert(!VM_IS_RAW_MODE_ENABLED(pVM)); NOREF(pVM);
     return false;
 #else
-    Assert(pVM->cCpus == 1 || HMIsEnabled(pVM));
-    return !HMIsEnabled(pVM);
+    Assert(pVM->cCpus == 1 || !VM_IS_RAW_MODE_ENABLED(pVM));
+    return VM_IS_RAW_MODE_ENABLED(pVM);
 #endif
 }
 
@@ -1471,8 +1471,8 @@ DECL_FORCE_INLINE(bool) pgmMapAreMappingsEnabled(PVM pVM)
 DECL_FORCE_INLINE(bool) pgmMapAreMappingsFloating(PVM pVM)
 {
 #ifdef PGM_WITHOUT_MAPPINGS
-    /* There are no mappings in VT-x and AMD-V mode. */
-    Assert(HMIsEnabled(pVM)); NOREF(pVM);
+    /* Only raw-mode has mappings. */
+    Assert(!VM_IS_RAW_MODE_ENABLED(pVM)); NOREF(pVM);
     return false;
 #else
     return !pVM->pgm.s.fMappingsFixed

@@ -1030,7 +1030,7 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
     /*
      * Resolve symbols.
      */
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBad",           &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
         AssertRCReturn(rc, rc);
@@ -1062,7 +1062,7 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
     /*
      * GIM is now initialized. Determine if TSC mode switching is allowed (respecting CFGM override).
      */
-    pVM->tm.s.fTSCModeSwitchAllowed &= tmR3HasFixedTSC(pVM) && GIMIsEnabled(pVM) && HMIsEnabled(pVM);
+    pVM->tm.s.fTSCModeSwitchAllowed &= tmR3HasFixedTSC(pVM) && GIMIsEnabled(pVM) && !VM_IS_RAW_MODE_ENABLED(pVM);
     LogRel(("TM: TMR3InitFinalize: fTSCModeSwitchAllowed=%RTbool\n", pVM->tm.s.fTSCModeSwitchAllowed));
     return rc;
 }
@@ -1082,7 +1082,7 @@ VMM_INT_DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
     pVM->tm.s.paTimerQueuesR0 = MMHyperR3ToR0(pVM, pVM->tm.s.paTimerQueuesR3);
 
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         pVM->tm.s.pvGIPRC           = MMHyperR3ToRC(pVM, pVM->tm.s.pvGIPR3);
         pVM->tm.s.paTimerQueuesRC   = MMHyperR3ToRC(pVM, pVM->tm.s.paTimerQueuesR3);

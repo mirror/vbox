@@ -2428,7 +2428,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTR0PTR || !HMIsEnabled(pVM));
+    AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTR0PTR || VM_IS_RAW_MODE_ENABLED(pVM));
 #else
     AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTR0PTR);
 #endif
@@ -3333,6 +3333,7 @@ static void pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE e
  */
 static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher)
 {
+/** @todo NEM: Shadow paging.   */
     VMMSWITCHER enmSwitcher = VMMSWITCHER_INVALID;
     switch (enmGuestMode)
     {
@@ -3347,7 +3348,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
         case PGMMODE_REAL:
         case PGMMODE_PROTECTED:
             if (    enmShadowMode != PGMMODE_INVALID
-                && !HMIsEnabled(pVM) /* always switch in hm mode! */)
+                && VM_IS_RAW_MODE_ENABLED(pVM) /* always switch in hm and nem modes! */)
                 break; /* (no change) */
 
             switch (enmHostMode)
@@ -3542,7 +3543,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
 
 #ifdef VBOX_WITH_RAW_MODE
     if (   enmSwitcher != VMMSWITCHER_INVALID
-        && !HMIsEnabled(pVM))
+        && VM_IS_RAW_MODE_ENABLED(pVM))
     {
         /*
          * Select new switcher.

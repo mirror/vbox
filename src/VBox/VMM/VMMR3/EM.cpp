@@ -179,7 +179,7 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
 
         pVCpu->em.s.pCtx         = CPUMQueryGuestCtxPtr(pVCpu);
 #ifdef VBOX_WITH_RAW_MODE
-        if (!HMIsEnabled(pVM))
+        if (VM_IS_RAW_MODE_ENABLED(pVM))
         {
             pVCpu->em.s.pPatmGCState = PATMR3QueryGCStateHC(pVM);
             AssertMsg(pVCpu->em.s.pPatmGCState, ("PATMR3QueryGCStateHC failed!\n"));
@@ -1390,7 +1390,8 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
 
     X86EFLAGS EFlags = pCtx->eflags;
-    if (HMIsEnabled(pVM))
+    /** @todo NEM: scheduling.   */
+    if (!VM_IS_RAW_MODE_ENABLED(pVM))
     {
         /*
          * Hardware accelerated raw-mode:
@@ -2375,7 +2376,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESCHEDULE_REM:
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
-                    if (HMIsEnabled(pVM))
+                    if (!VM_IS_RAW_MODE_ENABLED(pVM))
                     {
                         Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_IEM_THEN_REM)\n",
                               enmOldState, EMSTATE_IEM_THEN_REM));

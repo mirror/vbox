@@ -80,7 +80,7 @@ patmVirtPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvB
  */
 VMM_INT_DECL(void) PATMRawEnter(PVM pVM, PCPUMCTX pCtx)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     /*
      * Currently we don't bother to check whether PATM is enabled or not.
@@ -156,7 +156,7 @@ VMM_INT_DECL(void) PATMRawEnter(PVM pVM, PCPUMCTX pCtx)
  */
 VMM_INT_DECL(void) PATMRawLeave(PVM pVM, PCPUMCTX pCtx, int rawRC)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     bool fPatchCode = PATMIsPatchGCAddr(pVM, pCtx->eip);
 
     /*
@@ -257,7 +257,7 @@ VMM_INT_DECL(void) PATMRawLeave(PVM pVM, PCPUMCTX pCtx, int rawRC)
  */
 VMM_INT_DECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTX pCtx)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     uint32_t efl = pCtx->eflags.u32;
     efl &= ~PATM_VIRTUAL_FLAGS_MASK;
     efl |= pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & PATM_VIRTUAL_FLAGS_MASK;
@@ -274,7 +274,7 @@ VMM_INT_DECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTX pCtx)
  */
 VMM_INT_DECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTX pCtx, uint32_t efl)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     pVM->patm.s.CTXSUFF(pGCState)->uVMFlags = efl & PATM_VIRTUAL_FLAGS_MASK;
     efl &= ~PATM_VIRTUAL_FLAGS_MASK;
     efl |= X86_EFL_IF;
@@ -302,7 +302,7 @@ VMM_INT_DECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
  */
 VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMGetGCState(PVM pVM)
 {
-    AssertReturn(!HMIsEnabled(pVM), NIL_RTRCPTR);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), NIL_RTRCPTR);
     return pVM->patm.s.pGCStateGC;
 }
 
@@ -354,7 +354,7 @@ VMM_INT_DECL(int) PATMReadPatchCode(PVM pVM, RTGCPTR GCPtrPatchCode, void *pvDst
     /* Shortcut. */
     if (!PATMIsEnabled(pVM))
         return VERR_PATCH_NOT_FOUND;
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     /*
      * Check patch code and patch helper code.  We assume the requested bytes
@@ -409,7 +409,7 @@ VMM_INT_DECL(int) PATMReadPatchCode(PVM pVM, RTGCPTR GCPtrPatchCode, void *pvDst
  */
 VMM_INT_DECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
 {
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         pVM->patm.s.mmio.GCPhys = GCPhys;
         pVM->patm.s.mmio.pCachedData = (RTRCPTR)pCachedData;
@@ -448,7 +448,7 @@ VMM_INT_DECL(bool) PATMAreInterruptsEnabledByCtx(PVM pVM, PCPUMCTX pCtx)
 {
     if (PATMIsEnabled(pVM))
     {
-        Assert(!HMIsEnabled(pVM));
+        Assert(VM_IS_RAW_MODE_ENABLED(pVM));
         if (PATMIsPatchGCAddr(pVM, pCtx->eip))
             return false;
     }
@@ -490,7 +490,7 @@ PPATMPATCHREC patmQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC)
 VMM_INT_DECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint32_t *pSize)
 {
     PPATMPATCHREC pRec;
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     pRec = (PPATMPATCHREC)RTAvloU32Get(&CTXSUFF(pVM->patm.s.PatchLookupTree)->PatchTree, (AVLOU32KEY)pInstrGC);
     if (    pRec
@@ -517,7 +517,7 @@ VMM_INT_DECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode,
 VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTX pCtx, PDISCPUSTATE pCpu)
 {
     Assert(CPUMQueryGuestCtxPtr(VMMGetCpu0(pVM)) == pCtx);
-    AssertReturn(!HMIsEnabled(pVM), VERR_PATM_HM_IPE);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_PATM_HM_IPE);
 
     if (pCpu->pCurInstr->uOpcode == OP_SYSENTER)
     {

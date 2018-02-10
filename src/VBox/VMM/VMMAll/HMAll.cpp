@@ -48,7 +48,7 @@
  */
 VMMDECL(bool) HMIsEnabledNotMacro(PVM pVM)
 {
-    Assert(pVM->fHMEnabledFixed);
+    Assert(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET);
     return pVM->fHMEnabled;
 }
 
@@ -362,6 +362,7 @@ VMM_INT_DECL(bool) HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM)
  * @returns true if long mode is allowed, false otherwise.
  * @param   pVM         The cross context VM structure.
  */
+/** @todo NEM: Check users of HMIsLongModeAllowed */
 VMM_INT_DECL(bool) HMIsLongModeAllowed(PVM pVM)
 {
     return HMIsEnabled(pVM) && pVM->hm.s.fAllow64BitGuests;

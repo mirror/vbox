@@ -657,7 +657,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
 {
     LogFlow(("IOMR3IOPortRegisterRC: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%RRv pfnOutCallback=%RRv pfnInCallback=%RRv pfnOutStrCallback=%RRv pfnInStrCallback=%RRv pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pfnOutStrCallback, pfnInStrCallback, pszDesc));
-    AssertReturn(!HMIsEnabled(pVM), VERR_IOM_HM_IPE);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_IOM_HM_IPE);
 
     /*
      * Validate input.
@@ -1468,7 +1468,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS 
 {
     LogFlow(("IOMR3MmioRegisterRC: pDevIns=%p GCPhysStart=%RGp cbRange=%RGp pvUser=%RGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
-    AssertReturn(!HMIsEnabled(pVM), VERR_IOM_HM_IPE);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_IOM_HM_IPE);
 
     /*
      * Validate input.

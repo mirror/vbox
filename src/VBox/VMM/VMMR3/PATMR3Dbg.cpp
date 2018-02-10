@@ -267,7 +267,7 @@ static void patmR3DbgAddPatches(PVM pVM, RTDBGMOD hDbgMod)
  */
 VMMR3_INT_DECL(void) PATMR3DbgPopulateAddrSpace(PVM pVM, RTDBGAS hDbgAs)
 {
-    AssertReturnVoid(!HMIsEnabled(pVM));
+    AssertReturnVoid(VM_IS_RAW_MODE_ENABLED(pVM));
 
     /*
      * Add a fake debug module for the PATMGCSTATE structure.

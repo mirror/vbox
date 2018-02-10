@@ -174,7 +174,7 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
     }
 
     /* We always need to trap VMCALL/VMMCALL hypercall using #UDs for raw-mode VMs. */
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
         pKvm->fTrapXcptUD = true;
 
     return VINF_SUCCESS;

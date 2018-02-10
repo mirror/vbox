@@ -538,7 +538,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     RT_NOREF(pVM, GCPtrBase, cb);
 #endif /* PGM_WITHOUT_MAPPINGS */
 
-    Assert(HMIsEnabled(pVM));
+    Assert(!VM_IS_RAW_MODE_ENABLED(pVM));
     return VINF_SUCCESS;
 }
 

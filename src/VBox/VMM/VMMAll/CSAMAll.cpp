@@ -163,7 +163,7 @@ csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
  */
 VMM_INT_DECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     if (!CSAMIsEnabled(pVM))
         return VINF_SUCCESS;
 
@@ -193,7 +193,7 @@ VMM_INT_DECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage)
 {
     int pgdir, bit;
     uintptr_t page;
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     page  = (uintptr_t)pPage;
     pgdir = page >> X86_PAGE_4M_SHIFT;
@@ -230,7 +230,7 @@ VMM_INT_DECL(int) CSAMMarkPage(PVM pVM, RTRCUINTPTR pPage, bool fScanned)
 
     if (!CSAMIsEnabled(pVM))
         return VINF_SUCCESS;
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     page  = (uintptr_t)pPage;
     pgdir = page >> X86_PAGE_4M_SHIFT;
@@ -292,7 +292,7 @@ VMM_INT_DECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr)
 {
     if (!CSAMIsEnabled(pVM))
         return false;
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     if(CSAMIsPageScanned(pVM, (RTRCPTR)GCPtr))
     {
@@ -314,7 +314,7 @@ VMM_INT_DECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr)
  */
 VMM_INT_DECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     if (pVM->csam.s.cPossibleCodePages < RT_ELEMENTS(pVM->csam.s.pvPossibleCodePage))
     {
         pVM->csam.s.pvPossibleCodePage[pVM->csam.s.cPossibleCodePages++] = (RTRCPTR)GCPtr;
@@ -332,7 +332,7 @@ VMM_INT_DECL(void) CSAMMarkPossibleCodePage(PVM pVM, RTRCPTR GCPtr)
  */
 VMM_INT_DECL(int) CSAMEnableScanning(PVM pVM)
 {
-    AssertReturn(!HMIsEnabled(pVM), VERR_CSAM_HM_IPE);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_CSAM_HM_IPE);
     pVM->fCSAMEnabled = true;
     return VINF_SUCCESS;
 }
@@ -363,7 +363,7 @@ VMM_INT_DECL(int) CSAMDisableScanning(PVM pVM)
  */
 VMM_INT_DECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     for (uint32_t i=0;i<pVM->csam.s.cDangerousInstr;i++)
     {

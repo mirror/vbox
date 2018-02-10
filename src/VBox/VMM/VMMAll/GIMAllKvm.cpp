@@ -399,7 +399,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmExecHypercallInstr(PVMCPU pVCpu, PCPUMCTX pCtx,
             PVM      pVM  = pVCpu->CTX_SUFF(pVM);
             PCGIMKVM pKvm = &pVM->gim.s.u.Kvm;
             if (   pDis->pCurInstr->uOpcode != pKvm->uOpCodeNative
-                && HMIsEnabled(pVM))
+                && !VM_IS_RAW_MODE_ENABLED(pVM))
             {
                 /** @todo r=ramshankar: we probably should be doing this in an
                  *        EMT rendezvous. */

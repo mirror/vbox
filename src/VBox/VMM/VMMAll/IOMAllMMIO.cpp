@@ -1091,6 +1091,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /* This currently only works in real mode, protected mode without paging or with nested paging. */
+    /** @todo NEM: MMIO page aliasing. */
     if (    !HMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
         ||  (   CPUMIsGuestInPagedProtectedMode(pVCpu)
              && !HMIsNestedPagingActive(pVM)))
@@ -1165,6 +1166,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTHCPH
     Log(("IOMMMIOMapMMIOHCPage %RGp -> %RGp flags=%RX64\n", GCPhys, HCPhys, fPageFlags));
 
     AssertReturn(fPageFlags == (X86_PTE_RW | X86_PTE_P), VERR_INVALID_PARAMETER);
+    /** @todo NEM: MMIO page aliasing. */
     Assert(HMIsEnabled(pVM));
 
     /*
@@ -1216,6 +1218,7 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /* This currently only works in real mode, protected mode without paging or with nested paging. */
+    /** @todo NEM: MMIO page aliasing. */
     if (    !HMIsEnabled(pVM)       /* useless without VT-x/AMD-V */
         ||  (   CPUMIsGuestInPagedProtectedMode(pVCpu)
              && !HMIsNestedPagingActive(pVM)))

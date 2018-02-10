@@ -56,7 +56,7 @@ trpmGuestIDTWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
     Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
     Log(("trpmGuestIDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf)); NOREF(GCPtr); NOREF(cbBuf);
     NOREF(pvPtr); NOREF(pvUser); NOREF(pvBuf); NOREF(enmOrigin); NOREF(pvUser); RT_NOREF_PV(pVM);
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     /** @todo Check which IDT entry and keep the update cost low in TRPMR3SyncIDT() and CSAMCheckGates(). */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
@@ -468,7 +468,7 @@ VMMDECL(void) TRPMRestoreTrap(PVMCPU pVCpu)
 VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t cbInstr,
                              TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap)
 {
-    AssertReturn(!HMIsEnabled(pVCpu->CTX_SUFF(pVM)), VERR_TRPM_HM_IPE);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)), VERR_TRPM_HM_IPE);
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     X86EFLAGS eflags;
@@ -970,7 +970,7 @@ VMMDECL(int) TRPMRaiseXcptErrCR2(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT en
  */
 VMMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap)
 {
-    AssertReturn(!HMIsEnabled(pVM), VERR_TRPM_HM_IPE);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_TRPM_HM_IPE);
     AssertMsgReturn(iTrap < RT_ELEMENTS(pVM->trpm.s.aIdt), ("Illegal gate number %d!\n", iTrap), VERR_INVALID_PARAMETER);
 
     if (ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap))

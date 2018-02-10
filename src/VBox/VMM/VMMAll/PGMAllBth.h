@@ -2559,7 +2559,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
         /* Bail out here as pgmPoolGetPage will return NULL and we'll crash below.
          * Our individual shadow handlers will provide more information and force a fatal exit.
          */
-        if (   !HMIsEnabled(pVM)
+        if (   VM_IS_RAW_MODE_ENABLED(pVM)
             && MMHyperIsInsideArea(pVM, (RTGCPTR)GCPtrPage))
         {
             LogRel(("CheckPageFault: write to hypervisor region %RGv\n", GCPtrPage));

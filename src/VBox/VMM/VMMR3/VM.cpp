@@ -804,7 +804,6 @@ static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
 #else
     pVM->fHMEnabled = true;
 #endif
-    Assert(!pVM->fHMEnabledFixed);
     LogRel(("VM: fHMEnabled=%RTbool (configured) fRecompileUser=%RTbool fRecompileSupervisor=%RTbool\n"
             "VM: fRawRing1Enabled=%RTbool CSAM=%RTbool PATM=%RTbool\n",
             pVM->fHMEnabled, pVM->fRecompileUser, pVM->fRecompileSupervisor,
@@ -927,11 +926,21 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
      * Init all R3 components, the order here might be important.
      * NEM and HM shall be initialized first!
      */
+    Assert(pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NOT_SET);
     rc = NEMR3InitConfig(pVM);
     if (RT_SUCCESS(rc))
         rc = HMR3Init(pVM);
     if (RT_SUCCESS(rc))
     {
+        ASMCompilerBarrier(); /* HMR3Init will have modified bMainExecutionEngine */
+#ifdef VBOX_WITH_RAW_MODE
+        Assert(   pVM->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT
+               || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_RAW_MODE
+               || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API);
+#else
+        Assert(   pVM->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT
+               || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API);
+#endif
         rc = MMR3Init(pVM);
         if (RT_SUCCESS(rc))
         {
@@ -1116,10 +1125,6 @@ static int vmR3InitRing0(PVM pVM)
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING0);
     if (RT_SUCCESS(rc))
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_HM);
-
-    /** @todo Move this to the VMINITCOMPLETED_HM notification handler. */
-    if (RT_SUCCESS(rc))
-        CPUMR3SetHWVirtEx(pVM, HMIsEnabled(pVM));
 
     LogFlow(("vmR3InitRing0: returns %Rrc\n", rc));
     return rc;
@@ -4518,6 +4523,7 @@ VMMR3_INT_DECL(RTCPUID) VMR3GetVMCPUId(PVM pVM)
  */
 VMMR3_INT_DECL(bool) VMR3IsLongModeAllowed(PVM pVM)
 {
+/** @todo NEM: Fixme log mode allowed stuff. */
     if (HMIsEnabled(pVM))
         return HMIsLongModeAllowed(pVM);
     return false;

@@ -1012,7 +1012,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
                     /* PD not present; guest must reload CR3 to change it.
                      * No need to monitor anything in this case.
                      */
-                    Assert(!HMIsEnabled(pVM));
+                    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
                     GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
                     enmKind = PGMPOOLKIND_PAE_PD_PHYS;

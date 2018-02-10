@@ -115,7 +115,7 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
     pState->enmMode         = enmMode;
     pState->GCPtrPage       = 0;
     pState->pvPageR3        = NULL;
-    pState->hDbgAs          = !HMIsEnabled(pVM)
+    pState->hDbgAs          = VM_IS_RAW_MODE_ENABLED(pVM)
                             ? DBGF_AS_RC_AND_GC_GLOBAL
                             : DBGF_AS_GLOBAL;
     pState->pVM             = pVM;
@@ -234,7 +234,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
 
             /* translate the address */
             pState->GCPtrPage = GCPtr & PAGE_BASE_GC_MASK;
-            if (   !HMIsEnabled(pState->pVM)
+            if (   VM_IS_RAW_MODE_ENABLED(pState->pVM)
                 && MMHyperIsInsideArea(pState->pVM, pState->GCPtrPage))
             {
                 pState->pvPageR3 = MMHyperRCToR3(pState->pVM, (RTRCPTR)pState->GCPtrPage);

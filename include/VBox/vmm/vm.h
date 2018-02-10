@@ -930,6 +930,61 @@ typedef struct VMCPU
 #endif /* !VBOX_FOR_DTRACE_LIB */
 
 
+/** @name VM_EXEC_ENGINE_XXX - VM::bMainExecutionEngine values.
+ * @{ */
+/** Has not yet been set. */
+#define VM_EXEC_ENGINE_NOT_SET              UINT8_C(0)
+/** Raw-mode. */
+#define VM_EXEC_ENGINE_RAW_MODE             UINT8_C(1)
+/** Hardware assisted virtualization thru HM. */
+#define VM_EXEC_ENGINE_HW_VIRT              UINT8_C(2)
+/** Hardware assisted virtualization thru native API (NEM). */
+#define VM_EXEC_ENGINE_NATIVE_API           UINT8_C(3)
+/** @} */
+
+/**
+ * Helper that HM and NEM uses for safely modifying VM::bMainExecutionEngine.
+ *
+ * ONLY HM and NEM MAY USE THIS!
+ *
+ * @param   a_pVM       The cross context VM structure.
+ * @param   a_bValue    The new value.
+ * @internal
+ */
+#define VM_SET_MAIN_EXECUTION_ENGINE(a_pVM, a_bValue) \
+    do { \
+        *const_cast<uint8_t *>(&(a_pVM)->bMainExecutionEngine) = (a_bValue); \
+        ASMCompilerBarrier(); /* just to be on the safe side */ \
+    } while (0)
+
+/**
+ * Checks whether raw-mode is used.
+ *
+ * @retval  true if either is used.
+ * @retval  false if software virtualization (raw-mode) is used.
+ *
+ * @param   a_pVM       The cross context VM structure.
+ * @sa      HMR3IsEnabled, HMIsEnabled
+ * @internal
+ */
+#ifdef VBOX_WITH_RAW_MODE
+# define VM_IS_RAW_MODE_ENABLED(a_pVM)      ((a_pVM)->bMainExecutionEngine == VM_EXEC_ENGINE_RAW_MODE)
+#else
+# define VM_IS_RAW_MODE_ENABLED(a_pVM)      (false)
+#endif
+
+/**
+ * Checks whether HM (VT-x/AMD-V) or NEM is being used by this VM.
+ *
+ * @retval  true if either is used.
+ * @retval  false if software virtualization (raw-mode) is used.
+ *
+ * @param   a_pVM       The cross context VM structure.
+ * @sa      VM_IS_RAW_MODE_ENABLED, HMIsEnabled, HMR3IsEnabled
+ * @internal
+ */
+#define VM_IS_HM_OR_NEM_ENABLED(a_pVM)      ((a_pVM)->bMainExecutionEngine != VM_EXEC_ENGINE_RAW_MODE)
+
 
 /**
  * The cross context VM structure.
@@ -1009,6 +1064,10 @@ typedef struct VM
 
     /** @name Various items that are frequently accessed.
      * @{ */
+    /** The main execution engine, VM_EXEC_ENGINE_XXX.
+     * This is set early during vmR3InitRing3 by HM or NEM.  */
+    uint8_t const               bMainExecutionEngine;
+
     /** Whether to recompile user mode code or run it raw/hm. */
     bool                        fRecompileUser;
     /** Whether to recompile supervisor mode code or run it raw/hm. */
@@ -1023,16 +1082,12 @@ typedef struct VM
     bool                        fCSAMEnabled;
     /** Hardware VM support is available and enabled.
      * Determined very early during init.
-     * This is placed here for performance reasons. */
+     * This is placed here for performance reasons.
+     * @todo obsoleted by bMainExecutionEngine, eliminate. */
     bool                        fHMEnabled;
-    /** For asserting on fHMEnable usage. */
-    bool                        fHMEnabledFixed;
     /** Hardware VM support requires a minimal raw-mode context.
      * This is never set on 64-bit hosts, only 32-bit hosts requires it. */
     bool                        fHMNeedRawModeCtx;
-    /** NEM (native execution manager) active flag.
-     * This means we'll use NEM instead of HM when running guest code.  */
-    bool                        fNEMActive;
     /** Set when this VM is the master FT node.
      * @todo This doesn't need to be here, FTM should store it in it's own
      *       structures instead. */
@@ -1044,7 +1099,7 @@ typedef struct VM
     /** @} */
 
     /** Alignment padding. */
-    uint8_t                     uPadding1[1];
+    uint8_t                     uPadding1[2];
 
     /** @name Debugging
      * @{ */

@@ -132,7 +132,7 @@ int pdmR3DevInit(PVM pVM)
      * Get the RC & R0 devhlps and create the devhlp R3 task queue.
      */
     PCPDMDEVHLPRC pHlpRC = NIL_RTRCPTR;
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pHlpRC);
         AssertReleaseRCReturn(rc, rc);

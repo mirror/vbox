@@ -354,7 +354,7 @@ static int vmmR3InitStacks(PVM pVM)
 #endif
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
             /* MMHyperR3ToR0 returns R3 when not doing hardware assisted virtualization. */
-            if (!HMIsEnabled(pVM))
+            if (VM_IS_RAW_MODE_ENABLED(pVM))
                 pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack = NIL_RTR0PTR;
             else
 #endif
@@ -389,7 +389,7 @@ static int vmmR3InitLoggers(PVM pVM)
     PRTLOGGER pLogger = RTLogDefaultInstance();
     if (pLogger)
     {
-        if (!HMIsEnabled(pVM))
+        if (VM_IS_RAW_MODE_ENABLED(pVM))
         {
             pVM->vmm.s.cbRCLogger = RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]);
             rc = MMR3HyperAllocOnceNoRel(pVM, pVM->vmm.s.cbRCLogger, 0, MM_TAG_VMM, (void **)&pVM->vmm.s.pRCLoggerR3);
@@ -420,7 +420,7 @@ static int vmmR3InitLoggers(PVM pVM)
     /*
      * Allocate RC release logger instances (finalized in the relocator).
      */
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         PRTLOGGER pRelLogger = RTLogRelGetDefaultInstance();
         if (pRelLogger)
@@ -609,7 +609,7 @@ VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
     Assert(pVCpu && pVCpu->idCpu == 0);
 
     /* In VMX mode, there's no need to init RC. */
-    if (HMIsEnabled(pVM))
+    if (!VM_IS_RAW_MODE_ENABLED(pVM))
         return VINF_SUCCESS;
 
     AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
@@ -906,7 +906,7 @@ VMMR3_INT_DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Get other RC entry points.
      */
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         int rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "CPUMGCResumeGuest", &pVM->vmm.s.pfnCPUMRCResumeGuest);
         AssertReleaseMsgRC(rc, ("CPUMGCResumeGuest not found! rc=%Rra\n", rc));
@@ -942,14 +942,14 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 #endif
        )
     {
-        Assert(!HMIsEnabled(pVM));
+        Assert(VM_IS_RAW_MODE_ENABLED(pVM));
         rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "vmmGCLoggerFlush", &RCPtrLoggerFlush);
         AssertReleaseMsgRC(rc, ("vmmGCLoggerFlush not found! rc=%Rra\n", rc));
     }
 
     if (pVM->vmm.s.pRCLoggerR3)
     {
-        Assert(!HMIsEnabled(pVM));
+        Assert(VM_IS_RAW_MODE_ENABLED(pVM));
         RTRCPTR RCPtrLoggerWrapper = 0;
         rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "vmmGCLoggerWrapper", &RCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCLoggerWrapper not found! rc=%Rra\n", rc));
@@ -963,7 +963,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
     if (pVM->vmm.s.pRCRelLoggerR3)
     {
-        Assert(!HMIsEnabled(pVM));
+        Assert(VM_IS_RAW_MODE_ENABLED(pVM));
         RTRCPTR RCPtrLoggerWrapper = 0;
         rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "vmmGCRelLoggerWrapper", &RCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Rra\n", rc));
@@ -1035,7 +1035,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
  */
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM)
 {
-    if (HMIsEnabled(pVM))
+    if (!VM_IS_RAW_MODE_ENABLED(pVM))
         return pVM->vmm.s.szRing0AssertMsg1;
 
     RTRCPTR RCPtr;
@@ -1072,7 +1072,7 @@ VMMR3DECL(PVMCPU) VMMR3GetCpuByIdU(PUVM pUVM, RTCPUID idCpu)
  */
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM)
 {
-    if (HMIsEnabled(pVM))
+    if (!VM_IS_RAW_MODE_ENABLED(pVM))
         return pVM->vmm.s.szRing0AssertMsg2;
 
     RTRCPTR RCPtr;

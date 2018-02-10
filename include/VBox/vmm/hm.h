@@ -45,10 +45,11 @@ RT_C_DECLS_BEGIN
  * Checks whether HM (VT-x/AMD-V) is being used by this VM.
  *
  * @retval  true if used.
- * @retval  false if software virtualization (raw-mode) is used.
+ * @retval  false if software virtualization (raw-mode) or NEM is used.
  *
  * @param   a_pVM       The cross context VM structure.
- * @sa      HMIsEnabledNotMacro, HMR3IsEnabled
+ * @sa      VM_IS_HM_OR_NEM_ENABLED, VM_IS_RAW_MODE_ENABLED,
+ *          HMIsEnabledNotMacro, HMR3IsEnabled
  * @internal
  */
 #if defined(VBOX_STRICT) && defined(IN_RING3)

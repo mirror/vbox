@@ -69,7 +69,7 @@ static uint32_t mmR3HyperComputeHeapSize(PVM pVM)
      * so lets filter out that case first.
      */
     if (   !fCanUseLargerHeap
-        && !HMIsEnabled(pVM)
+        && VM_IS_RAW_MODE_ENABLED(pVM)
         && cbRam < 16*_1G64)
         return 1280 * _1K;
 
@@ -979,7 +979,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
     /*
      * Set MMHYPER_AONR_FLAGS_KERNEL_MAPPING if we're in going to execute in ring-0.
      */
-    if (HMIsEnabled(pVM))
+    if (VM_IS_HM_OR_NEM_ENABLED(pVM))
         fFlags |= MMHYPER_AONR_FLAGS_KERNEL_MAPPING;
 #endif
 

@@ -520,7 +520,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                                     rc = nemR3WinInitCreatePartition(pVM, pErrInfo);
                                     if (RT_SUCCESS(rc))
                                     {
-                                        pVM->fNEMActive = true;
+                                        VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
                                         Log(("NEM: Marked active!\n"));
                                     }
                                 }
@@ -542,9 +542,9 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     /*
      * We only fail if in forced mode, otherwise just log the complaint and return.
      */
-    Assert(pVM->fNEMActive || RTErrInfoIsSet(pErrInfo));
+    Assert(pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API || RTErrInfoIsSet(pErrInfo));
     if (   (fForced || !fFallback)
-        && !pVM->fNEMActive)
+        && pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NATIVE_API)
         return VMSetError(pVM, RT_SUCCESS_NP(rc) ? VERR_NEM_NOT_AVAILABLE : rc, RT_SRC_POS, "%s", pErrInfo->pszMsg);
 
     if (RTErrInfoIsSet(pErrInfo))
@@ -568,7 +568,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     AssertReturn(hPartition != NULL, VERR_WRONG_ORDER);
     AssertReturn(!pVM->nem.s.hPartitionDevice, VERR_WRONG_ORDER);
     AssertReturn(!pVM->nem.s.fCreatedEmts, VERR_WRONG_ORDER);
-    AssertReturn(!pVM->fNEMActive, VERR_WRONG_ORDER);
+    AssertReturn(pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API, VERR_WRONG_ORDER);
 
     /*
      * Continue setting up the partition now that we've got most of the CPUID feature stuff.

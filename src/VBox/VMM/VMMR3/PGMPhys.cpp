@@ -1568,7 +1568,7 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
 #if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
                               &R0PtrChunk,
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-                              HMIsEnabled(pVM) ? &R0PtrChunk : NULL,
+                              VM_IS_HM_OR_NEM_ENABLED(pVM) ? &R0PtrChunk : NULL,
 #else
                               NULL,
 #endif
@@ -1578,7 +1578,7 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
 #if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
         Assert(R0PtrChunk != NIL_RTR0PTR);
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-        if (!HMIsEnabled(pVM))
+        if (!VM_IS_HM_OR_NEM_ENABLED(pVM))
             R0PtrChunk = NIL_RTR0PTR;
 #else
         R0PtrChunk = (uintptr_t)pvChunk;
@@ -1700,7 +1700,7 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
          */
         uint32_t cbChunk;
         uint32_t cPagesPerChunk;
-        if (HMIsEnabled(pVM))
+        if (!VM_IS_RAW_MODE_ENABLED(pVM))
         {
             cbChunk = 16U*_1M;
             cPagesPerChunk = 1048048; /* max ~1048059 */
@@ -2520,7 +2520,7 @@ static uint16_t pgmR3PhysMMIOExCalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pc
      */
     uint32_t cbChunk;
     uint32_t cPagesPerChunk;
-    if (HMIsEnabled(pVM))
+    if (!VM_IS_RAW_MODE_ENABLED(pVM))
     {
         cbChunk = 16U*_1M;
         cPagesPerChunk = 1048048; /* max ~1048059 */
@@ -2613,7 +2613,7 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
 #if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
                                   &R0PtrChunk,
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-                                  HMIsEnabled(pVM) ? &R0PtrChunk : NULL,
+                                  VM_IS_HM_OR_NEM_ENABLED(pVM) ? &R0PtrChunk : NULL,
 #else
                                   NULL,
 #endif
@@ -2623,7 +2623,7 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
 #if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
             Assert(R0PtrChunk != NIL_RTR0PTR);
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-            if (!HMIsEnabled(pVM))
+            if (!VM_IS_HM_OR_NEM_ENABLED(pVM))
                 R0PtrChunk = NIL_RTR0PTR;
 #else
             R0PtrChunk = (uintptr_t)pvChunk;
@@ -2638,7 +2638,7 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
              * If we might end up in raw-mode, make a HMA mapping of the range,
              * just like we do for memory above 4GB.
              */
-            if (HMIsEnabled(pVM))
+            if (!VM_IS_RAW_MODE_ENABLED(pVM))
                 pNew->RamRange.pSelfRC  = NIL_RTRCPTR;
             else
             {

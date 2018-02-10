@@ -257,7 +257,7 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
             if (pLookup->u.Locked.pvR0)
                 return (RTR0PTR)((RTR0UINTPTR)pLookup->u.Locked.pvR0 + off);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-            AssertMsg(!HMIsEnabled(pVM), ("%s\n", R3STRING(pLookup->pszDesc)));
+            AssertMsg(VM_IS_RAW_MODE_ENABLED(pVM), ("%s\n", R3STRING(pLookup->pszDesc)));
 #else
             AssertMsgFailed(("%s\n", R3STRING(pLookup->pszDesc))); NOREF(pVM);
 #endif

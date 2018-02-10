@@ -46,7 +46,7 @@
  */
 DECLINLINE(bool) dbgfR3IsHMA(PUVM pUVM, RTGCUINTPTR FlatPtr)
 {
-    return !HMIsEnabled(pUVM->pVM)
+    return VM_IS_RAW_MODE_ENABLED(pUVM->pVM)
         && MMHyperIsInsideArea(pUVM->pVM, FlatPtr);
 }
 
@@ -114,7 +114,7 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddr
     {
         DBGFSELINFO SelInfo;
         int rc = DBGFR3SelQueryInfo(pUVM, idCpu, Sel, DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE, &SelInfo);
-        if (RT_FAILURE(rc) && !HMIsEnabled(pUVM->pVM))
+        if (RT_FAILURE(rc) && VM_IS_RAW_MODE_ENABLED(pUVM->pVM))
             rc = DBGFR3SelQueryInfo(pUVM, idCpu, Sel, DBGFSELQI_FLAGS_DT_SHADOW, &SelInfo);
         if (RT_FAILURE(rc))
             return rc;
@@ -378,7 +378,7 @@ static DECLCALLBACK(int) dbgfR3AddrToVolatileR3PtrOnVCpu(PUVM pUVM, VMCPUID idCp
     {
         rc = VERR_NOT_SUPPORTED; /** @todo create some dedicated errors for this stuff. */
         /** @todo this may assert, create a debug version of this which doesn't. */
-        if (   !HMIsEnabled(pVM)
+        if (   VM_IS_RAW_MODE_ENABLED(pVM)
             && MMHyperIsInsideArea(pVM, pAddress->FlatPtr))
         {
             void *pv = MMHyperRCToCC(pVM, (RTRCPTR)pAddress->FlatPtr);

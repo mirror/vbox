@@ -433,7 +433,7 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PUVM pUVM, VMCPUID idCpu, RTSEL Sel,
     }
     else
     {
-        if (HMIsEnabled(pVM))
+        if (!VM_IS_RAW_MODE_ENABLED(pVM))
             rc = VERR_INVALID_STATE;
         else
             rc = SELMR3GetShadowSelectorInfo(pVM, Sel, pSelInfo);

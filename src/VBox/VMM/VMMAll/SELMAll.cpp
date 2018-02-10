@@ -163,7 +163,7 @@ selmGuestTSSWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
 VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
 {
     Assert(pVM->cCpus == 1 && !CPUMIsGuestInLongMode(VMMGetCpu(pVM)));    /* DON'T USE! */
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     /** @todo check the limit. */
     X86DESC    Desc;
@@ -421,7 +421,7 @@ VMMDECL(int) SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPT
                                uint32_t fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
     Assert(!CPUMIsGuestInLongMode(pVCpu));    /* DON'T USE! (Accessing shadow GDT/LDT.) */
-    Assert(!HMIsEnabled(pVCpu->CTX_SUFF(pVM)));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)));
 
     /*
      * Deal with real & v86 mode first.
@@ -588,7 +588,7 @@ VMMDECL(int) SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPT
 static void selLoadHiddenSelectorRegFromGuestTable(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUMSELREG pSReg,
                                                    RTGCPTR GCPtrDesc, RTSEL const Sel, uint32_t const iSReg)
 {
-    Assert(!HMIsEnabled(pVCpu->CTX_SUFF(pVM)));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)));
     RT_NOREF_PV(pCtx); RT_NOREF_PV(Sel);
 
     /*
@@ -648,7 +648,7 @@ VMM_INT_DECL(void) SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUM
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(pVM->cCpus == 1);
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
 
     /*
@@ -743,7 +743,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRawMode(PVM pVM, PVMCPU pVCpu, RTSEL
                                                     PRTGCPTR ppvFlat, uint32_t *pcBits)
 {
     NOREF(pVCpu);
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     /** @todo validate limit! */
     X86DESC    Desc;
@@ -889,10 +889,10 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS Efl, RTSEL Sel
         CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSRegCS);
 
     /* Undo ring compression. */
-    if ((SelCPL & X86_SEL_RPL) == 1 && !HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if ((SelCPL & X86_SEL_RPL) == 1 && VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
         SelCPL &= ~X86_SEL_RPL;
     Assert(pSRegCS->Sel == SelCS);
-    if ((SelCS  & X86_SEL_RPL) == 1 && !HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if ((SelCS  & X86_SEL_RPL) == 1 && VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
         SelCS  &= ~X86_SEL_RPL;
 #else
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSRegCS));
@@ -936,7 +936,7 @@ VMMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
  */
 void selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     Assert((ss & 1) || esp == 0);
     pVM->selm.s.Tss.ss1  = ss;
     pVM->selm.s.Tss.esp1 = (uint32_t)esp;
@@ -953,7 +953,7 @@ void selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
  */
 void selmSetRing2Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     Assert((ss & 3) == 2 || esp == 0);
     pVM->selm.s.Tss.ss2  = ss;
     pVM->selm.s.Tss.esp2 = (uint32_t)esp;
@@ -974,7 +974,7 @@ void selmSetRing2Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
  */
 VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
 {
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = &pVM->aCpus[0];
 

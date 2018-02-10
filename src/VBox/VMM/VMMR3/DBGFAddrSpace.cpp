@@ -635,7 +635,7 @@ static void dbgfR3AsLazyPopulate(PUVM pUVM, RTDBGAS hAlias)
         RTDBGAS hDbgAs = pUVM->dbgf.s.ahAsAliases[iAlias];
         if (hAlias == DBGF_AS_R0 && pUVM->pVM)
             PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateR0Callback, hDbgAs);
-        else if (hAlias == DBGF_AS_RC && pUVM->pVM && !HMIsEnabled(pUVM->pVM))
+        else if (hAlias == DBGF_AS_RC && pUVM->pVM && VM_IS_RAW_MODE_ENABLED(pUVM->pVM))
         {
             LogRel(("DBGF: Lazy init of RC address space\n"));
             PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateRCCallback, hDbgAs);

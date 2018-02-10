@@ -92,7 +92,7 @@ AssertCompile2MemberOffsets(VM, cpum.s.GuestFeatures, cpum.ro.GuestFeatures);
 static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
 {
     Assert(!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
-    Assert(!HMIsEnabled(pVCpu->CTX_SUFF(pVM)));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)));
     Assert((uintptr_t)(pSReg - &pVCpu->cpum.s.Guest.es) < X86_SREG_COUNT);
 
     if (pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
@@ -579,7 +579,7 @@ VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVMCPU pVCpu)
 VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit)
 {
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if (VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
 #endif
     pVCpu->cpum.s.Guest.gdtr.cbGdt = cbLimit;
@@ -591,7 +591,7 @@ VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit)
 {
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if (VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
 #endif
     pVCpu->cpum.s.Guest.idtr.cbIdt = cbLimit;
@@ -603,7 +603,7 @@ VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 {
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+    if (VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 #endif
     pVCpu->cpum.s.Guest.tr.Sel  = tr;
@@ -616,7 +616,7 @@ VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
     if (   (   ldtr != 0
             || pVCpu->cpum.s.Guest.ldtr.Sel != 0)
-        && !HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+        && VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
 #endif
     pVCpu->cpum.s.Guest.ldtr.Sel      = ldtr;
@@ -1569,13 +1569,14 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
     if (!fForceHyper && (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER))
         fForceHyper = true;
 #endif
-    if (( HMIsEnabled(pVCpu->CTX_SUFF(pVM)) && !fForceHyper ? uDbgfDr7 : (uGstDr7 | uDbgfDr7)) & X86_DR7_ENABLED_MASK)
+    if (  (!VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)) && !fForceHyper ? uDbgfDr7 : (uGstDr7 | uDbgfDr7))
+        & X86_DR7_ENABLED_MASK)
     {
         Assert(!CPUMIsGuestDebugStateActive(pVCpu));
 #ifdef IN_RC
-        bool const fHmEnabled = false;
+        bool const fRawModeEnabled = true;
 #elif defined(IN_RING3)
-        bool const fHmEnabled = HMIsEnabled(pVM);
+        bool const fRawModeEnabled = VM_IS_RAW_MODE_ENABLED(pVM);
 #endif
 
         /*
@@ -1596,7 +1597,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
         {
             uNewDr0 = CPUMGetGuestDR0(pVCpu);
 #ifndef IN_RING0
-            if (fHmEnabled && MMHyperIsInsideArea(pVM, uNewDr0))
+            if (fRawModeEnabled && MMHyperIsInsideArea(pVM, uNewDr0))
                 uNewDr0 = 0;
             else
 #endif
@@ -1616,7 +1617,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
         {
             uNewDr1 = CPUMGetGuestDR1(pVCpu);
 #ifndef IN_RING0
-            if (fHmEnabled && MMHyperIsInsideArea(pVM, uNewDr1))
+            if (fRawModeEnabled && MMHyperIsInsideArea(pVM, uNewDr1))
                 uNewDr1 = 0;
             else
 #endif
@@ -1636,7 +1637,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
         {
             uNewDr2 = CPUMGetGuestDR2(pVCpu);
 #ifndef IN_RING0
-            if (fHmEnabled && MMHyperIsInsideArea(pVM, uNewDr2))
+            if (fRawModeEnabled && MMHyperIsInsideArea(pVM, uNewDr2))
                 uNewDr2 = 0;
             else
 #endif
@@ -1656,7 +1657,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
         {
             uNewDr3 = CPUMGetGuestDR3(pVCpu);
 #ifndef IN_RING0
-            if (fHmEnabled && MMHyperIsInsideArea(pVM, uNewDr3))
+            if (fRawModeEnabled && MMHyperIsInsideArea(pVM, uNewDr3))
                 uNewDr3 = 0;
             else
 #endif

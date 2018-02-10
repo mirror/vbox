@@ -1326,9 +1326,12 @@ VMMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb)
  * @returns false if outside.
  * @param   pVM         The cross context VM structure.
  * @param   GCPtr       The pointer to check.
+ *
+ * @note    Caller must check that we're in raw-mode before calling!
  */
 VMMDECL(bool) MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr)
 {
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     return (RTGCUINTPTR)GCPtr - (RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC < pVM->mm.s.cbHyperArea;
 }
 

@@ -481,7 +481,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
     /*
      * Do we need the cache? Skip the last bit if we don't.
      */
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
         return VINF_SUCCESS;
 
     /*

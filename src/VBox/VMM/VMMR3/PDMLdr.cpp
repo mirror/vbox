@@ -102,7 +102,7 @@ int pdmR3LdrInitU(PUVM pUVM)
      * Load the mandatory RC module, the VMMR0.r0 is loaded before VM creation.
      */
     PVM pVM = pUVM->pVM; AssertPtr(pVM);
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         int rc = PDMR3LdrLoadRC(pVM, NULL, VMMRC_MAIN_MODULE_NAME);
         if (RT_FAILURE(rc))
@@ -464,7 +464,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
      * Validate input.
      */
     AssertMsg(MMR3IsInitialized(pVM), ("bad init order!\n"));
-    AssertReturn(!HMIsEnabled(pVM), VERR_PDM_HM_IPE);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_PDM_HM_IPE);
 
     /*
      * Find the file if not specified.
@@ -914,7 +914,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
 {
 #if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
     RT_NOREF(pVM, pszModule, pszSymbol);
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     *pRCPtrValue = NIL_RTRCPTR;
     return VINF_SUCCESS;
 
@@ -984,7 +984,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const cha
 {
 #if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
     RT_NOREF(pVM, pszModule, pszSearchPath, pszSymbol);
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     *pRCPtrValue = NIL_RTRCPTR;
     return VINF_SUCCESS;
 
@@ -1597,7 +1597,7 @@ VMMR3_INT_DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size
                                                 const char *pszSymPrefix, const char *pszSymList,
                                                 bool fRing0)
 {
-    bool const fNullRun = !fRing0 && HMIsEnabled(pVM);
+    bool const fNullRun = !fRing0 && !VM_IS_RAW_MODE_ENABLED(pVM);
 
     /*
      * Find the module.

@@ -951,7 +951,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
                             ("%#llx\n", fXStateHostMask), fXStateHostMask = 0);
     }
     pVM->cpum.s.fXStateHostMask = fXStateHostMask;
-    if (!HMIsEnabled(pVM)) /* For raw-mode, we only use XSAVE/XRSTOR when the guest starts using it (CPUID/CR4 visibility). */
+    if (VM_IS_RAW_MODE_ENABLED(pVM)) /* For raw-mode, we only use XSAVE/XRSTOR when the guest starts using it (CPUID/CR4 visibility). */
         fXStateHostMask = 0;
     LogRel(("CPUM: fXStateHostMask=%#llx; initial: %#llx; host XCR0=%#llx\n",
             pVM->cpum.s.fXStateHostMask, fXStateHostMask, fXcr0Host));
@@ -1043,6 +1043,24 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
             return rc;
     }
 
+    /*
+     * Workaround for missing cpuid(0) patches when leaf 4 returns GuestInfo.DefCpuId:
+     * If we miss to patch a cpuid(0).eax then Linux tries to determine the number
+     * of processors from (cpuid(4).eax >> 26) + 1.
+     *
+     * Note: this code is obsolete, but let's keep it here for reference.
+     *       Purpose is valid when we artificially cap the max std id to less than 4.
+     *
+     * Note: This used to be a separate function CPUMR3SetHwVirt that was called
+     *       after VMINITCOMPLETED_HM.
+     */
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
+    {
+        Assert(   (pVM->cpum.s.aGuestCpuIdPatmStd[4].uEax & UINT32_C(0xffffc000)) == 0
+               || pVM->cpum.s.aGuestCpuIdPatmStd[0].uEax < 0x4);
+        pVM->cpum.s.aGuestCpuIdPatmStd[4].uEax &= UINT32_C(0x00003fff);
+    }
+
     CPUMR3Reset(pVM);
     return VINF_SUCCESS;
 }
@@ -1076,30 +1094,6 @@ VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
     }
 }
 
-
-/**
- * Apply late CPUM property changes based on the fHWVirtEx setting
- *
- * @param   pVM                 The cross context VM structure.
- * @param   fHWVirtExEnabled    HWVirtEx enabled/disabled
- */
-VMMR3DECL(void) CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled)
-{
-    /*
-     * Workaround for missing cpuid(0) patches when leaf 4 returns GuestInfo.DefCpuId:
-     * If we miss to patch a cpuid(0).eax then Linux tries to determine the number
-     * of processors from (cpuid(4).eax >> 26) + 1.
-     *
-     * Note: this code is obsolete, but let's keep it here for reference.
-     *       Purpose is valid when we artificially cap the max std id to less than 4.
-     */
-    if (!fHWVirtExEnabled)
-    {
-        Assert(   (pVM->cpum.s.aGuestCpuIdPatmStd[4].uEax & UINT32_C(0xffffc000)) == 0
-               || pVM->cpum.s.aGuestCpuIdPatmStd[0].uEax < 0x4);
-        pVM->cpum.s.aGuestCpuIdPatmStd[4].uEax &= UINT32_C(0x00003fff);
-    }
-}
 
 /**
  * Terminates the CPUM.
@@ -1648,7 +1642,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
             {
                 PVMCPU      pVCpu  = &pVM->aCpus[iCpu];
-                bool const  fValid = HMIsEnabled(pVM)
+                bool const  fValid = !VM_IS_RAW_MODE_ENABLED(pVM)
                                   || (   uVersion > CPUM_SAVED_STATE_VERSION_VER3_2
                                       && !(pVCpu->cpum.s.fChanged & CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID));
                 PCPUMSELREG paSelReg = CPUMCTX_FIRST_SREG(&pVCpu->cpum.s.Guest);
@@ -2663,7 +2657,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
 
             /* translate the address */
             pState->pvPageGC = GCPtr & PAGE_BASE_GC_MASK;
-            if (   !HMIsEnabled(pState->pVM)
+            if (   VM_IS_RAW_MODE_ENABLED(pState->pVM)
                 && MMHyperIsInsideArea(pState->pVM, pState->pvPageGC))
             {
                 pState->pvPageR3 = MMHyperRCToR3(pState->pVM, (RTRCPTR)pState->pvPageGC);

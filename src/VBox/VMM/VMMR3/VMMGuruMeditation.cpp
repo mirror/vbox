@@ -304,7 +304,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             RTGCUINTPTR     uCR2       = 0xdeadface;
             uint8_t         cbInstr    = UINT8_MAX;
             int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrorCode, &uCR2, &cbInstr);
-            if (!HMIsEnabled(pVM))
+            if (VM_IS_RAW_MODE_ENABLED(pVM))
             {
                 if (RT_SUCCESS(rc2))
                     pHlp->pfnPrintf(pHlp,
@@ -323,7 +323,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             /*
              * Dump the relevant hypervisor registers and stack.
              */
-            if (HMIsEnabled(pVM))
+            if (!VM_IS_RAW_MODE_ENABLED(pVM))
             {
                 if (   rcErr == VERR_VMM_RING0_ASSERTION /* fInRing3Call has already been cleared here. */
                     || pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)

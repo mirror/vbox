@@ -5303,7 +5303,7 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
      * For raw-mode we'll require that the CPUs are very similar since we don't
      * intercept CPUID instructions for user mode applications.
      */
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         /* CPUID(0) */
         CPUID_CHECK_RET(   aHostRawStd[0].uEbx == aRawStd[0].uEbx

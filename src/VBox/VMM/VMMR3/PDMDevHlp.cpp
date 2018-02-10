@@ -67,7 +67,7 @@
 DECLINLINE(int) pdmR3DevGetSymbolRCLazy(PPDMDEVINS pDevIns, const char *pszSymbol, PRTRCPTR ppvValue)
 {
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    if (HMIsEnabled(pVM))
+    if (!VM_IS_RAW_MODE_ENABLED(pVM))
     {
         *ppvValue = NIL_RTRCPTR;
         return VINF_SUCCESS;
@@ -139,7 +139,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
     int rc = VINF_SUCCESS;
     if (   pDevIns->pReg->szRCMod[0]
         && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        && !HMIsEnabled(pVM))
+        && VM_IS_RAW_MODE_ENABLED(pVM))
     {
         RTRCPTR RCPtrIn = NIL_RTRCPTR;
         if (pszIn)
@@ -180,7 +180,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
             rc = IOMR3IOPortRegisterRC(pVM, pDevIns, Port, cPorts, pvUser, RCPtrOut, RCPtrIn, RCPtrOutStr, RCPtrInStr, pszDesc);
         }
     }
-    else if (!HMIsEnabled(pVM))
+    else if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         AssertMsgFailed(("No RC module for this driver!\n"));
         rc = VERR_INVALID_PARAMETER;
@@ -317,7 +317,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
     int rc = VINF_SUCCESS;
     if (   pDevIns->pReg->szRCMod[0]
         && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        && !HMIsEnabled(pVM))
+        && VM_IS_RAW_MODE_ENABLED(pVM))
     {
         RTRCPTR RCPtrWrite = NIL_RTRCPTR;
         if (pszWrite)
@@ -346,7 +346,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
                 rc = rc3;
         }
     }
-    else if (!HMIsEnabled(pVM))
+    else if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         AssertMsgFailed(("No RC module for this driver!\n"));
         rc = VERR_INVALID_PARAMETER;

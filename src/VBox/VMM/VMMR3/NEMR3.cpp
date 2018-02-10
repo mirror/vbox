@@ -30,6 +30,8 @@
 #include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
 
+#include <iprt/asm.h>
+
 
 
 /**
@@ -85,7 +87,8 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
 /**
  * This is called by HMR3Init() when HM cannot be used.
  *
- * Sets VM::fNEMActive if we can use a native hypervisor API to execute the VM.
+ * Sets VM::bMainExecutionEngine to VM_EXEC_ENGINE_NATIVE_API if we can use a
+ * native hypervisor API to execute the VM.
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
@@ -97,19 +100,20 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
  */
 VMMR3_INT_DECL(int) NEMR3Init(PVM pVM, bool fFallback, bool fForced)
 {
-    Assert(!pVM->fNEMActive);
+    Assert(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NATIVE_API);
     int rc;
     if (pVM->nem.s.fEnabled)
     {
 #ifdef VBOX_WITH_NATIVE_NEM
         rc = nemR3NativeInit(pVM, fFallback, fForced);
+        ASMCompilerBarrier(); /* May have changed bMainExecutionEngine. */
 #else
         RT_NOREF(fFallback);
         rc = VINF_SUCCESS;
 #endif
         if (RT_SUCCESS(rc))
         {
-            if (pVM->fNEMActive)
+            if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
                 LogRel(("NEM: NEMR3Init: Active.\n"));
             else
             {
@@ -142,7 +146,7 @@ VMMR3_INT_DECL(int) NEMR3InitAfterCPUM(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_NATIVE_NEM
-    if (pVM->fNEMActive)
+    if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
         rc = nemR3NativeInitAfterCPUM(pVM);
 #else
     RT_NOREF(pVM);
@@ -162,7 +166,7 @@ VMMR3_INT_DECL(int) NEMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_NATIVE_NEM
-    if (pVM->fNEMActive)
+    if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
         rc = nemR3NativeInitCompleted(pVM, enmWhat);
 #else
     RT_NOREF(pVM, enmWhat);
@@ -185,7 +189,7 @@ VMMR3_INT_DECL(int) NEMR3Term(PVM pVM)
     /* Do native termination. */
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_NATIVE_NEM
-    if (pVM->fNEMActive)
+    if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
         rc = nemR3NativeTerm(pVM);
 #endif
 
@@ -205,7 +209,7 @@ VMMR3_INT_DECL(int) NEMR3Term(PVM pVM)
 VMMR3_INT_DECL(void) NEMR3Reset(PVM pVM)
 {
 #ifdef VBOX_WITH_NATIVE_NEM
-    if (pVM->fNEMActive)
+    if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
         nemR3NativeReset(pVM);
 #else
     RT_NOREF(pVM);
@@ -223,7 +227,7 @@ VMMR3_INT_DECL(void) NEMR3Reset(PVM pVM)
 VMMR3_INT_DECL(void) NEMR3ResetCpu(PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_NATIVE_NEM
-    if (pVCpu->pVMR3->fNEMActive)
+    if (pVCpu->pVMR3->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
         nemR3NativeResetCpu(pVCpu);
 #else
     RT_NOREF(pVCpu);

@@ -665,6 +665,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             {
                 LogRel(("HM: HMR3Init: AMD-V%s\n", fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : ""));
                 pVM->hm.s.svm.fSupported = true;
+                VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_HW_VIRT);
             }
             else if (fCaps & SUPVTCAPS_VT_X)
             {
@@ -677,6 +678,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                             fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST ? " and unrestricted guest execution" : "",
                             (fCaps & (SUPVTCAPS_NESTED_PAGING | SUPVTCAPS_VTX_UNRESTRICTED_GUEST)) ? " hw support" : ""));
                     pVM->hm.s.vmx.fSupported = true;
+                    VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_HW_VIRT);
                 }
                 else
                 {
@@ -684,12 +686,15 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                      * Before failing, try fallback to NEM if we're allowed to do that.
                      */
                     pVM->fHMEnabled = false;
+                    Assert(pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NOT_SET);
                     if (fFallbackToNEM)
                     {
                         LogRel(("HM: HMR3Init: Attempting fall back to NEM: The host kernel does not support VT-x - %s\n", pszWhy));
                         int rc2 = NEMR3Init(pVM, true /*fFallback*/, fHMForced);
+
+                        ASMCompilerBarrier(); /* NEMR3Init may have changed bMainExecutionEngine. */
                         if (   RT_SUCCESS(rc2)
-                            && pVM->fNEMActive)
+                            && pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET)
                             rc = VINF_SUCCESS;
                     }
                     if (RT_FAILURE(rc))
@@ -699,6 +704,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 
                         /* Fall back to raw-mode. */
                         LogRel(("HM: HMR3Init: Falling back to raw-mode: The host kernel does not support VT-x - %s\n", pszWhy));
+                        VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_RAW_MODE);
                     }
                 }
             }
@@ -744,34 +750,13 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             const char *pszMsg;
             switch (rc)
             {
-                case VERR_UNSUPPORTED_CPU:
-                    pszMsg = "Unknown CPU, VT-x or AMD-v features cannot be ascertained";
-                    break;
-
-                case VERR_VMX_NO_VMX:
-                    pszMsg = "VT-x is not available";
-                    break;
-
-                case VERR_VMX_MSR_VMX_DISABLED:
-                    pszMsg = "VT-x is disabled in the BIOS";
-                    break;
-
-                case VERR_VMX_MSR_ALL_VMX_DISABLED:
-                    pszMsg = "VT-x is disabled in the BIOS for all CPU modes";
-                    break;
-
-                case VERR_VMX_MSR_LOCKING_FAILED:
-                    pszMsg = "Failed to enable and lock VT-x features";
-                    break;
-
-                case VERR_SVM_NO_SVM:
-                    pszMsg = "AMD-V is not available";
-                    break;
-
-                case VERR_SVM_DISABLED:
-                    pszMsg = "AMD-V is disabled in the BIOS (or by the host OS)";
-                    break;
-
+                case VERR_UNSUPPORTED_CPU:          pszMsg = "Unknown CPU, VT-x or AMD-v features cannot be ascertained"; break;
+                case VERR_VMX_NO_VMX:               pszMsg = "VT-x is not available"; break;
+                case VERR_VMX_MSR_VMX_DISABLED:     pszMsg = "VT-x is disabled in the BIOS"; break;
+                case VERR_VMX_MSR_ALL_VMX_DISABLED: pszMsg = "VT-x is disabled in the BIOS for all CPU modes"; break;
+                case VERR_VMX_MSR_LOCKING_FAILED:   pszMsg = "Failed to enable and lock VT-x features"; break;
+                case VERR_SVM_NO_SVM:               pszMsg = "AMD-V is not available"; break;
+                case VERR_SVM_DISABLED:             pszMsg = "AMD-V is disabled in the BIOS (or by the host OS)"; break;
                 default:
                     return VMSetError(pVM, rc, RT_SRC_POS, "SUPR3QueryVTCaps failed with %Rrc", rc);
             }
@@ -784,8 +769,9 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             {
                 LogRel(("HM: HMR3Init: Attempting fall back to NEM: %s\n", pszMsg));
                 int rc2 = NEMR3Init(pVM, true /*fFallback*/, fHMForced);
+                ASMCompilerBarrier(); /* NEMR3Init may have changed bMainExecutionEngine. */
                 if (   RT_SUCCESS(rc2)
-                    && pVM->fNEMActive)
+                    && pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET)
                     rc = VINF_SUCCESS;
             }
             if (RT_FAILURE(rc))
@@ -794,21 +780,26 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                     return VM_SET_ERROR(pVM, rc, pszMsg);
 
                 LogRel(("HM: HMR3Init: Falling back to raw-mode: %s\n", pszMsg));
+                VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_RAW_MODE);
             }
         }
     }
-    /*
-     * If NEM is supposed to be used instead, initialize it instead.
-     */
-    else if (fUseNEMInstead)
+    else
     {
-        rc = NEMR3Init(pVM, false /*fFallback*/, fHMForced);
-        if (RT_FAILURE(rc))
-            return rc;
+        /*
+         * Disabled HM mean raw-mode, unless NEM is supposed to be used.
+         */
+        if (!fUseNEMInstead)
+            VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_RAW_MODE);
+        else
+        {
+            rc = NEMR3Init(pVM, false /*fFallback*/, true);
+            ASMCompilerBarrier(); /* NEMR3Init may have changed bMainExecutionEngine. */
+            if (RT_FAILURE(rc))
+                return rc;
+        }
     }
 
-    /* It's now OK to use the predicate function. */
-    pVM->fHMEnabledFixed = true;
     return VINF_SUCCESS;
 }
 

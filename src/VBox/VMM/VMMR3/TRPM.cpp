@@ -503,7 +503,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     pVM->trpm.s.hShadowIdtWriteHandlerType = NIL_PGMVIRTHANDLERTYPE;
     pVM->trpm.s.hGuestIdtWriteHandlerType  = NIL_PGMVIRTHANDLERTYPE;
 #ifdef VBOX_WITH_RAW_MODE
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
 # ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
         rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_HYPERVISOR, false /*fRelocUserRC*/,
@@ -541,7 +541,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
      * Statistics.
      */
 #ifdef VBOX_WITH_RAW_MODE
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         STAM_REG(pVM, &pVM->trpm.s.StatRCWriteGuestIDTFault,    STAMTYPE_COUNTER, "/TRPM/RC/IDTWritesFault",    STAMUNIT_OCCURENCES,     "Guest IDT writes the we returned to R3 to handle.");
         STAM_REG(pVM, &pVM->trpm.s.StatRCWriteGuestIDTHandled,  STAMTYPE_COUNTER, "/TRPM/RC/IDTWritesHandled",  STAMUNIT_OCCURENCES,     "Guest IDT writes that we handled successfully.");
@@ -580,7 +580,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
                         i < 0x20 ? "/TRPM/ForwardRaw/TRAP/%02X" : "/TRPM/ForwardRaw/IRQ/%02X", i);
 
 #  ifdef VBOX_WITH_RAW_MODE
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 256, sizeof(STAMCOUNTER), MM_TAG_TRPM, (void **)&pVM->trpm.s.paStatHostIrqR3);
         AssertRCReturn(rc, rc);
@@ -593,7 +593,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
 # endif
 
 #ifdef VBOX_WITH_RAW_MODE
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         STAM_REG(pVM, &pVM->trpm.s.StatForwardProfR3,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/ProfR3",   STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
         STAM_REG(pVM, &pVM->trpm.s.StatForwardProfRZ,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/ProfRZ",   STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
@@ -611,7 +611,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     /*
      * Default action when entering raw mode for the first time
      */
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
@@ -633,7 +633,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
 VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
 #ifdef VBOX_WITH_RAW_MODE
-    if (HMIsEnabled(pVM))
+    if (!VM_IS_RAW_MODE_ENABLED(pVM))
         return;
 
     /* Only applies to raw mode which supports only 1 VCPU. */
@@ -821,7 +821,7 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
     /*
      * Default action when entering raw mode for the first time
      */
-    if (!HMIsEnabled(pVM))
+    if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
@@ -904,7 +904,7 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutGCUIntPtr(pSSM, pTrpmCpu->uSavedCR2);
         SSMR3PutGCUInt(pSSM,    pTrpmCpu->uPrevVector);
     }
-    SSMR3PutBool(pSSM,      HMIsEnabled(pVM));
+    SSMR3PutBool(pSSM,      !VM_IS_RAW_MODE_ENABLED(pVM));
     PVMCPU pVCpu0 = &pVM->aCpus[0]; NOREF(pVCpu0); /* raw mode implies 1 VCPU */
     SSMR3PutUInt(pSSM,      VM_WHEN_RAW_MODE(VMCPU_FF_IS_SET(pVCpu0, VMCPU_FF_TRPM_SYNC_IDT), 0));
     SSMR3PutMem(pSSM,       &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
@@ -1077,7 +1077,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
     const bool  fRawRing0 = EMIsRawRing0Enabled(pVM);
     int         rc;
 
-    AssertReturn(!HMIsEnabled(pVM), VERR_TRPM_HM_IPE);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_TRPM_HM_IPE);
 
     if (fRawRing0 && CSAMIsEnabled(pVM))
     {
@@ -1182,7 +1182,7 @@ int trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
 {
     /* Only applies to raw mode which supports only 1 VCPU. */
     PVMCPU pVCpu = &pVM->aCpus[0];
-    Assert(!HMIsEnabled(pVM));
+    Assert(VM_IS_RAW_MODE_ENABLED(pVM));
 
     /** @todo cleanup trpmR3ClearPassThroughHandler()! */
     RTRCPTR aGCPtrs[TRPM_HANDLER_MAX];
@@ -1243,7 +1243,7 @@ int trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
  */
 VMMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
 {
-    AssertReturn(!HMIsEnabled(pVM), ~0U);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), ~0U);
 
     for (uint32_t iTrap = 0; iTrap < RT_ELEMENTS(pVM->trpm.s.aGuestTrapHandler); iTrap++)
     {
@@ -1274,7 +1274,7 @@ VMMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
 VMMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
 {
     AssertReturn(iTrap < RT_ELEMENTS(pVM->trpm.s.aIdt), TRPM_INVALID_HANDLER);
-    AssertReturn(!HMIsEnabled(pVM), TRPM_INVALID_HANDLER);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), TRPM_INVALID_HANDLER);
 
     return pVM->trpm.s.aGuestTrapHandler[iTrap];
 }
@@ -1293,7 +1293,7 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
 {
     /* Only valid in raw mode which implies 1 VCPU */
     Assert(PATMIsEnabled(pVM) && pVM->cCpus == 1);
-    AssertReturn(!HMIsEnabled(pVM), VERR_TRPM_HM_IPE);
+    AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_TRPM_HM_IPE);
     PVMCPU pVCpu = &pVM->aCpus[0];
 
     /*
@@ -1517,7 +1517,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     Log(("TRPMR3InjectEvent: CPU%d u8Interrupt=%d (%#x) rc=%Rrc\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc));
     if (RT_SUCCESS(rc))
     {
-        if (HMIsEnabled(pVM) || EMIsSupervisorCodeRecompiled(pVM))
+        if (EMIsSupervisorCodeRecompiled(pVM) || !VM_IS_RAW_MODE_ENABLED(pVM))
         {
             rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
             AssertRC(rc);
