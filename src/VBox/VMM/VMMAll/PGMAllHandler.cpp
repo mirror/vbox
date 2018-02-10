@@ -25,14 +25,12 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/nem.h>
 #include <VBox/vmm/stam.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
 #include <VBox/vmm/dbgf.h>
-#ifdef VBOX_WITH_REM
-# include <VBox/vmm/rem.h>
-#endif
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
 #include "PGMInline.h"
@@ -50,7 +48,7 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int  pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDLER pCur, PPGMRAMRANGE pRam);
-static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur);
+static void pgmHandlerPhysicalDeregisterNotifyREMAndNEM(PVM pVM, PPGMPHYSHANDLER pCur, int fRestoreRAM);
 static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur);
 
 
@@ -284,6 +282,10 @@ int pgmHandlerPhysicalExRegister(PVM pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPHYS
         int rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pPhysHandler, pRam);
         if (rc == VINF_PGM_SYNC_CR3)
             rc = VINF_PGM_GCPHYS_ALIASED;
+
+#if defined(IN_RING3) || defined(IN_RING0)
+        NEMHCNotifyHandlerPhysicalRegister(pVM, pType->enmKind, GCPhys, GCPhysLast - GCPhys + 1);
+#endif
         pgmUnlock(pVM);
 
 #ifdef VBOX_WITH_REM
@@ -420,11 +422,13 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pPhysHandler    The handler to deregister (but not free).
+ * @param   fRestoreAsRAM   How this will likely be restored, if we know (true,
+ *                          false, or if we don't know -1).
  */
-int pgmHandlerPhysicalExDeregister(PVM pVM, PPGMPHYSHANDLER pPhysHandler)
+int pgmHandlerPhysicalExDeregister(PVM pVM, PPGMPHYSHANDLER pPhysHandler, int fRestoreAsRAM)
 {
-    LogFlow(("pgmHandlerPhysicalExDeregister: Removing Range %RGp-%RGp %s\n",
-             pPhysHandler->Core.Key, pPhysHandler->Core.KeyLast, R3STRING(pPhysHandler->pszDesc)));
+    LogFlow(("pgmHandlerPhysicalExDeregister: Removing Range %RGp-%RGp %s fRestoreAsRAM=%d\n",
+             pPhysHandler->Core.Key, pPhysHandler->Core.KeyLast, R3STRING(pPhysHandler->pszDesc), fRestoreAsRAM));
     AssertReturn(pPhysHandler->Core.Key != NIL_RTGCPHYS, VERR_PGM_HANDLER_NOT_FOUND);
 
     /*
@@ -440,7 +444,7 @@ int pgmHandlerPhysicalExDeregister(PVM pVM, PPGMPHYSHANDLER pPhysHandler)
          * the cache.
          */
         pgmHandlerPhysicalResetRamFlags(pVM, pPhysHandler);
-        pgmHandlerPhysicalDeregisterNotifyREM(pVM, pPhysHandler);
+        pgmHandlerPhysicalDeregisterNotifyREMAndNEM(pVM, pPhysHandler, fRestoreAsRAM);
         pVM->pgm.s.pLastPhysHandlerR0 = 0;
         pVM->pgm.s.pLastPhysHandlerR3 = 0;
         pVM->pgm.s.pLastPhysHandlerRC = 0;
@@ -519,7 +523,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
          * the cache.
          */
         pgmHandlerPhysicalResetRamFlags(pVM, pRemoved);
-        pgmHandlerPhysicalDeregisterNotifyREM(pVM, pRemoved);
+        pgmHandlerPhysicalDeregisterNotifyREMAndNEM(pVM, pRemoved, -1);
         pVM->pgm.s.pLastPhysHandlerR0 = 0;
         pVM->pgm.s.pLastPhysHandlerR3 = 0;
         pVM->pgm.s.pLastPhysHandlerRC = 0;
@@ -541,7 +545,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
 /**
  * Shared code with modify.
  */
-static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
+static void pgmHandlerPhysicalDeregisterNotifyREMAndNEM(PVM pVM, PPGMPHYSHANDLER pCur, int fRestoreAsRAM)
 {
     PPGMPHYSHANDLERTYPEINT  pCurType    = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
     RTGCPHYS                GCPhysStart = pCur->Core.Key;
@@ -554,8 +558,8 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
      * we can make use of the page states to figure out whether a page should be
      * included in the REM notification or not.
      */
-    if (    (pCur->Core.Key & PAGE_OFFSET_MASK)
-        ||  ((pCur->Core.KeyLast + 1) & PAGE_OFFSET_MASK))
+    if (   (pCur->Core.Key           & PAGE_OFFSET_MASK)
+        || ((pCur->Core.KeyLast + 1) & PAGE_OFFSET_MASK))
     {
         Assert(pCurType->enmKind != PGMPHYSHANDLERKIND_MMIO);
 
@@ -594,21 +598,25 @@ static void pgmHandlerPhysicalDeregisterNotifyREM(PVM pVM, PPGMPHYSHANDLER pCur)
         }
     }
 
-#ifdef VBOX_WITH_REM
     /*
-     * Tell REM.
+     * Tell REM and NEM.
      */
-    const bool fRestoreAsRAM = pCurType->pfnHandlerR3
-                            && pCurType->enmKind != PGMPHYSHANDLERKIND_MMIO; /** @todo this isn't entirely correct. */
+#ifdef VBOX_WITH_REM
+    const bool fRestoreAsRAM2 = pCurType->pfnHandlerR3
+                             && pCurType->enmKind != PGMPHYSHANDLERKIND_MMIO; /** @todo this isn't entirely correct. */
 # ifndef IN_RING3
     REMNotifyHandlerPhysicalDeregister(pVM, pCurType->enmKind, GCPhysStart, GCPhysLast - GCPhysStart + 1,
-                                       !!pCurType->pfnHandlerR3, fRestoreAsRAM);
+                                       !!pCurType->pfnHandlerR3, fRestoreAsRAM2);
 # else
     REMR3NotifyHandlerPhysicalDeregister(pVM, pCurType->enmKind, GCPhysStart, GCPhysLast - GCPhysStart + 1,
-                                         !!pCurType->pfnHandlerR3, fRestoreAsRAM);
+                                         !!pCurType->pfnHandlerR3, fRestoreAsRAM2);
 # endif
+#endif
+#if defined(IN_RING3) || defined(IN_RING0)
+    NEMHCNotifyHandlerPhysicalDeregister(pVM, pCurType->enmKind, GCPhysStart, GCPhysLast - GCPhysStart + 1,
+                                         fRestoreAsRAM, fRestoreAsRAM2);
 #else
-    RT_NOREF_PV(pCurType);
+    RT_NOREF_PV(fRestoreAsRAM); /** @todo this needs more work for REM! */
 #endif
 }
 
@@ -815,10 +823,10 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
          * Clear the ram flags. (We're gonna move or free it!)
          */
         pgmHandlerPhysicalResetRamFlags(pVM, pCur);
-#ifdef VBOX_WITH_REM
-        PPGMPHYSHANDLERTYPEINT pCurType = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
-        const bool fRestoreAsRAM = pCurType->pfnHandlerR3
-                                && pCurType->enmKind != PGMPHYSHANDLERKIND_MMIO; /** @todo this isn't entirely correct. */
+#if defined(VBOX_WITH_REM) || defined(IN_RING3) || defined(IN_RING0)
+        PPGMPHYSHANDLERTYPEINT const pCurType      = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
+        bool const                   fRestoreAsRAM = pCurType->pfnHandlerR3 /** @todo this isn't entirely correct. */
+                                                  && pCurType->enmKind != PGMPHYSHANDLERKIND_MMIO;
 #endif
 
         /*
@@ -841,16 +849,23 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
 
                 if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pCur->Core))
                 {
+#if defined(VBOX_WITH_REM) || defined(IN_RING3) || defined(IN_RING0)
+                    RTGCPHYS            const cb            = GCPhysLast - GCPhys + 1;
+                    PGMPHYSHANDLERKIND  const enmKind       = pCurType->enmKind;
+#endif
 #ifdef VBOX_WITH_REM
-                    RTGCPHYS            cb            = GCPhysLast - GCPhys + 1;
-                    PGMPHYSHANDLERKIND  enmKind       = pCurType->enmKind;
-                    bool                fHasHCHandler = !!pCurType->pfnHandlerR3;
+                    bool                const fHasHCHandler = !!pCurType->pfnHandlerR3;
 #endif
 
                     /*
                      * Set ram flags, flush shadow PT entries and finally tell REM about this.
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
+
+#if defined(IN_RING3) || defined(IN_RING0)
+                    NEMHCNotifyHandlerPhysicalModify(pVM, enmKind, GCPhysCurrent, GCPhys, cb, fRestoreAsRAM);
+#endif
+
                     pgmUnlock(pVM);
 
 #ifdef VBOX_WITH_REM
@@ -887,7 +902,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
          * Invalid new location, flush the cache and free it.
          * We've only gotta notify REM and free the memory.
          */
-        pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
+        pgmHandlerPhysicalDeregisterNotifyREMAndNEM(pVM, pCur, -1);
         pVM->pgm.s.pLastPhysHandlerR0 = 0;
         pVM->pgm.s.pLastPhysHandlerR3 = 0;
         pVM->pgm.s.pLastPhysHandlerRC = 0;

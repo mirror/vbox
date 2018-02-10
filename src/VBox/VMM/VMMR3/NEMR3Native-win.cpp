@@ -124,6 +124,114 @@ static const struct
 
 
 /**
+ * Worker for nemR3NativeInit that probes and load the native API.
+ *
+ * @returns VBox status code.
+ * @param   fForced             Whether the HMForced flag is set and we should
+ *                              fail if we cannot initialize.
+ * @param   pErrInfo            Where to always return error info.
+ */
+static int nemR3WinInitProbeAndLoad(bool fForced, PRTERRINFO pErrInfo)
+{
+    /*
+     * Check that the DLL files we need are present, but without loading them.
+     * We'd like to avoid loading them unnecessarily.
+     */
+    WCHAR wszPath[MAX_PATH + 64];
+    UINT  cwcPath = GetSystemDirectoryW(wszPath, MAX_PATH);
+    if (cwcPath >= MAX_PATH || cwcPath < 2)
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "GetSystemDirectoryW failed (%#x / %u)", cwcPath, GetLastError());
+
+    if (wszPath[cwcPath - 1] != '\\' || wszPath[cwcPath - 1] != '/')
+        wszPath[cwcPath++] = '\\';
+    RTUtf16CopyAscii(&wszPath[cwcPath], RT_ELEMENTS(wszPath) - cwcPath, "WinHvPlatform.dll");
+    if (GetFileAttributesW(wszPath) == INVALID_FILE_ATTRIBUTES)
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE, "The native API dll was not found (%ls)", wszPath);
+
+    /*
+     * Check that we're in a VM and that the hypervisor identifies itself as Hyper-V.
+     */
+    if (!ASMHasCpuId())
+        return RTErrInfoSet(pErrInfo, VERR_NEM_NOT_AVAILABLE, "No CPUID support");
+    if (!ASMIsValidStdRange(ASMCpuId_EAX(0)))
+        return RTErrInfoSet(pErrInfo, VERR_NEM_NOT_AVAILABLE, "No CPUID leaf #1");
+    if (!(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_HVP))
+        return RTErrInfoSet(pErrInfo, VERR_NEM_NOT_AVAILABLE, "Not in a hypervisor partition (HVP=0)");
+
+    uint32_t cMaxHyperLeaf = 0;
+    uint32_t uEbx = 0;
+    uint32_t uEcx = 0;
+    uint32_t uEdx = 0;
+    ASMCpuIdExSlow(0x40000000, 0, 0, 0, &cMaxHyperLeaf, &uEbx, &uEcx, &uEdx);
+    if (!ASMIsValidHypervisorRange(cMaxHyperLeaf))
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE, "Invalid hypervisor CPUID range (%#x %#x %#x %#x)",
+                             cMaxHyperLeaf, uEbx, uEcx, uEdx);
+    if (   uEbx != UINT32_C(0x7263694d) /* Micr */
+        || uEcx != UINT32_C(0x666f736f) /* osof */
+        || uEdx != UINT32_C(0x76482074) /* t Hv */)
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE,
+                             "Not Hyper-V CPUID signature: %#x %#x %#x (expected %#x %#x %#x)",
+                             uEbx, uEcx, uEdx, UINT32_C(0x7263694d), UINT32_C(0x666f736f), UINT32_C(0x76482074));
+    if (cMaxHyperLeaf < UINT32_C(0x40000005))
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE, "Too narrow hypervisor CPUID range (%#x)", cMaxHyperLeaf);
+
+    /** @todo would be great if we could recognize a root partition from the
+     *        CPUID info, but I currently don't dare do that. */
+
+    /*
+     * Now try load the DLLs and resolve the APIs.
+     */
+    static const char * const s_apszDllNames[2] = { "WinHvPlatform.dll",  "vid.dll" };
+    RTLDRMOD                  ahMods[2]         = { NIL_RTLDRMOD,          NIL_RTLDRMOD };
+    int                       rc = VINF_SUCCESS;
+    for (unsigned i = 0; i < RT_ELEMENTS(s_apszDllNames); i++)
+    {
+        int rc2 = RTLdrLoadSystem(s_apszDllNames[i], true /*fNoUnload*/, &ahMods[i]);
+        if (RT_FAILURE(rc2))
+        {
+            if (!RTErrInfoIsSet(pErrInfo))
+                RTErrInfoSetF(pErrInfo, rc2, "Failed to load API DLL: %s: %Rrc", s_apszDllNames[i], rc2);
+            else
+                RTErrInfoAddF(pErrInfo, rc2, "; %s: %Rrc", s_apszDllNames[i], rc2);
+            ahMods[i] = NIL_RTLDRMOD;
+            rc = VERR_NEM_INIT_FAILED;
+        }
+    }
+    if (RT_SUCCESS(rc))
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aImports); i++)
+        {
+            int rc2 = RTLdrGetSymbol(ahMods[g_aImports[i].idxDll], g_aImports[i].pszName, (void **)g_aImports[i].ppfn);
+            if (RT_FAILURE(rc2))
+            {
+                *g_aImports[i].ppfn = NULL;
+
+                LogRel(("NEM:  %s: Failed to import %s!%s: %Rrc",
+                        g_aImports[i].fOptional ? "info" : fForced ? "fatal" : "error",
+                        s_apszDllNames[g_aImports[i].idxDll], g_aImports[i].pszName, rc2));
+                if (!g_aImports[i].fOptional)
+                {
+                    if (RTErrInfoIsSet(pErrInfo))
+                        RTErrInfoAddF(pErrInfo, rc2, ", %s!%s",
+                                      s_apszDllNames[g_aImports[i].idxDll], g_aImports[i].pszName);
+                    else
+                        rc = RTErrInfoSetF(pErrInfo, rc2, "Failed to import: %s!%s",
+                                           s_apszDllNames[g_aImports[i].idxDll], g_aImports[i].pszName);
+                    Assert(RT_FAILURE(rc));
+                }
+            }
+        }
+        if (RT_SUCCESS(rc))
+            Assert(!RTErrInfoIsSet(pErrInfo));
+    }
+
+    for (unsigned i = 0; i < RT_ELEMENTS(ahMods); i++)
+        RTLdrClose(ahMods[i]);
+    return rc;
+}
+
+
+/**
  * Worker for nemR3NativeInit that gets the hypervisor capabilities.
  *
  * @returns VBox status code.
@@ -412,129 +520,27 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
 {
     /*
      * Error state.
-     *
-     * The error message will be non-empty on failure, 'rc' may or  may not
-     * be set.  Early API detection failures will not set 'rc', so we'll sort
-     * that out at the other end of the function.
+     * The error message will be non-empty on failure and 'rc' will be set too.
      */
     RTERRINFOSTATIC ErrInfo;
-    int             rc = VINF_SUCCESS;
     PRTERRINFO pErrInfo = RTErrInfoInitStatic(&ErrInfo);
-
-    /*
-     * Check that the DLL files we need are present, but without loading them.
-     * We'd like to avoid loading them unnecessarily.
-     */
-    WCHAR wszPath[MAX_PATH + 64];
-    UINT  cwcPath = GetSystemDirectoryW(wszPath, MAX_PATH);
-    if (cwcPath >= MAX_PATH || cwcPath < 2)
-        rc = RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "GetSystemDirectoryW failed (%#x / %u)", cwcPath, GetLastError());
-    else
+    int rc = nemR3WinInitProbeAndLoad(fForced, pErrInfo);
+    if (RT_SUCCESS(rc))
     {
-        if (wszPath[cwcPath - 1] != '\\' || wszPath[cwcPath - 1] != '/')
-            wszPath[cwcPath++] = '\\';
-        RTUtf16CopyAscii(&wszPath[cwcPath], RT_ELEMENTS(wszPath) - cwcPath, "WinHvPlatform.dll");
-        if (GetFileAttributesW(wszPath) == INVALID_FILE_ATTRIBUTES)
-            rc = RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE, "The native API dll was not found (%ls)", wszPath);
-        else
+        /*
+         * Check the capabilties of the hypervisor, starting with whether it's present.
+         */
+        rc = nemR3WinInitCheckCapabilities(pVM, pErrInfo);
+        if (RT_SUCCESS(rc))
         {
             /*
-             * Check that we're in a VM and that the hypervisor identifies itself as Hyper-V.
+             * Create and initialize a partition.
              */
-            if (!ASMHasCpuId())
-                rc = RTErrInfoSet(pErrInfo, VERR_NEM_NOT_AVAILABLE, "No CPUID support");
-            else if (!ASMIsValidStdRange(ASMCpuId_EAX(0)))
-                rc = RTErrInfoSet(pErrInfo, VERR_NEM_NOT_AVAILABLE, "No CPUID leaf #1");
-            else if (!(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_HVP))
-                rc = RTErrInfoSet(pErrInfo, VERR_NEM_NOT_AVAILABLE, "Not in a hypervisor partition (HVP=0)");
-            else
+            rc = nemR3WinInitCreatePartition(pVM, pErrInfo);
+            if (RT_SUCCESS(rc))
             {
-                uint32_t cMaxHyperLeaf = 0;
-                uint32_t uEbx = 0;
-                uint32_t uEcx = 0;
-                uint32_t uEdx = 0;
-                ASMCpuIdExSlow(0x40000000, 0, 0, 0, &cMaxHyperLeaf, &uEbx, &uEcx, &uEdx);
-                if (!ASMIsValidHypervisorRange(cMaxHyperLeaf))
-                    rc = RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE, "Invalid hypervisor CPUID range (%#x %#x %#x %#x)",
-                                       cMaxHyperLeaf, uEbx, uEcx, uEdx);
-                else if (   uEbx != UINT32_C(0x7263694d) /* Micr */
-                         || uEcx != UINT32_C(0x666f736f) /* osof */
-                         || uEdx != UINT32_C(0x76482074) /* t Hv */)
-                    rc = RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE,
-                                       "Not Hyper-V CPUID signature: %#x %#x %#x (expected %#x %#x %#x)",
-                                       uEbx, uEcx, uEdx, UINT32_C(0x7263694d), UINT32_C(0x666f736f), UINT32_C(0x76482074));
-                else if (cMaxHyperLeaf < UINT32_C(0x40000005))
-                    rc = RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE, "Too narrow hypervisor CPUID range (%#x)", cMaxHyperLeaf);
-                else
-                {
-                    /** @todo would be great if we could recognize a root partition from the
-                     *        CPUID info, but I currently don't dare do that. */
-
-                    /*
-                     * Now try load the DLLs and resolve the APIs.
-                     */
-                    static const char * const s_pszDllPrefixes[] = { "WinHvPlatform.dll!",  "vid.dll!" };
-                    RTLDRMOD                  ahMods[2]          = { NIL_RTLDRMOD,          NIL_RTLDRMOD };
-                    rc = RTLdrLoadSystem("vid.dll", true /*fNoUnload*/, &ahMods[1]);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = RTLdrLoadSystem("WinHvPlatform.dll", true /*fNoUnload*/, &ahMods[0]);
-                        if (RT_SUCCESS(rc))
-                        {
-                            for (unsigned i = 0; i < RT_ELEMENTS(g_aImports); i++)
-                            {
-                                int rc2 = RTLdrGetSymbol(ahMods[g_aImports[i].idxDll], g_aImports[i].pszName,
-                                                         (void **)g_aImports[i].ppfn);
-                                if (RT_FAILURE(rc2))
-                                {
-                                    *g_aImports[i].ppfn = NULL;
-
-                                    LogRel(("NEM:  %s: Failed to import %s%s: %Rrc",
-                                            g_aImports[i].fOptional ? "info" : fForced ? "fatal" : "error",
-                                            s_pszDllPrefixes[g_aImports[i].idxDll], g_aImports[i].pszName, rc2));
-                                    if (!g_aImports[i].fOptional)
-                                    {
-                                        if (RTErrInfoIsSet(pErrInfo))
-                                            RTErrInfoAddF(pErrInfo, rc2, ", %s%s",
-                                                          s_pszDllPrefixes[g_aImports[i].idxDll], g_aImports[i].pszName);
-                                        else
-                                            rc = RTErrInfoSetF(pErrInfo, rc2, "Failed to import: %s%s",
-                                                               s_pszDllPrefixes[g_aImports[i].idxDll], g_aImports[i].pszName);
-                                        Assert(RT_FAILURE(rc));
-                                    }
-                                }
-                            }
-                            if (RT_SUCCESS(rc))
-                            {
-                                Assert(!RTErrInfoIsSet(pErrInfo));
-
-                                /*
-                                 * Check the capabilties of the hypervisor, starting with whether it's present.
-                                 */
-                                rc = nemR3WinInitCheckCapabilities(pVM, pErrInfo);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    /*
-                                     * Create and initialize a partition.
-                                     */
-                                    rc = nemR3WinInitCreatePartition(pVM, pErrInfo);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
-                                        Log(("NEM: Marked active!\n"));
-                                    }
-                                }
-                            }
-                            RTLdrClose(ahMods[0]);
-                        }
-                        else
-                            rc = RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
-                                               "Failed to load API DLL 'WinHvPlatform.dll': %Rrc", rc);
-                        RTLdrClose(ahMods[1]);
-                    }
-                    else
-                        rc = RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Failed to load API DLL 'vid.dll': %Rrc", rc);
-                }
+                VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
+                Log(("NEM: Marked active!\n"));
             }
         }
     }
@@ -703,5 +709,46 @@ void nemR3NativeReset(PVM pVM)
 void nemR3NativeResetCpu(PVMCPU pVCpu)
 {
     NOREF(pVCpu);
+}
+
+
+int nemR3NativeNotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
+{
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb);
+    return VINF_SUCCESS;
+}
+
+
+int nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
+{
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+    return VINF_SUCCESS;
+}
+
+
+int nemR3NativeNotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
+{
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+    return VINF_SUCCESS;
+}
+
+
+int nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags)
+{
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+    return VINF_SUCCESS;
+}
+
+
+int nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags)
+{
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+    return VINF_SUCCESS;
+}
+
+
+void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
+{
+    NOREF(pVCpu); NOREF(fEnabled);
 }
 

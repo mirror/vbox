@@ -234,3 +234,79 @@ VMMR3_INT_DECL(void) NEMR3ResetCpu(PVMCPU pVCpu)
 #endif
 }
 
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
+{
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_NATIVE_NEM
+    if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
+        rc = nemR3NativeNotifyPhysRamRegister(pVM, GCPhys, cb);
+#else
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb);
+#endif
+    return rc;
+}
+
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
+{
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_NATIVE_NEM
+    if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
+        rc = nemR3NativeNotifyPhysMmioExMap(pVM, GCPhys, cb, fFlags);
+#else
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+#endif
+    return rc;
+}
+
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
+{
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_NATIVE_NEM
+    if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
+        rc = nemR3NativeNotifyPhysMmioExUnmap(pVM, GCPhys, cb, fFlags);
+#else
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+#endif
+    return rc;
+}
+
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags)
+{
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_NATIVE_NEM
+    if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
+        rc = nemR3NativeNotifyPhysRomRegisterEarly(pVM, GCPhys, cb, fFlags);
+#else
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+#endif
+    return rc;
+}
+
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags)
+{
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_NATIVE_NEM
+    if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
+        rc = nemR3NativeNotifyPhysRomRegisterLate(pVM, GCPhys, cb, fFlags);
+#else
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+#endif
+    return rc;
+}
+
+
+VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
+{
+#ifdef VBOX_WITH_NATIVE_NEM
+    if (pVCpu->pVMR3->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
+        nemR3NativeNotifySetA20(pVCpu, fEnabled);
+#else
+    NOREF(pVCpu); NOREF(fEnabled);
+#endif
+}
+

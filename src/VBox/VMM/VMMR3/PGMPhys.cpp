@@ -24,6 +24,7 @@
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/nem.h>
 #include <VBox/vmm/stam.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
@@ -1745,16 +1746,16 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
         pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhysLast, NIL_RTRCPTR, NIL_RTR0PTR, pszDesc, pPrev);
     }
     pgmPhysInvalidatePageMapTLB(pVM);
-    pgmUnlock(pVM);
 
-#ifdef VBOX_WITH_REM
     /*
-     * Notify REM.
+     * Notify NEM while holding the lock (experimental) and REM without (like always).
      */
+    rc = NEMR3NotifyPhysRamRegister(pVM, GCPhys, cb);
+    pgmUnlock(pVM);
+#ifdef VBOX_WITH_REM
     REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, REM_NOTIFY_PHYS_RAM_FLAGS_RAM);
 #endif
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -3465,7 +3466,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
                 if (pCurMmio->fFlags & PGMREGMMIORANGE_F_MAPPED)
                 {
                     pCurMmio->fFlags &= ~PGMREGMMIORANGE_F_MAPPED;
-                    pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3);
+                    pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3, fRamExists);
                 }
 
                 if (!fRamExists)
@@ -3509,16 +3510,18 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
     }
     pgmPhysInvalidatePageMapTLB(pVM);
 
-    pgmUnlock(pVM);
-
-#ifdef VBOX_WITH_REM
     /*
-     * Inform REM without holding the PGM lock.
+     * Notify NEM while holding the lock (experimental) and REM without (like always).
      */
-    if (!fRamExists && (pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2))
+    uint32_t const fNemNotify = (pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2       ? NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2   : 0)
+                              | (pFirstMmio->fFlags & PGMREGMMIORANGE_F_OVERLAPPING ? NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE : 0);
+    int rc = NEMR3NotifyPhysMmioExMap(pVM, GCPhys, cbRange, fNemNotify);
+    pgmUnlock(pVM);
+#ifdef VBOX_WITH_REM
+    if (!fRamExists && (pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)) /** @todo this doesn't look right. */
         REMR3NotifyPhysRamRegister(pVM, GCPhys, cbRange, REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2);
 #endif
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -3566,20 +3569,21 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
 
     int rc = pgmLock(pVM);
     AssertRCReturn(rc, rc);
-    AssertReturnStmt(pFirstMmio->fFlags & PGMREGMMIORANGE_F_MAPPED, pgmUnlock(pVM), VERR_WRONG_ORDER);
+    uint16_t const fOldFlags = pFirstMmio->fFlags;
+    AssertReturnStmt(fOldFlags & PGMREGMMIORANGE_F_MAPPED, pgmUnlock(pVM), VERR_WRONG_ORDER);
 
     /*
      * If plain MMIO, we must deregister the handlers first.
      */
-    if (!(pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2))
+    if (!(fOldFlags & PGMREGMMIORANGE_F_MMIO2))
     {
         PPGMREGMMIORANGE pCurMmio = pFirstMmio;
-        rc = pgmHandlerPhysicalExDeregister(pVM, pFirstMmio->pPhysHandlerR3);
+        rc = pgmHandlerPhysicalExDeregister(pVM, pFirstMmio->pPhysHandlerR3, RT_BOOL(fOldFlags & PGMREGMMIORANGE_F_OVERLAPPING));
         AssertRCReturnStmt(rc, pgmUnlock(pVM), rc);
         while (!(pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK))
         {
             pCurMmio = pCurMmio->pNextR3;
-            rc = pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3);
+            rc = pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3, RT_BOOL(fOldFlags & PGMREGMMIORANGE_F_OVERLAPPING));
             AssertRCReturnStmt(rc, pgmUnlock(pVM), VERR_PGM_PHYS_MMIO_EX_IPE);
         }
 
@@ -3589,11 +3593,8 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
     /*
      * Unmap it.
      */
-#ifdef VBOX_WITH_REM
-    RTGCPHYS        GCPhysRangeREM;
-    bool            fInformREM;
-#endif
-    if (pFirstMmio->fFlags & PGMREGMMIORANGE_F_OVERLAPPING)
+    RTGCPHYS const GCPhysRangeNotify = pFirstMmio->RamRange.GCPhys;
+    if (fOldFlags & PGMREGMMIORANGE_F_OVERLAPPING)
     {
         /*
          * We've replaced RAM, replace with zero pages.
@@ -3603,7 +3604,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
          *       MMIO/MMIO2 region was mapped here.
          */
         /* Only one chunk allowed when overlapping! */
-        Assert(pFirstMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK);
+        Assert(fOldFlags & PGMREGMMIORANGE_F_LAST_CHUNK);
 
         /* Restore the RAM pages we've replaced. */
         PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3;
@@ -3611,7 +3612,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
             pRam = pRam->pNextR3;
 
         uint32_t cPagesLeft = pFirstMmio->RamRange.cb >> PAGE_SHIFT;
-        if (pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+        if (fOldFlags & PGMREGMMIORANGE_F_MMIO2)
             pVM->pgm.s.cZeroPages += cPagesLeft;
 
         PPGMPAGE pPageDst = &pRam->aPages[(pFirstMmio->RamRange.GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
@@ -3623,10 +3624,6 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
 
         /* Flush physical page map TLB. */
         pgmPhysInvalidatePageMapTLB(pVM);
-#ifdef VBOX_WITH_REM
-        GCPhysRangeREM = NIL_RTGCPHYS;  /* shuts up gcc */
-        fInformREM     = false;
-#endif
 
         /* Update range state. */
         pFirstMmio->RamRange.GCPhys = NIL_RTGCPHYS;
@@ -3638,10 +3635,6 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
         /*
          * Unlink the chunks related to the MMIO/MMIO2 region.
          */
-#ifdef VBOX_WITH_REM
-        GCPhysRangeREM = pFirstMmio->RamRange.GCPhys;
-        fInformREM     = RT_BOOL(pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2);
-#endif
         for (PPGMREGMMIORANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
         {
             pgmR3PhysUnlinkRamRange(pVM, &pCurMmio->RamRange);
@@ -3664,17 +3657,18 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
     pgmPhysInvalidatePageMapTLB(pVM);
     pgmPhysInvalidRamRangeTlbs(pVM);
 
-    pgmUnlock(pVM);
-
-#ifdef VBOX_WITH_REM
     /*
-     * Inform REM without holding the PGM lock.
+     * Notify NEM while holding the lock (experimental) and REM without (like always).
      */
-    if (fInformREM)
-        REMR3NotifyPhysRamDeregister(pVM, GCPhysRangeREM, cbRange);
+    uint32_t const fNemFlags = (fOldFlags & PGMREGMMIORANGE_F_MMIO2       ? NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2   : 0)
+                             | (fOldFlags & PGMREGMMIORANGE_F_OVERLAPPING ? NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE : 0);
+    rc = NEMR3NotifyPhysMmioExUnmap(pVM, GCPhysRangeNotify, cbRange, fNemFlags);
+    pgmUnlock(pVM);
+#ifdef VBOX_WITH_REM
+    if ((fOldFlags & (PGMREGMMIORANGE_F_OVERLAPPING | PGMREGMMIORANGE_F_MMIO2)) == PGMREGMMIORANGE_F_MMIO2)
+        REMR3NotifyPhysRamDeregister(pVM, GCPhysRangeNotify, cbRange);
 #endif
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -4090,6 +4084,11 @@ static int pgmR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RT
             pgmPhysInvalidatePageMapTLB(pVM);
 
 
+            /* Notify NEM before we register handlers. */
+            uint32_t const fNemNotify = (fRamExists ? NEM_NOTIFY_PHYS_ROM_F_REPLACE : 0)
+                                      | (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED ? NEM_NOTIFY_PHYS_ROM_F_SHADOW : 0);
+            rc = NEMR3NotifyPhysRomRegisterEarly(pVM, GCPhys, cb, fNemNotify);
+
             /*
              * !HACK ALERT!  REM + (Shadowed) ROM ==> mess.
              *
@@ -4104,15 +4103,17 @@ static int pgmR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RT
 #ifdef VBOX_WITH_REM
                 REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, true /* fShadowed */);
 #endif
-                rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
-                                                pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew),
-                                                pszDesc);
+                if (RT_SUCCESS(rc))
+                    rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
+                                                    pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew),
+                                                    pszDesc);
             }
             else
             {
-                rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
-                                                pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew),
-                                                pszDesc);
+                if (RT_SUCCESS(rc))
+                    rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
+                                                    pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew),
+                                                    pszDesc);
 #ifdef VBOX_WITH_REM
                 REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false /* fShadowed */);
 #endif
@@ -4202,7 +4203,9 @@ static int pgmR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RT
 
                         pgmPhysInvalidatePageMapTLB(pVM);
                         GMMR3AllocatePagesCleanup(pReq);
-                        return VINF_SUCCESS;
+
+                        /* Notify NEM again. */
+                        return NEMR3NotifyPhysRomRegisterLate(pVM, GCPhys, cb, fNemNotify);
                     }
 
                     /* bail out */
@@ -4534,6 +4537,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
 #ifdef VBOX_WITH_REM
         REMR3A20Set(pVCpu->pVMR3, pVCpu, fEnable);
 #endif
+        NEMR3NotifySetA20(pVCpu, fEnable);
 #ifdef PGM_WITH_A20
         pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);

@@ -242,6 +242,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/MMAll.cpp \
 	VMMAll/MMAllHyper.cpp \
 	VMMAll/MMAllPagePool.cpp \
+	VMMAll/NEMAll.cpp \
 	VMMAll/PDMAll.cpp \
 	VMMAll/PDMAllCritSect.cpp \
 	VMMAll/PDMAllCritSectRw.cpp \
@@ -785,6 +786,7 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMAll/MMAll.cpp \
  	VMMAll/MMAllHyper.cpp \
  	VMMAll/MMAllPagePool.cpp \
+	VMMAll/NEMAll.cpp \
  	VMMAll/PDMAll.cpp \
  	VMMAll/PDMAllCritSect.cpp \
  	VMMAll/PDMAllCritSectRw.cpp \

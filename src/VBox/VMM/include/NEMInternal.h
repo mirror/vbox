@@ -114,6 +114,12 @@ int     nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 int     nemR3NativeTerm(PVM pVM);
 void    nemR3NativeReset(PVM pVM);
 void    nemR3NativeResetCpu(PVMCPU pVCpu);
+int     nemR3NativeNotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
+int     nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
+int     nemR3NativeNotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
+int     nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags);
+int     nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags);
+void    nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled);
 #endif
 
 
