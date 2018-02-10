@@ -2511,6 +2511,8 @@ static DECLCALLBACK(bool) pgmR3PhysMMIOExRangeRelocate(PVM pVM, RTGCPTR GCPtrOld
  */
 static uint16_t pgmR3PhysMMIOExCalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pcPagesPerChunk, uint32_t *pcbChunk)
 {
+    RT_NOREF_PV(pVM); /* without raw mode */
+
     /*
      * This is the same calculation as PGMR3PhysRegisterRam does, except we'll be
      * needing a few bytes extra the PGMREGMMIORANGE structure.
