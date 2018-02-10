@@ -2526,6 +2526,7 @@ static DECLCALLBACK(int) drvHostDSoundSetCallback(PPDMIHOSTAUDIO pInterface, PFN
 }
 #endif
 
+
 /*********************************************************************************************************************************
 *   PDMDRVINS::IBase Interface                                                                                                   *
 *********************************************************************************************************************************/
@@ -2542,6 +2543,7 @@ static DECLCALLBACK(void *) drvHostDSoundQueryInterface(PPDMIBASE pInterface, co
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
     return NULL;
 }
+
 
 /*********************************************************************************************************************************
 *   PDMDRVREG Interface                                                                                                          *
