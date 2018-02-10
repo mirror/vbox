@@ -28,6 +28,7 @@
 
 #include <VBox/types.h>
 #include <VBox/vmm/vmapi.h>
+#include <VBox/vmm/pgm.h>
 
 
 RT_C_DECLS_BEGIN
@@ -37,11 +38,11 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** @defgroup grp_hm_r3    The HM ring-3 Context API
+/** @defgroup grp_nem_r3   The NEM ring-3 Context API
  * @{
  */
 VMMR3_INT_DECL(int)  NEMR3InitConfig(PVM pVM);
-VMMR3_INT_DECL(int)  NEMR3Init(PVM pVM, bool fFallback, bool fHMForced);
+VMMR3_INT_DECL(int)  NEMR3Init(PVM pVM, bool fFallback, bool fForced);
 VMMR3_INT_DECL(int)  NEMR3InitAfterCPUM(PVM pVM);
 #ifdef IN_RING3
 VMMR3_INT_DECL(int)  NEMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
@@ -49,6 +50,39 @@ VMMR3_INT_DECL(int)  NEMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3_INT_DECL(int)  NEMR3Term(PVM pVM);
 VMMR3_INT_DECL(void) NEMR3Reset(PVM pVM);
 VMMR3_INT_DECL(void) NEMR3ResetCpu(PVMCPU pVCpu);
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
+/** @name Flags for NEMR3NotifyPhysMmioExMap and NEMR3NotifyPhysMmioExUnmap.
+ * @{ */
+/** Set if it's MMIO2 being mapped or unmapped. */
+#define NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2     RT_BIT(0)
+/** Set if the range is replacing RAM rather that unused space. */
+#define NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE   RT_BIT(1)
+/** @} */
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags);
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags);
+/** @name Flags for NEMR3NotifyPhysRomRegisterEarly and NEMR3NotifyPhysRomRegisterLate.
+ * @{ */
+/** Set if the range is replacing RAM rather that unused space. */
+#define NEM_NOTIFY_PHYS_ROM_F_REPLACE       RT_BIT(1)
+/** Set if it's MMIO2 being mapped or unmapped. */
+#define NEM_NOTIFY_PHYS_ROM_F_SHADOW        RT_BIT(2)
+/** @} */
+
+VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled);
+/** @} */
+
+/** @defgroup grp_nem_hc    The NEM host context API
+ * @{
+ */
+VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
+VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                                        int fRestoreAsRAM, bool fRestoreAsRAM2);
+VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
+                                                    RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fRestoreAsRAM);
 /** @} */
 
 /** @} */
