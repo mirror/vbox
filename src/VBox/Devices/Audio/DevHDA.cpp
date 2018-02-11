@@ -280,14 +280,6 @@ static void                       hdaDoTransfers(PHDASTATE pThis);
 #endif /* IN_RING3 */
 /** @} */
 
-/** @name Timer functions.
- * @{
- */
-#ifdef IN_RING3
-static void hdaTimerMain(PHDASTATE pThis);
-#endif
-/** @} */
-
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -3060,30 +3052,6 @@ static void hdaGCTLReset(PHDASTATE pThis)
 
     LogFlowFuncLeave();
     LogRel(("HDA: Reset\n"));
-}
-
-/**
- * Main routine to perform the actual audio data transfers from the HDA streams
- * to the backend(s) and vice versa.
- *
- * @param   pThis               HDA state.
- */
-static void hdaDoTransfers(PHDASTATE pThis)
-{
-    PHDASTREAM pStreamLineIn  = hdaGetStreamFromSink(pThis, &pThis->SinkLineIn);
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    PHDASTREAM pStreamMicIn   = hdaGetStreamFromSink(pThis, &pThis->SinkMicIn);
-#endif
-    PHDASTREAM pStreamFront   = hdaGetStreamFromSink(pThis, &pThis->SinkFront);
-
-    hdaStreamUpdate(pStreamFront,  true /* fInTimer */);
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-# error "Implement me!"
-#endif
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    hdaStreamUpdate(pStreamMicIn,  true /* fInTimer */);
-#endif
-    hdaStreamUpdate(pStreamLineIn, true /* fInTimer */);
 }
 
 #ifdef DEBUG_andy
