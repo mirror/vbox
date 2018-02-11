@@ -1285,7 +1285,7 @@ static int qcowCreateImage(PQCOWIMAGE pImage, uint64_t cbSize,
                 pImage->cbCluster          = QCOW_CLUSTER_SIZE_DEFAULT;
                 pImage->cbL2Table          = qcowCluster2Byte(pImage, QCOW_L2_CLUSTERS_DEFAULT);
                 pImage->cL2TableEntries    = pImage->cbL2Table / sizeof(uint64_t);
-                pImage->cL1TableEntries    = RT_MIN(1, cbSize / (pImage->cbCluster * pImage->cL2TableEntries));
+                pImage->cL1TableEntries    = cbSize / (pImage->cbCluster * pImage->cL2TableEntries);
                 if (cbSize % (pImage->cbCluster * pImage->cL2TableEntries))
                     pImage->cL1TableEntries++;
                 pImage->cbL1Table          = RT_ALIGN_64(pImage->cL1TableEntries * sizeof(uint64_t), pImage->cbCluster);
