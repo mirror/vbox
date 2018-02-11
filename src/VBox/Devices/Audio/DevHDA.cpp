@@ -276,7 +276,6 @@ static int                        hdaRemoveStream(PHDASTATE pThis, PPDMAUDIOSTRE
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
 static DECLCALLBACK(VBOXSTRICTRC) hdaDMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
 # endif
-static void                       hdaDoTransfers(PHDASTATE pThis);
 #endif /* IN_RING3 */
 /** @} */
 
