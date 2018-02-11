@@ -891,8 +891,11 @@ static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 
     if (SUCCEEDED(hr))
     {
-        if (fFlush)
+        if (   fFlush
+            && pStreamDS->pCircBuf)
+        {
             RTCircBufReset(pStreamDS->pCircBuf);
+        }
     }
 
     if (FAILED(hr))
@@ -1265,8 +1268,11 @@ static HRESULT directSoundCaptureStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
 
     if (SUCCEEDED(hr))
     {
-        if (fFlush)
+        if (   fFlush
+            && pStreamDS->pCircBuf)
+        {
             RTCircBufReset(pStreamDS->pCircBuf);
+        }
     }
 
     if (FAILED(hr))
