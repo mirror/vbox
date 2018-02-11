@@ -488,8 +488,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.asStorageCtrls          = self.asStorageCtrlsDef;
         self.asHostIoCacheDef        = ['default', 'hostiocache', 'no-hostiocache'];
         self.asHostIoCache           = self.asHostIoCacheDef;
-        # TODO: reinstate the full list, but right now QCOW causes trouble
-        #self.asDiskFormatsDef        = ['VDI', 'VMDK', 'VHD', 'QED', 'Parallels', 'QCOW', 'iSCSI'];
+        self.asDiskFormatsDef        = ['VDI', 'VMDK', 'VHD', 'QED', 'Parallels', 'QCOW', 'iSCSI'];
         self.asDiskFormatsDef        = ['VDI', 'VMDK', 'VHD', 'QED', 'Parallels', 'iSCSI'];
         self.asDiskFormats           = self.asDiskFormatsDef;
         self.asDiskVariantsDef       = ['Dynamic', 'Fixed', 'DynamicSplit2G', 'FixedSplit2G', 'Network'];
