@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2017 Oracle Corporation
+ * Copyright (C) 2016-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -156,8 +156,8 @@ typedef struct HDASTATE
     bool                               fRCEnabled;
     /** Number of active (running) SDn streams. */
     uint8_t                            cStreamsActive;
-    /** The timer for pumping data thru the attached LUN drivers. */
-    PTMTIMERR3                         pTimer;
+    /** The stream timers for pumping data thru the attached LUN drivers. */
+    PTMTIMERR3                         pTimer[HDA_MAX_STREAMS];
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE                        StatTimer;
     STAMPROFILE                        StatIn;

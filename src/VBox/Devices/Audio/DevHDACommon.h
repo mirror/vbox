@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2017 Oracle Corporation
+ * Copyright (C) 2016-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -635,7 +635,7 @@ bool          hdaBDLENeedsInterrupt(PHDABDLE pBDLE);
  * @{
  */
 #ifdef IN_RING3
-bool          hdaTimerSet(PHDASTATE pThis, uint64_t u64Expire, bool fForce);
+bool          hdaTimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t u64Expire, bool fForce);
 #endif /* IN_RING3 */
 /** @} */
 

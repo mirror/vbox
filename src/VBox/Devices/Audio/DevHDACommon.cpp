@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2017 Oracle Corporation
+ * Copyright (C) 2017-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -403,8 +403,6 @@ int hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t
 
         /* Sanity checks. */
         Assert(cbChunk <= pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
-        Assert(cbChunk % pStream->State.cbFrameSize == 0);
-        Assert((cbChunk >> 1) >= 1);
 
         if (pStream->Dbg.Runtime.fEnabled)
             DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileDMA, (uint8_t *)pvBuf + cbWrittenTotal, cbChunk, 0 /* fFlags */);
@@ -676,6 +674,7 @@ bool hdaBDLENeedsInterrupt(PHDABDLE pBDLE)
  *
  * @returns Whether the new expiration time was set or not.
  * @param   pThis               HDA state.
+ * @param   pStream             HDA stream to set timer for.
  * @param   tsExpire            New (virtual) expiration time to set.
  * @param   fForce              Whether to force setting the expiration time or not.
  *
@@ -688,35 +687,31 @@ bool hdaBDLENeedsInterrupt(PHDABDLE pBDLE)
  *
  *          Forcing a new expiration time will override the above mechanism.
  */
-bool hdaTimerSet(PHDASTATE pThis, uint64_t tsExpire, bool fForce)
+bool hdaTimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool fForce)
 {
-    AssertPtr(pThis->pTimer);
+    AssertPtr(pThis);
+    AssertPtr(pStream);
 
     uint64_t tsExpireMin = tsExpire;
 
     if (!fForce)
     {
-        for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
-        {
-            PHDASTREAM pStream = &pThis->aStreams[i];
-
-            if (hdaStreamTransferIsScheduled(pStream))
-                tsExpireMin = RT_MIN(tsExpireMin, hdaStreamTransferGetNext(pStream));
-        }
+        if (hdaStreamTransferIsScheduled(pStream))
+            tsExpireMin = RT_MIN(tsExpireMin, hdaStreamTransferGetNext(pStream));
     }
 
-    const uint64_t tsNow = TMTimerGet(pThis->pTimer);
+    AssertPtr(pThis->pTimer[pStream->u8SD]);
+
+#ifdef VBOX_STRICT
+    const uint64_t tsNow = TMTimerGet(pThis->pTimer[pStream->u8SD]);
 
     if (tsExpireMin < tsNow) /* Make sure to not go backwards in time. */
         tsExpireMin = tsNow;
+#endif
 
-    Log3Func(("u64Epxire=%RU64 -> u64ExpireMin=%RU64, fForce=%RTbool [%s]\n",
-              tsExpire, tsExpireMin, fForce, tsExpireMin == tsExpire ? "OK" : "DELAYED"));
+      int rc2 = TMTimerSet(pThis->pTimer[pStream->u8SD], tsExpireMin);
+      AssertRC(rc2);
 
-    int rc2 = TMTimerSet(pThis->pTimer, tsExpireMin);
-    AssertRC(rc2);
-
-    return tsExpireMin == tsExpire;
+    return true;
 }
 #endif /* IN_RING3 */
-

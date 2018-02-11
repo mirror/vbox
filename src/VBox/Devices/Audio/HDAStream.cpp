@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2017 Oracle Corporation
+ * Copyright (C) 2017-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,6 +52,8 @@ int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
     pStream->u8SD           = u8SD;
     pStream->pMixSink       = NULL;
     pStream->pHDAState      = pThis;
+    pStream->pTimer         = pThis->pTimer[u8SD];
+    AssertPtr(pStream->pTimer);
 
     pStream->State.fInReset = false;
     pStream->State.fRunning = false;
@@ -59,19 +61,18 @@ int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
     RTListInit(&pStream->State.lstDMAHandlers);
 #endif
 
-    int rc = RTCircBufCreate(&pStream->State.pCircBuf, _64K); /** @todo Make this configurable. */
-    if (RT_SUCCESS(rc))
-    {
-        rc = hdaStreamPeriodCreate(&pStream->State.Period);
-        if (RT_SUCCESS(rc))
-            rc = RTCritSectInit(&pStream->State.CritSect);
-    }
+    int rc = RTCritSectInit(&pStream->CritSect);
+    AssertRCReturn(rc, rc);
 
-    int rc2;
+    rc = RTCircBufCreate(&pStream->State.pCircBuf, _64K); /** @todo Make this configurable. */
+    AssertRCReturn(rc, rc);
+
+    rc = hdaStreamPeriodCreate(&pStream->State.Period);
+    AssertRCReturn(rc, rc);
 
 #ifdef DEBUG
-    rc2 = RTCritSectInit(&pStream->Dbg.CritSect);
-    AssertRC(rc2);
+    rc = RTCritSectInit(&pStream->Dbg.CritSect);
+    AssertRCReturn(rc, rc);
 #endif
 
     pStream->Dbg.Runtime.fEnabled = pThis->Dbg.fEnabled;
@@ -86,8 +87,8 @@ int hdaStreamCreate(PHDASTREAM pStream, PHDASTATE pThis, uint8_t u8SD)
             RTStrPrintf(szFile, sizeof(szFile), "hdaStreamReadSD%RU8", pStream->u8SD);
 
         char szPath[RTPATH_MAX + 1];
-        rc2 = DrvAudioHlpGetFileName(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
-                                     0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+        int rc2 = DrvAudioHlpGetFileName(szPath, sizeof(szPath), pThis->Dbg.szOutPath, szFile,
+                                         0 /* uInst */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
         AssertRC(rc2);
         rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szPath, PDMAUDIOFILE_FLAG_NONE, &pStream->Dbg.Runtime.pFileStream);
         AssertRC(rc2);
@@ -132,9 +133,9 @@ void hdaStreamDestroy(PHDASTREAM pStream)
     AssertRC(rc2);
 #endif
 
-    if (RTCritSectIsInitialized(&pStream->State.CritSect))
+    if (RTCritSectIsInitialized(&pStream->CritSect))
     {
-        rc2 = RTCritSectDelete(&pStream->State.CritSect);
+        rc2 = RTCritSectDelete(&pStream->CritSect);
         AssertRC(rc2);
     }
 
@@ -365,7 +366,7 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
         pStream->State.cTransferPendingInterrupts = 0;
         pStream->State.cbDMALeft                  = 0;
 
-        const uint64_t cTicksPerHz = TMTimerGetFreq(pThis->pTimer) / pThis->u16TimerHz;
+        const uint64_t cTicksPerHz = TMTimerGetFreq(pStream->pTimer) / pThis->u16TimerHz;
 
         /* Calculate the timer ticks per byte for this stream. */
         pStream->State.cTicksPerByte = cTicksPerHz / pStream->State.cbTransferChunk;
@@ -373,6 +374,7 @@ int hdaStreamInit(PHDASTREAM pStream, uint8_t uSD)
 
         /* Calculate timer ticks per transfer. */
         pStream->State.cTransferTicks     = pStream->State.cbTransferChunk * pStream->State.cTicksPerByte;
+        Assert(pStream->State.cTransferTicks);
 
         /* Initialize the transfer timestamps. */
         pStream->State.tsTransferLast     = 0;
@@ -625,12 +627,23 @@ bool hdaStreamTransferIsScheduled(PHDASTREAM pStream)
 
     AssertPtrReturn(pStream->pHDAState, false);
 
+    const uint64_t tsNow = TMTimerGet(pStream->pTimer);
+
     const bool fScheduled =    pStream->State.fRunning
                             && (   pStream->State.cTransferPendingInterrupts
-                                || pStream->State.tsTransferNext > TMTimerGet(pStream->pHDAState->pTimer));
+                                || pStream->State.tsTransferNext > tsNow);
 
-    Log3Func(("[SD%RU8] tsTransferNext=%RU64, cTransferPendingInterrupts=%RU8 -> %RTbool\n",
-              pStream->u8SD, pStream->State.tsTransferNext, pStream->State.cTransferPendingInterrupts, fScheduled));
+#ifdef LOG_ENABLED
+    if (fScheduled)
+    {
+        if (pStream->State.cTransferPendingInterrupts)
+            Log3Func(("[SD%RU8] Scheduled (%RU8 IRQs pending)\n",
+                      pStream->u8SD, pStream->State.cTransferPendingInterrupts));
+        else
+            Log3Func(("[SD%RU8] Scheduled in %RU64\n",
+                      pStream->u8SD, pStream->State.tsTransferNext - tsNow));
+    }
+#endif
 
     return fScheduled;
 }
@@ -706,6 +719,8 @@ int hdaStreamWrite(PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32
 
         cbWrittenTotal += (uint32_t)cbDst;
     }
+
+    Log3Func(("cbWrittenTotal=%RU32\n", cbWrittenTotal));
 
     if (pcbWritten)
         *pcbWritten = cbWrittenTotal;
@@ -831,7 +846,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
         return VINF_SUCCESS;
     }
 
-    const uint64_t tsNow = TMTimerGet(pThis->pTimer);
+    const uint64_t tsNow = TMTimerGet(pStream->pTimer);
 
     if (!pStream->State.tsTransferLast)
         pStream->State.tsTransferLast = tsNow;
@@ -1218,11 +1233,12 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
     {
         Log3Func(("[SD%RU8] Scheduling timer\n", pStream->u8SD));
 
-        TMTimerUnlock(pThis->pTimer);
+        TMTimerUnlock(pStream->pTimer);
 
-        hdaTimerSet(pThis, tsTransferNext, false /* fForce */);
+        LogFunc(("Timer set SD%RU8\n", pStream->u8SD));
+        hdaTimerSet(pStream->pHDAState, pStream, tsTransferNext, false /* fForce */);
 
-        TMTimerLock(pThis->pTimer, VINF_SUCCESS);
+        TMTimerLock(pStream->pTimer, VINF_SUCCESS);
 
         pStream->State.tsTransferNext = tsTransferNext;
     }
@@ -1323,7 +1339,7 @@ void hdaStreamUpdate(PHDASTREAM pStream, bool fInTimer)
     else /* Input (SDI). */
     {
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-        if (fInTimer)
+        if (!fInTimer)
         {
 #endif
             rc2 = AudioMixerSinkUpdate(pSink);
@@ -1387,6 +1403,23 @@ void hdaStreamUpdate(PHDASTREAM pStream, bool fInTimer)
                 }
             }
         #endif
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+        }
+        else /* fInTimer */
+        {
+#endif
+            const uint64_t tsNow = RTTimeMilliTS();
+            static uint64_t s_lasti = 0;
+            if (s_lasti == 0)
+                s_lasti = tsNow;
+
+            if (tsNow - s_lasti >= 10) /** @todo Fix this properly. */
+            {
+                rc2 = hdaStreamAsyncIONotify(pStream);
+                AssertRC(rc2);
+
+                s_lasti = tsNow;
+            }
 
             const uint32_t cbToTransfer = hdaStreamGetUsed(pStream);
             if (cbToTransfer)
@@ -1395,7 +1428,7 @@ void hdaStreamUpdate(PHDASTREAM pStream, bool fInTimer)
                 AssertRC(rc2);
             }
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-        } /* fInTimer */
+        }
 #endif
     }
 }
@@ -1409,7 +1442,7 @@ void hdaStreamUpdate(PHDASTREAM pStream, bool fInTimer)
 void hdaStreamLock(PHDASTREAM pStream)
 {
     AssertPtrReturnVoid(pStream);
-    int rc2 = RTCritSectEnter(&pStream->State.CritSect);
+    int rc2 = RTCritSectEnter(&pStream->CritSect);
     AssertRC(rc2);
 }
 
@@ -1422,7 +1455,7 @@ void hdaStreamLock(PHDASTREAM pStream)
 void hdaStreamUnlock(PHDASTREAM pStream)
 {
     AssertPtrReturnVoid(pStream);
-    int rc2 = RTCritSectLeave(&pStream->State.CritSect);
+    int rc2 = RTCritSectLeave(&pStream->CritSect);
     AssertRC(rc2);
 }
 

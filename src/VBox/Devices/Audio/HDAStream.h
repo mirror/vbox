@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2017 Oracle Corporation
+ * Copyright (C) 2017-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -121,8 +121,6 @@ typedef struct HDASTREAMSTATE
     volatile bool           fRunning;
     /** Unused, padding. */
     uint8_t                 Padding0[3];
-    /** Critical section to serialize access. */
-    RTCRITSECT              CritSect;
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     /** Asynchronous I/O state members. */
     HDASTREAMSTATEAIO       AIO;
@@ -221,6 +219,10 @@ typedef struct HDASTREAM
     R3PTRTYPE(PHDASTATE)     pHDAState;
     /** Pointer to HDA sink this stream is attached to. */
     R3PTRTYPE(PHDAMIXERSINK) pMixSink;
+    /** The stream'S critical section to serialize access. */
+    RTCRITSECT               CritSect;
+    /** Pointer to the stream's timer. */
+    PTMTIMERR3               pTimer;
     /** Internal state of this stream. */
     HDASTREAMSTATE           State;
     /** Debug information. */
@@ -266,6 +268,13 @@ void              hdaStreamUnregisterDMAHandlers(PHDASTREAM pStream);
 # endif /* HDA_USE_DMA_ACCESS_HANDLER */
 /** @} */
 
+/** @name Timer functions.
+ * @{
+ */
+DECLCALLBACK(void) hdaStreamTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
+/** @} */
+
+
 /** @name Async I/O stream functions.
  * @{
  */
@@ -281,6 +290,5 @@ void              hdaStreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable);
 /** @} */
 
 #endif /* IN_RING3 */
-
 #endif /* !HDA_STREAM_H */
 

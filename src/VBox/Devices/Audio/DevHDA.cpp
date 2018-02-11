@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -503,9 +503,9 @@ static uint32_t const g_afMasks[5] =
 /**
  * Acquires the TM lock and HDA lock, returns on failure.
  */
-#define DEVHDA_LOCK_BOTH_RETURN_VOID(a_pThis) \
+#define DEVHDA_LOCK_BOTH_RETURN_VOID(a_pThis, a_SD) \
     do { \
-        int rcLock = TMTimerLock((a_pThis)->pTimer, VERR_IGNORED); \
+        int rcLock = TMTimerLock((a_pThis)->pTimer[a_SD], VERR_IGNORED); \
         if (rcLock != VINF_SUCCESS) \
         { \
             AssertRC(rcLock); \
@@ -515,7 +515,7 @@ static uint32_t const g_afMasks[5] =
         if (rcLock != VINF_SUCCESS) \
         { \
             AssertRC(rcLock); \
-            TMTimerUnlock((a_pThis)->pTimer); \
+            TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
             return; \
         } \
     } while (0)
@@ -523,16 +523,16 @@ static uint32_t const g_afMasks[5] =
 /**
  * Acquires the TM lock and HDA lock, returns on failure.
  */
-#define DEVHDA_LOCK_BOTH_RETURN(a_pThis, a_rcBusy) \
+#define DEVHDA_LOCK_BOTH_RETURN(a_pThis, a_SD, a_rcBusy) \
     do { \
-        int rcLock = TMTimerLock((a_pThis)->pTimer, (a_rcBusy)); \
+        int rcLock = TMTimerLock((a_pThis)->pTimer[a_SD], (a_rcBusy)); \
         if (rcLock != VINF_SUCCESS) \
             return rcLock; \
         rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, (a_rcBusy)); \
         if (rcLock != VINF_SUCCESS) \
         { \
             AssertRC(rcLock); \
-            TMTimerUnlock((a_pThis)->pTimer); \
+            TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
             return rcLock; \
         } \
     } while (0)
@@ -540,10 +540,10 @@ static uint32_t const g_afMasks[5] =
 /**
  * Releases the HDA lock and TM lock.
  */
-#define DEVHDA_UNLOCK_BOTH(a_pThis) \
+#define DEVHDA_UNLOCK_BOTH(a_pThis, a_SD) \
     do { \
         PDMCritSectLeave(&(a_pThis)->CritSect); \
-        TMTimerUnlock((a_pThis)->pTimer); \
+        TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
     } while (0)
 
 #ifdef IN_RING3
@@ -1305,7 +1305,10 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    DEVHDA_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+    /* Get the stream descriptor. */
+    const uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, CTL, iReg);
+
+    DEVHDA_LOCK_BOTH_RETURN(pThis, uSD, VINF_IOM_R3_MMIO_WRITE);
 
     /*
      * Some guests write too much (that is, 32-bit with the top 8 bit being junk)
@@ -1318,9 +1321,6 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     bool fReset    = RT_BOOL(u32Value & HDA_SDCTL_SRST);
     bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_SRST);
-
-    /* Get the stream descriptor. */
-    uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, CTL, iReg);
 
     LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
              uSD, fRun, fInRun, fReset, fInReset, u32Value));
@@ -1337,7 +1337,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     {
         LogFunc(("[SD%RU8] Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
 
-        DEVHDA_UNLOCK_BOTH(pThis);
+        DEVHDA_UNLOCK_BOTH(pThis, uSD);
         return hdaRegWriteU24(pThis, iReg, u32Value);
     }
 
@@ -1443,7 +1443,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
                 rc2 = hdaStreamPeriodBegin(&pStream->State.Period, hdaWalClkGetCurrent(pThis)/* Use current wall clock time */);
                 AssertRC(rc2);
 
-                rc2 = hdaTimerSet(pThis, TMTimerGet(pThis->pTimer) + pStream->State.cTransferTicks, false /* fForce */);
+                rc2 = hdaTimerSet(pThis, pStream, TMTimerGet(pThis->pTimer[pStream->u8SD]) + pStream->State.cTransferTicks, false /* fForce */);
                 AssertRC(rc2);
             }
             else
@@ -1471,8 +1471,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     int rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
     AssertRC(rc2);
 
-    DEVHDA_UNLOCK_BOTH(pThis);
-
+    DEVHDA_UNLOCK_BOTH(pThis, uSD);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -1483,15 +1482,17 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
 #ifdef IN_RING3
-    DEVHDA_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+    const uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, STS, iReg);
 
-    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, STS, iReg));
+    DEVHDA_LOCK_BOTH_RETURN(pThis, uSD, VINF_IOM_R3_MMIO_WRITE);
+
+    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     if (!pStream)
     {
         AssertMsgFailed(("[SD%RU8] Warning: Writing SDSTS on non-attached stream (0x%x)\n",
                          HDA_SD_NUM_FROM_REG(pThis, STS, iReg), u32Value));
 
-        DEVHDA_UNLOCK_BOTH(pThis);
+        DEVHDA_UNLOCK_BOTH(pThis, uSD);
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
@@ -1539,7 +1540,7 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     hdaProcessInterrupt(pThis, __FUNCTION__);
 #endif
 
-    const uint64_t tsNow = TMTimerGet(pThis->pTimer);
+    const uint64_t tsNow = TMTimerGet(pThis->pTimer[uSD]);
     Assert(tsNow >= pStream->State.tsTransferLast);
 
     const uint64_t cTicksElapsed     = tsNow - pStream->State.tsTransferLast;
@@ -1567,7 +1568,7 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
             LogRelMax2(64, ("HDA: Stream #%RU8 interrupt lagging behind (expected %uus, got %uus), trying to catch up ...\n",
                             pStream->u8SD,
-                            (TMTimerGetFreq(pThis->pTimer) / pThis->u16TimerHz) / 1000, (tsNow - pStream->State.tsTransferLast) / 1000));
+                            (TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pThis->u16TimerHz) / 1000,(tsNow - pStream->State.tsTransferLast) / 1000));
 
             cTicksToNext = 0;
         }
@@ -1586,13 +1587,14 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             pStream->State.cTransferPendingInterrupts--;
 
             /* Re-arm the timer. */
-            hdaTimerSet(pThis, tsNow + cTicksToNext, false /* fForce */);
+            LogFunc(("Timer set SD%RU8\n", pStream->u8SD));
+            hdaTimerSet(pThis, pStream, tsNow + cTicksToNext, false /* fForce */);
         }
     }
 
     hdaStreamUnlock(pStream);
 
-    DEVHDA_UNLOCK_BOTH(pThis);
+    DEVHDA_UNLOCK_BOTH(pThis, uSD);
     return VINF_SUCCESS;
 #else /* IN_RING3 */
     RT_NOREF(pThis, iReg, u32Value);
@@ -2781,61 +2783,41 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
 }
 
 /**
- * Main routine for the device timer.
+ * Main routine for the stream's timer.
  *
- * @param   pThis               HDA state.
+ * @param   pDevIns             Device instance.
+ * @param   pTimer              Timer this callback was called for.
+ * @param   pvUser              Pointer to associated HDASTREAM.
  */
-static void hdaTimerMain(PHDASTATE pThis)
+DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    AssertPtrReturnVoid(pThis);
+    RT_NOREF(pDevIns, pTimer);
 
-    STAM_PROFILE_START(&pThis->StatTimer, a);
+    PHDASTREAM pStream = (PHDASTREAM)pvUser;
+    AssertPtr(pStream);
 
-    DEVHDA_LOCK_BOTH_RETURN_VOID(pThis);
+    PHDASTATE  pThis   = pStream->pHDAState;
 
-    /* Do all transfers from/to DMA. */
-    hdaDoTransfers(pThis);
+    DEVHDA_LOCK_BOTH_RETURN_VOID(pStream->pHDAState, pStream->u8SD);
+
+    hdaStreamUpdate(pStream, true /* fInTimer */);
 
     /* Flag indicating whether to kick the timer again for a
      * new data processing round. */
-    bool fSinksActive = false;
+    const bool fSinkActive     = AudioMixerSinkIsActive(pStream->pMixSink->pMixSink);
+    const bool fTimerScheduled = hdaStreamTransferIsScheduled(pStream);
 
-    /* Do we need to kick the timer again? */
-    if (   AudioMixerSinkIsActive(pThis->SinkFront.pMixSink)
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-        || AudioMixerSinkIsActive(pThis->SinkCenterLFE.pMixSink)
-        || AudioMixerSinkIsActive(pThis->SinkRear.pMixSink)
-#endif
-        || AudioMixerSinkIsActive(pThis->SinkLineIn.pMixSink)
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-        || AudioMixerSinkIsActive(pThis->SinkMicIn.pMixSink)
-#endif
-        )
-    {
-        fSinksActive = true;
-    }
+    Log3Func(("fSinksActive=%RTbool, fTimerScheduled=%RTbool\n", fSinkActive, fTimerScheduled));
 
-    bool fTimerScheduled = false;
-    if (   hdaStreamTransferIsScheduled(hdaGetStreamFromSink(pThis, &pThis->SinkFront))
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-        || hdaStreamTransferIsScheduled(hdaGetStreamFromSink(pThis, &pThis->SinkMicIn))
-#endif
-        || hdaStreamTransferIsScheduled(hdaGetStreamFromSink(pThis, &pThis->SinkLineIn)))
-    {
-        fTimerScheduled = true;
-    }
-
-    Log3Func(("fSinksActive=%RTbool, fTimerScheduled=%RTbool\n", fSinksActive, fTimerScheduled));
-
-    if (    fSinksActive
+    if (    fSinkActive
         && !fTimerScheduled)
     {
-        hdaTimerSet(pThis, TMTimerGet(pThis->pTimer) + TMTimerGetFreq(pThis->pTimer) / pThis->u16TimerHz, true /* fForce */);
+        hdaTimerSet(pThis, pStream,
+                    TMTimerGet(pThis->pTimer[pStream->u8SD]) + TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pStream->pHDAState->u16TimerHz,
+                    true /* fForce */);
     }
 
-    DEVHDA_UNLOCK_BOTH(pThis);
-
-    STAM_PROFILE_STOP(&pThis->StatTimer, a);
+    DEVHDA_UNLOCK_BOTH(pThis, pStream->u8SD);
 }
 
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
@@ -3078,24 +3060,6 @@ static void hdaGCTLReset(PHDASTATE pThis)
 
     LogFlowFuncLeave();
     LogRel(("HDA: Reset\n"));
-}
-
-/**
- * Timer callback which handles the audio data transfers on a periodic basis.
- *
- * @param   pDevIns             Device instance.
- * @param   pTimer              Timer which was used when calling this.
- * @param   pvUser              User argument as PHDASTATE.
- */
-static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
-{
-    RT_NOREF(pDevIns, pTimer);
-
-    PHDASTATE pThis = (PHDASTATE)pvUser;
-    Assert(pThis == PDMINS_2_DATA(pDevIns, PHDASTATE));
-    AssertPtr(pThis);
-
-    hdaTimerMain(pThis);
 }
 
 /**
@@ -3640,8 +3604,6 @@ static int hdaLoadExecPost(PHDASTATE pThis)
 {
     int rc = VINF_SUCCESS;
 
-    uint64_t tsExpire = 0; /* Timestamp of new timer expiration time / Whether to resume the device timer. */
-
     /*
      * Enable all previously active streams.
      */
@@ -3678,25 +3640,13 @@ static int hdaLoadExecPost(PHDASTATE pThis)
                 /* (Re-)install the DMA handler. */
                 hdaStreamRegisterDMAHandlers(pThis, pStream);
 #endif
-                /* Determine the earliest timing slot we need to use. */
-                if (tsExpire)
-                    tsExpire = RT_MIN(tsExpire, hdaStreamTransferGetNext(pStream));
-                else
-                    tsExpire = hdaStreamTransferGetNext(pStream);
-
-                Log2Func(("[SD%RU8] tsExpire=%RU64\n", pStream->u8SD, tsExpire));
+                if (hdaStreamTransferIsScheduled(pStream))
+                    hdaTimerSet(pThis, pStream, hdaStreamTransferGetNext(pStream), true /* fForce */);
 
                 /* Also keep track of the currently active streams. */
                 pThis->cStreamsActive++;
             }
         }
-    }
-
-    /* Start the timer if one of the above streams were active during taking the saved state. */
-    if (tsExpire)
-    {
-        LogFunc(("Resuming timer at %RU64\n", tsExpire));
-        hdaTimerSet(pThis, tsExpire, true /* fForce */);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -5136,6 +5086,24 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
          */
         for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
         {
+            /* Create the emulation timer (per stream).
+             *
+             * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's HDA driver
+             *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
+             *        instead of the LPIB registers.
+             */
+            char szTimer[16];
+            RTStrPrintf2(szTimer, sizeof(szTimer), "HDA SD%RU8", i);
+
+            rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaTimer, &pThis->aStreams[i],
+                                        TMTIMER_FLAGS_NO_CRIT_SECT, szTimer, &pThis->pTimer[i]);
+            AssertRCReturn(rc, rc);
+
+            /* Use our own critcal section for the device timer.
+             * That way we can control more fine-grained when to lock what. */
+            rc = TMR3TimerSetCritSect(pThis->pTimer[i], &pThis->CritSect);
+            AssertRCReturn(rc, rc);
+
             rc = hdaStreamCreate(&pThis->aStreams[i], pThis, i /* u8SD */);
             AssertRC(rc);
         }
@@ -5325,24 +5293,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             AssertReleaseMsg(pNextReg || ((pReg->offset + pReg->size) & 3) == 0,
                              ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
         }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        /* Create the emulation timer.
-         *
-         * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's HDA driver
-         *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
-         *        instead of the LPIB registers.
-         */
-        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaTimer, pThis,
-                                    TMTIMER_FLAGS_NO_CRIT_SECT, "HDA Timer", &pThis->pTimer);
-        AssertRCReturn(rc, rc);
-
-        /* Use our own critcal section for the device timer.
-         * That way we can control more fine-grained when to lock what. */
-        rc = TMR3TimerSetCritSect(pThis->pTimer, &pThis->CritSect);
-        AssertRCReturn(rc, rc);
     }
 
 # ifdef VBOX_WITH_STATISTICS
