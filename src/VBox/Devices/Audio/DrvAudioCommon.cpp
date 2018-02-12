@@ -1030,6 +1030,23 @@ uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps)
 }
 
 /**
+ * Returns the amount of bytes for a given time (in ms) and PCM properties.
+ *
+ * @return  uint32_t            Calculated amount of bytes.
+ * @param   pProps              PCM properties to calculate amount of bytes for.
+ * @param   uMs                 Time (in ms) to calculate amount of bytes for.
+ */
+uint32_t DrvAudioHlpMsToBytes(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs)
+{
+    AssertPtrReturn(pProps, 0);
+
+    if (!uMs)
+        return 0;
+
+    return float(((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / 1000) * uMs;
+}
+
+/**
  * Sanitizes the file name component so that unsupported characters
  * will be replaced by an underscore ("_").
  *
