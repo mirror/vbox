@@ -421,8 +421,8 @@ static void hmR0SvmLogState(PVMCPU pVCpu, PCSVMVMCB pVmcb, PCPUMCTX pCtx, const 
 {
     RT_NOREF2(pVCpu, uVerbose);
 
-    Log4(("%s: cs:rip=%04x:%RX64 efl=%#RX32 cr0=%#RX32 cr3=%#RX32 cr4=%#RX32\n", pszPrefix, pCtx->cs.Sel, pCtx->rip,
-          pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4));
+    Log4(("%s: cs:rip=%04x:%RX64 efl=%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64\n", pszPrefix, pCtx->cs.Sel, pCtx->rip,
+          pCtx->rflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4));
     Log4(("%s: rsp=%#RX64 rbp=%#RX64 rdi=%#RX64\n", pszPrefix, pCtx->rsp, pCtx->rbp, pCtx->rdi));
     if (fFlags & HMSVM_LOG_CS)
     {
@@ -2263,12 +2263,8 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
                ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
-    Log4(("hmR0SvmLoadGuestState: CS:RIP=%04x:%RX64 EFL=%#x CR0=%#RX64 CR3=%#RX64 CR4=%#RX64 ESP=%#RX32 EBP=%#RX32\n",
-          pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->cr0, pCtx->cr3, pCtx->cr4, pCtx->esp, pCtx->ebp));
-    Log4(("hmR0SvmLoadGuestState: SS={%04x base=%016RX64 limit=%08x flags=%08x}\n", pCtx->ss.Sel, pCtx->ss.u64Base,
-          pCtx->ss.u32Limit, pCtx->ss.Attr.u));
-    Log4(("hmR0SvmLoadGuestState: FS={%04x base=%016RX64 limit=%08x flags=%08x}\n", pCtx->fs.Sel, pCtx->fs.u64Base,
-          pCtx->fs.u32Limit, pCtx->fs.Attr.u));
+    hmR0SvmLogState(pVCpu, pVmcb, pCtx, "hmR0SvmLoadGuestState", 0 /* fFlags */, 0 /* uVerbose */);
+
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
 }
