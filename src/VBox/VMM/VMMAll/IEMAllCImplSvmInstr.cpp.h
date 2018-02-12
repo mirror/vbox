@@ -60,29 +60,31 @@ IEM_STATIC uint8_t iemGetSvmEventType(uint32_t uVector, uint32_t fIemXcptFlags)
 DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /*
-     * Flush the TLB with new CR3. This is required in case the PGM mode change
-     * below doesn't actually change anything.
+     * Inform PGM about paging mode changes.
+     * We include X86_CR0_PE because PGM doesn't handle paged-real mode yet,
+     * see comment in iemMemPageTranslateAndCheckAccess().
      */
-    int rc = PGMFlushTLB(pVCpu, pCtx->cr3, true);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Inform PGM about paging mode changes.
-         * We include X86_CR0_PE because PGM doesn't handle paged-real mode yet,
-         * see comment in iemMemPageTranslateAndCheckAccess().
-         */
-        rc = PGMChangeMode(pVCpu, pCtx->cr0 | X86_CR0_PE, pCtx->cr4, pCtx->msrEFER);
+    int rc = PGMChangeMode(pVCpu, pCtx->cr0 | X86_CR0_PE, pCtx->cr4, pCtx->msrEFER);
 #ifdef IN_RING3
-        Assert(rc != VINF_PGM_CHANGE_MODE);
+    Assert(rc != VINF_PGM_CHANGE_MODE);
 #endif
+    AssertRCReturn(rc, rc);
+
+    /* Inform CPUM (recompiler), can later be removed. */
+    CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+
+    /*
+     * Flush the TLB with new CR3. This is required in case the PGM mode change
+     * above doesn't actually change anything.
+     */
+    if (rc == VINF_SUCCESS)
+    {
+        rc = PGMFlushTLB(pVCpu, pCtx->cr3, true);
         AssertRCReturn(rc, rc);
-
-        /* Inform CPUM (recompiler), can later be removed. */
-        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
-
-        /* Re-initialize IEM cache/state after the drastic mode switch. */
-        iemReInitExec(pVCpu);
     }
+
+    /* Re-initialize IEM cache/state after the drastic mode switch. */
+    iemReInitExec(pVCpu);
     return rc;
 }
 
