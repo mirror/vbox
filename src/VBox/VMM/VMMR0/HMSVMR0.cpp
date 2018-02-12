@@ -2263,8 +2263,9 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
                ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
+#ifdef VBOX_STRICT
     hmR0SvmLogState(pVCpu, pVmcb, pCtx, "hmR0SvmLoadGuestState", 0 /* fFlags */, 0 /* uVerbose */);
-
+#endif
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
 }
