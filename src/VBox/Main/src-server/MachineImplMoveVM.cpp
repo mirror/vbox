@@ -594,7 +594,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         }
 
         /*
-         * Update state file path 
+         * Update state file path
          * very important step!
          */
         rc = taskMoveVM->updatePathsToStateFiles(taskMoveVM->finalSaveStateFilesMap,
@@ -758,7 +758,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         try
         {
             /*
-             * Fix the progress count 
+             * Fix the progress count
              * In instance, the whole "move vm" operation is failed on 9th step. But total count is 20.
              * Where 20 = 2 * 10 operations, where 10 is the real number of operations. And this value was doubled
              * earlier in the init() exactly for one reason - rollback operation. Because in this case we must do
@@ -846,8 +846,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         /*
          * In case of success it's not urgent to update the progress object because we call i_notifyComplete() with
          * the success result. As result, the last number of progress operation can be not equal the number of operations
-         * because we doubled the number of operations for rollback case. 
-         * But if we want to update the progress object corectly it's needed to add all medium moved by standard 
+         * because we doubled the number of operations for rollback case.
+         * But if we want to update the progress object corectly it's needed to add all medium moved by standard
          * "move medium" logic (for us it's taskMoveVM->finalMediumsMap) to the current number of operation.
          */
 
