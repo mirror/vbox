@@ -894,8 +894,8 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
             || pgmPhysGetPage(pVM, GCPhys) == pPage)
         {
             uint8_t u2State = PGM_PAGE_GET_NEM_STATE(pPage);
-            int rc2 = NEMHCNotifyPhysPageAllocated(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, HCPhys,
-                                                   pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
+            rc2 = NEMHCNotifyPhysPageAllocated(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, HCPhys,
+                                               pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
             if (RT_SUCCESS(rc))
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             else
