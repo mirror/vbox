@@ -503,20 +503,16 @@ int hdaStreamEnable(PHDASTREAM pStream, bool fEnable)
 
     int rc = VINF_SUCCESS;
 
-    if (!pStream->pMixSink) /* Stream attached to a sink? */
-    {
-        AssertMsgFailed(("Stream #%RU8 not has no mixer sink attached\n", pStream->u8SD));
-        return VERR_WRONG_ORDER;
-    }
-
     AUDMIXSINKCMD enmCmd = fEnable
                          ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE;
 
     /* First, enable or disable the stream and the stream's sink, if any. */
-    if (pStream->pMixSink->pMixSink)
+    if (   pStream->pMixSink
+        && pStream->pMixSink->pMixSink)
         rc = AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
 
     if (   RT_SUCCESS(rc)
+        && fEnable
         && pStream->Dbg.Runtime.fEnabled)
     {
         Assert(DrvAudioHlpPCMPropsAreValid(&pStream->State.Cfg.Props));
