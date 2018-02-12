@@ -784,16 +784,6 @@ typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
 #endif /* VBOX_WITH_RAW_MODE */
 
 
-/** @name Page type predicates.
- * @{ */
-#define PGMPAGETYPE_IS_READABLE(type)   ( (type) <= PGMPAGETYPE_ROM )
-#define PGMPAGETYPE_IS_WRITEABLE(type)  ( (type) <= PGMPAGETYPE_ROM_SHADOW )
-#define PGMPAGETYPE_IS_RWX(type)        ( (type) <= PGMPAGETYPE_ROM_SHADOW )
-#define PGMPAGETYPE_IS_ROX(type)        ( (type) == PGMPAGETYPE_ROM )
-#define PGMPAGETYPE_IS_NP(type)         ( (type) == PGMPAGETYPE_MMIO )
-/** @} */
-
-
 /**
  * A Physical Guest Page tracking structure.
  *
@@ -822,8 +812,8 @@ typedef union PGMPAGE
         uint64_t    u2Unused0           : 2;
         /** 9:8   - The physical handler state (PGM_PAGE_HNDL_VIRT_STATE_*). */
         uint64_t    u2HandlerVirtStateY : 2;
-        /** 11:10 - Unused. */
-        uint64_t    u2Unused1           : 2;
+        /** 11:10 - NEM state bits. */
+        uint64_t    u2NemStateY         : 2;
         /** 12:48 - The host physical frame number (shift left to get the
          *  address). */
         uint64_t    HCPhysFN            : 36;
@@ -1425,6 +1415,20 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_INC_WRITE_LOCKS(a_pPage)       do { ++(a_pPage)->s.cWriteLocksY; } while (0)
+
+
+/** Gets the NEM state.
+ * @returns NEM state value (two bits).
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_NEM_STATE(a_pPage)         ((a_pPage)->s.u2NemStateY)
+
+/** Sets the NEM state.
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ * @param   a_u2State   The NEM state value (specific to NEM impl.).
+ */
+#define PGM_PAGE_SET_NEM_STATE(a_pPage, a_u2State) \
+    do { Assert((a_u2State) < 4); (a_pPage)->s.u2NemStateY = (a_u2State); } while (0)
 
 
 #if 0
@@ -4216,7 +4220,7 @@ int             pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys);
 int             pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage);
 int             pgmPhysPageLoadIntoTlb(PVM pVM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlbWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
-void            pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage);
+void            pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
 int             pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
@@ -4234,7 +4238,8 @@ DECLEXPORT(FNPGMPHYSHANDLER)        pgmPhysHandlerRedirectToHC;
 DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysPfHandlerRedirectToHC;
 DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysRomWritePfHandler;
 #endif
-int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys);
+int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys,
+                                PGMPAGETYPE enmNewType);
 void            pgmPhysInvalidRamRangeTlbs(PVM pVM);
 void            pgmPhysInvalidatePageMapTLB(PVM pVM);
 void            pgmPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys);

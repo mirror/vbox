@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
+#include <iprt/nt/nt-and-windows.h>
 #include <WinHvPlatform.h>
 
 #ifndef _WIN32_WINNT_WIN10
@@ -41,6 +42,26 @@
 #include <iprt/ldr.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#ifdef LOG_ENABLED
+# define NEM_WIN_INTERCEPT_NT_IO_CTLS
+#endif
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** @name Our two-bit physical page state for PGMPAGE
+ * @{ */
+#define NEM_WIN_PAGE_STATE_NOT_SET      0
+#define NEM_WIN_PAGE_STATE_UNMAPPED     1
+#define NEM_WIN_PAGE_STATE_READABLE     2
+#define NEM_WIN_PAGE_STATE_WRITABLE     3
+/** @} */
 
 
 /*********************************************************************************************************************************
@@ -122,6 +143,114 @@ static const struct
 #endif
 
 
+#ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
+
+/** The real NtDeviceIoControlFile API in NTDLL.   */
+static decltype(NtDeviceIoControlFile) *g_pfnNtDeviceIoControlFile;
+
+/**
+ * Wrapper that logs the call from VID.DLL.
+ *
+ * This is very handy for figuring out why an API call fails.
+ */
+static NTSTATUS WINAPI
+nemR3WinLogWrapper_NtDeviceIoControlFile(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUTINE pfnApcCallback, PVOID pvApcCtx,
+                                         PIO_STATUS_BLOCK pIos, ULONG uFunction, PVOID pvInput, ULONG cbInput,
+                                         PVOID pvOutput, ULONG cbOutput)
+{
+    NTSTATUS rcNt = g_pfnNtDeviceIoControlFile(hFile, hEvt, pfnApcCallback, pvApcCtx, pIos, uFunction,
+                                               pvInput, cbInput, pvOutput, cbOutput);
+    if (!hEvt && !pfnApcCallback && !pvApcCtx)
+        LogRel(("VID!NtDeviceIoControlFile: hFile=%#zx pIos=%p->{s:%#x, i:%#zx} uFunction=%#x Input=%p LB %#x Output=%p LB %#x) -> %#x; Caller=%p\n",
+                hFile, pIos, pIos->Status, pIos->Information, uFunction, pvInput, cbInput, pvOutput, cbOutput, rcNt, ASMReturnAddress()));
+    else
+        LogRel(("VID!NtDeviceIoControlFile: hFile=%#zx hEvt=%#zx Apc=%p/%p pIos=%p->{s:%#x, i:%#zx} uFunction=%#x Input=%p LB %#x Output=%p LB %#x) -> %#x; Caller=%p\n",
+                hFile, hEvt, pfnApcCallback, pvApcCtx, pIos, pIos->Status, pIos->Information, uFunction,
+                pvInput, cbInput, pvOutput, cbOutput, rcNt, ASMReturnAddress()));
+    return rcNt;
+}
+
+
+/**
+ * Patches the call table of VID.DLL so we can intercept and log
+ * NtDeviceIoControlFile.
+ *
+ * This is for DEBUGGING only.
+ *
+ * @param   hLdrModVid      The VID module handle.
+ */
+static void nemR3WinInitVidIntercepts(RTLDRMOD hLdrModVid)
+{
+    /*
+     * Locate the real API.
+     */
+    g_pfnNtDeviceIoControlFile = (decltype(NtDeviceIoControlFile) *)RTLdrGetSystemSymbol("NTDLL.DLL", "NtDeviceIoControlFile");
+    AssertReturnVoid(g_pfnNtDeviceIoControlFile > 0);
+
+    /*
+     * Locate the PE header and get what we need from it.
+     */
+    uint8_t const *pbImage = (uint8_t const *)RTLdrGetNativeHandle(hLdrModVid);
+    IMAGE_DOS_HEADER const *pMzHdr  = (IMAGE_DOS_HEADER const *)pbImage;
+    AssertReturnVoid(pMzHdr->e_magic == IMAGE_DOS_SIGNATURE);
+    IMAGE_NT_HEADERS const *pNtHdrs = (IMAGE_NT_HEADERS const *)&pbImage[pMzHdr->e_lfanew];
+    AssertReturnVoid(pNtHdrs->Signature == IMAGE_NT_SIGNATURE);
+
+    uint32_t const             cbImage   = pNtHdrs->OptionalHeader.SizeOfImage;
+    IMAGE_DATA_DIRECTORY const ImportDir = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+
+    /*
+     * Walk the import descriptor table looking for NTDLL.DLL.
+     */
+    bool fSuccess = true;
+    AssertReturnVoid(ImportDir.Size > 0);
+    AssertReturnVoid(ImportDir.Size < cbImage);
+    AssertReturnVoid(ImportDir.VirtualAddress > 0);
+    AssertReturnVoid(ImportDir.VirtualAddress < cbImage);
+    for (PIMAGE_IMPORT_DESCRIPTOR pImps = (PIMAGE_IMPORT_DESCRIPTOR)&pbImage[ImportDir.VirtualAddress];
+         pImps->Name != 0 && pImps->FirstThunk != 0;
+         pImps++)
+    {
+        AssertReturnVoid(pImps->Name < cbImage);
+        const char *pszModName = (const char *)&pbImage[pImps->Name];
+        if (RTStrICmpAscii(pszModName, "ntdll.dll"))
+            continue;
+        AssertReturnVoid(pImps->FirstThunk < cbImage);
+        AssertReturnVoid(pImps->OriginalFirstThunk < cbImage);
+
+        /*
+         * Walk the thunks table(s) looking for NtDeviceIoControlFile.
+         */
+        PIMAGE_THUNK_DATA pFirstThunk = (PIMAGE_THUNK_DATA)&pbImage[pImps->FirstThunk]; /* update this. */
+        PIMAGE_THUNK_DATA pThunk      = pImps->OriginalFirstThunk == 0                  /* read from this. */
+                                      ? (PIMAGE_THUNK_DATA)&pbImage[pImps->FirstThunk]
+                                      : (PIMAGE_THUNK_DATA)&pbImage[pImps->OriginalFirstThunk];
+        while (pThunk->u1.Ordinal != 0)
+        {
+            if (!(pThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG32))
+            {
+                AssertReturnVoid(pThunk->u1.Ordinal > 0 && pThunk->u1.Ordinal < cbImage);
+
+                const char *pszSymbol = (const char *)&pbImage[(uintptr_t)pThunk->u1.AddressOfData + 2];
+                if (strcmp(pszSymbol, "NtDeviceIoControlFile") == 0)
+                {
+                    DWORD fOldProt = PAGE_EXECUTE;
+                    VirtualProtect(&pFirstThunk->u1.Function, sizeof(uintptr_t), PAGE_EXECUTE_READWRITE, &fOldProt);
+                    pFirstThunk->u1.Function = (uintptr_t)nemR3WinLogWrapper_NtDeviceIoControlFile;
+                    VirtualProtect(&pFirstThunk->u1.Function, sizeof(uintptr_t), fOldProt, &fOldProt);
+                    fSuccess = true;
+                }
+            }
+
+            pThunk++;
+            pFirstThunk++;
+        }
+    }
+    Assert(fSuccess);
+}
+#endif
+
+
 
 /**
  * Worker for nemR3NativeInit that probes and load the native API.
@@ -199,6 +328,9 @@ static int nemR3WinInitProbeAndLoad(bool fForced, PRTERRINFO pErrInfo)
     }
     if (RT_SUCCESS(rc))
     {
+#ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
+        nemR3WinInitVidIntercepts(ahMods[1]);
+#endif
         for (unsigned i = 0; i < RT_ELEMENTS(g_aImports); i++)
         {
             int rc2 = RTLdrGetSymbol(ahMods[g_aImports[i].idxDll], g_aImports[i].pszName, (void **)g_aImports[i].ppfn);
@@ -266,7 +398,9 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     HRESULT hrc = WHvGetCapability(WHvCapabilityCodeHypervisorPresent, &Caps, sizeof(Caps));
     DWORD   rcWin = GetLastError();
     if (FAILED(hrc))
-        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeHypervisorPresent failed: %Rhrc", hrc);
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                             "WHvGetCapability/WHvCapabilityCodeHypervisorPresent failed: %Rhrc (Last=%#x/%u)",
+                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
     if (!Caps.HypervisorPresent)
     {
         if (!RTPathExists(RTPATH_NT_PASSTHRU_PREFIX "Device\\VidExo"))
@@ -283,7 +417,9 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     RT_ZERO(Caps);
     hrc = WHvGetCapability(WHvCapabilityCodeExtendedVmExits, &Caps, sizeof(Caps));
     if (FAILED(hrc))
-        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeExtendedVmExits failed: %Rhrc", hrc);
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                             "WHvGetCapability/WHvCapabilityCodeExtendedVmExits failed: %Rhrc (Last=%#x/%u)",
+                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
     NEM_LOG_REL_CAP_EX("WHvCapabilityCodeExtendedVmExits", "%'#018RX64", Caps.ExtendedVmExits.AsUINT64);
     pVM->nem.s.fExtendedMsrExit   = RT_BOOL(Caps.ExtendedVmExits.X64MsrExit);
     pVM->nem.s.fExtendedCpuIdExit = RT_BOOL(Caps.ExtendedVmExits.X64CpuidExit);
@@ -301,7 +437,9 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     RT_ZERO(Caps);
     hrc = WHvGetCapability(WHvCapabilityCodeFeatures, &Caps, sizeof(Caps));
     if (FAILED(hrc))
-        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeFeatures failed: %Rhrc", hrc);
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                             "WHvGetCapability/WHvCapabilityCodeFeatures failed: %Rhrc (Last=%#x/%u)",
+                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
     if (Caps.Features.AsUINT64 & ~(uint64_t)0)
         LogRel(("NEM: Warning! Unknown feature definitions: %#RX64\n", Caps.Features.AsUINT64));
     /** @todo RECHECK: WHV_CAPABILITY_FEATURES typedef. */
@@ -312,7 +450,9 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     RT_ZERO(Caps);
     hrc = WHvGetCapability(WHvCapabilityCodeProcessorVendor, &Caps, sizeof(Caps));
     if (FAILED(hrc))
-        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeProcessorVendor failed: %Rhrc", hrc);
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                             "WHvGetCapability/WHvCapabilityCodeProcessorVendor failed: %Rhrc (Last=%#x/%u)",
+                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
     switch (Caps.ProcessorVendor)
     {
         /** @todo RECHECK: WHV_PROCESSOR_VENDOR typedef. */
@@ -335,7 +475,9 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     RT_ZERO(Caps);
     hrc = WHvGetCapability(WHvCapabilityCodeProcessorFeatures, &Caps, sizeof(Caps));
     if (FAILED(hrc))
-        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeProcessorFeatures failed: %Rhrc", hrc);
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                             "WHvGetCapability/WHvCapabilityCodeProcessorFeatures failed: %Rhrc (Last=%#x/%u)",
+                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
     NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorFeatures", "%'#018RX64", Caps.ProcessorFeatures.AsUINT64);
 #define NEM_LOG_REL_CPU_FEATURE(a_Field)    NEM_LOG_REL_CAP_SUB(#a_Field, Caps.ProcessorFeatures.a_Field)
     NEM_LOG_REL_CPU_FEATURE(Sse3Support);
@@ -392,7 +534,9 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     RT_ZERO(Caps);
     hrc = WHvGetCapability(WHvCapabilityCodeProcessorClFlushSize, &Caps, sizeof(Caps));
     if (FAILED(hrc))
-        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "WHvGetCapability/WHvCapabilityCodeProcessorClFlushSize failed: %Rhrc", hrc);
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                             "WHvGetCapability/WHvCapabilityCodeProcessorClFlushSize failed: %Rhrc (Last=%#x/%u)",
+                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
     NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorClFlushSize", "2^%u", Caps.ProcessorClFlushSize);
     if (Caps.ProcessorClFlushSize < 8 && Caps.ProcessorClFlushSize > 9)
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Unsupported cache line flush size: %u", Caps.ProcessorClFlushSize);
@@ -449,7 +593,8 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
     WHV_PARTITION_HANDLE hPartition;
     HRESULT hrc = WHvCreatePartition(&hPartition);
     if (FAILED(hrc))
-        return RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED, "WHvCreatePartition failed with %Rhrc", hrc);
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED, "WHvCreatePartition failed with %Rhrc (Last=%#x/%u)",
+                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
 
     int rc;
 
@@ -494,7 +639,8 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
     }
     else
         rc = RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED,
-                           "Failed setting WHvPartitionPropertyCodeProcessorCount to %u: %Rhrc", pVM->cCpus, hrc);
+                           "Failed setting WHvPartitionPropertyCodeProcessorCount to %u: %Rhrc (Last=%#x/%u)",
+                           pVM->cCpus, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
     WHvDeletePartition(hPartition);
 
     Assert(!pVM->nem.s.hPartitionDevice);
@@ -589,7 +735,8 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     HRESULT hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                          "Failed to set WHvPartitionPropertyCodeProcessorVendor to %u: %Rhrc", Property.ProcessorVendor, hrc);
+                          "Failed to set WHvPartitionPropertyCodeProcessorVendor to %u: %Rhrc (Last=%#x/%u)",
+                          Property.ProcessorVendor, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
 
     /* Not sure if we really need to set the cache line flush size. */
     RT_ZERO(Property);
@@ -598,8 +745,8 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                          "Failed to set WHvPartitionPropertyCodeProcessorClFlushSize to %u: %Rhrc",
-                          pVM->nem.s.cCacheLineFlushShift, hrc);
+                          "Failed to set WHvPartitionPropertyCodeProcessorClFlushSize to %u: %Rhrc (Last=%#x/%u)",
+                          pVM->nem.s.cCacheLineFlushShift, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
 
     /*
      * Sync CPU features with CPUM.
@@ -613,8 +760,8 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                          "Failed to set WHvPartitionPropertyCodeProcessorFeatures to %'#RX64: %Rhrc",
-                          pVM->nem.s.uCpuFeatures.u64, hrc);
+                          "Failed to set WHvPartitionPropertyCodeProcessorFeatures to %'#RX64: %Rhrc (Last=%#x/%u)",
+                          pVM->nem.s.uCpuFeatures.u64, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
 
     /*
      * Set up the partition and create EMTs.
@@ -624,7 +771,9 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
      */
     hrc = WHvSetupPartition(hPartition);
     if (FAILED(hrc))
-        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to WHvSetupPartition failed: %Rhrc", hrc);
+        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                          "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)",
+                          hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
 
     /* Get the handle. */
     HANDLE hPartitionDevice;
@@ -654,12 +803,17 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         hrc = WHvCreateVirtualProcessor(hPartition, iCpu, 0 /*fFlags*/);
         if (FAILED(hrc))
         {
+            NTSTATUS const rcNtLast  = RTNtCurrentTeb()->LastStatusValue;
+            DWORD const    dwErrLast = RTNtCurrentTeb()->LastErrorValue;
             while (iCpu-- > 0)
             {
                 HRESULT hrc2 = WHvDeleteVirtualProcessor(hPartition, iCpu);
-                AssertLogRelMsg(SUCCEEDED(hrc2), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc\n", hPartition, iCpu, hrc2));
+                AssertLogRelMsg(SUCCEEDED(hrc2), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
+                                                  hPartition, iCpu, hrc2, RTNtCurrentTeb()->LastStatusValue,
+                                                  RTNtCurrentTeb()->LastErrorValue));
             }
-            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to WHvSetupPartition failed: %Rhrc", hrc);
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                              "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
         }
     }
     pVM->nem.s.fCreatedEmts = true;
@@ -691,7 +845,9 @@ int nemR3NativeTerm(PVM pVM)
         while (iCpu-- > 0)
         {
             HRESULT hrc = WHvDeleteVirtualProcessor(hPartition, iCpu);
-            AssertLogRelMsg(SUCCEEDED(hrc), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc\n", hPartition, iCpu, hrc));
+            AssertLogRelMsg(SUCCEEDED(hrc), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
+                                             hPartition, iCpu, hrc, RTNtCurrentTeb()->LastStatusValue,
+                                             RTNtCurrentTeb()->LastErrorValue));
         }
         WHvDeletePartition(hPartition);
     }
@@ -712,36 +868,114 @@ void nemR3NativeResetCpu(PVMCPU pVCpu)
 }
 
 
+
+DECLINLINE(int) nemR3NativeGCPhys2R3PtrReadOnly(PVM pVM, RTGCPHYS GCPhys, const void **ppv)
+{
+    PGMPAGEMAPLOCK Lock;
+    int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, ppv, &Lock);
+    if (RT_SUCCESS(rc))
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+    return rc;
+}
+
+DECLINLINE(int) nemR3NativeGCPhys2R3PtrWriteable(PVM pVM, RTGCPHYS GCPhys, void **ppv)
+{
+    PGMPAGEMAPLOCK Lock;
+    int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhys, ppv, &Lock);
+    if (RT_SUCCESS(rc))
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+    return rc;
+}
+
+
 int nemR3NativeNotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
 {
+    LogRel(("nemR3NativeNotifyPhysRamRegister: %RGp LB %RGp\n", GCPhys, cb));
     NOREF(pVM); NOREF(GCPhys); NOREF(cb);
     return VINF_SUCCESS;
 }
 
 
-int nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
+int nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvMmio2)
 {
-    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+    LogRel(("nemR3NativeNotifyPhysMmioExMap: %RGp LB %RGp fFlags=%#x pvMmio2=%p\n", GCPhys, cb, fFlags, pvMmio2));
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags); NOREF(pvMmio2);
     return VINF_SUCCESS;
 }
 
 
 int nemR3NativeNotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
 {
+    LogRel(("nemR3NativeNotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
     NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
     return VINF_SUCCESS;
 }
 
 
-int nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags)
+/**
+ * Called early during ROM registration, right after the pages have been
+ * allocated and the RAM range updated.
+ *
+ * This will be succeeded by a number of NEMHCNotifyPhysPageProtChanged() calls
+ * and finally a NEMR3NotifyPhysRomRegisterEarly().
+ *
+ * @returns VBox status code
+ * @param   pVM             The cross context VM structure.
+ * @param   GCPhys          The ROM address (page aligned).
+ * @param   cb              The size (page aligned).
+ * @param   fFlags          NEM_NOTIFY_PHYS_ROM_F_XXX.
+ */
+int nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
 {
-    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+    LogRel(("nemR3NativeNotifyPhysRomRegisterEarly: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
+#if 0 /* Let's not do this after all.  We'll protection change notifications for each page and if not we'll map them lazily. */
+    RTGCPHYS const cPages = cb >> X86_PAGE_SHIFT;
+    for (RTGCPHYS iPage = 0; iPage < cPages; iPage++, GCPhys += X86_PAGE_SIZE)
+    {
+        const void *pvPage;
+        int rc = nemR3NativeGCPhys2R3PtrReadOnly(pVM, GCPhys, &pvPage);
+        if (RT_SUCCESS(rc))
+        {
+            HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, (void *)pvPage, GCPhys, X86_PAGE_SIZE,
+                                         WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagExecute);
+            if (SUCCEEDED(hrc))
+            { /* likely */ }
+            else
+            {
+                LogRel(("nemR3NativeNotifyPhysRomRegisterEarly: GCPhys=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                        GCPhys, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+                return VERR_NEM_INIT_FAILED;
+            }
+        }
+        else
+        {
+            LogRel(("nemR3NativeNotifyPhysRomRegisterEarly: GCPhys=%RGp rc=%Rrc\n", GCPhys, rc));
+            return rc;
+        }
+    }
+#else
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb);
+#endif
+    RT_NOREF_PV(fFlags);
     return VINF_SUCCESS;
 }
 
 
-int nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags)
+/**
+ * Called after the ROM range has been fully completed.
+ *
+ * This will be preceeded by a NEMR3NotifyPhysRomRegisterEarly() call as well a
+ * number of NEMHCNotifyPhysPageProtChanged calls.
+ *
+ * @returns VBox status code
+ * @param   pVM             The cross context VM structure.
+ * @param   GCPhys          The ROM address (page aligned).
+ * @param   cb              The size (page aligned).
+ * @param   fFlags          NEM_NOTIFY_PHYS_ROM_F_XXX.
+ */
+int nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
 {
+    LogRel(("nemR3NativeNotifyPhysRomRegisterLate: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
     NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
     return VINF_SUCCESS;
 }
@@ -749,6 +983,147 @@ int nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, ui
 
 void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
 {
+    LogRel(("nemR3NativeNotifySetA20: fEnabled=%RTbool\n", fEnabled));
     NOREF(pVCpu); NOREF(fEnabled);
+}
+
+
+void nemR3NativeNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb)
+{
+    LogRel(("nemR3NativeNotifyHandlerPhysicalRegister: %RGp LB %RGp enmKind=%d\n", GCPhys, cb, enmKind));
+    NOREF(pVM); NOREF(enmKind); NOREF(GCPhys); NOREF(cb);
+}
+
+
+void nemR3NativeNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                                int fRestoreAsRAM, bool fRestoreAsRAM2)
+{
+    LogRel(("nemR3NativeNotifyHandlerPhysicalDeregister: %RGp LB %RGp enmKind=%d fRestoreAsRAM=%d fRestoreAsRAM2=%d\n",
+            GCPhys, cb, enmKind, fRestoreAsRAM, fRestoreAsRAM2));
+    NOREF(pVM); NOREF(enmKind); NOREF(GCPhys); NOREF(cb); NOREF(fRestoreAsRAM); NOREF(fRestoreAsRAM2);
+}
+
+
+void nemR3NativeNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
+                                            RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fRestoreAsRAM)
+{
+    LogRel(("nemR3NativeNotifyHandlerPhysicalModify: %RGp LB %RGp -> %RGp enmKind=%d fRestoreAsRAM=%d\n",
+            GCPhysOld, cb, GCPhysNew, enmKind, fRestoreAsRAM));
+    NOREF(pVM); NOREF(enmKind); NOREF(GCPhysOld); NOREF(GCPhysNew); NOREF(cb); NOREF(fRestoreAsRAM);
+}
+
+
+static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhys, uint32_t fPageProt, uint8_t *pu2State, bool fBackingChanged)
+{
+    /*
+     * Looks like we need to unmap a page before we can change the backing
+     * or even modify the protection.  This is going to be *REALLY* efficient.
+     * PGM lends us two bits to keep track of the state here.
+     */
+    uint8_t const u2OldState = *pu2State;
+    uint8_t const u2NewState = fPageProt & NEM_PAGE_PROT_WRITE ? NEM_WIN_PAGE_STATE_WRITABLE
+                             : fPageProt & NEM_PAGE_PROT_READ  ? NEM_WIN_PAGE_STATE_READABLE : NEM_WIN_PAGE_STATE_NOT_SET;
+    if (   fBackingChanged
+        || u2NewState != u2OldState)
+    {
+        if (u2OldState > NEM_WIN_PAGE_STATE_NOT_SET)
+        {
+            HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, X86_PAGE_SIZE);
+            if (SUCCEEDED(hrc))
+            {
+                *pu2State = NEM_WIN_PAGE_STATE_NOT_SET;
+                if (u2NewState == NEM_WIN_PAGE_STATE_NOT_SET)
+                    return VINF_SUCCESS;
+            }
+            else
+            {
+                LogRel(("nemR3NativeSetPhysPage/unmap: GCPhys=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                        GCPhys, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+                return VERR_NEM_INIT_FAILED;
+            }
+        }
+    }
+
+    /*
+     * Writeable mapping?
+     */
+    if (fPageProt & NEM_PAGE_PROT_WRITE)
+    {
+        void *pvPage;
+        int rc = nemR3NativeGCPhys2R3PtrWriteable(pVM, GCPhys, &pvPage);
+        if (RT_SUCCESS(rc))
+        {
+            HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, pvPage, GCPhys, X86_PAGE_SIZE,
+                                         WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagExecute | WHvMapGpaRangeFlagWrite);
+            if (SUCCEEDED(hrc))
+            {
+                *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
+                return VINF_SUCCESS;
+            }
+            LogRel(("nemR3NativeSetPhysPage/writable: GCPhys=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                    GCPhys, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+            return VERR_NEM_INIT_FAILED;
+        }
+        LogRel(("nemR3NativeSetPhysPage/writable: GCPhys=%RGp rc=%Rrc\n", GCPhys, rc));
+        return rc;
+    }
+
+    if (fPageProt & NEM_PAGE_PROT_READ)
+    {
+        const void *pvPage;
+        int rc = nemR3NativeGCPhys2R3PtrReadOnly(pVM, GCPhys, &pvPage);
+        if (RT_SUCCESS(rc))
+        {
+            HRESULT hrc = WHvMapGpaRange(pVM->nem.s.hPartition, (void *)pvPage, GCPhys, X86_PAGE_SIZE,
+                                         WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagExecute);
+            if (SUCCEEDED(hrc))
+            {
+                *pu2State = NEM_WIN_PAGE_STATE_READABLE;
+                return VINF_SUCCESS;
+            }
+            LogRel(("nemR3NativeSetPhysPage/readonly: GCPhys=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
+                    GCPhys, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+            return VERR_NEM_INIT_FAILED;
+        }
+        LogRel(("nemR3NativeSetPhysPage/readonly: GCPhys=%RGp rc=%Rrc\n", GCPhys, rc));
+        return rc;
+    }
+
+    /* We already unmapped it above. */
+    *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
+    return VINF_SUCCESS;
+}
+
+
+int nemR3NativeNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
+                                       PGMPAGETYPE enmType, uint8_t *pu2State)
+{
+    LogRel(("nemR3NativeNotifyPhysPageAllocated: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
+            GCPhys, HCPhys, fPageProt, enmType, *pu2State));
+    RT_NOREF_PV(HCPhys); RT_NOREF_PV(enmType);
+
+    return nemR3NativeSetPhysPage(pVM, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
+}
+
+
+void nemR3NativeNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
+                                          PGMPAGETYPE enmType, uint8_t *pu2State)
+{
+    LogRel(("nemR3NativeNotifyPhysPageProtChanged: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
+            GCPhys, HCPhys, fPageProt, enmType, *pu2State));
+    RT_NOREF_PV(HCPhys); RT_NOREF_PV(enmType);
+
+    nemR3NativeSetPhysPage(pVM, GCPhys, fPageProt, pu2State, false /*fBackingChanged*/);
+}
+
+
+void nemR3NativeNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew,
+                                      uint32_t fPageProt, PGMPAGETYPE enmType, uint8_t *pu2State)
+{
+    LogRel(("nemR3NativeNotifyPhysPageProtChanged: %RGp HCPhys=%RHp->%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
+            GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, *pu2State));
+    RT_NOREF_PV(HCPhysPrev); RT_NOREF_PV(HCPhysNew); RT_NOREF_PV(enmType);
+
+    nemR3NativeSetPhysPage(pVM, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
 }
 

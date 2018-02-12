@@ -52,7 +52,7 @@ VMMR3_INT_DECL(void) NEMR3Reset(PVM pVM);
 VMMR3_INT_DECL(void) NEMR3ResetCpu(PVMCPU pVCpu);
 
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
-VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvMmio2);
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
 /** @name Flags for NEMR3NotifyPhysMmioExMap and NEMR3NotifyPhysMmioExUnmap.
  * @{ */
@@ -62,8 +62,8 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPH
 #define NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE   RT_BIT(1)
 /** @} */
 
-VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags);
-VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags);
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
 /** @name Flags for NEMR3NotifyPhysRomRegisterEarly and NEMR3NotifyPhysRomRegisterLate.
  * @{ */
 /** Set if the range is replacing RAM rather that unused space. */
@@ -83,6 +83,21 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERK
                                                         int fRestoreAsRAM, bool fRestoreAsRAM2);
 VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
                                                     RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fRestoreAsRAM);
+
+VMM_INT_DECL(int)  NEMHCNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
+                                                PGMPAGETYPE enmType, uint8_t *pu2State);
+VMM_INT_DECL(void) NEMHCNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
+                                                  PGMPAGETYPE enmType, uint8_t *pu2State);
+VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew,
+                                              uint32_t fPageProt, PGMPAGETYPE enmType, uint8_t *pu2State);
+/** @name NEM_PAGE_PROT_XXX - Page protection
+ * @{ */
+#define NEM_PAGE_PROT_NONE      UINT32_C(0)     /**< All access causes VM exits. */
+#define NEM_PAGE_PROT_READ      RT_BIT(0)       /**< Read access. */
+#define NEM_PAGE_PROT_EXECUTE   RT_BIT(1)       /**< Execute access. */
+#define NEM_PAGE_PROT_WRITE     RT_BIT(2)       /**< write access. */
+/** @} */
+
 /** @} */
 
 /** @} */

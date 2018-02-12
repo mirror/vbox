@@ -133,7 +133,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
 
 # ifdef VBOX_STRICT /* check sum hack */
                         pPage->s.u2Unused0 = PageDesc.u32StrictChecksum        & 3;
-                        pPage->s.u2Unused1 = (PageDesc.u32StrictChecksum >> 8) & 3;
+                        //pPage->s.u2Unused1 = (PageDesc.u32StrictChecksum >> 8) & 3;
 # endif
                     }
                 }

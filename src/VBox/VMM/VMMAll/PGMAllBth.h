@@ -3223,7 +3223,8 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
 # if defined(PGM_WITH_LARGE_PAGES) && PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
-    if (BTH_IS_NP_ACTIVE(pVM))
+    if (    BTH_IS_NP_ACTIVE(pVM)
+        && !VM_IS_NEM_ENABLED(pVM)) /** @todo NEM: Large page support. */
     {
         /* Check if we allocated a big page before for this 2 MB range. */
         PPGMPAGE pPage;

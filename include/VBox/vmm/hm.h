@@ -48,8 +48,8 @@ RT_C_DECLS_BEGIN
  * @retval  false if software virtualization (raw-mode) or NEM is used.
  *
  * @param   a_pVM       The cross context VM structure.
- * @sa      VM_IS_HM_OR_NEM_ENABLED, VM_IS_RAW_MODE_ENABLED,
- *          HMIsEnabledNotMacro, HMR3IsEnabled
+ * @deprecated Please use VM_IS_RAW_MODE_ENABLED, VM_IS_HM_OR_NEM_ENABLED, or
+ *             VM_IS_HM_ENABLED instead.
  * @internal
  */
 #if defined(VBOX_STRICT) && defined(IN_RING3)

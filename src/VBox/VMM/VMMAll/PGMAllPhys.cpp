@@ -25,6 +25,7 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/nem.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
@@ -638,6 +639,7 @@ void pgmPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys)
     /** @todo clear the RC TLB whenever we add it. */
 }
 
+
 /**
  * Makes sure that there is at least one handy page ready for use.
  *
@@ -724,6 +726,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
 }
 
 
+
 /**
  * Replace a zero or shared page with new page that we can write to.
  *
@@ -764,8 +767,9 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     /*
      * Try allocate a large page if applicable.
      */
-    if (    PGMIsUsingLargePages(pVM)
-        &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
+    if (   PGMIsUsingLargePages(pVM)
+        && PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM
+        && !VM_IS_NEM_ENABLED(pVM)) /** @todo NEM: Implement large pages support. */
     {
         RTGCPHYS GCPhysBase = GCPhys & X86_PDE2M_PAE_PG_MASK;
         PPGMPAGE pBasePage;
@@ -875,6 +879,31 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     if (    fFlushTLBs
         &&  rc != VINF_PGM_GCPHYS_ALIASED)
         PGM_INVL_ALL_VCPU_TLBS(pVM);
+
+#ifndef IN_RC
+    /*
+     * Notify NEM about the mapping change for this page.
+     *
+     * Note! Shadow ROM pages are complicated as they can definitely be
+     *       allocated while not visible, so play safe.
+     */
+    if (VM_IS_NEM_ENABLED(pVM))
+    {
+        PGMPAGETYPE enmType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+        if (   enmType != PGMPAGETYPE_ROM_SHADOW
+            || pgmPhysGetPage(pVM, GCPhys) == pPage)
+        {
+            uint8_t u2State = PGM_PAGE_GET_NEM_STATE(pPage);
+            int rc2 = NEMHCNotifyPhysPageAllocated(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, HCPhys,
+                                                   pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
+            if (RT_SUCCESS(rc))
+                PGM_PAGE_SET_NEM_STATE(pPage, u2State);
+            else
+                rc = rc2;
+        }
+    }
+#endif
+
     return rc;
 }
 
@@ -900,6 +929,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
 {
     RTGCPHYS GCPhysBase = GCPhys & X86_PDE2M_PAE_PG_MASK;
     LogFlow(("pgmPhysAllocLargePage: %RGp base %RGp\n", GCPhys, GCPhysBase));
+    Assert(!VM_IS_NEM_ENABLED(pVM)); /** @todo NEM: Large page support. */
 
     /*
      * Prereqs.
@@ -987,6 +1017,8 @@ int pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
 {
     STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageRecheck);
 
+    Assert(!VM_IS_NEM_ENABLED(pVM)); /** @todo NEM: Large page support. */
+
     GCPhys &= X86_PDE2M_PAE_PG_MASK;
 
     /* Check the base page. */
@@ -1035,6 +1067,7 @@ int pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
 
 #endif /* PGM_WITH_LARGE_PAGES */
 
+
 /**
  * Deal with a write monitored page.
  *
@@ -1042,10 +1075,14 @@ int pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
  *
  * @param   pVM         The cross context VM structure.
  * @param   pPage       The physical page tracking structure.
+ * @param   GCPhys      The guest physical address of the page.
+ *                      PGMPhysReleasePageMappingLock() passes NIL_RTGCPHYS in a
+ *                      very unlikely situation where it is okay that we let NEM
+ *                      fix the page access in a lazy fasion.
  *
  * @remarks Called from within the PGM critical section.
  */
-void pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage)
+void pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 {
     Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED);
     PGM_PAGE_SET_WRITTEN_TO(pVM, pPage);
@@ -1053,6 +1090,25 @@ void pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage)
     Assert(pVM->pgm.s.cMonitoredPages > 0);
     pVM->pgm.s.cMonitoredPages--;
     pVM->pgm.s.cWrittenToPages++;
+
+#ifndef IN_RC
+    /*
+     * Notify NEM about the protection change so we won't spin forever.
+     *
+     * Note! NEM need to be handle to lazily correct page protection as we cannot
+     *       really get it 100% right here it seems.  The page pool does this too.
+     */
+    if (VM_IS_NEM_ENABLED(pVM) && GCPhys != NIL_RTGCPHYS)
+    {
+        uint8_t     u2State = PGM_PAGE_GET_NEM_STATE(pPage);
+        PGMPAGETYPE enmType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+        NEMHCNotifyPhysPageProtChanged(pVM, GCPhys, PGM_PAGE_GET_HCPHYS(pPage),
+                                       pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
+        PGM_PAGE_SET_NEM_STATE(pPage, u2State);
+    }
+#else
+    RT_NOREF(GCPhys);
+#endif
 }
 
 
@@ -1076,7 +1132,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     switch (PGM_PAGE_GET_STATE(pPage))
     {
         case PGM_PAGE_STATE_WRITE_MONITORED:
-            pgmPhysPageMakeWriteMonitoredWritable(pVM, pPage);
+            pgmPhysPageMakeWriteMonitoredWritable(pVM, pPage, GCPhys);
             RT_FALL_THRU();
         default: /* to shut up GCC */
         case PGM_PAGE_STATE_ALLOCATED:
@@ -2051,14 +2107,10 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
             PGM_PAGE_DEC_WRITE_LOCKS(pPage);
         }
 
-        if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED)
-        {
-            PGM_PAGE_SET_WRITTEN_TO(pVM, pPage);
-            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
-            Assert(pVM->pgm.s.cMonitoredPages > 0);
-            pVM->pgm.s.cMonitoredPages--;
-            pVM->pgm.s.cWrittenToPages++;
-        }
+        if (PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED)
+        { /* probably extremely likely */ }
+        else
+            pgmPhysPageMakeWriteMonitoredWritable(pVM, pPage, NIL_RTGCPHYS);
     }
     else
     {

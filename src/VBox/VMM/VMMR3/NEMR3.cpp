@@ -248,14 +248,14 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPH
 }
 
 
-VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvMmio2)
 {
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_NATIVE_NEM
     if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
-        rc = nemR3NativeNotifyPhysMmioExMap(pVM, GCPhys, cb, fFlags);
+        rc = nemR3NativeNotifyPhysMmioExMap(pVM, GCPhys, cb, fFlags, pvMmio2);
 #else
-    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
+    NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags); NOREF(pvMmio2);
 #endif
     return rc;
 }
@@ -274,7 +274,7 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPH
 }
 
 
-VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags)
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
 {
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_NATIVE_NEM
@@ -287,7 +287,19 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, R
 }
 
 
-VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, uint32_t fFlags)
+/**
+ * Called after the ROM range has been fully completed.
+ *
+ * This will be preceeded by a NEMR3NotifyPhysRomRegisterEarly() call as well a
+ * number of NEMHCNotifyPhysPageProtChanged calls.
+ *
+ * @returns VBox status code
+ * @param   pVM             The cross context VM structure.
+ * @param   GCPhys          The ROM address (page aligned).
+ * @param   cb              The size (page aligned).
+ * @param   fFlags          NEM_NOTIFY_PHYS_ROM_F_XXX.
+ */
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
 {
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_NATIVE_NEM

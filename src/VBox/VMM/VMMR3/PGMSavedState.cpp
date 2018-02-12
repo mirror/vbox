@@ -2738,7 +2738,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                         else if (   PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
                                  && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED)
                         {
-                            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
+                            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys, (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage));
                             AssertRCReturn(rc, rc);
                         }
                         /** @todo handle large pages (see @bugref{5545}) */
@@ -2761,7 +2761,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                                                   && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED,
                                                      ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_PGM_LOAD_UNEXPECTED_PAGE_TYPE);
 
-                            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
+                            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys, (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage));
                             AssertRCReturn(rc, rc);
                         }
                         Assert(PGM_PAGE_IS_ZERO(pPage));

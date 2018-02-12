@@ -136,6 +136,9 @@
 # include <ntstatus.h>
 # pragma warning(pop)
 
+# ifndef OBJ_DONT_REPARSE
+#  define RTNT_NEED_CLIENT_ID
+# endif
 
 # undef _FILE_INFORMATION_CLASS
 # undef FILE_INFORMATION_CLASS
@@ -502,12 +505,14 @@ RT_C_DECLS_BEGIN
 
 
 
-#ifdef IPRT_NT_USE_WINTERNL
+#ifdef RTNT_NEED_CLIENT_ID
 typedef struct _CLIENT_ID
 {
     HANDLE UniqueProcess;
     HANDLE UniqueThread;
 } CLIENT_ID;
+#endif
+#ifdef IPRT_NT_USE_WINTERNL
 typedef CLIENT_ID *PCLIENT_ID;
 #endif
 

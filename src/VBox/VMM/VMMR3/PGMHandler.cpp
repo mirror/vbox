@@ -267,7 +267,19 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode
         PPGMPAGE pPage;
         int rc = pgmPhysGetPageWithHintEx(pVM, GCPhys, &pPage, &pRamHint);
         if (RT_SUCCESS(rc))
+        {
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_NONE);
+
+            /* Tell NEM about the protection change. */
+            if (VM_IS_NEM_ENABLED(pVM))
+            {
+                uint8_t     u2State = PGM_PAGE_GET_NEM_STATE(pPage);
+                PGMPAGETYPE enmType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+                NEMHCNotifyPhysPageProtChanged(pVM, GCPhys, PGM_PAGE_GET_HCPHYS(pPage),
+                                               pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
+                PGM_PAGE_SET_NEM_STATE(pPage, u2State);
+            }
+        }
         else
             AssertRC(rc);
 
@@ -299,7 +311,19 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
         PPGMPAGE pPage;
         int rc = pgmPhysGetPageWithHintEx(pVM, GCPhys, &pPage, &pRamHint);
         if (RT_SUCCESS(rc))
+        {
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
+
+            /* Tell NEM about the protection change. */
+            if (VM_IS_NEM_ENABLED(pVM))
+            {
+                uint8_t     u2State = PGM_PAGE_GET_NEM_STATE(pPage);
+                PGMPAGETYPE enmType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
+                NEMHCNotifyPhysPageProtChanged(pVM, GCPhys, PGM_PAGE_GET_HCPHYS(pPage),
+                                               pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
+                PGM_PAGE_SET_NEM_STATE(pPage, u2State);
+            }
+        }
         else
             AssertRC(rc);
 

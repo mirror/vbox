@@ -964,7 +964,7 @@ typedef struct VMCPU
  * @retval  false if software virtualization (raw-mode) is used.
  *
  * @param   a_pVM       The cross context VM structure.
- * @sa      HMR3IsEnabled, HMIsEnabled
+ * @sa      VM_IS_HM_OR_NEM_ENABLED, VM_IS_HM_ENABLED, VM_IS_NEM_ENABLED.
  * @internal
  */
 #ifdef VBOX_WITH_RAW_MODE
@@ -980,10 +980,34 @@ typedef struct VMCPU
  * @retval  false if software virtualization (raw-mode) is used.
  *
  * @param   a_pVM       The cross context VM structure.
- * @sa      VM_IS_RAW_MODE_ENABLED, HMIsEnabled, HMR3IsEnabled
+ * @sa      VM_IS_RAW_MODE_ENABLED, VM_IS_HM_ENABLED, VM_IS_NEM_ENABLED.
  * @internal
  */
 #define VM_IS_HM_OR_NEM_ENABLED(a_pVM)      ((a_pVM)->bMainExecutionEngine != VM_EXEC_ENGINE_RAW_MODE)
+
+/**
+ * Checks whether HM is being used by this VM.
+ *
+ * @retval  true if HM (VT-x/AMD-v) is used.
+ * @retval  false if not.
+ *
+ * @param   a_pVM       The cross context VM structure.
+ * @sa      VM_IS_NEM_ENABLED, VM_IS_RAW_MODE_ENABLED, VM_IS_HM_OR_NEM_ENABLED.
+ * @internal
+ */
+#define VM_IS_HM_ENABLED(a_pVM)             ((a_pVM)->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT)
+
+/**
+ * Checks whether NEM is being used by this VM.
+ *
+ * @retval  true if a native hypervisor API is used.
+ * @retval  false if not.
+ *
+ * @param   a_pVM       The cross context VM structure.
+ * @sa      VM_IS_HM_ENABLED, VM_IS_RAW_MODE_ENABLED, VM_IS_HM_OR_NEM_ENABLED.
+ * @internal
+ */
+#define VM_IS_NEM_ENABLED(a_pVM)             ((a_pVM)->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
 
 
 /**

@@ -516,6 +516,16 @@ typedef enum PGMPAGETYPE
 } PGMPAGETYPE;
 AssertCompile(PGMPAGETYPE_END == 8);
 
+/** @name PGM page type predicates.
+ * @{ */
+#define PGMPAGETYPE_IS_READABLE(a_enmType)  ( (a_enmType) <= PGMPAGETYPE_ROM )
+#define PGMPAGETYPE_IS_WRITEABLE(a_enmType) ( (a_enmType) <= PGMPAGETYPE_ROM_SHADOW )
+#define PGMPAGETYPE_IS_RWX(a_enmType)       ( (a_enmType) <= PGMPAGETYPE_ROM_SHADOW )
+#define PGMPAGETYPE_IS_ROX(a_enmType)       ( (a_enmType) == PGMPAGETYPE_ROM )
+#define PGMPAGETYPE_IS_NP(a_enmType)        ( (a_enmType) == PGMPAGETYPE_MMIO )
+/** @} */
+
+
 VMM_INT_DECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys);
 
 VMM_INT_DECL(int)   PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys);
