@@ -42,14 +42,23 @@ UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &
     :QObject(parent)
     , m_comGuest(comGuest)
     , m_strHelp("start\n"
-                "        --session: Starts a new session\n"
-                "                     --username=username: Sets the username for start session. Overwrites the username set by 'set --username=username'\n"
-                "                     --password=password: Sets the password for start session. Overwrites the username set by 'set --password=password'\n"
-                "                     --session-name=name: Optional\n"
-                "                     --domain=domain: Currently not implemented and siliently ignored\n"
+                "        --session: Starts a new session. It takes following arguments\n"
+                "                        --username=username: Sets the username. Overrides the username set by 'set --username=username'\n"
+                "                        --password=password: Sets the password. Overrides the username set by 'set --password=password'\n"
+                "                        --session-name=name: Optional\n"
+                "                        --domain=domain: Currently not implemented and siliently ignored\n"
+                "        --process: Starts a new process. It takes following arguments\n"
+                "                        --username=username: Sets the username. Overrides the username set by 'set --username=username'\n"
+                "                        --password=password: Sets the password. Overrides the username set by 'set --password=password'\n"
+                "                        --session-name=name: Session name to start the new process under. If not found a new session with this name is created\n"
+                "                        --exe-path=path: Execuable path\n"
+                "                        --argument1=argument ... --argumentN=argument: Optional. Arguments to be passed to the new process\n"
+                "                        --environmentVar1=variable ... --environmentVarN=variable: Optional. Currently no avaible through this interface\n"
+                "                        --timout=time: (in ms). Optional. Timeout (in ms) for limiting the guest process' running time. Give 0 for an infinite timeout.\n"
 
-                "set --username=username\n"
-                "set --password=password"
+                "set\n"
+                "                        --username=username: Sets user name which is used in subsequent calls (maybe overriden).\n"
+                "                        --password=password: Sets user name which is used in subsequent calls (maybe overriden).\n"
 
                 //"start --process --username=username --password=password --session-name=name --exepath=path --argument1=argument ... --argumentN=argument --environmentVar1=variable ... --environmentVarN=variable\n"
                 )
@@ -185,7 +194,7 @@ bool UIGuestControlInterface::getUsername(QString &outStrUsername)
     /* Check to see if username is set previously. */
     if (m_bUsernameIsSet)
     {
-        outStrUsername == m_strUsername;
+        outStrUsername = m_strUsername;
         return true;
     }
     ERROR_RETURN("No username is set. Type 'help' for usage");
@@ -204,7 +213,7 @@ bool UIGuestControlInterface::getPassword(QString &outStrPassword)
     /* Check to see if username is set previously. */
     if (m_bPasswordIsSet)
     {
-        outStrPassword == m_strPassword;
+        outStrPassword = m_strPassword;
         return true;
     }
     ERROR_RETURN("No password is set. Type 'help' for usage")
