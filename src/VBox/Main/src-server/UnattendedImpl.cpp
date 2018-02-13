@@ -489,15 +489,22 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
     return S_FALSE;
 }
 
-
-static bool detectLinuxArch(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOSTYPE enmX86, VBOXOSTYPE enmAmd64)
+/**
+ * Detects linux architecture.
+ *
+ * @returns true if detected, false if not.
+ * @param   pszArch             The architecture string.
+ * @param   penmOsType          Where to return the arch and type on success.
+ * @param   enmBaseOsType       The base (x86) OS type to return.
+ */
+static bool detectLinuxArch(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOSTYPE enmBaseOsType)
 {
     if (   RTStrNICmp(pszArch, RT_STR_TUPLE("amd64"))  == 0
         || RTStrNICmp(pszArch, RT_STR_TUPLE("x86_64")) == 0
         || RTStrNICmp(pszArch, RT_STR_TUPLE("x86-64")) == 0 /* just in case */
         || RTStrNICmp(pszArch, RT_STR_TUPLE("x64"))    == 0 /* ditto */ )
     {
-        *penmOsType = enmAmd64;
+        *penmOsType = (VBOXOSTYPE)(enmBaseOsType | VBOXOSTYPE_x64);
         return true;
     }
 
@@ -510,12 +517,70 @@ static bool detectLinuxArch(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOST
         || RTStrNICmp(pszArch, RT_STR_TUPLE("i886")) == 0
         || RTStrNICmp(pszArch, RT_STR_TUPLE("i986")) == 0)
     {
-        *penmOsType = enmX86;
+        *penmOsType = enmBaseOsType;
         return true;
     }
 
+    /** @todo check for 'noarch' since source CDs have been seen to use that. */
     return false;
 }
+
+static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmOsType, const char **ppszNext)
+{
+    bool fRet = true;
+
+    if (    RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Red")) == 0
+        && !RT_C_IS_ALNUM(pszOsAndVersion[3]))
+
+    {
+        pszOsAndVersion = RTStrStripL(pszOsAndVersion + 3);
+        if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Hat")) == 0
+            && !RT_C_IS_ALNUM(pszOsAndVersion[3]))
+        {
+            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+            pszOsAndVersion = RTStrStripL(pszOsAndVersion + 3);
+        }
+        else
+            fRet = false;
+    }
+    else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Oracle")) == 0
+             && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
+    {
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Oracle);
+        pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
+    }
+    else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("CentOS")) == 0
+             && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
+    {
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+        pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
+    }
+    else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Fedora")) == 0
+             && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
+    {
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_FedoraCore);
+        pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
+    }
+    else
+        fRet = false;
+
+    /*
+     * Skip forward till we get a number.
+     */
+    if (ppszNext)
+    {
+        *ppszNext = pszOsAndVersion;
+        char ch;
+        for (const char *pszVersion = pszOsAndVersion; (ch = *pszVersion) != '\0'; pszVersion++)
+            if (RT_C_IS_DIGIT(ch))
+            {
+                *ppszNext = pszVersion;
+                break;
+            }
+    }
+    return fRet;
+}
+
 
 /**
  * Detect Linux distro ISOs.
@@ -555,14 +620,11 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
             if (RT_SUCCESS(vrc))
             {
                 LogRelFlow(("Unattended: .treeinfo: arch=%s\n", pBuf->sz));
-                if (!detectLinuxArch(pBuf->sz, penmOsType, VBOXOSTYPE_RedHat, VBOXOSTYPE_RedHat_x64))
-                {
-                    LogRel(("Unattended: .treeinfo: Unknown: arch='%s', assuming amd64\n", pBuf->sz));
-                    *penmOsType = VBOXOSTYPE_RedHat_x64;
-                }
+                if (!detectLinuxArch(pBuf->sz, penmOsType, VBOXOSTYPE_RedHat))
+                    LogRel(("Unattended: .treeinfo: Unknown: arch='%s'\n", pBuf->sz));
             }
             else
-                LogRel(("Unattended: .treeinfo: No 'arch'\n"));
+                LogRel(("Unattended: .treeinfo: No 'arch' property.\n"));
 
             /* Try figure the release name, it doesn't have to be redhat. */
             vrc = RTIniFileQueryValue(hIniFile, "release", "name", pBuf->sz, sizeof(*pBuf), NULL);
@@ -573,16 +635,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
             if (RT_SUCCESS(vrc))
             {
                 LogRelFlow(("Unattended: .treeinfo: name/family=%s\n", pBuf->sz));
-                if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("Oracle"))  == 0
-                    && !RT_C_IS_ALNUM(pBuf->sz[6]))
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Oracle);
-                else if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("Fedora"))  == 0
-                         && !RT_C_IS_ALNUM(pBuf->sz[6]))
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_FedoraCore);
-                else if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("Red"))  == 0
-                         && !RT_C_IS_ALNUM(pBuf->sz[3]))
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
-                else
+                if (!detectLinuxDistroName(pBuf->sz, penmOsType, NULL))
                 {
                     LogRel(("Unattended: .treeinfo: Unknown: name/family='%s', assuming Red Hat\n", pBuf->sz));
                     *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
@@ -598,7 +651,8 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
             if (RT_SUCCESS(vrc))
             {
                 LogRelFlow(("Unattended: .treeinfo: version=%s\n", pBuf->sz));
-                try { mStrDetectedOSVersion = RTStrStrip(pBuf->sz); } catch (std::bad_alloc) { }
+                try { mStrDetectedOSVersion = RTStrStrip(pBuf->sz); }
+                catch (std::bad_alloc) { return E_OUTOFMEMORY; }
             }
 
             RTIniFileRelease(hIniFile);
@@ -636,20 +690,28 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
                 {
                     *pszEol = '\0';
                     apszLines[i] = RTStrStrip(psz);
-                    psz = pszEol++;
+                    psz = pszEol + 1;
                 }
             }
         }
 
         /* Do we recognize the architecture? */
-        if (!detectLinuxArch(apszLines[2], penmOsType, VBOXOSTYPE_RedHat, VBOXOSTYPE_RedHat_x64))
-        {
-            LogRel(("Unattended: .discinfo: Unknown: arch='%s', assuming amd64\n", pBuf->sz));
-            *penmOsType = VBOXOSTYPE_RedHat_x64;
-        }
+        LogRelFlow(("Unattended: .discinfo: arch=%s\n", apszLines[2]));
+        if (!detectLinuxArch(apszLines[2], penmOsType, VBOXOSTYPE_RedHat))
+            LogRel(("Unattended: .discinfo: Unknown: arch='%s'\n", apszLines[2]));
 
         /* Do we recognize the release string? */
-        /// @todo apszLines[1]
+        LogRelFlow(("Unattended: .discinfo: product+version=%s\n", apszLines[1]));
+        const char *pszVersion = NULL;
+        if (!detectLinuxDistroName(apszLines[1], penmOsType, &pszVersion))
+            LogRel(("Unattended: .discinfo: Unknown: release='%s'\n", apszLines[1]));
+
+        if (*pszVersion)
+        {
+            LogRelFlow(("Unattended: .discinfo: version=%s\n", pszVersion));
+            try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
+            catch (std::bad_alloc) { return E_OUTOFMEMORY; }
+        }
 
         if (*penmOsType != VBOXOSTYPE_Unknown)
             return S_FALSE;
