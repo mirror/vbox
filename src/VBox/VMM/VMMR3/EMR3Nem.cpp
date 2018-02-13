@@ -466,7 +466,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_MASK))
         {
             rcStrict = emR3ForcedActions(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict));
-            VBOXVMM_EM_FF_ALL_RET(pVCpu, rcStrict);
+            VBOXVMM_EM_FF_ALL_RET(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
             if (   rcStrict != VINF_SUCCESS
                 && rcStrict != VINF_EM_RESCHEDULE_HM)
             {
