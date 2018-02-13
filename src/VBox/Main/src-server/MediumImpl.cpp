@@ -3017,14 +3017,20 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
                 suffix = i_getFormat();
                 if (suffix.compare("RAW", Utf8Str::CaseInsensitive) == 0)
                 {
-                    if (i_getDeviceType() == DeviceType_DVD)
-                        suffix = "iso";
-                    else
+                    DeviceType_T devType = i_getDeviceType();
+                    switch (devType)
                     {
-                        rc = setError(VERR_NOT_A_FILE,
-                               tr("Medium '%s' has RAW type. \"Move\" operation isn't supported for this type."),
-                               i_getLocationFull().c_str());
-                        throw rc;
+                        case DeviceType_DVD:
+                            suffix = "iso";
+                            break;
+                        case DeviceType_Floppy:
+                            suffix = "img";
+                            break;
+                        default:
+                            rc = setError(VERR_NOT_A_FILE,
+                                   tr("Medium '%s' has RAW type. \"Move\" operation isn't supported for this type."),
+                                   i_getLocationFull().c_str());
+                            throw rc;
                     }
                 }
                 /* Set the target extension like on the source. Any conversions are prohibited */
