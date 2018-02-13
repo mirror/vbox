@@ -34,6 +34,7 @@
 #include <iprt/path.h>
 #include <iprt/param.h>
 #include <iprt/process.h>
+#include <iprt/rand.h>
 #include <iprt/serialport.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -44,11 +45,32 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-
+/** Number of times to toggle the status lines during the test. */
+#define SERIALTEST_STS_LINE_TOGGLE_COUNT 100
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+
+
+/**
+ * Serial test mode.
+ */
+typedef enum SERIALTESTMODE
+{
+    /** Invalid mode. */
+    SERIALTESTMODE_INVALID = 0,
+    /** Serial port is looped back to itself */
+    SERIALTESTMODE_LOOPBACK,
+    /** A secondary serial port is used with a null modem cable in between. */
+    SERIALTESTMODE_SECONDARY,
+    /** The serial port is connected externally over which we have no control. */
+    SERIALTESTMODE_EXTERNAL,
+    /** Usual 32bit hack. */
+    SERIALTESTMODE_32BIT_HACK = 0x7fffffff
+} SERIALTESTMODE;
+/** Pointer to a serial test mode. */
+typedef SERIALTESTMODE *PSERIALTESTMDOE;
 
 /** Pointer to the serial test data instance. */
 typedef struct SERIALTEST *PSERIALTEST;
@@ -129,7 +151,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     {"--parity",           'p', RTGETOPT_REQ_STRING },
     {"--databits",         'c', RTGETOPT_REQ_UINT32 },
     {"--stopbits",         's', RTGETOPT_REQ_STRING },
-    {"--loopbackdevice",   'l', RTGETOPT_REQ_STRING },
+    {"--mode",             'm', RTGETOPT_REQ_STRING },
+    {"--secondarydevice",  'l', RTGETOPT_REQ_STRING },
     {"--tests",            't', RTGETOPT_REQ_STRING },
     {"--txbytes",          'x', RTGETOPT_REQ_UINT32 },
     {"--help",             'h', RTGETOPT_REQ_NOTHING}
@@ -138,22 +161,28 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 
 static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest);
 static DECLCALLBACK(int) serialTestRunWrite(PSERIALTEST pSerialTest);
+static DECLCALLBACK(int) serialTestRunStsLines(PSERIALTEST pSerialTest);
 
 /** Implemented tests. */
 static const SERIALTESTDESC g_aSerialTests[] =
 {
     {"readwrite", "Simple Read/Write test on the same serial port",       serialTestRunReadWrite },
-    {"write",     "Simple write test (verification done somewhere else)", serialTestRunWrite },
+    {"write",     "Simple write test (verification done somewhere else)", serialTestRunWrite     },
+    {"stslines",  "Testing the status line setting and receiving",        serialTestRunStsLines  }
 };
 
 /** The test handle. */
-static RTTEST          g_hTest               = NIL_RTTEST;
+static RTTEST          g_hTest                = NIL_RTTEST;
+/** The serial test mode. */
+static SERIALTESTMODE  g_enmMode              = SERIALTESTMODE_LOOPBACK;
+/** Random number generator. */
+static RTRAND          g_hRand                = NIL_RTRAND;
 /** The serial port handle. */
-static RTSERIALPORT    g_hSerialPort         = NIL_RTSERIALPORT;
+static RTSERIALPORT    g_hSerialPort          = NIL_RTSERIALPORT;
 /** The loopback serial port handle if configured. */
-static RTSERIALPORT    g_hSerialPortLoopback = NIL_RTSERIALPORT;
+static RTSERIALPORT    g_hSerialPortSecondary = NIL_RTSERIALPORT;
 /** Number of bytes to transmit for read/write tests. */
-static size_t          g_cbTx                = _1M;
+static size_t          g_cbTx                 = _1M;
 /** The config used. */
 static RTSERIALPORTCFG g_SerialPortCfg =
 {
@@ -324,6 +353,11 @@ static void serialTestRxBufVerify(RTTEST hTest, PSERIALTESTTXRXBUFCNT pSerBuf, u
 }
 
 
+DECLINLINE(bool) serialTestRndTrue(void)
+{
+    return RTRandAdvU32Ex(g_hRand, 0, 1) == 1;
+}
+
 /**
  * Runs a simple read/write test.
  *
@@ -406,6 +440,164 @@ static DECLCALLBACK(int) serialTestRunWrite(PSERIALTEST pSerialTest)
     uint64_t tsRuntime = RTTimeMilliTS() - tsStart;
     tsRuntime /= 1000; /* Seconds */
     RTTestValue(pSerialTest->hTest, "Throughput", g_cbTx / tsRuntime, RTTESTUNIT_BYTES_PER_SEC);
+
+    return rc;
+}
+
+
+/**
+ * Tests setting status lines and getting notified about status line changes.
+ *
+ * @returns IPRT status code.
+ * @param   pSerialTest         The serial test configuration.
+ */
+static DECLCALLBACK(int) serialTestRunStsLines(PSERIALTEST pSerialTest)
+{
+    int rc = VINF_SUCCESS;
+
+    if (g_enmMode == SERIALTESTMODE_LOOPBACK)
+    {
+        uint32_t fStsLinesQueriedOld = 0;
+
+        rc = RTSerialPortChgStatusLines(pSerialTest->hSerialPort,
+                                        RTSERIALPORT_CHG_STS_LINES_F_RTS | RTSERIALPORT_CHG_STS_LINES_F_DTR,
+                                        0);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTSerialPortQueryStatusLines(pSerialTest->hSerialPort, &fStsLinesQueriedOld);
+            if (RT_SUCCESS(rc))
+            {
+                /* Everything should be clear at this stage. */
+                if (!fStsLinesQueriedOld)
+                {
+                    uint32_t fStsLinesSetOld = 0;
+
+                    for (uint32_t i = 0; i < SERIALTEST_STS_LINE_TOGGLE_COUNT; i++)
+                    {
+                        uint32_t fStsLinesSet = 0;
+                        uint32_t fStsLinesClear = 0;
+
+                        /* Change RTS? */
+                        if (serialTestRndTrue())
+                        {
+                            /* Clear, if set previously otherwise set it. */
+                            if (fStsLinesSetOld & RTSERIALPORT_CHG_STS_LINES_F_RTS)
+                                fStsLinesClear |= RTSERIALPORT_CHG_STS_LINES_F_RTS;
+                            else
+                                fStsLinesSet   |= RTSERIALPORT_CHG_STS_LINES_F_RTS;
+                        }
+
+                        /* Change DTR? */
+                        if (serialTestRndTrue())
+                        {
+                            /* Clear, if set previously otherwise set it. */
+                            if (fStsLinesSetOld & RTSERIALPORT_CHG_STS_LINES_F_DTR)
+                                fStsLinesClear |= RTSERIALPORT_CHG_STS_LINES_F_DTR;
+                            else
+                                fStsLinesSet   |= RTSERIALPORT_CHG_STS_LINES_F_DTR;
+                        }
+
+                        rc = RTSerialPortChgStatusLines(pSerialTest->hSerialPort, fStsLinesClear, fStsLinesSet);
+                        if (RT_FAILURE(rc))
+                        {
+                            RTTestFailed(g_hTest, "Changing status lines failed with %Rrc on iteration %u (fSet=%#x fClear=%#x)\n",
+                                         rc, i, fStsLinesSet, fStsLinesClear);
+                            break;
+                        }
+
+                        /* Wait for status line monitor event. */
+                        uint32_t fEvtsRecv = 0;
+                        rc = RTSerialPortEvtPoll(pSerialTest->hSerialPort, RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED,
+                                                 &fEvtsRecv, RT_MS_1SEC);
+                        if (   RT_FAILURE(rc)
+                            && (rc != VERR_TIMEOUT && !fStsLinesSet && !fStsLinesClear))
+                        {
+                            RTTestFailed(g_hTest, "Waiting for status line change failed with %Rrc on iteration %u\n",
+                                         rc, i);
+                            break;
+                        }
+
+                        uint32_t fStsLinesQueried = 0;
+                        rc = RTSerialPortQueryStatusLines(pSerialTest->hSerialPort, &fStsLinesQueried);
+                        if (RT_FAILURE(rc))
+                        {
+                            RTTestFailed(g_hTest, "Querying status lines failed with %Rrc on iteration %u\n",
+                                         rc, i);
+                            break;
+                        }
+
+                        /* Compare expected and real result. */
+                        if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_DSR)
+                            != (fStsLinesQueriedOld & RTSERIALPORT_STS_LINE_DSR))
+                        {
+                            if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_DSR)
+                                && !(fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_DTR))
+                                RTTestFailed(g_hTest, "DSR line got set when it shouldn't be on iteration %u\n",
+                                             rc, i);
+                            else if (   !(fStsLinesQueried & RTSERIALPORT_STS_LINE_DSR)
+                                     && !(fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_DTR))
+                                RTTestFailed(g_hTest, "DSR line got cleared when it shouldn't be on iteration %u\n",
+                                             rc, i);
+                        }
+                        else if (   (fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_DTR)
+                                 || (fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_DTR))
+                                RTTestFailed(g_hTest, "DSR line didn't change when it should have on iteration %u\n",
+                                             rc, i);
+
+                        if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_DCD)
+                            != (fStsLinesQueriedOld & RTSERIALPORT_STS_LINE_DCD))
+                        {
+                            if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_DCD)
+                                && !(fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_DTR))
+                                RTTestFailed(g_hTest, "DCD line got set when it shouldn't be on iteration %u\n",
+                                             rc, i);
+                            else if (   !(fStsLinesQueried & RTSERIALPORT_STS_LINE_DCD)
+                                     && !(fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_DTR))
+                                RTTestFailed(g_hTest, "DCD line got cleared when it shouldn't be on iteration %u\n",
+                                             rc, i);
+                        }
+                        else if (   (fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_DTR)
+                                 || (fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_DTR))
+                                RTTestFailed(g_hTest, "DSR line didn't change when it should have on iteration %u\n",
+                                             rc, i);
+
+                        if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_CTS)
+                            != (fStsLinesQueriedOld & RTSERIALPORT_STS_LINE_CTS))
+                        {
+                            if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_CTS)
+                                && !(fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_RTS))
+                                RTTestFailed(g_hTest, "CTS line got set when it shouldn't be on iteration %u\n",
+                                             rc, i);
+                            else if (   !(fStsLinesQueried & RTSERIALPORT_STS_LINE_CTS)
+                                     && !(fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_RTS))
+                                RTTestFailed(g_hTest, "CTS line got cleared when it shouldn't be on iteration %u\n",
+                                             rc, i);
+                        }
+                        else if (   (fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_RTS)
+                                 || (fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_RTS))
+                                RTTestFailed(g_hTest, "CTS line didn't change when it should have on iteration %u\n",
+                                             rc, i);
+
+                        if (RTTestErrorCount(g_hTest) > 0)
+                            break;
+
+                        fStsLinesSetOld |= fStsLinesSet;
+                        fStsLinesSetOld &= ~fStsLinesClear;
+                        fStsLinesQueriedOld = fStsLinesQueried;
+                    }
+                }
+                else
+                    RTTestFailed(g_hTest, "Status lines active which should be clear (%#x, but expected %#x)\n",
+                                 fStsLinesQueriedOld, 0);
+            }
+            else
+                RTTestFailed(g_hTest, "Querying status lines failed with %Rrc\n", rc);
+        }
+        else
+            RTTestFailed(g_hTest, "Clearing status lines failed with %Rrc\n", rc);
+    }
+    else
+        rc = VERR_NOT_IMPLEMENTED;
 
     return rc;
 }
@@ -523,8 +715,11 @@ static void serialTestUsage(PRTSTREAM pStrm)
             case 's':
                 pszHelp = "Use the given stop bitcount, valid are: 1, 1.5, 2";
                 break;
+            case 'm':
+                pszHelp = "Mode of the serial port, valid are: loopback, secondary, external";
+                break;
             case 'l':
-                pszHelp = "Use the given serial port device as the loopback device";
+                pszHelp = "Use the given serial port device as the secondary device";
                 break;
             case 't':
                 pszHelp = "The tests to run separated by ':'";
@@ -556,7 +751,7 @@ int main(int argc, char *argv[])
      * Default values.
      */
     const char *pszDevice = NULL;
-    const char *pszDeviceLoopback = NULL;
+    const char *pszDeviceSecondary = NULL;
     PSERIALTESTDESC paTests = NULL;
 
     RTGETOPTUNION ValueUnion;
@@ -573,7 +768,7 @@ int main(int argc, char *argv[])
                 pszDevice = ValueUnion.psz;
                 break;
             case 'l':
-                pszDeviceLoopback = ValueUnion.psz;
+                pszDeviceSecondary = ValueUnion.psz;
                 break;
             case 'b':
                 g_SerialPortCfg.uBaudRate = ValueUnion.u32;
@@ -623,6 +818,19 @@ int main(int argc, char *argv[])
                     return RTEXITCODE_FAILURE;
                 }
                 break;
+            case 'm':
+                if (!RTStrICmp(ValueUnion.psz, "loopback"))
+                    g_enmMode = SERIALTESTMODE_LOOPBACK;
+                else if (!RTStrICmp(ValueUnion.psz, "secondary"))
+                    g_enmMode = SERIALTESTMODE_SECONDARY;
+                else if (!RTStrICmp(ValueUnion.psz, "external"))
+                    g_enmMode = SERIALTESTMODE_EXTERNAL;
+                else
+                {
+                    RTPrintf("Unknown serial test mode \"%s\" given\n", ValueUnion.psz);
+                    return RTEXITCODE_FAILURE;
+                }
+                break;
             case 't':
                 paTests = serialTestSelectFromCmdLine(ValueUnion.psz);
                 if (!paTests)
@@ -636,6 +844,12 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (g_enmMode == SERIALTESTMODE_SECONDARY && !pszDeviceSecondary)
+    {
+        RTPrintf("Mode set to secondary device but no secondary device given\n");
+        return RTEXITCODE_FAILURE;
+    }
+
     if (!paTests)
     {
         /* Select all. */
@@ -647,6 +861,16 @@ int main(int argc, char *argv[])
         }
         memcpy(paTests, &g_aSerialTests[0], RT_ELEMENTS(g_aSerialTests) * sizeof(SERIALTESTDESC));
     }
+
+    rc = RTRandAdvCreateParkMiller(&g_hRand);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("Failed to create random number generator: %Rrc\n");
+        return RTEXITCODE_FAILURE;
+    }
+
+    rc = RTRandAdvSeed(g_hRand, 0x123456789abcdef);
+    AssertRC(rc);
 
     /*
      * Start testing.
@@ -663,12 +887,12 @@ int main(int argc, char *argv[])
         rc = RTSerialPortOpen(&g_hSerialPort, pszDevice, fFlags);
         if (RT_SUCCESS(rc))
         {
-            if (pszDeviceLoopback)
+            if (g_enmMode == SERIALTESTMODE_SECONDARY)
             {
-                RTTestSub(g_hTest, "Opening loopback device");
-                rc = RTSerialPortOpen(&g_hSerialPortLoopback, pszDeviceLoopback, fFlags);
+                RTTestSub(g_hTest, "Opening secondary device");
+                rc = RTSerialPortOpen(&g_hSerialPortSecondary, pszDeviceSecondary, fFlags);
                 if (RT_FAILURE(rc))
-                    RTTestFailed(g_hTest, "Opening loopback device \"%s\" failed with %Rrc\n", pszDevice, rc);
+                    RTTestFailed(g_hTest, "Opening secondary device \"%s\" failed with %Rrc\n", pszDevice, rc);
             }
 
             if (RT_SUCCESS(rc))
@@ -678,12 +902,12 @@ int main(int argc, char *argv[])
                 rc = RTSerialPortCfgSet(g_hSerialPort, &g_SerialPortCfg ,NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    if (pszDeviceLoopback)
+                    if (g_enmMode == SERIALTESTMODE_SECONDARY)
                     {
-                        RTTestSub(g_hTest, "Setting serial port configuration for loopback device");
-                        rc = RTSerialPortCfgSet(g_hSerialPortLoopback, &g_SerialPortCfg, NULL);
+                        RTTestSub(g_hTest, "Setting serial port configuration for secondary device");
+                        rc = RTSerialPortCfgSet(g_hSerialPortSecondary, &g_SerialPortCfg, NULL);
                         if (RT_FAILURE(rc))
-                            RTTestFailed(g_hTest, "Setting configuration of loopback device \"%s\" failed with %Rrc\n", pszDevice, rc);
+                            RTTestFailed(g_hTest, "Setting configuration of secondary device \"%s\" failed with %Rrc\n", pszDevice, rc);
                     }
 
                     if (RT_SUCCESS(rc))
@@ -699,8 +923,10 @@ int main(int argc, char *argv[])
                         {
                             RTTestSub(g_hTest, pTest->pszDesc);
                             rc = pTest->pfnRun(&Test);
-                            if (RT_FAILURE(rc))
-                                RTTestFailed(g_hTest, "Running test \"%s\" failed with %Rrc\n", pTest->pszId, rc);
+                            if (   RT_FAILURE(rc)
+                                || RTTestErrorCount(g_hTest) > 0)
+                                RTTestFailed(g_hTest, "Running test \"%s\" failed (%Rrc, cErrors=%u)\n",
+                                             pTest->pszId, rc, RTTestErrorCount(g_hTest));
 
                             RTTestSubDone(g_hTest);
                             pTest++;
@@ -719,6 +945,7 @@ int main(int argc, char *argv[])
     else
         RTTestFailed(g_hTest, "No device given on command line\n");
 
+    RTRandAdvDestroy(g_hRand);
     RTMemFree(paTests);
     RTEXITCODE rcExit = RTTestSummaryAndDestroy(g_hTest);
     return rcExit;
