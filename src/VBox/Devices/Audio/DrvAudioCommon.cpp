@@ -621,6 +621,28 @@ char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags)
 }
 
 /**
+ * Converts a playback destination enumeration to a string.
+ *
+ * @returns Stringified playback destination, or "Unknown", if not found.
+ * @param   enmPlaybackDst      Playback destination to convert.
+ */
+const char *DrvAudioHlpPlaybackDstToStr(const PDMAUDIOPLAYBACKDEST enmPlaybackDst)
+{
+    switch (enmPlaybackDst)
+    {
+        case PDMAUDIOPLAYBACKDEST_UNKNOWN:    return "Unknown";
+        case PDMAUDIOPLAYBACKDEST_FRONT:      return "Front";
+        case PDMAUDIOPLAYBACKDEST_CENTER_LFE: return "Center / LFE";
+        case PDMAUDIOPLAYBACKDEST_REAR:       return "Rear";
+        default:
+            break;
+    }
+
+    AssertMsgFailed(("Invalid playback destination %ld\n", enmPlaybackDst));
+    return "Unknown";
+}
+
+/**
  * Converts a recording source enumeration to a string.
  *
  * @returns Stringified recording source, or "Unknown", if not found.
