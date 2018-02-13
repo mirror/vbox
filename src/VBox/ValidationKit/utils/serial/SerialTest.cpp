@@ -860,7 +860,7 @@ int main(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 
-    rc = RTRandAdvSeed(g_hRand, 0x123456789abcdef);
+    rc = RTRandAdvSeed(g_hRand, UINT64_C(0x123456789abcdef));
     AssertRC(rc);
 
     /*
