@@ -87,9 +87,8 @@ bool UIGuestControlInterface::parseCommand(const QString &strCommand)
 
     if (commandStrList.at(0) == "start")
         return parseStartCommand();
-    else
-        return parseSetCommand();
-    ERROR_RETURN("Syntax Error! Type 'help' for usage")
+    return parseSetCommand();
+    //ERROR_RETURN("Syntax Error! Type 'help' for usage")
 }
 
 bool UIGuestControlInterface::createArgumentMap(const QStringList &commandList)
