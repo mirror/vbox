@@ -37,6 +37,11 @@ TestExecService_SOURCES = \
 	TestExecService.cpp \
 	TestExecServiceTcp.cpp
 
+ifn1of ($(KBUILD_TARGET), os2)
+ TestExecService_SOURCES += \
+ 	TestExecServiceSerial.cpp
+endif
+
 INSTALLS += TestExecServiceFiles
 TestExecServiceFiles_TEMPLATE                = VBoxValidationKitR3
 TestExecServiceFiles_INST                    = $(INST_VALIDATIONKIT)

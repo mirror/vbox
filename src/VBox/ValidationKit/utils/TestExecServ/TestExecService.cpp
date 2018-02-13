@@ -158,7 +158,9 @@ typedef TXSEXEC *PTXSEXEC;
 static const PCTXSTRANSPORT g_apTransports[] =
 {
     &g_TcpTransport,
-    //&g_SerialTransport,
+#ifndef RT_OS_OS2
+    &g_SerialTransport,
+#endif
     //&g_FileSysTransport,
     //&g_GuestPropTransport,
     //&g_TestDevTransport,
