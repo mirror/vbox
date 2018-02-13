@@ -856,7 +856,7 @@ int main(int argc, char *argv[])
     rc = RTRandAdvCreateParkMiller(&g_hRand);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Failed to create random number generator: %Rrc\n");
+        RTPrintf("Failed to create random number generator: %Rrc\n", rc);
         return RTEXITCODE_FAILURE;
     }
 
