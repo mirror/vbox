@@ -128,7 +128,7 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
 {
     /* If scaled-size is valid: */
     const QSize scaledSize = frameBuffer()->scaledSize();
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio(); Q_UNUSED(dDevicePixelRatio);
     const bool fUseUnscaledHiDPIOutput = frameBuffer()->useUnscaledHiDPIOutput();
     if (scaledSize.isValid())
     {
