@@ -1257,7 +1257,7 @@ RTDECL(int) RTVfsChainOpenDir(const char *pszSpec, uint32_t fOpen,
         {
             const char *pszFinal = NULL;
             RTVFSOBJ    hVfsObj  = NIL_RTVFSOBJ;
-            pSpec->fOpenFile = fOpen;
+            pSpec->fOpenFile = RTFILE_O_READ;
             rc = RTVfsChainSpecCheckAndSetup(pSpec, NULL /*pReuseSpec*/, &hVfsObj, &pszFinal, poffError, pErrInfo);
             if (RT_SUCCESS(rc))
             {
