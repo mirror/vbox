@@ -532,51 +532,42 @@ static DECLCALLBACK(int) serialTestRunStsLines(PSERIALTEST pSerialTest)
                         {
                             if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_DSR)
                                 && !(fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_DTR))
-                                RTTestFailed(g_hTest, "DSR line got set when it shouldn't be on iteration %u\n",
-                                             rc, i);
+                                RTTestFailed(g_hTest, "DSR line got set when it shouldn't be on iteration %u\n", i);
                             else if (   !(fStsLinesQueried & RTSERIALPORT_STS_LINE_DSR)
                                      && !(fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_DTR))
-                                RTTestFailed(g_hTest, "DSR line got cleared when it shouldn't be on iteration %u\n",
-                                             rc, i);
+                                RTTestFailed(g_hTest, "DSR line got cleared when it shouldn't be on iteration %u\n", i);
                         }
                         else if (   (fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_DTR)
                                  || (fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_DTR))
-                                RTTestFailed(g_hTest, "DSR line didn't change when it should have on iteration %u\n",
-                                             rc, i);
+                                RTTestFailed(g_hTest, "DSR line didn't change when it should have on iteration %u\n", i);
 
                         if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_DCD)
                             != (fStsLinesQueriedOld & RTSERIALPORT_STS_LINE_DCD))
                         {
                             if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_DCD)
                                 && !(fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_DTR))
-                                RTTestFailed(g_hTest, "DCD line got set when it shouldn't be on iteration %u\n",
-                                             rc, i);
+                                RTTestFailed(g_hTest, "DCD line got set when it shouldn't be on iteration %u\n", i);
                             else if (   !(fStsLinesQueried & RTSERIALPORT_STS_LINE_DCD)
                                      && !(fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_DTR))
-                                RTTestFailed(g_hTest, "DCD line got cleared when it shouldn't be on iteration %u\n",
-                                             rc, i);
+                                RTTestFailed(g_hTest, "DCD line got cleared when it shouldn't be on iteration %u\n", i);
                         }
                         else if (   (fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_DTR)
                                  || (fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_DTR))
-                                RTTestFailed(g_hTest, "DSR line didn't change when it should have on iteration %u\n",
-                                             rc, i);
+                                RTTestFailed(g_hTest, "DSR line didn't change when it should have on iteration %u\n", i);
 
                         if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_CTS)
                             != (fStsLinesQueriedOld & RTSERIALPORT_STS_LINE_CTS))
                         {
                             if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_CTS)
                                 && !(fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_RTS))
-                                RTTestFailed(g_hTest, "CTS line got set when it shouldn't be on iteration %u\n",
-                                             rc, i);
+                                RTTestFailed(g_hTest, "CTS line got set when it shouldn't be on iteration %u\n", i);
                             else if (   !(fStsLinesQueried & RTSERIALPORT_STS_LINE_CTS)
                                      && !(fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_RTS))
-                                RTTestFailed(g_hTest, "CTS line got cleared when it shouldn't be on iteration %u\n",
-                                             rc, i);
+                                RTTestFailed(g_hTest, "CTS line got cleared when it shouldn't be on iteration %u\n", i);
                         }
                         else if (   (fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_RTS)
                                  || (fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_RTS))
-                                RTTestFailed(g_hTest, "CTS line didn't change when it should have on iteration %u\n",
-                                             rc, i);
+                                RTTestFailed(g_hTest, "CTS line didn't change when it should have on iteration %u\n", i);
 
                         if (RTTestErrorCount(g_hTest) > 0)
                             break;
