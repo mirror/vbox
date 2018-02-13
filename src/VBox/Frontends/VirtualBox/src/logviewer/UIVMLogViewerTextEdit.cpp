@@ -189,7 +189,6 @@ void UIVMLogViewerTextEdit::prepareWidgets()
 
     /* Configure this' wrap mode: */
     setWordWrapMode(QTextOption::NoWrap);
-    setWordWrapMode(QTextOption::NoWrap);
 
     setReadOnly(true);
 
