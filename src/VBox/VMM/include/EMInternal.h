@@ -406,10 +406,12 @@ typedef struct EMCPU
     STAMPROFILE             StatForcedActions;
     STAMPROFILE             StatHalted;
     STAMPROFILEADV          StatCapped;
-    STAMPROFILEADV          StatHmEntry;
-    STAMPROFILE             StatHmExec;
+    STAMPROFILEADV          StatHMEntry;
+    STAMPROFILE             StatHMExec;
     STAMPROFILE             StatIEMEmu;
     STAMPROFILE             StatIEMThenREM;
+    STAMPROFILEADV          StatNEMEntry;
+    STAMPROFILE             StatNEMExec;
     STAMPROFILE             StatREMEmu;
     STAMPROFILE             StatREMExec;
     STAMPROFILE             StatREMSync;
@@ -425,8 +427,10 @@ typedef struct EMCPU
     STAMPROFILE             StatIOEmu;
     /** R3: Profiling of emR3RawPrivileged. */
     STAMPROFILE             StatPrivEmu;
-    /** R3: Number of time emR3HmExecute is called. */
-    STAMCOUNTER             StatHmExecuteEntry;
+    /** R3: Number of times emR3HmExecute is called. */
+    STAMCOUNTER             StatHMExecuteCalled;
+    /** R3: Number of times emR3NEMExecute is called. */
+    STAMCOUNTER             StatNEMExecuteCalled;
 
     /** More statistics (R3). */
     R3PTRTYPE(PEMSTATS)     pStatsR3;
@@ -453,17 +457,26 @@ typedef EMCPU *PEMCPU;
 
 int     emR3InitDbg(PVM pVM);
 
-int     emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
-int     emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
+int          emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
+VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
+int          emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
+
 int     emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
 int     emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
+int     emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
+
 EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 int     emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
 int     emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
+
 int     emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
 int     emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu);
 int     emR3RawStep(PVM pVM, PVMCPU pVCpu);
+
+VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
+
 int     emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations);
+
 bool    emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
 
 RT_C_DECLS_END

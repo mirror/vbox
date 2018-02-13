@@ -172,6 +172,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/EMR3Dbg.cpp \
 	$(if $(VBOX_WITH_RAW_MODE),VMMR3/EMRaw.cpp) \
 	VMMR3/EMHM.cpp \
+	VMMR3/EMR3Nem.cpp \
 	VMMR3/FTM.cpp \
 	VMMR3/GIM.cpp \
 	VMMR3/GIMHv.cpp \

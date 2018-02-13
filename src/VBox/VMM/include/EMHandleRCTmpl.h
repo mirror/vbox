@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * EM - emR3[Raw|Hm]HandleRC template.
+ * EM - emR3[Raw|Hm|Nem]HandleRC template.
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,8 +18,8 @@
 #ifndef ___EMHandleRCTmpl_h
 #define ___EMHandleRCTmpl_h
 
-#if defined(EMHANDLERC_WITH_PATM) && defined(EMHANDLERC_WITH_HM)
-# error "Only one define"
+#if defined(EMHANDLERC_WITH_PATM) + defined(EMHANDLERC_WITH_HM) + defined(EMHANDLERC_WITH_NEM) != 1
+# error "Exactly one of these must be defined: EMHANDLERC_WITH_PATM, EMHANDLERC_WITH_HM, EMHANDLERC_WITH_NEM"
 #endif
 
 
@@ -41,6 +41,8 @@
 int emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 #elif defined(EMHANDLERC_WITH_HM) || defined(DOXYGEN_RUNNING)
 int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+#elif defined(EMHANDLERC_WITH_NEM)
+int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 #endif
 {
     switch (rc)
@@ -128,6 +130,7 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             break;
 #endif /* EMHANDLERC_WITH_PATM */
 
+#ifndef EMHANDLERC_WITH_NEM
         /*
          * Conflict or out of page tables.
          *
@@ -167,6 +170,7 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
                 rc = VINF_EM_RESCHEDULE;
             AssertMsg(RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST), ("%Rrc\n", rc));
             break;
+#endif /* !EMHANDLERC_WITH_NEM */
 
 #ifdef EMHANDLERC_WITH_PATM
         /*
@@ -249,32 +253,29 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
                 rc = emR3ExecuteInstruction(pVM, pVCpu, "Hypercall");
                 break;
             }
-            else
 #endif
+            /** @todo IEM/REM need to handle VMCALL/VMMCALL, see
+             *        @bugref{7270#c168}. */
+            uint8_t cbInstr = 0;
+            VBOXSTRICTRC rcStrict = GIMExecHypercallInstr(pVCpu, pCtx, &cbInstr);
+            if (rcStrict == VINF_SUCCESS)
             {
-                /** @todo IEM/REM need to handle VMCALL/VMMCALL, see
-                 *        @bugref{7270#c168}. */
-                uint8_t cbInstr = 0;
-                VBOXSTRICTRC rcStrict = GIMExecHypercallInstr(pVCpu, pCtx, &cbInstr);
-                if (rcStrict == VINF_SUCCESS)
-                {
-                    Assert(cbInstr);
-                    pCtx->rip += cbInstr;
-                    /* Update interrupt inhibition. */
-                    if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-                        && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
-                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-                    rc = VINF_SUCCESS;
-                }
-                else if (rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
-                    rc = VINF_SUCCESS;
-                else
-                {
-                    Assert(rcStrict != VINF_GIM_R3_HYPERCALL);
-                    rc = VBOXSTRICTRC_VAL(rcStrict);
-                }
-                break;
+                Assert(cbInstr);
+                pCtx->rip += cbInstr;
+                /* Update interrupt inhibition. */
+                if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                    && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
+                    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+                rc = VINF_SUCCESS;
             }
+            else if (rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
+                rc = VINF_SUCCESS;
+            else
+            {
+                Assert(rcStrict != VINF_GIM_R3_HYPERCALL);
+                rc = VBOXSTRICTRC_VAL(rcStrict);
+            }
+            break;
         }
 
 #ifdef EMHANDLERC_WITH_HM

@@ -80,6 +80,10 @@ typedef enum EMSTATE
     /** Executing in IEM, falling back on REM if we cannot switch back to HM or
      * RAW after a short while. */
     EMSTATE_IEM_THEN_REM,
+    /** Executing in native (API) execution monitor. */
+    EMSTATE_NEM,
+    /** Guest debug event from NEM mode is being processed. */
+    EMSTATE_DEBUG_GUEST_NEM,
     /** Just a hack to ensure that we get a 32-bit integer. */
     EMSTATE_MAKE_32BIT_HACK = 0x7fffffff
 } EMSTATE;

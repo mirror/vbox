@@ -868,6 +868,26 @@ void nemR3NativeResetCpu(PVMCPU pVCpu)
 }
 
 
+VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
+{
+    NOREF(pVM); NOREF(pVCpu);
+    return VERR_INTERNAL_ERROR_2;
+}
+
+
+bool nemR3NativeCanExecuteGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx);
+    return true;
+}
+
+
+bool nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(fEnable);
+    return false;
+}
+
 
 DECLINLINE(int) nemR3NativeGCPhys2R3PtrReadOnly(PVM pVM, RTGCPHYS GCPhys, const void **ppv)
 {

@@ -114,6 +114,10 @@ int     nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 int     nemR3NativeTerm(PVM pVM);
 void    nemR3NativeReset(PVM pVM);
 void    nemR3NativeResetCpu(PVMCPU pVCpu);
+VBOXSTRICTRC    nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu);
+bool            nemR3NativeCanExecuteGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+bool            nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
+
 int     nemR3NativeNotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
 int     nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvMmio2);
 int     nemR3NativeNotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);

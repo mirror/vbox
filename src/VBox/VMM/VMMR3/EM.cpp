@@ -420,28 +420,32 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVCpu->em.s.pCliStatTree = 0;
 
         /* these should be considered for release statistics. */
-        EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,      "/PROF/CPU%d/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatPrivEmu,    "/PROF/CPU%d/EM/Emulation/Priv",    "Profiling of emR3RawPrivileged.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatHmEntry,    "/PROF/CPU%d/EM/HmEnter",        "Profiling Hardware Accelerated Mode entry overhead.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatHmExec,     "/PROF/CPU%d/EM/HmExec",         "Profiling Hardware Accelerated Mode execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatIEMEmu,     "/PROF/CPU%d/EM/IEMEmuSingle",      "Profiling single instruction IEM execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatIEMThenREM, "/PROF/CPU%d/EM/IEMThenRem",        "Profiling IEM-then-REM instruction execution (by IEM).");
-        EM_REG_PROFILE(&pVCpu->em.s.StatREMEmu,     "/PROF/CPU%d/EM/REMEmuSingle",      "Profiling single instruction REM execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatREMExec,    "/PROF/CPU%d/EM/REMExec",           "Profiling REM execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatREMSync,    "/PROF/CPU%d/EM/REMSync",           "Profiling REM context syncing.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatRAWEntry,   "/PROF/CPU%d/EM/RAWEnter",          "Profiling Raw Mode entry overhead.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatRAWExec,    "/PROF/CPU%d/EM/RAWExec",           "Profiling Raw Mode execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatRAWTail,    "/PROF/CPU%d/EM/RAWTail",           "Profiling Raw Mode tail overhead.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,              "/PROF/CPU%d/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatPrivEmu,            "/PROF/CPU%d/EM/Emulation/Priv",    "Profiling of emR3RawPrivileged.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHMEntry,            "/PROF/CPU%d/EM/HMEnter",           "Profiling Hardware Accelerated Mode entry overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHMExec,             "/PROF/CPU%d/EM/HMExec",            "Profiling Hardware Accelerated Mode execution.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHMExecuteCalled,    "/PROF/CPU%d/EM/HMExecuteCalled",   "Number of times enmR3HMExecute is called.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatIEMEmu,             "/PROF/CPU%d/EM/IEMEmuSingle",      "Profiling single instruction IEM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatIEMThenREM,         "/PROF/CPU%d/EM/IEMThenRem",        "Profiling IEM-then-REM instruction execution (by IEM).");
+        EM_REG_PROFILE(&pVCpu->em.s.StatNEMEntry,           "/PROF/CPU%d/EM/NEMEnter",          "Profiling NEM entry overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatNEMExec,            "/PROF/CPU%d/EM/NEMExec",           "Profiling NEM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatNEMExecuteCalled,   "/PROF/CPU%d/EM/NEMExecuteCalled",  "Number of times enmR3NEMExecute is called.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMEmu,             "/PROF/CPU%d/EM/REMEmuSingle",      "Profiling single instruction REM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMExec,            "/PROF/CPU%d/EM/REMExec",           "Profiling REM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMSync,            "/PROF/CPU%d/EM/REMSync",           "Profiling REM context syncing.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWEntry,           "/PROF/CPU%d/EM/RAWEnter",          "Profiling Raw Mode entry overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWExec,            "/PROF/CPU%d/EM/RAWExec",           "Profiling Raw Mode execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWTail,            "/PROF/CPU%d/EM/RAWTail",           "Profiling Raw Mode tail overhead.");
 
 #endif /* VBOX_WITH_STATISTICS */
 
-        EM_REG_COUNTER(&pVCpu->em.s.StatForcedActions,     "/PROF/CPU%d/EM/ForcedActions",     "Profiling forced action execution.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatHalted,            "/PROF/CPU%d/EM/Halted",            "Profiling halted state (VMR3WaitHalted).");
-        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatCapped,        "/PROF/CPU%d/EM/Capped",            "Profiling capped state (sleep).");
-        EM_REG_COUNTER(&pVCpu->em.s.StatREMTotal,          "/PROF/CPU%d/EM/REMTotal",          "Profiling emR3RemExecute (excluding FFs).");
-        EM_REG_COUNTER(&pVCpu->em.s.StatRAWTotal,          "/PROF/CPU%d/EM/RAWTotal",          "Profiling emR3RawExecute (excluding FFs).");
+        EM_REG_COUNTER(&pVCpu->em.s.StatForcedActions,      "/PROF/CPU%d/EM/ForcedActions",     "Profiling forced action execution.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHalted,             "/PROF/CPU%d/EM/Halted",            "Profiling halted state (VMR3WaitHalted).");
+        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatCapped,         "/PROF/CPU%d/EM/Capped",            "Profiling capped state (sleep).");
+        EM_REG_COUNTER(&pVCpu->em.s.StatREMTotal,           "/PROF/CPU%d/EM/REMTotal",          "Profiling emR3RemExecute (excluding FFs).");
+        EM_REG_COUNTER(&pVCpu->em.s.StatRAWTotal,           "/PROF/CPU%d/EM/RAWTotal",          "Profiling emR3RawExecute (excluding FFs).");
 
-        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatTotal,         "/PROF/CPU%d/EM/Total",             "Profiling EMR3ExecuteVM.");
+        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatTotal,          "/PROF/CPU%d/EM/Total",             "Profiling EMR3ExecuteVM.");
     }
 
     emR3InitDbg(pVM);
@@ -672,10 +676,11 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
     }
 
     /*
-     * Force rescheduling if in RAW, HM, IEM, or REM.
+     * Force rescheduling if in RAW, HM, NEM, IEM, or REM.
      */
     return    pVCpu->em.s.enmState == EMSTATE_RAW
            || pVCpu->em.s.enmState == EMSTATE_HM
+           || pVCpu->em.s.enmState == EMSTATE_NEM
            || pVCpu->em.s.enmState == EMSTATE_IEM
            || pVCpu->em.s.enmState == EMSTATE_REM
            || pVCpu->em.s.enmState == EMSTATE_IEM_THEN_REM
@@ -788,6 +793,8 @@ static const char *emR3GetStateName(EMSTATE enmState)
         case EMSTATE_DEBUG_HYPER:       return "EMSTATE_DEBUG_HYPER";
         case EMSTATE_GURU_MEDITATION:   return "EMSTATE_GURU_MEDITATION";
         case EMSTATE_IEM_THEN_REM:      return "EMSTATE_IEM_THEN_REM";
+        case EMSTATE_NEM:               return "EMSTATE_NEM";
+        case EMSTATE_DEBUG_GUEST_NEM:   return "EMSTATE_DEBUG_GUEST_NEM";
         default:                        return "Unknown!";
     }
 }
@@ -828,6 +835,8 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
 #endif
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
                     rc = EMR3HmSingleInstruction(pVM, pVCpu, 0 /*fFlags*/);
+                else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_NEM)
+                    rc = VBOXSTRICTRC_TODO(emR3NemSingleInstruction(pVM, pVCpu, 0 /*fFlags*/));
 #ifdef VBOX_WITH_REM
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_REM)
                     rc = emR3RemStep(pVM, pVCpu);
@@ -2355,20 +2364,42 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 /*
                  * Reschedule - to raw-mode execution.
                  */
+/** @todo r=bird: consider merging VINF_EM_RESCHEDULE_RAW with VINF_EM_RESCHEDULE_HM, they serve the same purpose here at least. */
                 case VINF_EM_RESCHEDULE_RAW:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_RAW: %d -> %d (EMSTATE_RAW)\n", enmOldState, EMSTATE_RAW));
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
-                    pVCpu->em.s.enmState = EMSTATE_RAW;
+                    if (VM_IS_RAW_MODE_ENABLED(pVM))
+                    {
+                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_RAW: %d -> %d (EMSTATE_RAW)\n", enmOldState, EMSTATE_RAW));
+                        pVCpu->em.s.enmState = EMSTATE_RAW;
+                    }
+                    else
+                    {
+                        AssertLogRelFailed();
+                        pVCpu->em.s.enmState = EMSTATE_NONE;
+                    }
                     break;
 
                 /*
-                 * Reschedule - to hardware accelerated raw-mode execution.
+                 * Reschedule - to HM or NEM.
                  */
                 case VINF_EM_RESCHEDULE_HM:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_HM)\n", enmOldState, EMSTATE_HM));
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
                     Assert(!pVCpu->em.s.fForceRAW);
-                    pVCpu->em.s.enmState = EMSTATE_HM;
+                    if (VM_IS_HM_ENABLED(pVM))
+                    {
+                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_HM)\n", enmOldState, EMSTATE_HM));
+                        pVCpu->em.s.enmState = EMSTATE_HM;
+                    }
+                    else if (VM_IS_NEM_ENABLED(pVM))
+                    {
+                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_NEM)\n", enmOldState, EMSTATE_NEM));
+                        pVCpu->em.s.enmState = EMSTATE_NEM;
+                    }
+                    else
+                    {
+                        AssertLogRelFailed();
+                        pVCpu->em.s.enmState = EMSTATE_NONE;
+                    }
                     break;
 
                 /*
@@ -2535,6 +2566,11 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_GUEST_HM));
                         pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_HM;
                     }
+                    else if (enmOldState == EMSTATE_NEM)
+                    {
+                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_GUEST_NEM));
+                        pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_NEM;
+                    }
                     else if (enmOldState == EMSTATE_REM)
                     {
                         Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_GUEST_REM));
@@ -2608,10 +2644,12 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_UNHALT))
                     && (   enmNewState == EMSTATE_RAW
                         || enmNewState == EMSTATE_HM
+                        || enmNewState == EMSTATE_NEM
                         || enmNewState == EMSTATE_REM
                         || enmNewState == EMSTATE_IEM_THEN_REM
                         || enmNewState == EMSTATE_DEBUG_GUEST_RAW
                         || enmNewState == EMSTATE_DEBUG_GUEST_HM
+                        || enmNewState == EMSTATE_DEBUG_GUEST_NEM
                         || enmNewState == EMSTATE_DEBUG_GUEST_IEM
                         || enmNewState == EMSTATE_DEBUG_GUEST_REM) )
                 {
@@ -2655,6 +2693,13 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_HM:
                     rc = emR3HmExecute(pVM, pVCpu, &fFFDone);
+                    break;
+
+                /*
+                 * Execute hardware accelerated raw.
+                 */
+                case EMSTATE_NEM:
+                    rc = VBOXSTRICTRC_TODO(emR3NemExecute(pVM, pVCpu, &fFFDone));
                     break;
 
                 /*
@@ -2768,6 +2813,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_DEBUG_GUEST_RAW:
                 case EMSTATE_DEBUG_GUEST_HM:
+                case EMSTATE_DEBUG_GUEST_NEM:
                 case EMSTATE_DEBUG_GUEST_IEM:
                 case EMSTATE_DEBUG_GUEST_REM:
                     TMR3NotifySuspend(pVM, pVCpu);
