@@ -28,6 +28,7 @@
 /* Forward declarations: */
 class QITreeWidget;
 class QVBoxLayout;
+class QSplitter;
 class UIGuestControlConsole;
 class UIGuestControlInterface;
 class UIGuestSessionsEventHandler;
@@ -58,6 +59,7 @@ private:
 
     CConsole                 m_comConsole;
     QVBoxLayout             *m_pMainLayout;
+    QSplitter               *m_pSplitter;
     UIGuestSessionsEventHandler *m_pGuestSessionsEventHandler;
     QITreeWidget            *m_pTreeWidget;
     UIGuestControlConsole   *m_pConsole;

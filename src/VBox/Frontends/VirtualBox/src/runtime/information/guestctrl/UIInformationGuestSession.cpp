@@ -20,8 +20,9 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QVBoxLayout>
 # include <QApplication>
+# include <QVBoxLayout>
+# include <QSplitter>
 
 /* GUI includes: */
 # include "QITreeWidget.h"
@@ -41,6 +42,7 @@ UIInformationGuestSession::UIInformationGuestSession(QWidget *pParent, const CCo
     : QWidget(pParent)
     , m_comConsole(console)
     , m_pMainLayout(0)
+    , m_pSplitter(0)
     , m_pGuestSessionsEventHandler(0)
     , m_pTreeWidget(0)
     , m_pConsole(0)
@@ -66,17 +68,31 @@ void UIInformationGuestSession::prepareObjects()
     /* Configure layout: */
     m_pMainLayout->setSpacing(0);
 
+    m_pSplitter = new QSplitter;
+
+    if(!m_pSplitter)
+        return;
+
+    m_pSplitter->setOrientation(Qt::Vertical);
+
+    m_pMainLayout->addWidget(m_pSplitter);
+
+
     m_pTreeWidget = new QITreeWidget;
 
     if (m_pTreeWidget)
-        m_pMainLayout->addWidget(m_pTreeWidget, 9);
+        m_pSplitter->addWidget(m_pTreeWidget);
 
     m_pConsole = new UIGuestControlConsole;
     if(m_pConsole)
     {
-        m_pMainLayout->addWidget(m_pConsole, 4);
+        m_pSplitter->addWidget(m_pConsole);
         setFocusProxy(m_pConsole);
     }
+
+    m_pSplitter->setStretchFactor(0, 9);
+    m_pSplitter->setStretchFactor(1, 4);
+
     updateTreeWidget();
 }
 
