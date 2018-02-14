@@ -30,6 +30,7 @@ ifdef VBOX_WITH_UNATTENDED
  	ubuntu_preseed.cfg \
  	redhat67_ks.cfg \
  	rhel5_ks.cfg \
+ 	rhel4_ks.cfg \
  	ol_ks.cfg \
  	fedora_ks.cfg \
  	suse_autoinstall.xml \

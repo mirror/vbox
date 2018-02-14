@@ -711,6 +711,78 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
             LogRelFlow(("Unattended: .discinfo: version=%s\n", pszVersion));
             try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
             catch (std::bad_alloc) { return E_OUTOFMEMORY; }
+
+            /* CentOS likes to call their release 'Final' without mentioning the actual version
+               number (e.g. CentOS-4.7-x86_64-binDVD.iso), so we need to go look elsewhere.
+               This is only important for centos 4.x and 3.x releases. */
+            if (RTStrNICmp(pszVersion, RT_STR_TUPLE("Final")) == 0)
+            {
+                static const char * const s_apszDirs[] = { "CentOS/RPMS/", "RedHat/RPMS", "Server", "Workstation" };
+                for (unsigned iDir = 0; iDir < RT_ELEMENTS(s_apszDirs); iDir++)
+                {
+                    RTVFSDIR hVfsDir;
+                    vrc = RTVfsDirOpen(hVfsIso, s_apszDirs[iDir], 0, &hVfsDir);
+                    if (RT_FAILURE(vrc))
+                        continue;
+                    char szRpmDb[128];
+                    char szReleaseRpm[128];
+                    szRpmDb[0] = '\0';
+                    szReleaseRpm[0] = '\0';
+                    for (;;)
+                    {
+                        RTDIRENTRYEX DirEntry;
+                        size_t       cbDirEntry = sizeof(DirEntry);
+                        vrc = RTVfsDirReadEx(hVfsDir, &DirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING);
+                        if (RT_FAILURE(vrc))
+                            break;
+
+                        /* redhat-release-4WS-2.4.i386.rpm
+                           centos-release-4-7.x86_64.rpm, centos-release-4-4.3.i386.rpm
+                           centos-release-5-3.el5.centos.1.x86_64.rpm */
+                        char *psz;
+                        if (   (psz = strstr(DirEntry.szName, "-release-")) != NULL
+                            || (psz = strstr(DirEntry.szName, "-RELEASE-")) != NULL)
+                        {
+                            psz += 9;
+                            if (RT_C_IS_DIGIT(*psz))
+                                RTStrCopy(szReleaseRpm, sizeof(szReleaseRpm), psz);
+                        }
+                        /* rpmdb-redhat-4WS-2.4.i386.rpm,
+                           rpmdb-CentOS-4.5-0.20070506.i386.rpm,
+                           rpmdb-redhat-3.9-0.20070703.i386.rpm. */
+                        else if (   (   RTStrStartsWith(DirEntry.szName, "rpmdb-")
+                                     || RTStrStartsWith(DirEntry.szName, "RPMDB-"))
+                                 && RT_C_IS_DIGIT(DirEntry.szName[6]) )
+                            RTStrCopy(szRpmDb, sizeof(szRpmDb), &DirEntry.szName[6]);
+                    }
+                    RTVfsDirRelease(hVfsDir);
+
+                    /* Did we find anything relvant? */
+                    char *pszVersion = szRpmDb;
+                    if (!RT_C_IS_DIGIT(*pszVersion))
+                        pszVersion = szReleaseRpm;
+                    if (RT_C_IS_DIGIT(*pszVersion))
+                    {
+                        /* Convert '-' to '.' and strip stuff which doesn't look like a version string. */
+                        char *pszCur = pszVersion + 1;
+                        for (char ch = *pszCur; ch != '\0'; ch = *++pszCur)
+                            if (ch == '-')
+                                *pszCur = '.';
+                            else if (ch != '.' && !RT_C_IS_DIGIT(ch))
+                            {
+                                *pszCur = '\0';
+                                break;
+                            }
+                        while (&pszCur[-1] != pszVersion && pszCur[-1] == '.')
+                            *--pszCur = '\0';
+
+                        /* Set it and stop looking. */
+                        try { mStrDetectedOSVersion = pszVersion; }
+                        catch (std::bad_alloc) { return E_OUTOFMEMORY; }
+                        break;
+                    }
+                }
+            }
         }
 
         if (*penmOsType != VBOXOSTYPE_Unknown)

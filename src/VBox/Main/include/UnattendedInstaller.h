@@ -514,6 +514,7 @@ protected:
                                      RTVFS hVfsOrgIso, bool fOverwrite);
 };
 
+
 /**
  * RHEL 5 installer (same as RHEL 6 & 7, except for the kickstart template).
  */
@@ -522,6 +523,17 @@ class UnattendedRhel5Installer : public UnattendedRhel6And7Installer
 public:
     UnattendedRhel5Installer(Unattended *pParent) : UnattendedRhel6And7Installer(pParent, "rhel5_ks.cfg") {}
     ~UnattendedRhel5Installer() {}
+};
+
+
+/**
+ * RHEL 5 installer (same as RHEL 6 & 7, except for the kickstart template).
+ */
+class UnattendedRhel4Installer : public UnattendedRhel6And7Installer
+{
+public:
+    UnattendedRhel4Installer(Unattended *pParent) : UnattendedRhel6And7Installer(pParent, "rhel4_ks.cfg") {}
+    ~UnattendedRhel4Installer() {}
 };
 
 
