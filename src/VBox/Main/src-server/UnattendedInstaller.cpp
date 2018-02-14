@@ -80,6 +80,8 @@ using namespace std;
                 pUinstaller = new UnattendedRhel5Installer(pParent);
             else if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "4") >= 0)
                 pUinstaller = new UnattendedRhel4Installer(pParent);
+            else if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "3") >= 0)
+                pUinstaller = new UnattendedRhel3Installer(pParent);
             else
                 pUinstaller = new UnattendedRhel6And7Installer(pParent);
         }

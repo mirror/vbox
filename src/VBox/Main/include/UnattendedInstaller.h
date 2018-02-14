@@ -527,13 +527,24 @@ public:
 
 
 /**
- * RHEL 5 installer (same as RHEL 6 & 7, except for the kickstart template).
+ * RHEL 4 installer (same as RHEL 6 & 7, except for the kickstart template).
  */
 class UnattendedRhel4Installer : public UnattendedRhel6And7Installer
 {
 public:
     UnattendedRhel4Installer(Unattended *pParent) : UnattendedRhel6And7Installer(pParent, "rhel4_ks.cfg") {}
     ~UnattendedRhel4Installer() {}
+};
+
+
+/**
+ * RHEL 3 installer (same as RHEL 6 & 7, except for the kickstart template).
+ */
+class UnattendedRhel3Installer : public UnattendedRhel6And7Installer
+{
+public:
+    UnattendedRhel3Installer(Unattended *pParent) : UnattendedRhel6And7Installer(pParent, "rhel3_ks.cfg") {}
+    ~UnattendedRhel3Installer() {}
 };
 
 
