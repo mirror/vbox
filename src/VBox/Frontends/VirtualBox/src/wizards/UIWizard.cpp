@@ -253,7 +253,7 @@ void UIWizard::resizeToGoldenRatio()
         const double dRatio = (double)iIconMetric / 32;
         /* Load pixmap to icon first: */
         QIcon icon = UIIconPool::iconSet(m_strWatermarkName);
-        QSize size = icon.availableSizes().first();
+        QSize size = icon.availableSizes().value(0, QSize(145, 290));
         size *= dRatio;
         /* We should take into account watermark like its assigned already: */
         QPixmap watermarkPixmap(icon.pixmap(size));
@@ -490,7 +490,7 @@ void UIWizard::assignWatermarkHelper()
     const double dRatio = (double)iIconMetric / 32;
     /* Load pixmap to icon first: */
     QIcon icon = UIIconPool::iconSet(m_strWatermarkName);
-    QSize size = icon.availableSizes().first();
+    QSize size = icon.availableSizes().value(0, QSize(145, 290));
     size *= dRatio;
     /* Create initial watermark: */
     QPixmap pixWaterMark(icon.pixmap(size));

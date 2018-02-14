@@ -265,7 +265,7 @@ void UISettingsSerializerProgress::prepare()
                 {
                     /* Configure label: */
                     const QIcon icon = UIIconPool::iconSet(":/progress_settings_90px.png");
-                    pLabelPixmap->setPixmap(icon.pixmap(icon.availableSizes().first()));
+                    pLabelPixmap->setPixmap(icon.pixmap(icon.availableSizes().value(0, QSize(90, 90))));
                     /* Add label into layout: */
                     pLayoutPixmap->addWidget(pLabelPixmap);
                 }

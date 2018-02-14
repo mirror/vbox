@@ -416,7 +416,7 @@ void UIChooserPaneDelegate::fetchPixmapInfo(const QModelIndex &index, QPixmap &p
     {
         /* For global ID we return static pixmap/size: */
         const QIcon icon = UIIconPool::iconSet(":/edataglobal_32px.png");
-        pixmapSize = icon.availableSizes().first();
+        pixmapSize = icon.availableSizes().value(0, QSize(32, 32));
         pixmap = icon.pixmap(pixmapSize);
     }
 }

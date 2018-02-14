@@ -46,7 +46,8 @@ QPixmap UIIconPool::pixmap(const QString &strName)
     QIcon icon = iconSet(strName);
 
     /* Return pixmap of first available size: */
-    return icon.pixmap(icon.availableSizes().first());
+    const int iHint = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    return icon.pixmap(icon.availableSizes().value(0, QSize(iHint, iHint)));
 }
 
 /* static */

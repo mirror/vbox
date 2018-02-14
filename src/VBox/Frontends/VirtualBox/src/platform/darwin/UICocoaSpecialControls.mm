@@ -597,7 +597,7 @@ void UICocoaSegmentedButton::setToolTip(int iSegment, const QString &strTip)
 
 void UICocoaSegmentedButton::setIcon(int iSegment, const QIcon& icon)
 {
-    QImage image = toGray(icon.pixmap(icon.availableSizes().first()).toImage());
+    QImage image = toGray(icon.pixmap(icon.availableSizes().value(0, QSize(16, 16))).toImage());
 
     NSImage *pNSimage = [::darwinToNSImageRef(&image) autorelease];
     [nativeRef() setImage: pNSimage forSegment: iSegment];
