@@ -178,7 +178,6 @@
                                                          | SVM_CTRL_INTERCEPT_SHUTDOWN    \
                                                          | SVM_CTRL_INTERCEPT_FERR_FREEZE \
                                                          | SVM_CTRL_INTERCEPT_VMRUN       \
-                                                         | SVM_CTRL_INTERCEPT_VMMCALL     \
                                                          | SVM_CTRL_INTERCEPT_SKINIT      \
                                                          | SVM_CTRL_INTERCEPT_WBINVD      \
                                                          | SVM_CTRL_INTERCEPT_MONITOR     \
@@ -934,7 +933,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 #endif
 
         /* Set up unconditional intercepts and conditions. */
-        pVmcb->ctrl.u64InterceptCtrl = HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
+        pVmcb->ctrl.u64InterceptCtrl =   HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS
+                                       | SVM_CTRL_INTERCEPT_VMMCALL;
 
         /* CR0, CR4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
         pVmcb->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
@@ -2002,24 +2002,23 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         pVmcbNstGst->ctrl.u16InterceptRdDRx |= 0xffff;
         pVmcbNstGst->ctrl.u16InterceptWrDRx |= 0xffff;
 
-        /* Exclude the VINTR intercept of the outer guest as we don't need to cause VINTR #VMEXITs
-           that belong to the nested-guest to the outer guest. */
+        /*
+         * Adjust intercepts while executing the nested-guest that differ from the
+         * outer guest intercepts.
+         *
+         * - VINTR: Exclude the outer guest intercept as we don't need to cause VINTR #VMEXITs
+         *   that belong to the nested-guest to the outer guest.
+         *
+         * - VMMCALL: Exclude the outer guest intercept as when it's also not intercepted by
+         *   the nested-guest, the physical CPU raises a \#UD exception as expected.
+         */
         pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
-        pVmcbNstGst->ctrl.u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & ~SVM_CTRL_INTERCEPT_VINTR)
+        pVmcbNstGst->ctrl.u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & (  ~SVM_CTRL_INTERCEPT_VINTR
+                                                                                | ~SVM_CTRL_INTERCEPT_VMMCALL))
                                             |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
 
-        /*
-         * Adjust control intercepts while executing the nested-guest that differ
-         * from the outer guest intercepts.
-         *
-         * VMMCALL when not intercepted raises a \#UD exception in the guest. However,
-         * other SVM instructions like VMSAVE when not intercept can cause havoc on the
-         * host as they can write to any location in physical memory, hence they always
-         * need to be intercepted (see below).
-         */
         Assert(   (pVmcbNstGst->ctrl.u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS)
                == HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS);
-        pVmcbNstGst->ctrl.u64InterceptCtrl  &= ~SVM_CTRL_INTERCEPT_VMMCALL;
 
         /*
          * If we don't expose Virtualized-VMSAVE/VMLOAD feature to the outer guest, we
