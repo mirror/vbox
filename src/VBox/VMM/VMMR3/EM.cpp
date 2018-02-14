@@ -43,6 +43,7 @@
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/iem.h>
+#include <VBox/vmm/nem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
@@ -1399,21 +1400,24 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
 
     X86EFLAGS EFlags = pCtx->eflags;
-    /** @todo NEM: scheduling.   */
     if (!VM_IS_RAW_MODE_ENABLED(pVM))
     {
-        /*
-         * Hardware accelerated raw-mode:
-         */
-        if (   EMIsHwVirtExecutionEnabled(pVM)
-            && HMR3CanExecuteGuest(pVM, pCtx))
-            return EMSTATE_HM;
+        if (EMIsHwVirtExecutionEnabled(pVM))
+        {
+            if (VM_IS_HM_ENABLED(pVM))
+            {
+                if (HMR3CanExecuteGuest(pVM, pCtx))
+                    return EMSTATE_HM;
+            }
+            else if (NEMR3CanExecuteGuest(pVM, pVCpu, pCtx))
+                return EMSTATE_NEM;
 
-        /*
-         * Note! Raw mode and hw accelerated mode are incompatible. The latter
-         *       turns off monitoring features essential for raw mode!
-         */
-        return EMSTATE_IEM_THEN_REM;
+            /*
+             * Note! Raw mode and hw accelerated mode are incompatible. The latter
+             *       turns off monitoring features essential for raw mode!
+             */
+            return EMSTATE_IEM_THEN_REM;
+        }
     }
 
     /*
