@@ -27,7 +27,8 @@
 #include "COMEnums.h"
 #include "CGuest.h"
 
-
+class UIGuestControlSubCommandBase;
+class CommandData;
 class UIGuestControlInterface : public QObject
 {
 
@@ -40,6 +41,8 @@ signals:
 public:
 
     UIGuestControlInterface(QObject *parent, const CGuest &comGeust);
+    ~UIGuestControlInterface();
+
     /** Receives a command string */
     void putCommand(const QString &strCommand);
 
@@ -47,37 +50,27 @@ private slots:
 
 private:
 
-    bool parseCommand(const QString &strCommand);
-    bool createArgumentMap(const QStringList &commandList);
-    bool parseStartCommand();
-    bool parseStartSessionCommand();
-    bool parseSetCommand();
+    typedef bool (UIGuestControlInterface::*HandleFuncPtr)(int, char**);
 
-    /* Search username/password withing argument map if not
-       check if username/password is set previously. Return false
-       if username/string could not be found. */
-    bool getUsername(QString &outStrUsername);
-    bool getPassword(QString &outStrUsername);
-    void reset();
+    bool findSession(const QString& strSessionName, CGuestSession& outSession);
+    bool findSession(ULONG strSessionId, CGuestSession& outSession);
+    bool createSession(const CommandData &commandData, CGuestSession &outSession);
 
-    /** @name API call wrappers
-     * @{ */
-    void createSession(const QString &username, const QString &password,
-                       const QString &sessionName);
-    /** @} */
+    void prepareSubCommandHandlers();
+    bool startProcess(const CommandData &commandData, CGuestSession &guestSession);
 
+    /* Handles the 'start' process command */
+    bool handleStart(int, char**);
+        /* Handles the 'help' process command */
+    bool handleHelp(int, char**);
+    /* Handles the 'create' session command */
+    bool handleCreate(int, char**);
+    bool parseCommonOptions(int argc, char** argv, CommandData& commandData);
 
     CGuest        m_comGuest;
     const QString m_strHelp;
-    QString       m_strStatus;
-    QString       m_strUsername;
-    QString       m_strPassword;
-    bool          m_bUsernameIsSet;
-    bool          m_bPasswordIsSet;
-
-    /* Key is argument and value is value (possibly empty). */
-    QMap<QString, QString> m_argumentMap;
-
+    /* A map of function pointers to handleXXXX functions */
+    QMap<QString, HandleFuncPtr> m_subCommandHandlers;
 };
 
 #endif /* !___UIGuestControlInterface_h___ */

@@ -24,9 +24,12 @@
 # include "VBoxGlobal.h"
 
 /* COM includes: */
+# include "CGuestProcess.h"
 # include "CGuestSession.h"
 
+#include <iprt/getopt.h>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 #define SUCCESS_RETURN(strMessage){   \
     emit sigOutputString(strMessage); \
@@ -38,189 +41,356 @@
     return false;                      \
 }
 
+#define GCTLCMD_COMMON_OPT_USER             999 /**< The --username option number. */
+#define GCTLCMD_COMMON_OPT_PASSWORD         998 /**< The --password option number. */
+#define GCTLCMD_COMMON_OPT_PASSWORD_FILE    997 /**< The --password-file option number. */
+#define GCTLCMD_COMMON_OPT_DOMAIN           996 /**< The --domain option number. */
+#define GCTLCMD_COMMON_OPT_SESSION_NAME     995 /**< The --sessionname option number. */
+#define GCTLCMD_COMMON_OPT_SESSION_ID       994 /**< The --sessionid option number. */
+/** Common option definitions. */
+struct CommandData
+{
+    QString m_strUserName;
+    QString m_strPassword;
+    QString m_strExePath;
+    QString m_strSessionName;
+    ULONG   m_uSessionId;
+    QString m_strDomain;
+    QVector<QString> m_arguments;
+    QVector<QString> m_environmentChanges;
+};
+
 UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &comGuest)
     :QObject(parent)
     , m_comGuest(comGuest)
-    , m_strHelp("start\n"
-                "        --session: Starts a new session. It takes following arguments\n"
-                "                        --username=username: Sets the username. Overrides the username set by 'set --username=username'\n"
-                "                        --password=password: Sets the password. Overrides the username set by 'set --password=password'\n"
-                "                        --session-name=name: Optional\n"
-                "                        --domain=domain: Currently not implemented and siliently ignored\n"
-                "        --process: Starts a new process. It takes following arguments\n"
-                "                        --username=username: Sets the username. Overrides the username set by 'set --username=username'\n"
-                "                        --password=password: Sets the password. Overrides the username set by 'set --password=password'\n"
-                "                        --session-name=name: Session name to start the new process under. If not found a new session with this name is created\n"
-                "                        --exe-path=path: Execuable path\n"
-                "                        --argument1=argument ... --argumentN=argument: Optional. Arguments to be passed to the new process\n"
-                "                        --environmentVar1=variable ... --environmentVarN=variable: Optional. Currently no avaible through this interface\n"
-                "                        --timout=time: (in ms). Optional. Timeout (in ms) for limiting the guest process' running time. Give 0 for an infinite timeout.\n"
-
-                "set\n"
-                "                        --username=username: Sets user name which is used in subsequent calls (maybe overriden).\n"
-                "                        --password=password: Sets user name which is used in subsequent calls (maybe overriden).\n"
-
-                //"start --process --username=username --password=password --session-name=name --exepath=path --argument1=argument ... --argumentN=argument --environmentVar1=variable ... --environmentVarN=variable\n"
+    , m_strHelp("[common-options]      [--verbose|-v] [--quiet|-q]\n"
+                "                                   [--username <name>] [--domain <domain>]\n"
+                "                                   [--passwordfile <file> | --password <password>]\n"
+                "start                           [common-options]\n"
+                "                                   [--exe <path to executable>] [--timeout <msec>]\n"
+                "                                   [--sessionid <id> |  [sessionname <name>]]\n"
+                "                                   [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                "                                   [--ignore-operhaned-processes] [--profile]\n"
+                "                                   -- <program/arg0> [argument1] ... [argumentN]]\n"
+                "create                           [common-options]  [sessionname <name>]\n"
                 )
-    , m_bUsernameIsSet(false)
-    , m_bPasswordIsSet(false)
 {
+    prepareSubCommandHandlers();
+}
+
+bool UIGuestControlInterface::handleStart(int argc, char** argv)
+{
+    enum kGstCtrlRunOpt
+    {
+        kGstCtrlRunOpt_IgnoreOrphanedProcesses = 1000,
+        kGstCtrlRunOpt_NoProfile, /** @todo Deprecated and will be removed soon; use kGstCtrlRunOpt_Profile instead, if needed. */
+        kGstCtrlRunOpt_Profile,
+        kGstCtrlRunOpt_Dos2Unix,
+        kGstCtrlRunOpt_Unix2Dos,
+        kGstCtrlRunOpt_WaitForStdOut,
+        kGstCtrlRunOpt_NoWaitForStdOut,
+        kGstCtrlRunOpt_WaitForStdErr,
+        kGstCtrlRunOpt_NoWaitForStdErr
+    };
+
+    CommandData commandData;
+    parseCommonOptions(argc, argv, commandData);
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--sessionname",                   GCTLCMD_COMMON_OPT_SESSION_NAME,         RTGETOPT_REQ_STRING  },
+        { "--sessionid",                     GCTLCMD_COMMON_OPT_SESSION_ID,           RTGETOPT_REQ_UINT32  },
+        { "--putenv",                       'E',                                      RTGETOPT_REQ_STRING  },
+        { "--exe",                          'e',                                      RTGETOPT_REQ_STRING  },
+        { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
+        { "--unquoted-args",                'u',                                      RTGETOPT_REQ_NOTHING },
+        { "--ignore-operhaned-processes",   kGstCtrlRunOpt_IgnoreOrphanedProcesses,   RTGETOPT_REQ_NOTHING },
+        { "--no-profile",                   kGstCtrlRunOpt_NoProfile,                 RTGETOPT_REQ_NOTHING }, /** @todo Deprecated. */
+        { "--profile",                      kGstCtrlRunOpt_Profile,                   RTGETOPT_REQ_NOTHING }
+    };
+
+    bool sessionNameGiven = false;
+    bool sessionIdGiven = false;
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case GCTLCMD_COMMON_OPT_SESSION_NAME:
+                sessionNameGiven = true;
+                commandData.m_strSessionName  = ValueUnion.psz;
+                break;
+            case GCTLCMD_COMMON_OPT_SESSION_ID:
+                sessionIdGiven = true;
+                commandData.m_uSessionId  = ValueUnion.i32;
+                break;
+            case 'e':
+                commandData.m_strExePath  = ValueUnion.psz;
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (sessionNameGiven && commandData.m_strSessionName.isEmpty())
+    {
+        emit sigOutputString(QString("'Session Name' is not name valid\n").append(m_strHelp));
+        return false;
+    }
+
+    CGuestSession guestSession;
+    /* Check if sessionname and sessionid are both supplied */
+    if (sessionIdGiven && sessionNameGiven)
+    {
+        emit sigOutputString(QString("Both 'Session Name' and 'Session Id' are supplied\n").append(m_strHelp));
+        return false;
+    }
+    /* If sessionid is given then look for the session. if not found return without starting the process: */
+    else if (sessionIdGiven && !sessionNameGiven)
+    {
+        if (!findSession(commandData.m_uSessionId, guestSession))
+        {
+            emit sigOutputString(QString("No session with id %1 found.\n").arg(commandData.m_uSessionId).append(m_strHelp));
+            return false;
+        }
+    }
+    /* If sessionname is given then look for the session. if not try to create a session with the provided name: */
+    else if (!sessionIdGiven && sessionNameGiven)
+    {
+        if (!findSession(commandData.m_strSessionName, guestSession))
+        {
+            if (!createSession(commandData, guestSession))
+            {
+                emit sigOutputString(QString("Guest session could not be created"));
+                return false;
+            }
+        }
+    }
+    /* if neither sessionname and session id is given then create a new session */
+    else
+    {
+        if (!createSession(commandData, guestSession))
+        {
+            emit sigOutputString(QString("Guest session could not be created"));
+            return false;
+        }
+
+    }
+    if (!guestSession.isOk())
+        return false;
+    startProcess(commandData, guestSession);
+    return true;
+}
+
+bool UIGuestControlInterface::handleHelp(int, char**)
+{
+    emit  sigOutputString(m_strHelp);
+    return true;
+}
+
+bool UIGuestControlInterface::handleCreate(int argc, char** argv)
+{
+    CommandData commandData;
+    if (!parseCommonOptions(argc, argv, commandData))
+        return false;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--sessionname",      GCTLCMD_COMMON_OPT_SESSION_NAME,  RTGETOPT_REQ_STRING  }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case GCTLCMD_COMMON_OPT_SESSION_NAME:
+                commandData.m_strSessionName  = ValueUnion.psz;
+                if (commandData.m_strSessionName.isEmpty())
+                {
+                    emit sigOutputString(QString("'Session Name' is not name valid\n").append(m_strHelp));
+                    return false;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    CGuestSession guestSession;
+    if (!createSession(commandData, guestSession))
+        return false;
+    return true;
+}
+
+bool UIGuestControlInterface::parseCommonOptions(int argc, char** argv, CommandData& commandData)
+{
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--username",             GCTLCMD_COMMON_OPT_USER,            RTGETOPT_REQ_STRING  },
+        { "--passwordfile",         GCTLCMD_COMMON_OPT_PASSWORD_FILE,   RTGETOPT_REQ_STRING  },
+        { "--password",             GCTLCMD_COMMON_OPT_PASSWORD,        RTGETOPT_REQ_STRING  },
+        { "--domain",               GCTLCMD_COMMON_OPT_DOMAIN,          RTGETOPT_REQ_STRING  },
+        { "--quiet",                'q',                                RTGETOPT_REQ_NOTHING },
+        { "--verbose",              'v',                                RTGETOPT_REQ_NOTHING },
+        { "--help",                 'h',                                RTGETOPT_REQ_NOTHING }
+    };
+
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            /* Username: */
+            case GCTLCMD_COMMON_OPT_USER:
+                commandData.m_strUserName = ValueUnion.psz;
+                break;
+            /* Paaword: */
+            case GCTLCMD_COMMON_OPT_PASSWORD:
+                commandData.m_strPassword = ValueUnion.psz;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return true;
+}
+
+bool UIGuestControlInterface::startProcess(const CommandData &commandData, CGuestSession &guestSession)
+{
+    QVector<KProcessCreateFlag>  createFlags;
+    createFlags.push_back(KProcessCreateFlag_WaitForProcessStartOnly);
+
+    CGuestProcess process = guestSession.ProcessCreate(commandData.m_strExePath,
+                                                       commandData.m_arguments,
+                                                       commandData.m_environmentChanges,
+                                                       createFlags,
+                                                       0);
+    if (!process.isOk())
+        return false;
+    return true;
+}
+
+UIGuestControlInterface::~UIGuestControlInterface()
+{
+}
+
+void UIGuestControlInterface::prepareSubCommandHandlers()
+{
+    m_subCommandHandlers.insert("create" , &UIGuestControlInterface::handleCreate);
+    m_subCommandHandlers.insert("start", &UIGuestControlInterface::handleStart);
+    m_subCommandHandlers.insert("help" , &UIGuestControlInterface::handleHelp);
 }
 
 void UIGuestControlInterface::putCommand(const QString &strCommand)
 {
-    parseCommand(strCommand);
-}
 
-bool UIGuestControlInterface::parseCommand(const QString &strCommand)
-{
-    reset();
-    QStringList commandStrList = strCommand.split(" ", QString::SkipEmptyParts, Qt::CaseSensitive);
+    char **argv;
+    int argc;
+    QByteArray array = strCommand.toLocal8Bit();
+    RTGetOptArgvFromString(&argv, &argc, array.data(), RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, 0);
 
-    if (commandStrList.isEmpty())
-        ERROR_RETURN("Syntax Error! Type 'help' for usage")
-    else if (commandStrList.at(0) == "help")
-        SUCCESS_RETURN(m_strHelp)
+    static const RTGETOPTDEF s_aOptions[] = {};
 
-    if (!createArgumentMap(commandStrList))
-        return false;
-
-    if (commandStrList.at(0) == "start")
-        return parseStartCommand();
-    return parseSetCommand();
-    //ERROR_RETURN("Syntax Error! Type 'help' for usage")
-}
-
-bool UIGuestControlInterface::createArgumentMap(const QStringList &commandList)
-{
-    if (commandList.size() <= 1)
-        ERROR_RETURN("Syntax Error! Type 'help' for usage")
-
-    /* All arguments start with '--' and may have a value: */
-    for (int i = 1; i < commandList.size(); ++i)
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
-        const QString &strArgument = commandList.at(i);
-        if (strArgument.size() <= 2 || strArgument.left(2) != "--")
-            ERROR_RETURN("Syntax Error! Type 'help' for usage")
+        switch (ch)
+        {
+             case VINF_GETOPT_NOT_OPTION:
+             {
+                 /* Try to map ValueUnion.psz to a sub command handler: */
+                 QString strNoOption(ValueUnion.psz);
+                 if (!strNoOption.isNull())
+                 {
+                     QMap<QString, HandleFuncPtr>::iterator iterator =
+                         m_subCommandHandlers.find(strNoOption);
+                     if (iterator != m_subCommandHandlers.end())
+                     {
+                         (this->*(iterator.value()))(argc, argv);
+                         RTGetOptArgvFree(argv);
+                         return;
+                     }
+                     else
+                     {
+                         emit sigOutputString(QString("Unknown Command '%1'\n").arg(ValueUnion.psz).append(m_strHelp));
+                         RTGetOptArgvFree(argv);
+                         return;
+                     }
+                 }
+                 break;
+             }
+             default:
+                 break;
+         }
+     }
 
-        QString strKey;
-        QString strValue;
-        /* If argument includes a '=' then we have a two parts: */
-        int indexOfEqual = strArgument.indexOf("=");
-        strKey = strArgument.mid(2 /* -- prefix */, indexOfEqual - 2);
-        if (indexOfEqual != -1)
-            strValue = strArgument.mid(indexOfEqual + 1);
-        if (indexOfEqual != -1 && strValue.isEmpty())
-            ERROR_RETURN("Syntax Error! Type 'help' for usage")
-        if (strKey.isEmpty())
-            ERROR_RETURN("Syntax Error! Type 'help' for usage")
-
-        m_argumentMap.insert(strKey, strValue);
-    }
-    return true;
+    RTGetOptArgvFree(argv);
 }
 
-bool UIGuestControlInterface::parseStartCommand()
+bool UIGuestControlInterface::findSession(ULONG sessionId, CGuestSession& outSession)
 {
-    if (m_argumentMap.contains("session"))
-        return parseStartSessionCommand();
-
-    ERROR_RETURN("Syntax Error! Type 'help' for usage")
-}
-
-//CGuestProcess CGuestSession::ProcessCreate(const QString & aExecutable,
-//const QVector<QString> & aArguments,
-//const QVector<QString> & aEnvironmentChanges, const QVector<KProcessCreateFlag> & aFlags, ULONG aTimeoutMS)
-
-
-bool UIGuestControlInterface::parseStartSessionCommand()
-{
-    /* Each "start" command requires username and password: */
-    QString username;
-    QString password;
-    if (!getUsername(username))
-        return false;
-    if (!getPassword(password))
-        return false;
-    /* Check if session name is supplied: */
-    QString sessionname = m_argumentMap.value("session-name", QString());
     if (!m_comGuest.isOk())
-        ERROR_RETURN("No Valid guest object found")
-
-    CGuestSession comGuestSession =
-        m_comGuest.CreateSession(username, password, QString() /*domain name*/, sessionname);
-    if (!comGuestSession.isOk())
-        ERROR_RETURN("Could not create guest session")
-
-    SUCCESS_RETURN("Guest Session started");
+        return false;
+    QVector<CGuestSession> sessionVector = m_comGuest.GetSessions();
+    if (sessionVector.isEmpty())
+        return false;
+    for(int  i = 0; i < sessionVector.size(); ++i)
+    {
+        if (sessionVector.at(i).isOk() && sessionId == sessionVector.at(i).GetId())
+        {
+            outSession = sessionVector.at(i);
+            return true;
+        }
+    }
+    return false;
 }
 
-bool UIGuestControlInterface::parseSetCommand()
+bool UIGuestControlInterface::findSession(const QString& strSessionName, CGuestSession& outSession)
 {
-    /* After 'set' we should have a single argument with value: */
-    if (m_argumentMap.size() != 1)
-        ERROR_RETURN("Syntax Error! Type 'help' for usage")
-    /* Look for username: */
-    if (m_argumentMap.contains("username"))
-    {
-        QString strName = m_argumentMap.value("username", QString());
-        if (strName.isEmpty())
-            ERROR_RETURN("Syntax Error! Type 'help' for usage")
-        m_strUsername = strName;
-        return true;
-    }
-    else if (m_argumentMap.contains("password"))
-    {
-        QString strPassword = m_argumentMap.value("password", QString());
-        if (strPassword.isEmpty())
-            ERROR_RETURN("Syntax Error! Type 'help' for usage")
-        m_strPassword = strPassword;
-        return true;
-    }
-    /* Found neither 'usernanme' nor 'password' after set: */
-    ERROR_RETURN("Syntax Error! Type 'help' for usage")
+    if (!m_comGuest.isOk())
+        return false;
+    QVector<CGuestSession> sessionVector = m_comGuest.FindSession(strSessionName);
+    if (sessionVector.isEmpty())
+        return false;
+    /* Return the first session with @a sessionName */
+    outSession = sessionVector.at(0);
+    return false;
 }
 
-bool UIGuestControlInterface::getUsername(QString &outStrUsername)
+bool UIGuestControlInterface::createSession(const CommandData &commandData, CGuestSession& outSession)
 {
-    /* First check argument map for a valid username string: */
-    QString mapValue = m_argumentMap.value("username", QString());
-    if (!mapValue.isEmpty())
+    CGuestSession guestSession = m_comGuest.CreateSession(commandData.m_strUserName,
+                                                          commandData.m_strPassword,
+                                                          commandData.m_strDomain,
+                                                          commandData.m_strSessionName);
+    if (!guestSession.isOk())
     {
-        outStrUsername = mapValue;
-        return true;
+        emit sigOutputString(QString("Guest session could not be created"));
+        return false;
     }
-    /* Check to see if username is set previously. */
-    if (m_bUsernameIsSet)
+    /* Wait session to start: */
+    const ULONG waitTimeout = 1;//2000;
+    KGuestSessionWaitResult waitResult = guestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
+    if (waitResult != KGuestSessionWaitResult_Start)
     {
-        outStrUsername = m_strUsername;
-        return true;
+        emit sigOutputString("Guest Session has not started yet");
+        return false;
     }
-    ERROR_RETURN("No username is set. Type 'help' for usage");
-}
-
-bool UIGuestControlInterface::getPassword(QString &outStrPassword)
-{
-    /* First check argument map for a valid password string: */
-    QString mapValue = m_argumentMap.value("password", QString());
-    if (!mapValue.isEmpty())
-    {
-        outStrPassword = mapValue;
-        return true;
-    }
-
-    /* Check to see if username is set previously. */
-    if (m_bPasswordIsSet)
-    {
-        outStrPassword = m_strPassword;
-        return true;
-    }
-    ERROR_RETURN("No password is set. Type 'help' for usage")
-}
-
-void UIGuestControlInterface::reset()
-{
-    m_argumentMap.clear();
-    m_bUsernameIsSet = false;
-    m_bPasswordIsSet = false;
+    outSession = guestSession;
+    return true;
 }
