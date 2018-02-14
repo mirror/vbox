@@ -591,9 +591,9 @@ static int rtFsIsoImportProcessIso9660AddAndNameFile(PRTFSISOMKIMPORTER pThis, P
             }
             else
             {
+                pBlock2File->Core.pLeft  = NULL;
+                pBlock2File->Core.pRight = NULL;
                 pBlock2FilePrev->pNext = pBlock2File;
-                pBlock2FilePrev->Core.pLeft  = NULL;
-                pBlock2FilePrev->Core.pRight = NULL;
             }
         }
     }
