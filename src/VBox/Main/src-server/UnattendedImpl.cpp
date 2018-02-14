@@ -739,7 +739,6 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
                         /* redhat-release-4WS-2.4.i386.rpm
                            centos-release-4-7.x86_64.rpm, centos-release-4-4.3.i386.rpm
                            centos-release-5-3.el5.centos.1.x86_64.rpm */
-                        char *psz;
                         if (   (psz = strstr(DirEntry.szName, "-release-")) != NULL
                             || (psz = strstr(DirEntry.szName, "-RELEASE-")) != NULL)
                         {
@@ -758,13 +757,13 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
                     RTVfsDirRelease(hVfsDir);
 
                     /* Did we find anything relvant? */
-                    char *pszVersion = szRpmDb;
-                    if (!RT_C_IS_DIGIT(*pszVersion))
-                        pszVersion = szReleaseRpm;
-                    if (RT_C_IS_DIGIT(*pszVersion))
+                    psz = szRpmDb;
+                    if (!RT_C_IS_DIGIT(*psz))
+                        psz = szReleaseRpm;
+                    if (RT_C_IS_DIGIT(*psz))
                     {
                         /* Convert '-' to '.' and strip stuff which doesn't look like a version string. */
-                        char *pszCur = pszVersion + 1;
+                        char *pszCur = psz + 1;
                         for (char ch = *pszCur; ch != '\0'; ch = *++pszCur)
                             if (ch == '-')
                                 *pszCur = '.';
@@ -773,11 +772,11 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
                                 *pszCur = '\0';
                                 break;
                             }
-                        while (&pszCur[-1] != pszVersion && pszCur[-1] == '.')
+                        while (&pszCur[-1] != psz && pszCur[-1] == '.')
                             *--pszCur = '\0';
 
                         /* Set it and stop looking. */
-                        try { mStrDetectedOSVersion = pszVersion; }
+                        try { mStrDetectedOSVersion = psz; }
                         catch (std::bad_alloc) { return E_OUTOFMEMORY; }
                         break;
                     }
