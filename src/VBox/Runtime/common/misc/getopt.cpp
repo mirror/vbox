@@ -675,7 +675,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                     }
                     else if (rc == VINF_SUCCESS)
                     {
-                        if (iThis + 1 >= pState->argc)
+                        if (iThis + 1 + pState->cNonOptions >= pState->argc)
                             return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
                         pState->uIndex = uIndex;
                         pszValue = pState->argv[iThis + pState->cNonOptions + 1];
@@ -689,7 +689,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                 {
                     if (pszArgThis[cchLong] == '\0')
                     {
-                        if (iThis + 1 >= pState->argc)
+                        if (iThis + 1 + pState->cNonOptions >= pState->argc)
                             return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
                         pszValue = pState->argv[iThis + pState->cNonOptions + 1];
                         rtGetOptMoveArgvEntries(&pState->argv[iThis + 1], &pState->argv[iThis + pState->cNonOptions + 1]);
