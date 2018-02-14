@@ -49,7 +49,11 @@
 using namespace std;
 
 
-/* static */ UnattendedInstaller *UnattendedInstaller::createInstance(VBOXOSTYPE enmOsType, const Utf8Str &strGuestOsType,
+/* static */ UnattendedInstaller *UnattendedInstaller::createInstance(VBOXOSTYPE enmOsType,
+                                                                      const Utf8Str &strGuestOsType,
+                                                                      const Utf8Str &strDetectedOSVersion,
+                                                                      const Utf8Str &strDetectedOSFlavor,
+                                                                      const Utf8Str &strDetectedOSHints,
                                                                       Unattended *pParent)
 {
     UnattendedInstaller *pUinstaller = NULL;
@@ -68,7 +72,15 @@ using namespace std;
         else if (enmOsType >= VBOXOSTYPE_Ubuntu && enmOsType <= VBOXOSTYPE_Ubuntu_x64)
             pUinstaller = new UnattendedUbuntuInstaller(pParent);
         else if (enmOsType >= VBOXOSTYPE_RedHat && enmOsType <= VBOXOSTYPE_RedHat_x64)
-            pUinstaller = new UnattendedRedHat67Installer(pParent);
+        {
+            if (   strDetectedOSVersion.isEmpty()
+                || RTStrVersionCompare(strDetectedOSVersion.c_str(), "6") >= 0)
+                pUinstaller = new UnattendedRhel6And7Installer(pParent);
+            else if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "5") >= 0)
+                pUinstaller = new UnattendedRhel5Installer(pParent);
+            else
+                pUinstaller = new UnattendedRhel6And7Installer(pParent);
+        }
         else if (enmOsType >= VBOXOSTYPE_FedoraCore && enmOsType <= VBOXOSTYPE_FedoraCore_x64)
             pUinstaller = new UnattendedFedoraInstaller(pParent);
         else if (enmOsType >= VBOXOSTYPE_Oracle && enmOsType <= VBOXOSTYPE_Oracle_x64)
@@ -78,6 +90,8 @@ using namespace std;
             pUinstaller = new UnattendedSuseInstaller(new UnattendedSUSEXMLScript(pParent), pParent);
 #endif
     }
+    RT_NOREF_PV(strDetectedOSFlavor);
+    RT_NOREF_PV(strDetectedOSHints);
     return pUinstaller;
 }
 
@@ -1036,12 +1050,12 @@ HRESULT UnattendedDebianInstaller::editDebianTxtCfg(GeneralTextScript *pEditor)
 /*
 *
 *
-*  Implementation UnattendedRedHat67Installer functions
+*  Implementation UnattendedRhel6And7Installer functions
 *
 */
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-HRESULT UnattendedRedHat67Installer::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
-                                                              RTVFS hVfsOrgIso, bool fOverwrite)
+HRESULT UnattendedRhel6And7Installer::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                                               RTVFS hVfsOrgIso, bool fOverwrite)
 {
     Utf8Str strIsoLinuxCfg;
     try

@@ -63,6 +63,7 @@ ifdef VBOX_WITH_UNATTENDED
  	fedora_ks.cfg \
  	ol_ks.cfg \
  	redhat67_ks.cfg \
+ 	rhel5_ks.cfg \
  	win_nt5_unattended.sif \
  	win_nt6_unattended.xml \
        \

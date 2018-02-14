@@ -905,7 +905,8 @@ HRESULT Unattended::prepare()
     uint32_t   const idxOSType = Global::getOSTypeIndexFromId(mStrGuestOsTypeId.c_str());
     meGuestOsType     = idxOSType < Global::cOSTypes ? Global::sOSTypes[idxOSType].osType : VBOXOSTYPE_Unknown;
 
-    mpInstaller = UnattendedInstaller::createInstance(meGuestOsType, mStrGuestOsTypeId, this);
+    mpInstaller = UnattendedInstaller::createInstance(meGuestOsType, mStrGuestOsTypeId, mStrDetectedOSVersion,
+                                                      mStrDetectedOSFlavor, mStrDetectedOSHints, this);
     if (mpInstaller != NULL)
     {
         hrc = mpInstaller->initInstaller();
