@@ -133,7 +133,7 @@ DECLINLINE(int) GuestPropValidateFlags(const char *pcszFlags, uint32_t *pfFlags)
             {
                 size_t      cchFlagName;
                 const char *pszFlagName = GuestPropFlagNameAndLen(s_aFlagList[i], &cchFlagName);
-                if (RTStrNICmp(pcszNext, pszFlagName, cchFlagName) == 0)
+                if (RTStrNICmpAscii(pcszNext, pszFlagName, cchFlagName) == 0)
                 {
                     char ch;
                     fFlags |= s_aFlagList[i];
