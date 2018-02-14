@@ -117,7 +117,7 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
                 emit commandEntered(strCommand);
                 if(!m_tCommandHistory.contains(strCommand))
                     m_tCommandHistory.push_back(strCommand);
-                m_uCommandHistoryIndex = m_tCommandHistory.size();
+                m_uCommandHistoryIndex = m_tCommandHistory.size()-1;
                 moveCursor(QTextCursor::End);
                 QPlainTextEdit::keyPressEvent(pEvent);
                 startNextLine();

@@ -47,6 +47,16 @@
 #define GCTLCMD_COMMON_OPT_DOMAIN           996 /**< The --domain option number. */
 #define GCTLCMD_COMMON_OPT_SESSION_NAME     995 /**< The --sessionname option number. */
 #define GCTLCMD_COMMON_OPT_SESSION_ID       994 /**< The --sessionid option number. */
+
+#define GCTLCMD_COMMON_OPTION_DEFS() \
+        { "--username",             GCTLCMD_COMMON_OPT_USER,            RTGETOPT_REQ_STRING  }, \
+        { "--passwordfile",         GCTLCMD_COMMON_OPT_PASSWORD_FILE,   RTGETOPT_REQ_STRING  }, \
+        { "--password",             GCTLCMD_COMMON_OPT_PASSWORD,        RTGETOPT_REQ_STRING  }, \
+        { "--domain",               GCTLCMD_COMMON_OPT_DOMAIN,          RTGETOPT_REQ_STRING  }, \
+        { "--quiet",                'q',                                RTGETOPT_REQ_NOTHING }, \
+        { "--verbose",              'v',                                RTGETOPT_REQ_NOTHING },
+
+
 /** Common option definitions. */
 class CommandData
 {
@@ -240,7 +250,6 @@ bool UIGuestControlInterface::parseCommonOptions(int argc, char** argv, CommandD
         { "--domain",               GCTLCMD_COMMON_OPT_DOMAIN,          RTGETOPT_REQ_STRING  },
         { "--quiet",                'q',                                RTGETOPT_REQ_NOTHING },
         { "--verbose",              'v',                                RTGETOPT_REQ_NOTHING },
-        { "--help",                 'h',                                RTGETOPT_REQ_NOTHING }
     };
 
 
@@ -302,7 +311,10 @@ void UIGuestControlInterface::putCommand(const QString &strCommand)
     QByteArray array = strCommand.toLocal8Bit();
     RTGetOptArgvFromString(&argv, &argc, array.data(), RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, 0);
 
-    static const RTGETOPTDEF s_aOptions[] = {};
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        GCTLCMD_COMMON_OPTION_DEFS()
+    };
 
     int ch;
     RTGETOPTUNION ValueUnion;
