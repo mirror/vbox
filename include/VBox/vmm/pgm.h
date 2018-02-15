@@ -663,6 +663,46 @@ VMM_INT_DECL(int)   PGMPhysIemGCPhys2PtrNoLock(PVM pVM, PVMCPU pVCpu, RTGCPHYS G
 #define PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 RT_BIT_32(7)    /**< No ring-3 mapping (IEMTLBE_F_NO_MAPPINGR3). */
 /** @} */
 
+/** Information returned by PGMPhysNemQueryPageInfo. */
+typedef struct PGMPHYSNEMPAGEINFO
+{
+    /** The host physical address of the page, NIL_HCPHYS if invalid page. */
+    RTHCPHYS            HCPhys;
+    /** The NEM access mode for the page, NEM_PAGE_PROT_XXX  */
+    uint32_t            fNemProt : 8;
+    /** The NEM state associated with the PAGE. */
+    uint32_t            u2NemState : 2;
+    /** Set if the page has handler. */
+    uint32_t            fHasHandlers : 1;
+    /** Set if is the zero page backing it. */
+    uint32_t            fZeroPage : 1;
+    /** Set if the page has handler. */
+    PGMPAGETYPE         enmType;
+} PGMPHYSNEMPAGEINFO;
+/** Pointer to page information for NEM. */
+typedef PGMPHYSNEMPAGEINFO *PPGMPHYSNEMPAGEINFO;
+/**
+ * Callback for checking that the page is in sync while under the PGM lock.
+ *
+ * NEM passes this callback to PGMPhysNemQueryPageInfo to check that the page is
+ * in-sync between PGM and the native hypervisor API in an atomic fashion.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context per virtual CPU structure.
+ * @param   GCPhys      The guest physical address (subjected to A20 mask).
+ * @param   pInfo       The page info structure.  This function updates the
+ *                      u2NemState memory and the caller will update the PGMPAGE
+ *                      copy accordingly.
+ * @param   pvUser      Callback user argument.
+ */
+typedef DECLCALLBACK(int) FNPGMPHYSNEMQUERYCHECKER(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, PPGMPHYSNEMPAGEINFO pInfo, void *pvUser);
+/** Pointer to a FNPGMPHYSNEMQUERYCHECKER function. */
+typedef FNPGMPHYSNEMQUERYCHECKER *PFNPGMPHYSNEMQUERYCHECKER;
+
+VMM_INT_DECL(int)   PGMPhysNemQueryPageInfo(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, PPGMPHYSNEMPAGEINFO pInfo,
+                                            PFNPGMPHYSNEMQUERYCHECKER pfnChecker, void *pvUser);
+
 #ifdef VBOX_STRICT
 VMMDECL(unsigned)   PGMAssertHandlerAndFlagsInSync(PVM pVM);
 VMMDECL(unsigned)   PGMAssertNoMappingConflicts(PVM pVM);

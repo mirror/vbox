@@ -462,8 +462,8 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
         TMTimerPollVoid(pVM, pVCpu);
 #endif
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_MASK))
+        if (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK)
+            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_MASK))
         {
             rcStrict = emR3ForcedActions(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict));
             VBOXVMM_EM_FF_ALL_RET(pVCpu, VBOXSTRICTRC_VAL(rcStrict));

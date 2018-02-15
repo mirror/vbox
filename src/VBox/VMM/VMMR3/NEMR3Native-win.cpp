@@ -1,6 +1,9 @@
 /* $Id$ */
 /** @file
  * NEM - Native execution manager, native ring-3 Windows backend.
+ *
+ * Log group 2: Exit logging.
+ * Log group 3: Log context on exit.
  */
 
 /*
@@ -36,6 +39,8 @@
 #include <winerror.h> /* no api header for this. */
 
 #include <VBox/vmm/nem.h>
+#include <VBox/vmm/iem.h>
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/apic.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -142,6 +147,12 @@ static const struct
 # define WHvGetVirtualProcessorRegisters            g_pfnWHvGetVirtualProcessorRegisters
 # define WHvSetVirtualProcessorRegisters            g_pfnWHvSetVirtualProcessorRegisters
 #endif
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhys, uint32_t fPageProt, uint8_t *pu2State, bool fBackingChanged);
 
 
 #ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
@@ -603,7 +614,7 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
      * Set partition properties, most importantly the CPU count.
      */
     /**
-     * @todo Someone at microsoft please explain another weird API:
+     * @todo Someone at Microsoft please explain another weird API:
      *  - Why this API doesn't take the WHV_PARTITION_PROPERTY_CODE value as an
      *    argument rather than as part of the struct.  That is so weird if you've
      *    used any other NT or windows API,  including WHvGetCapability().
@@ -869,7 +880,7 @@ void nemR3NativeResetCpu(PVMCPU pVCpu)
 }
 
 
-static int nemR3WinCopyOutState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int nemR3WinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     WHV_REGISTER_NAME  aenmNames[128];
     WHV_REGISTER_VALUE aValues[128];
@@ -961,24 +972,30 @@ static int nemR3WinCopyOutState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     iReg++;
 
     /* Debug registers. */
-/** @todo fixme */
+/** @todo fixme. Figure out what the hyper-v version of KVM_SET_GUEST_DEBUG would be. */
     aenmNames[iReg]     = WHvX64RegisterDr0;
-    aValues[iReg].Reg64 = CPUMGetHyperDR0(pVCpu);
+    //aValues[iReg].Reg64 = CPUMGetHyperDR0(pVCpu);
+    aValues[iReg].Reg64 = pCtx->dr[0];
     iReg++;
     aenmNames[iReg]     = WHvX64RegisterDr1;
-    aValues[iReg].Reg64 = CPUMGetHyperDR1(pVCpu);
+    //aValues[iReg].Reg64 = CPUMGetHyperDR1(pVCpu);
+    aValues[iReg].Reg64 = pCtx->dr[1];
     iReg++;
     aenmNames[iReg]     = WHvX64RegisterDr2;
-    aValues[iReg].Reg64 = CPUMGetHyperDR2(pVCpu);
+    //aValues[iReg].Reg64 = CPUMGetHyperDR2(pVCpu);
+    aValues[iReg].Reg64 = pCtx->dr[2];
     iReg++;
     aenmNames[iReg]     = WHvX64RegisterDr3;
-    aValues[iReg].Reg64 = CPUMGetHyperDR3(pVCpu);
+    //aValues[iReg].Reg64 = CPUMGetHyperDR3(pVCpu);
+    aValues[iReg].Reg64 = pCtx->dr[3];
     iReg++;
     aenmNames[iReg]     = WHvX64RegisterDr6;
-    aValues[iReg].Reg64 = CPUMGetHyperDR6(pVCpu);
+    //aValues[iReg].Reg64 = CPUMGetHyperDR6(pVCpu);
+    aValues[iReg].Reg64 = pCtx->dr[6];
     iReg++;
     aenmNames[iReg]     = WHvX64RegisterDr7;
-    aValues[iReg].Reg64 = CPUMGetHyperDR7(pVCpu);
+    //aValues[iReg].Reg64 = CPUMGetHyperDR7(pVCpu);
+    aValues[iReg].Reg64 = pCtx->dr[7];
     iReg++;
 
     /* Vector state. */
@@ -1097,7 +1114,7 @@ static int nemR3WinCopyOutState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                                                         | ((uint64_t)pCtx->pXStateR3->x87.DS << 32)
                                                         | ((uint64_t)pCtx->pXStateR3->x87.Rsrvd2 << 48);
     aValues[iReg].XmmControlStatus.XmmStatusControl     = pCtx->pXStateR3->x87.MXCSR;
-    aValues[iReg].XmmControlStatus.XmmStatusControlMask = pCtx->pXStateR3->x87.MXCSR_MASK; /* ??? (Isn't this an output field?) */
+    aValues[iReg].XmmControlStatus.XmmStatusControlMask = pCtx->pXStateR3->x87.MXCSR_MASK; /** @todo ??? (Isn't this an output field?) */
     iReg++;
 
     /* MSRs */
@@ -1154,6 +1171,339 @@ static int nemR3WinCopyOutState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return VERR_INTERNAL_ERROR;
 }
 
+static int nemR3WinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    WHV_REGISTER_NAME  aenmNames[128];
+
+    /* GPRs */
+    aenmNames[0]  = WHvX64RegisterRax;
+    aenmNames[1]  = WHvX64RegisterRcx;
+    aenmNames[2]  = WHvX64RegisterRdx;
+    aenmNames[3]  = WHvX64RegisterRbx;
+    aenmNames[4]  = WHvX64RegisterRsp;
+    aenmNames[5]  = WHvX64RegisterRbp;
+    aenmNames[6]  = WHvX64RegisterRsi;
+    aenmNames[7]  = WHvX64RegisterRdi;
+    aenmNames[8]  = WHvX64RegisterR8;
+    aenmNames[9]  = WHvX64RegisterR9;
+    aenmNames[10] = WHvX64RegisterR10;
+    aenmNames[11] = WHvX64RegisterR11;
+    aenmNames[12] = WHvX64RegisterR12;
+    aenmNames[13] = WHvX64RegisterR13;
+    aenmNames[14] = WHvX64RegisterR14;
+    aenmNames[15] = WHvX64RegisterR15;
+
+    /* RIP & Flags */
+    aenmNames[16] = WHvX64RegisterRip;
+    aenmNames[17] = WHvX64RegisterRflags;
+
+    /* Segments */
+    aenmNames[18] = WHvX64RegisterEs;
+    aenmNames[19] = WHvX64RegisterCs;
+    aenmNames[20] = WHvX64RegisterSs;
+    aenmNames[21] = WHvX64RegisterDs;
+    aenmNames[22] = WHvX64RegisterFs;
+    aenmNames[23] = WHvX64RegisterGs;
+    aenmNames[24] = WHvX64RegisterLdtr;
+    aenmNames[25] = WHvX64RegisterTr;
+
+    /* Descriptor tables. */
+    aenmNames[26] = WHvX64RegisterIdtr;
+    aenmNames[27] = WHvX64RegisterGdtr;
+
+    /* Control registers. */
+    aenmNames[28] = WHvX64RegisterCr0;
+    aenmNames[29] = WHvX64RegisterCr2;
+    aenmNames[30] = WHvX64RegisterCr3;
+    aenmNames[31] = WHvX64RegisterCr4;
+    aenmNames[32] = WHvX64RegisterCr8;
+
+    /* Debug registers. */
+    aenmNames[33] = WHvX64RegisterDr0;
+    aenmNames[34] = WHvX64RegisterDr1;
+    aenmNames[35] = WHvX64RegisterDr2;
+    aenmNames[36] = WHvX64RegisterDr3;
+    aenmNames[37] = WHvX64RegisterDr6;
+    aenmNames[38] = WHvX64RegisterDr7;
+
+    /* Vector state. */
+    aenmNames[39] = WHvX64RegisterXmm0;
+    aenmNames[40] = WHvX64RegisterXmm1;
+    aenmNames[41] = WHvX64RegisterXmm2;
+    aenmNames[42] = WHvX64RegisterXmm3;
+    aenmNames[43] = WHvX64RegisterXmm4;
+    aenmNames[44] = WHvX64RegisterXmm5;
+    aenmNames[45] = WHvX64RegisterXmm6;
+    aenmNames[46] = WHvX64RegisterXmm7;
+    aenmNames[47] = WHvX64RegisterXmm8;
+    aenmNames[48] = WHvX64RegisterXmm9;
+    aenmNames[49] = WHvX64RegisterXmm10;
+    aenmNames[50] = WHvX64RegisterXmm11;
+    aenmNames[51] = WHvX64RegisterXmm12;
+    aenmNames[52] = WHvX64RegisterXmm13;
+    aenmNames[53] = WHvX64RegisterXmm14;
+    aenmNames[54] = WHvX64RegisterXmm15;
+
+    /* Floating point state. */
+    aenmNames[55] = WHvX64RegisterFpMmx0;
+    aenmNames[56] = WHvX64RegisterFpMmx1;
+    aenmNames[57] = WHvX64RegisterFpMmx2;
+    aenmNames[58] = WHvX64RegisterFpMmx3;
+    aenmNames[59] = WHvX64RegisterFpMmx4;
+    aenmNames[60] = WHvX64RegisterFpMmx5;
+    aenmNames[61] = WHvX64RegisterFpMmx6;
+    aenmNames[62] = WHvX64RegisterFpMmx7;
+    aenmNames[63] = WHvX64RegisterFpControlStatus;
+    aenmNames[64] = WHvX64RegisterXmmControlStatus;
+
+    /* MSRs */
+    // WHvX64RegisterTsc - don't touch
+    aenmNames[65] = WHvX64RegisterEfer;
+    aenmNames[66] = WHvX64RegisterKernelGsBase;
+    aenmNames[67] = WHvX64RegisterApicBase;
+    aenmNames[68] = WHvX64RegisterPat;
+    aenmNames[69] = WHvX64RegisterSysenterCs;
+    aenmNames[70] = WHvX64RegisterSysenterEip;
+    aenmNames[71] = WHvX64RegisterSysenterEsp;
+    aenmNames[72] = WHvX64RegisterStar;
+    aenmNames[73] = WHvX64RegisterLstar;
+    aenmNames[74] = WHvX64RegisterCstar;
+    aenmNames[75] = WHvX64RegisterSfmask;
+
+    /* event injection */
+    aenmNames[76] = WHvRegisterPendingInterruption;
+    aenmNames[77] = WHvRegisterPendingInterruption;
+    aenmNames[78] = WHvRegisterInterruptState;
+    aenmNames[79] = WHvRegisterPendingEvent0;
+    aenmNames[80] = WHvRegisterPendingEvent1;
+    unsigned const cRegs = 81;
+
+    /*
+     * Get the registers.
+     */
+    WHV_REGISTER_VALUE aValues[cRegs];
+    RT_ZERO(aValues);
+    Assert(RT_ELEMENTS(aValues) >= cRegs);
+    Assert(RT_ELEMENTS(aenmNames) >= cRegs);
+#ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
+    Log6(("Calling WHvGetVirtualProcessorRegisters(%p, %u, %p, %u, %p)\n",
+          pVM->nem.s.hPartition, pVCpu->idCpu, aenmNames, cRegs, aValues));
+#endif
+    HRESULT hrc = WHvGetVirtualProcessorRegisters(pVM->nem.s.hPartition, pVCpu->idCpu, aenmNames, cRegs, aValues);
+    if (SUCCEEDED(hrc))
+    {
+        /* GPRs */
+        Assert(aenmNames[0]  == WHvX64RegisterRax);
+        Assert(aenmNames[15] == WHvX64RegisterR15);
+        pCtx->rax = aValues[0].Reg64;
+        pCtx->rcx = aValues[1].Reg64;
+        pCtx->rdx = aValues[2].Reg64;
+        pCtx->rbx = aValues[3].Reg64;
+        pCtx->rsp = aValues[4].Reg64;
+        pCtx->rbp = aValues[5].Reg64;
+        pCtx->rsi = aValues[6].Reg64;
+        pCtx->rdi = aValues[7].Reg64;
+        pCtx->r8  = aValues[8].Reg64;
+        pCtx->r9  = aValues[9].Reg64;
+        pCtx->r10 = aValues[10].Reg64;
+        pCtx->r11 = aValues[11].Reg64;
+        pCtx->r12 = aValues[12].Reg64;
+        pCtx->r13 = aValues[13].Reg64;
+        pCtx->r14 = aValues[14].Reg64;
+        pCtx->r15 = aValues[15].Reg64;
+
+        /* RIP & Flags */
+        Assert(aenmNames[16] == WHvX64RegisterRip);
+        pCtx->rip      = aValues[16].Reg64;
+        pCtx->rflags.u = aValues[17].Reg64;
+
+        /* Segments */
+#define COPY_BACK_SEG(a_idx, a_enmName, a_SReg) \
+            do { \
+                Assert(aenmNames[a_idx] == a_enmName); \
+                (a_SReg).u64Base  = aValues[a_idx].Segment.Base; \
+                (a_SReg).u32Limit = aValues[a_idx].Segment.Limit; \
+                (a_SReg).ValidSel = (a_SReg).Sel = aValues[a_idx].Segment.Selector; \
+                (a_SReg).Attr.u   = aValues[a_idx].Segment.Attributes; \
+                (a_SReg).fFlags   = CPUMSELREG_FLAGS_VALID; \
+            } while (0)
+        COPY_BACK_SEG(18, WHvX64RegisterEs,   pCtx->es);
+        COPY_BACK_SEG(19, WHvX64RegisterCs,   pCtx->cs);
+        COPY_BACK_SEG(20, WHvX64RegisterSs,   pCtx->ss);
+        COPY_BACK_SEG(21, WHvX64RegisterDs,   pCtx->ds);
+        COPY_BACK_SEG(22, WHvX64RegisterFs,   pCtx->fs);
+        COPY_BACK_SEG(23, WHvX64RegisterGs,   pCtx->gs);
+        COPY_BACK_SEG(24, WHvX64RegisterLdtr, pCtx->ldtr);
+        COPY_BACK_SEG(25, WHvX64RegisterTr,   pCtx->tr);
+
+        /* Descriptor tables. */
+        Assert(aenmNames[26] == WHvX64RegisterIdtr);
+        pCtx->idtr.cbIdt = aValues[26].Table.Limit;
+        pCtx->idtr.pIdt  = aValues[26].Table.Base;
+        Assert(aenmNames[27] == WHvX64RegisterGdtr);
+        pCtx->gdtr.cbGdt = aValues[27].Table.Limit;
+        pCtx->gdtr.pGdt  = aValues[27].Table.Base;
+
+        /* Control registers. */
+        Assert(aenmNames[28] == WHvX64RegisterCr0);
+        if (pCtx->cr0 != aValues[28].Reg64)
+        {
+            CPUMSetGuestCR0(pVCpu, aValues[28].Reg64);
+            /** @todo more to do here! */
+        }
+        pCtx->cr2 = aValues[29].Reg64;
+        if (pCtx->cr3 != aValues[30].Reg64)
+        {
+            CPUMSetGuestCR3(pVCpu, aValues[30].Reg64);
+            /** @todo more to do here! */
+        }
+        if (pCtx->cr4 != aValues[31].Reg64)
+        {
+            CPUMSetGuestCR4(pVCpu, aValues[31].Reg64);
+            /** @todo more to do here! */
+        }
+        APICSetTpr(pVCpu, (uint8_t)aValues[32].Reg64 << 4);
+
+        /* Debug registers. */
+        Assert(aenmNames[33] == WHvX64RegisterDr0);
+    /** @todo fixme */
+        if (pCtx->dr[0] != aValues[33].Reg64)
+            CPUMSetGuestDR0(pVCpu, aValues[33].Reg64);
+        if (pCtx->dr[1] != aValues[34].Reg64)
+            CPUMSetGuestDR1(pVCpu, aValues[34].Reg64);
+        if (pCtx->dr[2] != aValues[35].Reg64)
+            CPUMSetGuestDR2(pVCpu, aValues[35].Reg64);
+        if (pCtx->dr[3] != aValues[36].Reg64)
+            CPUMSetGuestDR3(pVCpu, aValues[36].Reg64);
+        Assert(aenmNames[37] == WHvX64RegisterDr6);
+        Assert(aenmNames[38] == WHvX64RegisterDr7);
+        if (pCtx->dr[6] != aValues[37].Reg64)
+            CPUMSetGuestDR6(pVCpu, aValues[37].Reg64);
+        if (pCtx->dr[7] != aValues[38].Reg64)
+            CPUMSetGuestDR6(pVCpu, aValues[38].Reg64);
+
+        /* Vector state. */
+        Assert(aenmNames[39] == WHvX64RegisterXmm0);
+        Assert(aenmNames[54] == WHvX64RegisterXmm15);
+        pCtx->pXStateR3->x87.aXMM[0].uXmm.s.Lo  = aValues[39].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[0].uXmm.s.Hi  = aValues[39].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[1].uXmm.s.Lo  = aValues[40].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[1].uXmm.s.Hi  = aValues[40].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[2].uXmm.s.Lo  = aValues[41].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[2].uXmm.s.Hi  = aValues[41].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[3].uXmm.s.Lo  = aValues[42].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[3].uXmm.s.Hi  = aValues[42].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[4].uXmm.s.Lo  = aValues[43].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[4].uXmm.s.Hi  = aValues[43].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[5].uXmm.s.Lo  = aValues[44].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[5].uXmm.s.Hi  = aValues[44].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[6].uXmm.s.Lo  = aValues[45].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[6].uXmm.s.Hi  = aValues[45].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[7].uXmm.s.Lo  = aValues[46].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[7].uXmm.s.Hi  = aValues[46].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[8].uXmm.s.Lo  = aValues[47].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[8].uXmm.s.Hi  = aValues[47].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[9].uXmm.s.Lo  = aValues[48].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[9].uXmm.s.Hi  = aValues[48].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Lo = aValues[49].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Hi = aValues[49].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Lo = aValues[50].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Hi = aValues[50].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Lo = aValues[51].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Hi = aValues[51].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Lo = aValues[52].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Hi = aValues[52].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Lo = aValues[53].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Hi = aValues[53].Reg128.High64;
+        pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Lo = aValues[54].Reg128.Low64;
+        pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Hi = aValues[54].Reg128.High64;
+
+        /* Floating point state. */
+        Assert(aenmNames[55] == WHvX64RegisterFpMmx0);
+        Assert(aenmNames[62] == WHvX64RegisterFpMmx7);
+        pCtx->pXStateR3->x87.aRegs[0].au64[0] = aValues[55].Fp.AsUINT128.Low64;
+        pCtx->pXStateR3->x87.aRegs[0].au64[1] = aValues[55].Fp.AsUINT128.High64;
+        pCtx->pXStateR3->x87.aRegs[1].au64[0] = aValues[56].Fp.AsUINT128.Low64;
+        pCtx->pXStateR3->x87.aRegs[1].au64[1] = aValues[56].Fp.AsUINT128.High64;
+        pCtx->pXStateR3->x87.aRegs[2].au64[0] = aValues[57].Fp.AsUINT128.Low64;
+        pCtx->pXStateR3->x87.aRegs[2].au64[1] = aValues[57].Fp.AsUINT128.High64;
+        pCtx->pXStateR3->x87.aRegs[3].au64[0] = aValues[58].Fp.AsUINT128.Low64;
+        pCtx->pXStateR3->x87.aRegs[3].au64[1] = aValues[58].Fp.AsUINT128.High64;
+        pCtx->pXStateR3->x87.aRegs[4].au64[0] = aValues[59].Fp.AsUINT128.Low64;
+        pCtx->pXStateR3->x87.aRegs[4].au64[1] = aValues[59].Fp.AsUINT128.High64;
+        pCtx->pXStateR3->x87.aRegs[5].au64[0] = aValues[60].Fp.AsUINT128.Low64;
+        pCtx->pXStateR3->x87.aRegs[5].au64[1] = aValues[60].Fp.AsUINT128.High64;
+        pCtx->pXStateR3->x87.aRegs[6].au64[0] = aValues[61].Fp.AsUINT128.Low64;
+        pCtx->pXStateR3->x87.aRegs[6].au64[1] = aValues[61].Fp.AsUINT128.High64;
+        pCtx->pXStateR3->x87.aRegs[7].au64[0] = aValues[62].Fp.AsUINT128.Low64;
+        pCtx->pXStateR3->x87.aRegs[7].au64[1] = aValues[62].Fp.AsUINT128.High64;
+
+        Assert(aenmNames[63] == WHvX64RegisterFpControlStatus);
+        pCtx->pXStateR3->x87.FCW        = aValues[63].FpControlStatus.FpControl;
+        pCtx->pXStateR3->x87.FSW        = aValues[63].FpControlStatus.FpStatus;
+        pCtx->pXStateR3->x87.FTW        = aValues[63].FpControlStatus.FpTag
+                                        /*| (aValues[63].FpControlStatus.Reserved << 8)*/;
+        pCtx->pXStateR3->x87.FOP        = aValues[63].FpControlStatus.LastFpOp;
+        pCtx->pXStateR3->x87.FPUIP      = (uint32_t)aValues[63].FpControlStatus.LastFpRip;
+        pCtx->pXStateR3->x87.CS         = (uint16_t)(aValues[63].FpControlStatus.LastFpRip >> 32);
+        pCtx->pXStateR3->x87.Rsrvd1     = (uint16_t)(aValues[63].FpControlStatus.LastFpRip >> 48);
+
+        Assert(aenmNames[64] == WHvX64RegisterXmmControlStatus);
+        pCtx->pXStateR3->x87.FPUDP      = (uint32_t)aValues[64].XmmControlStatus.LastFpRdp;
+        pCtx->pXStateR3->x87.DS         = (uint16_t)(aValues[64].XmmControlStatus.LastFpRdp >> 32);
+        pCtx->pXStateR3->x87.Rsrvd2     = (uint16_t)(aValues[64].XmmControlStatus.LastFpRdp >> 48);
+        pCtx->pXStateR3->x87.MXCSR      = aValues[64].XmmControlStatus.XmmStatusControl;
+        pCtx->pXStateR3->x87.MXCSR_MASK = aValues[64].XmmControlStatus.XmmStatusControlMask; /** @todo ??? (Isn't this an output field?) */
+
+        /* MSRs */
+        // WHvX64RegisterTsc - don't touch
+        Assert(aenmNames[65] == WHvX64RegisterEfer);
+        if (aValues[65].Reg64 != pCtx->msrEFER)
+        {
+            pCtx->msrEFER = aValues[65].Reg64;
+            /** @todo more to do here! */
+        }
+
+        Assert(aenmNames[66] == WHvX64RegisterKernelGsBase);
+        pCtx->msrKERNELGSBASE = aValues[66].Reg64;
+
+        Assert(aenmNames[67] == WHvX64RegisterApicBase);
+        if (aValues[67].Reg64 != APICGetBaseMsrNoCheck(pVCpu))
+        {
+            VBOXSTRICTRC rc2 = APICSetBaseMsr(pVCpu, aValues[67].Reg64);
+            Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
+        }
+
+        Assert(aenmNames[68] == WHvX64RegisterPat);
+        pCtx->msrPAT    = aValues[68].Reg64;
+        /// @todo WHvX64RegisterSysenterCs
+        /// @todo WHvX64RegisterSysenterEip
+        /// @todo WHvX64RegisterSysenterEsp
+        Assert(aenmNames[72] == WHvX64RegisterStar);
+        pCtx->msrSTAR   = aValues[72].Reg64;
+        Assert(aenmNames[73] == WHvX64RegisterLstar);
+        pCtx->msrLSTAR  = aValues[73].Reg64;
+        Assert(aenmNames[74] == WHvX64RegisterCstar);
+        pCtx->msrCSTAR  = aValues[74].Reg64;
+        Assert(aenmNames[75] == WHvX64RegisterSfmask);
+        pCtx->msrSFMASK = aValues[75].Reg64;
+
+        /* event injection */
+        /// @todo WHvRegisterPendingInterruption
+        /// @todo WHvRegisterInterruptState
+        /// @todo WHvRegisterPendingEvent0
+        /// @todo WHvRegisterPendingEvent1
+
+
+        return VINF_SUCCESS;
+    }
+
+    AssertLogRelMsgFailed(("WHvGetVirtualProcessorRegisters(%p, %u,,%u,) -> %Rhrc (Last=%#x/%u)\n",
+                           pVM->nem.s.hPartition, pVCpu->idCpu, cRegs,
+                           hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+    return VERR_INTERNAL_ERROR;
+}
+
 
 #ifdef LOG_ENABLED
 /**
@@ -1168,7 +1518,7 @@ static void nemR3WinLogExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
     switch (pExitReason->ExitReason)
     {
         case WHvRunVpExitReasonMemoryAccess:
-            Log2(("Exit: Memory access GCPhys=%RGp GCVirt=%RGv %s %s %s\n",
+            Log2(("Exit: Memory access: GCPhys=%RGp GCVirt=%RGv %s %s %s\n",
                   pExitReason->MemoryAccess.Gpa, pExitReason->MemoryAccess.Gva,
                   pExitReason->MemoryAccess.AccessInfo.AccessType == WHvMemoryAccessRead ? "read"
                   : pExitReason->MemoryAccess.AccessInfo.AccessType == WHvMemoryAccessWrite ? "write"
@@ -1181,7 +1531,7 @@ static void nemR3WinLogExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
             break;
 
         case WHvRunVpExitReasonX64IoPortAccess:
-            Log2(("Exit: Memory access IoPort=%#x LB %u %s%s%s rax=%#RX64 rcx=%#RX64 rsi=%#RX64 rdi=%#RX64\n",
+            Log2(("Exit: I/O port access: IoPort=%#x LB %u %s%s%s rax=%#RX64 rcx=%#RX64 rsi=%#RX64 rdi=%#RX64\n",
                   pExitReason->IoPortAccess.PortNumber,
                   pExitReason->IoPortAccess.AccessInfo.AccessSize,
                   pExitReason->IoPortAccess.AccessInfo.IsWrite ? "out" : "in",
@@ -1191,7 +1541,7 @@ static void nemR3WinLogExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
                   pExitReason->IoPortAccess.Rcx,
                   pExitReason->IoPortAccess.Rsi,
                   pExitReason->IoPortAccess.Rdi));
-            Log2(("Exit: ds=%#x:{%#RX64 LB %#RX32, %#x}  es=%#x:{%#RX64 LB %#RX32, %#x}\n",
+            Log2(("Exit: + ds=%#x:{%#RX64 LB %#RX32, %#x}  es=%#x:{%#RX64 LB %#RX32, %#x}\n",
                   pExitReason->IoPortAccess.Ds.Selector,
                   pExitReason->IoPortAccess.Ds.Base,
                   pExitReason->IoPortAccess.Ds.Limit,
@@ -1246,13 +1596,13 @@ static void nemR3WinLogExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
     if (fExitCtx)
     {
         const WHV_VP_EXIT_CONTEXT *pVpCtx = &pExitReason->IoPortAccess.VpContext;
-        Log2(("Exit: CS:RIP=%04x:%08RX64 RFLAGS=%06RX64 cbInstr=%u CS={%RX64 L %#RX32, %#x}\n",
+        Log2(("Exit: + CS:RIP=%04x:%08RX64 RFLAGS=%06RX64 cbInstr=%u CS={%RX64 L %#RX32, %#x}\n",
               pVpCtx->Cs.Selector,
               pVpCtx->Rip,
               pVpCtx->Rflags,
               pVpCtx->InstructionLength,
               pVpCtx->Cs.Base, pVpCtx->Cs.Limit, pVpCtx->Cs.Attributes));
-        Log2(("Exit: cpl=%d CR0.PE=%d CR0.AM=%d EFER.LMA=%d DebugActive=%d InterruptionPending=%d InterruptShadow=%d\n",
+        Log2(("Exit: + cpl=%d CR0.PE=%d CR0.AM=%d EFER.LMA=%d DebugActive=%d InterruptionPending=%d InterruptShadow=%d\n",
               pVpCtx->ExecutionState.Cpl,
               pVpCtx->ExecutionState.Cr0Pe,
               pVpCtx->ExecutionState.Cr0Am,
@@ -1263,36 +1613,451 @@ static void nemR3WinLogExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
         AssertMsg(!(pVpCtx->ExecutionState.AsUINT16 & ~UINT16_C(0x107f)),
                   ("ExecutionState.AsUINT16=%#x\n", pVpCtx->ExecutionState.AsUINT16));
 
-        /** @todo Someone please explain why the InstructionBytes fields are 16 bytes
-         * long, when 15 would've been sufficent and saved 3-7 bytes of alignment
-         * padding?  Intel max length is 15, so is this sSome ARM stuff?  Aren't ARM
+        /** @todo Someone at Microsoft please explain why the InstructionBytes fields
+         * are 16 bytes long, when 15 would've been sufficent and saved 3-7 bytes of
+         * alignment padding?  Intel max length is 15, so is this sSome ARM stuff?
+         * Aren't ARM
          * instructions max 32-bit wide?  Confused. */
         if (fExitInstr && pExitReason->IoPortAccess.InstructionByteCount > 0)
-            Log2(("Exit: Instruction %.*Rhxs\n",
+            Log2(("Exit: + Instruction %.*Rhxs\n",
                   pExitReason->IoPortAccess.InstructionByteCount, pExitReason->IoPortAccess.InstructionBytes));
     }
 }
+
+
+/**
+ * Logs the current CPU state.
+ */
+static void nemR3WinLogState(PVM pVM, PVMCPU pVCpu)
+{
+    if (LogIs3Enabled())
+    {
+        char szRegs[4096];
+        DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
+                        "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
+                        "rsi=%016VR{rsi} rdi=%016VR{rdi} r8 =%016VR{r8} r9 =%016VR{r9}\n"
+                        "r10=%016VR{r10} r11=%016VR{r11} r12=%016VR{r12} r13=%016VR{r13}\n"
+                        "r14=%016VR{r14} r15=%016VR{r15} %VRF{rflags}\n"
+                        "rip=%016VR{rip} rsp=%016VR{rsp} rbp=%016VR{rbp}\n"
+                        "cs={%04VR{cs} base=%016VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} cr0=%016VR{cr0}\n"
+                        "ds={%04VR{ds} base=%016VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} cr2=%016VR{cr2}\n"
+                        "es={%04VR{es} base=%016VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} cr3=%016VR{cr3}\n"
+                        "fs={%04VR{fs} base=%016VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} cr4=%016VR{cr4}\n"
+                        "gs={%04VR{gs} base=%016VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}} cr8=%016VR{cr8}\n"
+                        "ss={%04VR{ss} base=%016VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
+                        "dr0=%016VR{dr0} dr1=%016VR{dr1} dr2=%016VR{dr2} dr3=%016VR{dr3}\n"
+                        "dr6=%016VR{dr6} dr7=%016VR{dr7}\n"
+                        "gdtr=%016VR{gdtr_base}:%04VR{gdtr_lim}  idtr=%016VR{idtr_base}:%04VR{idtr_lim}  rflags=%08VR{rflags}\n"
+                        "ldtr={%04VR{ldtr} base=%016VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%08VR{ldtr_attr}}\n"
+                        "tr  ={%04VR{tr} base=%016VR{tr_base} limit=%08VR{tr_lim} flags=%08VR{tr_attr}}\n"
+                        "    sysenter={cs=%04VR{sysenter_cs} eip=%08VR{sysenter_eip} esp=%08VR{sysenter_esp}}\n"
+                        "        efer=%016VR{efer}\n"
+                        "         pat=%016VR{pat}\n"
+                        "     sf_mask=%016VR{sf_mask}\n"
+                        "krnl_gs_base=%016VR{krnl_gs_base}\n"
+                        "       lstar=%016VR{lstar}\n"
+                        "        star=%016VR{star} cstar=%016VR{cstar}\n"
+                        "fcw=%04VR{fcw} fsw=%04VR{fsw} ftw=%04VR{ftw} mxcsr=%04VR{mxcsr} mxcsr_mask=%04VR{mxcsr_mask}\n"
+                        );
+
+        char szInstr[256];
+        DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, 0, 0,
+                           DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                           szInstr, sizeof(szInstr), NULL);
+        Log3(("%s%s\n", szRegs, szInstr));
+    }
+}
+
 #endif /* LOG_ENABLED */
+
+
+/**
+ * Advances the guest RIP and clear EFLAGS.RF.
+ *
+ * This may clear VMCPU_FF_INHIBIT_INTERRUPTS.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            The CPU context to update.
+ * @param   pExitCtx        The exit context.
+ */
+DECLINLINE(void) nemR3WinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, PCPUMCTX pCtx, WHV_VP_EXIT_CONTEXT const *pExitCtx)
+{
+    /* Advance the RIP. */
+    Assert(pExitCtx->InstructionLength > 0 && pExitCtx->InstructionLength < 16);
+    pCtx->rip += pExitCtx->InstructionLength;
+    pCtx->rflags.Bits.u1RF = 0;
+
+    /* Update interrupt inhibition. */
+    if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    { /* likely */ }
+    else if (pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+}
+
+
+static VBOXSTRICTRC nemR3WinHandleHalt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx); NOREF(pExitReason);
+    AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+
+/**
+ * @callback_method_impl{FNPGMPHYSNEMQUERYCHECKER}
+ */
+static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys,
+                                                                       PPGMPHYSNEMPAGEINFO pInfo, void *pvUser)
+{
+    uint8_t u2State = pInfo->u2NemState;
+    int rc = nemR3NativeSetPhysPage(pVM, GCPhys, pInfo->fNemProt, &u2State,
+                                    u2State <= NEM_WIN_PAGE_STATE_UNMAPPED /*fBackingChanged*/);
+    pInfo->u2NemState = u2State;
+    RT_NOREF(pVCpu, pvUser);
+    return rc;
+}
+
+
+/**
+ * Handles an memory access VMEXIT.
+ *
+ * This can be triggered by a number of things.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            The CPU context to update.
+ * @param   pExitReason     The exit reason information.
+ */
+static VBOXSTRICTRC nemR3WinHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_MEMORY_ACCESS_CONTEXT const *pMemCtx)
+{
+    /*
+     * Ask PGM for information about the given GCPhys.  We need to check if we're
+     * out of sync first.
+     */
+    PGMPHYSNEMPAGEINFO Info;
+    int rc = PGMPhysNemQueryPageInfo(pVM, pVCpu, pMemCtx->Gpa, &Info, nemR3WinHandleMemoryAccessPageCheckerCallback, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        if (Info.fNemProt & (pMemCtx->AccessInfo.AccessType == WHvMemoryAccessWrite ? NEM_PAGE_PROT_WRITE :NEM_PAGE_PROT_READ))
+            return VINF_SUCCESS;
+    }
+
+    /*
+     * Emulate the memory access, either access handler or special memory.
+     */
+    VBOXSTRICTRC rcStrict;
+    if (pMemCtx->InstructionByteCount > 0)
+        rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pMemCtx->VpContext.Rip,
+                                                pMemCtx->InstructionBytes, pMemCtx->InstructionByteCount);
+    else
+        rcStrict = IEMExecOne(pVCpu);
+    /** @todo do we need to do anything wrt debugging here?   */
+    return rcStrict;
+}
+
+
+/**
+ * Handles an I/O port access VMEXIT.
+ *
+ * We ASSUME that the hypervisor has don't I/O port access control.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            The CPU context to update.
+ * @param   pExitReason     The exit reason information.
+ */
+static VBOXSTRICTRC nemR3WinHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx,
+                                               WHV_X64_IO_PORT_ACCESS_CONTEXT const *pIoPortCtx)
+{
+    VBOXSTRICTRC rcStrict;
+    if (!pIoPortCtx->AccessInfo.StringOp)
+    {
+        /*
+         * Simple port I/O.
+         */
+        Assert(pCtx->rax == pIoPortCtx->Rax);
+
+        static uint32_t const s_fAndMask[8] =
+        {   UINT32_C(0xff), UINT32_C(0xffff), UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX };
+        uint32_t const fAndMask = s_fAndMask[pIoPortCtx->AccessInfo.AccessSize];
+        if (pIoPortCtx->AccessInfo.IsWrite)
+        {
+            rcStrict = IOMIOPortWrite(pVM, pVCpu, pIoPortCtx->PortNumber, (uint32_t)pIoPortCtx->Rax & fAndMask,
+                                      pIoPortCtx->AccessInfo.AccessSize);
+            if (IOM_SUCCESS(rcStrict))
+                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pIoPortCtx->VpContext);
+        }
+        else
+        {
+            uint32_t uValue = 0;
+            rcStrict = IOMIOPortRead(pVM, pVCpu, pIoPortCtx->PortNumber, &uValue,
+                                     pIoPortCtx->AccessInfo.AccessSize);
+            if (IOM_SUCCESS(rcStrict))
+            {
+                pCtx->eax = (pCtx->eax & ~fAndMask) | (uValue & fAndMask);
+                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pIoPortCtx->VpContext);
+            }
+        }
+    }
+    else
+    {
+        /*
+         * String port I/O.
+         */
+        /** @todo Someone at Microsoft please explain how we can get the address mode
+         * from the IoPortAccess.VpContext.  CS.Attributes is only sufficient for
+         * getting the default mode, it can always be overridden by a prefix.   This
+         * forces us to interpret the instruction from opcodes, which is suboptimal.
+         * Both AMD-V and VT-x includes the address size in the exit info, at least on
+         * CPUs that are reasonably new. */
+        Assert(   pIoPortCtx->Ds.Base     == pCtx->ds.u64Base
+               && pIoPortCtx->Ds.Limit    == pCtx->ds.u32Limit
+               && pIoPortCtx->Ds.Selector == pCtx->ds.Sel);
+        Assert(   pIoPortCtx->Es.Base     == pCtx->es.u64Base
+               && pIoPortCtx->Es.Limit    == pCtx->es.u32Limit
+               && pIoPortCtx->Es.Selector == pCtx->es.Sel);
+        Assert(pIoPortCtx->Rdi == pCtx->rdi);
+        Assert(pIoPortCtx->Rsi == pCtx->rsi);
+        Assert(pIoPortCtx->Rcx == pCtx->rcx);
+        Assert(pIoPortCtx->Rcx == pCtx->rcx);
+
+        rcStrict = IEMExecOne(pVCpu);
+    }
+    if (IOM_SUCCESS(rcStrict))
+    {
+        /*
+         * Do debug checks.
+         */
+        if (   pIoPortCtx->VpContext.ExecutionState.DebugActive /** @todo Microsoft: Does DebugActive this only reflext DR7? */
+            || (pIoPortCtx->VpContext.Rflags & X86_EFL_TF)
+            || DBGFBpIsHwIoArmed(pVM) )
+        {
+            /** @todo Debugging. */
+        }
+    }
+    return rcStrict;
+}
+
+
+static VBOXSTRICTRC nemR3WinHandleInterruptWindow(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx); NOREF(pExitReason);
+    AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+
+static VBOXSTRICTRC nemR3WinHandleMsrAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx); NOREF(pExitReason);
+    AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+
+static VBOXSTRICTRC nemR3WinHandleCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx); NOREF(pExitReason);
+    AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+
+static VBOXSTRICTRC nemR3WinHandleException(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx); NOREF(pExitReason);
+    AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+
+static VBOXSTRICTRC nemR3WinHandleUD(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx); NOREF(pExitReason);
+    AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+
+static VBOXSTRICTRC nemR3WinHandleTripleFault(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx); NOREF(pExitReason);
+    AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
+
+static VBOXSTRICTRC nemR3WinHandleInvalidState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx); NOREF(pExitReason);
+    AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+}
+
 
 VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 {
-    /*
-     * Just some simple experiment here that runs a couple of instructions.
-     */
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-    int rc = nemR3WinCopyOutState(pVM, pVCpu, pCtx);
-    if (RT_SUCCESS(rc))
+#ifdef LOG_ENABLED
+    if (LogIs3Enabled())
     {
+        Log3(("nemR3NativeRunGC: Entering #%u\n", pVCpu->idCpu));
+        nemR3WinLogState(pVM, pVCpu);
+    }
+#endif
+
+    /*
+     * The run loop.
+     *
+     * Current approach to state updating to use the sledgehammer and sync
+     * everything every time.  This will be optimized later.
+     */
+    const bool   fSingleStepping = false; /** @todo get this from somewhere. */
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    for (;;)
+    {
+        /*
+         * Copy the state.
+         */
+        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+        int rc2 = nemR3WinCopyStateToHyperV(pVM, pVCpu, pCtx);
+        AssertRCBreakStmt(rc2, rcStrict = rc2);
+
+        /*
+         * Run a bit.
+         */
         WHV_RUN_VP_EXIT_CONTEXT ExitReason;
         RT_ZERO(ExitReason);
-        HRESULT hrc = WHvRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, &ExitReason, sizeof(ExitReason));
-        Log2(("WHvRunVirtualProcessor -> %#x; exit code %#x (%d)\n", hrc, ExitReason.ExitReason));
+        if (   !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
+            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+        {
+            HRESULT hrc = WHvRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, &ExitReason, sizeof(ExitReason));
+            AssertLogRelMsgBreakStmt(SUCCEEDED(hrc),
+                                     ("WHvRunVirtualProcessor(%p, %u,,) -> %Rhrc (Last=%#x/%u)\n", pVM->nem.s.hPartition, pVCpu->idCpu,
+                                      hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue),
+                                     rcStrict = VERR_INTERNAL_ERROR);
+            Log2(("WHvRunVirtualProcessor -> %#x; exit code %#x (%d)\n", hrc, ExitReason.ExitReason, ExitReason.ExitReason));
+        }
+        else
+        {
+            LogFlow(("nemR3NativeRunGC: returning: pending FF (pre exec)\n"));
+            break;
+        }
+
+        /*
+         * Copy back the state.
+         */
+        rc2 = nemR3WinCopyStateFromHyperV(pVM, pVCpu, pCtx);
+        AssertRCBreakStmt(rc2, rcStrict = rc2);
+
+#ifdef VBOX_STRICT
+        /* Assert that the VpContext field makes sense. */
+        switch (ExitReason.ExitReason)
+        {
+            case WHvRunVpExitReasonMemoryAccess:
+            case WHvRunVpExitReasonX64IoPortAccess:
+            case WHvRunVpExitReasonX64MsrAccess:
+            case WHvRunVpExitReasonX64Cpuid:
+            case WHvRunVpExitReasonException:
+            case WHvRunVpExitReasonUnrecoverableException:
+                Assert(ExitReason.IoPortAccess.VpContext.InstructionLength > 0);
+                Assert(ExitReason.IoPortAccess.VpContext.InstructionLength < 16);
+                Assert(ExitReason.IoPortAccess.VpContext.ExecutionState.Cpl == CPUMGetGuestCPL(pVCpu));
+                Assert(ExitReason.IoPortAccess.VpContext.ExecutionState.Cr0Pe == RT_BOOL(pCtx->cr0 & X86_CR0_PE));
+                Assert(ExitReason.IoPortAccess.VpContext.ExecutionState.Cr0Am == RT_BOOL(pCtx->cr0 & X86_CR0_AM));
+                Assert(ExitReason.IoPortAccess.VpContext.ExecutionState.EferLma == RT_BOOL(pCtx->msrEFER & MSR_K6_EFER_LMA));
+                Assert(ExitReason.IoPortAccess.VpContext.ExecutionState.DebugActive == RT_BOOL(pCtx->dr[7] & X86_DR7_ENABLED_MASK));
+                Assert(ExitReason.IoPortAccess.VpContext.ExecutionState.Reserved0 == 0);
+                Assert(ExitReason.IoPortAccess.VpContext.ExecutionState.Reserved1 == 0);
+                Assert(ExitReason.IoPortAccess.VpContext.Rip == pCtx->rip);
+                Assert(ExitReason.IoPortAccess.VpContext.Rflags == pCtx->rflags.u);
+                Assert(   ExitReason.IoPortAccess.VpContext.Cs.Base     == pCtx->cs.u64Base
+                       && ExitReason.IoPortAccess.VpContext.Cs.Limit    == pCtx->cs.u32Limit
+                       && ExitReason.IoPortAccess.VpContext.Cs.Selector == pCtx->cs.Sel);
+                break;
+            default: break; /* shut up compiler. */
+        }
+#endif
+
+#ifdef LOG_ENABLED
+        /*
+         * Do some logging.
+         */
         if (LogIs2Enabled())
             nemR3WinLogExitReason(&ExitReason);
+        if (LogIs3Enabled())
+            nemR3WinLogState(pVM, pVCpu);
+#endif
 
-        rc = VERR_NOT_IMPLEMENTED;
+        /*
+         * Deal with the exit.
+         */
+        switch (ExitReason.ExitReason)
+        {
+            /* Frequent exits: */
+            case WHvRunVpExitReasonCanceled:
+            case WHvRunVpExitReasonAlerted:
+                rcStrict = VINF_SUCCESS;
+                break;
+
+            case WHvRunVpExitReasonX64Halt:
+                rcStrict = nemR3WinHandleHalt(pVM, pVCpu, pCtx, &ExitReason);
+                break;
+
+            case WHvRunVpExitReasonMemoryAccess:
+                rcStrict = nemR3WinHandleMemoryAccess(pVM, pVCpu, pCtx, &ExitReason.MemoryAccess);
+                break;
+
+            case WHvRunVpExitReasonX64IoPortAccess:
+                rcStrict = nemR3WinHandleIoPortAccess(pVM, pVCpu, pCtx, &ExitReason.IoPortAccess);
+                break;
+
+            case WHvRunVpExitReasonX64InterruptWindow:
+                rcStrict = nemR3WinHandleInterruptWindow(pVM, pVCpu, pCtx, &ExitReason);
+                break;
+
+            case WHvRunVpExitReasonX64MsrAccess: /* needs configuring */
+                rcStrict = nemR3WinHandleMsrAccess(pVM, pVCpu, pCtx, &ExitReason);
+                break;
+
+            case WHvRunVpExitReasonX64Cpuid: /* needs configuring */
+                rcStrict = nemR3WinHandleCpuId(pVM, pVCpu, pCtx, &ExitReason);
+                break;
+
+            case WHvRunVpExitReasonException: /* needs configuring */
+                rcStrict = nemR3WinHandleException(pVM, pVCpu, pCtx, &ExitReason);
+                break;
+
+            /* Unlikely exits: */
+            case WHvRunVpExitReasonUnsupportedFeature:
+                rcStrict = nemR3WinHandleUD(pVM, pVCpu, pCtx, &ExitReason);
+                break;
+
+            case WHvRunVpExitReasonUnrecoverableException:
+                rcStrict = nemR3WinHandleTripleFault(pVM, pVCpu, pCtx, &ExitReason);
+                break;
+
+            case WHvRunVpExitReasonInvalidVpRegisterValue:
+                rcStrict = nemR3WinHandleInvalidState(pVM, pVCpu, pCtx, &ExitReason);
+                break;
+
+            /* Undesired exits: */
+            case WHvRunVpExitReasonNone:
+            default:
+                AssertLogRelMsgFailed(("Unknown ExitReason: %#x\n", ExitReason.ExitReason));
+                rcStrict = VERR_INTERNAL_ERROR_3;
+                break;
+        }
+        if (rcStrict != VINF_SUCCESS)
+        {
+            LogFlow(("nemR3NativeRunGC: returning: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            break;
+        }
+
+        /* If any FF is pending, return to the EM loops.  That's okay for the
+           current sledgehammer approach. */
+        if (   VM_FF_IS_PENDING(   pVM,   !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK    : VM_FF_HP_R0_PRE_HM_STEP_MASK)
+            || VMCPU_FF_IS_PENDING(pVCpu, !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
+        {
+            LogFlow(("nemR3NativeRunGC: returning: pending FF\n"));
+            break;
+        }
     }
-    return rc;
+
+    return rcStrict;
 }
 
 
