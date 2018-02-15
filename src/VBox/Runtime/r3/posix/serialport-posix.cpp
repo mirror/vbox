@@ -103,6 +103,8 @@ typedef struct RTSERIALPORTINTERNAL
     int                 iFdPipeW;
     /** Event pending mask. */
     volatile uint32_t   fEvtsPending;
+    /** Flag whether we are in blocking or non blocking mode. */
+    bool                fBlocking;
     /** The current active config (we assume no one changes this behind our back). */
     struct termios      PortCfg;
 } RTSERIALPORTINTERNAL;
@@ -633,6 +635,47 @@ static void rtSerialPortMonitorThreadShutdown(PRTSERIALPORTINTERNAL pThis)
 }
 
 
+/**
+ * The slow path of rtSerialPortSwitchBlockingMode that does the actual switching.
+ *
+ * @returns IPRT status code.
+ * @param   pThis                   The internal serial port instance data.
+ * @param   fBlocking               The desired mode of operation.
+ * @remarks Do not call directly.
+ */
+static int rtSerialPortSwitchBlockingModeSlow(PRTSERIALPORTINTERNAL pThis, bool fBlocking)
+{
+    int fFlags = fcntl(pThis->iFd, F_GETFL, 0);
+    if (fFlags == -1)
+       return RTErrConvertFromErrno(errno);
+
+    if (fBlocking)
+        fFlags &= ~O_NONBLOCK;
+    else
+        fFlags |= O_NONBLOCK;
+    if (fcntl(pThis->iFd, F_SETFL, fFlags) == -1)
+       return RTErrConvertFromErrno(errno);
+
+    pThis->fBlocking = fBlocking;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Switches the serial port to the desired blocking mode if necessary.
+ *
+ * @returns IPRT status code.
+ * @param   pThis                   The internal serial port instance data.
+ * @param   fBlocking               The desired mode of operation.
+ */
+DECLINLINE(int) rtSerialPortSwitchBlockingMode(PRTSERIALPORTINTERNAL pThis, bool fBlocking)
+{
+    if (pThis->fBlocking != fBlocking)
+        return rtSerialPortSwitchBlockingModeSlow(pThis, fBlocking);
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAddress, uint32_t fFlags)
 {
     AssertPtrReturn(phSerialPort, VERR_INVALID_POINTER);
@@ -658,6 +701,7 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
         pThis->fOpenFlags   = fFlags;
         pThis->fEvtsPending = 0;
         pThis->iFd          = open(pszPortAddress, fPsxFlags);
+        pThis->fBlocking    = false;
         if (pThis->iFd != -1)
         {
             /* Create wakeup pipe for the event API. */
@@ -746,8 +790,42 @@ RTDECL(RTHCINTPTR) RTSerialPortToNative(RTSERIALPORT hSerialPort)
 
 RTDECL(int) RTSerialPortRead(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
-    RT_NOREF(hSerialPort, pvBuf, cbToRead, pcbRead);
-    return VERR_NOT_IMPLEMENTED;
+    PRTSERIALPORTINTERNAL pThis = hSerialPort;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbToRead > 0, VERR_INVALID_PARAMETER);
+
+    int rc = rtSerialPortSwitchBlockingMode(pThis, true);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Attempt read.
+         */
+        ssize_t cbRead = read(pThis->iFd, pvBuf, cbToRead);
+        if (cbRead >= 0)
+        {
+            if (pcbRead)
+                /* caller can handle partial read. */
+                *pcbRead = cbRead;
+            else
+            {
+                /* Caller expects all to be read. */
+                while ((ssize_t)cbToRead > cbRead)
+                {
+                    ssize_t cbReadPart = read(pThis->iFd, (uint8_t *)pvBuf + cbRead, cbToRead - cbRead);
+                    if (cbReadPart < 0)
+                        return RTErrConvertFromErrno(errno);
+
+                    cbRead += cbReadPart;
+                }
+            }
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+    }
+
+    return rc;
 }
 
 
@@ -762,23 +840,26 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
 
     *pcbRead = 0;
 
-    int rc = VINF_SUCCESS;
-    ssize_t cbThisRead = read(pThis->iFd, pvBuf, cbToRead);
-    if (cbThisRead > 0)
+    int rc = rtSerialPortSwitchBlockingMode(pThis, false);
+    if (RT_SUCCESS(rc))
     {
-        /*
-         * The read data needs to be scanned for the BREAK condition marker encoded in the data stream,
-         * if break detection was enabled during open.
-         */
-        if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_DETECT_BREAK_CONDITION)
-        { /** @todo */ }
+        ssize_t cbThisRead = read(pThis->iFd, pvBuf, cbToRead);
+        if (cbThisRead > 0)
+        {
+            /*
+             * The read data needs to be scanned for the BREAK condition marker encoded in the data stream,
+             * if break detection was enabled during open.
+             */
+            if (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_DETECT_BREAK_CONDITION)
+            { /** @todo */ }
 
-        *pcbRead = cbThisRead;
+            *pcbRead = cbThisRead;
+        }
+        else if (cbThisRead == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
+            rc = VINF_TRY_AGAIN;
+        else
+            rc = RTErrConvertFromErrno(errno);
     }
-    else if (cbThisRead == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
-        rc = VINF_TRY_AGAIN;
-    else
-        rc = RTErrConvertFromErrno(errno);
 
     return rc;
 }
@@ -786,8 +867,39 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
 
 RTDECL(int) RTSerialPortWrite(RTSERIALPORT hSerialPort, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
-    RT_NOREF(hSerialPort, pvBuf, cbToWrite, pcbWritten);
-    return VERR_NOT_IMPLEMENTED;
+    PRTSERIALPORTINTERNAL pThis = hSerialPort;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbToWrite > 0, VERR_INVALID_PARAMETER);
+
+    int rc = rtSerialPortSwitchBlockingMode(pThis, true);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Attempt write.
+         */
+        ssize_t cbWritten = write(pThis->iFd, pvBuf, cbToWrite);
+        if (cbWritten >= 0)
+        {
+            if (pcbWritten)
+                /* caller can handle partial write. */
+                *pcbWritten = cbWritten;
+            else
+            {
+                /* Caller expects all to be written. */
+                while ((ssize_t)cbToWrite > cbWritten)
+                {
+                    ssize_t cbWrittenPart = write(pThis->iFd, (const uint8_t *)pvBuf + cbWritten, cbToWrite - cbWritten);
+                    if (cbWrittenPart < 0)
+                        return RTErrConvertFromErrno(errno);
+                    cbWritten += cbWrittenPart;
+                }
+            }
+        }
+    }
+
+    return rc;
 }
 
 
@@ -802,14 +914,17 @@ RTDECL(int) RTSerialPortWriteNB(RTSERIALPORT hSerialPort, const void *pvBuf, siz
 
     *pcbWritten = 0;
 
-    int rc = VINF_SUCCESS;
-    ssize_t cbThisWrite = write(pThis->iFd, pvBuf, cbToWrite);
-    if (cbThisWrite > 0)
-        *pcbWritten = cbThisWrite;
-    else if (cbThisWrite == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
-        rc = VINF_TRY_AGAIN;
-    else
-        rc = RTErrConvertFromErrno(errno);
+    int rc = rtSerialPortSwitchBlockingMode(pThis, false);
+    if (RT_SUCCESS(rc))
+    {
+        ssize_t cbThisWrite = write(pThis->iFd, pvBuf, cbToWrite);
+        if (cbThisWrite > 0)
+            *pcbWritten = cbThisWrite;
+        else if (cbThisWrite == 0 || errno == EAGAIN || errno == EWOULDBLOCK)
+            rc = VINF_TRY_AGAIN;
+        else
+            rc = RTErrConvertFromErrno(errno);
+    }
 
     return rc;
 }
@@ -891,87 +1006,90 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
             break;
     }
 
-    struct pollfd aPollFds[2]; RT_ZERO(aPollFds);
-    aPollFds[0].fd = pThis->iFd;
-    aPollFds[0].events = POLLERR | POLLHUP;
-    aPollFds[0].revents = 0;
-    if (   (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_READ)
-        && (fEvtMask & RTSERIALPORT_EVT_F_DATA_RX))
-        aPollFds[0].events |= POLLIN;
-    if (   (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_WRITE)
-        && (fEvtMask & RTSERIALPORT_EVT_F_DATA_TX))
-        aPollFds[0].events |= POLLOUT;
-
-    aPollFds[1].fd      = pThis->iFdPipeR;
-    aPollFds[1].events  = POLLIN | POLLERR | POLLHUP;
-    aPollFds[1].revents = 0;
-
-    int rcPsx = 0;
-    int msTimeoutLeft = msTimeout == RT_INDEFINITE_WAIT ? -1 : msTimeout;
-    while (msTimeoutLeft != 0)
+    int rc = rtSerialPortSwitchBlockingMode(pThis, false);
+    if (RT_SUCCESS(rc))
     {
-        uint64_t tsPollStart = RTTimeMilliTS();
+        struct pollfd aPollFds[2]; RT_ZERO(aPollFds);
+        aPollFds[0].fd = pThis->iFd;
+        aPollFds[0].events = POLLERR | POLLHUP;
+        aPollFds[0].revents = 0;
+        if (   (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_READ)
+            && (fEvtMask & RTSERIALPORT_EVT_F_DATA_RX))
+            aPollFds[0].events |= POLLIN;
+        if (   (pThis->fOpenFlags & RTSERIALPORT_OPEN_F_WRITE)
+            && (fEvtMask & RTSERIALPORT_EVT_F_DATA_TX))
+            aPollFds[0].events |= POLLOUT;
 
-        rcPsx = poll(&aPollFds[0], RT_ELEMENTS(aPollFds), msTimeoutLeft);
-        if (rcPsx != -1 || errno != EINTR)
-            break;
-        /* Restart when getting interrupted. */
-        if (msTimeoutLeft > -1)
+        aPollFds[1].fd      = pThis->iFdPipeR;
+        aPollFds[1].events  = POLLIN | POLLERR | POLLHUP;
+        aPollFds[1].revents = 0;
+
+        int rcPsx = 0;
+        int msTimeoutLeft = msTimeout == RT_INDEFINITE_WAIT ? -1 : msTimeout;
+        while (msTimeoutLeft != 0)
         {
-            uint64_t tsPollEnd = RTTimeMilliTS();
-            uint64_t tsPollSpan = tsPollEnd - tsPollStart;
-            msTimeoutLeft -= RT_MIN(tsPollSpan, (uint32_t)msTimeoutLeft);
-        }
-    }
+            uint64_t tsPollStart = RTTimeMilliTS();
 
-    int rc = VINF_SUCCESS;
-    uint32_t fEvtsPending = 0;
-    if (rcPsx < 0 && errno != EINTR)
-        rc = RTErrConvertFromErrno(errno);
-    else if (rcPsx > 0)
-    {
-        if (aPollFds[0].revents != 0)
-        {
-            fEvtsPending |= (aPollFds[0].revents & POLLIN) ? RTSERIALPORT_EVT_F_DATA_RX : 0;
-            fEvtsPending |= (aPollFds[0].revents & POLLOUT) ? RTSERIALPORT_EVT_F_DATA_TX : 0;
-            /** @todo BREAK condition detection. */
-        }
-
-        if (aPollFds[1].revents != 0)
-        {
-            AssertReturn(!(aPollFds[1].revents & (POLLHUP | POLLERR | POLLNVAL)), VERR_INTERNAL_ERROR);
-            Assert(aPollFds[1].revents & POLLIN);
-
-            uint8_t bWakeupReason = 0;
-            ssize_t cbRead = read(pThis->iFdPipeR, &bWakeupReason, 1);
-            if (cbRead == 1)
+            rcPsx = poll(&aPollFds[0], RT_ELEMENTS(aPollFds), msTimeoutLeft);
+            if (rcPsx != -1 || errno != EINTR)
+                break;
+            /* Restart when getting interrupted. */
+            if (msTimeoutLeft > -1)
             {
-                switch (bWakeupReason)
-                {
-                    case RTSERIALPORT_WAKEUP_PIPE_REASON_INTERRUPT:
-                        rc = VERR_INTERRUPTED;
-                        break;
-                    case RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_CHANGED:
-                        fEvtsPending |= RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED;
-                        break;
-                    case RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_MONITOR_FAILED:
-                        fEvtsPending |= RTSERIALPORT_EVT_F_STATUS_LINE_MONITOR_FAILED;
-                        break;
-                    default:
-                        AssertFailed();
-                        rc = VERR_INTERNAL_ERROR;
-                }
+                uint64_t tsPollEnd = RTTimeMilliTS();
+                uint64_t tsPollSpan = tsPollEnd - tsPollStart;
+                msTimeoutLeft -= RT_MIN(tsPollSpan, (uint32_t)msTimeoutLeft);
             }
-            else
-                rc = VERR_INTERNAL_ERROR;
         }
-    }
-    else
-        rc = VERR_TIMEOUT;
 
-    *pfEvtsRecv = fEvtsPending & fEvtMask;
-    fEvtsPending &= ~fEvtMask;
-    ASMAtomicOrU32(&pThis->fEvtsPending, fEvtsPending);
+        uint32_t fEvtsPending = 0;
+        if (rcPsx < 0 && errno != EINTR)
+            rc = RTErrConvertFromErrno(errno);
+        else if (rcPsx > 0)
+        {
+            if (aPollFds[0].revents != 0)
+            {
+                fEvtsPending |= (aPollFds[0].revents & POLLIN) ? RTSERIALPORT_EVT_F_DATA_RX : 0;
+                fEvtsPending |= (aPollFds[0].revents & POLLOUT) ? RTSERIALPORT_EVT_F_DATA_TX : 0;
+                /** @todo BREAK condition detection. */
+            }
+
+            if (aPollFds[1].revents != 0)
+            {
+                AssertReturn(!(aPollFds[1].revents & (POLLHUP | POLLERR | POLLNVAL)), VERR_INTERNAL_ERROR);
+                Assert(aPollFds[1].revents & POLLIN);
+
+                uint8_t bWakeupReason = 0;
+                ssize_t cbRead = read(pThis->iFdPipeR, &bWakeupReason, 1);
+                if (cbRead == 1)
+                {
+                    switch (bWakeupReason)
+                    {
+                        case RTSERIALPORT_WAKEUP_PIPE_REASON_INTERRUPT:
+                            rc = VERR_INTERRUPTED;
+                            break;
+                        case RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_CHANGED:
+                            fEvtsPending |= RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED;
+                            break;
+                        case RTSERIALPORT_WAKEUP_PIPE_REASON_STS_LINE_MONITOR_FAILED:
+                            fEvtsPending |= RTSERIALPORT_EVT_F_STATUS_LINE_MONITOR_FAILED;
+                            break;
+                        default:
+                            AssertFailed();
+                            rc = VERR_INTERNAL_ERROR;
+                    }
+                }
+                else
+                    rc = VERR_INTERNAL_ERROR;
+            }
+        }
+        else
+            rc = VERR_TIMEOUT;
+
+        *pfEvtsRecv = fEvtsPending & fEvtMask;
+        fEvtsPending &= ~fEvtMask;
+        ASMAtomicOrU32(&pThis->fEvtsPending, fEvtsPending);
+    }
 
     return rc;
 }

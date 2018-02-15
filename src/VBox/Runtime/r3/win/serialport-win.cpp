@@ -334,8 +334,61 @@ RTDECL(int) RTSerialPortRead(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbToR
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbToRead > 0, VERR_INVALID_PARAMETER);
 
-    RT_NOREF(pcbRead);
-    int rc = VERR_NOT_IMPLEMENTED;
+    /*
+     * Kick of an overlapped read.
+     */
+    int rc = VINF_SUCCESS;
+    uint8_t *pbBuf = (uint8_t *)pvBuf;
+
+    while (   cbToRead > 0
+           && RT_SUCCESS(rc))
+    {
+        BOOL fSucc = ResetEvent(pThis->Overlapped.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
+        DWORD cbRead = 0;
+        if (ReadFile(pThis->hDev, pbBuf,
+                     cbToRead <= ~(DWORD)0 ? (DWORD)cbToRead : ~(DWORD)0,
+                     &cbRead, &pThis->Overlapped))
+        {
+            if (pcbRead)
+            {
+                *pcbRead = cbRead;
+                break;
+            }
+            rc = VINF_SUCCESS;
+        }
+        else if (GetLastError() == ERROR_IO_PENDING)
+        {
+            DWORD dwWait = WaitForSingleObject(pThis->Overlapped.hEvent, INFINITE);
+            if (dwWait == WAIT_OBJECT_0)
+            {
+                if (GetOverlappedResult(pThis->hDev, &pThis->Overlapped, &cbRead, TRUE /*fWait*/))
+                {
+                    if (pcbRead)
+                    {
+                        *pcbRead = cbRead;
+                        break;
+                    }
+                    rc = VINF_SUCCESS;
+                }
+                else
+                    rc = RTErrConvertFromWin32(GetLastError());
+            }
+            else
+            {
+                Assert(dwWait == WAIT_FAILED);
+                rc = RTErrConvertFromWin32(GetLastError());
+            }
+        }
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+
+        if (RT_SUCCESS(rc))
+        {
+            cbToRead -= cbRead;
+            pbBuf    += cbRead;
+        }
+    }
+
     return rc;
 }
 
@@ -393,8 +446,71 @@ RTDECL(int) RTSerialPortReadNB(RTSERIALPORT hSerialPort, void *pvBuf, size_t cbT
 
 RTDECL(int) RTSerialPortWrite(RTSERIALPORT hSerialPort, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
-    RT_NOREF(hSerialPort, pvBuf, cbToWrite, pcbWritten);
-    return VERR_NOT_IMPLEMENTED;
+    PRTSERIALPORTINTERNAL pThis = hSerialPort;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbToWrite > 0, VERR_INVALID_PARAMETER);
+
+    /* If I/O is pending, check if it has completed. */
+    int rc = VINF_SUCCESS;
+    if (pThis->fWritePending)
+        rc = rtSerialPortWriteCheckCompletion(pThis);
+    if (rc == VINF_SUCCESS)
+    {
+        const uint8_t *pbBuf = (const uint8_t *)pvBuf;
+
+        while (   cbToWrite > 0
+               && RT_SUCCESS(rc))
+        {
+            BOOL fSucc = ResetEvent(pThis->Overlapped.hEvent); Assert(fSucc == TRUE); RT_NOREF(fSucc);
+            DWORD cbWritten = 0;
+            if (WriteFile(pThis->hDev, pbBuf,
+                          cbToWrite <= ~(DWORD)0 ? (DWORD)cbToWrite : ~(DWORD)0,
+                          &cbWritten, &pThis->Overlapped))
+            {
+                if (pcbWritten)
+                {
+                    *pcbWritten = cbWritten;
+                    break;
+                }
+                rc = VINF_SUCCESS;
+            }
+            else if (GetLastError() == ERROR_IO_PENDING)
+            {
+                DWORD dwWait = WaitForSingleObject(pThis->Overlapped.hEvent, INFINITE);
+                if (dwWait == WAIT_OBJECT_0)
+                {
+                    if (GetOverlappedResult(pThis->hDev, &pThis->Overlapped, &cbWritten, TRUE /*fWait*/))
+                    {
+                        if (pcbWritten)
+                        {
+                            *pcbWritten = cbWritten;
+                            break;
+                        }
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                        rc = RTErrConvertFromWin32(GetLastError());
+                }
+                else
+                {
+                    Assert(dwWait == WAIT_FAILED);
+                    rc = RTErrConvertFromWin32(GetLastError());
+                }
+            }
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
+
+            if (RT_SUCCESS(rc))
+            {
+                cbToWrite -= cbWritten;
+                pbBuf     += cbWritten;
+            }
+        }
+    }
+
+    return rc;
 }
 
 
