@@ -1348,29 +1348,30 @@ void UIFrameBufferPrivate::updateCoordinateSystem()
 
 void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
 {
-    /* Scaled image is NULL by default: */
-    QImage scaledImage;
-    /* But if scale-factor is set and current image is NOT null: */
-    if (m_scaledSize.isValid() && !m_image.isNull())
+    /* Make sure cached image is valid: */
+    if (m_image.isNull())
+        return;
+
+    /* First we take the cached image as the source: */
+    QImage *pSourceImage = &m_image;
+
+    /* But if scaled size is set: */
+    if (m_scaledSize.isValid())
     {
-        /* We are doing a deep copy of the image to make sure it will not be
-         * detached during scale process, otherwise we can get a frozen frame-buffer. */
-        scaledImage = m_image.copy();
-        /* And scaling the image to predefined scale-factor: */
+        /* We scale the image to requested size and retain it
+         * by making heap shallow copy of that temporary object: */
         switch (m_pMachineView->visualStateType())
         {
             case UIVisualStateType_Scale:
-                scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio,
-                                                 transformationMode(scalingOptimizationType()));
+                pSourceImage = new QImage(pSourceImage->scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                                                               transformationMode(scalingOptimizationType())));
                 break;
             default:
-                scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio,
-                                                 transformationMode(scalingOptimizationType(), m_dScaleFactor));
+                pSourceImage = new QImage(pSourceImage->scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                                                               transformationMode(scalingOptimizationType(), m_dScaleFactor)));
                 break;
         }
     }
-    /* Finally we are choosing image to paint from: */
-    const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
 
     /* Prepare the base and hidpi paint rectangles: */
     const QRect paintRect = pEvent->rect();
@@ -1384,7 +1385,7 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     }
 
     /* Make sure hidpi paint rectangle is within the image boundary: */
-    paintRectHiDPI = paintRectHiDPI.intersected(sourceImage.rect());
+    paintRectHiDPI = paintRectHiDPI.intersected(pSourceImage->rect());
     if (paintRectHiDPI.isEmpty())
         return;
 
@@ -1399,40 +1400,49 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
 #endif /* VBOX_WS_MAC */
 
     /* Draw hidpi image rectangle: */
-    drawImageRect(painter, sourceImage, paintRectHiDPI,
+    drawImageRect(painter, *pSourceImage, paintRectHiDPI,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
                   useUnscaledHiDPIOutput(),
 #ifdef VBOX_WS_MAC
                   hiDPIOptimizationType(),
 #endif
                   devicePixelRatio());
+
+    /* If scaled size is set: */
+    if (m_scaledSize.isValid())
+    {
+        /* Wipe out copied image: */
+        delete pSourceImage;
+        pSourceImage = 0;
+    }
 }
 
 void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
 {
-    /* Scaled image is NULL by default: */
-    QImage scaledImage;
-    /* But if scale-factor is set and current image is NOT null: */
-    if (m_scaledSize.isValid() && !m_image.isNull())
+    /* Make sure cached image is valid: */
+    if (m_image.isNull())
+        return;
+
+    /* First we take the cached image as the source: */
+    QImage *pSourceImage = &m_image;
+
+    /* But if scaled size is set: */
+    if (m_scaledSize.isValid())
     {
-        /* We are doing a deep copy of the image to make sure it will not be
-         * detached during scale process, otherwise we can get a frozen frame-buffer. */
-        scaledImage = m_image.copy();
-        /* And scaling the image to predefined scale-factor: */
+        /* We scale the image to requested size and retain it
+         * by making heap shallow copy of that temporary object: */
         switch (m_pMachineView->visualStateType())
         {
             case UIVisualStateType_Scale:
-                scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio,
-                                                 transformationMode(scalingOptimizationType()));
+                pSourceImage = new QImage(pSourceImage->scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                                                               transformationMode(scalingOptimizationType())));
                 break;
             default:
-                scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio,
-                                                 transformationMode(scalingOptimizationType(), m_dScaleFactor));
+                pSourceImage = new QImage(pSourceImage->scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                                                               transformationMode(scalingOptimizationType(), m_dScaleFactor)));
                 break;
         }
     }
-    /* Finally we are choosing image to paint from: */
-    const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
 
     /* Prepare the base and hidpi paint rectangles: */
     const QRect paintRect = pEvent->rect();
@@ -1446,7 +1456,7 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     }
 
     /* Make sure hidpi paint rectangle is within the image boundary: */
-    paintRectHiDPI = paintRectHiDPI.intersected(sourceImage.rect());
+    paintRectHiDPI = paintRectHiDPI.intersected(pSourceImage->rect());
     if (paintRectHiDPI.isEmpty())
         return;
 
@@ -1481,13 +1491,21 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
     /* Draw hidpi image rectangle: */
-    drawImageRect(painter, sourceImage, paintRectHiDPI,
+    drawImageRect(painter, *pSourceImage, paintRectHiDPI,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
                   useUnscaledHiDPIOutput(),
 #ifdef VBOX_WS_MAC
                   hiDPIOptimizationType(),
 #endif
                   devicePixelRatio());
+
+    /* If scaled size is set: */
+    if (m_scaledSize.isValid())
+    {
+        /* Wipe out copied image: */
+        delete pSourceImage;
+        pSourceImage = 0;
+    }
 }
 
 /* static */
