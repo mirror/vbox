@@ -1372,19 +1372,20 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Finally we are choosing image to paint from: */
     const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
 
-    /* Prepare the 'paint' rectangle: */
-    QRect paintRect = pEvent->rect();
+    /* Prepare the base and hidpi paint rectangles: */
+    const QRect paintRect = pEvent->rect();
+    QRect paintRectHiDPI = paintRect;
 
     /* Take the device-pixel-ratio into account: */
     if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
     {
-        paintRect.moveTo(paintRect.topLeft() * devicePixelRatio());
-        paintRect.setSize(paintRect.size() * devicePixelRatio());
+        paintRectHiDPI.moveTo(paintRectHiDPI.topLeft() * devicePixelRatio());
+        paintRectHiDPI.setSize(paintRectHiDPI.size() * devicePixelRatio());
     }
 
-    /* Make sure paint-rectangle is within the image boundary: */
-    paintRect = paintRect.intersected(sourceImage.rect());
-    if (paintRect.isEmpty())
+    /* Make sure hidpi paint rectangle is within the image boundary: */
+    paintRectHiDPI = paintRectHiDPI.intersected(sourceImage.rect());
+    if (paintRectHiDPI.isEmpty())
         return;
 
     /* Create painter: */
@@ -1393,12 +1394,12 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
 #ifdef VBOX_WS_MAC
     /* On OSX for Qt5 we need to fill the backing store first: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(pEvent->rect(), QColor(Qt::black));
+    painter.fillRect(paintRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
 #endif /* VBOX_WS_MAC */
 
-    /* Draw image rectangle: */
-    drawImageRect(painter, sourceImage, paintRect,
+    /* Draw hidpi image rectangle: */
+    drawImageRect(painter, sourceImage, paintRectHiDPI,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
                   useUnscaledHiDPIOutput(),
 #ifdef VBOX_WS_MAC
@@ -1433,56 +1434,54 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* Finally we are choosing image to paint from: */
     const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
 
-    /* Prepare the 'paint' rectangle: */
-    QRect paintRect = pEvent->rect();
-
-    /* Prepare seamless regions to erase/paint: */
-    lock();
-    const QRegion eraseRegion = QRegion(paintRect) - m_syncVisibleRegion;
-    const QRegion paintRegion = QRegion(paintRect) & m_syncVisibleRegion;
-    unlock();
+    /* Prepare the base and hidpi paint rectangles: */
+    const QRect paintRect = pEvent->rect();
+    QRect paintRectHiDPI = paintRect;
 
     /* Take the device-pixel-ratio into account: */
     if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
     {
-        paintRect.moveTo(paintRect.topLeft() * devicePixelRatio());
-        paintRect.setSize(paintRect.size() * devicePixelRatio());
+        paintRectHiDPI.moveTo(paintRectHiDPI.topLeft() * devicePixelRatio());
+        paintRectHiDPI.setSize(paintRectHiDPI.size() * devicePixelRatio());
     }
 
-    /* Make sure paint-rectangle is within the image boundary: */
-    paintRect = paintRect.intersected(sourceImage.rect());
-    if (paintRect.isEmpty())
+    /* Make sure hidpi paint rectangle is within the image boundary: */
+    paintRectHiDPI = paintRectHiDPI.intersected(sourceImage.rect());
+    if (paintRectHiDPI.isEmpty())
         return;
 
     /* Create painter: */
     QPainter painter(m_pMachineView->viewport());
 
-    /* Apply painter clipping for erasing: */
-    painter.setClipRegion(eraseRegion);
-    /* Set composition-mode to erase: */
+    /* Adjust painter for erasing: */
+    lock();
+    painter.setClipRegion(QRegion(paintRect) - m_syncVisibleRegion);
     painter.setCompositionMode(QPainter::CompositionMode_Clear);
-    /* Erase rectangle: */
-    eraseImageRect(painter, paintRect,
+    unlock();
+
+    /* Erase hidpi rectangle: */
+    eraseImageRect(painter, paintRectHiDPI,
                    useUnscaledHiDPIOutput(),
 #ifdef VBOX_WS_MAC
                    hiDPIOptimizationType(),
 #endif
                    devicePixelRatio());
 
-    /* Apply painter clipping for painting: */
-    painter.setClipRegion(paintRegion);
-    /* Set composition-mode to paint: */
+    /* Adjust painter for painting: */
+    lock();
+    painter.setClipRegion(QRegion(paintRect) & m_syncVisibleRegion);
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    unlock();
 
 #ifdef VBOX_WITH_TRANSLUCENT_SEAMLESS
     /* In case of translucent seamless for Qt5 we need to fill the backing store first: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(pEvent->rect(), QColor(Qt::black));
+    painter.fillRect(paintRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
-    /* Draw image rectangle: */
-    drawImageRect(painter, sourceImage, paintRect,
+    /* Draw hidpi image rectangle: */
+    drawImageRect(painter, sourceImage, paintRectHiDPI,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
                   useUnscaledHiDPIOutput(),
 #ifdef VBOX_WS_MAC
