@@ -1350,13 +1350,13 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
 {
     /* Scaled image is NULL by default: */
     QImage scaledImage;
-    /* But if scaled-factor is set and current image is NOT null: */
+    /* But if scale-factor is set and current image is NOT null: */
     if (m_scaledSize.isValid() && !m_image.isNull())
     {
         /* We are doing a deep copy of the image to make sure it will not be
          * detached during scale process, otherwise we can get a frozen frame-buffer. */
         scaledImage = m_image.copy();
-        /* And scaling the image to predefined scaled-factor: */
+        /* And scaling the image to predefined scale-factor: */
         switch (m_pMachineView->visualStateType())
         {
             case UIVisualStateType_Scale:
@@ -1391,17 +1391,9 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     QPainter painter(m_pMachineView->viewport());
 
 #ifdef VBOX_WS_MAC
-    /* On OSX for Qt5 we need to erase backing store first: */
-    QRect eraseRect = paintRect;
-    /* Take the device-pixel-ratio into account: */
-    if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
-    {
-        eraseRect.moveTo(eraseRect.topLeft() / devicePixelRatio());
-        eraseRect.setSize(eraseRect.size() / devicePixelRatio());
-    }
-    /* Replace translucent background with black one: */
+    /* On OSX for Qt5 we need to fill the backing store first: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(eraseRect, QColor(Qt::black));
+    painter.fillRect(pEvent->rect(), QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
 #endif /* VBOX_WS_MAC */
 
@@ -1419,13 +1411,13 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
 {
     /* Scaled image is NULL by default: */
     QImage scaledImage;
-    /* But if scaled-factor is set and current image is NOT null: */
+    /* But if scale-factor is set and current image is NOT null: */
     if (m_scaledSize.isValid() && !m_image.isNull())
     {
         /* We are doing a deep copy of the image to make sure it will not be
          * detached during scale process, otherwise we can get a frozen frame-buffer. */
         scaledImage = m_image.copy();
-        /* And scaling the image to predefined scaled-factor: */
+        /* And scaling the image to predefined scale-factor: */
         switch (m_pMachineView->visualStateType())
         {
             case UIVisualStateType_Scale:
@@ -1482,18 +1474,10 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* Set composition-mode to paint: */
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-#if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS)
-    /* On OSX for Qt5 we need to erase backing store first: */
-    QRect eraseRect = paintRect;
-    /* Take the device-pixel-ratio into account: */
-    if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
-    {
-        eraseRect.moveTo(eraseRect.topLeft() / devicePixelRatio());
-        eraseRect.setSize(eraseRect.size() / devicePixelRatio());
-    }
-    /* Replace translucent background with black one: */
+#ifdef VBOX_WITH_TRANSLUCENT_SEAMLESS
+    /* In case of translucent seamless for Qt5 we need to fill the backing store first: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(eraseRect, QColor(Qt::black));
+    painter.fillRect(pEvent->rect(), QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
