@@ -1695,10 +1695,11 @@ DECLINLINE(void) nemR3WinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, PCPUMCTX pCtx, 
 }
 
 
-static VBOXSTRICTRC nemR3WinHandleHalt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
+static VBOXSTRICTRC nemR3WinHandleHalt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx); NOREF(pExitReason);
-    AssertLogRelFailedReturn(VERR_NOT_IMPLEMENTED);
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx);
+    LogFlow(("nemR3WinHandleHalt\n"));
+    return VINF_EM_HALT;
 }
 
 
@@ -1793,6 +1794,10 @@ static VBOXSTRICTRC nemR3WinHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
 static VBOXSTRICTRC nemR3WinHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx,
                                                WHV_X64_IO_PORT_ACCESS_CONTEXT const *pIoPortCtx)
 {
+    Assert(   pIoPortCtx->AccessInfo.AccessSize == 1
+           || pIoPortCtx->AccessInfo.AccessSize == 2
+           || pIoPortCtx->AccessInfo.AccessSize == 4);
+
     VBOXSTRICTRC rcStrict;
     if (!pIoPortCtx->AccessInfo.StringOp)
     {
@@ -1802,7 +1807,7 @@ static VBOXSTRICTRC nemR3WinHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
         Assert(pCtx->rax == pIoPortCtx->Rax);
 
         static uint32_t const s_fAndMask[8] =
-        {   UINT32_C(0xff), UINT32_C(0xffff), UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX };
+        { UINT32_MAX, UINT32_C(0xff), UINT32_C(0xffff), UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX };
         uint32_t const fAndMask = s_fAndMask[pIoPortCtx->AccessInfo.AccessSize];
         if (pIoPortCtx->AccessInfo.IsWrite)
         {
@@ -2017,7 +2022,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                 break;
 
             case WHvRunVpExitReasonX64Halt:
-                rcStrict = nemR3WinHandleHalt(pVM, pVCpu, pCtx, &ExitReason);
+                rcStrict = nemR3WinHandleHalt(pVM, pVCpu, pCtx);
                 break;
 
             case WHvRunVpExitReasonMemoryAccess:
@@ -2075,7 +2080,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         if (   VM_FF_IS_PENDING(   pVM,   !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK    : VM_FF_HP_R0_PRE_HM_STEP_MASK)
             || VMCPU_FF_IS_PENDING(pVCpu, !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
         {
-            LogFlow(("nemR3NativeRunGC: returning: pending FF\n"));
+            LogFlow(("nemR3NativeRunGC: returning: pending FF (%#x / %#x)\n", pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions));
             break;
         }
     }
