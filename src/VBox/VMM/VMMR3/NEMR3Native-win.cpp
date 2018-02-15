@@ -1709,8 +1709,31 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
                                                                        PPGMPHYSNEMPAGEINFO pInfo, void *pvUser)
 {
     uint8_t u2State = pInfo->u2NemState;
-    int rc = nemR3NativeSetPhysPage(pVM, GCPhys, pInfo->fNemProt, &u2State,
-                                    u2State <= NEM_WIN_PAGE_STATE_UNMAPPED /*fBackingChanged*/);
+    bool    fBackingChanged = true;
+    switch (u2State)
+    {
+        case NEM_WIN_PAGE_STATE_UNMAPPED:
+        case NEM_WIN_PAGE_STATE_NOT_SET:
+            if (pInfo->fNemProt == NEM_PAGE_PROT_NONE)
+                return VINF_SUCCESS;
+            break;
+        case NEM_WIN_PAGE_STATE_READABLE:
+            if (pInfo->fNemProt != NEM_PAGE_PROT_NONE)
+            {
+                if (!(pInfo->fNemProt & NEM_PAGE_PROT_WRITE))
+                    return VINF_SUCCESS;
+                fBackingChanged = false;
+            }
+            break;
+        case NEM_WIN_PAGE_STATE_WRITABLE:
+            if (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
+                return VINF_SUCCESS;
+            if (pInfo->fNemProt != NEM_PAGE_PROT_NONE)
+                fBackingChanged = false;
+            break;
+    }
+
+    int rc = nemR3NativeSetPhysPage(pVM, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, pInfo->fNemProt, &u2State, fBackingChanged);
     pInfo->u2NemState = u2State;
     RT_NOREF(pVCpu, pvUser);
     return rc;
@@ -1726,7 +1749,7 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            The CPU context to update.
- * @param   pExitReason     The exit reason information.
+ * @param   pMemCtx         The exit reason information.
  */
 static VBOXSTRICTRC nemR3WinHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_MEMORY_ACCESS_CONTEXT const *pMemCtx)
 {
@@ -1765,7 +1788,7 @@ static VBOXSTRICTRC nemR3WinHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            The CPU context to update.
- * @param   pExitReason     The exit reason information.
+ * @param   pIoPortCtx      The exit reason information.
  */
 static VBOXSTRICTRC nemR3WinHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx,
                                                WHV_X64_IO_PORT_ACCESS_CONTEXT const *pIoPortCtx)
