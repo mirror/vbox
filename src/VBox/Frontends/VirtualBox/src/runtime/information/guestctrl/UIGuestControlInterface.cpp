@@ -179,8 +179,6 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
             {
                 emit sigOutputString(generateErrorString(ch, ValueUnion));
                 return false;
-                printf("hoppala %d\n", ch);
-                break;
             }
         }
     }
