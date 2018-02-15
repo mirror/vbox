@@ -1017,11 +1017,19 @@ bool rewrite_SvnSyncProcess(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut,
             {
                 if (strcmp(pszSyncProcess, "export") != 0)
                     ScmError(pState, VERR_INVALID_STATE,
-                             "svn:sync-process=export, but parent directory differs: %s\n", pszParentSyncProcess);
+                             "svn:sync-process=export, but parent directory differs: %s\n"
+                             "WARNING! Make sure to unexport everything inside the directory first!\n"
+                             "         Then you may export the directory and stuff inside it if you want.\n"
+                             "         (Just exporting the directory will not make anything inside it externally visible.)\n"
+                             , pszParentSyncProcess);
                 RTStrFree(pszParentSyncProcess);
             }
             else if (rc == VERR_NOT_FOUND)
-                ScmError(pState, VERR_NOT_FOUND, "svn:sync-process=export, but parent directory is not exported!\n");
+                ScmError(pState, VERR_NOT_FOUND,
+                         "svn:sync-process=export, but parent directory is not exported!\n"
+                         "WARNING! Make sure to unexport everything inside the directory first!\n"
+                         "         Then you may export the directory and stuff inside it if you want.\n"
+                         "         (Just exporting the directory will not make anything inside it externally visible.)\n");
             else
                 ScmError(pState, rc, "ScmSvnQueryParentProperty: %Rrc\n", rc);
         }
