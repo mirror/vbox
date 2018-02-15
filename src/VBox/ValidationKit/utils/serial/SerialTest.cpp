@@ -554,7 +554,7 @@ static DECLCALLBACK(int) serialTestRunStsLines(PSERIALTEST pSerialTest)
                         }
                         else if (   (fStsLinesSet & RTSERIALPORT_CHG_STS_LINES_F_DTR)
                                  || (fStsLinesClear & RTSERIALPORT_CHG_STS_LINES_F_DTR))
-                                RTTestFailed(g_hTest, "DSR line didn't change when it should have on iteration %u\n", i);
+                                RTTestFailed(g_hTest, "DCD line didn't change when it should have on iteration %u\n", i);
 
                         if (   (fStsLinesQueried & RTSERIALPORT_STS_LINE_CTS)
                             != (fStsLinesQueriedOld & RTSERIALPORT_STS_LINE_CTS))
