@@ -31,16 +31,6 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-#define SUCCESS_RETURN(strMessage){   \
-    emit sigOutputString(strMessage); \
-    return true;                      \
-}
-
-#define ERROR_RETURN(strMessage){      \
-    emit sigOutputString(strMessage);  \
-    return false;                      \
-}
-
 #define GCTLCMD_COMMON_OPT_USER             999 /**< The --username option number. */
 #define GCTLCMD_COMMON_OPT_PASSWORD         998 /**< The --password option number. */
 #define GCTLCMD_COMMON_OPT_PASSWORD_FILE    997 /**< The --password-file option number. */
@@ -56,8 +46,49 @@
         { "--quiet",                'q',                                RTGETOPT_REQ_NOTHING }, \
         { "--verbose",              'v',                                RTGETOPT_REQ_NOTHING },
 
+#define HANDLE_COMMON_OPTION_DEFS()                   \
+    case GCTLCMD_COMMON_OPT_USER:                     \
+        commandData.m_strUserName = ValueUnion.psz;   \
+        break;                                        \
+    case GCTLCMD_COMMON_OPT_PASSWORD:                 \
+        commandData.m_strPassword = ValueUnion.psz;   \
+        break;
 
-/** Common option definitions. */
+QString generateErrorString(int getOptErrorCode, const RTGETOPTUNION &valueUnion)
+{
+    QString errorString;
+    if(valueUnion.pDef)
+    {
+        if(valueUnion.pDef->pszLong)
+        {
+            errorString = QString(valueUnion.pDef->pszLong);
+        }
+    }
+
+    switch (getOptErrorCode)
+    {
+        case (VERR_GETOPT_UNKNOWN_OPTION):
+            errorString = errorString.append("RTGetOpt: Command line option not recognized.");
+            break;
+        case (VERR_GETOPT_REQUIRED_ARGUMENT_MISSING):
+            errorString = errorString.append("RTGetOpt: Command line option needs argument.");
+            break;
+        case (VERR_GETOPT_INVALID_ARGUMENT_FORMAT):
+            errorString = errorString.append("RTGetOpt: Command line option has argument with bad format.");
+            break;
+        case (VINF_GETOPT_NOT_OPTION):
+            errorString = errorString.append("RTGetOpt: Not an option.");
+            break;
+        case (VERR_GETOPT_INDEX_MISSING):
+            errorString = errorString.append("RTGetOpt: Command line option needs an index.");
+            break;
+        default:
+            break;
+    }
+    return errorString;
+}
+
+/** Common option definitions: */
 class CommandData
 {
 public:
@@ -105,10 +136,11 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
     };
 
     CommandData commandData;
-    parseCommonOptions(argc, argv, commandData);
+    //parseCommonOptions(argc, argv, commandData);
 
     static const RTGETOPTDEF s_aOptions[] =
     {
+        GCTLCMD_COMMON_OPTION_DEFS()
         { "--sessionname",                   GCTLCMD_COMMON_OPT_SESSION_NAME,         RTGETOPT_REQ_STRING  },
         { "--sessionid",                     GCTLCMD_COMMON_OPT_SESSION_ID,           RTGETOPT_REQ_UINT32  },
         { "--putenv",                       'E',                                      RTGETOPT_REQ_STRING  },
@@ -126,11 +158,12 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1 /* ignore 0th element (command) */, 0);
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (ch)
         {
+            HANDLE_COMMON_OPTION_DEFS()
             case GCTLCMD_COMMON_OPT_SESSION_NAME:
                 sessionNameGiven = true;
                 commandData.m_strSessionName  = ValueUnion.psz;
@@ -143,13 +176,18 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
                 commandData.m_strExePath  = ValueUnion.psz;
                 break;
             default:
+            {
+                emit sigOutputString(generateErrorString(ch, ValueUnion));
+                return false;
+                printf("hoppala %d\n", ch);
                 break;
+            }
         }
     }
 
     if (sessionNameGiven && commandData.m_strSessionName.isEmpty())
     {
-        emit sigOutputString(QString("'Session Name' is not name valid\n").append(m_strHelp));
+        emit sigOutputString(QString(m_strHelp).append("'Session Name' is not name valid\n"));
         return false;
     }
 
@@ -157,7 +195,7 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
     /* Check if sessionname and sessionid are both supplied */
     if (sessionIdGiven && sessionNameGiven)
     {
-        emit sigOutputString(QString("Both 'Session Name' and 'Session Id' are supplied\n").append(m_strHelp));
+        emit sigOutputString(QString(m_strHelp).append("Both 'Session Name' and 'Session Id' are supplied\n"));
         return false;
     }
     /* If sessionid is given then look for the session. if not found return without starting the process: */
@@ -165,7 +203,7 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
     {
         if (!findSession(commandData.m_uSessionId, guestSession))
         {
-            emit sigOutputString(QString("No session with id %1 found.\n").arg(commandData.m_uSessionId).append(m_strHelp));
+            emit sigOutputString(QString(m_strHelp).append("No session with id %1 found.\n").arg(commandData.m_uSessionId));
             return false;
         }
     }
@@ -206,8 +244,6 @@ bool UIGuestControlInterface::handleHelp(int, char**)
 bool UIGuestControlInterface::handleCreate(int argc, char** argv)
 {
     CommandData commandData;
-    if (!parseCommonOptions(argc, argv, commandData))
-        return false;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -222,6 +258,7 @@ bool UIGuestControlInterface::handleCreate(int argc, char** argv)
     {
         switch (ch)
         {
+            HANDLE_COMMON_OPTION_DEFS()
             case GCTLCMD_COMMON_OPT_SESSION_NAME:
                 commandData.m_strSessionName  = ValueUnion.psz;
                 if (commandData.m_strSessionName.isEmpty())
@@ -237,43 +274,6 @@ bool UIGuestControlInterface::handleCreate(int argc, char** argv)
     CGuestSession guestSession;
     if (!createSession(commandData, guestSession))
         return false;
-    return true;
-}
-
-bool UIGuestControlInterface::parseCommonOptions(int argc, char** argv, CommandData& commandData)
-{
-    static const RTGETOPTDEF s_aOptions[] =
-    {
-        { "--username",             GCTLCMD_COMMON_OPT_USER,            RTGETOPT_REQ_STRING  },
-        { "--passwordfile",         GCTLCMD_COMMON_OPT_PASSWORD_FILE,   RTGETOPT_REQ_STRING  },
-        { "--password",             GCTLCMD_COMMON_OPT_PASSWORD,        RTGETOPT_REQ_STRING  },
-        { "--domain",               GCTLCMD_COMMON_OPT_DOMAIN,          RTGETOPT_REQ_STRING  },
-        { "--quiet",                'q',                                RTGETOPT_REQ_NOTHING },
-        { "--verbose",              'v',                                RTGETOPT_REQ_NOTHING },
-    };
-
-
-    int ch;
-    RTGETOPTUNION ValueUnion;
-    RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
-    {
-        switch (ch)
-        {
-            /* Username: */
-            case GCTLCMD_COMMON_OPT_USER:
-                commandData.m_strUserName = ValueUnion.psz;
-                break;
-            /* Paaword: */
-            case GCTLCMD_COMMON_OPT_PASSWORD:
-                commandData.m_strPassword = ValueUnion.psz;
-                break;
-            default:
-                break;
-        }
-    }
-
     return true;
 }
 
@@ -340,7 +340,7 @@ void UIGuestControlInterface::putCommand(const QString &strCommand)
                      }
                      else
                      {
-                         emit sigOutputString(QString("Unknown Command '%1'\n").arg(ValueUnion.psz).append(m_strHelp));
+                         emit sigOutputString(QString(m_strHelp).append("\nSyntax Error. Unknown Command '%1'").arg(ValueUnion.psz));
                          RTGetOptArgvFree(argv);
                          return;
                      }
@@ -397,7 +397,7 @@ bool UIGuestControlInterface::createSession(const CommandData &commandData, CGue
         return false;
     }
     /* Wait session to start: */
-    const ULONG waitTimeout = 1;//2000;
+    const ULONG waitTimeout = 2000;
     KGuestSessionWaitResult waitResult = guestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
     if (waitResult != KGuestSessionWaitResult_Start)
     {

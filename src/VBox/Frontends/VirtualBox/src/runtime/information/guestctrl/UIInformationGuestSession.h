@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIInformationConfiguration class declaration.
+ * VBox Qt GUI - UIInformationGuestSession class declaration.
  */
 
 /*

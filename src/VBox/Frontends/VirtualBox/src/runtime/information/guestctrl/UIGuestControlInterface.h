@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIInformationConfiguration class declaration.
+ * VBox Qt GUI - UIGuestControlInterface class declaration.
  */
 
 /*
@@ -65,7 +65,7 @@ private:
     bool handleHelp(int, char**);
     /* Handles the 'create' session command */
     bool handleCreate(int, char**);
-    bool parseCommonOptions(int argc, char** argv, CommandData& commandData);
+
 
     CGuest        m_comGuest;
     const QString m_strHelp;
