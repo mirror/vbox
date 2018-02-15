@@ -327,10 +327,10 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
         if (iIndexWin7 != -1)
             m_pComboType->setCurrentIndex(iIndexWin7);
     }
-    /* Or select Ubuntu item for Linux family as default: */
+    /* Or select Oracle Linux item for Linux family as default: */
     else if (strFamilyId == "Linux")
     {
-        QString strDefaultID = "Ubuntu";
+        QString strDefaultID = "Oracle";
         if (ARCH_BITS == 64 && m_fSupportsHWVirtEx && m_fSupportsLongMode)
             strDefaultID += "_64";
         const int iIndexUbuntu = m_pComboType->findData(strDefaultID, TypeID);
