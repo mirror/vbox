@@ -1327,7 +1327,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
                 {
                     uint8_t     u2State = PGM_PAGE_GET_NEM_STATE(pPage);
                     PGMPAGETYPE enmType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
-                    NEMHCNotifyPhysPageProtChanged(pVM, GCPhys, PGM_PAGE_GET_HCPHYS(pPage),
+                    NEMHCNotifyPhysPageProtChanged(pVM, GCPhysPage, PGM_PAGE_GET_HCPHYS(pPage),
                                                    pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
                     PGM_PAGE_SET_NEM_STATE(pPage, u2State);
                 }

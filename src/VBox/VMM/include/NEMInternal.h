@@ -82,6 +82,9 @@ typedef struct NEM
     /** The device handle for the partition, for use with Vid APIs or direct I/O
      * controls. */
     RTR3PTR                     hPartitionDevice;
+
+    /** Number of currently mapped pages. */
+    uint32_t volatile           cMappedPages;
 #endif
 
 } NEM;

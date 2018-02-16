@@ -4752,6 +4752,7 @@ VMM_INT_DECL(int) PGMPhysIemQueryAccess(PVM pVM, RTGCPHYS GCPhys, bool fWritable
 }
 
 #ifndef IN_RC
+
 /**
  * Interface used by NEM to check what to do on a memory access exit.
  *
@@ -4769,7 +4770,7 @@ VMM_INT_DECL(int) PGMPhysIemQueryAccess(PVM pVM, RTGCPHYS GCPhys, bool fWritable
  * @param   pvUser          User argument to pass to pfnChecker.
  */
 VMM_INT_DECL(int) PGMPhysNemPageInfoChecker(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, bool fMakeWritable, PPGMPHYSNEMPAGEINFO pInfo,
-                                            PFNPGMPHYSNEMQUERYCHECKER pfnChecker, void *pvUser)
+                                            PFNPGMPHYSNEMCHECKPAGE pfnChecker, void *pvUser)
 {
     pgmLock(pVM);
 
@@ -4847,7 +4848,49 @@ VMM_INT_DECL(int) PGMPhysNemPageInfoChecker(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPh
     }
 
     return rc;
+}
+
+
+/**
+ * NEM helper that performs @a pfnCallback on pages with NEM state @a uMinState
+ * or higher.
+ *
+ * @returns VBox status code from callback.
+ * @param   pVM             The cross context VM structure.
+ * @param   uMinState       The minimum NEM state value to call on.
+ * @param   pfnCallback     The callback function.
+ * @param   pvUser          User argument for the callback.
+ */
+VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVM pVM, uint8_t uMinState, PFNPGMPHYSNEMENUMCALLBACK pfnCallback, void *pvUser)
+{
+    /*
+     * Just brute force this problem.
+     */
+    pgmLock(pVM);
+    int rc = VINF_SUCCESS;
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX); pRam; pRam = pRam->CTX_SUFF(pNext))
+    {
+        uint32_t const cPages = pRam->cb >> X86_PAGE_SHIFT;
+        for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        {
+            uint8_t u2State = PGM_PAGE_GET_NEM_STATE(&pRam->aPages[iPage]);
+            if (u2State < uMinState)
+            { /* likely */ }
+            else
+            {
+                rc = pfnCallback(pVM, pRam->GCPhys + ((RTGCPHYS)iPage << X86_PAGE_SHIFT), &u2State, pvUser);
+                if (RT_SUCCESS(rc))
+                    PGM_PAGE_SET_NEM_STATE(&pRam->aPages[iPage], u2State);
+                else
+                    break;
+            }
+        }
+    }
+    pgmUnlock(pVM);
+
+    return rc;
 
 }
+
 #endif /* !IN_RC */
 
