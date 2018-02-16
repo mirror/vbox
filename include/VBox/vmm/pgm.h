@@ -689,8 +689,9 @@ typedef PGMPHYSNEMPAGEINFO *PPGMPHYSNEMPAGEINFO;
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context per virtual CPU structure.
- * @param   GCPhys      The guest physical address (subjected to A20 mask).
+ * @param   pVCpu       The cross context per virtual CPU structure.  Optional,
+ *                      see PGMPhysNemQueryPageInfo.
+ * @param   GCPhys      The guest physical address (not A20 masked).
  * @param   pInfo       The page info structure.  This function updates the
  *                      u2NemState memory and the caller will update the PGMPAGE
  *                      copy accordingly.
@@ -700,8 +701,8 @@ typedef DECLCALLBACK(int) FNPGMPHYSNEMQUERYCHECKER(PVM pVM, PVMCPU pVCpu, RTGCPH
 /** Pointer to a FNPGMPHYSNEMQUERYCHECKER function. */
 typedef FNPGMPHYSNEMQUERYCHECKER *PFNPGMPHYSNEMQUERYCHECKER;
 
-VMM_INT_DECL(int)   PGMPhysNemQueryPageInfo(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, PPGMPHYSNEMPAGEINFO pInfo,
-                                            PFNPGMPHYSNEMQUERYCHECKER pfnChecker, void *pvUser);
+VMM_INT_DECL(int)   PGMPhysNemPageInfoChecker(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, bool fMakeWritable,
+                                              PPGMPHYSNEMPAGEINFO pInfo, PFNPGMPHYSNEMQUERYCHECKER pfnChecker, void *pvUser);
 
 #ifdef VBOX_STRICT
 VMMDECL(unsigned)   PGMAssertHandlerAndFlagsInSync(PVM pVM);

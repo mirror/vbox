@@ -76,6 +76,8 @@ typedef enum VMCPUSTATE
     VMCPUSTATE_STARTED_EXEC,
     /** Executing guest code in the recompiler. */
     VMCPUSTATE_STARTED_EXEC_REM,
+    /** Executing guest code using NEM. */
+    VMCPUSTATE_STARTED_EXEC_NEM,
     /** Halted. */
     VMCPUSTATE_STARTED_HALTED,
 
