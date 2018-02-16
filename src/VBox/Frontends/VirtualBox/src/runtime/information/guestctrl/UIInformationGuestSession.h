@@ -74,7 +74,7 @@ private:
     UIGuestControlConsole   *m_pConsole;
     UIGuestControlInterface *m_pControlInterface;
 
-                /** Holds the Qt event listener instance. */
+    /** Holds the Qt event listener instance. */
     ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
     /** Holds the COM event listener instance. */
     CEventListener m_comEventListener;

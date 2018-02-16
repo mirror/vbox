@@ -29,7 +29,7 @@
 # include "UIExtraDataManager.h"
 # include "UIGuestControlConsole.h"
 # include "UIGuestControlInterface.h"
-# include "UIGuestSessionTreeItem.h"
+# include "UIGuestControlTreeItem.h"
 # include "UIInformationGuestSession.h"
 
 # include "VBoxGlobal.h"
@@ -196,6 +196,8 @@ void UIInformationGuestSession::sltGuestSessionRegistered(CGuestSession guestSes
 {
     if (!guestSession.isOk())
         return;
+
+    new UIGuestSessionTreeItem(m_pTreeWidget, guestSession);
     //printf("sltGuestSessionRegistered \n");
     // addGuestSession(guestSession);
     // emit sigGuestSessionUpdated();
