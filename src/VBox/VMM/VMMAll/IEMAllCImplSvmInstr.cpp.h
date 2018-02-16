@@ -153,7 +153,15 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         Assert(CPUMGetGuestCPL(pVCpu) == pCtx->ss.Attr.n.u2Dpl);
 
         PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-        /* Record any interrupt shadow of the nested-guest instruction into the nested-guest VMCB. */
+
+        /*
+         * Save additional state and intercept information.
+         *
+         *   - Interrupt shadow: Tracked using VMCPU_FF_INHIBIT_INTERRUPTS and RIP.
+         *   - V_TPR: Already updated by iemCImpl_load_CrX or by the physical CPU for
+         *     hardware-assisted SVM execution.
+         *   - V_IRQ: Tracked using VMCPU_FF_INTERRUPT_NESTED_GUEST force-flag and updated below.
+         */
         if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
         {
@@ -164,9 +172,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
             LogFlow(("iemSvmVmexit: Interrupt shadow till %#RX64\n", pCtx->rip));
         }
 
-        /*
-         * Save additional state and intercept information.
-         */
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
         {
             Assert(pVmcbCtrl->IntCtrl.n.u1VIrqPending);
@@ -175,7 +180,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         else
             pVmcbCtrl->IntCtrl.n.u1VIrqPending = 0;
 
-        /** @todo Save V_TPR, V_IRQ. */
         /** @todo NRIP. */
 
         /* Save exit information. */
