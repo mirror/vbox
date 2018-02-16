@@ -58,10 +58,6 @@
 # define NEM_WIN_INTERCEPT_NT_IO_CTLS
 #endif
 
-
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
 /** @name Our two-bit physical page state for PGMPAGE
  * @{ */
 #define NEM_WIN_PAGE_STATE_NOT_SET      0
@@ -76,6 +72,55 @@
 /** Checks if a_GCPhys is relevant to the limited A20 gate emulation.  */
 #define NEM_WIN_IS_RELEVANT_TO_A20(a_GCPhys)    \
     ( ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K) || ((RTGCPHYS)(a_GCPhys) < (RTGCPHYS)_64K) )
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** WHvRegisterInterruptState layout, reconstructed from the v7.1 DDK. */
+typedef union MISSINGINTERUPTSTATEREG
+{
+    /** 64-bit view. */
+    uint64_t au64[2];
+    struct /* unamed */
+    {
+        uint64_t fInterruptShadow : 1;
+        uint64_t fNmiMasked : 2;
+        uint64_t uReserved0 : 61;
+        uint64_t uReserved1;
+    };
+} MISSINGINTERUPTSTATEREG;
+AssertCompileSize(MISSINGINTERUPTSTATEREG, 16);
+
+/** Used by MISSINGPENDINGINTERRUPTIONREG. */
+typedef enum MISSINGPENDINGINTERRUPTIONTYPE
+{
+    kPendingIntType_Interrupt = 0,
+    kPendingIntType_Nmi,
+    kPendingIntType_Xcpt,
+    kPendingIntType_Dunno,
+    kPendingIntType_SoftwareInterrupt
+} MISSINGPENDINGINTERRUPTIONTYPE;
+
+/** WHvRegisterPendingInterruption layout, reconstructed from the v7.1 DDK. */
+typedef union MISSINGPENDINGINTERRUPTIONREG
+{
+    /** 64-bit view. */
+    uint64_t au64[2];
+    struct /* unamed */
+    {
+        uint32_t fInterruptionPending : 1;
+        uint32_t enmInterruptionType : 3; /**< MISSINGPENDINGINTERRUPTIONTYPE */
+        uint32_t fDeliverErrCd : 1;
+        uint32_t fUnknown0 : 1;
+        uint32_t fUnknown1 : 1; /**< Observed set when software interrupt was issued. */
+        uint32_t uReserved0 : 9;
+        uint32_t InterruptionVector : 16;
+        uint32_t uErrCd;
+        uint64_t uReserved1;
+    };
+} MISSINGPENDINGINTERRUPTIONREG;
+AssertCompileSize(MISSINGPENDINGINTERRUPTIONREG, 16);
 
 
 /*********************************************************************************************************************************
@@ -996,7 +1041,6 @@ static int nemR3WinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     aenmNames[iReg]     = WHvX64RegisterCr2;
     aValues[iReg].Reg64 = pCtx->cr2;
     iReg++;
-Log(("=> cr2=%RX64\n", pCtx->cr2));
     aenmNames[iReg]     = WHvX64RegisterCr3;
     aValues[iReg].Reg64 = pCtx->cr3;
     iReg++;
@@ -1313,7 +1357,7 @@ static int nemR3WinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /* event injection */
     aenmNames[76] = WHvRegisterPendingInterruption;
-    aenmNames[77] = WHvRegisterPendingInterruption;
+    aenmNames[77] = WHvRegisterInterruptState;
     aenmNames[78] = WHvRegisterInterruptState;
     aenmNames[79] = WHvRegisterPendingEvent0;
     aenmNames[80] = WHvRegisterPendingEvent1;
@@ -1398,7 +1442,6 @@ static int nemR3WinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         Assert(aenmNames[29] == WHvX64RegisterCr2);
         pCtx->cr2 = aValues[29].Reg64;
-Log(("<= cr2=%RX64\n", pCtx->cr2));
         if (pCtx->cr3 != aValues[30].Reg64)
         {
             CPUMSetGuestCR3(pVCpu, aValues[30].Reg64);
@@ -1537,6 +1580,20 @@ Log(("<= cr2=%RX64\n", pCtx->cr2));
         pCtx->msrSFMASK = aValues[75].Reg64;
 
         /// @todo WHvRegisterPendingInterruption
+        Assert(aenmNames[76] == WHvRegisterPendingInterruption);
+        /** @todo Someone at microsoft please explain why HV_X64_PENDING_INTERRUPTION_REGISTER
+         * and HV_X64_INTERRUPT_STATE_REGISTER are missing from the headers.  Ditto for
+         * wathever structures WHvRegisterPendingEvent0/1 uses.   */
+        MISSINGPENDINGINTERRUPTIONREG const * pPendingInt = (MISSINGPENDINGINTERRUPTIONREG const *)&aValues[76];
+        if (pPendingInt->fInterruptionPending)
+        {
+            Log6(("PendingInterruption: type=%u vector=%#x errcd=%RTbool/%#x unk0=%u unk1=%u\n",
+                  pPendingInt->enmInterruptionType, pPendingInt->InterruptionVector, pPendingInt->fDeliverErrCd,
+                  pPendingInt->uErrCd, pPendingInt->fUnknown0, pPendingInt->fUnknown1));
+            AssertMsg(pPendingInt->uReserved0 == 0 && pPendingInt->uReserved1 == 0,
+                      ("%#RX64 %#RX64\n", pPendingInt->au64[0], pPendingInt->au64[1]));
+        }
+
         /// @todo WHvRegisterInterruptState
         /// @todo WHvRegisterPendingEvent0
         /// @todo WHvRegisterPendingEvent1
@@ -2269,9 +2326,9 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
             break;
         }
 
-        /* Major hack alert! */
+        /* Hack alert! */
         uint32_t const cMappedPages = pVM->nem.s.cMappedPages;
-        if (cMappedPages < 200)
+        if (cMappedPages < 4000)
         { /* likely */ }
         else
         {
