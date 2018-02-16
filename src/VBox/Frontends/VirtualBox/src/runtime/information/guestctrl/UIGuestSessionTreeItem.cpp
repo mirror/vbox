@@ -21,7 +21,6 @@
 
 /* GUI includes: */
 # include "UIGuestSessionTreeItem.h"
-# include "UIGuestSessionsEventHandler.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */

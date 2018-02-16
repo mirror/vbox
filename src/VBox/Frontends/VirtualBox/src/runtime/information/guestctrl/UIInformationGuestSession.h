@@ -23,7 +23,11 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CConsole.h"
+#include "CGuest.h"
+#include "CEventListener.h"
+
+/* GUI includes: */
+#include "UIMainEventListener.h"
 
 /* Forward declarations: */
 class QITreeWidget;
@@ -32,6 +36,8 @@ class QSplitter;
 class UIGuestControlConsole;
 class UIGuestControlInterface;
 class UIGuestSessionsEventHandler;
+
+
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
@@ -43,7 +49,7 @@ signals:
 
 public:
 
-    UIInformationGuestSession(QWidget *pParent, const CConsole &console);
+    UIInformationGuestSession(QWidget *pParent, const CGuest &comGuest);
 
 private slots:
 
@@ -51,19 +57,27 @@ private slots:
     void sltConsoleCommandEntered(const QString &strCommand);
     void sltConsoleOutputReceived(const QString &strOutput);
 
+    void sltGuestSessionRegistered(CGuestSession guestSession);
+    void sltGuestSessionUnregistered(CGuestSession guestSession);
+
 private:
 
     void prepareObjects();
     void prepareConnections();
+    void prepareListener();
     void updateTreeWidget();
-
-    CConsole                 m_comConsole;
+    void cleanupListener();
+    CGuest                   m_comGuest;
     QVBoxLayout             *m_pMainLayout;
     QSplitter               *m_pSplitter;
-    UIGuestSessionsEventHandler *m_pGuestSessionsEventHandler;
     QITreeWidget            *m_pTreeWidget;
     UIGuestControlConsole   *m_pConsole;
     UIGuestControlInterface *m_pControlInterface;
+
+                /** Holds the Qt event listener instance. */
+    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
+    /** Holds the COM event listener instance. */
+    CEventListener m_comEventListener;
 };
 
 #endif /* !___UIInformationGuestSession_h___ */

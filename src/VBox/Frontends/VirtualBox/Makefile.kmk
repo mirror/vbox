@@ -377,7 +377,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/information/UIVMInformationDialog.h \
 	src/runtime/information/guestctrl/UIGuestControlConsole.h \
 	src/runtime/information/guestctrl/UIGuestControlInterface.h \
-	src/runtime/information/guestctrl/UIGuestSessionsEventHandler.h \
 	src/runtime/information/guestctrl/UIGuestSessionTreeItem.h \
 	src/runtime/information/guestctrl/UIInformationGuestSession.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
@@ -565,7 +564,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIStatusBarEditorWindow.cpp \
-       src/runtime/information/guestctrl/UIGuestSessionsEventHandler.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
@@ -709,7 +707,6 @@ VirtualBox_SOURCES = \
 	src/runtime/information/guestctrl/UIGuestControlConsole.cpp \
 	src/runtime/information/guestctrl/UIGuestControlInterface.cpp \
 	src/runtime/information/guestctrl/UIInformationGuestSession.cpp \
-	src/runtime/information/guestctrl/UIGuestSessionsEventHandler.cpp \
 	src/runtime/information/guestctrl/UIGuestSessionTreeItem.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \

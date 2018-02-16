@@ -26,39 +26,38 @@
 
 /* GUI includes: */
 # include "QITreeWidget.h"
+# include "UIExtraDataManager.h"
 # include "UIGuestControlConsole.h"
 # include "UIGuestControlInterface.h"
 # include "UIGuestSessionTreeItem.h"
-# include "UIGuestSessionsEventHandler.h"
 # include "UIInformationGuestSession.h"
+
 # include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "CGuest.h"
+# include "CEventSource.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UIInformationGuestSession::UIInformationGuestSession(QWidget *pParent, const CConsole &console)
+UIInformationGuestSession::UIInformationGuestSession(QWidget *pParent, const CGuest &comGuest)
     : QWidget(pParent)
-    , m_comConsole(console)
+    , m_comGuest(comGuest)
     , m_pMainLayout(0)
     , m_pSplitter(0)
-    , m_pGuestSessionsEventHandler(0)
     , m_pTreeWidget(0)
     , m_pConsole(0)
     , m_pControlInterface(0)
+    , m_pQtListener(0)
 {
+    prepareListener();
     prepareObjects();
     prepareConnections();
-
-    // if(m_pControlInterface)
-    //     m_pControlInterface->unitTest();
 }
 
 void UIInformationGuestSession::prepareObjects()
 {
-    m_pGuestSessionsEventHandler = new UIGuestSessionsEventHandler(this, m_comConsole.GetGuest());
-    m_pControlInterface = new UIGuestControlInterface(this, m_comConsole.GetGuest());
+    m_pControlInterface = new UIGuestControlInterface(this, m_comGuest);
 
     /* Create layout: */
     m_pMainLayout = new QVBoxLayout(this);
@@ -100,12 +99,9 @@ void UIInformationGuestSession::updateTreeWidget()
 {
     if (!m_pTreeWidget)
         return;
-    if (!m_pGuestSessionsEventHandler)
-        return;
 
     m_pTreeWidget->clear();
     QVector<QITreeWidgetItem> treeItemVector;
-    m_pGuestSessionsEventHandler->populateGuestSessionsTree(m_pTreeWidget);
     update();
 }
 
@@ -115,8 +111,13 @@ void UIInformationGuestSession::prepareConnections()
             this, &UIInformationGuestSession::sltConsoleOutputReceived);
     connect(m_pConsole, &UIGuestControlConsole::commandEntered,
             this, &UIInformationGuestSession::sltConsoleCommandEntered);
-    connect(m_pGuestSessionsEventHandler, &UIGuestSessionsEventHandler::sigGuestSessionsUpdated,
-            this, &UIInformationGuestSession::sltGuestSessionsUpdated);
+    if(m_pQtListener)
+    {
+        connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionRegistered,
+                this, &UIInformationGuestSession::sltGuestSessionRegistered, Qt::DirectConnection);
+        connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
+                this, &UIInformationGuestSession::sltGuestSessionUnregistered, Qt::DirectConnection);
+    }
 }
 
 void UIInformationGuestSession::sltGuestSessionsUpdated()
@@ -138,4 +139,72 @@ void UIInformationGuestSession::sltConsoleOutputReceived(const QString &strOutpu
     {
         m_pConsole->putOutput(strOutput);
     }
+}
+
+void UIInformationGuestSession::prepareListener()
+{
+    /* Create event listener instance: */
+    m_pQtListener.createObject();
+    m_pQtListener->init(new UIMainEventListener, this);
+    m_comEventListener = CEventListener(m_pQtListener);
+
+    /* Get CProgress event source: */
+    CEventSource comEventSource = m_comGuest.GetEventSource();
+    AssertWrapperOk(comEventSource);
+
+    /* Enumerate all the required event-types: */
+    QVector<KVBoxEventType> eventTypes;
+    eventTypes << KVBoxEventType_OnGuestSessionRegistered;
+
+
+    /* Register event listener for CProgress event source: */
+    comEventSource.RegisterListener(m_comEventListener, eventTypes,
+        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+    AssertWrapperOk(comEventSource);
+
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Register event sources in their listeners as well: */
+        m_pQtListener->getWrapped()->registerSource(comEventSource, m_comEventListener);
+    }
+}
+
+void UIInformationGuestSession::cleanupListener()
+{
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Unregister everything: */
+        m_pQtListener->getWrapped()->unregisterSources();
+    }
+
+    /* Make sure VBoxSVC is available: */
+    if (!vboxGlobal().isVBoxSVCAvailable())
+        return;
+
+    /* Get CProgress event source: */
+    CEventSource comEventSource = m_comGuest.GetEventSource();
+    AssertWrapperOk(comEventSource);
+
+    /* Unregister event listener for CProgress event source: */
+    comEventSource.UnregisterListener(m_comEventListener);
+}
+
+
+void UIInformationGuestSession::sltGuestSessionRegistered(CGuestSession guestSession)
+{
+    if (!guestSession.isOk())
+        return;
+    //printf("sltGuestSessionRegistered \n");
+    // addGuestSession(guestSession);
+    // emit sigGuestSessionUpdated();
+}
+
+void UIInformationGuestSession::sltGuestSessionUnregistered(CGuestSession guestSession)
+{
+    if (!guestSession.isOk())
+        return;
+    // removeGuestSession(guestSession);
+    // emit sigGuestSessionUpdated();
 }

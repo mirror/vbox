@@ -242,14 +242,16 @@ void UIVMInformationDialog::prepareTabWidget()
             m_pTabWidget->addTab(m_tabs.value(1), QString());
         }
 
-        UIInformationGuestSession *pGuestSessionWidget =
-            new UIInformationGuestSession(this, m_pMachineWindow->console());
-        if (pGuestSessionWidget)
+        if(m_pMachineWindow->console().isOk())
         {
-            m_tabs.insert(2, pGuestSessionWidget);
-            m_pTabWidget->addTab(m_tabs.value(2), QString());
+            UIInformationGuestSession *pGuestSessionWidget =
+                new UIInformationGuestSession(this, m_pMachineWindow->console().GetGuest());
+            if (pGuestSessionWidget)
+            {
+                m_tabs.insert(2, pGuestSessionWidget);
+                m_pTabWidget->addTab(m_tabs.value(2), QString());
+            }
         }
-
         /* Set Runtime Information tab as default: */
         m_pTabWidget->setCurrentIndex(1);
 
