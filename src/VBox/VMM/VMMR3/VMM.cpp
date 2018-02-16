@@ -1496,7 +1496,7 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     CPUMR3ResetCpu(pVM, pVCpu);
     EMR3ResetCpu(pVCpu);
     HMR3ResetCpu(pVCpu);
-    NEMR3ResetCpu(pVCpu);
+    NEMR3ResetCpu(pVCpu, true /*fInitIpi*/);
 
     /* This will trickle up on the target EMT. */
     return VINF_EM_WAIT_SIPI;

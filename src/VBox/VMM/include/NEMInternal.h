@@ -46,13 +46,17 @@ typedef struct NEM
     bool                        fEnabled;
 #ifdef RT_OS_WINDOWS
     /** Set if we've created the EMTs. */
-    bool                        fCreatedEmts;
+    bool                        fCreatedEmts : 1;
     /** WHvRunVpExitReasonX64Cpuid is supported. */
-    bool                        fExtendedMsrExit;
+    bool                        fExtendedMsrExit : 1;
     /** WHvRunVpExitReasonX64MsrAccess is supported. */
-    bool                        fExtendedCpuIdExit;
+    bool                        fExtendedCpuIdExit : 1;
     /** WHvRunVpExitReasonException is supported. */
-    bool                        fExtendedXcptExit;
+    bool                        fExtendedXcptExit : 1;
+    /** Set if we've started more than one CPU and cannot mess with A20. */
+    bool                        fA20Fixed : 1;
+    /** Set if A20 is enabled. */
+    bool                        fA20Enabled : 1;
     /** The reported CPU vendor.   */
     CPUMCPUVENDOR               enmCpuVendor;
     /** Cache line flush size as a power of two. */
@@ -113,10 +117,11 @@ int     nemR3NativeInitAfterCPUM(PVM pVM);
 int     nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 int     nemR3NativeTerm(PVM pVM);
 void    nemR3NativeReset(PVM pVM);
-void    nemR3NativeResetCpu(PVMCPU pVCpu);
+void    nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi);
 VBOXSTRICTRC    nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu);
 bool            nemR3NativeCanExecuteGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 bool            nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
+void            nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
 
 int     nemR3NativeNotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
 int     nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvMmio2);

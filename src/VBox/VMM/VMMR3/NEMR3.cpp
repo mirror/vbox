@@ -222,15 +222,16 @@ VMMR3_INT_DECL(void) NEMR3Reset(PVM pVM)
  *
  * Used to bring up secondary CPUs on SMP as well as CPU hot plugging.
  *
- * @param   pVCpu   The cross context virtual CPU structure to reset.
+ * @param   pVCpu       The cross context virtual CPU structure to reset.
+ * @param   fInitIpi    Set if being reset due to INIT IPI.
  */
-VMMR3_INT_DECL(void) NEMR3ResetCpu(PVMCPU pVCpu)
+VMMR3_INT_DECL(void) NEMR3ResetCpu(PVMCPU pVCpu, bool fInitIpi)
 {
 #ifdef VBOX_WITH_NATIVE_NEM
     if (pVCpu->pVMR3->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
-        nemR3NativeResetCpu(pVCpu);
+        nemR3NativeResetCpu(pVCpu, fInitIpi);
 #else
-    RT_NOREF(pVCpu);
+    RT_NOREF(pVCpu, fInitIpi);
 #endif
 }
 
@@ -269,6 +270,18 @@ VMMR3_INT_DECL(bool) NEMR3SetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnab
     return false;
 #endif
 }
+
+
+VMMR3_INT_DECL(void) NEMR3NotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
+{
+    AssertLogRelReturnVoid(VM_IS_NEM_ENABLED(pVM));
+#ifdef VBOX_WITH_NATIVE_NEM
+    nemR3NativeNotifyFF(pVM, pVCpu, fFlags);
+#else
+    RT_NOREF(pVM, pVCpu, fFlags);
+#endif
+}
+
 
 
 
