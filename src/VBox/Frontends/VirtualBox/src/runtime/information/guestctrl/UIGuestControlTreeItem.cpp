@@ -29,6 +29,7 @@
 # include "CEventSource.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
 /*********************************************************************************************************************************
 *   UIGuestControlTreeItem implementation.                                                                                       *
 *********************************************************************************************************************************/
@@ -95,6 +96,7 @@ void UIGuestControlTreeItem::cleanupListener(CEventSource comEventSource)
     comEventSource.UnregisterListener(m_comEventListener);
 }
 
+
 /*********************************************************************************************************************************
 *   UIGuestSessionTreeItem implementation.                                                                                       *
 *********************************************************************************************************************************/
@@ -156,6 +158,7 @@ void UIGuestSessionTreeItem::sltGuestProcessRegistered(CGuestProcess guestProces
 void UIGuestSessionTreeItem::sltGuestProcessUnregistered(CGuestProcess guestProcess)
 {
 }
+
 
 /*********************************************************************************************************************************
 *   UIGuestProcessTreeItem implementation.                                                                                       *
