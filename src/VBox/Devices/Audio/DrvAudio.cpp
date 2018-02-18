@@ -569,7 +569,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
     if (RT_FAILURE(rc))
     {
-        LogRel2(("Audio: %s stream '%s' failed with %Rrc\n", DrvAudioHlpStreamCmdToStr(enmStreamCmd), pHstStream->szName, rc));
+        LogRel(("Audio: %s stream '%s' failed with %Rrc\n", DrvAudioHlpStreamCmdToStr(enmStreamCmd), pHstStream->szName, rc));
         LogFunc(("[%s] %s failed with %Rrc\n", pStream->szName, DrvAudioHlpStreamCmdToStr(enmStreamCmd), rc));
     }
 
@@ -695,7 +695,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     AssertRC(rc2);
 
     if (RT_FAILURE(rc))
-        LogRel2(("Audio: Creating stream '%s' failed with %Rrc\n", pStream->szName, rc));
+        LogRel(("Audio: Creating stream '%s' failed with %Rrc\n", pStream->szName, rc));
 
     LogFlowFunc(("[%s] Returning %Rrc\n", pStream->szName, rc));
     return rc;
@@ -852,7 +852,7 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     }
 
     if (RT_FAILURE(rc))
-        LogRel2(("Audio: Re-initializing stream '%s' failed with %Rrc\n", pStream->szName, rc));
+        LogRel(("Audio: Re-initializing stream '%s' failed with %Rrc\n", pStream->szName, rc));
 
     LogFunc(("[%s] Returning %Rrc\n", pStream->szName, rc));
     return rc;
@@ -1837,7 +1837,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
         }
         else if (RT_UNLIKELY(RT_FAILURE(rc)))
         {
-            LogRel2(("Audio: Capturing stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
+            LogRel(("Audio: Capturing stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
         }
 
     } while (0);
@@ -2983,7 +2983,7 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
                 pHstStream = NULL;
             }
             else
-                LogRel2(("Audio: Uninitializing host stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
+                LogRel(("Audio: Uninitializing host stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
         }
 
         if (   RT_SUCCESS(rc)
@@ -3014,7 +3014,7 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
                 pGstStream = NULL;
             }
             else
-                LogRel2(("Audio: Uninitializing guest stream '%s' failed with %Rrc\n", pGstStream->szName, rc));
+                LogRel(("Audio: Uninitializing guest stream '%s' failed with %Rrc\n", pGstStream->szName, rc));
         }
     }
 
@@ -3078,7 +3078,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         if (rc == VERR_NOT_SUPPORTED)
             LogRel2(("Audio: Creating stream '%s' in backend not supported, skipping\n", pHstStream->szName));
         else
-            LogRel2(("Audio: Creating stream '%s' in backend failed with %Rrc\n", pHstStream->szName, rc));
+            LogRel(("Audio: Creating stream '%s' in backend failed with %Rrc\n", pHstStream->szName, rc));
 
         return rc;
     }
