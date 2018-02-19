@@ -706,6 +706,9 @@ typedef union
 } SVMLBRVIRT;
 AssertCompileSize(SVMLBRVIRT, 8);
 
+/** Maximum number of bytes in the Guest-instruction bytes field. */
+#define SVM_CTRL_GUEST_INSTR_BYTES_MAX      15
+
 /**
  * SVM VMCB control area.
  */
@@ -769,8 +772,8 @@ typedef struct
     uint64_t    u64NextRIP;
     /** Offset 0xd0 - Number of bytes fetched. */
     uint8_t     cbInstrFetched;
-    /** Offset 0xd1 - Fetched bytes. */
-    uint8_t     abInstr[15];
+    /** Offset 0xd1 - Guest instruction bytes. */
+    uint8_t     abInstr[SVM_CTRL_GUEST_INSTR_BYTES_MAX];
     /** Offset 0xe0 - AVIC APIC_BACKING_PAGE pointer. */
     SVMAVIC     AvicBackingPagePtr;
     /** Offset 0xe8-0xef - Reserved. */
