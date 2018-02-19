@@ -564,6 +564,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIStatusBarEditorWindow.cpp \
+	src/runtime/information/guestctrl/UIInformationGuestSession.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \

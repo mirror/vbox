@@ -31,7 +31,6 @@
 
 UIGuestControlConsole::UIGuestControlConsole(QWidget* parent /* = 0 */)
     :QPlainTextEdit(parent)
-    , m_uLineNumber(0)
     , m_strGreet("Welcome to 'Guest Control Console'. Type 'help' for help\n")
     , m_strPrompt("$>")
     , m_uCommandHistoryIndex(0)
@@ -43,7 +42,6 @@ UIGuestControlConsole::UIGuestControlConsole(QWidget* parent /* = 0 */)
 
 void UIGuestControlConsole::reset()
 {
-    m_uLineNumber = 0;
     clear();
     startNextLine();
     insertPlainText(m_strGreet);
@@ -60,7 +58,7 @@ void UIGuestControlConsole::startNextLine()
 
 void UIGuestControlConsole::putOutput(const QString &strOutput)
 {
-    if(strOutput.isNull() || strOutput.length() <= 0)
+    if (strOutput.isNull() || strOutput.length() <= 0)
         return;
 
     bool newLineNeeded = getCommandString().isEmpty();
@@ -71,7 +69,7 @@ void UIGuestControlConsole::putOutput(const QString &strOutput)
     insertPlainText(strOwn);
     moveCursor(QTextCursor::End);
 
-    if(newLineNeeded)
+    if (newLineNeeded)
     {
         insertPlainText("\n");
         startNextLine();
@@ -97,14 +95,14 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
         case Qt::Key_Backspace:
         {
             QTextCursor cursor = textCursor();
-            if(cursor.positionInBlock() > m_strPrompt.length())
+            if (cursor.positionInBlock() > m_strPrompt.length())
                 cursor.deletePreviousChar();
             break;
         }
         case Qt::Key_Left:
         case Qt::Key_Right:
         {
-            if(textCursor().positionInBlock() > m_strPrompt.length())
+            if (textCursor().positionInBlock() > m_strPrompt.length())
                 QPlainTextEdit::keyPressEvent(pEvent);
             break;
         }
@@ -112,10 +110,10 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
         case Qt::Key_Enter:
         {
             QString strCommand(getCommandString());
-            if(!strCommand.isEmpty())
+            if (!strCommand.isEmpty())
             {
                 emit commandEntered(strCommand);
-                if(!m_tCommandHistory.contains(strCommand))
+                if (!m_tCommandHistory.contains(strCommand))
                     m_tCommandHistory.push_back(strCommand);
                 m_uCommandHistoryIndex = m_tCommandHistory.size()-1;
                 moveCursor(QTextCursor::End);
@@ -138,38 +136,35 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
     }
 }
 
-int UIGuestControlConsole::currentLineNumber() const
-{
-    return textCursor().blockNumber();
-}
-
-
 void UIGuestControlConsole::mousePressEvent(QMouseEvent *pEvent)
 {
-    Q_UNUSED(pEvent);
-    setFocus();
+    // Q_UNUSED(pEvent);
+    // setFocus();
+    QPlainTextEdit::mousePressEvent(pEvent);
 }
 
 void UIGuestControlConsole::mouseDoubleClickEvent(QMouseEvent *pEvent)
 {
-    Q_UNUSED(pEvent);
+    //Q_UNUSED(pEvent);
+    QPlainTextEdit::mouseDoubleClickEvent(pEvent);
 }
 
 void UIGuestControlConsole::contextMenuEvent(QContextMenuEvent *pEvent)
 {
-    Q_UNUSED(pEvent);
+    //Q_UNUSED(pEvent);
+    QPlainTextEdit::contextMenuEvent(pEvent);
 }
 
 QString UIGuestControlConsole::getCommandString()
 {
     QTextDocument* pDocument = document();
-    if(!pDocument)
+    if (!pDocument)
         return QString();
     QTextBlock block = pDocument->lastBlock();//findBlockByLineNumber(pDocument->lineCount()-1);
     if (!block.isValid())
         return QString();
     QString lineStr = block.text();
-    if(lineStr.isNull() || lineStr.length() <= 1)
+    if (lineStr.isNull() || lineStr.length() <= 1)
         return QString();
     /* Remove m_strPrompt from the line string: */
     return (lineStr.right(lineStr.length()-m_strPrompt.length()));
@@ -189,10 +184,10 @@ void UIGuestControlConsole::replaceLineContent(const QString &stringNewContent)
 
 QString UIGuestControlConsole::getNextCommandFromHistory(const QString &originalString /* = QString() */)
 {
-    if(m_tCommandHistory.empty())
+    if (m_tCommandHistory.empty())
         return originalString;
 
-    if(m_uCommandHistoryIndex == (unsigned)(m_tCommandHistory.size() - 1))
+    if (m_uCommandHistoryIndex == (unsigned)(m_tCommandHistory.size() - 1))
         m_uCommandHistoryIndex = 0;
     else
         ++m_uCommandHistoryIndex;
@@ -203,20 +198,12 @@ QString UIGuestControlConsole::getNextCommandFromHistory(const QString &original
 
 QString UIGuestControlConsole::getPreviousCommandFromHistory(const QString &originalString /* = QString() */)
 {
-    if(m_tCommandHistory.empty())
+    if (m_tCommandHistory.empty())
         return originalString;
-    if(m_uCommandHistoryIndex == 0)
+    if (m_uCommandHistoryIndex == 0)
         m_uCommandHistoryIndex = m_tCommandHistory.size() - 1;
     else
         --m_uCommandHistoryIndex;
 
     return m_tCommandHistory.at(m_uCommandHistoryIndex);
-}
-
-void UIGuestControlConsole::printCommandHistory() const
-{
-    for(int i = 0; i < m_tCommandHistory.size(); ++i)
-    {
-        printf("%d -- %s\n", i, m_tCommandHistory.at(i).toStdString().c_str());
-    }
 }

@@ -36,6 +36,8 @@ class UIGuestControlTreeItem : public QITreeWidgetItem
 
 signals:
 
+    void sigGuessSessionUpdated();
+
 public:
 
 
@@ -58,6 +60,7 @@ private:
     virtual void prepareListener() = 0;
     virtual void prepareConnections() = 0;
     virtual void cleanupListener() = 0;
+    virtual void setColumnText() = 0;
 
     /** Holds the COM event listener instance. */
     CEventListener m_comEventListener;
@@ -73,6 +76,7 @@ public:
     UIGuestSessionTreeItem(QITreeWidget *pTreeWidget, CGuestSession& guestSession, const QStringList &strings = QStringList());
     UIGuestSessionTreeItem(UIGuestControlTreeItem *pTreeWidgetItem, CGuestSession& guestSession, const QStringList &strings = QStringList());
     virtual ~UIGuestSessionTreeItem();
+    const CGuestSession& guestSession() const;
 
 protected:
 
@@ -90,6 +94,7 @@ private:
     virtual void prepareListener() /* override */;
     virtual void prepareConnections() /* override */;
     virtual void cleanupListener()  /* override */;
+    virtual void setColumnText()  /* override */;
 
     CGuestSession m_comGuestSession;
 
@@ -103,6 +108,7 @@ public:
 
     UIGuestProcessTreeItem(QITreeWidget *pTreeWidget, CGuestProcess& guestProcess, const QStringList &strings = QStringList());
     UIGuestProcessTreeItem(UIGuestControlTreeItem *pTreeWidgetItem, CGuestProcess& guestProcess, const QStringList &strings = QStringList());
+    const CGuestProcess& guestProcess() const;
     virtual ~UIGuestProcessTreeItem();
 
 
@@ -120,6 +126,7 @@ private:
     virtual void prepareListener() /* override */;
     virtual void prepareConnections() /* override */;
     virtual void cleanupListener()  /* override */;
+    virtual void setColumnText()  /* override */;
 
     CGuestProcess m_comGuestProcess;
 };

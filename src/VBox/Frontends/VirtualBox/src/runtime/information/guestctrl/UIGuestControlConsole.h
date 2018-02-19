@@ -21,18 +21,20 @@
 /* Qt includes: */
 # include <QPlainTextEdit>
 
+/** QPlainTextEdit extension to provide a simple terminal like widget. */
 class UIGuestControlConsole : public QPlainTextEdit
 {
 
     Q_OBJECT;
 
 signals:
-
+    /* This is emitted when return key is pressed */
     void commandEntered(QString command);
 
 public:
 
     UIGuestControlConsole(QWidget* parent = 0);
+    /* @p strOutput is displayed in the console */
     void putOutput(const QString &strOutput);
 
 protected:
@@ -46,23 +48,20 @@ private slots:
 
 
 private:
+
     typedef QVector<QString> CommandHistory;
-    int      currentLineNumber() const;
-    void     reset();
-    void     startNextLine();
+    void        reset();
+    void        startNextLine();
     /** Return the text of the curent line */
-    QString  getCommandString();
+    QString     getCommandString();
     /** Replaces the content of the last line with m_strPromt + @p stringNewContent */
-    void     replaceLineContent(const QString &stringNewContent);
+    void        replaceLineContent(const QString &stringNewContent);
     /** Get next/prev command from history. Return @p originalString if history is empty. */
     QString     getNextCommandFromHistory(const QString &originalString = QString());
     QString     getPreviousCommandFromHistory(const QString &originalString = QString());
-    void        printCommandHistory() const;
 
-    /** Stores the line number the edit cursor */
-    unsigned m_uLineNumber;
-    const QString m_strGreet;
-    const QString m_strPrompt;
+    const QString  m_strGreet;
+    const QString  m_strPrompt;
 
     /* A vector of entered commands */
     CommandHistory m_tCommandHistory;

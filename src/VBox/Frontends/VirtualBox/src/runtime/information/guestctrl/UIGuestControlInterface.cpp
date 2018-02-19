@@ -57,13 +57,13 @@
 QString generateErrorString(int getOptErrorCode, const RTGETOPTUNION &valueUnion)
 {
     QString errorString;
-    if(valueUnion.pDef)
-    {
-        if(valueUnion.pDef->pszLong)
-        {
-            errorString = QString(valueUnion.pDef->pszLong);
-        }
-    }
+    // if (valueUnion.pDef)
+    // {
+    //     if (valueUnion.pDef->pszLong)
+    //     {
+    //         errorString = QString(valueUnion.pDef->pszLong);
+    //     }
+    // }
 
     switch (getOptErrorCode)
     {
@@ -114,7 +114,7 @@ UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &
                 "                                   [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
                 "                                   [--ignore-operhaned-processes] [--profile]\n"
                 "                                   -- <program/arg0> [argument1] ... [argumentN]]\n"
-                "create                           [common-options]  [sessionname <name>]\n"
+                "create                           [common-options]  [--sessionname <name>]\n"
                 )
 {
     prepareSubCommandHandlers();
@@ -245,6 +245,7 @@ bool UIGuestControlInterface::handleCreate(int argc, char** argv)
 
     static const RTGETOPTDEF s_aOptions[] =
     {
+        GCTLCMD_COMMON_OPTION_DEFS()
         { "--sessionname",      GCTLCMD_COMMON_OPT_SESSION_NAME,  RTGETOPT_REQ_STRING  }
     };
 
@@ -360,7 +361,7 @@ bool UIGuestControlInterface::findSession(ULONG sessionId, CGuestSession& outSes
     QVector<CGuestSession> sessionVector = m_comGuest.GetSessions();
     if (sessionVector.isEmpty())
         return false;
-    for(int  i = 0; i < sessionVector.size(); ++i)
+    for (int  i = 0; i < sessionVector.size(); ++i)
     {
         if (sessionVector.at(i).isOk() && sessionId == sessionVector.at(i).GetId())
         {

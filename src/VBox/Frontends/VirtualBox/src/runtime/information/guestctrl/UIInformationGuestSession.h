@@ -36,16 +36,13 @@ class QSplitter;
 class UIGuestControlConsole;
 class UIGuestControlInterface;
 class UIGuestSessionsEventHandler;
-
-
+class UIGuestControlTreeWidget;
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
 class UIInformationGuestSession : public QWidget
 {
     Q_OBJECT;
-
-signals:
 
 public:
 
@@ -60,6 +57,9 @@ private slots:
     void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltGuestSessionUnregistered(CGuestSession guestSession);
 
+    void sltTreeItemUpdated();
+    void sltCloseSessionOrProcess();
+
 private:
 
     void prepareObjects();
@@ -67,12 +67,12 @@ private:
     void prepareListener();
     void updateTreeWidget();
     void cleanupListener();
-    CGuest                   m_comGuest;
-    QVBoxLayout             *m_pMainLayout;
-    QSplitter               *m_pSplitter;
-    QITreeWidget            *m_pTreeWidget;
-    UIGuestControlConsole   *m_pConsole;
-    UIGuestControlInterface *m_pControlInterface;
+    CGuest                    m_comGuest;
+    QVBoxLayout              *m_pMainLayout;
+    QSplitter                *m_pSplitter;
+    UIGuestControlTreeWidget *m_pTreeWidget;
+    UIGuestControlConsole    *m_pConsole;
+    UIGuestControlInterface  *m_pControlInterface;
 
     /** Holds the Qt event listener instance. */
     ComObjPtr<UIMainEventListenerImpl> m_pQtListener;

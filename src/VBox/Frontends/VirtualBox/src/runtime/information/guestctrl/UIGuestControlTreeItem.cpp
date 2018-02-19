@@ -29,7 +29,91 @@
 # include "CEventSource.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+QString sessionStatusString(KGuestSessionStatus status)
+{
+    QString statusString;
+    switch (status)
+    {
+        case KGuestSessionStatus_Undefined:
+            statusString = "Undefined";
+            break;
+        case KGuestSessionStatus_Starting:
+            statusString = "Starting";
+            break;
+        case KGuestSessionStatus_Started:
+            statusString = "Started";
+            break;
+        case KGuestSessionStatus_Terminating:
+            statusString = "Terminating";
+            break;
+        case KGuestSessionStatus_Terminated:
+            statusString = "Terminated";
+            break;
+        case KGuestSessionStatus_TimedOutKilled:
+            statusString = "TimedOutKilled";
+            break;
+        case KGuestSessionStatus_TimedOutAbnormally:
+            statusString = "TimedOutAbnormally";
+            break;
+        case KGuestSessionStatus_Down:
+            statusString = "Down";
+            break;
+        case KGuestSessionStatus_Error:
+            statusString = "Error";
+            break;
+        default:
+            statusString = "Undefined";
+            break;
+    }
+    return statusString;
+}
 
+QString processStatusString(KProcessStatus status)
+{
+    QString statusString;
+    switch (status)
+    {
+        case KProcessStatus_Undefined:
+            statusString = "Undefined";
+            break;
+        case KProcessStatus_Starting:
+            statusString = "Starting";
+            break;
+        case KProcessStatus_Started:
+            statusString = "Started";
+            break;
+        case KProcessStatus_Paused:
+            statusString = "Terminating";
+            break;
+        case KProcessStatus_Terminating:
+            statusString = "Terminating";
+            break;
+        case KProcessStatus_TerminatedNormally:
+            statusString = "TerminatedNormally";
+            break;
+        case KProcessStatus_TerminatedSignal:
+            statusString = "TerminatedSignal";
+            break;
+        case KProcessStatus_TerminatedAbnormally:
+            statusString = "TerminatedAbnormally";
+            break;
+        case KProcessStatus_TimedOutKilled:
+            statusString = "TimedOutKilled";
+            break;
+        case KProcessStatus_TimedOutAbnormally:
+            statusString = "TimedOutAbnormally";
+            break;
+        case KProcessStatus_Down:
+            statusString = "Down";
+            break;
+        case KProcessStatus_Error:
+            statusString = "Error";
+            break;
+        default:
+            break;
+    }
+    return statusString;
+}
 /*********************************************************************************************************************************
 *   UIGuestControlTreeItem implementation.                                                                                       *
 *********************************************************************************************************************************/
@@ -52,14 +136,15 @@ UIGuestControlTreeItem::~UIGuestControlTreeItem()
 
 void UIGuestControlTreeItem::prepare()
 {
+    prepareListener();
     prepareConnections();
-    prepareConnections();
+    setColumnText();
 }
 
 void UIGuestControlTreeItem::prepareListener(CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes)
 {
-    AssertWrapperOk(comEventSource);
-
+    if (!comEventSource.isOk())
+        return;
     /* Create event listener instance: */
     m_pQtListener.createObject();
     m_pQtListener->init(new UIMainEventListener, this);
@@ -68,7 +153,6 @@ void UIGuestControlTreeItem::prepareListener(CEventSource comEventSource, QVecto
     /* Register event listener for CProgress event source: */
     comEventSource.RegisterListener(m_comEventListener, eventTypes,
         gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
-    AssertWrapperOk(comEventSource);
 
     /* If event listener registered as passive one: */
     if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
@@ -80,7 +164,8 @@ void UIGuestControlTreeItem::prepareListener(CEventSource comEventSource, QVecto
 
 void UIGuestControlTreeItem::cleanupListener(CEventSource comEventSource)
 {
-    AssertWrapperOk(comEventSource);
+    if (!comEventSource.isOk())
+        return;
     /* If event listener registered as passive one: */
     if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
     {
@@ -115,6 +200,7 @@ UIGuestSessionTreeItem::UIGuestSessionTreeItem(UIGuestControlTreeItem *pTreeWidg
     , m_comGuestSession(guestSession)
 {
     prepare();
+
 }
 
 UIGuestSessionTreeItem::~UIGuestSessionTreeItem()
@@ -122,14 +208,19 @@ UIGuestSessionTreeItem::~UIGuestSessionTreeItem()
     cleanupListener();
 }
 
+const CGuestSession& UIGuestSessionTreeItem::guestSession() const
+{
+    return m_comGuestSession;
+}
+
 void UIGuestSessionTreeItem::prepareConnections()
 {
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
-            this, &UIGuestSessionTreeItem::sltGuestSessionUpdated);
+            this, &UIGuestSessionTreeItem::sltGuestSessionUpdated, Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestProcessRegistered,
-            this, &UIGuestSessionTreeItem::sltGuestProcessRegistered);
+            this, &UIGuestSessionTreeItem::sltGuestProcessRegistered, Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestProcessUnregistered,
-            this, &UIGuestSessionTreeItem::sltGuestProcessUnregistered);
+            this, &UIGuestSessionTreeItem::sltGuestProcessUnregistered, Qt::DirectConnection);
 }
 
 void UIGuestSessionTreeItem::prepareListener()
@@ -148,17 +239,43 @@ void UIGuestSessionTreeItem::cleanupListener()
 
 void UIGuestSessionTreeItem::sltGuestSessionUpdated()
 {
+    setColumnText();
+    emit sigGuessSessionUpdated();
 }
 
 void UIGuestSessionTreeItem::sltGuestProcessRegistered(CGuestProcess guestProcess)
 {
-
+    if (!guestProcess.isOk())
+        return;
+    QStringList strList;
+    strList
+        << QString("PID: %1").arg(guestProcess.GetPID())
+        << QString("Process Name: %1").arg(guestProcess.GetName())
+        << QString("Process Status: %1").arg(processStatusString(guestProcess.GetStatus()));
+    /*UIGuestProcessTreeItem *newItem = */new UIGuestProcessTreeItem(this, guestProcess, strList);
 }
 
 void UIGuestSessionTreeItem::sltGuestProcessUnregistered(CGuestProcess guestProcess)
 {
+    for (int i = 0; i < childCount(); ++i)
+    {
+        UIGuestProcessTreeItem* item = dynamic_cast<UIGuestProcessTreeItem*>(child(i));
+        if (item && item->guestProcess() == guestProcess)
+        {
+            delete item;
+            break;
+        }
+    }
 }
 
+void UIGuestSessionTreeItem::setColumnText()
+{
+    if (!m_comGuestSession.isOk())
+        return;
+    setText(0, QString("Session Id: %1").arg(m_comGuestSession.GetId()));
+    setText(1, QString("Session Name: %1").arg(m_comGuestSession.GetName()));
+    setText(2, QString("Session Status: %1").arg(sessionStatusString(m_comGuestSession.GetStatus())));
+}
 
 /*********************************************************************************************************************************
 *   UIGuestProcessTreeItem implementation.                                                                                       *
@@ -182,7 +299,7 @@ UIGuestProcessTreeItem::UIGuestProcessTreeItem(UIGuestControlTreeItem *pTreeWidg
 void UIGuestProcessTreeItem::prepareConnections()
 {
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestProcessStateChanged,
-            this, &UIGuestProcessTreeItem::sltGuestProcessUpdated);
+            this, &UIGuestProcessTreeItem::sltGuestProcessUpdated, Qt::DirectConnection);
 }
 
 UIGuestProcessTreeItem::~UIGuestProcessTreeItem()
@@ -207,4 +324,20 @@ void UIGuestProcessTreeItem::cleanupListener()
 
 void UIGuestProcessTreeItem::sltGuestProcessUpdated()
 {
+    setColumnText();
+}
+
+ void UIGuestProcessTreeItem::setColumnText()
+{
+    if (!m_comGuestProcess.isOk())
+        return;
+    setText(0, QString("PID: %1").arg(m_comGuestProcess.GetPID()));
+    setText(1, QString("Process Name: %1").arg(m_comGuestProcess.GetName()));
+    setText(2, QString("Process Status: %1").arg(processStatusString(m_comGuestProcess.GetStatus())));
+
+}
+
+const CGuestProcess& UIGuestProcessTreeItem::guestProcess() const
+{
+    return m_comGuestProcess;
 }
