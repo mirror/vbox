@@ -72,9 +72,9 @@ FindSMBIOSPtr (
   UINTN                           Address;
 
   //
-  // First Search 0x0f0000 - 0x0fffff for SMBIOS Ptr
+  // First Search 0x0e0000 - 0x0fffff for SMBIOS Ptr
   //
-  for (Address = 0xf0000; Address < 0xfffff; Address += 0x10) {
+  for (Address = 0xe0000; Address < 0xfffff; Address += 0x10) {
     if (*(UINT32 *)(Address) == SMBIOS_PTR) {
       return (VOID *)Address;
     }
