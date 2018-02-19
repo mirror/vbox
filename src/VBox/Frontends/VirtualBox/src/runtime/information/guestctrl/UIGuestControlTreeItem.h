@@ -95,7 +95,8 @@ private:
     virtual void prepareConnections() /* override */;
     virtual void cleanupListener()  /* override */;
     virtual void setColumnText()  /* override */;
-
+    void addGuestProcess(CGuestProcess guestProcess);
+    void initProcessSubTree();
     CGuestSession m_comGuestSession;
 
 };

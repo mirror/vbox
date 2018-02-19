@@ -65,8 +65,11 @@ private:
     void prepareObjects();
     void prepareConnections();
     void prepareListener();
+    void initGuestSessionTree();
     void updateTreeWidget();
     void cleanupListener();
+    void addGuestSession(CGuestSession guestSession);
+
     CGuest                    m_comGuest;
     QVBoxLayout              *m_pMainLayout;
     QSplitter                *m_pSplitter;

@@ -134,7 +134,7 @@ protected:
 
 private slots:
 
-    void sltExpandAll(bool bExpand)
+    void sltExpandAll()
     {
         expandCollapseAll(true);
     }
@@ -176,6 +176,7 @@ UIInformationGuestSession::UIInformationGuestSession(QWidget *pParent, const CGu
     prepareListener();
     prepareObjects();
     prepareConnections();
+    initGuestSessionTree();
 }
 
 void UIInformationGuestSession::prepareObjects()
@@ -330,6 +331,18 @@ void UIInformationGuestSession::prepareListener()
     }
 }
 
+void UIInformationGuestSession::initGuestSessionTree()
+{
+    if (!m_comGuest.isOk())
+        return;
+
+    QVector<CGuestSession> sessions = m_comGuest.GetSessions();
+    for (int i = 0; i < sessions.size(); ++i)
+    {
+        addGuestSession(sessions.at(i));
+    }
+}
+
 void UIInformationGuestSession::cleanupListener()
 {
     /* If event listener registered as passive one: */
@@ -356,7 +369,11 @@ void UIInformationGuestSession::sltGuestSessionRegistered(CGuestSession guestSes
 {
     if (!guestSession.isOk())
         return;
+    addGuestSession(guestSession);
+}
 
+void UIInformationGuestSession::addGuestSession(CGuestSession guestSession)
+{
     UIGuestSessionTreeItem* sessionTreeItem = new UIGuestSessionTreeItem(m_pTreeWidget, guestSession);
     connect(sessionTreeItem, &UIGuestSessionTreeItem::sigGuessSessionUpdated,
             this, &UIInformationGuestSession::sltTreeItemUpdated);

@@ -194,6 +194,7 @@ UIGuestSessionTreeItem::UIGuestSessionTreeItem(QITreeWidget *pTreeWidget, CGuest
     , m_comGuestSession(guestSession)
 {
     prepare();
+    initProcessSubTree();
 }
 
 UIGuestSessionTreeItem::UIGuestSessionTreeItem(UIGuestControlTreeItem *pTreeWidgetItem, CGuestSession& guestSession,
@@ -202,7 +203,7 @@ UIGuestSessionTreeItem::UIGuestSessionTreeItem(UIGuestControlTreeItem *pTreeWidg
     , m_comGuestSession(guestSession)
 {
     prepare();
-
+    initProcessSubTree();
 }
 
 UIGuestSessionTreeItem::~UIGuestSessionTreeItem()
@@ -239,6 +240,15 @@ void UIGuestSessionTreeItem::cleanupListener()
     UIGuestControlTreeItem::cleanupListener(m_comGuestSession.GetEventSource());
 }
 
+void UIGuestSessionTreeItem::initProcessSubTree()
+{
+    if (!m_comGuestSession.isOk())
+        return;
+    QVector<CGuestProcess> processes = m_comGuestSession.GetProcesses();
+    for(int  i =0; i < processes.size(); ++i)
+        addGuestProcess(processes[i]);
+}
+
 void UIGuestSessionTreeItem::sltGuestSessionUpdated()
 {
     setColumnText();
@@ -249,11 +259,17 @@ void UIGuestSessionTreeItem::sltGuestProcessRegistered(CGuestProcess guestProces
 {
     if (!guestProcess.isOk())
         return;
+    addGuestProcess(guestProcess);
+}
+
+void UIGuestSessionTreeItem::addGuestProcess(CGuestProcess guestProcess)
+{
     QStringList strList;
     strList
         << QString("PID: %1").arg(guestProcess.GetPID())
         << QString("Process Name: %1").arg(guestProcess.GetName())
         << QString("Process Status: %1").arg(processStatusString(guestProcess.GetStatus()));
+
     /*UIGuestProcessTreeItem *newItem = */new UIGuestProcessTreeItem(this, guestProcess, strList);
 }
 
