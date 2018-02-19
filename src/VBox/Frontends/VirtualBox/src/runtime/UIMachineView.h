@@ -131,11 +131,6 @@ protected slots:
     /** Handles the scaling-optimization change. */
     void sltHandleScalingOptimizationChange(const QString &strMachineID);
 
-#ifdef VBOX_WS_MAC
-    /** Handles the HiDPI-optimization change. */
-    void sltHandleHiDPIOptimizationChange(const QString &strMachineID);
-#endif
-
     /** Handles the unscaled HiDPI output mode change. */
     void sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID);
 

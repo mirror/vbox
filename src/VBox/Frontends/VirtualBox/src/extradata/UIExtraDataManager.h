@@ -534,11 +534,6 @@ public:
         /** Defines whether Runtime UI should @a fUseUnscaledHiDPIOutput. */
         void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput, const QString &strID);
 
-#ifdef VBOX_WS_MAC
-        /** Returns Runtime UI HiDPI optimization type. */
-        HiDPIOptimizationType hiDPIOptimizationType(const QString &strID);
-#endif
-
 #ifndef VBOX_WS_MAC
         /** Returns whether mini-toolbar is enabled for full and seamless screens. */
         bool miniToolbarEnabled(const QString &strID);

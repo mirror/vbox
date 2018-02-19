@@ -67,9 +67,6 @@ template<> bool canConvert<MachineCloseAction>() { return true; }
 template<> bool canConvert<MouseCapturePolicy>() { return true; }
 template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
 template<> bool canConvert<ScalingOptimizationType>() { return true; }
-#ifdef VBOX_WS_MAC
-template<> bool canConvert<HiDPIOptimizationType>() { return true; }
-#endif
 #ifndef VBOX_WS_MAC
 template<> bool canConvert<MiniToolbarAlignment>() { return true; }
 #endif
@@ -1649,40 +1646,6 @@ template<> ScalingOptimizationType fromInternalString<ScalingOptimizationType>(c
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
 }
-
-#ifdef VBOX_WS_MAC
-/* QString <= HiDPIOptimizationType: */
-template<> QString toInternalString(const HiDPIOptimizationType &optimizationType)
-{
-    QString strResult;
-    switch (optimizationType)
-    {
-        case HiDPIOptimizationType_None:        strResult = "None"; break;
-        case HiDPIOptimizationType_Performance: strResult = "Performance"; break;
-        default:
-        {
-            AssertMsgFailed(("No text for type=%d", optimizationType));
-            break;
-        }
-    }
-    return strResult;
-}
-
-/* HiDPIOptimizationType <= QString: */
-template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const QString &strOptimizationType)
-{
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<HiDPIOptimizationType> values;
-    keys << "None";        values << HiDPIOptimizationType_None;
-    keys << "Performance"; values << HiDPIOptimizationType_Performance;
-    /* 'Performance' type for empty/unknown words (for trunk): */
-    if (!keys.contains(strOptimizationType, Qt::CaseInsensitive))
-        return HiDPIOptimizationType_Performance;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
-}
-#endif /* VBOX_WS_MAC */
 
 #ifndef VBOX_WS_MAC
 /* QString <= MiniToolbarAlignment: */

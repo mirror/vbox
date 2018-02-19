@@ -1996,9 +1996,6 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_Accelerate2D_PixformatYUY2 << GUI_Accelerate2D_PixformatAYUV
 #endif /* VBOX_WITH_VIDEOHWACCEL */
            << GUI_HiDPI_UnscaledOutput
-#ifdef VBOX_WS_MAC
-           << GUI_HiDPI_Optimization
-#endif
 #ifndef VBOX_WS_MAC
            << GUI_ShowMiniToolBar << GUI_MiniToolBarAutoHide << GUI_MiniToolBarAlignment
 #endif /* !VBOX_WS_MAC */
@@ -3745,13 +3742,6 @@ void UIExtraDataManager::setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput,
 #endif
 }
 
-#ifdef VBOX_WS_MAC
-HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &strID)
-{
-    return gpConverter->fromInternalString<HiDPIOptimizationType>(extraDataString(GUI_HiDPI_Optimization, strID));
-}
-#endif /* VBOX_WS_MAC */
-
 #ifndef VBOX_WS_MAC
 bool UIExtraDataManager::miniToolbarEnabled(const QString &strID)
 {
@@ -4418,11 +4408,6 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
         /* Scaling optimization type change: */
         else if (strKey == GUI_Scaling_Optimization)
             emit sigScalingOptimizationTypeChange(strMachineID);
-#ifdef VBOX_WS_MAC
-        /* HiDPI optimization type change: */
-        else if (strKey == GUI_HiDPI_Optimization)
-            emit sigHiDPIOptimizationTypeChange(strMachineID);
-#endif
         /* Unscaled HiDPI Output mode change: */
         else if (strKey == GUI_HiDPI_UnscaledOutput)
             emit sigUnscaledHiDPIOutputModeChange(strMachineID);
