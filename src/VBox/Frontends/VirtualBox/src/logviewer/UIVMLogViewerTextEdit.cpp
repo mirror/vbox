@@ -318,7 +318,7 @@ void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
     }
 
     QMenu *menu = createStandardContextMenu();
-    QAction *pAction = menu->addAction(tr("Bookmark"));
+    QAction *pAction = menu->addAction(UIVMLogViewerWidget::tr("Bookmark"));
     m_iContextMenuBookmark = bookmarkForPos(pEvent->pos());
     if (pAction)
         connect(pAction, &QAction::triggered, this, &UIVMLogViewerTextEdit::sltBookmark);
