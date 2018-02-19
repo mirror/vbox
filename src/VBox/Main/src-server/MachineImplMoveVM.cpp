@@ -22,6 +22,7 @@
 #include <iprt/stream.h>
 
 #include "MachineImplMoveVM.h"
+#include "MediumFormatImpl.h"
 #include "VirtualBoxImpl.h"
 #include "Logging.h"
 
@@ -112,7 +113,24 @@ struct fileList_t
 HRESULT MachineMoveVM::init()
 {
     HRESULT rc = S_OK;
-    Utf8Str strTargetFolder = m_targetPath;
+
+    Utf8Str strTargetFolder;
+    /* adding a trailing slash if it's needed */
+    {
+        size_t len = m_targetPath.length() + 2;
+        if (len >=RTPATH_MAX)
+        {
+            throw m_pMachine->setError(VBOX_E_IPRT_ERROR,
+                           m_pMachine->tr(" The destination path isn't correct. "
+                                          "The length of path exceeded the maximum value."));
+        }
+
+        char* path = new char [len];
+        RTStrCopy(path, len, m_targetPath.c_str());
+        RTPathEnsureTrailingSeparator(path, len);
+        strTargetFolder = m_targetPath = path;
+        delete path;
+    }
 
     /*
      * We have a mode which user is able to request
@@ -134,7 +152,15 @@ HRESULT MachineMoveVM::init()
         uint32_t cbSector = 0;
 
         vrc = RTFsQuerySizes(strTargetFolder.c_str(), &cbTotal, &cbFree, &cbBlock, &cbSector);
-        if (FAILED(vrc)) throw vrc;
+        if (FAILED(vrc))
+        {
+            RTPrintf("strTargetFolder is %s\n", strTargetFolder.c_str());
+            rc = m_pMachine->setError(E_FAIL,
+                                      m_pMachine->tr("Unable to move machine. Can't get the destination storage size (%s)"),
+                                      strTargetFolder.c_str());
+            throw rc;
+        }
+
         long long totalFreeSpace = cbFree;
         long long totalSpace = cbTotal;
         info = Utf8StrFmt("blocks: total %lld, free %u ", cbTotal, cbFree);
@@ -516,6 +542,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
      * Apart from that all other files located in the original VM
      * folder will be moved.
      */
+
      /* Collect the shareable disks.
      * Get the machines whom the shareable disks attach to.
      * Return an error if the state of any VM doesn't allow to move a shareable disk.
@@ -912,7 +939,7 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
                 }
 
                 strTargetImageName.append(RTPATH_DELIMITER).append(strLocation);
-                rc = m_pProgress->SetNextOperation(BstrFmt(machine->tr("Moving disk '%ls' ..."),
+                rc = m_pProgress->SetNextOperation(BstrFmt(machine->tr("Moving medium '%ls' ..."),
                                                        bstrSrcName.raw()).raw(),
                                                        mt.uWeight);
                 if (FAILED(rc)) throw rc;
@@ -920,7 +947,7 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
             else
             {
                 strTargetImageName = mt.strBaseName;//Should contain full path to the image
-                rc = m_pProgress->SetNextOperation(BstrFmt(machine->tr("Moving disk '%ls' back..."),
+                rc = m_pProgress->SetNextOperation(BstrFmt(machine->tr("Moving medium '%ls' back..."),
                                                        bstrSrcName.raw()).raw(),
                                                        mt.uWeight);
                 if (FAILED(rc)) throw rc;
@@ -941,36 +968,26 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
             rc = pMedium->COMGETTER(DeviceType)(&deviceType);
             if (FAILED(rc)) throw rc;
 
-            if (deviceType == DeviceType_Floppy)//on 12.02.2017, skip floppy
-            {
-                //1. no host drive image
-                BOOL fHostDrive = false;
-                rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
-                if (FAILED(rc)) throw rc;
-            }
-            else
-            {
-                ComPtr<IProgress> moveDiskProgress;
-                rc = pMedium->SetLocation(bstrLocation.raw(), moveDiskProgress.asOutParam());
-                /* Wait until the async process has finished. */
-                machineLock.release();
+            ComPtr<IProgress> moveDiskProgress;
+            rc = pMedium->SetLocation(bstrLocation.raw(), moveDiskProgress.asOutParam());
+            /* Wait until the async process has finished. */
+            machineLock.release();
 
-                rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+            rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
 
-                machineLock.acquire();
-                if (FAILED(rc)) throw rc;
+            machineLock.acquire();
+            if (FAILED(rc)) throw rc;
 
-                LogRelFunc(("Moving %s has been finished\n", strTargetImageName.c_str()));
+            LogRelFunc(("Moving %s has been finished\n", strTargetImageName.c_str()));
 
-                /* Check the result of the async process. */
-                LONG iRc;
-                rc = moveDiskProgress->COMGETTER(ResultCode)(&iRc);
-                if (FAILED(rc)) throw rc;
-                /* If the thread of the progress object has an error, then
-                 * retrieve the error info from there, or it'll be lost. */
-                if (FAILED(iRc))
-                    throw machine->setError(ProgressErrorInfo(moveDiskProgress));
-            }
+            /* Check the result of the async process. */
+            LONG iRc;
+            rc = moveDiskProgress->COMGETTER(ResultCode)(&iRc);
+            if (FAILED(rc)) throw rc;
+            /* If the thread of the progress object has an error, then
+             * retrieve the error info from there, or it'll be lost. */
+            if (FAILED(iRc))
+                throw machine->setError(ProgressErrorInfo(moveDiskProgress));
 
             ++itMedium;
         }
@@ -1210,42 +1227,13 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
             /* Cast to ComObjPtr<Medium> */
             ComObjPtr<Medium> pObjMedium = (Medium *)(IMedium *)pMedium;
 
-            /*Check for "read-only" medium ?????????????????? */
-//          bool fReadOnly = pObjMedium->i_isReadOnly();
-//          if (fReadOnly)
-//          {
-//              RTPrintf("Skipping file %s because of \"read-only\" property.\n",
-//                       Utf8Str(bstrLocation.raw()).c_str());
-//              continue;
-//          }
-
-            /* Check whether medium is represented by file on the disk or not. Case for ISCI, in instance */
-            bool fRealFile = pObjMedium->i_isMediumFormatFile();
-            if (!fRealFile)
+            /*Check for "read-only" medium in terms that VBox can't create this one */
+            bool fPass = isMediumTypeSupportedForMoving(pMedium);
+            if(!fPass)
             {
-                LogRelFunc(("Skipping file %s because it's not a real file on the disk.\n",
-                                 Utf8Str(bstrLocation.raw()).c_str()));
+                LogRelFunc(("Skipping file %s because of this medium type hasn't been supported for moving.\n",
+                         Utf8Str(bstrLocation.raw()).c_str()));
                 continue;
-            }
-
-            /* some special checks for DVD */
-            if (deviceType == DeviceType_DVD)
-            {
-                //no host drive CD/DVD image
-                BOOL fHostDrive = false;
-                rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
-                if (FAILED(rc)) throw rc;
-
-                if(fHostDrive)
-                    continue;
-
-                //only ISO image is moved
-                Utf8Str ext = bstrLocation;
-                ext.assignEx(RTPathSuffix(ext.c_str()));//returns extension with dot (".iso")
-
-                int equality = ext.compare(".iso", Utf8Str::CaseInsensitive);
-                if (equality != false)
-                    continue;
             }
 
             MEDIUMTASKCHAIN mtc;
@@ -1283,8 +1271,6 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
                 mt.pMedium = pMedium;
                 mt.uWeight = (ULONG)((lSize + _1M - 1) / _1M);
                 mtc.chain.append(mt);
-
-//              LogRelFunc(("Added media file %s into the llMedias.\n", mt.strBaseName.c_str()));
 
                 /* Query next parent. */
                 rc = pMedium->COMGETTER(Parent)(pMedium.asOutParam());
@@ -1333,7 +1319,6 @@ HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine)
          * be read and written */
         sst.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
         llSaveStateFiles.append(sst);
-        LogRelFunc(("Added state file %s into the llSaveStateFiles.\n", sst.strSaveStateFile.c_str()));
     }
     return S_OK;
 }
@@ -1361,4 +1346,80 @@ void MachineMoveVM::updateProgressStats(MEDIUMTASKCHAIN &mtc, ULONG &uCount, ULO
          * creation. */
         uMaxWeight = RT_MAX(uMaxWeight, mt.uWeight);
     }
+}
+
+bool MachineMoveVM::isMediumTypeSupportedForMoving(const ComPtr<IMedium> &pMedium)
+{
+    HRESULT rc = S_OK;
+    bool fSupported = true;
+    Bstr bstrLocation;
+    rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+    if (FAILED(rc)) 
+    {
+        fSupported = false;
+        throw rc;
+    }
+
+    DeviceType_T deviceType;
+    rc = pMedium->COMGETTER(DeviceType)(&deviceType);
+    if (FAILED(rc)) 
+    {
+        fSupported = false;
+        throw rc;
+    }
+
+    ComPtr<IMediumFormat> mediumFormat;
+    rc = pMedium->COMGETTER(MediumFormat)(mediumFormat.asOutParam());
+    if (FAILED(rc)) 
+    {
+        fSupported = false;
+        throw rc;
+    }
+
+    /*Check whether VBox is able to create this medium format or not, i.e. medium can be "read-only" */
+    Bstr bstrFormatName;
+    rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+    if (FAILED(rc))
+    {
+        fSupported = false;
+        throw rc;
+    }
+
+    Utf8Str formatName = Utf8Str(bstrFormatName);
+    if (formatName.compare("VHDX", Utf8Str::CaseInsensitive) == 0)
+    {
+        LogRelFunc(("Skipping medium %s. VHDX format is supported in \"read-only\" mode only. \n",
+                    Utf8Str(bstrLocation.raw()).c_str()));
+        fSupported = false;
+    }
+
+    /* Check whether medium is represented by file on the disk  or not */
+    if (fSupported)
+    {
+        ComObjPtr<Medium> pObjMedium = (Medium *)(IMedium *)pMedium;
+        fSupported = pObjMedium->i_isMediumFormatFile();
+        if (!fSupported)
+        {
+            LogRelFunc(("Skipping medium %s because it's not a real file on the disk.\n",
+                        Utf8Str(bstrLocation.raw()).c_str()));
+        }
+    }
+
+    /* some special checks for DVD */
+    if (fSupported && deviceType == DeviceType_DVD)
+    {
+        Utf8Str ext = bstrLocation;
+        ext.assignEx(RTPathSuffix(ext.c_str()));//returns extension with dot (".iso")
+
+        //only ISO image is moved. Otherwise adding some information into log file
+        int equality = ext.compare(".iso", Utf8Str::CaseInsensitive);
+        if (equality != false)
+        {
+            LogRelFunc(("Skipping file %s. Only ISO images are supported for now.\n",
+                         Utf8Str(bstrLocation.raw()).c_str()));
+            fSupported = false;
+        }
+    }
+
+    return fSupported;
 }

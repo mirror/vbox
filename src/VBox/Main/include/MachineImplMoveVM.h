@@ -120,6 +120,7 @@ public:
                                     const Utf8Str& sourcePath, const Utf8Str& targetPath);
     HRESULT moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfDisks, const Utf8Str* strTargetFolder = NULL);
     HRESULT restoreAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfDisks);
+    bool isMediumTypeSupportedForMoving(const ComPtr<IMedium> &pMedium);
 };
 
 #endif // ____H_MACHINEIMPLMOVEVM
