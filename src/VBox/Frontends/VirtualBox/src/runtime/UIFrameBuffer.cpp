@@ -293,12 +293,10 @@ protected:
 
     /** Erases corresponding @a rect with @a painter. */
     static void eraseImageRect(QPainter &painter, const QRect &rect,
-                               bool fUseUnscaledHiDPIOutput,
                                double dDevicePixelRatio);
     /** Draws corresponding @a rect of passed @a image with @a painter. */
     static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                               int iContentsShiftX, int iContentsShiftY,
-                              bool fUseUnscaledHiDPIOutput,
                               double dDevicePixelRatio);
 
     /** Holds the screen-id. */
@@ -1335,34 +1333,40 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* First we take the cached image as the source: */
     QImage *pSourceImage = &m_image;
 
-    /* But if scaled size is set: */
-    if (m_scaledSize.isValid())
+    /* But if we should scale image by some reason: */
+    if (   scaledSize().isValid()
+        || (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0))
     {
+        /* Calculate final scaled size: */
+        QSize effectiveSize = !scaledSize().isValid() ? pSourceImage->size() : scaledSize();
+        /* Take the device-pixel-ratio into account: */
+        if (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0)
+            effectiveSize *= devicePixelRatio();
         /* We scale the image to requested size and retain it
          * by making heap shallow copy of that temporary object: */
         switch (m_pMachineView->visualStateType())
         {
             case UIVisualStateType_Scale:
-                pSourceImage = new QImage(pSourceImage->scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                pSourceImage = new QImage(pSourceImage->scaled(effectiveSize, Qt::IgnoreAspectRatio,
                                                                transformationMode(scalingOptimizationType())));
                 break;
             default:
-                pSourceImage = new QImage(pSourceImage->scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                pSourceImage = new QImage(pSourceImage->scaled(effectiveSize, Qt::IgnoreAspectRatio,
                                                                transformationMode(scalingOptimizationType(), m_dScaleFactor)));
                 break;
         }
     }
+
+    /* Take the device-pixel-ratio into account: */
+    pSourceImage->setDevicePixelRatio(devicePixelRatio());
 
     /* Prepare the base and hidpi paint rectangles: */
     const QRect paintRect = pEvent->rect();
     QRect paintRectHiDPI = paintRect;
 
     /* Take the device-pixel-ratio into account: */
-    if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
-    {
-        paintRectHiDPI.moveTo(paintRectHiDPI.topLeft() * devicePixelRatio());
-        paintRectHiDPI.setSize(paintRectHiDPI.size() * devicePixelRatio());
-    }
+    paintRectHiDPI.moveTo(paintRectHiDPI.topLeft() * devicePixelRatio());
+    paintRectHiDPI.setSize(paintRectHiDPI.size() * devicePixelRatio());
 
     /* Make sure hidpi paint rectangle is within the image boundary: */
     paintRectHiDPI = paintRectHiDPI.intersected(pSourceImage->rect());
@@ -1382,11 +1386,11 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Draw hidpi image rectangle: */
     drawImageRect(painter, *pSourceImage, paintRectHiDPI,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  useUnscaledHiDPIOutput(),
                   devicePixelRatio());
 
-    /* If scaled size is set: */
-    if (m_scaledSize.isValid())
+    /* If we had to scale image for some reason: */
+    if (   scaledSize().isValid()
+        || (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0))
     {
         /* Wipe out copied image: */
         delete pSourceImage;
@@ -1403,34 +1407,40 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* First we take the cached image as the source: */
     QImage *pSourceImage = &m_image;
 
-    /* But if scaled size is set: */
-    if (m_scaledSize.isValid())
+    /* But if we should scale image by some reason: */
+    if (   scaledSize().isValid()
+        || (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0))
     {
+        /* Calculate final scaled size: */
+        QSize effectiveSize = !scaledSize().isValid() ? pSourceImage->size() : scaledSize();
+        /* Take the device-pixel-ratio into account: */
+        if (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0)
+            effectiveSize *= devicePixelRatio();
         /* We scale the image to requested size and retain it
          * by making heap shallow copy of that temporary object: */
         switch (m_pMachineView->visualStateType())
         {
             case UIVisualStateType_Scale:
-                pSourceImage = new QImage(pSourceImage->scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                pSourceImage = new QImage(pSourceImage->scaled(effectiveSize, Qt::IgnoreAspectRatio,
                                                                transformationMode(scalingOptimizationType())));
                 break;
             default:
-                pSourceImage = new QImage(pSourceImage->scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                pSourceImage = new QImage(pSourceImage->scaled(effectiveSize, Qt::IgnoreAspectRatio,
                                                                transformationMode(scalingOptimizationType(), m_dScaleFactor)));
                 break;
         }
     }
+
+    /* Take the device-pixel-ratio into account: */
+    pSourceImage->setDevicePixelRatio(devicePixelRatio());
 
     /* Prepare the base and hidpi paint rectangles: */
     const QRect paintRect = pEvent->rect();
     QRect paintRectHiDPI = paintRect;
 
     /* Take the device-pixel-ratio into account: */
-    if (useUnscaledHiDPIOutput() && devicePixelRatio() > 1.0)
-    {
-        paintRectHiDPI.moveTo(paintRectHiDPI.topLeft() * devicePixelRatio());
-        paintRectHiDPI.setSize(paintRectHiDPI.size() * devicePixelRatio());
-    }
+    paintRectHiDPI.moveTo(paintRectHiDPI.topLeft() * devicePixelRatio());
+    paintRectHiDPI.setSize(paintRectHiDPI.size() * devicePixelRatio());
 
     /* Make sure hidpi paint rectangle is within the image boundary: */
     paintRectHiDPI = paintRectHiDPI.intersected(pSourceImage->rect());
@@ -1448,7 +1458,6 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
 
     /* Erase hidpi rectangle: */
     eraseImageRect(painter, paintRectHiDPI,
-                   useUnscaledHiDPIOutput(),
                    devicePixelRatio());
 
     /* Adjust painter for painting: */
@@ -1467,11 +1476,11 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* Draw hidpi image rectangle: */
     drawImageRect(painter, *pSourceImage, paintRectHiDPI,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  useUnscaledHiDPIOutput(),
                   devicePixelRatio());
 
-    /* If scaled size is set: */
-    if (m_scaledSize.isValid())
+    /* If we had to scale image for some reason: */
+    if (   scaledSize().isValid()
+        || (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0))
     {
         /* Wipe out copied image: */
         delete pSourceImage;
@@ -1494,33 +1503,17 @@ Qt::TransformationMode UIFrameBufferPrivate::transformationMode(ScalingOptimizat
 
 /* static */
 void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
-                                          bool fUseUnscaledHiDPIOutput,
                                           double dDevicePixelRatio)
 {
     /* Prepare sub-pixmap: */
     QPixmap subPixmap = QPixmap(rect.width(), rect.height());
-
-    /* If HiDPI 'device-pixel-ratio' defined: */
-    if (dDevicePixelRatio > 1.0)
-    {
-        /* In auto-scale mode: */
-        if (!fUseUnscaledHiDPIOutput)
-        {
-            /* Adjust sub-pixmap: */
-            subPixmap = QPixmap((int)(rect.width() * dDevicePixelRatio),
-                                (int)(rect.height() * dDevicePixelRatio));
-        }
-
-        /* Mark sub-pixmap HiDPI: */
-        subPixmap.setDevicePixelRatio(dDevicePixelRatio);
-    }
+    /* Take the device-pixel-ratio into account: */
+    subPixmap.setDevicePixelRatio(dDevicePixelRatio);
 
     /* Which point we should draw corresponding sub-pixmap? */
-    QPointF paintPoint = rect.topLeft();
-
+    QPoint paintPoint = rect.topLeft();
     /* Take the device-pixel-ratio into account: */
-    if (fUseUnscaledHiDPIOutput && dDevicePixelRatio > 1.0)
-        paintPoint /= dDevicePixelRatio;
+    paintPoint /= dDevicePixelRatio;
 
     /* Draw sub-pixmap: */
     painter.drawPixmap(paintPoint, subPixmap);
@@ -1529,7 +1522,6 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
 /* static */
 void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                                          int iContentsShiftX, int iContentsShiftY,
-                                         bool fUseUnscaledHiDPIOutput,
                                          double dDevicePixelRatio)
 {
     /* Calculate offset: */
@@ -1547,28 +1539,13 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
 
     /* Create sub-pixmap on the basis of sub-image above (1st copy involved): */
     QPixmap subPixmap = QPixmap::fromImage(subImage);
-
-    /* If HiDPI 'device-pixel-ratio' defined: */
-    if (dDevicePixelRatio > 1.0)
-    {
-        /* In auto-scale mode: */
-        if (!fUseUnscaledHiDPIOutput)
-        {
-            /* Fast scale sub-pixmap (2nd copy involved): */
-            subPixmap = subPixmap.scaled(subPixmap.size() * dDevicePixelRatio,
-                                         Qt::IgnoreAspectRatio, Qt::FastTransformation);
-        }
-
-        /* Mark sub-pixmap HiDPI: */
-        subPixmap.setDevicePixelRatio(dDevicePixelRatio);
-    }
+    /* Take the device-pixel-ratio into account: */
+    subPixmap.setDevicePixelRatio(dDevicePixelRatio);
 
     /* Which point we should draw corresponding sub-pixmap? */
-    QPointF paintPoint = rect.topLeft();
-
+    QPoint paintPoint = rect.topLeft();
     /* Take the device-pixel-ratio into account: */
-    if (fUseUnscaledHiDPIOutput && dDevicePixelRatio > 1.0)
-        paintPoint /= dDevicePixelRatio;
+    paintPoint /= dDevicePixelRatio;
 
     /* Draw sub-pixmap: */
     painter.drawPixmap(paintPoint, subPixmap);
