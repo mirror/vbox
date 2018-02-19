@@ -359,28 +359,42 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
     {
         /* Start the moving */
         ComPtr<IProgress> progress;
-        do
-        {
-            /* we have to open a session for this task */
-            CHECK_ERROR_BREAK(srcMachine, LockMachine(a->session, LockType_Write));
-            ComPtr<IMachine> sessionMachine;
-            do
-            {
-                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
-                CHECK_ERROR_BREAK(sessionMachine, MoveTo(Bstr(pszTargetFolder).raw(),
-                                       Bstr(pszType).raw(),
-                                       progress.asOutParam()));
-                rc = showProgress(progress);
-                CHECK_PROGRESS_ERROR_RET(progress, ("Move VM failed"), RTEXITCODE_FAILURE);
-//              CHECK_ERROR_BREAK(sessionMachine, SaveSettings());
-            } while (0);
 
-            sessionMachine.setNull();
-            CHECK_ERROR_BREAK(a->session, UnlockMachine());
-        } while (0);
+        /* we have to open a session for this task */
+        CHECK_ERROR_RET(srcMachine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
+        ComPtr<IMachine> sessionMachine;
+
+        CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR_RET(sessionMachine, MoveTo(Bstr(pszTargetFolder).raw(),
+                               Bstr(pszType).raw(),
+                               progress.asOutParam()), RTEXITCODE_FAILURE);
+        rc = showProgress(progress);
+        CHECK_PROGRESS_ERROR_RET(progress, ("Move VM failed"), RTEXITCODE_FAILURE);
+
+        sessionMachine.setNull();
+        CHECK_ERROR_RET(a->session, UnlockMachine(), RTEXITCODE_FAILURE);
+
+//        do
+//        {
+//            /* we have to open a session for this task */
+//            CHECK_ERROR_BREAK(srcMachine, LockMachine(a->session, LockType_Write));
+//            ComPtr<IMachine> sessionMachine;
+//            do
+//            {
+//                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+//                CHECK_ERROR_BREAK(sessionMachine, MoveTo(Bstr(pszTargetFolder).raw(),
+//                                       Bstr(pszType).raw(),
+//                                       progress.asOutParam()));
+//                rc = showProgress(progress);
+//                CHECK_PROGRESS_ERROR_RET(progress, ("Move VM failed"), RTEXITCODE_FAILURE);
+////              CHECK_ERROR_BREAK(sessionMachine, SaveSettings());
+//            } while (0);
+//
+//            sessionMachine.setNull();
+//            CHECK_ERROR_BREAK(a->session, UnlockMachine());
+//        } while (0);
+        RTPrintf("Machine has been successfully moved into %s\n", pszTargetFolder);
     }
-
-    RTPrintf("Machine has been successfully moved into %s\n", pszTargetFolder);
 
     return RTEXITCODE_SUCCESS;
 }
