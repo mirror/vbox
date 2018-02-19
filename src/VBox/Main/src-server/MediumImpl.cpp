@@ -3033,6 +3033,11 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
                             throw rc;
                     }
                 }
+                else if (suffix.compare("Parallels", Utf8Str::CaseInsensitive) == 0)
+                {
+                    suffix = "hdd";
+                }
+
                 /* Set the target extension like on the source. Any conversions are prohibited */
                 suffix.toLower();
                 destPath.stripSuffix().append('.').append(suffix);
