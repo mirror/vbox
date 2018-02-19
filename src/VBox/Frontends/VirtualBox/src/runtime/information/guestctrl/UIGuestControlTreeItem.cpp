@@ -114,6 +114,8 @@ QString processStatusString(KProcessStatus status)
     }
     return statusString;
 }
+
+
 /*********************************************************************************************************************************
 *   UIGuestControlTreeItem implementation.                                                                                       *
 *********************************************************************************************************************************/
@@ -276,6 +278,7 @@ void UIGuestSessionTreeItem::setColumnText()
     setText(1, QString("Session Name: %1").arg(m_comGuestSession.GetName()));
     setText(2, QString("Session Status: %1").arg(sessionStatusString(m_comGuestSession.GetStatus())));
 }
+
 
 /*********************************************************************************************************************************
 *   UIGuestProcessTreeItem implementation.                                                                                       *

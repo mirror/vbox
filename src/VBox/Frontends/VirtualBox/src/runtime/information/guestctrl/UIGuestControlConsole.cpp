@@ -78,6 +78,8 @@ void UIGuestControlConsole::putOutput(const QString &strOutput)
 
 void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
 {
+    /* Check if we at the bottom most line.*/
+    bool lastLine = blockCount() == (textCursor().blockNumber() +1);
 
     switch (pEvent->key()) {
         case Qt::Key_PageUp:
@@ -89,13 +91,14 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
         case Qt::Key_PageDown:
         case Qt::Key_Down:
         {
-            replaceLineContent(getNextCommandFromHistory(getCommandString()));
+            if (lastLine)
+                replaceLineContent(getNextCommandFromHistory(getCommandString()));
             break;
         }
         case Qt::Key_Backspace:
         {
             QTextCursor cursor = textCursor();
-            if (cursor.positionInBlock() > m_strPrompt.length())
+            if (lastLine && cursor.positionInBlock() > m_strPrompt.length())
                 cursor.deletePreviousChar();
             break;
         }
@@ -109,16 +112,19 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
         case Qt::Key_Return:
         case Qt::Key_Enter:
         {
-            QString strCommand(getCommandString());
-            if (!strCommand.isEmpty())
+            if (lastLine)
             {
-                emit commandEntered(strCommand);
-                if (!m_tCommandHistory.contains(strCommand))
-                    m_tCommandHistory.push_back(strCommand);
-                m_uCommandHistoryIndex = m_tCommandHistory.size()-1;
-                moveCursor(QTextCursor::End);
-                QPlainTextEdit::keyPressEvent(pEvent);
-                startNextLine();
+                QString strCommand(getCommandString());
+                if (!strCommand.isEmpty())
+                {
+                    emit commandEntered(strCommand);
+                    if (!m_tCommandHistory.contains(strCommand))
+                        m_tCommandHistory.push_back(strCommand);
+                    m_uCommandHistoryIndex = m_tCommandHistory.size()-1;
+                    moveCursor(QTextCursor::End);
+                    QPlainTextEdit::keyPressEvent(pEvent);
+                    startNextLine();
+                }
             }
             break;
         }
@@ -131,7 +137,8 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
             break;
         }
         default:
-            QPlainTextEdit::keyPressEvent(pEvent);
+            if (lastLine)
+                QPlainTextEdit::keyPressEvent(pEvent);
             break;
     }
 }
@@ -151,8 +158,8 @@ void UIGuestControlConsole::mouseDoubleClickEvent(QMouseEvent *pEvent)
 
 void UIGuestControlConsole::contextMenuEvent(QContextMenuEvent *pEvent)
 {
-    //Q_UNUSED(pEvent);
-    QPlainTextEdit::contextMenuEvent(pEvent);
+    Q_UNUSED(pEvent);
+    //QPlainTextEdit::contextMenuEvent(pEvent);
 }
 
 QString UIGuestControlConsole::getCommandString()
