@@ -73,46 +73,92 @@ protected:
 
     void contextMenuEvent(QContextMenuEvent *pEvent) /* override */
     {
+        QMenu *menu = new QMenu(this);
         QList<QTreeWidgetItem *> selectedList = selectedItems();
-        if (selectedList.isEmpty())
-            return;
-        /* Always use the 0th item even if we have a multiple selection. */
-        UIGuestSessionTreeItem *sessionTreeItem = dynamic_cast<UIGuestSessionTreeItem*>(selectedList[0]);
+
+        UIGuestSessionTreeItem *sessionTreeItem = 0;
+        if (!selectedList.isEmpty())
+            sessionTreeItem = dynamic_cast<UIGuestSessionTreeItem*>(selectedList[0]);
+        QAction *pSessionCloseAction = 0;
+
         /* Create a guest session related context menu */
         if (sessionTreeItem)
         {
-            QMenu *menu = new QMenu(this);
-            QAction *pAction = menu->addAction(UIVMInformationDialog::tr("Close Session"));
-
-            if (pAction)
-                connect(pAction, &QAction::triggered,
+            pSessionCloseAction = menu->addAction(UIVMInformationDialog::tr("Close Session"));
+            if (pSessionCloseAction)
+                connect(pSessionCloseAction, &QAction::triggered,
                         this, &UIGuestControlTreeWidget::sigCloseSessionOrProcess);
-
-            menu->exec(pEvent->globalPos());
-
-            if (pAction)
-                disconnect(pAction, &QAction::triggered,
-                        this, &UIGuestControlTreeWidget::sigCloseSessionOrProcess);
-
-            delete menu;
-            return;
         }
-        UIGuestProcessTreeItem *processTreeItem = dynamic_cast<UIGuestProcessTreeItem*>(selectedList[0]);
-        if (!processTreeItem)
-            return;
-        /* Create a guest process tree item */
-        QMenu *menu = new QMenu(this);
-        QAction *pAction = menu->addAction(UIVMInformationDialog::tr("Terminate Process"));
-        if (pAction)
-            connect(pAction, &QAction::triggered,
-                    this, &UIGuestControlTreeWidget::sigCloseSessionOrProcess);
+        UIGuestProcessTreeItem *processTreeItem = 0;
+        if (!selectedList.isEmpty())
+            processTreeItem = dynamic_cast<UIGuestProcessTreeItem*>(selectedList[0]);
+        QAction *pProcessTerminateAction = 0;
+        if (processTreeItem)
+        {
+            pProcessTerminateAction = menu->addAction(UIVMInformationDialog::tr("Terminate Process"));
+            if (pProcessTerminateAction)
+                connect(pProcessTerminateAction, &QAction::triggered,
+                        this, &UIGuestControlTreeWidget::sigCloseSessionOrProcess);
+        }
+        if (pProcessTerminateAction || pSessionCloseAction)
+            menu->addSeparator();
+        // Add actions to expand/collapse all tree items
+        QAction *pExpandAllAction = menu->addAction(UIVMInformationDialog::tr("Expand All"));
+        if (pExpandAllAction)
+            connect(pExpandAllAction, &QAction::triggered,
+                    this, &UIGuestControlTreeWidget::sltExpandAll);
+        QAction *pCollapseAllAction = menu->addAction(UIVMInformationDialog::tr("Collapse All"));
+        if (pCollapseAllAction)
+            connect(pCollapseAllAction, &QAction::triggered,
+                    this, &UIGuestControlTreeWidget::sltCollapseAll);
+
         menu->exec(pEvent->globalPos());
 
-        if (pAction)
-            disconnect(pAction, &QAction::triggered,
-                    this, &UIGuestControlTreeWidget::sigCloseSessionOrProcess);
-        delete menu;
+        if (pSessionCloseAction)
+            disconnect(pSessionCloseAction, &QAction::triggered,
+                       this, &UIGuestControlTreeWidget::sigCloseSessionOrProcess);
+        if (pProcessTerminateAction)
+            disconnect(pProcessTerminateAction, &QAction::triggered,
+                       this, &UIGuestControlTreeWidget::sigCloseSessionOrProcess);
 
+        if (pExpandAllAction)
+            disconnect(pExpandAllAction, &QAction::triggered,
+                    this, &UIGuestControlTreeWidget::sltExpandAll);
+
+        if (pCollapseAllAction)
+            disconnect(pCollapseAllAction, &QAction::triggered,
+                    this, &UIGuestControlTreeWidget::sltCollapseAll);
+
+        delete menu;
+    }
+
+private slots:
+
+    void sltExpandAll(bool bExpand)
+    {
+        expandCollapseAll(true);
+    }
+
+    void sltCollapseAll()
+    {
+        expandCollapseAll(false);
+    }
+
+    void expandCollapseAll(bool bFlag)
+    {
+        for(int i = 0; i < topLevelItemCount(); ++i)
+        {
+            if (!topLevelItem(i))
+                break;
+            topLevelItem(i)->setExpanded(bFlag);
+            for (int j = 0; j < topLevelItem(i)->childCount(); ++j)
+            {
+                if (topLevelItem(i)->child(j))
+                {
+                    topLevelItem(i)->child(j)->setExpanded(bFlag);
+                }
+            }
+        }
     }
 
 };
