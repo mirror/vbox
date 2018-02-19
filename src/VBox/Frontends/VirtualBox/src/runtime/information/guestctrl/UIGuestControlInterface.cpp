@@ -54,7 +54,7 @@
         commandData.m_strPassword = ValueUnion.psz;   \
         break;
 
-QString generateErrorString(int getOptErrorCode, const RTGETOPTUNION &valueUnion)
+QString generateErrorString(int getOptErrorCode, const RTGETOPTUNION &/*valueUnion*/)
 {
     QString errorString;
     // if (valueUnion.pDef)
