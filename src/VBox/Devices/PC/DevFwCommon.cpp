@@ -118,6 +118,8 @@ typedef struct DMIMAINHDR
 } *DMIMAINHDRPTR;
 AssertCompileSize(DMIMAINHDR, 15);
 
+AssertCompile(sizeof(SMBIOSHDR) + sizeof(DMIMAINHDR) <= VBOX_DMI_HDR_SIZE);
+
 /** DMI header */
 typedef struct DMIHDR
 {
@@ -955,11 +957,14 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
  * reset.
  *
  * @param   pDevIns         The device instance data.
+ * @param   pHdr            Pointer to the header destination.
  * @param   cbDmiTables     Size of all DMI tables planted in bytes.
  * @param   cNumDmiTables   Number of DMI tables planted.
  */
-void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns, uint16_t cbDmiTables, uint16_t cNumDmiTables)
+void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns, uint8_t *pHdr, uint16_t cbDmiTables, uint16_t cNumDmiTables)
 {
+    RT_NOREF(pDevIns);
+
     struct
     {
         struct SMBIOSHDR     smbios;
@@ -994,7 +999,7 @@ void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns, uint16_t cbDmiTables, uin
     aBiosHeaders.smbios.u8Checksum   = fwCommonChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
     aBiosHeaders.dmi.u8Checksum      = fwCommonChecksum((uint8_t*)&aBiosHeaders.dmi,    sizeof(aBiosHeaders.dmi));
 
-    PDMDevHlpPhysWrite(pDevIns, 0xfe300, &aBiosHeaders, sizeof(aBiosHeaders));
+    memcpy(pHdr, &aBiosHeaders, sizeof(aBiosHeaders));
 }
 
 /**

@@ -1792,7 +1792,6 @@ static DECLCALLBACK(void) efiMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmC
     /*
      * Plant some structures in RAM.
      */
-    FwCommonPlantSmbiosAndDmiHdrs(pDevIns, pThis->cbDmiTables, pThis->cNumDmiTables);
     if (pThis->u8IOAPIC)
         FwCommonPlantMpsFloatPtr(pDevIns);
 
@@ -2387,16 +2386,24 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return rc;
 
     /*
-     * Plant DMI and MPS tables.
+     * Plant DMI and MPS tables in the ROM region.
      */
-    /** @todo XXX I wonder if we really need these tables as there is no SMBIOS header... */
     rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE, &pThis->aUuid,
                                pDevIns->pCfg, pThis->cCpus, &pThis->cbDmiTables, &pThis->cNumDmiTables);
     AssertRCReturn(rc, rc);
+
+    /*
+     * NB: VBox/Devices/EFI/Firmware/VBoxPkg/VBoxSysTables/VBoxSysTables.c scans memory for
+     * the SMBIOS header. The header must be placed in a range that EFI will scan.
+     */
+    FwCommonPlantSmbiosAndDmiHdrs(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
+                                  pThis->cbDmiTables, pThis->cNumDmiTables);
+
     if (pThis->u8IOAPIC)
         FwCommonPlantMpsTable(pDevIns,
-                              pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
-                              _4K - VBOX_DMI_TABLE_SIZE, pThis->cCpus);
+                              pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE + VBOX_DMI_HDR_SIZE,
+                              _4K - VBOX_DMI_TABLE_SIZE - VBOX_DMI_HDR_SIZE, pThis->cCpus);
+
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, _4K,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
 
