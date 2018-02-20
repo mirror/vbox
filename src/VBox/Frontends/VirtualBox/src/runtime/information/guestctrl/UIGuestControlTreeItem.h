@@ -29,6 +29,8 @@
 /* Forward declarations: */
 class CEventSource;
 
+/** QITreeWidgetItem extension serving as a base class
+    to UIGuestSessionTreeItem and UIGuestProcessTreeItem classes */
 class UIGuestControlTreeItem : public QITreeWidgetItem
 {
 
@@ -67,6 +69,8 @@ private:
 
 };
 
+/** UIGuestControlTreeItem extension. Represents a instance of CGuestSession
+    and acts as an event listener for this com object. */
 class UIGuestSessionTreeItem : public UIGuestControlTreeItem
 {
     Q_OBJECT;
@@ -101,6 +105,8 @@ private:
 
 };
 
+/** UIGuestControlTreeItem extension. Represents a instance of CGuestProcess
+    and acts as an event listener for this com object. */
 class UIGuestProcessTreeItem : public UIGuestControlTreeItem
 {
     Q_OBJECT;
