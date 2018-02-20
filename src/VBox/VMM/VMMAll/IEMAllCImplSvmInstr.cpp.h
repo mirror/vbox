@@ -956,22 +956,28 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, 
             && !(uErr & X86_TRAP_PF_ID))
         {
             /** @todo Nested-guest SVM - figure out fetching op-code bytes from IEM. */
-#ifdef IEM_WITH_CODE_TLB
-            AssertReleaseFailedReturn(VERR_IEM_IPE_5);
-#else
             PSVMVMCBCTRL  pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+#ifdef IEM_WITH_CODE_TLB
+            uint8_t const cbCurrent   = pVCpu->iem.s.cbInstrBuf;
+            uint8_t const *pbInstrBuf = pVCpu->iem.s.pbInstrBuf;
+            if (   pbInstrBuf
+                && cbCurrent >= SVM_CTRL_GUEST_INSTR_BYTES_MAX)
+            {
+                pVmcbCtrl->cbInstrFetched = SVM_CTRL_GUEST_INSTR_BYTES_MAX;
+                memcpy(&pVmcbCtrl->abInstr[0], pbInstrBuf, SVM_CTRL_GUEST_INSTR_BYTES_MAX);
+            }
+            else
+            { AssertReleaseFailedReturn(VERR_IEM_IPE_5); /** @todo */ }
+#else
             uint8_t const offOpCode = pVCpu->iem.s.offOpcode;
-            uint8_t const cbCurrent = pVCpu->iem.s.cbOpcode - pVCpu->iem.s.offOpcode;
+            uint8_t const cbCurrent = pVCpu->iem.s.cbOpcode - offOpCode;
             if (cbCurrent >= SVM_CTRL_GUEST_INSTR_BYTES_MAX)
             {
-                Assert(cbCurrent <= RT_ELEMENTS(pVCpu->iem.s.abOpcode));
+                pVmcbCtrl->cbInstrFetched = SVM_CTRL_GUEST_INSTR_BYTES_MAX;
                 memcpy(&pVmcbCtrl->abInstr[0], &pVCpu->iem.s.abOpcode[offOpCode], SVM_CTRL_GUEST_INSTR_BYTES_MAX);
             }
             else
-            {
-                /** @todo fetch 15 bytes from CS:RIP and stop fetching on exceptions or CS
-                 *        limit is exceeded. */
-            }
+            { AssertReleaseFailedReturn(VERR_IEM_IPE_5); /** @todo */ }
 #endif
         }
         Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept u32InterceptXcpt=%#RX32 u8Vector=%#x "
