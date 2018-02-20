@@ -1511,6 +1511,21 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     /* Resize displays always to keep the display layout because
      * "the D3DKMTInvalidateActiveVidPn function always resets a multimonitor desktop to the default configuration".
      */
+
+    if (fEnable || RT_BOOL(paDisplayDevices[iChangedMode].StateFlags & DISPLAY_DEVICE_ACTIVE))
+    {
+        RTRECTSIZE Size;
+
+        Size.cx = paDeviceModes[iChangedMode].dmPelsWidth;
+        Size.cy = paDeviceModes[iChangedMode].dmPelsHeight;
+
+        LogFunc(("Calling vboxDispIfUpdateModesWDDM to change target %d mode to (%d x %d)\n", iChangedMode, Size.cx, Size.cy));
+        winEr = vboxDispIfUpdateModesWDDM(&Op, iChangedMode, &Size);
+
+        if (winEr != NO_ERROR)
+            WARN(("vboxDispIfUpdateModesWDDM failed %d\n", winEr));
+    }
+
     for (uint32_t i = 0; i < cDevModes; ++i)
     {
         winEr = NO_ERROR;
@@ -1520,31 +1535,15 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
                                  fEnable:
                                  RT_BOOL(paDisplayDevices[i].StateFlags & DISPLAY_DEVICE_ACTIVE);
 
-        if (i == iChangedMode && fCurrentEnable)
+        winEr = vboxDispIfResizePerform(pIf, i, fCurrentEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+
+        LogFunc(("vboxDispIfResizePerform returned %d\n", winEr));
+
+        if (winEr == ERROR_RETRY)
         {
-            RTRECTSIZE Size;
-            Size.cx = paDeviceModes[iChangedMode].dmPelsWidth;
-            Size.cy = paDeviceModes[iChangedMode].dmPelsHeight;
-            LogFunc(("Calling vboxDispIfUpdateModesWDDM to change target %d mode to (%d x %d)\n", iChangedMode, Size.cx, Size.cy));
-            winEr = vboxDispIfUpdateModesWDDM(&Op, iChangedMode, &Size);
-            LogFunc(("vboxDispIfUpdateModesWDDM returned %d\n", winEr));
+            VBoxRrRetrySchedule(pIf, i, fCurrentEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
 
-            if (winEr != NO_ERROR)
-                WARN(("vboxDispIfUpdateModesWDDM failed %d\n", winEr));
-        }
-
-        if (winEr == NO_ERROR)
-        {
-            winEr = vboxDispIfResizePerform(pIf, i, fCurrentEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
-
-            LogFunc(("vboxDispIfResizePerform returned %d\n", winEr));
-
-            if (winEr == ERROR_RETRY)
-            {
-                VBoxRrRetrySchedule(pIf, i, fCurrentEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
-
-                winEr = NO_ERROR;
-            }
+            winEr = NO_ERROR;
         }
     }
 
