@@ -65,8 +65,9 @@ void UIMachineViewScale::sltPerformGuestScale()
     QSize scaledSize = size();
     const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
     const bool fUseUnscaledHiDPIOutput = frameBuffer()->useUnscaledHiDPIOutput();
-    if (dDevicePixelRatio > 1.0 && fUseUnscaledHiDPIOutput)
-        scaledSize *= dDevicePixelRatio;
+    scaledSize *= dDevicePixelRatio;
+    if (!fUseUnscaledHiDPIOutput)
+        scaledSize /= dDevicePixelRatio;
     frameBuffer()->setScaledSize(scaledSize);
     frameBuffer()->performRescale();
 
@@ -157,9 +158,7 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
     /* Propagate unscaled-hidpi-output feature to 3D service if necessary: */
     if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
-    {
         display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
-    }
 
     /* Perform frame-buffer rescaling: */
     frameBuffer()->performRescale();
