@@ -157,6 +157,8 @@ typedef struct NEMR0PERVCPU
     /** Handle to the memory object of the hypercall input/output page. */
     RTR0MEMOBJ                  hHypercallDataMemObj;
     /** @} */
+# else
+    uint32_t                    uDummy;
 # endif
 } NEMR0PERVCPU;
 
@@ -168,6 +170,8 @@ typedef struct NEMR0PERVM
 # ifdef RT_OS_WINDOWS
     /** The partition ID. */
     uint64_t                    idHvPartition;
+# else
+    uint32_t                    uDummy;
 # endif
 } NEMR0PERVM;
 
