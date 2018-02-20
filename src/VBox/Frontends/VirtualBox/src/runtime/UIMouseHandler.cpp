@@ -1044,13 +1044,14 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             }
 
             /* Take the device-pixel-ratio into account: */
-            const double dDevicePixelRatio = pFrameBuffer->devicePixelRatio();
-            cpnt.setX(cpnt.x() * dDevicePixelRatio);
-            cpnt.setY(cpnt.y() * dDevicePixelRatio);
+            const double dDevicePixelRatioFormal = pFrameBuffer->devicePixelRatio();
+            const double dDevicePixelRatioActual = pFrameBuffer->devicePixelRatioActual();
+            cpnt.setX(cpnt.x() * dDevicePixelRatioFormal);
+            cpnt.setY(cpnt.y() * dDevicePixelRatioFormal);
             if (!pFrameBuffer->useUnscaledHiDPIOutput())
             {
-                cpnt.setX(cpnt.x() / dDevicePixelRatio);
-                cpnt.setY(cpnt.y() / dDevicePixelRatio);
+                cpnt.setX(cpnt.x() / dDevicePixelRatioActual);
+                cpnt.setY(cpnt.y() / dDevicePixelRatioActual);
             }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP

@@ -63,11 +63,12 @@ void UIMachineViewScale::sltPerformGuestScale()
 {
     /* Assign new frame-buffer logical-size: */
     QSize scaledSize = size();
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatioFormal = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
     const bool fUseUnscaledHiDPIOutput = frameBuffer()->useUnscaledHiDPIOutput();
-    scaledSize *= dDevicePixelRatio;
+    scaledSize *= dDevicePixelRatioFormal;
     if (!fUseUnscaledHiDPIOutput)
-        scaledSize /= dDevicePixelRatio;
+        scaledSize /= dDevicePixelRatioActual;
     frameBuffer()->setScaledSize(scaledSize);
     frameBuffer()->performRescale();
 
@@ -85,8 +86,8 @@ void UIMachineViewScale::sltPerformGuestScale()
             // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
             if (!fUseUnscaledHiDPIOutput)
             {
-                xScaleFactor *= dDevicePixelRatio;
-                yScaleFactor *= dDevicePixelRatio;
+                xScaleFactor *= dDevicePixelRatioActual;
+                yScaleFactor *= dDevicePixelRatioActual;
             }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
             display().NotifyScaleFactorChange(m_uScreenId,
@@ -129,7 +130,7 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
 {
     /* If scaled-size is valid: */
     const QSize scaledSize = frameBuffer()->scaledSize();
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio(); Q_UNUSED(dDevicePixelRatio);
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual(); Q_UNUSED(dDevicePixelRatioActual);
     const bool fUseUnscaledHiDPIOutput = frameBuffer()->useUnscaledHiDPIOutput();
     if (scaledSize.isValid())
     {
@@ -144,8 +145,8 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
             // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
             if (!fUseUnscaledHiDPIOutput)
             {
-                xScaleFactor *= dDevicePixelRatio;
-                yScaleFactor *= dDevicePixelRatio;
+                xScaleFactor *= dDevicePixelRatioActual;
+                yScaleFactor *= dDevicePixelRatioActual;
             }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
             display().NotifyScaleFactorChange(m_uScreenId,

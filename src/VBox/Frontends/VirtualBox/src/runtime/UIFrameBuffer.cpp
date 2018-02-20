@@ -156,6 +156,10 @@ public:
     double devicePixelRatio() const { return m_dDevicePixelRatio; }
     /** Defines device-pixel-ratio set for HiDPI frame-buffer. */
     void setDevicePixelRatio(double dDevicePixelRatio) { m_dDevicePixelRatio = dDevicePixelRatio; }
+    /** Returns actual device-pixel-ratio set for HiDPI frame-buffer. */
+    double devicePixelRatioActual() const { return m_dDevicePixelRatioActual; }
+    /** Defines actual device-pixel-ratio set for HiDPI frame-buffer. */
+    void setDevicePixelRatioActual(double dDevicePixelRatioActual) { m_dDevicePixelRatioActual = dDevicePixelRatioActual; }
 
     /** Returns whether frame-buffer should use unscaled HiDPI output. */
     bool useUnscaledHiDPIOutput() const { return m_fUseUnscaledHiDPIOutput; }
@@ -374,6 +378,8 @@ protected:
      * @{ */
     /** Holds device-pixel-ratio set for HiDPI frame-buffer. */
     double m_dDevicePixelRatio;
+    /** Holds actual device-pixel-ratio set for HiDPI frame-buffer. */
+    double m_dDevicePixelRatioActual;
     /** Holds whether frame-buffer should use unscaled HiDPI output. */
     bool m_fUseUnscaledHiDPIOutput;
     /** @} */
@@ -525,6 +531,7 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
     , m_dScaleFactor(1.0)
     , m_enmScalingOptimizationType(ScalingOptimizationType_None)
     , m_dDevicePixelRatio(1.0)
+    , m_dDevicePixelRatioActual(1.0)
     , m_fUseUnscaledHiDPIOutput(false)
 {
     /* Update coordinate-system: */
@@ -1321,7 +1328,7 @@ void UIFrameBufferPrivate::updateCoordinateSystem()
 
     /* Take the device-pixel-ratio into account: */
     if (!useUnscaledHiDPIOutput())
-        m_transform = m_transform.scale(devicePixelRatio(), devicePixelRatio());
+        m_transform = m_transform.scale(devicePixelRatioActual(), devicePixelRatioActual());
     m_transform = m_transform.scale(1.0 / devicePixelRatio(), 1.0 / devicePixelRatio());
 }
 
@@ -1336,13 +1343,13 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
 
     /* But if we should scale image by some reason: */
     if (   scaledSize().isValid()
-        || (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0))
+        || (!useUnscaledHiDPIOutput() && devicePixelRatioActual() != 1.0))
     {
         /* Calculate final scaled size: */
         QSize effectiveSize = !scaledSize().isValid() ? pSourceImage->size() : scaledSize();
         /* Take the device-pixel-ratio into account: */
-        if (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0)
-            effectiveSize *= devicePixelRatio();
+        if (!useUnscaledHiDPIOutput() && devicePixelRatioActual() != 1.0)
+            effectiveSize *= devicePixelRatioActual();
         /* We scale the image to requested size and retain it
          * by making heap shallow copy of that temporary object: */
         switch (m_pMachineView->visualStateType())
@@ -1391,7 +1398,7 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
 
     /* If we had to scale image for some reason: */
     if (   scaledSize().isValid()
-        || (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0))
+        || (!useUnscaledHiDPIOutput() && devicePixelRatioActual() != 1.0))
     {
         /* Wipe out copied image: */
         delete pSourceImage;
@@ -1410,13 +1417,13 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
 
     /* But if we should scale image by some reason: */
     if (   scaledSize().isValid()
-        || (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0))
+        || (!useUnscaledHiDPIOutput() && devicePixelRatioActual() != 1.0))
     {
         /* Calculate final scaled size: */
         QSize effectiveSize = !scaledSize().isValid() ? pSourceImage->size() : scaledSize();
         /* Take the device-pixel-ratio into account: */
-        if (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0)
-            effectiveSize *= devicePixelRatio();
+        if (!useUnscaledHiDPIOutput() && devicePixelRatioActual() != 1.0)
+            effectiveSize *= devicePixelRatioActual();
         /* We scale the image to requested size and retain it
          * by making heap shallow copy of that temporary object: */
         switch (m_pMachineView->visualStateType())
@@ -1481,7 +1488,7 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
 
     /* If we had to scale image for some reason: */
     if (   scaledSize().isValid()
-        || (!useUnscaledHiDPIOutput() && devicePixelRatio() != 1.0))
+        || (!useUnscaledHiDPIOutput() && devicePixelRatioActual() != 1.0))
     {
         /* Wipe out copied image: */
         delete pSourceImage;
@@ -1682,6 +1689,16 @@ double UIFrameBuffer::devicePixelRatio() const
 void UIFrameBuffer::setDevicePixelRatio(double dDevicePixelRatio)
 {
     m_pFrameBuffer->setDevicePixelRatio(dDevicePixelRatio);
+}
+
+double UIFrameBuffer::devicePixelRatioActual() const
+{
+    return m_pFrameBuffer->devicePixelRatioActual();
+}
+
+void UIFrameBuffer::setDevicePixelRatioActual(double dDevicePixelRatioActual)
+{
+    m_pFrameBuffer->setDevicePixelRatioActual(dDevicePixelRatioActual);
 }
 
 bool UIFrameBuffer::useUnscaledHiDPIOutput() const

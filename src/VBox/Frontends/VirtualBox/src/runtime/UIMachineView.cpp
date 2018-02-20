@@ -260,7 +260,7 @@ void UIMachineView::applyMachineViewScaleFactor()
         // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
         // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
         if (!fUseUnscaledHiDPIOutput)
-            dScaleFactorFor3D *= frameBuffer()->devicePixelRatio();
+            dScaleFactorFor3D *= frameBuffer()->devicePixelRatioActual();
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
         display().NotifyScaleFactorChange(m_uScreenId,
                                           (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
@@ -365,10 +365,11 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     {
         /* Assign new frame-buffer logical-size: */
         QSize scaledSize = size();
-        const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
-        scaledSize *= dDevicePixelRatio;
+        const double dDevicePixelRatioFormal = frameBuffer()->devicePixelRatio();
+        const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+        scaledSize *= dDevicePixelRatioFormal;
         if (!frameBuffer()->useUnscaledHiDPIOutput())
-            scaledSize /= dDevicePixelRatio;
+            scaledSize /= dDevicePixelRatioActual;
         frameBuffer()->setScaledSize(scaledSize);
 
         /* Forget the last full-screen size: */
@@ -452,20 +453,21 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
     rect.translate(-contentsX(), -contentsY());
 
     /* Take the device-pixel-ratio into account: */
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
-    if (!frameBuffer()->useUnscaledHiDPIOutput() && dDevicePixelRatio != 1.0)
+    const double dDevicePixelRatioFormal = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+    if (!frameBuffer()->useUnscaledHiDPIOutput() && dDevicePixelRatioActual != 1.0)
     {
-        rect.moveTo((int)floor((double)rect.x() * dDevicePixelRatio) - 1,
-                    (int)floor((double)rect.y() * dDevicePixelRatio) - 1);
-        rect.setSize(QSize((int)ceil((double)rect.width()  * dDevicePixelRatio) + 2,
-                           (int)ceil((double)rect.height() * dDevicePixelRatio) + 2));
+        rect.moveTo((int)floor((double)rect.x() * dDevicePixelRatioActual) - 1,
+                    (int)floor((double)rect.y() * dDevicePixelRatioActual) - 1);
+        rect.setSize(QSize((int)ceil((double)rect.width()  * dDevicePixelRatioActual) + 2,
+                           (int)ceil((double)rect.height() * dDevicePixelRatioActual) + 2));
     }
-    if (dDevicePixelRatio != 1.0)
+    if (dDevicePixelRatioFormal != 1.0)
     {
-        rect.moveTo((int)floor((double)rect.x() / dDevicePixelRatio) - 1,
-                    (int)floor((double)rect.y() / dDevicePixelRatio) - 1);
-        rect.setSize(QSize((int)ceil((double)rect.width()  / dDevicePixelRatio) + 2,
-                           (int)ceil((double)rect.height() / dDevicePixelRatio) + 2));
+        rect.moveTo((int)floor((double)rect.x() / dDevicePixelRatioFormal) - 1,
+                    (int)floor((double)rect.y() / dDevicePixelRatioFormal) - 1);
+        rect.setSize(QSize((int)ceil((double)rect.width()  / dDevicePixelRatioFormal) + 2,
+                           (int)ceil((double)rect.height() / dDevicePixelRatioFormal) + 2));
     }
 
     /* Limit the resulting part by the viewport rectangle: */
@@ -511,7 +513,7 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
         // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
         // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
         if (!fUseUnscaledHiDPIOutput)
-            dScaleFactorFor3D *= frameBuffer()->devicePixelRatio();
+            dScaleFactorFor3D *= frameBuffer()->devicePixelRatioActual();
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
         display().NotifyScaleFactorChange(m_uScreenId,
                                           (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
@@ -711,10 +713,12 @@ void UIMachineView::prepareFrameBuffer()
         m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
 
         /* Take the scale-factor related attributes into account: */
-        const double dDevicePixelRatio = gpDesktop->devicePixelRatio(machineWindow());
+        const double dDevicePixelRatioFormal = gpDesktop->devicePixelRatio(machineWindow());
+        const double dDevicePixelRatioActual = gpDesktop->devicePixelRatioActual(machineWindow());
         const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
         const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
-        m_pFrameBuffer->setDevicePixelRatio(dDevicePixelRatio);
+        m_pFrameBuffer->setDevicePixelRatio(dDevicePixelRatioFormal);
+        m_pFrameBuffer->setDevicePixelRatioActual(dDevicePixelRatioActual);
         m_pFrameBuffer->setScaleFactor(dScaleFactor);
         m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
         /* Propagate the scale-factor related attributes to 3D service if necessary: */
@@ -726,7 +730,7 @@ void UIMachineView::prepareFrameBuffer()
             // On Windows and Linux opposing to macOS it's only Qt which can auto scale up,
             // not 3D overlay itself, so for auto scale-up mode we have to take that into account.
             if (!fUseUnscaledHiDPIOutput)
-                dScaleFactorFor3D *= dDevicePixelRatio;
+                dScaleFactorFor3D *= dDevicePixelRatioActual;
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
             display().NotifyScaleFactorChange(m_uScreenId,
                                               (uint32_t)(dScaleFactorFor3D * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
@@ -1060,10 +1064,11 @@ void UIMachineView::handleScaleChange()
         {
             /* Assign new frame-buffer logical-size: */
             QSize scaledSize = size();
-            const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
-            scaledSize *= dDevicePixelRatio;
+            const double dDevicePixelRatioFormal = frameBuffer()->devicePixelRatio();
+            const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+            scaledSize *= dDevicePixelRatioFormal;
             if (!frameBuffer()->useUnscaledHiDPIOutput())
-                scaledSize /= dDevicePixelRatio;
+                scaledSize /= dDevicePixelRatioActual;
             frameBuffer()->setScaledSize(scaledSize);
         }
         /* For other than 'scale' mode: */
@@ -1126,9 +1131,9 @@ void UIMachineView::takePausePixmapLive()
     }
 
     /* Take the device-pixel-ratio into account: */
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
-    if (!frameBuffer()->useUnscaledHiDPIOutput() && dDevicePixelRatio != 1.0)
-        screenShot = screenShot.scaled(screenShot.size() * dDevicePixelRatio,
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+    if (!frameBuffer()->useUnscaledHiDPIOutput() && dDevicePixelRatioActual != 1.0)
+        screenShot = screenShot.scaled(screenShot.size() * dDevicePixelRatioActual,
                                        Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
     /* Dim screen-shot if it is Ok: */
@@ -1164,9 +1169,9 @@ void UIMachineView::takePausePixmapSnapshot()
     QSize effectiveSize = uGuestWidth > 0 ? QSize(uGuestWidth, uGuestHeight) : guestScreenSizeHint();
 
     /* Take the device-pixel-ratio into account: */
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
-    if (!frameBuffer()->useUnscaledHiDPIOutput())
-        effectiveSize *= dDevicePixelRatio;
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+    if (!frameBuffer()->useUnscaledHiDPIOutput() && dDevicePixelRatioActual != 1.0)
+        effectiveSize *= dDevicePixelRatioActual;
 
     /* Create a screen-shot on the basis of the screen-data we have in saved-state: */
     QImage screenShot = QImage::fromData(screenData.data(), screenData.size(), "PNG").scaled(effectiveSize);
@@ -1197,9 +1202,9 @@ void UIMachineView::updateScaledPausePixmap()
         return;
 
     /* Take the device-pixel-ratio into account: */
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
-    if (!frameBuffer()->useUnscaledHiDPIOutput())
-        scaledSize *= dDevicePixelRatio;
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+    if (!frameBuffer()->useUnscaledHiDPIOutput() && dDevicePixelRatioActual != 1.0)
+        scaledSize *= dDevicePixelRatioActual;
 
     /* Update pause pixmap finally: */
     m_pausePixmapScaled = pausePixmap().scaled(scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -1229,13 +1234,14 @@ void UIMachineView::updateSliders()
     int yRange = frameBufferSize.height() - curViewportSize.height();
 
     /* Take the device-pixel-ratio into account: */
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
-    xRange *= dDevicePixelRatio;
-    yRange *= dDevicePixelRatio;
+    const double dDevicePixelRatioFormal = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+    xRange *= dDevicePixelRatioFormal;
+    yRange *= dDevicePixelRatioFormal;
     if (!frameBuffer()->useUnscaledHiDPIOutput())
     {
-        xRange /= dDevicePixelRatio;
-        yRange /= dDevicePixelRatio;
+        xRange /= dDevicePixelRatioActual;
+        yRange /= dDevicePixelRatioActual;
     }
 
     /* Configure scroll-bars: */
@@ -1252,14 +1258,15 @@ QPoint UIMachineView::viewportToContents(const QPoint &vp) const
     int iContentsY = contentsY();
 
     /* Take the device-pixel-ratio into account: */
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatioFormal = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
     if (!frameBuffer()->useUnscaledHiDPIOutput())
     {
-        iContentsX *= dDevicePixelRatio;
-        iContentsY *= dDevicePixelRatio;
+        iContentsX *= dDevicePixelRatioActual;
+        iContentsY *= dDevicePixelRatioActual;
     }
-    iContentsX /= dDevicePixelRatio;
-    iContentsY /= dDevicePixelRatio;
+    iContentsX /= dDevicePixelRatioFormal;
+    iContentsY /= dDevicePixelRatioFormal;
 
     /* Return point shifted according scroll-bars: */
     return QPoint(vp.x() + iContentsX, vp.y() + iContentsY);
@@ -1471,6 +1478,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                     {
                         /* Update device-pixel-ratio for underlying frame-buffer: */
                         m_pFrameBuffer->setDevicePixelRatio(gpDesktop->devicePixelRatio(machineWindow()));
+                        m_pFrameBuffer->setDevicePixelRatioActual(gpDesktop->devicePixelRatioActual(machineWindow()));
                         /* Perform frame-buffer rescaling: */
                         m_pFrameBuffer->performRescale();
                     }
@@ -1877,10 +1885,11 @@ QSize UIMachineView::scaledForward(QSize size) const
         size = QSize((int)(size.width() * dScaleFactor), (int)(size.height() * dScaleFactor));
 
     /* Take the device-pixel-ratio into account: */
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatioFormal = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
     if (!frameBuffer()->useUnscaledHiDPIOutput())
-        size = QSize(size.width() * dDevicePixelRatio, size.height() * dDevicePixelRatio);
-    size = QSize(size.width() / dDevicePixelRatio, size.height() / dDevicePixelRatio);
+        size = QSize(size.width() * dDevicePixelRatioActual, size.height() * dDevicePixelRatioActual);
+    size = QSize(size.width() / dDevicePixelRatioFormal, size.height() / dDevicePixelRatioFormal);
 
     /* Return result: */
     return size;
@@ -1889,10 +1898,11 @@ QSize UIMachineView::scaledForward(QSize size) const
 QSize UIMachineView::scaledBackward(QSize size) const
 {
     /* Take the device-pixel-ratio into account: */
-    const double dDevicePixelRatio = frameBuffer()->devicePixelRatio();
-    size = QSize(size.width() * dDevicePixelRatio, size.height() * dDevicePixelRatio);
+    const double dDevicePixelRatioFormal = frameBuffer()->devicePixelRatio();
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+    size = QSize(size.width() * dDevicePixelRatioFormal, size.height() * dDevicePixelRatioFormal);
     if (!frameBuffer()->useUnscaledHiDPIOutput())
-        size = QSize(size.width() / dDevicePixelRatio, size.height() / dDevicePixelRatio);
+        size = QSize(size.width() / dDevicePixelRatioActual, size.height() / dDevicePixelRatioActual);
 
     /* Take the scale-factor into account: */
     const double dScaleFactor = frameBuffer()->scaleFactor();
