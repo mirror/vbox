@@ -766,22 +766,22 @@ typedef struct
     /** Offset 0xb8 - LBR Virtualization. */
     SVMLBRVIRT      LbrVirt;
     /** Offset 0xc0 - VMCB Clean Bits. */
-    uint32_t    u32VmcbCleanBits;
-    uint32_t    u32Reserved0;
+    uint32_t        u32VmcbCleanBits;
+    uint32_t        u32Reserved0;
     /** Offset 0xc8 - Next sequential instruction pointer. */
-    uint64_t    u64NextRIP;
+    uint64_t        u64NextRIP;
     /** Offset 0xd0 - Number of bytes fetched. */
-    uint8_t     cbInstrFetched;
+    uint8_t         cbInstrFetched;
     /** Offset 0xd1 - Guest instruction bytes. */
-    uint8_t     abInstr[SVM_CTRL_GUEST_INSTR_BYTES_MAX];
+    uint8_t         abInstr[SVM_CTRL_GUEST_INSTR_BYTES_MAX];
     /** Offset 0xe0 - AVIC APIC_BACKING_PAGE pointer. */
-    SVMAVIC     AvicBackingPagePtr;
+    SVMAVIC         AvicBackingPagePtr;
     /** Offset 0xe8-0xef - Reserved. */
-    uint8_t     u8Reserved3[0xF0 - 0xE8];
+    uint8_t         u8Reserved3[0xF0 - 0xE8];
     /** Offset 0xf0 - AVIC LOGICAL_TABLE pointer. */
-    SVMAVIC     AvicLogicalTablePtr;
+    SVMAVIC         AvicLogicalTablePtr;
     /** Offset 0xf8 - AVIC PHYSICAL_TABLE pointer. */
-    SVMAVICPHYS AvicPhysicalTablePtr;
+    SVMAVICPHYS     AvicPhysicalTablePtr;
 } SVMVMCBCTRL;
 #pragma pack()
 /** Pointer to the SVMVMCBSTATESAVE structure. */
@@ -822,6 +822,7 @@ AssertCompileMemberOffset(SVMVMCBCTRL, AvicBackingPagePtr,      0xe0);
 AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved3,             0xe8);
 AssertCompileMemberOffset(SVMVMCBCTRL, AvicLogicalTablePtr,     0xf0);
 AssertCompileMemberOffset(SVMVMCBCTRL, AvicPhysicalTablePtr,    0xf8);
+AssertCompileMemberSize(SVMVMCBCTRL,   abInstr,                 0x0f);
 
 /**
  * SVM VMCB state save area.
