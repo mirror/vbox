@@ -24,6 +24,9 @@
 #include <VBox/vmm/cpum.h> /* For CPUMCPUVENDOR. */
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/vmapi.h>
+#ifdef RT_OS_WINDOWS
+#include <iprt/nt/hyperv.h>
+#endif
 
 RT_C_DECLS_BEGIN
 
@@ -82,6 +85,8 @@ typedef struct NEM
     /** The device handle for the partition, for use with Vid APIs or direct I/O
      * controls. */
     RTR3PTR                     hPartitionDevice;
+    /** The Hyper-V partition ID.   */
+    uint64_t                    idHvPartition;
 
     /** Number of currently mapped pages. */
     uint32_t volatile           cMappedPages;
@@ -104,7 +109,27 @@ typedef struct NEMCPU
 {
     /** NEMCPU_MAGIC. */
     uint32_t                    u32Magic;
-
+#ifdef RT_OS_WINDOWS
+    /** Parameters for making Hyper-V hypercalls. */
+    union
+    {
+        uint8_t                 ab[64];
+        /** Arguments for NEMR0MapPages (HvCallMapGpaPages). */
+        struct
+        {
+            RTGCPHYS            GCPhysSrc;
+            RTGCPHYS            GCPhysDst; /**< Same as GCPhysSrc except maybe when the A20 gate is disabled. */
+            uint32_t            cPages;
+            HV_MAP_GPA_FLAGS    fFlags;
+        }                       MapPages;
+        /** Arguments for NEMR0UnmapPages (HvCallUnmapGpaPages). */
+        struct
+        {
+            RTGCPHYS            GCPhys;
+            uint32_t            cPages;
+        }                       UnmapPages;
+    } Hypercall;
+#endif
 } NEMCPU;
 /** Pointer to NEM VMCPU instance data. */
 typedef NEMCPU *PNEMCPU;
@@ -113,6 +138,41 @@ typedef NEMCPU *PNEMCPU;
 #define NEMCPU_MAGIC            UINT32_C(0x4d454e20)
 /** NEMCPU::u32Magic value after termination. */
 #define NEMCPU_MAGIC_DEAD       UINT32_C(0xdead2222)
+
+
+#ifdef IN_RING0
+
+/**
+ * NEM GVMCPU instance data.
+ */
+typedef struct NEMR0PERVCPU
+{
+# ifdef RT_OS_WINDOWS
+    /** @name Hypercall input/ouput page.
+     * @{ */
+    /** Host physical address of the hypercall input/output page. */
+    RTHCPHYS                    HCPhysHypercallData;
+    /** Pointer to the hypercall input/output page. */
+    uint8_t                    *pbHypercallData;
+    /** Handle to the memory object of the hypercall input/output page. */
+    RTR0MEMOBJ                  hHypercallDataMemObj;
+    /** @} */
+# endif
+} NEMR0PERVCPU;
+
+/**
+ * NEM GVM instance data.
+ */
+typedef struct NEMR0PERVM
+{
+# ifdef RT_OS_WINDOWS
+    /** The partition ID. */
+    uint64_t                    idHvPartition;
+# endif
+} NEMR0PERVM;
+
+#endif /* IN_RING*/
+
 
 #ifdef IN_RING3
 int     nemR3NativeInit(PVM pVM, bool fFallback, bool fForced);
@@ -147,6 +207,13 @@ void    nemR3NativeNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPh
 #endif
 
 
+#ifdef RT_OS_WINDOWS
+/** Maximum number of pages we can map in a single NEMR0MapPages call. */
+# define NEM_MAX_MAP_PAGES      ((PAGE_SIZE - RT_UOFFSETOF(HV_INPUT_MAP_GPA_PAGES, PageList)) / sizeof(HV_SPA_PAGE_NUMBER))
+/** Maximum number of pages we can unmap in a single NEMR0UnmapPages call. */
+# define NEM_MAX_UNMAP_PAGES    4095
+
+#endif
 /** @} */
 
 RT_C_DECLS_END

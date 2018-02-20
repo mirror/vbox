@@ -50,6 +50,7 @@
 #include "../include/VMInternal.h"
 #include "../include/EMInternal.h"
 #include "../include/IEMInternal.h"
+#include "../include/NEMInternal.h"
 #include "../include/REMInternal.h"
 #include "../VMMR0/GMMR0Internal.h"
 #ifndef IN_RC

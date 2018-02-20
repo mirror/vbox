@@ -4,6 +4,8 @@
  *
  * Log group 2: Exit logging.
  * Log group 3: Log context on exit.
+ * Log group 5: Ring-3 memory management
+ * Log group 6: Ring-0 memory management
  * Log group 12: API intercepts.
  */
 
@@ -25,6 +27,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
 #include <iprt/nt/nt-and-windows.h>
+#include <iprt/nt/hyperv.h>
 #include <WinHvPlatform.h>
 
 #ifndef _WIN32_WINNT_WIN10
@@ -72,6 +75,9 @@
 /** Checks if a_GCPhys is relevant to the limited A20 gate emulation.  */
 #define NEM_WIN_IS_RELEVANT_TO_A20(a_GCPhys)    \
     ( ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K) || ((RTGCPHYS)(a_GCPhys) < (RTGCPHYS)_64K) )
+
+
+#define NEM_WIN_USE_HYPERCALLS
 
 
 /*********************************************************************************************************************************
@@ -146,6 +152,11 @@ static decltype(WHvGetVirtualProcessorRegisters) *  g_pfnWHvGetVirtualProcessorR
 static decltype(WHvSetVirtualProcessorRegisters) *  g_pfnWHvSetVirtualProcessorRegisters;
 /** @} */
 
+/** @name APIs imported from Vid.dll
+ * @{ */
+static BOOL (WINAPI *g_pfnVidGetHvPartitionId)(HANDLE hPartition, HV_PARTITION_ID *pidPartition);
+/** @} */
+
 
 /**
  * Import instructions.
@@ -175,6 +186,7 @@ static const struct
     NEM_WIN_IMPORT(0, false, WHvCancelRunVirtualProcessor),
     NEM_WIN_IMPORT(0, false, WHvGetVirtualProcessorRegisters),
     NEM_WIN_IMPORT(0, false, WHvSetVirtualProcessorRegisters),
+    NEM_WIN_IMPORT(1, false, VidGetHvPartitionId),
 #undef NEM_WIN_IMPORT
 };
 
@@ -751,13 +763,20 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
         if (RT_SUCCESS(rc))
         {
             /*
-             * Create and initialize a partition.
+             * Check out our ring-0 capabilities.
              */
-            rc = nemR3WinInitCreatePartition(pVM, pErrInfo);
+            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_NEM_INIT_VM, 0, NULL);
             if (RT_SUCCESS(rc))
             {
-                VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
-                Log(("NEM: Marked active!\n"));
+                /*
+                 * Create and initialize a partition.
+                 */
+                rc = nemR3WinInitCreatePartition(pVM, pErrInfo);
+                if (RT_SUCCESS(rc))
+                {
+                    VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
+                    Log(("NEM: Marked active!\n"));
+                }
             }
         }
     }
@@ -861,9 +880,14 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         || hPartitionDevice == (HANDLE)(intptr_t)-1)
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to get device handle for partition %p: %Rhrc", hPartition, hrc);
-    /** @todo Do a Vid query that uses the handle to check that we've got a
-     *  working value.  */
+
+    HV_PARTITION_ID idHvPartition = HV_PARTITION_ID_INVALID;
+    if (!g_pfnVidGetHvPartitionId(hPartitionDevice, &idHvPartition))
+        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                          "Failed to get device handle and/or partition ID for %p (hPartitionDevice=%p, Last=%#x/%u)",
+                          hPartition, hPartitionDevice, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
     pVM->nem.s.hPartitionDevice = hPartitionDevice;
+    pVM->nem.s.idHvPartition    = idHvPartition;
 
     /*
      * Create EMTs.
@@ -889,7 +913,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     }
     pVM->nem.s.fCreatedEmts = true;
 
-    LogRel(("NEM: Successfully set up partition (device handle %p)\n", hPartitionDevice));
+    LogRel(("NEM: Successfully set up partition (device handle %p, partition ID %#llx)\n", hPartitionDevice, idHvPartition));
     return VINF_SUCCESS;
 }
 
@@ -1587,7 +1611,7 @@ static int nemR3WinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         MISSINGPENDINGINTERRUPTIONREG const * pPendingInt = (MISSINGPENDINGINTERRUPTIONREG const *)&aValues[76];
         if (pPendingInt->fInterruptionPending)
         {
-            Log6(("PendingInterruption: type=%u vector=%#x errcd=%RTbool/%#x unk0=%u unk1=%u\n",
+            Log7(("PendingInterruption: type=%u vector=%#x errcd=%RTbool/%#x unk0=%u unk1=%u\n",
                   pPendingInt->enmInterruptionType, pPendingInt->InterruptionVector, pPendingInt->fDeliverErrCd,
                   pPendingInt->uErrCd, pPendingInt->fUnknown0, pPendingInt->fUnknown1));
             AssertMsg(pPendingInt->uReserved0 == 0 && pPendingInt->uReserved1 == 0,
@@ -1815,17 +1839,34 @@ static VBOXSTRICTRC nemR3WinHandleHalt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return VINF_EM_HALT;
 }
 
+
 static DECLCALLBACK(int) nemR3WinUnmapOnePageCallback(PVM pVM, RTGCPHYS GCPhys, uint8_t *pu2NemState, void *pvUser)
 {
     RT_NOREF_PV(pvUser);
+#ifdef NEM_WIN_USE_HYPERCALLS
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhys;
+    pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
+    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+#else
     HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, X86_PAGE_SIZE);
     if (SUCCEEDED(hrc))
+#endif
+    {
+        Log5(("NEM GPA unmap all: %RGp (cMappedPages=%u)\n", GCPhys, pVM->nem.s.cMappedPages - 1));
         *pu2NemState = NEM_WIN_PAGE_STATE_UNMAPPED;
+    }
     else
     {
+#ifdef NEM_WIN_USE_HYPERCALLS
+        LogRel(("nemR3WinUnmapOnePageCallback: GCPhys=%RGp rc=%Rrc\n", GCPhys, rc));
+#else
         LogRel(("nemR3WinUnmapOnePageCallback: GCPhys=%RGp %s hrc=%Rhrc (%#x) Last=%#x/%u (cMappedPages=%u)\n",
                 GCPhys, g_apszPageStates[*pu2NemState], hrc, hrc, RTNtCurrentTeb()->LastStatusValue,
                 RTNtCurrentTeb()->LastErrorValue, pVM->nem.s.cMappedPages));
+#endif
         *pu2NemState = NEM_WIN_PAGE_STATE_NOT_SET;
     }
     if (pVM->nem.s.cMappedPages > 0)
@@ -1946,16 +1987,29 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
      * Unmap and restart the instruction.
      * If this fails, which it does every so often, just unmap everything for now.
      */
+#ifdef NEM_WIN_USE_HYPERCALLS
+    pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhys;
+    pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
+    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+#else
     /** @todo figure out whether we mess up the state or if it's WHv.   */
     HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, X86_PAGE_SIZE);
     if (SUCCEEDED(hrc))
+#endif
     {
         pState->fDidSomething = true;
         pState->fCanResume    = true;
         pInfo->u2NemState = NEM_WIN_PAGE_STATE_UNMAPPED;
-        Log5(("nemR3WinHandleMemoryAccessPageCheckerCallback: %RGp => unmapped[%s]\n", GCPhys, g_apszPageStates[u2State]));
+        uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
+        Log5(("NEM GPA unmapped/exit: %RGp (was %s, cMappedPages=%u)\n", GCPhys, g_apszPageStates[u2State], cMappedPages));
         return VINF_SUCCESS;
     }
+#ifdef NEM_WIN_USE_HYPERCALLS
+    LogRel(("nemR3WinHandleMemoryAccessPageCheckerCallback/unmap: GCPhysDst=%RGp rc=%Rrc\n", GCPhys, rc));
+    return rc;
+#else
     LogRel(("nemR3WinHandleMemoryAccessPageCheckerCallback/unmap: GCPhysDst=%RGp %s hrc=%Rhrc (%#x) Last=%#x/%u (cMappedPages=%u)\n",
             GCPhys, g_apszPageStates[u2State], hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue,
             pVM->nem.s.cMappedPages));
@@ -1967,6 +2021,7 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
     pState->fCanResume    = true;
     pInfo->u2NemState = NEM_WIN_PAGE_STATE_UNMAPPED;
     return VINF_SUCCESS;
+#endif
 }
 
 
@@ -2182,7 +2237,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
      */
     const bool   fSingleStepping = false; /** @todo get this from somewhere. */
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    for (;;)
+    for (unsigned iLoop = 0;;iLoop++)
     {
         /*
          * Copy the state.
@@ -2326,6 +2381,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
             break;
         }
 
+#ifdef NEM_WIN_USE_HYPERCALLS
         /* Hack alert! */
         uint32_t const cMappedPages = pVM->nem.s.cMappedPages;
         if (cMappedPages < 4000)
@@ -2335,6 +2391,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
             PGMPhysNemEnumPagesByState(pVM, NEM_WIN_PAGE_STATE_READABLE, nemR3WinUnmapOnePageCallback, NULL);
             Log(("nemR3NativeRunGC: Unmapped all; cMappedPages=%u -> %u\n", cMappedPages, pVM->nem.s.cMappedPages));
         }
+#endif
 
         /* If any FF is pending, return to the EM loops.  That's okay for the
            current sledgehammer approach. */
@@ -2503,19 +2560,34 @@ int nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, 
 static DECLCALLBACK(int) nemR3WinUnsetForA20CheckerCallback(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys,
                                                             PPGMPHYSNEMPAGEINFO pInfo, void *pvUser)
 {
-    Assert(pVCpu == NULL);
-
     /* We'll just unmap the memory. */
     if (pInfo->u2NemState > NEM_WIN_PAGE_STATE_UNMAPPED)
     {
+#ifdef NEM_WIN_USE_HYPERCALLS
+        pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhys;
+        pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
+        int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+#else
         HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, X86_PAGE_SIZE);
         if (SUCCEEDED(hrc))
+#endif
+        {
+            uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
+            Log5(("NEM GPA unmapped/A20: %RGp (was %s, cMappedPages=%u)\n", GCPhys, g_apszPageStates[pInfo->u2NemState], cMappedPages));
             pInfo->u2NemState = NEM_WIN_PAGE_STATE_UNMAPPED;
+        }
         else
         {
+#ifdef NEM_WIN_USE_HYPERCALLS
+            LogRel(("nemR3WinUnsetForA20CheckerCallback/unmap: GCPhys=%RGp rc=%Rrc\n", GCPhys, rc));
+            return rc;
+#else
             LogRel(("nemR3WinUnsetForA20CheckerCallback/unmap: GCPhys=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
                     GCPhys, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
             return VERR_INTERNAL_ERROR_2;
+#endif
         }
     }
     RT_NOREF(pVCpu, pvUser);
@@ -2528,13 +2600,13 @@ static DECLCALLBACK(int) nemR3WinUnsetForA20CheckerCallback(PVM pVM, PVMCPU pVCp
  *
  * @returns The PGMPhysNemQueryPageInfo result.
  * @param   pVM             The cross context VM structure.
- * @param   pVCpu           The cross context virtual CPU structure.  Optional.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   GCPhys          The page to unmap.
  */
-static int nemR3WinUnmapPageForA20Gate(PVM pVM, RTGCPHYS GCPhys)
+static int nemR3WinUnmapPageForA20Gate(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
     PGMPHYSNEMPAGEINFO Info;
-    return PGMPhysNemPageInfoChecker(pVM, NULL /*pVCpu*/, GCPhys, false /*fMakeWritable*/, &Info,
+    return PGMPhysNemPageInfoChecker(pVM, pVCpu, GCPhys, false /*fMakeWritable*/, &Info,
                                      nemR3WinUnsetForA20CheckerCallback, NULL);
 }
 
@@ -2557,7 +2629,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
     {
         pVM->nem.s.fA20Enabled = fEnabled;
         for (RTGCPHYS GCPhys = _1M; GCPhys < _1M + _64K; GCPhys += X86_PAGE_SIZE)
-            nemR3WinUnmapPageForA20Gate(pVM, GCPhys);
+            nemR3WinUnmapPageForA20Gate(pVM, pVCpu, GCPhys);
     }
 }
 
@@ -2618,6 +2690,29 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
     {
         if (u2OldState > NEM_WIN_PAGE_STATE_UNMAPPED)
         {
+#ifdef NEM_WIN_USE_HYPERCALLS
+            PVMCPU pVCpu = VMMGetCpu(pVM);
+            pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhysDst;
+            pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
+            int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
+                uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
+                if (u2NewState == NEM_WIN_PAGE_STATE_UNMAPPED)
+                {
+                    Log5(("NEM GPA unmapped/set: %RGp (was %s, cMappedPages=%u)\n",
+                          GCPhysDst, g_apszPageStates[u2OldState], cMappedPages));
+                    return VINF_SUCCESS;
+                }
+            }
+            else
+            {
+                LogRel(("nemR3NativeSetPhysPage/unmap: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
+                return rc;
+            }
+#else
             HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhysDst, X86_PAGE_SIZE);
             if (SUCCEEDED(hrc))
             {
@@ -2625,7 +2720,8 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
                 uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
                 if (u2NewState == NEM_WIN_PAGE_STATE_UNMAPPED)
                 {
-                    Log5(("nemR3NativeSetPhysPage: %RGp => unmapped (total %u)\n", GCPhysDst, cMappedPages));
+                    Log5(("NEM GPA unmapped/set: %RGp (was %s, cMappedPages=%u)\n",
+                          GCPhysDst, g_apszPageStates[u2OldState], cMappedPages));
                     return VINF_SUCCESS;
                 }
             }
@@ -2635,6 +2731,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
                         GCPhysDst, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
                 return VERR_NEM_INIT_FAILED;
             }
+#endif
         }
     }
 
@@ -2643,6 +2740,27 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
      */
     if (fPageProt & NEM_PAGE_PROT_WRITE)
     {
+#ifdef NEM_WIN_USE_HYPERCALLS
+        RT_NOREF_PV(GCPhysSrc);
+        PVMCPU pVCpu = VMMGetCpu(pVM);
+        pVCpu->nem.s.Hypercall.MapPages.GCPhysSrc = GCPhysSrc;
+        pVCpu->nem.s.Hypercall.MapPages.GCPhysDst = GCPhysDst;
+        pVCpu->nem.s.Hypercall.MapPages.cPages    = 1;
+        pVCpu->nem.s.Hypercall.MapPages.fFlags    = HV_MAP_GPA_READABLE   | HV_MAP_GPA_WRITABLE
+                                                  | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN;
+        int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_MAP_PAGES, 0, NULL);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
+            uint32_t cMappedPages = ASMAtomicIncU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
+            Log5(("NEM GPA mapped/set: %RGp %s (was %s, cMappedPages=%u)\n",
+                  GCPhysDst, g_apszPageStates[u2NewState], g_apszPageStates[u2OldState], cMappedPages));
+            return VINF_SUCCESS;
+        }
+        LogRel(("nemR3NativeSetPhysPage/writable: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
+        return rc;
+#else
         void *pvPage;
         int rc = nemR3NativeGCPhys2R3PtrWriteable(pVM, GCPhysSrc, &pvPage);
         if (RT_SUCCESS(rc))
@@ -2653,7 +2771,8 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
             {
                 *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
                 uint32_t cMappedPages = ASMAtomicIncU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
-                Log5(("nemR3NativeSetPhysPage: %RGp => writable (total %u)\n", GCPhysDst, cMappedPages));
+                Log5(("NEM GPA mapped/set: %RGp %s (was %s, cMappedPages=%u)\n",
+                      GCPhysDst, g_apszPageStates[u2NewState], g_apszPageStates[u2OldState], cMappedPages));
                 return VINF_SUCCESS;
             }
             LogRel(("nemR3NativeSetPhysPage/writable: GCPhysDst=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
@@ -2662,10 +2781,30 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
         }
         LogRel(("nemR3NativeSetPhysPage/writable: GCPhysSrc=%RGp rc=%Rrc\n", GCPhysSrc, rc));
         return rc;
+#endif
     }
 
     if (fPageProt & NEM_PAGE_PROT_READ)
     {
+#ifdef NEM_WIN_USE_HYPERCALLS
+        PVMCPU pVCpu = VMMGetCpu(pVM);
+        pVCpu->nem.s.Hypercall.MapPages.GCPhysSrc = GCPhysSrc;
+        pVCpu->nem.s.Hypercall.MapPages.GCPhysDst = GCPhysDst;
+        pVCpu->nem.s.Hypercall.MapPages.cPages    = 1;
+        pVCpu->nem.s.Hypercall.MapPages.fFlags    = HV_MAP_GPA_READABLE | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN;
+        int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_MAP_PAGES, 0, NULL);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            *pu2State = NEM_WIN_PAGE_STATE_READABLE;
+            uint32_t cMappedPages = ASMAtomicIncU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
+            Log5(("NEM GPA mapped/set: %RGp %s (was %s, cMappedPages=%u)\n",
+                  GCPhysDst, g_apszPageStates[u2NewState], g_apszPageStates[u2OldState], cMappedPages));
+            return VINF_SUCCESS;
+        }
+        LogRel(("nemR3NativeSetPhysPage/readonly: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
+        return rc;
+#else
         const void *pvPage;
         int rc = nemR3NativeGCPhys2R3PtrReadOnly(pVM, GCPhysSrc, &pvPage);
         if (RT_SUCCESS(rc))
@@ -2676,7 +2815,8 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
             {
                 *pu2State = NEM_WIN_PAGE_STATE_READABLE;
                 uint32_t cMappedPages = ASMAtomicIncU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
-                Log5(("nemR3NativeSetPhysPage: %RGp => read+exec (total %u)\n", GCPhysDst, cMappedPages));
+                Log5(("NEM GPA mapped/set: %RGp %s (was %s, cMappedPages=%u)\n",
+                      GCPhysDst, g_apszPageStates[u2NewState], g_apszPageStates[u2OldState], cMappedPages));
                 return VINF_SUCCESS;
             }
             LogRel(("nemR3NativeSetPhysPage/readonly: GCPhysDst=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
@@ -2685,6 +2825,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
         }
         LogRel(("nemR3NativeSetPhysPage/readonly: GCPhysSrc=%RGp rc=%Rrc\n", GCPhysSrc, rc));
         return rc;
+#endif
     }
 
     /* We already unmapped it above. */
@@ -2702,7 +2843,23 @@ static int nemR3JustUnmapPageFromHyperV(PVM pVM, RTGCPHYS GCPhysDst, uint8_t *pu
         return VINF_SUCCESS;
     }
 
-    HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhysDst, X86_PAGE_SIZE);
+#ifdef NEM_WIN_USE_HYPERCALLS
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhysDst & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK;
+    pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
+    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
+        Log5(("NEM GPA unmapped/just: %RGp (was %s, cMappedPages=%u)\n", GCPhysDst, g_apszPageStates[*pu2State], cMappedPages));
+        *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
+        return VINF_SUCCESS;
+    }
+    LogRel(("nemR3NativeSetPhysPage/unmap: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
+    return rc;
+#else
+    HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhysDst & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, X86_PAGE_SIZE);
     if (SUCCEEDED(hrc))
     {
         uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
@@ -2713,6 +2870,7 @@ static int nemR3JustUnmapPageFromHyperV(PVM pVM, RTGCPHYS GCPhysDst, uint8_t *pu
     LogRel(("nemR3JustUnmapPageFromHyperV(%RGp): failed! hrc=%Rhrc (%#x) Last=%#x/%u\n",
             GCPhysDst, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
     return VERR_INTERNAL_ERROR_3;
+#endif
 }
 
 
@@ -2731,7 +2889,7 @@ int nemR3NativeNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys
     else
     {
         /* To keep effort at a minimum, we unmap the HMA page alias and resync it lazily when needed. */
-        rc = nemR3WinUnmapPageForA20Gate(pVM, GCPhys | RT_BIT_32(20));
+        rc = nemR3WinUnmapPageForA20Gate(pVM, pVCpu, GCPhys | RT_BIT_32(20));
         if (!NEM_WIN_IS_SUBJECT_TO_A20(GCPhys) && RT_SUCCESS(rc))
             rc = nemR3NativeSetPhysPage(pVM, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
 
@@ -2764,7 +2922,7 @@ void nemR3NativeNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCP
     else
     {
         /* To keep effort at a minimum, we unmap the HMA page alias and resync it lazily when needed. */
-        nemR3WinUnmapPageForA20Gate(pVM, GCPhys | RT_BIT_32(20));
+        nemR3WinUnmapPageForA20Gate(pVM, pVCpu, GCPhys | RT_BIT_32(20));
         if (!NEM_WIN_IS_SUBJECT_TO_A20(GCPhys))
             nemR3NativeSetPhysPage(pVM, GCPhys, GCPhys, fPageProt, pu2State, false /*fBackingChanged*/);
     }
@@ -2794,7 +2952,7 @@ void nemR3NativeNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysP
     else
     {
         /* To keep effort at a minimum, we unmap the HMA page alias and resync it lazily when needed. */
-        nemR3WinUnmapPageForA20Gate(pVM, GCPhys | RT_BIT_32(20));
+        nemR3WinUnmapPageForA20Gate(pVM, pVCpu, GCPhys | RT_BIT_32(20));
         if (!NEM_WIN_IS_SUBJECT_TO_A20(GCPhys))
             nemR3NativeSetPhysPage(pVM, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
     }

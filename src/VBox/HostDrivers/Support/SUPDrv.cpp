@@ -38,7 +38,7 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/asm-math.h>
 #include <iprt/cpuset.h>
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
 # include <iprt/dbg.h>
 #endif
 #include <iprt/handletable.h>
@@ -330,15 +330,15 @@ static SUPFUNC g_aFunctions[] =
     { "RTPowerNotificationRegister",            (void *)(uintptr_t)RTPowerNotificationRegister },
     { "RTProcSelf",                             (void *)(uintptr_t)RTProcSelf },
     { "RTR0AssertPanicSystem",                  (void *)(uintptr_t)RTR0AssertPanicSystem },
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
-    { "RTR0DbgKrnlInfoOpen",                    (void *)(uintptr_t)RTR0DbgKrnlInfoOpen },          /* only-darwin, only-solaris */
-    { "RTR0DbgKrnlInfoQueryMember",             (void *)(uintptr_t)RTR0DbgKrnlInfoQueryMember },   /* only-darwin, only-solaris */
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
+    { "RTR0DbgKrnlInfoOpen",                    (void *)(uintptr_t)RTR0DbgKrnlInfoOpen },          /* only-darwin, only-solaris, only-windows */
+    { "RTR0DbgKrnlInfoQueryMember",             (void *)(uintptr_t)RTR0DbgKrnlInfoQueryMember },   /* only-darwin, only-solaris, only-windows */
 # if defined(RT_OS_SOLARIS)
     { "RTR0DbgKrnlInfoQuerySize",               (void *)(uintptr_t)RTR0DbgKrnlInfoQuerySize },     /* only-solaris */
 # endif
-    { "RTR0DbgKrnlInfoQuerySymbol",             (void *)(uintptr_t)RTR0DbgKrnlInfoQuerySymbol },   /* only-darwin, only-solaris */
-    { "RTR0DbgKrnlInfoRelease",                 (void *)(uintptr_t)RTR0DbgKrnlInfoRelease },       /* only-darwin, only-solaris */
-    { "RTR0DbgKrnlInfoRetain",                  (void *)(uintptr_t)RTR0DbgKrnlInfoRetain },        /* only-darwin, only-solaris */
+    { "RTR0DbgKrnlInfoQuerySymbol",             (void *)(uintptr_t)RTR0DbgKrnlInfoQuerySymbol },   /* only-darwin, only-solaris, only-windows */
+    { "RTR0DbgKrnlInfoRelease",                 (void *)(uintptr_t)RTR0DbgKrnlInfoRelease },       /* only-darwin, only-solaris, only-windows */
+    { "RTR0DbgKrnlInfoRetain",                  (void *)(uintptr_t)RTR0DbgKrnlInfoRetain },        /* only-darwin, only-solaris, only-windows */
 #endif
     { "RTR0MemAreKrnlAndUsrDifferent",          (void *)(uintptr_t)RTR0MemAreKrnlAndUsrDifferent },
     { "RTR0MemKernelIsValidAddr",               (void *)(uintptr_t)RTR0MemKernelIsValidAddr },

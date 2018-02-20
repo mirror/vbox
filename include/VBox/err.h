@@ -2814,8 +2814,14 @@
 #define VERR_NEM_NOT_AVAILABLE                      (-6801)
 /** NEM init failed. */
 #define VERR_NEM_INIT_FAILED                        (-6802)
+/** NEM init failed because of missing kernel API. */
+#define VERR_NEM_MISSING_KERNEL_API                 (-6803)
 /** NEM failed to create a native VM instance. */
-#define VERR_NEM_VM_CREATE_FAILED                   (-6803)
+#define VERR_NEM_VM_CREATE_FAILED                   (-6804)
+/** NEM failed to map page(s) into the VM. */
+#define VERR_NEM_MAP_PAGES_FAILED                   (-6805)
+/** NEM failed to unmap page(s) into the VM. */
+#define VERR_NEM_UNMAP_PAGES_FAILED                 (-6806)
 /** @} */
 
 /* SED-END */

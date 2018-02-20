@@ -26,6 +26,9 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pgm.h>
+#ifdef VBOX_WITH_NEM_R0
+# include <VBox/vmm/nem.h>
+#endif
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
@@ -1958,6 +1961,35 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 #endif
+
+        /*
+         * NEM requests.
+         */
+#ifdef VBOX_WITH_NEM_R0
+# if defined(RT_ARCH_AMD64) && defined(RT_OS_WINDOWS)
+        case VMMR0_DO_NEM_INIT_VM:
+            if (u64Arg || pReqHdr || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = NEMR0InitVM(pGVM, pVM);
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            break;
+
+        case VMMR0_DO_NEM_MAP_PAGES:
+            if (u64Arg || pReqHdr || idCpu == NIL_VMCPUID)
+                return VERR_INVALID_PARAMETER;
+            rc = NEMR0MapPages(pGVM, pVM, idCpu);
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            break;
+
+        case VMMR0_DO_NEM_UNMAP_PAGES:
+            if (u64Arg || pReqHdr || idCpu == NIL_VMCPUID)
+                return VERR_INVALID_PARAMETER;
+            rc = NEMR0UnmapPages(pGVM, pVM, idCpu);
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            break;
+# endif
+#endif
+
         /*
          * For profiling.
          */

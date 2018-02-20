@@ -57,6 +57,9 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmcpuset.h>
 #include <VBox/vmm/vmm.h>
+#ifdef VBOX_WITH_NEM_R0
+# include <VBox/vmm/nem.h>
+#endif
 #include <VBox/param.h>
 #include <VBox/err.h>
 
@@ -1242,6 +1245,9 @@ static void gvmmR0CleanupVM(PGVM pGVM)
     }
 
     GMMR0CleanupVM(pGVM);
+#ifdef VBOX_WITH_NEM_R0
+    NEMR0CleanupVM(pGVM);
+#endif
 
     AssertCompile((uintptr_t)NIL_RTTHREADCTXHOOK == 0); /* Depends on zero initialized memory working for NIL at the moment. */
     for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)

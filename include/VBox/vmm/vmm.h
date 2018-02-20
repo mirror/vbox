@@ -500,8 +500,15 @@ typedef enum VMMR0OPERATION
     /** The end of the R0 service operations. */
     VMMR0_DO_SRV_END,
 
+    /** Call NEMR0InitVM() (host specific). */
+    VMMR0_DO_NEM_INIT_VM = 576,
+    /** Call NEMR0MapPages() (host specific). */
+    VMMR0_DO_NEM_MAP_PAGES,
+    /** Call NEMR0UnmapPages() (host specific). */
+    VMMR0_DO_NEM_UNMAP_PAGES,
+
     /** Official call we use for testing Ring-0 APIs. */
-    VMMR0_DO_TESTS,
+    VMMR0_DO_TESTS = 640,
     /** Test the 32->64 bits switcher. */
     VMMR0_DO_TEST_SWITCHER3264,
 

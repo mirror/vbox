@@ -828,6 +828,11 @@ ifndef VBOX_ONLY_EXTPACKS
  VMMR0_SOURCES.x86 = \
  	VMMR0/VMMR0JmpA-x86.asm
 
+ if1of ($(USERNAME),bird) # experimental.
+  VMMR0_SOURCES.win.amd64 += VMMR0/NEMR0Native-win.cpp
+  VMMR0_DEFS.win.amd64    += VBOX_WITH_NATIVE_NEM VBOX_WITH_NEM_R0
+ endif
+
  VMMR0_LIBS = \
  	$(PATH_STAGE_LIB)/ServicesR0$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \

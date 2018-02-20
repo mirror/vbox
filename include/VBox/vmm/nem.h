@@ -79,7 +79,17 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
 VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled);
 /** @} */
 
-/** @defgroup grp_nem_hc    The NEM host context API
+
+/** @defgroup grp_nem_r0    The NEM ring-0 Context API
+ * @{  */
+VMMR0_INT_DECL(int)  NEMR0InitVM(PGVM pGVM, PVM pVM);
+VMMR0_INT_DECL(void) NEMR0CleanupVM(PGVM pGVM);
+VMMR0_INT_DECL(int)  NEMR0MapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
+/** @} */
+
+
+/** @defgroup grp_nem_hc    The NEM Host Context API
  * @{
  */
 VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
