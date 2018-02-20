@@ -29,6 +29,9 @@
 
 class UIGuestControlSubCommandBase;
 class CommandData;
+
+/** UIGuestControlInterface parses a command string and  issues API calls
+    accordingly to achive guest control related operations */
 class UIGuestControlInterface : public QObject
 {
 
@@ -64,8 +67,9 @@ private:
         /* Handles the 'help' process command */
     bool handleHelp(int, char**);
     /* Handles the 'create' session command */
-    bool handleCreate(int, char**);
-
+    bool handleCreateSession(int, char**);
+    /* Handles the 'mkdir' session command to create guest directories */
+    bool handleMkdir(int, char**);
 
     CGuest        m_comGuest;
     const QString m_strHelp;

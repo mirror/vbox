@@ -92,12 +92,17 @@ QString generateErrorString(int getOptErrorCode, const RTGETOPTUNION &/*valueUni
 class CommandData
 {
 public:
+    CommandData()
+        : m_bSessionIdGiven(false)
+        , m_bSessionNameGiven(false){}
     QString m_strUserName;
     QString m_strPassword;
     QString m_strExePath;
     QString m_strSessionName;
     ULONG   m_uSessionId;
     QString m_strDomain;
+    bool    m_bSessionIdGiven;
+    bool    m_bSessionNameGiven;
     QVector<QString> m_arguments;
     QVector<QString> m_environmentChanges;
 };
@@ -105,8 +110,7 @@ public:
 UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &comGuest)
     :QObject(parent)
     , m_comGuest(comGuest)
-    , m_strHelp("[common-options]      [--verbose|-v] [--quiet|-q]\n"
-                "                                   [--username <name>] [--domain <domain>]\n"
+    , m_strHelp("[common-options]               [--username <name>] [--domain <domain>]\n"
                 "                                   [--passwordfile <file> | --password <password>]\n"
                 "start                           [common-options]\n"
                 "                                   [--exe <path to executable>] [--timeout <msec>]\n"
@@ -114,10 +118,18 @@ UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &
                 "                                   [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
                 "                                   [--ignore-operhaned-processes] [--profile]\n"
                 "                                   -- <program/arg0> [argument1] ... [argumentN]]\n"
-                "create                           [common-options]  [--sessionname <name>]\n"
+                "createsession                      [common-options]  [--sessionname <name>]\n"
+                "mkdir                           [common-options]\n"
+                "                                   [--path <path>]\n"
+                "                                   [--sessionid <id> |  [sessionname <name>]]\n"
                 )
 {
     prepareSubCommandHandlers();
+}
+
+bool UIGuestControlInterface::handleMkdir(int, char**)
+{
+    return true;
 }
 
 bool UIGuestControlInterface::handleStart(int argc, char** argv)
@@ -152,9 +164,6 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
         { "--profile",                      kGstCtrlRunOpt_Profile,                   RTGETOPT_REQ_NOTHING }
     };
 
-    bool sessionNameGiven = false;
-    bool sessionIdGiven = false;
-
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
@@ -165,11 +174,11 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
         {
             HANDLE_COMMON_OPTION_DEFS()
             case GCTLCMD_COMMON_OPT_SESSION_NAME:
-                sessionNameGiven = true;
+                commandData.m_bSessionNameGiven = true;
                 commandData.m_strSessionName  = ValueUnion.psz;
                 break;
             case GCTLCMD_COMMON_OPT_SESSION_ID:
-                sessionIdGiven = true;
+                commandData.m_bSessionIdGiven = true;
                 commandData.m_uSessionId  = ValueUnion.i32;
                 break;
             case 'e':
@@ -182,8 +191,13 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
             }
         }
     }
+    if (commandData.m_strExePath.isEmpty())
+    {
+        emit sigOutputString(QString(m_strHelp).append("Syntax error! No executable is given\n"));
+        return false;
+    }
 
-    if (sessionNameGiven && commandData.m_strSessionName.isEmpty())
+    if (commandData.m_bSessionNameGiven && commandData.m_strSessionName.isEmpty())
     {
         emit sigOutputString(QString(m_strHelp).append("'Session Name' is not name valid\n"));
         return false;
@@ -191,13 +205,13 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
 
     CGuestSession guestSession;
     /* Check if sessionname and sessionid are both supplied */
-    if (sessionIdGiven && sessionNameGiven)
+    if (commandData.m_bSessionIdGiven && commandData.m_bSessionNameGiven)
     {
         emit sigOutputString(QString(m_strHelp).append("Both 'Session Name' and 'Session Id' are supplied\n"));
         return false;
     }
     /* If sessionid is given then look for the session. if not found return without starting the process: */
-    else if (sessionIdGiven && !sessionNameGiven)
+    else if (commandData.m_bSessionIdGiven && !commandData.m_bSessionNameGiven)
     {
         if (!findSession(commandData.m_uSessionId, guestSession))
         {
@@ -206,7 +220,7 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
         }
     }
     /* If sessionname is given then look for the session. if not try to create a session with the provided name: */
-    else if (!sessionIdGiven && sessionNameGiven)
+    else if (!commandData.m_bSessionIdGiven && commandData.m_bSessionNameGiven)
     {
         if (!findSession(commandData.m_strSessionName, guestSession))
         {
@@ -239,7 +253,7 @@ bool UIGuestControlInterface::handleHelp(int, char**)
     return true;
 }
 
-bool UIGuestControlInterface::handleCreate(int argc, char** argv)
+bool UIGuestControlInterface::handleCreateSession(int argc, char** argv)
 {
     CommandData commandData;
 
@@ -297,9 +311,10 @@ UIGuestControlInterface::~UIGuestControlInterface()
 
 void UIGuestControlInterface::prepareSubCommandHandlers()
 {
-    m_subCommandHandlers.insert("create" , &UIGuestControlInterface::handleCreate);
+    m_subCommandHandlers.insert("createsession" , &UIGuestControlInterface::handleCreateSession);
     m_subCommandHandlers.insert("start", &UIGuestControlInterface::handleStart);
     m_subCommandHandlers.insert("help" , &UIGuestControlInterface::handleHelp);
+    m_subCommandHandlers.insert("mkdir" , &UIGuestControlInterface::handleMkdir);
 }
 
 void UIGuestControlInterface::putCommand(const QString &strCommand)
