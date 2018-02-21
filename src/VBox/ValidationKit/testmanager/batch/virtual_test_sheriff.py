@@ -187,7 +187,7 @@ class VirtualTestSheriffCaseFile(object):
 
     def getMainLog(self):
         """
-        Tries to reads the main log file since this will be the first source of information.
+        Tries to read the main log file since this will be the first source of information.
         """
         if self.sMainLog:
             return self.sMainLog;
@@ -204,7 +204,7 @@ class VirtualTestSheriffCaseFile(object):
 
     def getLogFile(self, oFile):
         """
-        Tries to reads the given file as a utf-8 log file.
+        Tries to read the given file as a utf-8 log file.
         oFile is a TestFileDataEx instance.
         Returns empty string if problems opening or reading the file.
         """
@@ -485,6 +485,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Host_Modprobe_Failed                      = ( 'Host',              'Modprobe failed' );
     ktReason_Host_Install_Hang                         = ( 'Host',              'Install hang' );
+    ktReason_Host_NetworkMisconfiguration              = ( 'Host',              'Network misconfiguration' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
     ktReason_OSInstall_Sata_no_BM                      = ( 'O/S Install',       'SATA busmaster bit not set' );
@@ -882,6 +883,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' ),
         ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' ),
         ( True,  ktReason_Host_DoubleFreeHeap,                      'double free or corruption' ),
+        ( True,  ktReason_Host_NetworkMisconfiguration,             'most likely not unique' ),
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.

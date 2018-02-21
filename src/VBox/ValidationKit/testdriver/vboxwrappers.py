@@ -1547,13 +1547,13 @@ class SessionWrapper(TdTaskBase):
                 abHostIP = socket.inet_aton(sHostIP)
                 if sys.version_info[0] < 3:
                     abHostIP = (ord(abHostIP[0]), ord(abHostIP[1]), ord(abHostIP[2]), ord(abHostIP[3]));
-                if   abHostIP[0] == 127 \
-                  or (abHostIP[0] == 169 and abHostIP[1] == 254) \
-                  or (abHostIP[0] == 192 and abHostIP[1] == 168 and abHostIP[2] == 56):
-                    reporter.log('warning: host IP for "%s" is %s, most likely not unique.' % (sHostName, sHostIP))
             except:
-                reporter.errorXcpt('failed to determine the host IP for "%s".' % (sHostName,))
-                return False
+                return reporter.errorXcpt('failed to determine the host IP for "%s".' % (sHostName,))
+            if   abHostIP[0] == 127 \
+              or (abHostIP[0] == 169 and abHostIP[1] == 254) \
+              or (abHostIP[0] == 192 and abHostIP[1] == 168 and abHostIP[2] == 56):
+                return reporter.error('host IP for "%s" is %s, most likely not unique.' % (sHostName, sHostIP))
+
             sDefaultMac = '%02X%02X%02X%02X%02X%02X' \
                 % (0x02, abHostIP[0], abHostIP[1], abHostIP[2], abHostIP[3], iNic)
             sMacAddr = sDefaultMac[0:(12 - cchMacAddr)] + sMacAddr
@@ -1562,15 +1562,13 @@ class SessionWrapper(TdTaskBase):
         try:
             oNic = self.o.machine.getNetworkAdapter(iNic)
         except:
-            reporter.errorXcpt('getNetworkAdapter(%s) failed for "%s"' % (iNic, self.sName))
-            return False
+            return reporter.errorXcpt('getNetworkAdapter(%s) failed for "%s"' % (iNic, self.sName))
 
         try:
             oNic.MACAddress = sMacAddr
         except:
-            reporter.errorXcpt('failed to set the MAC address on slot %s to "%s" for VM "%s"' \
+            return reporter.errorXcpt('failed to set the MAC address on slot %s to "%s" for VM "%s"' \
                 % (iNic, sMacAddr, self.sName))
-            return False
 
         reporter.log('set MAC address on slot %s to %s for VM "%s"' % (iNic, sMacAddr, self.sName))
         return True
