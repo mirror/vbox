@@ -709,15 +709,18 @@ VMM_INT_DECL(int)   PGMPhysNemPageInfoChecker(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
  * @returns VBox status code.
  *          Failure status will stop enumeration immediately and return.
  * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context per virtual CPU structure.  Optional,
+ *                      see PGMPhysNemEnumPagesByState.
  * @param   GCPhys      The guest physical address (not A20 masked).
  * @param   pu2NemState Pointer to variable with the NEM state.  This can be
  *                      update.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(int) FNPGMPHYSNEMENUMCALLBACK(PVM pVM, RTGCPHYS GCPhys, uint8_t *pu2NemState, void *pvUser);
+typedef DECLCALLBACK(int) FNPGMPHYSNEMENUMCALLBACK(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint8_t *pu2NemState, void *pvUser);
 /** Pointer to a FNPGMPHYSNEMENUMCALLBACK function. */
 typedef FNPGMPHYSNEMENUMCALLBACK *PFNPGMPHYSNEMENUMCALLBACK;
-VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVM pVM, uint8_t uMinState, PFNPGMPHYSNEMENUMCALLBACK pfnCallback, void *pvUser);
+VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVM pVM, PVMCPU VCpu, uint8_t uMinState,
+                                             PFNPGMPHYSNEMENUMCALLBACK pfnCallback, void *pvUser);
 
 
 #ifdef VBOX_STRICT

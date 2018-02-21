@@ -2486,17 +2486,30 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
     AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
+    return VMMR3CallR0Emt(pVM, pVCpu, (VMMR0OPERATION)uOperation, u64Arg, pReqHdr);
+}
 
-    /*
-     * Call Ring-0 entry with init code.
-     */
+
+/**
+ * Wrapper for SUPR3CallVMMR0Ex which will deal with VINF_VMM_CALL_HOST returns.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context VM structure.
+ * @param   uOperation  Operation to execute.
+ * @param   u64Arg      Constant argument.
+ * @param   pReqHdr     Pointer to a request header. See SUPR3CallVMMR0Ex for
+ *                      details.
+ */
+VMMR3_INT_DECL(int) VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
+{
     int rc;
     for (;;)
     {
 #ifdef NO_SUPCALLR0VMM
         rc = VERR_GENERAL_FAILURE;
 #else
-        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, uOperation, u64Arg, pReqHdr);
+        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, enmOperation, u64Arg, pReqHdr);
 #endif
         /*
          * Flush the logs.
@@ -2515,7 +2528,7 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
     }
 
     AssertLogRelMsgReturn(rc == VINF_SUCCESS || RT_FAILURE(rc),
-                          ("uOperation=%u rc=%Rrc\n", uOperation, rc),
+                          ("enmOperation=%u rc=%Rrc\n", enmOperation, rc),
                           VERR_IPE_UNEXPECTED_INFO_STATUS);
     return rc;
 }

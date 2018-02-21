@@ -4857,11 +4857,14 @@ VMM_INT_DECL(int) PGMPhysNemPageInfoChecker(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPh
  *
  * @returns VBox status code from callback.
  * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context per CPU structure.  This is
+ *                          optional as its only for passing to callback.
  * @param   uMinState       The minimum NEM state value to call on.
  * @param   pfnCallback     The callback function.
  * @param   pvUser          User argument for the callback.
  */
-VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVM pVM, uint8_t uMinState, PFNPGMPHYSNEMENUMCALLBACK pfnCallback, void *pvUser)
+VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVM pVM, PVMCPU pVCpu, uint8_t uMinState,
+                                             PFNPGMPHYSNEMENUMCALLBACK pfnCallback, void *pvUser)
 {
     /*
      * Just brute force this problem.
@@ -4878,7 +4881,7 @@ VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVM pVM, uint8_t uMinState, PFNPGMP
             { /* likely */ }
             else
             {
-                rc = pfnCallback(pVM, pRam->GCPhys + ((RTGCPHYS)iPage << X86_PAGE_SHIFT), &u2State, pvUser);
+                rc = pfnCallback(pVM, pVCpu, pRam->GCPhys + ((RTGCPHYS)iPage << X86_PAGE_SHIFT), &u2State, pvUser);
                 if (RT_SUCCESS(rc))
                     PGM_PAGE_SET_NEM_STATE(&pRam->aPages[iPage], u2State);
                 else

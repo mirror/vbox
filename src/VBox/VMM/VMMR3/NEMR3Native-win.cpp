@@ -222,7 +222,7 @@ static const char * const g_apszWHvMemAccesstypes[4] = { "read", "write", "exec"
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst, uint32_t fPageProt,
+static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst, uint32_t fPageProt,
                                   uint8_t *pu2State, bool fBackingChanged);
 
 
@@ -983,6 +983,46 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
     }
 }
 
+
+#ifdef NEM_WIN_USE_HYPERCALLS
+
+/**
+ * Wrapper around VMMR0_DO_NEM_MAP_PAGES for a single page.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the caller.
+ * @param   GCPhysSrc   The source page.  Does not need to be page aligned.
+ * @param   GCPhysDst   The destination page.  Same as @a GCPhysSrc except for
+ *                      when A20 is disabled.
+ * @param   fFlags      HV_MAP_GPA_XXX.
+ */
+DECLINLINE(int) nemR3WinHypercallMapPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst, uint32_t fFlags)
+{
+    pVCpu->nem.s.Hypercall.MapPages.GCPhysSrc   = GCPhysSrc & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK;
+    pVCpu->nem.s.Hypercall.MapPages.GCPhysDst   = GCPhysDst & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK;
+    pVCpu->nem.s.Hypercall.MapPages.cPages      = 1;
+    pVCpu->nem.s.Hypercall.MapPages.fFlags      = fFlags;
+    return VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_MAP_PAGES, 0, NULL);
+}
+
+
+/**
+ * Wrapper around VMMR0_DO_NEM_UNMAP_PAGES for a single page.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the caller.
+ * @param   GCPhys      The page to unmap.  Does not need to be page aligned.
+ */
+DECLINLINE(int) nemR3WinHypercallUnmapPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
+{
+    pVCpu->nem.s.Hypercall.UnmapPages.GCPhys    = GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK;
+    pVCpu->nem.s.Hypercall.UnmapPages.cPages    = 1;
+    return VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+}
+
+#endif /* NEM_WIN_USE_HYPERCALLS */
 
 static int nemR3WinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -1840,17 +1880,15 @@ static VBOXSTRICTRC nemR3WinHandleHalt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
-static DECLCALLBACK(int) nemR3WinUnmapOnePageCallback(PVM pVM, RTGCPHYS GCPhys, uint8_t *pu2NemState, void *pvUser)
+static DECLCALLBACK(int) nemR3WinUnmapOnePageCallback(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint8_t *pu2NemState, void *pvUser)
 {
     RT_NOREF_PV(pvUser);
 #ifdef NEM_WIN_USE_HYPERCALLS
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-    pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhys;
-    pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
-    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+    int rc = nemR3WinHypercallUnmapPage(pVM, pVCpu, GCPhys);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
 #else
+    RT_NOREF_PV(pVCpu);
     HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, X86_PAGE_SIZE);
     if (SUCCEEDED(hrc))
 #endif
@@ -1948,6 +1986,7 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
 
             /* Map the page. */
             int rc = nemR3NativeSetPhysPage(pVM,
+                                            pVCpu,
                                             GCPhysSrc & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK,
                                             GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK,
                                             pInfo->fNemProt,
@@ -1969,6 +2008,28 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
                 Log4(("nemR3WinHandleMemoryAccessPageCheckerCallback: %RGp - #2\n", GCPhys));
                 return VINF_SUCCESS;
             }
+
+#ifdef NEM_WIN_USE_HYPERCALLS
+            /* Upgrade page to writable. */
+/** @todo test this*/
+            if (   (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
+                && pState->fWriteAccess)
+            {
+                int rc = nemR3WinHypercallMapPage(pVM, pVCpu, GCPhysSrc, GCPhys,
+                                                    HV_MAP_GPA_READABLE   | HV_MAP_GPA_WRITABLE
+                                                  | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN);
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    pInfo->u2NemState = NEM_WIN_PAGE_STATE_WRITABLE;
+                    pState->fDidSomething = true;
+                    pState->fCanResume    = true;
+                    Log5(("NEM GPA write-upgrade/exit: %RGp (was %s, cMappedPages=%u)\n",
+                          GCPhys, g_apszPageStates[u2State], pVM->nem.s.cMappedPages));
+                    return rc;
+                }
+            }
+#endif
             break;
 
         case NEM_WIN_PAGE_STATE_WRITABLE:
@@ -1988,9 +2049,7 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
      * If this fails, which it does every so often, just unmap everything for now.
      */
 #ifdef NEM_WIN_USE_HYPERCALLS
-    pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhys;
-    pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
-    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+    int rc = nemR3WinHypercallUnmapPage(pVM, pVCpu, GCPhys);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
 #else
@@ -2014,7 +2073,7 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
             GCPhys, g_apszPageStates[u2State], hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue,
             pVM->nem.s.cMappedPages));
 
-    PGMPhysNemEnumPagesByState(pVM, NEM_WIN_PAGE_STATE_READABLE, nemR3WinUnmapOnePageCallback, NULL);
+    PGMPhysNemEnumPagesByState(pVM, pVCpu, NEM_WIN_PAGE_STATE_READABLE, nemR3WinUnmapOnePageCallback, NULL);
     Log(("nemR3WinHandleMemoryAccessPageCheckerCallback: Unmapped all (cMappedPages=%u)\n", pVM->nem.s.cMappedPages));
 
     pState->fDidSomething = true;
@@ -2381,14 +2440,14 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
             break;
         }
 
-#ifdef NEM_WIN_USE_HYPERCALLS
+#ifndef NEM_WIN_USE_HYPERCALLS
         /* Hack alert! */
         uint32_t const cMappedPages = pVM->nem.s.cMappedPages;
         if (cMappedPages < 4000)
         { /* likely */ }
         else
         {
-            PGMPhysNemEnumPagesByState(pVM, NEM_WIN_PAGE_STATE_READABLE, nemR3WinUnmapOnePageCallback, NULL);
+            PGMPhysNemEnumPagesByState(pVM, pVCpu, NEM_WIN_PAGE_STATE_READABLE, nemR3WinUnmapOnePageCallback, NULL);
             Log(("nemR3NativeRunGC: Unmapped all; cMappedPages=%u -> %u\n", cMappedPages, pVM->nem.s.cMappedPages));
         }
 #endif
@@ -2564,9 +2623,7 @@ static DECLCALLBACK(int) nemR3WinUnsetForA20CheckerCallback(PVM pVM, PVMCPU pVCp
     if (pInfo->u2NemState > NEM_WIN_PAGE_STATE_UNMAPPED)
     {
 #ifdef NEM_WIN_USE_HYPERCALLS
-        pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhys;
-        pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
-        int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+        int rc = nemR3WinHypercallUnmapPage(pVM, pVCpu, GCPhys);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
 #else
@@ -2667,14 +2724,17 @@ void nemR3NativeNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind,
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
  * @param   GCPhysSrc       The source page address.
  * @param   GCPhysDst       The hyper-V destination page.  This may differ from
  *                          GCPhysSrc when A20 is disabled.
  * @param   fPageProt       NEM_PAGE_PROT_XXX.
  * @param   pu2State        Our page state (input/output).
  * @param   fBackingChanged Set if the page backing is being changed.
+ * @thread  EMT(pVCpu)
  */
-static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst, uint32_t fPageProt,
+static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst, uint32_t fPageProt,
                                   uint8_t *pu2State, bool fBackingChanged)
 {
     /*
@@ -2691,10 +2751,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
         if (u2OldState > NEM_WIN_PAGE_STATE_UNMAPPED)
         {
 #ifdef NEM_WIN_USE_HYPERCALLS
-            PVMCPU pVCpu = VMMGetCpu(pVM);
-            pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhysDst;
-            pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
-            int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+            int rc = nemR3WinHypercallUnmapPage(pVM, pVCpu, GCPhysDst);
             AssertRC(rc);
             if (RT_SUCCESS(rc))
             {
@@ -2741,14 +2798,9 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
     if (fPageProt & NEM_PAGE_PROT_WRITE)
     {
 #ifdef NEM_WIN_USE_HYPERCALLS
-        RT_NOREF_PV(GCPhysSrc);
-        PVMCPU pVCpu = VMMGetCpu(pVM);
-        pVCpu->nem.s.Hypercall.MapPages.GCPhysSrc = GCPhysSrc;
-        pVCpu->nem.s.Hypercall.MapPages.GCPhysDst = GCPhysDst;
-        pVCpu->nem.s.Hypercall.MapPages.cPages    = 1;
-        pVCpu->nem.s.Hypercall.MapPages.fFlags    = HV_MAP_GPA_READABLE   | HV_MAP_GPA_WRITABLE
-                                                  | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN;
-        int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_MAP_PAGES, 0, NULL);
+        int rc = nemR3WinHypercallMapPage(pVM, pVCpu, GCPhysSrc, GCPhysDst,
+                                            HV_MAP_GPA_READABLE   | HV_MAP_GPA_WRITABLE
+                                          | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
@@ -2787,12 +2839,8 @@ static int nemR3NativeSetPhysPage(PVM pVM, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDs
     if (fPageProt & NEM_PAGE_PROT_READ)
     {
 #ifdef NEM_WIN_USE_HYPERCALLS
-        PVMCPU pVCpu = VMMGetCpu(pVM);
-        pVCpu->nem.s.Hypercall.MapPages.GCPhysSrc = GCPhysSrc;
-        pVCpu->nem.s.Hypercall.MapPages.GCPhysDst = GCPhysDst;
-        pVCpu->nem.s.Hypercall.MapPages.cPages    = 1;
-        pVCpu->nem.s.Hypercall.MapPages.fFlags    = HV_MAP_GPA_READABLE | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN;
-        int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_MAP_PAGES, 0, NULL);
+        int rc = nemR3WinHypercallMapPage(pVM, pVCpu, GCPhysSrc, GCPhysDst,
+                                          HV_MAP_GPA_READABLE | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
@@ -2845,9 +2893,7 @@ static int nemR3JustUnmapPageFromHyperV(PVM pVM, RTGCPHYS GCPhysDst, uint8_t *pu
 
 #ifdef NEM_WIN_USE_HYPERCALLS
     PVMCPU pVCpu = VMMGetCpu(pVM);
-    pVCpu->nem.s.Hypercall.UnmapPages.GCPhys = GCPhysDst & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK;
-    pVCpu->nem.s.Hypercall.UnmapPages.cPages = 1;
-    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_NEM_UNMAP_PAGES, 0, NULL);
+    int rc = nemR3WinHypercallUnmapPage(pVM, pVCpu, GCPhysDst);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
@@ -2856,7 +2902,7 @@ static int nemR3JustUnmapPageFromHyperV(PVM pVM, RTGCPHYS GCPhysDst, uint8_t *pu
         *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
         return VINF_SUCCESS;
     }
-    LogRel(("nemR3NativeSetPhysPage/unmap: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
+    LogRel(("nemR3JustUnmapPageFromHyperV/unmap: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
     return rc;
 #else
     HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhysDst & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, X86_PAGE_SIZE);
@@ -2882,16 +2928,17 @@ int nemR3NativeNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys
     RT_NOREF_PV(HCPhys); RT_NOREF_PV(enmType);
 
     int rc;
-#if 0
+#ifdef NEM_WIN_USE_HYPERCALLS
+    PVMCPU pVCpu = VMMGetCpu(pVM);
     if (   pVM->nem.s.fA20Enabled
         || !NEM_WIN_IS_RELEVANT_TO_A20(GCPhys))
-        rc = nemR3NativeSetPhysPage(pVM, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
+        rc = nemR3NativeSetPhysPage(pVM, pVCpu, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
     else
     {
         /* To keep effort at a minimum, we unmap the HMA page alias and resync it lazily when needed. */
         rc = nemR3WinUnmapPageForA20Gate(pVM, pVCpu, GCPhys | RT_BIT_32(20));
         if (!NEM_WIN_IS_SUBJECT_TO_A20(GCPhys) && RT_SUCCESS(rc))
-            rc = nemR3NativeSetPhysPage(pVM, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
+            rc = nemR3NativeSetPhysPage(pVM, pVCpu, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
 
     }
 #else
@@ -2915,16 +2962,17 @@ void nemR3NativeNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCP
             GCPhys, HCPhys, fPageProt, enmType, *pu2State));
     RT_NOREF_PV(HCPhys); RT_NOREF_PV(enmType);
 
-#if 0
+#ifdef NEM_WIN_USE_HYPERCALLS
+    PVMCPU pVCpu = VMMGetCpu(pVM);
     if (   pVM->nem.s.fA20Enabled
         || !NEM_WIN_IS_RELEVANT_TO_A20(GCPhys))
-        nemR3NativeSetPhysPage(pVM, GCPhys, GCPhys, fPageProt, pu2State, false /*fBackingChanged*/);
+        nemR3NativeSetPhysPage(pVM, pVCpu, GCPhys, GCPhys, fPageProt, pu2State, false /*fBackingChanged*/);
     else
     {
         /* To keep effort at a minimum, we unmap the HMA page alias and resync it lazily when needed. */
         nemR3WinUnmapPageForA20Gate(pVM, pVCpu, GCPhys | RT_BIT_32(20));
         if (!NEM_WIN_IS_SUBJECT_TO_A20(GCPhys))
-            nemR3NativeSetPhysPage(pVM, GCPhys, GCPhys, fPageProt, pu2State, false /*fBackingChanged*/);
+            nemR3NativeSetPhysPage(pVM, pVCpu, GCPhys, GCPhys, fPageProt, pu2State, false /*fBackingChanged*/);
     }
 #else
     RT_NOREF_PV(fPageProt);
@@ -2945,16 +2993,17 @@ void nemR3NativeNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysP
             GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, *pu2State));
     RT_NOREF_PV(HCPhysPrev); RT_NOREF_PV(HCPhysNew); RT_NOREF_PV(enmType);
 
-#if 0
+#ifdef NEM_WIN_USE_HYPERCALLS
+    PVMCPU pVCpu = VMMGetCpu(pVM);
     if (   pVM->nem.s.fA20Enabled
         || !NEM_WIN_IS_RELEVANT_TO_A20(GCPhys))
-        nemR3NativeSetPhysPage(pVM, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
+        nemR3NativeSetPhysPage(pVM, pVCpu, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
     else
     {
         /* To keep effort at a minimum, we unmap the HMA page alias and resync it lazily when needed. */
         nemR3WinUnmapPageForA20Gate(pVM, pVCpu, GCPhys | RT_BIT_32(20));
         if (!NEM_WIN_IS_SUBJECT_TO_A20(GCPhys))
-            nemR3NativeSetPhysPage(pVM, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
+            nemR3NativeSetPhysPage(pVM, pVCpu, GCPhys, GCPhys, fPageProt, pu2State, true /*fBackingChanged*/);
     }
 #else
     RT_NOREF_PV(fPageProt);
