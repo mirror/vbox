@@ -10287,7 +10287,6 @@ iemMemStoreDataU256AlignedAvxJmp(PVMCPU pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
 IEM_STATIC VBOXSTRICTRC
 iemMemStoreDataXdtr(PVMCPU pVCpu, uint16_t cbLimit, RTGCPTR GCPtrBase, uint8_t iSegReg, RTGCPTR GCPtrMem)
 {
-
     /*
      * The SIDT and SGDT instructions actually stores the data using two
      * independent writes.  The instructions does not respond to opsize prefixes.
