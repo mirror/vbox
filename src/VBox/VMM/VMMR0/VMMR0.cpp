@@ -1987,6 +1987,20 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             rc = NEMR0UnmapPages(pGVM, pVM, idCpu);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
+
+        case VMMR0_DO_NEM_EXPORT_STATE:
+            if (pReqHdr || idCpu == NIL_VMCPUID)
+                return VERR_INVALID_PARAMETER;
+            rc = NEMR0ExportState(pGVM, pVM, idCpu, u64Arg);
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            break;
+
+        case VMMR0_DO_NEM_IMPORT_STATE:
+            if (pReqHdr || idCpu == NIL_VMCPUID)
+                return VERR_INVALID_PARAMETER;
+            rc = NEMR0ImportState(pGVM, pVM, idCpu, u64Arg);
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            break;
 # endif
 #endif
 

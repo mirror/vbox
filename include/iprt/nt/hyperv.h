@@ -27,8 +27,15 @@
 #ifndef ___iprt_nt_hyperv_h
 #define ___iprt_nt_hyperv_h
 
-#include <iprt/types.h>
-#include <iprt/assertcompile.h>
+#ifndef IN_IDA_PRO
+# include <iprt/types.h>
+# include <iprt/assertcompile.h>
+#else
+# define RT_FLEXIBLE_ARRAY
+# define AssertCompile(expr)
+# define AssertCompileSize(type, size)
+# define AssertCompileMemberOffset(type, member, off)
+#endif
 
 
 /** Hyper-V partition ID. */
@@ -43,10 +50,13 @@ typedef uint64_t HV_GPA;
 typedef uint64_t HV_GPA_PAGE_NUMBER;
 /** System(/parent) physical page number. */
 typedef uint64_t HV_SPA_PAGE_NUMBER;
+/** Hyper-V unsigned 128-bit integer type.   */
+typedef struct { uint64_t Low64, High64; } HV_UINT128;
 
 
-
-/** Hypercall IDs.   */
+/**
+ * Hypercall IDs.
+ */
 typedef enum
 {
     HvCallReserved0000 = 0,
@@ -159,7 +169,8 @@ typedef enum
     /* 0x98 is reserved. */
     HvCallStartVirtualProcessor = 0x99,
     HvCallGetVpIndexFromApicId,
-    /* 0x9b.. are reserved/undocumented. */
+    /* 0x9b..0xae are reserved/undocumented.
+       0xad: New version of HvCallGetVpRegisters? Perhaps on logical CPU or smth. */
     HvCallFlushGuestPhysicalAddressSpace = 0xaf,
     HvCallFlushGuestPhysicalAddressList,
     /* 0xb1..0xb4 are unknown */
@@ -196,6 +207,10 @@ AssertCompile(HvCallFlushGuestPhysicalAddressList == 0xb0);
 AssertCompile(HvCallUncommitGpaPages == 0xbf);
 AssertCompile(HvCallCount == 0xda);
 
+/** Makes the first parameter to a hypercall (rcx).  */
+#define HV_MAKE_CALL_INFO(a_enmCallCode, a_cReps) ( (uint64_t)(a_enmCallCode) | ((uint64_t)(a_cReps) << 32) )
+/** Makes the return value (success) for a rep hypercall. */
+#define HV_MAKE_CALL_REP_RET(a_cReps)    ((uint64_t)(a_cReps) << 32)
 
 /** Hypercall status code. */
 typedef uint16_t HV_STATUS;
@@ -465,6 +480,606 @@ typedef struct
 AssertCompileSize(HV_OUTPUT_WRITE_GPA, 8);
 /** Pointer to the output for HvCallWriteGpa. */
 typedef HV_OUTPUT_WRITE_GPA *PHV_OUTPUT_WRITE_GPA;
+
+
+/**
+ * Register names used by HvCallGetVpRegisters and HvCallSetVpRegisters.
+ */
+typedef enum _HV_REGISTER_NAME
+{
+    HvRegisterExplicitSuspend = 0x00000000,
+    HvRegisterInterceptSuspend,
+
+    HvRegisterHypervisorVersion = 0x00000100,           /**< @since v5 */
+
+    HvRegisterPrivilegesAndFeaturesInfo = 0x00000200,   /**< @since v5 */
+    HvRegisterFeaturesInfo,                             /**< @since v5 */
+    HvRegisterImplementationLimitsInfo,                 /**< @since v5 */
+    HvRegisterHardwareFeaturesInfo,                     /**< @since v5 */
+
+    HvRegisterGuestCrashP0 = 0x00000210,                /**< @since v5 */
+    HvRegisterGuestCrashP1,                             /**< @since v5 */
+    HvRegisterGuestCrashP2,                             /**< @since v5 */
+    HvRegisterGuestCrashP3,                             /**< @since v5 */
+    HvRegisterGuestCrashP4,                             /**< @since v5 */
+    HvRegisterGuestCrashCtl,                            /**< @since v5 */
+
+    HvRegisterPowerStateConfigC1 = 0x00000220,          /**< @since v5 */
+    HvRegisterPowerStateTriggerC1,                      /**< @since v5 */
+    HvRegisterPowerStateConfigC2,                       /**< @since v5 */
+    HvRegisterPowerStateTriggerC2,                      /**< @since v5 */
+    HvRegisterPowerStateConfigC3,                       /**< @since v5 */
+    HvRegisterPowerStateTriggerC3,                      /**< @since v5 */
+
+    HvRegisterSystemReset = 0x00000230,                 /**< @since v5 */
+
+    HvRegisterProcessorClockFrequency = 0x00000240,     /**< @since v5 */
+    HvRegisterInterruptClockFrequency,                  /**< @since v5 */
+
+    HvRegisterGuestIdle = 0x00000250,                   /**< @since v5 */
+
+    HvRegisterDebugDeviceOptions = 0x00000260,          /**< @since v5 */
+
+    HvRegisterPendingInterruption = 0x00010002,
+    HvRegisterInterruptState,
+    HvRegisterPendingEvent0,                            /**< @since v5 */
+    HvRegisterPendingEvent1,                            /**< @since v5 */
+
+    HvX64RegisterRax = 0x00020000,
+    HvX64RegisterRcx,
+    HvX64RegisterRdx,
+    HvX64RegisterRbx,
+    HvX64RegisterRsp,
+    HvX64RegisterRbp,
+    HvX64RegisterRsi,
+    HvX64RegisterRdi,
+    HvX64RegisterR8,
+    HvX64RegisterR9,
+    HvX64RegisterR10,
+    HvX64RegisterR11,
+    HvX64RegisterR12,
+    HvX64RegisterR13,
+    HvX64RegisterR14,
+    HvX64RegisterR15,
+    HvX64RegisterRip,
+    HvX64RegisterRflags,
+
+    HvX64RegisterXmm0 = 0x00030000,
+    HvX64RegisterXmm1,
+    HvX64RegisterXmm2,
+    HvX64RegisterXmm3,
+    HvX64RegisterXmm4,
+    HvX64RegisterXmm5,
+    HvX64RegisterXmm6,
+    HvX64RegisterXmm7,
+    HvX64RegisterXmm8,
+    HvX64RegisterXmm9,
+    HvX64RegisterXmm10,
+    HvX64RegisterXmm11,
+    HvX64RegisterXmm12,
+    HvX64RegisterXmm13,
+    HvX64RegisterXmm14,
+    HvX64RegisterXmm15,
+    HvX64RegisterFpMmx0,
+    HvX64RegisterFpMmx1,
+    HvX64RegisterFpMmx2,
+    HvX64RegisterFpMmx3,
+    HvX64RegisterFpMmx4,
+    HvX64RegisterFpMmx5,
+    HvX64RegisterFpMmx6,
+    HvX64RegisterFpMmx7,
+    HvX64RegisterFpControlStatus,
+    HvX64RegisterXmmControlStatus,
+
+    HvX64RegisterCr0 = 0x00040000,
+    HvX64RegisterCr2,
+    HvX64RegisterCr3,
+    HvX64RegisterCr4,
+    HvX64RegisterCr8,
+    HvX64RegisterXfem,
+
+    HvX64RegisterIntermediateCr0 = 0x00041000,          /**< @since v5 */
+    HvX64RegisterIntermediateCr4 = 0x00041003,          /**< @since v5 */
+    HvX64RegisterIntermediateCr8,                       /**< @since v5 */
+
+    HvX64RegisterDr0 = 0x00050000,
+    HvX64RegisterDr1,
+    HvX64RegisterDr2,
+    HvX64RegisterDr3,
+    HvX64RegisterDr6,
+    HvX64RegisterDr7,
+
+    HvX64RegisterEs = 0x00060000,
+    HvX64RegisterCs,
+    HvX64RegisterSs,
+    HvX64RegisterDs,
+    HvX64RegisterFs,
+    HvX64RegisterGs,
+    HvX64RegisterLdtr,
+    HvX64RegisterTr,
+
+    HvX64RegisterIdtr = 0x00070000,
+    HvX64RegisterGdtr,
+
+    HvX64RegisterTsc = 0x00080000,
+    HvX64RegisterEfer,
+    HvX64RegisterKernelGsBase,
+    HvX64RegisterApicBase,
+    HvX64RegisterPat,
+    HvX64RegisterSysenterCs,
+    HvX64RegisterSysenterEip,
+    HvX64RegisterSysenterEsp,
+    HvX64RegisterStar,
+    HvX64RegisterLstar,
+    HvX64RegisterCstar,
+    HvX64RegisterSfmask,
+    HvX64RegisterInitialApicId,
+
+    HvX64RegisterMtrrCap,
+    HvX64RegisterMtrrDefType,
+
+    HvX64RegisterMtrrPhysBase0 = 0x00080010,
+    HvX64RegisterMtrrPhysBase1,
+    HvX64RegisterMtrrPhysBase2,
+    HvX64RegisterMtrrPhysBase3,
+    HvX64RegisterMtrrPhysBase4,
+    HvX64RegisterMtrrPhysBase5,
+    HvX64RegisterMtrrPhysBase6,
+    HvX64RegisterMtrrPhysBase7,
+    HvX64RegisterMtrrPhysBase8,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysBase9,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysBaseA,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysBaseB,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysBaseC,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysBaseD,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysBaseE,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysBaseF,                     /**< @since v4 */
+
+    HvX64RegisterMtrrPhysMask0 = 0x00080040,
+    HvX64RegisterMtrrPhysMask1,
+    HvX64RegisterMtrrPhysMask2,
+    HvX64RegisterMtrrPhysMask3,
+    HvX64RegisterMtrrPhysMask4,
+    HvX64RegisterMtrrPhysMask5,
+    HvX64RegisterMtrrPhysMask6,
+    HvX64RegisterMtrrPhysMask7,
+    HvX64RegisterMtrrPhysMask8,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysMask9,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysMaskA,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysMaskB,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysMaskC,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysMaskD,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysMaskE,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysMaskF,                     /**< @since v4 */
+
+    HvX64RegisterMtrrFix64k00000 = 0x00080070,
+    HvX64RegisterMtrrFix16k80000,
+    HvX64RegisterMtrrFix16kA0000,
+    HvX64RegisterMtrrFix4kC0000,
+    HvX64RegisterMtrrFix4kC8000,
+    HvX64RegisterMtrrFix4kD0000,
+    HvX64RegisterMtrrFix4kD8000,
+    HvX64RegisterMtrrFix4kE0000,
+    HvX64RegisterMtrrFix4kE8000,
+    HvX64RegisterMtrrFix4kF0000,
+    HvX64RegisterMtrrFix4kF8000,
+
+    HvX64RegisterIa32MiscEnable = 0x000800a0,       /**< @since v5 */
+    HvX64RegisterIa32FeatureControl,                /**< @since v5 */
+
+    HvX64RegisterVpRuntime = 0x00090000,
+    HvX64RegisterHypercall,
+    HvRegisterGuestOsId,
+    HvRegisterVpIndex,
+    HvRegisterTimeRefCount,
+
+    HvRegisterCpuManagementVersion = 0x00090007,    /**< @since v5 */
+
+    HvX64RegisterEoi = 0x00090010,
+    HvX64RegisterIcr,
+    HvX64RegisterTpr,
+    HvRegisterVpAssistPage,
+
+    HvRegisterStatsPartitionRetail = 0x00090020,
+    HvRegisterStatsPartitionInternal,
+    HvRegisterStatsVpRetail,
+    HvRegisterStatsVpInternal,
+
+    HvRegisterSint0 = 0x000a0000,
+    HvRegisterSint1,
+    HvRegisterSint2,
+    HvRegisterSint3,
+    HvRegisterSint4,
+    HvRegisterSint5,
+    HvRegisterSint6,
+    HvRegisterSint7,
+    HvRegisterSint8,
+    HvRegisterSint9,
+    HvRegisterSint10,
+    HvRegisterSint11,
+    HvRegisterSint12,
+    HvRegisterSint13,
+    HvRegisterSint14,
+    HvRegisterSint15,
+    HvRegisterScontrol,
+    HvRegisterSversion,
+    HvRegisterSifp,
+    HvRegisterSipp,
+    HvRegisterEom,
+    HvRegisterSirbp,                                /**< @since v4 */
+
+    HvRegisterStimer0Config = 0x000b0000,
+    HvRegisterStimer0Count,
+    HvRegisterStimer1Config,
+    HvRegisterStimer1Count,
+    HvRegisterStimer2Config,
+    HvRegisterStimer2Count,
+    HvRegisterStimer3Config,
+    HvRegisterStimer3Count,
+
+    HvX64RegisterYmm0Low = 0x000c0000,
+    HvX64RegisterYmm1Low,
+    HvX64RegisterYmm2Low,
+    HvX64RegisterYmm3Low,
+    HvX64RegisterYmm4Low,
+    HvX64RegisterYmm5Low,
+    HvX64RegisterYmm6Low,
+    HvX64RegisterYmm7Low,
+    HvX64RegisterYmm8Low,
+    HvX64RegisterYmm9Low,
+    HvX64RegisterYmm10Low,
+    HvX64RegisterYmm11Low,
+    HvX64RegisterYmm12Low,
+    HvX64RegisterYmm13Low,
+    HvX64RegisterYmm14Low,
+    HvX64RegisterYmm15Low,
+    HvX64RegisterYmm0High,
+    HvX64RegisterYmm1High,
+    HvX64RegisterYmm2High,
+    HvX64RegisterYmm3High,
+    HvX64RegisterYmm4High,
+    HvX64RegisterYmm5High,
+    HvX64RegisterYmm6High,
+    HvX64RegisterYmm7High,
+    HvX64RegisterYmm8High,
+    HvX64RegisterYmm9High,
+    HvX64RegisterYmm10High,
+    HvX64RegisterYmm11High,
+    HvX64RegisterYmm12High,
+    HvX64RegisterYmm13High,
+    HvX64RegisterYmm14High,
+    HvX64RegisterYmm15High,
+
+    HvRegisterVsmVpVtlControl = 0x000d0000,
+
+    HvRegisterVsmCodePageOffsets = 0x000d0002,
+    HvRegisterVsmVpStatus,
+    HvRegisterVsmPartitionStatus,
+    HvRegisterVsmVina,
+    HvRegisterVsmCapabilities,
+    HvRegisterVsmPartitionConfig,
+
+    HvRegisterVsmVpSecureConfigVtl0 = 0x000d0010,   /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl1,                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl2,                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl3,                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl4,                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl5,                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl6,                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl7,                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl8,                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl9,                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl10,               /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl11,               /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl12,               /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl13,               /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl14                /**< @since v5 */
+
+} HV_REGISTER_NAME;
+AssertCompile(HvRegisterInterceptSuspend == 0x00000001);
+AssertCompile(HvRegisterPendingEvent1 == 0x00010005);
+AssertCompile(HvX64RegisterRflags == 0x00020011);
+AssertCompile(HvX64RegisterXmmControlStatus == 0x00030019);
+AssertCompile(HvX64RegisterXfem == 0x00040005);
+AssertCompile(HvX64RegisterIntermediateCr0 == 0x00041000);
+AssertCompile(HvX64RegisterIntermediateCr4 == 0x00041003);
+AssertCompile(HvX64RegisterDr7 == 0x00050005);
+AssertCompile(HvX64RegisterTr == 0x00060007);
+AssertCompile(HvX64RegisterGdtr == 0x00070001);
+AssertCompile(HvX64RegisterInitialApicId == 0x0008000c);
+AssertCompile(HvX64RegisterMtrrDefType == 0x0008000e);
+AssertCompile(HvX64RegisterMtrrPhysBaseF == 0x0008001f);
+AssertCompile(HvX64RegisterMtrrPhysMaskF == 0x0008004f);
+AssertCompile(HvX64RegisterMtrrFix4kF8000 == 0x0008007a);
+AssertCompile(HvRegisterTimeRefCount == 0x00090004);
+AssertCompile(HvRegisterCpuManagementVersion == 0x00090007);
+AssertCompile(HvRegisterVpAssistPage == 0x00090013);
+AssertCompile(HvRegisterStatsVpInternal == 0x00090023);
+AssertCompile(HvRegisterSirbp == 0x000a0015);
+AssertCompile(HvRegisterStimer3Count == 0x000b0007);
+AssertCompile(HvX64RegisterYmm15High == 0x000c001f);
+AssertCompile(HvRegisterVsmVpSecureConfigVtl14 == 0x000d001e);
+AssertCompileSize(HV_REGISTER_NAME, 4);
+
+
+/** Value format for HvRegisterExplicitSuspend. */
+typedef union
+{
+    uint64_t            AsUINT64;
+    struct
+    {
+        uint64_t        Suspended : 1;
+        uint64_t        Reserved  : 63;
+    };
+} HV_EXPLICIT_SUSPEND_REGISTER;
+/** Pointer to a value of HvRegisterExplicitSuspend. */
+typedef HV_EXPLICIT_SUSPEND_REGISTER *PHV_EXPLICIT_SUSPEND_REGISTER;
+
+/** Value format for HvRegisterInterceptSuspend. */
+typedef union
+{
+    uint64_t            AsUINT64;
+    struct
+    {
+        uint64_t        Suspended : 1;
+        uint64_t        TlbLocked : 1;
+        uint64_t        Reserved  : 62;
+    };
+} HV_INTERCEPT_SUSPEND_REGISTER;
+/** Pointer to a value of HvRegisterInterceptSuspend. */
+typedef HV_INTERCEPT_SUSPEND_REGISTER *PHV_INTERCEPT_SUSPEND_REGISTER;
+
+/** Value format for HvRegisterInterruptState.
+ * @sa WHV_X64_INTERRUPT_STATE_REGISTER */
+typedef union
+{
+    uint64_t            AsUINT64;
+    struct
+    {
+        uint64_t        InterruptShadow : 1;
+        uint64_t        NmiMasked       : 1;
+        uint64_t        Reserved        : 62;
+    };
+} HV_X64_INTERRUPT_STATE_REGISTER;
+/** Pointer to a value of HvRegisterInterruptState. */
+typedef HV_X64_INTERRUPT_STATE_REGISTER *PHV_X64_INTERRUPT_STATE_REGISTER;
+
+/** Pending exception type for HvRegisterPendingInterruption.
+ * @sa WHV_X64_PENDING_INTERRUPTION_TYPE */
+typedef enum
+{
+    HvX64PendingInterrupt = 0,
+    /* what is/was 1? */
+    HvX64PendingNmi = 2,
+    HvX64PendingException
+    /* any more? */
+} HV_X64_PENDING_INTERRUPTION_TYPE;
+
+/** Value format for HvRegisterPendingInterruption.
+ * @sa WHV_X64_PENDING_INTERRUPTION_REGISTER  */
+typedef union
+{
+    uint64_t            AsUINT64;
+    struct
+    {
+        uint32_t        InterruptionPending : 1;
+        uint32_t        InterruptionType    : 3;    /**< HV_X64_PENDING_INTERRUPTION_TYPE */
+        uint32_t        DeliverErrorCode    : 1;
+        uint32_t        InstructionLength   : 4;    /**< @since v5? Wasn't in 7600 WDK */
+        uint32_t        NestedEvent         : 1;    /**< @since v5? Wasn't in 7600 WDK */
+        uint32_t        Reserved            : 6;
+        uint32_t        InterruptionVector  : 16;
+        uint32_t        ErrorCode;
+    };
+} HV_X64_PENDING_INTERRUPTION_REGISTER;
+/** Pointer to a value of HvRegisterPendingInterruption. */
+typedef HV_X64_PENDING_INTERRUPTION_REGISTER *PHV_X64_PENDING_INTERRUPTION_REGISTER;
+
+/** Value format for HvRegisterPendingEvent0/1.
+ * @sa WHV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER  */
+typedef union
+{
+    uint64_t            AsUINT64;
+    struct
+    {
+        uint64_t        NmiNotification         : 1;
+        uint64_t        InterruptNotification   : 1;
+        uint64_t        InterruptPriority       : 4;
+        uint64_t        Reserved                : 58;
+    };
+} HV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER;
+/** Pointer to a value of HvRegisterPendingEvent0/1. */
+typedef HV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER *PHV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER;
+
+
+/** Value format for HvX64RegisterEs..Tr.
+ * @sa WHV_X64_SEGMENT_REGISTER  */
+typedef struct _HV_X64_SEGMENT_REGISTER
+{
+    uint64_t            Base;
+    uint32_t            Limit;
+    uint16_t            Selector;
+    union
+    {
+        struct
+        {
+            uint16_t    SegmentType              : 4;
+            uint16_t    NonSystemSegment         : 1;
+            uint16_t    DescriptorPrivilegeLevel : 2;
+            uint16_t    Present                  : 1;
+            uint16_t    Reserved                 : 4;
+            uint16_t    Available                : 1;
+            uint16_t    Long                     : 1;
+            uint16_t    Default                  : 1;
+            uint16_t    Granularity              : 1;
+        };
+        uint16_t        Attributes;
+    };
+} HV_X64_SEGMENT_REGISTER;
+/** Pointer to a value of HvX64RegisterEs..Tr. */
+typedef HV_X64_SEGMENT_REGISTER *PHV_X64_SEGMENT_REGISTER;
+
+/** Value format for HvX64RegisterIdtr/Gdtr.
+ * @sa WHV_X64_TABLE_REGISTER */
+typedef struct
+{
+    uint16_t            Pad[3];
+    uint16_t            Limit;
+    uint64_t            Base;
+} HV_X64_TABLE_REGISTER;
+/** Pointer to a value of HvX64RegisterIdtr/Gdtrr. */
+typedef HV_X64_TABLE_REGISTER *PHV_X64_TABLE_REGISTER;
+
+/** Value format for HvX64RegisterFpMmx0..7 in floating pointer mode.
+ * @sa WHV_X64_FP_REGISTER, RTFLOAT80U2 */
+typedef union
+{
+    HV_UINT128          AsUINT128;
+    struct
+    {
+        uint64_t        Mantissa;
+        uint64_t        BiasedExponent  : 15;
+        uint64_t        Sign            : 1;
+        uint64_t        Reserved        : 48;
+    };
+} HV_X64_FP_REGISTER;
+/** Pointer to a value of HvX64RegisterFpMmx0..7 in floating point mode. */
+typedef HV_X64_FP_REGISTER *PHV_X64_FP_REGISTER;
+
+/** Value union for HvX64RegisterFpMmx0..7. */
+typedef union
+{
+    HV_UINT128          AsUINT128;
+    HV_X64_FP_REGISTER  Fp;
+    uint64_t            Mmx;
+} HV_X64_FP_MMX_REGISTER;
+/** Pointer to a value of HvX64RegisterFpMmx0..7. */
+typedef HV_X64_FP_MMX_REGISTER *PHV_X64_FP_MMX_REGISTER;
+
+/** Value format for HvX64RegisterFpControlStatus.
+ * @sa WHV_X64_FP_CONTROL_STATUS_REGISTER  */
+typedef union
+{
+    HV_UINT128              AsUINT128;
+    struct
+    {
+        uint16_t            FpControl;
+        uint16_t            FpStatus;
+        uint8_t             FpTag;
+        uint8_t             IgnNe    : 1;
+        uint8_t             Reserved : 7;
+        uint16_t            LastFpOp;
+        union
+        {
+            uint64_t        LastFpRip;
+            struct
+            {
+                uint32_t    LastFpEip;
+                uint16_t    LastFpCs;
+            };
+        };
+    };
+} HV_X64_FP_CONTROL_STATUS_REGISTER;
+/** Pointer to a value of HvX64RegisterFpControlStatus. */
+typedef HV_X64_FP_CONTROL_STATUS_REGISTER *PHV_X64_FP_CONTROL_STATUS_REGISTER;
+
+/** Value format for HvX64RegisterXmmControlStatus.
+ * @sa WHV_X64_XMM_CONTROL_STATUS_REGISTER  */
+typedef union
+{
+    HV_UINT128 AsUINT128;
+    struct
+    {
+        union
+        {
+            uint64_t        LastFpRdp;
+            struct
+            {
+                uint32_t    LastFpDp;
+                uint16_t    LastFpDs;
+            };
+        };
+        uint32_t            XmmStatusControl;
+        uint32_t            XmmStatusControlMask;
+    };
+} HV_X64_XMM_CONTROL_STATUS_REGISTER;
+/** Pointer to a value of HvX64RegisterXmmControlStatus. */
+typedef HV_X64_XMM_CONTROL_STATUS_REGISTER *PHV_X64_XMM_CONTROL_STATUS_REGISTER;
+
+/** Register value union.
+ * @sa WHV_REGISTER_VALUE  */
+typedef union
+{
+    HV_UINT128                                      Reg128;
+    uint64_t                                        Reg64;
+    uint32_t                                        Reg32;
+    uint16_t                                        Reg16;
+    uint8_t                                         Reg8;
+    HV_EXPLICIT_SUSPEND_REGISTER                    ExplicitSuspend;
+    HV_INTERCEPT_SUSPEND_REGISTER                   InterceptSuspend;
+    HV_X64_INTERRUPT_STATE_REGISTER                 InterruptState;
+    HV_X64_PENDING_INTERRUPTION_REGISTER            PendingInterruption;
+    HV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER    DeliverabilityNotifications;
+    HV_X64_TABLE_REGISTER                           Table;
+    HV_X64_SEGMENT_REGISTER                         Segment;
+    HV_X64_FP_REGISTER                              Fp;
+    HV_X64_FP_CONTROL_STATUS_REGISTER               FpControlStatus;
+    HV_X64_XMM_CONTROL_STATUS_REGISTER              XmmControlStatus;
+} HV_REGISTER_VALUE;
+AssertCompileSize(HV_REGISTER_VALUE, 16);
+/** Pointer to a Hyper-V register value union. */
+typedef HV_REGISTER_VALUE *PHV_REGISTER_VALUE;
+/** Pointer to a const Hyper-V register value union. */
+typedef HV_REGISTER_VALUE const *PCHV_REGISTER_VALUE;
+
+
+/** Input for HvCallGetVpRegister. */
+typedef struct
+{
+    HV_PARTITION_ID     PartitionId;
+    HV_VP_INDEX         VpIndex;
+    /** Was this introduced after v2? Dunno what it it really is. */
+    uint32_t            fFlags;
+    /* The repeating part: */
+    HV_REGISTER_NAME    Names[RT_FLEXIBLE_ARRAY];
+} HV_INPUT_GET_VP_REGISTERS;
+AssertCompileMemberOffset(HV_INPUT_GET_VP_REGISTERS, Names, 16);
+/** Pointer to input for HvCallGetVpRegister. */
+typedef HV_INPUT_GET_VP_REGISTERS *PHV_INPUT_GET_VP_REGISTERS;
+/* Output for HvCallGetVpRegister is an array of HV_REGISTER_VALUE parallel to HV_INPUT_GET_VP_REGISTERS::Names. */
+
+
+/** Register and value pair for HvCallSetVpRegister. */
+typedef struct
+{
+    HV_REGISTER_NAME    Name;
+    uint32_t            Pad0;
+    uint64_t            Pad1;
+    HV_REGISTER_VALUE   Value;
+} HV_REGISTER_ASSOC;
+AssertCompileSize(HV_REGISTER_ASSOC, 32);
+AssertCompileMemberOffset(HV_REGISTER_ASSOC, Value, 16);
+/** Pointer to a register and value pair for HvCallSetVpRegister. */
+typedef HV_REGISTER_ASSOC *PHV_REGISTER_ASSOC;
+/** Helper for clearing the alignment padding members. */
+#define HV_REGISTER_ASSOC_ZERO_PADDING(a_pRegAssoc) do { (a_pRegAssoc)->Pad0 = 0; (a_pRegAssoc)->Pad1 = 0; } while (0)
+/** Helper for clearing the alignment padding members and the high 64-bit
+ * part of the value. */
+#define HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(a_pRegAssoc) \
+    do { (a_pRegAssoc)->Pad0 = 0; (a_pRegAssoc)->Pad1 = 0; (a_pRegAssoc)->Value.Reg128.High64 = 0; } while (0)
+
+/** Input for HvCallSetVpRegister. */
+typedef struct
+{
+    HV_PARTITION_ID     PartitionId;
+    HV_VP_INDEX         VpIndex;
+    uint32_t            RsvdZ;
+    /* The repeating part: */
+    HV_REGISTER_ASSOC   Elements[RT_FLEXIBLE_ARRAY];
+} HV_INPUT_SET_VP_REGISTERS;
+AssertCompileMemberOffset(HV_INPUT_SET_VP_REGISTERS, Elements, 16);
+/** Pointer to input for HvCallSetVpRegister. */
+typedef HV_INPUT_SET_VP_REGISTERS *PHV_INPUT_SET_VP_REGISTERS;
 
 
 #endif

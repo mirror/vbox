@@ -2822,6 +2822,14 @@
 #define VERR_NEM_MAP_PAGES_FAILED                   (-6805)
 /** NEM failed to unmap page(s) into the VM. */
 #define VERR_NEM_UNMAP_PAGES_FAILED                 (-6806)
+/** NEM failed to get registers. */
+#define VERR_NEM_GET_REGISTERS_FAILED               (-6807)
+/** NEM failed to set registers. */
+#define VERR_NEM_SET_REGISTERS_FAILED               (-6808)
+/** Get register caller must flush the TLB (not an error). */
+#define VERR_NEM_FLUSH_TLB                          (-6809)
+/** Get register caller must change the CPU mode (not an error). */
+#define VERR_NEM_CHANGE_PGM_MODE                    (-6810)
 /** @} */
 
 /* SED-END */

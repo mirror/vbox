@@ -435,6 +435,10 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_NEM_MAP_PAGES,
     /** Call NEMR0UnmapPages() (host specific). */
     VMMR0_DO_NEM_UNMAP_PAGES,
+    /** Call NEMR0ExportState() (host specific). */
+    VMMR0_DO_NEM_EXPORT_STATE,
+    /** Call NEMR0ImportState() (host specific). */
+    VMMR0_DO_NEM_IMPORT_STATE,
 
     /** Official call we use for testing Ring-0 APIs. */
     VMMR0_DO_TESTS = 640,

@@ -86,6 +86,8 @@ VMMR0_INT_DECL(int)  NEMR0InitVM(PGVM pGVM, PVM pVM);
 VMMR0_INT_DECL(void) NEMR0CleanupVM(PGVM pGVM);
 VMMR0_INT_DECL(int)  NEMR0MapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t fWhat);
+VMMR0_INT_DECL(int)  NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t fWhat);
 /** @} */
 
 
