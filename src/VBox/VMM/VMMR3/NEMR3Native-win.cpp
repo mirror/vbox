@@ -1958,18 +1958,24 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
     }
 
     /*
-     * I'm not sure WTF was going on, but I ended up in a loop if I remapped a
-     * readonly page as writable.  Specifically, this was an issue with the big
-     * VRAM mapping at 0xe0000000 when booing DSL 4.4.1.  So, in a hope to work
-     * around that we no longer pre-map anything, just unmap stuff and do it
-     * lazily here.  And here we will first unmap, restart, and then remap with
-     * new protection or backing.
+     * Consolidate current page state with actual page protection and access type.
+     * We don't really consider downgrades here, as they shouldn't happen.
      */
+#ifndef NEM_WIN_USE_HYPERCALLS
+    /** @todo Someone at microsoft please explain:
+     * I'm not sure WTF was going on, but I ended up in a loop if I remapped a
+     * readonly page as writable (unmap, then map again).  Specifically, this was an
+     * issue with the big VRAM mapping at 0xe0000000 when booing DSL 4.4.1.  So, in
+     * a hope to work around that we no longer pre-map anything, just unmap stuff
+     * and do it lazily here.  And here we will first unmap, restart, and then remap
+     * with new protection or backing.
+     */
+#endif
+    int rc;
     switch (u2State)
     {
         case NEM_WIN_PAGE_STATE_UNMAPPED:
         case NEM_WIN_PAGE_STATE_NOT_SET:
-        {
             if (pInfo->fNemProt == NEM_PAGE_PROT_NONE)
             {
                 Log4(("nemR3WinHandleMemoryAccessPageCheckerCallback: %RGp - #1\n", GCPhys));
@@ -1985,21 +1991,19 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
             }
 
             /* Map the page. */
-            int rc = nemR3NativeSetPhysPage(pVM,
-                                            pVCpu,
-                                            GCPhysSrc & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK,
-                                            GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK,
-                                            pInfo->fNemProt,
-                                            &u2State,
-                                            true /*fBackingState*/);
+            rc = nemR3NativeSetPhysPage(pVM,
+                                        pVCpu,
+                                        GCPhysSrc & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK,
+                                        GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK,
+                                        pInfo->fNemProt,
+                                        &u2State,
+                                        true /*fBackingState*/);
             pInfo->u2NemState = u2State;
             Log4(("nemR3WinHandleMemoryAccessPageCheckerCallback: %RGp - synced => %s + %Rrc\n",
                   GCPhys, g_apszPageStates[u2State], rc));
-            RT_NOREF(pVCpu);
             pState->fDidSomething = true;
             pState->fCanResume    = true;
             return rc;
-        }
 
         case NEM_WIN_PAGE_STATE_READABLE:
             if (   !(pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
@@ -2015,9 +2019,9 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
             if (   (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
                 && pState->fWriteAccess)
             {
-                int rc = nemR3WinHypercallMapPage(pVM, pVCpu, GCPhysSrc, GCPhys,
-                                                    HV_MAP_GPA_READABLE   | HV_MAP_GPA_WRITABLE
-                                                  | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN);
+                rc = nemR3WinHypercallMapPage(pVM, pVCpu, GCPhysSrc, GCPhys,
+                                              HV_MAP_GPA_READABLE   | HV_MAP_GPA_WRITABLE
+                                              | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN);
                 AssertRC(rc);
                 if (RT_SUCCESS(rc))
                 {
@@ -2026,11 +2030,18 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
                     pState->fCanResume    = true;
                     Log5(("NEM GPA write-upgrade/exit: %RGp (was %s, cMappedPages=%u)\n",
                           GCPhys, g_apszPageStates[u2State], pVM->nem.s.cMappedPages));
-                    return rc;
                 }
             }
-#endif
+            else
+            {
+                /* Need to emulate the acces. */
+                AssertBreak(pInfo->fNemProt != NEM_PAGE_PROT_NONE); /* There should be no downgrades. */
+                rc = VINF_SUCCESS;
+            }
+            return rc;
+#else
             break;
+#endif
 
         case NEM_WIN_PAGE_STATE_WRITABLE:
             if (pInfo->fNemProt & NEM_PAGE_PROT_WRITE)
@@ -2038,6 +2049,9 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
                 Log4(("nemR3WinHandleMemoryAccessPageCheckerCallback: %RGp - #3\n", GCPhys));
                 return VINF_SUCCESS;
             }
+#ifdef NEM_WIN_USE_HYPERCALLS
+            AssertFailed(); /* There should be no downgrades. */
+#endif
             break;
 
         default:
@@ -2049,7 +2063,7 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
      * If this fails, which it does every so often, just unmap everything for now.
      */
 #ifdef NEM_WIN_USE_HYPERCALLS
-    int rc = nemR3WinHypercallUnmapPage(pVM, pVCpu, GCPhys);
+    rc = nemR3WinHypercallUnmapPage(pVM, pVCpu, GCPhys);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
 #else
@@ -2737,6 +2751,77 @@ void nemR3NativeNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind,
 static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst, uint32_t fPageProt,
                                   uint8_t *pu2State, bool fBackingChanged)
 {
+#ifdef NEM_WIN_USE_HYPERCALLS
+    /*
+     * When using the hypercalls instead of the ring-3 APIs, we don't need to
+     * unmap memory before modifying it.  We still want to track the state though,
+     * since unmap will fail when called an unmapped page and we don't want to redo
+     * upgrades/downgrades.
+     */
+    uint8_t const u2OldState = *pu2State;
+    int rc;
+    if (fPageProt == NEM_PAGE_PROT_NONE)
+    {
+        if (u2OldState > NEM_WIN_PAGE_STATE_UNMAPPED)
+        {
+            rc = nemR3WinHypercallUnmapPage(pVM, pVCpu, GCPhysDst);
+            if (RT_SUCCESS(rc))
+            {
+                *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
+                uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
+                Log5(("NEM GPA unmapped/set: %RGp (was %s, cMappedPages=%u)\n", GCPhysDst, g_apszPageStates[u2OldState], cMappedPages));
+            }
+            else
+                AssertLogRelMsgFailed(("nemR3NativeSetPhysPage/unmap: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
+        }
+        else
+            rc = VINF_SUCCESS;
+    }
+    else if (fPageProt & NEM_PAGE_PROT_WRITE)
+    {
+        if (u2OldState != NEM_WIN_PAGE_STATE_WRITABLE || fBackingChanged)
+        {
+            rc = nemR3WinHypercallMapPage(pVM, pVCpu, GCPhysSrc, GCPhysDst,
+                                            HV_MAP_GPA_READABLE   | HV_MAP_GPA_WRITABLE
+                                          | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN);
+            if (RT_SUCCESS(rc))
+            {
+                *pu2State = NEM_WIN_PAGE_STATE_WRITABLE;
+                uint32_t cMappedPages = u2OldState <= NEM_WIN_PAGE_STATE_UNMAPPED
+                                      ? ASMAtomicIncU32(&pVM->nem.s.cMappedPages) : pVM->nem.s.cMappedPages;
+                Log5(("NEM GPA writable/set: %RGp (was %s, cMappedPages=%u)\n", GCPhysDst, g_apszPageStates[u2OldState], cMappedPages));
+                NOREF(cMappedPages);
+            }
+            else
+                AssertLogRelMsgFailed(("nemR3NativeSetPhysPage/writable: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
+        }
+        else
+            rc = VINF_SUCCESS;
+    }
+    else
+    {
+        if (u2OldState != NEM_WIN_PAGE_STATE_READABLE || fBackingChanged)
+        {
+            rc = nemR3WinHypercallMapPage(pVM, pVCpu, GCPhysSrc, GCPhysDst,
+                                          HV_MAP_GPA_READABLE | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN);
+            if (RT_SUCCESS(rc))
+            {
+                *pu2State = NEM_WIN_PAGE_STATE_READABLE;
+                uint32_t cMappedPages = u2OldState <= NEM_WIN_PAGE_STATE_UNMAPPED
+                                      ? ASMAtomicIncU32(&pVM->nem.s.cMappedPages) : pVM->nem.s.cMappedPages;
+                Log5(("NEM GPA read+exec/set: %RGp (was %s, cMappedPages=%u)\n", GCPhysDst, g_apszPageStates[u2OldState], cMappedPages));
+                NOREF(cMappedPages);
+            }
+            else
+                AssertLogRelMsgFailed(("nemR3NativeSetPhysPage/writable: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
+        }
+        else
+            rc = VINF_SUCCESS;
+    }
+
+    return VINF_SUCCESS;
+
+#else
     /*
      * Looks like we need to unmap a page before we can change the backing
      * or even modify the protection.  This is going to be *REALLY* efficient.
@@ -2750,7 +2835,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
     {
         if (u2OldState > NEM_WIN_PAGE_STATE_UNMAPPED)
         {
-#ifdef NEM_WIN_USE_HYPERCALLS
+# ifdef NEM_WIN_USE_HYPERCALLS
             int rc = nemR3WinHypercallUnmapPage(pVM, pVCpu, GCPhysDst);
             AssertRC(rc);
             if (RT_SUCCESS(rc))
@@ -2769,7 +2854,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
                 LogRel(("nemR3NativeSetPhysPage/unmap: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
                 return rc;
             }
-#else
+# else
             HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhysDst, X86_PAGE_SIZE);
             if (SUCCEEDED(hrc))
             {
@@ -2788,7 +2873,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
                         GCPhysDst, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
                 return VERR_NEM_INIT_FAILED;
             }
-#endif
+# endif
         }
     }
 
@@ -2797,7 +2882,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
      */
     if (fPageProt & NEM_PAGE_PROT_WRITE)
     {
-#ifdef NEM_WIN_USE_HYPERCALLS
+# ifdef NEM_WIN_USE_HYPERCALLS
         int rc = nemR3WinHypercallMapPage(pVM, pVCpu, GCPhysSrc, GCPhysDst,
                                             HV_MAP_GPA_READABLE   | HV_MAP_GPA_WRITABLE
                                           | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN);
@@ -2812,7 +2897,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
         }
         LogRel(("nemR3NativeSetPhysPage/writable: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
         return rc;
-#else
+# else
         void *pvPage;
         int rc = nemR3NativeGCPhys2R3PtrWriteable(pVM, GCPhysSrc, &pvPage);
         if (RT_SUCCESS(rc))
@@ -2833,12 +2918,12 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
         }
         LogRel(("nemR3NativeSetPhysPage/writable: GCPhysSrc=%RGp rc=%Rrc\n", GCPhysSrc, rc));
         return rc;
-#endif
+# endif
     }
 
     if (fPageProt & NEM_PAGE_PROT_READ)
     {
-#ifdef NEM_WIN_USE_HYPERCALLS
+# ifdef NEM_WIN_USE_HYPERCALLS
         int rc = nemR3WinHypercallMapPage(pVM, pVCpu, GCPhysSrc, GCPhysDst,
                                           HV_MAP_GPA_READABLE | HV_MAP_GPA_EXECUTABLE | HV_MAP_GPA_EXECUTABLE_AGAIN);
         AssertRC(rc);
@@ -2852,7 +2937,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
         }
         LogRel(("nemR3NativeSetPhysPage/readonly: GCPhysDst=%RGp rc=%Rrc\n", GCPhysDst, rc));
         return rc;
-#else
+# else
         const void *pvPage;
         int rc = nemR3NativeGCPhys2R3PtrReadOnly(pVM, GCPhysSrc, &pvPage);
         if (RT_SUCCESS(rc))
@@ -2873,12 +2958,13 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
         }
         LogRel(("nemR3NativeSetPhysPage/readonly: GCPhysSrc=%RGp rc=%Rrc\n", GCPhysSrc, rc));
         return rc;
-#endif
+# endif
     }
 
     /* We already unmapped it above. */
     *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
     return VINF_SUCCESS;
+#endif /* !NEM_WIN_USE_HYPERCALLS */
 }
 
 
