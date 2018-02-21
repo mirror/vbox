@@ -883,7 +883,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' ),
         ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' ),
         ( True,  ktReason_Host_DoubleFreeHeap,                      'double free or corruption' ),
-        ( True,  ktReason_Host_NetworkMisconfiguration,             'most likely not unique' ),
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
@@ -1210,6 +1209,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             elif self.isResultFromVMRun(oFailedResult, sResultLog):
                 self.investigateVMResult(oCaseFile, oFailedResult, sResultLog);
 
+            elif sResultLog.find('most likely not unique') > 0:
+                oCaseFile.noteReasonForId(self.ktReason_Host_NetworkMisconfiguration, oFailedResult.idTestResult)
             elif sResultLog.find('Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))') > 0:
                 oCaseFile.noteReasonForId(self.ktReason_XPCOM_NS_ERROR_CALL_FAILED, oFailedResult.idTestResult);
 
