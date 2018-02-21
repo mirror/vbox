@@ -1511,7 +1511,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     /* Whether the current display is already or should be enabled. */
     BOOL fChangedEnable = fEnable || RT_BOOL(paDisplayDevices[iChangedMode].StateFlags & DISPLAY_DEVICE_ACTIVE);
 
-    if (fCurrentEnable)
+    if (fChangedEnable)
     {
         RTRECTSIZE Size;
 
