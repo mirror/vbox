@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
+# include "UIErrorString.h"
 # include "UIGuestControlInterface.h"
 # include "VBoxGlobal.h"
 
@@ -37,6 +38,12 @@
 #define GCTLCMD_COMMON_OPT_DOMAIN           996 /**< The --domain option number. */
 #define GCTLCMD_COMMON_OPT_SESSION_NAME     995 /**< The --sessionname option number. */
 #define GCTLCMD_COMMON_OPT_SESSION_ID       994 /**< The --sessionid option number. */
+
+#define RETURN_ERROR(strError)     \
+    {                              \
+    m_strStatus.append(strError);  \
+    return false;                  \
+    }
 
 #define GCTLCMD_COMMON_OPTION_DEFS() \
         { "--username",             GCTLCMD_COMMON_OPT_USER,            RTGETOPT_REQ_STRING  }, \
@@ -94,15 +101,19 @@ class CommandData
 public:
     CommandData()
         : m_bSessionIdGiven(false)
-        , m_bSessionNameGiven(false){}
+        , m_bSessionNameGiven(false)
+        , m_bCreateParentDirectories(false){}
     QString m_strUserName;
     QString m_strPassword;
     QString m_strExePath;
     QString m_strSessionName;
+    QString m_strDirectoryPath;
     ULONG   m_uSessionId;
     QString m_strDomain;
     bool    m_bSessionIdGiven;
     bool    m_bSessionNameGiven;
+    /* Create the whole path during mkdir */
+    bool    m_bCreateParentDirectories;
     QVector<QString> m_arguments;
     QVector<QString> m_environmentChanges;
 };
@@ -120,15 +131,80 @@ UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &
                 "                                   -- <program/arg0> [argument1] ... [argumentN]]\n"
                 "createsession                      [common-options]  [--sessionname <name>]\n"
                 "mkdir                           [common-options]\n"
-                "                                   [--path <path>]\n"
+                "                                   [-P|--parents] [<guest directory>\n"
                 "                                   [--sessionid <id> |  [sessionname <name>]]\n"
                 )
 {
     prepareSubCommandHandlers();
 }
 
-bool UIGuestControlInterface::handleMkdir(int, char**)
+bool UIGuestControlInterface::handleMkdir(int argc , char** argv)
 {
+
+    CommandData commandData;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        GCTLCMD_COMMON_OPTION_DEFS()
+        { "--sessionname",                  GCTLCMD_COMMON_OPT_SESSION_NAME,          RTGETOPT_REQ_STRING  },
+        { "--sessionid",                    GCTLCMD_COMMON_OPT_SESSION_ID,            RTGETOPT_REQ_UINT32  },
+        { "--parents",                      'P',                                      RTGETOPT_REQ_NOTHING  }
+    };
+
+    int ch;
+    bool pathFound = false;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1 /* ignore 0th element (command) */, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            HANDLE_COMMON_OPTION_DEFS()
+            case GCTLCMD_COMMON_OPT_SESSION_NAME:
+                commandData.m_bSessionNameGiven = true;
+                commandData.m_strSessionName  = ValueUnion.psz;
+                break;
+            case GCTLCMD_COMMON_OPT_SESSION_ID:
+                commandData.m_bSessionIdGiven = true;
+                commandData.m_uSessionId  = ValueUnion.i32;
+                break;
+            case 'P':
+                commandData.m_bCreateParentDirectories  = true;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pathFound)
+                {
+                    commandData.m_strDirectoryPath = ValueUnion.psz;
+                    pathFound = true;
+                }
+                /* Allow only a single NOT_OPTION */
+                else
+                    RETURN_ERROR(generateErrorString(ch, ValueUnion))
+
+                break;
+            default:
+                RETURN_ERROR(generateErrorString(ch, ValueUnion))
+        }
+    }
+    if (commandData.m_strDirectoryPath.isEmpty())
+        RETURN_ERROR(QString(m_strHelp).append("Syntax error! No path is given\n"));
+
+    CGuestSession guestSession;
+    if (!findOrCreateSession(commandData, guestSession) || !guestSession.isOk())
+        return false;
+
+
+    //const QString &strErr = comProgressInstall.GetErrorInfo().GetText();
+    QVector<KDirectoryCreateFlag> creationFlags;
+    if (commandData.m_bCreateParentDirectories)
+        creationFlags.push_back(KDirectoryCreateFlag_None);
+    else
+        creationFlags.push_back(KDirectoryCreateFlag_Parents);
+
+    guestSession.DirectoryCreate(commandData.m_strDirectoryPath, 0 /*ULONG aMode*/, creationFlags);
+
+    //startProcess(commandData, guestSession);
     return true;
 }
 
@@ -148,7 +224,6 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
     };
 
     CommandData commandData;
-    //parseCommonOptions(argc, argv, commandData);
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -185,65 +260,51 @@ bool UIGuestControlInterface::handleStart(int argc, char** argv)
                 commandData.m_strExePath  = ValueUnion.psz;
                 break;
             default:
-            {
-                emit sigOutputString(generateErrorString(ch, ValueUnion));
-                return false;
-            }
+                RETURN_ERROR(generateErrorString(ch, ValueUnion))
         }
     }
     if (commandData.m_strExePath.isEmpty())
-    {
-        emit sigOutputString(QString(m_strHelp).append("Syntax error! No executable is given\n"));
-        return false;
-    }
-
-    if (commandData.m_bSessionNameGiven && commandData.m_strSessionName.isEmpty())
-    {
-        emit sigOutputString(QString(m_strHelp).append("'Session Name' is not name valid\n"));
-        return false;
-    }
+        RETURN_ERROR(QString(m_strHelp).append("Syntax error! No executable is given\n"))
 
     CGuestSession guestSession;
+    if (!findOrCreateSession(commandData, guestSession) || !guestSession.isOk())
+        return false;
+    startProcess(commandData, guestSession);
+    return true;
+}
+
+bool UIGuestControlInterface::findOrCreateSession(const CommandData &commandData, CGuestSession &outGuestSession)
+{
+    if (commandData.m_bSessionNameGiven && commandData.m_strSessionName.isEmpty())
+        RETURN_ERROR(QString(m_strHelp).append("'Session Name' is not name valid\n"))
+
     /* Check if sessionname and sessionid are both supplied */
     if (commandData.m_bSessionIdGiven && commandData.m_bSessionNameGiven)
-    {
-        emit sigOutputString(QString(m_strHelp).append("Both 'Session Name' and 'Session Id' are supplied\n"));
-        return false;
-    }
+        RETURN_ERROR(QString(m_strHelp).append("Both 'Session Name' and 'Session Id' are supplied\n"))
+
     /* If sessionid is given then look for the session. if not found return without starting the process: */
     else if (commandData.m_bSessionIdGiven && !commandData.m_bSessionNameGiven)
     {
-        if (!findSession(commandData.m_uSessionId, guestSession))
+        if (!findSession(commandData.m_uSessionId, outGuestSession))
         {
-            emit sigOutputString(QString(m_strHelp).append("No session with id %1 found.\n").arg(commandData.m_uSessionId));
-            return false;
+            RETURN_ERROR(QString(m_strHelp).append("No session with id %1 found.\n").arg(commandData.m_uSessionId))
         }
     }
     /* If sessionname is given then look for the session. if not try to create a session with the provided name: */
     else if (!commandData.m_bSessionIdGiven && commandData.m_bSessionNameGiven)
     {
-        if (!findSession(commandData.m_strSessionName, guestSession))
+        if (!findSession(commandData.m_strSessionName, outGuestSession))
         {
-            if (!createSession(commandData, guestSession))
-            {
-                emit sigOutputString(QString("Guest session could not be created"));
+            if (!createSession(commandData, outGuestSession))
                 return false;
-            }
         }
     }
     /* if neither sessionname and session id is given then create a new session */
     else
     {
-        if (!createSession(commandData, guestSession))
-        {
-            emit sigOutputString(QString("Guest session could not be created"));
+        if (!createSession(commandData, outGuestSession))
             return false;
-        }
-
     }
-    if (!guestSession.isOk())
-        return false;
-    startProcess(commandData, guestSession);
     return true;
 }
 
@@ -276,8 +337,7 @@ bool UIGuestControlInterface::handleCreateSession(int argc, char** argv)
                 commandData.m_strSessionName  = ValueUnion.psz;
                 if (commandData.m_strSessionName.isEmpty())
                 {
-                    emit sigOutputString(QString("'Session Name' is not name valid\n").append(m_strHelp));
-                    return false;
+                    RETURN_ERROR(QString("'Session Name' is not name valid\n").append(m_strHelp))
                 }
                 break;
             default:
@@ -324,7 +384,7 @@ void UIGuestControlInterface::putCommand(const QString &strCommand)
     int argc;
     QByteArray array = strCommand.toLocal8Bit();
     RTGetOptArgvFromString(&argv, &argc, array.data(), RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, 0);
-
+    m_strStatus.clear();
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
@@ -350,6 +410,8 @@ void UIGuestControlInterface::putCommand(const QString &strCommand)
                      {
                          (this->*(iterator.value()))(argc, argv);
                          RTGetOptArgvFree(argv);
+                         if (!m_strStatus.isEmpty())
+                             emit sigOutputString(m_strStatus);
                          return;
                      }
                      else
@@ -364,7 +426,9 @@ void UIGuestControlInterface::putCommand(const QString &strCommand)
              default:
                  break;
          }
-     }
+    }
+    if (!m_strStatus.isEmpty())
+        emit sigOutputString(m_strStatus);
 
     RTGetOptArgvFree(argv);
 }
@@ -405,19 +469,16 @@ bool UIGuestControlInterface::createSession(const CommandData &commandData, CGue
                                                           commandData.m_strPassword,
                                                           commandData.m_strDomain,
                                                           commandData.m_strSessionName);
+
     if (!guestSession.isOk())
-    {
-        emit sigOutputString(QString("Guest session could not be created"));
         return false;
-    }
+
     /* Wait session to start: */
     const ULONG waitTimeout = 2000;
     KGuestSessionWaitResult waitResult = guestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
     if (waitResult != KGuestSessionWaitResult_Start)
-    {
-        emit sigOutputString("Guest Session has not started yet");
         return false;
-    }
+
     outSession = guestSession;
     return true;
 }

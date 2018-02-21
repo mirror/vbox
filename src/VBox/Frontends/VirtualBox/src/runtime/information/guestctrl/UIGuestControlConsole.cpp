@@ -75,7 +75,7 @@ void UIGuestControlConsole::putOutput(const QString &strOutput)
         insertPlainText("\n");
         startNextLine();
     }
-}
+ }
 
 void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
 {
@@ -138,7 +138,7 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
         }
         default:
         {
-            if(pEvent->modifiers() == Qt::ControlModifier && pEvent->key() == Qt::Key_C)
+            if (pEvent->modifiers() == Qt::ControlModifier && pEvent->key() == Qt::Key_C)
             {
                 QPlainTextEdit::keyPressEvent(pEvent);
             }

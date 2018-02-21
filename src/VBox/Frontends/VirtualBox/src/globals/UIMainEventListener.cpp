@@ -37,8 +37,11 @@
 # include "CExtraDataCanChangeEvent.h"
 # include "CExtraDataChangedEvent.h"
 # include "CGuestMonitorChangedEvent.h"
-#include  "CGuestProcessRegisteredEvent.h"
+# include "CGuestProcessIOEvent.h"
+# include "CGuestProcessRegisteredEvent.h"
 # include "CGuestSessionRegisteredEvent.h"
+# include "CGuestProcessStateChangedEvent.h"
+# include "CGuestSessionStateChangedEvent.h"
 # include "CKeyboardLedsChangedEvent.h"
 # include "CMachineStateChangedEvent.h"
 # include "CMachineDataChangedEvent.h"
@@ -449,16 +452,23 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         }
         case KVBoxEventType_OnGuestSessionStateChanged:
         {
-            emit sigGuestSessionStatedChanged();
+            CGuestSessionStateChangedEvent cEvent(pEvent);
+            emit sigGuestSessionStatedChanged(cEvent);
             break;
         }
-        case KVBoxEventType_OnGuestProcessStateChanged:
         case KVBoxEventType_OnGuestProcessInputNotify:
         case KVBoxEventType_OnGuestProcessOutput:
         {
-            emit sigGuestProcessStateChanged();
             break;
         }
+        case KVBoxEventType_OnGuestProcessStateChanged:
+        {
+            CGuestProcessStateChangedEvent cEvent(pEvent);
+            cEvent.GetError();
+            emit sigGuestProcessStateChanged(cEvent);
+            break;
+        }
+
         case KVBoxEventType_OnGuestFileRegistered:
         case KVBoxEventType_OnGuestFileStateChanged:
         case KVBoxEventType_OnGuestFileOffsetChanged:

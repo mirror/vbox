@@ -28,6 +28,8 @@
 
 /* Forward declarations: */
 class CEventSource;
+class CGuestProcessStateChangedEvent;
+class CGuestSessionStateChangedEvent;
 
 /** QITreeWidgetItem extension serving as a base class
     to UIGuestSessionTreeItem and UIGuestProcessTreeItem classes */
@@ -36,12 +38,7 @@ class UIGuestControlTreeItem : public QITreeWidgetItem
 
     Q_OBJECT;
 
-signals:
-
-    void sigGuessSessionUpdated();
-
 public:
-
 
     UIGuestControlTreeItem(QITreeWidget *pTreeWidget, const QStringList &strings = QStringList());
     UIGuestControlTreeItem(UIGuestControlTreeItem *pTreeWidgetItem, const QStringList &strings = QStringList());
@@ -75,12 +72,18 @@ class UIGuestSessionTreeItem : public UIGuestControlTreeItem
 {
     Q_OBJECT;
 
+signals:
+
+    void sigGuessSessionUpdated();
+    void sigGuestSessionErrorText(QString strError);
+
 public:
 
     UIGuestSessionTreeItem(QITreeWidget *pTreeWidget, CGuestSession& guestSession, const QStringList &strings = QStringList());
     UIGuestSessionTreeItem(UIGuestControlTreeItem *pTreeWidgetItem, CGuestSession& guestSession, const QStringList &strings = QStringList());
     virtual ~UIGuestSessionTreeItem();
     const CGuestSession& guestSession() const;
+    void errorString(QString strError);
 
 protected:
 
@@ -89,9 +92,10 @@ protected:
 
 private slots:
 
-    void sltGuestSessionUpdated();
+    void sltGuestSessionUpdated(const CGuestSessionStateChangedEvent& cEvent);
     void sltGuestProcessRegistered(CGuestProcess guestProcess);
     void sltGuestProcessUnregistered(CGuestProcess guestProcess);
+
 
 private:
 
@@ -111,6 +115,10 @@ class UIGuestProcessTreeItem : public UIGuestControlTreeItem
 {
     Q_OBJECT;
 
+signals:
+
+    void sigGuestProcessErrorText(QString strError);
+
 public:
 
     UIGuestProcessTreeItem(QITreeWidget *pTreeWidget, CGuestProcess& guestProcess, const QStringList &strings = QStringList());
@@ -126,7 +134,7 @@ protected:
 
 private slots:
 
-    void sltGuestProcessUpdated();
+    void sltGuestProcessUpdated(const CGuestProcessStateChangedEvent &cEvent);
 
 private:
 

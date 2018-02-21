@@ -27,6 +27,8 @@
 /* COM includes: */
 # include "CGuest.h"
 # include "CEventSource.h"
+# include "CGuestProcessStateChangedEvent.h"
+# include "CGuestSessionStateChangedEvent.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 QString sessionStatusString(KGuestSessionStatus status)
@@ -249,8 +251,16 @@ void UIGuestSessionTreeItem::initProcessSubTree()
         addGuestProcess(processes[i]);
 }
 
-void UIGuestSessionTreeItem::sltGuestSessionUpdated()
+void UIGuestSessionTreeItem::sltGuestSessionUpdated(const CGuestSessionStateChangedEvent& cEvent)
 {
+    if (cEvent.isOk() && m_comGuestSession.isOk() && m_comGuestSession.GetStatus() == KGuestSessionStatus_Error)
+    {
+        CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
+        if (cErrorInfo.isOk() && cErrorInfo.GetResultCode() != S_OK)
+        {
+            emit sigGuestSessionErrorText(cErrorInfo.GetText());
+        }
+    }
     setColumnText();
     emit sigGuessSessionUpdated();
 }
@@ -270,7 +280,14 @@ void UIGuestSessionTreeItem::addGuestProcess(CGuestProcess guestProcess)
         << QString("Process Name: %1").arg(guestProcess.GetName())
         << QString("Process Status: %1").arg(processStatusString(guestProcess.GetStatus()));
 
-    /*UIGuestProcessTreeItem *newItem = */new UIGuestProcessTreeItem(this, guestProcess, strList);
+    UIGuestProcessTreeItem *newItem = new UIGuestProcessTreeItem(this, guestProcess, strList);
+    connect(newItem, &UIGuestProcessTreeItem::sigGuestProcessErrorText,
+            this, &UIGuestSessionTreeItem::sigGuestSessionErrorText);
+}
+
+void UIGuestSessionTreeItem::errorString(QString strError)
+{
+    emit sigGuestSessionErrorText(strError);
 }
 
 void UIGuestSessionTreeItem::sltGuestProcessUnregistered(CGuestProcess guestProcess)
@@ -341,8 +358,23 @@ void UIGuestProcessTreeItem::cleanupListener()
     UIGuestControlTreeItem::cleanupListener(m_comGuestProcess.GetEventSource());
 }
 
-void UIGuestProcessTreeItem::sltGuestProcessUpdated()
+void UIGuestProcessTreeItem::sltGuestProcessUpdated(const CGuestProcessStateChangedEvent &cEvent)
 {
+    if (cEvent.isOk() && m_comGuestProcess.isOk() && m_comGuestProcess.GetStatus() == KProcessStatus_Error)
+    {
+        CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
+        if (cErrorInfo.isOk() && cErrorInfo.GetResultCode() != S_OK)
+        {
+            /* For some reason I am yet to find this emit is not working.
+               Thus we are calling the parent's function directly: */
+            //emit sigGuestProcessErrorText(cErrorInfo.GetText());
+            UIGuestSessionTreeItem *sessionParent = dynamic_cast<UIGuestSessionTreeItem*>(QTreeWidgetItem::parent());
+            if (sessionParent)
+            {
+                sessionParent->errorString(cErrorInfo.GetText().toStdString().c_str());
+            }
+        }
+    }
     setColumnText();
 }
 

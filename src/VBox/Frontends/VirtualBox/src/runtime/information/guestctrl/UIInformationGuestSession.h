@@ -56,6 +56,7 @@ private slots:
 
     void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltGuestSessionUnregistered(CGuestSession guestSession);
+    void sltGuestControlErrorText(QString strError);
 
     void sltTreeItemUpdated();
     void sltCloseSessionOrProcess();

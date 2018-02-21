@@ -377,6 +377,16 @@ void UIInformationGuestSession::addGuestSession(CGuestSession guestSession)
     UIGuestSessionTreeItem* sessionTreeItem = new UIGuestSessionTreeItem(m_pTreeWidget, guestSession);
     connect(sessionTreeItem, &UIGuestSessionTreeItem::sigGuessSessionUpdated,
             this, &UIInformationGuestSession::sltTreeItemUpdated);
+    connect(sessionTreeItem, &UIGuestSessionTreeItem::sigGuestSessionErrorText,
+            this, &UIInformationGuestSession::sltGuestControlErrorText);
+}
+
+void UIInformationGuestSession::sltGuestControlErrorText(QString strError)
+{
+    if (m_pConsole)
+    {
+        m_pConsole->putOutput(strError);
+    }
 }
 
 void UIInformationGuestSession::sltTreeItemUpdated()
