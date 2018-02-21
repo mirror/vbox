@@ -1659,7 +1659,7 @@ int UIMachineView::dragCheckPending(void)
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
     else if (!m_fIsDraggingFromGuest)
     {
-        // @todo Add guest->guest DnD functionality here by getting
+        /// @todo Add guest->guest DnD functionality here by getting
         //       the source of guest B (when copying from B to A).
         rc = m_pDnDHandler->dragCheckPending(screenId());
         if (RT_SUCCESS(rc))
@@ -1686,7 +1686,7 @@ int UIMachineView::dragStart(void)
         rc = VERR_WRONG_ORDER;
     else
     {
-        // @todo Add guest->guest DnD functionality here by getting
+        /// @todo Add guest->guest DnD functionality here by getting
         //       the source of guest B (when copying from B to A).
         rc = m_pDnDHandler->dragStart(screenId());
 
