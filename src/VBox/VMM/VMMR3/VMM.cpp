@@ -2494,12 +2494,12 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
  * Wrapper for SUPR3CallVMMR0Ex which will deal with VINF_VMM_CALL_HOST returns.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context VM structure.
- * @param   uOperation  Operation to execute.
- * @param   u64Arg      Constant argument.
- * @param   pReqHdr     Pointer to a request header. See SUPR3CallVMMR0Ex for
- *                      details.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context VM structure.
+ * @param   enmOperation    Operation to execute.
+ * @param   u64Arg          Constant argument.
+ * @param   pReqHdr         Pointer to a request header. See SUPR3CallVMMR0Ex for
+ *                          details.
  */
 VMMR3_INT_DECL(int) VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
 {
