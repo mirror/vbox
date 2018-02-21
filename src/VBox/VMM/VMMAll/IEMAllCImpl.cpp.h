@@ -4709,6 +4709,12 @@ IEM_CIMPL_DEF_2(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
      * Note! No CPL or V8086 checks here, it's a really sad story, ask Intel if
      *       you really must know.
      */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_READS))
+    {
+        Log(("sgdt: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_GDTR_READ, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pVCpu, pCtx->gdtr.cbGdt, pCtx->gdtr.pGdt, iEffSeg, GCPtrEffDst);
     if (rcStrict == VINF_SUCCESS)
@@ -4780,6 +4786,12 @@ IEM_CIMPL_DEF_2(iemCImpl_sidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
      * Note! No CPL or V8086 checks here, it's a really sad story, ask Intel if
      *       you really must know.
      */
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_READS))
+    {
+        Log(("sidt: Guest intercept -> #VMEXIT\n"));
+        IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_IDTR_READ, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pVCpu, pCtx->idtr.cbIdt, pCtx->idtr.pIdt, iEffSeg, GCPtrEffDst);
     if (rcStrict == VINF_SUCCESS)
