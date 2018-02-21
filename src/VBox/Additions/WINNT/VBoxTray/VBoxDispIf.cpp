@@ -1507,12 +1507,11 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     }
 
     vboxDispIfTargetConnectivityWDDM(&Op, iChangedMode, fEnable? 1: 0);
+    
+    /* Whether the current display is already or should be enabled. */
+    BOOL fChangedEnable = fEnable || RT_BOOL(paDisplayDevices[iChangedMode].StateFlags & DISPLAY_DEVICE_ACTIVE);
 
-    /* Resize displays always to keep the display layout because
-     * "the D3DKMTInvalidateActiveVidPn function always resets a multimonitor desktop to the default configuration".
-     */
-
-    if (fEnable || RT_BOOL(paDisplayDevices[iChangedMode].StateFlags & DISPLAY_DEVICE_ACTIVE))
+    if (fCurrentEnable)
     {
         RTRECTSIZE Size;
 
@@ -1521,30 +1520,15 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
 
         LogFunc(("Calling vboxDispIfUpdateModesWDDM to change target %d mode to (%d x %d)\n", iChangedMode, Size.cx, Size.cy));
         winEr = vboxDispIfUpdateModesWDDM(&Op, iChangedMode, &Size);
-
-        if (winEr != NO_ERROR)
-            WARN(("vboxDispIfUpdateModesWDDM failed %d\n", winEr));
     }
 
-    for (uint32_t i = 0; i < cDevModes; ++i)
+    winEr = vboxDispIfResizePerform(pIf, iChangedMode, fChangedEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+
+    if (winEr == ERROR_RETRY)
     {
+        VBoxRrRetrySchedule(pIf, iChangedMode, fChangedEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+
         winEr = NO_ERROR;
-
-        /* Whether the current display should be enabled. */
-        BOOL fCurrentEnable = i == iChangedMode?
-                                 fEnable:
-                                 RT_BOOL(paDisplayDevices[i].StateFlags & DISPLAY_DEVICE_ACTIVE);
-
-        winEr = vboxDispIfResizePerform(pIf, i, fCurrentEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
-
-        LogFunc(("vboxDispIfResizePerform returned %d\n", winEr));
-
-        if (winEr == ERROR_RETRY)
-        {
-            VBoxRrRetrySchedule(pIf, i, fCurrentEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
-
-            winEr = NO_ERROR;
-        }
     }
 
     vboxDispIfOpEnd(&Op);
