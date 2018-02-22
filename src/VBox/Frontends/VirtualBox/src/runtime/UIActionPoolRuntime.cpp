@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 # include "UIActionPoolRuntime.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIMultiScreenLayout.h"
 # include "UIExtraDataManager.h"
 # include "UIShortcutPool.h"
@@ -2799,39 +2800,68 @@ void UIActionPoolRuntime::updateMenuViewScaleFactor()
     /* Clear contents: */
     pMenu->clear();
 
-    /* Get corresponding scale-factor: */
-    const double dCurrentScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-
-    /* Prepare new contents: */
-    const QList<double> factors = QList<double>()
-                                  << 1.0
-                                  << 1.1
-                                  << 1.25
-                                  << 1.5
-                                  << 1.75
-                                  << 2.0;
-
     /* Create exclusive 'scale-factor' action-group: */
     QActionGroup *pActionGroup = new QActionGroup(pMenu);
     AssertPtrReturnVoid(pActionGroup);
     {
         /* Configure exclusive 'scale-factor' action-group: */
         pActionGroup->setExclusive(true);
-        /* For every available scale-factor: */
-        foreach (const double &dScaleFactor, factors)
+
+        /* Get current scale-factor: */
+        const double dCurrentScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+
+        /* Get device-pixel-ratio: */
+        bool fDevicePixelRatioMentioned = false;
+        const double dDevicePixelRatioActual = qMin(gpDesktop->devicePixelRatioActual(),
+                                                    10.0 /* meh, who knows? */);
+
+        /* Calculate minimum, maximum and step: */
+        const double dMinimum = 1.0;
+        const double dMaximum = ceil(dMinimum + dDevicePixelRatioActual);
+        const double dStep = 0.25;
+
+        /* Now, iterate possible scale-factors: */
+        double dScaleFactor = dMinimum;
+        do
         {
             /* Create exclusive 'scale-factor' action: */
-            QAction *pAction = pActionGroup->addAction(QApplication::translate("UIActionPool", "%1%", "scale-factor")
-                                                                               .arg(dScaleFactor * 100));
+            QAction *pAction = pActionGroup->addAction(QString());
             AssertPtrReturnVoid(pAction);
             {
+                /* For the 'unscaled' action: */
+                if (dScaleFactor == 1.0)
+                {
+                    pAction->setProperty("Requested Scale Factor", dScaleFactor);
+                    pAction->setText(QApplication::translate("UIActionPool", "Scale to %1% (unscaled output)", "scale-factor")
+                                     .arg(dScaleFactor * 100));
+                }
+                /* For the 'autoscaled' action: */
+                else if ((dScaleFactor >= dDevicePixelRatioActual) && !fDevicePixelRatioMentioned)
+                {
+                    pAction->setProperty("Requested Scale Factor", dDevicePixelRatioActual);
+                    pAction->setText(QApplication::translate("UIActionPool", "Scale to %1% (autoscaled output)", "scale-factor")
+                                     .arg(dDevicePixelRatioActual * 100));
+                    fDevicePixelRatioMentioned = true;
+                }
+                /* For other actions: */
+                else
+                {
+                    pAction->setProperty("Requested Scale Factor", dScaleFactor);
+                    pAction->setText(QApplication::translate("UIActionPool", "Scale to %1%", "scale-factor")
+                                     .arg(dScaleFactor * 100));
+                }
+
                 /* Configure exclusive 'scale-factor' action: */
-                pAction->setProperty("Requested Scale Factor", dScaleFactor);
                 pAction->setCheckable(true);
                 if (dScaleFactor == dCurrentScaleFactor)
                     pAction->setChecked(true);
             }
+
+            /* Increment scale-factor: */
+            dScaleFactor += dStep;
         }
+        while (dScaleFactor <= dMaximum);
+
         /* Insert group actions into menu: */
         pMenu->addActions(pActionGroup->actions());
         /* Install listener for exclusive action-group: */

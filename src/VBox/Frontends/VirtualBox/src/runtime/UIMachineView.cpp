@@ -246,15 +246,18 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
 
 void UIMachineView::applyMachineViewScaleFactor()
 {
-    /* Take the scale-factor related attributes into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-#ifdef VBOX_WS_MAC
-    const bool fUseUnscaledHiDPIOutput = false;
-#else
-    const bool fUseUnscaledHiDPIOutput = true;
-#endif
+    /* Acquire selected scale-factor: */
+    double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+
+    /* Take the device-pixel-ratio into account: */
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+    const bool fUseUnscaledHiDPIOutput = dScaleFactor != dDevicePixelRatioActual;
+    dScaleFactor = fUseUnscaledHiDPIOutput ? dScaleFactor : 1.0;
+
+    /* Assign frame-buffer with new values: */
     frameBuffer()->setScaleFactor(dScaleFactor);
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+
     /* Propagate the scale-factor related attributes to 3D service if necessary: */
     if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
     {
@@ -503,16 +506,19 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     if (strMachineID != vboxGlobal().managedVMUuid())
         return;
 
-    /* Take the scale-factor into account: */
-    const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-#ifdef VBOX_WS_MAC
-    const bool fUseUnscaledHiDPIOutput = false;
-#else
-    const bool fUseUnscaledHiDPIOutput = true;
-#endif
-    Q_UNUSED(fUseUnscaledHiDPIOutput);
+    /* Acquire selected scale-factor: */
+    double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+
+    /* Take the device-pixel-ratio into account: */
+    const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
+    const bool fUseUnscaledHiDPIOutput = dScaleFactor != dDevicePixelRatioActual;
+    dScaleFactor = fUseUnscaledHiDPIOutput ? dScaleFactor : 1.0;
+
+    /* Assign frame-buffer with new values: */
     frameBuffer()->setScaleFactor(dScaleFactor);
-    /* Propagate the scale-factor to 3D service if necessary: */
+    frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+
+    /* Propagate the scale-factor related attributes to 3D service if necessary: */
     if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
     {
         double dScaleFactorFor3D = dScaleFactor;
@@ -694,19 +700,21 @@ void UIMachineView::prepareFrameBuffer()
         /* Take scaling optimization type into account: */
         m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
 
-        /* Take the scale-factor related attributes into account: */
+        /* Acquire selected scale-factor: */
+        double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+
+        /* Take the device-pixel-ratio into account: */
         const double dDevicePixelRatioFormal = gpDesktop->devicePixelRatio(machineWindow());
         const double dDevicePixelRatioActual = gpDesktop->devicePixelRatioActual(machineWindow());
-        const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-#ifdef VBOX_WS_MAC
-        const bool fUseUnscaledHiDPIOutput = false;
-#else
-        const bool fUseUnscaledHiDPIOutput = true;
-#endif
+        const bool fUseUnscaledHiDPIOutput = dScaleFactor != dDevicePixelRatioActual;
+        dScaleFactor = fUseUnscaledHiDPIOutput ? dScaleFactor : 1.0;
+
+        /* Assign frame-buffer with new values: */
         m_pFrameBuffer->setDevicePixelRatio(dDevicePixelRatioFormal);
         m_pFrameBuffer->setDevicePixelRatioActual(dDevicePixelRatioActual);
         m_pFrameBuffer->setScaleFactor(dScaleFactor);
         m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+
         /* Propagate the scale-factor related attributes to 3D service if necessary: */
         if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
         {
