@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIInformationGuestSession class implementation.
+ * VBox Qt GUI - UIGuestControlWidget class implementation.
  */
 
 /*
@@ -31,7 +31,7 @@
 # include "UIGuestControlConsole.h"
 # include "UIGuestControlInterface.h"
 # include "UIGuestControlTreeItem.h"
-# include "UIInformationGuestSession.h"
+# include "UIGuestControlWidget.h"
 # include "UIVMInformationDialog.h"
 # include "VBoxGlobal.h"
 
@@ -163,7 +163,7 @@ private slots:
 
 };
 
-UIInformationGuestSession::UIInformationGuestSession(QWidget *pParent, const CGuest &comGuest)
+UIGuestControlWidget::UIGuestControlWidget(QWidget *pParent, const CGuest &comGuest)
     : QWidget(pParent)
     , m_comGuest(comGuest)
     , m_pMainLayout(0)
@@ -179,7 +179,7 @@ UIInformationGuestSession::UIInformationGuestSession(QWidget *pParent, const CGu
     initGuestSessionTree();
 }
 
-void UIInformationGuestSession::prepareObjects()
+void UIGuestControlWidget::prepareObjects()
 {
     m_pControlInterface = new UIGuestControlInterface(this, m_comGuest);
 
@@ -225,7 +225,7 @@ void UIInformationGuestSession::prepareObjects()
     updateTreeWidget();
 }
 
-void UIInformationGuestSession::updateTreeWidget()
+void UIGuestControlWidget::updateTreeWidget()
 {
     if (!m_pTreeWidget)
         return;
@@ -235,33 +235,33 @@ void UIInformationGuestSession::updateTreeWidget()
     update();
 }
 
-void UIInformationGuestSession::prepareConnections()
+void UIGuestControlWidget::prepareConnections()
 {
     qRegisterMetaType<QVector<int> >();
     connect(m_pControlInterface, &UIGuestControlInterface::sigOutputString,
-            this, &UIInformationGuestSession::sltConsoleOutputReceived);
+            this, &UIGuestControlWidget::sltConsoleOutputReceived);
     connect(m_pConsole, &UIGuestControlConsole::commandEntered,
-            this, &UIInformationGuestSession::sltConsoleCommandEntered);
+            this, &UIGuestControlWidget::sltConsoleCommandEntered);
 
     if (m_pTreeWidget)
         connect(m_pTreeWidget, &UIGuestControlTreeWidget::sigCloseSessionOrProcess,
-                this, &UIInformationGuestSession::sltCloseSessionOrProcess);
+                this, &UIGuestControlWidget::sltCloseSessionOrProcess);
 
     if (m_pQtListener)
     {
         connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionRegistered,
-                this, &UIInformationGuestSession::sltGuestSessionRegistered, Qt::DirectConnection);
+                this, &UIGuestControlWidget::sltGuestSessionRegistered, Qt::DirectConnection);
         connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
-                this, &UIInformationGuestSession::sltGuestSessionUnregistered, Qt::DirectConnection);
+                this, &UIGuestControlWidget::sltGuestSessionUnregistered, Qt::DirectConnection);
     }
 }
 
-void UIInformationGuestSession::sltGuestSessionsUpdated()
+void UIGuestControlWidget::sltGuestSessionsUpdated()
 {
     updateTreeWidget();
 }
 
-void UIInformationGuestSession::sltConsoleCommandEntered(const QString &strCommand)
+void UIGuestControlWidget::sltConsoleCommandEntered(const QString &strCommand)
 {
     if (m_pControlInterface)
     {
@@ -269,7 +269,7 @@ void UIInformationGuestSession::sltConsoleCommandEntered(const QString &strComma
     }
 }
 
-void UIInformationGuestSession::sltConsoleOutputReceived(const QString &strOutput)
+void UIGuestControlWidget::sltConsoleOutputReceived(const QString &strOutput)
 {
     if (m_pConsole)
     {
@@ -277,7 +277,7 @@ void UIInformationGuestSession::sltConsoleOutputReceived(const QString &strOutpu
     }
 }
 
-void UIInformationGuestSession::sltCloseSessionOrProcess()
+void UIGuestControlWidget::sltCloseSessionOrProcess()
 {
     if (!m_pTreeWidget)
         return;
@@ -306,7 +306,7 @@ void UIInformationGuestSession::sltCloseSessionOrProcess()
     guestSession.Close();
 }
 
-void UIInformationGuestSession::prepareListener()
+void UIGuestControlWidget::prepareListener()
 {
     /* Create event listener instance: */
     m_pQtListener.createObject();
@@ -335,7 +335,7 @@ void UIInformationGuestSession::prepareListener()
     }
 }
 
-void UIInformationGuestSession::initGuestSessionTree()
+void UIGuestControlWidget::initGuestSessionTree()
 {
     if (!m_comGuest.isOk())
         return;
@@ -347,7 +347,7 @@ void UIInformationGuestSession::initGuestSessionTree()
     }
 }
 
-void UIInformationGuestSession::cleanupListener()
+void UIGuestControlWidget::cleanupListener()
 {
     /* If event listener registered as passive one: */
     if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
@@ -369,23 +369,23 @@ void UIInformationGuestSession::cleanupListener()
 }
 
 
-void UIInformationGuestSession::sltGuestSessionRegistered(CGuestSession guestSession)
+void UIGuestControlWidget::sltGuestSessionRegistered(CGuestSession guestSession)
 {
     if (!guestSession.isOk())
         return;
     addGuestSession(guestSession);
 }
 
-void UIInformationGuestSession::addGuestSession(CGuestSession guestSession)
+void UIGuestControlWidget::addGuestSession(CGuestSession guestSession)
 {
     UIGuestSessionTreeItem* sessionTreeItem = new UIGuestSessionTreeItem(m_pTreeWidget, guestSession);
     connect(sessionTreeItem, &UIGuestSessionTreeItem::sigGuessSessionUpdated,
-            this, &UIInformationGuestSession::sltTreeItemUpdated);
+            this, &UIGuestControlWidget::sltTreeItemUpdated);
     connect(sessionTreeItem, &UIGuestSessionTreeItem::sigGuestSessionErrorText,
-            this, &UIInformationGuestSession::sltGuestControlErrorText);
+            this, &UIGuestControlWidget::sltGuestControlErrorText);
 }
 
-void UIInformationGuestSession::sltGuestControlErrorText(QString strError)
+void UIGuestControlWidget::sltGuestControlErrorText(QString strError)
 {
     if (m_pConsole)
     {
@@ -393,13 +393,13 @@ void UIInformationGuestSession::sltGuestControlErrorText(QString strError)
     }
 }
 
-void UIInformationGuestSession::sltTreeItemUpdated()
+void UIGuestControlWidget::sltTreeItemUpdated()
 {
     if (m_pTreeWidget)
         m_pTreeWidget->update();
 }
 
-void UIInformationGuestSession::sltGuestSessionUnregistered(CGuestSession guestSession)
+void UIGuestControlWidget::sltGuestSessionUnregistered(CGuestSession guestSession)
 {
     if (!guestSession.isOk())
         return;
@@ -423,4 +423,4 @@ void UIInformationGuestSession::sltGuestSessionUnregistered(CGuestSession guestS
     delete selectedItem;
 }
 
-#include "UIInformationGuestSession.moc"
+#include "UIGuestControlWidget.moc"

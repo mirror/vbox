@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIInformationGuestSession class declaration.
+ * VBox Qt GUI - UIGuestControlWidget class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIInformationGuestSession_h___
-#define ___UIInformationGuestSession_h___
+#ifndef ___UIGuestControlWidget_h___
+#define ___UIGuestControlWidget_h___
 
 /* Qt includes: */
 #include <QWidget>
@@ -40,13 +40,13 @@ class UIGuestControlTreeWidget;
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
-class UIInformationGuestSession : public QWidget
+class UIGuestControlWidget : public QWidget
 {
     Q_OBJECT;
 
 public:
 
-    UIInformationGuestSession(QWidget *pParent, const CGuest &comGuest);
+    UIGuestControlWidget(QWidget *pParent, const CGuest &comGuest);
 
 private slots:
 
@@ -84,4 +84,4 @@ private:
     CEventListener m_comEventListener;
 };
 
-#endif /* !___UIInformationGuestSession_h___ */
+#endif /* !___UIGuestControlWidget_h___ */
