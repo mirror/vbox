@@ -37,6 +37,7 @@
 # include "VBoxGlobal.h"
 # include "VBoxUtils.h"
 # include "UIInformationConfiguration.h"
+# include "UIGuestControlFileManager.h"
 # include "UIGuestControlWidget.h"
 # include "UIInformationRuntime.h"
 # include "UIMachine.h"
@@ -118,6 +119,7 @@ void UIVMInformationDialog::retranslateUi()
     m_pTabWidget->setTabText(0, tr("Configuration &Details"));
     m_pTabWidget->setTabText(1, tr("&Runtime Information"));
     m_pTabWidget->setTabText(2, tr("&Guest Session"));
+    m_pTabWidget->setTabText(3, tr("&Guest File Manager"));
 }
 
 bool UIVMInformationDialog::event(QEvent *pEvent)
@@ -252,6 +254,18 @@ void UIVMInformationDialog::prepareTabWidget()
                 m_pTabWidget->addTab(m_tabs.value(2), QString());
             }
         }
+        if(m_pMachineWindow->console().isOk())
+        {
+            UIGuestControlFileManager *pGuestControlFileManager =
+                new  UIGuestControlFileManager(this, m_pMachineWindow->console().GetGuest());
+            if (pGuestControlFileManager)
+            {
+                m_tabs.insert(3, pGuestControlFileManager);
+                m_pTabWidget->addTab(m_tabs.value(3), QString());
+            }
+        }
+
+
         /* Set Runtime Information tab as default: */
         m_pTabWidget->setCurrentIndex(1);
 
