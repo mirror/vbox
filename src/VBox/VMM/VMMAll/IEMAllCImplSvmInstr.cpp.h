@@ -911,7 +911,6 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstHandleCtrlIntercept(PVMCPU pVCpu, PCPUMCTX
  * @param   iEffSeg         The effective segment number.
  * @param   fRep            Whether this is a repeating IO instruction (REP prefix).
  * @param   fStrIo          Whether this is a string IO instruction.
- * @param   cbInstr         The length of the IO instruction in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr,
                                                    uint64_t uCr2)
