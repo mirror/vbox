@@ -1479,6 +1479,21 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
         return RT_BOOL(pVmcb->ctrl.u32InterceptXcpt & (UINT32_C(1) << uVector));
     return HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, uVector);
 }
+
+/**
+ * Updates the NextRIP (NRIP) field in the nested-guest VMCB.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   cbInstr     The length of the current instruction in bytes.
+ */
+DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cbInstr)
+{
+    RT_NOREF(pVCpu);
+    PSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    Assert(pVmcb);
+    pVmcb->ctrl.u64NextRIP = pCtx->rip + cbInstr;
+}
 #endif /* !IN_RC */
 
 /**
