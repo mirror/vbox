@@ -346,7 +346,11 @@ DECLEXPORT(EGLBoolean) eglChooseConfig (EGLDisplay hDisplay, const EGLint *paAtt
         /* Ignore attributes which are repeated later. */
         for (pAttrib2 = pAttrib + 2; *pAttrib2 != EGL_NONE; pAttrib2 += 2)
             if (*pAttrib2 == *pAttrib)
-                fSkip == true;
+            {
+                fSkip = true;
+                break;
+            }
+
         if (fSkip)
             continue;
         cGLXAttrib = convertEGLAttribToGLX(*pAttrib);
