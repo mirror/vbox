@@ -420,9 +420,14 @@ double UIDesktopWidgetWatchdog::devicePixelRatio(QWidget *pWidget)
 double UIDesktopWidgetWatchdog::devicePixelRatioActual(int iHostScreenIndex /* = -1 */)
 {
     /* First, we should check whether the screen is valid: */
-    QScreen *pScreen = iHostScreenIndex == -1
-                     ? QGuiApplication::primaryScreen()
-                     : QGuiApplication::screens().value(iHostScreenIndex);
+    QScreen *pScreen = 0;
+    if (iHostScreenIndex == -1)
+    {
+        pScreen = QGuiApplication::primaryScreen();
+        iHostScreenIndex = QGuiApplication::screens().indexOf(pScreen);
+    }
+    else
+        pScreen = QGuiApplication::screens().value(iHostScreenIndex);
     AssertPtrReturn(pScreen, 1.0);
 
 #ifdef VBOX_WS_WIN
