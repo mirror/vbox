@@ -2835,11 +2835,17 @@ void UIActionPoolRuntime::updateMenuViewScaleFactor()
                 if (dScaleFactor == 1.0)
                 {
                     pAction->setProperty("Requested Scale Factor", dScaleFactor);
-                    pAction->setText(QApplication::translate("UIActionPool", "Scale to %1% (unscaled output)", "scale-factor")
-                                     .arg(dScaleFactor * 100));
+                    if (dDevicePixelRatioActual == 1.0)
+                        pAction->setText(QApplication::translate("UIActionPool", "Scale to %1%", "scale-factor")
+                                         .arg(dScaleFactor * 100));
+                    else
+                        pAction->setText(QApplication::translate("UIActionPool", "Scale to %1% (unscaled output)", "scale-factor")
+                                         .arg(dScaleFactor * 100));
                 }
                 /* For the 'autoscaled' action: */
-                else if ((dScaleFactor >= dDevicePixelRatioActual) && !fDevicePixelRatioMentioned)
+                else if (   (dScaleFactor >= dDevicePixelRatioActual)
+                         && (dDevicePixelRatioActual != 1.0)
+                         && !fDevicePixelRatioMentioned)
                 {
                     pAction->setProperty("Requested Scale Factor", dDevicePixelRatioActual);
                     pAction->setText(QApplication::translate("UIActionPool", "Scale to %1% (autoscaled output)", "scale-factor")
