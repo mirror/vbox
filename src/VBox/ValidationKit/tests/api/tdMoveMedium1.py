@@ -159,7 +159,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             #The case supposes that user has passed a destination path with a file name but hasn't added an extension/suffix
             #to this destination file. User supposes that the extension would be added automatically and to be the same as
             #for the original file. Difficult case, apparently this case should follow mv(1) logic
-            #and the file name is processed as folder name (aka mv(1) logic). 
+            #and the file name is processed as folder name (aka mv(1) logic).
             #Be discussed.
             fRc = self.setLocation(os.path.join(sNewLoc, 'newName'), aoMediumAttachments) and fRc
             asNewFiles = ['newName' + os.path.splitext(s)[1] for s in asFiles]
