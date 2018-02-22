@@ -274,13 +274,7 @@ void UIGuestSessionTreeItem::sltGuestProcessRegistered(CGuestProcess guestProces
 
 void UIGuestSessionTreeItem::addGuestProcess(CGuestProcess guestProcess)
 {
-    QStringList strList;
-    strList
-        << QString("PID: %1").arg(guestProcess.GetPID())
-        << QString("Process Name: %1").arg(guestProcess.GetName())
-        << QString("Process Status: %1").arg(processStatusString(guestProcess.GetStatus()));
-
-    UIGuestProcessTreeItem *newItem = new UIGuestProcessTreeItem(this, guestProcess, strList);
+    UIGuestProcessTreeItem *newItem = new UIGuestProcessTreeItem(this, guestProcess);
     connect(newItem, &UIGuestProcessTreeItem::sigGuestProcessErrorText,
             this, &UIGuestSessionTreeItem::sigGuestSessionErrorText);
 }

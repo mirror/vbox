@@ -129,8 +129,8 @@ UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &
                 "                                   [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
                 "                                   [--ignore-operhaned-processes] [--profile]\n"
                 "                                   -- <program/arg0> [argument1] ... [argumentN]]\n"
-                "createsession                      [common-options]  [--sessionname <name>]\n"
-                "mkdir                           [common-options]\n"
+                "createsession                  [common-options]  [--sessionname <name>]\n"
+                "mkdir                            [common-options]\n"
                 "                                   [-P|--parents] [<guest directory>\n"
                 "                                   [--sessionid <id> |  [sessionname <name>]]\n"
                 )

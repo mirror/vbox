@@ -207,6 +207,10 @@ void UIInformationGuestSession::prepareObjects()
     {
         m_pSplitter->addWidget(m_pTreeWidget);
         m_pTreeWidget->setColumnCount(3);
+        QStringList labels;
+        labels << "" << "" << "";
+
+        m_pTreeWidget->setHeaderLabels(labels);
     }
     m_pConsole = new UIGuestControlConsole;
     if (m_pConsole)
