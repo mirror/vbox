@@ -4460,7 +4460,7 @@ FNIEMOP_DEF(iemOp_nop)
         Assert(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilter);
         Assert(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilterThreshold);
 #endif
-        IEMOP_HLP_SVM_CTRL_INTERCEPT(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
+        IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
     }
     else
         IEMOP_MNEMONIC(nop, "nop");

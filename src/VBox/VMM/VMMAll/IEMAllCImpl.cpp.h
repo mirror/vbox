@@ -564,6 +564,7 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_PUSHF))
     {
         Log2(("pushf: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_PUSHF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -631,6 +632,7 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_POPF))
     {
         Log2(("popf: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_POPF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -3878,6 +3880,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IRET))
     {
         Log(("iret: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_IRET, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -4661,6 +4664,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_WRITES))
     {
         Log(("lgdt: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_GDTR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -4712,6 +4716,7 @@ IEM_CIMPL_DEF_2(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_READS))
     {
         Log(("sgdt: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_GDTR_READ, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -4739,6 +4744,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_WRITES))
     {
         Log(("lidt: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_IDTR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -4789,6 +4795,7 @@ IEM_CIMPL_DEF_2(iemCImpl_sidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_READS))
     {
         Log(("sidt: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_IDTR_READ, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -4837,6 +4844,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
         if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_LDTR_WRITES))
         {
             Log(("lldt: Guest intercept -> #VMEXIT\n"));
+            IEM_SVM_UPDATE_NRIP(pVCpu);
             IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_LDTR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
 
@@ -4918,6 +4926,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_LDTR_WRITES))
     {
         Log(("lldt: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_LDTR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -4975,6 +4984,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_TR_WRITES))
     {
         Log(("ltr: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_TR_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -5082,6 +5092,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     if (IEM_IS_SVM_READ_CR_INTERCEPT_SET(pVCpu, iCrReg))
     {
         Log(("iemCImpl_mov_Rd_Cd: Guest intercept CR%u -> #VMEXIT\n", iCrReg));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_READ_CR0 + iCrReg, IEMACCESSCRX_MOV_CRX, iGReg);
     }
 
@@ -5232,6 +5243,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, iCrReg))
             {
                 Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                IEM_SVM_UPDATE_NRIP(pVCpu);
                 IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR0, enmAccessCrX, iGReg);
             }
             if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CR0_SEL_WRITES))
@@ -5242,6 +5254,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 {
                     Assert(enmAccessCrX != IEMACCESSCRX_CLTS);
                     Log(("iemCImpl_load_Cr%#x: TS/MP bit changed or lmsw instr: Guest intercept -> #VMEXIT\n", iCrReg));
+                    IEM_SVM_UPDATE_NRIP(pVCpu);
                     IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_CR0_SEL_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
                 }
             }
@@ -5309,6 +5322,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 2))
             {
                 Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                IEM_SVM_UPDATE_NRIP(pVCpu);
                 IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR2, enmAccessCrX, iGReg);
             }
             pCtx->cr2 = uNewCrX;
@@ -5361,6 +5375,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 3))
             {
                 Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                IEM_SVM_UPDATE_NRIP(pVCpu);
                 IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR3, enmAccessCrX, iGReg);
             }
 
@@ -5446,6 +5461,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 4))
             {
                 Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                IEM_SVM_UPDATE_NRIP(pVCpu);
                 IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR4, enmAccessCrX, iGReg);
             }
 
@@ -5508,6 +5524,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 8))
                 {
                     Log(("iemCImpl_load_Cr%#x: Guest intercept -> #VMEXIT\n", iCrReg));
+                    IEM_SVM_UPDATE_NRIP(pVCpu);
                     IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR8, enmAccessCrX, iGReg);
                 }
 
@@ -5672,6 +5689,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
     if (IEM_IS_SVM_READ_DR_INTERCEPT_SET(pVCpu, iDrReg))
     {
         Log(("mov r%u,dr%u: Guest intercept -> #VMEXIT\n", iGReg, iDrReg));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_READ_DR0 + (iDrReg & 0xf),
                               IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssists ? (iGReg & 7) : 0, 0 /* uExitInfo2 */);
     }
@@ -5773,6 +5791,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
     if (IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(pVCpu, iDrReg))
     {
         Log2(("mov dr%u,r%u: Guest intercept -> #VMEXIT\n", iDrReg, iGReg));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_WRITE_DR0 + (iDrReg & 0xf),
                               IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssists ? (iGReg & 7) : 0, 0 /* uExitInfo2 */);
     }
@@ -5809,6 +5828,7 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPG))
     {
         Log(("invlpg: Guest intercept (%RGp) -> #VMEXIT\n", GCPtrPage));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_INVLPG,
                               IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssists ? GCPtrPage : 0, 0 /* uExitInfo2 */);
     }
@@ -5953,6 +5973,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSC))
     {
         Log(("rdtsc: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_RDTSC, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -5997,6 +6018,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSCP))
     {
         Log(("rdtscp: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_RDTSCP, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -6038,6 +6060,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdpmc)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDPMC))
     {
         Log(("rdpmc: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_RDPMC, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -6482,6 +6505,7 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_HLT))
     {
         Log2(("hlt: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_HLT, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -6536,6 +6560,7 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MONITOR))
     {
         Log2(("monitor: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_MONITOR, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -6603,11 +6628,13 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
         && EMMonitorIsArmed(pVCpu))
     {
         Log2(("mwait: Guest intercept (monitor hardware armed) -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_MWAIT_ARMED, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MWAIT))
     {
         Log2(("mwait: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_MWAIT, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -6660,6 +6687,7 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CPUID))
     {
         Log2(("cpuid: Guest intercept -> #VMEXIT\n"));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_CPUID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
@@ -7013,6 +7041,7 @@ IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
         if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_XSETBV))
         {
             Log2(("xsetbv: Guest intercept -> #VMEXIT\n"));
+            IEM_SVM_UPDATE_NRIP(pVCpu);
             IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_XSETBV, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
 

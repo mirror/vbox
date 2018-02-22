@@ -411,6 +411,15 @@ typedef enum IEMXCPTCLASS
     } while (0)
 
 /**
+ * Updates the NextRIP (NRI) field in the nested-guest VMCB.
+ */
+# define IEM_SVM_UPDATE_NRIP(a_pVCpu) \
+    do { \
+        if (IEM_GET_GUEST_CPU_FEATURES(a_pVCpu)->fSvmNextRipSave) \
+            CPUMGuestSvmUpdateNRip(a_pVCpu, IEM_GET_CTX(a_pVCpu), IEM_GET_INSTR_LEN(a_pVCpu)); \
+    } while (0)
+
+/**
  * Check if an SVM is enabled.
  */
 # define IEM_IS_SVM_ENABLED(a_pVCpu)                         (CPUMIsGuestSvmEnabled(IEM_GET_CTX(a_pVCpu)))
@@ -472,6 +481,7 @@ typedef enum IEMXCPTCLASS
 
 #else
 # define IEM_SVM_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr)                                    do { } while (0)
+# define IEM_SVM_UPDATE_NRIP(a_pVCpu)                                                     do { } while (0)
 # define IEM_IS_SVM_ENABLED(a_pVCpu)                                                      (false)
 # define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)                              (false)
 # define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)                                 (false)
@@ -12838,12 +12848,16 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
-/** Check and handles SVM nested-guest control & instruction intercept. */
-# define IEMOP_HLP_SVM_CTRL_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+/** Check and handles SVM nested-guest instruction intercept and updates
+ *  NRIP if needed. */
+# define IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
     do \
     { \
         if (IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)) \
+        { \
+            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
             IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2); \
+        } \
     } while (0)
 
 /** Check and handle SVM nested-guest CR0 read intercept. */
@@ -12851,12 +12865,15 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     do \
     { \
         if (IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)) \
+        { \
+            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
             IEM_RETURN_SVM_VMEXIT(a_pVCpu, SVM_EXIT_READ_CR0 + (a_uCr), a_uExitInfo1, a_uExitInfo2); \
+        } \
     } while (0)
 
 #else  /* !VBOX_WITH_NESTED_HWVIRT */
-# define IEMOP_HLP_SVM_CTRL_INTERCEPT(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)    do { } while (0)
-# define IEMOP_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2)                    do { } while (0)
+# define IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)  do { } while (0)
+# define IEMOP_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2)                            do { } while (0)
 #endif /* !VBOX_WITH_NESTED_HWVIRT */
 
 
