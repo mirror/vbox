@@ -35,6 +35,9 @@
 # include "CExtPack.h"
 # include "CExtPackManager.h"
 
+/* External includes: */
+# include <math.h>
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
