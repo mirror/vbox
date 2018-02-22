@@ -1287,18 +1287,6 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                                                                    QString::number(uScaleFactorOld, 'f', 2)));
             }
 
-#ifdef VBOX_WS_MAC
-            /* Unscaled HiDPI Video Output? */
-            const QString strUnscaledOutput = unscaledOutputReport(comMachine);
-            const QString strUnscaledOutputOld = unscaledOutputReport(comMachineOld);
-            if (!strUnscaledOutput.isNull())
-            {
-                ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Unscaled HiDPI Video Output", "details (display)"),
-                                                         empReport(strUnscaledOutput, strUnscaledOutputOld));
-            }
-#endif /* VBOX_WS_MAC */
-
             /* Acceleration? */
             const QString strAcceleration = displayAccelerationReport(comMachine);
             const QString strAccelerationOld = displayAccelerationReport(comMachineOld);
@@ -1662,34 +1650,6 @@ double UISnapshotDetailsWidget::scaleFactorReport(CMachine comMachine)
     /* Return report: */
     return dReport;
 }
-
-#ifdef VBOX_WS_MAC
-/* static */
-QString UISnapshotDetailsWidget::unscaledOutputReport(CMachine comMachine)
-{
-    // WORKAROUND:
-    // IMachine::GetExtraData still non-const..
-    CMachine comExtraDataMachine = comMachine;
-    /* Prepare report: */
-    QString strReport;
-    /* Acquire Unscaled Output mode: */
-    const QString strValue = comExtraDataMachine.GetExtraData(UIExtraDataDefs::GUI_HiDPI_UnscaledOutput);
-    {
-        /* Try to convert loaded data to bool: */
-        const bool fEnabled  = strValue.compare("true", Qt::CaseInsensitive) == 0 ||
-                               strValue.compare("yes", Qt::CaseInsensitive) == 0 ||
-                               strValue.compare("on", Qt::CaseInsensitive) == 0 ||
-                               strValue == "1";
-        /* Append information: */
-        if (fEnabled)
-            strReport = QApplication::translate("UIGDetails", "Enabled", "details (display/Unscaled HiDPI Video Output)");
-        else
-            /* strReport = */ QApplication::translate("UIGDetails", "Disabled", "details (display/Unscaled HiDPI Video Output)");
-    }
-    /* Return report: */
-    return strReport;
-}
-#endif /* VBOX_WS_MAC */
 
 /* static */
 QString UISnapshotDetailsWidget::displayAccelerationReport(CMachine comMachine)

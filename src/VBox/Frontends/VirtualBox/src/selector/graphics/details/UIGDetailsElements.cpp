@@ -419,22 +419,6 @@ void UIGDetailsUpdateTaskDisplay::run()
                                          QString::number(dValue, 'f', 2));
         }
 
-#ifdef VBOX_WS_MAC
-        /* Get 'Unscaled HiDPI Video Output' mode value: */
-        const QString strUnscaledHiDPIMode = machine.GetExtraData(UIExtraDataDefs::GUI_HiDPI_UnscaledOutput);
-        {
-            /* Try to convert loaded data to bool: */
-            const bool fEnabled  = strUnscaledHiDPIMode.compare("true", Qt::CaseInsensitive) == 0 ||
-                                   strUnscaledHiDPIMode.compare("yes", Qt::CaseInsensitive) == 0 ||
-                                   strUnscaledHiDPIMode.compare("on", Qt::CaseInsensitive) == 0 ||
-                                   strUnscaledHiDPIMode == "1";
-            /* Append information: */
-            if (fEnabled)
-                table << UITextTableLine(QApplication::translate("UIGDetails", "Unscaled HiDPI Video Output", "details (display)"),
-                                         QApplication::translate("UIGDetails", "Enabled", "details (display/Unscaled HiDPI Video Output)"));
-        }
-#endif /* VBOX_WS_MAC */
-
         QStringList acceleration;
 #ifdef VBOX_WITH_VIDEOHWACCEL
         /* 2D acceleration: */

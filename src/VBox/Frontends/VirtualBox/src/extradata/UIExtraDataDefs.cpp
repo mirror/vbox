@@ -154,7 +154,6 @@ const char* UIExtraDataDefs::GUI_Accelerate2D_PixformatUYVY = "GUI/Accelerate2D/
 const char* UIExtraDataDefs::GUI_Accelerate2D_PixformatYUY2 = "GUI/Accelerate2D/PixformatYUY2";
 const char* UIExtraDataDefs::GUI_Accelerate2D_PixformatAYUV = "GUI/Accelerate2D/PixformatAYUV";
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-const char* UIExtraDataDefs::GUI_HiDPI_UnscaledOutput = "GUI/HiDPI/UnscaledOutput";
 #ifndef VBOX_WS_MAC
 const char* UIExtraDataDefs::GUI_ShowMiniToolBar = "GUI/ShowMiniToolBar";
 const char* UIExtraDataDefs::GUI_MiniToolBarAutoHide = "GUI/MiniToolBarAutoHide";

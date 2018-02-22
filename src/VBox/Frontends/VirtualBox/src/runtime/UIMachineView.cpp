@@ -248,7 +248,11 @@ void UIMachineView::applyMachineViewScaleFactor()
 {
     /* Take the scale-factor related attributes into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+#ifdef VBOX_WS_MAC
+    const bool fUseUnscaledHiDPIOutput = false;
+#else
+    const bool fUseUnscaledHiDPIOutput = true;
+#endif
     frameBuffer()->setScaleFactor(dScaleFactor);
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
     /* Propagate the scale-factor related attributes to 3D service if necessary: */
@@ -501,7 +505,11 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
 
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+#ifdef VBOX_WS_MAC
+    const bool fUseUnscaledHiDPIOutput = false;
+#else
+    const bool fUseUnscaledHiDPIOutput = true;
+#endif
     Q_UNUSED(fUseUnscaledHiDPIOutput);
     frameBuffer()->setScaleFactor(dScaleFactor);
     /* Propagate the scale-factor to 3D service if necessary: */
@@ -545,32 +553,6 @@ void UIMachineView::sltHandleScalingOptimizationChange(const QString &strMachine
 
     /* Update viewport: */
     viewport()->update();
-}
-
-void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID)
-{
-    /* Skip unrelated machine IDs: */
-    if (strMachineID != vboxGlobal().managedVMUuid())
-        return;
-
-    /* Take the unscaled HiDPI output mode into account: */
-    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
-    frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
-    /* Propagate the unscaled HiDPI output mode to 3D service if necessary: */
-    if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
-        display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
-
-    /* Handle scale attributes change: */
-    handleScaleChange();
-    /* Adjust guest-screen size: */
-    adjustGuestScreenSize();
-
-    /* Update scaled pause pixmap, if necessary: */
-    updateScaledPausePixmap();
-    viewport()->update();
-
-    /* Update console's display viewport and 3D overlay: */
-    updateViewport();
 }
 
 void UIMachineView::sltMachineStateChanged()
@@ -716,7 +698,11 @@ void UIMachineView::prepareFrameBuffer()
         const double dDevicePixelRatioFormal = gpDesktop->devicePixelRatio(machineWindow());
         const double dDevicePixelRatioActual = gpDesktop->devicePixelRatioActual(machineWindow());
         const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-        const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+#ifdef VBOX_WS_MAC
+        const bool fUseUnscaledHiDPIOutput = false;
+#else
+        const bool fUseUnscaledHiDPIOutput = true;
+#endif
         m_pFrameBuffer->setDevicePixelRatio(dDevicePixelRatioFormal);
         m_pFrameBuffer->setDevicePixelRatioActual(dDevicePixelRatioActual);
         m_pFrameBuffer->setScaleFactor(dScaleFactor);
@@ -836,9 +822,6 @@ void UIMachineView::prepareConnections()
     /* Scaling-optimization change: */
     connect(gEDataManager, SIGNAL(sigScalingOptimizationTypeChange(const QString&)),
             this, SLOT(sltHandleScalingOptimizationChange(const QString&)));
-    /* Unscaled HiDPI output mode change: */
-    connect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
-            this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));
 }
 
 void UIMachineView::prepareConsoleConnections()

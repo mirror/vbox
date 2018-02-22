@@ -157,10 +157,6 @@ private:
     static QString accelerationReport(const CMachine &comMachine);
     /** Acquires @a comMachine scale-factor report. */
     static double scaleFactorReport(CMachine comMachine);
-#ifdef VBOX_WS_MAC
-    /** Acquires @a comMachine unscaled output report. */
-    static QString unscaledOutputReport(CMachine comMachine);
-#endif /* VBOX_WS_MAC */
     /** Acquires @a comMachine display acceleration report. */
     static QString displayAccelerationReport(CMachine comMachine);
     /** Acquires @a comMachine VRDE server report. */

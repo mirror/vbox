@@ -89,9 +89,6 @@ signals:
     void sigHiDPIOptimizationTypeChange(const QString &strMachineID);
 #endif
 
-    /** Notifies about unscaled HiDPI output mode change. */
-    void sigUnscaledHiDPIOutputModeChange(const QString &strMachineID);
-
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Notifies about 'dock icon' appearance change. */
     void sigDockIconAppearanceChange(bool fEnabled);
@@ -528,11 +525,6 @@ public:
         /** Returns whether 2D acceleration should use AYUV pixel format. */
         bool usePixelFormatAYUV(const QString &strID);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-
-        /** Returns whether Runtime UI should use unscaled HiDPI output. */
-        bool useUnscaledHiDPIOutput(const QString &strID);
-        /** Defines whether Runtime UI should @a fUseUnscaledHiDPIOutput. */
-        void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput, const QString &strID);
 
 #ifndef VBOX_WS_MAC
         /** Returns whether mini-toolbar is enabled for full and seamless screens. */

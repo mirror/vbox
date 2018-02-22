@@ -1995,7 +1995,6 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_Accelerate2D_PixformatYV12 << GUI_Accelerate2D_PixformatUYVY
            << GUI_Accelerate2D_PixformatYUY2 << GUI_Accelerate2D_PixformatAYUV
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-           << GUI_HiDPI_UnscaledOutput
 #ifndef VBOX_WS_MAC
            << GUI_ShowMiniToolBar << GUI_MiniToolBarAutoHide << GUI_MiniToolBarAlignment
 #endif /* !VBOX_WS_MAC */
@@ -3720,28 +3719,6 @@ bool UIExtraDataManager::usePixelFormatAYUV(const QString &strID)
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-bool UIExtraDataManager::useUnscaledHiDPIOutput(const QString &strID)
-{
-#ifdef VBOX_WS_MAC
-    /* 'False' unless feature allowed: */
-    return isFeatureAllowed(GUI_HiDPI_UnscaledOutput, strID);
-#else
-    /* 'True' unless feature restricted: */
-    return !isFeatureRestricted(GUI_HiDPI_UnscaledOutput, strID);
-#endif
-}
-
-void UIExtraDataManager::setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput, const QString &strID)
-{
-#ifdef VBOX_WS_MAC
-    /* 'True' if feature allowed, null-string otherwise: */
-    setExtraDataString(GUI_HiDPI_UnscaledOutput, toFeatureAllowed(fUseUnscaledHiDPIOutput), strID);
-#else
-    /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_HiDPI_UnscaledOutput, toFeatureRestricted(!fUseUnscaledHiDPIOutput), strID);
-#endif
-}
-
 #ifndef VBOX_WS_MAC
 bool UIExtraDataManager::miniToolbarEnabled(const QString &strID)
 {
@@ -4408,9 +4385,6 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
         /* Scaling optimization type change: */
         else if (strKey == GUI_Scaling_Optimization)
             emit sigScalingOptimizationTypeChange(strMachineID);
-        /* Unscaled HiDPI Output mode change: */
-        else if (strKey == GUI_HiDPI_UnscaledOutput)
-            emit sigUnscaledHiDPIOutputModeChange(strMachineID);
     }
 
     /* Notify listeners: */

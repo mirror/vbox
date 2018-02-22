@@ -44,7 +44,6 @@ struct UIDataSettingsMachineDisplay
         : m_iCurrentVRAM(0)
         , m_cGuestScreenCount(0)
         , m_dScaleFactor(1.0)
-        , m_fUseUnscaledHiDPIOutput(false)
         , m_f3dAccelerationEnabled(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
         , m_f2dAccelerationEnabled(false)
@@ -72,7 +71,6 @@ struct UIDataSettingsMachineDisplay
                && (m_iCurrentVRAM == other.m_iCurrentVRAM)
                && (m_cGuestScreenCount == other.m_cGuestScreenCount)
                && (m_dScaleFactor == other.m_dScaleFactor)
-               && (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput)
                && (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled)
 #ifdef VBOX_WITH_VIDEOHWACCEL
                && (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled)
@@ -226,8 +224,6 @@ struct UIDataSettingsMachineDisplay
     int     m_cGuestScreenCount;
     /** Holds the guest screen scale-factor. */
     double  m_dScaleFactor;
-    /** Holds whether automatic Retina scaling is disabled. */
-    bool    m_fUseUnscaledHiDPIOutput;
     /** Holds whether the 3D acceleration is enabled. */
     bool    m_f3dAccelerationEnabled;
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -346,7 +342,6 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     oldDisplayData.m_iCurrentVRAM = m_machine.GetVRAMSize();
     oldDisplayData.m_cGuestScreenCount = m_machine.GetMonitorCount();
     oldDisplayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId());
-    oldDisplayData.m_fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(m_machine.GetId());
     oldDisplayData.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     oldDisplayData.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
@@ -394,7 +389,6 @@ void UIMachineSettingsDisplay::getFromCache()
     /* Load old 'Screen' data from the cache: */
     m_pEditorVideoScreenCount->setValue(oldDisplayData.m_cGuestScreenCount);
     m_pEditorGuestScreenScale->setValue((int)(oldDisplayData.m_dScaleFactor * 100));
-    m_pCheckBoxUnscaledHiDPIOutput->setChecked(oldDisplayData.m_fUseUnscaledHiDPIOutput);
     m_pCheckbox3D->setChecked(oldDisplayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     m_pCheckbox2DVideo->setChecked(oldDisplayData.m_f2dAccelerationEnabled);
@@ -441,7 +435,6 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
     newDisplayData.m_cGuestScreenCount = m_pEditorVideoScreenCount->value();
     newDisplayData.m_dScaleFactor = (double)m_pEditorGuestScreenScale->value() / 100;
-    newDisplayData.m_fUseUnscaledHiDPIOutput = m_pCheckBoxUnscaledHiDPIOutput->isChecked();
     newDisplayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     newDisplayData.m_f2dAccelerationEnabled = m_pCheckbox2DVideo->isChecked();
@@ -617,8 +610,7 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pSliderVideoScreenCount, m_pEditorVideoScreenCount);
     setTabOrder(m_pEditorVideoScreenCount, m_pSliderGuestScreenScale);
     setTabOrder(m_pSliderGuestScreenScale, m_pEditorGuestScreenScale);
-    setTabOrder(m_pEditorGuestScreenScale, m_pCheckBoxUnscaledHiDPIOutput);
-    setTabOrder(m_pCheckBoxUnscaledHiDPIOutput, m_pCheckbox3D);
+    setTabOrder(m_pEditorGuestScreenScale, m_pCheckbox3D);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     setTabOrder(m_pCheckbox3D, m_pCheckbox2DVideo);
     setTabOrder(m_pCheckbox2DVideo, m_pCheckboxRemoteDisplay);
@@ -698,8 +690,6 @@ void UIMachineSettingsDisplay::polishPage()
     m_pLabelGuestScreenScaleMin->setEnabled(isMachineInValidMode());
     m_pLabelGuestScreenScaleMax->setEnabled(isMachineInValidMode());
     m_pEditorGuestScreenScale->setEnabled(isMachineInValidMode());
-    m_pLabelHiDPI->setEnabled(isMachineInValidMode());
-    m_pCheckBoxUnscaledHiDPIOutput->setEnabled(isMachineInValidMode());
     m_pLabelVideoOptions->setEnabled(isMachineOffline());
     m_pCheckbox3D->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -1396,9 +1386,6 @@ bool UIMachineSettingsDisplay::saveScreenData()
         /* Save guest-screen scale-factor: */
         if (fSuccess && newDisplayData.m_dScaleFactor != oldDisplayData.m_dScaleFactor)
             /* fSuccess = */ gEDataManager->setScaleFactor(newDisplayData.m_dScaleFactor, strMachineId);
-        /* Save whether Unscaled HiDPI Output is enabled: : */
-        if (fSuccess && newDisplayData.m_fUseUnscaledHiDPIOutput != oldDisplayData.m_fUseUnscaledHiDPIOutput)
-            /* fSuccess = */ gEDataManager->setUseUnscaledHiDPIOutput(newDisplayData.m_fUseUnscaledHiDPIOutput, strMachineId);
     }
     /* Return result: */
     return fSuccess;
