@@ -955,31 +955,23 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, 
             && u8Vector == X86_XCPT_PF
             && !(uErr & X86_TRAP_PF_ID))
         {
-            /** @todo Nested-guest SVM - figure out fetching op-code bytes from IEM. */
             PSVMVMCBCTRL  pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
 #ifdef IEM_WITH_CODE_TLB
-            uint8_t const cbCurrent   = pVCpu->iem.s.cbInstrBuf;
             uint8_t const *pbInstrBuf = pVCpu->iem.s.pbInstrBuf;
+            uint8_t const  cbInstrBuf = pVCpu->iem.s.cbInstrBuf;
+            pVmcbCtrl->cbInstrFetched = RT_MIN(cbInstrBuf, SVM_CTRL_GUEST_INSTR_BYTES_MAX);
             if (   pbInstrBuf
-                && cbCurrent >= SVM_CTRL_GUEST_INSTR_BYTES_MAX)
-            {
-                pVmcbCtrl->cbInstrFetched = SVM_CTRL_GUEST_INSTR_BYTES_MAX;
-                memcpy(&pVmcbCtrl->abInstr[0], pbInstrBuf, SVM_CTRL_GUEST_INSTR_BYTES_MAX);
-            }
-            else
-            { AssertReleaseFailedReturn(VERR_IEM_IPE_5); /** @todo */ }
+                && cbInstrBuf > 0)
+                memcpy(&pVmcbCtrl->abInstr[0], pbInstrBuf, pVmcbCtrl->cbInstrFetched);
 #else
-            uint8_t const offOpCode = pVCpu->iem.s.offOpcode;
-            uint8_t const cbCurrent = pVCpu->iem.s.cbOpcode - offOpCode;
-            if (cbCurrent >= SVM_CTRL_GUEST_INSTR_BYTES_MAX)
-            {
-                pVmcbCtrl->cbInstrFetched = SVM_CTRL_GUEST_INSTR_BYTES_MAX;
-                memcpy(&pVmcbCtrl->abInstr[0], &pVCpu->iem.s.abOpcode[offOpCode], SVM_CTRL_GUEST_INSTR_BYTES_MAX);
-            }
-            else
-            { AssertReleaseFailedReturn(VERR_IEM_IPE_5); /** @todo */ }
+            uint8_t const cbOpcode    = pVCpu->iem.s.cbOpcode;
+            pVmcbCtrl->cbInstrFetched = RT_MIN(cbOpcode, SVM_CTRL_GUEST_INSTR_BYTES_MAX);
+            if (cbOpcode > 0)
+                memcpy(&pVmcbCtrl->abInstr[0], &pVCpu->iem.s.abOpcode[0], pVmcbCtrl->cbInstrFetched);
 #endif
         }
+        if (u8Vector == X86_XCPT_BR)
+            IEM_SVM_UPDATE_NRIP(pVCpu);
         Log2(("iemHandleSvmNstGstEventIntercept: Xcpt intercept u32InterceptXcpt=%#RX32 u8Vector=%#x "
               "uExitInfo1=%#RX64 uExitInfo2=%#RX64 -> #VMEXIT\n", pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl.u32InterceptXcpt,
               u8Vector, uExitInfo1, uExitInfo2));
@@ -995,6 +987,7 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, 
     {
         uint64_t const uExitInfo1 = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmDecodeAssists ? u8Vector : 0;
         Log2(("iemHandleSvmNstGstEventIntercept: Software INT intercept (u8Vector=%#x) -> #VMEXIT\n", u8Vector));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_SWINT, uExitInfo1, 0 /* uExitInfo2 */);
     }
 
@@ -1042,6 +1035,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
     if (fIntercept)
     {
         Log3(("iemSvmHandleIOIntercept: u16Port=%#x (%u) -> #VMEXIT\n", u16Port, u16Port));
+        IEM_SVM_UPDATE_NRIP(pVCpu);
         return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_IOIO, IoExitInfo.u, pCtx->rip + cbInstr);
     }
 
@@ -1069,6 +1063,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
  * @param   idMsr       The MSR being accessed in the nested-guest.
  * @param   fWrite      Whether this is an MSR write access, @c false implies an
  *                      MSR read.
+ * @param   cbInstr     The length of the MSR read/write instruction in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t idMsr, bool fWrite)
 {
@@ -1099,7 +1094,10 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, ui
         uint8_t *pbMsrpm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
         pbMsrpm += offMsrpm;
         if (ASMBitTest(pbMsrpm, uMsrpmBit))
+        {
+            IEM_SVM_UPDATE_NRIP(pVCpu);
             return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);
+        }
     }
     else
     {
