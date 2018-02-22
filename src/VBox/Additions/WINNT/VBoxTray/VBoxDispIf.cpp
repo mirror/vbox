@@ -1507,7 +1507,7 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
     }
 
     vboxDispIfTargetConnectivityWDDM(&Op, iChangedMode, fEnable? 1: 0);
-    
+
     /* Whether the current display is already or should be enabled. */
     BOOL fChangedEnable = fEnable || RT_BOOL(paDisplayDevices[iChangedMode].StateFlags & DISPLAY_DEVICE_ACTIVE);
 
