@@ -2490,6 +2490,13 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
             hmR0VmxSetMsrPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         }
 #endif
+        /*
+         * The IA32_PRED_CMD MSR is write-only and has no state associated with it. We never need to intercept
+         * access (writes need to be executed without exiting, reds will #GP-fault anyway).
+         */
+        if (pVM->cpum.ro.GuestFeatures.fIbpb)
+            hmR0VmxSetMsrPermission(pVCpu, MSR_IA32_PRED_CMD,     VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
+
         /* Though MSR_IA32_PERF_GLOBAL_CTRL is saved/restored lazily, we want intercept reads/write to it for now. */
     }
 
@@ -6629,6 +6636,7 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             case MSR_K6_STAR:           pMixedCtx->msrSTAR         = pMsr->u64Value;             break;
             case MSR_K8_SF_MASK:        pMixedCtx->msrSFMASK       = pMsr->u64Value;             break;
             case MSR_K8_KERNEL_GS_BASE: pMixedCtx->msrKERNELGSBASE = pMsr->u64Value;             break;
+            case MSR_IA32_SPEC_CTRL:    CPUMR0SetGuestSpecCtrl(pVCpu, pMsr->u64Value);           break;
             case MSR_K6_EFER: /* Nothing to do here since we intercept writes, see hmR0VmxLoadGuestMsrs(). */
                 break;
 
@@ -9171,6 +9179,21 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
             hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX);
             Assert(!pVCpu->hm.s.vmx.cMsrs || pVCpu->hm.s.vmx.fUpdatedHostMsrs);
         }
+    }
+
+    if (pVM->cpum.ro.GuestFeatures.fIbrs)
+    {
+        bool fMsrUpdated;
+        int rc2 = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
+        AssertRC(rc2);
+        Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS));
+
+        rc2 = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_IA32_SPEC_CTRL, CPUMR0GetGuestSpecCtrl(pVCpu), true /* fUpdateHostMsr */,
+                                         &fMsrUpdated);
+        AssertRC(rc2);
+        Assert(fMsrUpdated || pVCpu->hm.s.vmx.fUpdatedHostMsrs);
+        /* Finally, mark that all host MSR values are updated so we don't redo it without leaving VT-x. See @bugref{6956}. */
+        pVCpu->hm.s.vmx.fUpdatedHostMsrs = true;
     }
 
 #ifdef VBOX_STRICT

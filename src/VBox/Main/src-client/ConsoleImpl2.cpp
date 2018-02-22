@@ -1021,6 +1021,11 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             LogRel(("Limiting the firmware APIC level from APIC to Disabled\n"));
         }
 
+        /* Speculation Control. */
+        BOOL fSpecCtrl = FALSE;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_SpecCtrl, &fSpecCtrl);      H();
+        InsertConfigInteger(pCPUM, "SpecCtrl", fSpecCtrl);
+
         /* Nested VT-x / AMD-V. */
         BOOL fNestedHWVirt = FALSE;
         hrc = pMachine->GetCPUProperty(CPUPropertyType_HWVirt, &fNestedHWVirt);      H();
@@ -1171,6 +1176,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         BOOL fIBPBOnVMEntry = false;
         hrc = pMachine->GetCPUProperty(CPUPropertyType_IBPBOnVMEntry, &fIBPBOnVMEntry); H();
         InsertConfigInteger(pHM, "IBPBOnVMEntry", fIBPBOnVMEntry);
+
+        BOOL fSpecCtrlByHost = false;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_SpecCtrlByHost, &fSpecCtrlByHost); H();
+        InsertConfigInteger(pHM, "SpecCtrlByHost", fSpecCtrlByHost);
 
         /* Reset overwrite. */
         if (i_isResetTurnedIntoPowerOff())

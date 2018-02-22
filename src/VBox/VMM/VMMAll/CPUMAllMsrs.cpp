@@ -6294,5 +6294,30 @@ VMMR0_INT_DECL(void) CPUMR0SetGuestTscAux(PVMCPU pVCpu, uint64_t uValue)
     pVCpu->cpum.s.GuestMsrs.msr.TscAux = uValue;
 }
 
+/**
+ * Fast way for HM to access the IA32_SPEC_CTRL register.
+ *
+ * @returns The register value.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @thread  EMT(pVCpu)
+ */
+VMMR0_INT_DECL(uint64_t) CPUMR0GetGuestSpecCtrl(PVMCPU pVCpu)
+{
+    return pVCpu->cpum.s.GuestMsrs.msr.SpecCtrl;
+}
+
+
+/**
+ * Fast way for HM to access the IA32_SPEC_CTRL register.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   uValue  The new value.
+ * @thread  EMT(pVCpu)
+ */
+VMMR0_INT_DECL(void) CPUMR0SetGuestSpecCtrl(PVMCPU pVCpu, uint64_t uValue)
+{
+    pVCpu->cpum.s.GuestMsrs.msr.SpecCtrl = uValue;
+}
+
 #endif /* IN_RING0 */
 

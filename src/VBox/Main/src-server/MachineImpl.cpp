@@ -197,6 +197,8 @@ Machine::HWData::HWData()
     mX2APIC = false;
     mIBPBOnVMExit = false;
     mIBPBOnVMEntry = false;
+    mSpecCtrl = false;
+    mSpecCtrlByHost = false;
     mNestedHWVirt = false;
     mHPETEnabled = false;
     mCpuExecutionCap = 100; /* Maximum CPU execution cap by default. */
@@ -2266,6 +2268,14 @@ HRESULT Machine::getCPUProperty(CPUPropertyType_T aProperty, BOOL *aValue)
             *aValue = mHWData->mIBPBOnVMEntry;
             break;
 
+        case CPUPropertyType_SpecCtrl:
+            *aValue = mHWData->mSpecCtrl;
+            break;
+
+        case CPUPropertyType_SpecCtrlByHost:
+            *aValue = mHWData->mSpecCtrlByHost;
+            break;
+
         case CPUPropertyType_HWVirt:
             *aValue = mHWData->mNestedHWVirt;
             break;
@@ -2329,6 +2339,18 @@ HRESULT Machine::setCPUProperty(CPUPropertyType_T aProperty, BOOL aValue)
             i_setModified(IsModified_MachineData);
             mHWData.backup();
             mHWData->mIBPBOnVMEntry = !!aValue;
+            break;
+
+        case CPUPropertyType_SpecCtrl:
+            i_setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mSpecCtrl = !!aValue;
+            break;
+
+        case CPUPropertyType_SpecCtrlByHost:
+            i_setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mSpecCtrlByHost = !!aValue;
             break;
 
         case CPUPropertyType_HWVirt:
@@ -9022,6 +9044,8 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         mHWData->mX2APIC                      = data.fX2APIC;
         mHWData->mIBPBOnVMExit                = data.fIBPBOnVMExit;
         mHWData->mIBPBOnVMEntry               = data.fIBPBOnVMEntry;
+        mHWData->mSpecCtrl                    = data.fSpecCtrl;
+        mHWData->mSpecCtrlByHost              = data.fSpecCtrlByHost;
         mHWData->mNestedHWVirt                = data.fNestedHWVirt;
         mHWData->mCPUCount                    = data.cCPUs;
         mHWData->mCPUHotPlugEnabled           = data.fCpuHotPlug;
@@ -10348,6 +10372,8 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         data.fX2APIC                = !!mHWData->mX2APIC;
         data.fIBPBOnVMExit          = !!mHWData->mIBPBOnVMExit;
         data.fIBPBOnVMEntry         = !!mHWData->mIBPBOnVMEntry;
+        data.fSpecCtrl              = !!mHWData->mSpecCtrl;
+        data.fSpecCtrlByHost        = !!mHWData->mSpecCtrlByHost;
         data.fNestedHWVirt          = !!mHWData->mNestedHWVirt;
         data.cCPUs                  = mHWData->mCPUCount;
         data.fCpuHotPlug            = !!mHWData->mCPUHotPlugEnabled;

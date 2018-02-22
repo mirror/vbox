@@ -1008,7 +1008,7 @@
         If set, force an indirect branch prediction barrier on VM exits if the
         host CPU supports it.  This setting will significantly slow down workloads
         causing many VM exits, so it is only recommended for situation where there
-        real need to be paranoid.
+        is a real need to be paranoid.
       </desc>
     </const>
     <const name="IBPBOnVMEntry"         value="7">
@@ -1016,13 +1016,26 @@
         If set, force an indirect branch prediction barrier on VM entry if the
         host CPU supports it.  This setting will significantly slow down workloads
         causing many VM exits, so it is only recommended for situation where there
-        real need to be paranoid.
+        is a real need to be paranoid.
       </desc>
     </const>
     <const name="HWVirt"                value="8">
       <desc>
         Enabled the hardware virtualization (AMD-V/VT-x) feature on the guest CPU.
         This requires hardware virtualization on the host CPU.
+      </desc>
+    </const>
+    <const name="SpecCtrl"              value="9">
+      <desc>
+        If set, the speculation control CPUID bits and MSRs, when available on the
+        host, are exposed to the guest. Depending on the host CPU and operating
+        system, this may significantly slow down workloads causing many VM exits.
+      </desc>
+    </const>
+    <const name="SpecCtrlByHost"        value="10">
+      <desc>
+        If set, the speculation controls are managed by the host. This is intended
+        for guests which do not set the speculation controls themselves.
       </desc>
     </const>
   </enum>

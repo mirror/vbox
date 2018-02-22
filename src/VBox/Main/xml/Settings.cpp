@@ -2779,6 +2779,8 @@ Hardware::Hardware() :
     fX2APIC(false),
     fIBPBOnVMExit(false),
     fIBPBOnVMEntry(false),
+    fSpecCtrl(false),
+    fSpecCtrlByHost(false),
     fNestedHWVirt(false),
     enmLongMode(HC_ARCH_BITS == 64 ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled),
     cCPUs(1),
@@ -2935,6 +2937,8 @@ bool Hardware::operator==(const Hardware& h) const
             && fX2APIC                   == h.fX2APIC
             && fIBPBOnVMExit             == h.fIBPBOnVMExit
             && fIBPBOnVMEntry            == h.fIBPBOnVMEntry
+            && fSpecCtrl                 == h.fSpecCtrl
+            && fSpecCtrlByHost           == h.fSpecCtrlByHost
             && fNestedHWVirt             == h.fNestedHWVirt
             && cCPUs                     == h.cCPUs
             && fCpuHotPlug               == h.fCpuHotPlug
@@ -3944,6 +3948,12 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("vmexit", hw.fIBPBOnVMExit);
                 pelmCPUChild->getAttributeValue("vmentry", hw.fIBPBOnVMEntry);
             }
+            pelmCPUChild = pelmHwChild->findChildElement("SpecCtrl");
+            if (pelmCPUChild)
+                pelmCPUChild->getAttributeValue("enabled", hw.fSpecCtrl);
+            pelmCPUChild = pelmHwChild->findChildElement("SpecCtrlByHost");
+            if (pelmCPUChild)
+                pelmCPUChild->getAttributeValue("enabled", hw.fSpecCtrlByHost);
             pelmCPUChild = pelmHwChild->findChildElement("NestedHWVirt");
             if (pelmCPUChild)
                 pelmCPUChild->getAttributeValue("enabled", hw.fNestedHWVirt);
@@ -5283,6 +5293,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 pelmChild->setAttribute("vmentry", hw.fIBPBOnVMEntry);
         }
     }
+    if (m->sv >= SettingsVersion_v1_16 && hw.fSpecCtrl)
+        pelmCPU->createChild("SpecCtrl")->setAttribute("enabled", hw.fSpecCtrl);
+    if (m->sv >= SettingsVersion_v1_16 && hw.fSpecCtrlByHost)
+        pelmCPU->createChild("SpecCtrlByHost")->setAttribute("enabled", hw.fSpecCtrlByHost);
     if (m->sv >= SettingsVersion_v1_17 && hw.fNestedHWVirt)
         pelmCPU->createChild("NestedHWVirt")->setAttribute("enabled", hw.fNestedHWVirt);
 
@@ -6968,7 +6982,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             || !hardwareMachine.fAPIC
             || hardwareMachine.fX2APIC
             || hardwareMachine.fIBPBOnVMExit
-            || hardwareMachine.fIBPBOnVMEntry)
+            || hardwareMachine.fIBPBOnVMEntry
+            || hardwareMachine.fSpecCtrl
+            || hardwareMachine.fSpecCtrlByHost)
         {
             m->sv = SettingsVersion_v1_16;
             return;

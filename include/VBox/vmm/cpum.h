@@ -1222,6 +1222,8 @@ VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu);
 VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg);
 VMMR0_INT_DECL(void)        CPUMR0SetGuestTscAux(PVMCPU pVCpu, uint64_t uValue);
 VMMR0_INT_DECL(uint64_t)    CPUMR0GetGuestTscAux(PVMCPU pVCpu);
+VMMR0_INT_DECL(void)        CPUMR0SetGuestSpecCtrl(PVMCPU pVCpu, uint64_t uValue);
+VMMR0_INT_DECL(uint64_t)    CPUMR0GetGuestSpecCtrl(PVMCPU pVCpu);
 /** @} */
 
 

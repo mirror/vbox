@@ -1749,7 +1749,9 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
             pFeatures->fIbpb                = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB);
             pFeatures->fIbrs                = pFeatures->fIbpb;
             pFeatures->fStibp               = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_STIBP);
+#if 0   // Disabled until IA32_ARCH_CAPABILITIES support can be tested
             pFeatures->fArchCap             = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP);
+#endif
         }
 
         /* MWAIT/MONITOR leaf. */
@@ -4313,7 +4315,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM)
             CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
         /* Check if speculation control is enabled. */
-        rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnableSpecCtrl", &fEnable, false);
+        rc = CFGMR3QueryBoolDef(pCpumCfg, "SpecCtrl", &fEnable, false);
         AssertRCReturn(rc, rc);
         if (fEnable)
             CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SPEC_CTRL);
@@ -4620,8 +4622,12 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
                 if (pVM->cpum.s.HostFeatures.fIbrs)
                 {
                     pLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB;
+                    pVM->cpum.s.GuestFeatures.fIbrs = 1;
                     if (pVM->cpum.s.HostFeatures.fStibp)
+                    {
                         pLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_STIBP;
+                        pVM->cpum.s.GuestFeatures.fStibp = 1;
+                    }
 
                     /* Make sure we have the speculation control MSR... */
                     pMsrRange = cpumLookupMsrRange(pVM, MSR_IA32_SPEC_CTRL);
