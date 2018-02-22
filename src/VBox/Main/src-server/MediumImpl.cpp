@@ -3043,6 +3043,15 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation, ComPtr<IProgress> &aP
                 destPath.stripSuffix().append('.').append(suffix);
             }
 
+            /* Simple check for existence */
+            if (RTFileExists(destPath.c_str()))
+            {
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("The given path '%s' is an existing file. Delete or rename this file."),
+                              destPath.c_str());
+                throw rc;
+            }
+
             if (!i_isMediumFormatFile())
             {
                 rc = setError(VERR_NOT_A_FILE,
