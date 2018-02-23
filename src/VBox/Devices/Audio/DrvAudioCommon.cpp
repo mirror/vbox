@@ -1052,6 +1052,28 @@ uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps)
 }
 
 /**
+ * Returns the time (in ms) for given byte amount and PCM properties.
+ *
+ * @return  uint64_t            Calculated time (in ms).
+ * @param   pProps              PCM properties to calculate amount of bytes for.
+ * @param   cbBytes             Amount of bytes to calculate time for.
+ */
+uint64_t DrvAudioHlpBytesToMs(const PPDMAUDIOPCMPROPS pProps, size_t cbBytes)
+{
+    AssertPtrReturn(pProps, 0);
+
+    if (!cbBytes)
+        return 0;
+
+    const float dbBytesPerMs = ((pProps->cBits / 8) * pProps->cChannels * pProps->uHz) / 1000;
+    Assert(dbBytesPerMs >= 0.0f);
+    if (!dbBytesPerMs) /* Prevent division by zero. */
+        return 0;
+
+    return cbBytes / dbBytesPerMs;
+}
+
+/**
  * Returns the amount of bytes for a given time (in ms) and PCM properties.
  *
  * @return  uint32_t            Calculated amount of bytes.
