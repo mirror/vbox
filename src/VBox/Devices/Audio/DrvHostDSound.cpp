@@ -2125,36 +2125,6 @@ static DECLCALLBACK(int) dsoundThread(RTTHREAD hThreadSelf, void *pvUser)
                             pStreamDS->Out.fFirstPlayback = false;
                         }
                     }
-                    else /* Continue playback */
-                    {
-                        if (   !RTCircBufUsed(pCircBuf)
-                            && pStreamDS->Out.cbPlayed == pStreamDS->Out.cbWritten)
-                        {
-                            Assert(pStreamDS->Out.cbPlayed == pStreamDS->Out.cbWritten);
-
-                            Log3Func(("Stopping (cbFree=%ld, cbRemaining=%ld, cbUsed=%ld, cbToPlay=%ld, offPlay=%ld, offWrite=%ld)\n",
-                                      cbFree, cbRemaining, cbUsed, cbToPlay, offPlayCursor, offWriteCursor));
-
-                            /* As we're using a streaming buffer and DirectSound apparently has no clean way of figuring out
-                             * when such a buffer was played back fully, we need to make a guess ourselves:
-                             *
-                             * See if there's any data left between the play and write cursors and calculate some rough estimate
-                             * how long we have to wait before actually stopping the buffer.
-                             *
-                             * Sleeping here is fine, as we're running in a (dedicated) thread anyway. */
-                            const DWORD cbRemaining = dsoundRingDistance(offWriteCursor, offPlayCursor, pStreamDS->cbBufSize);
-                            uint64_t msWait = cbRemaining / DrvAudioHlpMsToBytes(&pStreamDS->pCfg->Props, 1 /* ms */);
-
-                            if (msWait)
-                            {
-                                Log3Func(("Waiting %RU64ms (%ld bytes)\n", msWait, cbRemaining));
-                                RTThreadSleep(msWait);
-                            }
-
-                            DSLOG(("DSound: Stopping playing output\n"));
-                            hr = IDirectSoundBuffer8_Stop(pDSB);
-                        }
-                    }
                 }
                 break;
             }
@@ -2459,11 +2429,9 @@ static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetPending(PPDMIHOSTAUDIO pInte
             const uint64_t diffLastPlayMs = tsNowMs - pStreamDS->Out.tsLastPlayMs;
             const uint64_t msThreshold    = pThis->Cfg.msLatencyOut;
 
-            Log3Func(("diffLastPlayMs=%RU64ms\n", diffLastPlayMs));
+            Log2Func(("diffLastPlayMs=%RU64ms\n", diffLastPlayMs));
 
             cbPending = (diffLastPlayMs >= msThreshold) ? 0 : 1;
-
-            pStreamDS->Out.tsLastPlayMs = tsNowMs;
         }
 
         return cbPending;
