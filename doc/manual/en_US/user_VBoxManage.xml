@@ -627,6 +627,13 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
           </listitem>
 
           <listitem>
+            <para><computeroutput>--spec-ctrl on|off</computeroutput>: This setting
+            enables/disables exposing speculation control interfaces to the guest, provided
+            they are available on the host. Depending on the host CPU and workload, enabling
+            speculation control may significantly reduce performance.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--cpu-profile &lt;host|intel 80[86|286|386]&gt;</computeroutput>:
             This enables specification of a profile for guest cpu emulation.
             Specify either one based on the host system CPU (host), or one from
