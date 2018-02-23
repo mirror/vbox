@@ -171,7 +171,11 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
             #case 4. Only file name
             fRc = self.setLocation('onlyMediumName', aoMediumAttachments) and fRc
             asNewFiles = ['onlyMediumName' + os.path.splitext(s)[1] for s in asFiles]
-            fRc = self.checkLocation(sNewLoc, aoMediumAttachments, asNewFiles) and fRc
+            if self.oTstDrv.fpApiVer >= 5.3:
+                fRc = self.checkLocation(sNewLoc, aoMediumAttachments, asNewFiles) and fRc
+            else:
+                fRc = self.checkLocation(sNewLoc, aoMediumAttachments,
+                                         [s.replace('.hdd', '.parallels') for s in asNewFiles]) and fRc
 
             #case 5. Move all files from a snapshot
             fRc = fRc and oSession.takeSnapshot('Snapshot1')
