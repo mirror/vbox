@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2482,26 +2482,25 @@ int GuestProcessTool::i_exitCodeToRc(const char *pszTool, int32_t iExitCode)
             case VBOXSERVICETOOLBOX_CAT_EXITCODE_FILE_NOT_FOUND:    return VERR_FILE_NOT_FOUND;
             case VBOXSERVICETOOLBOX_CAT_EXITCODE_PATH_NOT_FOUND:    return VERR_PATH_NOT_FOUND;
             case VBOXSERVICETOOLBOX_CAT_EXITCODE_SHARING_VIOLATION: return VERR_SHARING_VIOLATION;
-            default:
-                break;
+            default:                                                break;
         }
     }
     else if (!RTStrICmp(pszTool, VBOXSERVICE_TOOL_STAT))
     {
         switch (iExitCode)
         {
-            case VBOXSERVICETOOLBOX_STAT_EXITCODE_ACCESS_DENIED:    return VERR_ACCESS_DENIED;
-            case VBOXSERVICETOOLBOX_STAT_EXITCODE_FILE_NOT_FOUND:   return VERR_FILE_NOT_FOUND;
-            case VBOXSERVICETOOLBOX_STAT_EXITCODE_PATH_NOT_FOUND:   return VERR_PATH_NOT_FOUND;
-            default:
-                break;
+            case VBOXSERVICETOOLBOX_STAT_EXITCODE_ACCESS_DENIED:  return VERR_ACCESS_DENIED;
+            case VBOXSERVICETOOLBOX_STAT_EXITCODE_FILE_NOT_FOUND: return VERR_FILE_NOT_FOUND;
+            case VBOXSERVICETOOLBOX_STAT_EXITCODE_PATH_NOT_FOUND: return VERR_PATH_NOT_FOUND;
+            default:                                              break;
         }
     }
     else if (!RTStrICmp(pszTool, VBOXSERVICE_TOOL_MKDIR))
     {
         switch (iExitCode)
         {
-            case RTEXITCODE_FAILURE:                                return VERR_CANT_CREATE;
+            case RTEXITCODE_FAILURE: return VERR_CANT_CREATE;
+            default:                 break;
         }
     }
 
