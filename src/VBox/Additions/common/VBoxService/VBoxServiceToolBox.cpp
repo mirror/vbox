@@ -888,10 +888,6 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
     uint32_t fFlags       = VBOXSERVICETOOLBOXLSFLAG_NONE;
     uint32_t fOutputFlags = VBOXSERVICETOOLBOXOUTPUTFLAG_NONE;
 
-    /* Init file list. */
-    RTLISTANCHOR fileList;
-    RTListInit(&fileList);
-
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
            && RT_SUCCESS(rc))
     {
@@ -928,40 +924,22 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
-                /* Add file(s) to buffer. This enables processing multiple files
-                 * at once.
-                 *
-                 * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
-                 * processing this loop it's safe to immediately exit on syntax errors
-                 * or showing the help text (see above). */
-                rc = vgsvcToolboxPathBufAddPathEntry(&fileList, ValueUnion.psz);
-                /** @todo r=bird: Nit: creating a list here is not really
-                 *        necessary since you've got one in argv that's
-                 *        accessible via RTGetOpt. */
+                Assert(GetState.iNext);
+                GetState.iNext--;
                 break;
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
+
+        /* All flags / options processed? Bail out here.
+         * Processing the file / directory list comes down below. */
+        if (ch == VINF_GETOPT_NOT_OPTION)
+            break;
     }
 
     if (RT_SUCCESS(rc))
     {
-        /* If not files given add current directory to list. */
-        if (RTListIsEmpty(&fileList))
-        {
-            char szDirCur[RTPATH_MAX + 1];
-            rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
-            if (RT_SUCCESS(rc))
-            {
-                rc = vgsvcToolboxPathBufAddPathEntry(&fileList, szDirCur);
-                if (RT_FAILURE(rc))
-                    RTMsgError("Adding current directory failed, rc=%Rrc\n", rc);
-            }
-            else
-                RTMsgError("Getting current directory failed, rc=%Rrc\n", rc);
-        }
-
         /* Print magic/version. */
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         {
@@ -971,39 +949,60 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
             vgsvcToolboxPrintStrmHeader("vbt_ls", 1 /* Stream version */);
         }
 
-        PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
-        RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
+        ch = RTGetOpt(&GetState, &ValueUnion);
+        do
         {
-            if (RTFileExists(pNodeIt->pszName))
+            char *pszEntry = NULL;
+
+            if (ch == 0) /* Use current directory if no element specified. */
+            {
+                char szDirCur[RTPATH_MAX + 1];
+                rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
+                if (RT_FAILURE(rc))
+                    RTMsgError("Getting current directory failed, rc=%Rrc\n", rc);
+
+                pszEntry = RTStrDup(szDirCur);
+                if (!pszEntry)
+                    RTMsgError("Allocating current directory failed\n");
+            }
+            else
+            {
+                pszEntry = RTStrDup(ValueUnion.psz);
+                if (!pszEntry)
+                    RTMsgError("Allocating directory '%s' failed\n", ValueUnion.psz);
+            }
+
+            if (RTFileExists(pszEntry))
             {
                 RTFSOBJINFO objInfo;
-                int rc2 = RTPathQueryInfoEx(pNodeIt->pszName, &objInfo,
+                int rc2 = RTPathQueryInfoEx(pszEntry, &objInfo,
                                             RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /** @todo Follow link? */);
                 if (RT_FAILURE(rc2))
                 {
                     if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                        RTMsgError("Cannot access '%s': No such file or directory\n", pNodeIt->pszName);
+                        RTMsgError("Cannot access '%s': No such file or directory\n", pszEntry);
                     rc = VERR_FILE_NOT_FOUND;
                     /* Do not break here -- process every element in the list
                      * and keep failing rc. */
                 }
                 else
                 {
-                    rc2 = vgsvcToolboxPrintFsInfo(pNodeIt->pszName,
-                                                  strlen(pNodeIt->pszName) /* cbName */,
-                                                  fOutputFlags,
-                                                  &objInfo);
+                    rc2 = vgsvcToolboxPrintFsInfo(pszEntry, strlen(pszEntry) /* cbName */,
+                                                  fOutputFlags, &objInfo);
                     if (RT_FAILURE(rc2))
                         rc = rc2;
                 }
             }
             else
             {
-                int rc2 = vgsvcToolboxLsHandleDir(pNodeIt->pszName, fFlags, fOutputFlags);
+                int rc2 = vgsvcToolboxLsHandleDir(pszEntry, fFlags, fOutputFlags);
                 if (RT_FAILURE(rc2))
                     rc = rc2;
             }
+
+            RTStrFree(pszEntry);
         }
+        while ((ch = RTGetOpt(&GetState, &ValueUnion)));
 
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
             vgsvcToolboxPrintStrmTermination();
@@ -1011,7 +1010,6 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
     else if (fVerbose)
         RTMsgError("Failed with rc=%Rrc\n", rc);
 
-    vgsvcToolboxPathBufDestroy(&fileList);
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
