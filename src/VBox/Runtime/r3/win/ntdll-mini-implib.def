@@ -31,6 +31,7 @@ EXPORTS
 
     CsrClientCallServer                   ;;= _CsrClientCallServer@16
 
+    NtAlertThread                         ;;= _NtAlertThread@4
     NtAllocateVirtualMemory               ;;= _NtAllocateVirtualMemory@24
     NtClearEvent                          ;;= _NtClearEvent@4
     NtClose                               ;;= _NtClose@4

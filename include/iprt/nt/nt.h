@@ -1496,10 +1496,14 @@ typedef PTEB_COMMON PTEB;
 DECL_FORCE_INLINE(PTEB)     RTNtCurrentTeb(void) { return (PTEB)__readfsdword(RT_OFFSETOF(TEB_COMMON, NtTib.Self)); }
 DECL_FORCE_INLINE(PPEB)     RTNtCurrentPeb(void) { return (PPEB)__readfsdword(RT_OFFSETOF(TEB_COMMON, ProcessEnvironmentBlock)); }
 DECL_FORCE_INLINE(uint32_t) RTNtCurrentThreadId(void) { return __readfsdword(RT_OFFSETOF(TEB_COMMON, ClientId.UniqueThread)); }
+DECL_FORCE_INLINE(NTSTATUS) RTNtLastStatusValue(void) { return (NTSTATUS)__readfsdword(RT_OFFSETOF(TEB_COMMON, LastStatusValue)); }
+DECL_FORCE_INLINE(uint32_t) RTNtLastErrorValue(void)  { return __readfsdword(RT_OFFSETOF(TEB_COMMON, LastErrorValue)); }
 # elif defined(RT_ARCH_AMD64)
 DECL_FORCE_INLINE(PTEB)     RTNtCurrentTeb(void) { return (PTEB)__readgsqword(RT_OFFSETOF(TEB_COMMON, NtTib.Self)); }
 DECL_FORCE_INLINE(PPEB)     RTNtCurrentPeb(void) { return (PPEB)__readgsqword(RT_OFFSETOF(TEB_COMMON, ProcessEnvironmentBlock)); }
-DECL_FORCE_INLINE(uint32_t) RTNtCurrentThreadId(void) { return (uint32_t)__readgsqword(RT_OFFSETOF(TEB_COMMON, ClientId.UniqueThread)); }
+DECL_FORCE_INLINE(uint32_t) RTNtCurrentThreadId(void) { return __readgsdword(RT_OFFSETOF(TEB_COMMON, ClientId.UniqueThread)); }
+DECL_FORCE_INLINE(NTSTATUS) RTNtLastStatusValue(void) { return (NTSTATUS)__readgsdword(RT_OFFSETOF(TEB_COMMON, LastStatusValue)); }
+DECL_FORCE_INLINE(uint32_t) RTNtLastErrorValue(void)  { return __readgsdword(RT_OFFSETOF(TEB_COMMON, LastErrorValue)); }
 # else
 #  error "Port me"
 # endif
@@ -1507,6 +1511,8 @@ DECL_FORCE_INLINE(uint32_t) RTNtCurrentThreadId(void) { return (uint32_t)__readg
 # define RTNtCurrentTeb()        ((PTEB)NtCurrentTeb())
 # define RTNtCurrentPeb()        (RTNtCurrentTeb()->ProcessEnvironmentBlock)
 # define RTNtCurrentThreadId()   ((uint32_t)(uintptr_t)RTNtCurrentTeb()->ClientId.UniqueThread)
+# define RTNtLastStatusValue()   (RTNtCurrentTeb()->LastStatusValue)
+# define RTNtLastErrorValue()    (RTNtCurrentTeb()->LastErrorValue)
 #endif
 #define NtCurrentPeb()           RTNtCurrentPeb()
 
@@ -1542,6 +1548,10 @@ NTSYSAPI NTSTATUS NTAPI NtOpenProcess(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, 
 NTSYSAPI NTSTATUS NTAPI ZwOpenProcess(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PCLIENT_ID);
 NTSYSAPI NTSTATUS NTAPI NtOpenThread(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PCLIENT_ID);
 NTSYSAPI NTSTATUS NTAPI ZwOpenThread(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PCLIENT_ID);
+NTSYSAPI NTSTATUS NTAPI NtAlertThread(HANDLE hThread);
+#ifdef IPRT_NT_USE_WINTERNL
+NTSYSAPI NTSTATUS NTAPI ZwAlertThread(HANDLE hThread);
+#endif
 
 #ifdef IPRT_NT_USE_WINTERNL
 NTSYSAPI NTSTATUS NTAPI NtOpenProcessToken(HANDLE, ACCESS_MASK, PHANDLE);
