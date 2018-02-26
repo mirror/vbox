@@ -858,7 +858,8 @@ static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fF
                     AssertRC(rc);
                 }
             }
-            else if (enmState == VMCPUSTATE_STARTED_EXEC_NEM)
+            else if (   enmState == VMCPUSTATE_STARTED_EXEC_NEM
+                     || enmState == VMCPUSTATE_STARTED_EXEC_NEM_WAIT)
                 NEMR3NotifyFF(pUVCpu->pVM, pVCpu, fFlags);
 #ifdef VBOX_WITH_REM
             else if (enmState == VMCPUSTATE_STARTED_EXEC_REM)
@@ -1000,7 +1001,8 @@ static DECLCALLBACK(void) vmR3DefaultNotifyCpuFF(PUVMCPU pUVCpu, uint32_t fFlags
         if (pVCpu)
         {
             VMCPUSTATE enmState = pVCpu->enmState;
-            if (enmState == VMCPUSTATE_STARTED_EXEC_NEM)
+            if (   enmState == VMCPUSTATE_STARTED_EXEC_NEM
+                || enmState == VMCPUSTATE_STARTED_EXEC_NEM_WAIT)
                 NEMR3NotifyFF(pUVCpu->pVM, pVCpu, fFlags);
 #ifdef VBOX_WITH_REM
             else if (   !(fFlags & VMNOTIFYFF_FLAGS_DONE_REM)

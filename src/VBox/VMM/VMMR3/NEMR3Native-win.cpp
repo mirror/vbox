@@ -28,6 +28,7 @@
 #define LOG_GROUP LOG_GROUP_NEM
 #include <iprt/nt/nt-and-windows.h>
 #include <iprt/nt/hyperv.h>
+#include <iprt/nt/vid.h>
 #include <WinHvPlatform.h>
 
 #ifndef _WIN32_WINNT_WIN10
@@ -77,28 +78,10 @@
     ( ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K) || ((RTGCPHYS)(a_GCPhys) < (RTGCPHYS)_64K) )
 
 
-#define NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-#define NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/** WHvRegisterInterruptState layout, reconstructed from the v7.1 DDK. */
-typedef union MISSINGINTERUPTSTATEREG
-{
-    /** 64-bit view. */
-    uint64_t au64[2];
-    struct /* unamed */
-    {
-        uint64_t fInterruptShadow : 1;
-        uint64_t fNmiMasked : 2;
-        uint64_t uReserved0 : 61;
-        uint64_t uReserved1;
-    };
-} MISSINGINTERUPTSTATEREG;
-AssertCompileSize(MISSINGINTERUPTSTATEREG, 16);
-
 
 
 /*********************************************************************************************************************************
@@ -115,6 +98,7 @@ static decltype(WHvSetPartitionProperty) *          g_pfnWHvSetPartitionProperty
 static decltype(WHvMapGpaRange) *                   g_pfnWHvMapGpaRange;
 static decltype(WHvUnmapGpaRange) *                 g_pfnWHvUnmapGpaRange;
 static decltype(WHvTranslateGva) *                  g_pfnWHvTranslateGva;
+#ifndef NEM_WIN_USE_OUR_OWN_RUN_API
 static decltype(WHvCreateVirtualProcessor) *        g_pfnWHvCreateVirtualProcessor;
 static decltype(WHvDeleteVirtualProcessor) *        g_pfnWHvDeleteVirtualProcessor;
 static decltype(WHvRunVirtualProcessor) *           g_pfnWHvRunVirtualProcessor;
@@ -122,11 +106,19 @@ static decltype(WHvGetRunExitContextSize) *         g_pfnWHvGetRunExitContextSiz
 static decltype(WHvCancelRunVirtualProcessor) *     g_pfnWHvCancelRunVirtualProcessor;
 static decltype(WHvGetVirtualProcessorRegisters) *  g_pfnWHvGetVirtualProcessorRegisters;
 static decltype(WHvSetVirtualProcessorRegisters) *  g_pfnWHvSetVirtualProcessorRegisters;
+#endif
 /** @} */
 
 /** @name APIs imported from Vid.dll
  * @{ */
-static BOOL (WINAPI *g_pfnVidGetHvPartitionId)(HANDLE hPartition, HV_PARTITION_ID *pidPartition);
+static decltype(VidGetHvPartitionId)               *g_pfnVidGetHvPartitionId;
+static decltype(VidStartVirtualProcessor)          *g_pfnVidStartVirtualProcessor;
+static decltype(VidStopVirtualProcessor)           *g_pfnVidStopVirtualProcessor;
+static decltype(VidMessageSlotMap)                 *g_pfnVidMessageSlotMap;
+static decltype(VidMessageSlotHandleAndGetNext)    *g_pfnVidMessageSlotHandleAndGetNext;
+#ifdef LOG_ENABLED
+static decltype(VidGetVirtualProcessorRunningStatus) *g_pfnVidGetVirtualProcessorRunningStatus;
+#endif
 /** @} */
 
 
@@ -151,14 +143,23 @@ static const struct
     NEM_WIN_IMPORT(0, false, WHvMapGpaRange),
     NEM_WIN_IMPORT(0, false, WHvUnmapGpaRange),
     NEM_WIN_IMPORT(0, false, WHvTranslateGva),
+#ifndef NEM_WIN_USE_OUR_OWN_RUN_API
     NEM_WIN_IMPORT(0, false, WHvCreateVirtualProcessor),
     NEM_WIN_IMPORT(0, false, WHvDeleteVirtualProcessor),
     NEM_WIN_IMPORT(0, false, WHvRunVirtualProcessor),
-    NEM_WIN_IMPORT(0, false, WHvGetRunExitContextSize),
     NEM_WIN_IMPORT(0, false, WHvCancelRunVirtualProcessor),
+    NEM_WIN_IMPORT(0, false, WHvGetRunExitContextSize),
     NEM_WIN_IMPORT(0, false, WHvGetVirtualProcessorRegisters),
     NEM_WIN_IMPORT(0, false, WHvSetVirtualProcessorRegisters),
+#endif
     NEM_WIN_IMPORT(1, false, VidGetHvPartitionId),
+    NEM_WIN_IMPORT(1, false, VidMessageSlotMap),
+    NEM_WIN_IMPORT(1, false, VidMessageSlotHandleAndGetNext),
+    NEM_WIN_IMPORT(1, false, VidStartVirtualProcessor),
+    NEM_WIN_IMPORT(1, false, VidStopVirtualProcessor),
+#ifdef LOG_ENABLED
+    NEM_WIN_IMPORT(1, false, VidGetVirtualProcessorRunningStatus),
+#endif
 #undef NEM_WIN_IMPORT
 };
 
@@ -201,7 +202,14 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
 #ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
 
 /** The real NtDeviceIoControlFile API in NTDLL.   */
-static decltype(NtDeviceIoControlFile) *g_pfnNtDeviceIoControlFile;
+static decltype(NtDeviceIoControlFile)       *g_pfnNtDeviceIoControlFile;
+/** Mapping slot for CPU #0.
+ * @{  */
+static VID_MESSAGE_MAPPING_HEADER            *g_pMsgSlotMapping = NULL;
+static const HV_MESSAGE_HEADER               *g_pHvMsgHdr;
+static const HV_X64_INTERCEPT_MESSAGE_HEADER *g_pX64MsgHdr;
+/** @} */
+
 
 /**
  * Wrapper that logs the call from VID.DLL.
@@ -213,15 +221,50 @@ nemR3WinLogWrapper_NtDeviceIoControlFile(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUT
                                          PIO_STATUS_BLOCK pIos, ULONG uFunction, PVOID pvInput, ULONG cbInput,
                                          PVOID pvOutput, ULONG cbOutput)
 {
+    char szFunction[32];
+    const char *pszFunction;
+    switch (uFunction)
+    {
+        case 0x2210cb: pszFunction = "VidMessageSlotHandleAndGetNext"; break;
+        case 0x2210cc: pszFunction = "VidMessageSlotMap"; break;
+        case 0x221164: pszFunction = "VidStopVirtualProcessor"; break;
+        case 0x221158: pszFunction = "VidStartVirtualProcessor"; break;
+        case 0x2210a7: pszFunction = "VidGetVirtualProcessorState"; break;
+        case 0x221153: pszFunction = "VidSetVirtualProcessorState"; break;
+        default:
+            RTStrPrintf(szFunction, sizeof(szFunction), "%#x", uFunction);
+            pszFunction = szFunction;
+            break;
+    }
+
+    if (cbInput > 0 && pvInput)
+        Log12(("VID!NtDeviceIoControlFile: %s/input: %.*Rhxs\n", pszFunction, RT_MIN(cbInput, 32), pvInput));
     NTSTATUS rcNt = g_pfnNtDeviceIoControlFile(hFile, hEvt, pfnApcCallback, pvApcCtx, pIos, uFunction,
                                                pvInput, cbInput, pvOutput, cbOutput);
     if (!hEvt && !pfnApcCallback && !pvApcCtx)
-        Log12(("VID!NtDeviceIoControlFile: hFile=%#zx pIos=%p->{s:%#x, i:%#zx} uFunction=%#x Input=%p LB %#x Output=%p LB %#x) -> %#x; Caller=%p\n",
-               hFile, pIos, pIos->Status, pIos->Information, uFunction, pvInput, cbInput, pvOutput, cbOutput, rcNt, ASMReturnAddress()));
+        Log12(("VID!NtDeviceIoControlFile: hFile=%#zx pIos=%p->{s:%#x, i:%#zx} uFunction=%s Input=%p LB %#x Output=%p LB %#x) -> %#x; Caller=%p\n",
+               hFile, pIos, pIos->Status, pIos->Information, pszFunction, pvInput, cbInput, pvOutput, cbOutput, rcNt, ASMReturnAddress()));
     else
-        Log12(("VID!NtDeviceIoControlFile: hFile=%#zx hEvt=%#zx Apc=%p/%p pIos=%p->{s:%#x, i:%#zx} uFunction=%#x Input=%p LB %#x Output=%p LB %#x) -> %#x; Caller=%p\n",
-               hFile, hEvt, pfnApcCallback, pvApcCtx, pIos, pIos->Status, pIos->Information, uFunction,
+        Log12(("VID!NtDeviceIoControlFile: hFile=%#zx hEvt=%#zx Apc=%p/%p pIos=%p->{s:%#x, i:%#zx} uFunction=%s Input=%p LB %#x Output=%p LB %#x) -> %#x; Caller=%p\n",
+               hFile, hEvt, pfnApcCallback, pvApcCtx, pIos, pIos->Status, pIos->Information, pszFunction,
                pvInput, cbInput, pvOutput, cbOutput, rcNt, ASMReturnAddress()));
+    if (cbOutput > 0 && pvOutput)
+    {
+        Log12(("VID!NtDeviceIoControlFile: %s/output: %.*Rhxs\n", pszFunction, RT_MIN(cbOutput, 32), pvOutput));
+        if (uFunction == 0x2210cc && g_pMsgSlotMapping == NULL && cbOutput >= sizeof(void *))
+        {
+            g_pMsgSlotMapping = *(VID_MESSAGE_MAPPING_HEADER **)pvOutput;
+            g_pHvMsgHdr       = (const HV_MESSAGE_HEADER               *)(g_pMsgSlotMapping + 1);
+            g_pX64MsgHdr      = (const HV_X64_INTERCEPT_MESSAGE_HEADER *)(g_pHvMsgHdr + 1);
+            Log12(("VID!NtDeviceIoControlFile: Message slot mapping: %p\n", g_pMsgSlotMapping));
+        }
+    }
+    if (g_pMsgSlotMapping && (uFunction == 0x2210cb || uFunction == 0x2210cc || uFunction == 0x221164))
+        Log12(("VID!NtDeviceIoControlFile: enmVidMsgType=%#x cb=%#x msg=%#x payload=%u cs:rip=%04x:%08RX64 (%s)\n",
+               g_pMsgSlotMapping->enmVidMsgType, g_pMsgSlotMapping->cbMessage,
+               g_pHvMsgHdr->MessageType, g_pHvMsgHdr->PayloadSize,
+               g_pX64MsgHdr->CsSegment.Selector, g_pX64MsgHdr->Rip, pszFunction));
+
     return rcNt;
 }
 
@@ -303,8 +346,8 @@ static void nemR3WinInitVidIntercepts(RTLDRMOD hLdrModVid)
     }
     Assert(fSuccess);
 }
-#endif
 
+#endif /* NEM_WIN_INTERCEPT_NT_IO_CTLS */
 
 
 /**
@@ -455,7 +498,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeHypervisorPresent failed: %Rhrc (Last=%#x/%u)",
-                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                             hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
     if (!Caps.HypervisorPresent)
     {
         if (!RTPathExists(RTPATH_NT_PASSTHRU_PREFIX "Device\\VidExo"))
@@ -474,7 +517,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeExtendedVmExits failed: %Rhrc (Last=%#x/%u)",
-                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                             hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
     NEM_LOG_REL_CAP_EX("WHvCapabilityCodeExtendedVmExits", "%'#018RX64", Caps.ExtendedVmExits.AsUINT64);
     pVM->nem.s.fExtendedMsrExit   = RT_BOOL(Caps.ExtendedVmExits.X64MsrExit);
     pVM->nem.s.fExtendedCpuIdExit = RT_BOOL(Caps.ExtendedVmExits.X64CpuidExit);
@@ -494,7 +537,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeFeatures failed: %Rhrc (Last=%#x/%u)",
-                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                             hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
     if (Caps.Features.AsUINT64 & ~(uint64_t)0)
         LogRel(("NEM: Warning! Unknown feature definitions: %#RX64\n", Caps.Features.AsUINT64));
     /** @todo RECHECK: WHV_CAPABILITY_FEATURES typedef. */
@@ -507,7 +550,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeProcessorVendor failed: %Rhrc (Last=%#x/%u)",
-                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                             hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
     switch (Caps.ProcessorVendor)
     {
         /** @todo RECHECK: WHV_PROCESSOR_VENDOR typedef. */
@@ -532,7 +575,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeProcessorFeatures failed: %Rhrc (Last=%#x/%u)",
-                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                             hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
     NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorFeatures", "%'#018RX64", Caps.ProcessorFeatures.AsUINT64);
 #define NEM_LOG_REL_CPU_FEATURE(a_Field)    NEM_LOG_REL_CAP_SUB(#a_Field, Caps.ProcessorFeatures.a_Field)
     NEM_LOG_REL_CPU_FEATURE(Sse3Support);
@@ -591,7 +634,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeProcessorClFlushSize failed: %Rhrc (Last=%#x/%u)",
-                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                             hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
     NEM_LOG_REL_CAP_EX("WHvCapabilityCodeProcessorClFlushSize", "2^%u", Caps.ProcessorClFlushSize);
     if (Caps.ProcessorClFlushSize < 8 && Caps.ProcessorClFlushSize > 9)
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Unsupported cache line flush size: %u", Caps.ProcessorClFlushSize);
@@ -649,7 +692,7 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
     HRESULT hrc = WHvCreatePartition(&hPartition);
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED, "WHvCreatePartition failed with %Rhrc (Last=%#x/%u)",
-                             hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                             hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
 
     int rc;
 
@@ -695,7 +738,7 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
     else
         rc = RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED,
                            "Failed setting WHvPartitionPropertyCodeProcessorCount to %u: %Rhrc (Last=%#x/%u)",
-                           pVM->cCpus, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                           pVM->cCpus, hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
     WHvDeletePartition(hPartition);
 
     Assert(!pVM->nem.s.hPartitionDevice);
@@ -798,7 +841,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorVendor to %u: %Rhrc (Last=%#x/%u)",
-                          Property.ProcessorVendor, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                          Property.ProcessorVendor, hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
 
     /* Not sure if we really need to set the cache line flush size. */
     RT_ZERO(Property);
@@ -808,7 +851,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorClFlushSize to %u: %Rhrc (Last=%#x/%u)",
-                          pVM->nem.s.cCacheLineFlushShift, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                          pVM->nem.s.cCacheLineFlushShift, hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
 
     /*
      * Sync CPU features with CPUM.
@@ -823,7 +866,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorFeatures to %'#RX64: %Rhrc (Last=%#x/%u)",
-                          pVM->nem.s.uCpuFeatures.u64, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                          pVM->nem.s.uCpuFeatures.u64, hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
 
     /*
      * Set up the partition and create EMTs.
@@ -835,7 +878,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)",
-                          hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                          hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
 
     /* Get the handle. */
     HANDLE hPartitionDevice;
@@ -857,31 +900,53 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     if (!g_pfnVidGetHvPartitionId(hPartitionDevice, &idHvPartition))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to get device handle and/or partition ID for %p (hPartitionDevice=%p, Last=%#x/%u)",
-                          hPartition, hPartitionDevice, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue);
+                          hPartition, hPartitionDevice, RTNtLastStatusValue(), RTNtLastErrorValue());
     pVM->nem.s.hPartitionDevice = hPartitionDevice;
     pVM->nem.s.idHvPartition    = idHvPartition;
 
     /*
-     * Create EMTs.
+     * Setup the EMTs.
      */
     VMCPUID iCpu;
     for (iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
+        PVMCPU pVCpu = &pVM->aCpus[iCpu];
+
+        pVCpu->nem.s.hNativeThreadHandle = (RTR3PTR)RTThreadGetNativeHandle(VMR3GetThreadHandle(pVCpu->pUVCpu));
+        Assert((HANDLE)pVCpu->nem.s.hNativeThreadHandle != INVALID_HANDLE_VALUE);
+
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+        VID_MAPPED_MESSAGE_SLOT MappedMsgSlot = { NULL, UINT32_MAX, UINT32_MAX };
+        if (g_pfnVidMessageSlotMap(hPartitionDevice, &MappedMsgSlot, iCpu))
+        {
+            AssertLogRelMsg(MappedMsgSlot.iCpu == iCpu && MappedMsgSlot.uParentAdvisory == UINT32_MAX,
+                            ("%#x %#x (iCpu=%#x)\n", MappedMsgSlot.iCpu, MappedMsgSlot.uParentAdvisory, iCpu));
+            pVCpu->nem.s.pvMsgSlotMapping = MappedMsgSlot.pMsgBlock;
+        }
+        else
+        {
+            NTSTATUS const rcNtLast  = RTNtLastStatusValue();
+            DWORD const    dwErrLast = RTNtLastErrorValue();
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                              "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
+        }
+#else
         hrc = WHvCreateVirtualProcessor(hPartition, iCpu, 0 /*fFlags*/);
         if (FAILED(hrc))
         {
-            NTSTATUS const rcNtLast  = RTNtCurrentTeb()->LastStatusValue;
-            DWORD const    dwErrLast = RTNtCurrentTeb()->LastErrorValue;
+            NTSTATUS const rcNtLast  = RTNtLastStatusValue();
+            DWORD const    dwErrLast = RTNtLastErrorValue();
             while (iCpu-- > 0)
             {
                 HRESULT hrc2 = WHvDeleteVirtualProcessor(hPartition, iCpu);
                 AssertLogRelMsg(SUCCEEDED(hrc2), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
-                                                  hPartition, iCpu, hrc2, RTNtCurrentTeb()->LastStatusValue,
-                                                  RTNtCurrentTeb()->LastErrorValue));
+                                                  hPartition, iCpu, hrc2, RTNtLastStatusValue(),
+                                                  RTNtLastErrorValue()));
             }
             return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                               "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
         }
+#endif /* !NEM_WIN_USE_OUR_OWN_RUN_API */
     }
     pVM->nem.s.fCreatedEmts = true;
 
@@ -911,10 +976,14 @@ int nemR3NativeTerm(PVM pVM)
         LogRel(("NEM: Destroying partition %p with its %u VCpus...\n", hPartition, iCpu));
         while (iCpu-- > 0)
         {
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+            pVM->aCpus[iCpu].nem.s.pvMsgSlotMapping = NULL;
+#else
             HRESULT hrc = WHvDeleteVirtualProcessor(hPartition, iCpu);
             AssertLogRelMsg(SUCCEEDED(hrc), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
-                                             hPartition, iCpu, hrc, RTNtCurrentTeb()->LastStatusValue,
-                                             RTNtCurrentTeb()->LastErrorValue));
+                                             hPartition, iCpu, hrc, RTNtLastStatusValue(),
+                                             RTNtLastErrorValue()));
+#endif
         }
         WHvDeletePartition(hPartition);
     }
@@ -1292,7 +1361,7 @@ static int nemR3WinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         return VINF_SUCCESS;
     AssertLogRelMsgFailed(("WHvSetVirtualProcessorRegisters(%p, %u,,%u,) -> %Rhrc (Last=%#x/%u)\n",
                            pVM->nem.s.hPartition, pVCpu->idCpu, iReg,
-                           hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+                           hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
     return VERR_INTERNAL_ERROR;
 #endif /* !NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 }
@@ -1665,13 +1734,416 @@ static int nemR3WinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     AssertLogRelMsgFailed(("WHvGetVirtualProcessorRegisters(%p, %u,,%u,) -> %Rhrc (Last=%#x/%u)\n",
                            pVM->nem.s.hPartition, pVCpu->idCpu, cRegs,
-                           hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+                           hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
     return VERR_INTERNAL_ERROR;
 #endif /* !NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 }
 
 
 #ifdef LOG_ENABLED
+/**
+ * Get the virtual processor running status.
+ */
+DECLINLINE(VID_PROCESSOR_STATUS) nemR3WinCpuGetRunningStatus(PVMCPU pVCpu)
+{
+    RTERRVARS Saved;
+    RTErrVarsSave(&Saved);
+
+    /*
+     * This API is disabled in release builds, it seems.  On build 17101 it requires
+     * the following patch to be enabled (windbg): eb vid+12180 0f 84 98 00 00 00
+     */
+    VID_PROCESSOR_STATUS enmCpuStatus = VidProcessorStatusUndefined;
+    NTSTATUS rcNt = g_pfnVidGetVirtualProcessorRunningStatus(pVCpu->pVMR3->nem.s.hPartitionDevice, pVCpu->idCpu, &enmCpuStatus);
+    AssertRC(rcNt);
+
+    RTErrVarsRestore(&Saved);
+    return enmCpuStatus;
+}
+#endif
+
+
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+
+/**
+ * Our own WHvCancelRunVirtualProcessor that can later be moved to ring-0.
+ *
+ * This is an experiment only.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ */
+static int nemR3WinCancelRunVirtualProcessor(PVM pVM, PVMCPU pVCpu)
+{
+    /*
+     * Work the state.
+     *
+     * From the looks of things, we should let the EMT call VidStopVirtualProcessor.
+     * So, we just need to modify the state and kick the EMT if it's waiting on
+     * messages.  For the latter we use QueueUserAPC / KeAlterThread.
+     */
+    for (;;)
+    {
+        VMCPUSTATE enmState = VMCPU_GET_STATE(pVCpu);
+        switch (enmState)
+        {
+            case VMCPUSTATE_STARTED_EXEC_NEM:
+                if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED, VMCPUSTATE_STARTED_EXEC_NEM))
+                {
+                    Log8(("nemR3WinCancelRunVirtualProcessor: Switched %u to canceled state\n", pVCpu->idCpu));
+                    return VINF_SUCCESS;
+                }
+                break;
+
+            case VMCPUSTATE_STARTED_EXEC_NEM_WAIT:
+            {
+                if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED, VMCPUSTATE_STARTED_EXEC_NEM_WAIT))
+                {
+                    NTSTATUS rcNt = NtAlertThread(pVCpu->nem.s.hNativeThreadHandle);
+                    Log8(("nemR3WinCancelRunVirtualProcessor: Alerted %u: %#x\n", pVCpu->idCpu, rcNt));
+                    Assert(rcNt == STATUS_SUCCESS);
+                    if (NT_SUCCESS(rcNt))
+                        return VINF_SUCCESS;
+                    AssertLogRelMsgFailedReturn(("NtAlertThread failed: %#x\n", rcNt), RTErrConvertFromNtStatus(rcNt));
+                }
+                break;
+            }
+
+            default:
+                return VINF_SUCCESS;
+        }
+
+        ASMNopPause();
+        RT_NOREF(pVM);
+    }
+}
+
+
+/** 
+ * Fills in WHV_VP_EXIT_CONTEXT from HV_X64_INTERCEPT_MESSAGE_HEADER.
+ */
+DECLINLINE(void) nemR3WinConvertX64MsgHdrToVpExitCtx(HV_X64_INTERCEPT_MESSAGE_HEADER const *pHdr, WHV_VP_EXIT_CONTEXT *pCtx)
+{
+    pCtx->ExecutionState.AsUINT16   = pHdr->ExecutionState.AsUINT16;
+    pCtx->InstructionLength         = pHdr->InstructionLength;
+    pCtx->Cs.Base                   = pHdr->CsSegment.Base;
+    pCtx->Cs.Limit                  = pHdr->CsSegment.Limit;
+    pCtx->Cs.Selector               = pHdr->CsSegment.Selector;
+    pCtx->Cs.Attributes             = pHdr->CsSegment.Attributes;
+    pCtx->Rip                       = pHdr->Rip;
+    pCtx->Rflags                    = pHdr->Rflags;
+}
+
+
+/**
+ * Convert hyper-V exit message to the WinHvPlatform structures.
+ *
+ * @returns VBox status code
+ * @param   pMsgHdr         The message to convert.
+ * @param   pExitCtx        The output structure. Assumes zeroed.
+ */
+static int nemR3WinRunVirtualProcessorConvertPending(HV_MESSAGE_HEADER const *pMsgHdr, WHV_RUN_VP_EXIT_CONTEXT *pExitCtx)
+{
+    switch (pMsgHdr->MessageType)
+    {
+        case HvMessageTypeUnmappedGpa:
+        case HvMessageTypeGpaIntercept:
+        {
+            PCHV_X64_MEMORY_INTERCEPT_MESSAGE pMemMsg = (PCHV_X64_MEMORY_INTERCEPT_MESSAGE)(pMsgHdr + 1);
+            Assert(pMsgHdr->PayloadSize == RT_UOFFSETOF(HV_X64_MEMORY_INTERCEPT_MESSAGE, DsSegment));
+
+            pExitCtx->ExitReason                            = WHvRunVpExitReasonMemoryAccess;
+            nemR3WinConvertX64MsgHdrToVpExitCtx(&pMemMsg->Header, &pExitCtx->MemoryAccess.VpContext);
+            pExitCtx->MemoryAccess.InstructionByteCount     = pMemMsg->InstructionByteCount;
+            ((uint64_t *)pExitCtx->MemoryAccess.InstructionBytes)[0] = ((uint64_t const *)pMemMsg->InstructionBytes)[0];
+            ((uint64_t *)pExitCtx->MemoryAccess.InstructionBytes)[1] = ((uint64_t const *)pMemMsg->InstructionBytes)[1];
+
+            pExitCtx->MemoryAccess.AccessInfo.AccessType    = pMemMsg->Header.InterceptAccessType;
+            pExitCtx->MemoryAccess.AccessInfo.GpaUnmapped   = pMsgHdr->MessageType == HvMessageTypeUnmappedGpa;
+            pExitCtx->MemoryAccess.AccessInfo.GvaValid      = pMemMsg->MemoryAccessInfo.GvaValid;
+            pExitCtx->MemoryAccess.AccessInfo.Reserved      = pMemMsg->MemoryAccessInfo.Reserved;
+            pExitCtx->MemoryAccess.Gpa                      = pMemMsg->GuestPhysicalAddress;
+            pExitCtx->MemoryAccess.Gva                      = pMemMsg->GuestVirtualAddress;
+            return VINF_SUCCESS;
+        }
+
+        case HvMessageTypeX64IoPortIntercept:
+        {
+            PCHV_X64_IO_PORT_INTERCEPT_MESSAGE pPioMsg= (PCHV_X64_IO_PORT_INTERCEPT_MESSAGE)(pMsgHdr + 1);
+            Assert(pMsgHdr->PayloadSize == sizeof(*pPioMsg));
+
+            pExitCtx->ExitReason                            = WHvRunVpExitReasonX64IoPortAccess;
+            nemR3WinConvertX64MsgHdrToVpExitCtx(&pPioMsg->Header, &pExitCtx->IoPortAccess.VpContext);
+            pExitCtx->IoPortAccess.InstructionByteCount     = pPioMsg->InstructionByteCount;
+            ((uint64_t *)pExitCtx->IoPortAccess.InstructionBytes)[0] = ((uint64_t const *)pPioMsg->InstructionBytes)[0];
+            ((uint64_t *)pExitCtx->IoPortAccess.InstructionBytes)[1] = ((uint64_t const *)pPioMsg->InstructionBytes)[1];
+
+            pExitCtx->IoPortAccess.AccessInfo.IsWrite       = pPioMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE;
+            pExitCtx->IoPortAccess.AccessInfo.AccessSize    = pPioMsg->AccessInfo.AccessSize;
+            pExitCtx->IoPortAccess.AccessInfo.StringOp      = pPioMsg->AccessInfo.StringOp;
+            pExitCtx->IoPortAccess.AccessInfo.RepPrefix     = pPioMsg->AccessInfo.RepPrefix;
+            pExitCtx->IoPortAccess.AccessInfo.Reserved      = pPioMsg->AccessInfo.Reserved;
+            pExitCtx->IoPortAccess.PortNumber               = pPioMsg->PortNumber;
+            pExitCtx->IoPortAccess.Rax                      = pPioMsg->Rax;
+            pExitCtx->IoPortAccess.Rcx                      = pPioMsg->Rcx;
+            pExitCtx->IoPortAccess.Rsi                      = pPioMsg->Rsi;
+            pExitCtx->IoPortAccess.Rdi                      = pPioMsg->Rdi;
+            pExitCtx->IoPortAccess.Ds.Base                  = pPioMsg->DsSegment.Base;
+            pExitCtx->IoPortAccess.Ds.Limit                 = pPioMsg->DsSegment.Limit;
+            pExitCtx->IoPortAccess.Ds.Selector              = pPioMsg->DsSegment.Selector;
+            pExitCtx->IoPortAccess.Ds.Attributes            = pPioMsg->DsSegment.Attributes;
+            pExitCtx->IoPortAccess.Es.Base                  = pPioMsg->EsSegment.Base;
+            pExitCtx->IoPortAccess.Es.Limit                 = pPioMsg->EsSegment.Limit;
+            pExitCtx->IoPortAccess.Es.Selector              = pPioMsg->EsSegment.Selector;
+            pExitCtx->IoPortAccess.Es.Attributes            = pPioMsg->EsSegment.Attributes;
+            return VINF_SUCCESS;
+        }
+
+        case HvMessageTypeX64Halt:
+        {
+            PCHV_X64_HALT_MESSAGE pHaltMsg = (PCHV_X64_HALT_MESSAGE)(pMsgHdr + 1);
+            AssertMsg(pHaltMsg->u64Reserved == 0, ("HALT reserved: %#RX64\n", pHaltMsg->u64Reserved));
+            pExitCtx->ExitReason = WHvRunVpExitReasonX64Halt;
+            return VINF_SUCCESS;
+        }
+
+        case HvMessageTypeX64InterruptWindow:
+            AssertLogRelMsgFailedReturn(("Message type %#x not implemented!\n", pMsgHdr->MessageType), VERR_INTERNAL_ERROR_2);
+
+        case HvMessageTypeInvalidVpRegisterValue:
+        case HvMessageTypeUnrecoverableException:
+        case HvMessageTypeUnsupportedFeature:
+        case HvMessageTypeTlbPageSizeMismatch:
+            AssertLogRelMsgFailedReturn(("Message type %#x not implemented!\n", pMsgHdr->MessageType), VERR_INTERNAL_ERROR_2);
+
+        case HvMessageTypeX64MsrIntercept:
+        case HvMessageTypeX64CpuidIntercept:
+        case HvMessageTypeX64ExceptionIntercept:
+        case HvMessageTypeX64ApicEoi:
+        case HvMessageTypeX64LegacyFpError:
+        case HvMessageTypeX64RegisterIntercept:
+        case HvMessageTypeApicEoi:
+        case HvMessageTypeFerrAsserted:
+        case HvMessageTypeEventLogBufferComplete:
+        case HvMessageTimerExpired:
+            AssertLogRelMsgFailedReturn(("Unexpected message type #x!\n", pMsgHdr->MessageType), VERR_INTERNAL_ERROR_2);
+
+        default:
+            AssertLogRelMsgFailedReturn(("Unknown message type #x!\n", pMsgHdr->MessageType), VERR_INTERNAL_ERROR_2);
+    }
+}
+
+
+/**
+ * Our own WHvRunVirtualProcessor that can later be moved to ring-0.
+ *
+ * This is an experiment only.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   pExitCtx        Where to return exit information.
+ * @param   cbExitCtx       Size of the exit information area.
+ */
+static int nemR3WinRunVirtualProcessor(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT *pExitCtx, size_t cbExitCtx)
+{
+    RT_BZERO(pExitCtx, cbExitCtx);
+
+    /*
+     * Tell the CPU to execute stuff if we haven't got a pending message.
+     */
+    VID_MESSAGE_MAPPING_HEADER volatile *pMappingHeader = (VID_MESSAGE_MAPPING_HEADER volatile *)pVCpu->nem.s.pvMsgSlotMapping;
+    uint32_t                             fHandleAndGetFlags;
+    if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED))
+    {
+        uint8_t const bMsgState = pVCpu->nem.s.bMsgState;
+        if (bMsgState == NEM_WIN_MSG_STATE_PENDING_MSG)
+        {
+            Assert(pMappingHeader->enmVidMsgType == VidMessageHypervisorMessage);
+            fHandleAndGetFlags = VID_MSHAGN_F_GET_NEXT_MESSAGE | VID_MSHAGN_F_HANDLE_MESSAGE;
+            Log8(("nemR3WinRunVirtualProcessor: #1: msg pending, no need to start CPU (cpu state %u)\n", nemR3WinCpuGetRunningStatus(pVCpu) ));
+        }
+        else if (bMsgState != NEM_WIN_MSG_STATE_STARTED)
+        {
+            if (bMsgState == NEM_WIN_MSG_STATE_PENDING_STOP_AND_MSG)
+            {
+                Log8(("nemR3WinRunVirtualProcessor: #0: pending stop+message (cpu status %u)\n", nemR3WinCpuGetRunningStatus(pVCpu) ));
+                /* ACK the pending message and get the stop message. */
+                BOOL fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
+                                                                 VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE, 5000);
+                AssertLogRelMsg(fWait, ("dwErr=%u (%#x) rcNt=%#x\n", RTNtLastErrorValue(), RTNtLastErrorValue(), RTNtLastStatusValue()));
+
+                /* ACK the stop message. */
+                fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
+                                                                 VID_MSHAGN_F_HANDLE_MESSAGE, 5000);
+                AssertLogRelMsg(fWait, ("dwErr=%u (%#x) rcNt=%#x\n", RTNtLastErrorValue(), RTNtLastErrorValue(), RTNtLastStatusValue()));
+
+                pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_STOPPED;
+            }
+
+            Log8(("nemR3WinRunVirtualProcessor: #1: starting CPU (cpu status %u)\n", nemR3WinCpuGetRunningStatus(pVCpu) ));
+            if (g_pfnVidStartVirtualProcessor(pVM->nem.s.hPartitionDevice, pVCpu->idCpu))
+                pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_STARTED;
+            else
+            {
+                VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM);
+                AssertLogRelMsgFailedReturn(("VidStartVirtualProcessor failed for CPU #%u: rcNt=%#x dwErr=%u\n",
+                                             pVCpu->idCpu, RTNtLastStatusValue(), RTNtLastErrorValue()),
+                                            VERR_INTERNAL_ERROR_3);
+            }
+            fHandleAndGetFlags = VID_MSHAGN_F_GET_NEXT_MESSAGE;
+        }
+        else
+        {
+            /* This shouldn't happen. */
+            fHandleAndGetFlags = VID_MSHAGN_F_GET_NEXT_MESSAGE;
+            Log8(("nemR3WinRunVirtualProcessor: #1: NO MSG PENDING! No need to start CPU (cpu state %u)\n", nemR3WinCpuGetRunningStatus(pVCpu) ));
+        }
+    }
+    else
+    {
+        Log8(("nemR3WinRunVirtualProcessor: #1: state=%u -> canceled (cpu status %u)\n",
+              VMCPU_GET_STATE(pVCpu), nemR3WinCpuGetRunningStatus(pVCpu)));
+        pExitCtx->ExitReason = WHvRunVpExitReasonCanceled;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Wait for it to stop and give us a reason to work with.
+     */
+    uint32_t cMillies = 5000; // Starting low so we can experiment without getting stuck.
+    for (;;)
+    {
+        if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_WAIT, VMCPUSTATE_STARTED_EXEC_NEM))
+        {
+            Log8(("nemR3WinRunVirtualProcessor: #2: Waiting %#x (cpu status %u)...\n",
+                  fHandleAndGetFlags, nemR3WinCpuGetRunningStatus(pVCpu)));
+            BOOL fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
+                                                             fHandleAndGetFlags, cMillies);
+            if (fWait)
+            {
+                /* Not sure yet, but we have to check whether there is anything pending
+                   and retry if there isn't. */
+                VID_MESSAGE_TYPE const enmVidMsgType = pMappingHeader->enmVidMsgType;
+                if (enmVidMsgType == VidMessageHypervisorMessage)
+                {
+                    if (!VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM_WAIT))
+                        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
+                    Log8(("nemR3WinRunVirtualProcessor: #3: wait succeeded: %#x / %#x (cpu status %u)\n",
+                          enmVidMsgType, ((HV_MESSAGE_HEADER const *)(pMappingHeader + 1))->MessageType,
+                          nemR3WinCpuGetRunningStatus(pVCpu) ));
+                    pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_PENDING_MSG;
+                    return nemR3WinRunVirtualProcessorConvertPending((HV_MESSAGE_HEADER const *)(pMappingHeader + 1), pExitCtx);
+                }
+
+                /* This shouldn't happen, and I think its wrong. */
+                VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
+#ifdef DEBUG_bird
+                __debugbreak();
+#endif
+                Log8(("nemR3WinRunVirtualProcessor: #3: wait succeeded, but nothing pending: %#x / %#x (cpu status %u)\n",
+                      enmVidMsgType, ((HV_MESSAGE_HEADER const *)(pMappingHeader + 1))->MessageType, nemR3WinCpuGetRunningStatus(pVCpu) ));
+                pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_STARTED;
+                AssertLogRelMsgReturnStmt(enmVidMsgType == VidMessageStopRequestComplete,
+                                          ("enmVidMsgType=%#x\n", enmVidMsgType),
+                                          g_pfnVidStopVirtualProcessor(pVM->nem.s.hPartitionDevice, pVCpu->idCpu),
+                                          VERR_INTERNAL_ERROR_3);
+                fHandleAndGetFlags &= ~VID_MSHAGN_F_HANDLE_MESSAGE;
+            }
+            else
+            {
+                VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
+
+                /* Note! VID.SYS merges STATUS_ALERTED and STATUS_USER_APC into STATUS_TIMEOUT. */
+                DWORD const dwErr = RTNtLastErrorValue();
+                AssertLogRelMsgReturnStmt(   dwErr == STATUS_TIMEOUT
+                                          || dwErr == STATUS_ALERTED || dwErr == STATUS_USER_APC, /* just in case */
+                                          ("dwErr=%u (%#x) (cpu status %u)\n", dwErr, dwErr, nemR3WinCpuGetRunningStatus(pVCpu)),
+                                          g_pfnVidStopVirtualProcessor(pVM->nem.s.hPartitionDevice, pVCpu->idCpu),
+                                          VERR_INTERNAL_ERROR_3);
+                Log8(("nemR3WinRunVirtualProcessor: #3: wait timed out (cpu status %u)\n", nemR3WinCpuGetRunningStatus(pVCpu) ));
+                pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_STARTED;
+                fHandleAndGetFlags &= ~VID_MSHAGN_F_HANDLE_MESSAGE;
+            }
+        }
+        else
+        {
+            /*
+             * State changed and we need to return.
+             *
+             * We must ensure that the processor is not running while we
+             * return, and that can be a bit complicated.
+             */
+            Log8(("nemR3WinRunVirtualProcessor: #4: state changed to %u (cpu status %u)\n",
+                  VMCPU_GET_STATE(pVCpu), nemR3WinCpuGetRunningStatus(pVCpu) ));
+            VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
+
+            /* If we haven't marked the pervious message as handled, simply return
+               without doing anything special. */
+            if (fHandleAndGetFlags & VID_MSHAGN_F_HANDLE_MESSAGE)
+            {
+                Log8(("nemR3WinRunVirtualProcessor: #5: Didn't resume previous message.\n"));
+                pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_PENDING_MSG;
+                pExitCtx->ExitReason = WHvRunVpExitReasonCanceled;
+                return VINF_SUCCESS;
+            }
+
+            /* The processor is running, so try stop it. */
+            BOOL fStop = g_pfnVidStopVirtualProcessor(pVM->nem.s.hPartitionDevice, pVCpu->idCpu);
+            if (fStop)
+            {
+                Log8(("nemR3WinRunVirtualProcessor: #5: Stopping CPU succeeded (cpu status %u)\n", nemR3WinCpuGetRunningStatus(pVCpu) ));
+                pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_STOPPED;
+                pExitCtx->ExitReason = WHvRunVpExitReasonCanceled;
+                return VINF_SUCCESS;
+            }
+
+            /* Dang, the CPU stopped by itself with a message pending. */
+            DWORD dwErr = RTNtLastErrorValue();
+            Log8(("nemR3WinRunVirtualProcessor: #5: Stopping CPU failed (%u/%#x) - cpu status %u\n",
+                  dwErr, dwErr, nemR3WinCpuGetRunningStatus(pVCpu) ));
+            pExitCtx->ExitReason = WHvRunVpExitReasonCanceled;
+            AssertLogRelMsgReturn(dwErr == ERROR_VID_STOP_PENDING, ("dwErr=%#u\n", dwErr), VERR_INTERNAL_ERROR_3);
+
+            /* Get the pending message. */
+            BOOL fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
+                                                             VID_MSHAGN_F_GET_NEXT_MESSAGE, 5000);
+            AssertLogRelMsgReturn(fWait, ("error=%#u\n", RTNtLastErrorValue()), VERR_INTERNAL_ERROR_3);
+
+            VID_MESSAGE_TYPE const enmVidMsgType = pMappingHeader->enmVidMsgType;
+            if (enmVidMsgType == VidMessageHypervisorMessage)
+            {
+                Log8(("nemR3WinRunVirtualProcessor: #6: wait succeeded: %#x / %#x (cpu status %u)\n", enmVidMsgType,
+                      ((HV_MESSAGE_HEADER const *)(pMappingHeader + 1))->MessageType, nemR3WinCpuGetRunningStatus(pVCpu) ));
+                pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_PENDING_STOP_AND_MSG;
+                return nemR3WinRunVirtualProcessorConvertPending((HV_MESSAGE_HEADER const *)(pMappingHeader + 1), pExitCtx);
+            }
+
+            /* ACK the stop message, if that's what it is.  Don't think we'll ever get here. */
+            Log8(("nemR3WinRunVirtualProcessor: #6b: wait succeeded: %#x / %#x (cpu status %u)\n", enmVidMsgType,
+                  ((HV_MESSAGE_HEADER const *)(pMappingHeader + 1))->MessageType, nemR3WinCpuGetRunningStatus(pVCpu) ));
+            AssertLogRelMsgReturn(enmVidMsgType == VidMessageStopRequestComplete, ("enmVidMsgType=%#x\n", enmVidMsgType),
+                                  VERR_INTERNAL_ERROR_3);
+            fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
+                                                        VID_MSHAGN_F_HANDLE_MESSAGE, 5000);
+            AssertLogRelMsgReturn(fWait, ("dwErr=%#u\n", RTNtLastErrorValue()), VERR_INTERNAL_ERROR_3);
+
+            pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_STOPPED;
+            pExitCtx->ExitReason = WHvRunVpExitReasonCanceled;
+            return VINF_SUCCESS;
+        }
+
+        /** @todo check flags and stuff? */
+    }
+}
+
+#endif /* NEM_WIN_USE_OUR_OWN_RUN_API */
+
+#ifdef LOG_ENABLED
+
 /**
  * Log the full details of an exit reason.
  *
@@ -1889,8 +2361,8 @@ static DECLCALLBACK(int) nemR3WinUnmapOnePageCallback(PVM pVM, PVMCPU pVCpu, RTG
         LogRel(("nemR3WinUnmapOnePageCallback: GCPhys=%RGp rc=%Rrc\n", GCPhys, rc));
 #else
         LogRel(("nemR3WinUnmapOnePageCallback: GCPhys=%RGp %s hrc=%Rhrc (%#x) Last=%#x/%u (cMappedPages=%u)\n",
-                GCPhys, g_apszPageStates[*pu2NemState], hrc, hrc, RTNtCurrentTeb()->LastStatusValue,
-                RTNtCurrentTeb()->LastErrorValue, pVM->nem.s.cMappedPages));
+                GCPhys, g_apszPageStates[*pu2NemState], hrc, hrc, RTNtLastStatusValue(),
+                RTNtLastErrorValue(), pVM->nem.s.cMappedPages));
 #endif
         *pu2NemState = NEM_WIN_PAGE_STATE_NOT_SET;
     }
@@ -2071,7 +2543,7 @@ static DECLCALLBACK(int) nemR3WinHandleMemoryAccessPageCheckerCallback(PVM pVM, 
     return rc;
 #else
     LogRel(("nemR3WinHandleMemoryAccessPageCheckerCallback/unmap: GCPhysDst=%RGp %s hrc=%Rhrc (%#x) Last=%#x/%u (cMappedPages=%u)\n",
-            GCPhys, g_apszPageStates[u2State], hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue,
+            GCPhys, g_apszPageStates[u2State], hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue(),
             pVM->nem.s.cMappedPages));
 
     PGMPhysNemEnumPagesByState(pVM, pVCpu, NEM_WIN_PAGE_STATE_READABLE, nemR3WinUnmapOnePageCallback, NULL);
@@ -2314,14 +2786,21 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         if (   !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
             && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         {
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+            int rc2 = nemR3WinRunVirtualProcessor(pVM, pVCpu, &ExitReason, sizeof(ExitReason));
+            AssertRCBreakStmt(rc2, rcStrict = rc2);
+#else
+            Log8(("Calling WHvRunVirtualProcessor\n"));
             VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED);
             HRESULT hrc = WHvRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, &ExitReason, sizeof(ExitReason));
             VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM);
             AssertLogRelMsgBreakStmt(SUCCEEDED(hrc),
                                      ("WHvRunVirtualProcessor(%p, %u,,) -> %Rhrc (Last=%#x/%u)\n", pVM->nem.s.hPartition, pVCpu->idCpu,
-                                      hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue),
+                                      hrc, RTNtLastStatusValue(), RTNtLastErrorValue()),
                                      rcStrict = VERR_INTERNAL_ERROR);
-            Log2(("WHvRunVirtualProcessor -> %#x; exit code %#x (%d)\n", hrc, ExitReason.ExitReason, ExitReason.ExitReason));
+            Log2(("WHvRunVirtualProcessor -> %#x; exit code %#x (%d) (cpu status %u)\n",
+                  hrc, ExitReason.ExitReason, ExitReason.ExitReason, nemR3WinCpuGetRunningStatus(pVCpu) ));
+#endif
         }
         else
         {
@@ -2493,10 +2972,14 @@ bool nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
  */
 void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 {
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+    nemR3WinCancelRunVirtualProcessor(pVM, pVCpu);
+#else
+    Log8(("nemR3NativeNotifyFF: canceling %u\n", pVCpu->idCpu));
     HRESULT hrc = WHvCancelRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, 0);
     AssertMsg(SUCCEEDED(hrc), ("WHvCancelRunVirtualProcessor -> hrc=%Rhrc\n", hrc));
-
     RT_NOREF_PV(hrc);
+#endif
     RT_NOREF_PV(fFlags);
 }
 
@@ -2576,7 +3059,7 @@ int nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
             else
             {
                 LogRel(("nemR3NativeNotifyPhysRomRegisterEarly: GCPhys=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
-                        GCPhys, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+                        GCPhys, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
                 return VERR_NEM_INIT_FAILED;
             }
         }
@@ -2643,7 +3126,7 @@ static DECLCALLBACK(int) nemR3WinUnsetForA20CheckerCallback(PVM pVM, PVMCPU pVCp
             return rc;
 #else
             LogRel(("nemR3WinUnsetForA20CheckerCallback/unmap: GCPhys=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
-                    GCPhys, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+                    GCPhys, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
             return VERR_INTERNAL_ERROR_2;
 #endif
         }
@@ -2857,7 +3340,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
             else
             {
                 LogRel(("nemR3NativeSetPhysPage/unmap: GCPhysDst=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
-                        GCPhysDst, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+                        GCPhysDst, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
                 return VERR_NEM_INIT_FAILED;
             }
 # endif
@@ -2900,7 +3383,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
                 return VINF_SUCCESS;
             }
             LogRel(("nemR3NativeSetPhysPage/writable: GCPhysDst=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
-                    GCPhysDst, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+                    GCPhysDst, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
             return VERR_NEM_INIT_FAILED;
         }
         LogRel(("nemR3NativeSetPhysPage/writable: GCPhysSrc=%RGp rc=%Rrc\n", GCPhysSrc, rc));
@@ -2940,7 +3423,7 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
                 return VINF_SUCCESS;
             }
             LogRel(("nemR3NativeSetPhysPage/readonly: GCPhysDst=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
-                    GCPhysDst, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+                    GCPhysDst, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
             return VERR_NEM_INIT_FAILED;
         }
         LogRel(("nemR3NativeSetPhysPage/readonly: GCPhysSrc=%RGp rc=%Rrc\n", GCPhysSrc, rc));
@@ -2987,7 +3470,7 @@ static int nemR3JustUnmapPageFromHyperV(PVM pVM, RTGCPHYS GCPhysDst, uint8_t *pu
         return VINF_SUCCESS;
     }
     LogRel(("nemR3JustUnmapPageFromHyperV(%RGp): failed! hrc=%Rhrc (%#x) Last=%#x/%u\n",
-            GCPhysDst, hrc, hrc, RTNtCurrentTeb()->LastStatusValue, RTNtCurrentTeb()->LastErrorValue));
+            GCPhysDst, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
     return VERR_INTERNAL_ERROR_3;
 #endif
 }

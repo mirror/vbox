@@ -27,6 +27,7 @@
 #ifndef ___iprt_nt_hyperv_h
 #define ___iprt_nt_hyperv_h
 
+
 #ifndef IN_IDA_PRO
 # include <iprt/types.h>
 # include <iprt/assertcompile.h>
@@ -52,6 +53,18 @@ typedef uint64_t HV_GPA_PAGE_NUMBER;
 typedef uint64_t HV_SPA_PAGE_NUMBER;
 /** Hyper-V unsigned 128-bit integer type.   */
 typedef struct { uint64_t Low64, High64; } HV_UINT128;
+/** Hyper-V port ID. */
+typedef union
+{
+    uint32_t        AsUINT32;
+    struct
+    {
+        uint32_t    Id       : 24;
+        uint32_t    Reserved : 8;
+    };
+} HV_PORT_ID;
+/** Pointer to a Hyper-V port ID. */
+typedef HV_PORT_ID *PHV_PORT_ID;
 
 
 /**
@@ -916,6 +929,7 @@ typedef struct _HV_X64_SEGMENT_REGISTER
         uint16_t        Attributes;
     };
 } HV_X64_SEGMENT_REGISTER;
+AssertCompileSize(HV_X64_SEGMENT_REGISTER, 16);
 /** Pointer to a value of HvX64RegisterEs..Tr. */
 typedef HV_X64_SEGMENT_REGISTER *PHV_X64_SEGMENT_REGISTER;
 
@@ -927,6 +941,7 @@ typedef struct
     uint16_t            Limit;
     uint64_t            Base;
 } HV_X64_TABLE_REGISTER;
+AssertCompileSize(HV_X64_TABLE_REGISTER, 16);
 /** Pointer to a value of HvX64RegisterIdtr/Gdtrr. */
 typedef HV_X64_TABLE_REGISTER *PHV_X64_TABLE_REGISTER;
 
@@ -1081,6 +1096,363 @@ AssertCompileMemberOffset(HV_INPUT_SET_VP_REGISTERS, Elements, 16);
 /** Pointer to input for HvCallSetVpRegister. */
 typedef HV_INPUT_SET_VP_REGISTERS *PHV_INPUT_SET_VP_REGISTERS;
 
+
+
+/**
+ * Hyper-V SyncIC message types.
+ */
+typedef enum
+{
+    HvMessageTypeNone = 0x00000000,
+
+    HvMessageTypeUnmappedGpa = 0x80000000,
+    HvMessageTypeGpaIntercept,
+
+    HvMessageTimerExpired = 0x80000010,
+
+    HvMessageTypeInvalidVpRegisterValue = 0x80000020,
+    HvMessageTypeUnrecoverableException,
+    HvMessageTypeUnsupportedFeature,
+    HvMessageTypeTlbPageSizeMismatch,                   /**< @since v5 */
+
+    /** @note Same as HvMessageTypeX64ApicEoi? Gone in 5.0.  Missing from 7600 WDK
+     *        headers even if it's in the 2.0 docs.  */
+    HvMessageTypeApicEoi = 0x80000030,
+    /** @note Same as HvMessageTypeX64LegacyFpError? Gone in 5.0, whereas 4.0b
+     *        calls it HvMessageTypeX64LegacyFpError.  Missing from 7600 WDK
+     *        headers even if it's in the 2.0 docs. */
+    HvMessageTypeFerrAsserted,
+
+    HvMessageTypeEventLogBufferComplete = 0x80000040,
+
+    HvMessageTypeX64IoPortIntercept = 0x80010000,
+    HvMessageTypeX64MsrIntercept,
+    HvMessageTypeX64CpuidIntercept,
+    HvMessageTypeX64ExceptionIntercept,
+    /** @note Appeared in 5.0 docs, but were here in 7600 WDK headers already. */
+    HvMessageTypeX64ApicEoi,
+    /** @note Appeared in 5.0 docs, but were here in 7600 WDK headers already. */
+    HvMessageTypeX64LegacyFpError,
+    /** @since v5   */
+    HvMessageTypeX64RegisterIntercept,
+    /** @since WinHvPlatform? */
+    HvMessageTypeX64Halt,
+    /** @since WinHvPlatform? */
+    HvMessageTypeX64InterruptWindow
+
+} HV_MESSAGE_TYPE;
+AssertCompileSize(HV_MESSAGE_TYPE, 4);
+AssertCompile(HvMessageTypeX64RegisterIntercept == 0x80010006);
+AssertCompile(HvMessageTypeX64Halt == 0x80010007);
+AssertCompile(HvMessageTypeX64InterruptWindow == 0x80010008);
+/** Pointer to a Hyper-V SyncIC message type. */
+typedef HV_MESSAGE_TYPE *PHV_MESSAGE_TYPE;
+
+/** Flag set for hypervisor messages, guest cannot send messages with this
+ *  flag set. */
+#define HV_MESSAGE_TYPE_HYPERVISOR_MASK     UINT32_C(0x80000000)
+
+/** Hyper-V SynIC message size (they are fixed sized). */
+#define HV_MESSAGE_SIZE                     256
+/** Maximum Hyper-V SynIC message payload size in bytes. */
+#define HV_MESSAGE_MAX_PAYLOAD_BYTE_COUNT   (HV_MESSAGE_SIZE - 16)
+/** Maximum Hyper-V SynIC message payload size in QWORDs (uint64_t). */
+#define HV_MESSAGE_MAX_PAYLOAD_QWORD_COUNT  (HV_MESSAGE_MAX_PAYLOAD_BYTE_COUNT / 8)
+
+/** SynIC message flags.   */
+typedef union
+{
+    uint8_t             AsUINT8;
+    struct
+    {
+        /** Messages are pending in the queue. */
+        uint8_t         MessagePending : 1;
+        uint8_t         Reserved : 7;
+    };
+} HV_MESSAGE_FLAGS;
+AssertCompileSize(HV_MESSAGE_FLAGS, 1);
+
+/** SynIC message header. */
+typedef struct
+{
+    HV_MESSAGE_TYPE     MessageType;
+    /** The 2.0-5.0b docs all have this incorrectly switched with 'Reserved', WDK 7600 got it right. */
+    uint8_t             PayloadSize;
+    HV_MESSAGE_FLAGS    MessageFlags;
+    uint16_t            Reserved;
+    union
+    {
+        uint64_t        OriginationId;
+        HV_PARTITION_ID Sender;
+        HV_PORT_ID      Port;
+    };
+} HV_MESSAGE_HEADER;
+AssertCompileSize(HV_MESSAGE_HEADER, 16);
+/** Pointer to a Hyper-V message header. */
+typedef HV_MESSAGE_HEADER *PHV_MESSAGE_HEADER;
+/** Pointer to a const Hyper-V message header. */
+typedef HV_MESSAGE_HEADER const *PCHV_MESSAGE_HEADER;
+
+
+
+/** @name Intercept access type.
+ * @{ */
+typedef uint8_t HV_INTERCEPT_ACCESS_TYPE;
+#define HV_INTERCEPT_ACCESS_READ            0
+#define HV_INTERCEPT_ACCESS_WRITE           1
+#define HV_INTERCEPT_ACCESS_EXECUTE         2
+/** @} */
+
+/** @name Intercept access type mask.
+ * @{ */
+typedef uint32_t HV_INTERCEPT_ACCESS_TYPE_MASK;
+#define HV_INTERCEPT_ACCESS_MASK_NONE       0
+#define HV_INTERCEPT_ACCESS_MASK_READ       1
+#define HV_INTERCEPT_ACCESS_MASK_WRITE      2
+#define HV_INTERCEPT_ACCESS_MASK_EXECUTE    4
+/** @} */
+
+/** X64 intercept execution state.
+ * @sa WHV_X64_VP_EXECUTION_STATE */
+typedef union
+{
+    uint16_t            AsUINT16;
+    struct
+    {
+        uint16_t        Cpl                 : 2;
+        uint16_t        Cr0Pe               : 1;
+        uint16_t        Cr0Am               : 1;
+        uint16_t        EferLma             : 1;
+        uint16_t        DebugActive         : 1;
+        uint16_t        InterruptionPending : 1;
+        uint16_t        Reserved0           : 5;
+        uint16_t        InterruptShadow     : 1;
+        uint16_t        Reserved1           : 3;
+    };
+} HV_X64_VP_EXECUTION_STATE;
+AssertCompileSize(HV_X64_VP_EXECUTION_STATE, 2);
+/** Pointer to X86 intercept execution state. */
+typedef HV_X64_VP_EXECUTION_STATE *PHV_X64_VP_EXECUTION_STATE;
+/** Pointer to const X86 intercept execution state. */
+typedef HV_X64_VP_EXECUTION_STATE const *PCHV_X64_VP_EXECUTION_STATE;
+
+/** X64 intercept message header. */
+typedef struct
+{
+    HV_VP_INDEX                     VpIndex;                /**< 0x00 */
+    uint8_t                         InstructionLength;      /**< 0x04: Zero if not available, instruction fetch exit, ... */
+    HV_INTERCEPT_ACCESS_TYPE        InterceptAccessType;    /**< 0x05 */
+    HV_X64_VP_EXECUTION_STATE       ExecutionState;         /**< 0x06 */
+    HV_X64_SEGMENT_REGISTER         CsSegment;              /**< 0x08 */
+    uint64_t                        Rip;                    /**< 0x18 */
+    uint64_t                        Rflags;                 /**< 0x20 */
+} HV_X64_INTERCEPT_MESSAGE_HEADER;
+AssertCompileSize(HV_X64_INTERCEPT_MESSAGE_HEADER, 40);
+/** Pointer to a x86 intercept message header. */
+typedef HV_X64_INTERCEPT_MESSAGE_HEADER *PHV_X64_INTERCEPT_MESSAGE_HEADER;
+
+
+/** X64 memory access flags (HvMessageTypeGpaIntercept, HvMessageTypeUnmappedGpa).
+ * @sa WHV_MEMORY_ACCESS_INFO */
+typedef union
+{
+    uint8_t             AsUINT8;
+    struct
+    {
+        uint8_t         GvaValid : 1;
+        uint8_t         Reserved : 7;
+    };
+} HV_X64_MEMORY_ACCESS_INFO;
+AssertCompileSize(HV_X64_MEMORY_ACCESS_INFO, 1);
+
+/** The payload format for HvMessageTypeGpaIntercept and HvMessageTypeUnmappedGpa.
+ * @sa   WHV_MEMORY_ACCESS_CONTEXT
+ * @note max message size. */
+typedef struct
+{
+    HV_X64_INTERCEPT_MESSAGE_HEADER Header;                 /**< 0x00 */
+    HV_CACHE_TYPE                   CacheType;              /**< 0x28 */
+    uint8_t                         InstructionByteCount;   /**< 0x2c */
+    HV_X64_MEMORY_ACCESS_INFO       MemoryAccessInfo;       /**< 0x2d */
+    uint16_t                        Reserved1;              /**< 0x2e */
+    uint64_t                        GuestVirtualAddress;    /**< 0x30 */
+    uint64_t                        GuestPhysicalAddress;   /**< 0x38 */
+    uint8_t                         InstructionBytes[16];   /**< 0x40 */
+    /* We don't the following (v5 / WinHvPlatform): */
+    HV_X64_SEGMENT_REGISTER         DsSegment;              /**< 0x50 */
+    HV_X64_SEGMENT_REGISTER         SsSegment;              /**< 0x60 */
+    uint64_t                        Rax;                    /**< 0x70 */
+    uint64_t                        Rcx;                    /**< 0x78 */
+    uint64_t                        Rdx;                    /**< 0x80 */
+    uint64_t                        Rbx;                    /**< 0x88 */
+    uint64_t                        Rsp;                    /**< 0x90 */
+    uint64_t                        Rbp;                    /**< 0x98 */
+    uint64_t                        Rsi;                    /**< 0xa0 */
+    uint64_t                        Rdi;                    /**< 0xa8 */
+    uint64_t                        R8;                     /**< 0xb0 */
+    uint64_t                        R9;                     /**< 0xb8 */
+    uint64_t                        R10;                    /**< 0xc0 */
+    uint64_t                        R11;                    /**< 0xc8 */
+    uint64_t                        R12;                    /**< 0xd0 */
+    uint64_t                        R13;                    /**< 0xd8 */
+    uint64_t                        R14;                    /**< 0xe0 */
+    uint64_t                        R15;                    /**< 0xe8 */
+} HV_X64_MEMORY_INTERCEPT_MESSAGE;
+AssertCompileSize(HV_X64_MEMORY_INTERCEPT_MESSAGE, 0xf0);
+AssertCompileMemberOffset(HV_X64_MEMORY_INTERCEPT_MESSAGE, DsSegment, 0x50);
+/** Pointer to a HvMessageTypeGpaIntercept or HvMessageTypeUnmappedGpa payload. */
+typedef HV_X64_MEMORY_INTERCEPT_MESSAGE *PHV_X64_MEMORY_INTERCEPT_MESSAGE;
+/** Pointer to a const HvMessageTypeGpaIntercept or HvMessageTypeUnmappedGpa payload. */
+typedef HV_X64_MEMORY_INTERCEPT_MESSAGE const *PCHV_X64_MEMORY_INTERCEPT_MESSAGE;
+
+
+/** X64 I/O port access information (HvMessageTypeX64IoPortIntercept). */
+typedef union HV_X64_IO_PORT_ACCESS_INFO
+{
+    uint8_t             AsUINT8;
+    struct
+    {
+        uint8_t         AccessSize  : 3;
+        uint8_t         StringOp    : 1;
+        uint8_t         RepPrefix   : 1;
+        uint8_t         Reserved    : 3;
+    };
+} HV_X64_IO_PORT_ACCESS_INFO;
+AssertCompileSize(HV_X64_IO_PORT_ACCESS_INFO, 1);
+
+/** The payload format for HvMessageTypeX64IoPortIntercept.  */
+typedef struct _HV_X64_IO_PORT_INTERCEPT_MESSAGE
+{
+    HV_X64_INTERCEPT_MESSAGE_HEADER     Header;                 /**< 0x00 */
+    uint16_t                            PortNumber;             /**< 0x28 */
+    HV_X64_IO_PORT_ACCESS_INFO          AccessInfo;             /**< 0x2a */
+    uint8_t                             InstructionByteCount;   /**< 0x2b */
+    uint32_t                            Reserved;               /**< 0x2c */
+    uint64_t                            Rax;                    /**< 0x30 */
+    uint8_t                             InstructionBytes[16];   /**< 0x38 */
+    HV_X64_SEGMENT_REGISTER             DsSegment;              /**< 0x48 */
+    HV_X64_SEGMENT_REGISTER             EsSegment;              /**< 0x58 */
+    uint64_t                            Rcx;                    /**< 0x68 */
+    uint64_t                            Rsi;                    /**< 0x70 */
+    uint64_t                            Rdi;                    /**< 0x78 */
+} HV_X64_IO_PORT_INTERCEPT_MESSAGE;
+AssertCompileSize(HV_X64_IO_PORT_INTERCEPT_MESSAGE, 128);
+/** Pointer to a HvMessageTypeX64IoPortIntercept payload. */
+typedef HV_X64_IO_PORT_INTERCEPT_MESSAGE *PHV_X64_IO_PORT_INTERCEPT_MESSAGE;
+/** Pointer to a const HvMessageTypeX64IoPortIntercept payload. */
+typedef HV_X64_IO_PORT_INTERCEPT_MESSAGE const *PCHV_X64_IO_PORT_INTERCEPT_MESSAGE;
+
+/** Full I/O port message. */
+typedef struct
+{
+    HV_MESSAGE_HEADER                   MsgHdr;
+    HV_X64_IO_PORT_INTERCEPT_MESSAGE    Payload;
+} HV_X64_IO_PORT_INTERCEPT_MESSAGE_FULL;
+
+
+/** X64 exception information (HvMessageTypeX64ExceptionIntercept).
+ * @sa WHV_VP_EXCEPTION_INFO */
+typedef union
+{
+    uint8_t             AsUINT8;
+    struct
+    {
+        uint8_t         ErrorCodeValid : 1;
+        /** @todo WHV_VP_EXCEPTION_INFO::SoftwareException   */
+        uint8_t         Reserved       : 7;
+    };
+} HV_X64_EXCEPTION_INFO;
+AssertCompileSize(HV_X64_EXCEPTION_INFO, 1);
+
+/** The payload format for HvMessageTypeX64ExceptionIntercept.
+ * @sa   WHV_VP_EXCEPTION_CONTEXT
+ * @note max message size. */
+typedef struct
+{
+    HV_X64_INTERCEPT_MESSAGE_HEADER     Header;                 /**< 0x00 */
+    uint16_t                            ExceptionVector;        /**< 0x28 */
+    HV_X64_EXCEPTION_INFO               ExceptionInfo;          /**< 0x2a */
+    uint8_t                             InstructionByteCount;   /**< 0x2b */
+    uint32_t                            ErrorCode;              /**< 0x2c */
+    uint64_t                            ExceptionParameter;     /**< 0x30 */
+    uint64_t                            Reserved;               /**< 0x38 */
+    uint8_t                             InstructionBytes[16];   /**< 0x40 */
+    HV_X64_SEGMENT_REGISTER             DsSegment;              /**< 0x50 */
+    HV_X64_SEGMENT_REGISTER             SsSegment;              /**< 0x60 */
+    uint64_t                            Rax;                    /**< 0x70 */
+    uint64_t                            Rcx;                    /**< 0x78 */
+    uint64_t                            Rdx;                    /**< 0x80 */
+    uint64_t                            Rbx;                    /**< 0x88 */
+    uint64_t                            Rsp;                    /**< 0x90 */
+    uint64_t                            Rbp;                    /**< 0x98 */
+    uint64_t                            Rsi;                    /**< 0xa0 */
+    uint64_t                            Rdi;                    /**< 0xa8 */
+    uint64_t                            R8;                     /**< 0xb0 */
+    uint64_t                            R9;                     /**< 0xb8 */
+    uint64_t                            R10;                    /**< 0xc0 */
+    uint64_t                            R11;                    /**< 0xc8 */
+    uint64_t                            R12;                    /**< 0xd0 */
+    uint64_t                            R13;                    /**< 0xd8 */
+    uint64_t                            R14;                    /**< 0xe0 */
+    uint64_t                            R15;                    /**< 0xe8 */
+} HV_X64_EXCEPTION_INTERCEPT_MESSAGE;
+AssertCompileSize(HV_X64_EXCEPTION_INTERCEPT_MESSAGE, 0xf0);
+/** Pointer to a HvMessageTypeX64ExceptionIntercept payload. */
+typedef HV_X64_EXCEPTION_INTERCEPT_MESSAGE *PHV_X64_EXCEPTION_INTERCEPT_MESSAGE;
+/** Pointer to a ocnst HvMessageTypeX64ExceptionIntercept payload. */
+typedef HV_X64_EXCEPTION_INTERCEPT_MESSAGE const *PCHV_X64_EXCEPTION_INTERCEPT_MESSAGE;
+
+
+/**
+ * The payload format for HvMessageTypeX64Halt,
+ *
+ * @note This message does not include HV_X64_INTERCEPT_MESSAGE_HEADER!
+ */
+typedef struct
+{
+    /** Seems to be a zero 64-bit field here.  */
+    uint64_t    u64Reserved;
+} HV_X64_HALT_MESSAGE;
+/** Pointer to a HvMessageTypeX64Halt payload. */
+typedef HV_X64_HALT_MESSAGE *PHV_X64_HALT_MESSAGE;
+/** Pointer to a const HvMessageTypeX64Halt payload. */
+typedef HV_X64_HALT_MESSAGE const *PCHV_X64_HALT_MESSAGE;
+
+/** Full HvMessageTypeX64Halt message. */
+typedef struct
+{
+    HV_MESSAGE_HEADER                   MsgHdr;
+    HV_X64_HALT_MESSAGE                 Payload;
+} HV_X64_HALT_MESSAGE_FULL;
+
+
+
+/** Hyper-V SynIC message. */
+typedef struct
+{
+    HV_MESSAGE_HEADER   Header;
+    /** 0x10 */
+    union
+    {
+        uint64_t                            Payload[HV_MESSAGE_MAX_PAYLOAD_QWORD_COUNT];
+
+        /** Common header for X64 intercept messages. */
+        HV_X64_INTERCEPT_MESSAGE_HEADER     X64InterceptHeader;
+        /** HvMessageTypeGpaIntercept, HvMessageTypeUnmappedGpa. */
+        HV_X64_MEMORY_INTERCEPT_MESSAGE     X86MemoryIntercept;
+        /** HvMessageTypeX64IoPortIntercept */
+        HV_X64_IO_PORT_INTERCEPT_MESSAGE    X64IoPortIntercept;
+        /** HvMessageTypeX64ExceptionIntercept */
+        HV_X64_EXCEPTION_INTERCEPT_MESSAGE  X64ExceptionIntercept;
+        /** HvMessageTypeX64Halt. */
+        HV_X64_HALT_MESSAGE                 X64Halt;
+    };
+} HV_MESSAGE;
+AssertCompileSize(HV_MESSAGE, HV_MESSAGE_SIZE);
+/** Pointer to a Hyper-V SynIC message. */
+typedef HV_MESSAGE *PHV_MESSAGE;
+/** Pointer to const a Hyper-V SynIC message. */
+typedef HV_MESSAGE const *PCHV_MESSAGE;
 
 #endif
 

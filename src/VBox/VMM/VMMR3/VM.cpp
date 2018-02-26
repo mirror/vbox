@@ -4532,7 +4532,7 @@ VMMR3_INT_DECL(bool) VMR3IsLongModeAllowed(PVM pVM)
 
 
 /**
- * Returns the native handle of the current EMT VMCPU thread.
+ * Returns the native ID of the current EMT VMCPU thread.
  *
  * @returns Handle if this is an EMT thread; NIL_RTNATIVETHREAD otherwise
  * @param   pVM             The cross context VM structure.
@@ -4550,7 +4550,7 @@ VMMR3DECL(RTNATIVETHREAD) VMR3GetVMCPUNativeThread(PVM pVM)
 
 
 /**
- * Returns the native handle of the current EMT VMCPU thread.
+ * Returns the native ID of the current EMT VMCPU thread.
  *
  * @returns Handle if this is an EMT thread; NIL_RTNATIVETHREAD otherwise
  * @param   pUVM        The user mode VM structure.
@@ -4581,6 +4581,19 @@ VMMR3DECL(RTTHREAD) VMR3GetVMCPUThread(PUVM pUVM)
     if (!pUVCpu)
         return NIL_RTTHREAD;
 
+    return pUVCpu->vm.s.ThreadEMT;
+}
+
+
+/**
+ * Returns the handle of the current EMT VMCPU thread.
+ *
+ * @returns The IPRT thread handle.
+ * @param   pUVCpu          The user mode CPU handle.
+ * @thread  EMT
+ */
+VMMR3_INT_DECL(RTTHREAD) VMR3GetThreadHandle(PUVMCPU pUVCpu)
+{
     return pUVCpu->vm.s.ThreadEMT;
 }
 
