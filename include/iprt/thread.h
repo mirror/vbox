@@ -327,6 +327,17 @@ RTDECL(int) RTThreadCreateF(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUs
 RTDECL(RTNATIVETHREAD) RTThreadGetNative(RTTHREAD Thread);
 
 /**
+ * Gets the native thread handle for a IPRT thread.
+ *
+ * @returns The thread handle. INVALID_HANDLE_VALUE on failure.
+ * @param   hThread     The IPRT thread handle.
+ *
+ * @note    Windows only.
+ * @note    Only valid after parent returns from the thread creation call.
+ */
+RTDECL(uintptr_t) RTThreadGetNativeHandle(RTTHREAD hThread);
+
+/**
  * Gets the IPRT thread of a native thread.
  *
  * @returns The IPRT thread handle

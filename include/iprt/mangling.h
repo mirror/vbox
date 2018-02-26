@@ -2217,6 +2217,7 @@
 # define RTThreadGetExecutionTimeMilli                  RT_MANGLER(RTThreadGetExecutionTimeMilli)
 # define RTThreadGetName                                RT_MANGLER(RTThreadGetName)
 # define RTThreadGetNative                              RT_MANGLER(RTThreadGetNative)
+# define RTThreadGetNativeHandle                        RT_MANGLER(RTThreadGetNativeHandle)
 # define RTThreadGetNativeState                         RT_MANGLER(RTThreadGetNativeState)
 # define RTThreadGetReallySleeping                      RT_MANGLER(RTThreadGetReallySleeping)
 # define RTThreadGetState                               RT_MANGLER(RTThreadGetState)

@@ -376,3 +376,26 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
     return RTErrConvertFromWin32(iLastError);
 }
 
+
+/**
+ * Gets the native thread handle for a IPRT thread.
+ *
+ * @returns The thread handle. INVALID_HANDLE_VALUE on failure.
+ * @param   hThread     The IPRT thread handle.
+ *
+ * @note    Windows only.
+ * @note    Only valid after parent returns from the thread creation call.
+ */
+RTDECL(uintptr_t) RTThreadGetNativeHandle(RTTHREAD hThread)
+{
+    PRTTHREADINT pThread = rtThreadGet(hThread);
+    if (pThread)
+    {
+        uintptr_t hHandle = pThread->hThread;
+        rtThreadRelease(pThread);
+        return hHandle;
+    }
+    return (uintptr_t)INVALID_HANDLE_VALUE;
+}
+RT_EXPORT_SYMBOL(RTThreadGetNativeHandle);
+
