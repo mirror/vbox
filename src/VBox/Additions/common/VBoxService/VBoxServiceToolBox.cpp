@@ -1398,10 +1398,6 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
     uint32_t fOutputFlags = VBOXSERVICETOOLBOXOUTPUTFLAG_LONG; /* Use long mode by default. */
     uint32_t fQueryInfoFlags = RTPATH_F_ON_LINK;
 
-    /* Init file list. */
-    RTLISTANCHOR fileList;
-    RTListInit(&fileList);
-
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
            && RT_SUCCESS(rc))
     {
@@ -1433,24 +1429,19 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-/** @todo r=bird: The whole fileList is unecessary because you're using
- * RTGETOPTINIT_FLAGS_OPTS_FIRST.  You can obviously do the processing right
- * here, but you could also just drop down and rewind GetState.iNext by one and
- * continue there. */
-
-                /* Add file(s) to buffer. This enables processing multiple files
-                 * at once.
-                 *
-                 * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
-                 * processing this loop it's safe to immediately exit on syntax errors
-                 * or showing the help text (see above). */
-                rc = vgsvcToolboxPathBufAddPathEntry(&fileList, ValueUnion.psz);
+                Assert(GetState.iNext);
+                GetState.iNext--;
                 break;
             }
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
+
+        /* All flags / options processed? Bail out here.
+         * Processing the file / directory list comes down below. */
+        if (ch == VINF_GETOPT_NOT_OPTION)
+            break;
     }
 
     if (RT_SUCCESS(rc))
@@ -1463,20 +1454,19 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
             vgsvcToolboxPrintStrmHeader("vbt_stat", 1 /* Stream version */);
         }
 
-        PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
-        RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
+        while ((ch = RTGetOpt(&GetState, &ValueUnion)))
         {
             RTFSOBJINFO objInfo;
-            int rc2 = RTPathQueryInfoEx(pNodeIt->pszName, &objInfo, RTFSOBJATTRADD_UNIX, fQueryInfoFlags);
+            int rc2 = RTPathQueryInfoEx(ValueUnion.psz, &objInfo, RTFSOBJATTRADD_UNIX, fQueryInfoFlags);
             if (RT_FAILURE(rc2))
             {
                 if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                    RTMsgError("Cannot stat for '%s': %Rrc\n", pNodeIt->pszName, rc2);
+                    RTMsgError("Cannot stat for '%s': %Rrc\n", ValueUnion.psz, rc2);
             }
             else
             {
-                rc2 = vgsvcToolboxPrintFsInfo(pNodeIt->pszName,
-                                              strlen(pNodeIt->pszName) /* cbName */,
+                rc2 = vgsvcToolboxPrintFsInfo(ValueUnion.psz,
+                                              strlen(ValueUnion.psz) /* cbName */,
                                               fOutputFlags,
                                               &objInfo);
             }
@@ -1491,14 +1481,9 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
             vgsvcToolboxPrintStrmTermination();
 
         /* At this point the overall result (success/failure) should be in rc. */
-
-        if (RTListIsEmpty(&fileList))
-            RTMsgError("Missing operand\n");
     }
     else
         RTMsgError("Failed with rc=%Rrc\n", rc);
-
-    vgsvcToolboxPathBufDestroy(&fileList);
 
     if (RT_FAILURE(rc))
     {
