@@ -112,7 +112,7 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
              * So far, so good.
              */
             /** @todo would be good if we could establish the partition ID ourselves. */
-            /** @todop this is too EARLY!   */
+            /** @todo this is too EARLY!   */
             pGVM->nem.s.idHvPartition = pVM->nem.s.idHvPartition;
             return rc;
         }
