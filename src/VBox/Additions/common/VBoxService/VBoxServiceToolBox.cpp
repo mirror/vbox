@@ -1595,8 +1595,17 @@ bool VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
          * For debugging and testing purposes we also allow toolbox program access
          * when the first VBoxService argument is --use-toolbox.
          */
-        if (argc < 3 || strcmp(argv[1], "--use-toolbox"))
+        if (argc < 2 || strcmp(argv[1], "--use-toolbox"))
             return false;
+
+        /* No tool specified? Show toolbox help. */
+        if (argc < 3)
+        {
+            vgsvcToolboxShowUsage();
+            *prcExit = RTEXITCODE_SYNTAX;
+            return true;
+        }
+
         argc -= 2;
         argv += 2;
         pszTool = argv[0];
