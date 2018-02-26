@@ -1264,6 +1264,7 @@ int DrvAudioHlpFileCreate(PDMAUDIOFILETYPE enmType, const char *pszFile, PDMAUDI
     if (RT_SUCCESS(rc))
     {
         RTStrPrintf(pFile->szName, RT_ELEMENTS(pFile->szName), "%s", pszFile);
+        pFile->hFile  = NIL_RTFILE;
         pFile->fFlags = fFlags;
         pFile->pvData = NULL;
         pFile->cbData = 0;
