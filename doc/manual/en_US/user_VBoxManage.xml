@@ -2010,7 +2010,9 @@ Virtual system 0:
     <para>For virtualization products which aren't fully compatible with the
     OVF standard 1.0 you can enable a OVF 0.9 legacy mode with the
     <computeroutput>--legacy09</computeroutput> option. Other options are
-    --ovf09, --ovf10, --ovf20.</para>
+    <computeroutput>--ovf09</computeroutput>,
+    <computeroutput>--ovf10</computeroutput>,
+    <computeroutput>--ovf20</computeroutput>.</para>
 
     <para>To specify options controlling the exact content of the appliance
     file, you can use <computeroutput>--options</computeroutput> to request the
