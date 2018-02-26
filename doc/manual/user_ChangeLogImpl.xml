@@ -50,6 +50,11 @@ are ordered as follows:
           audio drivers at runtime</para>
       </listitem>
 
+      <listitem>
+        <para>Networking: Added a workaround for older guests which do not enable
+        bus mastering for the virtio PCI device</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
