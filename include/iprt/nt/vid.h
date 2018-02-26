@@ -95,6 +95,19 @@ typedef enum
 AssertCompileSize(VID_PROCESSOR_STATUS, 4);
 
 
+/** I/O control input for VidMessageSlotHandleAndGetNext. */
+typedef struct VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT
+{
+    HV_VP_INDEX         iCpu;
+    uint32_t            fFlags;         /**< VID_MSHAGN_F_GET_XXX*/
+    uint32_t            cMillies;
+} VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT;
+/** Pointer to input for VidMessageSlotHandleAndGetNext. */
+typedef VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT *PVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT;
+/** Pointer to const input for VidMessageSlotHandleAndGetNext. */
+typedef VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT const *PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT;
+
+
 RT_C_DECLS_BEGIN
 
 /** Calling convention. */
@@ -194,6 +207,15 @@ DECLIMPORT(BOOL) VIDAPI VidMessageSlotHandleAndGetNext(VID_PARTITION_HANDLE hPar
  */
 DECLIMPORT(BOOL) VIDAPI VidGetVirtualProcessorRunningStatus(VID_PARTITION_HANDLE hPartition, HV_VP_INDEX iCpu,
                                                             VID_PROCESSOR_STATUS *penmStatus);
+
+
+DECLIMPORT(BOOL) VIDAPI VidGetVirtualProcessorState(VID_PARTITION_HANDLE hPartition, HV_VP_INDEX iCpu,
+                                                    HV_REGISTER_NAME const *paRegNames, uint32_t cRegisters,
+                                                    HV_REGISTER_VALUE *paRegValues);
+
+DECLIMPORT(BOOL) VIDAPI VidSetVirtualProcessorState(VID_PARTITION_HANDLE hPartition, HV_VP_INDEX iCpu,
+                                                    HV_REGISTER_NAME const *paRegNames, uint32_t cRegisters,
+                                                    HV_REGISTER_VALUE const *paRegValues);
 
 RT_C_DECLS_END
 

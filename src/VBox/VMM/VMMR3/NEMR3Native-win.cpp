@@ -77,11 +77,14 @@
 #define NEM_WIN_IS_RELEVANT_TO_A20(a_GCPhys)    \
     ( ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K) || ((RTGCPHYS)(a_GCPhys) < (RTGCPHYS)_64K) )
 
-
-
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
+/** VID I/O control detection: Fake partition handle input. */
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE          ((HANDLE)(uintptr_t)38479125)
+/** VID I/O control detection: Fake partition ID return. */
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_ID    UINT64_C(0xfa1e000042424242)
+/** VID I/O control detection: Fake CPU index input. */
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX        UINT32_C(42)
+/** VID I/O control detection: Fake timeout input. */
+#define NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT         UINT32_C(0x00080286)
 
 
 /*********************************************************************************************************************************
@@ -117,6 +120,8 @@ static decltype(VidStopVirtualProcessor)           *g_pfnVidStopVirtualProcessor
 static decltype(VidMessageSlotMap)                 *g_pfnVidMessageSlotMap;
 static decltype(VidMessageSlotHandleAndGetNext)    *g_pfnVidMessageSlotHandleAndGetNext;
 #ifdef LOG_ENABLED
+static decltype(VidGetVirtualProcessorState)       *g_pfnVidGetVirtualProcessorState;
+static decltype(VidSetVirtualProcessorState)       *g_pfnVidSetVirtualProcessorState;
 static decltype(VidGetVirtualProcessorRunningStatus) *g_pfnVidGetVirtualProcessorRunningStatus;
 #endif
 /** @} */
@@ -158,10 +163,45 @@ static const struct
     NEM_WIN_IMPORT(1, false, VidStartVirtualProcessor),
     NEM_WIN_IMPORT(1, false, VidStopVirtualProcessor),
 #ifdef LOG_ENABLED
+    NEM_WIN_IMPORT(1, false, VidGetVirtualProcessorState),
+    NEM_WIN_IMPORT(1, false, VidSetVirtualProcessorState),
     NEM_WIN_IMPORT(1, false, VidGetVirtualProcessorRunningStatus),
 #endif
 #undef NEM_WIN_IMPORT
 };
+
+
+/** The real NtDeviceIoControlFile API in NTDLL.   */
+static decltype(NtDeviceIoControlFile) *g_pfnNtDeviceIoControlFile;
+/** Pointer to the NtDeviceIoControlFile import table entry. */
+static decltype(NtDeviceIoControlFile) **g_ppfnVidNtDeviceIoControlFile;
+/** Info about the VidGetHvPartitionId I/O control interface. */
+static NEMWINIOCTL g_IoCtlGetHvPartitionId;
+/** Info about the VidStartVirtualProcessor I/O control interface. */
+static NEMWINIOCTL g_IoCtlStartVirtualProcessor;
+/** Info about the VidStopVirtualProcessor I/O control interface. */
+static NEMWINIOCTL g_IoCtlStopVirtualProcessor;
+/** Info about the VidMessageSlotHandleAndGetNext I/O control interface. */
+static NEMWINIOCTL g_IoCtlMessageSlotHandleAndGetNext;
+#ifdef LOG_ENABLED
+/** Info about the VidMessageSlotMap I/O control interface - for logging. */
+static NEMWINIOCTL g_IoCtlMessageSlotMap;
+/* Info about the VidGetVirtualProcessorState I/O control interface - for logging. */
+static NEMWINIOCTL g_IoCtlGetVirtualProcessorState;
+/* Info about the VidSetVirtualProcessorState I/O control interface - for logging. */
+static NEMWINIOCTL g_IoCtlSetVirtualProcessorState;
+/** Pointer to what nemR3WinIoctlDetector_ForLogging should fill in. */
+static NEMWINIOCTL *g_pIoCtlDetectForLogging;
+#endif
+
+#ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
+/** Mapping slot for CPU #0.
+ * @{  */
+static VID_MESSAGE_MAPPING_HEADER            *g_pMsgSlotMapping = NULL;
+static const HV_MESSAGE_HEADER               *g_pHvMsgHdr;
+static const HV_X64_INTERCEPT_MESSAGE_HEADER *g_pX64MsgHdr;
+/** @} */
+#endif
 
 
 /*
@@ -199,18 +239,8 @@ static int nemR3NativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTG
                                   uint8_t *pu2State, bool fBackingChanged);
 
 
+
 #ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
-
-/** The real NtDeviceIoControlFile API in NTDLL.   */
-static decltype(NtDeviceIoControlFile)       *g_pfnNtDeviceIoControlFile;
-/** Mapping slot for CPU #0.
- * @{  */
-static VID_MESSAGE_MAPPING_HEADER            *g_pMsgSlotMapping = NULL;
-static const HV_MESSAGE_HEADER               *g_pHvMsgHdr;
-static const HV_X64_INTERCEPT_MESSAGE_HEADER *g_pX64MsgHdr;
-/** @} */
-
-
 /**
  * Wrapper that logs the call from VID.DLL.
  *
@@ -221,20 +251,25 @@ nemR3WinLogWrapper_NtDeviceIoControlFile(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUT
                                          PIO_STATUS_BLOCK pIos, ULONG uFunction, PVOID pvInput, ULONG cbInput,
                                          PVOID pvOutput, ULONG cbOutput)
 {
+
     char szFunction[32];
     const char *pszFunction;
-    switch (uFunction)
+    if (uFunction == g_IoCtlMessageSlotHandleAndGetNext.uFunction)
+        pszFunction = "VidMessageSlotHandleAndGetNext";
+    else if (uFunction == g_IoCtlStartVirtualProcessor.uFunction)
+        pszFunction = "VidStartVirtualProcessor";
+    else if (uFunction == g_IoCtlStopVirtualProcessor.uFunction)
+        pszFunction = "VidStopVirtualProcessor";
+    else if (uFunction == g_IoCtlMessageSlotMap.uFunction)
+        pszFunction = "VidMessageSlotMap";
+    else if (uFunction == g_IoCtlGetVirtualProcessorState.uFunction)
+        pszFunction = "VidGetVirtualProcessorState";
+    else if (uFunction == g_IoCtlSetVirtualProcessorState.uFunction)
+        pszFunction = "VidSetVirtualProcessorState";
+    else
     {
-        case 0x2210cb: pszFunction = "VidMessageSlotHandleAndGetNext"; break;
-        case 0x2210cc: pszFunction = "VidMessageSlotMap"; break;
-        case 0x221164: pszFunction = "VidStopVirtualProcessor"; break;
-        case 0x221158: pszFunction = "VidStartVirtualProcessor"; break;
-        case 0x2210a7: pszFunction = "VidGetVirtualProcessorState"; break;
-        case 0x221153: pszFunction = "VidSetVirtualProcessorState"; break;
-        default:
-            RTStrPrintf(szFunction, sizeof(szFunction), "%#x", uFunction);
-            pszFunction = szFunction;
-            break;
+        RTStrPrintf(szFunction, sizeof(szFunction), "%#x", uFunction);
+        pszFunction = szFunction;
     }
 
     if (cbInput > 0 && pvInput)
@@ -259,7 +294,11 @@ nemR3WinLogWrapper_NtDeviceIoControlFile(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUT
             Log12(("VID!NtDeviceIoControlFile: Message slot mapping: %p\n", g_pMsgSlotMapping));
         }
     }
-    if (g_pMsgSlotMapping && (uFunction == 0x2210cb || uFunction == 0x2210cc || uFunction == 0x221164))
+    if (   g_pMsgSlotMapping
+        && (   uFunction == g_IoCtlMessageSlotHandleAndGetNext.uFunction
+            || uFunction == g_IoCtlStopVirtualProcessor.uFunction
+            || uFunction == g_IoCtlMessageSlotMap.uFunction
+               ))
         Log12(("VID!NtDeviceIoControlFile: enmVidMsgType=%#x cb=%#x msg=%#x payload=%u cs:rip=%04x:%08RX64 (%s)\n",
                g_pMsgSlotMapping->enmVidMsgType, g_pMsgSlotMapping->cbMessage,
                g_pHvMsgHdr->MessageType, g_pHvMsgHdr->PayloadSize,
@@ -267,32 +306,39 @@ nemR3WinLogWrapper_NtDeviceIoControlFile(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUT
 
     return rcNt;
 }
+#endif /* NEM_WIN_INTERCEPT_NT_IO_CTLS */
 
 
 /**
- * Patches the call table of VID.DLL so we can intercept and log
- * NtDeviceIoControlFile.
+ * Patches the call table of VID.DLL so we can intercept NtDeviceIoControlFile.
  *
- * This is for DEBUGGING only.
+ * This is for used to figure out the I/O control codes and in logging builds
+ * for logging API calls that WinHvPlatform.dll does.
  *
+ * @returns VBox status code.
  * @param   hLdrModVid      The VID module handle.
+ * @param   pErrInfo        Where to return additional error information.
  */
-static void nemR3WinInitVidIntercepts(RTLDRMOD hLdrModVid)
+static int nemR3WinInitVidIntercepts(RTLDRMOD hLdrModVid, PRTERRINFO pErrInfo)
 {
     /*
      * Locate the real API.
      */
     g_pfnNtDeviceIoControlFile = (decltype(NtDeviceIoControlFile) *)RTLdrGetSystemSymbol("NTDLL.DLL", "NtDeviceIoControlFile");
-    AssertReturnVoid(g_pfnNtDeviceIoControlFile > 0);
+    AssertReturn(g_pfnNtDeviceIoControlFile != NULL,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Failed to resolve NtDeviceIoControlFile from NTDLL.DLL"));
 
     /*
      * Locate the PE header and get what we need from it.
      */
     uint8_t const *pbImage = (uint8_t const *)RTLdrGetNativeHandle(hLdrModVid);
     IMAGE_DOS_HEADER const *pMzHdr  = (IMAGE_DOS_HEADER const *)pbImage;
-    AssertReturnVoid(pMzHdr->e_magic == IMAGE_DOS_SIGNATURE);
+    AssertReturn(pMzHdr->e_magic == IMAGE_DOS_SIGNATURE,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL mapping doesn't start with MZ signature: %#x", pMzHdr->e_magic));
     IMAGE_NT_HEADERS const *pNtHdrs = (IMAGE_NT_HEADERS const *)&pbImage[pMzHdr->e_lfanew];
-    AssertReturnVoid(pNtHdrs->Signature == IMAGE_NT_SIGNATURE);
+    AssertReturn(pNtHdrs->Signature == IMAGE_NT_SIGNATURE,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL has invalid PE signaturre: %#x @%#x",
+                               pNtHdrs->Signature, pMzHdr->e_lfanew));
 
     uint32_t const             cbImage   = pNtHdrs->OptionalHeader.SizeOfImage;
     IMAGE_DATA_DIRECTORY const ImportDir = pNtHdrs->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
@@ -300,21 +346,26 @@ static void nemR3WinInitVidIntercepts(RTLDRMOD hLdrModVid)
     /*
      * Walk the import descriptor table looking for NTDLL.DLL.
      */
-    bool fSuccess = true;
-    AssertReturnVoid(ImportDir.Size > 0);
-    AssertReturnVoid(ImportDir.Size < cbImage);
-    AssertReturnVoid(ImportDir.VirtualAddress > 0);
-    AssertReturnVoid(ImportDir.VirtualAddress < cbImage);
+    AssertReturn(   ImportDir.Size > 0
+                 && ImportDir.Size < cbImage,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL bad import directory size: %#x", ImportDir.Size));
+    AssertReturn(   ImportDir.VirtualAddress > 0
+                 && ImportDir.VirtualAddress <= cbImage - ImportDir.Size,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL bad import directory RVA: %#x", ImportDir.VirtualAddress));
+
     for (PIMAGE_IMPORT_DESCRIPTOR pImps = (PIMAGE_IMPORT_DESCRIPTOR)&pbImage[ImportDir.VirtualAddress];
          pImps->Name != 0 && pImps->FirstThunk != 0;
          pImps++)
     {
-        AssertReturnVoid(pImps->Name < cbImage);
+        AssertReturn(pImps->Name < cbImage,
+                     RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL bad import directory entry name: %#x", pImps->Name));
         const char *pszModName = (const char *)&pbImage[pImps->Name];
         if (RTStrICmpAscii(pszModName, "ntdll.dll"))
             continue;
-        AssertReturnVoid(pImps->FirstThunk < cbImage);
-        AssertReturnVoid(pImps->OriginalFirstThunk < cbImage);
+        AssertReturn(pImps->FirstThunk < cbImage,
+                     RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL bad FirstThunk: %#x", pImps->FirstThunk));
+        AssertReturn(pImps->OriginalFirstThunk < cbImage,
+                     RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL bad FirstThunk: %#x", pImps->FirstThunk));
 
         /*
          * Walk the thunks table(s) looking for NtDeviceIoControlFile.
@@ -327,16 +378,16 @@ static void nemR3WinInitVidIntercepts(RTLDRMOD hLdrModVid)
         {
             if (!(pThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG32))
             {
-                AssertReturnVoid(pThunk->u1.Ordinal > 0 && pThunk->u1.Ordinal < cbImage);
+                AssertReturn(pThunk->u1.Ordinal > 0 && pThunk->u1.Ordinal < cbImage,
+                             RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "VID.DLL bad FirstThunk: %#x", pImps->FirstThunk));
 
                 const char *pszSymbol = (const char *)&pbImage[(uintptr_t)pThunk->u1.AddressOfData + 2];
                 if (strcmp(pszSymbol, "NtDeviceIoControlFile") == 0)
                 {
-                    DWORD fOldProt = PAGE_EXECUTE;
+                    DWORD fOldProt = PAGE_READONLY;
                     VirtualProtect(&pFirstThunk->u1.Function, sizeof(uintptr_t), PAGE_EXECUTE_READWRITE, &fOldProt);
-                    pFirstThunk->u1.Function = (uintptr_t)nemR3WinLogWrapper_NtDeviceIoControlFile;
-                    VirtualProtect(&pFirstThunk->u1.Function, sizeof(uintptr_t), fOldProt, &fOldProt);
-                    fSuccess = true;
+                    g_ppfnVidNtDeviceIoControlFile = (decltype(NtDeviceIoControlFile) **)&pFirstThunk->u1.Function;
+                    /* Don't restore the protection here, so we modify the NtDeviceIoControlFile pointer later. */
                 }
             }
 
@@ -344,10 +395,16 @@ static void nemR3WinInitVidIntercepts(RTLDRMOD hLdrModVid)
             pFirstThunk++;
         }
     }
-    Assert(fSuccess);
-}
 
-#endif /* NEM_WIN_INTERCEPT_NT_IO_CTLS */
+    if (*g_ppfnVidNtDeviceIoControlFile)
+    {
+#ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
+        *g_ppfnVidNtDeviceIoControlFile = nemR3WinLogWrapper_NtDeviceIoControlFile;
+#endif
+        return VINF_SUCCESS;
+    }
+    return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Failed to patch NtDeviceIoControlFile import in VID.DLL!");
+}
 
 
 /**
@@ -425,10 +482,9 @@ static int nemR3WinInitProbeAndLoad(bool fForced, PRTERRINFO pErrInfo)
         }
     }
     if (RT_SUCCESS(rc))
+        rc = nemR3WinInitVidIntercepts(ahMods[1], pErrInfo);
+    if (RT_SUCCESS(rc))
     {
-#ifdef NEM_WIN_INTERCEPT_NT_IO_CTLS
-        nemR3WinInitVidIntercepts(ahMods[1]);
-#endif
         for (unsigned i = 0; i < RT_ELEMENTS(g_aImports); i++)
         {
             int rc2 = RTLdrGetSymbol(ahMods[g_aImports[i].idxDll], g_aImports[i].pszName, (void **)g_aImports[i].ppfn);
@@ -452,7 +508,9 @@ static int nemR3WinInitProbeAndLoad(bool fForced, PRTERRINFO pErrInfo)
             }
         }
         if (RT_SUCCESS(rc))
+        {
             Assert(!RTErrInfoIsSet(pErrInfo));
+        }
     }
 
     for (unsigned i = 0; i < RT_ELEMENTS(ahMods); i++)
@@ -674,6 +732,259 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
 
 
 /**
+ * Used to fill in g_IoCtlGetHvPartitionId.
+ */
+static NTSTATUS WINAPI
+nemR3WinIoctlDetector_GetHvPartitionId(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUTINE pfnApcCallback, PVOID pvApcCtx,
+                                       PIO_STATUS_BLOCK pIos, ULONG uFunction, PVOID pvInput, ULONG cbInput,
+                                       PVOID pvOutput, ULONG cbOutput)
+{
+    AssertLogRelMsgReturn(hFile == NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, ("hFile=%p\n", hFile), STATUS_INVALID_PARAMETER_1);
+    RT_NOREF(hEvt); RT_NOREF(pfnApcCallback); RT_NOREF(pvApcCtx);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pIos), ("pIos=%p\n", pIos), STATUS_INVALID_PARAMETER_5);
+    AssertLogRelMsgReturn(cbInput == 0, ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_8);
+    RT_NOREF(pvInput);
+
+    AssertLogRelMsgReturn(RT_VALID_PTR(pvOutput), ("pvOutput=%p\n", pvOutput), STATUS_INVALID_PARAMETER_9);
+    AssertLogRelMsgReturn(cbOutput == sizeof(HV_PARTITION_ID), ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_10);
+    *(HV_PARTITION_ID *)pvOutput = NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_ID;
+
+    g_IoCtlGetHvPartitionId.cbInput   = cbInput;
+    g_IoCtlGetHvPartitionId.cbOutput  = cbOutput;
+    g_IoCtlGetHvPartitionId.uFunction = uFunction;
+
+    return STATUS_SUCCESS;
+}
+
+
+/**
+ * Used to fill in g_IoCtlStartVirtualProcessor.
+ */
+static NTSTATUS WINAPI
+nemR3WinIoctlDetector_StartVirtualProcessor(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUTINE pfnApcCallback, PVOID pvApcCtx,
+                                            PIO_STATUS_BLOCK pIos, ULONG uFunction, PVOID pvInput, ULONG cbInput,
+                                            PVOID pvOutput, ULONG cbOutput)
+{
+    AssertLogRelMsgReturn(hFile == NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, ("hFile=%p\n", hFile), STATUS_INVALID_PARAMETER_1);
+    RT_NOREF(hEvt); RT_NOREF(pfnApcCallback); RT_NOREF(pvApcCtx);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pIos), ("pIos=%p\n", pIos), STATUS_INVALID_PARAMETER_5);
+    AssertLogRelMsgReturn(cbInput == sizeof(HV_VP_INDEX), ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_8);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pvInput), ("pvInput=%p\n", pvInput), STATUS_INVALID_PARAMETER_9);
+    AssertLogRelMsgReturn(*(HV_VP_INDEX *)pvInput == NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX,
+                          ("*piCpu=%u\n", *(HV_VP_INDEX *)pvInput), STATUS_INVALID_PARAMETER_9);
+    AssertLogRelMsgReturn(cbOutput == 0, ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_10);
+    RT_NOREF(pvOutput);
+
+    g_IoCtlStartVirtualProcessor.cbInput   = cbInput;
+    g_IoCtlStartVirtualProcessor.cbOutput  = cbOutput;
+    g_IoCtlStartVirtualProcessor.uFunction = uFunction;
+
+    return STATUS_SUCCESS;
+}
+
+
+/**
+ * Used to fill in g_IoCtlStartVirtualProcessor.
+ */
+static NTSTATUS WINAPI
+nemR3WinIoctlDetector_StopVirtualProcessor(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUTINE pfnApcCallback, PVOID pvApcCtx,
+                                           PIO_STATUS_BLOCK pIos, ULONG uFunction, PVOID pvInput, ULONG cbInput,
+                                           PVOID pvOutput, ULONG cbOutput)
+{
+    AssertLogRelMsgReturn(hFile == NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, ("hFile=%p\n", hFile), STATUS_INVALID_PARAMETER_1);
+    RT_NOREF(hEvt); RT_NOREF(pfnApcCallback); RT_NOREF(pvApcCtx);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pIos), ("pIos=%p\n", pIos), STATUS_INVALID_PARAMETER_5);
+    AssertLogRelMsgReturn(cbInput == sizeof(HV_VP_INDEX), ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_8);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pvInput), ("pvInput=%p\n", pvInput), STATUS_INVALID_PARAMETER_9);
+    AssertLogRelMsgReturn(*(HV_VP_INDEX *)pvInput == NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX,
+                          ("*piCpu=%u\n", *(HV_VP_INDEX *)pvInput), STATUS_INVALID_PARAMETER_9);
+    AssertLogRelMsgReturn(cbOutput == 0, ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_10);
+    RT_NOREF(pvOutput);
+
+    g_IoCtlStopVirtualProcessor.cbInput   = cbInput;
+    g_IoCtlStopVirtualProcessor.cbOutput  = cbOutput;
+    g_IoCtlStopVirtualProcessor.uFunction = uFunction;
+
+    return STATUS_SUCCESS;
+}
+
+
+/**
+ * Used to fill in g_IoCtlMessageSlotHandleAndGetNext
+ */
+static NTSTATUS WINAPI
+nemR3WinIoctlDetector_MessageSlotHandleAndGetNext(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUTINE pfnApcCallback, PVOID pvApcCtx,
+                                                  PIO_STATUS_BLOCK pIos, ULONG uFunction, PVOID pvInput, ULONG cbInput,
+                                                  PVOID pvOutput, ULONG cbOutput)
+{
+    AssertLogRelMsgReturn(hFile == NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, ("hFile=%p\n", hFile), STATUS_INVALID_PARAMETER_1);
+    RT_NOREF(hEvt); RT_NOREF(pfnApcCallback); RT_NOREF(pvApcCtx);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pIos), ("pIos=%p\n", pIos), STATUS_INVALID_PARAMETER_5);
+
+    AssertLogRelMsgReturn(cbInput == sizeof(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT), ("cbInput=%#x\n", cbInput),
+                          STATUS_INVALID_PARAMETER_8);
+    AssertLogRelMsgReturn(RT_VALID_PTR(pvInput), ("pvInput=%p\n", pvInput), STATUS_INVALID_PARAMETER_9);
+    PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT pVidIn = (PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT)pvInput;
+    AssertLogRelMsgReturn(   pVidIn->iCpu == NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX
+                          && pVidIn->fFlags == VID_MSHAGN_F_HANDLE_MESSAGE
+                          && pVidIn->cMillies == NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT,
+                          ("iCpu=%u fFlags=%#x cMillies=%#x\n", pVidIn->iCpu, pVidIn->fFlags, pVidIn->cMillies),
+                          STATUS_INVALID_PARAMETER_9);
+    AssertLogRelMsgReturn(cbOutput == 0, ("cbInput=%#x\n", cbInput), STATUS_INVALID_PARAMETER_10);
+    RT_NOREF(pvOutput);
+
+    g_IoCtlMessageSlotHandleAndGetNext.cbInput   = cbInput;
+    g_IoCtlMessageSlotHandleAndGetNext.cbOutput  = cbOutput;
+    g_IoCtlMessageSlotHandleAndGetNext.uFunction = uFunction;
+
+    return STATUS_SUCCESS;
+}
+
+
+#ifdef LOG_ENABLED
+/**
+ * Used to fill in what g_pIoCtlDetectForLogging points to.
+ */
+static NTSTATUS WINAPI nemR3WinIoctlDetector_ForLogging(HANDLE hFile, HANDLE hEvt, PIO_APC_ROUTINE pfnApcCallback, PVOID pvApcCtx,
+                                                        PIO_STATUS_BLOCK pIos, ULONG uFunction, PVOID pvInput, ULONG cbInput,
+                                                        PVOID pvOutput, ULONG cbOutput)
+{
+    RT_NOREF(hFile, hEvt, pfnApcCallback, pvApcCtx, pIos, pvInput, pvOutput);
+
+    g_pIoCtlDetectForLogging->cbInput   = cbInput;
+    g_pIoCtlDetectForLogging->cbOutput  = cbOutput;
+    g_pIoCtlDetectForLogging->uFunction = uFunction;
+
+    return STATUS_SUCCESS;
+}
+#endif
+
+
+/**
+ * Worker for nemR3NativeInit that detect I/O control function numbers for VID.
+ *
+ * We use the function numbers directly in ring-0 and to name functions when
+ * logging NtDeviceIoControlFile calls.
+ *
+ * @note    We could alternatively do this by disassembling the respective
+ *          functions, but hooking NtDeviceIoControlFile and making fake calls
+ *          more easily provides the desired information.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.  Will set I/O
+ *                              control info members.
+ * @param   pErrInfo            Where to always return error info.
+ */
+static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
+{
+    /*
+     * Probe the I/O control information for select VID APIs so we can use
+     * them directly from ring-0 and better log them.
+     *
+     */
+    decltype(NtDeviceIoControlFile) * const pfnOrg = *g_ppfnVidNtDeviceIoControlFile;
+
+    /* VidGetHvPartitionId */
+    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_GetHvPartitionId;
+    HV_PARTITION_ID idHvPartition = HV_PARTITION_ID_INVALID;
+    BOOL fRet = g_pfnVidGetHvPartitionId(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, &idHvPartition);
+    *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
+    AssertReturn(fRet && idHvPartition == NEM_WIN_IOCTL_DETECTOR_FAKE_PARTITION_ID && g_IoCtlGetHvPartitionId.uFunction != 0,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                               "Problem figuring out VidGetHvPartitionId: fRet=%u idHvPartition=%#x dwErr=%u",
+                               fRet, idHvPartition, GetLastError()) );
+    LogRel(("NEM: VidGetHvPartitionId            -> fun:%#x in:%#x out:%#x\n",
+            g_IoCtlGetHvPartitionId.uFunction, g_IoCtlGetHvPartitionId.cbInput, g_IoCtlGetHvPartitionId.cbOutput));
+
+    /* VidStartVirtualProcessor */
+    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_StartVirtualProcessor;
+    fRet = g_pfnVidStartVirtualProcessor(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX);
+    *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
+    AssertReturn(fRet && g_IoCtlStartVirtualProcessor.uFunction != 0,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                               "Problem figuring out VidStartVirtualProcessor: fRet=%u dwErr=%u",
+                               fRet, GetLastError()) );
+    LogRel(("NEM: VidStartVirtualProcessor       -> fun:%#x in:%#x out:%#x\n", g_IoCtlStartVirtualProcessor.uFunction,
+            g_IoCtlStartVirtualProcessor.cbInput, g_IoCtlStartVirtualProcessor.cbOutput));
+
+    /* VidStopVirtualProcessor */
+    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_StopVirtualProcessor;
+    fRet = g_pfnVidStopVirtualProcessor(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX);
+    *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
+    AssertReturn(fRet && g_IoCtlStopVirtualProcessor.uFunction != 0,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                               "Problem figuring out VidStopVirtualProcessor: fRet=%u dwErr=%u",
+                               fRet, GetLastError()) );
+    LogRel(("NEM: VidStopVirtualProcessor        -> fun:%#x in:%#x out:%#x\n", g_IoCtlStopVirtualProcessor.uFunction,
+            g_IoCtlStopVirtualProcessor.cbInput, g_IoCtlStopVirtualProcessor.cbOutput));
+
+    /* VidMessageSlotHandleAndGetNext */
+    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_MessageSlotHandleAndGetNext;
+    fRet = g_pfnVidMessageSlotHandleAndGetNext(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE,
+                                               NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX, VID_MSHAGN_F_HANDLE_MESSAGE,
+                                               NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT);
+    *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
+    AssertReturn(fRet && g_IoCtlMessageSlotHandleAndGetNext.uFunction != 0,
+                 RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
+                               "Problem figuring out VidMessageSlotHandleAndGetNext: fRet=%u dwErr=%u",
+                               fRet, GetLastError()) );
+    LogRel(("NEM: VidMessageSlotHandleAndGetNext -> fun:%#x in:%#x out:%#x\n",
+            g_IoCtlMessageSlotHandleAndGetNext.uFunction, g_IoCtlMessageSlotHandleAndGetNext.cbInput,
+            g_IoCtlMessageSlotHandleAndGetNext.cbOutput));
+
+#ifdef LOG_ENABLED
+    /* The following are only for logging: */
+    union
+    {
+        VID_MAPPED_MESSAGE_SLOT MapSlot;
+        HV_REGISTER_NAME        Name;
+        HV_REGISTER_VALUE       Value;
+    } uBuf;
+
+    /* VidMessageSlotMap */
+    g_pIoCtlDetectForLogging = &g_IoCtlMessageSlotMap;
+    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_ForLogging;
+    fRet = g_pfnVidMessageSlotMap(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, &uBuf.MapSlot, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX);
+    *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
+    Assert(fRet);
+    LogRel(("NEM: VidMessageSlotMap              -> fun:%#x in:%#x out:%#x\n", g_pIoCtlDetectForLogging->uFunction,
+            g_pIoCtlDetectForLogging->cbInput, g_pIoCtlDetectForLogging->cbOutput));
+
+    /* VidGetVirtualProcessorState */
+    uBuf.Name = HvRegisterExplicitSuspend;
+    g_pIoCtlDetectForLogging = &g_IoCtlGetVirtualProcessorState;
+    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_ForLogging;
+    fRet = g_pfnVidGetVirtualProcessorState(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX,
+                                            &uBuf.Name, 1, &uBuf.Value);
+    *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
+    Assert(fRet);
+    LogRel(("NEM: VidGetVirtualProcessorState    -> fun:%#x in:%#x out:%#x\n", g_pIoCtlDetectForLogging->uFunction,
+            g_pIoCtlDetectForLogging->cbInput, g_pIoCtlDetectForLogging->cbOutput));
+
+    /* VidSetVirtualProcessorState */
+    uBuf.Name = HvRegisterExplicitSuspend;
+    g_pIoCtlDetectForLogging = &g_IoCtlSetVirtualProcessorState;
+    *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_ForLogging;
+    fRet = g_pfnVidSetVirtualProcessorState(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX,
+                                            &uBuf.Name, 1, &uBuf.Value);
+    *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
+    Assert(fRet);
+    LogRel(("NEM: VidSetVirtualProcessorState    -> fun:%#x in:%#x out:%#x\n", g_pIoCtlDetectForLogging->uFunction,
+            g_pIoCtlDetectForLogging->cbInput, g_pIoCtlDetectForLogging->cbOutput));
+
+    g_pIoCtlDetectForLogging = NULL;
+#endif
+
+    /* Done. */
+    pVM->nem.s.IoCtlGetHvPartitionId            = g_IoCtlGetHvPartitionId;
+    pVM->nem.s.IoCtlStartVirtualProcessor       = g_IoCtlStartVirtualProcessor;
+    pVM->nem.s.IoCtlStopVirtualProcessor        = g_IoCtlStopVirtualProcessor;
+    pVM->nem.s.IoCtlMessageSlotHandleAndGetNext = g_IoCtlMessageSlotHandleAndGetNext;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Creates and sets up a Hyper-V (exo) partition.
  *
  * @returns VBox status code.
@@ -778,19 +1089,26 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
         if (RT_SUCCESS(rc))
         {
             /*
-             * Check out our ring-0 capabilities.
+             * Discover the VID I/O control function numbers we need.
              */
-            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_NEM_INIT_VM, 0, NULL);
+            rc = nemR3WinInitDiscoverIoControlProperties(pVM, pErrInfo);
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Create and initialize a partition.
+                 * Check out our ring-0 capabilities.
                  */
-                rc = nemR3WinInitCreatePartition(pVM, pErrInfo);
+                rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_NEM_INIT_VM, 0, NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
-                    Log(("NEM: Marked active!\n"));
+                    /*
+                     * Create and initialize a partition.
+                     */
+                    rc = nemR3WinInitCreatePartition(pVM, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                    {
+                        VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
+                        Log(("NEM: Marked active!\n"));
+                    }
                 }
             }
         }
@@ -1798,7 +2116,6 @@ static int nemR3WinCancelRunVirtualProcessor(PVM pVM, PVMCPU pVCpu)
                 break;
 
             case VMCPUSTATE_STARTED_EXEC_NEM_WAIT:
-            {
                 if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED, VMCPUSTATE_STARTED_EXEC_NEM_WAIT))
                 {
                     NTSTATUS rcNt = NtAlertThread(pVCpu->nem.s.hNativeThreadHandle);
@@ -1809,7 +2126,6 @@ static int nemR3WinCancelRunVirtualProcessor(PVM pVM, PVMCPU pVCpu)
                     AssertLogRelMsgFailedReturn(("NtAlertThread failed: %#x\n", rcNt), RTErrConvertFromNtStatus(rcNt));
                 }
                 break;
-            }
 
             default:
                 return VINF_SUCCESS;
@@ -1821,7 +2137,7 @@ static int nemR3WinCancelRunVirtualProcessor(PVM pVM, PVMCPU pVCpu)
 }
 
 
-/** 
+/**
  * Fills in WHV_VP_EXIT_CONTEXT from HV_X64_INTERCEPT_MESSAGE_HEADER.
  */
 DECLINLINE(void) nemR3WinConvertX64MsgHdrToVpExitCtx(HV_X64_INTERCEPT_MESSAGE_HEADER const *pHdr, WHV_VP_EXIT_CONTEXT *pCtx)
@@ -3006,7 +3322,7 @@ DECLINLINE(int) nemR3NativeGCPhys2R3PtrWriteable(PVM pVM, RTGCPHYS GCPhys, void 
 
 int nemR3NativeNotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
 {
-    LogRel(("nemR3NativeNotifyPhysRamRegister: %RGp LB %RGp\n", GCPhys, cb));
+    Log5(("nemR3NativeNotifyPhysRamRegister: %RGp LB %RGp\n", GCPhys, cb));
     NOREF(pVM); NOREF(GCPhys); NOREF(cb);
     return VINF_SUCCESS;
 }
@@ -3014,7 +3330,7 @@ int nemR3NativeNotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
 
 int nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvMmio2)
 {
-    LogRel(("nemR3NativeNotifyPhysMmioExMap: %RGp LB %RGp fFlags=%#x pvMmio2=%p\n", GCPhys, cb, fFlags, pvMmio2));
+    Log5(("nemR3NativeNotifyPhysMmioExMap: %RGp LB %RGp fFlags=%#x pvMmio2=%p\n", GCPhys, cb, fFlags, pvMmio2));
     NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags); NOREF(pvMmio2);
     return VINF_SUCCESS;
 }
@@ -3022,7 +3338,7 @@ int nemR3NativeNotifyPhysMmioExMap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32
 
 int nemR3NativeNotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
 {
-    LogRel(("nemR3NativeNotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
+    Log5(("nemR3NativeNotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
     NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
     return VINF_SUCCESS;
 }
@@ -3043,7 +3359,7 @@ int nemR3NativeNotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint
  */
 int nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
 {
-    LogRel(("nemR3NativeNotifyPhysRomRegisterEarly: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
+    Log5(("nemR3NativeNotifyPhysRomRegisterEarly: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
 #if 0 /* Let's not do this after all.  We'll protection change notifications for each page and if not we'll map them lazily. */
     RTGCPHYS const cPages = cb >> X86_PAGE_SHIFT;
     for (RTGCPHYS iPage = 0; iPage < cPages; iPage++, GCPhys += X86_PAGE_SIZE)
@@ -3091,7 +3407,7 @@ int nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
  */
 int nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags)
 {
-    LogRel(("nemR3NativeNotifyPhysRomRegisterLate: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
+    Log5(("nemR3NativeNotifyPhysRomRegisterLate: %RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags));
     NOREF(pVM); NOREF(GCPhys); NOREF(cb); NOREF(fFlags);
     return VINF_SUCCESS;
 }
@@ -3177,7 +3493,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
 
 void nemR3NativeNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb)
 {
-    LogRel(("nemR3NativeNotifyHandlerPhysicalRegister: %RGp LB %RGp enmKind=%d\n", GCPhys, cb, enmKind));
+    Log5(("nemR3NativeNotifyHandlerPhysicalRegister: %RGp LB %RGp enmKind=%d\n", GCPhys, cb, enmKind));
     NOREF(pVM); NOREF(enmKind); NOREF(GCPhys); NOREF(cb);
 }
 
@@ -3185,8 +3501,8 @@ void nemR3NativeNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKin
 void nemR3NativeNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
                                                 int fRestoreAsRAM, bool fRestoreAsRAM2)
 {
-    LogRel(("nemR3NativeNotifyHandlerPhysicalDeregister: %RGp LB %RGp enmKind=%d fRestoreAsRAM=%d fRestoreAsRAM2=%d\n",
-            GCPhys, cb, enmKind, fRestoreAsRAM, fRestoreAsRAM2));
+    Log5(("nemR3NativeNotifyHandlerPhysicalDeregister: %RGp LB %RGp enmKind=%d fRestoreAsRAM=%d fRestoreAsRAM2=%d\n",
+          GCPhys, cb, enmKind, fRestoreAsRAM, fRestoreAsRAM2));
     NOREF(pVM); NOREF(enmKind); NOREF(GCPhys); NOREF(cb); NOREF(fRestoreAsRAM); NOREF(fRestoreAsRAM2);
 }
 
@@ -3194,8 +3510,8 @@ void nemR3NativeNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmK
 void nemR3NativeNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
                                             RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fRestoreAsRAM)
 {
-    LogRel(("nemR3NativeNotifyHandlerPhysicalModify: %RGp LB %RGp -> %RGp enmKind=%d fRestoreAsRAM=%d\n",
-            GCPhysOld, cb, GCPhysNew, enmKind, fRestoreAsRAM));
+    Log5(("nemR3NativeNotifyHandlerPhysicalModify: %RGp LB %RGp -> %RGp enmKind=%d fRestoreAsRAM=%d\n",
+          GCPhysOld, cb, GCPhysNew, enmKind, fRestoreAsRAM));
     NOREF(pVM); NOREF(enmKind); NOREF(GCPhysOld); NOREF(GCPhysNew); NOREF(cb); NOREF(fRestoreAsRAM);
 }
 
@@ -3479,8 +3795,8 @@ static int nemR3JustUnmapPageFromHyperV(PVM pVM, RTGCPHYS GCPhysDst, uint8_t *pu
 int nemR3NativeNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
                                        PGMPAGETYPE enmType, uint8_t *pu2State)
 {
-    LogRel(("nemR3NativeNotifyPhysPageAllocated: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
-            GCPhys, HCPhys, fPageProt, enmType, *pu2State));
+    Log5(("nemR3NativeNotifyPhysPageAllocated: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
+          GCPhys, HCPhys, fPageProt, enmType, *pu2State));
     RT_NOREF_PV(HCPhys); RT_NOREF_PV(enmType);
 
     int rc;
@@ -3514,8 +3830,8 @@ int nemR3NativeNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys
 void nemR3NativeNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
                                           PGMPAGETYPE enmType, uint8_t *pu2State)
 {
-    LogRel(("nemR3NativeNotifyPhysPageProtChanged: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
-            GCPhys, HCPhys, fPageProt, enmType, *pu2State));
+    Log5(("nemR3NativeNotifyPhysPageProtChanged: %RGp HCPhys=%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
+          GCPhys, HCPhys, fPageProt, enmType, *pu2State));
     RT_NOREF_PV(HCPhys); RT_NOREF_PV(enmType);
 
 #ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
@@ -3545,8 +3861,8 @@ void nemR3NativeNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCP
 void nemR3NativeNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew,
                                       uint32_t fPageProt, PGMPAGETYPE enmType, uint8_t *pu2State)
 {
-    LogRel(("nemR3NativeNotifyPhysPageProtChanged: %RGp HCPhys=%RHp->%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
-            GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, *pu2State));
+    Log5(("nemR3NativeNotifyPhysPageProtChanged: %RGp HCPhys=%RHp->%RHp fPageProt=%#x enmType=%d *pu2State=%d\n",
+          GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, *pu2State));
     RT_NOREF_PV(HCPhysPrev); RT_NOREF_PV(HCPhysNew); RT_NOREF_PV(enmType);
 
 #ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES

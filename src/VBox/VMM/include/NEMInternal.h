@@ -48,7 +48,20 @@ RT_C_DECLS_BEGIN
 # if defined(NEM_WIN_USE_OUR_OWN_RUN_API) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 #  error "NEM_WIN_USE_OUR_OWN_RUN_API requires NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS"
 # endif
+
+/**
+ * Windows VID I/O control information.
+ */
+typedef struct NEMWINIOCTL
+{
+    /** The I/O control function number. */
+    uint32_t    uFunction;
+    uint32_t    cbInput;
+    uint32_t    cbOutput;
+} NEMWINIOCTL;
+
 #endif
+
 
 /**
  * NEM VM Instance data.
@@ -103,8 +116,17 @@ typedef struct NEM
 
     /** Number of currently mapped pages. */
     uint32_t volatile           cMappedPages;
-#endif
 
+    /** Info about the VidGetHvPartitionId I/O control interface. */
+    NEMWINIOCTL                 IoCtlGetHvPartitionId;
+    /** Info about the VidStartVirtualProcessor I/O control interface. */
+    NEMWINIOCTL                 IoCtlStartVirtualProcessor;
+    /** Info about the VidStopVirtualProcessor I/O control interface. */
+    NEMWINIOCTL                 IoCtlStopVirtualProcessor;
+    /** Info about the VidStopVirtualProcessor I/O control interface. */
+    NEMWINIOCTL                 IoCtlMessageSlotHandleAndGetNext;
+
+#endif /* RT_OS_WINDOWS */
 } NEM;
 /** Pointer to NEM VM instance data. */
 typedef NEM *PNEM;
@@ -114,21 +136,6 @@ typedef NEM *PNEM;
 /** NEM::u32Magic value after termination. */
 #define NEM_MAGIC_DEAD          UINT32_C(0xdead1111)
 
-#if defined(RT_OS_WINDOWS) && defined(NEM_WIN_USE_OUR_OWN_RUN_API)
-/** @name NEM_WIN_MSG_STATE_XXX - Windows message handling state.
- * @{ */
-/** The CPU has not been started. */
-# define NEM_WIN_MSG_STATE_STOPPED              UINT8_C(0x00)
-/** The CPU has been started, no messages are pending. */
-# define NEM_WIN_MSG_STATE_STARTED              UINT8_C(0x01)
-/** Message is pending and needs to be ACKed. */
-# define NEM_WIN_MSG_STATE_PENDING_MSG          UINT8_C(0x02)
-/** Both a message and execution stopping is pending.  We need to ACK the
- * current message and get the stop message, then ACK the stop message before
- *  the CPU can be started again.  */
-# define NEM_WIN_MSG_STATE_PENDING_STOP_AND_MSG UINT8_C(0x03)
-/** @} */
-#endif
 
 /**
  * NEM VMCPU Instance data.
@@ -174,6 +181,24 @@ typedef NEMCPU *PNEMCPU;
 #define NEMCPU_MAGIC            UINT32_C(0x4d454e20)
 /** NEMCPU::u32Magic value after termination. */
 #define NEMCPU_MAGIC_DEAD       UINT32_C(0xdead2222)
+
+
+#if defined(RT_OS_WINDOWS) && defined(NEM_WIN_USE_OUR_OWN_RUN_API)
+/** @name NEM_WIN_MSG_STATE_XXX - Windows message handling state.
+ * @{ */
+/** The CPU has not been started. */
+# define NEM_WIN_MSG_STATE_STOPPED              UINT8_C(0x00)
+/** The CPU has been started, no messages are pending. */
+# define NEM_WIN_MSG_STATE_STARTED              UINT8_C(0x01)
+/** Message is pending and needs to be ACKed. */
+# define NEM_WIN_MSG_STATE_PENDING_MSG          UINT8_C(0x02)
+/** Both a message and execution stopping is pending.  We need to ACK the
+ * current message and get the stop message, then ACK the stop message before
+ *  the CPU can be started again.  */
+# define NEM_WIN_MSG_STATE_PENDING_STOP_AND_MSG UINT8_C(0x03)
+/** @} */
+#endif
+
 
 
 #ifdef IN_RING0
