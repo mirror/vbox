@@ -24547,7 +24547,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <interface
       name="IVirtualBoxClientList" extends="$unknown"
       uuid="6e7f09c9-da13-4126-9cc8-9aab81fed413"
-      wsmap="managed"
+      wsmap="suppress" internal="yes"
       reservedMethods="2" reservedAttributes="2"
     >
         <desc>
