@@ -1,6 +1,8 @@
 This file contains some notes about things to try out to give the X.Org video
 driver a reasonably thorough test.  We will add cases of things which have been
-known to fail in the past to this file as we discover them.
+known to fail in the past to this file as we discover them.  Tests should be
+carried out with Additions installed, and both with and without 3D enabled in
+the machine settings.
 
  * Test XFree86 guests (CentOS 3), early X.Org (CentOS 5) and recent
    (CentOS 6 and 7, current Ubuntu/Fedora).  Test Solaris guests (10 and 11?).
@@ -13,9 +15,6 @@ known to fail in the past to this file as we discover them.
    running).
  * Test switching directly between normal, full-screen, seamless and scaled
    modes.
- * execute "xprop -root | grep VBOX" after resizing a screen: VBOX_SIZE_HINTS
-   should be set, and VBOX_SIZE_HINTS_MISMATCH should equal 0 on CentOS 6 and
-   later (4.4 and later).
  * Test re-ordering the virtual screen using the native guest operating system
    tools and make sure that mouse integration still works as expected.
  * Test disabling and re-enabling guest screens with the native system tools.
