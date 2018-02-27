@@ -6,8 +6,11 @@
  *          at least not in SDK v7.1.
  */
 
-/*
- * Copyright (C) 2006-2018 Oracle Corporation
+ /*
+ * Copyright(C) 2006 - 2018 Oracle Corporation
+ *
+ * Oracle Corporation confidential
+ * All rights reserved
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2603,4 +2606,3 @@ DECLEXPORT(uint32_t) VbpsUpdateRegistrations(void)
 
     return VINF_SUCCESS;
 }
-

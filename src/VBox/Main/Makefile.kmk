@@ -1202,7 +1202,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  VBoxProxyStub_SDKS     = VBOX_NTDLL
  VBoxProxyStub_DEFPATH  = $(VBoxCOM_0_OUTDIR)/# Hack to workaround drive letter in $(VBoxCOM_0_OUTDIR)/ for CFLAGS hack below.
  VBoxProxyStub_INCS     = $(VBoxCOM_0_OUTDIR)/ \
-    $(VBOX_PATH_MAIN_SRC)/include/ 
+    $(VBOX_PATH_MAIN_SRC)/include/
  VBoxProxyStub_SOURCES := \
  	VirtualBox_p.c \
  	VirtualBox_i.c \
@@ -1218,7 +1218,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  VBoxProxyStubLegacy_EXTENDS  = VBoxProxyStub
  VBoxProxyStubLegacy_DEFS     = $(VBoxProxyStub_DEFS) VBOX_IN_PROXY_STUB_LEGACY
  VBoxProxyStubLegacy_INCS     = $(VBoxCOM_0_OUTDIR)/legacy/ \
-    $(VBOX_PATH_MAIN_SRC)/include/ 
+    $(VBOX_PATH_MAIN_SRC)/include/
  VBoxProxyStubLegacy_SOURCES  = \
  	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_p.c \
  	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
@@ -1234,7 +1234,7 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
   VBoxProxyStub-x86_SDKS     = VBOX_NTDLL
   VBoxProxyStub-x86_DEFS     = $(VBoxProxyStub_DEFS) VBOX_PROXY_STUB_32_ON_64 WIN32
   VBoxProxyStub-x86_INCS     = $(VBoxCOM-x86_0_OUTDIR)/ \
-    $(VBOX_PATH_MAIN_SRC)/include/ 
+    $(VBOX_PATH_MAIN_SRC)/include/
   VBoxProxyStub-x86_SOURCES  = \
   	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_p.c \
   	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \

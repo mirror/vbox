@@ -157,10 +157,10 @@ void SendCloseToAllThreads(DWORD dwTargetPid)
 static int CloseActiveClients()
 {
     ComPtr<IVirtualBoxClientList> ptrClientList;
-    /*
+    /**
     * Connect to VBoxSDS.
+    * here we close all API client processes: our own and customers
     */
-    // TODO: here we close all API client processes: our own and customers
     LogRelFunc(("Forcibly close API clients during system shutdown on Windows 7:\n"));
     HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxClientList, NULL, CLSCTX_LOCAL_SERVER, IID_IVirtualBoxClientList,
         (void **)ptrClientList.asOutParam());
