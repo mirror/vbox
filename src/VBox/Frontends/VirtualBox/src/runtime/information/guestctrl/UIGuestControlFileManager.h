@@ -23,12 +23,23 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CEventListener.h"
+#include "CEventSource.h"
 #include "CGuest.h"
+#include "CGuestSession.h"
+
+/* GUI includes: */
+#include "UIMainEventListener.h"
 
 /* Forward declarations: */
+class CGuestSessionStateChangedEvent;
+class QITreeView;
+class QPlainTextEdit;
 class QVBoxLayout;
 class QSplitter;
-
+class UIFileListModel;
+class UIGuestControlFileTree;
+class UIGuestSessionCreateWidget;
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
@@ -39,16 +50,46 @@ class UIGuestControlFileManager : public QWidget
 public:
 
     UIGuestControlFileManager(QWidget *pParent, const CGuest &comGuest);
+    ~UIGuestControlFileManager();
+
+private slots:
+
+    void sltGuestSessionUnregistered(CGuestSession guestSession);
+    void sltCreateSession(QString strUserName, QString strPassword);
+    void sltCloseSession();
+    void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
 
 private:
 
     void prepareObjects();
+    void prepareGuestListener();
     void prepareConnections();
+    bool createSession(const QString& strUserName, const QString& strPassword,
+                       const QString& strDomain = QString() /* not used currently */);
 
-    CGuest         m_comGuest;
-    QVBoxLayout   *m_pMainLayout;
-    QSplitter     *m_pSplitter;
-    QWidget       *m_pSessionCreateWidget;
+    void prepareListener(ComObjPtr<UIMainEventListenerImpl> &Qtistener,
+                         CEventListener &comEventListener,
+                         CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes);
+
+    void cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
+                         CEventListener &comEventListener,
+                         CEventSource comEventSource);
+
+    CGuest            m_comGuest;
+    CGuestSession     m_comGuestSession;
+
+    QVBoxLayout      *m_pMainLayout;
+    QSplitter        *m_pSplitter;
+    UIGuestSessionCreateWidget        *m_pSessionCreateWidget;
+    QPlainTextEdit   *m_pLogOutput;
+    UIGuestControlFileTree* m_pGuestFileTree;
+
+    ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
+    CEventListener m_comGuestListener;
+
+    ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
+    CEventListener m_comSessionListener;
+
 };
 
 #endif /* !___UIGuestControlFileManager_h___ */

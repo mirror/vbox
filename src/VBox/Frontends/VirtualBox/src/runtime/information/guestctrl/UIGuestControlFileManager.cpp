@@ -20,35 +20,53 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QSplitter>
+# include <QAbstractItemModel>
 # include <QHBoxLayout>
+# include <QPlainTextEdit>
+# include <QPushButton>
+# include <QSplitter>
 # include <QVBoxLayout>
 
 /* GUI includes: */
 # include "QILabel.h"
 # include "QILineEdit.h"
-# include "QIToolButton.h"
 # include "QIWithRetranslateUI.h"
+# include "UIExtraDataManager.h"
 # include "UIGuestControlFileManager.h"
+# include "UIGuestControlFileTree.h"
 # include "UIVMInformationDialog.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "CGuest.h"
+# include "CGuestDirectory.h"
+# include "CGuestSessionStateChangedEvent.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 class UIGuestSessionCreateWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    void sigCreateSession(QString strUserName, QString strPassword);
+    void sigCloseButtonClick();
+
 public:
 
     UIGuestSessionCreateWidget(QWidget *pParent = 0);
+    void switchSessionCreateMode();
+    void switchSessionCloseMode();
 
 protected:
 
     void retranslateUi();
+
+private slots:
+
+    void sltCreateButtonClick();
 
 private:
     void         prepareWidgets();
@@ -57,11 +75,18 @@ private:
 
     QILabel      *m_pUserNameLabel;
     QILabel      *m_pPasswordLabel;
-    QIToolButton *m_pCreateButton;
+    QPushButton  *m_pCreateButton;
+    QPushButton  *m_pCloseButton;
 
     QHBoxLayout *m_pMainLayout;
 
 };
+
+
+
+/*********************************************************************************************************************************
+*   UIGuestSessionCreateWidget implementation.                                                                                   *
+*********************************************************************************************************************************/
 
 UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -70,6 +95,7 @@ UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 *
     , m_pUserNameLabel(0)
     , m_pPasswordLabel(0)
     , m_pCreateButton(0)
+    , m_pCloseButton(0)
     , m_pMainLayout(0)
 {
     prepareWidgets();
@@ -102,12 +128,27 @@ void UIGuestSessionCreateWidget::prepareWidgets()
         m_pMainLayout->addWidget(m_pPasswordLabel);
     }
 
-    m_pCreateButton = new QIToolButton;
+    m_pCreateButton = new QPushButton;
     if (m_pCreateButton)
     {
         m_pMainLayout->addWidget(m_pCreateButton);
+        connect(m_pCreateButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sltCreateButtonClick);
     }
+
+    m_pCloseButton = new QPushButton;
+    if (m_pCloseButton)
+    {
+        m_pMainLayout->addWidget(m_pCloseButton);
+        connect(m_pCloseButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sigCloseButtonClick);
+    }
+
     retranslateUi();
+}
+
+void UIGuestSessionCreateWidget::sltCreateButtonClick()
+{
+    if(m_pUserNameEdit && m_pPasswordEdit)
+        emit sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
 }
 
 void UIGuestSessionCreateWidget::retranslateUi()
@@ -131,10 +172,36 @@ void UIGuestSessionCreateWidget::retranslateUi()
         m_pPasswordLabel->setText(UIVMInformationDialog::tr("Password"));
     }
     if(m_pCreateButton)
-    {
         m_pCreateButton->setText(UIVMInformationDialog::tr("Create Session"));
-    }
+    if(m_pCloseButton)
+        m_pCloseButton->setText(UIVMInformationDialog::tr("Close Session"));
+
 }
+
+void UIGuestSessionCreateWidget::switchSessionCreateMode()
+{
+    m_pUserNameEdit->setEnabled(true);
+    m_pPasswordEdit->setEnabled(true);
+    m_pUserNameLabel->setEnabled(true);
+    m_pPasswordLabel->setEnabled(true);
+    m_pCreateButton->setEnabled(true);
+    m_pCloseButton->setEnabled(false);
+}
+
+void UIGuestSessionCreateWidget::switchSessionCloseMode()
+{
+    m_pUserNameEdit->setEnabled(false);
+    m_pPasswordEdit->setEnabled(false);
+    m_pUserNameLabel->setEnabled(false);
+    m_pPasswordLabel->setEnabled(false);
+    m_pCreateButton->setEnabled(false);
+    m_pCloseButton->setEnabled(true);
+}
+
+
+/*********************************************************************************************************************************
+*   UIGuestControlFileManager implementation.                                                                                    *
+*********************************************************************************************************************************/
 
 UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGuest &comGuest)
     : QWidget(pParent)
@@ -142,9 +209,32 @@ UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGu
     , m_pMainLayout(0)
     , m_pSplitter(0)
     , m_pSessionCreateWidget(0)
+    , m_pLogOutput(0)
+    , m_pGuestFileTree(0)
 {
+    prepareGuestListener();
     prepareObjects();
     prepareConnections();
+}
+
+UIGuestControlFileManager::~UIGuestControlFileManager()
+{
+    if(m_comGuest.isOk() && m_pQtGuestListener && m_comGuestListener.isOk())
+        cleanupListener(m_pQtGuestListener, m_comGuestListener, m_comGuest.GetEventSource());
+    if(m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
+        cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
+}
+
+void UIGuestControlFileManager::prepareGuestListener()
+{
+    if(m_comGuest.isOk())
+    {
+        QVector<KVBoxEventType> eventTypes;
+        eventTypes << KVBoxEventType_OnGuestSessionRegistered;
+
+        prepareListener(m_pQtGuestListener, m_comGuestListener,
+                        m_comGuest.GetEventSource(), eventTypes);
+    }
 }
 
 void UIGuestControlFileManager::prepareObjects()
@@ -157,20 +247,32 @@ void UIGuestControlFileManager::prepareObjects()
     /* Configure layout: */
     m_pMainLayout->setSpacing(0);
 
-    m_pSplitter = new QSplitter;
-
-    if (!m_pSplitter)
-        return;
 
     m_pSessionCreateWidget = new UIGuestSessionCreateWidget();
     if (m_pSessionCreateWidget)
     {
-        m_pSplitter->addWidget(m_pSessionCreateWidget);
+        m_pMainLayout->addWidget(m_pSessionCreateWidget, 0, Qt::AlignTop);
     }
 
-    m_pSplitter->setOrientation(Qt::Vertical);
-    m_pMainLayout->addWidget(m_pSplitter);
+    m_pSplitter = new QSplitter;
+    if (m_pSplitter)
+    {
+        m_pMainLayout->addWidget(m_pSplitter);
+        m_pSplitter->setOrientation(Qt::Vertical);
+    }
 
+    m_pGuestFileTree = new UIGuestControlFileTree;
+    if (m_pGuestFileTree)
+    {
+        m_pSplitter->addWidget(m_pGuestFileTree);
+    }
+
+    m_pLogOutput = new QPlainTextEdit;
+    if (m_pLogOutput)
+    {
+        m_pLogOutput->setReadOnly(true);
+        m_pMainLayout->addWidget(m_pLogOutput, 0, Qt::AlignBottom);
+    }
 
     // m_pSplitter->setStretchFactor(0, 9);
     // m_pSplitter->setStretchFactor(1, 4);
@@ -178,7 +280,178 @@ void UIGuestControlFileManager::prepareObjects()
 
 void UIGuestControlFileManager::prepareConnections()
 {
+    if (m_pQtGuestListener)
+    {
+        connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
+                this, &UIGuestControlFileManager::sltGuestSessionUnregistered, Qt::DirectConnection);
+    }
+    if(m_pSessionCreateWidget)
+    {
+        connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCreateSession,
+                this, &UIGuestControlFileManager::sltCreateSession);
+        connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCloseButtonClick,
+                this, &UIGuestControlFileManager::sltCloseSession);
+    }
+}
 
+void UIGuestControlFileManager::sltGuestSessionUnregistered(CGuestSession guestSession)
+{
+    if (!guestSession.isOk())
+        return;
+    if(guestSession == m_comGuestSession && m_comGuestSession.isOk())
+        m_comGuestSession.detach();
+    if (m_pSessionCreateWidget)
+        m_pSessionCreateWidget->switchSessionCreateMode();
+}
+
+void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString strPassword)
+{
+    if(strUserName.isEmpty())
+    {
+        m_pLogOutput->appendPlainText("No user name is given");
+        return;
+    }
+    createSession(strUserName, strPassword);
+}
+
+void UIGuestControlFileManager::sltCloseSession()
+{
+    // if (!m_comGuestSession.isOk())
+    // {
+    //     m_pLogOutput->appendPlainText("Guest session is not valid");
+    //     return;
+    // }
+    // m_pLogOutput->appendPlainText("Guest session is closed");
+
+    if(m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
+        cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
+
+    m_comGuestSession.Close();
+    if(m_pSessionCreateWidget)
+        m_pSessionCreateWidget->switchSessionCreateMode();
+}
+
+void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent)
+{
+    //if (cEvent.isOk() && m_comGuestSession.isOk())// && m_comGuestProcess.GetStatus() == KProcessStatus_Error)
+    {
+        CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
+        if (cErrorInfo.isOk())// && cErrorInfo.GetResultCode() != S_OK)
+        {
+    //         /* For some reason I am yet to find this emit is not working.
+    //            Thus we are calling the parent's function directly: */
+    //         //emit sigGuestProcessErrorText(cErrorInfo.GetText());
+    //         UIGuestSessionTreeItem *sessionParent = dynamic_cast<UIGuestSessionTreeItem*>(QTreeWidgetItem::parent());
+    //         if (sessionParent)
+    //         {
+    //             sessionParent->errorString(cErrorInfo.GetText().toStdString().c_str());
+    //         }
+            m_pLogOutput->appendPlainText(cErrorInfo.GetText());
+        }
+    }
+
+    if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
+    {
+
+        // printf("/lk %d c:/users %d\n", m_comGuestSession.DirectoryExists("/lk", true),
+        //        m_comGuestSession.DirectoryExists("c:/users", true));
+        QVector<KDirectoryOpenFlag> flag;
+        flag.push_back(KDirectoryOpenFlag_None);
+        CGuestDirectory directory = m_comGuestSession.DirectoryOpen("c:/", "*", flag);
+        if(directory.isOk())
+        {
+            m_pLogOutput->appendPlainText("Current Directory");
+            m_pLogOutput->appendPlainText(directory.GetDirectoryName());
+        }
+    }
+
+}
+
+
+bool UIGuestControlFileManager::createSession(const QString& strUserName, const QString& strPassword,
+                                              const QString& strDomain /* not used currently */)
+{
+    if (!m_comGuest.isOk())
+        return false;
+    m_comGuestSession = m_comGuest.CreateSession(strUserName, strPassword,
+                                                               strDomain, "File Manager Session");
+
+    if (!m_comGuestSession.isOk())
+    {
+        m_pLogOutput->appendPlainText("Guest session could not be created");
+        return false;
+    }
+
+    m_pLogOutput->appendPlainText("Guest session has been created");
+    if(m_pSessionCreateWidget)
+        m_pSessionCreateWidget->switchSessionCloseMode();
+
+    /* Prepare session listener */
+    QVector<KVBoxEventType> eventTypes;
+    eventTypes << KVBoxEventType_OnGuestSessionStateChanged;
+    //<< KVBoxEventType_OnGuestProcessRegistered;
+    prepareListener(m_pQtSessionListener, m_comSessionListener,
+                    m_comGuestSession.GetEventSource(), eventTypes);
+
+    /* Connect to session listener */
+    qRegisterMetaType<CGuestSessionStateChangedEvent>();
+
+
+    connect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
+            this, &UIGuestControlFileManager::sltGuestSessionStateChanged);
+    // /* Wait session to start: */
+    // const ULONG waitTimeout = 2000;
+    // KGuestSessionWaitResult waitResult = guestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
+    // if (waitResult != KGuestSessionWaitResult_Start)
+    //     return false;
+
+    // outSession = guestSession;
+
+    return true;
+}
+
+void UIGuestControlFileManager::prepareListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
+                                                CEventListener &comEventListener,
+                                                CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes)
+{
+    if (!comEventSource.isOk())
+        return;
+    /* Create event listener instance: */
+    QtListener.createObject();
+    QtListener->init(new UIMainEventListener, this);
+    comEventListener = CEventListener(QtListener);
+
+    /* Register event listener for CProgress event source: */
+    comEventSource.RegisterListener(comEventListener, eventTypes,
+        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
+
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Register event sources in their listeners as well: */
+        QtListener->getWrapped()->registerSource(comEventSource, comEventListener);
+    }
+}
+
+void UIGuestControlFileManager::cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
+                                                CEventListener &comEventListener,
+                                                CEventSource comEventSource)
+{
+    if (!comEventSource.isOk())
+        return;
+    /* If event listener registered as passive one: */
+    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
+    {
+        /* Unregister everything: */
+        QtListener->getWrapped()->unregisterSources();
+    }
+
+    /* Make sure VBoxSVC is available: */
+    if (!vboxGlobal().isVBoxSVCAvailable())
+        return;
+
+    /* Unregister event listener for CProgress event source: */
+    comEventSource.UnregisterListener(comEventListener);
 }
 
 #include "UIGuestControlFileManager.moc"
