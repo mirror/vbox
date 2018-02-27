@@ -170,7 +170,7 @@ static int CloseActiveClients()
         hrc = ptrClientList->get_Clients(aCllients.__asOutParam());
         RTCList<LONG> clientsList = aCllients.toList();
         LogRel(("==========Client list begin ========\n"));
-        for (int i = 0; i < clientsList.size(); i++)
+        for (size_t i = 0; i < clientsList.size(); i++)
         {
             LogRel(("About to close client pid: %d\n", clientsList[i]));
             SendCloseToAllThreads(clientsList[i]);
