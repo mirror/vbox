@@ -74,6 +74,9 @@ private:
     bool handleCreateSession(int, char**);
     /* Handles the 'mkdir' session command to create guest directories */
     bool handleMkdir(int, char**);
+    bool handleStat(int, char**);
+
+    QString getFsObjInfoString(const CGuestFsObjInfo &fsObjectInfo) const;
 
     CGuest        m_comGuest;
     const QString m_strHelp;

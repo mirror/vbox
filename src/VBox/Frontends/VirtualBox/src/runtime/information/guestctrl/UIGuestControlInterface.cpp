@@ -27,8 +27,11 @@
 /* COM includes: */
 # include "CGuestProcess.h"
 # include "CGuestSession.h"
+# include "CGuestFsObjInfo.h"
 
-#include <iprt/getopt.h>
+/* Misc. includes: */
+# include <iprt/getopt.h>
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -43,6 +46,12 @@
     {                              \
     m_strStatus.append(strError);  \
     return false;                  \
+    }
+
+#define RETURN_MESSAGE(strMessage)   \
+    {                                \
+    m_strStatus.append(strMessage);  \
+    return true;                     \
     }
 
 #define GCTLCMD_COMMON_OPTION_DEFS() \
@@ -107,7 +116,7 @@ public:
     QString m_strPassword;
     QString m_strExePath;
     QString m_strSessionName;
-    QString m_strDirectoryPath;
+    QString m_strPath;
     ULONG   m_uSessionId;
     QString m_strDomain;
     bool    m_bSessionIdGiven;
@@ -132,6 +141,8 @@ UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &
                 "createsession                  [common-options]  [--sessionname <name>]\n"
                 "mkdir                            [common-options]\n"
                 "                                   [-P|--parents] [<guest directory>\n"
+                "                                   [--sessionid <id> |  [sessionname <name>]]\n"
+                "stat                            [common-options]\n"
                 "                                   [--sessionid <id> |  [sessionname <name>]]\n"
                 )
 {
@@ -175,7 +186,7 @@ bool UIGuestControlInterface::handleMkdir(int argc , char** argv)
             case VINF_GETOPT_NOT_OPTION:
                 if (!pathFound)
                 {
-                    commandData.m_strDirectoryPath = ValueUnion.psz;
+                    commandData.m_strPath = ValueUnion.psz;
                     pathFound = true;
                 }
                 /* Allow only a single NOT_OPTION */
@@ -187,7 +198,7 @@ bool UIGuestControlInterface::handleMkdir(int argc , char** argv)
                 RETURN_ERROR(generateErrorString(ch, ValueUnion))
         }
     }
-    if (commandData.m_strDirectoryPath.isEmpty())
+    if (commandData.m_strPath.isEmpty())
         RETURN_ERROR(QString(m_strHelp).append("Syntax error! No path is given\n"));
 
     CGuestSession guestSession;
@@ -202,10 +213,84 @@ bool UIGuestControlInterface::handleMkdir(int argc , char** argv)
     else
         creationFlags.push_back(KDirectoryCreateFlag_Parents);
 
-    guestSession.DirectoryCreate(commandData.m_strDirectoryPath, 0 /*ULONG aMode*/, creationFlags);
+    guestSession.DirectoryCreate(commandData.m_strPath, 0 /*ULONG aMode*/, creationFlags);
 
     //startProcess(commandData, guestSession);
     return true;
+}
+
+bool UIGuestControlInterface::handleStat(int argc, char** argv)
+{
+
+    CommandData commandData;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        GCTLCMD_COMMON_OPTION_DEFS()
+        { "--sessionname",                  GCTLCMD_COMMON_OPT_SESSION_NAME,          RTGETOPT_REQ_STRING  },
+        { "--sessionid",                    GCTLCMD_COMMON_OPT_SESSION_ID,            RTGETOPT_REQ_UINT32  }
+    };
+
+    int ch;
+    bool pathFound = false;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1 /* ignore 0th element (command) */, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            HANDLE_COMMON_OPTION_DEFS()
+            case GCTLCMD_COMMON_OPT_SESSION_NAME:
+                commandData.m_bSessionNameGiven = true;
+                commandData.m_strSessionName  = ValueUnion.psz;
+                break;
+            case GCTLCMD_COMMON_OPT_SESSION_ID:
+                commandData.m_bSessionIdGiven = true;
+                commandData.m_uSessionId  = ValueUnion.i32;
+                break;
+            case 'P':
+                commandData.m_bCreateParentDirectories  = true;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pathFound)
+                {
+                    commandData.m_strPath = ValueUnion.psz;
+                    pathFound = true;
+                }
+                /* Allow only a single NOT_OPTION */
+                else
+                    RETURN_ERROR(generateErrorString(ch, ValueUnion))
+
+                break;
+            default:
+                RETURN_ERROR(generateErrorString(ch, ValueUnion))
+        }
+    }
+    if (commandData.m_strPath.isEmpty())
+        RETURN_ERROR(QString(m_strHelp).append("Syntax error! No path is given\n"));
+
+    CGuestSession guestSession;
+    if (!findOrCreateSession(commandData, guestSession) || !guestSession.isOk())
+        return false;
+
+    bool isADirectory =
+        guestSession.DirectoryExists(commandData.m_strPath, false /*BOOL aFollowSymlinks*/);
+
+    bool isAFile = false;
+    if (!isADirectory)
+        isAFile = guestSession.FileExists(commandData.m_strPath, false /*BOOL aFollowSymlinks*/);
+
+    if (!isADirectory && !isAFile)
+        RETURN_ERROR("Specified object does not exist")
+
+    CGuestFsObjInfo fsObjectInfo = guestSession.FsObjQueryInfo(commandData.m_strPath, false /*BOOL aFollowSymlinks*/);
+    if (!fsObjectInfo.isOk())
+        RETURN_ERROR("Cannot get object info");
+
+    QString strObjectInfo = getFsObjInfoString(fsObjectInfo);
+
+    RETURN_MESSAGE(strObjectInfo);
 }
 
 bool UIGuestControlInterface::handleStart(int argc, char** argv)
@@ -375,6 +460,7 @@ void UIGuestControlInterface::prepareSubCommandHandlers()
     m_subCommandHandlers.insert("start", &UIGuestControlInterface::handleStart);
     m_subCommandHandlers.insert("help" , &UIGuestControlInterface::handleHelp);
     m_subCommandHandlers.insert("mkdir" , &UIGuestControlInterface::handleMkdir);
+    m_subCommandHandlers.insert("stat" , &UIGuestControlInterface::handleStat);
 }
 
 void UIGuestControlInterface::putCommand(const QString &strCommand)
@@ -481,4 +567,18 @@ bool UIGuestControlInterface::createSession(const CommandData &commandData, CGue
 
     outSession = guestSession;
     return true;
+}
+
+QString UIGuestControlInterface::getFsObjInfoString(const CGuestFsObjInfo &fsObjectInfo) const
+{
+    QString strInfo;
+    if (!fsObjectInfo.isOk())
+        return strInfo;
+    strInfo.append(QString("Name %1 \n").arg(fsObjectInfo.GetName()));
+    strInfo.append(QString("Size %1 \n").arg(fsObjectInfo.GetObjectSize()));
+    strInfo.append(QString("User %1 \n").arg(fsObjectInfo.GetUserName()));
+    strInfo.append(QString("BirthTime %1 \n").arg(fsObjectInfo.GetBirthTime()));
+    strInfo.append(QString("ChangeTime %1 ").arg(fsObjectInfo.GetChangeTime()));
+
+    return strInfo;
 }

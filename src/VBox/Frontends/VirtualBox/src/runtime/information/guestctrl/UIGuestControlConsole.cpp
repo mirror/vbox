@@ -105,7 +105,7 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
         case Qt::Key_Left:
         case Qt::Key_Right:
         {
-            if (textCursor().positionInBlock() > m_strPrompt.length())
+            if (textCursor().positionInBlock() > m_strPrompt.length()-1)
                 QPlainTextEdit::keyPressEvent(pEvent);
             break;
         }
