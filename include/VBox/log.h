@@ -649,6 +649,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_VIRTUALBOX,
     /** Main group, IVirtualBoxClient. */
     LOG_GROUP_MAIN_VIRTUALBOXCLIENT,
+    /** Main group, IVirtualBoxClientList. */
+    LOG_GROUP_MAIN_VIRTUALBOXCLIENTLIST,
     /** Main group, IVirtualBoxSDS. */
     LOG_GROUP_MAIN_VIRTUALBOXSDS,
     /** Main group, IVirtualSystemDescription. */
@@ -1127,6 +1129,7 @@ typedef enum LOGGROUP
     "MAIN_VIDEOCAPTURECHANGEDEVENT", \
     "MAIN_VIRTUALBOX", \
     "MAIN_VIRTUALBOXCLIENT", \
+    "MAIN_VIRTUALBOXCLIENTLIST", \
     "MAIN_VIRTUALBOXSDS", \
     "MAIN_VIRTUALSYSTEMDESCRIPTION", \
     "MAIN_VMMDEVINTERFACES", \

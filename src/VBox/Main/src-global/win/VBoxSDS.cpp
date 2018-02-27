@@ -86,6 +86,7 @@
 #include "VBox/com/VirtualBox.h"
 
 #include "VirtualBoxSDSImpl.h"
+#include "VirtualBoxClientListImpl.h"
 #include "Logging.h"
 
 #include <VBox/err.h>
@@ -693,6 +694,18 @@ protected:
 };
 
 
+int SetServiceEnvFlag()
+{
+    int rc = VINF_SUCCESS;
+    if (!SetEnvironmentVariable(L"VBOX_SERVICE_PROCESS", L""))
+    {
+        rc = RTErrConvertFromWin32(GetLastError());
+        LogRel(("Error: cannot set service environment flag:  %Rrs\n", rc));
+    }
+    return rc;
+}
+
+
 /**
  * Main function for the VBoxSDS process.
  *
@@ -714,6 +727,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
      * Initialize the VBox runtime without loading the support driver.
      */
     RTR3InitExe(argc, &argv, 0);
+
+    SetServiceEnvFlag();
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -921,6 +936,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         {
             BEGIN_OBJECT_MAP(s_aObjectMap)
                 OBJECT_ENTRY(CLSID_VirtualBoxSDS, VirtualBoxSDS)
+                OBJECT_ENTRY(CLSID_VirtualBoxClientList, VirtualBoxClientList)
             END_OBJECT_MAP()
             hrcExit = pServiceModule->init(s_aObjectMap, hInstance, &LIBID_VirtualBox,
                                            L"VBoxSDS",

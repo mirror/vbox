@@ -73,6 +73,7 @@ private:
     // IVirtualBoxSDS methods
     STDMETHODIMP_(HRESULT) RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid, IUnknown **aExistingVirtualBox);
     STDMETHODIMP_(HRESULT) DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid);
+    STDMETHODIMP_(HRESULT) NotifyClientsFinished();
 
 
     // Private methods

@@ -24480,6 +24480,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </param>
       </method>
 
+      <method name="notifyClientsFinished">
+          <desc>Notify service that their clients finished.</desc>
+      </method>
+
   </interface>
 
   <!--
@@ -24529,7 +24533,39 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </param>
       </method>
 
+      <method name="notifyClientsFinished">
+          <desc>Notify SDS that clients finished.</desc>
+      </method>
+
   </interface>
+
+    <!--
+  // IVirtualBoxClientList
+  //////////////////////////////////////////////////////////////////////////
+  -->
+
+    <interface
+      name="IVirtualBoxClientList" extends="$unknown"
+      uuid="6e7f09c9-da13-4126-9cc8-9aab81fed413"
+      wsmap="managed"
+      reservedMethods="2" reservedAttributes="2"
+    >
+        <desc>
+            The IVirtualBoxClientList interface represents a list of VirtualBox API clients.
+        </desc>
+
+        <method name="registerClient">
+            <desc>Register VirtualBox API Client.</desc>
+            <param name="pid" type="long" dir="in">
+                <desc>Process ID of VirtualBox API client.</desc>
+            </param>
+        </method>
+
+        <attribute name="clients" readonly="yes" type="long" dir="out" safearray="yes">
+            <desc>List of registered VirtualBox API clients.</desc>
+        </attribute>
+
+    </interface>
 
 </if> <!-- bird: shouldn't this if-element at leat include the VBoxSDS module, if not the whole system service application? -->
 
@@ -24543,10 +24579,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
          VBoxSDS.cpp and VBoxProxyStub.cpp
      -->
   <module name="VBoxSDS" context="LocalService">
-    <class name="VirtualBoxSDS" uuid="74ab5ffe-8726-4435-aa7e-876d705bcba5"
-           namespace="virtualbox.org">
-      <interface name="IVirtualBoxSDS" default="yes"/>
-    </class>
+      <class name="VirtualBoxSDS" uuid="74ab5ffe-8726-4435-aa7e-876d705bcba5"
+             namespace="virtualbox.org">
+          <interface name="IVirtualBoxSDS" default="yes"/>
+      </class>
+      <class name="VirtualBoxClientList" uuid="b2313c29-07eb-4613-ab27-f86bda7a0cae" namespace="virtualbox.org" >
+          <interface name="IVirtualBoxClientList" default="yes" />
+      </class>
   </module>
 
 </application>

@@ -52,6 +52,7 @@ public:
     /** The VBoxSVC chosen to instantiate CLSID_VirtualBox.
      * This is NULL if not set. */
     ComPtr<IVBoxSVCRegistration>    m_ptrTheChosenOne;
+    ComPtr<IVirtualBoxClientList>   m_ptrClientList;
 private:
     /** Reference count to make destruction safe wrt hung callers.
      * (References are retain while holding the map lock in some form, but
@@ -177,6 +178,8 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBo
                     {
                         LogRel(("VirtualBoxSDS::registerVBoxSVC: Seems VBoxSVC instance died.  Dropping it and letting caller take over.\n"));
                         pUserData->m_ptrTheChosenOne.setNull();
+                        /* Release the client list and stop client list watcher thread*/
+                        pUserData->m_ptrClientList.setNull();
                     }
                 }
                 else
@@ -189,6 +192,21 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBo
                     try
                     {
                         pUserData->m_ptrTheChosenOne = aVBoxSVC;
+                        /*
+                        * Create instance of ClientList
+                        */
+                        HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxClientList, NULL, CLSCTX_LOCAL_SERVER,
+                            IID_IVirtualBoxClientList,
+                            (void **)pUserData->m_ptrClientList.asOutParam());
+                        if (SUCCEEDED(hrc))
+                        {
+                            LogFunc(("Created API client list instance in VBoxSDS : hr=%Rhrf\n", hrc));
+                        }
+                        else
+                        {
+                            LogFunc(("Error in creating API client list instance: hr=%Rhrf\n", hrc));
+                        }
+
                         hrc = S_OK;
                     }
                     catch (...)
@@ -234,6 +252,8 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aV
                             pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
                     pUserData->m_ptrTheChosenOne.setNull();
                     /** @todo consider evicting the user from the table...   */
+                    /* Release the client list and stop client list watcher thread*/
+                    pUserData->m_ptrClientList.setNull();
                 }
                 else
                     LogRel(("VirtualBoxSDS::deregisterVBoxSVC: not the choosen one (%p != %p)\n",
@@ -259,6 +279,33 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aV
     return hrc;
 }
 
+
+STDMETHODIMP_(HRESULT) VirtualBoxSDS::NotifyClientsFinished()
+{
+    LogRelFlowThisFuncEnter();
+
+    int vrc = RTCritSectRwEnterShared(&m_MapCritSect);
+    if (RT_SUCCESS(vrc))
+    {
+        for (UserDataMap_T::iterator it = m_UserDataMap.begin(); it != m_UserDataMap.end(); ++it)
+        {
+            VBoxSDSPerUserData *pUserData = it->second;
+            if (pUserData && pUserData->m_ptrTheChosenOne)
+            {
+                LogRelFunc(("Notify VBoxSVC that all clients finished\n"));
+                /* Notify VBoxSVC about finishing all API clients it should free references to VBoxSDS
+                   and clean up itself */
+                if (pUserData->m_ptrClientList)
+                    pUserData->m_ptrClientList.setNull();
+                pUserData->m_ptrTheChosenOne->NotifyClientsFinished();
+            }
+        }
+        RTCritSectRwLeaveShared(&m_MapCritSect);
+    }
+
+    LogRelFlowThisFuncLeave();
+    return S_OK;
+}
 
 // private methods
 ///////////////////////////////////////////////////////////////////////////////

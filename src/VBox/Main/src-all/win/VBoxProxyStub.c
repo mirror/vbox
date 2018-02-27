@@ -40,6 +40,7 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <iprt/utf16.h>
+#include "RpcChannelHook.h"
 
 
 /*********************************************************************************************************************************
@@ -146,6 +147,18 @@ static PCRTUTF16 const      g_apwszProxyStubClsIds[] =
     L"{327E3C00-EE61-462F-AED3-0DFF6CBF9904}",
 };
 
+BOOL IsVBoxServiceProcess(void)
+{
+    if (GetEnvironmentVariable(L"VBOX_SERVICE_PROCESS", NULL, 0) == 0)
+    {
+        int res = GetLastError();
+        if (res != ERROR_ENVVAR_NOT_FOUND)
+            LogRel(("Error: cannot get service environment variable: %Rrwa\n", res));
+        return false;
+    }
+    return true;
+}
+
 
 /**
  * DLL main function.
@@ -170,6 +183,11 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
             /* Init IPRT. */
             RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
             Log12(("VBoxProxyStub[%u]/DllMain: DLL_PROCESS_ATTACH\n", GetCurrentProcessId()));
+
+            /* Install RPC channel hook to intercept a moment just after VirtualBox object activation.
+               It's reports to VBoxSDS that a new VirtualBox API client started. */
+            if(!IsVBoxServiceProcess())
+                SetupClientRpcChannelHook();
 
 #ifdef VBOX_STRICT
             {
@@ -1345,6 +1363,11 @@ void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwsz
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxSDS", "VirtualBoxSDS Class", &CLSID_VirtualBoxSDS, ".1");
     VbpsRegisterClassId(pState, &CLSID_VirtualBoxSDS, "VirtualBoxSDS Class", pszSdsAppId, "VirtualBox.VirtualBoxSDS", ".1",
                         &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszSdsExe, NULL /*N/A*/);
+
+    VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxClientList.1", "VirtualBoxClientList Class", &CLSID_VirtualBoxClientList, NULL);
+    VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxClientList", "VirtualBoxClientList Class", &CLSID_VirtualBoxClientList, ".1");
+    VbpsRegisterClassId(pState, &CLSID_VirtualBoxClientList, "VirtualBoxClientList Class", pszSdsAppId, "VirtualBox.VirtualBoxClientList", ".1",
+        &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszSdsExe, NULL /*N/A*/);
 #endif
 }
 
