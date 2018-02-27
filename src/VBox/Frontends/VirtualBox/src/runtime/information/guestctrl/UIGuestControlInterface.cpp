@@ -70,6 +70,50 @@
         commandData.m_strPassword = ValueUnion.psz;   \
         break;
 
+QString getFsObjTypeString(KFsObjType type)
+{
+    QString strType;
+    switch(type)
+    {
+        case (KFsObjType_Unknown):
+            strType = "Unknown";
+            break;
+    case (KFsObjType_Fifo):
+        strType = "Fifo";
+        break;
+
+    case (KFsObjType_DevChar):
+        strType = "DevChar";
+        break;
+
+    case (KFsObjType_Directory):
+        strType = "Directory";
+        break;
+
+    case (KFsObjType_DevBlock):
+        strType = "DevBlock";
+        break;
+
+    case (KFsObjType_File):
+        strType = "File";
+        break;
+    case (KFsObjType_Symlink):
+        strType = "Symlink";
+        break;
+    case (KFsObjType_Socket):
+        strType = "Socket";
+        break;
+
+    case (KFsObjType_WhiteOut):
+        strType = "WhiteOut";
+        break;
+    default:
+        strType = "Unknown";
+        break;
+    }
+    return strType;
+};
+
 QString generateErrorString(int getOptErrorCode, const RTGETOPTUNION &/*valueUnion*/)
 {
     QString errorString;
@@ -142,7 +186,7 @@ UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &
                 "mkdir                            [common-options]\n"
                 "                                   [-P|--parents] [<guest directory>\n"
                 "                                   [--sessionid <id> |  [sessionname <name>]]\n"
-                "stat                            [common-options]\n"
+                "[stat|ls                          [common-options]\n"
                 "                                   [--sessionid <id> |  [sessionname <name>]]\n"
                 )
 {
@@ -273,6 +317,8 @@ bool UIGuestControlInterface::handleStat(int argc, char** argv)
     CGuestSession guestSession;
     if (!findOrCreateSession(commandData, guestSession) || !guestSession.isOk())
         return false;
+    if (guestSession.GetStatus() != KGuestSessionStatus_Started)
+        RETURN_ERROR("The guest session is not valid");
 
     bool isADirectory =
         guestSession.DirectoryExists(commandData.m_strPath, false /*BOOL aFollowSymlinks*/);
@@ -384,6 +430,9 @@ bool UIGuestControlInterface::findOrCreateSession(const CommandData &commandData
                 return false;
         }
     }
+    /* search within the existing CGuestSessions and return a valid one if found: */
+    if (findAValidGuestSession(outGuestSession))
+        return true;
     /* if neither sessionname and session id is given then create a new session */
     else
     {
@@ -391,6 +440,23 @@ bool UIGuestControlInterface::findOrCreateSession(const CommandData &commandData
             return false;
     }
     return true;
+}
+
+bool UIGuestControlInterface::findAValidGuestSession(CGuestSession &outGuestSession)
+{
+    if (!m_comGuest.isOk())
+        return false;
+
+    QVector<CGuestSession> sessions = m_comGuest.GetSessions();
+    for(int i = 0; i < sessions.size(); ++i)
+    {
+        if (sessions[i].isOk() && sessions[i].GetStatus() == KGuestSessionStatus_Started)
+        {
+            outGuestSession = sessions[i];
+            return true;
+        }
+    }
+    return false;
 }
 
 bool UIGuestControlInterface::handleHelp(int, char**)
@@ -461,6 +527,7 @@ void UIGuestControlInterface::prepareSubCommandHandlers()
     m_subCommandHandlers.insert("help" , &UIGuestControlInterface::handleHelp);
     m_subCommandHandlers.insert("mkdir" , &UIGuestControlInterface::handleMkdir);
     m_subCommandHandlers.insert("stat" , &UIGuestControlInterface::handleStat);
+    m_subCommandHandlers.insert("ls" , &UIGuestControlInterface::handleStat);
 }
 
 void UIGuestControlInterface::putCommand(const QString &strCommand)
@@ -551,6 +618,10 @@ bool UIGuestControlInterface::findSession(const QString& strSessionName, CGuestS
 
 bool UIGuestControlInterface::createSession(const CommandData &commandData, CGuestSession& outSession)
 {
+    if (!m_comGuest.isOk())
+        return false;
+    if(commandData.m_strUserName.isEmpty())
+        RETURN_ERROR("No user name has been given");
     CGuestSession guestSession = m_comGuest.CreateSession(commandData.m_strUserName,
                                                           commandData.m_strPassword,
                                                           commandData.m_strDomain,
@@ -574,11 +645,11 @@ QString UIGuestControlInterface::getFsObjInfoString(const CGuestFsObjInfo &fsObj
     QString strInfo;
     if (!fsObjectInfo.isOk())
         return strInfo;
-    strInfo.append(QString("Name %1 \n").arg(fsObjectInfo.GetName()));
-    strInfo.append(QString("Size %1 \n").arg(fsObjectInfo.GetObjectSize()));
-    strInfo.append(QString("User %1 \n").arg(fsObjectInfo.GetUserName()));
-    strInfo.append(QString("BirthTime %1 \n").arg(fsObjectInfo.GetBirthTime()));
-    strInfo.append(QString("ChangeTime %1 ").arg(fsObjectInfo.GetChangeTime()));
+    strInfo.append(QString("%1 \t").arg(fsObjectInfo.GetName()));
+    strInfo.append(QString("%1 \t").arg(getFsObjTypeString(fsObjectInfo.GetType())));
+    strInfo.append(QString("%1 \t").arg(fsObjectInfo.GetObjectSize()));
+    strInfo.append(QString("%1 \t").arg(fsObjectInfo.GetBirthTime()));
+    strInfo.append(QString("%1 ").arg(fsObjectInfo.GetChangeTime()));
 
     return strInfo;
 }
