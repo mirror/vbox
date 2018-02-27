@@ -960,7 +960,7 @@ static int videoRecStreamOpenFile(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
     char *pszFile = NULL;
 
     int rc;
-    if (pStream->uScreenID > 1)
+    if (pCfg->aScreens.size() > 1)
         rc = RTStrAPrintf(&pszFile, "%s-%u%s", pszAbsPath, pStream->uScreenID + 1, pszSuff);
     else
         rc = RTStrAPrintf(&pszFile, "%s%s", pszAbsPath, pszSuff);
@@ -968,31 +968,56 @@ static int videoRecStreamOpenFile(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
     if (RT_SUCCESS(rc))
     {
         uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_WRITE;
-#ifdef DEBUG
-        fOpen |= RTFILE_O_CREATE_REPLACE;
-#else
+
         /* Play safe: the file must not exist, overwriting is potentially
          * hazardous as nothing prevents the user from picking a file name of some
          * other important file, causing unintentional data loss. */
         fOpen |= RTFILE_O_CREATE;
-#endif
+
         RTFILE hFile;
         rc = RTFileOpen(&hFile, pszFile, fOpen);
+        if (rc == VERR_ALREADY_EXISTS)
+        {
+            RTStrFree(pszFile);
+            pszFile = NULL;
+
+            RTTIMESPEC ts;
+            RTTimeNow(&ts);
+            RTTIME time;
+            RTTimeExplode(&time, &ts);
+
+            if (pCfg->aScreens.size() > 1)
+                rc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ-%u%s",
+                                  pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
+                                  time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
+                                  pStream->uScreenID + 1, pszSuff);
+            else
+                rc = RTStrAPrintf(&pszFile, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ%s",
+                                  pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
+                                  time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
+                                  pszSuff);
+
+            if (RT_SUCCESS(rc))
+                rc = RTFileOpen(&hFile, pszFile, fOpen);
+        }
+
         if (RT_SUCCESS(rc))
         {
             pStream->enmDst       = VIDEORECDEST_FILE;
             pStream->File.hFile   = hFile;
             pStream->File.pszFile = pszFile; /* Assign allocated string to our stream's config. */
         }
-        else
-            RTStrFree(pszFile);
     }
 
     RTStrFree(pszSuff);
     RTStrFree(pszAbsPath);
 
     if (RT_FAILURE(rc))
-        LogRel(("VideoRec: Failed to open file for screen %RU32, rc=%Rrc\n", pStream->uScreenID, rc));
+    {
+        LogRel(("VideoRec: Failed to open file '%s' for screen %RU32, rc=%Rrc\n",
+                pszFile ? pszFile : "<Unnamed>", pStream->uScreenID, rc));
+        RTStrFree(pszFile);
+    }
 
     return rc;
 }
