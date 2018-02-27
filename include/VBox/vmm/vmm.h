@@ -431,6 +431,8 @@ typedef enum VMMR0OPERATION
 
     /** Call NEMR0InitVM() (host specific). */
     VMMR0_DO_NEM_INIT_VM = 576,
+    /** Call NEMR0InitVMPart2() (host specific). */
+    VMMR0_DO_NEM_INIT_VM_PART_2,
     /** Call NEMR0MapPages() (host specific). */
     VMMR0_DO_NEM_MAP_PAGES,
     /** Call NEMR0UnmapPages() (host specific). */

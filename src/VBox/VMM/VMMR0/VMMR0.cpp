@@ -1974,6 +1974,13 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
+        case VMMR0_DO_NEM_INIT_VM_PART_2:
+            if (u64Arg || pReqHdr || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = NEMR0InitVMPart2(pGVM, pVM);
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            break;
+
         case VMMR0_DO_NEM_MAP_PAGES:
             if (u64Arg || pReqHdr || idCpu == NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;

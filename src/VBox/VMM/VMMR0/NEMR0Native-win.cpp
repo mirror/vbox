@@ -20,7 +20,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
+#include <iprt/nt/nt.h>
 #include <iprt/nt/hyperv.h>
+#include <iprt/nt/vid.h>
 
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/iem.h>
@@ -49,7 +51,7 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static uint64_t (* g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysInput, uint64_t HCPhysOutput);
+static uint64_t (*g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysInput, uint64_t HCPhysOutput);
 
 
 
@@ -63,6 +65,9 @@ static uint64_t (* g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysI
  */
 VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
 {
+    AssertCompile(sizeof(pGVM->nem.s) <= sizeof(pGVM->nem.padding));
+    AssertCompile(sizeof(pGVM->aCpus[0].nem.s) <= sizeof(pGVM->aCpus[0].nem.padding));
+
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, 0);
     AssertRCReturn(rc, rc);
 
@@ -111,9 +116,6 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
             /*
              * So far, so good.
              */
-            /** @todo would be good if we could establish the partition ID ourselves. */
-            /** @todo this is too EARLY!   */
-            pGVM->nem.s.idHvPartition = pVM->nem.s.idHvPartition;
             return rc;
         }
 
@@ -121,6 +123,123 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
     }
 
     RT_NOREF(pGVM, pVM);
+    return rc;
+}
+
+
+/**
+ * Perform an I/O control operation on the partition handle (VID.SYS).
+ *
+ * @returns NT status code.
+ * @param   pGVM            The ring-0 VM structure.
+ * @param   uFunction       The function to perform.
+ * @param   pvInput         The input buffer.  This must point within the VM
+ *                          structure so we can easily convert to a ring-3
+ *                          pointer if necessary.
+ * @param   cbInput         The size of the input.  @a pvInput must be NULL when
+ *                          zero.
+ * @param   pvOutput        The output buffer.  This must also point within the
+ *                          VM structure for ring-3 pointer magic.
+ * @param   cbOutput        The size of the output.  @a pvOutput must be NULL
+ *                          when zero.
+ */
+DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput,
+                                             void *pvOutput, uint32_t cbOutput)
+{
+#ifdef RT_STRICT
+    /*
+     * Input and output parameters are part of the VM CPU structure.
+     */
+    PVM          pVM  = pGVM->pVM;
+    size_t const cbVM = RT_UOFFSETOF(VM, aCpus[pGVM->cCpus]);
+    if (pvInput)
+        AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pVM <= cbVM, VERR_INVALID_PARAMETER);
+    if (pvOutput)
+        AssertReturn(((uintptr_t)pvOutput + cbOutput) - (uintptr_t)pVM <= cbVM, VERR_INVALID_PARAMETER);
+#endif
+
+    int32_t rcNt = STATUS_UNSUCCESSFUL;
+    int rc = SUPR0IoCtlPerform(pGVM->nem.s.pIoCtlCtx, uFunction,
+                               pvInput,
+                               pvInput  ? (uintptr_t)pvInput  + pGVM->nem.s.offRing3ConversionDelta : NIL_RTR3PTR,
+                               cbInput,
+                               pvOutput,
+                               pvOutput ? (uintptr_t)pvOutput + pGVM->nem.s.offRing3ConversionDelta : NIL_RTR3PTR,
+                               cbOutput,
+                               &rcNt);
+    if (RT_SUCCESS(rc) || !NT_SUCCESS((NTSTATUS)rcNt))
+        return (NTSTATUS)rcNt;
+    return STATUS_UNSUCCESSFUL;
+}
+
+
+/**
+ * 2nd part of the initialization, after we've got a partition handle.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The ring-0 VM handle.
+ * @param   pVM             The cross context VM handle.
+ * @thread  EMT(0)
+ */
+VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVM pVM)
+{
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, 0);
+    AssertRCReturn(rc, rc);
+    SUPR0Printf("NEMR0InitVMPart2\n"); LogRel(("2: NEMR0InitVMPart2\n"));
+
+    /*
+     * Copy and validate the I/O control information from ring-3.
+     */
+    NEMWINIOCTL Copy = pVM->nem.s.IoCtlGetHvPartitionId;
+    AssertLogRelReturn(Copy.uFunction != 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbInput == 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbOutput == sizeof(HV_PARTITION_ID), VERR_NEM_INIT_FAILED);
+    pGVM->nem.s.IoCtlGetHvPartitionId = Copy;
+
+    Copy = pVM->nem.s.IoCtlStartVirtualProcessor;
+    AssertLogRelReturn(Copy.uFunction != 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbInput == sizeof(HV_VP_INDEX), VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbOutput == 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, VERR_NEM_INIT_FAILED);
+    pGVM->nem.s.IoCtlStartVirtualProcessor = Copy;
+
+    Copy = pVM->nem.s.IoCtlStopVirtualProcessor;
+    AssertLogRelReturn(Copy.uFunction != 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbInput == sizeof(HV_VP_INDEX), VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbOutput == 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlStartVirtualProcessor.uFunction, VERR_NEM_INIT_FAILED);
+    pGVM->nem.s.IoCtlStopVirtualProcessor = Copy;
+
+    Copy = pVM->nem.s.IoCtlMessageSlotHandleAndGetNext;
+    AssertLogRelReturn(Copy.uFunction != 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbInput == sizeof(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT), VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.cbOutput == 0, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlStartVirtualProcessor.uFunction, VERR_NEM_INIT_FAILED);
+    AssertLogRelReturn(Copy.uFunction != pGVM->nem.s.IoCtlStopVirtualProcessor.uFunction, VERR_NEM_INIT_FAILED);
+    pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext = Copy;
+
+    /*
+     * Setup of an I/O control context for the partition handle for later use.
+     */
+    rc = SUPR0IoCtlSetupForHandle(pGVM->pSession, pVM->nem.s.hPartitionDevice, 0, &pGVM->nem.s.pIoCtlCtx);
+    AssertLogRelRCReturn(rc, rc);
+    pGVM->nem.s.offRing3ConversionDelta = (uintptr_t)pVM->pVMR3 - (uintptr_t)pGVM->pVM;
+
+    /*
+     * Get the partition ID.
+     */
+    PVMCPU pVCpu = &pGVM->pVM->aCpus[0];
+    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlGetHvPartitionId.uFunction, NULL, 0,
+                                            &pVCpu->nem.s.uIoCtlBuf.idPartition, sizeof(pVCpu->nem.s.uIoCtlBuf.idPartition));
+    AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("IoCtlGetHvPartitionId failed: %#x\n", rcNt), VERR_NEM_INIT_FAILED);
+    pGVM->nem.s.idHvPartition = pVCpu->nem.s.uIoCtlBuf.idPartition;
+    AssertLogRelMsgReturn(pGVM->nem.s.idHvPartition == pVM->nem.s.idHvPartition,
+                          ("idHvPartition mismatch: r0=%#RX64, r3=%#RX64\n", pGVM->nem.s.idHvPartition, pVM->nem.s.idHvPartition),
+                          VERR_NEM_INIT_FAILED);
+
+
     return rc;
 }
 
@@ -136,6 +255,14 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
 VMMR0_INT_DECL(void) NEMR0CleanupVM(PGVM pGVM)
 {
     pGVM->nem.s.idHvPartition = HV_PARTITION_ID_INVALID;
+
+    /* Clean up I/O control context. */
+    if (pGVM->nem.s.pIoCtlCtx)
+    {
+        int rc = SUPR0IoCtlCleanup(pGVM->nem.s.pIoCtlCtx);
+        AssertRC(rc);
+        pGVM->nem.s.pIoCtlCtx = NULL;
+    }
 
     /* Free the hypercall pages. */
     VMCPUID i = pGVM->cCpus;
@@ -194,10 +321,6 @@ VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
             AssertMsgReturn(!(GCPhysSrc & X86_PAGE_OFFSET_MASK), ("GCPhysSrc=%RGp\n", GCPhysSrc), VERR_OUT_OF_RANGE);
             AssertReturn(GCPhysSrc < _1E, VERR_OUT_OF_RANGE);
         }
-
-        /** @todo fix pGVM->nem.s.idHvPartition init. */
-        if (pGVM->nem.s.idHvPartition == 0)
-            pGVM->nem.s.idHvPartition = pVM->nem.s.idHvPartition;
 
         /*
          * Compose and make the hypercall.
@@ -290,10 +413,6 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
         AssertReturn(cPages <= NEM_MAX_UNMAP_PAGES, VERR_OUT_OF_RANGE);
         AssertMsgReturn(!(GCPhys & X86_PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_OUT_OF_RANGE);
         AssertReturn(GCPhys < _1E, VERR_OUT_OF_RANGE);
-
-        /** @todo fix pGVM->nem.s.idHvPartition init. */
-        if (pGVM->nem.s.idHvPartition == 0)
-            pGVM->nem.s.idHvPartition = pVM->nem.s.idHvPartition;
 
         /*
          * Compose and make the hypercall.
@@ -731,10 +850,6 @@ VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
-        /** @todo fix pGVM->nem.s.idHvPartition init. */
-        if (pGVM->nem.s.idHvPartition == 0)
-            pGVM->nem.s.idHvPartition = pVM->nem.s.idHvPartition;
-
         /*
          * Call worker.
          */
@@ -1144,10 +1259,6 @@ VMMR0_INT_DECL(int)  NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_
         PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
-
-        /** @todo fix pGVM->nem.s.idHvPartition init. */
-        if (pGVM->nem.s.idHvPartition == 0)
-            pGVM->nem.s.idHvPartition = pVM->nem.s.idHvPartition;
 
         /*
          * Call worker.

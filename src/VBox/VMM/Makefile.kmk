@@ -829,11 +829,6 @@ ifndef VBOX_ONLY_EXTPACKS
  VMMR0_SOURCES.x86 = \
  	VMMR0/VMMR0JmpA-x86.asm
 
- if1of ($(USERNAME),bird) # experimental.
-  VMMR0_SOURCES.win.amd64 += VMMR0/NEMR0Native-win.cpp
-  VMMR0_DEFS.win.amd64    += VBOX_WITH_NATIVE_NEM VBOX_WITH_NEM_R0
- endif
-
  VMMR0_LIBS = \
  	$(PATH_STAGE_LIB)/ServicesR0$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
@@ -841,6 +836,11 @@ ifndef VBOX_ONLY_EXTPACKS
  ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
   VMMR0_LIBS += \
   	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ endif
+ if1of ($(USERNAME),bird) # experimental.
+  VMMR0_SOURCES.win.amd64 += VMMR0/NEMR0Native-win.cpp
+  VMMR0_DEFS.win.amd64    += VBOX_WITH_NATIVE_NEM VBOX_WITH_NEM_R0
+  VMMR0/NEMR0Native-win.cpp_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
  endif
 
  $(call VBOX_SET_VER_INFO_R0,VMMR0,VirtualBox VMM - ring-0 context parts) # Version info / description.

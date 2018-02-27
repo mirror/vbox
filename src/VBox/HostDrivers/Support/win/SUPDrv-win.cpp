@@ -2130,6 +2130,38 @@ static int supdrvNtCompare(PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, u
     return iDiff;
 }
 
+/** Image compare exclusion regions. */
+typedef struct SUPDRVNTEXCLREGIONS
+{
+    /** Number of regions.   */
+    uint32_t        cRegions;
+    /** The regions. */
+    struct SUPDRVNTEXCLREGION
+    {
+        uint32_t    uRva;
+        uint32_t    cb;
+    }               aRegions[16];
+} SUPDRVNTEXCLREGIONS;
+
+/**
+ * Adds an exclusion region to the collection.
+ */
+static bool supdrvNtAddExclRegion(SUPDRVNTEXCLREGIONS *pRegions, uint32_t uRvaRegion, uint32_t cbRegion)
+{
+    uint32_t const cRegions = pRegions->cRegions;
+    AssertReturn(cRegions + 1 <= RT_ELEMENTS(pRegions->aRegions), false);
+    uint32_t i = 0;
+    for (; i < cRegions; i++)
+        if (uRvaRegion < pRegions->aRegions[i].uRva)
+            break;
+    if (i != cRegions)
+        memmove(&pRegions->aRegions[i + 1], &pRegions->aRegions[i], (cRegions - i) * sizeof(pRegions->aRegions[0]));
+    pRegions->aRegions[i].uRva = uRvaRegion;
+    pRegions->aRegions[i].cb   = cbRegion;
+    pRegions->cRegions++;
+    return true;
+}
+
 
 int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, PSUPLDRLOAD pReq)
 {
@@ -2183,22 +2215,14 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
             &&  pNtHdrsIprt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress < pImage->cbImageBits
             )
         {
-            struct MyRegion
-            {
-                uint32_t uRva;
-                uint32_t cb;
-            }           aExcludeRgns[16];
-            unsigned    cExcludeRgns = 0;
+            SUPDRVNTEXCLREGIONS ExcludeRegions;
+            ExcludeRegions.cRegions = 0;
 
             /* ImageBase: */
             if (   pNtHdrsNtLd->OptionalHeader.ImageBase != pNtHdrsIprt->OptionalHeader.ImageBase
                 && (   pNtHdrsNtLd->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage
                     || pNtHdrsIprt->OptionalHeader.ImageBase == (uintptr_t)pImage->pvImage) )
-            {
-                aExcludeRgns[cExcludeRgns].uRva = offImageBase;
-                aExcludeRgns[cExcludeRgns].cb   = cbImageBase;
-                cExcludeRgns++;
-            }
+                supdrvNtAddExclRegion(&ExcludeRegions, offImageBase, cbImageBase);
 
             /* Imports: */
             uint32_t    cImpsLeft    = pNtHdrsIprt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
@@ -2207,12 +2231,12 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
             AssertLogRelReturn(offImps + cImpsLeft * sizeof(IMAGE_IMPORT_DESCRIPTOR) <= pImage->cbImageBits, VERR_INTERNAL_ERROR_3);
             IMAGE_IMPORT_DESCRIPTOR const *pImp = (IMAGE_IMPORT_DESCRIPTOR const *)(pbImageBits + offImps);
             while (   cImpsLeft-- > 0
-                   && cExcludeRgns < RT_ELEMENTS(aExcludeRgns))
+                   && ExcludeRegions.cRegions < RT_ELEMENTS(ExcludeRegions.aRegions))
             {
                 uint32_t uRvaThunk = pImp->OriginalFirstThunk;
-                if (    uRvaThunk >  sizeof(IMAGE_NT_HEADERS)
-                    &&  uRvaThunk <= pImage->cbImageBits - sizeof(IMAGE_THUNK_DATA)
-                    &&  uRvaThunk != pImp->FirstThunk)
+                if (   uRvaThunk >  sizeof(IMAGE_NT_HEADERS)
+                    && uRvaThunk <= pImage->cbImageBits - sizeof(IMAGE_THUNK_DATA)
+                    && uRvaThunk != pImp->FirstThunk)
                 {
                     /* Find the size of the thunk table. */
                     IMAGE_THUNK_DATA const *paThunk    = (IMAGE_THUNK_DATA const *)(pbImageBits + uRvaThunk);
@@ -2220,18 +2244,30 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                     uint32_t                cThunks    = 0;
                     while (cThunks < cMaxThunks && paThunk[cThunks].u1.Function != 0)
                         cThunks++;
-
-                    /* Ordered table insert. */
-                    unsigned i = 0;
-                    for (; i < cExcludeRgns; i++)
-                        if (uRvaThunk < aExcludeRgns[i].uRva)
-                            break;
-                    if (i != cExcludeRgns)
-                        memmove(&aExcludeRgns[i + 1], &aExcludeRgns[i], (cExcludeRgns - i) * sizeof(aExcludeRgns[0]));
-                    aExcludeRgns[i].uRva = uRvaThunk;
-                    aExcludeRgns[i].cb   = cThunks * sizeof(IMAGE_THUNK_DATA);
-                    cExcludeRgns++;
+                    supdrvNtAddExclRegion(&ExcludeRegions, uRvaThunk, cThunks * sizeof(IMAGE_THUNK_DATA));
                 }
+
+#if 0 /* Useful for VMMR0 hacking, not for production use.  See also SUPDrvLdr.cpp. */
+                /* Exclude the other thunk table if ntoskrnl.exe. */
+                uint32_t uRvaName = pImp->Name;
+                if (   uRvaName > sizeof(IMAGE_NT_HEADERS)
+                    && uRvaName < pImage->cbImageBits - sizeof("ntoskrnl.exe")
+                    && memcmp(&pbImageBits[uRvaName], RT_STR_TUPLE("ntoskrnl.exe")) == 0)
+                {
+                    uRvaThunk = pImp->FirstThunk;
+                    if (   uRvaThunk >  sizeof(IMAGE_NT_HEADERS)
+                        && uRvaThunk <= pImage->cbImageBits - sizeof(IMAGE_THUNK_DATA))
+                    {
+                        /* Find the size of the thunk table. */
+                        IMAGE_THUNK_DATA const *paThunk    = (IMAGE_THUNK_DATA const *)(pbImageBits + uRvaThunk);
+                        uint32_t                cMaxThunks = (pImage->cbImageBits - uRvaThunk) / sizeof(IMAGE_THUNK_DATA);
+                        uint32_t                cThunks    = 0;
+                        while (cThunks < cMaxThunks && paThunk[cThunks].u1.Function != 0)
+                            cThunks++;
+                        supdrvNtAddExclRegion(&ExcludeRegions, uRvaThunk, cThunks * sizeof(IMAGE_THUNK_DATA));
+                    }
+                }
+#endif
 
                 /* advance */
                 pImp++;
@@ -2242,11 +2278,11 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
              */
             int         iDiff    = 0;
             uint32_t    uRvaNext = 0;
-            for (unsigned i = 0; !iDiff && i < cExcludeRgns; i++)
+            for (unsigned i = 0; !iDiff && i < ExcludeRegions.cRegions; i++)
             {
-                if (uRvaNext < aExcludeRgns[i].uRva)
-                    iDiff = supdrvNtCompare(pImage, pbImageBits, uRvaNext, aExcludeRgns[i].uRva - uRvaNext, pReq);
-                uRvaNext = aExcludeRgns[i].uRva + aExcludeRgns[i].cb;
+                if (uRvaNext < ExcludeRegions.aRegions[i].uRva)
+                    iDiff = supdrvNtCompare(pImage, pbImageBits, uRvaNext, ExcludeRegions.aRegions[i].uRva - uRvaNext, pReq);
+                uRvaNext = ExcludeRegions.aRegions[i].uRva + ExcludeRegions.aRegions[i].cb;
             }
             if (!iDiff && uRvaNext < pImage->cbImageBits)
                 iDiff = supdrvNtCompare(pImage, pbImageBits, uRvaNext, pImage->cbImageBits - uRvaNext, pReq);
@@ -2557,6 +2593,230 @@ SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 {
     return 0;
+}
+
+
+SUPR0DECL(int) SUPR0IoCtlSetupForHandle(PSUPDRVSESSION pSession, intptr_t hHandle, uint32_t fFlags, PSUPR0IOCTLCTX *ppCtx)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(ppCtx, VERR_INVALID_POINTER);
+    *ppCtx = NULL;
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+
+    /*
+     * Turn the partition handle into a file object and related device object
+     * so that we can issue direct I/O control calls to the pair later.
+     */
+    PFILE_OBJECT pFileObject = NULL;
+    OBJECT_HANDLE_INFORMATION HandleInfo = { 0, 0 };
+    NTSTATUS rcNt = ObReferenceObjectByHandle((HANDLE)hHandle, /*FILE_WRITE_DATA*/0, *IoFileObjectType,
+                                              UserMode, (void **)&pFileObject, &HandleInfo);
+    if (!NT_SUCCESS(rcNt))
+        return RTErrConvertFromNtStatus(rcNt);
+    AssertPtrReturn(pFileObject, VERR_INTERNAL_ERROR_3);
+
+    PDEVICE_OBJECT pDevObject = IoGetRelatedDeviceObject(pFileObject);
+    AssertMsgReturnStmt(RT_VALID_PTR(pDevObject), ("pDevObject=%p\n", pDevObject),
+                        ObDereferenceObject(pFileObject), VERR_INTERNAL_ERROR_2);
+
+    /*
+     * Allocate a context structure and fill it in.
+     */
+    PSUPR0IOCTLCTX pCtx = (PSUPR0IOCTLCTX)RTMemAllocZ(sizeof(*pCtx));
+    if (pCtx)
+    {
+        pCtx->u32Magic      = SUPR0IOCTLCTX_MAGIC;
+        pCtx->cRefs         = 1;
+        pCtx->pFileObject   = pFileObject;
+        pCtx->pDeviceObject = pDevObject;
+
+        PDRIVER_OBJECT pDrvObject = pDevObject->DriverObject;
+        if (   RT_VALID_PTR(pDrvObject->FastIoDispatch)
+            && RT_VALID_PTR(pDrvObject->FastIoDispatch->FastIoDeviceControl))
+            pCtx->pfnFastIoDeviceControl = pDrvObject->FastIoDispatch->FastIoDeviceControl;
+        else
+            pCtx->pfnFastIoDeviceControl = NULL;
+        *ppCtx = pCtx;
+        return VINF_SUCCESS;
+    }
+
+    ObDereferenceObject(pFileObject);
+    return VERR_NO_MEMORY;
+}
+
+
+/**
+ * I/O control destructor for NT.
+ *
+ * @param   pCtx    The context to destroy.
+ */
+static void supdrvNtIoCtlContextDestroy(PSUPR0IOCTLCTX pCtx)
+{
+    PFILE_OBJECT pFileObject = pCtx->pFileObject;
+    pCtx->pfnFastIoDeviceControl = NULL;
+    pCtx->pFileObject            = NULL;
+    pCtx->pDeviceObject          = NULL;
+    ASMAtomicWriteU32(&pCtx->u32Magic, ~SUPR0IOCTLCTX_MAGIC);
+
+    if (RT_VALID_PTR(pFileObject))
+        ObDereferenceObject(pFileObject);
+    RTMemFree(pCtx);
+}
+
+
+SUPR0DECL(int) SUPR0IoCtlCleanup(PSUPR0IOCTLCTX pCtx)
+{
+    if (pCtx != NULL)
+    {
+        AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+        AssertReturn(pCtx->u32Magic == SUPR0IOCTLCTX_MAGIC, VERR_INVALID_PARAMETER);
+
+        uint32_t cRefs = ASMAtomicDecU32(&pCtx->cRefs);
+        Assert(cRefs < _4K);
+        if (cRefs == 0)
+            supdrvNtIoCtlContextDestroy(pCtx);
+    }
+    return VINF_SUCCESS;
+}
+
+
+SUPR0DECL(int)  SUPR0IoCtlPerform(PSUPR0IOCTLCTX pCtx, uintptr_t uFunction,
+                                  void *pvInput, RTR3PTR pvInputUser, size_t cbInput,
+                                  void *pvOutput, RTR3PTR pvOutputUser, size_t cbOutput,
+                                  int32_t *piNativeRc)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->u32Magic == SUPR0IOCTLCTX_MAGIC, VERR_INVALID_PARAMETER);
+
+    /* Reference the context. */
+    uint32_t cRefs = ASMAtomicIncU32(&pCtx->cRefs);
+    Assert(cRefs > 1 && cRefs < _4K);
+
+    /*
+     * Try fast I/O control path first.
+     */
+    IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    if (pCtx->pfnFastIoDeviceControl)
+    {
+        /* Must pass user addresses here as that's what's being expected. */
+        BOOLEAN fHandled = pCtx->pfnFastIoDeviceControl(pCtx->pFileObject,
+                                                        TRUE /*Wait*/,
+                                                        (void *)pvInputUser,  (ULONG)cbInput,
+                                                        (void *)pvOutputUser, (ULONG)cbOutput,
+                                                        uFunction,
+                                                        &Ios,
+                                                        pCtx->pDeviceObject);
+        if (fHandled)
+        {
+            /* Relase the context. */
+            cRefs = ASMAtomicDecU32(&pCtx->cRefs);
+            Assert(cRefs < _4K);
+            if (cRefs == 0)
+                supdrvNtIoCtlContextDestroy(pCtx);
+
+            /* Set/convert status and return. */
+            if (piNativeRc)
+            {
+                *piNativeRc = Ios.Status;
+                return VINF_SUCCESS;
+            }
+            if (NT_SUCCESS(Ios.Status))
+                return VINF_SUCCESS;
+            return RTErrConvertFromNtStatus(Ios.Status);
+        }
+
+        /*
+         * Fall back on IRP if not handled.
+         *
+         * Note! Perhaps we should rather fail, because VID.SYS will crash getting
+         *       the partition ID with the code below.  It tries to zero the output
+         *       buffer as if it were as system buffer...
+         */
+        RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+    }
+
+    /*
+     * For directly accessed buffers we must supply user mode addresses or
+     * we'll fail ProbeForWrite validation.
+     */
+    switch (uFunction & 3)
+    {
+        case METHOD_BUFFERED:
+            /* For buffered accesses, we can supply kernel buffers. */
+            break;
+
+        case METHOD_IN_DIRECT:
+            pvInput  = (void *)pvInputUser;
+            break;
+
+        case METHOD_NEITHER:
+            pvInput  = (void *)pvInputUser;
+            RT_FALL_THRU();
+
+        case METHOD_OUT_DIRECT:
+            pvOutput = (void *)pvOutputUser;
+            break;
+    }
+
+    /*
+     * Build the request.
+     */
+    int rc;
+    KEVENT Event;
+    KeInitializeEvent(&Event, NotificationEvent, FALSE);
+
+    PIRP pIrp = IoBuildDeviceIoControlRequest(uFunction, pCtx->pDeviceObject,
+                                              pvInput, (ULONG)cbInput, pvOutput, (ULONG)cbOutput,
+                                              FALSE /* InternalDeviceControl */, &Event, &Ios);
+    if (pIrp)
+    {
+        IoGetNextIrpStackLocation(pIrp)->FileObject = pCtx->pFileObject;
+
+        /*
+         * Make the call.
+         */
+        NTSTATUS rcNt = IoCallDriver(pCtx->pDeviceObject, pIrp);
+        if (rcNt == STATUS_PENDING)
+        {
+            rcNt = KeWaitForSingleObject(&Event,            /* Object */
+                                         Executive,         /* WaitReason */
+                                         KernelMode,        /* WaitMode */
+                                         FALSE,             /* Alertable */
+                                         NULL);             /* TimeOut */
+            AssertMsg(rcNt == STATUS_SUCCESS, ("rcNt=%#x\n", rcNt));
+            rcNt = Ios.Status;
+        }
+        else if (NT_SUCCESS(rcNt) && Ios.Status != STATUS_SUCCESS)
+            rcNt = Ios.Status;
+
+        /* Set/convert return code. */
+        if (piNativeRc)
+        {
+            *piNativeRc = rcNt;
+            rc = VINF_SUCCESS;
+        }
+        else if (NT_SUCCESS(rcNt))
+            rc = VINF_SUCCESS;
+        else
+            rc = RTErrConvertFromNtStatus(rcNt);
+    }
+    else
+    {
+        if (piNativeRc)
+            *piNativeRc = STATUS_NO_MEMORY;
+        rc = VERR_NO_MEMORY;
+    }
+
+    /* Relase the context. */
+    cRefs = ASMAtomicDecU32(&pCtx->cRefs);
+    Assert(cRefs < _4K);
+    if (cRefs == 0)
+        supdrvNtIoCtlContextDestroy(pCtx);
+
+    return rc;
 }
 
 

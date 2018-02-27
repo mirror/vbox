@@ -172,6 +172,12 @@ typedef struct NEMCPU
             uint32_t            cPages;
         }                       UnmapPages;
     } Hypercall;
+    /** I/O control buffer, we always use this for I/O controls. */
+    union
+    {
+        uint8_t                 ab[64];
+        HV_PARTITION_ID         idPartition;
+    } uIoCtlBuf;
 #endif
 } NEMCPU;
 /** Pointer to NEM VMCPU instance data. */
@@ -231,6 +237,19 @@ typedef struct NEMR0PERVM
 # ifdef RT_OS_WINDOWS
     /** The partition ID. */
     uint64_t                    idHvPartition;
+    /** I/O control context. */
+    PSUPR0IOCTLCTX              pIoCtlCtx;
+    /** Delta to add to convert a ring-0 pointer to a ring-3 one.   */
+    uintptr_t                   offRing3ConversionDelta;
+    /** Info about the VidGetHvPartitionId I/O control interface. */
+    NEMWINIOCTL                 IoCtlGetHvPartitionId;
+    /** Info about the VidStartVirtualProcessor I/O control interface. */
+    NEMWINIOCTL                 IoCtlStartVirtualProcessor;
+    /** Info about the VidStopVirtualProcessor I/O control interface. */
+    NEMWINIOCTL                 IoCtlStopVirtualProcessor;
+    /** Info about the VidStopVirtualProcessor I/O control interface. */
+    NEMWINIOCTL                 IoCtlMessageSlotHandleAndGetNext;
+
 # else
     uint32_t                    uDummy;
 # endif

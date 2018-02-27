@@ -166,11 +166,18 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
     /*
      * Only SUPR0 and VMMR0.r0
      */
-    if (    pszModule
-        &&  *pszModule
-        &&  strcmp(pszModule, "VBoxDrv.sys")
-        &&  strcmp(pszModule, "VMMR0.r0"))
+    if (   pszModule
+        && *pszModule
+        && strcmp(pszModule, "VBoxDrv.sys")
+        && strcmp(pszModule, "VMMR0.r0"))
     {
+#if defined(RT_OS_WINDOWS) && 0 /* Useful for VMMR0 hacking, not for production use.  See also SUPDrv-win.cpp */
+        if (strcmp(pszModule, "ntoskrnl.exe") == 0)
+        {
+            *pValue = 42; /* Non-zero so ring-0 can find the end of the IAT and exclude it when comparing. */
+            return VINF_SUCCESS;
+        }
+#endif
         AssertMsgFailed(("%s is importing from %s! (expected 'SUPR0.dll' or 'VMMR0.r0', case-sensitive)\n", pArgs->pszModule, pszModule));
         return RTErrInfoSetF(pArgs->pErrInfo, VERR_SYMBOL_NOT_FOUND,
                              "Unexpected import module '%s' in '%s'", pszModule, pArgs->pszModule);

@@ -1926,6 +1926,60 @@ SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t 
 
 SUPR0DECL(void) SUPR0BadContext(PSUPDRVSESSION pSession, const char *pszFile, uint32_t uLine, const char *pszExpr);
 
+/** Context structure returned by SUPR0IoCtlSetup for use with
+ * SUPR0IoCtlPerform and cleaned up by SUPR0IoCtlCleanup. */
+typedef struct SUPR0IOCTLCTX *PSUPR0IOCTLCTX;
+
+/**
+ * Sets up a I/O control context for the given handle.
+ *
+ * @returns VBox status code.
+ * @param   pSession        The support driver session.
+ * @param   hHandle         The handle.
+ * @param   fFlags          Flag, MBZ.
+ * @param   ppCtx           Where the context is returned.
+ */
+SUPR0DECL(int) SUPR0IoCtlSetupForHandle(PSUPDRVSESSION pSession, intptr_t hHandle, uint32_t fFlags, PSUPR0IOCTLCTX *ppCtx);
+
+/**
+ * Cleans up the I/O control context when done.
+ *
+ * This won't close the handle passed to SUPR0IoCtlSetupForHandle.
+ *
+ * @returns VBox status code.
+ * @param   pCtx            The I/O control context to cleanup.
+ */
+SUPR0DECL(int) SUPR0IoCtlCleanup(PSUPR0IOCTLCTX pCtx);
+
+/**
+ * Performs an I/O control operation.
+ *
+ * @returns VBox status code.
+ * @param   pCtx            The I/O control context returned by
+ *                          SUPR0IoCtlSetupForHandle.
+ * @param   uFunction       The I/O control function to perform.
+ * @param   pvInput         Pointer to input buffer (ring-0).
+ * @param   pvInputUser     Ring-3 pointer corresponding to @a pvInput.
+ * @param   cbInput         The amount of input.  If zero, both input pointers
+ *                          are expected to be NULL.
+ * @param   pvOutput        Pointer to output buffer (ring-0).
+ * @param   pvOutputUser    Ring-3 pointer corresponding to @a pvInput.
+ * @param   cbOutput        The amount of input.  If zero, both input pointers
+ *                          are expected to be NULL.
+ * @param   piNativeRc      Where to return the native return code.   When
+ *                          specified the VBox status code will typically be
+ *                          VINF_SUCCESS and the caller have to consult this for
+ *                          the actual result of the operation.  (This saves
+ *                          pointless status code conversion.)  Optional.
+ *
+ * @note    On unix systems where there is only one set of buffers possible,
+ *          pass the same pointers as input and output.
+ */
+SUPR0DECL(int)  SUPR0IoCtlPerform(PSUPR0IOCTLCTX pCtx, uintptr_t uFunction,
+                                  void *pvInput, RTR3PTR pvInputUser, size_t cbInput,
+                                  void *pvOutput, RTR3PTR pvOutputUser, size_t cbOutput,
+                                  int32_t *piNativeRc);
+
 /**
  * Writes to the debugger and/or kernel log.
  *

@@ -124,7 +124,7 @@ typedef struct GVM
 # ifdef ___NEMInternal_h
         struct NEMR0PERVM   s;
 # endif
-        uint8_t             padding[64];
+        uint8_t             padding[128];
     } nem;
 #endif
 

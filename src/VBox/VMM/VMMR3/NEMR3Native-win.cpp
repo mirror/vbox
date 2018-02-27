@@ -1268,8 +1268,16 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     }
     pVM->nem.s.fCreatedEmts = true;
 
-    LogRel(("NEM: Successfully set up partition (device handle %p, partition ID %#llx)\n", hPartitionDevice, idHvPartition));
-    return VINF_SUCCESS;
+    /*
+     * Do some more ring-0 initialization now that we've got the partition handle.
+     */
+    int rc = VMMR3CallR0Emt(pVM, &pVM->aCpus[0], VMMR0_DO_NEM_INIT_VM_PART_2, 0, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        LogRel(("NEM: Successfully set up partition (device handle %p, partition ID %#llx)\n", hPartitionDevice, idHvPartition));
+        return VINF_SUCCESS;
+    }
+    return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to NEMR0InitVMPart2 failed: %Rrc", rc);
 }
 
 
@@ -1341,7 +1349,6 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
         pVM->nem.s.fA20Fixed   = true;
     }
 }
-
 
 #ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
 
@@ -2294,7 +2301,7 @@ static int nemR3WinRunVirtualProcessor(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CO
 
                 /* ACK the stop message. */
                 fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
-                                                                 VID_MSHAGN_F_HANDLE_MESSAGE, 5000);
+                                                            VID_MSHAGN_F_HANDLE_MESSAGE, 5000);
                 AssertLogRelMsg(fWait, ("dwErr=%u (%#x) rcNt=%#x\n", RTNtLastErrorValue(), RTNtLastErrorValue(), RTNtLastStatusValue()));
 
                 pVCpu->nem.s.bMsgState = NEM_WIN_MSG_STATE_STOPPED;

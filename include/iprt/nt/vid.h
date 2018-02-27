@@ -107,7 +107,19 @@ typedef VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT *PVID_IOCTL_INPUT_MESSA
 /** Pointer to const input for VidMessageSlotHandleAndGetNext. */
 typedef VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT const *PCVID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT;
 
+/** @name VID_MSHAGN_F_GET_XXX - Flags for VidMessageSlotHandleAndGetNext
+ * @{ */
+/** This will try get the next message, waiting if necessary.
+ * It is subject to NtAlertThread processing when it starts waiting.  */
+#define VID_MSHAGN_F_GET_NEXT_MESSAGE   RT_BIT_32(0)
+/** ACK the message as handled and resume execution/whatever.
+ * This is executed before VID_MSHAGN_F_GET_NEXT_MESSAGE and should not be
+ * subject to NtAlertThread side effects. */
+#define VID_MSHAGN_F_HANDLE_MESSAGE     RT_BIT_32(1)
+/** @} */
 
+
+#ifdef IN_RING3
 RT_C_DECLS_BEGIN
 
 /** Calling convention. */
@@ -184,17 +196,6 @@ DECLIMPORT(BOOL) VIDAPI VidMessageSlotMap(VID_PARTITION_HANDLE hPartition, PVID_
  */
 DECLIMPORT(BOOL) VIDAPI VidMessageSlotHandleAndGetNext(VID_PARTITION_HANDLE hPartition, HV_VP_INDEX iCpu,
                                                        uint32_t fFlags, uint32_t cMillies);
-/** @name VID_MSHAGN_F_GET_XXX - Flags for VidMessageSlotHandleAndGetNext
- * @{ */
-/** This will try get the next message, waiting if necessary.
- * It is subject to NtAlertThread processing when it starts waiting.  */
-#define VID_MSHAGN_F_GET_NEXT_MESSAGE   RT_BIT_32(0)
-/** ACK the message as handled and resume execution/whatever.
- * This is executed before VID_MSHAGN_F_GET_NEXT_MESSAGE and should not be
- * subject to NtAlertThread side effects. */
-#define VID_MSHAGN_F_HANDLE_MESSAGE     RT_BIT_32(1)
-/** @} */
-
 /**
  * Gets the processor running status.
  *
@@ -218,6 +219,7 @@ DECLIMPORT(BOOL) VIDAPI VidSetVirtualProcessorState(VID_PARTITION_HANDLE hPartit
                                                     HV_REGISTER_VALUE const *paRegValues);
 
 RT_C_DECLS_END
+#endif /* IN_RING3 */
 
 #endif
 
