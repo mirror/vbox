@@ -51,6 +51,7 @@ class VcsRevisionData(ModelDataBase):
 
     kasAllowNullAttributes      = [ ];
     kfAllowUnicode_sMessage     = True;
+    kcchMax_sMessage            = 8192;
 
     def __init__(self):
         ModelDataBase.__init__(self);
