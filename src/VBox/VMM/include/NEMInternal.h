@@ -60,6 +60,28 @@ typedef struct NEMWINIOCTL
     uint32_t    cbOutput;
 } NEMWINIOCTL;
 
+/** @name Windows: Our two-bit physical page state for PGMPAGE
+ * @{ */
+# define NEM_WIN_PAGE_STATE_NOT_SET     0
+# define NEM_WIN_PAGE_STATE_UNMAPPED    1
+# define NEM_WIN_PAGE_STATE_READABLE    2
+# define NEM_WIN_PAGE_STATE_WRITABLE    3
+/** @} */
+
+/** Windows: Checks if a_GCPhys is subject to the limited A20 gate emulation. */
+# define NEM_WIN_IS_SUBJECT_TO_A20(a_GCPhys)     ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K)
+/** Windows: Checks if a_GCPhys is relevant to the limited A20 gate emulation. */
+# define NEM_WIN_IS_RELEVANT_TO_A20(a_GCPhys)    \
+    ( ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K) || ((RTGCPHYS)(a_GCPhys) < (RTGCPHYS)_64K) )
+
+#endif /* RT_OS_WINDOWS */
+
+
+/** Trick to make slickedit see the static functions in the template. */
+#ifndef IN_SLICKEDIT
+# define NEM_TMPL_STATIC static
+#else
+# define NEM_TMPL_STATIC
 #endif
 
 
@@ -276,19 +298,19 @@ int     nemR3NativeNotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, 
 int     nemR3NativeNotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
 int     nemR3NativeNotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags);
 void    nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled);
-/* NEMHCNotifyXxxx for ring-3: */
-void    nemR3NativeNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
-void    nemR3NativeNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
-                                                   int fRestoreAsRAM, bool fRestoreAsRAM2);
-void    nemR3NativeNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
-                                               RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fRestoreAsRAM);
-int     nemR3NativeNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
-                                           PGMPAGETYPE enmType, uint8_t *pu2State);
-void    nemR3NativeNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
-                                             PGMPAGETYPE enmType, uint8_t *pu2State);
-void    nemR3NativeNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew, uint32_t fPageProt,
-                                         PGMPAGETYPE enmType, uint8_t *pu2State);
 #endif
+
+void    nemHCNativeNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
+void    nemHCNativeNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                                   int fRestoreAsRAM, bool fRestoreAsRAM2);
+void    nemHCNativeNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
+                                               RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fRestoreAsRAM);
+int     nemHCNativeNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
+                                           PGMPAGETYPE enmType, uint8_t *pu2State);
+void    nemHCNativeNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
+                                             PGMPAGETYPE enmType, uint8_t *pu2State);
+void    nemHCNativeNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew, uint32_t fPageProt,
+                                         PGMPAGETYPE enmType, uint8_t *pu2State);
 
 
 #ifdef RT_OS_WINDOWS

@@ -1163,6 +1163,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PGVM pGVM, PVM pVM)
                     VERR_WRONG_ORDER);
 
     uint32_t        hGVM = pGVM->hSelf;
+    ASMCompilerBarrier();
     AssertReturn(hGVM != NIL_GVM_HANDLE, VERR_INVALID_VM_HANDLE);
     AssertReturn(hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_VM_HANDLE);
 
@@ -1508,6 +1509,7 @@ GVMMR0DECL(int) GVMMR0DeregisterVCpu(PGVM pGVM, PVM pVM, VMCPUID idCpu)
          */
         gvmmR0CreateDestroyLock(pGVMM);
         uint32_t hSelf = pGVM->hSelf;
+        ASMCompilerBarrier();
         if (   hSelf < RT_ELEMENTS(pGVMM->aHandles)
             && pGVMM->aHandles[hSelf].pvObj != NULL
             && pGVMM->aHandles[hSelf].pGVM  == pGVM)
@@ -1598,6 +1600,7 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
         return VERR_INVALID_POINTER;
 
     uint16_t hGVM = pVM->hSelf;
+    ASMCompilerBarrier();
     if (RT_UNLIKELY(    hGVM == NIL_GVM_HANDLE
                     ||  hGVM >= RT_ELEMENTS(pGVMM->aHandles)))
         return VERR_INVALID_HANDLE;
@@ -1642,6 +1645,47 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
     *ppGVM = pGVM;
     *ppGVMM = pGVMM;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Fast look up a GVM structure by the cross context VM structure.
+ *
+ * This is mainly used a glue function, so performance is .
+ *
+ * @returns GVM on success, NULL on failure.
+ * @param   pVM             The cross context VM structure.  ASSUMES to be
+ *                          reasonably valid, so we can do fewer checks than in
+ *                          gvmmR0ByVM.
+ *
+ * @note    Do not use this on pVM structures from userland!
+ */
+GVMMR0DECL(PGVM) GVMMR0FastGetGVMByVM(PVM pVM)
+{
+    AssertPtr(pVM);
+    Assert(!((uintptr_t)pVM & PAGE_OFFSET_MASK));
+
+    PGVMM pGVMM;
+    GVMM_GET_VALID_INSTANCE(pGVMM, NULL);
+
+    /*
+     * Validate.
+     */
+    uint16_t hGVM = pVM->hSelf;
+    ASMCompilerBarrier();
+    AssertReturn(hGVM != NIL_GVM_HANDLE && hGVM < RT_ELEMENTS(pGVMM->aHandles), NULL);
+
+    /*
+     * Look it up and check pVM against the value in the handle and GVM structures.
+     */
+    PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
+    AssertReturn(pHandle->pVM == pVM, NULL);
+
+    PGVM pGVM = pHandle->pGVM;
+    AssertPtrReturn(pGVM, NULL);
+    AssertReturn(pGVM->pVM == pVM, NULL);
+
+    return pGVM;
 }
 
 
@@ -1762,6 +1806,7 @@ static int gvmmR0ByGVMandVMandEMT(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGVMM *ppGV
     GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
     uint16_t hGVM = pGVM->hSelf;
+    ASMCompilerBarrier();
     AssertReturn(   hGVM != NIL_GVM_HANDLE
                  && hGVM < RT_ELEMENTS(pGVMM->aHandles), VERR_INVALID_VM_HANDLE);
 

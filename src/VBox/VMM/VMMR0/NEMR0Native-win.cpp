@@ -54,6 +54,19 @@
 static uint64_t (*g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysInput, uint64_t HCPhysOutput);
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
+                                     uint32_t cPages, uint32_t fFlags);
+NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys, uint32_t cPages);
+
+
+/*
+ * Instantate the code we share with ring-0.
+ */
+#include "../VMMAll/NEMAllNativeTemplate-win.cpp.h"
+
 
 /**
  * Called by NEMR3Init to make sure we've got what we need.
@@ -281,83 +294,6 @@ VMMR0_INT_DECL(void) NEMR0CleanupVM(PGVM pGVM)
 }
 
 
-/**
- * Maps pages into the guest physical address space.
- *
- * Generally the caller will be under the PGM lock already, so no extra effort
- * is needed to make sure all changes happens under it.
- *
- * @returns VBox status code.
- * @param   pGVM            The ring-0 VM handle.
- * @param   pVM             The cross context VM handle.
- * @param   idCpu           The calling EMT.  Necessary for getting the
- *                          hypercall page and arguments.
- * @thread  EMT(idCpu)
- */
-VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
-{
-    /*
-     * Validate the call.
-     */
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
-    if (RT_SUCCESS(rc))
-    {
-        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
-        PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
-
-        RTGCPHYS                GCPhysSrc = pVCpu->nem.s.Hypercall.MapPages.GCPhysSrc;
-        RTGCPHYS const          GCPhysDst = pVCpu->nem.s.Hypercall.MapPages.GCPhysDst;
-        uint32_t const          cPages    = pVCpu->nem.s.Hypercall.MapPages.cPages;
-        HV_MAP_GPA_FLAGS const  fFlags    = pVCpu->nem.s.Hypercall.MapPages.fFlags;
-
-        AssertReturn(cPages > 0, VERR_OUT_OF_RANGE);
-        AssertReturn(cPages <= NEM_MAX_MAP_PAGES, VERR_OUT_OF_RANGE);
-        AssertReturn(!(fFlags & ~(HV_MAP_GPA_MAYBE_ACCESS_MASK & ~HV_MAP_GPA_DUNNO_ACCESS)), VERR_INVALID_FLAGS);
-        AssertMsgReturn(!(GCPhysDst & X86_PAGE_OFFSET_MASK), ("GCPhysDst=%RGp\n", GCPhysDst), VERR_OUT_OF_RANGE);
-        AssertReturn(GCPhysDst < _1E, VERR_OUT_OF_RANGE);
-        if (GCPhysSrc != GCPhysDst)
-        {
-            AssertMsgReturn(!(GCPhysSrc & X86_PAGE_OFFSET_MASK), ("GCPhysSrc=%RGp\n", GCPhysSrc), VERR_OUT_OF_RANGE);
-            AssertReturn(GCPhysSrc < _1E, VERR_OUT_OF_RANGE);
-        }
-
-        /*
-         * Compose and make the hypercall.
-         * Ring-3 is not allowed to fill in the host physical addresses of the call.
-         */
-        HV_INPUT_MAP_GPA_PAGES *pMapPages = (HV_INPUT_MAP_GPA_PAGES *)pGVCpu->nem.s.pbHypercallData;
-        AssertPtrReturn(pMapPages, VERR_INTERNAL_ERROR_3);
-        pMapPages->TargetPartitionId    = pGVM->nem.s.idHvPartition;
-        pMapPages->TargetGpaBase        = GCPhysDst >> X86_PAGE_SHIFT;
-        pMapPages->MapFlags             = fFlags;
-        pMapPages->u32ExplicitPadding   = 0;
-        for (uint32_t iPage = 0; iPage < cPages; iPage++, GCPhysSrc += X86_PAGE_SIZE)
-        {
-            RTHCPHYS HCPhys = NIL_RTGCPHYS;
-            rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysSrc, &HCPhys);
-            AssertRCBreak(rc);
-            pMapPages->PageList[iPage] = HCPhys >> X86_PAGE_SHIFT;
-        }
-        if (RT_SUCCESS(rc))
-        {
-            uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallMapGpaPages | ((uint64_t)cPages << 32),
-                                                       pGVCpu->nem.s.HCPhysHypercallData, 0);
-            Log6(("NEMR0MapPages: %RGp/%RGp L %u prot %#x -> %#RX64\n",
-                  GCPhysDst, GCPhysSrc - cPages * X86_PAGE_SIZE, cPages, fFlags, uResult));
-            if (uResult == ((uint64_t)cPages << 32))
-                rc = VINF_SUCCESS;
-            else
-            {
-                rc = VERR_NEM_MAP_PAGES_FAILED;
-                LogRel(("g_pfnHvlInvokeHypercall/MapGpaPages -> %#RX64\n", uResult));
-            }
-        }
-    }
-    return rc;
-}
-
-
 #if 0 /* for debugging GPA unmapping.  */
 static int nemR3WinDummyReadGpa(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys)
 {
@@ -382,6 +318,138 @@ static int nemR3WinDummyReadGpa(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys)
 
 
 /**
+ * Worker for NEMR0MapPages and others.
+ */
+NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
+                                     uint32_t cPages, uint32_t fFlags)
+{
+    /*
+     * Validate.
+     */
+    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+
+    AssertReturn(cPages > 0, VERR_OUT_OF_RANGE);
+    AssertReturn(cPages <= NEM_MAX_MAP_PAGES, VERR_OUT_OF_RANGE);
+    AssertReturn(!(fFlags & ~(HV_MAP_GPA_MAYBE_ACCESS_MASK & ~HV_MAP_GPA_DUNNO_ACCESS)), VERR_INVALID_FLAGS);
+    AssertMsgReturn(!(GCPhysDst & X86_PAGE_OFFSET_MASK), ("GCPhysDst=%RGp\n", GCPhysDst), VERR_OUT_OF_RANGE);
+    AssertReturn(GCPhysDst < _1E, VERR_OUT_OF_RANGE);
+    if (GCPhysSrc != GCPhysDst)
+    {
+        AssertMsgReturn(!(GCPhysSrc & X86_PAGE_OFFSET_MASK), ("GCPhysSrc=%RGp\n", GCPhysSrc), VERR_OUT_OF_RANGE);
+        AssertReturn(GCPhysSrc < _1E, VERR_OUT_OF_RANGE);
+    }
+
+    /*
+     * Compose and make the hypercall.
+     * Ring-3 is not allowed to fill in the host physical addresses of the call.
+     */
+    HV_INPUT_MAP_GPA_PAGES *pMapPages = (HV_INPUT_MAP_GPA_PAGES *)pGVCpu->nem.s.pbHypercallData;
+    AssertPtrReturn(pMapPages, VERR_INTERNAL_ERROR_3);
+    pMapPages->TargetPartitionId    = pGVM->nem.s.idHvPartition;
+    pMapPages->TargetGpaBase        = GCPhysDst >> X86_PAGE_SHIFT;
+    pMapPages->MapFlags             = fFlags;
+    pMapPages->u32ExplicitPadding   = 0;
+    for (uint32_t iPage = 0; iPage < cPages; iPage++, GCPhysSrc += X86_PAGE_SIZE)
+    {
+        RTHCPHYS HCPhys = NIL_RTGCPHYS;
+        int rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysSrc, &HCPhys);
+        AssertRCReturn(rc, rc);
+        pMapPages->PageList[iPage] = HCPhys >> X86_PAGE_SHIFT;
+    }
+
+    uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallMapGpaPages | ((uint64_t)cPages << 32),
+                                               pGVCpu->nem.s.HCPhysHypercallData, 0);
+    Log6(("NEMR0MapPages: %RGp/%RGp L %u prot %#x -> %#RX64\n",
+          GCPhysDst, GCPhysSrc - cPages * X86_PAGE_SIZE, cPages, fFlags, uResult));
+    if (uResult == ((uint64_t)cPages << 32))
+        return VINF_SUCCESS;
+
+    LogRel(("g_pfnHvlInvokeHypercall/MapGpaPages -> %#RX64\n", uResult));
+    return VERR_NEM_MAP_PAGES_FAILED;
+}
+
+
+/**
+ * Maps pages into the guest physical address space.
+ *
+ * Generally the caller will be under the PGM lock already, so no extra effort
+ * is needed to make sure all changes happens under it.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The ring-0 VM handle.
+ * @param   pVM             The cross context VM handle.
+ * @param   idCpu           The calling EMT.  Necessary for getting the
+ *                          hypercall page and arguments.
+ * @thread  EMT(idCpu)
+ */
+VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+{
+    /*
+     * Unpack the call.
+     */
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    if (RT_SUCCESS(rc))
+    {
+        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+
+        RTGCPHYS const          GCPhysSrc = pVCpu->nem.s.Hypercall.MapPages.GCPhysSrc;
+        RTGCPHYS const          GCPhysDst = pVCpu->nem.s.Hypercall.MapPages.GCPhysDst;
+        uint32_t const          cPages    = pVCpu->nem.s.Hypercall.MapPages.cPages;
+        HV_MAP_GPA_FLAGS const  fFlags    = pVCpu->nem.s.Hypercall.MapPages.fFlags;
+
+        /*
+         * Do the work.
+         */
+        rc = nemR0WinMapPages(pGVM, pVM, pGVCpu, GCPhysSrc, GCPhysDst, cPages, fFlags);
+    }
+    return rc;
+}
+
+
+/**
+ * Worker for NEMR0UnmapPages and others.
+ */
+NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys, uint32_t cPages)
+{
+    /*
+     * Validate input.
+     */
+    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+
+    AssertReturn(cPages > 0, VERR_OUT_OF_RANGE);
+    AssertReturn(cPages <= NEM_MAX_UNMAP_PAGES, VERR_OUT_OF_RANGE);
+    AssertMsgReturn(!(GCPhys & X86_PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_OUT_OF_RANGE);
+    AssertReturn(GCPhys < _1E, VERR_OUT_OF_RANGE);
+
+    /*
+     * Compose and make the hypercall.
+     */
+    HV_INPUT_UNMAP_GPA_PAGES *pUnmapPages = (HV_INPUT_UNMAP_GPA_PAGES *)pGVCpu->nem.s.pbHypercallData;
+    AssertPtrReturn(pUnmapPages, VERR_INTERNAL_ERROR_3);
+    pUnmapPages->TargetPartitionId    = pGVM->nem.s.idHvPartition;
+    pUnmapPages->TargetGpaBase        = GCPhys >> X86_PAGE_SHIFT;
+    pUnmapPages->fFlags               = 0;
+
+    uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallUnmapGpaPages | ((uint64_t)cPages << 32),
+                                               pGVCpu->nem.s.HCPhysHypercallData, 0);
+    Log6(("NEMR0UnmapPages: %RGp L %u -> %#RX64\n", GCPhys, cPages, uResult));
+    if (uResult == ((uint64_t)cPages << 32))
+    {
+#if 1       /* Do we need to do this? Hopefully not... */
+        uint64_t volatile uR = g_pfnHvlInvokeHypercall(HvCallUncommitGpaPages | ((uint64_t)cPages << 32),
+                                                       pGVCpu->nem.s.HCPhysHypercallData, 0);
+        AssertMsg(uR == ((uint64_t)cPages << 32), ("uR=%#RX64\n", uR));
+#endif
+        return VINF_SUCCESS;
+    }
+
+    LogRel(("g_pfnHvlInvokeHypercall/UnmapGpaPages -> %#RX64\n", uResult));
+    return VERR_NEM_UNMAP_PAGES_FAILED;
+}
+
+
+/**
  * Unmaps pages from the guest physical address space.
  *
  * Generally the caller will be under the PGM lock already, so no extra effort
@@ -397,49 +465,21 @@ static int nemR3WinDummyReadGpa(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys)
 VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
     /*
-     * Validate the call.
+     * Unpack the call.
      */
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_SUCCESS(rc))
     {
         PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
-        RTGCPHYS                GCPhys = pVCpu->nem.s.Hypercall.UnmapPages.GCPhys;
-        uint32_t const          cPages = pVCpu->nem.s.Hypercall.UnmapPages.cPages;
-
-        AssertReturn(cPages > 0, VERR_OUT_OF_RANGE);
-        AssertReturn(cPages <= NEM_MAX_UNMAP_PAGES, VERR_OUT_OF_RANGE);
-        AssertMsgReturn(!(GCPhys & X86_PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_OUT_OF_RANGE);
-        AssertReturn(GCPhys < _1E, VERR_OUT_OF_RANGE);
+        RTGCPHYS const GCPhys = pVCpu->nem.s.Hypercall.UnmapPages.GCPhys;
+        uint32_t const cPages = pVCpu->nem.s.Hypercall.UnmapPages.cPages;
 
         /*
-         * Compose and make the hypercall.
+         * Do the work.
          */
-        HV_INPUT_UNMAP_GPA_PAGES *pUnmapPages = (HV_INPUT_UNMAP_GPA_PAGES *)pGVCpu->nem.s.pbHypercallData;
-        AssertPtrReturn(pUnmapPages, VERR_INTERNAL_ERROR_3);
-        pUnmapPages->TargetPartitionId    = pGVM->nem.s.idHvPartition;
-        pUnmapPages->TargetGpaBase        = GCPhys >> X86_PAGE_SHIFT;
-        pUnmapPages->fFlags               = 0;
-
-        uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallUnmapGpaPages | ((uint64_t)cPages << 32),
-                                                   pGVCpu->nem.s.HCPhysHypercallData, 0);
-        Log6(("NEMR0UnmapPages: %RGp L %u -> %#RX64\n", GCPhys, cPages, uResult));
-        if (uResult == ((uint64_t)cPages << 32))
-        {
-#if 1       /* Do we need to do this? Hopefully not... */
-            uint64_t volatile uR = g_pfnHvlInvokeHypercall(HvCallUncommitGpaPages | ((uint64_t)cPages << 32),
-                                                           pGVCpu->nem.s.HCPhysHypercallData, 0);
-            AssertMsg(uR == ((uint64_t)cPages << 32), ("uR=%#RX64\n", uR));
-#endif
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            rc = VERR_NEM_UNMAP_PAGES_FAILED;
-            LogRel(("g_pfnHvlInvokeHypercall/UnmapGpaPages -> %#RX64\n", uResult));
-        }
+        rc = nemR0WinUnmapPages(pGVM, pGVCpu, GCPhys, cPages);
     }
     return rc;
 }

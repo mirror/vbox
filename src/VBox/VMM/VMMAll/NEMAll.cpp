@@ -40,7 +40,7 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIN
 {
 #if defined(VBOX_WITH_NATIVE_NEM) && defined(IN_RING3)
     if (VM_IS_NEM_ENABLED(pVM))
-        nemR3NativeNotifyHandlerPhysicalRegister(pVM, enmKind, GCPhys, cb);
+        nemHCNativeNotifyHandlerPhysicalRegister(pVM, enmKind, GCPhys, cb);
 #else
     RT_NOREF(pVM, enmKind, GCPhys, cb);
 #endif
@@ -52,7 +52,7 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERK
 {
 #if defined(VBOX_WITH_NATIVE_NEM) && defined(IN_RING3)
     if (VM_IS_NEM_ENABLED(pVM))
-        nemR3NativeNotifyHandlerPhysicalDeregister(pVM, enmKind, GCPhys, cb, fRestoreAsRAM, fRestoreAsRAM2);
+        nemHCNativeNotifyHandlerPhysicalDeregister(pVM, enmKind, GCPhys, cb, fRestoreAsRAM, fRestoreAsRAM2);
 #else
     RT_NOREF(pVM, enmKind, GCPhys, cb, fRestoreAsRAM, fRestoreAsRAM2);
 #endif
@@ -64,7 +64,7 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND 
 {
 #if defined(VBOX_WITH_NATIVE_NEM) && defined(IN_RING3)
     if (VM_IS_NEM_ENABLED(pVM))
-        nemR3NativeNotifyHandlerPhysicalModify(pVM, enmKind, GCPhysOld, GCPhysNew, cb, fRestoreAsRAM);
+        nemHCNativeNotifyHandlerPhysicalModify(pVM, enmKind, GCPhysOld, GCPhysNew, cb, fRestoreAsRAM);
 #else
     RT_NOREF(pVM, enmKind, GCPhysOld, GCPhysNew, cb, fRestoreAsRAM);
 #endif
@@ -76,7 +76,7 @@ VMM_INT_DECL(int)  NEMHCNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPH
 {
     Assert(VM_IS_NEM_ENABLED(pVM));
 #if defined(VBOX_WITH_NATIVE_NEM) && defined(IN_RING3)
-    return nemR3NativeNotifyPhysPageAllocated(pVM, GCPhys, HCPhys, fPageProt, enmType, pu2State);
+    return nemHCNativeNotifyPhysPageAllocated(pVM, GCPhys, HCPhys, fPageProt, enmType, pu2State);
 #else
     RT_NOREF(pVM, GCPhys, HCPhys, fPageProt, enmType, pu2State);
     return VINF_SUCCESS;
@@ -88,8 +88,8 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHC
                                                   PGMPAGETYPE enmType, uint8_t *pu2State)
 {
     Assert(VM_IS_NEM_ENABLED(pVM));
-#if defined(VBOX_WITH_NATIVE_NEM) && defined(IN_RING3)
-    nemR3NativeNotifyPhysPageProtChanged(pVM, GCPhys, HCPhys, fPageProt, enmType, pu2State);
+#if defined(VBOX_WITH_NATIVE_NEM)
+    nemHCNativeNotifyPhysPageProtChanged(pVM, GCPhys, HCPhys, fPageProt, enmType, pu2State);
 #else
     RT_NOREF(pVM, GCPhys, HCPhys, fPageProt, enmType, pu2State);
 #endif
@@ -100,8 +100,8 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS
                                               uint32_t fPageProt, PGMPAGETYPE enmType, uint8_t *pu2State)
 {
     Assert(VM_IS_NEM_ENABLED(pVM));
-#if defined(VBOX_WITH_NATIVE_NEM) && defined(IN_RING3)
-    nemR3NativeNotifyPhysPageChanged(pVM, GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, pu2State);
+#if defined(VBOX_WITH_NATIVE_NEM)
+    nemHCNativeNotifyPhysPageChanged(pVM, GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, pu2State);
 #else
     RT_NOREF(pVM, GCPhys, HCPhysPrev, HCPhysNew, fPageProt, enmType, pu2State);
 #endif

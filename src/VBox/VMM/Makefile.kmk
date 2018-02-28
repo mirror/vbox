@@ -1078,6 +1078,9 @@ IEMAllInstructions3DNow.cpp.o      IEMAllInstructions3DNow.cpp.obj \
 IEMAllCImpl.cpp.o                  IEMAllCImpl.cpp.obj \
 IEMAllCImplStrInstr.cpp.o          IEMAllCImplStrInstr.cpp.obj: IEMAll.o
 
+# Alias the NEM template to the objects where it is used:
+NEMAllNativeTemplate-win.cpp.o:    NEMR3Native-win.o NEMR0Native-win.o
+
 # Alias the switcher templates.
 PAEand32Bit.o PAEand32Bit.obj:                 PAETo32Bit.o   PAEToPAE.o   32BitTo32Bit.o PAETo32Bit.o
 LegacyandAMD64.o LegacyandAMD64.obj:           32BitToAMD64.o PAEToAMD64.o
