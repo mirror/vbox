@@ -73,6 +73,7 @@ def printOut(sString):
     Outputs a string to standard output, dealing with python 2.x encoding stupidity.
     """
     sStreamEncoding = sys.stdout.encoding;
+    if sStreamEncoding is None: sStreamEncoding = 'US-ASCII'; # files, pipes and such on 2.x
     if sStreamEncoding == 'UTF-8' or not isinstance(sString, unicode):
         print(sString);
     else:
@@ -83,6 +84,7 @@ def printErr(sString):
     Outputs a string to standard error, dealing with python 2.x encoding stupidity.
     """
     sStreamEncoding = sys.stderr.encoding;
+    if sStreamEncoding is None: sStreamEncoding = 'US-ASCII'; # files, pipes and such on 2.x
     if sStreamEncoding == 'UTF-8' or not isinstance(sString, unicode):
         print(sString, file = sys.stderr);
     else:
