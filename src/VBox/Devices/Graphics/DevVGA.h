@@ -78,13 +78,13 @@
 #ifdef CONFIG_BOCHS_VBE
 
 /* Cross reference with <VBoxVideoVBE.h> */
-#define VBE_DISPI_INDEX_NB_SAVED        0xb /* Number of saved registers (vbe_regs array) */
-#define VBE_DISPI_INDEX_NB              0xc /* Total number of VBE registers */
+#define VBE_DISPI_INDEX_NB_SAVED        0xb /* Old number of saved registers (vbe_regs array, see vga_load) */
+#define VBE_DISPI_INDEX_NB              0xd /* Total number of VBE registers */
 
 #define VGA_STATE_COMMON_BOCHS_VBE              \
     uint16_t vbe_index;                         \
     uint16_t vbe_regs[VBE_DISPI_INDEX_NB];      \
-    uint16_t alignment[3]; /* pad to 64 bits */ \
+    uint16_t alignment[2]; /* pad to 64 bits */ \
     uint32_t vbe_start_addr;                    \
     uint32_t vbe_line_offset;                   \
     uint32_t vbe_bank_max;
@@ -337,12 +337,14 @@ typedef struct VGAState {
     bool                        fRemappedVGA;
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     bool                        fRenderVRAM;
+    /** Whether 3D is enabled for the VM. */
+    bool                        f3DEnabled;
 # ifdef VBOX_WITH_VMSVGA
     /* Whether the SVGA emulation is enabled or not. */
     bool                        fVMSVGAEnabled;
-    bool                        Padding4[1+4];
+    bool                        Padding4[0+4];
 # else
-    bool                        Padding4[2+4];
+    bool                        Padding4[1+4];
 # endif
 
     /** Physical access type for the linear frame buffer dirty page tracking. */

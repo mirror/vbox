@@ -49,6 +49,7 @@
 #define VBE_DISPI_IOPORT_DAC_WRITE_INDEX  0x03C8
 #define VBE_DISPI_IOPORT_DAC_DATA         0x03C9
 
+/* Cross reference with src/VBox/Devices/Graphics/DevVGA.h */
 #define VBE_DISPI_INDEX_ID              0x0
 #define VBE_DISPI_INDEX_XRES            0x1
 #define VBE_DISPI_INDEX_YRES            0x2
@@ -61,6 +62,7 @@
 #define VBE_DISPI_INDEX_Y_OFFSET        0x9
 #define VBE_DISPI_INDEX_VBOX_VIDEO      0xa
 #define VBE_DISPI_INDEX_FB_BASE_HI      0xb
+#define VBE_DISPI_INDEX_CFG             0xc
 
 #define VBE_DISPI_ID0                   0xB0C0
 #define VBE_DISPI_ID1                   0xB0C1
@@ -72,6 +74,7 @@
 /* The VBOX interface id. Indicates support for VBVA shared memory interface. */
 #define VBE_DISPI_ID_HGSMI              0xBE01
 #define VBE_DISPI_ID_ANYX               0xBE02
+#define VBE_DISPI_ID_CFG                0xBE03 /* VBE_DISPI_INDEX_CFG is available. */
 
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
@@ -81,6 +84,17 @@
  *        code and ignored by the emulated hardware. */
 #define VBE_DISPI_LFB_ENABLED           0x40
 #define VBE_DISPI_NOCLEARMEM            0x80
+
+/* VBE_DISPI_INDEX_CFG content. */
+#define VBE_DISPI_CFG_MASK_ID           0x0FFF /* Identifier of a configuration value. */
+#define VBE_DISPI_CFG_MASK_SUPPORT      0x1000 /* Query whether the identifier is supported. */
+#define VBE_DISPI_CFG_MASK_RESERVED     0xE000 /* For future extensions. Must be 0. */
+
+/* VBE_DISPI_INDEX_CFG values. */
+#define VBE_DISPI_CFG_ID_VERSION        0x0000 /* Version of the configuration interface. */
+#define VBE_DISPI_CFG_ID_VRAM_SIZE      0x0001 /* VRAM size. */
+#define VBE_DISPI_CFG_ID_3D             0x0002 /* 3D support. */
+#define VBE_DISPI_CFG_ID_VMSVGA         0x0003 /* VMSVGA FIFO and ports are available. */
 
 #define VGA_PORT_HGSMI_HOST             0x3b0
 #define VGA_PORT_HGSMI_GUEST            0x3d0

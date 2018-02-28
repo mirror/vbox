@@ -3719,6 +3719,9 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
 #else
         NOREF(fHMEnabled);
 #endif
+        BOOL f3DEnabled;
+        hrc = ptrMachine->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);                      H();
+        InsertConfigInteger(pCfg,  "3DEnabled",            f3DEnabled);
 
         i_attachStatusDriver(pInst, &mapCrOglLed, 0, 0, NULL, NULL, 0);
 
@@ -3738,8 +3741,6 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
                 InsertConfigInteger(pCfg, "HostWindowId", winId);
                 pFramebuffer->Release();
             }
-            BOOL f3DEnabled;
-            hrc = ptrMachine->COMGETTER(Accelerate3DEnabled)(&f3DEnabled);                  H();
             InsertConfigInteger(pCfg, "VMSVGA3dEnabled", f3DEnabled);
 #else
             LogRel(("VMSVGA3d not available in this build!\n"));

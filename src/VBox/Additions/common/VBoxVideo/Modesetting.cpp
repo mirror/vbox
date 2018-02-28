@@ -58,13 +58,52 @@ DECLHIDDEN(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx)
 
 
 /**
+ * Query whether the virtual hardware supports VBE_DISPI_ID_CFG
+ * and set the interface.
+ *
+ * @returns Whether the interface is supported.
+ */
+DECLHIDDEN(bool) VBoxVGACfgAvailable(void)
+{
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_CFG);
+    const uint16_t DispiId = VBVO_PORT_READ_U16(VBE_DISPI_IOPORT_DATA);
+    return (DispiId == VBE_DISPI_ID_CFG);
+}
+
+
+/**
+ * Query a configuration value from the virtual hardware which supports VBE_DISPI_ID_CFG.
+ * I.e. use this function only if VBoxVGACfgAvailable returns true.
+ *
+ * @returns Whether the value is supported.
+ * @param  u16Id     Identifier of the configuration value (VBE_DISPI_CFG_ID_*).
+ * @param  pu32Value Where to store value from the host.
+ */
+DECLHIDDEN(bool) VBoxVGACfgQuery(uint16_t u16Id, uint32_t *pu32Value)
+{
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_CFG);
+    VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, VBE_DISPI_CFG_MASK_SUPPORT | u16Id);
+    const uint32_t u32 = VBVO_PORT_READ_U32(VBE_DISPI_IOPORT_DATA);
+    if (u32)
+    {
+        VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_DATA, u16Id);
+        *pu32Value = VBVO_PORT_READ_U32(VBE_DISPI_IOPORT_DATA);
+        return true;
+    }
+
+    return false;
+}
+
+
+/**
  * Returns the size of the video RAM in bytes.
  *
  * @returns the size
  */
 DECLHIDDEN(uint32_t) VBoxVideoGetVRAMSize(void)
 {
-    /** @note A 32bit read on this port returns the VRAM size. */
+    /** @note A 32bit read on this port returns the VRAM size if interface is older than VBE_DISPI_ID_CFG. */
     return VBVO_PORT_READ_U32(VBE_DISPI_IOPORT_DATA);
 }
 
