@@ -151,7 +151,16 @@ PDMBOTHCBDECL(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, 
     } while (pBus->iBus != 0);
 
     AssertMsgReturnVoid(pBus->iBus == 0, ("This is not the host pci bus iBus=%d\n", pBus->iBus));
-    ich9pciSetIrqInternal(DEVPCIBUS_2_DEVPCIROOT(pBus), uDevFnBridge, pPciDev, iIrqPinBridge, iLevel, uTagSrc);
+
+    /*
+     * For MSI/MSI-X enabled devices the iIrq doesn't denote the pin but rather a vector which is completely
+     * orthogonal to the pin based approach. The vector is not subject to the pin based routing with PCI bridges.
+     */
+    int iIrqPinVector = iIrqPinBridge;
+    if (   MsiIsEnabled(pPciDev)
+        || MsixIsEnabled(pPciDev))
+        iIrqPinVector = iIrq;
+    ich9pciSetIrqInternal(DEVPCIBUS_2_DEVPCIROOT(pBus), uDevFnBridge, pPciDev, iIrqPinVector, iLevel, uTagSrc);
 }
 
 
