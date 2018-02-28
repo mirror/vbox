@@ -857,7 +857,7 @@ static uint32_t vbe_read_cfg(PVGASTATE pThis)
     {
         case VBE_DISPI_CFG_ID_VERSION:
            return fQuerySupport ? 1 : 0;
-        case VBE_DISPI_CFG_ID_VRAM_SIZE: 
+        case VBE_DISPI_CFG_ID_VRAM_SIZE:
            return fQuerySupport ? 1 : pThis->vram_size;
         case VBE_DISPI_CFG_ID_3D:
            return fQuerySupport ? 1 : pThis->f3DEnabled;
