@@ -4,10 +4,7 @@
  */
 
 /*
- * Copyright(C) 2017 - 2018 Oracle Corporation
- *
- * Oracle Corporation confidential
- * All rights reserved
+ * Copyright (C) 2015-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
