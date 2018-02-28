@@ -3,7 +3,7 @@
  * VBoxSDS - COM global service main entry (System Directory Service)
  */
 
- /*
+/*
  * Copyright (C) 2017-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as

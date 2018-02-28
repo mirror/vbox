@@ -6,7 +6,7 @@
  *          at least not in SDK v7.1.
  */
 
- /*
+/*
  * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
