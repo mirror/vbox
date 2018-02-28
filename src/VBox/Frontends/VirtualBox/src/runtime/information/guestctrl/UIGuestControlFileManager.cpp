@@ -353,8 +353,6 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
     if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
     {
 
-        // printf("/lk %d c:/users %d\n", m_comGuestSession.DirectoryExists("/lk", true),
-        //        m_comGuestSession.DirectoryExists("c:/users", true));
         QVector<KDirectoryOpenFlag> flag;
         flag.push_back(KDirectoryOpenFlag_None);
         CGuestDirectory directory = m_comGuestSession.DirectoryOpen("c:/", "*", flag);

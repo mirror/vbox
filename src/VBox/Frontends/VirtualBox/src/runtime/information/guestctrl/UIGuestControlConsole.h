@@ -50,19 +50,23 @@ private slots:
 private:
 
     typedef QVector<QString> CommandHistory;
-    void        reset();
-    void        startNextLine();
-    /** Return the text of the curent line */
-    QString     getCommandString();
-    /** Replaces the content of the last line with m_strPromt + @p stringNewContent */
-    void        replaceLineContent(const QString &stringNewContent);
-    /** Get next/prev command from history. Return @p originalString if history is empty. */
-    QString     getNextCommandFromHistory(const QString &originalString = QString());
-    QString     getPreviousCommandFromHistory(const QString &originalString = QString());
+    typedef QMap<QString, int> TabDictionary;
 
+    void           reset();
+    void           startNextLine();
+    /** Return the text of the curent line */
+    QString        getCommandString();
+    /** Replaces the content of the last line with m_strPromt + @p stringNewContent */
+    void           replaceLineContent(const QString &stringNewContent);
+    /** Get next/prev command from history. Return @p originalString if history is empty. */
+    QString        getNextCommandFromHistory(const QString &originalString = QString());
+    QString        getPreviousCommandFromHistory(const QString &originalString = QString());
+    void           completeByTab();
+    /* Return a list of words that start with @p strSearch */
+    QList<QString> matchedWords(const QString &strSearch) const;
     const QString  m_strGreet;
     const QString  m_strPrompt;
-
+    TabDictionary  m_tabDictinary;
     /* A vector of entered commands */
     CommandHistory m_tCommandHistory;
     unsigned       m_uCommandHistoryIndex;

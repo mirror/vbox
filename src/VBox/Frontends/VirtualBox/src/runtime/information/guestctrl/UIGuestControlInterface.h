@@ -79,10 +79,10 @@ private:
     bool handleStat(int, char**);
 
     QString getFsObjInfoString(const CGuestFsObjInfo &fsObjectInfo) const;
-
+    bool    isGuestAdditionsAvaible();
     CGuest        m_comGuest;
     const QString m_strHelp;
-    QString  m_strStatus;
+    QString       m_strStatus;
     /* A map of function pointers to handleXXXX functions */
     QMap<QString, HandleFuncPtr> m_subCommandHandlers;
 };

@@ -39,6 +39,17 @@ UIGuestControlConsole::UIGuestControlConsole(QWidget* parent /* = 0 */)
     setUndoRedoEnabled(false);
     setWordWrapMode(QTextOption::NoWrap);
     reset();
+
+    m_tabDictinary.insert("username", 0);
+    m_tabDictinary.insert("createsession", 0);
+    m_tabDictinary.insert("exe", 0);
+    m_tabDictinary.insert("sessionid", 0);
+    m_tabDictinary.insert("sessionname", 0);
+    m_tabDictinary.insert("timeout", 0);
+    m_tabDictinary.insert("password", 0);
+    m_tabDictinary.insert("start", 0);
+    m_tabDictinary.insert("ls", 0);
+    m_tabDictinary.insert("stat", 0);
 }
 
 void UIGuestControlConsole::reset()
@@ -136,6 +147,9 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
             setTextCursor(cursor);
             break;
         }
+        case Qt::Key_Tab:
+            completeByTab();
+            break;
         default:
         {
             if (pEvent->modifiers() == Qt::ControlModifier && pEvent->key() == Qt::Key_C)
@@ -223,4 +237,67 @@ QString UIGuestControlConsole::getPreviousCommandFromHistory(const QString &orig
         --m_uCommandHistoryIndex;
 
     return m_tCommandHistory.at(m_uCommandHistoryIndex);
+}
+
+void UIGuestControlConsole::completeByTab()
+{
+    bool lastLine = blockCount() == (textCursor().blockNumber() +1);
+    if (!lastLine)
+        return;
+    /* Save whatever we have currently on this line: */
+    QString currentCommand = getCommandString();
+
+    QTextCursor cursor = textCursor();
+    /* Save the cursor's position within the line */
+    int cursorBlockPosition = cursor.positionInBlock();
+
+    /* Find out on which word the cursor is. This is the word we will
+       complete: */
+    cursor.select(QTextCursor::WordUnderCursor);
+    QString currentWord = cursor.selectedText();
+
+    const QList<QString> &matches = matchedWords(currentWord);
+    /* If there are no matches do nothing: */
+    if(matches.empty())
+        return;
+    /* if there are more than one match list them all and
+       reprint the line: */
+    if(matches.size() > 1)
+    {
+        moveCursor(QTextCursor::End);
+        QString strMatches;
+        for(int i = 0; i < matches.size(); ++i)
+        {
+            strMatches.append(matches.at(i));
+            strMatches.append(" ");
+        }
+        appendPlainText(strMatches);
+        insertPlainText(QString("\n").append(m_strPrompt));
+        insertPlainText(currentCommand);
+        /* Put the cursor in its previous position within the line: */
+        int blockPosition = textCursor().block().position();
+        QTextCursor nCursor = textCursor();
+        nCursor.setPosition(blockPosition + cursorBlockPosition);
+        setTextCursor(nCursor);
+        return;
+    }
+    /* if there is only one word just complete: */
+    /* some sanity checks */
+    if(matches.at(0).length() > currentWord.length())
+       insertPlainText(matches.at(0).right(matches.at(0).length() - currentWord.length()));
+}
+
+
+QList<QString> UIGuestControlConsole::matchedWords(const QString &strSearch) const
+{
+    QList<QString> list;
+    /* Go thru the map and find which of its elements start with @pstrSearch: */
+    for(TabDictionary::const_iterator iterator = m_tabDictinary.begin();
+        iterator != m_tabDictinary.end(); ++iterator)
+    {
+        const QString &strMap = iterator.key();
+        if(strMap.startsWith(strSearch))
+            list.push_back(strMap);
+    }
+    return list;
 }
