@@ -482,14 +482,26 @@ RTDECL(int) RTThreadUserReset(RTTHREAD Thread);
 /**
  * Pokes the thread.
  *
- * This will signal the thread, attempting to interrupt whatever it's currently
- * doing.  This is *NOT* implemented on all platforms and may cause unresolved
- * symbols during linking or VERR_NOT_IMPLEMENTED at runtime.
+ * This will wake up or/and signal the thread, attempting to interrupt whatever
+ * it's currently doing.
+ *
+ * The posixy version of this will send a signal to the thread, quite likely
+ * waking it up from normal sleeps, waits, and I/O.  When IPRT is in
+ * non-obtrusive mode, the posixy version will definitely return
+ * VERR_NOT_IMPLEMENTED, and it may also do so if no usable signal was found.
+ *
+ * On Windows the thread will be alerted, waking it up from most sleeps and
+ * waits, but not probably very little in the I/O area (needs testing).  On NT
+ * 3.50 and 3.1 VERR_NOT_IMPLEMENTED will be returned.
  *
  * @returns IPRT status code.
  *
  * @param   hThread             The thread to poke.  This must not be the
  *                              calling thread.
+ *
+ * @note    This is *NOT* implemented on all platforms and may cause unresolved
+ *          symbols during linking or VERR_NOT_IMPLEMENTED at runtime.
+ *
  */
 RTDECL(int) RTThreadPoke(RTTHREAD hThread);
 

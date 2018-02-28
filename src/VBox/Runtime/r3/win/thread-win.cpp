@@ -44,6 +44,7 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include "internal/thread.h"
+#include "internal-r3-win.h"
 
 
 /*********************************************************************************************************************************
@@ -398,4 +399,23 @@ RTDECL(uintptr_t) RTThreadGetNativeHandle(RTTHREAD hThread)
     return (uintptr_t)INVALID_HANDLE_VALUE;
 }
 RT_EXPORT_SYMBOL(RTThreadGetNativeHandle);
+
+
+RTDECL(int) RTThreadPoke(RTTHREAD hThread)
+{
+    AssertReturn(hThread != RTThreadSelf(), VERR_INVALID_PARAMETER);
+    if (g_pfnNtAlertThread)
+    {
+        PRTTHREADINT pThread = rtThreadGet(hThread);
+        AssertReturn(pThread, VERR_INVALID_HANDLE);
+
+        NTSTATUS rcNt = g_pfnNtAlertThread((HANDLE)pThread->hThread);
+
+        rtThreadRelease(pThread);
+        if (NT_SUCCESS(rcNt))
+            return VINF_SUCCESS;
+        return RTErrConvertFromErrno(rcNt);
+    }
+    return VERR_NOT_IMPLEMENTED;
+}
 

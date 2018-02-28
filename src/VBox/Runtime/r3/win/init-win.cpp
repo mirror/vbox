@@ -83,6 +83,8 @@ DECLHIDDEN(HMODULE)                         g_hModNtDll = NULL;
 DECLHIDDEN(PFNNTQUERYFULLATTRIBUTESFILE)    g_pfnNtQueryFullAttributesFile = NULL;
 /** NtDuplicateToken (NT 3.51). */
 DECLHIDDEN(PFNNTDUPLICATETOKEN)             g_pfnNtDuplicateToken = NULL;
+/** NtAlertThread (NT 3.51). */
+decltype(NtAlertThread)                    *g_pfnNtAlertThread = NULL;
 
 /** Either ws2_32.dll (NT4+) or wsock32.dll (NT3.x). */
 DECLHIDDEN(HMODULE)                         g_hModWinSock = NULL;
@@ -512,7 +514,7 @@ DECLHIDDEN(int) rtR3InitNativeFirst(uint32_t fFlags)
      */
     g_pfnNtQueryFullAttributesFile = (PFNNTQUERYFULLATTRIBUTESFILE)GetProcAddress(g_hModNtDll, "NtQueryFullAttributesFile");
     g_pfnNtDuplicateToken          = (PFNNTDUPLICATETOKEN)GetProcAddress(         g_hModNtDll, "NtDuplicateToken");
-
+    g_pfnNtAlertThread             = (decltype(NtAlertThread) *)GetProcAddress(   g_hModNtDll, "NtAlertThread");
 
     /*
      * Resolve the winsock error getter and setter so assertions can save those too.
