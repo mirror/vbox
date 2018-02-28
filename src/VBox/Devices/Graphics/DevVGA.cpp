@@ -2781,7 +2781,7 @@ static void vga_save(PSSMHANDLE pSSM, PVGASTATE pThis)
     AssertCompile(RT_ELEMENTS(pThis->vbe_regs) < 256);
     SSMR3PutU8(pSSM, (uint8_t)RT_ELEMENTS(pThis->vbe_regs));
     SSMR3PutU16(pSSM, pThis->vbe_index);
-    for(i = 0; i < RT_ELEMENTS(pThis->vbe_regs); i++)
+    for(i = 0; i < (int)RT_ELEMENTS(pThis->vbe_regs); i++)
         SSMR3PutU16(pSSM, pThis->vbe_regs[i]);
     SSMR3PutU32(pSSM, pThis->vbe_start_addr);
     SSMR3PutU32(pSSM, pThis->vbe_line_offset);
