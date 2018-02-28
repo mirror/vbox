@@ -130,6 +130,8 @@ class VcsImport(object): # pylint: disable=R0903
             elif len(sMessage) > VcsRevisionData.kcchMax_sMessage:
                 sMessage = sMessage[:VcsRevisionData.kcchMax_sMessage - 4] + ' ...';
             if not self.oConfig.fQuiet:
+                if isinstance(sMessage, unicode) and hasattr(sMessage, 'encode'):
+                    sMessage = sMessage.encode(sys.getdefaultencoding(), 'ignore')
                 print(u'sDate=%s iRev=%u sAuthor=%s sMsg[%s]=%s' % (sDate, iRevision, sAuthor, type(sMessage).__name__, sMessage));
             oData = VcsRevisionData().initFromValues(self.oConfig.sRepository, iRevision, sDate, sAuthor, sMessage);
             oLogic.addVcsRevision(oData);
