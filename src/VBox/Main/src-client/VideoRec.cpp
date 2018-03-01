@@ -32,6 +32,7 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 
+#include <VBox/err.h>
 #include <VBox/com/VirtualBox.h>
 
 #include "WebMWriter.h"
@@ -39,11 +40,9 @@
 
 #ifdef VBOX_WITH_LIBVPX
 # define VPX_CODEC_DISABLE_COMPAT 1
-# include <vpx/vp8cx.h>
-# include <vpx/vpx_image.h>
-
-/** Default VPX codec to use. */
-# define DEFAULTCODEC (vpx_codec_vp8_cx())
+# include "vpx/vp8cx.h"
+# include "vpx/vpx_image.h"
+# include "vpx/vpx_encoder.h"
 #endif /* VBOX_WITH_LIBVPX */
 
 struct VIDEORECVIDEOFRAME;
@@ -147,7 +146,7 @@ typedef struct VIDEORECAUDIOFRAME
 {
     uint8_t             abBuf[_64K]; /** @todo Fix! */
     size_t              cbBuf;
-    /** Time stamp (in ms). */
+    /** Absolute time stamp (in ms). */
     uint64_t            uTimeStampMs;
 } VIDEORECAUDIOFRAME, *PVIDEORECAUDIOFRAME;
 #endif
@@ -1089,15 +1088,6 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
 
     PVIDEORECVIDEOCODEC pVC = &pStream->Video.Codec;
 
-#ifdef VBOX_WITH_LIBVPX
-    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pVC->VPX.Cfg, 0);
-    if (rcv != VPX_CODEC_OK)
-    {
-        LogRel(("VideoRec: Failed to get default configuration for VPX codec: %s\n", vpx_codec_err_to_string(rcv)));
-        return VERR_INVALID_PARAMETER;
-    }
-#endif
-
     pStream->Video.uDelayMs = 1000 / pCfg->Video.uFPS;
 
     switch (pStream->enmDst)
@@ -1182,6 +1172,19 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
         return rc;
 
 #ifdef VBOX_WITH_LIBVPX
+# ifdef VBOX_WITH_LIBVPX_VP9
+    vpx_codec_iface_t *pCodecIface = vpx_codec_vp9_cx();
+# else /* Default is using VP8. */
+    vpx_codec_iface_t *pCodecIface = vpx_codec_vp8_cx();
+# endif
+
+    vpx_codec_err_t rcv = vpx_codec_enc_config_default(pCodecIface, &pVC->VPX.Cfg, 0 /* Reserved */);
+    if (rcv != VPX_CODEC_OK)
+    {
+        LogRel(("VideoRec: Failed to get default config for VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
+        return VERR_AVREC_CODEC_INIT_FAILED;
+    }
+
     /* Target bitrate in kilobits per second. */
     pVC->VPX.Cfg.rc_target_bitrate = pCfg->Video.uRate;
     /* Frame width. */
@@ -1195,11 +1198,11 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
     pVC->VPX.Cfg.g_threads = 0;
 
     /* Initialize codec. */
-    rcv = vpx_codec_enc_init(&pVC->VPX.Ctx, DEFAULTCODEC, &pVC->VPX.Cfg, 0);
+    rcv = vpx_codec_enc_init(&pVC->VPX.Ctx, pCodecIface, &pVC->VPX.Cfg, 0 /* Flags */);
     if (rcv != VPX_CODEC_OK)
     {
-        LogRel(("VideoRec: Failed to initialize VP8 encoder: %s\n", vpx_codec_err_to_string(rcv)));
-        return VERR_INVALID_PARAMETER;
+        LogRel(("VideoRec: Failed to initialize VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
+        return VERR_AVREC_CODEC_INIT_FAILED;
     }
 
     if (!vpx_img_alloc(&pVC->VPX.RawImage, VPX_IMG_FMT_I420, pCfg->Video.uWidth, pCfg->Video.uHeight, 1))
