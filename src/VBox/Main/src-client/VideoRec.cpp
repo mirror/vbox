@@ -945,12 +945,8 @@ static int videoRecStreamOpenFile(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg)
     AssertPtrReturn(pszAbsPath, VERR_NO_MEMORY);
 
     RTPathStripSuffix(pszAbsPath);
-    AssertPtrReturn(pszAbsPath, VERR_INVALID_PARAMETER);
 
-    char *pszSuff    = RTPathSuffix(pszAbsPath);
-    if (!pszSuff)
-        pszSuff = RTStrDup(".webm");
-
+    char *pszSuff = RTStrDup(".webm");
     if (!pszSuff)
     {
         RTStrFree(pszAbsPath);
