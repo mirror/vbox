@@ -2832,6 +2832,20 @@
 #define VERR_NEM_CHANGE_PGM_MODE                    (-6810)
 /** @} */
 
+/** @name Audio / Video recording Status Codes
+ * @{
+ */
+/** Codec was not found. */
+#define VERR_AVREC_CODEC_NOT_FOUND                  (-6900)
+/** Codec initialization failed. */
+#define VERR_AVREC_CODEC_INIT_FAILED                (-6902)
+/** Codec is not supported. */
+#define VERR_AVREC_CODEC_NOT_SUPPORTED              (-6903)
+/** Format not supported by the codec. */
+#define VERR_AVREC_FORMAT_NOT_SUPPORTED             (-6904)
+/** Recording is not possible due to a set restriction. */
+#define VERR_AVREC_RESTRICTED                       (-6905)
+/** @} */
 /* SED-END */
 
 /** @} */
