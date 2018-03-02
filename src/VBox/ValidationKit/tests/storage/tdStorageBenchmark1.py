@@ -1176,7 +1176,16 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     oStorCfgVm = storagecfg.StorageCfg(oExecVm, 'linux', self.getGuestDisk(oSession, oTxsSession, \
                                                                                            eStorageController));
 
-                    sMountPoint = self.prepareStorage(oStorCfgVm);
+                    iTry = 0;
+                    while iTry < 3:
+                        sMountPoint = self.prepareStorage(oStorCfgVm);
+                        if sMountPoint is not None:
+                            reporter.log('Prepared storage on %s try' % (iTry + 1,));
+                            break;
+                        else:
+                            iTry = iTry + 1;
+                            self.sleep(5);
+
                     if sMountPoint is not None:
                         self.testBenchmark('linux', sIoTest, sMountPoint, oExecVm, dTestSet, \
                                            cMsTimeout = 3 * 3600 * 1000); # 3 hours max (Benchmark and QED takes a lot of time)
