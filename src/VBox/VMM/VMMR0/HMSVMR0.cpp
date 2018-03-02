@@ -3459,12 +3459,11 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
          */
         if (!fIntShadow)
         {
-            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
             if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
                 && !pVCpu->hm.s.fSingleInstruction
                 && CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx))
             {
-                if (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_INTR)
+                if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_INTR))
                 {
                     Log4(("Intercepting external interrupt -> #VMEXIT\n"));
                     return IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
