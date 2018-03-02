@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2702,7 +2702,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                 /* Last argument and no destination specified with
                  * --target-directory yet? Then use the current
                  * (= last) argument as destination. */
-                if (   pCtx->pArg->argc == GetState.iNext
+                if (   GetState.argc == GetState.iNext
                     && pszDst == NULL)
                     pszDst = ValueUnion.psz;
                 else
