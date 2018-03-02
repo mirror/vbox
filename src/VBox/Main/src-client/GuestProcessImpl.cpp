@@ -2482,6 +2482,7 @@ int GuestProcessTool::i_exitCodeToRc(const char *pszTool, int32_t iExitCode)
             case VBOXSERVICETOOLBOX_CAT_EXITCODE_FILE_NOT_FOUND:    return VERR_FILE_NOT_FOUND;
             case VBOXSERVICETOOLBOX_CAT_EXITCODE_PATH_NOT_FOUND:    return VERR_PATH_NOT_FOUND;
             case VBOXSERVICETOOLBOX_CAT_EXITCODE_SHARING_VIOLATION: return VERR_SHARING_VIOLATION;
+            case VBOXSERVICETOOLBOX_CAT_EXITCODE_IS_A_DIRECTORY:    return VERR_IS_A_DIRECTORY;
             default:                                                break;
         }
     }

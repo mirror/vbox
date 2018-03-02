@@ -541,6 +541,9 @@ static RTEXITCODE vgsvcToolboxCat(int argc, char **argv)
             case VERR_SHARING_VIOLATION:
                 return (RTEXITCODE)VBOXSERVICETOOLBOX_CAT_EXITCODE_SHARING_VIOLATION;
 
+            case VERR_IS_A_DIRECTORY:
+                return (RTEXITCODE)VBOXSERVICETOOLBOX_CAT_EXITCODE_IS_A_DIRECTORY;
+
             default:
 #ifdef DEBUG_andy
                 AssertMsgFailed(("Exit code for %Rrc not implemented\n", rc));
