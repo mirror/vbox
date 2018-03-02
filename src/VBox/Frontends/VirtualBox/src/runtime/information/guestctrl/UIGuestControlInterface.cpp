@@ -345,8 +345,6 @@ bool UIGuestControlInterface::handleStat(int argc, char** argv)
         CGuestDirectory directory = guestSession.DirectoryOpen(commandData.m_strPath, /*aFilter*/ "", aFlags);
         if (directory.isOk())
         {
-            //printf("directory opened\n");
-            //CGuestFsObjInfo directoryInfo = static_cast<CGuestFsObjInfo>(directory.Read());
             CFsObjInfo directoryInfo = directory.Read();
             while (directoryInfo.isOk())
             {
