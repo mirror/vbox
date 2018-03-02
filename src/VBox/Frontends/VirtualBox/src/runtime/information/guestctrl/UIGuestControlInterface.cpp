@@ -25,6 +25,8 @@
 # include "VBoxGlobal.h"
 
 /* COM includes: */
+# include "CFsObjInfo.h"
+# include "CGuestDirectory.h"
 # include "CGuestProcess.h"
 # include "CGuestSession.h"
 # include "CGuestFsObjInfo.h"
@@ -70,7 +72,7 @@
         commandData.m_strPassword = ValueUnion.psz;   \
         break;
 
-QString getFsObjTypeString(KFsObjType type)
+QString UIGuestControlInterface::getFsObjTypeString(KFsObjType type)
 {
     QString strType;
     switch(type)
@@ -333,9 +335,27 @@ bool UIGuestControlInterface::handleStat(int argc, char** argv)
     CGuestFsObjInfo fsObjectInfo = guestSession.FsObjQueryInfo(commandData.m_strPath, false /*BOOL aFollowSymlinks*/);
     if (!fsObjectInfo.isOk())
         RETURN_ERROR("Cannot get object info");
+    QString strObjectInfo = getFsObjInfoString<CGuestFsObjInfo>(fsObjectInfo);
 
-    QString strObjectInfo = getFsObjInfoString(fsObjectInfo);
-
+    /* In case it is a directory get a list of its content: */
+    if (isADirectory)
+    {
+        QVector<KDirectoryOpenFlag> aFlags;
+        aFlags.push_back(KDirectoryOpenFlag_None);
+        CGuestDirectory directory = guestSession.DirectoryOpen(commandData.m_strPath, /*aFilter*/ "", aFlags);
+        if (directory.isOk())
+        {
+            //printf("directory opened\n");
+            //CGuestFsObjInfo directoryInfo = static_cast<CGuestFsObjInfo>(directory.Read());
+            CFsObjInfo directoryInfo = directory.Read();
+            while (directoryInfo.isOk())
+            {
+                strObjectInfo.append("\n");
+                strObjectInfo.append(getFsObjInfoString<CFsObjInfo>(directoryInfo));
+                directoryInfo = directory.Read();
+            }
+        }
+    }
     RETURN_MESSAGE(strObjectInfo);
 }
 
@@ -532,7 +552,7 @@ void UIGuestControlInterface::prepareSubCommandHandlers()
 
 void UIGuestControlInterface::putCommand(const QString &strCommand)
 {
-    if (!isGuestAdditionsAvaible())
+    if (!isGuestAdditionsAvaible(m_comGuest))
     {
         emit sigOutputString("No guest addtions detected. Guest control needs guest additions");
         return;
@@ -645,23 +665,28 @@ bool UIGuestControlInterface::createSession(const CommandData &commandData, CGue
     return true;
 }
 
-QString UIGuestControlInterface::getFsObjInfoString(const CGuestFsObjInfo &fsObjectInfo) const
+bool UIGuestControlInterface::isGuestAdditionsAvaible(CGuest &guest)
 {
-    QString strInfo;
-    if (!fsObjectInfo.isOk())
-        return strInfo;
-    strInfo.append(QString("%1 \t").arg(fsObjectInfo.GetName()));
-    strInfo.append(QString("%1 \t").arg(getFsObjTypeString(fsObjectInfo.GetType())));
-    strInfo.append(QString("%1 \t").arg(fsObjectInfo.GetObjectSize()));
-    strInfo.append(QString("%1 \t").arg(fsObjectInfo.GetBirthTime()));
-    strInfo.append(QString("%1 ").arg(fsObjectInfo.GetChangeTime()));
-    return strInfo;
+    if (!guest.isOk())
+        return false;
+    return guest.GetAdditionsStatus(guest.GetAdditionsRunLevel());
+
 }
 
-bool UIGuestControlInterface::isGuestAdditionsAvaible()
+template<typename T>
+QString UIGuestControlInterface::getFsObjInfoString(const T &fsObjectInfo) const
 {
-    if (!m_comGuest.isOk())
-        return false;
-    return m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
+    QString strObjectInfo;
+    if (!fsObjectInfo.isOk())
+        return strObjectInfo;
 
+    strObjectInfo.append(getFsObjTypeString(fsObjectInfo.GetType()).append("\t"));
+    strObjectInfo.append(fsObjectInfo.GetName().append("\t"));
+    strObjectInfo.append(QString::number(fsObjectInfo.GetObjectSize()).append("\t"));
+
+    /* Currently I dont know a way to convert these into a meaningful date/time: */
+    // strObjectInfo.append("BirthTime", QString::number(fsObjectInfo.GetBirthTime()));
+    // strObjectInfo.append("ChangeTime", QString::number(fsObjectInfo.GetChangeTime()));
+
+    return strObjectInfo;
 }

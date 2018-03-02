@@ -32,13 +32,15 @@
 #include "UIMainEventListener.h"
 
 /* Forward declarations: */
-class CGuestSessionStateChangedEvent;
-class QITreeView;
 class QPlainTextEdit;
 class QVBoxLayout;
 class QSplitter;
-class UIFileListModel;
+class QTreeWidgetItem;
+class CGuestSessionStateChangedEvent;
+class QITreeView;
+class UIGuestFileTable;
 class UIGuestControlFileTree;
+class UIGuestControlFileTreeItem;
 class UIGuestSessionCreateWidget;
 
 /** QWidget extension
@@ -59,6 +61,10 @@ private slots:
     void sltCloseSession();
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
 
+    void sltTreeItemEntered(QTreeWidgetItem *item, int column);
+    void sltTreeItemExpanded(QTreeWidgetItem *item);
+    void sltTreeItemClicked(QTreeWidgetItem *item, int column);
+
 private:
 
     void prepareObjects();
@@ -74,22 +80,35 @@ private:
     void cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
                          CEventListener &comEventListener,
                          CEventSource comEventSource);
+    void initFileTree();
+    void initFileTable();
+    void openSubTree(UIGuestControlFileTreeItem *item);
 
+    template<typename T>
+    QStringList   getFsObjInfoStringList(const T &fsObjectInfo) const;
+
+    void readDirectory(const QString& strPath,
+                       UIGuestControlFileTreeItem* treeParent,
+                       const int &startDepth,
+                       int iMaxDepth);
+
+
+    const int         m_iMaxRecursionDepth;
     CGuest            m_comGuest;
     CGuestSession     m_comGuestSession;
 
     QVBoxLayout      *m_pMainLayout;
-    QSplitter        *m_pSplitter;
-    UIGuestSessionCreateWidget        *m_pSessionCreateWidget;
+    QSplitter        *m_pVerticalSplitter;
     QPlainTextEdit   *m_pLogOutput;
-    UIGuestControlFileTree* m_pGuestFileTree;
+
+    UIGuestControlFileTree*     m_pGuestFileTree;
+    UIGuestSessionCreateWidget *m_pSessionCreateWidget;
+    UIGuestFileTable           *m_pGuestFileTable;
 
     ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
-    CEventListener m_comGuestListener;
-
     ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
     CEventListener m_comSessionListener;
-
+    CEventListener m_comGuestListener;
 };
 
 #endif /* !___UIGuestControlFileManager_h___ */

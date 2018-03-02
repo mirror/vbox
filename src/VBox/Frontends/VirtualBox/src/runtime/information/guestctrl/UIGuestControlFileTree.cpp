@@ -42,27 +42,78 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-class UIGuestControlFileTreeItem : public QITreeWidgetItem
-{
-    Q_OBJECT;
 
-public:
-    UIGuestControlFileTreeItem(UIGuestControlFileTree *pTreeWidget, const QStringList &strings = QStringList());
-    UIGuestControlFileTreeItem(UIGuestControlFileTreeItem *pTreeWidgetItem, const QStringList &strings = QStringList());
-    virtual ~UIGuestControlFileTreeItem();
-
-};
-
-UIGuestControlFileTreeItem::UIGuestControlFileTreeItem(UIGuestControlFileTree *pTreeWidget, const QStringList &strings /* = QStringList() */)
+UIGuestControlFileTreeItem::UIGuestControlFileTreeItem(UIGuestControlFileTree *pTreeWidget,
+                                                       int depth, const QString &path,
+                                                       const QStringList &strings /* = QStringList() */)
     :QITreeWidgetItem(pTreeWidget, strings)
-
+    , m_iDepth(depth)
+    , m_strPath(path)
+    , m_bIsOpened(false)
+    , m_bIsDirectory(false)
 {
+    prepare();
 }
-UIGuestControlFileTreeItem::UIGuestControlFileTreeItem(UIGuestControlFileTreeItem *pTreeWidgetItem, const QStringList &strings /*= QStringList() */)
+
+UIGuestControlFileTreeItem::UIGuestControlFileTreeItem(UIGuestControlFileTreeItem *pTreeWidgetItem,
+                                                       int depth, const QString &path,
+                                                       const QStringList &strings /*= QStringList() */)
     :QITreeWidgetItem(pTreeWidgetItem, strings)
+    , m_iDepth(depth)
+    , m_strPath(path)
+    , m_bIsOpened(false)
+    , m_bIsDirectory(false)
 {
+    prepare();
 }
 
 UIGuestControlFileTreeItem::~UIGuestControlFileTreeItem(){}
 
-#include "UIGuestControlFileTree.moc"
+void UIGuestControlFileTreeItem::prepare()
+{
+    /* For debugging: */
+    setBackground(1, Qt::red);
+    //QBrush::QBrush(Qt::GlobalColor
+    //Qt::red
+}
+
+QList<UIGuestControlFileTreeItem*>  UIGuestControlFileTreeItem::children()
+{
+    QList<UIGuestControlFileTreeItem*> children;
+    for(int i = 0; i < childCount(); ++i)
+    {
+        UIGuestControlFileTreeItem* ch = dynamic_cast<UIGuestControlFileTreeItem*>(child(i));
+        if(ch)
+            children.push_back(ch);
+    }
+    return children;
+}
+
+int UIGuestControlFileTreeItem::depth() const
+{
+    return m_iDepth;
+}
+
+const QString& UIGuestControlFileTreeItem::path() const
+{
+    return m_strPath;
+}
+
+bool UIGuestControlFileTreeItem::isOpened() const
+{
+    return m_bIsOpened;
+}
+void UIGuestControlFileTreeItem::setIsOpened(bool flag)
+{
+    m_bIsOpened = flag;
+    setBackground(1, Qt::green);
+}
+
+bool UIGuestControlFileTreeItem::isDirectory() const
+{
+    return m_bIsDirectory;
+}
+void UIGuestControlFileTreeItem::setIsDirectory(bool flag)
+{
+    m_bIsDirectory = flag;
+}

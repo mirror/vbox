@@ -49,6 +49,15 @@ public:
     /** Receives a command string */
     void putCommand(const QString &strCommand);
 
+    /** @name Some utility functions
+     * @{ */
+        /** Pass a non-const ref since for some reason CGuest::GetAdditionsStatus
+            is non-const?! */
+       static bool    isGuestAdditionsAvaible(CGuest &guest);
+       static QString getFsObjTypeString(KFsObjType type);
+    /** @} */
+
+
 private slots:
 
 private:
@@ -58,7 +67,7 @@ private:
     /** findOrCreateSession parses command options and determines if an existing session
         to be returned or a new one to be created */
     bool findOrCreateSession(const CommandData &commandData, CGuestSession &outGuestSession);
-    /* Search a valid gurst session among existing ones, assign @p outGuestSession if found and return true */
+    /** Search a valid gurst session among existing ones, assign @p outGuestSession if found and return true */
     bool findAValidGuestSession(CGuestSession &outGuestSession);
     bool findSession(const QString& strSessionName, CGuestSession& outSession);
     bool findSession(ULONG strSessionId, CGuestSession& outSession);
@@ -68,22 +77,23 @@ private:
     bool startProcess(const CommandData &commandData, CGuestSession &guestSession);
     bool createDirectory(const CommandData &commandData, CGuestSession &guestSession);
 
-    /* Handles the 'start' process command */
+    /** Handles the 'start' process command */
     bool handleStart(int, char**);
         /* Handles the 'help' process command */
     bool handleHelp(int, char**);
-    /* Handles the 'create' session command */
+    /** Handles the 'create' session command */
     bool handleCreateSession(int, char**);
-    /* Handles the 'mkdir' session command to create guest directories */
+    /** Handles the 'mkdir' session command to create guest directories */
     bool handleMkdir(int, char**);
     bool handleStat(int, char**);
+    template<typename T>
+    QString getFsObjInfoString(const T &fsObjectInfo) const;
 
-    QString getFsObjInfoString(const CGuestFsObjInfo &fsObjectInfo) const;
-    bool    isGuestAdditionsAvaible();
+
     CGuest        m_comGuest;
     const QString m_strHelp;
     QString       m_strStatus;
-    /* A map of function pointers to handleXXXX functions */
+    /** A map of function pointers to handleXXXX functions */
     QMap<QString, HandleFuncPtr> m_subCommandHandlers;
 };
 
