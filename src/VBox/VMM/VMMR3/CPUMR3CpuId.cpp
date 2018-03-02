@@ -3573,6 +3573,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         pSvmFeatureLeaf->uEbx  = 0x8000;                                        /** @todo figure out virtual NASID. */
         pSvmFeatureLeaf->uEcx  = 0;
         pSvmFeatureLeaf->uEdx &= (  X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE         /** @todo Support other SVM features */
+                                  | X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID
                                   | X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS);
     }
     else
