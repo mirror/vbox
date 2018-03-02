@@ -655,7 +655,7 @@ DECLINLINE(UINT) vboxWddmCalcOffXru(UINT w, D3DDDIFORMAT enmFormat)
         case D3DDDIFMT_DXT5:
         {
             UINT Pitch = (w + 3) / 4; /* <- pitch size in blocks */
-            Pitch *= 8;               /* <- pitch size in bytes */
+            Pitch *= 16;              /* <- pitch size in bytes */
             return Pitch;
         }
         default:
