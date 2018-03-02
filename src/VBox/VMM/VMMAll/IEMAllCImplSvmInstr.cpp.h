@@ -405,6 +405,15 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
 
+        /* Flush by ASID. */
+        if (   !pVM->cpum.ro.GuestFeatures.fSvmFlusbByAsid
+            &&  pVmcbCtrl->TLBCtrl.n.u8TLBFlush != SVM_TLB_FLUSH_NOTHING
+            &&  pVmcbCtrl->TLBCtrl.n.u8TLBFlush != SVM_TLB_FLUSH_ENTIRE)
+        {
+            Log(("iemSvmVmrun: Flush-by-ASID not supported -> #VMEXIT\n"));
+            return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+
         /* IO permission bitmap. */
         RTGCPHYS const GCPhysIOBitmap = pVmcbCtrl->u64IOPMPhysAddr;
         if (   (GCPhysIOBitmap & X86_PAGE_4K_OFFSET_MASK)
