@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_GUEST_CONTROL // LOG_GROUP_MAIN_GUESTFSOBJINFO
+#define LOG_GROUP LOG_GROUP_MAIN_GUESTFSOBJINFO
 #include "LoggingNew.h"
 
 #ifndef VBOX_WITH_GUEST_CONTROL
