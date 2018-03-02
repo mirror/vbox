@@ -14351,10 +14351,6 @@ Wersja %1</translation>
         <translation type="obsolete">Migawka %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nie można znaleźć obrazu VirtualBox Guest Additions CD &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; lub &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Host Drive </source>
         <translation type="obsolete">Napęd gospodarza </translation>
     </message>

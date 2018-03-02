@@ -91,7 +91,7 @@ VOID WDBGAPI WinDbgExtensionDllInit(PWINDBG_EXTENSION_APIS64 lpExtensionApis, US
 
 DECLARE_API(help)
 {
-    dprintf("**** VirtulBox Video Driver debugging extension ****\n"
+    dprintf("**** VirtualBox Video Driver debugging extension ****\n"
             " The following commands are supported: \n"
             " !ms - save memory (video data) to clipboard \n"
             "  usage: !ms <virtual memory address> <width> <height> [bitsPerPixel (default is 32)] [pitch (default is ((width * bpp + 7) >> 3) + 3) & ~3)]\n");

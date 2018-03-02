@@ -5218,7 +5218,7 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>När kryssad kommer programmet att med jämna mellanrum ansluta till VIrtualBox webbplats och kontrollera huruvida det finns en ny version av VirtualBox tillgänglig.</translation>
+        <translation>När kryssad kommer programmet att med jämna mellanrum ansluta till VirtualBox webbplats och kontrollera huruvida det finns en ny version av VirtualBox tillgänglig.</translation>
     </message>
     <message>
         <source>&amp;Check for Updates</source>

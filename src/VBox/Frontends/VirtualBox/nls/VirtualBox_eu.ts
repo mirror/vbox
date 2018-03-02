@@ -899,7 +899,7 @@
     <message>
         <location line="+33"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Ireki nabigatzailea eta joan VirtuaBox produktuaren web gunera</translation>
+        <translation>Ireki nabigatzailea eta joan VirtualBox produktuaren web gunera</translation>
     </message>
     <message>
         <location line="+32"/>

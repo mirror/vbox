@@ -883,7 +883,7 @@
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Abre um navegador com a página de produto do VIrtualBox</translation>
+        <translation>Abre um navegador com a página de produto do VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Reset all warnings</source>

@@ -77,7 +77,7 @@ HRESULT VirtualBoxClient::init()
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
     // setup COM Security to enable impersonation
     // This works for console VirtualBox clients, GUI has own security settings
-    //  For GUI Virtual Box it will be second call so can return TOO_LATE error
+    //  For GUI VirtualBox it will be second call so can return TOO_LATE error
     HRESULT hrGUICoInitializeSecurity = CoInitializeSecurity(NULL,
                                                              -1,
                                                              NULL,

@@ -52,7 +52,7 @@ BOOLEAN VBoxMPEnablePointer(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, PSTATUS_BLOCK 
 BOOLEAN VBoxMPQueryPointerPosition(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_POSITION pPos, PSTATUS_BLOCK pStatus);
 BOOLEAN VBoxMPQueryPointerCapabilities(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_CAPABILITIES pCaps, PSTATUS_BLOCK pStatus);
 
-/* ==================== Virtual Box VRP's handlers ==================== */
+/* ==================== VirtualBox VRP's handlers ==================== */
 BOOLEAN VBoxMPVBVAEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResult, PSTATUS_BLOCK pStatus);
 BOOLEAN VBoxMPSetVisibleRegion(uint32_t cRects, RTRECT *pRects, PSTATUS_BLOCK pStatus);
 BOOLEAN VBoxMPHGSMIQueryPortProcs(PVBOXMP_DEVEXT pExt, HGSMIQUERYCPORTPROCS *pProcs, PSTATUS_BLOCK pStatus);

@@ -4283,7 +4283,7 @@
     </message>
     <message>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
-        <translation>Geef hier de bestandsnaam op waaronder VirtalBox de opname moet opslaan.</translation>
+        <translation>Geef hier de bestandsnaam op waaronder VirtualBox de opname moet opslaan.</translation>
     </message>
     <message>
         <source>Selects the resolution (frame size) of the recorded video.</source>
@@ -4414,7 +4414,7 @@
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>U probeert deze virtuele machine te versleutelen. Hiervoor moet &lt;i&gt;%1&lt;/i&gt; zijn ge:installeerd. Installeer het Extention Pack van de downloadsite van VirtalBox.</translation>
+        <translation>U probeert deze virtuele machine te versleutelen. Hiervoor moet &lt;i&gt;%1&lt;/i&gt; zijn ge:installeerd. Installeer het Extention Pack van de downloadsite van VirtualBox.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
@@ -8989,7 +8989,7 @@
     </message>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation>Dit zijn de virtuele machines binnen de appliance en voorgestelde instellingen voor de geïmporteerde VirtuelBox machines. U kunt veel van de weergegeven eigenschappen aanpassen door op de items te dubbelklikken, of andere uitschakelen door middel van onderstaande keuzevakjes.</translation>
+        <translation>Dit zijn de virtuele machines binnen de appliance en voorgestelde instellingen voor de geïmporteerde VirtualBox machines. U kunt veel van de weergegeven eigenschappen aanpassen door op de items te dubbelklikken, of andere uitschakelen door middel van onderstaande keuzevakjes.</translation>
     </message>
     <message>
         <source>Import Virtual Appliance</source>

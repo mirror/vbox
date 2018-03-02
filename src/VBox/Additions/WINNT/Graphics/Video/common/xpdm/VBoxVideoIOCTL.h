@@ -21,7 +21,7 @@
 #include <VBox/VMMDev.h> /* VBVAMEMORY */
 #include <HGSMI.h>
 
-/* ==================== Virtual Box specific VRP's ==================== */
+/* ==================== VirtualBox specific VRP's ==================== */
 
 /* Called by the display driver when it is ready to
  * switch to VBVA operation mode.
@@ -61,7 +61,7 @@
 #define IOCTL_VIDEO_QUERY_VBOXVIDEO_INFO \
     CTL_CODE(FILE_DEVICE_VIDEO, 0x436, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
-/* ==================== Data structures used by Virtual Box VRPS's ==================== */
+/* ==================== Data structures used by VirtualBox VRPS's ==================== */
 typedef void* HVBOXVIDEOHGSMI;
 
 /* Complete host commands addressed to the display */

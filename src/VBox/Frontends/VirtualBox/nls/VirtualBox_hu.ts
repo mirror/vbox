@@ -15726,10 +15726,6 @@ Verzió %1</translation>
         <translation type="obsolete">Pillanatkép %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nem találom a VirtualBox Integrációs szolgáltatások CD képet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; vagy &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>Host Drive </source>
         <translation type="obsolete">Gazda eszköz </translation>
     </message>

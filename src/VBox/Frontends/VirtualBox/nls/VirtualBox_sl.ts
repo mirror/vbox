@@ -466,7 +466,7 @@
     <message>
         <location line="+1"/>
         <source>Import an appliance into VirtualBox</source>
-        <translation>Uvozi namensko napravo v VirtulaBox</translation>
+        <translation>Uvozi namensko napravo v VirtualBox</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -1323,7 +1323,7 @@
     <message>
         <location line="+32"/>
         <source>&amp;VirtualBox Forums...</source>
-        <translation>&amp;Forumi VirtuaBox …</translation>
+        <translation>&amp;Forumi VirtualBox …</translation>
     </message>
     <message>
         <location line="+1"/>

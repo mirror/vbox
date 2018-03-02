@@ -52,7 +52,7 @@
  *      version (stored in m->sv) is high enough. That is, for VirtualBox 4.0, write it
  *      only if (m->sv >= SettingsVersion_v1_11).
  *
- *   5) You _must_ update xml/VirtalBox-settings.xsd to contain the new tags and attributes.
+ *   5) You _must_ update xml/VirtualBox-settings.xsd to contain the new tags and attributes.
  *      Check that settings file from before and after your change are validating properly.
  *      Use "kmk testvalidsettings", it should not find any files which don't validate.
  */
