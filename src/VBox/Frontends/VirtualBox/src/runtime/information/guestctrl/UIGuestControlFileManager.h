@@ -35,12 +35,8 @@
 class QPlainTextEdit;
 class QVBoxLayout;
 class QSplitter;
-class QTreeWidgetItem;
 class CGuestSessionStateChangedEvent;
-class QITreeView;
 class UIGuestFileTable;
-class UIGuestControlFileTree;
-class UIGuestControlFileTreeItem;
 class UIGuestSessionCreateWidget;
 
 /** QWidget extension
@@ -61,10 +57,6 @@ private slots:
     void sltCloseSession();
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
 
-    void sltTreeItemEntered(QTreeWidgetItem *item, int column);
-    void sltTreeItemExpanded(QTreeWidgetItem *item);
-    void sltTreeItemClicked(QTreeWidgetItem *item, int column);
-
 private:
 
     void prepareObjects();
@@ -80,17 +72,12 @@ private:
     void cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
                          CEventListener &comEventListener,
                          CEventSource comEventSource);
-    void initFileTree();
+
     void initFileTable();
-    void openSubTree(UIGuestControlFileTreeItem *item);
 
     template<typename T>
     QStringList   getFsObjInfoStringList(const T &fsObjectInfo) const;
 
-    void readDirectory(const QString& strPath,
-                       UIGuestControlFileTreeItem* treeParent,
-                       const int &startDepth,
-                       int iMaxDepth);
 
 
     const int         m_iMaxRecursionDepth;
@@ -101,7 +88,6 @@ private:
     QSplitter        *m_pVerticalSplitter;
     QPlainTextEdit   *m_pLogOutput;
 
-    UIGuestControlFileTree*     m_pGuestFileTree;
     UIGuestSessionCreateWidget *m_pSessionCreateWidget;
     UIGuestFileTable           *m_pGuestFileTable;
 

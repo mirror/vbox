@@ -35,7 +35,6 @@
 # include "UIExtraDataManager.h"
 # include "UIGuestControlFileManager.h"
 # include "UIGuestControlFileTable.h"
-# include "UIGuestControlFileTree.h"
 # include "UIGuestControlInterface.h"
 # include "UIVMInformationDialog.h"
 # include "VBoxGlobal.h"
@@ -222,7 +221,6 @@ UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGu
     , m_pMainLayout(0)
     , m_pVerticalSplitter(0)
     , m_pLogOutput(0)
-    , m_pGuestFileTree(0)
     , m_pSessionCreateWidget(0)
     , m_pGuestFileTable(0)
 {
@@ -290,18 +288,6 @@ void UIGuestControlFileManager::prepareObjects()
     }
 
 
-    //m_pGuestFileTree = new UIGuestControlFileTree;
-    if (m_pGuestFileTree)
-    {
-        //m_pMainLayout->addWidget(m_pGuestFileTree, 1, 0, 4 /*rowSpan*/, 1 /*columnSpan*/);
-
-        m_pGuestFileTree->setColumnCount(1);
-
-        m_pGuestFileTree->header()->hide();
-    }
-    //
-
-
     m_pVerticalSplitter->setStretchFactor(0, 9);
     m_pVerticalSplitter->setStretchFactor(1, 4);
 }
@@ -320,47 +306,6 @@ void UIGuestControlFileManager::prepareConnections()
         connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCloseButtonClick,
                 this, &UIGuestControlFileManager::sltCloseSession);
     }
-    if (m_pGuestFileTree)
-    {
-
-        connect(m_pGuestFileTree, &UIGuestControlFileTree::itemEntered,
-                this, &UIGuestControlFileManager::sltTreeItemEntered);
-        connect(m_pGuestFileTree, &UIGuestControlFileTree::itemExpanded,
-                this, &UIGuestControlFileManager::sltTreeItemExpanded);
-        connect(m_pGuestFileTree, &UIGuestControlFileTree::itemClicked,
-                this, &UIGuestControlFileManager::sltTreeItemClicked);
-
-    }
-}
-
-void UIGuestControlFileManager::sltTreeItemEntered(QTreeWidgetItem * item, int column)
-{
-}
-
-void UIGuestControlFileManager::sltTreeItemExpanded(QTreeWidgetItem * item)
-{
-    UIGuestControlFileTreeItem *treeItem = dynamic_cast<UIGuestControlFileTreeItem*>(item);
-    if(!treeItem)
-        return;
-    openSubTree(treeItem);
-    const QList<UIGuestControlFileTreeItem*> children = treeItem->children();
-    for(int i = 0; i < children.size(); ++i)
-        openSubTree(children[i]);
-}
-
-void UIGuestControlFileManager::openSubTree(UIGuestControlFileTreeItem*treeItem)
-{
-    /* Continue only for not-yet-opened directories: */
-    if((treeItem->isDirectory() && treeItem->isOpened())
-       || !treeItem->isDirectory())
-        return;
-    readDirectory(treeItem->path(), treeItem, treeItem->depth(), m_iMaxRecursionDepth);
-    if(m_pGuestFileTree)
-        m_pGuestFileTree->update();
-}
-
-void UIGuestControlFileManager::sltTreeItemClicked(QTreeWidgetItem * item, int column)
-{
 }
 
 void UIGuestControlFileManager::sltGuestSessionUnregistered(CGuestSession guestSession)
@@ -412,12 +357,10 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
     }
     if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
     {
-        //initFileTree();
         initFileTable();
     }
     else
     {
-        m_pGuestFileTree->clear();
         m_pLogOutput->appendPlainText("Session status has changed");
     }
 }
@@ -431,85 +374,7 @@ void UIGuestControlFileManager::initFileTable()
     m_pGuestFileTable->initGuestFileTable(m_comGuestSession);
 }
 
-void UIGuestControlFileManager::initFileTree()
-{
-    if (!m_comGuestSession.isOk() || m_comGuestSession.GetStatus() != KGuestSessionStatus_Started)
-        return;
-    if (!m_pGuestFileTree)
-        return;
-    m_pGuestFileTree->clear();
-    QString rootPath("/");
 
-
-
-    CGuestFsObjInfo fsObjectInfo = m_comGuestSession.FsObjQueryInfo(rootPath, false /*BOOL aFollowSymlinks*/);
-    if (!fsObjectInfo.isOk())
-    {
-        m_pLogOutput->appendPlainText("Cannot get file object info");
-        return;
-    }
-    const QStringList &strList = getFsObjInfoStringList<CGuestFsObjInfo>(fsObjectInfo);
-
-    UIGuestControlFileTreeItem *rootItem = new UIGuestControlFileTreeItem(m_pGuestFileTree, 0, rootPath, strList);
-    rootItem->setIsDirectory(true);
-    rootItem->setIcon(0, QIcon(":/sf_32px.png"));
-    rootItem->setIsOpened(false);
-    rootItem->setExpanded(true);
-
-    readDirectory(rootPath, rootItem, rootItem->depth(), m_iMaxRecursionDepth);
-    if(m_pGuestFileTree)
-        m_pGuestFileTree->update();
-}
-
-void UIGuestControlFileManager::readDirectory(const QString& strPath,
-                                              UIGuestControlFileTreeItem* treeParent,
-                                              const int &startDepth,
-                                              int iMaxDepth)
-{
-    if (!treeParent || treeParent->depth() - startDepth >= iMaxDepth || strPath.isEmpty())
-        return;
-    QVector<KDirectoryOpenFlag> flag;
-    flag.push_back(KDirectoryOpenFlag_None);
-    CGuestDirectory directory;
-    directory = m_comGuestSession.DirectoryOpen(strPath, /*aFilter*/ "", flag);
-    treeParent->setIsOpened(true);
-    if (directory.isOk())
-    {
-        CFsObjInfo fsInfo = directory.Read();
-        while (fsInfo.isOk())
-        {
-            if (fsInfo.GetName() != "."
-                && fsInfo.GetName() != "..")
-            {
-                QString path(strPath);
-                if (path.at(path.length() -1 ) != '/')
-                    path.append(QString("/").append(fsInfo.GetName()));
-                else
-                    path.append(fsInfo.GetName());
-                UIGuestControlFileTreeItem *treeItem =
-                    new UIGuestControlFileTreeItem(treeParent, treeParent->depth() + 1 /*depth */,
-                                                   path, getFsObjInfoStringList<CFsObjInfo>(fsInfo));
-                if (fsInfo.GetType() == KFsObjType_Directory)
-                {
-                    treeItem->setIsDirectory(true);
-                    treeItem->setIcon(0, QIcon(":/sf_32px.png"));
-                    treeItem->setIsOpened(false);
-                    readDirectory(path, treeItem, startDepth, iMaxDepth);
-                }
-                else
-                {
-                    treeItem->setIsDirectory(false);
-                    treeItem->setIsOpened(false);
-                    treeItem->setIcon(0, QIcon(":/vm_open_filemanager_16px"));
-                    treeItem->setHidden(true);
-                }
-            }
-
-            fsInfo = directory.Read();
-        }
-        directory.Close();
-    }
-}
 
 bool UIGuestControlFileManager::createSession(const QString& strUserName, const QString& strPassword,
                                               const QString& strDomain /* not used currently */)
