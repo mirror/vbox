@@ -1,7 +1,9 @@
 /* $Id$ */
 /** @file
-* VBox Global COM Class implementation.
-*/
+ * VBox Global COM Class implementation.
+ *
+ * @todo r=bird: Why is this file in src-all? Shouldn't it be in src-global/win/?!?
+ */
 
 /*
  * Copyright (C) 2017-2018 Oracle Corporation
@@ -15,6 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 #include "Logging.h"
 #include "VirtualBoxClientListImpl.h"
 
@@ -24,12 +27,14 @@
 
 ////////////////// CClientListWatcher implementation /////////////////
 
-/*
-* Helper class that tracks existance of registered client processes.
-* It removes the client process from client list if it shutdowned unexpectedly,
-* without calling DeRegisterClient().
-* Also it notifies VBoxSVC and VBoxSDS that this client process finished.
-*/
+/**
+ * Helper class that tracks existance of registered client processes.
+ *
+ * It removes the client process from client list if it shutdowned unexpectedly,
+ * without calling DeRegisterClient().
+ *
+ * It also notifies VBoxSVC and VBoxSDS that this client process finished.
+ */
 class CClientListWatcher
 {
 public:
@@ -47,7 +52,7 @@ protected:
     RTSEMEVENT                  m_wakeUpWatcherEvent;
 };
 
-volatile RTTHREAD CClientListWatcher::m_WatcherThread = NULL;
+volatile RTTHREAD CClientListWatcher::m_WatcherThread = NULL; /** @todo r=bird: Wrong prefix for a static variable (s_)*/
 
 CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientListCritSect)
     : m_clientList(list), m_clientListCritSect(clientListCritSect)
@@ -56,17 +61,18 @@ CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientLis
 
     if (ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::m_WatcherThread) != NULL)
     {
-        LogRelFunc(("Error: watcher thread already created.\n"));
+        LogRelFunc(("Error: Watcher thread already created!\n"));
         return;
     }
 
     int rc = RTSemEventCreate(&m_wakeUpWatcherEvent);
     if (RT_FAILURE(rc))
     {
-        LogRelFunc(("Error: failed to create wake up event for watcher thread. %Rrs \n", rc));
+        LogRelFunc(("Error: Failed to create wake up event for watcher thread: %Rrs\n", rc));
         return;
     }
 
+    /** @todo r=bird: Hanging indent on '(', please. */
     RTTHREAD watcherThread;
     rc = RTThreadCreate(&watcherThread,
         (PFNRTTHREAD)CClientListWatcher::WatcherWorker,
@@ -81,7 +87,7 @@ CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientLis
         LogRelFunc(("Created client list watcher thread.\n"));
     }
     else
-        LogRelFunc(("Failed to create client list watcher thread %Rrs \n", rc));
+        LogRelFunc(("Failed to create client list watcher thread: %Rrs\n", rc));
 }
 
 
@@ -98,15 +104,18 @@ CClientListWatcher::~CClientListWatcher()
 
     rc = RTThreadWait(CClientListWatcher::m_WatcherThread, RT_INDEFINITE_WAIT, NULL);
     if (RT_FAILURE(rc))
-        LogRelFunc(("Error: watcher thread didn't finished. Possible thread leak. %Rrs \n", rc));
+        LogRelFunc(("Error: watcher thread didn't finished. Possible thread leak. %Rrs\n", rc));
     else
-        LogRelFunc(("Watcher thread finished. %\n"));
+        LogRelFunc(("Watcher thread finished.\n"));
 
     ASMAtomicWriteNullPtr((void* volatile*)&CClientListWatcher::m_WatcherThread);
 
     RTSemEventDestroy(m_wakeUpWatcherEvent);
 }
 
+/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
+/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
+/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
 
 /*
 * Notifies the VBoxSDS that API client list is empty.
@@ -122,15 +131,18 @@ void CClientListWatcher::NotifySDSAllClientsFinished()
     * Connect to VBoxSDS.
     */
     HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxSDS, NULL, CLSCTX_LOCAL_SERVER, IID_IVirtualBoxSDS,
-        (void **)ptrVirtualBoxSDS.asOutParam());
+                                   (void **)ptrVirtualBoxSDS.asOutParam());
     if (SUCCEEDED(hrc))
     {
-        LogRelFunc(("Notify SDS that all API clients finished\n"));
+        LogRelFunc(("Notifying SDS that all API clients finished...\n"));
         ptrVirtualBoxSDS->NotifyClientsFinished();
     }
 }
 
 
+/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
+/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
+/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
 /*
 * Deregister all staled VBoxSVC through VBoxSDS and forcebly close VBoxSVC process
 * Parameters:
@@ -142,7 +154,7 @@ DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *p
     Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::m_WatcherThread));
     LogRelFunc(("Enter watcher thread\n"));
 
-    CClientListWatcher* pThis = (CClientListWatcher*)pvUser;
+    CClientListWatcher *pThis = (CClientListWatcher *)pvUser;
     Assert(pThis);
 
     ASMAtomicWriteBool(&pThis->m_fWatcherRunning, true);
@@ -158,6 +170,16 @@ DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *p
         TClientSet::iterator end = pThis->m_clientList.end();
         for (; it != end; ++it)
         {
+/** @todo r=bird: this is a bit inefficient because RTProcWait will try open
+ * all the process each time.  Would be better have registerClient open the
+ * process and just to a WaitForSingleObject here (if you want to be really
+ * performant, you could keep wait arrays of 64 objects each and use
+ * WaitForMultipleObjects on each of them).
+ *
+ * And please, don't give me the portability argument here, because this
+ * RTProcWait call only works on windows.  We're not the parent of any of these
+ * clients and can't wait on them.
+ */
             // check status of client process by his pid
             int rc = RTProcWait(*it, RTPROCWAIT_FLAGS_NOBLOCK, NULL);
             if (rc == VERR_PROCESS_NOT_FOUND)
@@ -185,6 +207,9 @@ DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *p
          * Wait for two second before next iteration.
          * Destructor will wake up it immidietely.
          */
+/** @todo r=bird: This is where wait for multiple objects would be really nice, as
+ * you could wait on the first 63 client processes here in addition to the event.
+ * That would speed up the response time. */
         RTSemEventWait(pThis->m_wakeUpWatcherEvent, 2000);
     }
     LogRelFunc(("Finish watcher thread.  Client list size: %d\n", pThis->m_clientList.size()));
@@ -196,14 +221,16 @@ DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *p
 HRESULT VirtualBoxClientList::FinalConstruct()
 {
     int rc = RTCritSectRwInit(&m_MapCritSect);
-    Assert(RT_SUCCESS(rc));
-    if (RT_FAILURE(rc))
-    {
-        LogRelFunc(("Error: creating client list critical section. %Rrs\n", rc));
-        return E_FAIL;
-    }
+    AssertLogRelRCReturn(rc, E_FAIL);
 
-    m_pWatcher = new CClientListWatcher(m_ClientSet, m_MapCritSect);
+    try
+    {
+        m_pWatcher = new CClientListWatcher(m_ClientSet, m_MapCritSect);
+    }
+    catch (std::bad_alloc)
+    {
+        AssertLogRelFailedReturn(E_OUTOFMEMORY);
+    }
     Assert(m_pWatcher);
 
     AutoInitSpan autoInitSpan(this);
@@ -224,13 +251,15 @@ void VirtualBoxClientList::FinalRelease()
     }
 
     int rc = RTCritSectRwDelete(&m_MapCritSect);
-    Assert(RT_SUCCESS(rc));
-    NOREF(rc);
+    AssertRC(rc);
 
     BaseFinalRelease();
-    LogRelFunc(("VirtualBoxClientList released. res=%d\n", rc));
+    LogRelFunc(("VirtualBoxClientList released.\n"));
 }
 
+/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
+/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
+/** @todo r=bird: DOXYGEN COMMENTS! DON'T FORGET IT!! */
 /*
 * Deregister API client to add it to API client list
 * API client process calls this function at start to include this process to client list
@@ -239,47 +268,64 @@ void VirtualBoxClientList::FinalRelease()
 HRESULT VirtualBoxClientList::registerClient(LONG aPid)
 {
     int rc = RTCritSectRwEnterExcl(&m_MapCritSect);
-    Assert(RT_SUCCESS(rc));
-    NOREF(rc);
+    AssertRCReturn(rc, E_FAIL);
     Assert(m_pWatcher);
 
-    m_ClientSet.insert(aPid);
+    try
+    {
+        m_ClientSet.insert(aPid);
+    }
+    catch (std::bad_alloc)
+    {
+        RTCritSectRwLeaveExcl(&m_MapCritSect);
+        AssertLogRelFailedReturn(E_OUTOFMEMORY);
+    }
 
     rc = RTCritSectRwLeaveExcl(&m_MapCritSect);
-    Assert(RT_SUCCESS(rc));
-    LogRelFunc(("VirtualBoxClientList client registered. pid: %d res=%d\n", aPid, rc));
+    AssertRC(rc);
+    LogRelFunc(("VirtualBoxClientList client registered. pid: %d\n", aPid, rc));
     return S_OK;
 }
 
 
-/*
-* Returns list of api client processes.
-* Result list contains PID of all clients exept VBoxSDS and VBoxSVC
-*   aEnvironment - reference to clients list that should be filled here
-*
-*/
+/**
+ * Returns PIDs of the API client processes.
+ *
+ * @returns COM status code.
+ * @param   aEnvironment    Reference to vector that is to receive the PID list.
+ *
+ * @todo r=bird: There is no obvious reason why this is called 'aEnvironment', a
+ *               more natural name would be 'aPids'.
+ */
 HRESULT VirtualBoxClientList::getClients(std::vector<LONG> &aEnvironment)
 {
     int rc = RTCritSectRwEnterShared(&m_MapCritSect);
-    Assert(RT_SUCCESS(rc));
-    NOREF(rc);
-    if (RT_SUCCESS(rc))
+    AssertLogRelRCReturn(rc, E_FAIL);
+    if (!m_ClientSet.empty())
     {
-        if (!m_ClientSet.empty())
+        Assert(aEnvironment.empty());
+        size_t const cClients = m_ClientSet.size();
+        try
         {
-            Assert(aEnvironment.empty());
-            aEnvironment.reserve(m_ClientSet.size());
+            aEnvironment.reserve(cClients);
             aEnvironment.assign(m_ClientSet.begin(), m_ClientSet.end());
-            Assert(aEnvironment.size());
         }
-        else
+        catch (std::bad_alloc)
         {
-            LogFunc(("Client list is empty\n"));
+            RTCritSectRwLeaveShared(&m_MapCritSect);
+            AssertLogRelMsgFailedReturn(("cClients=%zu\n", cClients), E_OUTOFMEMORY);
         }
-
-        rc = RTCritSectRwLeaveShared(&m_MapCritSect);
-        Assert(RT_SUCCESS(rc));
+        Assert(aEnvironment.size() == cClients);
     }
-    LogRelFunc(("VirtualBoxClientList client list requested. res=%d\n", rc));
+    else
+    {
+        LogFunc(("Client list is empty\n"));
+    }
+
+    rc = RTCritSectRwLeaveShared(&m_MapCritSect);
+    AssertRC(rc);
+
+    LogRelFunc(("VirtualBoxClientList client list requested.\n"));
     return S_OK;
 }
+

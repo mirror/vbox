@@ -296,7 +296,7 @@ if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
  	src-all/AutoCaller.cpp \
  	src-all/VirtualBoxBase.cpp \
  	src-all/VirtualBoxErrorInfoImpl.cpp \
-    src-all/VirtualBoxClientListImpl.cpp \
+ 	src-all/VirtualBoxClientListImpl.cpp \
  	src-global/VirtualBoxSDSImpl.cpp
  VBoxSDS_SOURCES.win = \
  	src-global/win/VBoxSDS.cpp \
