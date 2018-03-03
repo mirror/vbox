@@ -168,8 +168,9 @@ typedef struct NEMCPU
     uint32_t                    u32Magic;
 #ifdef RT_OS_WINDOWS
 # ifdef NEM_WIN_USE_OUR_OWN_RUN_API
-    /** We've got a message pending (NEM_WIN_MSG_STATE_XXX). */
-    uint8_t                     bMsgState;
+    /** The VID_MSHAGN_F_XXX flags.
+     * Either VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE or zero. */
+    uint32_t                    fHandleAndGetFlags;
     /** What VidMessageSlotMap returns and is used for passing exit info. */
     RTR3PTR                     pvMsgSlotMapping;
 # endif
@@ -209,24 +210,6 @@ typedef NEMCPU *PNEMCPU;
 #define NEMCPU_MAGIC            UINT32_C(0x4d454e20)
 /** NEMCPU::u32Magic value after termination. */
 #define NEMCPU_MAGIC_DEAD       UINT32_C(0xdead2222)
-
-
-#if defined(RT_OS_WINDOWS) && defined(NEM_WIN_USE_OUR_OWN_RUN_API)
-/** @name NEM_WIN_MSG_STATE_XXX - Windows message handling state.
- * @{ */
-/** The CPU has not been started. */
-# define NEM_WIN_MSG_STATE_STOPPED              UINT8_C(0x00)
-/** The CPU has been started, no messages are pending. */
-# define NEM_WIN_MSG_STATE_STARTED              UINT8_C(0x01)
-/** Message is pending and needs to be ACKed. */
-# define NEM_WIN_MSG_STATE_PENDING_MSG          UINT8_C(0x02)
-/** Both a message and execution stopping is pending.  We need to ACK the
- * current message and get the stop message, then ACK the stop message before
- *  the CPU can be started again.  */
-# define NEM_WIN_MSG_STATE_PENDING_STOP_AND_MSG UINT8_C(0x03)
-/** @} */
-#endif
-
 
 
 #ifdef IN_RING0

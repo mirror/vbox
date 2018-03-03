@@ -209,6 +209,11 @@ static const HV_X64_INTERCEPT_MESSAGE_HEADER *g_pX64MsgHdr;
 # define WHvCancelRunVirtualProcessor               g_pfnWHvCancelRunVirtualProcessor
 # define WHvGetVirtualProcessorRegisters            g_pfnWHvGetVirtualProcessorRegisters
 # define WHvSetVirtualProcessorRegisters            g_pfnWHvSetVirtualProcessorRegisters
+
+# define VidMessageSlotHandleAndGetNext             g_pfnVidMessageSlotHandleAndGetNext
+# define VidStartVirtualProcessor                    g_pfnVidStartVirtualProcessor
+# define VidStopVirtualProcessor                    g_pfnVidStopVirtualProcessor
+
 #endif
 
 /** WHV_MEMORY_ACCESS_TYPE names */
@@ -1336,9 +1341,9 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
     }
 }
 
+#ifndef NEM_WIN_USE_OUR_OWN_RUN_API
 
-#ifdef LOG_ENABLED
-
+# ifdef LOG_ENABLED
 /**
  * Log the full details of an exit reason.
  *
@@ -1391,7 +1396,7 @@ static void nemR3WinLogWHvExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
             fExitCtx = fExitInstr = true;
             break;
 
-# if 0
+#  if 0
         case WHvRunVpExitReasonUnrecoverableException:
         case WHvRunVpExitReasonInvalidVpRegisterValue:
         case WHvRunVpExitReasonUnsupportedFeature:
@@ -1409,7 +1414,7 @@ static void nemR3WinLogWHvExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
             WHV_UNRECOVERABLE_EXCEPTION_CONTEXT UnrecoverableException;
             WHV_X64_UNSUPPORTED_FEATURE_CONTEXT UnsupportedFeature;
             WHV_RUN_VP_CANCELED_CONTEXT CancelReason;
-#endif
+#  endif
 
         case WHvRunVpExitReasonNone:
             Log2(("Exit: No reason\n"));
@@ -1454,8 +1459,31 @@ static void nemR3WinLogWHvExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
                   pExitReason->IoPortAccess.InstructionByteCount, pExitReason->IoPortAccess.InstructionBytes));
     }
 }
+# endif /* LOG_ENABLED */
 
-#endif /* LOG_ENABLED */
+
+/**
+ * Advances the guest RIP and clear EFLAGS.RF.
+ *
+ * This may clear VMCPU_FF_INHIBIT_INTERRUPTS.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            The CPU context to update.
+ * @param   pExitCtx        The exit context.
+ */
+DECLINLINE(void) nemR3WinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, PCPUMCTX pCtx, WHV_VP_EXIT_CONTEXT const *pExitCtx)
+{
+    /* Advance the RIP. */
+    Assert(pExitCtx->InstructionLength > 0 && pExitCtx->InstructionLength < 16);
+    pCtx->rip += pExitCtx->InstructionLength;
+    pCtx->rflags.Bits.u1RF = 0;
+
+    /* Update interrupt inhibition. */
+    if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    { /* likely */ }
+    else if (pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+}
 
 
 static VBOXSTRICTRC nemR3WinWHvHandleHalt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -1466,7 +1494,7 @@ static VBOXSTRICTRC nemR3WinWHvHandleHalt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
-#ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
+# ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
 /**
  * @callback_method_impl{FNPGMPHYSNEMENUMCALLBACK,
  *      Hack to unmap all pages when/before we run into quota (WHv only).}
@@ -1492,7 +1520,7 @@ static DECLCALLBACK(int) nemR3WinWHvUnmapOnePageCallback(PVM pVM, PVMCPU pVCpu, 
         ASMAtomicDecU32(&pVM->nem.s.cMappedPages);
     return VINF_SUCCESS;
 }
-#endif /* !NEM_WIN_USE_HYPERCALLS_FOR_PAGES */
+# endif /* !NEM_WIN_USE_HYPERCALLS_FOR_PAGES */
 
 
 /**
@@ -1586,7 +1614,7 @@ static VBOXSTRICTRC nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
             rcStrict = IOMIOPortWrite(pVM, pVCpu, pIoPortCtx->PortNumber, (uint32_t)pIoPortCtx->Rax & fAndMask,
                                       pIoPortCtx->AccessInfo.AccessSize);
             if (IOM_SUCCESS(rcStrict))
-                nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pIoPortCtx->VpContext);
+                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pIoPortCtx->VpContext);
         }
         else
         {
@@ -1596,7 +1624,7 @@ static VBOXSTRICTRC nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
             if (IOM_SUCCESS(rcStrict))
             {
                 pCtx->eax = (pCtx->eax & ~fAndMask) | (uValue & fAndMask);
-                nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pIoPortCtx->VpContext);
+                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pIoPortCtx->VpContext);
             }
         }
     }
@@ -1691,13 +1719,13 @@ static VBOXSTRICTRC nemR3WinWHvHandleInvalidState(PVM pVM, PVMCPU pVCpu, PCPUMCT
 
 VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
 {
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     if (LogIs3Enabled())
     {
         Log3(("nemR3NativeRunGC: Entering #%u\n", pVCpu->idCpu));
         nemHCWinLogState(pVM, pVCpu);
     }
-#endif
+# endif
 
     /*
      * The run loop.
@@ -1724,10 +1752,6 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
         if (   !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
             && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         {
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
-            int rc2 = nemHCWinRunVirtualProcessor(pVM, pVCpu, &ExitReason, sizeof(ExitReason));
-            AssertRCBreakStmt(rc2, rcStrict = rc2);
-#else
             Log8(("Calling WHvRunVirtualProcessor\n"));
             VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED);
             HRESULT hrc = WHvRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, &ExitReason, sizeof(ExitReason));
@@ -1738,7 +1762,6 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
                                      rcStrict = VERR_INTERNAL_ERROR);
             Log2(("WHvRunVirtualProcessor -> %#x; exit code %#x (%d) (cpu status %u)\n",
                   hrc, ExitReason.ExitReason, ExitReason.ExitReason, nemR3WinCpuGetRunningStatus(pVCpu) ));
-#endif
         }
         else
         {
@@ -1752,7 +1775,7 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
         rc2 = nemHCWinCopyStateFromHyperV(pVM, pVCpu, pCtx);
         AssertRCBreakStmt(rc2, rcStrict = rc2);
 
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
         /*
          * Do some logging.
          */
@@ -1760,9 +1783,9 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
             nemR3WinLogWHvExitReason(&ExitReason);
         if (LogIs3Enabled())
             nemHCWinLogState(pVM, pVCpu);
-#endif
+# endif
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
         /* Assert that the VpContext field makes sense. */
         switch (ExitReason.ExitReason)
         {
@@ -1791,7 +1814,7 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
                 break;
             default: break; /* shut up compiler. */
         }
-#endif
+# endif
 
         /*
          * Deal with the exit.
@@ -1858,7 +1881,7 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
             break;
         }
 
-#ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
+# ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
         /* Hack alert! */
         uint32_t const cMappedPages = pVM->nem.s.cMappedPages;
         if (cMappedPages < 4000)
@@ -1868,7 +1891,7 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
             PGMPhysNemEnumPagesByState(pVM, pVCpu, NEM_WIN_PAGE_STATE_READABLE, nemR3WinWHvUnmapOnePageCallback, NULL);
             Log(("nemR3NativeRunGC: Unmapped all; cMappedPages=%u -> %u\n", cMappedPages, pVM->nem.s.cMappedPages));
         }
-#endif
+# endif
 
         /* If any FF is pending, return to the EM loops.  That's okay for the
            current sledgehammer approach. */
@@ -1883,10 +1906,12 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
     return rcStrict;
 }
 
+#endif /* !NEM_WIN_USE_OUR_OWN_RUN_API */
+
 
 VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 {
-#if 1
+#ifndef NEM_WIN_USE_OUR_OWN_RUN_API
     return nemR3WinWHvRunGC(pVM, pVCpu);
 #elif 1
     return nemHCWinRunGC(pVM, pVCpu);

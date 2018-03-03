@@ -256,28 +256,30 @@ struc CPUMCTX
     .pXStateRC      RTRCPTR_RES 1
     .aoffXState         resw    64
     .fWorldSwitcher     resd    1
+    .fExtrn             resq    1
     alignb 8
     .hwvirt.svm.uMsrHSavePa            resq          1
     .hwvirt.svm.GCPhysVmcb             resq          1
     .hwvirt.svm.pVmcbR0                RTR0PTR_RES   1
+    alignb 8
     .hwvirt.svm.pVmcbR3                RTR3PTR_RES   1
-%if HC_ARCH_BITS == 32
-    .hwvirt.svm.abPadding0             resb          8
-%endif
+    alignb 8
     .hwvirt.svm.HostState              resb        184
     .hwvirt.svm.u16Padding0            resw          1
     .hwvirt.svm.cPauseFilter           resw          1
     .hwvirt.svm.cPauseFilterThreshold  resw          1
     .hwvirt.svm.fInterceptEvents       resb          1
     .hwvirt.svm.fHMCachedVmcb          resb          1
+    alignb 8
     .hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES   1
+    alignb 8
     .hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES   1
+    alignb 8
     .hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES   1
+    alignb 8
     .hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES   1
+    alignb 8
     .hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES  1
-%if HC_ARCH_BITS == 32
-    .hwvirt.svm.abPadding2             resb          16
-%endif
     .hwvirt.fLocalForcedActions        resd          1
     .hwvirt.fGif                       resb          1
     alignb 64

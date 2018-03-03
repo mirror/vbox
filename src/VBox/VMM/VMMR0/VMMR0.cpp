@@ -1996,9 +1996,9 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             break;
 
         case VMMR0_DO_NEM_EXPORT_STATE:
-            if (pReqHdr || idCpu == NIL_VMCPUID)
+            if (u64Arg || pReqHdr || idCpu == NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            rc = NEMR0ExportState(pGVM, pVM, idCpu, u64Arg);
+            rc = NEMR0ExportState(pGVM, pVM, idCpu);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 

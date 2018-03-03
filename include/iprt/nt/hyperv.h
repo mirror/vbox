@@ -1439,7 +1439,7 @@ typedef struct
         /** Common header for X64 intercept messages. */
         HV_X64_INTERCEPT_MESSAGE_HEADER     X64InterceptHeader;
         /** HvMessageTypeGpaIntercept, HvMessageTypeUnmappedGpa. */
-        HV_X64_MEMORY_INTERCEPT_MESSAGE     X86MemoryIntercept;
+        HV_X64_MEMORY_INTERCEPT_MESSAGE     X64MemoryIntercept;
         /** HvMessageTypeX64IoPortIntercept */
         HV_X64_IO_PORT_INTERCEPT_MESSAGE    X64IoPortIntercept;
         /** HvMessageTypeX64ExceptionIntercept */

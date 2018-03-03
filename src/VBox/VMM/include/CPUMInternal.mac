@@ -229,14 +229,14 @@ struc CPUMCPU
     .Guest.pXStateRC      RTRCPTR_RES 1
     .Guest.aoffXState         resw    64
     .Guest.fWorldSwitcher     resd    1
+    .Guest.fExtrn             resq    1
     alignb 8
     .Guest.hwvirt.svm.uMsrHSavePa            resq         1
     .Guest.hwvirt.svm.GCPhysVmcb             resq         1
     .Guest.hwvirt.svm.pVmcbR0                RTR0PTR_RES  1
+    alignb 8
     .Guest.hwvirt.svm.pVmcbR3                RTR3PTR_RES  1
-%if HC_ARCH_BITS == 32
-    .Guest.hwvirt.svm.abPadding0             resb         8
-%endif
+    alignb 8
     .Guest.hwvirt.svm.HostState              resb         184
     .Guest.hwvirt.svm.u16Padding0            resw         1
     .Guest.hwvirt.svm.cPauseFilter           resw         1
@@ -244,13 +244,14 @@ struc CPUMCPU
     .Guest.hwvirt.svm.fInterceptEvents       resb         1
     .Guest.hwvirt.svm.fHMCachedVmcb          resb         1
     .Guest.hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES  1
+    alignb 8
     .Guest.hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES  1
+    alignb 8
     .Guest.hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES  1
+    alignb 8
     .Guest.hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES  1
+    alignb 8
     .Guest.hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES 1
-%if HC_ARCH_BITS == 32
-    .Guest.hwvirt.svm.abPadding2             resb         16
-%endif
     .Guest.hwvirt.fLocalForcedActions        resd         1
     .Guest.hwvirt.fGif                       resb         1
     alignb 64
@@ -515,14 +516,14 @@ struc CPUMCPU
     .Hyper.pXStateRC      RTRCPTR_RES 1
     .Hyper.aoffXState         resw    64
     .Hyper.fWorldSwitcher     resd    1
+    .Hyper.fExtrn             resq    1
     alignb 8
     .Hyper.hwvirt.svm.uMsrHSavePa            resq         1
     .Hyper.hwvirt.svm.GCPhysVmcb             resq         1
     .Hyper.hwvirt.svm.pVmcbR0                RTR0PTR_RES  1
+    alignb 8
     .Hyper.hwvirt.svm.pVmcbR3                RTR3PTR_RES  1
-%if HC_ARCH_BITS == 32
-    .Hyper.hwvirt.svm.abPadding0             resb         8
-%endif
+    alignb 8
     .Hyper.hwvirt.svm.HostState              resb         184
     .Hyper.hwvirt.svm.u16Padding0            resw         1
     .Hyper.hwvirt.svm.cPauseFilter           resw         1
@@ -530,13 +531,14 @@ struc CPUMCPU
     .Hyper.hwvirt.svm.fInterceptEvents       resb         1
     .Hyper.hwvirt.svm.fHMCachedVmcb          resb         1
     .Hyper.hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES  1
+    alignb 8
     .Hyper.hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES  1
+    alignb 8
     .Hyper.hwvirt.svm.pvIoBitmapR0           RTR0PTR_RES  1
+    alignb 8
     .Hyper.hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES  1
+    alignb 8
     .Hyper.hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES 1
-%if HC_ARCH_BITS == 32
-    .Hyper.hwvirt.svm.abPadding2             resb         16
-%endif
     .Hyper.hwvirt.fLocalForcedActions        resd         1
     .Hyper.hwvirt.fGif                       resb         1
     alignb 64

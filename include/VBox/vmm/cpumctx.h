@@ -472,52 +472,65 @@ typedef struct CPUMCTX
 
     /** 0x2d4 - World switcher flags, CPUMCTX_WSF_XXX. */
     uint32_t                    fWorldSwitcher;
+    /** 0x2d8 - Externalized state tracker, CPUMCTX_EXTRN_XXX.
+     * Currently only used internally in NEM/win.  */
+    uint64_t                    fExtrn;
 
-    /** 728 - Hardware virtualization state.   */
+    /** 0x2e0 - Hardware virtualization state.   */
     struct
     {
         union   /* no tag! */
         {
             struct
             {
-                /** 728 - MSR holding physical address of the Guest's Host-state. */
+                /** 0x2e0 - MSR holding physical address of the Guest's Host-state. */
                 uint64_t            uMsrHSavePa;
-                /** 736 - Guest physical address of the nested-guest VMCB. */
+                /** 0x2e8 - Guest physical address of the nested-guest VMCB. */
                 RTGCPHYS            GCPhysVmcb;
-                /** 744 - Cache of the nested-guest VMCB - R0 ptr. */
+                /** 0x2f0 - Cache of the nested-guest VMCB - R0 ptr. */
                 R0PTRTYPE(PSVMVMCB) pVmcbR0;
-                /** 752 / 748 - Cache of the nested-guest VMCB - R3 ptr. */
+#if HC_ARCH_BITS == 32
+                uint32_t            uVmcbR0Padding;
+#endif
+                /** 0x2f8 - Cache of the nested-guest VMCB - R3 ptr. */
                 R3PTRTYPE(PSVMVMCB) pVmcbR3;
 #if HC_ARCH_BITS == 32
-                /** NA / 752 - Padding. */
-                uint8_t             abPadding0[8];
+                uint32_t            uVmcbR3Padding;
 #endif
-                /** 760 - Guest's host-state save area. */
+                /** 0x300 - Guest's host-state save area. */
                 SVMHOSTSTATE        HostState;
-                /** 944 - Padding. */
+                /** 0x3b8 - Padding. */
                 uint16_t            u16Padding0;
-                /** 946 - Pause filter count. */
+                /** 0x3ba - Pause filter count. */
                 uint16_t            cPauseFilter;
-                /** 948 - Pause filter count. */
+                /** 0x3bc - Pause filter count. */
                 uint16_t            cPauseFilterThreshold;
-                /** 950 - Whether the injected event is subject to event intercepts. */
+                /** 0x3be - Whether the injected event is subject to event intercepts. */
                 bool                fInterceptEvents;
-                /** 951 - Whether parts of the VMCB are cached (and potentially modified) by HM. */
+                /** 0x3bf - Whether parts of the VMCB are cached (and potentially modified) by HM. */
                 bool                fHMCachedVmcb;
-                /** 952 - MSR permission bitmap - R0 ptr. */
+                /** 0x3c0 - MSR permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)   pvMsrBitmapR0;
-                /** 960 / 956 - MSR permission bitmap - R3 ptr. */
-                R3PTRTYPE(void *)   pvMsrBitmapR3;
-                /** 968 / 960 - IO permission bitmap - R0 ptr. */
-                R0PTRTYPE(void *)   pvIoBitmapR0;
-                /** 976 / 964 - IO permission bitmap - R3 ptr. */
-                R3PTRTYPE(void *)   pvIoBitmapR3;
-                /** 984 / 968 - Host physical address of the nested-guest VMCB.  */
-                RTHCPHYS            HCPhysVmcb;
 #if HC_ARCH_BITS == 32
-                /** NA / 976 - Padding. */
-                uint8_t             abPadding2[16];
+                uint32_t            uvMsrBitmapR0Padding;
 #endif
+                /** 0x3c8 - MSR permission bitmap - R3 ptr. */
+                R3PTRTYPE(void *)   pvMsrBitmapR3;
+#if HC_ARCH_BITS == 32
+                uint32_t            uvMsrBitmapR3Padding;
+#endif
+                /** 0x3d0 - IO permission bitmap - R0 ptr. */
+                R0PTRTYPE(void *)   pvIoBitmapR0;
+#if HC_ARCH_BITS == 32
+                uint32_t            uIoBitmapR0Padding;
+#endif
+                /** 0x3d8 - IO permission bitmap - R3 ptr. */
+                R3PTRTYPE(void *)   pvIoBitmapR3;
+#if HC_ARCH_BITS == 32
+                uint32_t            uIoBitmapR3Padding;
+#endif
+                /** 0x3e0 - Host physical address of the nested-guest VMCB.  */
+                RTHCPHYS            HCPhysVmcb;
             } svm;
 #if 0
             struct
@@ -526,13 +539,12 @@ typedef struct CPUMCTX
 #endif
         } CPUM_UNION_NM(s);
 
-        /** 992 - A subset of force flags that are preserved while running
-         *  the nested-guest. */
+        /** 0x3e8 - A subset of force flags that are preserved while running the nested-guest. */
         uint32_t                fLocalForcedActions;
-        /** 996 - Global interrupt flag (always true on nested VMX). */
+        /** 0x3f0 - Global interrupt flag (always true on nested VMX). */
         bool                    fGif;
-        /** 997 - Padding. */
-        uint8_t                 abPadding1[27];
+        /** 0x3f1 - Padding. */
+        uint8_t                 abPadding1[19];
     } hwvirt;
     /** @} */
 } CPUMCTX;
@@ -587,22 +599,16 @@ AssertCompileMemberOffset(CPUMCTX,                  pXStateR0, 576);
 AssertCompileMemberOffset(CPUMCTX,                  pXStateR3, 584);
 AssertCompileMemberOffset(CPUMCTX,                  pXStateRC, 592);
 AssertCompileMemberOffset(CPUMCTX,                 aoffXState, 596);
-AssertCompileMemberOffset(CPUMCTX, hwvirt, 728);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.uMsrHSavePa,            728);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.GCPhysVmcb,             736);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,                744);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR3,                HC_ARCH_BITS == 64 ? 752 : 748);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HostState,              760);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilter,           946);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilterThreshold,  948);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fInterceptEvents,       950);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,          952);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR3,          HC_ARCH_BITS == 64 ? 960 : 956);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,           HC_ARCH_BITS == 64 ? 968 : 960);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR3,           HC_ARCH_BITS == 64 ? 976 : 964);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HCPhysVmcb,             HC_ARCH_BITS == 64 ? 984 : 968);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions,        992);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.fGif,                       996);
+AssertCompileMemberOffset(CPUMCTX, hwvirt, 0x2e0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.uMsrHSavePa,            0x2e0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,                0x2f0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR3,                0x2f8);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HostState,              0x300);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilter,           0x3ba);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,          0x3c0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR3,           0x3d8);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HCPhysVmcb,             0x3e0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions,        0x3e8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,       8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0, 8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,  8);
@@ -749,6 +755,132 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
 #define CPUMCTX_WSF_IBPB_EXIT           RT_BIT_32(0)
 /** Touch IA32_PRED_CMD.IBPB on VM entry. */
 #define CPUMCTX_WSF_IBPB_ENTRY          RT_BIT_32(1)
+/** @} */
+
+/** @name CPUMCTX_EXTRN_XXX
+ * Used to parts of the CPUM state that is externalized and needs fetching
+ * before use.
+ *
+ * @{ */
+/** External state keeper: Invalid.  */
+#define CPUMCTX_EXTRN_KEEPER_INVALID            UINT64_C(0x0000000000000000)
+/** External state keeper: HM. */
+#define CPUMCTX_EXTRN_KEEPER_HM                 UINT64_C(0x0000000000000001)
+/** External state keeper: NEM. */
+#define CPUMCTX_EXTRN_KEEPER_NEM                UINT64_C(0x0000000000000002)
+/** External state keeper: REM. */
+#define CPUMCTX_EXTRN_KEEPER_REM                UINT64_C(0x0000000000000003)
+/** External state keeper mask. */
+#define CPUMCTX_EXTRN_KEEPER_MASK               UINT64_C(0x0000000000000003)
+
+/** The RIP register value is kept externally. */
+#define CPUMCTX_EXTRN_RIP                       UINT64_C(0x0000000000000004)
+/** The CS register values are kept externally. */
+#define CPUMCTX_EXTRN_CS                        UINT64_C(0x0000000000000008)
+/** The RFLAGS register values are kept externally. */
+#define CPUMCTX_EXTRN_RFLAGS                    UINT64_C(0x0000000000000010)
+
+/** The RAX register value is kept externally. */
+#define CPUMCTX_EXTRN_RAX                       UINT64_C(0x0000000000000020)
+/** The RCX register value is kept externally. */
+#define CPUMCTX_EXTRN_RCX                       UINT64_C(0x0000000000000040)
+/** The RDX register value is kept externally. */
+#define CPUMCTX_EXTRN_RDX                       UINT64_C(0x0000000000000080)
+/** The RBX register value is kept externally. */
+#define CPUMCTX_EXTRN_RBX                       UINT64_C(0x0000000000000100)
+/** The RSP register value is kept externally. */
+#define CPUMCTX_EXTRN_RSP                       UINT64_C(0x0000000000000200)
+/** The RBP register value is kept externally. */
+#define CPUMCTX_EXTRN_RBP                       UINT64_C(0x0000000000000400)
+/** The RSI register value is kept externally. */
+#define CPUMCTX_EXTRN_RSI                       UINT64_C(0x0000000000000800)
+/** The RDI register value is kept externally. */
+#define CPUMCTX_EXTRN_RDI                       UINT64_C(0x0000000000001000)
+/** The R8 thru R15 register values are kept externally. */
+#define CPUMCTX_EXTRN_R8_R15                    UINT64_C(0x0000000000002000)
+/** General purpose registers mask. */
+#define CPUMCTX_EXTRN_GPRS_MASK                 UINT64_C(0x0000000000003fe0)
+
+/** The SS register values are kept externally. */
+#define CPUMCTX_EXTRN_SS                        UINT64_C(0x0000000000004000)
+/** The DS register values are kept externally. */
+#define CPUMCTX_EXTRN_DS                        UINT64_C(0x0000000000008000)
+/** The ES register values are kept externally. */
+#define CPUMCTX_EXTRN_ES                        UINT64_C(0x0000000000010000)
+/** The FS register values are kept externally. */
+#define CPUMCTX_EXTRN_FS                        UINT64_C(0x0000000000020000)
+/** The GS register values are kept externally. */
+#define CPUMCTX_EXTRN_GS                        UINT64_C(0x0000000000040000)
+/** Segment registers (includes CS). */
+#define CPUMCTX_EXTRN_SREG_MASK                 UINT64_C(0x000000000007c008)
+
+/** The GDTR register values are kept externally. */
+#define CPUMCTX_EXTRN_GDTR                      UINT64_C(0x0000000000080000)
+/** The IDTR register values are kept externally. */
+#define CPUMCTX_EXTRN_IDTR                      UINT64_C(0x0000000000100000)
+/** The LDTR register values are kept externally. */
+#define CPUMCTX_EXTRN_LDTR                      UINT64_C(0x0000000000200000)
+/** The TR register values are kept externally. */
+#define CPUMCTX_EXTRN_TR                        UINT64_C(0x0000000000400000)
+/** Table register mask. */
+#define CPUMCTX_EXTRN_TABLE_MASK                UINT64_C(0x0000000000780000)
+
+/** The CR0 register value is kept externally. */
+#define CPUMCTX_EXTRN_CR0                       UINT64_C(0x0000000000800000)
+/** The CR2 register value is kept externally. */
+#define CPUMCTX_EXTRN_CR2                       UINT64_C(0x0000000001000000)
+/** The CR3 register value is kept externally. */
+#define CPUMCTX_EXTRN_CR3                       UINT64_C(0x0000000002000000)
+/** The CR4 register value is kept externally. */
+#define CPUMCTX_EXTRN_CR4                       UINT64_C(0x0000000004000000)
+/** Control register mask. */
+#define CPUMCTX_EXTRN_CR_MASK                   UINT64_C(0x0000000007800000)
+/** The EFER register value is kept externally. */
+#define CPUMCTX_EXTRN_EFER                      UINT64_C(0x0000000008000000)
+
+/** The DR0, DR1, DR2 and DR3 register values are kept externally. */
+#define CPUMCTX_EXTRN_DR0_DR3                   UINT64_C(0x0000000010000000)
+/** The DR6 register value is kept externally. */
+#define CPUMCTX_EXTRN_DR6                       UINT64_C(0x0000000020000000)
+/** The DR7 register value is kept externally. */
+#define CPUMCTX_EXTRN_DR7                       UINT64_C(0x0000000040000000)
+/** Debug register mask. */
+#define CPUMCTX_EXTRN_DR_MASK                   UINT64_C(0x0000000070000000)
+
+/** The XSAVE_C_X87 state is kept externally. */
+#define CPUMCTX_EXTRN_X87                       UINT64_C(0x0000000080000000)
+/** The XSAVE_C_SSE, XSAVE_C_YMM, XSAVE_C_ZMM_HI256, XSAVE_C_ZMM_16HI and
+ * XSAVE_C_OPMASK state is kept externally. */
+#define CPUMCTX_EXTRN_SSE_AVX                   UINT64_C(0x0000000100000000)
+/** The state of XSAVE components not covered by CPUMCTX_EXTRN_X87 and
+ * CPUMCTX_EXTRN_SEE_AVX is kept externally. */
+#define CPUMCTX_EXTRN_OTHER_XSAVE               UINT64_C(0x0000000200000000)
+/** The state of XCR0 and XCR1 register values are kept externally. */
+#define CPUMCTX_EXTRN_XCRx                      UINT64_C(0x0000000400000000)
+
+/** The KERNEL GS BASE MSR value is kept externally. */
+#define CPUMCTX_EXTRN_KERNEL_GS_BASE            UINT64_C(0x0000000800000000)
+/** The STAR, LSTAR, CSTAR and SFMASK MSR values are kept externally. */
+#define CPUMCTX_EXTRN_SYSCALL_MSRS              UINT64_C(0x0000001000000000)
+/** The SYSENTER_CS, SYSENTER_EIP and SYSENTER_ESP MSR values are kept externally. */
+#define CPUMCTX_EXTRN_SYSENTER_MSRS             UINT64_C(0x0000002000000000)
+/** The SYSENTER_CS, SYSENTER_EIP and SYSENTER_ESP MSR values are kept externally. */
+#define CPUMCTX_EXTRN_TSC_AUX                   UINT64_C(0x0000004000000000)
+/** All other stateful MSRs not covered by CPUMCTX_EXTRN_EFER,
+ * CPUMCTX_EXTRN_KERNEL_GS_BASE, CPUMCTX_EXTRN_SYSCALL_MSRS,
+ * CPUMCTX_EXTRN_SYSENTER_MSRS, and CPUMCTX_EXTRN_TSC_AUX.  */
+#define CPUMCTX_EXTRN_OTHER_MSRS                UINT64_C(0x0000008000000000)
+
+/** Mask of bits the keepers can use for state tracking. */
+#define CPUMCTX_EXTRN_KEEPER_STATE_MASK         UINT64_C(0xffff000000000000)
+
+/** NEM/Win: Event injection (known was interruption) pending state. */
+#define CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT      UINT64_C(0x0001000000000000)
+/** NEM/Win: Mask. */
+#define CPUMCTX_EXTRN_NEM_WIN_MASK              UINT64_C(0x0001000000000000)
+
+/** All CPUM state bits, not including keeper specific ones. */
+#define CPUMCTX_EXTRN_ALL                       UINT64_C(0x000000fffffffffc)
 /** @} */
 
 
