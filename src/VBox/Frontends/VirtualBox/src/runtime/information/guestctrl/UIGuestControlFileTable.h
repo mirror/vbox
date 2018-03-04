@@ -32,6 +32,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QAction;
 class QILineEdit;
 class QVBoxLayout;
 class UIFileTableItem;
@@ -113,9 +114,11 @@ protected slots:
 
 private:
 
-    void                    prepareObjects();
-    QVBoxLayout             *m_pMainLayout;
-    QILineEdit              *m_pCurrentLocationEdit;
+    void           prepareObjects();
+    QVBoxLayout    *m_pMainLayout;
+    QILineEdit     *m_pCurrentLocationEdit;
+    UIToolBar      *m_pToolBar;
+    QAction        *m_pActionRefresh;
 
     friend class UIGuestControlFileModel;
 };

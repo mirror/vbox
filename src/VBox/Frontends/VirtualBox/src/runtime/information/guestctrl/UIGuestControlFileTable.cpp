@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAction>
 # include <QDir>
 # include <QHeaderView>
 # include <QItemDelegate>
@@ -27,6 +28,7 @@
 
 /* GUI includes: */
 # include "QILineEdit.h"
+# include "UIIconPool.h"
 # include "UIGuestControlFileTable.h"
 # include "UIToolBar.h"
 
@@ -348,7 +350,7 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pTree(0)
     , m_pMainLayout(0)
     , m_pCurrentLocationEdit(0)
-
+    , m_pToolBar(0)
 {
     prepareObjects();
 }
@@ -378,6 +380,20 @@ void UIGuestControlFileTable::prepareObjects()
     m_pMainLayout->setSpacing(0);
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(m_pMainLayout);
+
+
+    m_pToolBar = new UIToolBar;
+    if (m_pToolBar)
+    {
+        m_pMainLayout->addWidget(m_pToolBar);
+    }
+    m_pActionRefresh = new QAction(this);
+    m_pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_22px.png")));
+
+    m_pToolBar->addAction(m_pActionRefresh);
+
+
+
 
     m_pCurrentLocationEdit = new QILineEdit;
     if(m_pCurrentLocationEdit)
