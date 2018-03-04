@@ -20,12 +20,15 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QDir>
 # include <QHeaderView>
+# include <QItemDelegate>
 # include <QVBoxLayout>
 
 /* GUI includes: */
 # include "QILineEdit.h"
 # include "UIGuestControlFileTable.h"
+# include "UIToolBar.h"
 
 /* COM includes: */
 # include "CFsObjInfo.h"
@@ -33,6 +36,14 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+class UIFileDelegate : public QItemDelegate
+{
+
+    Q_OBJECT;
+
+protected:
+        virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
+};
 
 /*********************************************************************************************************************************
 *   UIFileTableItem definition.                                                                                                  *
@@ -188,9 +199,7 @@ UIFileTableItem* UIGuestControlFileModel::rootItem() const
 }
 
 UIGuestControlFileModel::~UIGuestControlFileModel()
-{
-    //delete rootItem;
-}
+{}
 
 int UIGuestControlFileModel::columnCount(const QModelIndex &parent) const
 {
@@ -317,13 +326,22 @@ QModelIndex UIGuestControlFileModel::rootIndex() const
                        rootItem()->child(0));
 }
 
+void UIGuestControlFileModel::beginReset()
+{
+    beginResetModel();
+}
+
+void UIGuestControlFileModel::endReset()
+{
+    endResetModel();
+}
 
 /*********************************************************************************************************************************
 *   UIGuestControlFileTable implementation.                                                                                      *
 *********************************************************************************************************************************/
 
 UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
-    :QWidget(pParent)
+    :QIWithRetranslateUI<QWidget>(pParent)
     , m_pRootItem(0)
     , m_pView(0)
     , m_pModel(0)
@@ -338,6 +356,18 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
 UIGuestControlFileTable::~UIGuestControlFileTable()
 {
     delete m_pRootItem;
+}
+
+void UIGuestControlFileTable::reset()
+{
+    if(m_pModel)
+        m_pModel->beginReset();
+    delete m_pRootItem;
+    m_pRootItem = 0;
+    if(m_pModel)
+        m_pModel->endReset();
+    if(m_pCurrentLocationEdit)
+        m_pCurrentLocationEdit->clear();
 }
 
 void UIGuestControlFileTable::prepareObjects()
@@ -370,6 +400,15 @@ void UIGuestControlFileTable::prepareObjects()
 
         m_pMainLayout->addWidget(m_pView);
         m_pView->setModel(m_pModel);
+        m_pView->setItemDelegate(new UIFileDelegate);
+        /* Minimize the row height: */
+        m_pView->verticalHeader()->setDefaultSectionSize(m_pView->verticalHeader()->minimumSectionSize());
+        /* Make the columns take all the avaible space: */
+        m_pView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+        connect(m_pView, &QTableView::doubleClicked,
+                this, &UIGuestControlFileTable::sltItemDoubleClicked);
+
     }
 }
 
@@ -395,28 +434,10 @@ void UIGuestControlFileTable::changeLocation(const QModelIndex &index)
     m_pModel->signalUpdate();
 }
 
-
-/*********************************************************************************************************************************
-*   UIGuestFileTable implementation.                                                                                             *
-*********************************************************************************************************************************/
-
-UIGuestFileTable::UIGuestFileTable(QWidget *pParent /*= 0*/)
-    :UIGuestControlFileTable(pParent)
+void UIGuestControlFileTable::initializeFileTree()
 {
-    connect(m_pView, &QTableView::doubleClicked,
-            this, &UIGuestFileTable::sltItemDoubleClicked);
-}
-
-void UIGuestFileTable::initGuestFileTable(const CGuestSession &session)
-{
-    if (!session.isOk())
-        return;
-    if (session.GetStatus() != KGuestSessionStatus_Started)
-        return;
-    m_comGuestSession = session;
-
     if(m_pRootItem)
-        delete m_pRootItem;
+        reset();
 
     QList<QVariant> headData;
     headData << "Name" << "Size";
@@ -432,17 +453,103 @@ void UIGuestFileTable::initGuestFileTable(const CGuestSession &session)
     startItem->setIsOpened(false);
     /* Read the root directory and get the list: */
 
-    readDirectory("/", startItem);
+    readDirectory("/", startItem, true);
     m_pView->setRootIndex(m_pModel->rootIndex());
     m_pModel->signalUpdate();
+
+}
+
+void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
+                                                UIFileTableItem *parent, bool isDirectoryMap, bool isStartDir)
+{
+    /* Make sure we have a ".." item within directories, and make sure it does not include for the start dir: */
+    if (isDirectoryMap)
+    {
+        if (!map.contains("..")  && !isStartDir)
+        {
+            QList<QVariant> data;
+            data << ".." << 4096;
+            UIFileTableItem *item = new UIFileTableItem(data, parent);
+            item->setIsDirectory(true);
+            item->setIsOpened(false);
+            map.insert("..", item);
+        }
+        else if (map.contains("..")  && isStartDir)
+        {
+            map.remove("..");
+        }
+    }
+    for(QMap<QString,UIFileTableItem*>::const_iterator iterator = map.begin();
+        iterator != map.end(); ++iterator)
+    {
+        if(iterator.key() == "." || iterator.key().isEmpty())
+            continue;
+        parent->appendChild(iterator.value());
+    }
+}
+
+void UIGuestControlFileTable::sltItemDoubleClicked(const QModelIndex &index)
+{
+    if (!index.isValid() ||  !m_pModel || !m_pView)
+        return;
+
+    UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
+    if (!item)
+        return;
+    /* check if we need to go up: */
+    if (item->isUpDirectory())
+    {
+        QModelIndex parentIndex = m_pModel->parent(m_pModel->parent(index));
+        if (parentIndex.isValid())
+            changeLocation(parentIndex);
+        return;
+    }
+
+    if (!item->isDirectory())
+        return;
+    if(!item->isOpened())
+       readDirectory(item->path(),item);
+
+    changeLocation(index);
+}
+
+void UIGuestControlFileTable::retranslateUi()
+{
+    // if (m_pUserNameEdit)
+    // {
+    //     m_pUserNameEdit->setToolTip(UIVMInformationDialog::tr("User name to authenticate session creation"));
+    // }
+
+}
+
+/*********************************************************************************************************************************
+*   UIGuestFileTable implementation.                                                                                             *
+*********************************************************************************************************************************/
+
+UIGuestFileTable::UIGuestFileTable(QWidget *pParent /*= 0*/)
+    :UIGuestControlFileTable(pParent)
+{
+}
+
+void UIGuestFileTable::initGuestFileTable(const CGuestSession &session)
+{
+    if (!session.isOk())
+        return;
+    if (session.GetStatus() != KGuestSessionStatus_Started)
+        return;
+    m_comGuestSession = session;
+
+
+    initializeFileTree();
 }
 
 void UIGuestFileTable::readDirectory(const QString& strPath,
-                                     UIFileTableItem *parent)
+                                     UIFileTableItem *parent, bool isStartDir /*= false*/)
 
 {
     if (!parent)
         return;
+
     CGuestDirectory directory;
     QVector<KDirectoryOpenFlag> flag;
     flag.push_back(KDirectoryOpenFlag_None);
@@ -476,45 +583,61 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
             }
             fsInfo = directory.Read();
         }
-        insertToTree(directories, parent);
-        insertToTree(files, parent);
+        insertItemsToTree(directories, parent, true, isStartDir);
+        insertItemsToTree(files, parent, false, isStartDir);
         updateCurrentLocationEdit(strPath);
     }
 }
 
-void UIGuestFileTable::insertToTree(const QMap<QString,UIFileTableItem*> &map, UIFileTableItem *parent)
+/*********************************************************************************************************************************
+*   UIHostFileTable implementation.                                                                                              *
+*********************************************************************************************************************************/
+
+UIHostFileTable::UIHostFileTable(QWidget *pParent /* = 0 */)
+    :UIGuestControlFileTable(pParent)
 {
-    for(QMap<QString,UIFileTableItem*>::const_iterator iterator = map.begin();
-        iterator != map.end(); ++iterator)
-    {
-        if(iterator.key() != ".")
-            parent->appendChild(iterator.value());
-    }
+    initializeFileTree();
 }
 
-void UIGuestFileTable::sltItemDoubleClicked(const QModelIndex &index)
+void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir /*= false*/)
 {
-    if (!index.isValid() ||  !m_pModel || !m_pView)
+    if (!parent)
         return;
 
-    UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
-    if (!item)
+    QDir directory(strPath);
+    parent->setIsOpened(true);
+    if (!directory.exists())
         return;
-    /* check if we need to go up: */
-    if (item->isUpDirectory())
+    QFileInfoList entries = directory.entryInfoList();
+    QMap<QString, UIFileTableItem*> directories;
+    QMap<QString, UIFileTableItem*> files;
+
+
+    for(int i = 0; i < entries.size(); ++i)
     {
-        QModelIndex parentIndex = m_pModel->parent(m_pModel->parent(index));
-        if (parentIndex.isValid())
-            changeLocation(parentIndex);
-        // else
-        //     changeLocation(m_pModel->rootIndex());
-        return;
+        const QFileInfo &fileInfo = entries.at(i);
+
+        QList<QVariant> data;
+        data << fileInfo.baseName() << fileInfo.size();
+        UIFileTableItem *item = new UIFileTableItem(data, parent);
+        item->setPath(fileInfo.absoluteFilePath());
+        if (fileInfo.isDir())
+        {
+            directories.insert(fileInfo.baseName(), item);
+            item->setIsDirectory(true);
+            item->setIsOpened(false);
+        }
+        else
+        {
+            files.insert(fileInfo.baseName(), item);
+            item->setIsDirectory(false);
+            item->setIsOpened(false);
+        }
+
     }
-
-    if (!item->isDirectory())
-        return;
-    if(!item->isOpened())
-       readDirectory(item->path(),item);
-
-    changeLocation(index);
+    insertItemsToTree(directories, parent, true, isStartDir);
+    insertItemsToTree(files, parent, false, isStartDir);
+    updateCurrentLocationEdit(strPath);
 }
+
+#include "UIGuestControlFileTable.moc"

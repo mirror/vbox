@@ -37,6 +37,7 @@ class QVBoxLayout;
 class QSplitter;
 class CGuestSessionStateChangedEvent;
 class UIGuestFileTable;
+class UIHostFileTable;
 class UIGuestSessionCreateWidget;
 
 /** QWidget extension
@@ -90,7 +91,7 @@ private:
 
     UIGuestSessionCreateWidget *m_pSessionCreateWidget;
     UIGuestFileTable           *m_pGuestFileTable;
-
+    UIHostFileTable            *m_pHostFileTable;
     ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
     ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
     CEventListener m_comSessionListener;

@@ -29,12 +29,14 @@
 
 /* GUI includes: */
 #include "QITableView.h"
+#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QILineEdit;
 class QVBoxLayout;
 class UIFileTableItem;
 class UIGuestControlFileTable;
+class UIToolBar;
 
 /** UIGuestControlFileModel serves as the model for a file structure.
     it supports a tree level hierarchy which can be displayed with
@@ -60,6 +62,8 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     void signalUpdate();
     QModelIndex rootIndex() const;
+    void beginReset();
+    void endReset();
 
 private:
 
@@ -73,7 +77,7 @@ private:
     and a host version are derived from this base. Each of these children
     populates the UIGuestControlFileModel by scanning the file system
     differently. */
-class UIGuestControlFileTable : public QWidget
+class UIGuestControlFileTable : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -81,20 +85,31 @@ public:
 
     UIGuestControlFileTable(QWidget *pParent = 0);
     virtual ~UIGuestControlFileTable();
+    /** Delete all the tree nodes */
+    void reset();
 
 protected:
 
+    void retranslateUi();
     void updateCurrentLocationEdit(const QString& strLocation);
     void changeLocation(const QModelIndex &index);
+    void initializeFileTree();
+    void insertItemsToTree(QMap<QString,UIFileTableItem*> &map, UIFileTableItem *parent,
+                           bool isDirectoryMap, bool isStartDir);
+    virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) = 0;
+
     UIFileTableItem         *m_pRootItem;
 
     /** Using QITableView causes the following problem when I click on the table items
         Qt WARNING: Cannot creat accessible child interface for object:  UIGuestControlFileView.....
         so for now subclass QTableView */
-    QTableView   *m_pView;
+    QTableView              *m_pView;
     UIGuestControlFileModel *m_pModel;
-    QTreeView   *m_pTree;
+    QTreeView               *m_pTree;
 
+protected slots:
+
+    void sltItemDoubleClicked(const QModelIndex &index);
 
 private:
 
@@ -116,15 +131,29 @@ public:
     UIGuestFileTable(QWidget *pParent = 0);
     void initGuestFileTable(const CGuestSession &session);
 
-private slots:
+protected:
 
-    void sltItemDoubleClicked(const QModelIndex &index);
+    virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
 
 private:
-    void readDirectory(const QString& strPath,
-                       UIFileTableItem *parent);
-    void insertToTree(const QMap<QString,UIFileTableItem*> &map, UIFileTableItem *parent);
+
     CGuestSession m_comGuestSession;
+};
+
+/** This class scans the host file system by using the Qt
+    and populates the UIGuestControlFileModel*/
+class UIHostFileTable : public UIGuestControlFileTable
+{
+    Q_OBJECT;
+
+public:
+
+    UIHostFileTable(QWidget *pParent = 0);
+
+protected:
+
+    virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
+
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */

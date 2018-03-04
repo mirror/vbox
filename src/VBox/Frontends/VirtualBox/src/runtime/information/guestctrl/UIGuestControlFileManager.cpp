@@ -223,6 +223,7 @@ UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGu
     , m_pLogOutput(0)
     , m_pSessionCreateWidget(0)
     , m_pGuestFileTable(0)
+    , m_pHostFileTable(0)
 {
     prepareGuestListener();
     prepareObjects();
@@ -270,14 +271,28 @@ void UIGuestControlFileManager::prepareObjects()
     {
         m_pMainLayout->addWidget(m_pVerticalSplitter);
         m_pVerticalSplitter->setOrientation(Qt::Vertical);
-        m_pVerticalSplitter->setHandleWidth(1);
+        m_pVerticalSplitter->setHandleWidth(2);
     }
 
-    m_pGuestFileTable = new UIGuestFileTable;
-    if (m_pGuestFileTable)
+    QWidget *fileTableContainer = new QWidget;
+    QHBoxLayout *containerLayout = new QHBoxLayout;
+    if(fileTableContainer)
     {
-        m_pVerticalSplitter->addWidget(m_pGuestFileTable);
+        if(containerLayout)
+        {
+            fileTableContainer->setLayout(containerLayout);
+            containerLayout->setSpacing(0);
+            containerLayout->setContentsMargins(0, 0, 0, 0);
+            m_pGuestFileTable = new UIGuestFileTable;
+            if (m_pGuestFileTable)
+                containerLayout->addWidget(m_pGuestFileTable);
+            m_pHostFileTable = new UIHostFileTable;
+            if (m_pHostFileTable)
+                containerLayout->addWidget(m_pHostFileTable);
+        }
+        m_pVerticalSplitter->addWidget(fileTableContainer);
     }
+
 
     m_pLogOutput = new QPlainTextEdit;
     if (m_pLogOutput)
@@ -288,8 +303,8 @@ void UIGuestControlFileManager::prepareObjects()
     }
 
 
-    m_pVerticalSplitter->setStretchFactor(0, 9);
-    m_pVerticalSplitter->setStretchFactor(1, 4);
+    m_pVerticalSplitter->setStretchFactor(0, 3);
+    m_pVerticalSplitter->setStretchFactor(1, 1);
 }
 
 void UIGuestControlFileManager::prepareConnections()
@@ -330,17 +345,19 @@ void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString st
 
 void UIGuestControlFileManager::sltCloseSession()
 {
-    // if (!m_comGuestSession.isOk())
-    // {
-    //     m_pLogOutput->appendPlainText("Guest session is not valid");
-    //     return;
-    // }
-    // m_pLogOutput->appendPlainText("Guest session is closed");
+    if (!m_comGuestSession.isOk())
+    {
+        m_pLogOutput->appendPlainText("Guest session is not valid");
+        return;
+    }
+    if (m_pGuestFileTable)
+        m_pGuestFileTable->reset();
 
     if(m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
 
     m_comGuestSession.Close();
+    m_pLogOutput->appendPlainText("Guest session is closed");
     if(m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCreateMode();
 }
