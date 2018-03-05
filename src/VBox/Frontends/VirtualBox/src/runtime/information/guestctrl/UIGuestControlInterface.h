@@ -53,7 +53,7 @@ public:
      * @{ */
         /** Pass a non-const ref since for some reason CGuest::GetAdditionsStatus
             is non-const?! */
-       static bool    isGuestAdditionsAvaible(CGuest &guest);
+       static bool    isGuestAdditionsAvailable(const CGuest &guest);
        static QString getFsObjTypeString(KFsObjType type);
     /** @} */
 

@@ -81,11 +81,11 @@ private:
                          CEventSource comEventSource);
 
     void initFileTable();
+    void postSessionCreated();
+    void postSessionClosed();
 
     template<typename T>
     QStringList   getFsObjInfoStringList(const T &fsObjectInfo) const;
-
-
 
     const int         m_iMaxRecursionDepth;
     CGuest            m_comGuest;

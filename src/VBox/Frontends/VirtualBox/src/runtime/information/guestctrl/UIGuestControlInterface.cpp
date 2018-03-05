@@ -550,7 +550,7 @@ void UIGuestControlInterface::prepareSubCommandHandlers()
 
 void UIGuestControlInterface::putCommand(const QString &strCommand)
 {
-    if (!isGuestAdditionsAvaible(m_comGuest))
+    if (!isGuestAdditionsAvailable(m_comGuest))
     {
         emit sigOutputString("No guest addtions detected. Guest control needs guest additions");
         return;
@@ -663,12 +663,12 @@ bool UIGuestControlInterface::createSession(const CommandData &commandData, CGue
     return true;
 }
 
-bool UIGuestControlInterface::isGuestAdditionsAvaible(CGuest &guest)
+bool UIGuestControlInterface::isGuestAdditionsAvailable(const CGuest &guest)
 {
     if (!guest.isOk())
         return false;
-    return guest.GetAdditionsStatus(guest.GetAdditionsRunLevel());
-
+    CGuest guestNonConst = const_cast<CGuest&>(guest);
+    return guestNonConst.GetAdditionsStatus(guestNonConst.GetAdditionsRunLevel());
 }
 
 template<typename T>

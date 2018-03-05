@@ -307,6 +307,7 @@ void UIGuestControlFileManager::prepareObjects()
             containerLayout->setSpacing(0);
             containerLayout->setContentsMargins(0, 0, 0, 0);
             m_pGuestFileTable = new UIGuestFileTable;
+            m_pGuestFileTable->setEnabled(false);
             if (m_pGuestFileTable)
                 containerLayout->addWidget(m_pGuestFileTable);
 
@@ -314,6 +315,7 @@ void UIGuestControlFileManager::prepareObjects()
             if (m_pToolBar)
             {
                 m_pToolBar->setOrientation(Qt::Vertical);
+                m_pToolBar->setEnabled(false);
 
                 /* Add to dummy QWidget to toolbar to center the action icons vertically: */
                 QWidget *topSpacerWidget = new QWidget(this);
@@ -322,8 +324,6 @@ void UIGuestControlFileManager::prepareObjects()
                 QWidget *bottomSpacerWidget = new QWidget(this);
                 bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
                 bottomSpacerWidget->setVisible(true);
-
-
 
                 m_pCopyGuestToHost = new QAction(this);
                 m_pCopyGuestToHost->setIcon(UIIconPool::iconSet(QString(":/arrow_right_10px_x2.png")));
@@ -383,15 +383,23 @@ void UIGuestControlFileManager::sltGuestSessionUnregistered(CGuestSession guestS
         return;
     if (guestSession == m_comGuestSession && m_comGuestSession.isOk())
         m_comGuestSession.detach();
-    if (m_pSessionCreateWidget)
-        m_pSessionCreateWidget->switchSessionCreateMode();
+    postSessionClosed();
 }
 
 void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString strPassword)
 {
+    if (!UIGuestControlInterface::isGuestAdditionsAvailable(m_comGuest))
+    {
+        if (m_pLogOutput)
+        {
+            m_pLogOutput->appendPlainText("Could not find Guest Additions");
+            return;
+        }
+    }
     if (strUserName.isEmpty())
     {
-        m_pLogOutput->appendPlainText("No user name is given");
+        if (m_pLogOutput)
+            m_pLogOutput->appendPlainText("No user name is given");
         return;
     }
     createSession(strUserName, strPassword);
@@ -412,8 +420,7 @@ void UIGuestControlFileManager::sltCloseSession()
 
     m_comGuestSession.Close();
     m_pLogOutput->appendPlainText("Guest session is closed");
-    if (m_pSessionCreateWidget)
-        m_pSessionCreateWidget->switchSessionCreateMode();
+    postSessionClosed();
 }
 
 void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent)
@@ -429,6 +436,7 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
     if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
     {
         initFileTable();
+        postSessionCreated();
     }
     else
     {
@@ -445,6 +453,26 @@ void UIGuestControlFileManager::initFileTable()
     m_pGuestFileTable->initGuestFileTable(m_comGuestSession);
 }
 
+void UIGuestControlFileManager::postSessionCreated()
+{
+    if (m_pSessionCreateWidget)
+        m_pSessionCreateWidget->switchSessionCloseMode();
+    if(m_pGuestFileTable)
+        m_pGuestFileTable->setEnabled(true);
+    if(m_pToolBar)
+        m_pToolBar->setEnabled(true);
+}
+
+void UIGuestControlFileManager::postSessionClosed()
+{
+    if (m_pSessionCreateWidget)
+        m_pSessionCreateWidget->switchSessionCreateMode();
+    if(m_pGuestFileTable)
+        m_pGuestFileTable->setEnabled(false);
+    if(m_pToolBar)
+        m_pToolBar->setEnabled(false);
+
+}
 
 
 bool UIGuestControlFileManager::createSession(const QString& strUserName, const QString& strPassword,
