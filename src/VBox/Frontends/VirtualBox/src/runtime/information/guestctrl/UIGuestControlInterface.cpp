@@ -466,7 +466,7 @@ bool UIGuestControlInterface::findAValidGuestSession(CGuestSession &outGuestSess
         return false;
 
     QVector<CGuestSession> sessions = m_comGuest.GetSessions();
-    for(int i = 0; i < sessions.size(); ++i)
+    for (int i = 0; i < sessions.size(); ++i)
     {
         if (sessions[i].isOk() && sessions[i].GetStatus() == KGuestSessionStatus_Started)
         {
@@ -643,7 +643,7 @@ bool UIGuestControlInterface::createSession(const CommandData &commandData, CGue
 {
     if (!m_comGuest.isOk())
         return false;
-    if(commandData.m_strUserName.isEmpty())
+    if (commandData.m_strUserName.isEmpty())
         RETURN_ERROR("No user name has been given");
     CGuestSession guestSession = m_comGuest.CreateSession(commandData.m_strUserName,
                                                           commandData.m_strPassword,

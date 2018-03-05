@@ -24,13 +24,15 @@
 # include <QDir>
 # include <QHeaderView>
 # include <QItemDelegate>
-# include <QVBoxLayout>
+# include <QGridLayout>
 
 /* GUI includes: */
+# include "QILabel.h"
 # include "QILineEdit.h"
 # include "UIIconPool.h"
 # include "UIGuestControlFileTable.h"
 # include "UIToolBar.h"
+# include "UIVMInformationDialog.h"
 
 /* COM includes: */
 # include "CFsObjInfo.h"
@@ -235,9 +237,14 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
 
     if (role == Qt::DecorationRole && index.column() == 0)
     {
-        if (item->isDirectory() && !item->isUpDirectory())
-            return QIcon(":/sf_32px.png");
-        if (!item->isDirectory())
+        if (item->isDirectory())
+        {
+            if (item->isUpDirectory())
+                return QIcon(":/arrow_up_10px_x2.png");
+            else
+                return QIcon(":/sf_32px.png");
+        }
+        else
             return QIcon(":/vm_open_filemanager_16px");
     }
 
@@ -350,11 +357,21 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pView(0)
     , m_pModel(0)
     , m_pTree(0)
+    , m_pLocationLabel(0)
     , m_pMainLayout(0)
     , m_pCurrentLocationEdit(0)
     , m_pToolBar(0)
+    , m_pRefresh(0)
+    , m_pDelete(0)
+    , m_pNewFolder(0)
+    , m_pGoUp(0)
+    , m_pCopy(0)
+    , m_pCut(0)
+    , m_pPaste(0)
+
 {
     prepareObjects();
+    prepareActions();
 }
 
 UIGuestControlFileTable::~UIGuestControlFileTable()
@@ -364,43 +381,41 @@ UIGuestControlFileTable::~UIGuestControlFileTable()
 
 void UIGuestControlFileTable::reset()
 {
-    if(m_pModel)
+    if (m_pModel)
         m_pModel->beginReset();
     delete m_pRootItem;
     m_pRootItem = 0;
-    if(m_pModel)
+    if (m_pModel)
         m_pModel->endReset();
-    if(m_pCurrentLocationEdit)
+    if (m_pCurrentLocationEdit)
         m_pCurrentLocationEdit->clear();
 }
 
 void UIGuestControlFileTable::prepareObjects()
 {
-    m_pMainLayout = new QVBoxLayout();
+    m_pMainLayout = new QGridLayout();
     if (!m_pMainLayout)
         return;
     m_pMainLayout->setSpacing(0);
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(m_pMainLayout);
 
-
     m_pToolBar = new UIToolBar;
     if (m_pToolBar)
     {
-        m_pMainLayout->addWidget(m_pToolBar);
+        m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 5);
     }
-    m_pActionRefresh = new QAction(this);
-    m_pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_22px.png")));
 
-    m_pToolBar->addAction(m_pActionRefresh);
-
-
-
+    m_pLocationLabel = new QILabel;
+    if (m_pLocationLabel)
+    {
+        m_pMainLayout->addWidget(m_pLocationLabel, 1, 0, 1, 1);
+    }
 
     m_pCurrentLocationEdit = new QILineEdit;
-    if(m_pCurrentLocationEdit)
+    if (m_pCurrentLocationEdit)
     {
-        m_pMainLayout->addWidget(m_pCurrentLocationEdit);
+        m_pMainLayout->addWidget(m_pCurrentLocationEdit, 1, 1, 1, 4);
         m_pCurrentLocationEdit->setReadOnly(true);
     }
 
@@ -416,7 +431,7 @@ void UIGuestControlFileTable::prepareObjects()
         m_pView->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_pView->verticalHeader()->setVisible(false);
 
-        m_pMainLayout->addWidget(m_pView);
+        m_pMainLayout->addWidget(m_pView, 2, 0, 5, 5);
         m_pView->setModel(m_pModel);
         m_pView->setItemDelegate(new UIFileDelegate);
         /* Minimize the row height: */
@@ -430,6 +445,42 @@ void UIGuestControlFileTable::prepareObjects()
     }
 }
 
+void UIGuestControlFileTable::prepareActions()
+{
+    if (!m_pToolBar)
+        return;
+
+    m_pGoUp = new QAction(this);
+    m_pGoUp->setIcon(UIIconPool::iconSet(QString(":/arrow_up_10px_x2.png")));
+    m_pToolBar->addAction(m_pGoUp);
+
+
+    m_pRefresh = new QAction(this);
+    m_pRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_22px.png")));
+    m_pToolBar->addAction(m_pRefresh);
+
+    m_pDelete = new QAction(this);
+    m_pDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
+    m_pToolBar->addAction(m_pDelete);
+
+    m_pNewFolder = new QAction(this);
+    m_pNewFolder->setIcon(UIIconPool::iconSet(QString(":/sf_32px.png")));
+    m_pToolBar->addAction(m_pNewFolder);
+
+    m_pCopy = new QAction(this);
+    m_pCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
+    m_pToolBar->addAction(m_pCopy);
+
+    m_pCut = new QAction(this);
+    m_pCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
+    m_pToolBar->addAction(m_pCut);
+
+
+    m_pPaste = new QAction(this);
+    m_pPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
+    m_pToolBar->addAction(m_pPaste);
+}
+
 void UIGuestControlFileTable::updateCurrentLocationEdit(const QString& strLocation)
 {
     if (!m_pCurrentLocationEdit)
@@ -439,13 +490,13 @@ void UIGuestControlFileTable::updateCurrentLocationEdit(const QString& strLocati
 
 void UIGuestControlFileTable::changeLocation(const QModelIndex &index)
 {
-    if(!index.isValid() || !m_pView)
+    if (!index.isValid() || !m_pView)
         return;
     m_pView->setRootIndex(index);
     m_pView->clearSelection();
 
     UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
-    if(item)
+    if (item)
     {
         updateCurrentLocationEdit(item->path());
     }
@@ -454,7 +505,7 @@ void UIGuestControlFileTable::changeLocation(const QModelIndex &index)
 
 void UIGuestControlFileTable::initializeFileTree()
 {
-    if(m_pRootItem)
+    if (m_pRootItem)
         reset();
 
     QList<QVariant> headData;
@@ -497,10 +548,10 @@ void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &
             map.remove("..");
         }
     }
-    for(QMap<QString,UIFileTableItem*>::const_iterator iterator = map.begin();
+    for (QMap<QString,UIFileTableItem*>::const_iterator iterator = map.begin();
         iterator != map.end(); ++iterator)
     {
-        if(iterator.key() == "." || iterator.key().isEmpty())
+        if (iterator.key() == "." || iterator.key().isEmpty())
             continue;
         parent->appendChild(iterator.value());
     }
@@ -525,7 +576,7 @@ void UIGuestControlFileTable::sltItemDoubleClicked(const QModelIndex &index)
 
     if (!item->isDirectory())
         return;
-    if(!item->isOpened())
+    if (!item->isOpened())
        readDirectory(item->path(),item);
 
     changeLocation(index);
@@ -533,10 +584,56 @@ void UIGuestControlFileTable::sltItemDoubleClicked(const QModelIndex &index)
 
 void UIGuestControlFileTable::retranslateUi()
 {
-    // if (m_pUserNameEdit)
-    // {
-    //     m_pUserNameEdit->setToolTip(UIVMInformationDialog::tr("User name to authenticate session creation"));
-    // }
+    if (m_pRefresh)
+    {
+        m_pRefresh->setText(UIVMInformationDialog::tr("Refresh"));
+        m_pRefresh->setToolTip(UIVMInformationDialog::tr("Refresh the current directory"));
+        m_pRefresh->setStatusTip(UIVMInformationDialog::tr("Refresh the current directory"));
+    }
+    if (m_pDelete)
+    {
+        m_pDelete->setText(UIVMInformationDialog::tr("Delete"));
+        m_pDelete->setToolTip(UIVMInformationDialog::tr("Delete the selected item"));
+        m_pDelete->setStatusTip(UIVMInformationDialog::tr("Delete the selected item"));
+    }
+
+    if (m_pNewFolder)
+    {
+        m_pNewFolder->setText(UIVMInformationDialog::tr("Create a new folder"));
+        m_pNewFolder->setToolTip(UIVMInformationDialog::tr("Create a new folder"));
+        m_pNewFolder->setStatusTip(UIVMInformationDialog::tr("Create a new folder"));
+
+    }
+    if (m_pGoUp)
+    {
+        m_pGoUp->setText(UIVMInformationDialog::tr("Move one level up"));
+        m_pGoUp->setToolTip(UIVMInformationDialog::tr("Move one level up"));
+        m_pGoUp->setStatusTip(UIVMInformationDialog::tr("Move one level up"));
+
+    }
+
+    if (m_pCopy)
+    {
+        m_pCopy->setText(UIVMInformationDialog::tr("Copy the selected item"));
+        m_pCopy->setToolTip(UIVMInformationDialog::tr("Copy the selected item"));
+        m_pCopy->setStatusTip(UIVMInformationDialog::tr("Copy the selected item"));
+
+    }
+
+    if (m_pCut)
+    {
+        m_pCut->setText(UIVMInformationDialog::tr("Cut the selected item"));
+        m_pCut->setToolTip(UIVMInformationDialog::tr("Cut the selected item"));
+        m_pCut->setStatusTip(UIVMInformationDialog::tr("Cut the selected item"));
+
+    }
+
+    if ( m_pPaste)
+    {
+        m_pPaste->setText(UIVMInformationDialog::tr("Paste the copied item"));
+        m_pPaste->setToolTip(UIVMInformationDialog::tr("Paste the copied item"));
+        m_pPaste->setStatusTip(UIVMInformationDialog::tr("Paste the copied item"));
+    }
 
 }
 
@@ -548,6 +645,7 @@ void UIGuestControlFileTable::retranslateUi()
 UIGuestFileTable::UIGuestFileTable(QWidget *pParent /*= 0*/)
     :UIGuestControlFileTable(pParent)
 {
+    retranslateUi();
 }
 
 void UIGuestFileTable::initGuestFileTable(const CGuestSession &session)
@@ -560,6 +658,13 @@ void UIGuestFileTable::initGuestFileTable(const CGuestSession &session)
 
 
     initializeFileTree();
+}
+
+void UIGuestFileTable::retranslateUi()
+{
+    if (m_pLocationLabel)
+        m_pLocationLabel->setText(UIVMInformationDialog::tr("Guest System"));
+    UIGuestControlFileTable::retranslateUi();
 }
 
 void UIGuestFileTable::readDirectory(const QString& strPath,
@@ -617,6 +722,14 @@ UIHostFileTable::UIHostFileTable(QWidget *pParent /* = 0 */)
     :UIGuestControlFileTable(pParent)
 {
     initializeFileTree();
+    retranslateUi();
+}
+
+void UIHostFileTable::retranslateUi()
+{
+    if (m_pLocationLabel)
+        m_pLocationLabel->setText(UIVMInformationDialog::tr("Host System"));
+    UIGuestControlFileTable::retranslateUi();
 }
 
 void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir /*= false*/)
@@ -633,7 +746,7 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     QMap<QString, UIFileTableItem*> files;
 
 
-    for(int i = 0; i < entries.size(); ++i)
+    for (int i = 0; i < entries.size(); ++i)
     {
         const QFileInfo &fileInfo = entries.at(i);
 

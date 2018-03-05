@@ -33,9 +33,11 @@
 # include "QILineEdit.h"
 # include "QIWithRetranslateUI.h"
 # include "UIExtraDataManager.h"
+# include "UIIconPool.h"
 # include "UIGuestControlFileManager.h"
 # include "UIGuestControlFileTable.h"
 # include "UIGuestControlInterface.h"
+# include "UIToolBar.h"
 # include "UIVMInformationDialog.h"
 # include "VBoxGlobal.h"
 
@@ -158,7 +160,7 @@ void UIGuestSessionCreateWidget::prepareWidgets()
 
 void UIGuestSessionCreateWidget::sltCreateButtonClick()
 {
-    if(m_pUserNameEdit && m_pPasswordEdit)
+    if (m_pUserNameEdit && m_pPasswordEdit)
         emit sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
 }
 
@@ -182,9 +184,9 @@ void UIGuestSessionCreateWidget::retranslateUi()
         m_pPasswordLabel->setToolTip(UIVMInformationDialog::tr("Password to authenticate session creation"));
         m_pPasswordLabel->setText(UIVMInformationDialog::tr("Password"));
     }
-    if(m_pCreateButton)
+    if (m_pCreateButton)
         m_pCreateButton->setText(UIVMInformationDialog::tr("Create Session"));
-    if(m_pCloseButton)
+    if (m_pCloseButton)
         m_pCloseButton->setText(UIVMInformationDialog::tr("Close Session"));
 
 }
@@ -215,12 +217,14 @@ void UIGuestSessionCreateWidget::switchSessionCloseMode()
 *********************************************************************************************************************************/
 
 UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGuest &comGuest)
-    : QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_iMaxRecursionDepth(1)
     , m_comGuest(comGuest)
     , m_pMainLayout(0)
     , m_pVerticalSplitter(0)
     , m_pLogOutput(0)
+    , m_pToolBar(0)
+    , m_pCopyGuestToHost(0)
     , m_pSessionCreateWidget(0)
     , m_pGuestFileTable(0)
     , m_pHostFileTable(0)
@@ -228,19 +232,38 @@ UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGu
     prepareGuestListener();
     prepareObjects();
     prepareConnections();
+    retranslateUi();
 }
 
 UIGuestControlFileManager::~UIGuestControlFileManager()
 {
-    if(m_comGuest.isOk() && m_pQtGuestListener && m_comGuestListener.isOk())
+    if (m_comGuest.isOk() && m_pQtGuestListener && m_comGuestListener.isOk())
         cleanupListener(m_pQtGuestListener, m_comGuestListener, m_comGuest.GetEventSource());
-    if(m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
+    if (m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
+}
+
+void UIGuestControlFileManager::retranslateUi()
+{
+    if (m_pCopyGuestToHost)
+    {
+        m_pCopyGuestToHost->setText(UIVMInformationDialog::tr("Copy the selected object from guest to host"));
+        m_pCopyGuestToHost->setToolTip(UIVMInformationDialog::tr("Copy the selected object from guest to host"));
+        m_pCopyGuestToHost->setStatusTip(UIVMInformationDialog::tr("Copy the selected object from guest to host"));
+    }
+
+    if (m_pCopyHostToGuest)
+    {
+        m_pCopyHostToGuest->setText(UIVMInformationDialog::tr("Copy the selected object from host to guest"));
+        m_pCopyHostToGuest->setToolTip(UIVMInformationDialog::tr("Copy the selected object from host to guest"));
+        m_pCopyHostToGuest->setStatusTip(UIVMInformationDialog::tr("Copy the selected object from host to guest"));
+    }
+
 }
 
 void UIGuestControlFileManager::prepareGuestListener()
 {
-    if(m_comGuest.isOk())
+    if (m_comGuest.isOk())
     {
         QVector<KVBoxEventType> eventTypes;
         eventTypes << KVBoxEventType_OnGuestSessionRegistered;
@@ -276,9 +299,9 @@ void UIGuestControlFileManager::prepareObjects()
 
     QWidget *fileTableContainer = new QWidget;
     QHBoxLayout *containerLayout = new QHBoxLayout;
-    if(fileTableContainer)
+    if (fileTableContainer)
     {
-        if(containerLayout)
+        if (containerLayout)
         {
             fileTableContainer->setLayout(containerLayout);
             containerLayout->setSpacing(0);
@@ -286,6 +309,37 @@ void UIGuestControlFileManager::prepareObjects()
             m_pGuestFileTable = new UIGuestFileTable;
             if (m_pGuestFileTable)
                 containerLayout->addWidget(m_pGuestFileTable);
+
+            m_pToolBar = new UIToolBar;
+            if (m_pToolBar)
+            {
+                m_pToolBar->setOrientation(Qt::Vertical);
+
+                /* Add to dummy QWidget to toolbar to center the action icons vertically: */
+                QWidget *topSpacerWidget = new QWidget(this);
+                topSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+                topSpacerWidget->setVisible(true);
+                QWidget *bottomSpacerWidget = new QWidget(this);
+                bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+                bottomSpacerWidget->setVisible(true);
+
+
+
+                m_pCopyGuestToHost = new QAction(this);
+                m_pCopyGuestToHost->setIcon(UIIconPool::iconSet(QString(":/arrow_right_10px_x2.png")));
+                m_pCopyHostToGuest = new QAction(this);
+                m_pCopyHostToGuest->setIcon(UIIconPool::iconSet(QString(":/arrow_left_10px_x2.png")));
+
+
+                m_pToolBar->addWidget(topSpacerWidget);
+                m_pToolBar->addAction(m_pCopyGuestToHost);
+                m_pToolBar->addAction(m_pCopyHostToGuest);
+                m_pToolBar->addWidget(bottomSpacerWidget);
+
+
+                containerLayout->addWidget(m_pToolBar);
+            }
+
             m_pHostFileTable = new UIHostFileTable;
             if (m_pHostFileTable)
                 containerLayout->addWidget(m_pHostFileTable);
@@ -314,7 +368,7 @@ void UIGuestControlFileManager::prepareConnections()
         connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
                 this, &UIGuestControlFileManager::sltGuestSessionUnregistered, Qt::DirectConnection);
     }
-    if(m_pSessionCreateWidget)
+    if (m_pSessionCreateWidget)
     {
         connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCreateSession,
                 this, &UIGuestControlFileManager::sltCreateSession);
@@ -327,7 +381,7 @@ void UIGuestControlFileManager::sltGuestSessionUnregistered(CGuestSession guestS
 {
     if (!guestSession.isOk())
         return;
-    if(guestSession == m_comGuestSession && m_comGuestSession.isOk())
+    if (guestSession == m_comGuestSession && m_comGuestSession.isOk())
         m_comGuestSession.detach();
     if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCreateMode();
@@ -335,7 +389,7 @@ void UIGuestControlFileManager::sltGuestSessionUnregistered(CGuestSession guestS
 
 void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString strPassword)
 {
-    if(strUserName.isEmpty())
+    if (strUserName.isEmpty())
     {
         m_pLogOutput->appendPlainText("No user name is given");
         return;
@@ -353,12 +407,12 @@ void UIGuestControlFileManager::sltCloseSession()
     if (m_pGuestFileTable)
         m_pGuestFileTable->reset();
 
-    if(m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
+    if (m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
 
     m_comGuestSession.Close();
     m_pLogOutput->appendPlainText("Guest session is closed");
-    if(m_pSessionCreateWidget)
+    if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCreateMode();
 }
 
@@ -408,7 +462,7 @@ bool UIGuestControlFileManager::createSession(const QString& strUserName, const 
     }
 
     m_pLogOutput->appendPlainText("Guest session has been created");
-    if(m_pSessionCreateWidget)
+    if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCloseMode();
 
     /* Prepare session listener */

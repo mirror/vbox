@@ -33,8 +33,9 @@
 
 /* Forward declarations: */
 class QAction;
+class QILabel;
 class QILineEdit;
-class QVBoxLayout;
+class QGridLayout;
 class UIFileTableItem;
 class UIGuestControlFileTable;
 class UIToolBar;
@@ -74,7 +75,7 @@ private:
     UIFileTableItem *m_pRootItem;
 };
 
-/** This serves a base class for file table. Currently a guest version
+/** This class serves a base class for file table. Currently a guest version
     and a host version are derived from this base. Each of these children
     populates the UIGuestControlFileModel by scanning the file system
     differently. */
@@ -107,6 +108,7 @@ protected:
     QTableView              *m_pView;
     UIGuestControlFileModel *m_pModel;
     QTreeView               *m_pTree;
+    QILabel                 *m_pLocationLabel;
 
 protected slots:
 
@@ -114,11 +116,18 @@ protected slots:
 
 private:
 
-    void           prepareObjects();
-    QVBoxLayout    *m_pMainLayout;
+    void            prepareObjects();
+    void            prepareActions();
+    QGridLayout    *m_pMainLayout;
     QILineEdit     *m_pCurrentLocationEdit;
     UIToolBar      *m_pToolBar;
-    QAction        *m_pActionRefresh;
+    QAction        *m_pRefresh;
+    QAction        *m_pDelete;
+    QAction        *m_pNewFolder;
+    QAction        *m_pGoUp;
+    QAction        *m_pCopy;
+    QAction        *m_pCut;
+    QAction        *m_pPaste;
 
     friend class UIGuestControlFileModel;
 };
@@ -136,6 +145,7 @@ public:
 
 protected:
 
+    void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
 
 private:
@@ -155,6 +165,7 @@ public:
 
 protected:
 
+    void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
 
 };

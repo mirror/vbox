@@ -258,15 +258,15 @@ void UIGuestControlConsole::completeByTab()
 
     const QList<QString> &matches = matchedWords(currentWord);
     /* If there are no matches do nothing: */
-    if(matches.empty())
+    if (matches.empty())
         return;
     /* if there are more than one match list them all and
        reprint the line: */
-    if(matches.size() > 1)
+    if (matches.size() > 1)
     {
         moveCursor(QTextCursor::End);
         QString strMatches;
-        for(int i = 0; i < matches.size(); ++i)
+        for (int i = 0; i < matches.size(); ++i)
         {
             strMatches.append(matches.at(i));
             strMatches.append(" ");
@@ -283,7 +283,7 @@ void UIGuestControlConsole::completeByTab()
     }
     /* if there is only one word just complete: */
     /* some sanity checks */
-    if(matches.at(0).length() > currentWord.length())
+    if (matches.at(0).length() > currentWord.length())
        insertPlainText(matches.at(0).right(matches.at(0).length() - currentWord.length()));
 }
 
@@ -292,11 +292,11 @@ QList<QString> UIGuestControlConsole::matchedWords(const QString &strSearch) con
 {
     QList<QString> list;
     /* Go thru the map and find which of its elements start with @pstrSearch: */
-    for(TabDictionary::const_iterator iterator = m_tabDictinary.begin();
+    for (TabDictionary::const_iterator iterator = m_tabDictinary.begin();
         iterator != m_tabDictinary.end(); ++iterator)
     {
         const QString &strMap = iterator.key();
-        if(strMap.startsWith(strSearch))
+        if (strMap.startsWith(strSearch))
             list.push_back(strMap);
     }
     return list;

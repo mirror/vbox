@@ -146,7 +146,7 @@ private slots:
 
     void expandCollapseAll(bool bFlag)
     {
-        for(int i = 0; i < topLevelItemCount(); ++i)
+        for (int i = 0; i < topLevelItemCount(); ++i)
         {
             if (!topLevelItem(i))
                 break;
