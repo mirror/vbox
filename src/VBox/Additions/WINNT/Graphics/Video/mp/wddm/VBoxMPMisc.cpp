@@ -2024,13 +2024,9 @@ static BOOLEAN vboxWddmSlVSyncIrqCb(PVOID pvContext)
         if (pTarget->fConnected)
         {
             memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
-#ifdef VBOX_WDDM_WIN8
             notify.InterruptType = g_VBoxDisplayOnly?
                                        DXGK_INTERRUPT_DISPLAYONLY_VSYNC:
                                        DXGK_INTERRUPT_CRTC_VSYNC;
-#else
-            notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
-#endif
             notify.CrtcVsync.VidPnTargetId = i;
             pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
             bNeedDpc = TRUE;
@@ -2090,8 +2086,6 @@ NTSTATUS VBoxWddmSlTerm(PVBOXMP_DEVEXT pDevExt)
     return STATUS_SUCCESS;
 }
 
-#ifdef VBOX_WDDM_WIN8
-
 void vboxWddmDiInitDefault(DXGK_DISPLAY_INFORMATION *pInfo, PHYSICAL_ADDRESS PhAddr, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
     pInfo->Width = 1024;
@@ -2135,6 +2129,4 @@ void vboxWddmDmSetupDefaultVramLocation(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRE
     if (vboxWddmAddrSetVram(&pSource->AllocData.Addr, 1, offVram))
         pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
 }
-
-#endif /* VBOX_WDDM_WIN8 */
 

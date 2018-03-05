@@ -40,18 +40,14 @@
 #define VBOXWDDM_DUMMY_DMABUFFER_SIZE (sizeof(VBOXCMDVBVA_HDR) / 2)
 
 DWORD g_VBoxLogUm = 0;
-#ifdef VBOX_WDDM_WIN8
+
+/* Whether the driver is display-only (no 3D) for Windows 8 or newer guests. */
 DWORD g_VBoxDisplayOnly = 0;
-#endif
 
 #define VBOXWDDM_MEMTAG 'MDBV'
 PVOID vboxWddmMemAlloc(IN SIZE_T cbSize)
 {
-#ifdef VBOX_WDDM_WIN8
-    POOL_TYPE enmPoolType = NonPagedPoolNx;
-#else
-    POOL_TYPE enmPoolType = NonPagedPool;
-#endif
+    POOL_TYPE enmPoolType = (VBoxQueryWinVersion() >= WINVERSION_8) ? NonPagedPoolNx : NonPagedPool;
     return ExAllocatePoolWithTag(enmPoolType, cbSize, VBOXWDDM_MEMTAG);
 }
 
@@ -1279,44 +1275,46 @@ NTSTATUS DxgkDdiStartDevice(
                     }
 
                     Status = STATUS_SUCCESS;
-#ifdef VBOX_WDDM_WIN8
-                    DXGK_DISPLAY_INFORMATION DisplayInfo;
-                    Status = pDevExt->u.primary.DxgkInterface.DxgkCbAcquirePostDisplayOwnership(pDevExt->u.primary.DxgkInterface.DeviceHandle,
-                            &DisplayInfo);
-                    if (NT_SUCCESS(Status))
+
+                    if (VBoxQueryWinVersion() >= WINVERSION_8)
                     {
-                        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[0];
-                        PHYSICAL_ADDRESS PhAddr;
-                        /* display info may sometimes not be valid, e.g. on from-full-graphics wddm driver update
-                         * ensure we have something meaningful here */
-                        if (!DisplayInfo.Width)
+                        DXGK_DISPLAY_INFORMATION DisplayInfo;
+                        Status = pDevExt->u.primary.DxgkInterface.DxgkCbAcquirePostDisplayOwnership(pDevExt->u.primary.DxgkInterface.DeviceHandle,
+                                &DisplayInfo);
+                        if (NT_SUCCESS(Status))
                         {
-                            PhAddr = VBoxCommonFromDeviceExt(pDevExt)->phVRAM;
-                            vboxWddmDiInitDefault(&DisplayInfo, PhAddr, 0);
+                            PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[0];
+                            PHYSICAL_ADDRESS PhAddr;
+                            /* display info may sometimes not be valid, e.g. on from-full-graphics wddm driver update
+                             * ensure we have something meaningful here */
+                            if (!DisplayInfo.Width)
+                            {
+                                PhAddr = VBoxCommonFromDeviceExt(pDevExt)->phVRAM;
+                                vboxWddmDiInitDefault(&DisplayInfo, PhAddr, 0);
+                            }
+                            else
+                            {
+                                PhAddr = DisplayInfo.PhysicAddress;
+                                DisplayInfo.TargetId = 0;
+                            }
+
+                            vboxWddmDiToAllocData(pDevExt, &DisplayInfo, &pSource->AllocData);
+
+                            /* init the rest source infos with some default values */
+                            for (UINT i = 1; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                            {
+                                PhAddr.QuadPart += pSource->AllocData.SurfDesc.cbSize;
+                                PhAddr.QuadPart = ROUND_TO_PAGES(PhAddr.QuadPart);
+                                vboxWddmDiInitDefault(&DisplayInfo, PhAddr, i);
+                                pSource = &pDevExt->aSources[i];
+                                vboxWddmDiToAllocData(pDevExt, &DisplayInfo, &pSource->AllocData);
+                            }
                         }
                         else
                         {
-                            PhAddr = DisplayInfo.PhysicAddress;
-                            DisplayInfo.TargetId = 0;
-                        }
-
-                        vboxWddmDiToAllocData(pDevExt, &DisplayInfo, &pSource->AllocData);
-
-                        /* init the rest source infos with some default values */
-                        for (UINT i = 1; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-                        {
-                            PhAddr.QuadPart += pSource->AllocData.SurfDesc.cbSize;
-                            PhAddr.QuadPart = ROUND_TO_PAGES(PhAddr.QuadPart);
-                            vboxWddmDiInitDefault(&DisplayInfo, PhAddr, i);
-                            pSource = &pDevExt->aSources[i];
-                            vboxWddmDiToAllocData(pDevExt, &DisplayInfo, &pSource->AllocData);
+                            WARN(("DxgkCbAcquirePostDisplayOwnership failed, Status 0x%x", Status));
                         }
                     }
-                    else
-                    {
-                        WARN(("DxgkCbAcquirePostDisplayOwnership failed, Status 0x%x", Status));
-                    }
-#endif
 
                     VBoxWddmVModesInit(pDevExt);
                 }
@@ -2200,10 +2198,8 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
         case DXGKQAITYPE_DRIVERCAPS:
         {
             DXGK_DRIVERCAPS *pCaps = (DXGK_DRIVERCAPS*)pQueryAdapterInfo->pOutputData;
-
-#ifdef VBOX_WDDM_WIN8
             memset(pCaps, 0, sizeof (*pCaps));
-#endif
+
             pCaps->HighestAcceptableAddress.LowPart = ~0UL;
 #ifdef RT_ARCH_AMD64
             /* driver talks to host in terms of page numbers when reffering to RAM
@@ -2214,118 +2210,108 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH;
             pCaps->MaxPointerHeight = VBOXWDDM_C_POINTER_MAX_HEIGHT;
             pCaps->PointerCaps.Value = 3; /* Monochrome , Color*/ /* MaskedColor == Value | 4, disable for now */
-#ifdef VBOX_WDDM_WIN8
             if (!g_VBoxDisplayOnly)
-#endif
             {
-            pCaps->MaxAllocationListSlotId = 16;
-            pCaps->ApertureSegmentCommitLimit = 0;
-            pCaps->InterruptMessageNumber = 0;
-            pCaps->NumberOfSwizzlingRanges = 0;
-            pCaps->MaxOverlays = 0;
+                pCaps->MaxAllocationListSlotId = 16;
+                pCaps->ApertureSegmentCommitLimit = 0;
+                pCaps->InterruptMessageNumber = 0;
+                pCaps->NumberOfSwizzlingRanges = 0;
+                pCaps->MaxOverlays = 0;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-            for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-            {
-                if ( pDevExt->aSources[i].Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED)
-                    pCaps->MaxOverlays += pDevExt->aSources[i].Vhwa.Settings.cOverlaysSupported;
-            }
+                for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                {
+                    if ( pDevExt->aSources[i].Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED)
+                        pCaps->MaxOverlays += pDevExt->aSources[i].Vhwa.Settings.cOverlaysSupported;
+                }
 #endif
-            pCaps->GammaRampCaps.Value = 0;
-            pCaps->PresentationCaps.Value = 0;
-            pCaps->PresentationCaps.NoScreenToScreenBlt = 1;
-            pCaps->PresentationCaps.NoOverlapScreenBlt = 1;
-            pCaps->MaxQueuedFlipOnVSync = 0; /* do we need it? */
-            pCaps->FlipCaps.Value = 0;
-            /* ? pCaps->FlipCaps.FlipOnVSyncWithNoWait = 1; */
-            pCaps->SchedulingCaps.Value = 0;
-            /* we might need it for Aero.
-             * Setting this flag means we support DeviceContext, i.e.
-             *  DxgkDdiCreateContext and DxgkDdiDestroyContext
-             */
-            pCaps->SchedulingCaps.MultiEngineAware = 1;
-            pCaps->MemoryManagementCaps.Value = 0;
-            /** @todo this correlates with pCaps->SchedulingCaps.MultiEngineAware */
-            pCaps->MemoryManagementCaps.PagingNode = 0;
-            /** @todo this correlates with pCaps->SchedulingCaps.MultiEngineAware */
-            pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = VBOXWDDM_NUM_NODES;
-#ifdef VBOX_WDDM_WIN8
-            pCaps->WDDMVersion = DXGKDDI_WDDMv1;
-#endif
+                pCaps->GammaRampCaps.Value = 0;
+                pCaps->PresentationCaps.Value = 0;
+                pCaps->PresentationCaps.NoScreenToScreenBlt = 1;
+                pCaps->PresentationCaps.NoOverlapScreenBlt = 1;
+                pCaps->MaxQueuedFlipOnVSync = 0; /* do we need it? */
+                pCaps->FlipCaps.Value = 0;
+                /* ? pCaps->FlipCaps.FlipOnVSyncWithNoWait = 1; */
+                pCaps->SchedulingCaps.Value = 0;
+                /* we might need it for Aero.
+                 * Setting this flag means we support DeviceContext, i.e.
+                 *  DxgkDdiCreateContext and DxgkDdiDestroyContext
+                 */
+                pCaps->SchedulingCaps.MultiEngineAware = 1;
+                pCaps->MemoryManagementCaps.Value = 0;
+                /** @todo this correlates with pCaps->SchedulingCaps.MultiEngineAware */
+                pCaps->MemoryManagementCaps.PagingNode = 0;
+                /** @todo this correlates with pCaps->SchedulingCaps.MultiEngineAware */
+                pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = VBOXWDDM_NUM_NODES;
+
+                if (VBoxQueryWinVersion() >= WINVERSION_8)
+                    pCaps->WDDMVersion = DXGKDDI_WDDMv1;
             }
-#ifdef VBOX_WDDM_WIN8
             else
             {
                 pCaps->WDDMVersion = DXGKDDI_WDDMv1_2;
             }
-#endif
             break;
         }
         case DXGKQAITYPE_QUERYSEGMENT:
         {
-#ifdef VBOX_WDDM_WIN8
             if (!g_VBoxDisplayOnly)
-#endif
             {
-            /* no need for DXGK_QUERYSEGMENTIN as it contains AGP aperture info, which (AGP aperture) we do not support
-             * DXGK_QUERYSEGMENTIN *pQsIn = (DXGK_QUERYSEGMENTIN*)pQueryAdapterInfo->pInputData; */
-            DXGK_QUERYSEGMENTOUT *pQsOut = (DXGK_QUERYSEGMENTOUT*)pQueryAdapterInfo->pOutputData;
+                /* no need for DXGK_QUERYSEGMENTIN as it contains AGP aperture info, which (AGP aperture) we do not support
+                 * DXGK_QUERYSEGMENTIN *pQsIn = (DXGK_QUERYSEGMENTIN*)pQueryAdapterInfo->pInputData; */
+                DXGK_QUERYSEGMENTOUT *pQsOut = (DXGK_QUERYSEGMENTOUT*)pQueryAdapterInfo->pOutputData;
 # define VBOXWDDM_SEGMENTS_COUNT 2
-            if (!pQsOut->pSegmentDescriptor)
-            {
-                /* we are requested to provide the number of segments we support */
-                pQsOut->NbSegment = VBOXWDDM_SEGMENTS_COUNT;
-            }
-            else if (pQsOut->NbSegment != VBOXWDDM_SEGMENTS_COUNT)
-            {
-                WARN(("NbSegment (%d) != 1", pQsOut->NbSegment));
-                Status = STATUS_INVALID_PARAMETER;
-            }
-            else
-            {
-                DXGK_SEGMENTDESCRIPTOR* pDr = pQsOut->pSegmentDescriptor;
-                /* we are requested to provide segment information */
-                pDr->BaseAddress.QuadPart = 0;
-                pDr->CpuTranslatedAddress = VBoxCommonFromDeviceExt(pDevExt)->phVRAM;
-                /* make sure the size is page aligned */
-                /** @todo need to setup VBVA buffers and adjust the mem size here */
-                pDr->Size = vboxWddmVramCpuVisibleSegmentSize(pDevExt);
-                pDr->NbOfBanks = 0;
-                pDr->pBankRangeTable = 0;
-                pDr->CommitLimit = pDr->Size;
-                pDr->Flags.Value = 0;
-                pDr->Flags.CpuVisible = 1;
+                if (!pQsOut->pSegmentDescriptor)
+                {
+                    /* we are requested to provide the number of segments we support */
+                    pQsOut->NbSegment = VBOXWDDM_SEGMENTS_COUNT;
+                }
+                else if (pQsOut->NbSegment != VBOXWDDM_SEGMENTS_COUNT)
+                {
+                    WARN(("NbSegment (%d) != 1", pQsOut->NbSegment));
+                    Status = STATUS_INVALID_PARAMETER;
+                }
+                else
+                {
+                    DXGK_SEGMENTDESCRIPTOR* pDr = pQsOut->pSegmentDescriptor;
+                    /* we are requested to provide segment information */
+                    pDr->BaseAddress.QuadPart = 0;
+                    pDr->CpuTranslatedAddress = VBoxCommonFromDeviceExt(pDevExt)->phVRAM;
+                    /* make sure the size is page aligned */
+                    /** @todo need to setup VBVA buffers and adjust the mem size here */
+                    pDr->Size = vboxWddmVramCpuVisibleSegmentSize(pDevExt);
+                    pDr->NbOfBanks = 0;
+                    pDr->pBankRangeTable = 0;
+                    pDr->CommitLimit = pDr->Size;
+                    pDr->Flags.Value = 0;
+                    pDr->Flags.CpuVisible = 1;
 
-                ++pDr;
-                /* create cpu-invisible segment of the same size */
-                pDr->BaseAddress.QuadPart = 0;
-                pDr->CpuTranslatedAddress.QuadPart = 0;
-                /* make sure the size is page aligned */
-                /** @todo need to setup VBVA buffers and adjust the mem size here */
-                pDr->Size = vboxWddmVramCpuInvisibleSegmentSize(pDevExt);
-                pDr->NbOfBanks = 0;
-                pDr->pBankRangeTable = 0;
-                pDr->CommitLimit = pDr->Size;
-                pDr->Flags.Value = 0;
+                    ++pDr;
+                    /* create cpu-invisible segment of the same size */
+                    pDr->BaseAddress.QuadPart = 0;
+                    pDr->CpuTranslatedAddress.QuadPart = 0;
+                    /* make sure the size is page aligned */
+                    /** @todo need to setup VBVA buffers and adjust the mem size here */
+                    pDr->Size = vboxWddmVramCpuInvisibleSegmentSize(pDevExt);
+                    pDr->NbOfBanks = 0;
+                    pDr->pBankRangeTable = 0;
+                    pDr->CommitLimit = pDr->Size;
+                    pDr->Flags.Value = 0;
 
-                pQsOut->PagingBufferSegmentId = 0;
-                pQsOut->PagingBufferSize = PAGE_SIZE;
-                pQsOut->PagingBufferPrivateDataSize = PAGE_SIZE;
+                    pQsOut->PagingBufferSegmentId = 0;
+                    pQsOut->PagingBufferSize = PAGE_SIZE;
+                    pQsOut->PagingBufferPrivateDataSize = PAGE_SIZE;
+                }
             }
-            }
-#ifdef VBOX_WDDM_WIN8
             else
             {
                 WARN(("unsupported Type (%d)", pQueryAdapterInfo->Type));
                 Status = STATUS_NOT_SUPPORTED;
             }
-#endif
 
             break;
         }
         case DXGKQAITYPE_UMDRIVERPRIVATE:
-#ifdef VBOX_WDDM_WIN8
             if (!g_VBoxDisplayOnly)
-#endif
             {
                 if (pQueryAdapterInfo->OutputDataSize == sizeof (VBOXWDDM_QI))
                 {
@@ -2349,20 +2335,18 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                     Status = STATUS_BUFFER_TOO_SMALL;
                 }
             }
-#ifdef VBOX_WDDM_WIN8
             else
             {
                 WARN(("unsupported Type (%d)", pQueryAdapterInfo->Type));
                 Status = STATUS_NOT_SUPPORTED;
             }
-#endif
             break;
-#ifdef VBOX_WDDM_WIN8
+
         case DXGKQAITYPE_QUERYSEGMENT3:
             LOGREL(("DXGKQAITYPE_QUERYSEGMENT3 treating as unsupported!"));
             Status = STATUS_NOT_SUPPORTED;
             break;
-#endif
+
         default:
             WARN(("unsupported Type (%d)", pQueryAdapterInfo->Type));
             Status = STATUS_NOT_SUPPORTED;
@@ -5313,7 +5297,6 @@ DxgkDdiSetVidPnSourceAddress(
         vboxWddmAddrSetVram(&pAllocation->AllocData.Addr, pSetVidPnSourceAddress->PrimarySegment, (VBOXVIDEOOFFSET)pSetVidPnSourceAddress->PrimaryAddress.QuadPart);
     }
 
-#ifdef VBOX_WDDM_WIN8
     if (g_VBoxDisplayOnly && !pAllocation)
     {
         /* the VRAM here is an absolute address, nto an offset!
@@ -5322,11 +5305,8 @@ DxgkDdiSetVidPnSourceAddress(
                 vboxWddmVramAddrToOffset(pDevExt, pSetVidPnSourceAddress->PrimaryAddress));
     }
     else
-#endif
     {
-#ifdef VBOX_WDDM_WIN8
         Assert(!g_VBoxDisplayOnly);
-#endif
         vboxWddmAddrSetVram(&pSource->AllocData.Addr, pSetVidPnSourceAddress->PrimarySegment,
                                                     pSetVidPnSourceAddress->PrimaryAddress.QuadPart);
     }
@@ -5592,9 +5572,7 @@ DxgkDdiControlInterrupt(
 
     switch (InterruptType)
     {
-#ifdef VBOX_WDDM_WIN8
         case DXGK_INTERRUPT_DISPLAYONLY_VSYNC:
-#endif
         case DXGK_INTERRUPT_CRTC_VSYNC:
         {
             Status = VBoxWddmSlEnableVSyncNotification(pDevExt, Enable);
@@ -7203,8 +7181,6 @@ NTSTATUS APIENTRY CALLBACK DxgkDdiRestartFromTimeout(IN_CONST_HANDLE hAdapter)
     return STATUS_SUCCESS;
 }
 
-#ifdef VBOX_WDDM_WIN8
-
 static NTSTATUS APIENTRY DxgkDdiQueryVidPnHWCapability(
         __in     const HANDLE hAdapter,
         __inout  DXGKARG_QUERYVIDPNHWCAPABILITY *pVidPnHWCaps
@@ -7480,7 +7456,6 @@ static NTSTATUS vboxWddmInitDisplayOnlyDriver(IN PDRIVER_OBJECT pDriverObject, I
     }
     return Status;
 }
-#endif
 
 static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING pRegistryPath, BOOLEAN fCmdVbva)
 {
@@ -7493,7 +7468,10 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     DRIVER_INITIALIZATION_DATA DriverInitializationData = {'\0'};
 
     // Fill in the DriverInitializationData structure and call DxgkInitialize()
-    DriverInitializationData.Version = DXGKDDI_INTERFACE_VERSION;
+    if (VBoxQueryWinVersion() >= WINVERSION_8)
+        DriverInitializationData.Version = DXGKDDI_INTERFACE_VERSION_WIN8;
+    else
+        DriverInitializationData.Version = DXGKDDI_INTERFACE_VERSION_VISTA_SP1;
 
     DriverInitializationData.DxgkDdiAddDevice = DxgkDdiAddDevice;
     DriverInitializationData.DxgkDdiStartDevice = DxgkDdiStartDevice;
@@ -7594,15 +7572,10 @@ DriverEntry(
     RTLogGroupSettings(0, "+default.e.l.f.l2.l3");
 #endif
 
-#ifdef VBOX_WDDM_WIN8
-    LOGREL(("VBox WDDM Driver for Windows 8+ version %d.%d.%dr%d, %d bit; Built %s %s",
+    LOGREL(("VBox WDDM Driver for Windows %s version %d.%d.%dr%d, %d bit; Built %s %s",
+            VBoxQueryWinVersion() >= WINVERSION_8 ? "8+" : "Vista and 7",
             VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
             (sizeof (void*) << 3), __DATE__, __TIME__));
-#else
-    LOGREL(("VBox WDDM Driver for Windows Vista and 7 version %d.%d.%dr%d, %d bit; Built %s %s",
-            VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
-            (sizeof (void*) << 3), __DATE__, __TIME__));
-#endif
 
     if (   !ARGUMENT_PRESENT(DriverObject)
         || !ARGUMENT_PRESENT(RegistryPath))
@@ -7655,37 +7628,35 @@ DriverEntry(
         if (!VBoxMpCrCtlConIs3DSupported())
 #endif
         {
-#ifdef VBOX_WDDM_WIN8
-            Assert(f3DRequired);
-            g_VBoxDisplayOnly = 1;
+            /* No 3D support by the host. */
+            if (VBoxQueryWinVersion() >= WINVERSION_8)
+            {
+                /* Use display only driver for Win8+. */
+                g_VBoxDisplayOnly = 1;
 
-            /* Black list some builds. */
-            if (major == 6 && minor == 4 && build == 9841)
-            {
-                /* W10 Technical preview crashes with display-only driver. */
-                LOGREL(("3D is NOT supported by the host, fallback to the system video driver."));
-                Status = STATUS_UNSUCCESSFUL;
+                /* Black list some builds. */
+                if (major == 6 && minor == 4 && build == 9841)
+                {
+                    /* W10 Technical preview crashes with display-only driver. */
+                    LOGREL(("3D is NOT supported by the host, fallback to the system video driver."));
+                    Status = STATUS_UNSUCCESSFUL;
+                }
+                else
+                {
+                    LOGREL(("3D is NOT supported by the host, falling back to display-only mode.."));
+                }
             }
             else
             {
-                LOGREL(("3D is NOT supported by the host, falling back to display-only mode.."));
+                if (f3DRequired)
+                {
+                    LOGREL(("3D is NOT supported by the host, but is required for the current guest version using this driver.."));
+                    Status = STATUS_UNSUCCESSFUL;
+                }
+                else
+                    LOGREL(("3D is NOT supported by the host, but is NOT required for the current guest version using this driver, continuing with Disabled 3D.."));
             }
-#else
-            if (f3DRequired)
-            {
-                LOGREL(("3D is NOT supported by the host, but is required for the current guest version using this driver.."));
-                Status = STATUS_UNSUCCESSFUL;
-            }
-            else
-                LOGREL(("3D is NOT supported by the host, but is NOT required for the current guest version using this driver, continuing with Disabled 3D.."));
-#endif
         }
-
-#if 0 //defined(DEBUG_misha) && defined(VBOX_WDDM_WIN8)
-        /* force g_VBoxDisplayOnly for debugging purposes */
-        LOGREL(("Current win8 video driver only supports display-only mode no matter whether or not host 3D is enabled!"));
-        g_VBoxDisplayOnly = 1;
-#endif
 
         if (NT_SUCCESS(Status))
         {
@@ -7694,13 +7665,11 @@ DriverEntry(
             if (RT_SUCCESS(rc))
 #endif
             {
-#ifdef VBOX_WDDM_WIN8
                 if (g_VBoxDisplayOnly)
                 {
                     Status = vboxWddmInitDisplayOnlyDriver(DriverObject, RegistryPath);
                 }
                 else
-#endif
                 {
                     Status = vboxWddmInitFullGraphicsDriver(DriverObject, RegistryPath,
 #ifdef VBOX_WITH_CROGL
@@ -7713,6 +7682,7 @@ DriverEntry(
 
                 if (NT_SUCCESS(Status))
                     return Status;
+
 #ifdef VBOX_WITH_CROGL
                 VBoxVrTerm();
 #endif

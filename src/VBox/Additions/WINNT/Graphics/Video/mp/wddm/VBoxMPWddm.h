@@ -200,11 +200,7 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
     );
 #endif
 
-#ifdef VBOX_WDDM_WIN8
-# define VBOXWDDM_IS_DISPLAYONLY() (g_VBoxDisplayOnly)
-#else
-# define VBOXWDDM_IS_DISPLAYONLY() (FALSE)
-#endif
+#define VBOXWDDM_IS_DISPLAYONLY() (g_VBoxDisplayOnly)
 
 # define VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, _pAlloc) ((_pAlloc)->bAssigned)
 

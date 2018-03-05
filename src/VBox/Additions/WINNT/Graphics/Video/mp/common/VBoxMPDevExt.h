@@ -30,9 +30,7 @@
 #endif
 
 #ifdef VBOX_WDDM_MINIPORT
-# ifdef VBOX_WDDM_WIN8
 extern DWORD g_VBoxDisplayOnly;
-# endif
 # include "wddm/VBoxMPTypes.h"
 #endif
 
