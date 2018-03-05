@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_GUEST_CONTROL //LOG_GROUP_MAIN_GUESTSESSION
+#define LOG_GROUP LOG_GROUP_MAIN_GUESTSESSION
 #include "LoggingNew.h"
 
 #include "GuestImpl.h"
@@ -2456,7 +2456,9 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
     }
-/** @todo r=bird: fend off flags we don't implement here!  */
+
+    if (fFlags)
+        return setError(E_NOTIMPL, tr("Flag(s) not yet implemented"));
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2464,15 +2466,15 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
 
     try
     {
-        SessionTaskCopyFrom *pTask = NULL;
+        SessionTaskCopyFileFrom *pTask = NULL;
         ComObjPtr<Progress> pProgress;
         try
         {
-            pTask = new SessionTaskCopyFrom(this /* GuestSession */, aSource, aDest, fFlags);
+            pTask = new SessionTaskCopyFileFrom(this /* GuestSession */, aSource, aDest, fFlags);
         }
         catch(...)
         {
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFrom object "));
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFileFrom object"));
             throw;
         }
 
@@ -2482,7 +2484,7 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
         {
             delete pTask;
             hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Creating progress object for SessionTaskCopyFrom object failed"));
+                          tr("Creating progress object for SessionTaskCopyFileFrom object failed"));
             throw hr;
         }
 
@@ -2529,7 +2531,9 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
     }
-/** @todo r=bird: fend off flags we don't implement here!  */
+
+    if (fFlags)
+        return setError(E_NOTIMPL, tr("Flag(s) not yet implemented"));
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2537,25 +2541,24 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
 
     try
     {
-        SessionTaskCopyTo *pTask = NULL;
+        SessionTaskCopyFileTo *pTask = NULL;
         ComObjPtr<Progress> pProgress;
         try
         {
-            pTask = new SessionTaskCopyTo(this /* GuestSession */, aSource, aDest, fFlags);
+            pTask = new SessionTaskCopyFileTo(this /* GuestSession */, aSource, aDest, fFlags);
         }
         catch(...)
         {
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyTo object "));
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFileTo object"));
             throw;
         }
-
 
         hr = pTask->Init(Utf8StrFmt(tr("Copying \"%s\" from host to \"%s\" on the guest"), aSource.c_str(), aDest.c_str()));
         if (FAILED(hr))
         {
             delete pTask;
             hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Creating progress object for SessionTaskCopyTo object failed"));
+                          tr("Creating progress object for SessionTaskCopyFileTo object failed"));
             throw hr;
         }
 
@@ -2602,8 +2605,77 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
 HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                            const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
-    RT_NOREF(aSource, aDestination, aFlags, aProgress);
-    ReturnComNotImplemented();
+    LogFlowThisFuncEnter();
+
+    if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
+        return setError(E_INVALIDARG, tr("No source directory specified"));
+
+    if (RT_UNLIKELY((aDestination.c_str()) == NULL || *(aDestination.c_str()) == '\0'))
+        return setError(E_INVALIDARG, tr("No destination directory specified"));
+
+    if (!RTPathExists(aSource.c_str()))
+        return setError(E_INVALIDARG, tr("Source directory \"%s\" does not exist"), aSource.c_str());
+
+    uint32_t fFlags = DirectoryCopyFlags_None;
+    if (aFlags.size())
+    {
+        for (size_t i = 0; i < aFlags.size(); i++)
+            fFlags |= aFlags[i];
+    }
+    /** @todo Validate flags. */
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hr = S_OK;
+
+    try
+    {
+        SessionTaskCopyDirTo *pTask = NULL;
+        ComObjPtr<Progress> pProgress;
+        try
+        {
+            pTask = new SessionTaskCopyDirTo(this /* GuestSession */, aSource, aDestination, "" /* strFilter */, fFlags);
+        }
+        catch(...)
+        {
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyDirTo object"));
+            throw;
+        }
+
+        hr = pTask->Init(Utf8StrFmt(tr("Copying directory \"%s\" from host to \"%s\" on the guest"),
+                                    aSource.c_str(), aDestination.c_str()));
+        if (FAILED(hr))
+        {
+            delete pTask;
+            hr = setError(VBOX_E_IPRT_ERROR,
+                          tr("Creating progress object for SessionTaskCopyDirTo object failed"));
+            throw hr;
+        }
+
+        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+
+        if (SUCCEEDED(hr))
+        {
+            /* Return progress to the caller. */
+            pProgress = pTask->GetProgressObject();
+            hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
+        }
+        else
+            hr = setError(VBOX_E_IPRT_ERROR,
+                          tr("Starting thread for copying directory \"%s\" from host to \"%s\" on the guest failed"),
+                          aSource.c_str(), aDestination.c_str());
+    }
+    catch(std::bad_alloc &)
+    {
+        hr = E_OUTOFMEMORY;
+    }
+    catch(HRESULT eHR)
+    {
+        hr = eHR;
+        LogFlowThisFunc(("Exception was caught in the function\n"));
+    }
+
+    return hr;
 }
 
 HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
@@ -2705,13 +2777,22 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
         *aExists = objData.mType == FsObjType_Directory;
     else
     {
-        /** @todo r=bird: Looks like this code raises errors if the directory doesn't
-         *        exist... That's of course not right. */
         switch (rc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::i_setErrorExternal(this, guestRc);
+            {
+                switch (guestRc)
+                {
+                    case VERR_PATH_NOT_FOUND:
+                        *aExists = FALSE;
+                        break;
+                    default:
+                        hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory existence \"%s\" failed: %s"),
+                                      aPath.c_str(), GuestProcess::i_guestErrorToString(guestRc).c_str());
+                        break;
+                }
                 break;
+            }
 
             default:
                hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory existence \"%s\" failed: %Rrc"),

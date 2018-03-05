@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -69,25 +69,47 @@ public:
         return hr;
     }
 
-    const ComObjPtr<Progress>& GetProgressObject() const {return mProgress;}
+    const ComObjPtr<Progress>& GetProgressObject() const { return mProgress; }
 
 protected:
 
-    int getGuestProperty(const ComObjPtr<Guest> &pGuest,
-                           const Utf8Str &strPath, Utf8Str &strValue);
+    /** @name Directory handling primitives.
+     * @{ */
+    int directoryCreate(const com::Utf8Str &strPath, DirectoryCreateFlag_T enmDirecotryCreateFlags, uint32_t uMode, bool fFollowSymlinks);
+    /** @}  */
+
+    /** @name File handling primitives.
+     * @{ */
+    int fileCopyToGuestEx(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags, PRTFILE pFile, uint64_t cbOffset, uint64_t cbSize);
+    int fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
+    /** @}  */
+
+    /** @name Guest property handling primitives.
+     * @{ */
+    int getGuestProperty(const ComObjPtr<Guest> &pGuest, const Utf8Str &strPath, Utf8Str &strValue);
+    /** @}  */
+
+    /** @name Path handling primitives.
+     * @{ */
+    int pathConstructOnGuest(const Utf8Str &strSourceRoot, const Utf8Str &strSource, const Utf8Str &strDest, Utf8Str &strOut);
+    /** @}  */
+
     int setProgress(ULONG uPercent);
     int setProgressSuccess(void);
     HRESULT setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg);
+
     inline void setTaskDesc(const Utf8Str &strTaskDesc) throw()
     {
         mDesc = strTaskDesc;
     }
 
     HRESULT createAndSetProgressObject();
+
 protected:
 
     Utf8Str                 mDesc;
-    GuestSession           *mSession;
+    /** The guest session object this task is working on. */
+    ComObjPtr<GuestSession> mSession;
     /** Progress object for getting updated when running
      *  asynchronously. Optional. */
     ComObjPtr<Progress>     mProgress;
@@ -115,18 +137,66 @@ protected:
 };
 
 /**
- * Task for copying files from host to the guest.
+ * Task for copying directories from guest to the host.
  */
-class SessionTaskCopyTo : public GuestSessionTask
+class SessionTaskCopyDirFrom : public GuestSessionTask
 {
 public:
 
-    SessionTaskCopyTo(GuestSession *pSession,
-                      const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
-    SessionTaskCopyTo(GuestSession *pSession,
-                      PRTFILE pSourceFile, size_t cbSourceOffset, uint64_t cbSourceSize,
-                      const Utf8Str &strDest, uint32_t uFlags);
-    virtual ~SessionTaskCopyTo(void);
+    SessionTaskCopyDirFrom(GuestSession *pSession,
+                           const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter, DirectoryCopyFlags_T enmDirCopyFlags);
+    virtual ~SessionTaskCopyDirFrom(void);
+    int Run(void);
+
+protected:
+
+    int directoryCopyToHost(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive, bool fFollowSymlinks,
+                            const Utf8Str &strSubDir /* For recursion. */);
+protected:
+
+    Utf8Str              mSource;
+    Utf8Str              mDest;
+    Utf8Str              mFilter;
+    DirectoryCopyFlags_T mDirCopyFlags;
+};
+
+/**
+ * Task for copying directories from host to the guest.
+ */
+class SessionTaskCopyDirTo : public GuestSessionTask
+{
+public:
+
+    SessionTaskCopyDirTo(GuestSession *pSession,
+                         const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter, DirectoryCopyFlags_T enmDirCopyFlags);
+    virtual ~SessionTaskCopyDirTo(void);
+    int Run(void);
+
+protected:
+
+    int directoryCopyToGuest(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive, bool fFollowSymlinks,
+                             const Utf8Str &strSubDir /* For recursion. */);
+protected:
+
+    Utf8Str              mSource;
+    Utf8Str              mDest;
+    Utf8Str              mFilter;
+    DirectoryCopyFlags_T mDirCopyFlags;
+};
+
+/**
+ * Task for copying files from host to the guest.
+ */
+class SessionTaskCopyFileTo : public GuestSessionTask
+{
+public:
+
+    SessionTaskCopyFileTo(GuestSession *pSession,
+                          const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
+    SessionTaskCopyFileTo(GuestSession *pSession,
+                          PRTFILE pSourceFile, size_t cbSourceOffset, uint64_t cbSourceSize,
+                          const Utf8Str &strDest, uint32_t uFlags);
+    virtual ~SessionTaskCopyFileTo(void);
     int Run(void);
 
 protected:
@@ -142,13 +212,13 @@ protected:
 /**
  * Task for copying files from guest to the host.
  */
-class SessionTaskCopyFrom : public GuestSessionTask
+class SessionTaskCopyFileFrom : public GuestSessionTask
 {
 public:
 
-    SessionTaskCopyFrom(GuestSession *pSession,
+    SessionTaskCopyFileFrom(GuestSession *pSession,
                         const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
-    virtual ~SessionTaskCopyFrom(void);
+    virtual ~SessionTaskCopyFileFrom(void);
     int Run(void);
 
 protected:
@@ -222,12 +292,9 @@ protected:
         GuestProcessStartupInfo mProcInfo;
     };
 
-    int i_addProcessArguments(ProcessArguments &aArgumentsDest,
-                              const ProcessArguments &aArgumentsSource);
-    int i_copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO,
-                          Utf8Str const &strFileSource, const Utf8Str &strFileDest,
-                          bool fOptional, uint32_t *pcbSize);
-    int i_runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo);
+    int addProcessArguments(ProcessArguments &aArgumentsDest, const ProcessArguments &aArgumentsSource);
+    int copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO, Utf8Str const &strFileSource, const Utf8Str &strFileDest, bool fOptional, uint32_t *pcbSize);
+    int runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo);
 
     /** Files to handle. */
     std::vector<InstallerFile> mFiles;
@@ -422,6 +489,7 @@ public:
     /** @name Public internal methods.
      * @todo r=bird: Most of these are public for no real reason...
      * @{ */
+    int                     i_copyToGuestCreateDir(const com::Utf8Str &aDestination, uint32_t fFlags, int *pGuestRc);
     int                     i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestRc);
     inline bool             i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDirectory> *pDir);
     int                     i_directoryRemoveFromList(GuestDirectory *pDirectory);
