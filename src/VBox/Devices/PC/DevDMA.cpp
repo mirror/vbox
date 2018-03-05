@@ -52,9 +52,6 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "VBoxDD.h"
 
 
