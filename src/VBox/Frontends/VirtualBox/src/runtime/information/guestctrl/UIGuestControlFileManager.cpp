@@ -76,6 +76,7 @@ public:
 protected:
 
     void retranslateUi();
+    void keyPressEvent(QKeyEvent * pEvent);
 
 private slots:
 
@@ -189,6 +190,18 @@ void UIGuestSessionCreateWidget::retranslateUi()
     if (m_pCloseButton)
         m_pCloseButton->setText(UIVMInformationDialog::tr("Close Session"));
 
+}
+
+void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
+{
+    /* Emit sigCreateSession upon enter press: */
+    if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)
+    {
+        if ((m_pUserNameEdit && m_pUserNameEdit->hasFocus()) ||
+            (m_pPasswordEdit && m_pPasswordEdit->hasFocus()))
+            sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
+    }
+    QWidget::keyPressEvent(pEvent);
 }
 
 void UIGuestSessionCreateWidget::switchSessionCreateMode()
@@ -457,9 +470,9 @@ void UIGuestControlFileManager::postSessionCreated()
 {
     if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCloseMode();
-    if(m_pGuestFileTable)
+    if (m_pGuestFileTable)
         m_pGuestFileTable->setEnabled(true);
-    if(m_pToolBar)
+    if (m_pToolBar)
         m_pToolBar->setEnabled(true);
 }
 
@@ -467,9 +480,9 @@ void UIGuestControlFileManager::postSessionClosed()
 {
     if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCreateMode();
-    if(m_pGuestFileTable)
+    if (m_pGuestFileTable)
         m_pGuestFileTable->setEnabled(false);
-    if(m_pToolBar)
+    if (m_pToolBar)
         m_pToolBar->setEnabled(false);
 
 }

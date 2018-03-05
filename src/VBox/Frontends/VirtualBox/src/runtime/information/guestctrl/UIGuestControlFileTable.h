@@ -99,7 +99,7 @@ protected:
     void insertItemsToTree(QMap<QString,UIFileTableItem*> &map, UIFileTableItem *parent,
                            bool isDirectoryMap, bool isStartDir);
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) = 0;
-
+    virtual void refresh() = 0;
     UIFileTableItem         *m_pRootItem;
 
     /** Using QITableView causes the following problem when I click on the table items
@@ -113,6 +113,8 @@ protected:
 protected slots:
 
     void sltItemDoubleClicked(const QModelIndex &index);
+    void sltGoUp();
+    void sltRefresh();
 
 private:
 
@@ -147,6 +149,7 @@ protected:
 
     void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
+    virtual void refresh() /* override */;
 
 private:
 
@@ -167,6 +170,7 @@ protected:
 
     void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
+    virtual void refresh() /* override */;
 
 };
 

@@ -80,6 +80,7 @@ public:
 
     /** True if this is directory and name is ".." */
     bool isUpDirectory() const;
+    void clearChildren();
 
 private:
     QList<UIFileTableItem*> m_childItems;
@@ -103,6 +104,7 @@ UIFileTableItem::UIFileTableItem(const QList<QVariant> &data, UIFileTableItem *p
 UIFileTableItem::~UIFileTableItem()
 {
     qDeleteAll(m_childItems);
+    m_childItems.clear();
 }
 
 void UIFileTableItem::appendChild(UIFileTableItem *item)
@@ -146,6 +148,12 @@ int UIFileTableItem::row() const
 bool UIFileTableItem::isDirectory() const
 {
     return m_bIsDirectory;
+}
+
+void UIFileTableItem::clearChildren()
+{
+    qDeleteAll(m_childItems);
+    m_childItems.clear();
 }
 
 bool UIFileTableItem::isOpened() const
@@ -451,13 +459,21 @@ void UIGuestControlFileTable::prepareActions()
         return;
 
     m_pGoUp = new QAction(this);
-    m_pGoUp->setIcon(UIIconPool::iconSet(QString(":/arrow_up_10px_x2.png")));
-    m_pToolBar->addAction(m_pGoUp);
-
+    if (m_pGoUp)
+    {
+        connect(m_pGoUp, &QAction::triggered, this, &UIGuestControlFileTable::sltGoUp);
+        m_pGoUp->setIcon(UIIconPool::iconSet(QString(":/arrow_up_10px_x2.png")));
+        m_pToolBar->addAction(m_pGoUp);
+    }
 
     m_pRefresh = new QAction(this);
-    m_pRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_22px.png")));
-    m_pToolBar->addAction(m_pRefresh);
+    if (m_pRefresh)
+    {
+        connect(m_pRefresh, &QAction::triggered, this, &UIGuestControlFileTable::sltRefresh);
+        m_pRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_22px.png")));
+        m_pToolBar->addAction(m_pRefresh);
+    }
+
 
     m_pDelete = new QAction(this);
     m_pDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
@@ -581,6 +597,37 @@ void UIGuestControlFileTable::sltItemDoubleClicked(const QModelIndex &index)
 
     changeLocation(index);
 }
+
+void UIGuestControlFileTable::sltGoUp()
+{
+    if (!m_pView || !m_pModel)
+        return;
+    QModelIndex currentRoot = m_pView->rootIndex();
+    if (!currentRoot.isValid())
+        return;
+    if (currentRoot != m_pModel->rootIndex())
+        m_pView->setRootIndex(currentRoot.parent());
+}
+
+void UIGuestControlFileTable::sltRefresh()
+{
+    if (!m_pView || !m_pModel)
+        return;
+    QModelIndex currentIndex = m_pView->rootIndex();
+    if (!currentIndex.isValid())
+        return;
+    UIFileTableItem *treeItem =
+        static_cast<UIFileTableItem*>(currentIndex.internalPointer());
+    if (!treeItem)
+        return;
+    m_pModel->beginReset();
+    /* For now we clear the whole subtree (that isrecursively) which is an overkill: */
+    treeItem->clearChildren();
+    readDirectory(treeItem->path(), treeItem, false);
+    m_pModel->endReset();
+    m_pView->setRootIndex(currentIndex);
+}
+
 
 void UIGuestControlFileTable::retranslateUi()
 {
@@ -713,6 +760,10 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
     }
 }
 
+void UIGuestFileTable::refresh()
+{
+}
+
 
 /*********************************************************************************************************************************
 *   UIHostFileTable implementation.                                                                                              *
@@ -771,6 +822,10 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     insertItemsToTree(directories, parent, true, isStartDir);
     insertItemsToTree(files, parent, false, isStartDir);
     updateCurrentLocationEdit(strPath);
+}
+
+void UIHostFileTable::refresh()
+{
 }
 
 #include "UIGuestControlFileTable.moc"
