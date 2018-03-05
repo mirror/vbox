@@ -178,6 +178,17 @@ static int get_dns_addr_domain(PNATState pData)
     {
         struct dns_entry *pDns;
         RTNETADDRU *address = &st.rcps_nameserver[i].uAddr;
+
+        if (address->IPv4.u == INADDR_ANY)
+        {
+            /*
+             * This doesn't seem to be very well documented except for
+             * RTFS of res_init.c, but INADDR_ANY is a valid value for
+             * for "nameserver".
+             */
+            address->IPv4.u = RT_H2N_U32_C(INADDR_LOOPBACK);
+        }
+
         if (  (address->IPv4.u & RT_H2N_U32_C(IN_CLASSA_NET))
            == RT_N2H_U32_C(INADDR_LOOPBACK & IN_CLASSA_NET))
         {
@@ -192,15 +203,6 @@ static int get_dns_addr_domain(PNATState pData)
                 LogRel(("NAT: DNS server %RTnaipv4 registration detected, switching to the DNS proxy\n", address->IPv4));
                 pData->fUseDnsProxy = 1;
             }
-        }
-        else if (address->IPv4.u == INADDR_ANY)
-        {
-            /*
-             * This doesn't seem to be very well documented except for
-             * RTFS of res_init.c, but INADDR_ANY is a valid value for
-             * for "nameserver".
-             */
-            address->IPv4.u = pData->special_addr.s_addr | RT_H2N_U32_C(CTL_ALIAS);
         }
 
         pDns = RTMemAllocZ(sizeof(struct dns_entry));
