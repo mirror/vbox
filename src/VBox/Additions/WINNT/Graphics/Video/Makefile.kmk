@@ -221,7 +221,6 @@ ifdef VBOX_WITH_WDDM
 	$(call MSG_TOOL,Inf2Cat,VBoxVideoWddm-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
- ifdef VBOX_WITH_WDDM_W8
   VBOXWDDMW8_WITH_DISPD3D = 1
   ifdef VBOX_WITH_CROGL
    VBOXWDDMW8_WITH_GL = 1
@@ -411,7 +410,6 @@ ifdef VBOX_WITH_WDDM
 	$(call MSG_TOOL,Inf2Cat,VBoxVideoW8-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
- endif # VBOX_WITH_WDDM_W8
 endif # VBOX_WITH_WDDM
 
 include $(FILE_KBUILD_SUB_FOOTER)

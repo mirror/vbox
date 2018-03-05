@@ -133,11 +133,9 @@ DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideoWddm.sys \
 	$(PATH_STAGE_BIN)/additions/VBoxVideoWddm.inf \
 	$(PATH_STAGE_BIN)/additions/VBoxDispD3D.dll
- ifdef VBOX_WITH_WDDM_W8
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideoW8.sys \
 	$(PATH_STAGE_BIN)/additions/VBoxVideoW8.inf
- endif
  ifdef VBOX_WITH_CROGL
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/wined3dwddm.dll \
@@ -146,10 +144,8 @@ DRIVER_FILES += \
  ifdef VBOX_SIGN_ADDITIONS
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideoWddm.cat
-  ifdef VBOX_WITH_WDDM_W8
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideoW8.cat
-  endif
  endif
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
 DRIVER_FILES += \
@@ -192,7 +188,6 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'VBOX_WITH_GUEST_INSTALL_HELPER=$(if $(VBOX_WITH_GUEST_INSTALL_HELPER),1,0)' \
 	-E 'VBOX_WITH_LICENSE_INSTALL_RTF=$(if $(VBOX_BRAND_LICENSE_RTF),1,0)' \
 	-E 'VBOX_WITH_WDDM=$(if $(VBOX_WITH_WDDM),1,0)' \
-	-E 'VBOX_WITH_WDDM_W8=$(if $(VBOX_WITH_WDDM_W8),1,0)' \
 	-E 'VBOX_BRAND_WIN_ADD_INST_DLGBMP=$(subst /,\,$(VBOX_BRAND_WIN_ADD_INST_DLGBMP))' \
 	-E 'VBOX_BRAND_LICENSE_RTF=$(subst /,\,$(VBOX_BRAND_LICENSE_RTF))' \
 	$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),-E 'VBOX_BRAND_$(lang)_LICENSE_RTF=$(VBOX_BRAND_$(lang)_LICENSE_RTF)') \

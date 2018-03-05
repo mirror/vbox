@@ -2278,7 +2278,6 @@ Sub Main
    CheckSourcePath
    CheckForkBuild strOptkBuild
    CheckForWinDDK strOptDDK
-   CfgPrint "VBOX_WITH_WDDM_W8     := " '' @todo look for WinDDKv8
    CheckForVisualCPP strOptVC, strOptVCCommon, blnOptVCExpressEdition
    CheckForPlatformSDK strOptSDK
    CheckForMidl

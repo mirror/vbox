@@ -160,17 +160,15 @@ ifdef VBOX_WITH_WDDM
  	$(VBOX_LIB_IPRT_GUEST_R0) \
  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
 
- ifdef VBOX_WITH_WDDM_W8
-  #
-  # VBoxVideoW8 - Windows Guest Additions WDDM 1.2 Miniport Video Driver for Win8
-  #
-  SYSMODS += VBoxVideoW8
-  VBoxVideoW8_EXTENDS    = VBoxVideoWddm
-  VBoxVideoW8_TEMPLATE   = VBOXGUESTR0
-  VBoxVideoW8_DEFS       = $(VBoxVideoWddm_DEFS) VBOX_WDDM_WIN8
-  VBoxVideoW8_SOURCES    = $(subst VBoxMPWddm.rc,VBoxMPW8.rc,$(VBoxVideoWddm_SOURCES))
-  VBoxVideoW8_LIBS       = $(VBoxVideoWddm_LIBS)
- endif # VBOX_WITH_WDDM_W8
+ #
+ # VBoxVideoW8 - Windows Guest Additions WDDM 1.2 Miniport Video Driver for Win8
+ #
+ SYSMODS += VBoxVideoW8
+ VBoxVideoW8_EXTENDS    = VBoxVideoWddm
+ VBoxVideoW8_TEMPLATE   = VBOXGUESTR0
+ VBoxVideoW8_DEFS       = $(VBoxVideoWddm_DEFS) VBOX_WDDM_WIN8
+ VBoxVideoW8_SOURCES    = $(subst VBoxMPWddm.rc,VBoxMPW8.rc,$(VBoxVideoWddm_SOURCES))
+ VBoxVideoW8_LIBS       = $(VBoxVideoWddm_LIBS)
 
 endif # VBOX_WITH_WDDM
 
@@ -184,10 +182,8 @@ ifdef VBOX_SIGN_ADDITIONS
  ifdef VBOX_WITH_WDDM
   VBoxVideoWddm_INSTTYPE       = none
   VBoxVideoWddm_DEBUG_INSTTYPE = both
-  ifdef VBOX_WITH_WDDM_W8
-   VBoxVideoW8_INSTTYPE        = none
-   VBoxVideoW8_DEBUG_INSTTYPE  = both
-  endif
+  VBoxVideoW8_INSTTYPE         = none
+  VBoxVideoW8_DEBUG_INSTTYPE   = both
  endif
 endif # VBOX_SIGN_ADDITIONS
 

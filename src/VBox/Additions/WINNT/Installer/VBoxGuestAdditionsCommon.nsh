@@ -137,7 +137,6 @@ Function ExtractFiles
     !endif ; $%VBOX_WITH_CROGL% == "1"
   !endif ; $%BUILD_TARGET_ARCH% == "amd64"
 
-  !if $%VBOX_WITH_WDDM_W8% == "1"
   ; WDDM Video driver for Win8
   SetOutPath "$0\VBoxVideoW8"
 
@@ -177,7 +176,6 @@ Function ExtractFiles
         FILE "$%PATH_OUT%\bin\additions\wined3dwddm-x86.dll"
       !endif ; $%VBOX_WITH_CROGL% == "1"
     !endif ; $%BUILD_TARGET_ARCH% == "amd64"
-  !endif ; $%VBOX_WITH_WDDM_W8% == "1"
 !endif ; $%VBOX_WITH_WDDM% == "1"
 
   ; Mouse driver

@@ -487,8 +487,6 @@ if1of ($(KBUILD_TARGET), darwin linux win freebsd)
 endif
 # Enable Wddm Video driver for Vista+ guests.
 VBOX_WITH_WDDM = 1
-# Enable Wddm Video driver for Windows 8 guests.
-VBOX_WITH_WDDM_W8 = 1
 # Lazy developer!!
 VBOXWDDM_WITH_VBVA = 1
 # Lazy developer!!
