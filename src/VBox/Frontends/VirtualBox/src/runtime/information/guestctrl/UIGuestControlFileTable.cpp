@@ -875,9 +875,9 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     updateCurrentLocationEdit(strPath);
 }
 
-void UIHostFileTable::deleteByItem(UIFileTableItem */*item */)
+void UIHostFileTable::deleteByItem(UIFileTableItem *item)
 {
-
+    Q_UNUSED(item);
 }
 
 #include "UIGuestControlFileTable.moc"
