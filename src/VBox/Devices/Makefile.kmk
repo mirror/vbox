@@ -971,6 +971,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	PC/DevPit-i8254.cpp \
   	PC/DevPIC.cpp \
   	PC/DevRTC.cpp \
+ 	PC/DevDMA.cpp \
   	PC/DevHPET.cpp \
   	Storage/DevATA.cpp \
   	Network/DevPCNet.cpp \
@@ -1138,6 +1139,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevPit-i8254.cpp \
  	PC/DevPIC.cpp \
  	PC/DevRTC.cpp \
+ 	PC/DevDMA.cpp \
  	PC/DevHPET.cpp \
  	Storage/DevATA.cpp \
  	Network/DevPCNet.cpp \

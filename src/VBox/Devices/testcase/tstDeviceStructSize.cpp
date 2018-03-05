@@ -62,6 +62,8 @@
 #undef LOG_GROUP
 #include "../PC/DevHPET.cpp"
 #undef LOG_GROUP
+#include "../PC/DevDMA.cpp"
+#undef LOG_GROUP
 #include "../PC/DevLPC.cpp"
 #undef LOG_GROUP
 #include "../EFI/DevSmc.cpp"
