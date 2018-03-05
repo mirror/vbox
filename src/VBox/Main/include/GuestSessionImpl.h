@@ -75,12 +75,14 @@ protected:
 
     /** @name Directory handling primitives.
      * @{ */
-    int directoryCreate(const com::Utf8Str &strPath, DirectoryCreateFlag_T enmDirecotryCreateFlags, uint32_t uMode, bool fFollowSymlinks);
+    int directoryCreate(const com::Utf8Str &strPath, DirectoryCreateFlag_T enmDirecotryCreateFlags, uint32_t uMode,
+                        bool fFollowSymlinks);
     /** @}  */
 
     /** @name File handling primitives.
      * @{ */
-    int fileCopyToGuestEx(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags, PRTFILE pFile, uint64_t cbOffset, uint64_t cbSize);
+    int fileCopyToGuestEx(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags, PRTFILE pFile,
+                          uint64_t cbOffset, uint64_t cbSize); /**< r=bird: 'cbOffset' makes no sense what so ever. It should be 'off', or do you mean sizeof(uint64_t)? */
     int fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
     /** @}  */
 
@@ -143,15 +145,15 @@ class SessionTaskCopyDirFrom : public GuestSessionTask
 {
 public:
 
-    SessionTaskCopyDirFrom(GuestSession *pSession,
-                           const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter, DirectoryCopyFlags_T enmDirCopyFlags);
+    SessionTaskCopyDirFrom(GuestSession *pSession, const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter,
+                           DirectoryCopyFlags_T enmDirCopyFlags);
     virtual ~SessionTaskCopyDirFrom(void);
     int Run(void);
 
 protected:
 
-    int directoryCopyToHost(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive, bool fFollowSymlinks,
-                            const Utf8Str &strSubDir /* For recursion. */);
+    int directoryCopyToHost(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive,
+                            bool fFollowSymlinks, const Utf8Str &strSubDir /* For recursion. */);
 protected:
 
     Utf8Str              mSource;
@@ -167,15 +169,15 @@ class SessionTaskCopyDirTo : public GuestSessionTask
 {
 public:
 
-    SessionTaskCopyDirTo(GuestSession *pSession,
-                         const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter, DirectoryCopyFlags_T enmDirCopyFlags);
+    SessionTaskCopyDirTo(GuestSession *pSession, const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter,
+                         DirectoryCopyFlags_T enmDirCopyFlags);
     virtual ~SessionTaskCopyDirTo(void);
     int Run(void);
 
 protected:
 
-    int directoryCopyToGuest(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive, bool fFollowSymlinks,
-                             const Utf8Str &strSubDir /* For recursion. */);
+    int directoryCopyToGuest(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive,
+                             bool fFollowSymlinks, const Utf8Str &strSubDir /* For recursion. */);
 protected:
 
     Utf8Str              mSource;

@@ -2634,7 +2634,8 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
         ComObjPtr<Progress> pProgress;
         try
         {
-            pTask = new SessionTaskCopyDirTo(this /* GuestSession */, aSource, aDestination, "" /* strFilter */, fFlags);
+            pTask = new SessionTaskCopyDirTo(this /* GuestSession */, aSource, aDestination, "" /* strFilter */,
+                                             (DirectoryCopyFlags_T)fFlags);
         }
         catch(...)
         {
