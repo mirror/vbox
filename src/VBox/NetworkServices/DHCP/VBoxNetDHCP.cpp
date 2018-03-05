@@ -645,6 +645,11 @@ int VBoxNetDhcp::hostDnsServers(const ComHostPtr& host,
 
         if (addr.u == INADDR_ANY)
         {
+            /*
+             * This doesn't seem to be very well documented except for
+             * RTFS of res_init.c, but INADDR_ANY is a valid value for
+             * for "nameserver".
+             */
             addr.u = RT_H2N_U32_C(INADDR_LOOPBACK);
         }
 
