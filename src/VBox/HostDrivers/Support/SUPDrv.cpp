@@ -1436,12 +1436,12 @@ static DECLCALLBACK(void) supdrvSessionObjHandleDelete(RTHANDLETABLE hHandleTabl
  * Fast path I/O Control worker.
  *
  * @returns VBox status code that should be passed down to ring-3 unchanged.
- * @param   uIOCtl      Function number.
+ * @param   uOperation  SUP_VMMR0_DO_XXX (not the I/O control number!).
  * @param   idCpu       VMCPU id.
  * @param   pDevExt     Device extention.
  * @param   pSession    Session data.
  */
-int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
+int VBOXCALL supdrvIOCtlFast(uintptr_t uOperation, VMCPUID idCpu, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
     /*
      * Validate input and check that the VM has a session.
@@ -1457,22 +1457,9 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT pDev
             if (RT_LIKELY(pDevExt->pfnVMMR0EntryFast))
             {
                 /*
-                 * Do the call.
+                 * Make the call.
                  */
-                switch (uIOCtl)
-                {
-                    case SUP_IOCTL_FAST_DO_RAW_RUN:
-                        pDevExt->pfnVMMR0EntryFast(pGVM, pVM, idCpu, SUP_VMMR0_DO_RAW_RUN);
-                        break;
-                    case SUP_IOCTL_FAST_DO_HM_RUN:
-                        pDevExt->pfnVMMR0EntryFast(pGVM, pVM, idCpu, SUP_VMMR0_DO_HM_RUN);
-                        break;
-                    case SUP_IOCTL_FAST_DO_NOP:
-                        pDevExt->pfnVMMR0EntryFast(pGVM, pVM, idCpu, SUP_VMMR0_DO_NOP);
-                        break;
-                    default:
-                        return VERR_INTERNAL_ERROR;
-                }
+                pDevExt->pfnVMMR0EntryFast(pGVM, pVM, idCpu, uOperation);
                 return VINF_SUCCESS;
             }
 

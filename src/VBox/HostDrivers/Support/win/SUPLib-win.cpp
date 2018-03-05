@@ -672,9 +672,7 @@ int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cb
     PSUPREQHDR pHdr = (PSUPREQHDR)pvReq;
     Assert(cbReq == RT_MAX(pHdr->cbIn, pHdr->cbOut));
 # ifdef USE_NT_DEVICE_IO_CONTROL_FILE
-    IO_STATUS_BLOCK Ios;
-    Ios.Status = -1;
-    Ios.Information = 0;
+    IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
     NTSTATUS rcNt = NtDeviceIoControlFile((HANDLE)pThis->hDevice, NULL /*hEvent*/, NULL /*pfnApc*/, NULL /*pvApcCtx*/, &Ios,
                                           (ULONG)uFunction,
                                           pvReq /*pvInput */, pHdr->cbIn /* cbInput */,
@@ -702,9 +700,7 @@ int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu)
      * Issue device I/O control.
      */
 # ifdef USE_NT_DEVICE_IO_CONTROL_FILE
-    IO_STATUS_BLOCK Ios;
-    Ios.Status = -1;
-    Ios.Information = 0;
+    IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
     NTSTATUS rcNt = NtDeviceIoControlFile((HANDLE)pThis->hDevice, NULL /*hEvent*/, NULL /*pfnApc*/, NULL /*pvApcCtx*/, &Ios,
                                           (ULONG)uFunction,
                                           NULL /*pvInput */, 0 /* cbInput */,

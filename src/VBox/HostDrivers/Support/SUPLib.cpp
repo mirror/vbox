@@ -276,7 +276,7 @@ SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00290000
-                                   ? 0x00290003
+                                   ? 0x00290004
                                    : SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -612,15 +612,19 @@ static int supCallVMMR0ExFake(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg,
 SUPR3DECL(int) SUPR3CallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCpu)
 {
     NOREF(pVMR0);
-    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_RAW_RUN))
-        return suplibOsIOCtlFast(&g_supLibData, SUP_IOCTL_FAST_DO_RAW_RUN, idCpu);
-    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_HM_RUN))
-        return suplibOsIOCtlFast(&g_supLibData, SUP_IOCTL_FAST_DO_HM_RUN, idCpu);
-    if (RT_LIKELY(uOperation == SUP_VMMR0_DO_NOP))
-        return suplibOsIOCtlFast(&g_supLibData, SUP_IOCTL_FAST_DO_NOP, idCpu);
-
-    AssertMsgFailed(("%#x\n", uOperation));
-    return VERR_INTERNAL_ERROR;
+    static const uintptr_t s_auFunctions[4] =
+    {
+        SUP_IOCTL_FAST_DO_RAW_RUN,
+        SUP_IOCTL_FAST_DO_HM_RUN,
+        SUP_IOCTL_FAST_DO_NOP,
+        SUP_IOCTL_FAST_DO_NEM_RUN
+    };
+    AssertCompile(SUP_VMMR0_DO_RAW_RUN == 0);
+    AssertCompile(SUP_VMMR0_DO_HM_RUN  == 1);
+    AssertCompile(SUP_VMMR0_DO_NOP     == 2);
+    AssertCompile(SUP_VMMR0_DO_NEM_RUN == 3);
+    AssertMsgReturn(uOperation < RT_ELEMENTS(s_auFunctions), ("%#x\n", uOperation), VERR_INTERNAL_ERROR);
+    return suplibOsIOCtlFast(&g_supLibData, s_auFunctions[uOperation], idCpu);
 }
 
 

@@ -632,11 +632,10 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
      * the session and iCmd, and only returns a VBox status code.
      */
     int rc;
-    if (   (    iCmd == SUP_IOCTL_FAST_DO_RAW_RUN
-            ||  iCmd == SUP_IOCTL_FAST_DO_HM_RUN
-            ||  iCmd == SUP_IOCTL_FAST_DO_NOP)
+    AssertCompile((SUP_IOCTL_FAST_DO_FIRST & 0xff) == (SUP_IOCTL_FLAG | 64));
+    if (   (uintptr_t)(iCmd - SUP_IOCTL_FAST_DO_FIRST) < (uintptr_t)32
         && fUnrestricted)
-        rc = supdrvIOCtlFast(iCmd, *(uint32_t *)pData, &g_DevExt, pSession);
+        rc = supdrvIOCtlFast(iCmd - SUP_IOCTL_FAST_DO_FIRST, *(uint32_t *)pData, &g_DevExt, pSession);
     else
         rc = VBoxDrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);
 

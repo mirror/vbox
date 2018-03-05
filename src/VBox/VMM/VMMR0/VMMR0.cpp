@@ -1328,7 +1328,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
             break;
 
         /*
-         * Impossible.
+         * Shouldn't happen.
          */
         default:
             AssertMsgFailed(("%#x\n", enmOperation));

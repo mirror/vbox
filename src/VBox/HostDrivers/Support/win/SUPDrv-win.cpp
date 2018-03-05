@@ -1128,11 +1128,12 @@ static BOOLEAN _stdcall VBoxDrvNtFastIoDeviceControl(PFILE_OBJECT pFileObj, BOOL
          * Deal with the 2-3 high-speed IOCtl that takes their arguments from
          * the session and iCmd, and does not return anything.
          */
-        if (   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
-            || uCmd == SUP_IOCTL_FAST_DO_HM_RUN
-            || uCmd == SUP_IOCTL_FAST_DO_NOP)
+        if (   (uCmd & 3) == METHOD_NEITHER
+            && (uint32_t)((uCmd - SUP_IOCTL_FAST_DO_FIRST) >> 2) < (uint32_t)32)
         {
-            int rc = supdrvIOCtlFast(uCmd, (unsigned)(uintptr_t)pvOutput/* VMCPU id */, pDevExt, pSession);
+            int rc = supdrvIOCtlFast((uCmd - SUP_IOCTL_FAST_DO_FIRST) >> 2,
+                                     (unsigned)(uintptr_t)pvOutput/* VMCPU id */,
+                                     pDevExt, pSession);
             pIoStatus->Status      = RT_SUCCESS(rc) ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER;
             pIoStatus->Information = 0; /* Could be used to pass rc if we liked. */
             supdrvSessionRelease(pSession);
@@ -1317,12 +1318,13 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         }
 #endif
 
-        ULONG ulCmd = pStack->Parameters.DeviceIoControl.IoControlCode;
-        if (   ulCmd == SUP_IOCTL_FAST_DO_RAW_RUN
-            || ulCmd == SUP_IOCTL_FAST_DO_HM_RUN
-            || ulCmd == SUP_IOCTL_FAST_DO_NOP)
+        ULONG uCmd = pStack->Parameters.DeviceIoControl.IoControlCode;
+        if (   (uCmd & 3) == METHOD_NEITHER
+            && (uint32_t)((uCmd - SUP_IOCTL_FAST_DO_FIRST) >> 2) < (uint32_t)32)
         {
-            int rc = supdrvIOCtlFast(ulCmd, (unsigned)(uintptr_t)pIrp->UserBuffer /* VMCPU id */, pDevExt, pSession);
+            int rc = supdrvIOCtlFast((uCmd - SUP_IOCTL_FAST_DO_FIRST) >> 2,
+                                     (unsigned)(uintptr_t)pIrp->UserBuffer /* VMCPU id */,
+                                     pDevExt, pSession);
 
             /* Complete the I/O request. */
             supdrvSessionRelease(pSession);

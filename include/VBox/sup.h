@@ -809,6 +809,8 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 #define SUP_VMMR0_DO_HM_RUN     1
 /** @see VMMR0_DO_NOP */
 #define SUP_VMMR0_DO_NOP        2
+/** @see VMMR0_DO_NEM_RUN */
+#define SUP_VMMR0_DO_NEM_RUN    3
 /** @} */
 
 /** SUPR3QueryVTCaps capability flags
