@@ -1338,6 +1338,8 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
             break;
         }
 
+#ifdef VBOX_WITH_NEM_R0
+# if defined(RT_ARCH_AMD64) && defined(RT_OS_WINDOWS)
         case VMMR0_DO_NEM_RUN:
         {
             /*
@@ -1354,11 +1356,13 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
              * Fire dtrace probe and collect statistics.
              */
             VBOXVMM_R0_VMM_RETURN_TO_RING3_NEM(pVCpu, CPUMQueryGuestCtxPtr(pVCpu), rc);
-#ifdef VBOX_WITH_STATISTICS
+#  ifdef VBOX_WITH_STATISTICS
             vmmR0RecordRC(pVM, pVCpu, rc);
-#endif
+#  endif
             break;
         }
+# endif
+#endif
 
 
         /*

@@ -1203,6 +1203,7 @@ DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, PC
         Log4(("%s/%u: nemR0WinImportState -> %Rrc\n", pszCaller, pGVCpu->idCpu, -rc));
         return -rc;
     }
+    RT_NOREF(pszCaller);
     AssertMsgFailedReturn(("%s/%u: nemR0WinImportState failed: %Rrc\n", pszCaller, pGVCpu->idCpu, rc), rc);
 }
 #endif /* IN_RING0 */

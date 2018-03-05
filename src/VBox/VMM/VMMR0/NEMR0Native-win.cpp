@@ -450,7 +450,7 @@ NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhy
 #if 1       /* Do we need to do this? Hopefully not... */
         uint64_t volatile uR = g_pfnHvlInvokeHypercall(HvCallUncommitGpaPages | ((uint64_t)cPages << 32),
                                                        pGVCpu->nem.s.HCPhysHypercallData, 0);
-        AssertMsg(uR == ((uint64_t)cPages << 32), ("uR=%#RX64\n", uR));
+        AssertMsg(uR == ((uint64_t)cPages << 32), ("uR=%#RX64\n", uR)); NOREF(uR);
 #endif
         return VINF_SUCCESS;
     }
