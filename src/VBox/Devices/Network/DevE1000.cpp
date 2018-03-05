@@ -5005,7 +5005,7 @@ DECLINLINE(void) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC *pDesc)
         if (RT_UNLIKELY(cbMaxSegmentSize > E1K_MAX_TX_PKT_SIZE))
         {
             pThis->contextTSE.dw3.u16MSS = E1K_MAX_TX_PKT_SIZE - pThis->contextTSE.dw3.u8HDRLEN - 4; /*VTAG*/
-            LogRelMax(10, ("%s Transmit packet is too large: %u > %u(max). Adjusted MSS to %u.\n",
+            LogRelMax(10, ("%s: Transmit packet is too large: %u > %u(max). Adjusted MSS to %u.\n",
                            pThis->szPrf, cbMaxSegmentSize, E1K_MAX_TX_PKT_SIZE, pThis->contextTSE.dw3.u16MSS));
         }
         pThis->u32PayRemain = pThis->contextTSE.dw2.u20PAYLEN;
@@ -5241,17 +5241,17 @@ static void e1kDumpTxDCache(PE1KSTATE pThis)
 {
     unsigned i, cDescs = TDLEN / sizeof(E1KTXDESC);
     uint32_t tdh = TDH;
-    LogRel(("-- Transmit Descriptors (%d total) --\n", cDescs));
+    LogRel(("E1000: -- Transmit Descriptors (%d total) --\n", cDescs));
     for (i = 0; i < cDescs; ++i)
     {
         E1KTXDESC desc;
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), e1kDescAddr(TDBAH, TDBAL, i),
                           &desc, sizeof(desc));
         if (i == tdh)
-            LogRel((">>> "));
-        LogRel(("%RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, i), &desc));
+            LogRel(("E1000: >>> "));
+        LogRel(("E1000: %RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, i), &desc));
     }
-    LogRel(("-- Transmit Descriptors in Cache (at %d (TDH %d)/ fetched %d / max %d) --\n",
+    LogRel(("E1000: -- Transmit Descriptors in Cache (at %d (TDH %d)/ fetched %d / max %d) --\n",
             pThis->iTxDCurrent, TDH, pThis->nTxDFetched, E1K_TXD_CACHE_SIZE));
     if (tdh > pThis->iTxDCurrent)
         tdh -= pThis->iTxDCurrent;
@@ -5260,8 +5260,8 @@ static void e1kDumpTxDCache(PE1KSTATE pThis)
     for (i = 0; i < pThis->nTxDFetched; ++i)
     {
         if (i == pThis->iTxDCurrent)
-            LogRel((">>> "));
-        LogRel(("%RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, tdh++ % cDescs), &pThis->aTxDescriptors[i]));
+            LogRel(("E1000: >>> "));
+        LogRel(("E1000: %RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, tdh++ % cDescs), &pThis->aTxDescriptors[i]));
     }
 }
 
@@ -5331,7 +5331,7 @@ static int e1kXmitPending(PE1KSTATE pThis, bool fOnWorkerThread)
                  * a complete packet in it. Drop the cache and hope that
                  * the guest driver can recover from network card error.
                  */
-                LogRel(("%s No complete packets in%s TxD cache! "
+                LogRel(("%s: No complete packets in%s TxD cache! "
                       "Fetched=%d, current=%d, TX len=%d.\n",
                       pThis->szPrf,
                       u8Remain == E1K_TXD_CACHE_SIZE ? " full" : "",
@@ -6139,47 +6139,47 @@ static void e1kDumpState(PE1KSTATE pThis)
 {
     RT_NOREF(pThis);
     for (int i = 0; i < E1K_NUM_OF_32BIT_REGS; ++i)
-        E1kLog2(("%s %8.8s = %08x\n", pThis->szPrf, g_aE1kRegMap[i].abbrev, pThis->auRegs[i]));
+        E1kLog2(("%s: %8.8s = %08x\n", pThis->szPrf, g_aE1kRegMap[i].abbrev, pThis->auRegs[i]));
 # ifdef E1K_INT_STATS
-    LogRel(("%s Interrupt attempts: %d\n", pThis->szPrf, pThis->uStatIntTry));
-    LogRel(("%s Interrupts raised : %d\n", pThis->szPrf, pThis->uStatInt));
-    LogRel(("%s Interrupts lowered: %d\n", pThis->szPrf, pThis->uStatIntLower));
-    LogRel(("%s ICR outside ISR   : %d\n", pThis->szPrf, pThis->uStatNoIntICR));
-    LogRel(("%s IMS raised ints   : %d\n", pThis->szPrf, pThis->uStatIntIMS));
-    LogRel(("%s Interrupts skipped: %d\n", pThis->szPrf, pThis->uStatIntSkip));
-    LogRel(("%s Masked interrupts : %d\n", pThis->szPrf, pThis->uStatIntMasked));
-    LogRel(("%s Early interrupts  : %d\n", pThis->szPrf, pThis->uStatIntEarly));
-    LogRel(("%s Late interrupts   : %d\n", pThis->szPrf, pThis->uStatIntLate));
-    LogRel(("%s Lost interrupts   : %d\n", pThis->szPrf, pThis->iStatIntLost));
-    LogRel(("%s Interrupts by RX  : %d\n", pThis->szPrf, pThis->uStatIntRx));
-    LogRel(("%s Interrupts by TX  : %d\n", pThis->szPrf, pThis->uStatIntTx));
-    LogRel(("%s Interrupts by ICS : %d\n", pThis->szPrf, pThis->uStatIntICS));
-    LogRel(("%s Interrupts by RDTR: %d\n", pThis->szPrf, pThis->uStatIntRDTR));
-    LogRel(("%s Interrupts by RDMT: %d\n", pThis->szPrf, pThis->uStatIntRXDMT0));
-    LogRel(("%s Interrupts by TXQE: %d\n", pThis->szPrf, pThis->uStatIntTXQE));
-    LogRel(("%s TX int delay asked: %d\n", pThis->szPrf, pThis->uStatTxIDE));
-    LogRel(("%s TX delayed:         %d\n", pThis->szPrf, pThis->uStatTxDelayed));
-    LogRel(("%s TX delay expired:   %d\n", pThis->szPrf, pThis->uStatTxDelayExp));
-    LogRel(("%s TX no report asked: %d\n", pThis->szPrf, pThis->uStatTxNoRS));
-    LogRel(("%s TX abs timer expd : %d\n", pThis->szPrf, pThis->uStatTAD));
-    LogRel(("%s TX int timer expd : %d\n", pThis->szPrf, pThis->uStatTID));
-    LogRel(("%s RX abs timer expd : %d\n", pThis->szPrf, pThis->uStatRAD));
-    LogRel(("%s RX int timer expd : %d\n", pThis->szPrf, pThis->uStatRID));
-    LogRel(("%s TX CTX descriptors: %d\n", pThis->szPrf, pThis->uStatDescCtx));
-    LogRel(("%s TX DAT descriptors: %d\n", pThis->szPrf, pThis->uStatDescDat));
-    LogRel(("%s TX LEG descriptors: %d\n", pThis->szPrf, pThis->uStatDescLeg));
-    LogRel(("%s Received frames   : %d\n", pThis->szPrf, pThis->uStatRxFrm));
-    LogRel(("%s Transmitted frames: %d\n", pThis->szPrf, pThis->uStatTxFrm));
-    LogRel(("%s TX frames up to 1514: %d\n", pThis->szPrf, pThis->uStatTx1514));
-    LogRel(("%s TX frames up to 2962: %d\n", pThis->szPrf, pThis->uStatTx2962));
-    LogRel(("%s TX frames up to 4410: %d\n", pThis->szPrf, pThis->uStatTx4410));
-    LogRel(("%s TX frames up to 5858: %d\n", pThis->szPrf, pThis->uStatTx5858));
-    LogRel(("%s TX frames up to 7306: %d\n", pThis->szPrf, pThis->uStatTx7306));
-    LogRel(("%s TX frames up to 8754: %d\n", pThis->szPrf, pThis->uStatTx8754));
-    LogRel(("%s TX frames up to 16384: %d\n", pThis->szPrf, pThis->uStatTx16384));
-    LogRel(("%s TX frames up to 32768: %d\n", pThis->szPrf, pThis->uStatTx32768));
-    LogRel(("%s Larger TX frames    : %d\n", pThis->szPrf, pThis->uStatTxLarge));
-    LogRel(("%s Max TX Delay        : %lld\n", pThis->szPrf, pThis->uStatMaxTxDelay));
+    LogRel(("%s: Interrupt attempts: %d\n", pThis->szPrf, pThis->uStatIntTry));
+    LogRel(("%s: Interrupts raised : %d\n", pThis->szPrf, pThis->uStatInt));
+    LogRel(("%s: Interrupts lowered: %d\n", pThis->szPrf, pThis->uStatIntLower));
+    LogRel(("%s: ICR outside ISR   : %d\n", pThis->szPrf, pThis->uStatNoIntICR));
+    LogRel(("%s: IMS raised ints   : %d\n", pThis->szPrf, pThis->uStatIntIMS));
+    LogRel(("%s: Interrupts skipped: %d\n", pThis->szPrf, pThis->uStatIntSkip));
+    LogRel(("%s: Masked interrupts : %d\n", pThis->szPrf, pThis->uStatIntMasked));
+    LogRel(("%s: Early interrupts  : %d\n", pThis->szPrf, pThis->uStatIntEarly));
+    LogRel(("%s: Late interrupts   : %d\n", pThis->szPrf, pThis->uStatIntLate));
+    LogRel(("%s: Lost interrupts   : %d\n", pThis->szPrf, pThis->iStatIntLost));
+    LogRel(("%s: Interrupts by RX  : %d\n", pThis->szPrf, pThis->uStatIntRx));
+    LogRel(("%s: Interrupts by TX  : %d\n", pThis->szPrf, pThis->uStatIntTx));
+    LogRel(("%s: Interrupts by ICS : %d\n", pThis->szPrf, pThis->uStatIntICS));
+    LogRel(("%s: Interrupts by RDTR: %d\n", pThis->szPrf, pThis->uStatIntRDTR));
+    LogRel(("%s: Interrupts by RDMT: %d\n", pThis->szPrf, pThis->uStatIntRXDMT0));
+    LogRel(("%s: Interrupts by TXQE: %d\n", pThis->szPrf, pThis->uStatIntTXQE));
+    LogRel(("%s: TX int delay asked: %d\n", pThis->szPrf, pThis->uStatTxIDE));
+    LogRel(("%s: TX delayed:         %d\n", pThis->szPrf, pThis->uStatTxDelayed));
+    LogRel(("%s: TX delay expired:   %d\n", pThis->szPrf, pThis->uStatTxDelayExp));
+    LogRel(("%s: TX no report asked: %d\n", pThis->szPrf, pThis->uStatTxNoRS));
+    LogRel(("%s: TX abs timer expd : %d\n", pThis->szPrf, pThis->uStatTAD));
+    LogRel(("%s: TX int timer expd : %d\n", pThis->szPrf, pThis->uStatTID));
+    LogRel(("%s: RX abs timer expd : %d\n", pThis->szPrf, pThis->uStatRAD));
+    LogRel(("%s: RX int timer expd : %d\n", pThis->szPrf, pThis->uStatRID));
+    LogRel(("%s: TX CTX descriptors: %d\n", pThis->szPrf, pThis->uStatDescCtx));
+    LogRel(("%s: TX DAT descriptors: %d\n", pThis->szPrf, pThis->uStatDescDat));
+    LogRel(("%s: TX LEG descriptors: %d\n", pThis->szPrf, pThis->uStatDescLeg));
+    LogRel(("%s: Received frames   : %d\n", pThis->szPrf, pThis->uStatRxFrm));
+    LogRel(("%s: Transmitted frames: %d\n", pThis->szPrf, pThis->uStatTxFrm));
+    LogRel(("%s: TX frames up to 1514: %d\n", pThis->szPrf, pThis->uStatTx1514));
+    LogRel(("%s: TX frames up to 2962: %d\n", pThis->szPrf, pThis->uStatTx2962));
+    LogRel(("%s: TX frames up to 4410: %d\n", pThis->szPrf, pThis->uStatTx4410));
+    LogRel(("%s: TX frames up to 5858: %d\n", pThis->szPrf, pThis->uStatTx5858));
+    LogRel(("%s: TX frames up to 7306: %d\n", pThis->szPrf, pThis->uStatTx7306));
+    LogRel(("%s: TX frames up to 8754: %d\n", pThis->szPrf, pThis->uStatTx8754));
+    LogRel(("%s: TX frames up to 16384: %d\n", pThis->szPrf, pThis->uStatTx16384));
+    LogRel(("%s: TX frames up to 32768: %d\n", pThis->szPrf, pThis->uStatTx32768));
+    LogRel(("%s: Larger TX frames    : %d\n", pThis->szPrf, pThis->uStatTxLarge));
+    LogRel(("%s: Max TX Delay        : %lld\n", pThis->szPrf, pThis->uStatMaxTxDelay));
 # endif /* E1K_INT_STATS */
 }
 
@@ -6344,8 +6344,8 @@ static DECLCALLBACK(int) e1kR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInt
             rc = VINF_SUCCESS;
             break;
         }
-        E1kLogRel(("E1000 e1kR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
-        E1kLog(("%s e1kR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", pThis->szPrf, cMillies));
+        E1kLogRel(("E1000: e1kR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
+        E1kLog(("%s: e1kR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", pThis->szPrf, cMillies));
         RTSemEventWait(pThis->hEventMoreRxDescAvail, cMillies);
     }
     STAM_PROFILE_STOP(&pThis->StatRxOverflow, a);
@@ -7692,11 +7692,11 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 N_("Configuration error: Failed to get the value of 'LinkUpDelay'"));
     Assert(pThis->cMsLinkUpDelay <= 300000); /* less than 5 minutes */
     if (pThis->cMsLinkUpDelay > 5000)
-        LogRel(("%s WARNING! Link up delay is set to %u seconds!\n", pThis->szPrf, pThis->cMsLinkUpDelay / 1000));
+        LogRel(("%s: WARNING! Link up delay is set to %u seconds!\n", pThis->szPrf, pThis->cMsLinkUpDelay / 1000));
     else if (pThis->cMsLinkUpDelay == 0)
-        LogRel(("%s WARNING! Link up delay is disabled!\n", pThis->szPrf));
+        LogRel(("%s: WARNING! Link up delay is disabled!\n", pThis->szPrf));
 
-    LogRel(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s Itr=%s ItrRx=%s TID=%s R0=%s GC=%s\n", pThis->szPrf,
+    LogRel(("%s: Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s Itr=%s ItrRx=%s TID=%s R0=%s GC=%s\n", pThis->szPrf,
             g_aChips[pThis->eChip].pcszName, pThis->cMsLinkUpDelay,
             pThis->fEthernetCRC ? "on" : "off",
             pThis->fGSOEnabled ? "enabled" : "disabled",
