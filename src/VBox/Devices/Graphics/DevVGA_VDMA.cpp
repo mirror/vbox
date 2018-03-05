@@ -1325,11 +1325,14 @@ static int vboxVDMACrCtlPost(PVGASTATE pVGAState, PVBOXVDMACMD_CHROMIUM_CTL pCmd
 
     /* Submit and wait for it. */
     rc = vboxVDMACrCtlPostAsync(pVGAState, pCmd, cbCmd, vboxVDMACrCtlCbSetEvent, pHdr);
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
         rc = RTSemEventWaitNoResume(pHdr->hEvtDone, RT_INDEFINITE_WAIT);
     else
+    {
+        if (rc != VERR_NOT_SUPPORTED)
+            AssertRC(rc);
         vboxVDMACrCtlRelease(pCmd);
+    }
     return rc;
 }
 
