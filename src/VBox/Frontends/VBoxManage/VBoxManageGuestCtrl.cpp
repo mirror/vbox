@@ -1848,7 +1848,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     }
 
     ComPtr<IProgress> pProgress;
-    HRESULT rc;
+    HRESULT rc = S_OK;
 
     for (unsigned long s = 0; s < vecSources.size(); s++)
     {
