@@ -190,26 +190,28 @@ enum {
 
 
 /* Convert DMA channel number (0-7) to controller number (0-1). */
-#define DMACH2C(c)      (c < 4 ? 0 : 1)
+#define DMACH2C(c)          (c < 4 ? 0 : 1)
 
 #ifdef LOG_ENABLED
-static int const dmaChannelMap[8] = {-1, 2, 3, 1, -1, -1, -1, 0};
+static int const g_aiDmaChannelMap[8] = {-1, 2, 3, 1, -1, -1, -1, 0};
 /* Map a DMA page register offset (0-7) to channel index (0-3). */
-#define DMAPG2CX(c)     (dmaChannelMap[c])
+# define DMAPG2CX(c)        (g_aiDmaChannelMap[c])
 #endif
 
-static int const dmaMapChannel[4] = {7, 3, 1, 2};
+#ifdef IN_RING3
+static int const g_aiDmaMapChannel[4] = {7, 3, 1, 2};
 /* Map a channel index (0-3) to DMA page register offset (0-7). */
-#define DMACX2PG(c)     (dmaMapChannel[c])
+# define DMACX2PG(c)        (g_aiDmaMapChannel[c])
 /* Map a channel number (0-7) to DMA page register offset (0-7). */
-#define DMACH2PG(c)     (dmaMapChannel[c & 3])
+# define DMACH2PG(c)        (g_aiDmaMapChannel[c & 3])
+#endif
 
 /* Test the decrement bit of mode register. */
-#define IS_MODE_DEC(c)  ((c) & 0x20)
+#define IS_MODE_DEC(c)      ((c) & 0x20)
 /* Test the auto-init bit of mode register. */
-#define IS_MODE_AI(c)   ((c) & 0x10)
+#define IS_MODE_AI(c)       ((c) & 0x10)
 /* Extract the transfer type bits of mode register. */
-#define GET_MODE_XTYP(c)(((c) & 0x0c) >> 2)
+#define GET_MODE_XTYP(c)    (((c) & 0x0c) >> 2)
 
 
 /* Perform a master clear (reset) on a DMA controller. */
