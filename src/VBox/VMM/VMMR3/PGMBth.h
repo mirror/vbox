@@ -134,7 +134,7 @@ PGM_BTH_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 
     PVM pVM = pVCpu->pVMR3;
 
-    Assert(HMIsNestedPagingActive(pVM) == pVM->pgm.s.fNestedPaging);
+    Assert((HMIsNestedPagingActive(pVM) || VM_IS_NEM_ENABLED(pVM)) == pVM->pgm.s.fNestedPaging);
     Assert(!pVM->pgm.s.fNestedPaging);
 
     pgmLock(pVM);

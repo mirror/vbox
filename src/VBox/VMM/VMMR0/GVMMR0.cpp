@@ -942,14 +942,15 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                                        RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    pVM->pVMR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMMapObj);
-                                    AssertPtr((void *)pVM->pVMR3);
+                                    PVMR3 pVMR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMMapObj);
+                                    pVM->pVMR3 = pVMR3;
+                                    AssertPtr((void *)pVMR3);
 
                                     /* Initialize all the VM pointers. */
                                     for (uint32_t i = 0; i < cCpus; i++)
                                     {
                                         pVM->aCpus[i].pVMR0           = pVM;
-                                        pVM->aCpus[i].pVMR3           = pVM->pVMR3;
+                                        pVM->aCpus[i].pVMR3           = pVMR3;
                                         pVM->aCpus[i].idHostCpu       = NIL_RTCPUID;
                                         pVM->aCpus[i].hNativeThreadR0 = NIL_RTNATIVETHREAD;
                                     }
@@ -971,9 +972,16 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         pHandle->hEMT0                = hEMT0;
                                         pHandle->ProcId               = ProcId;
                                         pGVM->pVM                     = pVM;
+                                        pGVM->pVMR3                   = pVMR3;
                                         pGVM->aCpus[0].hEMT           = hEMT0;
                                         pVM->aCpus[0].hNativeThreadR0 = hEMT0;
                                         pGVMM->cEMTs += cCpus;
+
+                                        for (uint32_t i = 0; i < cCpus; i++)
+                                        {
+                                            pGVM->aCpus[i].pVCpu          = &pVM->aCpus[i];
+                                            pGVM->aCpus[i].pVM            = pVM;
+                                        }
 
                                         /* Associate it with the session and create the context hook for EMT0. */
                                         rc = SUPR0SetSessionVM(pSession, pGVM, pVM);
@@ -993,7 +1001,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                                 CPUMR0RegisterVCpuThread(&pVM->aCpus[0]);
 
                                                 *ppVM = pVM;
-                                                Log(("GVMMR0CreateVM: pVM=%p pVMR3=%p pGVM=%p hGVM=%d\n", pVM, pVM->pVMR3, pGVM, iHandle));
+                                                Log(("GVMMR0CreateVM: pVM=%p pVMR3=%p pGVM=%p hGVM=%d\n", pVM, pVMR3, pGVM, iHandle));
                                                 return VINF_SUCCESS;
                                             }
 
@@ -1062,6 +1070,9 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
     {
         pGVM->aCpus[i].gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
         pGVM->aCpus[i].hEMT                  = NIL_RTNATIVETHREAD;
+        pGVM->aCpus[i].pGVM                  = pGVM;
+        pGVM->aCpus[i].pVCpu                 = NULL;
+        pGVM->aCpus[i].pVM                   = NULL;
     }
 }
 
@@ -1185,14 +1196,14 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PGVM pGVM, PVM pVM)
     AssertRC(rc);
 
     /* Be careful here because we might theoretically be racing someone else cleaning up. */
-    if (    pHandle->pVM == pVM
-        &&  (   (   pHandle->hEMT0  == hSelf
-                 && pHandle->ProcId == ProcId)
-             || pHandle->hEMT0 == NIL_RTNATIVETHREAD)
-        &&  VALID_PTR(pHandle->pvObj)
-        &&  VALID_PTR(pHandle->pSession)
-        &&  VALID_PTR(pHandle->pGVM)
-        &&  pHandle->pGVM->u32Magic == GVM_MAGIC)
+    if (   pHandle->pVM == pVM
+        && (   (   pHandle->hEMT0  == hSelf
+                && pHandle->ProcId == ProcId)
+            || pHandle->hEMT0 == NIL_RTNATIVETHREAD)
+        && VALID_PTR(pHandle->pvObj)
+        && VALID_PTR(pHandle->pSession)
+        && VALID_PTR(pHandle->pGVM)
+        && pHandle->pGVM->u32Magic == GVM_MAGIC)
     {
         /* Check that other EMTs have deregistered. */
         uint32_t cNotDeregistered = 0;
@@ -1349,8 +1360,8 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
      * Do the global cleanup round.
      */
     PGVM pGVM = pHandle->pGVM;
-    if (    VALID_PTR(pGVM)
-        &&  pGVM->u32Magic == GVM_MAGIC)
+    if (   VALID_PTR(pGVM)
+        && pGVM->u32Magic == GVM_MAGIC)
     {
         pGVMM->cEMTs -= pGVM->cCpus;
 

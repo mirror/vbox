@@ -527,6 +527,20 @@ static void vmmR3InitRegisterStats(PVM pVM)
 
 
 /**
+ * Worker for VMMR3InitR0 that calls ring-0 to do EMT specific initialization.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context per CPU structure.
+ * @thread  EMT(pVCpu)
+ */
+static DECLCALLBACK(int) vmmR3InitR0Emt(PVM pVM, PVMCPU pVCpu)
+{
+    return VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_VMMR0_INIT_EMT, 0, NULL);
+}
+
+
+/**
  * Initializes the R0 VMM.
  *
  * @returns VBox status code.
@@ -560,8 +574,7 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_VMMR0_INIT,
-                              RT_MAKE_U64(VMMGetSvnRev(), vmmGetBuildType()), NULL);
+        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_VMMR0_INIT, RT_MAKE_U64(VMMGetSvnRev(), vmmGetBuildType()), NULL);
 #endif
         /*
          * Flush the logs.
@@ -591,6 +604,12 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
         LogRel(("VMM: Enabled thread-context hooks\n"));
     else
         LogRel(("VMM: Thread-context hooks unavailable\n"));
+
+    /*
+     * Send all EMTs to ring-0 to get their logger initialized.
+     */
+    for (VMCPUID idCpu = 0; RT_SUCCESS(rc) && idCpu < pVM->cCpus; idCpu++)
+        rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)vmmR3InitR0Emt, 2, pVM, &pVM->aCpus[idCpu]);
 
     return rc;
 }
@@ -1430,6 +1449,49 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
             return rc;
         }
         rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
+        if (RT_FAILURE(rc))
+            return rc;
+        /* Resume R0 */
+    }
+}
+
+
+/**
+ * Perform one of the fast I/O control VMMR0 operation.
+ *
+ * @returns VBox strict status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   enmOperation    The operation to perform.
+ */
+VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOperation)
+{
+    for (;;)
+    {
+        VBOXSTRICTRC rcStrict;
+        do
+        {
+#ifdef NO_SUPCALLR0VMM
+            rcStrict = VERR_GENERAL_FAILURE;
+#else
+            rcStrict = SUPR3CallVMMR0Fast(pVM->pVMR0, enmOperation, pVCpu->idCpu);
+            if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+                rcStrict = pVCpu->vmm.s.iLastGZRc;
+#endif
+        } while (rcStrict == VINF_EM_RAW_INTERRUPT_HYPER);
+
+#ifdef LOG_ENABLED
+        /*
+         * Flush the log
+         */
+        PVMMR0LOGGER pR0LoggerR3 = pVCpu->vmm.s.pR0LoggerR3;
+        if (    pR0LoggerR3
+            &&  pR0LoggerR3->Logger.offScratch > 0)
+            RTLogFlushR0(NULL, &pR0LoggerR3->Logger);
+#endif /* !LOG_ENABLED */
+        if (rcStrict != VINF_VMM_CALL_HOST)
+            return rcStrict;
+        int rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
         if (RT_FAILURE(rc))
             return rc;
         /* Resume R0 */

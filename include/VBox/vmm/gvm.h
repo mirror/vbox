@@ -45,6 +45,13 @@ typedef struct GVMCPU
     /** Handle to the EMT thread. */
     RTNATIVETHREAD  hEMT;
 
+    /** Pointer to the global (ring-0) VM structure this CPU belongs to. */
+    PGVM            pGVM;
+    /** Pointer to the corresponding cross context CPU structure. */
+    PVMCPU          pVCpu;
+    /** Pointer to the corresponding cross context VM structure. */
+    PVM             pVM;
+
     /** The GVMM per vcpu data. */
     union
     {
@@ -65,8 +72,6 @@ typedef struct GVMCPU
     } nem;
 #endif
 } GVMCPU;
-/** Pointer to the GVMCPU data. */
-typedef GVMCPU *PGVMCPU;
 
 /** @} */
 
@@ -92,6 +97,8 @@ typedef struct GVM
     uint32_t        hSelf;
     /** The ring-0 mapping of the VM structure. */
     PVM             pVM;
+    /** The ring-3 mapping of the VM structure. */
+    PVMR3           pVMR3;
     /** The support driver session the VM is associated with. */
     PSUPDRVSESSION  pSession;
     /** Number of Virtual CPUs, i.e. how many entries there are in aCpus.

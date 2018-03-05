@@ -335,6 +335,8 @@ typedef enum VMMR0OPERATION
 
     /** Call VMMR0 Per VM Init. */
     VMMR0_DO_VMMR0_INIT = 64,
+    /** Call VMMR0 Per VM EMT Init */
+    VMMR0_DO_VMMR0_INIT_EMT,
     /** Call VMMR0 Per VM Termination. */
     VMMR0_DO_VMMR0_TERM,
 
@@ -529,6 +531,7 @@ VMMR3DECL(int)          VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs
 # endif
 VMMR3DECL(int)          VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 VMMR3_INT_DECL(int)     VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
+VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOperation);
 VMMR3DECL(void)         VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr);
 VMMR3_INT_DECL(void)    VMMR3YieldSuspend(PVM pVM);
 VMMR3_INT_DECL(void)    VMMR3YieldStop(PVM pVM);

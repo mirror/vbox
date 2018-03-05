@@ -609,6 +609,29 @@ typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
  */
 DECLASM(int)    vmmR0CallRing3SetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM, PVMCPU pVCpu);
 
+
+/**
+ * Callback function for vmmR0CallRing3SetJmp2.
+ *
+ * @returns VBox status code.
+ * @param   pvUser      The user argument.
+ */
+typedef DECLCALLBACK(int) FNVMMR0SETJMP2(PGVM pGVM, VMCPUID idCpu);
+/** Pointer to FNVMMR0SETJMP2(). */
+typedef FNVMMR0SETJMP2 *PFNVMMR0SETJMP2;
+
+/**
+ * Same as vmmR0CallRing3SetJmp except for the function signature.
+ *
+ * @returns VINF_SUCCESS on success or whatever is passed to vmmR0CallRing3LongJmp.
+ * @param   pJmpBuf     The jmp_buf to set.
+ * @param   pfn         The function to be called when not resuming.
+ * @param   pGVM        The ring-0 VM structure.
+ * @param   idCpu       The ID of the calling EMT.
+ */
+DECLASM(int)    vmmR0CallRing3SetJmp2(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP2 pfn, PGVM pGVM, VMCPUID idCpu);
+
+
 /**
  * Callback function for vmmR0CallRing3SetJmpEx.
  *
@@ -616,7 +639,7 @@ DECLASM(int)    vmmR0CallRing3SetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, P
  * @param   pvUser      The user argument.
  */
 typedef DECLCALLBACK(int) FNVMMR0SETJMPEX(void *pvUser);
-/** Pointer to FNVMMR0SETJMP(). */
+/** Pointer to FNVMMR0SETJMPEX(). */
 typedef FNVMMR0SETJMPEX *PFNVMMR0SETJMPEX;
 
 /**

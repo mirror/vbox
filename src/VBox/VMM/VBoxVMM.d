@@ -57,6 +57,7 @@ provider vboxvmm
 
     probe r0__vmm__return__to__ring3__rc(struct VMCPU *a_pVCpu, struct CPUMCTX *p_Ctx, int a_rc);
     probe r0__vmm__return__to__ring3__hm(struct VMCPU *a_pVCpu, struct CPUMCTX *p_Ctx, int a_rc);
+    probe r0__vmm__return__to__ring3__nem(struct VMCPU *a_pVCpu, struct CPUMCTX *p_Ctx, int a_rc);
 
 
     /** @name CPU Exception probes

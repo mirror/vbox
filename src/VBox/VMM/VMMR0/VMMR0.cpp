@@ -505,6 +505,40 @@ static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType
 
 
 /**
+ * Does EMT specific VM initialization.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        The ring-0 VM structure.
+ * @param   pVM         The cross context VM structure.
+ * @param   idCpu       The EMT that's calling.
+ */
+static int vmmR0InitVMEmt(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+{
+    /* Paranoia (caller checked these already). */
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
+    AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_INVALID_CPU_ID);
+
+#ifdef LOG_ENABLED
+    /*
+     * Registration of ring 0 loggers.
+     */
+    PVMCPU       pVCpu     = &pVM->aCpus[idCpu];
+    PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
+    if (   pR0Logger
+        && !pR0Logger->fRegistered)
+    {
+        RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
+        pR0Logger->fRegistered = true;
+    }
+#endif
+    RT_NOREF(pVM);
+
+    return VINF_SUCCESS;
+}
+
+
+
+/**
  * Terminates the R0 bits for a particular VM instance.
  *
  * This is normally called by ring-3 as part of the VM termination process, but
@@ -1166,22 +1200,6 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
                     GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
                 VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 
-#ifdef LOG_ENABLED
-                /*
-                 * Ugly: Lazy registration of ring 0 loggers.
-                 */
-                if (pVCpu->idCpu > 0)
-                {
-                    PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
-                    if (   pR0Logger
-                        && RT_UNLIKELY(!pR0Logger->fRegistered))
-                    {
-                        RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
-                        pR0Logger->fRegistered = true;
-                    }
-                }
-#endif
-
 #ifdef VMM_R0_TOUCH_FPU
                 /*
                  * Make sure we've got the FPU state loaded so and we don't need to clear
@@ -1319,6 +1337,29 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
             }
             break;
         }
+
+        case VMMR0_DO_NEM_RUN:
+        {
+            /*
+             * Setup the longjmp machinery and execute guest code (calls NEMR0RunGuestCode).
+             */
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            int rc = vmmR0CallRing3SetJmp2(&pVCpu->vmm.s.CallRing3JmpBufR0, NEMR0RunGuestCode, pGVM, idCpu);
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
+
+            pVCpu->vmm.s.iLastGZRc = rc;
+
+            /*
+             * Fire dtrace probe and collect statistics.
+             */
+            VBOXVMM_R0_VMM_RETURN_TO_RING3_NEM(pVCpu, CPUMQueryGuestCtxPtr(pVCpu), rc);
+#ifdef VBOX_WITH_STATISTICS
+            vmmR0RecordRC(pVM, pVCpu, rc);
+#endif
+            break;
+        }
+
 
         /*
          * For profiling.
@@ -1538,6 +1579,14 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
          */
         case VMMR0_DO_VMMR0_INIT:
             rc = vmmR0InitVM(pGVM, pVM, RT_LODWORD(u64Arg), RT_HIDWORD(u64Arg));
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            break;
+
+        /*
+         * Does EMT specific ring-0 init.
+         */
+        case VMMR0_DO_VMMR0_INIT_EMT:
+            rc = vmmR0InitVMEmt(pGVM, pVM, idCpu);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 

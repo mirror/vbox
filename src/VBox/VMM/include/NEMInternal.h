@@ -168,6 +168,8 @@ typedef struct NEMCPU
     uint32_t                    u32Magic;
 #ifdef RT_OS_WINDOWS
 # ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+    /** Pending VERR_NEM_CHANGE_PGM_MODE or VERR_NEM_FLUSH_TLB. */
+    int32_t                     rcPgmPending;
     /** The VID_MSHAGN_F_XXX flags.
      * Either VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE or zero. */
     uint32_t                    fHandleAndGetFlags;
@@ -200,6 +202,10 @@ typedef struct NEMCPU
     {
         uint8_t                 ab[64];
         HV_PARTITION_ID         idPartition;
+        HV_VP_INDEX             idCpu;
+# ifdef VID_MSHAGN_F_GET_NEXT_MESSAGE
+        VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT MsgSlotHandleAndGetNext;
+# endif
     } uIoCtlBuf;
 #endif
 } NEMCPU;

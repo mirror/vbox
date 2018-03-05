@@ -96,6 +96,8 @@ typedef RCPTRTYPE(struct VMCPU *)   PVMCPURC;
 
 /** Pointer to a ring-0 (global) VM structure. */
 typedef R0PTRTYPE(struct GVM *)     PGVM;
+/** Pointer to the GVMCPU data. */
+typedef R0PTRTYPE(struct GVMCPU *)  PGVMCPU;
 
 /** Pointer to a ring-3 (user mode) VM structure. */
 typedef R3PTRTYPE(struct UVM *)     PUVM;

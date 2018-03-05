@@ -1198,6 +1198,8 @@
 /** SMAP enabled, but the AC flag was found to be clear - check the kernel
  * log for details. */
 #define VERR_VMM_SMAP_BUT_AC_CLEAR          (-2717)
+/** NEM returned in the wrong state. */
+#define VERR_VMM_WRONG_NEM_VMCPU_STATE      (-2718)
 /** @} */
 
 
@@ -2828,8 +2830,12 @@
 #define VERR_NEM_SET_REGISTERS_FAILED               (-6808)
 /** Get register caller must flush the TLB (not an error). */
 #define VERR_NEM_FLUSH_TLB                          (-6809)
+/** Get register caller must flush the TLB. */
+#define VINF_NEM_FLUSH_TLB                          (6809)
 /** Get register caller must change the CPU mode (not an error). */
 #define VERR_NEM_CHANGE_PGM_MODE                    (-6810)
+/** Get register caller must change the CPU mode. */
+#define VINF_NEM_CHANGE_PGM_MODE                    (6810)
 /** @} */
 
 /** @name Audio / Video recording Status Codes

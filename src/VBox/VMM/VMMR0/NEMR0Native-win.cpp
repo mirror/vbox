@@ -23,6 +23,7 @@
 #include <iprt/nt/nt.h>
 #include <iprt/nt/hyperv.h>
 #include <iprt/nt/vid.h>
+#include <winerror.h>
 
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/iem.h>
@@ -49,6 +50,12 @@
 
 
 /*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+typedef uint32_t DWORD; /* for winerror.h constants */
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static uint64_t (*g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysInput, uint64_t HCPhysOutput);
@@ -57,9 +64,13 @@ static uint64_t (*g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysIn
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
-                                     uint32_t cPages, uint32_t fFlags);
-NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys, uint32_t cPages);
+NEM_TMPL_STATIC int  nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
+                                      uint32_t cPages, uint32_t fFlags);
+NEM_TMPL_STATIC int  nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys, uint32_t cPages);
+NEM_TMPL_STATIC int  nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx);
+NEM_TMPL_STATIC int  nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat);
+DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput,
+                                                     void *pvOutput, uint32_t cbOutput);
 
 
 /*
@@ -496,7 +507,7 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  * @param   pCtx        The CPU context structure to import into.
  * @param   fWhat       What to export. To be defined, UINT64_MAX for now.
  */
-static int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx)
+NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx)
 {
     PVMCPU                     pVCpu  = &pGVM->pVM->aCpus[pGVCpu->idCpu];
     HV_INPUT_SET_VP_REGISTERS *pInput = (HV_INPUT_SET_VP_REGISTERS *)pGVCpu->nem.s.pbHypercallData;
@@ -1074,7 +1085,7 @@ VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  * @param   pCtx        The CPU context structure to import into.
  * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX.
  */
-static int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat)
+NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat)
 {
     HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nem.s.pbHypercallData;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
@@ -1693,17 +1704,30 @@ static int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_
     /* Almost done, just update extrn flags and maybe change PGM mode. */
     pCtx->fExtrn &= ~fWhat;
 
+    /* Typical. */
+    if (!fMaybeChangedMode && !fFlushTlb)
+        return VINF_SUCCESS;
+
+    /*
+     * Slow.
+     */
     int rc = VINF_SUCCESS;
     if (fMaybeChangedMode)
     {
         rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
         if (rc == VINF_PGM_CHANGE_MODE)
-            rc = VERR_NEM_CHANGE_PGM_MODE;
-        else
-            AssertRC(rc);
+        {
+            LogFlow(("nemR0WinImportState: -> VERR_NEM_CHANGE_PGM_MODE!\n"));
+            return VERR_NEM_CHANGE_PGM_MODE;
+        }
+        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc));
     }
-    if (fFlushTlb && rc == VINF_SUCCESS)
+
+    if (fFlushTlb)
+    {
+        LogFlow(("nemR0WinImportState: -> VERR_NEM_FLUSH_TLB!\n"));
         rc = VERR_NEM_FLUSH_TLB; /* Calling PGMFlushTLB w/o long jump setup doesn't work, ring-3 does it. */
+    }
 
     return rc;
 }
@@ -1738,5 +1762,12 @@ VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t
         rc = nemR0WinImportState(pGVM, pGVCpu, CPUMQueryGuestCtxPtr(pVCpu), fWhat);
     }
     return rc;
+}
+
+
+VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
+{
+    PVM pVM = pGVM->pVM;
+    return nemHCWinRunGC(pVM, &pVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
 }
 

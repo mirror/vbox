@@ -1913,13 +1913,38 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 {
 #ifndef NEM_WIN_USE_OUR_OWN_RUN_API
     return nemR3WinWHvRunGC(pVM, pVCpu);
-#elif 1
-    return nemHCWinRunGC(pVM, pVCpu);
+#elif 0
+    return nemHCWinRunGC(pVM, pVCpu, NULL /*pGVM*/, NULL /*pGVCpu*/);
 #else
-    int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_RUN_GC, 0, NULL);
-    if (RT_SUCCESS(rc))
-        return pVCpu->nem.s.rcRing0;
-    return rc;
+    VBOXSTRICTRC rcStrict = VMMR3CallR0EmtFast(pVM, pVCpu, VMMR0_DO_NEM_RUN);
+    if (RT_SUCCESS(rcStrict))
+    {
+        /* We deal wtih VINF_NEM_CHANGE_PGM_MODE and VINF_NEM_FLUSH_TLB here, since we're running
+           the risk of getting these while we already got another RC (I/O ports). */
+        VBOXSTRICTRC rcPgmPending = pVCpu->nem.s.rcPgmPending;
+        pVCpu->nem.s.rcPgmPending = VINF_SUCCESS;
+        if (   rcStrict == VINF_NEM_CHANGE_PGM_MODE
+            || rcStrict == VINF_PGM_CHANGE_MODE
+            || rcPgmPending == VINF_NEM_CHANGE_PGM_MODE )
+        {
+            LogFlow(("nemR3NativeRunGC: calling PGMChangeMode...\n"));
+            int rc = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
+            AssertRCReturn(rc, rc);
+            if (rcStrict == VINF_NEM_CHANGE_PGM_MODE || rcStrict == VINF_NEM_FLUSH_TLB)
+                rcStrict = VINF_SUCCESS;
+        }
+        else if (rcStrict == VINF_NEM_FLUSH_TLB || rcPgmPending == VINF_NEM_FLUSH_TLB)
+        {
+            LogFlow(("nemR3NativeRunGC: calling PGMFlushTLB...\n"));
+            int rc = PGMFlushTLB(pVCpu, CPUMGetGuestCR3(pVCpu), true);
+            AssertRCReturn(rc, rc);
+            if (rcStrict == VINF_NEM_FLUSH_TLB || rcStrict == VINF_NEM_CHANGE_PGM_MODE)
+                rcStrict = VINF_SUCCESS;
+        }
+        else
+            AssertMsg(rcPgmPending == VINF_SUCCESS, ("rcPgmPending=%Rrc\n", VBOXSTRICTRC_VAL(rcPgmPending) ));
+    }
+    return rcStrict;
 #endif
 }
 
