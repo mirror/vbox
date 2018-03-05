@@ -423,6 +423,7 @@ void UIGuestControlFileManager::sltCloseSession()
     if (!m_comGuestSession.isOk())
     {
         m_pLogOutput->appendPlainText("Guest session is not valid");
+        postSessionClosed();
         return;
     }
     if (m_pGuestFileTable)
@@ -438,10 +439,10 @@ void UIGuestControlFileManager::sltCloseSession()
 
 void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent)
 {
-    if (cEvent.isOk() && m_comGuestSession.isOk())// && m_comGuestProcess.GetStatus() == KProcessStatus_Error)
+    if (cEvent.isOk() && m_comGuestSession.isOk())
     {
         CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
-        if (cErrorInfo.isOk())// && cErrorInfo.GetResultCode() != S_OK)
+        if (cErrorInfo.isOk())
         {
             m_pLogOutput->appendPlainText(cErrorInfo.GetText());
         }
@@ -519,13 +520,17 @@ bool UIGuestControlFileManager::createSession(const QString& strUserName, const 
 
     connect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
             this, &UIGuestControlFileManager::sltGuestSessionStateChanged);
-    // /* Wait session to start: */
-    // const ULONG waitTimeout = 2000;
-    // KGuestSessionWaitResult waitResult = guestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
-    // if (waitResult != KGuestSessionWaitResult_Start)
-    //     return false;
-
-    // outSession = guestSession;
+     /* Wait session to start. For some reason we cannot get GuestSessionStatusChanged event
+        consistently. So we wait: */
+    m_pLogOutput->appendPlainText("Waiting the session to start");
+    const ULONG waitTimeout = 2000;
+    KGuestSessionWaitResult waitResult = m_comGuestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
+    if (waitResult != KGuestSessionWaitResult_Start)
+    {
+        m_pLogOutput->appendPlainText("The session did not start");
+        sltCloseSession();
+        return false;
+    }
 
     return true;
 }

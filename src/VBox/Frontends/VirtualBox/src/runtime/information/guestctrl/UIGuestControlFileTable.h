@@ -99,7 +99,8 @@ protected:
     void insertItemsToTree(QMap<QString,UIFileTableItem*> &map, UIFileTableItem *parent,
                            bool isDirectoryMap, bool isStartDir);
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) = 0;
-    virtual void refresh() = 0;
+    virtual void refresh();
+    virtual void deleteByItem(UIFileTableItem *item) = 0;
     UIFileTableItem         *m_pRootItem;
 
     /** Using QITableView causes the following problem when I click on the table items
@@ -115,11 +116,13 @@ protected slots:
     void sltItemDoubleClicked(const QModelIndex &index);
     void sltGoUp();
     void sltRefresh();
+    void sltDelete();
 
 private:
 
     void            prepareObjects();
     void            prepareActions();
+    void            deleteByIndex(const QModelIndex &itemIndex);
     QGridLayout    *m_pMainLayout;
     QILineEdit     *m_pCurrentLocationEdit;
     UIToolBar      *m_pToolBar;
@@ -149,7 +152,7 @@ protected:
 
     void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
-    virtual void refresh() /* override */;
+    virtual void deleteByItem(UIFileTableItem *item) /* override */;
 
 private:
 
@@ -170,8 +173,7 @@ protected:
 
     void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
-    virtual void refresh() /* override */;
-
+    virtual void deleteByItem(UIFileTableItem *item) /* override */;
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */

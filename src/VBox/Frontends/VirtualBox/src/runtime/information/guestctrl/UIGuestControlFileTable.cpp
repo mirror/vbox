@@ -37,6 +37,7 @@
 /* COM includes: */
 # include "CFsObjInfo.h"
 # include "CGuestDirectory.h"
+# include "CProgress.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -476,8 +477,12 @@ void UIGuestControlFileTable::prepareActions()
 
 
     m_pDelete = new QAction(this);
-    m_pDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
-    m_pToolBar->addAction(m_pDelete);
+    if (m_pDelete)
+    {
+        connect(m_pDelete, &QAction::triggered, this, &UIGuestControlFileTable::sltDelete);
+        m_pDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
+        m_pToolBar->addAction(m_pDelete);
+    }
 
     m_pNewFolder = new QAction(this);
     m_pNewFolder->setIcon(UIIconPool::iconSet(QString(":/sf_32px.png")));
@@ -611,6 +616,11 @@ void UIGuestControlFileTable::sltGoUp()
 
 void UIGuestControlFileTable::sltRefresh()
 {
+    refresh();
+}
+
+void UIGuestControlFileTable::refresh()
+{
     if (!m_pView || !m_pModel)
         return;
     QModelIndex currentIndex = m_pView->rootIndex();
@@ -620,14 +630,40 @@ void UIGuestControlFileTable::sltRefresh()
         static_cast<UIFileTableItem*>(currentIndex.internalPointer());
     if (!treeItem)
         return;
+    bool isRootDir = (m_pModel->rootIndex() == currentIndex);
     m_pModel->beginReset();
     /* For now we clear the whole subtree (that isrecursively) which is an overkill: */
     treeItem->clearChildren();
-    readDirectory(treeItem->path(), treeItem, false);
+    readDirectory(treeItem->path(), treeItem, isRootDir);
     m_pModel->endReset();
     m_pView->setRootIndex(currentIndex);
 }
 
+void UIGuestControlFileTable::sltDelete()
+{
+    if (!m_pView || !m_pModel)
+        return;
+    QItemSelectionModel *selectionModel =  m_pView->selectionModel();
+    if (!selectionModel)
+        return;
+
+    QModelIndexList selectedItemIndices = selectionModel->selectedIndexes();
+    for(int i = 0; i < selectedItemIndices.size(); ++i)
+    {
+        deleteByIndex(selectedItemIndices.at(i));
+    }
+    refresh();
+}
+
+void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
+{
+    if (!itemIndex.isValid())
+        return;
+    UIFileTableItem *treeItem = static_cast<UIFileTableItem*>(itemIndex.internalPointer());
+    if (!treeItem)
+        return;
+    deleteByItem(treeItem);
+}
 
 void UIGuestControlFileTable::retranslateUi()
 {
@@ -640,8 +676,8 @@ void UIGuestControlFileTable::retranslateUi()
     if (m_pDelete)
     {
         m_pDelete->setText(UIVMInformationDialog::tr("Delete"));
-        m_pDelete->setToolTip(UIVMInformationDialog::tr("Delete the selected item"));
-        m_pDelete->setStatusTip(UIVMInformationDialog::tr("Delete the selected item"));
+        m_pDelete->setToolTip(UIVMInformationDialog::tr("Delete the selected item(s)"));
+        m_pDelete->setStatusTip(UIVMInformationDialog::tr("Delete the selected item(s)"));
     }
 
     if (m_pNewFolder)
@@ -662,24 +698,24 @@ void UIGuestControlFileTable::retranslateUi()
     if (m_pCopy)
     {
         m_pCopy->setText(UIVMInformationDialog::tr("Copy the selected item"));
-        m_pCopy->setToolTip(UIVMInformationDialog::tr("Copy the selected item"));
-        m_pCopy->setStatusTip(UIVMInformationDialog::tr("Copy the selected item"));
+        m_pCopy->setToolTip(UIVMInformationDialog::tr("Copy the selected item(s)"));
+        m_pCopy->setStatusTip(UIVMInformationDialog::tr("Copy the selected item(s)"));
 
     }
 
     if (m_pCut)
     {
-        m_pCut->setText(UIVMInformationDialog::tr("Cut the selected item"));
-        m_pCut->setToolTip(UIVMInformationDialog::tr("Cut the selected item"));
-        m_pCut->setStatusTip(UIVMInformationDialog::tr("Cut the selected item"));
+        m_pCut->setText(UIVMInformationDialog::tr("Cut the selected item(s)"));
+        m_pCut->setToolTip(UIVMInformationDialog::tr("Cut the selected item(s)"));
+        m_pCut->setStatusTip(UIVMInformationDialog::tr("Cut the selected item(s)"));
 
     }
 
     if ( m_pPaste)
     {
-        m_pPaste->setText(UIVMInformationDialog::tr("Paste the copied item"));
-        m_pPaste->setToolTip(UIVMInformationDialog::tr("Paste the copied item"));
-        m_pPaste->setStatusTip(UIVMInformationDialog::tr("Paste the copied item"));
+        m_pPaste->setText(UIVMInformationDialog::tr("Paste the copied item(s)"));
+        m_pPaste->setToolTip(UIVMInformationDialog::tr("Paste the copied item(s)"));
+        m_pPaste->setStatusTip(UIVMInformationDialog::tr("Paste the copied item(s)"));
     }
 
 }
@@ -760,10 +796,25 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
     }
 }
 
-void UIGuestFileTable::refresh()
+void UIGuestFileTable::deleteByItem(UIFileTableItem *item)
 {
-}
+    if (!item)
+        return;
+    if (!m_comGuestSession.isOk())
+        return;
+    if (item->isUpDirectory())
+        return;
+    QVector<KDirectoryRemoveRecFlag> flags(KDirectoryRemoveRecFlag_ContentAndDir);
 
+    if (item->isDirectory())
+    {
+        m_comGuestSession.DirectoryRemoveRecursive(item->path(), flags);
+    }
+    else
+    {
+        m_comGuestSession.FsObjRemove(item->path());
+    }
+}
 
 /*********************************************************************************************************************************
 *   UIHostFileTable implementation.                                                                                              *
@@ -824,8 +875,9 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     updateCurrentLocationEdit(strPath);
 }
 
-void UIHostFileTable::refresh()
+void UIHostFileTable::deleteByItem(UIFileTableItem */*item */)
 {
+
 }
 
 #include "UIGuestControlFileTable.moc"
