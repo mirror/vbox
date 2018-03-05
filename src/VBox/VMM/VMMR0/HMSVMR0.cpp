@@ -5470,7 +5470,7 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
         case SVM_EXIT_WRITE_CR8:
         {
             uint8_t const uCr = uExitCode - SVM_EXIT_WRITE_CR0;
-            Log4(("hmR0SvmHandleExitNested: Write CR%u\n", uCr)); NOREF(uCr);
+            Log4(("hmR0SvmHandleExit: Write CR%u\n", uCr)); NOREF(uCr);
             return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
         }
 
