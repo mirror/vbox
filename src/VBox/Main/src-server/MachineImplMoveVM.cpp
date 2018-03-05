@@ -277,8 +277,8 @@ HRESULT MachineMoveVM::init()
             }
         }
 
-        ULONG uCount       = 0;//looks like it should be initialized by 1. See assertion in the Progress::setNextOperation()
-        ULONG uTotalWeight = 0;
+        ULONG uCount       = 1;//looks like it should be initialized by 1. See assertion in the Progress::setNextOperation()
+        ULONG uTotalWeight = 1;
 
         /* The lists llMedias and llSaveStateFiles are filled in the queryMediasForAllStates() */
         queryMediasForAllStates(machineList);
@@ -362,7 +362,8 @@ HRESULT MachineMoveVM::init()
         /* Prepare data for moving the log files */
         {
             Utf8Str strFolder = vmFolders[VBox_LogFolder];
-            if (strFolder.isNotEmpty())
+
+            if (RTPathExists(strFolder.c_str()))
             {
                 uint64_t totalLogSize = 0;
                 rc = getFolderSize(strFolder, totalLogSize);
@@ -397,6 +398,11 @@ HRESULT MachineMoveVM::init()
                         ++it;
                     }
                 }
+            }
+            else
+            {
+                LogRelFunc(("Information: The original log folder %s doesn't exist\n", strFolder.c_str()));
+                rc = S_OK;//it's not error in this case if there isn't an original log folder
             }
         }
 
@@ -520,7 +526,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
     Utf8Str strTargetFolder = taskMoveVM->m_targetPath;
     {
         Bstr bstrMachineName;
-        taskMoveVM->m_pMachine->COMGETTER(Name)(bstrMachineName.asOutParam());
+        machine->COMGETTER(Name)(bstrMachineName.asOutParam());
         strTargetFolder.append(Utf8Str(bstrMachineName));
     }
 
@@ -534,18 +540,26 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
      * basic mode:
      * - The images which are solely attached to the VM
      *   and located in the original VM folder will be moved.
+     *   All subfolders related to the original VM are also moved from the original location
+     *   (Standard - snapshots and logs folders).
      *
-     * full mode:
-     * - All disks which are directly attached to the VM
-     *   will be moved.
+     * canonical mode:
+     * - All disks tied with the VM will be moved into a new location if it's possible.
+     *   All folders related to the original VM are also moved.
+     * This mode is intended to collect all files/images/snapshots related to the VM in the one place.
      *
-     * Apart from that all other files located in the original VM
-     * folder will be moved.
      */
 
-     /* Collect the shareable disks.
+    /*
+     * A way to handle shareable disk:
+     * Collect the shareable disks attched to the VM.
      * Get the machines whom the shareable disks attach to.
-     * Return an error if the state of any VM doesn't allow to move a shareable disk.
+     * Return an error if the state of any VM doesn't allow to move a shareable disk and 
+     * this disk is located in the VM's folder (it means the disk is intended for "moving").
+     */
+
+
+    /*
      * Check new destination whether enough room for the VM or not. if "not" return an error.
      * Make a copy of VM settings and a list with all files which are moved. Save the list on the disk.
      * Start "move" operation.
@@ -565,7 +579,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
             throw rc;
 
         /* Get Machine::Data here because moveAllDisks() change it */
-        Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
+        Machine::Data *machineData = machine->mData.data();
         settings::MachineConfigFile *machineConfFile = machineData->pMachineConfigFile;
 
         /* Copy all save state files. */
@@ -589,8 +603,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                 int vrc = RTDirCreateFullPath(strTrgSnapshotFolder.c_str(), 0700);
                 if (RT_FAILURE(vrc))
                     throw machine->setError(VBOX_E_IPRT_ERROR,
-                                      machine->tr("Could not create snapshots folder '%s' (%Rrc)"),
-                                            strTrgSnapshotFolder.c_str(), vrc);
+                                            machine->tr("Could not create snapshots folder '%s' (%Rrc)"),
+                                                        strTrgSnapshotFolder.c_str(), vrc);
             }
 
             std::map<Utf8Str, SAVESTATETASK>::iterator itState = taskMoveVM->finalSaveStateFilesMap.begin();
@@ -609,8 +623,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                                        MachineMoveVM::copyFileProgress, &taskMoveVM->m_pProgress);
                 if (RT_FAILURE(vrc))
                     throw machine->setError(VBOX_E_IPRT_ERROR,
-                                      machine->tr("Could not copy state file '%s' to '%s' (%Rrc)"),
-                                            sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
+                                            machine->tr("Could not copy state file '%s' to '%s' (%Rrc)"),
+                                                        sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
 
                 /* save new file in case of restoring */
                 newFiles.append(strTrgSaveState);
@@ -624,13 +638,19 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
          * Update state file path
          * very important step!
          */
-        rc = taskMoveVM->updatePathsToStateFiles(taskMoveVM->finalSaveStateFilesMap,
-                                                 taskMoveVM->vmFolders[VBox_SettingFolder],
-                                                 strTargetFolder);
-        if (FAILED(rc))
-            throw rc;
+        {
+            rc = taskMoveVM->updatePathsToStateFiles(taskMoveVM->finalSaveStateFilesMap,
+                                                     taskMoveVM->vmFolders[VBox_SettingFolder],
+                                                     strTargetFolder);
+            if (FAILED(rc))
+                throw rc;
+        }
 
-        /* Moving Machine settings file */
+        /*
+         * Moving Machine settings file 
+         * The settings file are moved after all disks and snapshots because this file should be updated
+         * with actual information and only then should be moved.
+         */
         {
             LogRelFunc(("Copy Machine settings file \n"));
 
@@ -639,13 +659,27 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
             if (FAILED(rc)) throw rc;
 
             Utf8Str strTargetSettingsFilePath = strTargetFolder;
+
+            /* Check a folder existing and create one if it's not */
+            if (!RTDirExists(strTargetSettingsFilePath.c_str()))
+            {
+                int vrc = RTDirCreateFullPath(strTargetSettingsFilePath.c_str(), 0700);
+                if (RT_FAILURE(vrc))
+                    throw machine->setError(VBOX_E_IPRT_ERROR,
+                                            machine->tr("Could not create a home machine folder '%s' (%Rrc)"),
+                                                        strTargetSettingsFilePath.c_str(), vrc);
+                LogRelFunc(("Created a home machine folder %s\n", strTargetSettingsFilePath.c_str()));
+            }
+
+            /* Create a full path */
             Bstr bstrMachineName;
-            taskMoveVM->m_pMachine->COMGETTER(Name)(bstrMachineName.asOutParam());
-            strTargetSettingsFilePath.append(RTPATH_DELIMITER).append(Utf8Str(bstrMachineName)).append(".vbox");
+            machine->COMGETTER(Name)(bstrMachineName.asOutParam());
+            strTargetSettingsFilePath.append(RTPATH_DELIMITER).append(Utf8Str(bstrMachineName));
+            strTargetSettingsFilePath.append(".vbox");
 
             Utf8Str strSettingsFilePath;
             Bstr bstr_settingsFilePath;
-            taskMoveVM->m_pMachine->COMGETTER(SettingsFilePath)(bstr_settingsFilePath.asOutParam());
+            machine->COMGETTER(SettingsFilePath)(bstr_settingsFilePath.asOutParam());
             strSettingsFilePath = bstr_settingsFilePath;
 
             int vrc = RTFileCopyEx(strSettingsFilePath.c_str(), strTargetSettingsFilePath.c_str(), 0,
@@ -657,6 +691,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
 
             LogRelFunc(("The setting file %s has been copied into the folder %s\n", strSettingsFilePath.c_str(),
                         strTargetSettingsFilePath.stripFilename().c_str()));
+
             /* save new file in case of restoring */
             newFiles.append(strTargetSettingsFilePath);
             /* save original file for deletion in the end */
@@ -667,84 +702,87 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         {
             LogRelFunc(("Copy machine log files \n"));
 
-            Utf8Str strTargetLogFolderPath = strTargetFolder;
-
             if (taskMoveVM->vmFolders[VBox_LogFolder].isNotEmpty())
             {
-                Bstr bstrMachineName;
-                taskMoveVM->m_pMachine->COMGETTER(Name)(bstrMachineName.asOutParam());
-                strTargetLogFolderPath.append(RTPATH_DELIMITER).append("Logs");
-
-                /* Check a log folder existing and create one if it's not */
-                if (!RTDirExists(strTargetLogFolderPath.c_str()))
+                /* Check an original log folder existence */
+                if (RTDirExists(taskMoveVM->vmFolders[VBox_LogFolder].c_str()))
                 {
-                    int vrc = RTDirCreateFullPath(strTargetLogFolderPath.c_str(), 0700);
-                    if (RT_FAILURE(vrc))
-                        throw machine->setError(VBOX_E_IPRT_ERROR,
-                                          machine->tr("Could not create log folder '%s' (%Rrc)"),
-                                                strTargetLogFolderPath.c_str(), vrc);
-                }
+                    Utf8Str strTargetLogFolderPath = strTargetFolder;
+                    strTargetLogFolderPath.append(RTPATH_DELIMITER).append("Logs");
 
-                fileList_t filesList;
-                taskMoveVM->getFilesList(taskMoveVM->vmFolders[VBox_LogFolder], filesList);
-                cit_t it = filesList.m_list.begin();
-                while(it != filesList.m_list.end())
-                {
-                    Utf8Str strFullSourceFilePath = it->first.c_str();
-                    strFullSourceFilePath.append(RTPATH_DELIMITER).append(it->second.c_str());
+                    /* Check a destination log folder existence and create one if it's not */
+                    if (!RTDirExists(strTargetLogFolderPath.c_str()))
+                    {
+                        int vrc = RTDirCreateFullPath(strTargetLogFolderPath.c_str(), 0700);
+                        if (RT_FAILURE(vrc))
+                            throw machine->setError(VBOX_E_IPRT_ERROR,
+                                                    machine->tr("Could not create log folder '%s' (%Rrc)"),
+                                                                strTargetLogFolderPath.c_str(), vrc);
+                        LogRelFunc(("Created a log machine folder %s\n", strTargetLogFolderPath.c_str()));
+                    }
 
-                    Utf8Str strFullTargetFilePath = strTargetLogFolderPath;
-                    strFullTargetFilePath.append(RTPATH_DELIMITER).append(it->second.c_str());
+                    fileList_t filesList;
+                    taskMoveVM->getFilesList(taskMoveVM->vmFolders[VBox_LogFolder], filesList);
+                    cit_t it = filesList.m_list.begin();
+                    while(it != filesList.m_list.end())
+                    {
+                        Utf8Str strFullSourceFilePath = it->first.c_str();
+                        strFullSourceFilePath.append(RTPATH_DELIMITER).append(it->second.c_str());
 
-                    /* Move to next sub-operation. */
-                    rc = taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(machine->tr("Copying the log file '%s' ..."),
-                                                            RTPathFilename(strFullSourceFilePath.c_str())).raw(), 1);
-                    if (FAILED(rc)) throw rc;
+                        Utf8Str strFullTargetFilePath = strTargetLogFolderPath;
+                        strFullTargetFilePath.append(RTPATH_DELIMITER).append(it->second.c_str());
 
-                    int vrc = RTFileCopyEx(strFullSourceFilePath.c_str(), strFullTargetFilePath.c_str(), 0,
-                                   MachineMoveVM::copyFileProgress, &taskMoveVM->m_pProgress);
-                    if (RT_FAILURE(vrc))
-                        throw machine->setError(VBOX_E_IPRT_ERROR,
-                                        machine->tr("Could not copy the log file '%s' to '%s' (%Rrc)"),
-                                        strFullSourceFilePath.c_str(), strFullTargetFilePath.stripFilename().c_str(), vrc);
+                        /* Move to next sub-operation. */
+                        rc = taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(machine->tr("Copying the log file '%s' ..."),
+                                                                RTPathFilename(strFullSourceFilePath.c_str())).raw(), 1);
+                        if (FAILED(rc)) throw rc;
 
-                    LogRelFunc(("The log file %s has been copied into the folder %s\n", strFullSourceFilePath.c_str(),
-                                     strFullTargetFilePath.stripFilename().c_str()));
+                        int vrc = RTFileCopyEx(strFullSourceFilePath.c_str(), strFullTargetFilePath.c_str(), 0,
+                                       MachineMoveVM::copyFileProgress, &taskMoveVM->m_pProgress);
+                        if (RT_FAILURE(vrc))
+                            throw machine->setError(VBOX_E_IPRT_ERROR,
+                                            machine->tr("Could not copy the log file '%s' to '%s' (%Rrc)"),
+                                            strFullSourceFilePath.c_str(), strFullTargetFilePath.stripFilename().c_str(), vrc);
 
-                    /* save new file in case of restoring */
-                    newFiles.append(strFullTargetFilePath);
-                    /* save original file for deletion in the end */
-                    originalFiles.append(strFullSourceFilePath);
+                        LogRelFunc(("The log file %s has been copied into the folder %s\n", strFullSourceFilePath.c_str(),
+                                         strFullTargetFilePath.stripFilename().c_str()));
 
-                    ++it;
+                        /* save new file in case of restoring */
+                        newFiles.append(strFullTargetFilePath);
+                        /* save original file for deletion in the end */
+                        originalFiles.append(strFullSourceFilePath);
+
+                        ++it;
+                    }
                 }
             }
         }
 
         /* save all VM data */
         {
-            rc = taskMoveVM->m_pMachine->SaveSettings();
+            rc = machine->SaveSettings();
         }
 
         {
             LogRelFunc(("Update path to XML setting file\n"));
             Utf8Str strTargetSettingsFilePath = strTargetFolder;
             Bstr bstrMachineName;
-            taskMoveVM->m_pMachine->COMGETTER(Name)(bstrMachineName.asOutParam());
+            machine->COMGETTER(Name)(bstrMachineName.asOutParam());
             strTargetSettingsFilePath.append(RTPATH_DELIMITER).append(Utf8Str(bstrMachineName)).append(".vbox");
             machineData->m_strConfigFileFull = strTargetSettingsFilePath;
-            taskMoveVM->m_pMachine->mParent->i_copyPathRelativeToConfig(strTargetSettingsFilePath, machineData->m_strConfigFile);
+            machine->mParent->i_copyPathRelativeToConfig(strTargetSettingsFilePath, machineData->m_strConfigFile);
         }
 
-        /* Marks the global registry for uuid as modified */
+        /* Save global settings in the VirtualBox.xml */
         {
-            Guid uuid = taskMoveVM->m_pMachine->mData->mUuid;
-            taskMoveVM->m_pMachine->mParent->i_markRegistryModified(uuid);
+            /* Marks the global registry for uuid as modified */
+            Guid uuid = machine->mData->mUuid;
+            machine->mParent->i_markRegistryModified(uuid);
 
-            // save the global settings; for that we should hold only the VirtualBox lock
-            AutoWriteLock vboxLock(taskMoveVM->m_pMachine->mParent COMMA_LOCKVAL_SRC_POS);
+            /* for saving the global settings we should hold only the VirtualBox lock */
+            AutoWriteLock vboxLock(machine->mParent COMMA_LOCKVAL_SRC_POS);
 
-            rc = taskMoveVM->m_pMachine->mParent->i_saveSettings();
+            rc = machine->mParent->i_saveSettings();
         }
     }
     catch(HRESULT hrc)
@@ -756,14 +794,14 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
     catch (...)
     {
         LogRelFunc(("Moving machine to a new destination was failed. Check original and destination places.\n"));
-        rc = VirtualBoxBase::handleUnexpectedExceptions(taskMoveVM->m_pMachine, RT_SRC_POS);
+        rc = VirtualBoxBase::handleUnexpectedExceptions(machine, RT_SRC_POS);
         taskMoveVM->result = rc;
     }
 
     /* Cleanup on failure */
     if (FAILED(rc))
     {
-        Machine::Data *machineData = taskMoveVM->m_pMachine->mData.data();
+        Machine::Data *machineData = machine->mData.data();
 
         /* ! Apparently we should update the Progress object !*/
         ULONG operationCount = 0;
@@ -777,7 +815,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         rc = taskMoveVM->m_pProgress->COMGETTER(OperationPercent)(&operationPercent);
 
         Bstr bstrMachineName;
-        taskMoveVM->m_pMachine->COMGETTER(Name)(bstrMachineName.asOutParam());
+        machine->COMGETTER(Name)(bstrMachineName.asOutParam());
         LogRelFunc(("Moving machine %s was failed on operation %s\n",
                     Utf8Str(bstrMachineName.raw()).c_str(), Utf8Str(bstrOperationDescription.raw()).c_str()));
 
@@ -811,7 +849,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         catch (...)
         {
             LogRelFunc(("Rollback scenario: restoration the original mediums were failed. Machine can be corrupted.\n"));
-            rc = VirtualBoxBase::handleUnexpectedExceptions(taskMoveVM->m_pMachine, RT_SRC_POS);
+            rc = VirtualBoxBase::handleUnexpectedExceptions(machine, RT_SRC_POS);
             taskMoveVM->result = rc;
         }
 
@@ -837,7 +875,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         {
             AutoWriteLock  srcLock(machine COMMA_LOCKVAL_SRC_POS);
             srcLock.release();
-            rc = taskMoveVM->m_pMachine->SaveSettings();
+            rc = machine->SaveSettings();
             srcLock.acquire();
         }
 
@@ -847,22 +885,21 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
             Utf8Str strOriginalSettingsFilePath = taskMoveVM->vmFolders[VBox_SettingFolder];
             strOriginalSettingsFilePath.append(RTPATH_DELIMITER).append(Utf8Str(bstrMachineName)).append(".vbox");
             machineData->m_strConfigFileFull = strOriginalSettingsFilePath;
-            taskMoveVM->m_pMachine->mParent->i_copyPathRelativeToConfig(strOriginalSettingsFilePath,
-                                                                        machineData->m_strConfigFile);
+            machine->mParent->i_copyPathRelativeToConfig(strOriginalSettingsFilePath, machineData->m_strConfigFile);
         }
 
         /* Marks the global registry for uuid as modified */
         {
             AutoWriteLock  srcLock(machine COMMA_LOCKVAL_SRC_POS);
             srcLock.release();
-            Guid uuid = taskMoveVM->m_pMachine->mData->mUuid;
-            taskMoveVM->m_pMachine->mParent->i_markRegistryModified(uuid);
+            Guid uuid = machine->mData->mUuid;
+            machine->mParent->i_markRegistryModified(uuid);
             srcLock.acquire();
 
             // save the global settings; for that we should hold only the VirtualBox lock
-            AutoWriteLock vboxLock(taskMoveVM->m_pMachine->mParent COMMA_LOCKVAL_SRC_POS);
+            AutoWriteLock vboxLock(machine->mParent COMMA_LOCKVAL_SRC_POS);
 
-            rc = taskMoveVM->m_pMachine->mParent->i_saveSettings();
+            rc = machine->mParent->i_saveSettings();
         }
 
         /* In case of failure the progress object on the other side (user side) get notification about operation
@@ -891,7 +928,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
 
         rc = taskMoveVM->deleteFiles(originalFiles);
         if (FAILED(rc))
-            LogRelFunc(("Rollback scenario: can't delete all original files.\n"));
+            LogRelFunc(("Forward scenario: can't delete all original files.\n"));
     }
 
     if (!taskMoveVM->m_pProgress.isNull())
@@ -1088,13 +1125,9 @@ HRESULT MachineMoveVM::deleteFiles(const RTCList<Utf8Str>& listOfFiles)
     {
         for (size_t i = 0; i < listOfFiles.size(); ++i)
         {
+            LogRelFunc(("Deleting file %s ...\n", listOfFiles.at(i).c_str()));
             rc = m_pProgress->SetNextOperation(BstrFmt("Deleting file %s...", listOfFiles.at(i).c_str()).raw(), 1);
             if (FAILED(rc)) throw rc;
-
-            Bstr bstrOperationDescription;
-            rc = m_pProgress->COMGETTER(OperationDescription)(bstrOperationDescription.asOutParam());
-            Utf8Str strOperationDescription = bstrOperationDescription;
-            LogRelFunc(("%s\n", strOperationDescription.c_str()));
 
             int vrc = RTFileDelete(listOfFiles.at(i).c_str());
             if (RT_FAILURE(vrc))
@@ -1119,37 +1152,45 @@ HRESULT MachineMoveVM::deleteFiles(const RTCList<Utf8Str>& listOfFiles)
 
 HRESULT MachineMoveVM::getFolderSize(const Utf8Str& strRootFolder, uint64_t& size)
 {
+    HRESULT rc = S_OK;
     int vrc = 0;
     uint64_t totalFolderSize = 0;
     fileList_t filesList;
 
-    HRESULT rc = getFilesList(strRootFolder, filesList);
-    if (SUCCEEDED(rc))
+    bool ex = RTPathExists(strRootFolder.c_str());
+    if (ex == true)
     {
-        cit_t it = filesList.m_list.begin();
-        while(it != filesList.m_list.end())
+        rc = getFilesList(strRootFolder, filesList);
+        if (SUCCEEDED(rc))
         {
-            uint64_t cbFile = 0;
-            Utf8Str fullPath =  it->first;
-            fullPath.append(RTPATH_DELIMITER).append(it->second);
-            vrc = RTFileQuerySize(fullPath.c_str(), &cbFile);
-            if (RT_SUCCESS(vrc))
+            cit_t it = filesList.m_list.begin();
+            while(it != filesList.m_list.end())
             {
-                totalFolderSize += cbFile;
+                uint64_t cbFile = 0;
+                Utf8Str fullPath =  it->first;
+                fullPath.append(RTPATH_DELIMITER).append(it->second);
+                vrc = RTFileQuerySize(fullPath.c_str(), &cbFile);
+                if (RT_SUCCESS(vrc))
+                {
+                    totalFolderSize += cbFile;
+                }
+                else
+                    throw m_pMachine->setError(VBOX_E_IPRT_ERROR,
+                                     m_pMachine->tr("Could not get the size of file '%s' (%Rrc)"),
+                                     fullPath.c_str(), vrc);
+                ++it;
             }
-            else
-                throw m_pMachine->setError(VBOX_E_IPRT_ERROR,
-                                 m_pMachine->tr("Could not get the size of file '%s' (%Rrc)"),
-                                 fullPath.c_str(), vrc);
-            ++it;
-        }
 
-        size = totalFolderSize;
+            size = totalFolderSize;
+        }
+        else
+            m_pMachine->setError(VBOX_E_IPRT_ERROR,
+                               m_pMachine->tr("Could not calculate the size of folder '%s' (%Rrc)"),
+                               strRootFolder.c_str(), vrc);
     }
     else
-        m_pMachine->setError(VBOX_E_IPRT_ERROR,
-                           m_pMachine->tr("Could not calculate the size of folder '%s' (%Rrc)"),
-                           strRootFolder.c_str(), vrc);
+        size = 0;
+
     return rc;
 }
 
