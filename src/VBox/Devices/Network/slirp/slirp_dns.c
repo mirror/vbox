@@ -193,6 +193,15 @@ static int get_dns_addr_domain(PNATState pData)
                 pData->fUseDnsProxy = 1;
             }
         }
+        else if (address->IPv4.u == INADDR_ANY)
+        {
+            /*
+             * This doesn't seem to be very well documented except for
+             * RTFS of res_init.c, but INADDR_ANY is a valid value for
+             * for "nameserver".
+             */
+            address->IPv4.u = pData->special_addr.s_addr | RT_H2N_U32_C(CTL_ALIAS);
+        }
 
         pDns = RTMemAllocZ(sizeof(struct dns_entry));
         if (pDns == NULL)
