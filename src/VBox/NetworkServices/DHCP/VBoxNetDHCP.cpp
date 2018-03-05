@@ -643,6 +643,11 @@ int VBoxNetDhcp::hostDnsServers(const ComHostPtr& host,
         if (RT_FAILURE(rc))
             continue;
 
+        if (addr.u == INADDR_ANY)
+        {
+            addr.u = RT_H2N_U32_C(INADDR_LOOPBACK);
+        }
+
         if (addr.au8[0] == 127)
         {
             AddressToOffsetMapping::const_iterator remap(mapping.find(addr));
