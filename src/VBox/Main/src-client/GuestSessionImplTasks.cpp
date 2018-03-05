@@ -38,6 +38,7 @@
 
 #include <iprt/env.h>
 #include <iprt/file.h> /* For CopyTo/From. */
+#include <iprt/dir.h>
 #include <iprt/path.h>
 
 
