@@ -36,7 +36,8 @@ ValidationKitTestsApi_EXEC_SOURCES := \
 	$(PATH_SUB_CURRENT)/tdAppliance1.py \
 	$(PATH_SUB_CURRENT)/tdMoveMedium1.py \
 	$(PATH_SUB_CURRENT)/tdPython1.py \
-	$(PATH_SUB_CURRENT)/tdTreeDepth1.py
+	$(PATH_SUB_CURRENT)/tdTreeDepth1.py \
+	$(PATH_SUB_CURRENT)/tdMoveVM.py
 ValidationKitTestsApi_SOURCES := \
 	$(wildcard \
 		$(PATH_SUB_CURRENT)/*.ova \
