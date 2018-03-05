@@ -42,6 +42,7 @@
 #include <iprt/cpp/utils.h> /* For unconst(). */
 #include <iprt/env.h>
 #include <iprt/file.h> /* For CopyTo/From. */
+#include <iprt/path.h>
 
 #include <VBox/com/array.h>
 #include <VBox/com/listeners.h>
