@@ -191,9 +191,10 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
         #2. All disks attached to VM are located inside the VM's folder.
         #   There are no any snapshots and logs.
         #   
-        #3. There are snapshots and logs folder and some files in these folders.
+        #3. There are snapshots.
         #
-        #4. There are one or more save state files in the snapshots folder.
+        #4. There are one or more save state files in the snapshots folder
+        #   and some files in the logs folder.
         #
         #5. There is an ISO image (.iso) attached to the VM.
         #
@@ -223,7 +224,50 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
             #get session machine
             oSession = self.oTstDrv.openSession(aMachine)
             fRc = True
-            fRc = self.moveVMToLocation(sNewLoc + os.sep, oSession.o.machine) and fRc
+
+            sMoveLoc = sNewLoc + os.sep
+            #1 case.
+            #   All disks attached to VM are located outside the VM's folder.
+            #   There are no any snapshots and logs.
+            #   In this case only VM setting file should be moved (.vbox file)
+            fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+
+            fRc = fRc and oSession.saveSettings()
+            if fRc is False:
+                reporter.log('Couldn\'t save machine settings')
+
+            #2 case.
+            #   All disks attached to VM are located inside the VM's folder.
+            #   There are no any snapshots and logs.
+            sLoc = sMoveLoc + aMachine.name + os.sep
+            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_2d_scenario')
+            os.mkdir(sMoveLoc, 0o775)
+            aoMediumAttachments = aMachine.getMediumAttachmentsOfController(sController)
+            SubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
+            SubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
+            fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+
+            fRc = fRc and oSession.saveSettings()
+            if fRc is False:
+                reporter.log('Couldn\'t save machine settings')
+
+            #3 case.
+            #   There are snapshots.
+            sLoc = sMoveLoc + aMachine.name + os.sep
+            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
+            os.mkdir(sMoveLoc, 0o775)
+
+            n = 5
+            for counter in range(1,n+1):
+                strSnapshot = 'Snapshot' + str(counter)
+                fRc = fRc and oSession.takeSnapshot(strSnapshot)
+                if fRc is False:
+                    reporter.error('Error: Can\'t take snapshot "%s".' % (strSnapshot,))
+                    reporter.testFailure('Error: Can\'t take snapshot "%s".' % (strSnapshot,));
+
+            aoMediumAttachments = aMachine.getMediumAttachmentsOfController(sController)
+            if fRc is True:
+                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
 
             fRc = fRc and oSession.saveSettings()
             if fRc is False:
