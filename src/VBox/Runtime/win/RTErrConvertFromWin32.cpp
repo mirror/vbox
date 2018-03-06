@@ -423,6 +423,8 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case WSANO_DATA:            return VERR_NET_ADDRESS_NOT_AVAILABLE;
 #endif
 
+        case 1272 /*STATUS_SMB_GUEST_LOGON_BLOCKED*/: return VERR_AUTHENTICATION_FAILURE;
+
 
 #ifndef ERROR_NOT_A_REPARSE_POINT
 # define ERROR_NOT_A_REPARSE_POINT 0x1126
