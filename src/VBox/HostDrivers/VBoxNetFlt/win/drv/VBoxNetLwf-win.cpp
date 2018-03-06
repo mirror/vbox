@@ -1335,7 +1335,7 @@ static void vboxNetLwfWinIndicateOffload(PVBOXNETLWF_MODULE pModuleCtx, PNDIS_OF
     OffloadingIndication.SourceHandle = pModuleCtx->hFilter;
     OffloadingIndication.StatusCode = NDIS_STATUS_TASK_OFFLOAD_CURRENT_CONFIG;
     OffloadingIndication.StatusBuffer = pOffload;
-    OffloadingIndication.StatusBufferSize = sizeof(NDIS_OFFLOAD);
+    OffloadingIndication.StatusBufferSize = pOffload->Header.Size;
     NdisFIndicateStatus(pModuleCtx->hFilter, &OffloadingIndication);
 }
 
