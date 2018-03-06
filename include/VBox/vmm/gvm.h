@@ -30,6 +30,7 @@
 
 #include <VBox/types.h>
 #include <iprt/thread.h>
+#include <iprt/assertcompile.h>
 
 
 /** @defgroup grp_gvmcpu    GVMCPU - The Global VMCPU Data
@@ -104,7 +105,7 @@ typedef struct GVM
     /** Number of Virtual CPUs, i.e. how many entries there are in aCpus.
      * Same same as VM::cCpus. */
     uint32_t        cCpus;
-    uint32_t        padding;
+    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 16 : 4];
 
     /** The GVMM per vm data. */
     union
@@ -147,6 +148,16 @@ typedef struct GVM
     /** GVMCPU array for the configured number of virtual CPUs. */
     GVMCPU          aCpus[1];
 } GVM;
+AssertCompileMemberOffset(GVM, gvmm,   40);
+AssertCompileMemberOffset(GVM, gmm,    40 + 256);
+#ifdef VBOX_WITH_NEM_R0
+AssertCompileMemberOffset(GVM, nem,    40 + 256 + 512);
+AssertCompileMemberOffset(GVM, rawpci, 40 + 256 + 512 + 128);
+AssertCompileMemberOffset(GVM, aCpus,  40 + 256 + 512 + 128 + 64);
+#else
+AssertCompileMemberOffset(GVM, rawpci, 40 + 256 + 512);
+AssertCompileMemberOffset(GVM, aCpus,  40 + 256 + 512 + 64);
+#endif
 
 /** The GVM::u32Magic value (Wayne Shorter). */
 #define GVM_MAGIC       0x19330825
