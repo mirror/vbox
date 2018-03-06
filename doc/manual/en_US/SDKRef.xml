@@ -3914,6 +3914,18 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
+      <title>Incompatible API changes with version x.x</title>
+
+      <itemizedlist>
+        <listitem><para>The enumerations FileOpenExFlags, FsObjMoveFlags and DirectoryCopyFlags have
+          been renamed to <link linkend="FileOpenExFlag">, <link linkend="FsObjMoveFlag"> and <link linkend="DirectoryCopyFlag"> 
+          accordingly to match the rest of the API.</para>
+        </listitem>
+      </itemizedlist>
+
+    </sect1>
+
+    <sect1>
       <title>Incompatible API changes with version 5.x</title>
 
       <itemizedlist>
