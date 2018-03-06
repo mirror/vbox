@@ -4289,7 +4289,7 @@ AuthResult AUTHCALL AuthEntry(
                   <link linkend="FileSharingMode">FileSharingMode</link>
                   (fileOpenEx only).</para></listitem>
                 <listitem><para>Added a flags parameter taking a list of
-                <link linkend="FileOpenExFlags">FileOpenExFlags</link> values
+                <link linkend="FileOpenExFlag">FileOpenExFlag</link> values
                 (fileOpenEx only).</para></listitem>
                 <listitem><para>Removed the offset parameter (fileOpenEx
                 only).</para></listitem>
