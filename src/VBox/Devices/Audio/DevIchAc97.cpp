@@ -392,10 +392,10 @@ typedef struct AC97STATE
 {
     /** The PCI device state. */
     PDMPCIDEV               PciDev;
-    /** R3 Pointer to the device instance. */
-    PPDMDEVINSR3            pDevInsR3;
     /** Critical section protecting the AC'97 state. */
     PDMCRITSECT             CritSect;
+    /** R3 Pointer to the device instance. */
+    PPDMDEVINSR3            pDevInsR3;
     /** Global Control (Bus Master Control Register). */
     uint32_t                glob_cnt;
     /** Global Status (Bus Master Control Register). */
