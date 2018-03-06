@@ -254,8 +254,8 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
             sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
             os.mkdir(sMoveLoc, 0o775)
 
-            ic = 5
-            for counter in range(1,ic+1):
+            cSnap = 5
+            for counter in range(1,cSnap+1):
                 strSnapshot = 'Snapshot' + str(counter)
                 fRc = fRc and oSession.takeSnapshot(strSnapshot)
                 if fRc is False:
