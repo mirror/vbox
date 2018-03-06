@@ -2590,21 +2590,21 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
 }
 
 HRESULT GuestSession::directoryCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
-                                    const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
+                                    const std::vector<DirectoryCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
     RT_NOREF(aSource, aDestination, aFlags, aProgress);
     ReturnComNotImplemented();
 }
 
 HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
-                                             const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
+                                             const std::vector<DirectoryCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
     RT_NOREF(aSource, aDestination, aFlags, aProgress);
     ReturnComNotImplemented();
 }
 
 HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
-                                           const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
+                                           const std::vector<DirectoryCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
     LogFlowThisFuncEnter();
 
@@ -2617,7 +2617,7 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
     if (!RTPathExists(aSource.c_str()))
         return setError(E_INVALIDARG, tr("Source directory \"%s\" does not exist"), aSource.c_str());
 
-    uint32_t fFlags = DirectoryCopyFlags_None;
+    uint32_t fFlags = DirectoryCopyFlag_None;
     if (aFlags.size())
     {
         for (size_t i = 0; i < aFlags.size(); i++)
@@ -3130,13 +3130,13 @@ HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, FileAccessMode_T aAcce
                                ULONG aCreationMode, ComPtr<IGuestFile> &aFile)
 {
     LogFlowThisFuncEnter();
-    const std::vector<FileOpenExFlags_T> EmptyFlags;
+    const std::vector<FileOpenExFlag_T> EmptyFlags;
     return fileOpenEx(aPath, aAccessMode, aOpenAction, FileSharingMode_All, aCreationMode, EmptyFlags, aFile);
 }
 
 HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
                                  FileSharingMode_T aSharingMode, ULONG aCreationMode,
-                                 const std::vector<FileOpenExFlags_T> &aFlags, ComPtr<IGuestFile> &aFile)
+                                 const std::vector<FileOpenExFlag_T> &aFlags, ComPtr<IGuestFile> &aFile)
 {
     LogFlowThisFuncEnter();
 
@@ -3204,7 +3204,7 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     for (size_t i = 0; i < aFlags.size(); i++)
         fOpenEx = aFlags[i];
     if (fOpenEx)
-        return setError(E_INVALIDARG, tr("Unsupported FileOpenExFlags values in aFlags (%#x)"), fOpenEx);
+        return setError(E_INVALIDARG, tr("Unsupported FileOpenExFlag value(s) in aFlags (%#x)"), fOpenEx);
     openInfo.mfOpenEx = fOpenEx;
 
     ComObjPtr <GuestFile> pFile;
@@ -3421,7 +3421,7 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
 }
 
 HRESULT GuestSession::fsObjMove(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
-                                const std::vector<FsObjMoveFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
+                                const std::vector<FsObjMoveFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
     RT_NOREF(aSource, aDestination, aFlags, aProgress);
     ReturnComNotImplemented();

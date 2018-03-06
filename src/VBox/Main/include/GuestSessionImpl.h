@@ -146,7 +146,7 @@ class SessionTaskCopyDirFrom : public GuestSessionTask
 public:
 
     SessionTaskCopyDirFrom(GuestSession *pSession, const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter,
-                           DirectoryCopyFlags_T enmDirCopyFlags);
+                           DirectoryCopyFlag_T enmDirCopyFlags);
     virtual ~SessionTaskCopyDirFrom(void);
     int Run(void);
 
@@ -156,10 +156,10 @@ protected:
                             bool fFollowSymlinks, const Utf8Str &strSubDir /* For recursion. */);
 protected:
 
-    Utf8Str              mSource;
-    Utf8Str              mDest;
-    Utf8Str              mFilter;
-    DirectoryCopyFlags_T mDirCopyFlags;
+    Utf8Str             mSource;
+    Utf8Str             mDest;
+    Utf8Str             mFilter;
+    DirectoryCopyFlag_T mDirCopyFlags;
 };
 
 /**
@@ -170,7 +170,7 @@ class SessionTaskCopyDirTo : public GuestSessionTask
 public:
 
     SessionTaskCopyDirTo(GuestSession *pSession, const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter,
-                         DirectoryCopyFlags_T enmDirCopyFlags);
+                         DirectoryCopyFlag_T enmDirCopyFlags);
     virtual ~SessionTaskCopyDirTo(void);
     int Run(void);
 
@@ -180,10 +180,10 @@ protected:
                              bool fFollowSymlinks, const Utf8Str &strSubDir /* For recursion. */);
 protected:
 
-    Utf8Str              mSource;
-    Utf8Str              mDest;
-    Utf8Str              mFilter;
-    DirectoryCopyFlags_T mDirCopyFlags;
+    Utf8Str             mSource;
+    Utf8Str             mDest;
+    Utf8Str             mFilter;
+    DirectoryCopyFlag_T mDirCopyFlags;
 };
 
 /**
@@ -357,15 +357,15 @@ private:
 
     HRESULT directoryCopy(const com::Utf8Str &aSource,
                           const com::Utf8Str &aDestination,
-                          const std::vector<DirectoryCopyFlags_T> &aFlags,
+                          const std::vector<DirectoryCopyFlag_T> &aFlags,
                           ComPtr<IProgress> &aProgress);
     HRESULT directoryCopyFromGuest(const com::Utf8Str &aSource,
                                    const com::Utf8Str &aDestination,
-                                   const std::vector<DirectoryCopyFlags_T> &aFlags,
+                                   const std::vector<DirectoryCopyFlag_T> &aFlags,
                                    ComPtr<IProgress> &aProgress);
     HRESULT directoryCopyToGuest(const com::Utf8Str &aSource,
                                  const com::Utf8Str &aDestination,
-                                 const std::vector<DirectoryCopyFlags_T> &aFlags,
+                                 const std::vector<DirectoryCopyFlag_T> &aFlags,
                                  ComPtr<IProgress> &aProgress);
     HRESULT directoryCreate(const com::Utf8Str &aPath,
                             ULONG aMode,
@@ -424,7 +424,7 @@ private:
                        FileOpenAction_T aOpenAction,
                        FileSharingMode_T aSharingMode,
                        ULONG aCreationMode,
-                       const std::vector<FileOpenExFlags_T> &aFlags,
+                       const std::vector<FileOpenExFlag_T> &aFlags,
                        ComPtr<IGuestFile> &aFile);
     HRESULT fileQuerySize(const com::Utf8Str &aPath,
                           BOOL aFollowSymlinks,
@@ -441,7 +441,7 @@ private:
                         const std::vector<FsObjRenameFlag_T> &aFlags);
     HRESULT fsObjMove(const com::Utf8Str &aSource,
                       const com::Utf8Str &aDestination,
-                      const std::vector<FsObjMoveFlags_T> &aFlags,
+                      const std::vector<FsObjMoveFlag_T> &aFlags,
                       ComPtr<IProgress> &aProgress);
     HRESULT fsObjSetACL(const com::Utf8Str &aPath,
                         BOOL aFollowSymlinks,

@@ -630,7 +630,7 @@ int SessionTaskOpen::Run(void)
 
 SessionTaskCopyDirTo::SessionTaskCopyDirTo(GuestSession *pSession,
                                            const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter,
-                                           DirectoryCopyFlags_T enmDirCopyFlags)
+                                           DirectoryCopyFlag_T enmDirCopyFlags)
                                            : GuestSessionTask(pSession)
                                            , mSource(strSource)
                                            , mDest(strDest)
@@ -796,7 +796,7 @@ int SessionTaskCopyDirTo::Run(void)
      * The target directory might already exist on the guest (based on mDirCopyFlags). */
     int rc = directoryCreate(mDest, DirectoryCreateFlag_None, uDirMode, fFollowSymlinks);
     if (   rc == VWRN_ALREADY_EXISTS
-        && !(mDirCopyFlags & DirectoryCopyFlags_CopyIntoExisting))
+        && !(mDirCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
     {
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                             Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" exists when it must not"), mDest.c_str()));

@@ -11027,8 +11027,8 @@ and "VAR" for unsetting. -->
   </enum>
 
   <enum
-    name="FsObjMoveFlags"
-    uuid="98fdd11f-4063-ac60-5737-e49092aab95f"
+    name="FsObjMoveFlag"
+    uuid="2450a05d-80c6-4c96-9a17-94d73293ff86"
     >
     <desc>
       File moving flags.
@@ -11073,8 +11073,8 @@ and "VAR" for unsetting. -->
   </enum>
 
   <enum
-    name="DirectoryCopyFlags"
-    uuid="cc500f0c-4a54-88c9-56b3-7e9310416da7"
+    name="DirectoryCopyFlag"
+    uuid="b5901856-d064-4fbc-ab06-2909ba106154"
     >
     <desc>
       Directory copying flags.
@@ -11433,8 +11433,8 @@ and "VAR" for unsetting. -->
   </enum>
 
   <enum
-    name="FileOpenExFlags"
-    uuid="9d62017b-ddd3-4e5a-a08e-14d1c23bbac1"
+    name="FileOpenExFlag"
+    uuid="4671abd4-f70c-42aa-8542-6c169cb87a5c"
     >
     <desc>
       Open flags for <link to="IGuestSession::fileOpenEx"/>.
@@ -11857,7 +11857,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="486fd828-4c6b-239b-a846-c4bb69e41038"
+    uuid="049af4e1-9732-4815-b01a-d64d21c064fe"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="8"
     >
@@ -12025,11 +12025,11 @@ and "VAR" for unsetting. -->
       </param>
       <param name="destination" type="wstring" dir="in">
         <desc>The path to the target directory (in the guest).  Unless the
-          <link to="DirectoryCopyFlags_CopyIntoExisting"/> flag is given, the
+          <link to="DirectoryCopyFlag_CopyIntoExisting"/> flag is given, the
           directory shall not already exist.  Guest path style.</desc>
       </param>
-      <param name="flags" type="DirectoryCopyFlags" dir="in" safearray="yes">
-        <desc>Zero or more <link to="DirectoryCopyFlags"/> values.</desc>
+      <param name="flags" type="DirectoryCopyFlag" dir="in" safearray="yes">
+        <desc>Zero or more <link to="DirectoryCopyFlag"/> values.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation to completion.</desc>
@@ -12050,11 +12050,11 @@ and "VAR" for unsetting. -->
       </param>
       <param name="destination" type="wstring" dir="in">
         <desc>Where to put the directory on the host.  Unless the
-          <link to="DirectoryCopyFlags_CopyIntoExisting"/> flag is given, the
+          <link to="DirectoryCopyFlag_CopyIntoExisting"/> flag is given, the
           directory shall not already exist.  Host path style.</desc>
       </param>
-      <param name="flags" type="DirectoryCopyFlags" dir="in" safearray="yes">
-        <desc>Zero or more <link to="DirectoryCopyFlags"/> values.</desc>
+      <param name="flags" type="DirectoryCopyFlag" dir="in" safearray="yes">
+        <desc>Zero or more <link to="DirectoryCopyFlag"/> values.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation to completion.</desc>
@@ -12075,11 +12075,11 @@ and "VAR" for unsetting. -->
       </param>
       <param name="destination" type="wstring" dir="in">
         <desc>Where to put the file in the guest. Unless the
-          <link to="DirectoryCopyFlags_CopyIntoExisting"/> flag is given, the
+          <link to="DirectoryCopyFlag_CopyIntoExisting"/> flag is given, the
           directory shall not already exist.  Guest style path.</desc>
       </param>
-      <param name="flags" type="DirectoryCopyFlags" dir="in" safearray="yes">
-        <desc>Zero or more <link to="DirectoryCopyFlags"/> values.</desc>
+      <param name="flags" type="DirectoryCopyFlag" dir="in" safearray="yes">
+        <desc>Zero or more <link to="DirectoryCopyFlag"/> values.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation to completion.</desc>
@@ -12572,8 +12572,8 @@ and "VAR" for unsetting. -->
           OS dependent.  The API does the best it can on each OS.
         </desc>
       </param>
-      <param name="flags" type="FileOpenExFlags" dir="in" safearray="yes">
-        <desc>Zero or more <link to="FileOpenExFlags"/> values. </desc>
+      <param name="flags" type="FileOpenExFlag" dir="in" safearray="yes">
+        <desc>Zero or more <link to="FileOpenExFlag"/> values. </desc>
       </param>
       <param name="file" type="IGuestFile" dir="return">
         <desc><link to="IGuestFile"/> object representing the opened file.</desc>
@@ -12731,8 +12731,8 @@ and "VAR" for unsetting. -->
         <desc>Where to move the file to (file, not directory).  Guest path
           style.</desc>
       </param>
-      <param name="flags" type="FsObjMoveFlags" dir="in" safearray="yes">
-        <desc>Zero or more <link to="FsObjMoveFlags"/> values.</desc>
+      <param name="flags" type="FsObjMoveFlag" dir="in" safearray="yes">
+        <desc>Zero or more <link to="FsObjMoveFlag"/> values.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation to completion.</desc>

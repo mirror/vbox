@@ -1868,8 +1868,8 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
             }
             else if (RTDirExists(pszSrc))
             {
-                SafeArray<DirectoryCopyFlags_T> copyFlags;
-                copyFlags.push_back(DirectoryCopyFlags_CopyIntoExisting);
+                SafeArray<DirectoryCopyFlag_T> copyFlags;
+                copyFlags.push_back(DirectoryCopyFlag_CopyIntoExisting);
                 rc = pCtx->pGuestSession->DirectoryCopyToGuest(Bstr(pszSrc).raw(), Bstr(pszDst).raw(),
                                                                ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
             }
