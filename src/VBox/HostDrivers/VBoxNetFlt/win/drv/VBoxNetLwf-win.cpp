@@ -1155,7 +1155,7 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         pModuleCtx->cbOffloadConfig = pParameters->DefaultOffloadConfiguration->Header.Size;
     else
         vboxNetLwfLogErrorEvent(IO_ERR_INTERNAL_ERROR, STATUS_SUCCESS, 8);
-    
+
     pModuleCtx->pSavedOffloadConfig =
         (PNDIS_OFFLOAD)NdisAllocateMemoryWithTagPriority(hFilter, pModuleCtx->cbOffloadConfig,
                                                          VBOXNETLWF_MEM_TAG, LowPoolPriority);
