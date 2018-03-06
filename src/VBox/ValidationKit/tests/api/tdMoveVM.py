@@ -67,7 +67,7 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
     #
     #createTestMachine
     #
-    def createTestMachine(self, oListOfImageNames):
+    def createTestMachine(self):
         oVM = self.oTstDrv.createTestVM('test-vm-move', 1, None, 4)
         if oVM is None:
             return None
@@ -107,9 +107,7 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
         fRc = fRc and oSession.saveSettings()
         fRc = oSession.close() and fRc
 
-        if fRc is True:
-            oListOfImageNames = asFiles
-        else:
+        if fRc is False:
             oVM = None
 
         return oVM
@@ -206,8 +204,7 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
 
         try:
             #create test machine
-            aListOfImageNames = []
-            aMachine = self.createTestMachine(aListOfImageNames)
+            aMachine = self.createTestMachine()
 
             if aMachine is None:
                 reporter.error('Failed to create test machine')
@@ -243,8 +240,8 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
             sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_2d_scenario')
             os.mkdir(sMoveLoc, 0o775)
             aoMediumAttachments = aMachine.getMediumAttachmentsOfController(sController)
-            SubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
-            SubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
+            oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
+            oSubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
             fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
 
             fRc = fRc and oSession.saveSettings()
@@ -257,8 +254,8 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
             sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
             os.mkdir(sMoveLoc, 0o775)
 
-            n = 5
-            for counter in range(1,n+1):
+            ic = 5
+            for counter in range(1,ic+1):
                 strSnapshot = 'Snapshot' + str(counter)
                 fRc = fRc and oSession.takeSnapshot(strSnapshot)
                 if fRc is False:
