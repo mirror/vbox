@@ -79,6 +79,9 @@ public:
     const QString  &path() const;
     void setPath(const QString &path);
 
+    const QString  &name() const;
+    void setName(const QString &name);
+
     /** True if this is directory and name is ".." */
     bool isUpDirectory() const;
     void clearChildren();
@@ -90,6 +93,7 @@ private:
     bool             m_bIsDirectory;
     bool             m_bIsOpened;
     QString          m_strPath;
+    QString          m_strName;
 };
 
 
@@ -180,6 +184,16 @@ const QString  &UIFileTableItem::path() const
 void UIFileTableItem::setPath(const QString &path)
 {
     m_strPath = path;
+}
+
+const QString  &UIFileTableItem::name() const
+{
+    return m_strName;
+}
+
+void UIFileTableItem::setName(const QString &name)
+{
+    m_strName = name;
 }
 
 bool UIFileTableItem::isUpDirectory() const
@@ -370,10 +384,12 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pMainLayout(0)
     , m_pCurrentLocationEdit(0)
     , m_pToolBar(0)
+    , m_pGoUp(0)
+    , m_pGoHome(0)
     , m_pRefresh(0)
     , m_pDelete(0)
+    , m_pRename(0)
     , m_pNewFolder(0)
-    , m_pGoUp(0)
     , m_pCopy(0)
     , m_pCut(0)
     , m_pPaste(0)
@@ -467,6 +483,14 @@ void UIGuestControlFileTable::prepareActions()
         m_pToolBar->addAction(m_pGoUp);
     }
 
+    m_pGoHome = new QAction(this);
+    if (m_pGoHome)
+    {
+        connect(m_pGoHome, &QAction::triggered, this, &UIGuestControlFileTable::sltGoHome);
+        m_pGoHome->setIcon(UIIconPool::iconSet(QString(":/nw_24px.png")));
+        m_pToolBar->addAction(m_pGoHome);
+    }
+
     m_pRefresh = new QAction(this);
     if (m_pRefresh)
     {
@@ -475,6 +499,7 @@ void UIGuestControlFileTable::prepareActions()
         m_pToolBar->addAction(m_pRefresh);
     }
 
+    m_pToolBar->addSeparator();
 
     m_pDelete = new QAction(this);
     if (m_pDelete)
@@ -482,6 +507,14 @@ void UIGuestControlFileTable::prepareActions()
         connect(m_pDelete, &QAction::triggered, this, &UIGuestControlFileTable::sltDelete);
         m_pDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
         m_pToolBar->addAction(m_pDelete);
+    }
+
+    m_pRename = new QAction(this);
+    if (m_pRename)
+    {
+        connect(m_pRename, &QAction::triggered, this, &UIGuestControlFileTable::sltRename);
+        m_pRename->setIcon(UIIconPool::iconSet(QString(":/name_16px_x2.png")));
+        m_pToolBar->addAction(m_pRename);
     }
 
     m_pNewFolder = new QAction(this);
@@ -537,6 +570,7 @@ void UIGuestControlFileTable::initializeFileTree()
     startDirData << "/" << 4096;
     UIFileTableItem* startItem = new UIFileTableItem(startDirData, m_pRootItem);
     startItem->setPath("/");
+    startItem->setName("/");
     m_pRootItem->appendChild(startItem);
 
     startItem->setIsDirectory(true);
@@ -582,25 +616,7 @@ void UIGuestControlFileTable::sltItemDoubleClicked(const QModelIndex &index)
 {
     if (!index.isValid() ||  !m_pModel || !m_pView)
         return;
-
-    UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
-    if (!item)
-        return;
-    /* check if we need to go up: */
-    if (item->isUpDirectory())
-    {
-        QModelIndex parentIndex = m_pModel->parent(m_pModel->parent(index));
-        if (parentIndex.isValid())
-            changeLocation(parentIndex);
-        return;
-    }
-
-    if (!item->isDirectory())
-        return;
-    if (!item->isOpened())
-       readDirectory(item->path(),item);
-
-    changeLocation(index);
+    goIntoDirectory(index);
 }
 
 void UIGuestControlFileTable::sltGoUp()
@@ -614,9 +630,35 @@ void UIGuestControlFileTable::sltGoUp()
         m_pView->setRootIndex(currentRoot.parent());
 }
 
+void UIGuestControlFileTable::sltGoHome()
+{
+}
+
 void UIGuestControlFileTable::sltRefresh()
 {
     refresh();
+}
+
+void UIGuestControlFileTable::goIntoDirectory(const QModelIndex &itemIndex)
+{
+    UIFileTableItem *item = static_cast<UIFileTableItem*>(itemIndex.internalPointer());
+    if (!item)
+        return;
+    /* check if we need to go up: */
+    if (item->isUpDirectory())
+    {
+        QModelIndex parentIndex = m_pModel->parent(m_pModel->parent(itemIndex));
+        if (parentIndex.isValid())
+            changeLocation(parentIndex);
+        return;
+    }
+
+    if (!item->isDirectory())
+        return;
+    if (!item->isOpened())
+       readDirectory(item->path(),item);
+
+    changeLocation(itemIndex);
 }
 
 void UIGuestControlFileTable::refresh()
@@ -647,12 +689,16 @@ void UIGuestControlFileTable::sltDelete()
     if (!selectionModel)
         return;
 
-    QModelIndexList selectedItemIndices = selectionModel->selectedIndexes();
+    QModelIndexList selectedItemIndices = selectionModel->selectedRows();
     for(int i = 0; i < selectedItemIndices.size(); ++i)
     {
         deleteByIndex(selectedItemIndices.at(i));
     }
     refresh();
+}
+
+void UIGuestControlFileTable::sltRename()
+{
 }
 
 void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
@@ -667,6 +713,27 @@ void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
 
 void UIGuestControlFileTable::retranslateUi()
 {
+    if (m_pGoUp)
+    {
+        m_pGoUp->setText(UIVMInformationDialog::tr("Move one level up"));
+        m_pGoUp->setToolTip(UIVMInformationDialog::tr("Move one level up"));
+        m_pGoUp->setStatusTip(UIVMInformationDialog::tr("Move one level up"));
+    }
+
+    if (m_pGoHome)
+    {
+        m_pGoHome->setText(UIVMInformationDialog::tr("Goto home folder"));
+        m_pGoHome->setToolTip(UIVMInformationDialog::tr("Goto home folder"));
+        m_pGoHome->setStatusTip(UIVMInformationDialog::tr("Goto home folder"));
+    }
+
+    if (m_pRename)
+    {
+        m_pRename->setText(UIVMInformationDialog::tr("Rename the selected item"));
+        m_pRename->setToolTip(UIVMInformationDialog::tr("Rename the selected item"));
+        m_pRename->setStatusTip(UIVMInformationDialog::tr("Rename the selected item"));
+    }
+
     if (m_pRefresh)
     {
         m_pRefresh->setText(UIVMInformationDialog::tr("Refresh"));
@@ -685,13 +752,6 @@ void UIGuestControlFileTable::retranslateUi()
         m_pNewFolder->setText(UIVMInformationDialog::tr("Create a new folder"));
         m_pNewFolder->setToolTip(UIVMInformationDialog::tr("Create a new folder"));
         m_pNewFolder->setStatusTip(UIVMInformationDialog::tr("Create a new folder"));
-
-    }
-    if (m_pGoUp)
-    {
-        m_pGoUp->setText(UIVMInformationDialog::tr("Move one level up"));
-        m_pGoUp->setToolTip(UIVMInformationDialog::tr("Move one level up"));
-        m_pGoUp->setStatusTip(UIVMInformationDialog::tr("Move one level up"));
 
     }
 
@@ -717,7 +777,31 @@ void UIGuestControlFileTable::retranslateUi()
         m_pPaste->setToolTip(UIVMInformationDialog::tr("Paste the copied item(s)"));
         m_pPaste->setStatusTip(UIVMInformationDialog::tr("Paste the copied item(s)"));
     }
+}
 
+
+void UIGuestControlFileTable::keyPressEvent(QKeyEvent * pEvent)
+{
+    /* Browse into directory with enter: */
+    if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)
+    {
+        if (m_pView && m_pModel)
+        {
+            /* Get the selected item. If there are 0 or more than 1 selection do nothing: */
+            QItemSelectionModel *selectionModel =  m_pView->selectionModel();
+            if (selectionModel)
+            {
+                QModelIndexList selectedItemIndices = selectionModel->selectedRows();
+                if (selectedItemIndices.size() == 1)
+                    goIntoDirectory(selectedItemIndices.at(0));
+            }
+        }
+    }
+    else if(pEvent->key() == Qt::Key_Delete)
+    {
+        sltDelete();
+    }
+    QWidget::keyPressEvent(pEvent);
 }
 
 
@@ -812,9 +896,11 @@ void UIGuestFileTable::deleteByItem(UIFileTableItem *item)
     }
     else
     {
+        /** @todo this is not working: */
         m_comGuestSession.FsObjRemove(item->path());
     }
 }
+
 
 /*********************************************************************************************************************************
 *   UIHostFileTable implementation.                                                                                              *
@@ -840,6 +926,7 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
         return;
 
     QDir directory(strPath);
+    //directory.setFilter(QDir::NoDotAndDotDot);
     parent->setIsOpened(true);
     if (!directory.exists())
         return;
@@ -847,11 +934,9 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     QMap<QString, UIFileTableItem*> directories;
     QMap<QString, UIFileTableItem*> files;
 
-
     for (int i = 0; i < entries.size(); ++i)
     {
         const QFileInfo &fileInfo = entries.at(i);
-
         QList<QVariant> data;
         data << fileInfo.baseName() << fileInfo.size();
         UIFileTableItem *item = new UIFileTableItem(data, parent);
@@ -877,7 +962,22 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
 
 void UIHostFileTable::deleteByItem(UIFileTableItem *item)
 {
-    Q_UNUSED(item);
+    if (!item->isDirectory())
+    {
+        QDir itemToDelete;//(item->path());
+        itemToDelete.remove(item->path());
+    }
+    QDir itemToDelete(item->path());
+    itemToDelete.setFilter(QDir::NoDotAndDotDot);
+    /* Try to delete item recursively (in case of directories).
+       note that this is no good way of deleting big directory
+       trees. We need a better error reporting and a kind of progress
+       indicator: */
+    /** @todo replace this recursive delete by a better implementation: */
+    bool deleteSuccess = itemToDelete.removeRecursively();
+
+     if (!deleteSuccess)
+         emit sigLogOutput(QString(item->path()).append(" could not be deleted"));
 }
 
 #include "UIGuestControlFileTable.moc"

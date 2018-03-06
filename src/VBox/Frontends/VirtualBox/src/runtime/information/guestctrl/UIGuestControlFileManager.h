@@ -63,6 +63,7 @@ private slots:
     void sltCreateSession(QString strUserName, QString strPassword);
     void sltCloseSession();
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
+    void sltReceieveLogOutput(QString strOutput);
 
 private:
 

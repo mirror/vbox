@@ -42,7 +42,9 @@ class UIToolBar;
 
 /** UIGuestControlFileModel serves as the model for a file structure.
     it supports a tree level hierarchy which can be displayed with
-    QTableView and/or QTreeView */
+    QTableView and/or QTreeView. Note the file structure data is not
+    kept by the model but rather by the containing widget which also servers
+    as the interface to functionality this model provides.*/
 class UIGuestControlFileModel : public QAbstractItemModel
 {
 
@@ -78,10 +80,15 @@ private:
 /** This class serves a base class for file table. Currently a guest version
     and a host version are derived from this base. Each of these children
     populates the UIGuestControlFileModel by scanning the file system
-    differently. */
+    differently. The file structre kept in this class as a tree and all
+    the interfacing is done thru this class.*/
 class UIGuestControlFileTable : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
+
+signals:
+
+    void sigLogOutput(QString);
 
 public:
 
@@ -101,6 +108,7 @@ protected:
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) = 0;
     virtual void refresh();
     virtual void deleteByItem(UIFileTableItem *item) = 0;
+    void keyPressEvent(QKeyEvent * pEvent);
     UIFileTableItem         *m_pRootItem;
 
     /** Using QITableView causes the following problem when I click on the table items
@@ -115,21 +123,27 @@ protected slots:
 
     void sltItemDoubleClicked(const QModelIndex &index);
     void sltGoUp();
+    void sltGoHome();
     void sltRefresh();
     void sltDelete();
+    void sltRename();
 
 private:
 
     void            prepareObjects();
     void            prepareActions();
     void            deleteByIndex(const QModelIndex &itemIndex);
+    void            goIntoDirectory(const QModelIndex &itemIndex);
     QGridLayout    *m_pMainLayout;
     QILineEdit     *m_pCurrentLocationEdit;
     UIToolBar      *m_pToolBar;
+    QAction        *m_pGoUp;
+    QAction        *m_pGoHome;
     QAction        *m_pRefresh;
     QAction        *m_pDelete;
+    QAction        *m_pRename;
     QAction        *m_pNewFolder;
-    QAction        *m_pGoUp;
+
     QAction        *m_pCopy;
     QAction        *m_pCut;
     QAction        *m_pPaste;

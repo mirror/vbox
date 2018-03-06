@@ -322,8 +322,11 @@ void UIGuestControlFileManager::prepareObjects()
             m_pGuestFileTable = new UIGuestFileTable;
             m_pGuestFileTable->setEnabled(false);
             if (m_pGuestFileTable)
+            {
+                connect(m_pGuestFileTable, &UIGuestFileTable::sigLogOutput,
+                        this, &UIGuestControlFileManager::sltReceieveLogOutput);
                 containerLayout->addWidget(m_pGuestFileTable);
-
+            }
             m_pToolBar = new UIToolBar;
             if (m_pToolBar)
             {
@@ -355,7 +358,11 @@ void UIGuestControlFileManager::prepareObjects()
 
             m_pHostFileTable = new UIHostFileTable;
             if (m_pHostFileTable)
+            {
+                connect(m_pHostFileTable, &UIHostFileTable::sigLogOutput,
+                        this, &UIGuestControlFileManager::sltReceieveLogOutput);
                 containerLayout->addWidget(m_pHostFileTable);
+            }
         }
         m_pVerticalSplitter->addWidget(fileTableContainer);
     }
@@ -456,6 +463,12 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
     {
         m_pLogOutput->appendPlainText("Session status has changed");
     }
+}
+
+void UIGuestControlFileManager::sltReceieveLogOutput(QString strOutput)
+{
+    if (m_pLogOutput)
+        m_pLogOutput->appendPlainText(strOutput);
 }
 
 void UIGuestControlFileManager::initFileTable()
