@@ -505,7 +505,6 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  * @param   pGVM        The ring-0 VM handle.
  * @param   pGVCpu      The irng-0 VCPU handle.
  * @param   pCtx        The CPU context structure to import into.
- * @param   fWhat       What to export. To be defined, UINT64_MAX for now.
  */
 NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx)
 {
