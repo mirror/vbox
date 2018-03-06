@@ -187,10 +187,10 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
         #1. All disks attached to VM are located outside the VM's folder.
         #   There are no any snapshots and logs.
         #   In this case only VM setting file should be moved (.vbox file)
-        #   
+        #
         #2. All disks attached to VM are located inside the VM's folder.
         #   There are no any snapshots and logs.
-        #   
+        #
         #3. There are snapshots.
         #
         #4. There are one or more save state files in the snapshots folder
@@ -200,9 +200,9 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
         #
         #6. There is a floppy image (.img) attached to the VM.
         #
-        #7. There are shareable disk and immutable disk attached to the VM. 
+        #7. There are shareable disk and immutable disk attached to the VM.
         #
-        #8. There is "read-only" disk attached to the VM.  
+        #8. There is "read-only" disk attached to the VM.
 
         try:
             #create test machine
@@ -263,7 +263,7 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
                 fRc = fRc and oSession.takeSnapshot(strSnapshot)
                 if fRc is False:
                     reporter.error('Error: Can\'t take snapshot "%s".' % (strSnapshot,))
-                    reporter.testFailure('Error: Can\'t take snapshot "%s".' % (strSnapshot,));
+                    reporter.testFailure('Error: Can\'t take snapshot "%s".' % (strSnapshot,))
 
             aoMediumAttachments = aMachine.getMediumAttachmentsOfController(sController)
             if fRc is True:
