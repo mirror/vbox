@@ -3918,7 +3918,8 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem><para>The enumerations FileOpenExFlags, FsObjMoveFlags and DirectoryCopyFlags have
-          been renamed to <link linkend="FileOpenExFlag">, <link linkend="FsObjMoveFlag"> and <link linkend="DirectoryCopyFlag"> 
+          been renamed to <link linkend="FileOpenExFlag">FileOpenExFlag</link>, 
+          <link linkend="FsObjMoveFlag">FsObjMoveFlag</link> and <link linkend="DirectoryCopyFlag">DirectoryCopyFlag</link>
           accordingly to match the rest of the API.</para>
         </listitem>
       </itemizedlist>
