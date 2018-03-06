@@ -1767,7 +1767,12 @@ VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t
 
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
 {
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
     PVM pVM = pGVM->pVM;
     return nemHCWinRunGC(pVM, &pVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
+#else
+    RT_NOREF(pGVM, idCpu);
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 

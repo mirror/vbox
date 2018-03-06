@@ -1569,6 +1569,9 @@ static VBOXSTRICTRC nemR3WinWHvHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
     /*
      * Emulate the memory access, either access handler or special memory.
      */
+    rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM);
+    AssertRCReturn(rc, rc);
+
     VBOXSTRICTRC rcStrict;
     if (pMemCtx->InstructionByteCount > 0)
         rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pMemCtx->VpContext.Rip,
@@ -1639,6 +1642,7 @@ static VBOXSTRICTRC nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
          * forces us to interpret the instruction from opcodes, which is suboptimal.
          * Both AMD-V and VT-x includes the address size in the exit info, at least on
          * CPUs that are reasonably new. */
+# if 0 // requires sledgehammer
         Assert(   pIoPortCtx->Ds.Base     == pCtx->ds.u64Base
                && pIoPortCtx->Ds.Limit    == pCtx->ds.u32Limit
                && pIoPortCtx->Ds.Selector == pCtx->ds.Sel);
@@ -1649,6 +1653,10 @@ static VBOXSTRICTRC nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
         Assert(pIoPortCtx->Rsi == pCtx->rsi);
         Assert(pIoPortCtx->Rcx == pCtx->rcx);
         Assert(pIoPortCtx->Rcx == pCtx->rcx);
+# endif
+
+        int rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM);
+        AssertRCReturn(rc, rc);
 
         rcStrict = IEMExecOne(pVCpu);
     }
@@ -1729,18 +1737,15 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
 
     /*
      * The run loop.
-     *
-     * Current approach to state updating to use the sledgehammer and sync
-     * everything every time.  This will be optimized later.
      */
+    PCPUMCTX     pCtx            = CPUMQueryGuestCtxPtr(pVCpu);
     const bool   fSingleStepping = false; /** @todo get this from somewhere. */
-    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    VBOXSTRICTRC rcStrict        = VINF_SUCCESS;
     for (unsigned iLoop = 0;;iLoop++)
     {
         /*
          * Copy the state.
          */
-        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
         int rc2 = nemHCWinCopyStateToHyperV(pVM, pVCpu, pCtx);
         AssertRCBreakStmt(rc2, rcStrict = rc2);
 
@@ -1761,7 +1766,7 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
                                       hrc, RTNtLastStatusValue(), RTNtLastErrorValue()),
                                      rcStrict = VERR_INTERNAL_ERROR);
             Log2(("WHvRunVirtualProcessor -> %#x; exit code %#x (%d) (cpu status %u)\n",
-                  hrc, ExitReason.ExitReason, ExitReason.ExitReason, nemR3WinCpuGetRunningStatus(pVCpu) ));
+                  hrc, ExitReason.ExitReason, ExitReason.ExitReason, nemHCWinCpuGetRunningStatus(pVCpu) ));
         }
         else
         {
@@ -1769,11 +1774,13 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
             break;
         }
 
+# if 0 /* sledgehammer approach */
         /*
          * Copy back the state.
          */
-        rc2 = nemHCWinCopyStateFromHyperV(pVM, pVCpu, pCtx);
+        rc2 = nemHCWinCopyStateFromHyperV(pVM, pVCpu, pCtx, UINT64_MAX);
         AssertRCBreakStmt(rc2, rcStrict = rc2);
+# endif
 
 # ifdef LOG_ENABLED
         /*
@@ -1785,7 +1792,7 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
             nemHCWinLogState(pVM, pVCpu);
 # endif
 
-# ifdef VBOX_STRICT
+# if 0 //def VBOX_STRICT - requires sledgehammer
         /* Assert that the VpContext field makes sense. */
         switch (ExitReason.ExitReason)
         {
@@ -1902,6 +1909,21 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
             break;
         }
     }
+
+
+    /*
+     * Copy back the state before returning.
+     */
+    if (pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT)))
+    {
+        int rc2 = nemHCWinCopyStateFromHyperV(pVM, pVCpu, pCtx, CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK);
+        if (RT_SUCCESS(rc2))
+            pCtx->fExtrn = 0;
+        else if (RT_SUCCESS(rcStrict))
+            rcStrict = rc2;
+    }
+    else
+        pCtx->fExtrn = 0;
 
     return rcStrict;
 }

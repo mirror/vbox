@@ -69,10 +69,13 @@ typedef struct NEMWINIOCTL
 /** @} */
 
 /** Windows: Checks if a_GCPhys is subject to the limited A20 gate emulation. */
-# define NEM_WIN_IS_SUBJECT_TO_A20(a_GCPhys)     ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K)
+# define NEM_WIN_IS_SUBJECT_TO_A20(a_GCPhys)    ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K)
 /** Windows: Checks if a_GCPhys is relevant to the limited A20 gate emulation. */
 # define NEM_WIN_IS_RELEVANT_TO_A20(a_GCPhys)    \
     ( ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K) || ((RTGCPHYS)(a_GCPhys) < (RTGCPHYS)_64K) )
+
+/** The CPUMCTX_EXTRN_XXX mask for IEM. */
+# define NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM     CPUMCTX_EXTRN_ALL
 
 #endif /* RT_OS_WINDOWS */
 
