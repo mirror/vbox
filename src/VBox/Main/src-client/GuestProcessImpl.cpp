@@ -2169,8 +2169,8 @@ int GuestProcessTool::i_runExErrorInfo(      GuestSession              *pGuestSe
             {
                 GuestProcessStreamBlock strmBlk;
                 vrc = procTool.i_waitEx(  paStrmOutObjects
-                                        ? GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK
-                                        : GUESTPROCESSTOOL_FLAG_NONE, &strmBlk, &errorInfo.guestRc);
+                                        ? GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK
+                                        : GUESTPROCESSTOOL_WAIT_FLAG_NONE, &strmBlk, &errorInfo.guestRc);
                 if (paStrmOutObjects)
                     paStrmOutObjects->push_back(strmBlk);
             }
@@ -2184,7 +2184,7 @@ int GuestProcessTool::i_runExErrorInfo(      GuestSession              *pGuestSe
     if (RT_SUCCESS(vrc))
     {
         /* Make sure the process runs until completion. */
-        vrc = procTool.i_wait(GUESTPROCESSTOOL_FLAG_NONE, &errorInfo.guestRc);
+        vrc = procTool.i_wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &errorInfo.guestRc);
         if (RT_SUCCESS(vrc))
             errorInfo.guestRc = procTool.i_terminatedOk(&errorInfo.iExitCode);
     }
@@ -2226,18 +2226,18 @@ int GuestProcessTool::i_terminatedOk(int32_t *piExitCode /* = NULL */)
     return vrc;
 }
 
-int GuestProcessTool::i_wait(uint32_t fFlags, int *pGuestRc)
+int GuestProcessTool::i_wait(uint32_t fToolWaitFlags, int *pGuestRc)
 {
-    return i_waitEx(fFlags, NULL /* pStrmBlkOut */, pGuestRc);
+    return i_waitEx(fToolWaitFlags, NULL /* pStrmBlkOut */, pGuestRc);
 }
 
-int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBlkOut, int *pGuestRc)
+int GuestProcessTool::i_waitEx(uint32_t fToolWaitFlags, GuestProcessStreamBlock *pStrmBlkOut, int *pGuestRc)
 {
-    LogFlowThisFunc(("fFlags=0x%x, pStreamBlock=%p, pGuestRc=%p\n", fFlags, pStrmBlkOut, pGuestRc));
+    LogFlowThisFunc(("fToolWaitFlags=0x%x, pStreamBlock=%p, pGuestRc=%p\n", fToolWaitFlags, pStrmBlkOut, pGuestRc));
 
     /* Can we parse the next block without waiting? */
     int vrc;
-    if (fFlags & GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK)
+    if (fToolWaitFlags & GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK)
     {
         AssertPtr(pStrmBlkOut);
         vrc = i_getCurrentBlock(OUTPUT_HANDLE_ID_STDOUT, *pStrmBlkOut);
@@ -2247,11 +2247,11 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
     }
 
     /* Do the waiting. */
-    uint32_t fWaitFlags = ProcessWaitForFlag_Terminate;
+    uint32_t fProcWaitForFlags = ProcessWaitForFlag_Terminate;
     if (mStartupInfo.mFlags & ProcessCreateFlag_WaitForStdOut)
-        fWaitFlags |= ProcessWaitForFlag_StdOut;
+        fProcWaitForFlags |= ProcessWaitForFlag_StdOut;
     if (mStartupInfo.mFlags & ProcessCreateFlag_WaitForStdErr)
-        fWaitFlags |= ProcessWaitForFlag_StdErr;
+        fProcWaitForFlags |= ProcessWaitForFlag_StdErr;
 
     /** @todo Decrease timeout while running. */
     uint64_t u64StartMS = RTTimeMilliTS();
@@ -2292,8 +2292,7 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
         uint64_t u64ElapsedMS;
         UPDATE_AND_CHECK_ELAPSED_TIME();
 
-        vrc = pProcess->i_waitFor(fWaitFlags, GET_REMAINING_TIME,
-                                  waitRes, &vrcGuest);
+        vrc = pProcess->i_waitFor(fProcWaitForFlags, GET_REMAINING_TIME, waitRes, &vrcGuest);
         if (RT_FAILURE(vrc))
             break;
 
@@ -2312,9 +2311,9 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
                 break;
 
             case ProcessWaitResult_WaitFlagNotSupported:
-                if (fWaitFlags & ProcessWaitForFlag_StdOut)
+                if (fProcWaitForFlags & ProcessWaitForFlag_StdOut)
                     fHandleStdOut = true;
-                if (fWaitFlags & ProcessWaitForFlag_StdErr)
+                if (fProcWaitForFlags & ProcessWaitForFlag_StdErr)
                     fHandleStdErr = true;
                 /* Since waiting for stdout / stderr is not supported by the guest,
                  * wait a bit to not hog the CPU too much when polling for data. */
@@ -2365,7 +2364,7 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
                 vrc = mStdOut.AddData(byBuf, cbRead);
 
                 if (   RT_SUCCESS(vrc)
-                    && (fFlags & GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK))
+                    && (fToolWaitFlags & GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK))
                 {
                     AssertPtr(pStrmBlkOut);
                     vrc = i_getCurrentBlock(OUTPUT_HANDLE_ID_STDOUT, *pStrmBlkOut);

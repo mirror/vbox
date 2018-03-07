@@ -1717,7 +1717,7 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
     if (RT_SUCCESS(vrc))
     {
         if (RT_SUCCESS(rcGuest))
-            vrc = procTool.i_wait(GUESTPROCESSTOOL_FLAG_NONE, &rcGuest);
+            vrc = procTool.i_wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &rcGuest);
         if (RT_SUCCESS(vrc))
             vrc = procTool.i_terminatedOk();
     }

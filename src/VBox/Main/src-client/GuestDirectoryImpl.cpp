@@ -282,7 +282,7 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pG
         return VERR_COM_UNEXPECTED;
 
     GuestProcessStreamBlock curBlock;
-    int rc = mData.mProcessTool.i_waitEx(GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK,
+    int rc = mData.mProcessTool.i_waitEx(GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK,
                                          &curBlock, pGuestRc);
     if (RT_SUCCESS(rc))
     {

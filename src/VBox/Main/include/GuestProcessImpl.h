@@ -170,16 +170,16 @@ private:
 };
 
 /**
- * Guest process tool flags.
+ * Guest process tool wait flags.
  */
-/** No flags specified; wait until process terminates.
+/** No wait flags specified; wait until process terminates.
  *  The maximum waiting time is set in the process' startup
  *  info. */
-#define GUESTPROCESSTOOL_FLAG_NONE            0
+#define GUESTPROCESSTOOL_WAIT_FLAG_NONE            0
 /** Wait until next stream block from stdout has been
  *  read in completely, then return.
  */
-#define GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK    RT_BIT(0)
+#define GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK    RT_BIT(0)
 
 /**
  * Structure for keeping a VBoxService toolbox tool's error info around.
