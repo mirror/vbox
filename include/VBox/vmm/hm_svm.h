@@ -583,7 +583,7 @@ typedef union
         uint32_t    u1ADDR16            : 1;   /**< Bit 7: 16-bit address size. */
         uint32_t    u1ADDR32            : 1;   /**< Bit 8: 32-bit address size. */
         uint32_t    u1ADDR64            : 1;   /**< Bit 9: 64-bit address size. */
-        uint32_t    u3SEG               : 3;   /**< BITS 12:10: Effective segment number. Added w/ decode assist in APM v3.17. */
+        uint32_t    u3SEG               : 3;   /**< Bits 12:10: Effective segment number. Added w/ decode assist in APM v3.17. */
         uint32_t    u3Reserved          : 3;
         uint32_t    u16Port             : 16;  /**< Bits 31:16: Port number. */
     } n;
