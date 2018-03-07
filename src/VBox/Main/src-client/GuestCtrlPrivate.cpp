@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,7 +35,7 @@
 #ifdef DEBUG
 # include <iprt/file.h>
 #endif /* DEBUG */
-
+#include <iprt/time.h>
 
 
 int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk)
@@ -101,6 +101,46 @@ int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
     return rc;
 }
 
+/**
+ * Extracts the timespec from a given stream block key.
+ *
+ * @return Pointer to handed-in timespec, or NULL if invalid / not found.
+ * @param  strmBlk              Stream block to extract timespec from.
+ * @param  strKey               Key to get timespec for.
+ * @param  pTimeSpec            Where to store the extracted timespec.
+ */
+/* static */
+PRTTIMESPEC GuestFsObjData::TimeSpecFromKey(const GuestProcessStreamBlock &strmBlk, const Utf8Str &strKey, PRTTIMESPEC pTimeSpec)
+{
+    AssertPtrReturn(pTimeSpec, NULL);
+
+    Utf8Str strTime = strmBlk.GetString(strKey.c_str());
+    if (strTime.isEmpty())
+        return NULL;
+
+    if (!RTTimeSpecFromString(pTimeSpec, strTime.c_str()))
+        return NULL;
+
+    return pTimeSpec;
+}
+
+/**
+ * Extracts the in nanoseconds relative from Unix epoch for a given stream block key.
+ *
+ * @return Nanoseconds relative from Unix epoch, or 0 if invalid / not found.
+ * @param  strmBlk              Stream block to extract nanoseconds from.
+ * @param  strKey               Key to get nanoseconds for.
+ */
+/* static */
+int64_t GuestFsObjData::UnixEpochNsFromKey(const GuestProcessStreamBlock &strmBlk, const Utf8Str &strKey)
+{
+    RTTIMESPEC TimeSpec;
+    if (!GuestFsObjData::TimeSpecFromKey(strmBlk, strKey, &TimeSpec))
+        return 0;
+
+    return TimeSpec.i64NanosecondsRelativeToUnixEpoch;
+}
+
 int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
 {
     LogFlowFunc(("\n"));
@@ -124,9 +164,13 @@ int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
             mType = FsObjType_File;
         else if (strType.equalsIgnoreCase("d"))
             mType = FsObjType_Directory;
-        /** @todo Add more types! */
-        else
+        else /** @todo Add more types! */
             mType = FsObjType_Unknown;
+        /* Dates. */
+        mAccessTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_atime");
+        mBirthTime        = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_birthtime");
+        mChangeTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_ctime");
+        mModificationTime = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_mtime");
         /* Object size. */
         rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
         if (RT_FAILURE(rc)) throw rc;
