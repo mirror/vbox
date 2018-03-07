@@ -446,7 +446,7 @@ void UIGuestControlFileManager::sltCloseSession()
 
 void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent)
 {
-    if (cEvent.isOk() && m_comGuestSession.isOk())
+    if (cEvent.isOk() /*&& m_comGuestSession.isOk()*/)
     {
         CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
         if (cErrorInfo.isOk())

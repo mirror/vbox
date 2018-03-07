@@ -56,11 +56,14 @@ public:
     ~UIGuestControlFileModel();
 
     QVariant data(const QModelIndex &index, int role) const /* override */;
+    bool setData(const QModelIndex &index, const QVariant &value, int role);
+
     Qt::ItemFlags flags(const QModelIndex &index) const /* override */;
     QVariant headerData(int section, Qt::Orientation orientation,
     int role = Qt::DisplayRole) const /* override */;
     QModelIndex index(int row, int column,
-    const QModelIndex &parent = QModelIndex()) const /* override */;
+                      const QModelIndex &parent = QModelIndex()) const /* override */;
+    QModelIndex index(UIFileTableItem* item);
     QModelIndex parent(const QModelIndex &index) const /* override */;
     int rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     int columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
@@ -96,6 +99,7 @@ public:
     virtual ~UIGuestControlFileTable();
     /** Delete all the tree nodes */
     void reset();
+    void emitLogOutput(const QString& strOutput);
 
 protected:
 
@@ -108,7 +112,19 @@ protected:
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) = 0;
     virtual void refresh();
     virtual void deleteByItem(UIFileTableItem *item) = 0;
+    virtual void goToHomeDirectory() = 0;
+    virtual bool renameItem(UIFileTableItem *item, QString newPath) = 0;
+    void             goIntoDirectory(const QModelIndex &itemIndex);
+    /** Follow the path trail, open directories as we go and descend */
+    void             goIntoDirectory(const QVector<QString> &pathTrail);
+    /** Go into directory pointed by the @p item */
+    void             goIntoDirectory(UIFileTableItem *item);
+    UIFileTableItem* indexData(const QModelIndex &index) const;
     void keyPressEvent(QKeyEvent * pEvent);
+
+    /** Replace the last part of the @p previusPath with newBaseName */
+    QString constructNewItemPath(const QString &previousPath, const QString &newBaseName);
+
     UIFileTableItem         *m_pRootItem;
 
     /** Using QITableView causes the following problem when I click on the table items
@@ -118,7 +134,7 @@ protected:
     UIGuestControlFileModel *m_pModel;
     QTreeView               *m_pTree;
     QILabel                 *m_pLocationLabel;
-
+    QAction                  *m_pGoHome;
 protected slots:
 
     void sltItemDoubleClicked(const QModelIndex &index);
@@ -130,23 +146,25 @@ protected slots:
 
 private:
 
-    void            prepareObjects();
-    void            prepareActions();
-    void            deleteByIndex(const QModelIndex &itemIndex);
-    void            goIntoDirectory(const QModelIndex &itemIndex);
-    QGridLayout    *m_pMainLayout;
-    QILineEdit     *m_pCurrentLocationEdit;
-    UIToolBar      *m_pToolBar;
-    QAction        *m_pGoUp;
-    QAction        *m_pGoHome;
-    QAction        *m_pRefresh;
-    QAction        *m_pDelete;
-    QAction        *m_pRename;
-    QAction        *m_pNewFolder;
+    void             prepareObjects();
+    void             prepareActions();
+    void             deleteByIndex(const QModelIndex &itemIndex);
+    /** Return the UIFileTableItem for path / which is a direct (and single) child of m_pRootItem */
+    UIFileTableItem *getStartDirectoryItem();
 
-    QAction        *m_pCopy;
-    QAction        *m_pCut;
-    QAction        *m_pPaste;
+    QGridLayout     *m_pMainLayout;
+    QILineEdit      *m_pCurrentLocationEdit;
+    UIToolBar       *m_pToolBar;
+    QAction         *m_pGoUp;
+
+    QAction         *m_pRefresh;
+    QAction         *m_pDelete;
+    QAction         *m_pRename;
+    QAction         *m_pNewFolder;
+
+    QAction         *m_pCopy;
+    QAction         *m_pCut;
+    QAction         *m_pPaste;
 
     friend class UIGuestControlFileModel;
 };
@@ -167,10 +185,14 @@ protected:
     void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void deleteByItem(UIFileTableItem *item) /* override */;
+    virtual void goToHomeDirectory() /* override */;
+    virtual bool renameItem(UIFileTableItem *item, QString newPath);
 
 private:
 
+    void configureObjects();
     CGuestSession m_comGuestSession;
+
 };
 
 /** This class scans the host file system by using the Qt
@@ -188,6 +210,8 @@ protected:
     void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void deleteByItem(UIFileTableItem *item) /* override */;
+    virtual void goToHomeDirectory() /* override */;
+    virtual bool renameItem(UIFileTableItem *item, QString newPath);
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
