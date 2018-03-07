@@ -2451,7 +2451,7 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
     if (RT_UNLIKELY((aDest.c_str()) == NULL || *(aDest.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
-    FileCopyFlag_T fFlags = FileCopyFlag_None;
+    uint32_t fFlags = FileCopyFlag_None;
     if (aFlags.size())
     {
         for (size_t i = 0; i < aFlags.size(); i++)
@@ -2471,7 +2471,7 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
         ComObjPtr<Progress> pProgress;
         try
         {
-            pTask = new SessionTaskCopyFileFrom(this /* GuestSession */, aSource, aDest, fFlags);
+            pTask = new SessionTaskCopyFileFrom(this /* GuestSession */, aSource, aDest, (FileCopyFlag_T)fFlags);
         }
         catch(...)
         {
@@ -2526,7 +2526,7 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
     if (RT_UNLIKELY((aDest.c_str()) == NULL || *(aDest.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
-    FileCopyFlag_T fFlags = FileCopyFlag_None;
+    uint32_t fFlags = FileCopyFlag_None;
     if (aFlags.size())
     {
         for (size_t i = 0; i < aFlags.size(); i++)
@@ -2546,7 +2546,7 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
         ComObjPtr<Progress> pProgress;
         try
         {
-            pTask = new SessionTaskCopyFileTo(this /* GuestSession */, aSource, aDest, fFlags);
+            pTask = new SessionTaskCopyFileTo(this /* GuestSession */, aSource, aDest, (FileCopyFlag_T)fFlags);
         }
         catch(...)
         {
