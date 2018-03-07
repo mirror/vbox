@@ -946,7 +946,7 @@ SessionTaskCopyDirFrom::~SessionTaskCopyDirFrom(void)
  * @param   strSource               Source directory on the guest to copy to the host.
  * @param   strFilter               DOS-style wildcard filter (?, *).  Optional.
  * @param   strDest                 Destination directory on the host.
- * @param   fRecursive,             Whether to recursively copy the directory contents or not.
+ * @param   fRecursive              Whether to recursively copy the directory contents or not.
  * @param   fFollowSymlinks         Whether to follow symlinks or not.
  * @param   strSubDir               Current sub directory to handle. Needs to NULL and only
  *                                  is needed for recursion.
