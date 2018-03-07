@@ -3931,6 +3931,14 @@ AuthResult AUTHCALL AuthEntry(
                 <computeroutput>IGuestSession::directoryCopyFromGuest()</computeroutput> and
                 <computeroutput>IGuestSession::directoryCopyToGuest()</computeroutput>.
               </para>
+
+              <para>The following attributes have been implemented:
+                <computeroutput>IGuestFsObjInfo::accessTime</computeroutput>,
+                <computeroutput>IGuestFsObjInfo::birthTime</computeroutput>,
+                <computeroutput>IGuestFsObjInfo::changeTime</computeroutput> and
+                <computeroutput>IGuestFsObjInfo::modificationTime</computeroutput>.
+              </para>
+              
             </listitem>
           </itemizedlist>
         </para></listitem>
