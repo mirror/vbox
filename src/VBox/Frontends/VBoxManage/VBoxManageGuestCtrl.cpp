@@ -218,14 +218,14 @@ class SOURCEFILEENTRY
             Parse(pszSource);
         }
 
-        const char* GetSource() const
+        Utf8Str GetSource() const
         {
-            return mSource.c_str();
+            return mSource;
         }
 
-        const char* GetFilter() const
+        Utf8Str GetFilter() const
         {
-            return mFilter.c_str();
+            return mFilter;
         }
 
     private:
@@ -1766,7 +1766,6 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
-    Utf8Str strSource;
     const char *pszDst = NULL;
     bool fDryRun = false;
     bool fFollow = false;
@@ -1852,35 +1851,45 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
 
     for (unsigned long s = 0; s < vecSources.size(); s++)
     {
-        char *pszSrc = RTStrDup(vecSources[s].GetSource());
-        AssertPtrBreakStmt(pszSrc, vrc = VERR_NO_MEMORY);
-        const char *pszFilter = vecSources[s].GetFilter();
-        RT_NOREF(pszFilter);
-        /* pszFilter can be NULL if not set. */
+        Utf8Str strSrc    = vecSources[s].GetSource();
+        Utf8Str strFilter = vecSources[s].GetFilter();
+        RT_NOREF(strFilter);
+        /* strFilter can be NULL if not set. */
 
         if (fHostToGuest)
         {
-            if (RTFileExists(pszSrc))
+            if (RTFileExists(strSrc.c_str()))
             {
                 SafeArray<FileCopyFlag_T> copyFlags;
-                rc = pCtx->pGuestSession->FileCopyToGuest(Bstr(pszSrc).raw(), Bstr(pszDst).raw(),
+                rc = pCtx->pGuestSession->FileCopyToGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
                                                           ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
             }
-            else if (RTDirExists(pszSrc))
+            else if (RTDirExists(strSrc.c_str()))
             {
                 SafeArray<DirectoryCopyFlag_T> copyFlags;
                 copyFlags.push_back(DirectoryCopyFlag_CopyIntoExisting);
-                rc = pCtx->pGuestSession->DirectoryCopyToGuest(Bstr(pszSrc).raw(), Bstr(pszDst).raw(),
+                rc = pCtx->pGuestSession->DirectoryCopyToGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
                                                                ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
             }
             else if (pCtx->cVerbose)
-                RTPrintf("Warning: \"%s\" does not exist or is not a file/directory, skipping ...\n", pszSrc);
+                RTPrintf("Warning: \"%s\" does not exist or is not a file/directory, skipping ...\n", strSrc.c_str());
         }
         else
         {
-            SafeArray<FileCopyFlag_T> copyFlags;
-            rc = pCtx->pGuestSession->FileCopyFromGuest(Bstr(pszSrc).raw(), Bstr(pszDst).raw(),
-                                                        ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
+            if (   strSrc.endsWith("/")
+                || strSrc.endsWith("\\"))
+            {
+                SafeArray<DirectoryCopyFlag_T> copyFlags;
+                copyFlags.push_back(DirectoryCopyFlag_CopyIntoExisting);
+                rc = pCtx->pGuestSession->DirectoryCopyFromGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
+                                                                 ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
+            }
+            else
+            {
+                SafeArray<FileCopyFlag_T> copyFlags;
+                rc = pCtx->pGuestSession->FileCopyFromGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
+                                                            ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
+            }
         }
     }
 

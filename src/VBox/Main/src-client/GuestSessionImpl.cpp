@@ -2599,8 +2599,75 @@ HRESULT GuestSession::directoryCopy(const com::Utf8Str &aSource, const com::Utf8
 HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                              const std::vector<DirectoryCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
-    RT_NOREF(aSource, aDestination, aFlags, aProgress);
-    ReturnComNotImplemented();
+    LogFlowThisFuncEnter();
+
+    if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
+        return setError(E_INVALIDARG, tr("No source directory specified"));
+
+    if (RT_UNLIKELY((aDestination.c_str()) == NULL || *(aDestination.c_str()) == '\0'))
+        return setError(E_INVALIDARG, tr("No destination directory specified"));
+
+    uint32_t fFlags = DirectoryCopyFlag_None;
+    if (aFlags.size())
+    {
+        for (size_t i = 0; i < aFlags.size(); i++)
+            fFlags |= aFlags[i];
+    }
+    /** @todo Validate flags. */
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hr = S_OK;
+
+    try
+    {
+        SessionTaskCopyDirFrom *pTask = NULL;
+        ComObjPtr<Progress> pProgress;
+        try
+        {
+            pTask = new SessionTaskCopyDirFrom(this /* GuestSession */, aSource, aDestination, "" /* strFilter */,
+                                               (DirectoryCopyFlag_T)fFlags);
+        }
+        catch(...)
+        {
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyDirFrom object"));
+            throw;
+        }
+
+        hr = pTask->Init(Utf8StrFmt(tr("Copying directory \"%s\" from guest to \"%s\" on the host"),
+                                    aSource.c_str(), aDestination.c_str()));
+        if (FAILED(hr))
+        {
+            delete pTask;
+            hr = setError(VBOX_E_IPRT_ERROR,
+                          tr("Creating progress object for SessionTaskCopyDirFrom object failed"));
+            throw hr;
+        }
+
+        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+
+        if (SUCCEEDED(hr))
+        {
+            /* Return progress to the caller. */
+            pProgress = pTask->GetProgressObject();
+            hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
+        }
+        else
+            hr = setError(VBOX_E_IPRT_ERROR,
+                          tr("Starting thread for copying directory \"%s\" from guest to \"%s\" on the host failed"),
+                          aSource.c_str(), aDestination.c_str());
+    }
+    catch(std::bad_alloc &)
+    {
+        hr = E_OUTOFMEMORY;
+    }
+    catch(HRESULT eHR)
+    {
+        hr = eHR;
+        LogFlowThisFunc(("Exception was caught in the function\n"));
+    }
+
+    return hr;
 }
 
 HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,

@@ -81,9 +81,12 @@ protected:
 
     /** @name File handling primitives.
      * @{ */
-    int fileCopyToGuestEx(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags, PRTFILE pFile,
-                          uint64_t cbOffset, uint64_t cbSize); /**< r=bird: 'cbOffset' makes no sense what so ever. It should be 'off', or do you mean sizeof(uint64_t)? */
-    int fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
+    int fileCopyFromEx(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags,
+                       PRTFILE pFile, uint64_t cbOffset, uint64_t cbSize);
+    int fileCopyFrom(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
+    int fileCopyToEx(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags, PRTFILE pFile,
+                     uint64_t cbOffset, uint64_t cbSize); /**< r=bird: 'cbOffset' makes no sense what so ever. It should be 'off', or do you mean sizeof(uint64_t)? */
+    int fileCopyTo(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
     /** @}  */
 
     /** @name Guest property handling primitives.
@@ -194,21 +197,21 @@ class SessionTaskCopyFileTo : public GuestSessionTask
 public:
 
     SessionTaskCopyFileTo(GuestSession *pSession,
-                          const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
+                          const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
     SessionTaskCopyFileTo(GuestSession *pSession,
                           PRTFILE pSourceFile, size_t cbSourceOffset, uint64_t cbSourceSize,
-                          const Utf8Str &strDest, uint32_t uFlags);
+                          const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
     virtual ~SessionTaskCopyFileTo(void);
     int Run(void);
 
 protected:
 
-    Utf8Str  mSource;
-    PRTFILE  mSourceFile;
-    size_t   mSourceOffset;
-    uint64_t mSourceSize;
-    Utf8Str  mDest;
-    uint32_t mCopyFileFlags;
+    Utf8Str        mSource;
+    PRTFILE        mSourceFile;
+    size_t         mSourceOffset;
+    uint64_t       mSourceSize;
+    Utf8Str        mDest;
+    FileCopyFlag_T mFileCopyFlags;
 };
 
 /**
@@ -219,15 +222,15 @@ class SessionTaskCopyFileFrom : public GuestSessionTask
 public:
 
     SessionTaskCopyFileFrom(GuestSession *pSession,
-                        const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags);
+                        const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
     virtual ~SessionTaskCopyFileFrom(void);
     int Run(void);
 
 protected:
 
-    Utf8Str  mSource;
-    Utf8Str  mDest;
-    uint32_t mFlags;
+    Utf8Str        mSource;
+    Utf8Str        mDest;
+    FileCopyFlag_T mFileCopyFlags;
 };
 
 /**
