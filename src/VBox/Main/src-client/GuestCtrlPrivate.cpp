@@ -38,69 +38,6 @@
 #include <iprt/time.h>
 
 
-int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk)
-{
-    LogFlowFunc(("\n"));
-
-    int rc = VINF_SUCCESS;
-
-    try
-    {
-#ifdef DEBUG
-        strmBlk.DumpToLog();
-#endif
-        /* Object name. */
-        mName = strmBlk.GetString("name");
-        if (mName.isEmpty()) throw VERR_NOT_FOUND;
-        /* Type. */
-        Utf8Str strType(strmBlk.GetString("ftype"));
-        if (strType.equalsIgnoreCase("-"))
-            mType = FsObjType_File;
-        else if (strType.equalsIgnoreCase("d"))
-            mType = FsObjType_Directory;
-        /** @todo Add more types! */
-        else
-            mType = FsObjType_Unknown;
-        /* Object size. */
-        rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
-        if (RT_FAILURE(rc)) throw rc;
-        /** @todo Add complete ls info! */
-    }
-    catch (int rc2)
-    {
-        rc = rc2;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
-{
-    LogFlowFunc(("\n"));
-
-    int rc;
-
-    try
-    {
-#ifdef DEBUG
-        strmBlk.DumpToLog();
-#endif
-        /* Object name. */
-        mName = strmBlk.GetString("name");
-        if (mName.isEmpty()) throw VERR_NOT_FOUND;
-        /* Assign the stream block's rc. */
-        rc = strmBlk.GetRc();
-    }
-    catch (int rc2)
-    {
-        rc = rc2;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
 /**
  * Extracts the timespec from a given stream block key.
  *
@@ -139,6 +76,84 @@ int64_t GuestFsObjData::UnixEpochNsFromKey(const GuestProcessStreamBlock &strmBl
         return 0;
 
     return TimeSpec.i64NanosecondsRelativeToUnixEpoch;
+}
+
+/**
+ * Initializes this object data with a stream block from VBOXSERVICE_TOOL_LS.
+ *
+ * @return VBox status code.
+ * @param  strmBlk              Stream block to use for initialization.
+ * @param  fLong                Whether the stream block contains long (detailed) information or not.
+ */
+int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong)
+{
+    LogFlowFunc(("\n"));
+
+    int rc = VINF_SUCCESS;
+
+    try
+    {
+#ifdef DEBUG
+        strmBlk.DumpToLog();
+#endif
+        /* Object name. */
+        mName = strmBlk.GetString("name");
+        if (mName.isEmpty()) throw VERR_NOT_FOUND;
+        /* Type. */
+        Utf8Str strType(strmBlk.GetString("ftype"));
+        if (strType.equalsIgnoreCase("-"))
+            mType = FsObjType_File;
+        else if (strType.equalsIgnoreCase("d"))
+            mType = FsObjType_Directory;
+        /** @todo Add more types! */
+        else
+            mType = FsObjType_Unknown;
+        if (fLong)
+        {
+            /* Dates. */
+            mAccessTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_atime");
+            mBirthTime        = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_birthtime");
+            mChangeTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_ctime");
+            mModificationTime = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_mtime");
+        }
+        /* Object size. */
+        rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
+        if (RT_FAILURE(rc)) throw rc;
+        /** @todo Add complete ls info! */
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
+{
+    LogFlowFunc(("\n"));
+
+    int rc;
+
+    try
+    {
+#ifdef DEBUG
+        strmBlk.DumpToLog();
+#endif
+        /* Object name. */
+        mName = strmBlk.GetString("name");
+        if (mName.isEmpty()) throw VERR_NOT_FOUND;
+        /* Assign the stream block's rc. */
+        rc = strmBlk.GetRc();
+    }
+    catch (int rc2)
+    {
+        rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)

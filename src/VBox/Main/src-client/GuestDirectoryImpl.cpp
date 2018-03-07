@@ -298,7 +298,7 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pG
             if (curBlock.GetCount()) /* Did we get content? */
             {
                 GuestFsObjData objData;
-                rc = objData.FromLs(curBlock);
+                rc = objData.FromLs(curBlock, true /* fLong */);
                 if (RT_SUCCESS(rc))
                 {
                    rc = fsObjInfo->init(objData);
