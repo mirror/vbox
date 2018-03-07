@@ -3917,12 +3917,25 @@ AuthResult AUTHCALL AuthEntry(
       <title>Incompatible API changes with version x.x</title>
 
       <itemizedlist>
-        <listitem><para>The enumerations FileOpenExFlags, FsObjMoveFlags and DirectoryCopyFlags have
-          been renamed to <link linkend="FileOpenExFlag">FileOpenExFlag</link>,
-          <link linkend="FsObjMoveFlag">FsObjMoveFlag</link> and <link linkend="DirectoryCopyFlag">DirectoryCopyFlag</link>
-          accordingly to match the rest of the API.</para>
-        </listitem>
-      </itemizedlist>
+
+        <listitem><para>Guest Control APIs were changed as follows:
+          <itemizedlist>
+            <listitem><para>The enumerations FileOpenExFlags, FsObjMoveFlags and DirectoryCopyFlags have
+              been renamed to <link linkend="FileOpenExFlag">FileOpenExFlag</link>,
+              <link linkend="FsObjMoveFlag">FsObjMoveFlag</link> and <link linkend="DirectoryCopyFlag">DirectoryCopyFlag</link>
+              accordingly to match the rest of the API.</para>
+            </listitem>
+
+            <listitem>
+              <para>The following methods have been implemented:
+                <computeroutput>IGuestSession::directoryCopyFromGuest()</computeroutput> and
+                <computeroutput>IGuestSession::directoryCopyToGuest()</computeroutput>.
+              </para>
+            </listitem>
+          </itemizedlist>
+        </para></listitem>
+
+      <itemizedlist>
 
     </sect1>
 
