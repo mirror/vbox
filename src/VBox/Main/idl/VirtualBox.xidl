@@ -2,7 +2,7 @@
 
 <!--
 
-    Copyright (C) 2006-2017 Oracle Corporation
+    Copyright (C) 2006-2018 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -12039,14 +12039,10 @@ and "VAR" for unsetting. -->
     <method name="directoryCopyFromGuest">
       <desc>
         Recursively copies a directory from the guest to the host.
-
-        <result name="E_NOTIMPL">
-          Not yet implemented.
-        </result>
       </desc>
       <param name="source" type="wstring" dir="in">
         <desc>Path to the directory on the guest side that should be copied to
-          the host.  Guest path style.</desc>
+          the host. Guest path style.</desc>
       </param>
       <param name="destination" type="wstring" dir="in">
         <desc>Where to put the directory on the host.  Unless the
@@ -12064,10 +12060,6 @@ and "VAR" for unsetting. -->
     <method name="directoryCopyToGuest">
       <desc>
         Recursively copies a directory from the host to the guest.
-
-        <result name="E_NOTIMPL">
-          Not yet implemented.
-        </result>
       </desc>
       <param name="source" type="wstring" dir="in">
         <desc>Path to the directory on the host side that should be copied to
@@ -12076,7 +12068,7 @@ and "VAR" for unsetting. -->
       <param name="destination" type="wstring" dir="in">
         <desc>Where to put the file in the guest. Unless the
           <link to="DirectoryCopyFlag_CopyIntoExisting"/> flag is given, the
-          directory shall not already exist.  Guest style path.</desc>
+          directory shall not already exist. Guest style path.</desc>
       </param>
       <param name="flags" type="DirectoryCopyFlag" dir="in" safearray="yes">
         <desc>Zero or more <link to="DirectoryCopyFlag"/> values.</desc>
