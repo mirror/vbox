@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QAction>
+# include <QDateTime>
 # include <QDir>
 # include <QHeaderView>
 # include <QItemDelegate>
@@ -284,7 +285,7 @@ bool UIGuestControlFileModel::setData(const QModelIndex &index, const QVariant &
         else
         {
             if (m_pParent)
-                m_pParent->emitLogOutput(QString("cannot rename %1").arg(item->path()));
+                m_pParent->emitLogOutput(QString(item->path()).append(" could not be renamed"));
         }
         return true;
     }
@@ -585,21 +586,36 @@ void UIGuestControlFileTable::prepareActions()
     }
 
     m_pNewFolder = new QAction(this);
-    m_pNewFolder->setIcon(UIIconPool::iconSet(QString(":/sf_32px.png")));
-    m_pToolBar->addAction(m_pNewFolder);
+    if (m_pNewFolder)
+    {
+        m_pNewFolder->setIcon(UIIconPool::iconSet(QString(":/sf_32px.png")));
+        m_pToolBar->addAction(m_pNewFolder);
+        m_pNewFolder->setEnabled(false);
+    }
 
     m_pCopy = new QAction(this);
-    m_pCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
-    m_pToolBar->addAction(m_pCopy);
+    if (m_pCopy)
+    {
+        m_pCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
+        m_pToolBar->addAction(m_pCopy);
+        m_pCopy->setEnabled(false);
+    }
 
     m_pCut = new QAction(this);
-    m_pCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
-    m_pToolBar->addAction(m_pCut);
-
+    if (m_pCut)
+    {
+        m_pCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
+        m_pToolBar->addAction(m_pCut);
+        m_pCut->setEnabled(false);
+    }
 
     m_pPaste = new QAction(this);
-    m_pPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
-    m_pToolBar->addAction(m_pPaste);
+    if (m_pPaste)
+    {
+        m_pPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
+        m_pToolBar->addAction(m_pPaste);
+        m_pPaste->setEnabled(false);
+    }
 }
 
 void UIGuestControlFileTable::updateCurrentLocationEdit(const QString& strLocation)
@@ -630,11 +646,11 @@ void UIGuestControlFileTable::initializeFileTree()
         reset();
 
     QList<QVariant> headData;
-    headData << "Name" << "Size";
+    headData << "Name" << "Size" << "Change Time";
     m_pRootItem = new UIFileTableItem(headData, true, 0);
 
     QList<QVariant> startDirData;
-    startDirData << "/" << 4096;
+    startDirData << "/" << 4096 << QDateTime();
     UIFileTableItem* startItem = new UIFileTableItem(startDirData, true, m_pRootItem);
     startItem->setPath("/");
     m_pRootItem->appendChild(startItem);
@@ -940,6 +956,8 @@ QString UIGuestControlFileTable::constructNewItemPath(const QString &previousPat
     newPath += newBaseName;
     return newPath;
 }
+
+
 /*********************************************************************************************************************************
 *   UIGuestFileTable implementation.                                                                                             *
 *********************************************************************************************************************************/
@@ -993,10 +1011,10 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
         while (fsInfo.isOk())
         {
             QList<QVariant> data;
-            data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize());
+            QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/1000);
+            data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize()) << changeTime;
             bool isDirectory = (fsInfo.GetType() == KFsObjType_Directory);
             UIFileTableItem *item = new UIFileTableItem(data, isDirectory, parent);
-
             item->setPath(strPath, fsInfo.GetName());
             if (isDirectory)
             {
@@ -1032,11 +1050,14 @@ void UIGuestFileTable::deleteByItem(UIFileTableItem *item)
     }
     else
         m_comGuestSession.FsObjRemove(item->path());
+    if (!m_comGuestSession.isOk())
+        emit sigLogOutput(QString(item->path()).append(" could not be deleted"));
+
 }
 
 void UIGuestFileTable::goToHomeDirectory()
 {
-    /* TODO: not implemented in guest control yet: */
+    /** @todo not implemented in guest control yet: */
 }
 
 bool UIGuestFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
@@ -1058,6 +1079,7 @@ void UIGuestFileTable::configureObjects()
     if (m_pGoHome)
         m_pGoHome->setEnabled(false);
 }
+
 
 /*********************************************************************************************************************************
 *   UIHostFileTable implementation.                                                                                              *
@@ -1095,7 +1117,7 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     {
         const QFileInfo &fileInfo = entries.at(i);
         QList<QVariant> data;
-        data << fileInfo.baseName() << fileInfo.size();
+        data << fileInfo.baseName() << fileInfo.size() << fileInfo.lastModified();
         UIFileTableItem *item = new UIFileTableItem(data, fileInfo.isDir(), parent);
         item->setPath(fileInfo.absoluteFilePath());
         if (fileInfo.isDir())
@@ -1155,9 +1177,14 @@ void UIHostFileTable::goToHomeDirectory()
     goIntoDirectory(pathTrail);
 }
 
-bool UIHostFileTable::renameItem(UIFileTableItem *item, QString newPath)
+bool UIHostFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
 {
-    Q_UNUSED(item);
-    return true;
+    if (!item || item->isUpDirectory() || newBaseName.isEmpty())
+        return false;
+    QString newPath = constructNewItemPath(item->path(), newBaseName);
+    QDir a;
+    return a.rename(item->path(), newPath);
 }
+
+
 #include "UIGuestControlFileTable.moc"

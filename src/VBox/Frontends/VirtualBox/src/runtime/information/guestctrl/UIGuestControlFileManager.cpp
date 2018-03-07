@@ -342,11 +342,18 @@ void UIGuestControlFileManager::prepareObjects()
                 bottomSpacerWidget->setVisible(true);
 
                 m_pCopyGuestToHost = new QAction(this);
-                m_pCopyGuestToHost->setIcon(UIIconPool::iconSet(QString(":/arrow_right_10px_x2.png")));
+                if(m_pCopyGuestToHost)
+                {
+                    m_pCopyGuestToHost->setIcon(UIIconPool::iconSet(QString(":/arrow_right_10px_x2.png")));
+                    m_pCopyGuestToHost->setEnabled(false);
+                }
+
                 m_pCopyHostToGuest = new QAction(this);
-                m_pCopyHostToGuest->setIcon(UIIconPool::iconSet(QString(":/arrow_left_10px_x2.png")));
-
-
+                if (m_pCopyHostToGuest)
+                {
+                    m_pCopyHostToGuest->setIcon(UIIconPool::iconSet(QString(":/arrow_left_10px_x2.png")));
+                    m_pCopyHostToGuest->setEnabled(false);
+                }
                 m_pToolBar->addWidget(topSpacerWidget);
                 m_pToolBar->addAction(m_pCopyGuestToHost);
                 m_pToolBar->addAction(m_pCopyHostToGuest);

@@ -113,7 +113,7 @@ protected:
     virtual void refresh();
     virtual void deleteByItem(UIFileTableItem *item) = 0;
     virtual void goToHomeDirectory() = 0;
-    virtual bool renameItem(UIFileTableItem *item, QString newPath) = 0;
+    virtual bool renameItem(UIFileTableItem *item, QString newBaseName) = 0;
     void             goIntoDirectory(const QModelIndex &itemIndex);
     /** Follow the path trail, open directories as we go and descend */
     void             goIntoDirectory(const QVector<QString> &pathTrail);
@@ -186,7 +186,7 @@ protected:
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void deleteByItem(UIFileTableItem *item) /* override */;
     virtual void goToHomeDirectory() /* override */;
-    virtual bool renameItem(UIFileTableItem *item, QString newPath);
+    virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
 
 private:
 
@@ -211,7 +211,7 @@ protected:
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void deleteByItem(UIFileTableItem *item) /* override */;
     virtual void goToHomeDirectory() /* override */;
-    virtual bool renameItem(UIFileTableItem *item, QString newPath);
+    virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
