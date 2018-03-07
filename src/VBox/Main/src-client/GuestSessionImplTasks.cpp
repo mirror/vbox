@@ -1017,14 +1017,73 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
         return rc;
     }
 
-RT_NOREF(fRecursive, fFollowSymlinks);
-
     ComObjPtr<GuestFsObjInfo> fsObjInfo;
     while (RT_SUCCESS(rc = pDir->i_readInternal(fsObjInfo, &rcGuest)))
     {
-        com::Bstr aName;
-        fsObjInfo->COMGETTER(Name)(aName.asOutParam());
-        LogFlowThisFunc(("strName=%ls\n", aName.raw()));
+        FsObjType_T enmObjType = FsObjType_Unknown; /* Shut up MSC. */
+        HRESULT hr2 = fsObjInfo->COMGETTER(Type)(&enmObjType);
+        AssertComRC(hr2);
+
+        com::Bstr bstrName;
+        hr2 = fsObjInfo->COMGETTER(Name)(bstrName.asOutParam());
+        AssertComRC(hr2);
+
+        Utf8Str strName(bstrName);
+
+        LogFlowThisFunc(("strName=%ls\n", strName.c_str()));
+
+        switch (enmObjType)
+        {
+            case FsObjType_Directory:
+            {
+                bool fSkip = false;
+
+                if (   strName.equals(".")
+                    || strName.equals(".."))
+                {
+                    fSkip = true;
+                }
+
+                if (   strFilter.isNotEmpty()
+                    && !RTStrSimplePatternMatch(strFilter.c_str(), strName.c_str()))
+                    fSkip = true;
+
+                if (   fRecursive
+                    && !fSkip)
+                    rc = directoryCopyToHost(strSrcDir, strFilter, strDstDir, fRecursive, fFollowSymlinks,
+                                             strSrcSubDir + strName);
+                break;
+            }
+
+            case FsObjType_Symlink:
+            {
+                if (fFollowSymlinks)
+                { /* Fall through to next case is intentional. */ }
+                else
+                    break;
+                RT_FALL_THRU();
+            }
+
+            case FsObjType_File:
+            {
+                if (   strFilter.isNotEmpty()
+                    && !RTStrSimplePatternMatch(strFilter.c_str(), strName.c_str()))
+                {
+                    break; /* Filter does not match. */
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    Utf8Str strSrcFile = strSrcDir + strSrcSubDir + strName;
+                    Utf8Str strDstFile = strDstDir + strSrcSubDir + strName;
+                    rc = fileCopyFrom(strSrcFile, strDstFile, FileCopyFlag_None);
+                }
+                break;
+            }
+
+            default:
+                break;
+        }
     }
 
     if (rc == VERR_NO_MORE_FILES) /* Reading done? */
