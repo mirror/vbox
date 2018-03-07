@@ -3935,7 +3935,7 @@ AuthResult AUTHCALL AuthEntry(
           </itemizedlist>
         </para></listitem>
 
-      <itemizedlist>
+      </itemizedlist>
 
     </sect1>
 
