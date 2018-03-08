@@ -853,7 +853,7 @@ RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
         return NULL;
 
     /* Second. */
-    rc = RTStrToUInt8Ex(pszString, (char **)&pszString, 10, &pTime->u8Minute);
+    rc = RTStrToUInt8Ex(pszString, (char **)&pszString, 10, &pTime->u8Second);
     if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS && rc != VWRN_TRAILING_SPACES)
         return NULL;
     if (pTime->u8Second > 59)
