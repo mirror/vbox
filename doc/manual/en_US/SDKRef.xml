@@ -3938,7 +3938,7 @@ AuthResult AUTHCALL AuthEntry(
                 <computeroutput>IGuestFsObjInfo::changeTime</computeroutput> and
                 <computeroutput>IGuestFsObjInfo::modificationTime</computeroutput>.
               </para>
-              
+
             </listitem>
           </itemizedlist>
         </para></listitem>
