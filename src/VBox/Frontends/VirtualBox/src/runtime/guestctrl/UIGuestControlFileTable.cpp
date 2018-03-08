@@ -820,6 +820,36 @@ QString UIGuestControlFileTable::getNewDirectoryName()
     return QString();
 }
 
+QString UIGuestControlFileTable::currentPath() const
+{
+    if (!m_pView)
+        return QString();
+    QModelIndex currentRoot = m_pView->rootIndex();
+    if (!currentRoot.isValid())
+        return QString();
+    UIFileTableItem *item = static_cast<UIFileTableItem*>(currentRoot.internalPointer());
+    if (!item)
+        return QString();
+    return item->path();
+}
+
+QStringList UIGuestControlFileTable::selectedItemPathList()
+{
+    QItemSelectionModel *selectionModel =  m_pView->selectionModel();
+    if (!selectionModel)
+        return QStringList();
+
+    QStringList pathList;
+    QModelIndexList selectedItemIndices = selectionModel->selectedRows();
+    for(int i = 0; i < selectedItemIndices.size(); ++i)
+    {
+        UIFileTableItem *item = static_cast<UIFileTableItem*>(selectedItemIndices.at(i).internalPointer());
+        if (!item)
+            continue;
+        pathList.push_back(item->path());
+    }
+    return pathList;
+}
 
 /*********************************************************************************************************************************
 *   UIGuestFileTable implementation.                                                                                             *
@@ -963,6 +993,13 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
     return true;
 }
 
+void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
+{
+}
+
+void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
+{
+}
 
 /*********************************************************************************************************************************
 *   UIHostFileTable implementation.                                                                                              *

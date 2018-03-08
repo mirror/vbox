@@ -345,15 +345,16 @@ void UIGuestControlFileManager::prepareObjects()
                 if(m_pCopyGuestToHost)
                 {
                     m_pCopyGuestToHost->setIcon(UIIconPool::iconSet(QString(":/arrow_right_10px_x2.png")));
-                    m_pCopyGuestToHost->setEnabled(false);
+                    connect(m_pCopyGuestToHost, &QAction::triggered, this, &UIGuestControlFileManager::sltCopyGuestToHost);
                 }
 
                 m_pCopyHostToGuest = new QAction(this);
                 if (m_pCopyHostToGuest)
                 {
                     m_pCopyHostToGuest->setIcon(UIIconPool::iconSet(QString(":/arrow_left_10px_x2.png")));
-                    m_pCopyHostToGuest->setEnabled(false);
+                    connect(m_pCopyHostToGuest, &QAction::triggered, this, &UIGuestControlFileManager::sltCopyHostToGuest);
                 }
+
                 m_pToolBar->addWidget(topSpacerWidget);
                 m_pToolBar->addAction(m_pCopyGuestToHost);
                 m_pToolBar->addAction(m_pCopyHostToGuest);
@@ -477,6 +478,25 @@ void UIGuestControlFileManager::sltReceieveLogOutput(QString strOutput)
 {
     if (m_pLogOutput)
         m_pLogOutput->appendPlainText(strOutput);
+}
+
+void UIGuestControlFileManager::sltCopyGuestToHost()
+{
+    if (!m_pGuestFileTable || !m_pHostFileTable)
+        return;
+    QString hostDestinationPath = m_pHostFileTable->currentPath();
+    printf("current host path %s\n", hostDestinationPath.toStdString().c_str());
+    m_pGuestFileTable->copyGuestToHost(hostDestinationPath);
+}
+
+void UIGuestControlFileManager::sltCopyHostToGuest()
+{
+    if (!m_pGuestFileTable || !m_pHostFileTable)
+        return;
+    QStringList hostSourcePathList = m_pHostFileTable->selectedItemPathList();
+    for(int i = 0; i < hostSourcePathList.size(); ++i)
+        printf("%s\n", hostSourcePathList[i].toStdString().c_str());
+    m_pGuestFileTable->copyHostToGuest(hostSourcePathList);
 }
 
 void UIGuestControlFileManager::initFileTable()

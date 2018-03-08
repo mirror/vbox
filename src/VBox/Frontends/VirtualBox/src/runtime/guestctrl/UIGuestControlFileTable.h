@@ -110,6 +110,10 @@ public:
     /** Delete all the tree nodes */
     void reset();
     void emitLogOutput(const QString& strOutput);
+    /** Returns the path of the rootIndex */
+    QString     currentPath() const;
+    /** Returns the paths of the selected items (if any) as a list */
+    QStringList selectedItemPathList();
 
 protected:
 
@@ -146,6 +150,7 @@ protected:
     UIGuestControlFileModel *m_pModel;
     QILabel                 *m_pLocationLabel;
     QAction                  *m_pGoHome;
+
 protected slots:
 
     void sltItemDoubleClicked(const QModelIndex &index);
@@ -192,6 +197,8 @@ public:
 
     UIGuestFileTable(QWidget *pParent = 0);
     void initGuestFileTable(const CGuestSession &session);
+    void copyGuestToHost(const QString& hostDestinationPath);
+    void copyHostToGuest(const QStringList &hostSourcePathList);
 
 protected:
 

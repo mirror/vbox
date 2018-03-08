@@ -64,6 +64,8 @@ private slots:
     void sltCloseSession();
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
     void sltReceieveLogOutput(QString strOutput);
+    void sltCopyGuestToHost();
+    void sltCopyHostToGuest();
 
 private:
 
