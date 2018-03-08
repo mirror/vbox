@@ -26,8 +26,11 @@
 # include <QHeaderView>
 # include <QItemDelegate>
 # include <QGridLayout>
+# include <QPushButton>
 
 /* GUI includes: */
+# include "QIDialog.h"
+# include "QIDialogButtonBox.h"
 # include "QILabel.h"
 # include "QILineEdit.h"
 # include "UIErrorString.h"
@@ -43,6 +46,11 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
+/*********************************************************************************************************************************
+*   UIFileDelegate definition.                                                                                                   *
+*********************************************************************************************************************************/
+/** A QItemDelegate child class to disable dashed lines drawn around selected cells in QTableViews */
 class UIFileDelegate : public QItemDelegate
 {
 
@@ -51,6 +59,31 @@ class UIFileDelegate : public QItemDelegate
 protected:
         virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
 };
+
+
+/*********************************************************************************************************************************
+*   UIFileStringInputDialog definition.                                                                                          *
+*********************************************************************************************************************************/
+/** A QIDialog child including a line edit whose text exposed when the dialog is accepted */
+class UIStringInputDialog : public QIDialog
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIStringInputDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    QString getString() const;
+
+private:
+
+    QILineEdit      *m_pLineEdit;
+
+    // virtual void accept() /* override */;
+    // virtual void reject() /* override */;
+
+};
+
 
 
 /*********************************************************************************************************************************
@@ -103,6 +136,39 @@ private:
         for files it is the name of the file */
     QString          m_strBaseName;
 };
+
+
+/*********************************************************************************************************************************
+*   UIFileStringInputDialog implementation.                                                                                      *
+*********************************************************************************************************************************/
+UIStringInputDialog::UIStringInputDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags flags /* = 0 */)
+    :QIDialog(pParent, flags)
+{
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    m_pLineEdit = new QILineEdit(this);
+    layout->addWidget(m_pLineEdit);
+
+    QIDialogButtonBox *pButtonBox =
+        new QIDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
+    layout->addWidget(pButtonBox);
+        // {
+        //     /* Configure button-box: */
+    connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIStringInputDialog::accept);
+    connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIStringInputDialog::reject);
+
+}
+
+QString UIStringInputDialog::getString() const
+{
+    if (!m_pLineEdit)
+        return QString();
+    return m_pLineEdit->text();
+}
+
+
+/*********************************************************************************************************************************
+*   UIFileTableItem implementation.                                                                                              *
+*********************************************************************************************************************************/
 
 
 UIFileTableItem::UIFileTableItem(const QList<QVariant> &data, bool isDirectory, UIFileTableItem *parent)
@@ -305,6 +371,13 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
         /* dont show anything but the name for up directories: */
         if (item->isUpDirectory() && index.column() != 0)
             return QVariant();
+        /* Format date/time column: */
+        if (item->data(index.column()).canConvert(QMetaType::QDateTime))
+        {
+            QDateTime dateTime = item->data(index.column()).toDateTime();
+            if (dateTime.isValid())
+                return dateTime.toString("dd.MM.yyyy hh:mm:ss");
+        }
         return item->data(index.column());
     }
 
@@ -431,6 +504,23 @@ void UIGuestControlFileModel::endReset()
     endResetModel();
 }
 
+bool UIGuestControlFileModel::insertRows(int position, int rows, const QModelIndex &parent)
+{
+    UIFileTableItem *parentItem = static_cast<UIFileTableItem*>(parent.internalPointer());
+
+    if (!parentItem)
+        return false;
+    beginInsertRows(parent, position, position + rows -1);
+
+    QList<QVariant> data;
+    data << "New Item" << 0 << QDateTime::currentDateTime();
+    UIFileTableItem *newItem = new UIFileTableItem(data, true, parentItem);
+    parentItem->appendChild(newItem);
+    endInsertRows();
+
+    return true;
+}
+
 
 /*********************************************************************************************************************************
 *   UIGuestControlFileTable implementation.                                                                                      *
@@ -451,7 +541,7 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pRefresh(0)
     , m_pDelete(0)
     , m_pRename(0)
-    , m_pNewFolder(0)
+    , m_pCreateNewDirectory(0)
     , m_pCopy(0)
     , m_pCut(0)
     , m_pPaste(0)
@@ -585,12 +675,12 @@ void UIGuestControlFileTable::prepareActions()
         m_pToolBar->addAction(m_pRename);
     }
 
-    m_pNewFolder = new QAction(this);
-    if (m_pNewFolder)
+    m_pCreateNewDirectory = new QAction(this);
+    if (m_pCreateNewDirectory)
     {
-        m_pNewFolder->setIcon(UIIconPool::iconSet(QString(":/sf_32px.png")));
-        m_pToolBar->addAction(m_pNewFolder);
-        m_pNewFolder->setEnabled(false);
+        connect(m_pCreateNewDirectory, &QAction::triggered, this, &UIGuestControlFileTable::sltCreateNewDirectory);
+        m_pCreateNewDirectory->setIcon(UIIconPool::iconSet(QString(":/sf_32px.png")));
+        m_pToolBar->addAction(m_pCreateNewDirectory);
     }
 
     m_pCopy = new QAction(this);
@@ -811,6 +901,7 @@ void UIGuestControlFileTable::sltDelete()
     {
         deleteByIndex(selectedItemIndices.at(i));
     }
+    /** @todo dont refresh here, just delete the rows and update the table view: */
     refresh();
 }
 
@@ -829,8 +920,32 @@ void UIGuestControlFileTable::sltRename()
     if (!item || item->isUpDirectory())
         return;
     m_pView->edit(selectedItemIndices.at(0));
+}
+
+void UIGuestControlFileTable::sltCreateNewDirectory()
+{
+    if (!m_pModel || !m_pView)
+        return;
+    QModelIndex currentIndex = m_pView->rootIndex();
+    if (!currentIndex.isValid())
+        return;
+    UIFileTableItem *item = static_cast<UIFileTableItem*>(currentIndex.internalPointer());
+    if (!item)
+        return;
+
+    QString newDirectoryName = getNewDirectoryName();
+    if (newDirectoryName.isEmpty())
+        return;
+
+    if (createDirectory(item->path(), newDirectoryName))
+    {
+        /** @todo instead of refreshing here (an overkill) just add the
+           rows and update the tabel view: */
+        sltRefresh();
+    }
 
 }
+
 
 void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
 {
@@ -851,9 +966,9 @@ void UIGuestControlFileTable::retranslateUi()
 
     if (m_pGoHome)
     {
-        m_pGoHome->setText(UIVMInformationDialog::tr("Go to home folder"));
-        m_pGoHome->setToolTip(UIVMInformationDialog::tr("Go to home folder"));
-        m_pGoHome->setStatusTip(UIVMInformationDialog::tr("Go to home folder"));
+        m_pGoHome->setText(UIVMInformationDialog::tr("Go to home directory"));
+        m_pGoHome->setToolTip(UIVMInformationDialog::tr("Go to home directory"));
+        m_pGoHome->setStatusTip(UIVMInformationDialog::tr("Go to home directory"));
     }
 
     if (m_pRename)
@@ -876,11 +991,11 @@ void UIGuestControlFileTable::retranslateUi()
         m_pDelete->setStatusTip(UIVMInformationDialog::tr("Delete the selected item(s)"));
     }
 
-    if (m_pNewFolder)
+    if (m_pCreateNewDirectory)
     {
-        m_pNewFolder->setText(UIVMInformationDialog::tr("Create a new folder"));
-        m_pNewFolder->setToolTip(UIVMInformationDialog::tr("Create a new folder"));
-        m_pNewFolder->setStatusTip(UIVMInformationDialog::tr("Create a new folder"));
+        m_pCreateNewDirectory->setText(UIVMInformationDialog::tr("Create a new directory"));
+        m_pCreateNewDirectory->setToolTip(UIVMInformationDialog::tr("Create a new directory"));
+        m_pCreateNewDirectory->setStatusTip(UIVMInformationDialog::tr("Create a new directory"));
 
     }
 
@@ -926,7 +1041,7 @@ void UIGuestControlFileTable::keyPressEvent(QKeyEvent * pEvent)
             }
         }
     }
-    else if(pEvent->key() == Qt::Key_Delete)
+    else if (pEvent->key() == Qt::Key_Delete)
     {
         sltDelete();
     }
@@ -955,6 +1070,29 @@ QString UIGuestControlFileTable::constructNewItemPath(const QString &previousPat
     }
     newPath += newBaseName;
     return newPath;
+}
+
+QString UIGuestControlFileTable::mergePaths(const QString &path, const QString &baseName)
+{
+    QString newPath(path);
+    /* make sure we have a trailing '/': */
+    if (newPath.at(newPath.length() - 1) != QChar('/'))
+        newPath += QChar('/');
+    newPath += baseName;
+    return newPath;
+}
+
+QString UIGuestControlFileTable::getNewDirectoryName()
+{
+    UIStringInputDialog *dialog = new UIStringInputDialog();
+    if (dialog->execute())
+    {
+        QString strDialog = dialog->getString();
+        delete dialog;
+        return strDialog;
+    }
+    delete dialog;
+    return QString();
 }
 
 
@@ -1011,7 +1149,8 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
         while (fsInfo.isOk())
         {
             QList<QVariant> data;
-            QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/1000);
+            QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/1000000);
+
             data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize()) << changeTime;
             bool isDirectory = (fsInfo.GetType() == KFsObjType_Directory);
             UIFileTableItem *item = new UIFileTableItem(data, isDirectory, parent);
@@ -1078,6 +1217,24 @@ void UIGuestFileTable::configureObjects()
 {
     if (m_pGoHome)
         m_pGoHome->setEnabled(false);
+}
+
+bool UIGuestFileTable::createDirectory(const QString &path, const QString &directoryName)
+{
+    if (!m_comGuestSession.isOk())
+        return false;
+
+    QString newDirectoryPath = mergePaths(path, directoryName);
+    QVector<KDirectoryCreateFlag> flags(KDirectoryCreateFlag_None);
+
+    m_comGuestSession.DirectoryCreate(newDirectoryPath, 777/*aMode*/, flags);
+    if (!m_comGuestSession.isOk())
+    {
+        emit sigLogOutput(newDirectoryPath.append(" could not be created"));
+        return false;
+    }
+    emit sigLogOutput(newDirectoryPath.append(" has been created"));
+    return true;
 }
 
 
@@ -1159,7 +1316,7 @@ void UIHostFileTable::deleteByItem(UIFileTableItem *item)
 
 void UIHostFileTable::goToHomeDirectory()
 {
-    if(!m_pRootItem || m_pRootItem->childCount() <= 0)
+    if (!m_pRootItem || m_pRootItem->childCount() <= 0)
         return;
     UIFileTableItem *startDirItem = m_pRootItem->child(0);
     if (!startDirItem)
@@ -1186,5 +1343,16 @@ bool UIHostFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
     return a.rename(item->path(), newPath);
 }
 
+bool UIHostFileTable::createDirectory(const QString &path, const QString &directoryName)
+{
+    QDir parentDir(path);
+    if (!parentDir.mkdir(directoryName))
+    {
+        emit sigLogOutput(mergePaths(path, directoryName).append(" could not be created"));
+        return false;
+    }
+
+    return true;
+}
 
 #include "UIGuestControlFileTable.moc"

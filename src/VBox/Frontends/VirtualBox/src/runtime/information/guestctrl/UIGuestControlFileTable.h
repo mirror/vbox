@@ -71,6 +71,7 @@ public:
     QModelIndex rootIndex() const;
     void beginReset();
     void endReset();
+    bool insertRows(int position, int rows, const QModelIndex &parent);
 
 private:
 
@@ -114,6 +115,7 @@ protected:
     virtual void deleteByItem(UIFileTableItem *item) = 0;
     virtual void goToHomeDirectory() = 0;
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName) = 0;
+    virtual bool createDirectory(const QString &path, const QString &directoryName) = 0;
     void             goIntoDirectory(const QModelIndex &itemIndex);
     /** Follow the path trail, open directories as we go and descend */
     void             goIntoDirectory(const QVector<QString> &pathTrail);
@@ -124,6 +126,7 @@ protected:
 
     /** Replace the last part of the @p previusPath with newBaseName */
     QString constructNewItemPath(const QString &previousPath, const QString &newBaseName);
+    QString mergePaths(const QString &Path, const QString &baseName);
 
     UIFileTableItem         *m_pRootItem;
 
@@ -143,6 +146,7 @@ protected slots:
     void sltRefresh();
     void sltDelete();
     void sltRename();
+    void sltCreateNewDirectory();
 
 private:
 
@@ -151,7 +155,8 @@ private:
     void             deleteByIndex(const QModelIndex &itemIndex);
     /** Return the UIFileTableItem for path / which is a direct (and single) child of m_pRootItem */
     UIFileTableItem *getStartDirectoryItem();
-
+    /** Shows a modal dialog with a line edit for user to enter a new directory name and return the entered string*/
+    QString         getNewDirectoryName();
     QGridLayout     *m_pMainLayout;
     QILineEdit      *m_pCurrentLocationEdit;
     UIToolBar       *m_pToolBar;
@@ -160,7 +165,7 @@ private:
     QAction         *m_pRefresh;
     QAction         *m_pDelete;
     QAction         *m_pRename;
-    QAction         *m_pNewFolder;
+    QAction         *m_pCreateNewDirectory;
 
     QAction         *m_pCopy;
     QAction         *m_pCut;
@@ -187,6 +192,7 @@ protected:
     virtual void deleteByItem(UIFileTableItem *item) /* override */;
     virtual void goToHomeDirectory() /* override */;
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
+    virtual bool createDirectory(const QString &path, const QString &directoryName);
 
 private:
 
@@ -212,6 +218,7 @@ protected:
     virtual void deleteByItem(UIFileTableItem *item) /* override */;
     virtual void goToHomeDirectory() /* override */;
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
+    virtual bool createDirectory(const QString &path, const QString &directoryName);
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
