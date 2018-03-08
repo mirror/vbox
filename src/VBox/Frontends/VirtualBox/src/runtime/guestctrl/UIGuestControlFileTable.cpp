@@ -995,10 +995,12 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
 
 void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
 {
+    Q_UNUSED(hostDestinationPath);
 }
 
 void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
 {
+    Q_UNUSED(hostSourcePathList);
 }
 
 /*********************************************************************************************************************************
