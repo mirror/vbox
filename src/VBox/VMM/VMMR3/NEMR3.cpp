@@ -19,6 +19,179 @@
  *
  * Later.
  *
+ *
+ * @section sec_nem_win     Windows
+ *
+ * On Windows the Hyper-V root partition (dom0 in zen terminology) does not have
+ * nested VT-x or AMD-V capabilities.  For a while raw-mode worked in it,
+ * however now we \#GP when modifying CR4.  So, when Hyper-V is active on
+ * Windows we have little choice but to use Hyper-V to run our VMs.
+ *
+ * @subsection subsec_nem_win_whv   The WinHvPlatform API
+ *
+ * Since Windows 10 build 17083 there is a documented API for managing Hyper-V
+ * VMs, header file WinHvPlatform.h and implementation in WinHvPlatform.dll.
+ * This interface is a wrapper around the undocumented Virtualization
+ * Infrastructure Driver (VID) API - VID.DLL and VID.SYS.  The wrapper is
+ * written in C++, namespaced and early version (at least) was using standard
+ * container templates in several places.
+ *
+ * When creating a VM using WHvCreatePartition, it will only create the
+ * WinHvPlatform structures for it, to which you get an abstract pointer.  The
+ * VID API that actually creates the partition is first engaged when you call
+ * WHvSetupPartition after first setting a lot of properties using
+ * WHvSetPartitionProperty.  Since the VID API is just a very thin wrapper
+ * around CreateFile and NtDeviceIoControl, it returns an actual HANDLE for the
+ * partition WinHvPlatform.  We fish this HANDLE out of the WinHvPlatform
+ * partition structures because we need to talk directly to VID for reasons
+ * we'll get to in a bit.  (Btw. we could also intercept the CreateFileW or
+ * NtDeviceIoControl calls from VID.DLL to get the HANDLE should fishing in the
+ * partition structures become difficult.)
+ *
+ * The WinHvPlatform API requires us to both set the number of guest CPUs before
+ * setting up the partition and call WHvCreateVirtualProcessor for each of them.
+ * The CPU creation function boils down to a VidMessageSlotMap call that sets up
+ * and maps a message buffer into ring-3 for async communication with hyper-V
+ * and/or the VID.SYS thread actually running the CPU.  When for instance a
+ * VMEXIT is encountered, hyper-V sends a message that the
+ * WHvRunVirtualProcessor API retrieves (and later acknowledges) via
+ * VidMessageSlotHandleAndGetNext.  It should be noteded that
+ * WHvDeleteVirtualProcessor doesn't do much as there seems to be no partner
+ * function VidMessagesSlotMap that reverses what it did.
+ *
+ * Memory is managed thru calls to WHvMapGpaRange and WHvUnmapGpaRange (GPA does
+ * not mean grade point average here, but rather guest physical addressspace),
+ * which corresponds to VidCreateVaGpaRangeSpecifyUserVa and VidDestroyGpaRange
+ * respectively.  As 'UserVa' indicates, the functions works on user process
+ * memory.  The mappings are also subject to quota restrictions, so the number
+ * of ranges are limited and probably their total size as well.  Obviously
+ * VID.SYS keeps track of the ranges, but so does WinHvPlatform, which means
+ * there is a bit of overhead involved and quota restrctions makes sense.  For
+ * some reason though, regions are lazily mapped on VMEXIT/memory by
+ * WHvRunVirtualProcessor.
+ *
+ * Running guest code is done thru the WHvRunVirtualProcessor function.  It
+ * asynchronously starts or resumes hyper-V CPU execution and then waits for an
+ * VMEXIT message.   Other threads can interrupt the execution by using
+ * WHvCancelVirtualProcessor, which which case the thread in
+ * WHvRunVirtualProcessor is woken up via a dummy QueueUserAPC and will call
+ * VidStopVirtualProcessor to asynchronously end execution.  The stop CPU call
+ * not immediately succeed if the CPU encountered a VMEXIT before the stop was
+ * processed, in which case the VMEXIT needs to be processed first, and the
+ * pending stop will be processed in a subsequent call to
+ * WHvRunVirtualProcessor.
+ *
+ * {something about registers}
+ *
+ * @subsubsection subsubsec_nem_win_whv_cons    Issues / Disadvantages
+ *
+ * Here are some observations:
+ *
+ * - The WHvCancelVirtualProcessor API schedules a dummy usermode APC callback
+ *   in order to cancel any current or future alertable wait in VID.SYS during
+ *   the VidMessageSlotHandleAndGetNext call.
+ *
+ *   IIRC this will make the kernel schedule the callback thru
+ *   NTDLL!KiUserApcDispatcher by modifying the thread context and quite
+ *   possibly the userland thread stack.  When the APC callback returns to
+ *   KiUserApcDispatcher, it will call NtContinue to restore the old thread
+ *   context and resume execution from there.  Upshot this is a bit expensive.
+ *
+ *   Using NtAltertThread call could do the same without the thread context
+ *   modifications and the extra kernel call.
+ *
+ *
+ * - Not sure if this is a thing, but WHvCancelVirtualProcessor seems to cause
+ *   cause a lot more spurious WHvRunVirtualProcessor returns that what we get
+ *   with the replacement code.  By spurious returns we mean that the
+ *   subsequent call to WHvRunVirtualProcessor would return immediately.
+ *
+ *
+ * - When WHvRunVirtualProcessor returns without a message, or on a terse
+ *   VID message like HLT, it will make a kernel call to get some registers.
+ *   This is potentially inefficient if the caller decides he needs more
+ *   register state.
+ *
+ *   It would be better to just return what's available and let the caller fetch
+ *   what is missing from his point of view in a single kernel call.
+ *
+ *
+ * - The WHvRunVirtualProcessor implementation does lazy GPA range mappings when
+ *   a unmapped GPA message is received from hyper-V.
+ *
+ *   Since MMIO is currently realized as unmapped GPA, this will slow down all
+ *   MMIO accesses a tiny little bit as WHvRunVirtualProcessor looks up the
+ *   guest physical address the checks if it's a pending lazy mapping.
+ *
+ *
+ * - There is no API for modifying protection of a page within a GPA range.
+ *
+ *   We're left with having to unmap the range and then remap it with the new
+ *   protection.  For instance we're actively using this to track dirty VRAM
+ *   pages, which means there are occational readonly->writable transitions at
+ *   run time followed by bulk reversal to readonly when the display is
+ *   refreshed.
+ *
+ *   Now to work around the issue, we do page sized GPA ranges.  In addition to
+ *   add a lot of tracking overhead to WinHvPlatform and VID.SYS, it also causes
+ *   us to exceed our quota before we've even mapped a default sized VRAM
+ *   page-by-page.  So, to work around this quota issue we have to lazily map
+ *   pages and actively restrict the number of mappings.
+ *
+ *   Out best workaround thus far is bypassing WinHvPlatform and VID when in
+ *   comes to memory and instead us the hypercalls to do it (HvCallMapGpaPages,
+ *   HvCallUnmapGpaPages).  (This also maps a whole lot better into our own
+ *   guest page management infrastructure.)
+ *
+ *
+ * - Observed problems doing WHvUnmapGpaRange followed by WHvMapGpaRange.
+ *
+ *   As mentioned above, we've been forced to use this sequence when modifying
+ *   page protection.   However, when upgrading from readonly to writable, we've
+ *   ended up looping forever with the same write to readonly memory exit.
+ *
+ *   Workaround: Insert a WHvRunVirtualProcessor call and make sure to get a GPA
+ *   unmapped exit between the two calls.  Terrible for performance and code
+ *   sanity.
+ *
+ *
+ * - WHVRunVirtualProcessor wastes time converting VID/Hyper-V messages to it's
+ *   own defined format.
+ *
+ *   We understand this might be because Microsoft wishes to remain free to
+ *   modify the VID/Hyper-V messages, but it's still rather silly and does slow
+ *   things down.
+ *
+ *
+ * - WHVRunVirtualProcessor would've benefited from using a callback interface:
+ *      - The potential size changes of the exit context structure wouldn't be
+ *        an issue, since the function could manage that itself.
+ *      - State handling could be optimized simplified (esp. cancellation).
+ *
+ *
+ * - WHvGetVirtualProcessorRegisters and WHvSetVirtualProcessorRegisters
+ *   internally converts register names, probably using temporary heap buffers.
+ *
+ *   From the looks of things, it's converting from WHV_REGISTER_NAME to
+ *   HV_REGISTER_NAME that's documented in the "Virtual Processor Register
+ *   Names" section of "Hypervisor Top-Level Functional Specification".  This
+ *   feels like an awful waste of time.  We simply cannot understand why it
+ *   wouldn't have sufficed to use HV_REGISTER_NAME here and simply checked the
+ *   input values if restrictions were desired.
+ *
+ *   To avoid the heap + conversion overhead, we're currently using the
+ *   HvCallGetVpRegisters and HvCallSetVpRegisters calls directly.
+ *
+ *
+ * - Why does WINHVR.SYS (or VID.SYS) only query/set 32 registers at the time
+ *   thru the HvCallGetVpRegisters and HvCallSetVpRegisters hypercalls?
+ *
+ *   We've not trouble getting/setting all the registers defined by
+ *   WHV_REGISTER_NAME in one hypercall...
+ *
+ *
+ * - .
+ *
  */
 
 
