@@ -345,7 +345,7 @@ void UIGuestControlFileTable::prepareObjects()
         /* Minimize the row height: */
         m_pView->verticalHeader()->setDefaultSectionSize(m_pView->verticalHeader()->minimumSectionSize());
         /* Make the columns take all the avaible space: */
-        m_pView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        //m_pView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
         connect(m_pView, &QTableView::doubleClicked,
                 this, &UIGuestControlFileTable::sltItemDoubleClicked);
@@ -933,8 +933,9 @@ bool UIGuestFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
     QVector<KFsObjRenameFlag> aFlags(KFsObjRenameFlag_Replace);
 
     m_comGuestSession.FsObjRename(item->path(), newPath, aFlags);
-    if (m_comGuestSession.isOk())
+    if (!m_comGuestSession.isOk())
         return false;
+    item->setPath(newPath);
     return true;
 }
 
@@ -999,17 +1000,17 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     {
         const QFileInfo &fileInfo = entries.at(i);
         QList<QVariant> data;
-        data << fileInfo.baseName() << fileInfo.size() << fileInfo.lastModified();
+        data << fileInfo.fileName() << fileInfo.size() << fileInfo.lastModified();
         UIFileTableItem *item = new UIFileTableItem(data, fileInfo.isDir(), parent);
         item->setPath(fileInfo.absoluteFilePath());
         if (fileInfo.isDir())
         {
-            directories.insert(fileInfo.baseName(), item);
+            directories.insert(fileInfo.fileName(), item);
             item->setIsOpened(false);
         }
         else
         {
-            files.insert(fileInfo.baseName(), item);
+            files.insert(fileInfo.fileName(), item);
             item->setIsOpened(false);
         }
 
@@ -1064,8 +1065,13 @@ bool UIHostFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
     if (!item || item->isUpDirectory() || newBaseName.isEmpty())
         return false;
     QString newPath = constructNewItemPath(item->path(), newBaseName);
-    QDir a;
-    return a.rename(item->path(), newPath);
+    QDir tempDir;
+    if (tempDir.rename(item->path(), newPath))
+    {
+        item->setPath(newPath);
+        return true;
+    }
+    return false;
 }
 
 bool UIHostFileTable::createDirectory(const QString &path, const QString &directoryName)

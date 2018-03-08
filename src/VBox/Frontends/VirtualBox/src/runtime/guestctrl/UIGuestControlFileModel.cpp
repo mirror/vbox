@@ -68,20 +68,23 @@ bool UIGuestControlFileModel::setData(const QModelIndex &index, const QVariant &
 {
     if (index.isValid() && role == Qt::EditRole)
     {
-        UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
-        if (!item || !m_pParent)
-            return false;
-        if (m_pParent->renameItem(item, value.toString()))
+        if (index.column() == 0 && value.canConvert(QMetaType::QString))
         {
-            item->setData(value, index.column());
-            emit dataChanged(index, index);
+            UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
+            if (!item || !m_pParent)
+                return false;
+            if (m_pParent->renameItem(item, value.toString()))
+            {
+                item->setData(value, index.column());
+                emit dataChanged(index, index);
+            }
+            else
+            {
+                if (m_pParent)
+                    m_pParent->emitLogOutput(QString(item->path()).append(" could not be renamed"));
+            }
+            return true;
         }
-        else
-        {
-            if (m_pParent)
-                m_pParent->emitLogOutput(QString(item->path()).append(" could not be renamed"));
-        }
-        return true;
     }
     return false;
 }

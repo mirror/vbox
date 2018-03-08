@@ -420,6 +420,7 @@ void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString st
         if (m_pLogOutput)
         {
             m_pLogOutput->appendPlainText("Could not find Guest Additions");
+            postSessionClosed();
             return;
         }
     }
