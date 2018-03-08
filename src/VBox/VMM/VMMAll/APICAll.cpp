@@ -1963,6 +1963,20 @@ VMM_INT_DECL(VBOXSTRICTRC) APICReadMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t *
                 break;
             }
 
+            /*
+             * Windows guest using Hyper-V x2APIC MSR compatibility mode tries to read the "high"
+             * LDR bits, which is quite absurd (as it's a 32-bit register) using this invalid MSR
+             * index (0x80E), see @bugref{8382#c175}.
+             */
+            case MSR_IA32_X2APIC_LDR + 1:
+            {
+                if (pApic->fHyperVCompatMode)
+                    *pu64Value = 0;
+                else
+                    rcStrict = apicMsrAccessError(pVCpu, u32Reg, APICMSRACCESS_READ_RSVD_OR_UNKNOWN);
+                break;
+            }
+
             /* Reserved MSRs: */
             case MSR_IA32_X2APIC_LVT_CMCI:
             default:
