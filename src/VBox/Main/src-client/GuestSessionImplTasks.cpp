@@ -993,8 +993,6 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
     dirOpenInfo.mPath   = strSrcCur;
     dirOpenInfo.mFlags  = 0; /** @todo Handle flags? */
 
-RT_BREAKPOINT();
-
     ComObjPtr <GuestDirectory> pDir; int rcGuest;
     rc = mSession->i_directoryOpenInternal(dirOpenInfo, pDir, &rcGuest);
     if (RT_FAILURE(rc))
@@ -1019,8 +1017,6 @@ RT_BREAKPOINT();
         return rc;
     }
 
-RT_BREAKPOINT();
-
     ComObjPtr<GuestFsObjInfo> fsObjInfo;
     while (RT_SUCCESS(rc = pDir->i_readInternal(fsObjInfo, &rcGuest)))
     {
@@ -1032,13 +1028,7 @@ RT_BREAKPOINT();
         hr2 = fsObjInfo->COMGETTER(Name)(bstrName.asOutParam());
         AssertComRC(hr2);
 
-        LONG64 lCT = 0;
-        hr2 = fsObjInfo->COMGETTER(ChangeTime)(&lCT);
-        AssertComRC(hr2);
-
         Utf8Str strName(bstrName);
-
-        LogRel(("strName=%s, lCT=%RI64\n", strName.c_str(), lCT));
 
         switch (enmObjType)
         {
@@ -1055,8 +1045,6 @@ RT_BREAKPOINT();
                 if (   strFilter.isNotEmpty()
                     && !RTStrSimplePatternMatch(strFilter.c_str(), strName.c_str()))
                     fSkip = true;
-
-    fSkip = true;
 
                 if (   fRecursive
                     && !fSkip)
@@ -1099,11 +1087,7 @@ RT_BREAKPOINT();
     if (rc == VERR_NO_MORE_FILES) /* Reading done? */
         rc = VINF_SUCCESS;
 
-RT_BREAKPOINT();
-
     pDir->i_closeInternal(&rcGuest);
-
-RT_BREAKPOINT();
 
     LogFlowFunc(("Leaving '%s', rc=%Rrc\n", strSrcCur.c_str(), rc));
     return rc;
