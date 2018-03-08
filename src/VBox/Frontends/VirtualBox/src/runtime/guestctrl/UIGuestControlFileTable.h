@@ -19,8 +19,6 @@
 #define ___UIGuestControlFileTable_h___
 
 /* Qt includes: */
-#include <QAbstractItemModel>
-#include <QTreeView>
 #include <QWidget>
 
 /* COM includes: */
@@ -37,48 +35,59 @@ class QILabel;
 class QILineEdit;
 class QGridLayout;
 class UIFileTableItem;
+class UIGuestControlFileModel;
 class UIGuestControlFileTable;
 class UIToolBar;
 
-/** UIGuestControlFileModel serves as the model for a file structure.
-    it supports a tree level hierarchy which can be displayed with
-    QTableView and/or QTreeView. Note the file structure data is not
-    kept by the model but rather by the containing widget which also servers
-    as the interface to functionality this model provides.*/
-class UIGuestControlFileModel : public QAbstractItemModel
+/*********************************************************************************************************************************
+*   UIFileTableItem definition.                                                                                                  *
+*********************************************************************************************************************************/
+
+class UIFileTableItem
 {
-
-    Q_OBJECT;
-
 public:
+    explicit UIFileTableItem(const QList<QVariant> &data, bool isDirectory, UIFileTableItem *parentItem);
+    ~UIFileTableItem();
 
-    explicit UIGuestControlFileModel(QObject *parent = 0);
-    ~UIGuestControlFileModel();
+    void appendChild(UIFileTableItem *child);
 
-    QVariant data(const QModelIndex &index, int role) const /* override */;
-    bool setData(const QModelIndex &index, const QVariant &value, int role);
+    UIFileTableItem *child(int row) const;
+    /** Return a child (if possible) by path */
+    UIFileTableItem *child(const QString &path) const;
+    int childCount() const;
+    int columnCount() const;
+    QVariant data(int column) const;
+    void setData(const QVariant &data, int index);
+    int row() const;
+    UIFileTableItem *parentItem();
 
-    Qt::ItemFlags flags(const QModelIndex &index) const /* override */;
-    QVariant headerData(int section, Qt::Orientation orientation,
-    int role = Qt::DisplayRole) const /* override */;
-    QModelIndex index(int row, int column,
-                      const QModelIndex &parent = QModelIndex()) const /* override */;
-    QModelIndex index(UIFileTableItem* item);
-    QModelIndex parent(const QModelIndex &index) const /* override */;
-    int rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
-    void signalUpdate();
-    QModelIndex rootIndex() const;
-    void beginReset();
-    void endReset();
-    bool insertRows(int position, int rows, const QModelIndex &parent);
+    bool isDirectory() const;
+    bool isOpened() const;
+    void setIsOpened(bool flag);
+
+    const QString  &path() const;
+    void setPath(const QString &path);
+    /** Merge prefix and suffix by making sure they have a single '/' in between */
+    void setPath(const QString &prexix, const QString &suffix);
+
+    /** True if this is directory and name is ".." */
+    bool isUpDirectory() const;
+    void clearChildren();
 
 private:
-
-    UIFileTableItem* rootItem() const;
-    void setupModelData(const QStringList &lines, UIFileTableItem *parent);
-    UIGuestControlFileTable* m_pParent;
-    UIFileTableItem *m_pRootItem;
+    QList<UIFileTableItem*>         m_childItems;
+    /** Used to find children by path */
+    QMap<QString, UIFileTableItem*> m_childMap;
+    QList<QVariant>  m_itemData;
+    UIFileTableItem *m_parentItem;
+    bool             m_bIsDirectory;
+    bool             m_bIsOpened;
+    /** Full absolute path of the item. Without the trailing '/' */
+    QString          m_strPath;
+    /** For directories base name is the name of the lowest level directory
+        in strPath. eg. for 'm_strPath = /opt/qt5.6/examples' 'm_strBaseName = examples'
+        for files it is the name of the file */
+    QString          m_strBaseName;
 };
 
 /** This class serves a base class for file table. Currently a guest version
@@ -135,7 +144,6 @@ protected:
         so for now subclass QTableView */
     QTableView              *m_pView;
     UIGuestControlFileModel *m_pModel;
-    QTreeView               *m_pTree;
     QILabel                 *m_pLocationLabel;
     QAction                  *m_pGoHome;
 protected slots:

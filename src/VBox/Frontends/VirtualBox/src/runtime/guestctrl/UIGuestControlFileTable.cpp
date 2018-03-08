@@ -36,6 +36,7 @@
 # include "UIErrorString.h"
 # include "UIIconPool.h"
 # include "UIGuestControlFileTable.h"
+# include "UIGuestControlFileModel.h"
 # include "UIToolBar.h"
 # include "UIVMInformationDialog.h"
 
@@ -64,6 +65,7 @@ protected:
 /*********************************************************************************************************************************
 *   UIFileStringInputDialog definition.                                                                                          *
 *********************************************************************************************************************************/
+
 /** A QIDialog child including a line edit whose text exposed when the dialog is accepted */
 class UIStringInputDialog : public QIDialog
 {
@@ -84,63 +86,10 @@ private:
 
 };
 
-
-
-/*********************************************************************************************************************************
-*   UIFileTableItem definition.                                                                                                  *
-*********************************************************************************************************************************/
-
-class UIFileTableItem
-{
-public:
-    explicit UIFileTableItem(const QList<QVariant> &data, bool isDirectory, UIFileTableItem *parentItem);
-    ~UIFileTableItem();
-
-    void appendChild(UIFileTableItem *child);
-
-    UIFileTableItem *child(int row) const;
-    /** Return a child (if possible) by path */
-    UIFileTableItem *child(const QString &path) const;
-    int childCount() const;
-    int columnCount() const;
-    QVariant data(int column) const;
-    void setData(const QVariant &data, int index);
-    int row() const;
-    UIFileTableItem *parentItem();
-
-    bool isDirectory() const;
-    bool isOpened() const;
-    void setIsOpened(bool flag);
-
-    const QString  &path() const;
-    void setPath(const QString &path);
-    /** Merge prefix and suffix by making sure they have a single '/' in between */
-    void setPath(const QString &prexix, const QString &suffix);
-
-    /** True if this is directory and name is ".." */
-    bool isUpDirectory() const;
-    void clearChildren();
-
-private:
-    QList<UIFileTableItem*>         m_childItems;
-    /** Used to find children by path */
-    QMap<QString, UIFileTableItem*> m_childMap;
-    QList<QVariant>  m_itemData;
-    UIFileTableItem *m_parentItem;
-    bool             m_bIsDirectory;
-    bool             m_bIsOpened;
-    /** Full absolute path of the item. Without the trailing '/' */
-    QString          m_strPath;
-    /** For directories base name is the name of the lowest level directory
-        in strPath. eg. for 'm_strPath = /opt/qt5.6/examples' 'm_strBaseName = examples'
-        for files it is the name of the file */
-    QString          m_strBaseName;
-};
-
-
 /*********************************************************************************************************************************
 *   UIFileStringInputDialog implementation.                                                                                      *
 *********************************************************************************************************************************/
+
 UIStringInputDialog::UIStringInputDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags flags /* = 0 */)
     :QIDialog(pParent, flags)
 {
@@ -164,7 +113,6 @@ QString UIStringInputDialog::getString() const
         return QString();
     return m_pLineEdit->text();
 }
-
 
 /*********************************************************************************************************************************
 *   UIFileTableItem implementation.                                                                                              *
@@ -301,228 +249,6 @@ bool UIFileTableItem::isUpDirectory() const
 
 
 /*********************************************************************************************************************************
-*   UIGuestControlFileModel implementation.                                                                                      *
-*********************************************************************************************************************************/
-
-UIGuestControlFileModel::UIGuestControlFileModel(QObject *parent)
-    : QAbstractItemModel(parent)
-    , m_pParent(qobject_cast<UIGuestControlFileTable*>(parent))
-{
-    QList<QVariant> rootData;
-    // rootData << "Title" << "Summary";
-    // rootItem = new UIFileTableItem(rootData);
-}
-
-UIFileTableItem* UIGuestControlFileModel::rootItem() const
-{
-    if (!m_pParent)
-        return 0;
-    return m_pParent->m_pRootItem;
-}
-
-UIGuestControlFileModel::~UIGuestControlFileModel()
-{}
-
-int UIGuestControlFileModel::columnCount(const QModelIndex &parent) const
-{
-    if (parent.isValid())
-        return static_cast<UIFileTableItem*>(parent.internalPointer())->columnCount();
-    else
-    {
-        if (!rootItem())
-            return 0;
-        else
-            return rootItem()->columnCount();
-    }
-}
-
-bool UIGuestControlFileModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{
-    if (index.isValid() && role == Qt::EditRole)
-    {
-        UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
-        if (!item || !m_pParent)
-            return false;
-        if (m_pParent->renameItem(item, value.toString()))
-        {
-            item->setData(value, index.column());
-            emit dataChanged(index, index);
-        }
-        else
-        {
-            if (m_pParent)
-                m_pParent->emitLogOutput(QString(item->path()).append(" could not be renamed"));
-        }
-        return true;
-    }
-    return false;
-}
-
-QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
-{
-    if (!index.isValid())
-        return QVariant();
-    UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
-    if (!item)
-        return QVariant();
-
-    if (role == Qt::DisplayRole || role == Qt::EditRole)
-    {
-        /* dont show anything but the name for up directories: */
-        if (item->isUpDirectory() && index.column() != 0)
-            return QVariant();
-        /* Format date/time column: */
-        if (item->data(index.column()).canConvert(QMetaType::QDateTime))
-        {
-            QDateTime dateTime = item->data(index.column()).toDateTime();
-            if (dateTime.isValid())
-                return dateTime.toString("dd.MM.yyyy hh:mm:ss");
-        }
-        return item->data(index.column());
-    }
-
-    if (role == Qt::DecorationRole && index.column() == 0)
-    {
-        if (item->isDirectory())
-        {
-            if (item->isUpDirectory())
-                return QIcon(":/arrow_up_10px_x2.png");
-            else
-                return QIcon(":/sf_32px.png");
-        }
-        else
-            return QIcon(":/vm_open_filemanager_16px");
-    }
-
-    return QVariant();
-}
-
-Qt::ItemFlags UIGuestControlFileModel::flags(const QModelIndex &index) const
-{
-    if (!index.isValid())
-        return 0;
-    UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
-    if (!item)
-        return QAbstractItemModel::flags(index);
-
-    if (!item->isUpDirectory() && index.column() == 0)
-        return QAbstractItemModel::flags(index)  | Qt::ItemIsEditable;
-    return QAbstractItemModel::flags(index);
-}
-
-QVariant UIGuestControlFileModel::headerData(int section, Qt::Orientation orientation,
-                               int role) const
-{
-    if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-    {
-        if (!rootItem())
-            return QVariant();
-        else
-            return rootItem()->data(section);
-    }
-    return QVariant();
-}
-
-QModelIndex UIGuestControlFileModel::index(UIFileTableItem* item)
-{
-    if (!item)
-        return QModelIndex();
-    return createIndex(item->row(), 0, item);
-}
-
-QModelIndex UIGuestControlFileModel::index(int row, int column, const QModelIndex &parent)
-            const
-{
-    if (!hasIndex(row, column, parent))
-        return QModelIndex();
-
-    UIFileTableItem *parentItem;
-
-    if (!parent.isValid())
-        parentItem = rootItem();
-    else
-        parentItem = static_cast<UIFileTableItem*>(parent.internalPointer());
-    if (!parentItem)
-        return QModelIndex();
-
-    UIFileTableItem *childItem = parentItem->child(row);
-    if (childItem)
-        return createIndex(row, column, childItem);
-    else
-        return QModelIndex();
-}
-
-
-QModelIndex UIGuestControlFileModel::parent(const QModelIndex &index) const
-{
-    if (!index.isValid())
-        return QModelIndex();
-
-    UIFileTableItem *childItem = static_cast<UIFileTableItem*>(index.internalPointer());
-    UIFileTableItem *parentItem = childItem->parentItem();
-
-    if (parentItem == rootItem())
-        return QModelIndex();
-
-    return createIndex(parentItem->row(), 0, parentItem);
-}
-
-int UIGuestControlFileModel::rowCount(const QModelIndex &parent) const
-{
-    if (parent.column() > 0)
-        return 0;
-    UIFileTableItem *parentItem = 0;
-    if (!parent.isValid())
-        parentItem = rootItem();
-    else
-        parentItem = static_cast<UIFileTableItem*>(parent.internalPointer());
-    if (!parentItem)
-        return 0;
-    return parentItem->childCount();
-}
-
-void UIGuestControlFileModel::signalUpdate()
-{
-    emit layoutChanged();
-}
-
-QModelIndex UIGuestControlFileModel::rootIndex() const
-{
-    if (!rootItem())
-        return QModelIndex();
-    return createIndex(rootItem()->child(0)->row(), 0,
-                       rootItem()->child(0));
-}
-
-void UIGuestControlFileModel::beginReset()
-{
-    beginResetModel();
-}
-
-void UIGuestControlFileModel::endReset()
-{
-    endResetModel();
-}
-
-bool UIGuestControlFileModel::insertRows(int position, int rows, const QModelIndex &parent)
-{
-    UIFileTableItem *parentItem = static_cast<UIFileTableItem*>(parent.internalPointer());
-
-    if (!parentItem)
-        return false;
-    beginInsertRows(parent, position, position + rows -1);
-
-    QList<QVariant> data;
-    data << "New Item" << 0 << QDateTime::currentDateTime();
-    UIFileTableItem *newItem = new UIFileTableItem(data, true, parentItem);
-    parentItem->appendChild(newItem);
-    endInsertRows();
-
-    return true;
-}
-
-
-/*********************************************************************************************************************************
 *   UIGuestControlFileTable implementation.                                                                                      *
 *********************************************************************************************************************************/
 
@@ -531,7 +257,6 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pRootItem(0)
     , m_pView(0)
     , m_pModel(0)
-    , m_pTree(0)
     , m_pLocationLabel(0)
     , m_pGoHome(0)
     , m_pMainLayout(0)
