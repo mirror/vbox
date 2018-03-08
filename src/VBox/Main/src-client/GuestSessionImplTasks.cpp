@@ -492,7 +492,7 @@ int GuestSessionTask::fileCopyFromEx(const Utf8Str &strSource, const Utf8Str &st
     {
         LogFlowThisFunc(("procStatus=%d, exitCode=%d\n", procStatus, exitCode));
         if (procStatus == ProcessStatus_TerminatedNormally)
-            rc = GuestProcessTool::i_exitCodeToRc(procInfo, exitCode);
+            rc = GuestProcessTool::exitCodeToRc(procInfo, exitCode);
         else
             rc = VERR_GENERAL_FAILURE;
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -789,7 +789,7 @@ int GuestSessionTask::fileCopyToEx(const Utf8Str &strSource, const Utf8Str &strD
         {
             LogFlowThisFunc(("procStatus=%d, exitCode=%d\n", procStatus, exitCode));
             if (procStatus == ProcessStatus_TerminatedNormally)
-                rc = GuestProcessTool::i_exitCodeToRc(procInfo, exitCode);
+                rc = GuestProcessTool::exitCodeToRc(procInfo, exitCode);
             else
                 rc = VERR_GENERAL_FAILURE;
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -993,6 +993,8 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
     dirOpenInfo.mPath   = strSrcCur;
     dirOpenInfo.mFlags  = 0; /** @todo Handle flags? */
 
+RT_BREAKPOINT();
+
     ComObjPtr <GuestDirectory> pDir; int rcGuest;
     rc = mSession->i_directoryOpenInternal(dirOpenInfo, pDir, &rcGuest);
     if (RT_FAILURE(rc))
@@ -1017,6 +1019,8 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
         return rc;
     }
 
+RT_BREAKPOINT();
+
     ComObjPtr<GuestFsObjInfo> fsObjInfo;
     while (RT_SUCCESS(rc = pDir->i_readInternal(fsObjInfo, &rcGuest)))
     {
@@ -1028,9 +1032,13 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
         hr2 = fsObjInfo->COMGETTER(Name)(bstrName.asOutParam());
         AssertComRC(hr2);
 
+        LONG64 lCT = 0;
+        hr2 = fsObjInfo->COMGETTER(ChangeTime)(&lCT);
+        AssertComRC(hr2);
+
         Utf8Str strName(bstrName);
 
-        LogFlowThisFunc(("strName=%ls\n", strName.c_str()));
+        LogRel(("strName=%s, lCT=%RI64\n", strName.c_str(), lCT));
 
         switch (enmObjType)
         {
@@ -1047,6 +1055,8 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
                 if (   strFilter.isNotEmpty()
                     && !RTStrSimplePatternMatch(strFilter.c_str(), strName.c_str()))
                     fSkip = true;
+
+    fSkip = true;
 
                 if (   fRecursive
                     && !fSkip)
@@ -1089,7 +1099,11 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
     if (rc == VERR_NO_MORE_FILES) /* Reading done? */
         rc = VINF_SUCCESS;
 
+RT_BREAKPOINT();
+
     pDir->i_closeInternal(&rcGuest);
+
+RT_BREAKPOINT();
 
     LogFlowFunc(("Leaving '%s', rc=%Rrc\n", strSrcCur.c_str(), rc));
     return rc;
@@ -1713,13 +1727,13 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
 
     GuestProcessTool procTool;
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = procTool.Init(pSession, procInfo, false /* Async */, &rcGuest);
+    int vrc = procTool.init(pSession, procInfo, false /* Async */, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
         if (RT_SUCCESS(rcGuest))
-            vrc = procTool.i_wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &rcGuest);
+            vrc = procTool.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &rcGuest);
         if (RT_SUCCESS(vrc))
-            vrc = procTool.i_terminatedOk();
+            vrc = procTool.terminatedOk();
     }
 
     if (RT_FAILURE(vrc))
@@ -1729,7 +1743,7 @@ int SessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProc
             case VWRN_GSTCTL_PROCESS_EXIT_CODE:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Running update file \"%s\" on guest failed: %Rrc"),
-                                               procInfo.mExecutable.c_str(), procTool.i_getRc()));
+                                               procInfo.mExecutable.c_str(), procTool.getRc()));
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:

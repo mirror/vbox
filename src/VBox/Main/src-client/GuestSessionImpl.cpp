@@ -701,7 +701,7 @@ int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMo
     }
 
     if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::i_run(this, procInfo, pGuestRc);
+        vrc = GuestProcessTool::run(this, procInfo, pGuestRc);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -854,7 +854,7 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
      *        we now can run in a user-dedicated session. */
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     GuestCtrlStreamObjects stdOut;
-    int vrc = GuestProcessTool::i_runEx(this, procInfo,
+    int vrc = GuestProcessTool::runEx(this, procInfo,
                                         &stdOut, 1 /* cStrmOutObjects */,
                                         &vrcGuest);
     if (!GuestProcess::i_isGuestError(vrc))
@@ -1249,7 +1249,7 @@ int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
     }
 
     if (RT_SUCCESS(vrc))
-        vrc = GuestProcessTool::i_run(this, procInfo, pGuestRc);
+        vrc = GuestProcessTool::run(this, procInfo, pGuestRc);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1419,7 +1419,7 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
 
     int vrcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     GuestCtrlStreamObjects stdOut;
-    int vrc = GuestProcessTool::i_runEx(this, procInfo,
+    int vrc = GuestProcessTool::runEx(this, procInfo,
                                         &stdOut, 1 /* cStrmOutObjects */,
                                         &vrcGuest);
     if (!GuestProcess::i_isGuestError(vrc))
@@ -2780,16 +2780,16 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
                 break;
 
             case VERR_INVALID_PARAMETER:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Invalid parameters given"));
-               break;
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Invalid parameters given"));
+                break;
 
             case VERR_BROKEN_PIPE:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Unexpectedly aborted"));
-               break;
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Unexpectedly aborted"));
+                break;
 
             default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %Rrc"), rc);
-               break;
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %Rrc"), rc);
+                break;
         }
     }
 

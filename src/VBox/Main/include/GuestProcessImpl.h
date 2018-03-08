@@ -86,7 +86,7 @@ protected:
     int i_onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int i_prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
     int i_setProcessStatus(ProcessStatus_T procStatus, int procRc);
-    static void i_startProcessThreadTask(GuestProcessStartTask *pTask);
+    static int i_startProcessThreadTask(GuestProcessStartTask *pTask);
     /** @}  */
 
 private:
@@ -212,41 +212,41 @@ public:
 
 public:
 
-    int Init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, bool fAsync, int *pGuestRc);
+    int init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, bool fAsync, int *pGuestRc);
 
-    int i_getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock);
+    int getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock);
 
-    int i_getRc(void) const;
+    int getRc(void) const;
 
-    GuestProcessStream &i_getStdOut(void) { return mStdOut; }
+    GuestProcessStream &getStdOut(void) { return mStdOut; }
 
-    GuestProcessStream &i_getStdErr(void) { return mStdErr; }
+    GuestProcessStream &getStdErr(void) { return mStdErr; }
 
-    int i_wait(uint32_t fFlags, int *pGuestRc);
+    int wait(uint32_t fFlags, int *pGuestRc);
 
-    int i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBlock, int *pGuestRc);
+    int waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBlock, int *pGuestRc);
 
-    bool i_isRunning(void);
+    bool isRunning(void);
 
-    int i_terminatedOk(int32_t *piExitCode = NULL);
+    int terminatedOk(int32_t *piExitCode = NULL);
 
-    int i_terminate(uint32_t uTimeoutMS, int *pGuestRc);
+    int terminate(uint32_t uTimeoutMS, int *pGuestRc);
 
 public:
 
-    static int i_run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pGuestRc);
+    static int run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pGuestRc);
 
-    static int i_runErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestProcessToolErrorInfo &errorInfo);
+    static int runErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestProcessToolErrorInfo &errorInfo);
 
-    static int i_runEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
-                       GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, int *pGuestRc);
+    static int runEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
+                     GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, int *pGuestRc);
 
-    static int i_runExErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
-                                GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, GuestProcessToolErrorInfo &errorInfo);
+    static int runExErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
+                              GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, GuestProcessToolErrorInfo &errorInfo);
 
-    static int i_exitCodeToRc(const GuestProcessStartupInfo &startupInfo, int32_t iExitCode);
+    static int exitCodeToRc(const GuestProcessStartupInfo &startupInfo, int32_t iExitCode);
 
-    static int i_exitCodeToRc(const char *pszTool, int32_t iExitCode);
+    static int exitCodeToRc(const char *pszTool, int32_t iExitCode);
 
 protected:
 
@@ -255,7 +255,6 @@ protected:
     GuestProcessStartupInfo     mStartupInfo;
     GuestProcessStream          mStdOut;
     GuestProcessStream          mStdErr;
-
 };
 
 #endif /* !____H_GUESTPROCESSIMPL */

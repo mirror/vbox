@@ -105,7 +105,7 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession,
          * it later in subsequent read() calls.
          * Note: No guest rc available because operation is asynchronous.
          */
-        vrc = mData.mProcessTool.Init(mSession, procInfo,
+        vrc = mData.mProcessTool.init(mSession, procInfo,
                                       true /* Async */, NULL /* Guest rc */);
     }
 
@@ -252,7 +252,7 @@ int GuestDirectory::i_closeInternal(int *pGuestRc)
 {
     AssertPtrReturn(pGuestRc, VERR_INVALID_POINTER);
 
-    int rc = mData.mProcessTool.i_terminate(30 * 1000 /* 30s timeout */, pGuestRc);
+    int rc = mData.mProcessTool.terminate(30 * 1000 /* 30s timeout */, pGuestRc);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -282,7 +282,7 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pG
         return VERR_COM_UNEXPECTED;
 
     GuestProcessStreamBlock curBlock;
-    int rc = mData.mProcessTool.i_waitEx(GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK,
+    int rc = mData.mProcessTool.waitEx(GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK,
                                          &curBlock, pGuestRc);
     if (RT_SUCCESS(rc))
     {
@@ -290,8 +290,8 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pG
          * Note: The guest process can still be around to serve the next
          *       upcoming stream block next time.
          */
-        if (!mData.mProcessTool.i_isRunning())
-            rc = mData.mProcessTool.i_terminatedOk();
+        if (!mData.mProcessTool.isRunning())
+            rc = mData.mProcessTool.terminatedOk();
 
         if (RT_SUCCESS(rc))
         {
@@ -390,7 +390,7 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 
             case VWRN_GSTCTL_PROCESS_EXIT_CODE:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: %Rrc"),
-                              mData.mOpenInfo.mPath.c_str(), mData.mProcessTool.i_getRc());
+                              mData.mOpenInfo.mPath.c_str(), mData.mProcessTool.getRc());
                 break;
 
             case VERR_PATH_NOT_FOUND:
