@@ -177,7 +177,7 @@ typedef struct VMCPU
 #ifdef ___NEMInternal_h
         struct NEMCPU       s;
 #endif
-        uint8_t             padding[256];       /* multiple of 64 */
+        uint8_t             padding[512];       /* multiple of 64 */
     } nem;
 
     /** TRPM part. */
@@ -266,7 +266,7 @@ typedef struct VMCPU
     STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[1848];
+    uint8_t                 abAlignment2[1592];
 
     /** PGM part. */
     union VMCPUUNIONPGM

@@ -838,6 +838,7 @@ NEM_TMPL_STATIC int nemHCWinCancelRunVirtualProcessor(PVM pVM, PVMCPU pVCpu)
                 if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED, VMCPUSTATE_STARTED_EXEC_NEM))
                 {
                     Log8(("nemHCWinCancelRunVirtualProcessor: Switched %u to canceled state\n", pVCpu->idCpu));
+                    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatCancelChangedState);
                     return VINF_SUCCESS;
                 }
                 break;
@@ -853,7 +854,10 @@ NEM_TMPL_STATIC int nemHCWinCancelRunVirtualProcessor(PVM pVM, PVMCPU pVCpu)
                     Log8(("nemHCWinCancelRunVirtualProcessor: Alerted %u: %#x\n", pVCpu->idCpu, rcNt));
                     Assert(rcNt == STATUS_SUCCESS);
                     if (NT_SUCCESS(rcNt))
+                    {
+                        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatCancelAlertedThread);
                         return VINF_SUCCESS;
+                    }
                     AssertLogRelMsgFailedReturn(("NtAlertThread failed: %#x\n", rcNt), RTErrConvertFromNtStatus(rcNt));
                 }
                 break;
@@ -1453,17 +1457,21 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
         {
             case HvMessageTypeUnmappedGpa:
                 Assert(pMsg->Header.PayloadSize == RT_UOFFSETOF(HV_X64_MEMORY_INTERCEPT_MESSAGE, DsSegment));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMemUnmapped);
                 return nemHCWinHandleMessageMemory(pVM, pVCpu, &pMsg->X64MemoryIntercept, pCtx, pGVCpu);
 
             case HvMessageTypeGpaIntercept:
                 Assert(pMsg->Header.PayloadSize == RT_UOFFSETOF(HV_X64_MEMORY_INTERCEPT_MESSAGE, DsSegment));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMemIntercept);
                 return nemHCWinHandleMessageMemory(pVM, pVCpu, &pMsg->X64MemoryIntercept, pCtx, pGVCpu);
 
             case HvMessageTypeX64IoPortIntercept:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64IoPortIntercept));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitPortIo);
                 return nemHCWinHandleMessageIoPort(pVM, pVCpu, &pMsg->X64IoPortIntercept, pCtx, pGVCpu);
 
             case HvMessageTypeX64Halt:
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHalt);
                 return VINF_EM_HALT;
 
             case HvMessageTypeX64InterruptWindow:
@@ -1535,6 +1543,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
     if (NT_SUCCESS(rcNt))
     {
         Log8(("nemHCWinStopCpu: Stopping CPU succeeded (cpu status %u)\n", nemHCWinCpuGetRunningStatus(pVCpu) ));
+        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuSuccess);
         return rcStrict;
     }
 # else
@@ -1542,6 +1551,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
     if (fRet)
     {
         Log8(("nemHCWinStopCpu: Stopping CPU succeeded (cpu status %u)\n", nemHCWinCpuGetRunningStatus(pVCpu) ));
+        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuSuccess);
         return rcStrict;
     }
     RT_NOREF(pGVM, pGVCpu);
@@ -1559,6 +1569,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
                           RT_SUCCESS(rcStrict) ?  VERR_INTERNAL_ERROR_3 : rcStrict);
 # endif
     Log8(("nemHCWinStopCpu: Stopping CPU pending...\n"));
+    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuPending);
 
     /*
      * First message: Exit or similar.
@@ -1651,6 +1662,18 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
 # endif
 
     /*
+     * Try switch to NEM runloop state.
+     */
+    if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED))
+    { /* likely */ }
+    else
+    {
+        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
+        LogFlow(("NEM/%u: returning immediately because canceled\n", pVCpu->idCpu));
+        return VINF_SUCCESS;
+    }
+
+    /*
      * The run loop.
      *
      * Current approach to state updating to use the sledgehammer and sync
@@ -1703,7 +1726,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                 pVCpu->nem.s.fHandleAndGetFlags = VID_MSHAGN_F_GET_NEXT_MESSAGE;
             }
 
-            if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_WAIT, VMCPUSTATE_STARTED))
+            if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_WAIT, VMCPUSTATE_STARTED_EXEC_NEM))
             {
 # ifdef IN_RING0
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
@@ -1713,12 +1736,12 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                                                         &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
                                                         sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
                                                         NULL, 0);
-                VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
+                VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
                 if (rcNt == STATUS_SUCCESS)
 # else
                 BOOL fRet = VidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
                                                            pVCpu->nem.s.fHandleAndGetFlags, cMillies);
-                VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
+                VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
                 if (fRet)
 # endif
                 {
@@ -1732,6 +1755,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                     else
                     {
                         LogFlow(("NEM/%u: breaking: nemHCWinHandleMessage -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+                        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
                         break;
                     }
                 }
@@ -1749,7 +1773,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                                           || rcNt == STATUS_USER_APC /* ditto */
                                           , ("VidMessageSlotHandleAndGetNext failed for CPU #%u: %#x (%u)\n", pVCpu->idCpu, rcNt, rcNt),
                                           VERR_INTERNAL_ERROR_3);
-                    pVCpu->nem.s.fHandleAndGetFlags = VID_MSHAGN_F_GET_NEXT_MESSAGE; /* exits are likely */
+                    pVCpu->nem.s.fHandleAndGetFlags = VID_MSHAGN_F_GET_NEXT_MESSAGE;
+                    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatGetMsgTimeout);
                 }
 
                 /*
@@ -1763,12 +1788,19 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                  *        not to set important RCs here unless we've handled a message. */
                 LogFlow(("NEM/%u: breaking: pending FF (%#x / %#x)\n",
                          pVCpu->idCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPost);
             }
             else
+            {
                 LogFlow(("NEM/%u: breaking: canceled %d (pre exec)\n", pVCpu->idCpu, VMCPU_GET_STATE(pVCpu) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnCancel);
+            }
         }
         else
+        {
             LogFlow(("NEM/%u: breaking: pending FF (pre exec)\n", pVCpu->idCpu));
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPre);
+        }
         break;
     } /* the run loop */
 
@@ -1783,7 +1815,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         rcStrict = nemHCWinStopCpu(pVM, pVCpu, rcStrict, pMappingHeader, pGVM, pGVCpu);
     }
 
-    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
+    if (!VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM))
+        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
 
     if (pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT)))
     {

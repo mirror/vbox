@@ -210,6 +210,23 @@ typedef struct NEMCPU
         VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT MsgSlotHandleAndGetNext;
 # endif
     } uIoCtlBuf;
+
+    /** @name Statistics
+     * @{ */
+    STAMCOUNTER                 StatExitPortIo;
+    STAMCOUNTER                 StatExitMemUnmapped;
+    STAMCOUNTER                 StatExitMemIntercept;
+    STAMCOUNTER                 StatExitHalt;
+    STAMCOUNTER                 StatGetMsgTimeout;
+    STAMCOUNTER                 StatStopCpuSuccess;
+    STAMCOUNTER                 StatStopCpuPending;
+    STAMCOUNTER                 StatCancelChangedState;
+    STAMCOUNTER                 StatCancelAlertedThread;
+    STAMCOUNTER                 StatBreakOnCancel;
+    STAMCOUNTER                 StatBreakOnFFPre;
+    STAMCOUNTER                 StatBreakOnFFPost;
+    STAMCOUNTER                 StatBreakOnStatus;
+    /** @} */
 #endif
 } NEMCPU;
 /** Pointer to NEM VMCPU instance data. */

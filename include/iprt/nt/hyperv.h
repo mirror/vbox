@@ -197,6 +197,7 @@ typedef enum
     HvCallPrecommitGpaPages = 0xbe,
     HvCallUncommitGpaPages,             /**< Happens when VidDestroyGpaRangeCheckSecure/WHvUnmapGpaRange is called. */
     /* 0xc0..0xcb are unknown */
+    HvCallVpRunloopRelated = 0xc2,      /**< Fast */
     HvCallQueryVtlProtectionMaskRange = 0xcc,
     HvCallModifyVtlProtectionMaskRange,
     /* 0xce..0xd1 are unknown */

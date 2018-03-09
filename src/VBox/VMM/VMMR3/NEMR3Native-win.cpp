@@ -1099,6 +1099,25 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                     {
                         VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
                         Log(("NEM: Marked active!\n"));
+
+                        /* Register release statistics */
+                        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+                        {
+                            PNEMCPU pNemCpu = &pVM->aCpus[iCpu].nem.s;
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitPortIo,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of port I/O exits",               "/NEM/CPU%u/ExitPortIo", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitMemUnmapped,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unmapped memory exits",        "/NEM/CPU%u/ExitMemUnmapped", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitMemIntercept,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of intercepted memory exits",     "/NEM/CPU%u/ExitMemIntercept", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitHalt,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitHalt", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPending,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stops",            "/NEM/CPU%u/StopCpuPending", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatCancelChangedState,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel changed state",         "/NEM/CPU%u/CancelChangedState", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatCancelAlertedThread, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel alerted EMT",           "/NEM/CPU%u/CancelAlertedEMT", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPre,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pre execution FF breaks",      "/NEM/CPU%u/BreakOnFFPre", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPost,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of post execution FF breaks",     "/NEM/CPU%u/BreakOnFFPost", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnCancel,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel execution breaks",      "/NEM/CPU%u/BreakOnCancel", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnStatus,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of status code breaks",           "/NEM/CPU%u/BreakOnStatus", iCpu);
+                        }
                     }
                 }
             }
@@ -1274,6 +1293,9 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
 
 int nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
+    //BOOL fRet = SetThreadPriority(GetCurrentThread(), 0);
+    //AssertLogRel(fRet);
+
     NOREF(pVM); NOREF(enmWhat);
     return VINF_SUCCESS;
 }
@@ -2234,10 +2256,10 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * setting up the partition and call WHvCreateVirtualProcessor for each of them.
  * The CPU creation function boils down to a VidMessageSlotMap call that sets up
  * and maps a message buffer into ring-3 for async communication with hyper-V
- * and/or the VID.SYS thread actually running the CPU.  When for instance a
- * VMEXIT is encountered, hyper-V sends a message that the
- * WHvRunVirtualProcessor API retrieves (and later acknowledges) via
- * VidMessageSlotHandleAndGetNext.  It should be noteded that
+ * and/or the VID.SYS thread actually running the CPU thru
+ * WinHvRunVpDispatchLoop().  When for instance a VMEXIT is encountered, hyper-V
+ * sends a message that the WHvRunVirtualProcessor API retrieves (and later
+ * acknowledges) via VidMessageSlotHandleAndGetNext.  It should be noteded that
  * WHvDeleteVirtualProcessor doesn't do much as there seems to be no partner
  * function VidMessagesSlotMap that reverses what it did.
  *
@@ -2256,7 +2278,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * asynchronously starts or resumes hyper-V CPU execution and then waits for an
  * VMEXIT message.  Hyper-V / VID.SYS will return information about the message
  * in the message buffer mapping, and WHvRunVirtualProcessor will convert that
- * into it's own WHV_RUN_VP_EXIT_CONTEXT format.
+ * finto it's own WHV_RUN_VP_EXIT_CONTEXT format.
  *
  * Other threads can interrupt the execution by using WHvCancelVirtualProcessor,
  * which which case the thread in WHvRunVirtualProcessor is woken up via a dummy
@@ -2286,6 +2308,26 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *
  *   When using the offical WinHvPlatform API, the numbers are %3 for port I/O
  *   and 5% for MMIO.
+ *
+ *   While the tests we've done are using tight tight loops only doing port I/O
+ *   and MMIO, the problem is clearly visible when running regular guest OSes.
+ *   Anything that hammers the VGA device would be suffering, for example:
+ *
+ *       - Windows 2000 boot screen animation overloads us with MMIO exits
+ *         and won't even boot because all the time is spent in interrupt
+ *         handlers and redrawin the screen.
+ *
+ *       - DSL 4.4 and its bootmenu logo is slower than molasses in january.
+ *
+ *   We have not found a workaround for this yet.
+ *
+ *   Something that might improve the issue a little is to detect blocks with
+ *   excessive MMIO and port I/O exits and emulate instructions to cover
+ *   multiple exits before letting Hyper-V have a go at the guest execution
+ *   again.  This will only improve the situation under some circumstances,
+ *   since emulating instructions without recompilation can be expensive, so
+ *   there will only be real gains if the exitting instructions are tightly
+ *   packed.
  *
  *
  * - The WHvCancelVirtualProcessor API schedules a dummy usermode APC callback
@@ -2416,11 +2458,12 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   wouldn't be a problem if HV_REGISTER_NAME was used, see previous point.
  *
  *
- * - Why does WINHVR.SYS (or VID.SYS) only query/set 32 registers at the time
- *   thru the HvCallGetVpRegisters and HvCallSetVpRegisters hypercalls?
+ * - Why does VID.SYS only query/set 32 registers at the time thru the
+ *   HvCallGetVpRegisters and HvCallSetVpRegisters hypercalls?
  *
  *   We've not trouble getting/setting all the registers defined by
- *   WHV_REGISTER_NAME in one hypercall (around 80)...
+ *   WHV_REGISTER_NAME in one hypercall (around 80).  Some kind of stack
+ *   buffering or similar?
  *
  *
  * - The I/O port exit context information seems to be missing the address size
