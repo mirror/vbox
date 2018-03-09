@@ -446,7 +446,7 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const ch
     if (fFlags & RTR3INIT_FLAGS_SUPLIB)
     {
         rc = SUPR3Init(NULL);
-        AssertMsgRCReturn(rc, ("Failed to initializable the support library, rc=%Rrc!\n", rc), rc);
+        AssertMsgRCReturn(rc, ("Failed to initialize the support library, rc=%Rrc!\n", rc), rc);
     }
 #endif
 
