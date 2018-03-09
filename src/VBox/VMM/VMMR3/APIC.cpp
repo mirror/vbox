@@ -408,6 +408,9 @@ VMMR3_INT_DECL(void) APICR3HvSetCompatMode(PVM pVM, bool fHyperVCompatMode)
     PAPIC pApic = VM_TO_APIC(pVM);
     pApic->fHyperVCompatMode = fHyperVCompatMode;
 
+    if (fHyperVCompatMode)
+        LogRel(("APIC: Enabling Hyper-V x2APIC compatibility mode\n"));
+
     int rc = CPUMR3MsrRangesInsert(pVM, &g_MsrRange_x2Apic);
     AssertLogRelRC(rc);
 }
