@@ -917,10 +917,11 @@ function svnHistoryTooltipCalcId(sRepository, iRevision)
  * @param   oEvt        The event.
  * @param   sRepository The repository name.
  * @param   iRevision   The revision number.
+ * @param   sUrlPrefix  URL prefix for non-testmanager use.
  *
  * @remarks onmouseout must be set to call tooltipHide.
  */
-function svnHistoryTooltipShow(oEvt, sRepository, iRevision)
+function svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, sUrlPrefix)
 {
     var sKey        = svnHistoryTooltipCalcId(sRepository, iRevision);
     var oTooltip    = g_dTooltips[sKey];
@@ -971,7 +972,7 @@ function svnHistoryTooltipShow(oEvt, sRepository, iRevision)
             oSubElement = oTooltip.oIFrame;
         }
 
-        oSubElement.setAttribute('src', 'index.py?Action=VcsHistoryTooltip&repo=' + sRepository
+        oSubElement.setAttribute('src', sUrlPrefix + 'index.py?Action=VcsHistoryTooltip&repo=' + sRepository
                                  + '&rev=' + svnHistoryTooltipCalcLastRevision(iRevision)
                                  + '&cEntries=' + g_cTooltipSvnRevisions
                                  + '#r' + iRevision);
@@ -986,6 +987,20 @@ function svnHistoryTooltipShow(oEvt, sRepository, iRevision)
      */
     tooltipResetShowTimer();
     g_idTooltipShowTimer = setTimeout(svnHistoryTooltipDelayedShow, 512);
+}
+
+/**
+ * The onmouseenter event handler for creating the tooltip.
+ *
+ * @param   oEvt        The event.
+ * @param   sRepository The repository name.
+ * @param   iRevision   The revision number.
+ *
+ * @remarks onmouseout must be set to call tooltipHide.
+ */
+function svnHistoryTooltipShow(oEvt, sRepository, iRevision)
+{
+    return svnHistoryTooltipShowEx(oEvt, sRepository, iRevision, '')
 }
 
 /** @} */
