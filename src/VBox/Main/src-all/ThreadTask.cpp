@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2015-2017 Oracle Corporation
+ * Copyright (C) 2015-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,8 @@
 #include "VirtualBoxBase.h"
 #include "ThreadTask.h"
 
+#define LOG_GROUP LOG_GROUP_MAIN_THREAD_TASK
+#include "LoggingNew.h"
 
 /**
  * Starts the task (on separate thread), consuming @a this.
@@ -73,6 +75,8 @@ HRESULT ThreadTask::createThreadWithType(RTTHREADTYPE enmType)
  */
 HRESULT ThreadTask::createThreadInternal(RTTHREADTYPE enmType)
 {
+    LogThisFunc(("Created \"%s\"\n", m_strTaskName.c_str()));
+
     mAsync = true;
     int vrc = RTThreadCreate(NULL,
                              taskHandlerThreadProc,
@@ -80,7 +84,7 @@ HRESULT ThreadTask::createThreadInternal(RTTHREADTYPE enmType)
                              0,
                              enmType,
                              0,
-                             this->getTaskName().c_str());
+                             m_strTaskName.c_str());
     if (RT_SUCCESS(vrc))
         return S_OK;
 
@@ -101,10 +105,14 @@ HRESULT ThreadTask::createThreadInternal(RTTHREADTYPE enmType)
 
     ThreadTask *pTask = static_cast<ThreadTask *>(pvUser);
 
+    LogFunc(("Started \"%s\"\n", pTask->m_strTaskName.c_str()));
+
     /*
      *  handler shall catch and process all possible cases as errors and exceptions.
      */
     pTask->handler();
+
+    LogFunc(("Ended \"%s\"\n", pTask->m_strTaskName.c_str()));
 
     delete pTask;
     return VINF_SUCCESS;

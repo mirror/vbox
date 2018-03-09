@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -617,6 +617,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_STORAGEDEVICECHANGEDEVENT,
     /** Main group, ISystemProperties. */
     LOG_GROUP_MAIN_SYSTEMPROPERTIES,
+    /** Main group, threaded tasks. */
+    LOG_GROUP_MAIN_THREAD_TASK,
     /** Main group, IToken. */
     LOG_GROUP_MAIN_TOKEN,
     /** Main group, IUnattended. */
@@ -1113,6 +1115,7 @@ typedef enum LOGGROUP
     "MAIN_STORAGECONTROLLERCHANGEDEVENT", \
     "MAIN_STORAGEDEVICECHANGEDEVENT", \
     "MAIN_SYSTEMPROPERTIES", \
+    "MAIN_THREAD_TASK", \
     "MAIN_TOKEN", \
     "MAIN_UNATTENDED", \
     "MAIN_USBCONTROLLER", \
