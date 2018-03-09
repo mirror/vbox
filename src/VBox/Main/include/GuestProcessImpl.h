@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -222,9 +222,9 @@ public:
 
     GuestProcessStream &getStdErr(void) { return mStdErr; }
 
-    int wait(uint32_t fFlags, int *pGuestRc);
+    int wait(uint32_t fToolWaitFlags, int *pGuestRc);
 
-    int waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBlock, int *pGuestRc);
+    int waitEx(uint32_t fToolWaitFlags, GuestProcessStreamBlock *pStreamBlock, int *pGuestRc);
 
     bool isRunning(void);
 
@@ -234,6 +234,8 @@ public:
 
 public:
 
+    /** Wrapped @name Static run methods.
+     * @{ */
     static int run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pGuestRc);
 
     static int runErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestProcessToolErrorInfo &errorInfo);
@@ -243,17 +245,26 @@ public:
 
     static int runExErrorInfo(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
                               GuestCtrlStreamObjects *pStrmOutObjects, uint32_t cStrmOutObjects, GuestProcessToolErrorInfo &errorInfo);
+    /** @}  */
 
+    /** Wrapped @name Static exit code conversion methods.
+     * @{ */
     static int exitCodeToRc(const GuestProcessStartupInfo &startupInfo, int32_t iExitCode);
 
     static int exitCodeToRc(const char *pszTool, int32_t iExitCode);
+    /** @}  */
 
 protected:
 
+    /** Pointer to session this toolbox object is bound to. */
     ComObjPtr<GuestSession>     pSession;
+    /** Pointer to process object this toolbox object is bound to. */
     ComObjPtr<GuestProcess>     pProcess;
+    /** The toolbox' startup info. */
     GuestProcessStartupInfo     mStartupInfo;
+    /** Stream object for handling the toolbox' stdout data. */
     GuestProcessStream          mStdOut;
+    /** Stream object for handling the toolbox' stderr data. */
     GuestProcessStream          mStdErr;
 };
 
