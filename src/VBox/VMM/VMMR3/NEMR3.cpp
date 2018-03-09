@@ -22,7 +22,7 @@
  * can.   Since this is host specific in nature, information about an
  * implementation is contained in the NEMR3Native-xxxx.cpp files.
  *
- * @rel pg_nem_win
+ * @ref pg_nem_win
  */
 
 

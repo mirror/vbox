@@ -2223,12 +2223,12 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * VID API that actually creates the partition is first engaged when you call
  * WHvSetupPartition after first setting a lot of properties using
  * WHvSetPartitionProperty.  Since the VID API is just a very thin wrapper
- * around CreateFile and NtDeviceIoControl, it returns an actual HANDLE for the
- * partition WinHvPlatform.  We fish this HANDLE out of the WinHvPlatform
+ * around CreateFile and NtDeviceIoControlFile, it returns an actual HANDLE for
+ * the partition WinHvPlatform.  We fish this HANDLE out of the WinHvPlatform
  * partition structures because we need to talk directly to VID for reasons
  * we'll get to in a bit.  (Btw. we could also intercept the CreateFileW or
- * NtDeviceIoControl calls from VID.DLL to get the HANDLE should fishing in the
- * partition structures become difficult.)
+ * NtDeviceIoControlFile calls from VID.DLL to get the HANDLE should fishing in
+ * the partition structures become difficult.)
  *
  * The WinHvPlatform API requires us to both set the number of guest CPUs before
  * setting up the partition and call WHvCreateVirtualProcessor for each of them.
@@ -2276,6 +2276,17 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * @subsection subsec_nem_win_whv_cons  Issues / Disadvantages
  *
  * Here are some observations (mostly against build 17101):
+ *
+ * - The VMEXIT performance is dismal (build 17101).
+ *
+ *   Our proof of concept implementation with a kernel runloop (i.e. not using
+ *   WHvRunVirtualProcessor and friends, but calling VID.SYS fast I/O control
+ *   entry point directly) delivers 9-10% of the port I/O performance and only
+ *   6-7% of the MMIO performance that we have with our own hypervisor.
+ *
+ *   When using the offical WinHvPlatform API, the numbers are %3 for port I/O
+ *   and 5% for MMIO.
+ *
  *
  * - The WHvCancelVirtualProcessor API schedules a dummy usermode APC callback
  *   in order to cancel any current or future alertable wait in VID.SYS during
@@ -2452,7 +2463,46 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *
  * @section sec_nem_win_impl    Our implementation.
  *
- * Tomorrow...
+ * We set out with the goal of wanting to run as much as possible in ring-0,
+ * reasoning that this would give use the best performance.
+ *
+ * This goal was approached gradually, starting out with a pure WinHvPlatform
+ * implementation, gradually replacing parts: register access, guest memory
+ * handling, running virtual processors.  Then finally moving it all into
+ * ring-0, while keeping most of it configurable so that we could make
+ * comparisons (see NEMInternal.h and nemR3NativeRunGC()).
+ *
+ *
+ * @subsection subsect_nem_win_impl_ioctl       VID.SYS I/O control calls
+ *
+ * To run things in ring-0 we need to talk directly to VID.SYS thru its I/O
+ * control interface.  Looking at changes between like build 17083 and 17101 (if
+ * memory serves) a set of the VID I/O control numbers shifted a little, which
+ * means we need to determin them dynamically.  We currently do this by hooking
+ * the NtDeviceIoControlFile API call from VID.DLL and snooping up the
+ * parameters when making dummy calls to relevant APIs.  (We could also
+ * disassemble the relevant APIs and try fish out the information from that, but
+ * this is way simpler.)
+ *
+ * Issuing I/O control calls from ring-0 is facing a small challenge with
+ * respect to direct buffering.  When using direct buffering the device will
+ * typically check that the buffer is actually in the user address space range
+ * and reject kernel addresses.  Fortunately, we've got the cross context VM
+ * structure that is mapped into both kernel and user space, it's also locked
+ * and safe to access from kernel space.  So, we place the I/O control buffers
+ * in the per-CPU part of it (NEMCPU::uIoCtlBuf) and give the driver the user
+ * address if direct access buffering or kernel address if not.
+ *
+ * The I/O control calls are 'abstracted' in the support driver, see
+ * SUPR0IoCtlSetupForHandle(), SUPR0IoctlPerform() and SUPR0IoCtlCleanup().
+ *
+ *
+ * @subsection subsect_nem_win_impl_cpumctx     CPUMCTX
+ *
+ * Since the CPU state needs to live in Hyper-V when executing, we probably
+ * should not transfer more than necessary when handling VMEXITs.  To help us
+ * manage this CPUMCTX got a new field CPUMCTX::fExtrn that to indicate which
+ * part of the state is currently externalized (== in Hyper-V).
  *
  *
  */
