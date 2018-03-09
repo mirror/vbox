@@ -508,6 +508,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Ignore_Buggy_Test_Driver                  = ( 'Ignore',            'Buggy test driver' );
     ktReason_Ignore_Stale_Files                        = ( 'Ignore',            'Stale files' );
     ktReason_Buggy_Build_Broken_Build                  = ( 'Broken Build',      'Buggy build' );
+    ktReason_Unknown_VM_Start_Error                    = ( 'Unknown',           'VM Start Error' );
+    ktReason_Unknown_VM_Runtime_Error                  = ( 'Unknown',           'VM Runtime Error' );
     ## @}
 
     ## BSOD category.
@@ -883,6 +885,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' ),
         ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' ),
         ( True,  ktReason_Host_DoubleFreeHeap,                      'double free or corruption' ),
+        ( False, ktReason_Unknown_VM_Start_Error,                   'VMSetError: ' ),
+        ( False, ktReason_Unknown_VM_Runtime_Error,                 'Console: VM runtime error: fatal=true' ),
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
