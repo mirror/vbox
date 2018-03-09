@@ -42,6 +42,8 @@ typedef struct GVMCPU
 {
     /** VCPU id (0 - (pVM->cCpus - 1). */
     VMCPUID         idCpu;
+    /** Padding. */
+    uint32_t        uPadding;
 
     /** Handle to the EMT thread. */
     RTNATIVETHREAD  hEMT;
@@ -52,6 +54,9 @@ typedef struct GVMCPU
     PVMCPU          pVCpu;
     /** Pointer to the corresponding cross context VM structure. */
     PVM             pVM;
+
+    /** Padding so gvmm starts on a 64 byte boundrary. */
+    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 4*4 + 24 : 24];
 
     /** The GVMM per vcpu data. */
     union
@@ -73,6 +78,13 @@ typedef struct GVMCPU
     } nem;
 #endif
 } GVMCPU;
+AssertCompileMemberOffset(GVMCPU, gvmm,   64);
+#ifdef VBOX_WITH_NEM_R0
+AssertCompileMemberOffset(GVMCPU, nem,    64 + 64);
+AssertCompileSize(        GVMCPU,         64 + 64 + 64);
+#else
+AssertCompileSize(        GVMCPU,         64 + 64);
+#endif
 
 /** @} */
 
@@ -105,7 +117,8 @@ typedef struct GVM
     /** Number of Virtual CPUs, i.e. how many entries there are in aCpus.
      * Same same as VM::cCpus. */
     uint32_t        cCpus;
-    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 16 : 4];
+    /** Padding so gvmm starts on a 64 byte boundrary.   */
+    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 12 + 28 : 28];
 
     /** The GVMM per vm data. */
     union
@@ -148,15 +161,15 @@ typedef struct GVM
     /** GVMCPU array for the configured number of virtual CPUs. */
     GVMCPU          aCpus[1];
 } GVM;
-AssertCompileMemberOffset(GVM, gvmm,   40);
-AssertCompileMemberOffset(GVM, gmm,    40 + 256);
+AssertCompileMemberOffset(GVM, gvmm,   64);
+AssertCompileMemberOffset(GVM, gmm,    64 + 256);
 #ifdef VBOX_WITH_NEM_R0
-AssertCompileMemberOffset(GVM, nem,    40 + 256 + 512);
-AssertCompileMemberOffset(GVM, rawpci, 40 + 256 + 512 + 128);
-AssertCompileMemberOffset(GVM, aCpus,  40 + 256 + 512 + 128 + 64);
+AssertCompileMemberOffset(GVM, nem,    64 + 256 + 512);
+AssertCompileMemberOffset(GVM, rawpci, 64 + 256 + 512 + 128);
+AssertCompileMemberOffset(GVM, aCpus,  64 + 256 + 512 + 128 + 64);
 #else
-AssertCompileMemberOffset(GVM, rawpci, 40 + 256 + 512);
-AssertCompileMemberOffset(GVM, aCpus,  40 + 256 + 512 + 64);
+AssertCompileMemberOffset(GVM, rawpci, 64 + 256 + 512);
+AssertCompileMemberOffset(GVM, aCpus,  64 + 256 + 512 + 64);
 #endif
 
 /** The GVM::u32Magic value (Wayne Shorter). */
