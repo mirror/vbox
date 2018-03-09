@@ -298,6 +298,17 @@
           windows and automatic guest resizing will probably never be implemented
           due to inherent limitations of the OS/2 graphics system.</para>
         </listitem>
+
+        <listitem>
+          <para>Some guest operating systems pre-dating ATAPI CD-ROMs may exhibit
+          long delays or entirely fail to boot in certain configurations. This is
+          most likely to happen when an IDE/ATAPI CD-ROM exists alone on a primary
+          or secondary IDE channel.</para>
+          <para>One of the affected operating systems is MS OS/2 1.21 (fails to boot
+          with an error message referencing COUNTRY.SYS) and MS OS/2 1.3 (long delays).
+          To avoid such problems, disable the emulated IDE/ATAPI CD-ROM; the guest OS
+          cannot use it anyway.</para>
+        </listitem>
       </itemizedlist>
     </sect1>
 </chapter>
