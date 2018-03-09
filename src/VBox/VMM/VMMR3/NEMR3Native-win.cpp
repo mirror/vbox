@@ -2273,7 +2273,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * WHvGetVirtualProcessorRegisters.
  *
  *
- * @subsection subsec_nem_win_whv_cons  Issues / Disadvantages
+ * @subsection subsec_nem_win_whv_cons  Issues & Feedback
  *
  * Here are some observations (mostly against build 17101):
  *
