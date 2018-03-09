@@ -2370,6 +2370,15 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   (or the santity of our code).
  *
  *
+ * - Implementing A20 gate behavior is tedious, where as correctly emulating the
+ *   A20M# pin (present on 486 and later) is near impossible for SMP setups
+ *   (e.g. possiblity of two CPUs with different A20 status).
+ *
+ *   Workaround: Only do A20 on CPU 0, restricting the emulation to HMA.  We
+ *   unmap all pages related to HMA (0x100000..0x10ffff) when the A20 state
+ *   changes, lazily syncing the right pages back when accessed.
+ *
+ *
  * - WHVRunVirtualProcessor wastes time converting VID/Hyper-V messages to its
  *   own format (WHV_RUN_VP_EXIT_CONTEXT).
  *
