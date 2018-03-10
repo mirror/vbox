@@ -265,7 +265,7 @@ RTDECL(bool) RTSystemIsInsideVM(void);
  *
  * @remarks Windows NT only.  Requires IPRT to be initialized.
  */
-RTDECL(uint32_t) RTSystemGetNtBuildNo(void)
+RTDECL(uint32_t) RTSystemGetNtBuildNo(void);
 
 #endif /* RT_OS_WINDOWS */
 
