@@ -100,7 +100,6 @@ static decltype(WHvTranslateGva) *                  g_pfnWHvTranslateGva;
 static decltype(WHvCreateVirtualProcessor) *        g_pfnWHvCreateVirtualProcessor;
 static decltype(WHvDeleteVirtualProcessor) *        g_pfnWHvDeleteVirtualProcessor;
 static decltype(WHvRunVirtualProcessor) *           g_pfnWHvRunVirtualProcessor;
-static decltype(WHvGetRunExitContextSize) *         g_pfnWHvGetRunExitContextSize;
 static decltype(WHvCancelRunVirtualProcessor) *     g_pfnWHvCancelRunVirtualProcessor;
 static decltype(WHvGetVirtualProcessorRegisters) *  g_pfnWHvGetVirtualProcessorRegisters;
 static decltype(WHvSetVirtualProcessorRegisters) *  g_pfnWHvSetVirtualProcessorRegisters;
@@ -152,7 +151,6 @@ static const struct
     NEM_WIN_IMPORT(0, false, WHvDeleteVirtualProcessor),
     NEM_WIN_IMPORT(0, false, WHvRunVirtualProcessor),
     NEM_WIN_IMPORT(0, false, WHvCancelRunVirtualProcessor),
-    NEM_WIN_IMPORT(0, false, WHvGetRunExitContextSize),
     NEM_WIN_IMPORT(0, false, WHvGetVirtualProcessorRegisters),
     NEM_WIN_IMPORT(0, false, WHvSetVirtualProcessorRegisters),
 #endif
@@ -1534,7 +1532,8 @@ static void nemR3WinLogWHvExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
          * instructions max 32-bit wide?  Confused. */
         if (fExitInstr && pExitReason->IoPortAccess.InstructionByteCount > 0)
             Log2(("Exit: + Instruction %.*Rhxs\n",
-                  pExitReason->IoPortAccess.InstructionByteCount, pExitReason->IoPortAccess.InstructionBytes));
+                  pExitReason->IoPortAccess.InstructionByteCount,
+                  &pExitReason->IoPortAccess.InstructionBytes[g_uBuildNo >= 17110 ? 3 : 0]));
     }
 }
 # endif /* LOG_ENABLED */
@@ -1653,7 +1652,8 @@ static VBOXSTRICTRC nemR3WinWHvHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
     VBOXSTRICTRC rcStrict;
     if (pMemCtx->InstructionByteCount > 0)
         rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pMemCtx->VpContext.Rip,
-                                                pMemCtx->InstructionBytes, pMemCtx->InstructionByteCount);
+                                                &pMemCtx->InstructionBytes[g_uBuildNo >= 17110 ? 3 : 0],
+                                                pMemCtx->InstructionByteCount);
     else
         rcStrict = IEMExecOne(pVCpu);
     /** @todo do we need to do anything wrt debugging here?   */
@@ -1685,7 +1685,7 @@ static VBOXSTRICTRC nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
         /*
          * Simple port I/O.
          */
-        Assert(pCtx->rax == pIoPortCtx->Rax);
+        //Assert(pCtx->rax == pIoPortCtx->Rax); - sledgehammer
 
         static uint32_t const s_fAndMask[8] =
         { UINT32_MAX, UINT32_C(0xff), UINT32_C(0xffff), UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX };
@@ -2520,6 +2520,14 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   We've not trouble getting/setting all the registers defined by
  *   WHV_REGISTER_NAME in one hypercall (around 80).  Some kind of stack
  *   buffering or similar?
+ *
+ *
+ * - Wrong instruction length in the VpContext with unmapped GPA memory exit
+ *   contexts on 17115/AMD.
+ *
+ *   One byte "PUSH CS" was reported as 2 bytes, while a two byte
+ *   "MOV [EBX],EAX" was reported with a 1 byte instruction length.  Problem
+ *   naturally present in untranslated hyper-v messages.
  *
  *
  * - The I/O port exit context information seems to be missing the address size

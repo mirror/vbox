@@ -1261,12 +1261,31 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, 
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_EXECUTE);
+    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
 
     /*
      * Whatever we do, we must clear pending event ejection upon resume.
      */
     if (pMsg->Header.ExecutionState.InterruptionPending)
         pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_MASK;
+
+#if 0 /* Experiment: 20K -> 34K exit/s. */
+    if (   pMsg->Header.ExecutionState.EferLma
+        && pMsg->Header.CsSegment.Long
+        && pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE)
+    {
+        if (   pMsg->Header.Rip - (uint64_t)0xf65a < (uint64_t)(0xf662 - 0xf65a)
+            && pMsg->InstructionBytes[0] == 0x89
+            && pMsg->InstructionBytes[1] == 0x03)
+        {
+            pCtx->rip    = pMsg->Header.Rip + 2;
+            pCtx->fExtrn &= ~CPUMCTX_EXTRN_RIP;
+            AssertMsg(pMsg->Header.InstructionLength == 2, ("%#x\n", pMsg->Header.InstructionLength));
+            //Log(("%RX64 msg:\n%.80Rhxd\n", pCtx->rip, pMsg));
+            return VINF_SUCCESS;
+        }
+    }
+#endif
 
     /*
      * Ask PGM for information about the given GCPhys.  We need to check if we're
@@ -1317,6 +1336,13 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, 
     NOREF(pGVCpu);
 # endif
 
+    if (pMsg->Reserved1)
+        Log(("MemExit/Reserved1=%#x\n", pMsg->Reserved1));
+    if (pMsg->Header.ExecutionState.Reserved0 || pMsg->Header.ExecutionState.Reserved1)
+        Log(("MemExit/Hdr/State: Reserved0=%#x Reserved1=%#x\n", pMsg->Header.ExecutionState.Reserved0, pMsg->Header.ExecutionState.Reserved1));
+    //if (pMsg->InstructionByteCount > 0)
+    //    Log4(("InstructionByteCount=%#x %.16Rhxs\n", pMsg->InstructionByteCount, pMsg->InstructionBytes));
+
     if (pMsg->InstructionByteCount > 0)
         rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pMsg->Header.Rip,
                                                 pMsg->InstructionBytes, pMsg->InstructionByteCount);
@@ -1345,6 +1371,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, 
            || pMsg->AccessInfo.AccessSize == 4);
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
+    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
 
     /*
      * Whatever we do, we must clear pending event ejection upon resume.
