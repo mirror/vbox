@@ -53,6 +53,7 @@
 #include <iprt/ldr.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 
 
 /*********************************************************************************************************************************
@@ -70,6 +71,15 @@
 #define NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX        UINT32_C(42)
 /** VID I/O control detection: Fake timeout input. */
 #define NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT         UINT32_C(0x00080286)
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+#ifndef NEM_WIN_USE_17110_PLUS_WDK
+typedef HRESULT (WINAPI *PFNWHVGETCAPABILITY_17110)(WHV_CAPABILITY_CODE, void *, uint32_t, uint32_t *);
+typedef HRESULT (WINAPI *PFNWHVSETPARTITIONPROPERTY_17110)(WHV_PARTITION_HANDLE, WHV_PARTITION_PROPERTY_CODE, void *, uint32_t);
+#endif
 
 
 /*********************************************************************************************************************************
@@ -110,6 +120,10 @@ static decltype(VidSetVirtualProcessorState)       *g_pfnVidSetVirtualProcessorS
 static decltype(VidGetVirtualProcessorRunningStatus) *g_pfnVidGetVirtualProcessorRunningStatus;
 #endif
 /** @} */
+
+/** The Windows build number. */
+static uint32_t g_uBuildNo = 17110;
+
 
 
 /**
@@ -211,7 +225,7 @@ static const HV_X64_INTERCEPT_MESSAGE_HEADER *g_pX64MsgHdr;
 # define WHvSetVirtualProcessorRegisters            g_pfnWHvSetVirtualProcessorRegisters
 
 # define VidMessageSlotHandleAndGetNext             g_pfnVidMessageSlotHandleAndGetNext
-# define VidStartVirtualProcessor                    g_pfnVidStartVirtualProcessor
+# define VidStartVirtualProcessor                   g_pfnVidStartVirtualProcessor
 # define VidStopVirtualProcessor                    g_pfnVidStopVirtualProcessor
 
 #endif
@@ -511,6 +525,24 @@ static int nemR3WinInitProbeAndLoad(bool fForced, PRTERRINFO pErrInfo)
 
 
 /**
+ * Wrapper for different WHvGetCapability signatures.
+ */
+DECLINLINE(HRESULT) WHvGetCapabilityWrapper(WHV_CAPABILITY_CODE enmCap, WHV_CAPABILITY *pOutput, uint32_t cbOutput)
+{
+#ifdef NEM_WIN_USE_17110_PLUS_WDK
+    return g_pfnWHvGetCapability(enmCap, pOutput, cbOutput, NULL);
+#else
+    if (g_uBuildNo >= 17110)
+    {
+        PFNWHVGETCAPABILITY_17110 pfnNewVersion = (PFNWHVGETCAPABILITY_17110)g_pfnWHvGetCapability;
+        return pfnNewVersion(enmCap, &pOutput->HypervisorPresent, cbOutput - RT_OFFSETOF(WHV_CAPABILITY, HypervisorPresent), NULL);
+    }
+    return g_pfnWHvGetCapability(enmCap, pOutput, cbOutput);
+#endif
+}
+
+
+/**
  * Worker for nemR3NativeInit that gets the hypervisor capabilities.
  *
  * @returns VBox status code.
@@ -542,7 +574,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     WHV_CAPABILITY Caps;
     RT_ZERO(Caps);
     SetLastError(0);
-    HRESULT hrc = WHvGetCapability(WHvCapabilityCodeHypervisorPresent, &Caps, sizeof(Caps));
+    HRESULT hrc = WHvGetCapabilityWrapper(WHvCapabilityCodeHypervisorPresent, &Caps, sizeof(Caps));
     DWORD   rcWin = GetLastError();
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
@@ -562,7 +594,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
      * Check what extended VM exits are supported.
      */
     RT_ZERO(Caps);
-    hrc = WHvGetCapability(WHvCapabilityCodeExtendedVmExits, &Caps, sizeof(Caps));
+    hrc = WHvGetCapabilityWrapper(WHvCapabilityCodeExtendedVmExits, &Caps, sizeof(Caps));
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeExtendedVmExits failed: %Rhrc (Last=%#x/%u)",
@@ -582,7 +614,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
      * Check features in case they end up defining any.
      */
     RT_ZERO(Caps);
-    hrc = WHvGetCapability(WHvCapabilityCodeFeatures, &Caps, sizeof(Caps));
+    hrc = WHvGetCapabilityWrapper(WHvCapabilityCodeFeatures, &Caps, sizeof(Caps));
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeFeatures failed: %Rhrc (Last=%#x/%u)",
@@ -595,7 +627,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
      * Check that the CPU vendor is supported.
      */
     RT_ZERO(Caps);
-    hrc = WHvGetCapability(WHvCapabilityCodeProcessorVendor, &Caps, sizeof(Caps));
+    hrc = WHvGetCapabilityWrapper(WHvCapabilityCodeProcessorVendor, &Caps, sizeof(Caps));
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeProcessorVendor failed: %Rhrc (Last=%#x/%u)",
@@ -620,7 +652,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
      * CPU features, guessing these are virtual CPU features?
      */
     RT_ZERO(Caps);
-    hrc = WHvGetCapability(WHvCapabilityCodeProcessorFeatures, &Caps, sizeof(Caps));
+    hrc = WHvGetCapabilityWrapper(WHvCapabilityCodeProcessorFeatures, &Caps, sizeof(Caps));
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeProcessorFeatures failed: %Rhrc (Last=%#x/%u)",
@@ -679,7 +711,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
      * The cache line flush size.
      */
     RT_ZERO(Caps);
-    hrc = WHvGetCapability(WHvCapabilityCodeProcessorClFlushSize, &Caps, sizeof(Caps));
+    hrc = WHvGetCapabilityWrapper(WHvCapabilityCodeProcessorClFlushSize, &Caps, sizeof(Caps));
     if (FAILED(hrc))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED,
                              "WHvGetCapability/WHvCapabilityCodeProcessorClFlushSize failed: %Rhrc (Last=%#x/%u)",
@@ -709,7 +741,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
             for (uint32_t i = s_aUnknowns[j].iMin; i <= s_aUnknowns[j].iMax; i++)
             {
                 RT_ZERO(Caps);
-                hrc = WHvGetCapability((WHV_CAPABILITY_CODE)i, &Caps, sizeof(Caps));
+                hrc = WHvGetCapabilityWrapper((WHV_CAPABILITY_CODE)i, &Caps, sizeof(Caps));
                 if (SUCCEEDED(hrc))
                     LogRel(("NEM: Warning! Unknown capability %#x returning: %.*Rhxs\n", i, sizeof(Caps), &Caps));
             }
@@ -976,6 +1008,27 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
 
 
 /**
+ * Wrapper for different WHvSetPartitionProperty signatures.
+ */
+DECLINLINE(HRESULT) WHvSetPartitionPropertyWrapper(WHV_PARTITION_HANDLE hPartition, WHV_PARTITION_PROPERTY_CODE enmProp,
+                                                   WHV_PARTITION_PROPERTY *pInput, uint32_t cbInput)
+{
+#ifdef NEM_WIN_USE_17110_PLUS_WDK
+    return g_pfnWHvSetPartitionProperty(hPartition, enmProp, pInput, cbInput, NULL);
+#else
+    pInput->PropertyCode = enmProp;
+    if (g_uBuildNo >= 17110)
+    {
+        PFNWHVSETPARTITIONPROPERTY_17110 pfnNewVersion = (PFNWHVSETPARTITIONPROPERTY_17110)g_pfnWHvSetPartitionProperty;
+        return pfnNewVersion(hPartition, enmProp, &pInput->ExtendedVmExits,
+                             cbInput - RT_UOFFSETOF(WHV_PARTITION_PROPERTY, ExtendedVmExits));
+    }
+    return g_pfnWHvSetPartitionProperty(hPartition, pInput, cbInput);
+#endif
+}
+
+
+/**
  * Creates and sets up a Hyper-V (exo) partition.
  *
  * @returns VBox status code.
@@ -1011,17 +1064,17 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
      *    WHVPartitionPropertyCodeProcessorClFlushSize, but the API insists on 16. */
     WHV_PARTITION_PROPERTY Property;
     RT_ZERO(Property);
-    Property.PropertyCode   = WHvPartitionPropertyCodeProcessorCount;
     Property.ProcessorCount = pVM->cCpus;
-    hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+    hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeProcessorCount, &Property, sizeof(Property));
     if (SUCCEEDED(hrc))
     {
         RT_ZERO(Property);
-        Property.PropertyCode                  = WHvPartitionPropertyCodeExtendedVmExits;
+#if 0
         Property.ExtendedVmExits.X64CpuidExit  = pVM->nem.s.fExtendedCpuIdExit;
         Property.ExtendedVmExits.X64MsrExit    = pVM->nem.s.fExtendedMsrExit;
         Property.ExtendedVmExits.ExceptionExit = pVM->nem.s.fExtendedXcptExit;
-        hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+#endif
+        hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeExtendedVmExits, &Property, sizeof(Property));
         if (SUCCEEDED(hrc))
         {
             /*
@@ -1064,6 +1117,8 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
  */
 int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
 {
+    g_uBuildNo = RTSystemGetNtBuildNo();
+
     /*
      * Error state.
      * The error message will be non-empty on failure and 'rc' will be set too.
@@ -1158,24 +1213,26 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     /*
      * Continue setting up the partition now that we've got most of the CPUID feature stuff.
      */
-
-    /* Not sure if we really need to set the vendor. */
     WHV_PARTITION_PROPERTY Property;
+    HRESULT                hrc;
+
+#if 0
+    /* Not sure if we really need to set the vendor.
+       Update: Apparently we don't. WHvPartitionPropertyCodeProcessorVendor was removed in 17110. */
     RT_ZERO(Property);
-    Property.PropertyCode    = WHvPartitionPropertyCodeProcessorVendor;
     Property.ProcessorVendor = pVM->nem.s.enmCpuVendor == CPUMCPUVENDOR_AMD ? WHvProcessorVendorAmd
                              : WHvProcessorVendorIntel;
-    HRESULT hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+    hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeProcessorVendor, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorVendor to %u: %Rhrc (Last=%#x/%u)",
                           Property.ProcessorVendor, hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
+#endif
 
     /* Not sure if we really need to set the cache line flush size. */
     RT_ZERO(Property);
-    Property.PropertyCode         = WHvPartitionPropertyCodeProcessorClFlushSize;
     Property.ProcessorClFlushSize = pVM->nem.s.cCacheLineFlushShift;
-    hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+    hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeProcessorClFlushSize, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorClFlushSize to %u: %Rhrc (Last=%#x/%u)",
@@ -1188,9 +1245,8 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
 
     /* Set the partition property. */
     RT_ZERO(Property);
-    Property.PropertyCode               = WHvPartitionPropertyCodeProcessorFeatures;
     Property.ProcessorFeatures.AsUINT64 = pVM->nem.s.uCpuFeatures.u64;
-    hrc = WHvSetPartitionProperty(hPartition, &Property, sizeof(Property));
+    hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeProcessorFeatures, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorFeatures to %'#RX64: %Rhrc (Last=%#x/%u)",
@@ -2490,9 +2546,13 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *        FindFirstFileEx, and others for typical pattern for generic
  *        information getters.
  *
+ *   Update: All concerns have been addressed in build 17110.
+ *
  *
  * - The WHvGetPartitionProperty function uses the same weird design as
  *   WHvGetCapability, see above.
+ *
+ *   Update: All concerns have been addressed in build 17110.
  *
  *
  * - The WHvSetPartitionProperty function has a totally weird design too:
@@ -2511,6 +2571,9 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *      - See GetFileAttributesEx, SetFileInformationByHandle, FindFirstFileEx,
  *        and others for typical pattern for generic information setters and
  *        getters.
+ *
+ *   Update: All concerns have been addressed in build 17110.
+ *
  *
  *
  * @section sec_nem_win_impl    Our implementation.

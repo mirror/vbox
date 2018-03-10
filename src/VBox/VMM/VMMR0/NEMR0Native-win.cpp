@@ -1407,7 +1407,21 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         }
         if (fWhat & CPUMCTX_EXTRN_TR)
         {
+            /* AMD-V likes loading TR with in AVAIL state, whereas intel insists on BUSY.  So,
+               avoid to trigger sanity assertions around the code, always fix this. */
             COPY_BACK_SEG(iReg, HvX64RegisterTr,   pCtx->tr);
+            switch (pCtx->tr.Attr.n.u4Type)
+            {
+                case X86_SEL_TYPE_SYS_386_TSS_BUSY:
+                case X86_SEL_TYPE_SYS_286_TSS_BUSY:
+                    break;
+                case X86_SEL_TYPE_SYS_386_TSS_AVAIL:
+                    pCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_386_TSS_BUSY;
+                    break;
+                case X86_SEL_TYPE_SYS_286_TSS_AVAIL:
+                    pCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_286_TSS_BUSY;
+                    break;
+            }
             iReg++;
         }
         if (fWhat & CPUMCTX_EXTRN_IDTR)
