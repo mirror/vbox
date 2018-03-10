@@ -256,6 +256,19 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
  */
 RTDECL(bool) RTSystemIsInsideVM(void);
 
+#ifdef RT_OS_WINDOWS
+
+/**
+ * Get the Windows NT build number.
+ *
+ * @returns NT build number.
+ *
+ * @remarks Windows NT only.  Requires IPRT to be initialized.
+ */
+RTDECL(uint32_t) RTSystemGetNtBuildNo(void)
+
+#endif /* RT_OS_WINDOWS */
+
 /** @} */
 
 RT_C_DECLS_END

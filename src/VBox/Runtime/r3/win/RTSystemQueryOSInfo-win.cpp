@@ -340,3 +340,9 @@ RTDECL(int) RTSystemQueryOSInfo(RTSYSOSINFO enmInfo, char *pszInfo, size_t cchIn
     return VERR_NOT_SUPPORTED;
 }
 
+
+RTDECL(uint32_t) RTSystemGetNtBuildNo(void)
+{
+    return g_WinOsInfoEx.dwBuildNumber;
+}
+
