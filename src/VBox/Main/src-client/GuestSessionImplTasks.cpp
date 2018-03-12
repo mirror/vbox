@@ -214,9 +214,9 @@ int GuestSessionTask::directoryCreate(const com::Utf8Str &strPath,
     LogFlowFunc(("strPath=%s, fFlags=0x%x, uMode=%RU32, fFollowSymlinks=%RTbool\n",
                  strPath.c_str(), enmDirecotryCreateFlags, uMode, fFollowSymlinks));
 
-    GuestFsObjData objData; int guestRc;
+    GuestFsObjData objData; int rcGuest;
 
-    int rc = mSession->i_directoryQueryInfoInternal(strPath, fFollowSymlinks, objData, &guestRc);
+    int rc = mSession->i_directoryQueryInfoInternal(strPath, fFollowSymlinks, objData, &rcGuest);
     if (RT_SUCCESS(rc))
     {
         return VWRN_ALREADY_EXISTS;
@@ -227,11 +227,11 @@ int GuestSessionTask::directoryCreate(const com::Utf8Str &strPath,
         {
             case VERR_GSTCTL_GUEST_ERROR:
             {
-                switch (guestRc)
+                switch (rcGuest)
                 {
                     case VERR_FILE_NOT_FOUND:
                     case VERR_PATH_NOT_FOUND:
-                        rc = mSession->i_directoryCreateInternal(strPath.c_str(), uMode, enmDirecotryCreateFlags, &guestRc);
+                        rc = mSession->i_directoryCreateInternal(strPath.c_str(), uMode, enmDirecotryCreateFlags, &rcGuest);
                         break;
                     default:
                         break;
@@ -248,7 +248,7 @@ int GuestSessionTask::directoryCreate(const com::Utf8Str &strPath,
     {
         if (rc == VERR_GSTCTL_GUEST_ERROR)
         {
-            setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestProcess::i_guestErrorToString(guestRc));
+            setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestProcess::i_guestErrorToString(rcGuest));
         }
         else
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -995,6 +995,7 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
 
     ComObjPtr <GuestDirectory> pDir; int rcGuest;
     rc = mSession->i_directoryOpenInternal(dirOpenInfo, pDir, &rcGuest);
+
     if (RT_FAILURE(rc))
     {
         switch (rc)

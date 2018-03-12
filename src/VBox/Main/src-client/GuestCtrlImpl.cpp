@@ -545,11 +545,11 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
     else
     {
         Assert(!pSession.isNull());
-        int guestRc;
-        rc = pSession->i_startSessionInternal(&guestRc);
+        int rcGuest;
+        rc = pSession->i_startSessionInternal(&rcGuest);
         if (RT_FAILURE(rc))
         {
-            /** @todo Handle guestRc! */
+            /** @todo Handle rcGuest! */
 
             hr = setError(VBOX_E_IPRT_ERROR, tr("Could not open guest session: %Rrc"), rc);
         }

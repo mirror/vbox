@@ -208,19 +208,19 @@ int GuestDirectory::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
 }
 
 /* static */
-Utf8Str GuestDirectory::i_guestErrorToString(int guestRc)
+Utf8Str GuestDirectory::i_guestErrorToString(int rcGuest)
 {
     Utf8Str strError;
 
     /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
-    switch (guestRc)
+    switch (rcGuest)
     {
         case VERR_DIR_NOT_EMPTY:
             strError += Utf8StrFmt("Directoy is not empty");
             break;
 
         default:
-            strError += Utf8StrFmt("%Rrc", guestRc);
+            strError += Utf8StrFmt("%Rrc", rcGuest);
             break;
     }
 
@@ -246,13 +246,13 @@ int GuestDirectory::i_onRemove(void)
  * guest session's directory list.
  *
  * @return VBox status code.
- * @param  pGuestRc             Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
+ * @param  prcGuest             Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
  */
-int GuestDirectory::i_closeInternal(int *pGuestRc)
+int GuestDirectory::i_closeInternal(int *prcGuest)
 {
-    AssertPtrReturn(pGuestRc, VERR_INVALID_POINTER);
+    AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
 
-    int rc = mData.mProcessTool.terminate(30 * 1000 /* 30s timeout */, pGuestRc);
+    int rc = mData.mProcessTool.terminate(30 * 1000 /* 30s timeout */, prcGuest);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -270,11 +270,11 @@ int GuestDirectory::i_closeInternal(int *pGuestRc)
  *
  * @return VBox status code. Will return VERR_NO_MORE_FILES if no more entries are available.
  * @param  fsObjInfo            Where to store the read directory entry.
- * @param  pGuestRc             Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
+ * @param  prcGuest             Where to store the guest result code in case VERR_GSTCTL_GUEST_ERROR is returned.
  */
-int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pGuestRc)
+int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *prcGuest)
 {
-    AssertPtrReturn(pGuestRc, VERR_INVALID_POINTER);
+    AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
 
     /* Create the FS info object. */
     HRESULT hr = fsObjInfo.createObject();
@@ -283,7 +283,7 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pG
 
     GuestProcessStreamBlock curBlock;
     int rc = mData.mProcessTool.waitEx(GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK,
-                                         &curBlock, pGuestRc);
+                                         &curBlock, prcGuest);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -319,12 +319,12 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pG
 }
 
 /* static */
-HRESULT GuestDirectory::i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
+HRESULT GuestDirectory::i_setErrorExternal(VirtualBoxBase *pInterface, int rcGuest)
 {
     AssertPtr(pInterface);
-    AssertMsg(RT_FAILURE(guestRc), ("Guest rc does not indicate a failure when setting error\n"));
+    AssertMsg(RT_FAILURE(rcGuest), ("Guest rc does not indicate a failure when setting error\n"));
 
-    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestDirectory::i_guestErrorToString(guestRc).c_str());
+    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestDirectory::i_guestErrorToString(rcGuest).c_str());
 }
 
 // implementation of public methods

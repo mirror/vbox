@@ -354,7 +354,7 @@ int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
     return vrc;
 }
 
-int GuestFile::i_closeFile(int *pGuestRc)
+int GuestFile::i_closeFile(int *prcGuest)
 {
     LogFlowThisFunc(("strFile=%s\n", mData.mOpenInfo.mFileName.c_str()));
 
@@ -385,7 +385,7 @@ int GuestFile::i_closeFile(int *pGuestRc)
     vrc = sendCommand(HOST_FILE_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
         vrc = i_waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
-                                    NULL /* FileStatus */, pGuestRc);
+                                    NULL /* FileStatus */, prcGuest);
     unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
@@ -393,12 +393,12 @@ int GuestFile::i_closeFile(int *pGuestRc)
 }
 
 /* static */
-Utf8Str GuestFile::i_guestErrorToString(int guestRc)
+Utf8Str GuestFile::i_guestErrorToString(int rcGuest)
 {
     Utf8Str strError;
 
     /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
-    switch (guestRc)
+    switch (rcGuest)
     {
         case VERR_ALREADY_EXISTS:
             strError += Utf8StrFmt(tr("File already exists"));
@@ -417,7 +417,7 @@ Utf8Str GuestFile::i_guestErrorToString(int guestRc)
             break;
 
         default:
-            strError += Utf8StrFmt("%Rrc", guestRc);
+            strError += Utf8StrFmt("%Rrc", rcGuest);
             break;
     }
 
@@ -442,18 +442,18 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
     pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.uType);
     pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.rc);
 
-    int guestRc = (int)dataCb.rc; /* uint32_t vs. int. */
+    int rcGuest = (int)dataCb.rc; /* uint32_t vs. int. */
 
-    LogFlowFunc(("uType=%RU32, guestRc=%Rrc\n",
-                 dataCb.uType, guestRc));
+    LogFlowFunc(("uType=%RU32, rcGuest=%Rrc\n",
+                 dataCb.uType, rcGuest));
 
-    if (RT_FAILURE(guestRc))
+    if (RT_FAILURE(rcGuest))
     {
-        int rc2 = i_setFileStatus(FileStatus_Error, guestRc);
+        int rc2 = i_setFileStatus(FileStatus_Error, rcGuest);
         AssertRC(rc2);
 
         rc2 = signalWaitEventInternal(pCbCtx,
-                                      guestRc, NULL /* pPayload */);
+                                      rcGuest, NULL /* pPayload */);
         AssertRC(rc2);
 
         return VINF_SUCCESS; /* Report to the guest. */
@@ -463,7 +463,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
     {
         case GUEST_FILE_NOTIFYTYPE_ERROR:
         {
-            int rc2 = i_setFileStatus(FileStatus_Error, guestRc);
+            int rc2 = i_setFileStatus(FileStatus_Error, rcGuest);
             AssertRC(rc2);
 
             break;
@@ -480,7 +480,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                            VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
 
                 /* Set the process status. */
-                int rc2 = i_setFileStatus(FileStatus_Open, guestRc);
+                int rc2 = i_setFileStatus(FileStatus_Open, rcGuest);
                 AssertRC(rc2);
             }
             else
@@ -491,7 +491,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
         case GUEST_FILE_NOTIFYTYPE_CLOSE:
         {
-            int rc2 = i_setFileStatus(FileStatus_Closed, guestRc);
+            int rc2 = i_setFileStatus(FileStatus_Closed, rcGuest);
             AssertRC(rc2);
 
             break;
@@ -591,11 +591,11 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
     if (RT_SUCCESS(vrc))
     {
         GuestWaitEventPayload payload(dataCb.uType, &dataCb, sizeof(dataCb));
-        int rc2 = signalWaitEventInternal(pCbCtx, guestRc, &payload);
+        int rc2 = signalWaitEventInternal(pCbCtx, rcGuest, &payload);
         AssertRC(rc2);
     }
 
-    LogFlowThisFunc(("uType=%RU32, guestRc=%Rrc\n",
+    LogFlowThisFunc(("uType=%RU32, rcGuest=%Rrc\n",
                      dataCb.uType, dataCb.rc));
 
     LogFlowFuncLeaveRC(vrc);
@@ -641,7 +641,7 @@ int GuestFile::i_onRemove(void)
     return vrc;
 }
 
-int GuestFile::i_openFile(uint32_t uTimeoutMS, int *pGuestRc)
+int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 {
     LogFlowThisFuncEnter();
 
@@ -687,7 +687,7 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *pGuestRc)
     vrc = sendCommand(HOST_FILE_OPEN, i, paParms);
     if (RT_SUCCESS(vrc))
         vrc = i_waitForStatusChange(pEvent, uTimeoutMS,
-                                    NULL /* FileStatus */, pGuestRc);
+                                    NULL /* FileStatus */, prcGuest);
 
     unregisterWaitEvent(pEvent);
 
@@ -859,12 +859,12 @@ int GuestFile::i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
 }
 
 /* static */
-HRESULT GuestFile::i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
+HRESULT GuestFile::i_setErrorExternal(VirtualBoxBase *pInterface, int rcGuest)
 {
     AssertPtr(pInterface);
-    AssertMsg(RT_FAILURE(guestRc), ("Guest rc does not indicate a failure when setting error\n"));
+    AssertMsg(RT_FAILURE(rcGuest), ("Guest rc does not indicate a failure when setting error\n"));
 
-    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestFile::i_guestErrorToString(guestRc).c_str());
+    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestFile::i_guestErrorToString(rcGuest).c_str());
 }
 
 int GuestFile::i_setFileStatus(FileStatus_T fileStatus, int fileRc)
@@ -984,7 +984,7 @@ int GuestFile::i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
 }
 
 int GuestFile::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
-                                     FileStatus_T *pFileStatus, int *pGuestRc)
+                                     FileStatus_T *pFileStatus, int *prcGuest)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
     /* pFileStatus is optional. */
@@ -1020,8 +1020,8 @@ int GuestFile::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS
         if (RT_FAILURE((int)lGuestRc))
             vrc = VERR_GSTCTL_GUEST_ERROR;
 
-        if (pGuestRc)
-            *pGuestRc = (int)lGuestRc;
+        if (prcGuest)
+            *prcGuest = (int)lGuestRc;
     }
 
     return vrc;
@@ -1182,8 +1182,8 @@ HRESULT GuestFile::close()
     LogFlowThisFuncEnter();
 
     /* Close file on guest. */
-    int guestRc;
-    int rc = i_closeFile(&guestRc);
+    int rcGuest;
+    int rc = i_closeFile(&rcGuest);
     /* On failure don't return here, instead do all the cleanup
      * work first and then return an error. */
 
@@ -1195,7 +1195,7 @@ HRESULT GuestFile::close()
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_GSTCTL_GUEST_ERROR)
-            return GuestFile::i_setErrorExternal(this, guestRc);
+            return GuestFile::i_setErrorExternal(this, rcGuest);
 
         return setError(VBOX_E_IPRT_ERROR,
                         tr("Closing guest file failed with %Rrc\n"), rc);

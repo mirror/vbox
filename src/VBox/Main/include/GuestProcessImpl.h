@@ -187,7 +187,7 @@ private:
 struct GuestProcessToolErrorInfo
 {
     /** Return code from the guest side for executing the process tool. */
-    int  guestRc;
+    int  rcGuest;
     /** The process tool's returned exit code. */
     int32_t iExitCode;
 };

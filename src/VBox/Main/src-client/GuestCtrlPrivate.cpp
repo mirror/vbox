@@ -934,18 +934,18 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
 }
 
 int GuestBase::signalWaitEventInternal(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
-                                       int guestRc, const GuestWaitEventPayload *pPayload)
+                                       int rcGuest, const GuestWaitEventPayload *pPayload)
 {
-    if (RT_SUCCESS(guestRc))
+    if (RT_SUCCESS(rcGuest))
         return signalWaitEventInternalEx(pCbCtx, VINF_SUCCESS,
                                          0 /* Guest rc */, pPayload);
 
     return signalWaitEventInternalEx(pCbCtx, VERR_GSTCTL_GUEST_ERROR,
-                                     guestRc, pPayload);
+                                     rcGuest, pPayload);
 }
 
 int GuestBase::signalWaitEventInternalEx(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
-                                         int rc, int guestRc,
+                                         int rc, int rcGuest,
                                          const GuestWaitEventPayload *pPayload)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
@@ -957,11 +957,11 @@ int GuestBase::signalWaitEventInternalEx(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
         GuestWaitEvents::iterator itEvent = mWaitEvents.find(pCbCtx->uContextID);
         if (itEvent != mWaitEvents.end())
         {
-            LogFlowThisFunc(("Signalling event=%p (CID %RU32, rc=%Rrc, guestRc=%Rrc, pPayload=%p) ...\n",
-                             itEvent->second, itEvent->first, rc, guestRc, pPayload));
+            LogFlowThisFunc(("Signalling event=%p (CID %RU32, rc=%Rrc, rcGuest=%Rrc, pPayload=%p) ...\n",
+                             itEvent->second, itEvent->first, rc, rcGuest, pPayload));
             GuestWaitEvent *pEvent = itEvent->second;
             AssertPtr(pEvent);
-            rc2 = pEvent->SignalInternal(rc, guestRc, pPayload);
+            rc2 = pEvent->SignalInternal(rc, rcGuest, pPayload);
         }
         else
             rc2 = VERR_NOT_FOUND;
@@ -1163,7 +1163,7 @@ int GuestWaitEventBase::Init(uint32_t uCID)
     return RTSemEventCreate(&mEventSem);
 }
 
-int GuestWaitEventBase::SignalInternal(int rc, int guestRc,
+int GuestWaitEventBase::SignalInternal(int rc, int rcGuest,
                                        const GuestWaitEventPayload *pPayload)
 {
     if (ASMAtomicReadBool(&mfAborted))
@@ -1171,9 +1171,9 @@ int GuestWaitEventBase::SignalInternal(int rc, int guestRc,
 
 #ifdef VBOX_STRICT
     if (rc == VERR_GSTCTL_GUEST_ERROR)
-        AssertMsg(RT_FAILURE(guestRc), ("Guest error indicated but no actual guest error set (%Rrc)\n", guestRc));
+        AssertMsg(RT_FAILURE(rcGuest), ("Guest error indicated but no actual guest error set (%Rrc)\n", rcGuest));
     else
-        AssertMsg(RT_SUCCESS(guestRc), ("No guest error indicated but actual guest error set (%Rrc)\n", guestRc));
+        AssertMsg(RT_SUCCESS(rcGuest), ("No guest error indicated but actual guest error set (%Rrc)\n", rcGuest));
 #endif
 
     int rc2;
@@ -1184,7 +1184,7 @@ int GuestWaitEventBase::SignalInternal(int rc, int guestRc,
     if (RT_SUCCESS(rc2))
     {
         mRc = rc;
-        mGuestRc = guestRc;
+        mGuestRc = rcGuest;
 
         rc2 = RTSemEventSignal(mEventSem);
     }
