@@ -3176,9 +3176,11 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
 {
     LogFlowThisFuncEnter();
 
-/** @todo r=bird: Treat empty file with a FALSE return. */
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No file to check existence for specified"));
+    {
+        *aExists = FALSE;
+        return S_OK;
+    }
 
     GuestFsObjData objData; int rcGuest;
     int vrc = i_fileQueryInfoInternal(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
