@@ -683,7 +683,8 @@ int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMo
                 vrc = VERR_INVALID_PARAMETER;
         }
 
-        if (uMode)
+        if (   RT_SUCCESS(vrc)
+            && uMode)
         {
             procInfo.mArguments.push_back(Utf8Str("--mode")); /* Set the creation mode. */
 
@@ -695,7 +696,8 @@ int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMo
             else
                 vrc = VERR_BUFFER_OVERFLOW;
         }
-        procInfo.mArguments.push_back("--"); /* '--version' is a valid directory name. */
+
+        procInfo.mArguments.push_back("--");    /* '--version' is a valid directory name. */
         procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
     }
     catch (std::bad_alloc)
@@ -2775,24 +2777,27 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
     int rc = i_directoryCreateInternal(aPath, (uint32_t)aMode, fFlags, &rcGuest);
     if (RT_FAILURE(rc))
     {
-        switch (rc)
+        if (GuestProcess::i_isGuestError(rc))
         {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %s",
-                                                    GuestDirectory::i_guestErrorToString(rcGuest).c_str()));
-                break;
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %s"),
+                                                GuestDirectory::i_guestErrorToString(rcGuest).c_str());
+        }
+        else
+        {
+            switch (rc)
+            {
+                case VERR_INVALID_PARAMETER:
+                    hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Invalid parameters given"));
+                    break;
 
-            case VERR_INVALID_PARAMETER:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Invalid parameters given"));
-                break;
+                case VERR_BROKEN_PIPE:
+                    hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Unexpectedly aborted"));
+                    break;
 
-            case VERR_BROKEN_PIPE:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Unexpectedly aborted"));
-                break;
-
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %Rrc"), rc);
-                break;
+                default:
+                    hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %Rrc"), rc);
+                    break;
+            }
         }
     }
 

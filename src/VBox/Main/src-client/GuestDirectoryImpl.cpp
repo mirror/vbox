@@ -215,8 +215,12 @@ Utf8Str GuestDirectory::i_guestErrorToString(int rcGuest)
     /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
     switch (rcGuest)
     {
+        case VERR_CANT_CREATE:
+            strError += Utf8StrFmt("Access denied");
+            break;
+
         case VERR_DIR_NOT_EMPTY:
-            strError += Utf8StrFmt("Directoy is not empty");
+            strError += Utf8StrFmt("Not empty");
             break;
 
         default:
