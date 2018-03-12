@@ -260,16 +260,16 @@ void UIGuestControlFileManager::retranslateUi()
 {
     if (m_pCopyGuestToHost)
     {
-        m_pCopyGuestToHost->setText(UIVMInformationDialog::tr("Copy the selected object from guest to host"));
-        m_pCopyGuestToHost->setToolTip(UIVMInformationDialog::tr("Copy the selected object from guest to host"));
-        m_pCopyGuestToHost->setStatusTip(UIVMInformationDialog::tr("Copy the selected object from guest to host"));
+        m_pCopyGuestToHost->setText(UIVMInformationDialog::tr("Copy the selected object(s) from guest to host"));
+        m_pCopyGuestToHost->setToolTip(UIVMInformationDialog::tr("Copy the selected object(s) from guest to host"));
+        m_pCopyGuestToHost->setStatusTip(UIVMInformationDialog::tr("Copy the selected object(s) from guest to host"));
     }
 
     if (m_pCopyHostToGuest)
     {
-        m_pCopyHostToGuest->setText(UIVMInformationDialog::tr("Copy the selected object from host to guest"));
-        m_pCopyHostToGuest->setToolTip(UIVMInformationDialog::tr("Copy the selected object from host to guest"));
-        m_pCopyHostToGuest->setStatusTip(UIVMInformationDialog::tr("Copy the selected object from host to guest"));
+        m_pCopyHostToGuest->setText(UIVMInformationDialog::tr("Copy the selected object(s) from host to guest"));
+        m_pCopyHostToGuest->setToolTip(UIVMInformationDialog::tr("Copy the selected object(s) from host to guest"));
+        m_pCopyHostToGuest->setStatusTip(UIVMInformationDialog::tr("Copy the selected object(s) from host to guest"));
     }
 
 }
@@ -484,7 +484,7 @@ void UIGuestControlFileManager::sltCopyGuestToHost()
 {
     if (!m_pGuestFileTable || !m_pHostFileTable)
         return;
-    QString hostDestinationPath = m_pHostFileTable->currentPath();
+    QString hostDestinationPath = m_pHostFileTable->currentDirectoryPath();
     printf("current host path %s\n", hostDestinationPath.toStdString().c_str());
     m_pGuestFileTable->copyGuestToHost(hostDestinationPath);
 }

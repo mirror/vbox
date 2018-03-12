@@ -67,8 +67,6 @@ public:
 
     const QString  &path() const;
     void setPath(const QString &path);
-    /** Merge prefix and suffix by making sure they have a single '/' in between */
-    void setPath(const QString &prexix, const QString &suffix);
 
     /** True if this is directory and name is ".." */
     bool isUpDirectory() const;
@@ -84,10 +82,7 @@ private:
     bool             m_bIsOpened;
     /** Full absolute path of the item. Without the trailing '/' */
     QString          m_strPath;
-    /** For directories base name is the name of the lowest level directory
-        in strPath. eg. for 'm_strPath = /opt/qt5.6/examples' 'm_strBaseName = examples'
-        for files it is the name of the file */
-    QString          m_strBaseName;
+
 };
 
 /** This class serves a base class for file table. Currently a guest version
@@ -111,7 +106,7 @@ public:
     void reset();
     void emitLogOutput(const QString& strOutput);
     /** Returns the path of the rootIndex */
-    QString     currentPath() const;
+    QString     currentDirectoryPath() const;
     /** Returns the paths of the selected items (if any) as a list */
     QStringList selectedItemPathList();
 
@@ -137,9 +132,7 @@ protected:
     UIFileTableItem* indexData(const QModelIndex &index) const;
     void keyPressEvent(QKeyEvent * pEvent);
 
-    /** Replace the last part of the @p previusPath with newBaseName */
-    QString constructNewItemPath(const QString &previousPath, const QString &newBaseName);
-    QString mergePaths(const QString &Path, const QString &baseName);
+
 
     UIFileTableItem         *m_pRootItem;
 
@@ -210,6 +203,10 @@ protected:
     virtual bool createDirectory(const QString &path, const QString &directoryName);
 
 private:
+
+    KFsObjType fsObjectType(const QString& path);
+    bool copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath);
+    bool copyHostToGuest(const QString& hostSourcePath, const QString &guestDestinationPath);
 
     void configureObjects();
     CGuestSession m_comGuestSession;

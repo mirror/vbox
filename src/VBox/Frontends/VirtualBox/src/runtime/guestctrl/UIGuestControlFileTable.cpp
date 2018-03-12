@@ -42,10 +42,120 @@
 
 /* COM includes: */
 # include "CFsObjInfo.h"
+# include "CGuestFsObjInfo.h"
 # include "CGuestDirectory.h"
 # include "CProgress.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+/** A collection of utility functions for some path string manipulations */
+class UIPathOperations
+{
+public:
+    static QString removeMultipleDelimiters(const QString &path);
+    static QString removeTrailingDelimiters(const QString &path);
+    static QString addStartDelimiter(const QString &path);
+    static QString removeAllDelimiters(const QString &path);
+
+    //    static QString removeTrailingDelimiters(const QString &path);
+    static QString sanitize(const QString &path);
+    /** Merge prefix and suffix by making sure they have a single '/' in between */
+    static QString mergePaths(const QString &path, const QString &baseName);
+    /** Returns the last part of the @p path. That is the filename or directory name without the path */
+    static QString getObjectName(const QString &path);
+    /** Remove the object name and return the path */
+    static QString getPathExceptObjectName(const QString &path);
+    /** Replace the last part of the @p previusPath with newBaseName */
+    static QString constructNewItemPath(const QString &previousPath, const QString &newBaseName);
+
+    static const QChar delimiter;
+};
+
+const QChar UIPathOperations::delimiter = QChar('/');
+
+QString UIPathOperations::removeMultipleDelimiters(const QString &path)
+{
+    QString newPath(path);
+    QString doubleDelimiter(2, delimiter);
+
+    while (newPath.contains(doubleDelimiter) && !newPath.isEmpty())
+        newPath = newPath.replace(doubleDelimiter, delimiter);
+    return newPath;
+}
+
+QString UIPathOperations::removeTrailingDelimiters(const QString &path)
+{
+    if (path.isNull() || path.isEmpty())
+        return QString();
+    QString newPath(path);
+    /* Make sure for we dont have any trailing slashes: */
+    while (newPath.length() > 1 && newPath.at(newPath.length() - 1) == UIPathOperations::delimiter)
+        newPath.chop(1);
+    return newPath;
+}
+
+QString UIPathOperations::addStartDelimiter(const QString &path)
+{
+    if (path.isEmpty())
+        return QString(path);
+    QString newPath(path);
+    if (newPath.at(0) != delimiter)
+        newPath.insert(0, delimiter);
+    return newPath;
+}
+
+QString UIPathOperations::sanitize(const QString &path)
+{
+    return addStartDelimiter(removeTrailingDelimiters(removeMultipleDelimiters(path)));
+}
+
+QString UIPathOperations::mergePaths(const QString &path, const QString &baseName)
+{
+    QString newBase(baseName);
+    newBase = newBase.remove(delimiter);
+
+    /* make sure we have one and only one trailing '/': */
+    QString newPath(sanitize(path));
+    if(newPath.isEmpty())
+        newPath = delimiter;
+    if(newPath.at(newPath.length() - 1) != delimiter)
+        newPath += UIPathOperations::delimiter;
+    newPath += newBase;
+    return sanitize(newPath);
+}
+
+QString UIPathOperations::getObjectName(const QString &path)
+{
+    if (path.length() <= 1)
+        return QString(path);
+
+    QString strTemp(sanitize(path));
+    if (strTemp.length() < 2)
+        return strTemp;
+    int lastSlashPosition = strTemp.lastIndexOf(UIPathOperations::delimiter);
+    if (lastSlashPosition == -1)
+        return QString();
+    return strTemp.right(strTemp.length() - lastSlashPosition - 1);
+}
+
+QString UIPathOperations::getPathExceptObjectName(const QString &path)
+{
+    if (path.length() <= 1)
+        return QString(path);
+
+    QString strTemp(sanitize(path));
+    int lastSlashPosition = strTemp.lastIndexOf(UIPathOperations::delimiter);
+    if (lastSlashPosition == -1)
+        return QString();
+    return strTemp.left(lastSlashPosition + 1);
+}
+
+QString UIPathOperations::constructNewItemPath(const QString &previousPath, const QString &newBaseName)
+{
+    if (previousPath.length() <= 1)
+         return QString(previousPath);
+    return sanitize(mergePaths(getPathExceptObjectName(previousPath), newBaseName));
+}
 
 
 /*********************************************************************************************************************************
@@ -127,7 +237,6 @@ UIFileTableItem::UIFileTableItem(const QList<QVariant> &data, bool isDirectory, 
     , m_bIsDirectory(isDirectory)
     , m_bIsOpened(false)
 {
-
 }
 
 UIFileTableItem::~UIFileTableItem()
@@ -223,21 +332,7 @@ void UIFileTableItem::setPath(const QString &path)
     if (path.isNull() || path.isEmpty())
         return;
     m_strPath = path;
-    /* Make sure for we dont have any trailing slashes: */
-    if (m_strPath.length() > 1 && m_strPath.at(m_strPath.length() - 1) == QChar('/'))
-        m_strPath.chop(1);
-}
-
-void UIFileTableItem::setPath(const QString &prefix, const QString &suffix)
-{
-    if (prefix.isEmpty())
-        return;
-    QString newPath(prefix);
-    /* Make sure we have a trailing '/' in @p prefix: */
-    if (prefix.at(newPath.length() - 1) != QChar('/'))
-        newPath += "/";
-    newPath += suffix;
-    setPath(newPath);
+    UIPathOperations::removeTrailingDelimiters(m_strPath);
 }
 
 bool UIFileTableItem::isUpDirectory() const
@@ -784,30 +879,6 @@ UIFileTableItem *UIGuestControlFileTable::getStartDirectoryItem()
     return m_pRootItem->child(0);
 }
 
-QString UIGuestControlFileTable::constructNewItemPath(const QString &previousPath, const QString &newBaseName)
-{
-    if (newBaseName.isEmpty() || previousPath.length() <= 1)
-        return QString();
-
-    QStringList pathList = previousPath.split('/', QString::SkipEmptyParts);
-    QString newPath("/");
-    for(int i = 0; i < pathList.size() - 1; ++i)
-    {
-        newPath += (pathList.at(i) + "/");
-    }
-    newPath += newBaseName;
-    return newPath;
-}
-
-QString UIGuestControlFileTable::mergePaths(const QString &path, const QString &baseName)
-{
-    QString newPath(path);
-    /* make sure we have a trailing '/': */
-    if (newPath.at(newPath.length() - 1) != QChar('/'))
-        newPath += QChar('/');
-    newPath += baseName;
-    return newPath;
-}
 
 QString UIGuestControlFileTable::getNewDirectoryName()
 {
@@ -822,7 +893,7 @@ QString UIGuestControlFileTable::getNewDirectoryName()
     return QString();
 }
 
-QString UIGuestControlFileTable::currentPath() const
+QString UIGuestControlFileTable::currentDirectoryPath() const
 {
     if (!m_pView)
         return QString();
@@ -831,6 +902,9 @@ QString UIGuestControlFileTable::currentPath() const
         return QString();
     UIFileTableItem *item = static_cast<UIFileTableItem*>(currentRoot.internalPointer());
     if (!item)
+        return QString();
+    /* be paranoid: */
+    if (!item->isDirectory())
         return QString();
     return item->path();
 }
@@ -897,7 +971,6 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
 
     directory = m_comGuestSession.DirectoryOpen(strPath, /*aFilter*/ "", flag);
     parent->setIsOpened(true);
-
     if (directory.isOk())
     {
         CFsObjInfo fsInfo = directory.Read();
@@ -912,7 +985,7 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
             data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize()) << changeTime;
             bool isDirectory = (fsInfo.GetType() == KFsObjType_Directory);
             UIFileTableItem *item = new UIFileTableItem(data, isDirectory, parent);
-            item->setPath(strPath, fsInfo.GetName());
+            item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
             if (isDirectory)
             {
                 directories.insert(fsInfo.GetName(), item);
@@ -929,6 +1002,7 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
         insertItemsToTree(files, parent, false, isStartDir);
         updateCurrentLocationEdit(strPath);
     }
+    directory.Close();
 }
 
 void UIGuestFileTable::deleteByItem(UIFileTableItem *item)
@@ -962,7 +1036,7 @@ bool UIGuestFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
 
     if (!item || item->isUpDirectory() || newBaseName.isEmpty() || !m_comGuestSession.isOk())
         return false;
-    QString newPath = constructNewItemPath(item->path(), newBaseName);
+    QString newPath = UIPathOperations::constructNewItemPath(item->path(), newBaseName);
     QVector<KFsObjRenameFlag> aFlags(KFsObjRenameFlag_Replace);
 
     m_comGuestSession.FsObjRename(item->path(), newPath, aFlags);
@@ -983,7 +1057,7 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
     if (!m_comGuestSession.isOk())
         return false;
 
-    QString newDirectoryPath = mergePaths(path, directoryName);
+    QString newDirectoryPath = UIPathOperations::mergePaths(path, directoryName);
     QVector<KDirectoryCreateFlag> flags(KDirectoryCreateFlag_None);
 
     m_comGuestSession.DirectoryCreate(newDirectoryPath, 777/*aMode*/, flags);
@@ -998,12 +1072,56 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
 
 void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
 {
-    Q_UNUSED(hostDestinationPath);
+    QStringList selectedPathList = selectedItemPathList();
+    for (int i = 0; i < selectedPathList.size(); ++i)
+        copyGuestToHost(selectedPathList.at(i), hostDestinationPath);
 }
 
 void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
 {
-    Q_UNUSED(hostSourcePathList);
+    for (int i = 0; i < hostSourcePathList.size(); ++i)
+        copyHostToGuest(hostSourcePathList.at(i), currentDirectoryPath());
+}
+
+bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath)
+{
+    if (m_comGuestSession.isNull())
+        return false;
+
+    /* Currently API expects a path including a file name for file copy*/
+    KFsObjType objectType = fsObjectType(guestSourcePath);
+    if (objectType == KFsObjType_File)
+    {
+        // QString destinatioFilePath =  mergePaths(hostDestinationPath, const QString &Path, const QString &baseName);
+
+    }
+
+    QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
+    /** @todo listen to CProgress object to monitor copy operation: */
+    /*CProgress comProgress = */m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, hostDestinationPath, aFlags);
+    if (!m_comGuestSession.isOk())
+        return false;
+    return true;
+}
+
+bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QString &guestDestinationPath)
+{
+    if (m_comGuestSession.isNull())
+        return false;
+    QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
+    /** @todo listen to CProgress object to monitor copy operation: */
+    /*CProgress comProgress = */m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, guestDestinationPath, aFlags);
+    return true;
+}
+
+KFsObjType UIGuestFileTable::fsObjectType(const QString& path)
+{
+    if (m_comGuestSession.isNull())
+        return KFsObjType_Unknown;
+    CGuestFsObjInfo comFsObjInfo = m_comGuestSession.FsObjQueryInfo(path, false /*aFollowSymlinks*/);
+    if (!comFsObjInfo.isOk() || m_comGuestSession.isOk())
+        return KFsObjType_Unknown;
+    return comFsObjInfo.GetType();
 }
 
 
@@ -1107,7 +1225,7 @@ bool UIHostFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
 {
     if (!item || item->isUpDirectory() || newBaseName.isEmpty())
         return false;
-    QString newPath = constructNewItemPath(item->path(), newBaseName);
+    QString newPath = UIPathOperations::constructNewItemPath(item->path(), newBaseName);
     QDir tempDir;
     if (tempDir.rename(item->path(), newPath))
     {
@@ -1122,7 +1240,7 @@ bool UIHostFileTable::createDirectory(const QString &path, const QString &direct
     QDir parentDir(path);
     if (!parentDir.mkdir(directoryName))
     {
-        emit sigLogOutput(mergePaths(path, directoryName).append(" could not be created"));
+        emit sigLogOutput(UIPathOperations::mergePaths(path, directoryName).append(" could not be created"));
         return false;
     }
 
