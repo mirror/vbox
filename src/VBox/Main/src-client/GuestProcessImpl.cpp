@@ -2044,6 +2044,19 @@ bool GuestProcessTool::isRunning(void)
     return false;
 }
 
+/**
+ * Static helper function to start and wait for a certain toolbox tool.
+ *
+ * This function most likely is the one you want to use in the first place if you
+ * want to just use a toolbox tool and wait for its result. See runEx() if you also
+ * needs its output.
+ *
+ * @return  VBox status code.
+ * @param   pGuestSession           Guest control session to use for starting the toolbox tool in.
+ * @param   startupInfo             Startup information about the toolbox tool.
+ * @param   prcGuest                Where to store the toolbox tool's specific error code in case
+ *                                  VERR_GSTCTL_GUEST_ERROR is returned.
+ */
 /* static */
 int GuestProcessTool::run(      GuestSession              *pGuestSession,
                           const GuestProcessStartupInfo   &startupInfo,
@@ -2055,22 +2068,30 @@ int GuestProcessTool::run(      GuestSession              *pGuestSession,
     int vrc = runErrorInfo(pGuestSession, startupInfo, errorInfo);
     if (RT_SUCCESS(vrc))
     {
-        if (errorInfo.rcGuest == VWRN_GSTCTL_PROCESS_EXIT_CODE)
-            rcGuest = GuestProcessTool::exitCodeToRc(startupInfo, errorInfo.iExitCode);
-        else
-            rcGuest = errorInfo.rcGuest;
+        /* Make sure to check the error information we got from the guest tool. */
+        if (GuestProcess::i_isGuestError(errorInfo.rcGuest))
+        {
+            if (errorInfo.rcGuest == VWRN_GSTCTL_PROCESS_EXIT_CODE) /* Translate exit code to a meaningful error code. */
+                rcGuest = GuestProcessTool::exitCodeToRc(startupInfo, errorInfo.iExitCode);
+            else /* At least return something. */
+                rcGuest = errorInfo.rcGuest;
 
-        if (prcGuest)
-            *prcGuest = rcGuest;
+            if (prcGuest)
+                *prcGuest = rcGuest;
+
+            vrc = VERR_GSTCTL_GUEST_ERROR;
+        }
     }
 
+    LogFlowFunc(("Returned rc=%Rrc, rcGuest=%Rrc, iExitCode=%d\n", vrc, errorInfo.rcGuest, errorInfo.iExitCode));
     return vrc;
 }
 
 /**
- * Static helper function to start and wait for a certain toolbox tool.
+ * Static helper function to start and wait for a certain toolbox tool, returning
+ * extended error information from the guest.
  *
- * @return  IPRT status code.
+ * @return  VBox status code.
  * @param   pGuestSession           Guest control session to use for starting the toolbox tool in.
  * @param   startupInfo             Startup information about the toolbox tool.
  * @param   errorInfo               Error information returned for error handling.
@@ -2081,8 +2102,7 @@ int GuestProcessTool::runErrorInfo(      GuestSession              *pGuestSessio
                                          GuestProcessToolErrorInfo &errorInfo)
 {
     return runExErrorInfo(pGuestSession, startupInfo,
-                            NULL /* paStrmOutObjects */, 0 /* cStrmOutObjects */,
-                            errorInfo);
+                          NULL /* paStrmOutObjects */, 0 /* cStrmOutObjects */, errorInfo);
 }
 
 /**
@@ -2109,19 +2129,22 @@ int GuestProcessTool::runEx(      GuestSession              *pGuestSession,
     int vrc = GuestProcessTool::runExErrorInfo(pGuestSession, startupInfo, paStrmOutObjects, cStrmOutObjects, errorInfo);
     if (RT_SUCCESS(vrc))
     {
-        if (errorInfo.rcGuest == VWRN_GSTCTL_PROCESS_EXIT_CODE)
-            rcGuest = GuestProcessTool::exitCodeToRc(startupInfo, errorInfo.iExitCode);
-        else
-            rcGuest = errorInfo.rcGuest;
+        /* Make sure to check the error information we got from the guest tool. */
+        if (GuestProcess::i_isGuestError(errorInfo.rcGuest))
+        {
+            if (errorInfo.rcGuest == VWRN_GSTCTL_PROCESS_EXIT_CODE) /* Translate exit code to a meaningful error code. */
+                rcGuest = GuestProcessTool::exitCodeToRc(startupInfo, errorInfo.iExitCode);
+            else /* At least return something. */
+                rcGuest = errorInfo.rcGuest;
 
-        /* Return VERR_GSTCTL_GUEST_ERROR if we retrieved a guest return code. */
-        if (RT_FAILURE(rcGuest))
+            if (prcGuest)
+                *prcGuest = rcGuest;
+
             vrc = VERR_GSTCTL_GUEST_ERROR;
-
-        if (prcGuest)
-            *prcGuest = rcGuest;
+        }
     }
 
+    LogFlowFunc(("Returned rc=%Rrc, rcGuest=%Rrc, iExitCode=%d\n", vrc, errorInfo.rcGuest, errorInfo.iExitCode));
     return vrc;
 }
 
@@ -2132,7 +2155,7 @@ int GuestProcessTool::runEx(      GuestSession              *pGuestSession,
  * objects. Those objects are issued on the guest side as part of VBoxService's toolbox tools (think of a BusyBox-like approach)
  * on stdout and can be used on the host side to retrieve more information about the actual command issued on the guest side.
  *
- * @return  IPRT status code.
+ * @return  VBox status code.
  * @param   pGuestSession           Guest control session to use for starting the toolbox tool in.
  * @param   startupInfo             Startup information about the toolbox tool.
  * @param   paStrmOutObjects        Pointer to stream objects array to use for retrieving the output of the toolbox tool.
