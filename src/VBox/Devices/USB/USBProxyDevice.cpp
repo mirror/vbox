@@ -1106,6 +1106,9 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
                      * While isochronous has a max of 1023 bytes.
                      */
                     PVUSBDESCENDPOINTEX paEps = (PVUSBDESCENDPOINTEX)paIfs[iIf].paSettings[iAlt].paEndpoints;
+                    if (!paEps)
+                        continue;
+
                     for (unsigned iEp = 0; iEp < paIfs[iIf].paSettings[iAlt].Core.bNumEndpoints; iEp++)
                     {
                         const uint16_t cbMax = (paEps[iEp].Core.bmAttributes & 3) == 1 /* isoc */
@@ -1156,6 +1159,9 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
                         continue;
 
                     PVUSBDESCENDPOINTEX paEps = (PVUSBDESCENDPOINTEX)paIfs[iIf].paSettings[iAlt].paEndpoints;
+                    if (!paEps)
+                        continue;
+
                     for (unsigned iEp = 0; iEp < paIfs[iIf].paSettings[iAlt].Core.bNumEndpoints; iEp++)
                     {
                         /* isoch/asynch/data*/
