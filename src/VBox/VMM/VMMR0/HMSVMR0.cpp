@@ -1421,8 +1421,8 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
      */
     if (!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
     {
-        u64GuestCR0 |= X86_CR0_PG;     /* When Nested Paging is not available, use shadow page tables. */
-        u64GuestCR0 |= X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
+        u64GuestCR0 |= X86_CR0_PG      /* When Nested Paging is not available, use shadow page tables. */
+                    |  X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
     }
 
     /*
@@ -1443,8 +1443,8 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
     else
     {
         fInterceptNM = true;           /* Guest FPU inactive, #VMEXIT on #NM for lazy FPU loading. */
-        u64GuestCR0 |=  X86_CR0_TS     /* Guest can task switch quickly and do lazy FPU syncing. */
-                      | X86_CR0_MP;    /* FWAIT/WAIT should not ignore CR0.TS and should generate #NM. */
+        u64GuestCR0 |= X86_CR0_TS      /* Guest can task switch quickly and do lazy FPU syncing. */
+                    |  X86_CR0_MP;     /* FWAIT/WAIT should not ignore CR0.TS and should generate #NM. */
     }
 
     /*
@@ -1942,6 +1942,8 @@ static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx
  */
 static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
+    /* If we modify intercepts from here, please check & adjust hmR0SvmLoadGuestXcptInterceptsNested()
+       if required. */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
     {
         /* Trap #UD for GIM provider (e.g. for hypercalls). */
@@ -1978,11 +1980,9 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
 {
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
     {
-        /* First, load the guest exception intercepts into the guest VMCB. */
         PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
-        hmR0SvmLoadGuestXcptIntercepts(pVCpu, pVmcb, pCtx);
 
-        /* Next, merge the intercepts into the nested-guest VMCB. */
+        /* Merge the guest's CR intercepts into the nested-guest VMCB. */
         pVmcbNstGst->ctrl.u16InterceptRdCRx |= pVmcb->ctrl.u16InterceptRdCRx;
         pVmcbNstGst->ctrl.u16InterceptWrCRx |= pVmcb->ctrl.u16InterceptWrCRx;
 
@@ -1990,7 +1990,7 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         pVmcbNstGst->ctrl.u16InterceptRdCRx |= RT_BIT(0) | RT_BIT(4);
         pVmcbNstGst->ctrl.u16InterceptWrCRx |= RT_BIT(0) | RT_BIT(4);
 
-        /* Always intercept CR3 reads and writes without nested-paging as we load shadow page tables. */
+        /* Without nested paging, intercept CR3 reads and writes as we load shadow page tables. */
         if (!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
         {
             pVmcbNstGst->ctrl.u16InterceptRdCRx |= RT_BIT(3);
@@ -2003,6 +2003,25 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         pVmcbNstGst->ctrl.u16InterceptWrDRx |= 0xffff;
 
         /*
+         * Merge the guest's exception intercepts into the nested-guest VMCB.
+         *
+         * - \#UD: Exclude these as the outer guest's GIM hypercalls are not applicable
+         * while executing the nested-guest.
+         *
+         * - \#BP: Exclude breakpoints set by the VM debugger for the outer guest. This can
+         * be tweaked later depending on how we wish to implement breakpoints.
+         *
+         * Warning!! This ASSUMES we only intercept \#UD for hypercall purposes and \#BP
+         * for VM debugger breakpoints, see hmR0SvmLoadGuestXcptIntercepts.
+         */
+#ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
+        pVmcbNstGst->ctrl.u32InterceptXcpt  |= (pVmcb->ctrl.u32InterceptXcpt & ~(  RT_BIT(X86_XCPT_UD)
+                                                                                 | RT_BIT(X86_XCPT_BP)));
+#else
+        pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
+#endif
+
+        /*
          * Adjust intercepts while executing the nested-guest that differ from the
          * outer guest intercepts.
          *
@@ -2012,9 +2031,8 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
          * - VMMCALL: Exclude the outer guest intercept as when it's also not intercepted by
          *   the nested-guest, the physical CPU raises a \#UD exception as expected.
          */
-        pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
-        pVmcbNstGst->ctrl.u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & (  ~SVM_CTRL_INTERCEPT_VINTR
-                                                                                | ~SVM_CTRL_INTERCEPT_VMMCALL))
+        pVmcbNstGst->ctrl.u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & ~(  SVM_CTRL_INTERCEPT_VINTR
+                                                                                 | SVM_CTRL_INTERCEPT_VMMCALL))
                                             |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
 
         Assert(   (pVmcbNstGst->ctrl.u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS)
@@ -2042,8 +2060,7 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
 
         /* Finally, update the VMCB clean bits. */
         pVmcbNstGst->ctrl.u32VmcbCleanBits  &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
-
-        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS));
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
     }
 }
 #endif
@@ -2921,14 +2938,12 @@ static void hmR0SvmUpdateTscOffsettingNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     if (    fCanUseRealTsc
         && !(pVmcbNstGstCache->u64InterceptCtrl & (SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP)))
     {
-        pVmcbNstGstCtrl->u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_RDTSC;
-        pVmcbNstGstCtrl->u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_RDTSCP;
+        pVmcbNstGstCtrl->u64InterceptCtrl &= ~(SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
     }
     else
     {
-        pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSC;
-        pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSCP;
+        pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
 
@@ -2967,14 +2982,12 @@ static void hmR0SvmUpdateTscOffsetting(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb)
     bool fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &pVmcb->ctrl.u64TSCOffset, &fParavirtTsc);
     if (fCanUseRealTsc)
     {
-        pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_RDTSC;
-        pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_RDTSCP;
+        pVmcb->ctrl.u64InterceptCtrl &= ~(SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
     }
     else
     {
-        pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSC;
-        pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSCP;
+        pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
     pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
@@ -5372,8 +5385,21 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     return VINF_SUCCESS;
                 }
 
+                /** @todo Needed when restoring saved-state when saved state support wasn't yet
+                 *        added. Perhaps it won't be required later. */
+#if 0
+                case SVM_EXIT_NPF:
+                {
+                    Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+                    if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_PF))
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, SVM_EXIT_EXCEPTION_14, RT_LO_U32(uExitInfo1), uExitInfo2);
+                    hmR0SvmSetPendingXcptPF(pVCpu, pCtx, RT_LO_U32(uExitInfo1), uExitInfo2);
+                    return VINF_SUCCESS;
+                }
+#else
+                case SVM_EXIT_NPF:
+#endif
                 case SVM_EXIT_INIT:  /* We shouldn't get INIT signals while executing a nested-guest. */
-                case SVM_EXIT_NPF:   /* We don't yet support nested-paging for nested-guests, so this should never happen. */
                 {
                     return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
                 }
@@ -6422,7 +6448,10 @@ HMSVM_EXIT_DECL hmR0SvmExitShutdown(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 HMSVM_EXIT_DECL hmR0SvmExitUnexpected(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     RT_NOREF(pCtx);
-    AssertMsgFailed(("hmR0SvmExitUnexpected: ExitCode=%#RX64\n", pSvmTransient->u64ExitCode));
+    PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
+    AssertMsgFailed(("hmR0SvmExitUnexpected: ExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", pSvmTransient->u64ExitCode,
+                     pVmcb->ctrl.u64ExitInfo1, pVmcb->ctrl.u64ExitInfo2));
+    RT_NOREF(pVmcb);
     pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
     return VERR_SVM_UNEXPECTED_EXIT;
 }
@@ -6999,7 +7028,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 
     /* See AMD spec. 15.25.6 "Nested versus Guest Page Faults, Fault Ordering" for VMCB details for #NPF. */
     PSVMVMCB pVmcb           = pVCpu->hm.s.svm.pVmcb;
-    uint32_t u32ErrCode      = pVmcb->ctrl.u64ExitInfo1;
+    uint32_t u32ErrCode      = pVmcb->ctrl.u64ExitInfo1;    /** @todo Make it more explicit that high bits can be non-zero. */
     RTGCPHYS GCPhysFaultAddr = pVmcb->ctrl.u64ExitInfo2;
 
     Log4(("#NPF at CS:RIP=%04x:%#RX64 faultaddr=%RGp errcode=%#x \n", pCtx->cs.Sel, pCtx->rip, GCPhysFaultAddr, u32ErrCode));
