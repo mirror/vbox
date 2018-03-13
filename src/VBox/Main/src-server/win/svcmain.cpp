@@ -438,8 +438,8 @@ public:
     STDMETHOD(NotifyClientsFinished)()
     {
         LogRelFunc(("All clients gone - shutdown sequence initiated\n"));
-
-        m_pFactory->i_finishVBoxSvc();
+        if(m_pFactory)
+            m_pFactory->i_finishVBoxSvc();
 
         // This is not enough to finish VBoxSvc such as reference to crashed client still is in action
         // So I forcebly shutdown VBoxSvc
