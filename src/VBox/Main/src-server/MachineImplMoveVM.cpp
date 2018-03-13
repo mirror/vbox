@@ -637,8 +637,10 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         /*
          * Update state file path
          * very important step!
+         * Not obvious how to do it correctly.
          */
         {
+            LogRelFunc(("Update state file path\n"));
             rc = taskMoveVM->updatePathsToStateFiles(taskMoveVM->finalSaveStateFilesMap,
                                                      taskMoveVM->vmFolders[VBox_SettingFolder],
                                                      strTargetFolder);
@@ -1056,15 +1058,25 @@ HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATE
     while (itState != listOfFiles.end())
     {
         const SAVESTATETASK &sst = itState->second;
-
-        Utf8Str strGuidMachine = sst.snapshotUuid.toString();
-        ComObjPtr<Snapshot> snapshotMachineObj;
-
-        rc = m_pMachine->i_findSnapshotById(sst.snapshotUuid, snapshotMachineObj, true);
-        if (SUCCEEDED(rc) && !snapshotMachineObj.isNull())
+           
+        if (sst.snapshotUuid != Guid::Empty)
         {
-            snapshotMachineObj->i_updateSavedStatePaths(sourcePath.c_str(),
-                                                        targetPath.c_str());
+            Utf8Str strGuidMachine = sst.snapshotUuid.toString();
+            ComObjPtr<Snapshot> snapshotMachineObj;
+
+            rc = m_pMachine->i_findSnapshotById(sst.snapshotUuid, snapshotMachineObj, true);
+            if (SUCCEEDED(rc) && !snapshotMachineObj.isNull())
+            {
+                snapshotMachineObj->i_updateSavedStatePaths(sourcePath.c_str(),
+                                                            targetPath.c_str());
+            }
+        }
+        else
+        {
+            const Utf8Str &path = m_pMachine->mSSData->strStateFilePath;
+            m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%s",
+                                                               targetPath.c_str(),
+                                                               path.c_str() + sourcePath.length());
         }
 
         ++itState;
