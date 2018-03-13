@@ -919,6 +919,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           "\n" ),
         ( True,  ktReason_OSInstall_GRUB_hang,
           "-----\nGRUB Loading stage2..\n\n\n\n" ),
+        ( True,  ktReason_OSInstall_GRUB_hang,
+          "-----\nGRUB Loading stage2...\n\n\n\n" ), # the 3 dot hang appears to be less frequent
         ( True,  ktReason_Panic_BootManagerC000000F,
           "Windows failed to start. A recent hardware or software change might be the" ),
         ( True,  ktReason_BootManager_Image_corrupt,
