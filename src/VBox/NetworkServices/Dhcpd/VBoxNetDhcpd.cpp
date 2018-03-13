@@ -583,7 +583,7 @@ int VBoxNetDhcpd::main(int argc, char **argv)
         m_Config = Config::compat(argc, argv);
 
     if (m_Config == NULL)
-        return RTEXITCODE_FAILURE;
+        return VERR_GENERAL_FAILURE;
 
     homeInit();
     m_Config->setHome(m_strHome);
