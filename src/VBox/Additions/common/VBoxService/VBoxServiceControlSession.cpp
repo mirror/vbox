@@ -639,7 +639,7 @@ static int vgsvcGstCtrlSessionHandlePathUserDocuments(PVBOXSERVICECTRLSESSION pS
 
     /* Report back in any case. */
     int rc2 = VbglR3GuestCtrlMsgReplyEx(pHostCtx, rc, 0 /* Type */,
-                                        szPath, strlen(szPath) + 1 /* Include terminating zero */);
+                                        szPath, (uint32_t)strlen(szPath) + 1 /* Include terminating zero */);
     if (RT_FAILURE(rc2))
         VGSvcError("Failed to report user documents, rc=%Rrc\n", rc2);
     if (RT_SUCCESS(rc))
@@ -662,7 +662,7 @@ static int vgsvcGstCtrlSessionHandlePathUserHome(PVBOXSERVICECTRLSESSION pSessio
 
     /* Report back in any case. */
     int rc2 = VbglR3GuestCtrlMsgReplyEx(pHostCtx, rc, 0 /* Type */,
-                                        szPath, strlen(szPath) + 1 /* Include terminating zero */);
+                                        szPath, (uint32_t)strlen(szPath) + 1 /* Include terminating zero */);
     if (RT_FAILURE(rc2))
         VGSvcError("Failed to report user home, rc=%Rrc\n", rc2);
     if (RT_SUCCESS(rc))
