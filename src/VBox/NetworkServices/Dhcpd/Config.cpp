@@ -19,6 +19,7 @@
 #include <iprt/net.h>           /* NB: must come before getopt.h */
 #include <iprt/getopt.h>
 #include <iprt/path.h>
+#include <iprt/message.h>
 #include <iprt/string.h>
 
 #include "Config.h"
@@ -94,7 +95,7 @@ Config *Config::hardcoded()
 
 
 /* compatibility with old VBoxNetDHCP */
-static RTGETOPTDEF g_aCompatOptions[] =
+static const RTGETOPTDEF g_aCompatOptions[] =
 {
     { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
     { "--lower-ip",       'l',   RTGETOPT_REQ_IPV4ADDR },
@@ -113,8 +114,9 @@ Config *Config::compat(int argc, char **argv)
     int rc;
 
     rc = RTGetOptInit(&State, argc, argv,
-                      g_aCompatOptions, RT_ELEMENTS(g_aCompatOptions), 0,
+                      g_aCompatOptions, RT_ELEMENTS(g_aCompatOptions), 1,
                       RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCReturn(rc, NULL);
 
     std::unique_ptr<Config> config(new Config());
     for (;;)
@@ -161,12 +163,23 @@ Config *Config::compat(int argc, char **argv)
                 else if (strcmp(Val.psz, "netadp") == 0)
                     config->m_enmTrunkType = kIntNetTrunkType_NetAdp;
                 else
+                {
+                    RTMsgError("Unknown trunk type '%s'", Val.psz);
                     return NULL;
+                }
                 break;
 
             case 'u': /* --upper-ip */
                 config->m_IPv4PoolLast = Val.IPv4Addr;
                 break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                RTMsgError("%s: Unexpected command line argument", Val.psz);
+                return NULL;
+
+            default:
+                RTGetOptPrintError(rc, &Val);
+                return NULL;
         }
     }
 
