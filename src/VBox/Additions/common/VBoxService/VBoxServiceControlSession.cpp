@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -629,6 +629,52 @@ static int vgsvcGstCtrlSessionHandlePathRename(PVBOXSERVICECTRLSESSION pSession,
 }
 
 
+static int vgsvcGstCtrlSessionHandlePathUserDocuments(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
+{
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+
+    char szPath[RTPATH_MAX];
+    int rc = RTPathUserDocuments(szPath, sizeof(szPath));
+
+    /* Report back in any case. */
+    int rc2 = VbglR3GuestCtrlMsgReplyEx(pHostCtx, rc, 0 /* Type */,
+                                        szPath, strlen(szPath) + 1 /* Include terminating zero */);
+    if (RT_FAILURE(rc2))
+        VGSvcError("Failed to report user documents, rc=%Rrc\n", rc2);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+#ifdef DEBUG
+    VGSvcVerbose(4, "User documents is '%s', rc=%Rrc\n", szPath, rc);
+#endif
+    return rc;
+}
+
+
+static int vgsvcGstCtrlSessionHandlePathUserHome(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
+{
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+
+    char szPath[RTPATH_MAX];
+    int rc = RTPathUserHome(szPath, sizeof(szPath));
+
+    /* Report back in any case. */
+    int rc2 = VbglR3GuestCtrlMsgReplyEx(pHostCtx, rc, 0 /* Type */,
+                                        szPath, strlen(szPath) + 1 /* Include terminating zero */);
+    if (RT_FAILURE(rc2))
+        VGSvcError("Failed to report user home, rc=%Rrc\n", rc2);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+#ifdef DEBUG
+    VGSvcVerbose(4, "User home is '%s', rc=%Rrc\n", szPath, rc);
+#endif
+    return rc;
+}
+
+
 /**
  * Handles starting a guest processes.
  *
@@ -1021,6 +1067,20 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
         case HOST_PATH_RENAME:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandlePathRename(pSession, pHostCtx);
+            else
+                rc = VERR_NOT_SUPPORTED;
+            break;
+
+        case HOST_PATH_USER_DOCUMENTS:
+            if (fImpersonated)
+                rc = vgsvcGstCtrlSessionHandlePathUserDocuments(pSession, pHostCtx);
+            else
+                rc = VERR_NOT_SUPPORTED;
+            break;
+
+        case HOST_PATH_USER_HOME:
+            if (fImpersonated)
+                rc = vgsvcGstCtrlSessionHandlePathUserHome(pSession, pHostCtx);
             else
                 rc = VERR_NOT_SUPPORTED;
             break;

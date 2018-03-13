@@ -983,6 +983,18 @@ public:
 
     void* MutableRaw(void) { return pvData; }
 
+    Utf8Str ToString(void)
+    {
+        const char  *pszStr = (const char *)pvData;
+              size_t cbStr  = cbData;
+
+        if (!RTStrValidateEncodingEx(pszStr, cbStr,
+                                     RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED | RTSTR_VALIDATE_ENCODING_EXACT_LENGTH))
+            return "";
+
+        return Utf8Str(pszStr, cbStr);
+    }
+
 protected:
 
     /** Type of payload. */

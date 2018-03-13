@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -192,7 +192,15 @@ enum eHostFn
     /**
      * Renames a path on the guest.
      */
-    HOST_PATH_RENAME = 330
+    HOST_PATH_RENAME = 330,
+    /**
+     * Retrieves the user's documents directory.
+     */
+    HOST_PATH_USER_DOCUMENTS = 331,
+    /**
+     * Retrieves the user's home directory.
+     */
+    HOST_PATH_USER_HOME = 332
 };
 
 /**

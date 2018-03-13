@@ -349,6 +349,8 @@ private:
     HRESULT getPathStyle(PathStyle_T *aPathStyle);
     HRESULT getCurrentDirectory(com::Utf8Str &aCurrentDirectory);
     HRESULT setCurrentDirectory(const com::Utf8Str &aCurrentDirectory);
+    HRESULT getUserDocuments(com::Utf8Str &aUserDocuments);
+    HRESULT getUserHome(com::Utf8Str &aUserHome);
     HRESULT getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDirectories);
     HRESULT getFiles(std::vector<ComPtr<IGuestFile> > &aFiles);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
@@ -532,6 +534,8 @@ public:
     uint32_t                i_getProtocolVersion(void) { return mData.mProtocolVersion; }
     int                     i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags,
                                                  int *pGuestRc);
+    int                     i_pathUserDocuments(Utf8Str &strPath, int *prcGuest);
+    int                     i_pathUserHome(Utf8Str &strPath, int *prcGuest);
     int                     i_processRemoveFromList(GuestProcess *pProcess);
     int                     i_processCreateExInternal(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             i_processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);

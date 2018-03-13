@@ -11857,7 +11857,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="049af4e1-9732-4815-b01a-d64d21c064fe"
+    uuid="8d3485b3-64a9-4995-998e-6c602b91abd2"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="8"
     >
@@ -11979,10 +11979,20 @@ and "VAR" for unsetting. -->
     </attribute>
     <attribute name="currentDirectory" type="wstring">
       <desc>
-        The current directory of the session.  Guest path style.
+        Gets or sets the current directory of the session.  Guest path style.
         <result name="E_NOTIMPL">
           This attribute is not implemented yet.
         </result>
+      </desc>
+    </attribute>
+    <attribute name="userHome" type="wstring" readonly="yes">
+      <desc>
+        Returns the user's home / profile directory.  Guest path style.
+      </desc>
+    </attribute>
+    <attribute name="userDocuments" type="wstring" readonly="yes">
+      <desc>
+        Returns the user's documents directory.  Guest path style.
       </desc>
     </attribute>
     <attribute name="directories" type="IGuestDirectory" readonly="yes" safearray="yes">

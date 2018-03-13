@@ -543,6 +543,64 @@ HRESULT GuestSession::setCurrentDirectory(const com::Utf8Str &aCurrentDirectory)
     ReturnComNotImplemented();
 }
 
+HRESULT GuestSession::getUserHome(com::Utf8Str &aUserHome)
+{
+    HRESULT hr = i_isReadyExternal();
+    if (FAILED(hr))
+        return hr;
+
+    int rcGuest;
+    int vrc = i_pathUserHome(aUserHome, &rcGuest);
+    if (RT_FAILURE(vrc))
+    {
+        switch (vrc)
+        {
+            case VERR_NOT_SUPPORTED:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's home path is not supported by installed Guest Additions"));
+                break;
+
+            case VERR_GSTCTL_GUEST_ERROR:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's home path failed: %Rrc"), rcGuest);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's home path failed: %Rrc"), vrc);
+                break;
+        }
+    }
+
+    return hr;
+}
+
+HRESULT GuestSession::getUserDocuments(com::Utf8Str &aUserDocuments)
+{
+    HRESULT hr = i_isReadyExternal();
+    if (FAILED(hr))
+        return hr;
+
+    int rcGuest;
+    int vrc = i_pathUserDocuments(aUserDocuments, &rcGuest);
+    if (RT_FAILURE(vrc))
+    {
+        switch (vrc)
+        {
+            case VERR_NOT_SUPPORTED:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's documents path is not supported by installed Guest Additions"));
+                break;
+
+            case VERR_GSTCTL_GUEST_ERROR:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's documents path failed: %Rrc"), rcGuest);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's documents path failed: %Rrc"), vrc);
+                break;
+        }
+    }
+
+    return hr;
+}
+
 HRESULT GuestSession::getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDirectories)
 {
     LogFlowThisFuncEnter();
@@ -649,7 +707,7 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
     vrc = i_sendCommand(HOST_SESSION_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
         vrc = i_waitForStatusChange(pEvent, GuestSessionWaitForFlag_Terminate, uTimeoutMS,
-                                  NULL /* Session status */, prcGuest);
+                                    NULL /* Session status */, prcGuest);
 
     unregisterWaitEvent(pEvent);
 
@@ -1797,8 +1855,7 @@ void GuestSession::i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask)
     NOREF(vrc);
 }
 
-int GuestSession::i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest,
-                                     uint32_t uFlags, int *prcGuest)
+int GuestSession::i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *prcGuest)
 {
     AssertReturn(!(uFlags & ~PATHRENAME_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
 
@@ -1832,6 +1889,106 @@ int GuestSession::i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &
         if (   vrc == VERR_GSTCTL_GUEST_ERROR
             && prcGuest)
             *prcGuest = pEvent->GuestResult();
+    }
+
+    unregisterWaitEvent(pEvent);
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+/**
+ * Returns the user's absolute documents path, if any.
+ *
+ * @return VBox status code.
+ * @param  strPath              Where to store the user's document path.
+ * @param  prcGuest             Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
+ *                              Any other return code indicates some host side error.
+ */
+int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *prcGuest)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /** @todo Cache the user's document path? */
+
+    GuestWaitEvent *pEvent = NULL;
+    int vrc = registerWaitEvent(mData.mSession.mID, 0 /* Object ID */, &pEvent);
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    /* Prepare HGCM call. */
+    VBOXHGCMSVCPARM paParms[2];
+    int i = 0;
+    paParms[i++].setUInt32(pEvent->ContextID());
+
+    alock.release(); /* Drop write lock before sending. */
+
+    vrc = i_sendCommand(HOST_PATH_USER_DOCUMENTS, i, paParms);
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = pEvent->Wait(30 * 1000);
+        if (RT_SUCCESS(vrc))
+        {
+            strPath = pEvent->Payload().ToString();
+        }
+        else
+        {
+            if (vrc == VERR_GSTCTL_GUEST_ERROR)
+            {
+                if (prcGuest)
+                    *prcGuest = pEvent->GuestResult();
+            }
+        }
+    }
+
+    unregisterWaitEvent(pEvent);
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+/**
+ * Returns the user's absolute home path, if any.
+ *
+ * @return VBox status code.
+ * @param  strPath              Where to store the user's home path.
+ * @param  prcGuest             Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
+ *                              Any other return code indicates some host side error.
+ */
+int GuestSession::i_pathUserHome(Utf8Str &strPath, int *prcGuest)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /** @todo Cache the user's home path? */
+
+    GuestWaitEvent *pEvent = NULL;
+    int vrc = registerWaitEvent(mData.mSession.mID, 0 /* Object ID */, &pEvent);
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    /* Prepare HGCM call. */
+    VBOXHGCMSVCPARM paParms[2];
+    int i = 0;
+    paParms[i++].setUInt32(pEvent->ContextID());
+
+    alock.release(); /* Drop write lock before sending. */
+
+    vrc = i_sendCommand(HOST_PATH_USER_HOME, i, paParms);
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = pEvent->Wait(30 * 1000);
+        if (RT_SUCCESS(vrc))
+        {
+            strPath = pEvent->Payload().ToString();
+        }
+        else
+        {
+            if (vrc == VERR_GSTCTL_GUEST_ERROR)
+            {
+                if (prcGuest)
+                    *prcGuest = pEvent->GuestResult();
+            }
+        }
     }
 
     unregisterWaitEvent(pEvent);
