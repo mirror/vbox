@@ -394,7 +394,7 @@ void UIGuestControlFileManager::prepareConnections()
     if (m_pQtGuestListener)
     {
         connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
-                this, &UIGuestControlFileManager::sltGuestSessionUnregistered, Qt::DirectConnection);
+                this, &UIGuestControlFileManager::sltGuestSessionUnregistered);
     }
     if (m_pSessionCreateWidget)
     {

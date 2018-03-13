@@ -250,9 +250,9 @@ void UIGuestControlWidget::prepareConnections()
     if (m_pQtListener)
     {
         connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionRegistered,
-                this, &UIGuestControlWidget::sltGuestSessionRegistered, Qt::DirectConnection);
+                this, &UIGuestControlWidget::sltGuestSessionRegistered);
         connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
-                this, &UIGuestControlWidget::sltGuestSessionUnregistered, Qt::DirectConnection);
+                this, &UIGuestControlWidget::sltGuestSessionUnregistered);
     }
 }
 

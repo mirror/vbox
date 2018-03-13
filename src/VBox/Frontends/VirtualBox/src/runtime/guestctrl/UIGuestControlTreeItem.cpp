@@ -220,12 +220,14 @@ const CGuestSession& UIGuestSessionTreeItem::guestSession() const
 
 void UIGuestSessionTreeItem::prepareConnections()
 {
+
+    qRegisterMetaType<CGuestProcess>();
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
-            this, &UIGuestSessionTreeItem::sltGuestSessionUpdated, Qt::DirectConnection);
+            this, &UIGuestSessionTreeItem::sltGuestSessionUpdated);
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestProcessRegistered,
-            this, &UIGuestSessionTreeItem::sltGuestProcessRegistered, Qt::DirectConnection);
+            this, &UIGuestSessionTreeItem::sltGuestProcessRegistered);
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestProcessUnregistered,
-            this, &UIGuestSessionTreeItem::sltGuestProcessUnregistered, Qt::DirectConnection);
+            this, &UIGuestSessionTreeItem::sltGuestProcessUnregistered);
 }
 
 void UIGuestSessionTreeItem::prepareListener()
@@ -274,6 +276,14 @@ void UIGuestSessionTreeItem::sltGuestProcessRegistered(CGuestProcess guestProces
 
 void UIGuestSessionTreeItem::addGuestProcess(CGuestProcess guestProcess)
 {
+    /* Dont add the tree items for already terminated or currently being terminated
+       guest processes: */
+    KProcessStatus processStatus = guestProcess.GetStatus();
+    if (processStatus != KProcessStatus_Starting &&
+        processStatus != KProcessStatus_Started &&
+        processStatus != KProcessStatus_Paused)
+        return;
+
     UIGuestProcessTreeItem *newItem = new UIGuestProcessTreeItem(this, guestProcess);
     connect(newItem, &UIGuestProcessTreeItem::sigGuestProcessErrorText,
             this, &UIGuestSessionTreeItem::sigGuestSessionErrorText);
@@ -328,8 +338,9 @@ UIGuestProcessTreeItem::UIGuestProcessTreeItem(UIGuestControlTreeItem *pTreeWidg
 
 void UIGuestProcessTreeItem::prepareConnections()
 {
+    qRegisterMetaType<CGuestProcessStateChangedEvent>();
     connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigGuestProcessStateChanged,
-            this, &UIGuestProcessTreeItem::sltGuestProcessUpdated, Qt::DirectConnection);
+            this, &UIGuestProcessTreeItem::sltGuestProcessUpdated);
 }
 
 UIGuestProcessTreeItem::~UIGuestProcessTreeItem()
@@ -358,18 +369,17 @@ void UIGuestProcessTreeItem::sltGuestProcessUpdated(const CGuestProcessStateChan
     {
         CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
         if (cErrorInfo.isOk() && cErrorInfo.GetResultCode() != S_OK)
-        {
-            /* For some reason I am yet to find this emit is not working.
-               Thus we are calling the parent's function directly: */
-            //emit sigGuestProcessErrorText(cErrorInfo.GetText());
-            UIGuestSessionTreeItem *sessionParent = dynamic_cast<UIGuestSessionTreeItem*>(QTreeWidgetItem::parent());
-            if (sessionParent)
-            {
-                sessionParent->errorString(cErrorInfo.GetText().toStdString().c_str());
-            }
-        }
+            emit sigGuestProcessErrorText(cErrorInfo.GetText());
+
     }
     setColumnText();
+    KProcessStatus processStatus = m_comGuestProcess.GetStatus();
+    if (processStatus != KProcessStatus_Starting &&
+        processStatus !=  KProcessStatus_Started &&
+        processStatus !=  KProcessStatus_Paused)
+    {
+        this->deleteLater();
+    }
 }
 
  void UIGuestProcessTreeItem::setColumnText()
