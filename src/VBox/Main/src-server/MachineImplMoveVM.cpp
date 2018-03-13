@@ -1058,7 +1058,7 @@ HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATE
     while (itState != listOfFiles.end())
     {
         const SAVESTATETASK &sst = itState->second;
-           
+
         if (sst.snapshotUuid != Guid::Empty)
         {
             Utf8Str strGuidMachine = sst.snapshotUuid.toString();
