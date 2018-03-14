@@ -165,7 +165,9 @@ ifdef VBOX_WITH_ICHAT_THEATER
 endif
 
 
-
+#
+# Include folders.
+#
 VBOX_GUI_INC_DIRS = \
 	./src \
 	./src/converter \
@@ -210,26 +212,15 @@ VBOX_GUI_INC_DIRS += \
 	./src/net
 endif
 
+#
+# VirtualBox - GUI Application.
+# Include folders.
+#
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
 	$(VirtualBox_0_OUTDIR)/include \
 	$(VBOX_GRAPHICS_INCS)
 
-# Necessary for the hdd backend enumeration
-VirtualBox_LIBS = $(LIB_DDU)
-
-if1of ($(KBUILD_TARGET), linux netbsd openbsd)
- VirtualBox_LIBS += dl
-endif
-
-# This library is required for multi-monitor support
-VirtualBox_LIBS.linux   += Xinerama
-VirtualBox_LIBS.solaris += Xinerama
-VirtualBox_LIBS.freebsd += Xinerama
-
-VirtualBox_LIBS.linux   += xcb
-VirtualBox_LIBS.solaris += xcb
-VirtualBox_LIBS.freebsd += xcb
 
 ifneq ($(KBUILD_TARGET),win)
 VirtualBox_CXXFLAGS += -Wno-switch
@@ -269,14 +260,42 @@ ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
 
-VirtualBox_LIBS.win       = \
+
+#
+# VirtualBox - GUI Application.
+# Libraries.
+#
+
+# Library required for the hdd backend enumeration:
+VirtualBox_LIBS = $(LIB_DDU)
+
+# Runtime library loader required on X11 hosts:
+if1of ($(KBUILD_TARGET), linux netbsd openbsd)
+ VirtualBox_LIBS += dl
+endif
+
+# Xinerama library required for multi-monitor support:
+VirtualBox_LIBS.linux   += Xinerama
+VirtualBox_LIBS.solaris += Xinerama
+VirtualBox_LIBS.freebsd += Xinerama
+
+# XCB library required for direct XCB native code support:
+VirtualBox_LIBS.linux   += xcb
+VirtualBox_LIBS.solaris += xcb
+VirtualBox_LIBS.freebsd += xcb
+
+# Various Windows hosts libraries:
+VirtualBox_LIBS.win = \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Htmlhelp.Lib \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
-if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
- VirtualBox_LIBS         += $(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
+
+# VBox keyboard shared library for X11 hosts:
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
+ VirtualBox_LIBS += $(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
+# These are 2D Video Acceleration and 3D Acceleration related libs:
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
  VirtualBox_LIBS.solaris   += GL
