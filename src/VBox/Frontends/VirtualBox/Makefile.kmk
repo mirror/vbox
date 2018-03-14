@@ -923,19 +923,6 @@ VirtualBox_SOURCES.win += \
 	src/platform/win/VBoxUtils-win.cpp \
 	src/platform/win/WinKeyboard.cpp
 
-if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
- INSTALLS.linux += VirtualBox.qt.conf
- INSTALLS.solaris += VirtualBox.qt.conf
- VirtualBox.qt.conf_INST = $(INST_BIN)
- VirtualBox.qt.conf_MODE = 644
- VirtualBox.qt.conf_SOURCES = $(VirtualBox_0_OUTDIR)/qt.conf=>qt.conf
-
-$$(VirtualBox_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION_MK) | $$(@D)/
-	$(QUIET)$(RM) -f $@
-	$(QUIET)$(APPEND) $@ "[Paths]"
-	$(QUIET)$(APPEND) $@ "Plugins =" $(PATH_OUT)/$(INST_BIN)/plugins
-endif
-
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/CocoaEventHelper.mm \
 	src/platform/darwin/DarwinKeyboard.cpp \
@@ -972,8 +959,30 @@ ifdef VBOX_WITH_DRAG_AND_DROP
  endif
 endif
 
+
+#
+# VirtualBox - GUI Application.
+# Deployment.
+#
+if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
+ INSTALLS.linux += VirtualBox.qt.conf
+ INSTALLS.solaris += VirtualBox.qt.conf
+ VirtualBox.qt.conf_INST = $(INST_BIN)
+ VirtualBox.qt.conf_MODE = 644
+ VirtualBox.qt.conf_SOURCES = $(VirtualBox_0_OUTDIR)/qt.conf=>qt.conf
+
+$$(VirtualBox_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION_MK) | $$(@D)/
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(APPEND) $@ "[Paths]"
+	$(QUIET)$(APPEND) $@ "Plugins =" $(PATH_OUT)/$(INST_BIN)/plugins
+endif
+
+
+#
+# VirtualBox - GUI Application.
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt unit.)
+#
 VirtualBox_QT_MODULES = Core Gui Widgets PrintSupport
 VirtualBox_QT_MODULES.linux   += X11Extras
 VirtualBox_QT_MODULES.solaris += X11Extras
@@ -983,6 +992,7 @@ VirtualBox_QT_MODULES.win     += WinExtras
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_QT_MODULES += OpenGL
 endif
+
 
 # Pull in the ui files
 $(eval VirtualBox_SOURCES += $(FORMS))
@@ -1036,6 +1046,11 @@ includedep $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep
 VirtualBox_BLDDIRS       += $(VirtualBox_0_OUTDIR)/include
 VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMWrappers
 VirtualBox_CLEAN         += $(wildcard $(VirtualBox_0_OUTDIR)/include/*) $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep
+
+#
+# VirtualBox - GUI Application.
+# Build generated COM wrappers as part of app.
+#
 VirtualBox_SOURCES       += $(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
 
 ## @todo kmk doesn't remake optional outputs when they are missing...
