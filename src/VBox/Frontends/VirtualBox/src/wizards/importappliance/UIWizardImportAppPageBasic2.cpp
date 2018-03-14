@@ -122,6 +122,14 @@ void UIWizardImportAppPageBasic2::initializePage()
 {
     /* Acquire appliance and certificate: */
     CAppliance *pAppliance = m_pApplianceWidget->appliance();
+    /* Check if pAppliance is alive. If not just return here. This
+       prevents crashes when an invalid ova file is supllied: */
+    if (!pAppliance)
+    {
+        if (wizard())
+            wizard()->reject();
+        return;
+    }
     CCertificate certificate = pAppliance->GetCertificate();
     if (certificate.isNull())
         m_enmCertText = kCertText_Unsigned;
