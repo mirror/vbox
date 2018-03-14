@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2017 Oracle Corporation
+# Copyright (C) 2006-2018 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -18,20 +18,16 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+
 #
 # Globals.
 #
-VBOX_VIRTUALBOX4_SRC := $(PATH_SUB_CURRENT)
-VBOX_VIRTUALBOX4_OUT_DIR := $(PATH_TARGET)/VirtualBox/misc
+VBOX_VIRTUALBOX_SRC := $(PATH_SUB_CURRENT)
+VBOX_VIRTUALBOX_OUT_DIR := $(PATH_TARGET)/VirtualBox/misc
 
-# Show the update notifier dialog during startup. If this setting is disabled
-# the user can still update using the menu if desired.
-ifndef VBOX_OSE
-VBOX_WITH_UPDATE_REQUEST := 1
-endif
 
 #
-# The targets.
+# Targets.
 #
 ifdef VBOX_WITH_HARDENING
 PROGRAMS += VirtualBoxHardened
@@ -40,7 +36,6 @@ DLLS += VirtualBox
 else
 PROGRAMS += VirtualBox
 endif
-
 INSTALLS += VirtualBox.nls
 
 
@@ -86,6 +81,15 @@ SAVED_TEMPLATE :=
 LANGUAGE       :=
 IMAGES         :=
 # FORMS and TRANSLATIONS are reset further down.
+
+
+#
+# Perform initial new version check on startup.
+# If this setting is disabled the user can still check using the menu.
+#
+ifndef VBOX_OSE
+VBOX_WITH_UPDATE_REQUEST := 1
+endif
 
 
 #
@@ -978,8 +982,8 @@ VirtualBox_SOURCES             += VirtualBox1_x4.qrc
 VirtualBox1_x4.qrc_RCCFLAGS  = -name BASIC1_X4
 VirtualBox_SOURCES             += VirtualBox2_x4.qrc
 VirtualBox2_x4.qrc_RCCFLAGS  = -name BASIC2_X4
-VirtualBox_SOURCES += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
-$(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
+VirtualBox_SOURCES += $(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc
+$(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += VirtualBoxShaders.qrc
  VirtualBoxShaders.qrc_RCCFLAGS = -name SHADERS
@@ -1021,13 +1025,13 @@ $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
   $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp \
 ): \
 		$(VBOX_XIDL_FILE) \
-		$(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl \
+		$(VBOX_VIRTUALBOX_SRC)/src/globals/COMWrappers.xsl \
 		$(VBOX_FILESPLIT) \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
 	$(QUIET)$(RM) -f -- "$@" "$(PATH_TARGET)/VirtualBoxComWrapperFiles.dep"
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ \
-                $(VBOX_VIRTUALBOX4_SRC)/src/globals/COMWrappers.xsl $<
+                $(VBOX_VIRTUALBOX_SRC)/src/globals/COMWrappers.xsl $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VirtualBox_0_OUTDIR)/include \
 		$(PATH_TARGET)/VirtualBoxComWrapperFiles.dep VirtualBox_VBOX_COMWRAPPERS
 	$(APPEND) "$@"
@@ -1039,10 +1043,10 @@ testwrappers:: $$(VirtualBox_0_OUTDIR)/include/COMWrappers
 #
 # Generate qrc file with branded icons.
 #
-VirtualBox_BLDDIRS       += $(VBOX_VIRTUALBOX4_OUT_DIR)
-VirtualBox_CLEAN         += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
-$(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
-		$(VBOX_VIRTUALBOX4_SRC)/VirtualBoxBrand.qrc \
+VirtualBox_BLDDIRS       += $(VBOX_VIRTUALBOX_OUT_DIR)
+VirtualBox_CLEAN         += $(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc
+$(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc: \
+		$(VBOX_VIRTUALBOX_SRC)/VirtualBoxBrand.qrc \
 		$(PATH_ROOT)/Config.kmk \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
