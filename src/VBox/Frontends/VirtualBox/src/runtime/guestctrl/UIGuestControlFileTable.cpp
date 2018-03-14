@@ -1123,6 +1123,7 @@ bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QSt
 
 bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QString &guestDestinationPath)
 {
+    Q_UNUSED(guestDestinationPath);
     if (m_comGuestSession.isNull())
         return false;
     QFileInfo hostFileInfo(hostSourcePath);
