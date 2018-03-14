@@ -1860,12 +1860,18 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         {
             if (RTFileExists(strSrc.c_str()))
             {
+                if (pCtx->cVerbose)
+                    RTPrintf("File '%s' -> '%s'\n", strSrc.c_str(), pszDst);
+
                 SafeArray<FileCopyFlag_T> copyFlags;
                 rc = pCtx->pGuestSession->FileCopyToGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
                                                           ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
             }
             else if (RTDirExists(strSrc.c_str()))
             {
+                if (pCtx->cVerbose)
+                    RTPrintf("Directory '%s' -> '%s'\n", strSrc.c_str(), pszDst);
+
                 SafeArray<DirectoryCopyFlag_T> copyFlags;
                 copyFlags.push_back(DirectoryCopyFlag_CopyIntoExisting);
                 rc = pCtx->pGuestSession->DirectoryCopyToGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
@@ -1876,20 +1882,40 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         }
         else
         {
-            if (   strSrc.endsWith("/")
-                || strSrc.endsWith("\\"))
+            /* We need to query the source type on the guest first in order to know which copy flavor we need. */
+            ComPtr<IGuestFsObjInfo> pFsObjInfo;
+            FsObjType_T enmObjType = FsObjType_Unknown; /* Shut up MSC */
+            rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(strSrc).raw(), TRUE  /* fFollowSymlinks */, pFsObjInfo.asOutParam());
+            if (SUCCEEDED(rc))
+                rc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
+            if (FAILED(rc))
             {
+                if (pCtx->cVerbose)
+                    RTPrintf("Warning: Cannot stat for element '%s': No such element\n", strSrc.c_str());
+                continue; /* Skip. */
+            }
+
+            if (enmObjType == FsObjType_Directory)
+            {
+                if (pCtx->cVerbose)
+                    RTPrintf("Directory '%s' -> '%s'\n", strSrc.c_str(), pszDst);
+
                 SafeArray<DirectoryCopyFlag_T> copyFlags;
                 copyFlags.push_back(DirectoryCopyFlag_CopyIntoExisting);
                 rc = pCtx->pGuestSession->DirectoryCopyFromGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
                                                                  ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
             }
-            else
+            else if (enmObjType == FsObjType_File)
             {
+                if (pCtx->cVerbose)
+                    RTPrintf("File '%s' -> '%s'\n", strSrc.c_str(), pszDst);
+
                 SafeArray<FileCopyFlag_T> copyFlags;
                 rc = pCtx->pGuestSession->FileCopyFromGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
                                                             ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
             }
+            else if (pCtx->cVerbose)
+                RTPrintf("Warning: Skipping '%s': Not handled\n", strSrc.c_str());
         }
     }
 
