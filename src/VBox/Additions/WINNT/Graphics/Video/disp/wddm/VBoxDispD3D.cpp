@@ -2293,6 +2293,7 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETDECODEGUIDCOUNT:
         case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDCOUNT:
         case D3DDDICAPS_GETVIDEOPROCESSORRTFORMATCOUNT:
+        case D3DDDICAPS_GETCONTENTPROTECTIONCAPS:
             if (pData->pData && pData->DataSize)
                 memset(pData->pData, 0, pData->DataSize);
             break;
