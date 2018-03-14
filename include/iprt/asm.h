@@ -3897,7 +3897,9 @@ DECLINLINE(void) ASMMemFill32(volatile void RT_FAR *pv, size_t cb, uint32_t u32)
  *
  * @todo Fix name, it is a predicate function but it's not returning boolean!
  */
-#if !defined(RDESKTOP) && (!defined(RT_OS_LINUX) || !defined(__KERNEL__))
+#if    !defined(RDESKTOP) && (!defined(RT_OS_LINUX) || !defined(__KERNEL__)) \
+    && !defined(RT_ARCH_SPARC64) \
+    && !defined(RT_ARCH_SPARC32)
 DECLASM(void RT_FAR *) ASMMemFirstNonZero(void const RT_FAR *pv, size_t cb);
 #else
 DECLINLINE(void RT_FAR *) ASMMemFirstNonZero(void const RT_FAR *pv, size_t cb)
@@ -4004,7 +4006,9 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const RT_FAR *pvPage)
  * @remarks No alignment requirements.
  */
 #if    (!defined(RT_OS_LINUX) || !defined(__KERNEL__)) \
-    && (!defined(RT_OS_FREEBSD) || !defined(_KERNEL))
+    && (!defined(RT_OS_FREEBSD) || !defined(_KERNEL)) \
+    && !defined(RT_ARCH_SPARC64) \
+    && !defined(RT_ARCH_SPARC32)
 DECLASM(void *) ASMMemFirstMismatchingU8(void const RT_FAR *pv, size_t cb, uint8_t u8);
 #else
 DECLINLINE(void *) ASMMemFirstMismatchingU8(void const RT_FAR *pv, size_t cb, uint8_t u8)
