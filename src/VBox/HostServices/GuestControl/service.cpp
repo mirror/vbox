@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1040,7 +1040,7 @@ private:
  */
 int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
 {
-    RT_NOREF1(pvClient);
+    RT_NOREF(pvClient);
     LogFlowFunc(("[Client %RU32] Connected\n", u32ClientID));
 #ifdef VBOX_STRICT
     ClientStateMapIterConst it = mClientStateMap.find(u32ClientID);
@@ -1068,7 +1068,7 @@ int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
  */
 int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 {
-    RT_NOREF1(pvClient);
+    RT_NOREF(pvClient);
     LogFlowFunc(("[Client %RU32] Disconnected (%zu clients total)\n",
                  u32ClientID, mClientStateMap.size()));
 
@@ -1172,7 +1172,7 @@ int Service::clientGetCommand(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandl
 int Service::clientSetMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
                                    uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RT_NOREF1(callHandle);
+    RT_NOREF(callHandle);
 
     /*
      * Lookup client in our list so that we can assign the context ID of
@@ -1223,7 +1223,7 @@ int Service::clientSetMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE call
 int Service::clientSetMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
                                      uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RT_NOREF2(callHandle, paParms);
+    RT_NOREF(callHandle, paParms);
 
     /*
      * Lookup client in our list so that we can assign the context ID of
@@ -1251,7 +1251,7 @@ int Service::clientSetMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE ca
 int Service::clientSkipMsg(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
                            uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RT_NOREF2(callHandle, paParms);
+    RT_NOREF(callHandle, paParms);
 
     /*
      * Lookup client in our list so that we can assign the context ID of
@@ -1575,7 +1575,7 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
  */
 int Service::sessionClose(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RT_NOREF2(u32ClientID, callHandle);
+    RT_NOREF(u32ClientID, callHandle);
     if (cParms < 2)
         return VERR_INVALID_PARAMETER;
 
