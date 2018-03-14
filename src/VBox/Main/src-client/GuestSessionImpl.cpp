@@ -555,13 +555,20 @@ HRESULT GuestSession::getUserHome(com::Utf8Str &aUserHome)
     {
         switch (vrc)
         {
-            case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's home path is not supported by installed Guest Additions"));
-                break;
-
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's home path failed: %Rrc"), rcGuest);
+            {
+                switch (rcGuest)
+                {
+                    case VERR_NOT_SUPPORTED:
+                        hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's home path is not supported by installed Guest Additions"));
+                        break;
+
+                    break;
+                        hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's home path failed on the guest: %Rrc"), rcGuest);
+                        break;
+                }
                 break;
+            }
 
             default:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's home path failed: %Rrc"), vrc);
@@ -584,13 +591,20 @@ HRESULT GuestSession::getUserDocuments(com::Utf8Str &aUserDocuments)
     {
         switch (vrc)
         {
-            case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's documents path is not supported by installed Guest Additions"));
-                break;
-
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's documents path failed: %Rrc"), rcGuest);
+            {
+                switch (rcGuest)
+                {
+                    case VERR_NOT_SUPPORTED:
+                        hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's documents path is not supported by installed Guest Additions"));
+                        break;
+
+                    break;
+                        hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's documents path failed on the guest: %Rrc"), rcGuest);
+                        break;
+                }
                 break;
+            }
 
             default:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Getting the user's documents path failed: %Rrc"), vrc);
