@@ -701,7 +701,7 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
 
             case GUEST_MSG_REPLY:
             {
-                if (pSvcCb->mParms >= 3)
+                if (pSvcCb->mParms >= 4)
                 {
                     int idx = 1; /* Current parameter index. */
                     CALLBACKDATA_MSG_REPLY dataCb;
@@ -714,8 +714,9 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                     AssertRCReturn(vrc, vrc);
 
                     GuestWaitEventPayload evPayload(dataCb.uType, dataCb.pvPayload, dataCb.cbPayload);
-                    int rc2 = signalWaitEventInternal(pCtxCb, dataCb.rc, &evPayload);
-                    AssertRC(rc2);
+                    vrc = signalWaitEventInternal(pCtxCb, dataCb.rc, &evPayload);
+                    if (vrc == VERR_NOT_FOUND)
+                        vrc = VINF_SUCCESS;
                 }
                 else
                     vrc = VERR_INVALID_PARAMETER;
