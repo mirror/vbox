@@ -604,7 +604,7 @@ typedef struct ClientState
     }
 
     /**
-     * Set to inidicate that a client call (GUEST_MSG_WAIT) is pending.
+     * Set to indicate that a client call (GUEST_MSG_WAIT) is pending.
      */
     int SetPending(const ClientConnection *pConnection)
     {
@@ -1025,12 +1025,10 @@ private:
     int prepareExecute(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientConnect(uint32_t u32ClientID, void *pvClient);
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
-    int clientGetCommand(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int clientSetMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int clientSetMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientMsgGet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientMsgSkip(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int cancelHostCmd(uint32_t u32ContextID);
-    int cancelPendingWaits(uint32_t u32ClientID, int rcPending);
     int hostCallback(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int hostProcessCommand(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
@@ -1114,7 +1112,11 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
             HostCommand *pNext = RTListNodeGetNext(&pCurCmd->Node, HostCommand, Node);
             bool fLast = RTListNodeIsLast(&mHostCmdList, &pCurCmd->Node);
 
-            int rc2 = cancelHostCmd(pCurCmd->mContextID);
+            uint32_t cParms = 0;
+            VBOXHGCMSVCPARM arParms[2];
+            arParms[cParms++].setUInt32(pCurCmd->mContextID);
+
+            int rc2 = hostCallback(GUEST_DISCONNECTED, cParms, arParms);
             if (RT_FAILURE(rc2))
             {
                 LogFlowFunc(("Cancelling host command with CID=%u (refCount=%RU32) failed with rc=%Rrc\n",
@@ -1140,8 +1142,10 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 }
 
 /**
- * Either fills in parameters from a pending host command into our guest context or
- * defer the guest call until we have something from the host.
+ * A client asks for the next message to process.
+ *
+ * This either fills in a pending host command into the client's parameter space
+ * or defers the guest call until we have something from the host.
  *
  * @return  IPRT status code.
  * @param   u32ClientID                 The client's ID.
@@ -1149,8 +1153,8 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
  * @param   cParms                      Number of parameters.
  * @param   paParms                     Array of parameters.
  */
-int Service::clientGetCommand(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
-                              uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::clientMsgGet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
+                          uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Lookup client in our list so that we can assign the context ID of
@@ -1179,8 +1183,18 @@ int Service::clientGetCommand(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandl
     return clientState.RunCurrent(&thisCon);
 }
 
-int Service::clientSetMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
-                                   uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+/**
+ * A client tells this service to set a message filter.
+ * That way a client only will get new messages which matches the filter.
+ *
+ * @return VBox status code.
+ * @param  u32ClientID                  The client's ID.
+ * @param  callHandle                   The client's call handle.
+ * @param  cParms                       Number of parameters.
+ * @param  paParms                      Array of parameters.
+ */
+int Service::clientMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
+                                uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF(callHandle);
 
@@ -1230,8 +1244,17 @@ int Service::clientSetMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE call
     return rc;
 }
 
-int Service::clientSetMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
-                                     uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+/**
+ * A client tells this service to unset (clear) its message filter.
+ *
+ * @return VBox status code.
+ * @param  u32ClientID                  The client's ID.
+ * @param  callHandle                   The client's call handle.
+ * @param  cParms                       Number of parameters.
+ * @param  paParms                      Array of parameters.
+ */
+int Service::clientMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
+                                  uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF(callHandle, paParms);
 
@@ -1312,43 +1335,6 @@ int Service::clientMsgSkip(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
 }
 
 /**
- * Cancels a buffered host command to unblock waiting on Main side
- * via callbacks.
- *
- * @return  IPRT status code.
- * @param   u32ContextID                Context ID of host command to cancel.
- */
-int Service::cancelHostCmd(uint32_t u32ContextID)
-{
-    Assert(mpfnHostCallback);
-
-    LogFlowFunc(("Cancelling CID=%u ...\n", u32ContextID));
-
-    uint32_t cParms = 0;
-    VBOXHGCMSVCPARM arParms[2];
-    arParms[cParms++].setUInt32(u32ContextID);
-
-    return hostCallback(GUEST_DISCONNECTED, cParms, arParms);
-}
-
-/**
- * Client asks itself (in another thread) to cancel all pending waits which are blocking the client
- * from shutting down / doing something else.
- *
- * @return  IPRT status code.
- * @param   u32ClientID                 The client's ID.
- * @param   rcPending                   Result code for completing pending operation.
- */
-int Service::cancelPendingWaits(uint32_t u32ClientID, int rcPending)
-{
-    ClientStateMapIter itClientState = mClientStateMap.find(u32ClientID);
-    if (itClientState != mClientStateMap.end())
-        return itClientState->second.CancelWaiting(rcPending);
-
-    return VINF_SUCCESS;
-}
-
-/**
  * Notifies the host (using low-level HGCM callbacks) about an event
  * which was sent from the client.
  *
@@ -1366,8 +1352,7 @@ int Service::hostCallback(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM p
     if (mpfnHostCallback)
     {
         VBOXGUESTCTRLHOSTCALLBACK data(cParms, paParms);
-        rc = mpfnHostCallback(mpvHostData, eFunction,
-                              (void *)(&data), sizeof(data));
+        rc = mpfnHostCallback(mpvHostData, eFunction, (void *)(&data), sizeof(data));
     }
     else
         rc = VERR_NOT_SUPPORTED;
@@ -1479,7 +1464,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         if (eFunction == GUEST_MSG_WAIT)
         {
             LogFlowFunc(("[Client %RU32] GUEST_MSG_GET\n", u32ClientID));
-            rc = clientGetCommand(u32ClientID, callHandle, cParms, paParms);
+            rc = clientMsgGet(u32ClientID, callHandle, cParms, paParms);
         }
         else
         {
@@ -1491,9 +1476,13 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                  * client can gracefully shut down.
                  */
                 case GUEST_CANCEL_PENDING_WAITS:
+                {
                     LogFlowFunc(("[Client %RU32] GUEST_CANCEL_PENDING_WAITS\n", u32ClientID));
-                    rc = cancelPendingWaits(u32ClientID, VINF_SUCCESS /* Pending result */);
+                    ClientStateMapIter itClientState = mClientStateMap.find(u32ClientID);
+                    if (itClientState != mClientStateMap.end())
+                        rc = itClientState->second.CancelWaiting(VINF_SUCCESS /* Pending result */);
                     break;
+                }
 
                 /*
                  * The guest only wants certain messages set by the filter mask(s).
@@ -1501,7 +1490,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                  */
                 case GUEST_MSG_FILTER_SET:
                     LogFlowFunc(("[Client %RU32] GUEST_MSG_FILTER_SET\n", u32ClientID));
-                    rc = clientSetMsgFilterSet(u32ClientID, callHandle, cParms, paParms);
+                    rc = clientMsgFilterSet(u32ClientID, callHandle, cParms, paParms);
                     break;
 
                 /*
@@ -1509,7 +1498,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                  */
                 case GUEST_MSG_FILTER_UNSET:
                     LogFlowFunc(("[Client %RU32] GUEST_MSG_FILTER_UNSET\n", u32ClientID));
-                    rc = clientSetMsgFilterUnset(u32ClientID, callHandle, cParms, paParms);
+                    rc = clientMsgFilterUnset(u32ClientID, callHandle, cParms, paParms);
                     break;
 
                 /*
