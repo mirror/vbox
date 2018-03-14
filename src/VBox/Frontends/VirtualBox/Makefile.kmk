@@ -93,7 +93,7 @@ endif
 
 
 #
-# VirtualBox - The GUI program.
+# VirtualBox - GUI Application.
 #
 USES += qt5
 VirtualBox_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
@@ -105,20 +105,18 @@ VirtualBox_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 
 VirtualBox_DEFS           =
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
-VirtualBox_DEFS.linux     = VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
-VirtualBox_DEFS.solaris   = VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
-VirtualBox_DEFS.freebsd   = VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
-VirtualBox_DEFS.darwin    = VBOX_WITH_TRANSLUCENT_SEAMLESS # VBOX_WITH_MASKED_SEAMLESS
-VirtualBox_DEFS.win       = VBOX_WITH_MASKED_SEAMLESS # VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBox_DEFS.linux     = VBOX_WS_X11
+VirtualBox_DEFS.solaris   = VBOX_WS_X11
+VirtualBox_DEFS.freebsd   = VBOX_WS_X11
+VirtualBox_DEFS.darwin    = VBOX_WS_MAC
+VirtualBox_DEFS.win       = VBOX_WS_WIN
+VirtualBox_DEFS.linux     += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBox_DEFS.solaris   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBox_DEFS.freebsd   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBox_DEFS.darwin    += VBOX_WITH_TRANSLUCENT_SEAMLESS # VBOX_WITH_MASKED_SEAMLESS
+VirtualBox_DEFS.win       += VBOX_WITH_MASKED_SEAMLESS # VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBox_DEFS.darwin    += VBOX_DARWIN_USE_NATIVE_CONTROLS
 VirtualBox_DEFS.win       += UNICODE QT_DLL
-ifdef VBOX_WITH_ICHAT_THEATER
- VirtualBox_DEFS.darwin   += VBOX_WITH_ICHAT_THEATER
-endif
-VirtualBox_DEFS.linux     += VBOX_WS_X11
-VirtualBox_DEFS.solaris   += VBOX_WS_X11
-VirtualBox_DEFS.freebsd   += VBOX_WS_X11
-VirtualBox_DEFS.darwin    += VBOX_WS_MAC
-VirtualBox_DEFS.win       += VBOX_WS_WIN
 VirtualBox_DEFS           += \
 	$(if $(VBOX_WITH_ADDITIONS_AUTOUPDATE_UI),VBOX_WITH_ADDITIONS_AUTOUPDATE_UI) \
 	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
@@ -145,23 +143,25 @@ VirtualBox_DEFS           += \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE) \
 	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
 ifdef VBOX_WITH_DEBUGGER_GUI
- VirtualBox_DEFS        += VBOX_WITH_DEBUGGER_GUI
+ VirtualBox_DEFS          += VBOX_WITH_DEBUGGER_GUI
  if "$(KBUILD_TYPE)" != "release"
-  VirtualBox_DEFS       += VBOX_WITH_DEBUGGER_GUI_MENU
+  VirtualBox_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
  endif
 endif
 ifdef VBOX_WITH_VIDEOHWACCEL
- VirtualBox_DEFS        += VBOX_WITH_VIDEOHWACCEL \
-	VBOX_GUI_USE_QGL
+ VirtualBox_DEFS          += VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
 else ifdef VBOX_GUI_USE_QGL
- VirtualBox_DEFS        += VBOX_GUI_USE_QGL
+ VirtualBox_DEFS          += VBOX_GUI_USE_QGL
 endif
 ifdef VBOX_WITH_LIBCURL
- VirtualBox_DEFS        += VBOX_GUI_WITH_NETWORK_MANAGER
+ VirtualBox_DEFS          += VBOX_GUI_WITH_NETWORK_MANAGER
  VBOX_GUI_WITH_NETWORK_MANAGER := 1
 endif
 ifneq ($(KBUILD_TYPE),release)
- VirtualBox_DEFS        += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+ VirtualBox_DEFS          += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+endif
+ifdef VBOX_WITH_ICHAT_THEATER
+ VirtualBox_DEFS.darwin   += VBOX_WITH_ICHAT_THEATER
 endif
 
 
@@ -910,7 +910,6 @@ $$(VirtualBox_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION
 	$(QUIET)$(APPEND) $@ "Plugins =" $(PATH_OUT)/$(INST_BIN)/plugins
 endif
 
-VirtualBox_DEFS.darwin += VBOX_DARWIN_USE_NATIVE_CONTROLS
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/CocoaEventHelper.mm \
 	src/platform/darwin/DarwinKeyboard.cpp \
