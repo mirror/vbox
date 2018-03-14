@@ -559,6 +559,16 @@ typedef struct ClientState
         return rc;
     }
 
+    /** Returns the pointer to the current host command in a client's list.
+     *  NULL if no current command available. */
+    const HostCommand *GetCurrent(void)
+    {
+        if (!mHostCmdList.size())
+            return NULL;
+
+        return (*mHostCmdList.begin());
+    }
+
     bool WantsHostCommand(const HostCommand *pHostCmd) const
     {
         AssertPtrReturn(pHostCmd, false);
@@ -1018,7 +1028,7 @@ private:
     int clientGetCommand(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientSetMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientSetMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int clientSkipMsg(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientMsgSkip(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int cancelHostCmd(uint32_t u32ContextID);
     int cancelPendingWaits(uint32_t u32ClientID, int rcPending);
     int hostCallback(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
@@ -1248,29 +1258,57 @@ int Service::clientSetMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE ca
     return VINF_SUCCESS;
 }
 
-int Service::clientSkipMsg(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
+/**
+ * A client tells this service that the current command can be skipped and therefore can be removed
+ * from the internal command list.
+ *
+ * This also tells the host callback(s) waiting for a reply for this command that this command
+ * has been skipped by returning VERR_NOT_SUPPORTED to the host.
+ *
+ * @return VBox status code.
+ * @param  u32ClientID                  The client's ID.
+ * @param  callHandle                   The client's call handle.
+ * @param  cParms                       Number of parameters.
+ * @param  paParms                      Array of parameters.
+ */
+int Service::clientMsgSkip(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
                            uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RT_NOREF(callHandle, paParms);
+    RT_NOREF(callHandle, cParms, paParms);
+
+    int rc;
 
     /*
      * Lookup client in our list so that we can assign the context ID of
      * a command to that client.
      */
     ClientStateMapIter itClientState = mClientStateMap.find(u32ClientID);
-    AssertMsg(itClientState != mClientStateMap.end(), ("Client ID=%RU32 not found when it should be present\n",
-                                                       u32ClientID));
-    if (itClientState == mClientStateMap.end())
-        return VERR_NOT_FOUND; /* Should never happen. */
+    AssertMsg(itClientState != mClientStateMap.end(), ("Client ID=%RU32 not found when it should be present\n", u32ClientID));
+    if (itClientState != mClientStateMap.end())
+    {
+        const HostCommand *pCurCmd = itClientState->second.GetCurrent();
+        if (pCurCmd)
+        {
+            /* Tell the host that the guest did not handle the current command. */
+            uint32_t cHstParms = 0;
+            VBOXHGCMSVCPARM aHstParms[4];
+            aHstParms[cHstParms++].setUInt32(pCurCmd->mContextID);
+            aHstParms[cHstParms++].setUInt32(0); /* Notification type (None / generic). */
+            aHstParms[cHstParms++].setUInt32(VERR_NOT_SUPPORTED);
+            aHstParms[cHstParms++].setPointer(NULL, 0); /* Payload (none). */
 
-    if (cParms != 1)
-        return VERR_INVALID_PARAMETER;
+            itClientState->second.DequeueCurrent();
 
-    LogFlowFunc(("[Client %RU32] Skipping current message ...\n", u32ClientID));
+            rc = hostCallback(GUEST_MSG_REPLY, cHstParms, aHstParms);
+        }
+        else
+            rc = VERR_NOT_FOUND; /* Should never happen. */
+    }
+    else
+        rc = VERR_NOT_FOUND; /* Ditto. */
 
-    itClientState->second.DequeueCurrent();
-
-    return VINF_SUCCESS;
+    LogFlowFunc(("[Client %RU32] Skipped current message, rc=%Rrc\n", u32ClientID, rc));
+    return rc;
 }
 
 /**
@@ -1482,7 +1520,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                  */
                 case GUEST_MSG_SKIP:
                     LogFlowFunc(("[Client %RU32] GUEST_MSG_SKIP\n", u32ClientID));
-                    rc = clientSkipMsg(u32ClientID, callHandle, cParms, paParms);
+                    rc = clientMsgSkip(u32ClientID, callHandle, cParms, paParms);
                     break;
 
                 /*
