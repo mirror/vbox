@@ -18,11 +18,7 @@
 #ifndef ___VBoxMPWddm_h___
 #define ___VBoxMPWddm_h___
 
-#ifdef VBOX_WDDM_WIN8
-# define VBOX_WDDM_DRIVERNAME L"VBoxVideoW8"
-#else
-# define VBOX_WDDM_DRIVERNAME L"VBoxVideoWddm"
-#endif
+#define VBOX_WDDM_DRIVERNAME L"VBoxWddm"
 
 #ifndef DEBUG_misha
 # ifdef Assert

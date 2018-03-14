@@ -97,14 +97,14 @@ Function ExtractFiles
 !endif
 
 !if $%VBOX_WITH_WDDM% == "1"
-  ; WDDM Video driver for Vista and 7
-  SetOutPath "$0\VBoxVideoWddm"
+  ; WDDM Video driver
+  SetOutPath "$0\VBoxWddm"
 
   !ifdef VBOX_SIGN_ADDITIONS
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.cat"
+    FILE "$%PATH_OUT%\bin\additions\VBoxWddm.cat"
   !endif
-  FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
-  FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
+  FILE "$%PATH_OUT%\bin\additions\VBoxWddm.sys"
+  FILE "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
   FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
 
   !if $%VBOX_WITH_CROGL% == "1"
@@ -136,46 +136,6 @@ Function ExtractFiles
       FILE "$%PATH_OUT%\bin\additions\wined3dwddm-x86.dll"
     !endif ; $%VBOX_WITH_CROGL% == "1"
   !endif ; $%BUILD_TARGET_ARCH% == "amd64"
-
-  ; WDDM Video driver for Win8
-  SetOutPath "$0\VBoxVideoW8"
-
-    !ifdef VBOX_SIGN_ADDITIONS
-      FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.cat"
-    !endif
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.sys"
-    FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.inf"
-    FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
-
-    !if $%VBOX_WITH_CROGL% == "1"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
-
-      FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
-      FILE "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
-    !endif ; $%VBOX_WITH_CROGL% == "1"
-
-    !if $%BUILD_TARGET_ARCH% == "amd64"
-      FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
-
-      !if $%VBOX_WITH_CROGL% == "1"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu-x86.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLcrutil-x86.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu-x86.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLpackspu-x86.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu-x86.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu-x86.dll"
-        FILE "$%PATH_OUT%\bin\additions\VBoxOGL-x86.dll"
-
-        FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm-x86.dll"
-        FILE "$%PATH_OUT%\bin\additions\wined3dwddm-x86.dll"
-      !endif ; $%VBOX_WITH_CROGL% == "1"
-    !endif ; $%BUILD_TARGET_ARCH% == "amd64"
 !endif ; $%VBOX_WITH_WDDM% == "1"
 
   ; Mouse driver

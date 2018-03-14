@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxVideoWddm - Resource file containing version info and icon.
+ * VBoxWddm - Resource file containing version info and icon.
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,9 +32,9 @@ BEGIN
    BEGIN
       BLOCK "040904b0"
       BEGIN
-         VALUE "FileDescription",  "VirtualBox Video Driver for Windows Vista and 7\0"
-         VALUE "InternalName",     "VBoxMPWddm\0"
-         VALUE "OriginalFilename", "VBoxVideoWddm.sys\0"
+         VALUE "FileDescription",  "VirtualBox WDDM Video Driver\0"
+         VALUE "InternalName",     "VBoxWddm\0"
+         VALUE "OriginalFilename", "VBoxWddm.sys\0"
          VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
          VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT

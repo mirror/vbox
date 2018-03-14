@@ -130,12 +130,9 @@ DRIVER_FILES += \
 endif
 ifdef VBOX_WITH_WDDM
 DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/VBoxVideoWddm.sys \
-	$(PATH_STAGE_BIN)/additions/VBoxVideoWddm.inf \
+	$(PATH_STAGE_BIN)/additions/VBoxWddm.sys \
+	$(PATH_STAGE_BIN)/additions/VBoxWddm.inf \
 	$(PATH_STAGE_BIN)/additions/VBoxDispD3D.dll
-DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/VBoxVideoW8.sys \
-	$(PATH_STAGE_BIN)/additions/VBoxVideoW8.inf
  ifdef VBOX_WITH_CROGL
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/wined3dwddm.dll \
@@ -143,9 +140,7 @@ DRIVER_FILES += \
  endif
  ifdef VBOX_SIGN_ADDITIONS
 DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/VBoxVideoWddm.cat
-DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/VBoxVideoW8.cat
+	$(PATH_STAGE_BIN)/additions/VBoxWddm.cat
  endif
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
 DRIVER_FILES += \

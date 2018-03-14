@@ -232,21 +232,11 @@ Function W2K_CopyFiles
     ; WDDM Video driver
     SetOutPath "$INSTDIR"
 
-    ${If} $g_strWinVersion == "8"
-    ${OrIf} $g_strWinVersion == "8_1"
-    ${OrIf} $g_strWinVersion == "10"
-      !ifdef VBOX_SIGN_ADDITIONS
-        FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.cat"
-      !endif
-      FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.sys"
-      FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.inf"
-    ${Else}
-      !ifdef VBOX_SIGN_ADDITIONS
-        FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.cat"
-      !endif
-      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
-      FILE "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
-    ${EndIf}
+    !ifdef VBOX_SIGN_ADDITIONS
+      FILE "$%PATH_OUT%\bin\additions\VBoxWddm.cat"
+    !endif
+    FILE "$%PATH_OUT%\bin\additions\VBoxWddm.sys"
+    FILE "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
 
     FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
 
@@ -390,15 +380,8 @@ Function W2K_InstallFiles
 
   ${If} $g_bNoVideoDrv == "false"
     ${If} $g_bWithWDDM == "true"
-      ${If} $g_strWinVersion == "8"
-      ${OrIf} $g_strWinVersion == "8_1"
-      ${OrIf} $g_strWinVersion == "10"
-        ${LogVerbose} "Installing WDDM video driver for Windows 8 or newer..."
-        ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxVideoW8.inf$\" $\"$INSTDIR\install_drivers.log$\"" "false"
-      ${Else}
-        ${LogVerbose} "Installing WDDM video driver for Windows Vista and 7..."
-        ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxVideoWddm.inf$\" $\"$INSTDIR\install_drivers.log$\"" "false"
-      ${EndIf}
+      ${LogVerbose} "Installing WDDM video driver..."
+      ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxWddm.inf$\" $\"$INSTDIR\install_drivers.log$\"" "false"
     ${Else}
       ${LogVerbose} "Installing video driver ..."
       ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxVideo.inf$\" $\"$INSTDIR\install_drivers.log$\"" "false"
@@ -529,12 +512,17 @@ Function ${un}W2K_UninstallInstDir
   Delete /REBOOTOK "$INSTDIR\VBoxService.exe" ; Deprecated, does not get installed anymore
 
 !if $%VBOX_WITH_WDDM% == "1"
+  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxWddm.cat"
+  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxWddm.sys"
+  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
+  ; Obsolete files begin
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.cat"
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.cat"
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.sys"
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.inf"
+  ; Obsolete files end
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
 
     Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
@@ -595,6 +583,14 @@ Function ${un}W2K_Uninstall
   ; Remove video driver
 !if $%VBOX_WITH_WDDM% == "1"
 
+  ${LogVerbose} "Uninstalling WDDM video driver..."
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver uninstall $\"$INSTDIR\VBoxWddm.inf$\"" "true"
+  ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service delete VBoxWddm" "true"
+  ;misha> @todo driver file removal (as well as service removal) should be done as driver package uninstall
+  ;       could be done with "VBoxDrvInst.exe /u", e.g. by passing additional arg to it denoting that driver package is to be uninstalled
+  Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxWddm.sys"
+
+  ; Obsolete files begin
   ${LogVerbose} "Uninstalling WDDM video driver for Windows 8..."
   ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver uninstall $\"$INSTDIR\VBoxVideoW8.inf$\"" "true"
   ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" service delete VBoxVideoW8" "true"
@@ -609,6 +605,8 @@ Function ${un}W2K_Uninstall
   ;misha> @todo driver file removal (as well as service removal) should be done as driver package uninstall
   ;       could be done with "VBoxDrvInst.exe /u", e.g. by passing additional arg to it denoting that driver package is to be uninstalled
   Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxVideoWddm.sys"
+  ; Obsolete files end
+
   Delete /REBOOTOK "$g_strSystemDir\VBoxDispD3D.dll"
 !endif ; $%VBOX_WITH_WDDM% == "1"
 

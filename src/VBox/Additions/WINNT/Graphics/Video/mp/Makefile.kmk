@@ -63,39 +63,37 @@ VBoxVideo_LIBS.x86      = \
 
 ifdef VBOX_WITH_WDDM
  #
- # VBoxVideoWddm - Windows Guest Additions WDDM Miniport Video Driver
+ # VBoxWddm - Windows Guest Additions WDDM Miniport Video Driver
  #
- SYSMODS += VBoxVideoWddm
- VBoxVideoWddm_TEMPLATE    = VBOXGUESTR0
- VBoxVideoWddm_SDKS        = $(VBOX_WINDDK_GST_W8)
+ SYSMODS += VBoxWddm
+ VBoxWddm_TEMPLATE         = VBOXGUESTR0
+ VBoxWddm_SDKS             = $(VBOX_WINDDK_GST_W8)
+ VBoxWddm_DEFS            += VBOX_WDDM_MINIPORT VBOX_WITH_WDDM VBOX_WITH_HGCM
  # WIN9X_COMPAT_SPINLOCK inlines KeInitializeSpinLock in W8 DDK (Windows 7 or older ntoskrnl does not export it).
- VBoxVideoWddm_DEFS       += VBOX_WITH_8BPP_MODES WIN9X_COMPAT_SPINLOCK
- VBoxVideoWddm_DEFS       += VBOX_WDDM_MINIPORT VBOX_WITH_WDDM VBOX_WITH_HGCM
+ VBoxWddm_DEFS            += WIN9X_COMPAT_SPINLOCK
+ VBoxWddm_DEFS            += VBOX_WITH_8BPP_MODES
  ifdef VBOX_WITH_VIDEOHWACCEL
-  VBoxVideoWddm_DEFS      += VBOX_WITH_VIDEOHWACCEL
+  VBoxWddm_DEFS           += VBOX_WITH_VIDEOHWACCEL
  endif
  ifdef VBOXWDDM_WITH_VBVA
-  VBoxVideoWddm_DEFS      += VBOXWDDM_WITH_VBVA
-  VBoxVideoWddm_DEFS      += VBOXWDDM_RENDER_FROM_SHADOW
+  VBoxWddm_DEFS           += VBOXWDDM_WITH_VBVA
+  VBoxWddm_DEFS           += VBOXWDDM_RENDER_FROM_SHADOW
   ifdef VBOXVDMA_WITH_VBVA
-   VBoxVideoWddm_DEFS     += VBOXVDMA_WITH_VBVA
+   VBoxWddm_DEFS          += VBOXVDMA_WITH_VBVA
   endif
  endif
  ifdef VBOX_WITH_VDMA
-  VBoxVideoWddm_DEFS      += VBOX_WITH_VDMA
+  VBoxWddm_DEFS           += VBOX_WITH_VDMA
  endif
  ifdef VBOX_WITH_CRHGSMI
-  VBoxVideoWddm_DEFS      += VBOX_WITH_CRHGSMI
+  VBoxWddm_DEFS           += VBOX_WITH_CRHGSMI
  endif
- ifdef DEBUG_misha
-  VBoxVideoWddm_DEFS      += LOG_ENABLED
- endif
- VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR
- VBoxVideoWddm_DEFS       += VBOX_SVN_REV=$(VBOX_SVN_REV)
+ VBoxWddm_DEFS            += LOG_TO_BACKDOOR
+ VBoxWddm_DEFS            += VBOX_SVN_REV=$(VBOX_SVN_REV)
  ifdef VBOX_VDMA_WITH_WATCHDOG
-  VBoxVideoWddm_DEFS      += VBOX_VDMA_WITH_WATCHDOG
+  VBoxWddm_DEFS           += VBOX_VDMA_WITH_WATCHDOG
  endif
- VBoxVideoWddm_INCS       += \
+ VBoxWddm_INCS            += \
  	../../../include \
  	.. \
  	. \
@@ -104,10 +102,10 @@ ifdef VBOX_WITH_WDDM
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer \
  	$(VBOX_GRAPHICS_INCS)
 
- VBoxVideoWddm_LDFLAGS.x86 += /Entry:DriverEntry@8
- VBoxVideoWddm_LDFLAGS.amd64 += /Entry:DriverEntry
+ VBoxWddm_LDFLAGS.x86     += /Entry:DriverEntry@8
+ VBoxWddm_LDFLAGS.amd64   += /Entry:DriverEntry
 
- VBoxVideoWddm_SOURCES     = \
+ VBoxWddm_SOURCES          = \
  	wddm/VBoxMPWddm.cpp \
 	wddm/VBoxMPVidPn.cpp \
 	wddm/VBoxMPVdma.cpp \
@@ -115,7 +113,7 @@ ifdef VBOX_WITH_WDDM
  	wddm/VBoxMPCm.cpp \
  	wddm/VBoxMPCr.cpp \
  	wddm/VBoxMPMisc.cpp \
- 	wddm/VBoxMPWddm.rc \
+ 	wddm/VBoxWddm.rc \
  	wddm/VBoxMPRegistry.cpp \
  	wddm/VBoxMPVModes.cpp \
  	common/VBoxMPUtils.cpp \
@@ -127,11 +125,11 @@ ifdef VBOX_WITH_WDDM
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 
-   VBoxVideoWddm_SOURCES   += \
+ VBoxWddm_SOURCES         += \
 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/sortarray.cpp
 
  if defined(VBOX_WITH_CROGL)
-   VBoxVideoWddm_SOURCES   += \
+   VBoxWddm_SOURCES       += \
 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/vreg.cpp \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_buffer.c \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_bounds.c \
@@ -140,18 +138,18 @@ ifdef VBOX_WITH_WDDM
  	$(VBOX_PATH_CROGL_GENFILES)/pack_bounds_swap.c \
  	$(VBOX_PATH_CROGL_GENFILES)/packer.c \
  	wddm/VBoxMPCrUtil.cpp
-   VBoxVideoWddm_DEFS      += VBOX_WITH_CROGL
+   VBoxWddm_DEFS          += VBOX_WITH_CROGL
  endif
  ifdef VBOXWDDM_WITH_VBVA
-  VBoxVideoWddm_SOURCES   += \
+  VBoxWddm_SOURCES        += \
     wddm/VBoxMPVbva.cpp
  endif
  ifdef VBOX_WITH_VIDEOHWACCEL
-  VBoxVideoWddm_SOURCES   += \
+  VBoxWddm_SOURCES        += \
     wddm/VBoxMPVhwa.cpp
  endif
 
- VBoxVideoWddm_LIBS        = \
+ VBoxWddm_LIBS             = \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/BufferOverflowK.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/ntoskrnl.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/hal.lib \
@@ -159,16 +157,6 @@ ifdef VBOX_WITH_WDDM
  	$(VBOX_LIB_VBGL_R0) \
  	$(VBOX_LIB_IPRT_GUEST_R0) \
  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
-
- #
- # VBoxVideoW8 - Windows Guest Additions WDDM 1.2 Miniport Video Driver for Win8
- #
- SYSMODS += VBoxVideoW8
- VBoxVideoW8_EXTENDS    = VBoxVideoWddm
- VBoxVideoW8_TEMPLATE   = VBOXGUESTR0
- VBoxVideoW8_DEFS       = $(VBoxVideoWddm_DEFS) VBOX_WDDM_WIN8
- VBoxVideoW8_SOURCES    = $(subst VBoxMPWddm.rc,VBoxMPW8.rc,$(VBoxVideoWddm_SOURCES))
- VBoxVideoW8_LIBS       = $(VBoxVideoWddm_LIBS)
 
 endif # VBOX_WITH_WDDM
 
@@ -180,10 +168,8 @@ ifdef VBOX_SIGN_ADDITIONS
  VBoxVideo_INSTTYPE            = none
  VBoxVideo_DEBUG_INSTTYPE      = both
  ifdef VBOX_WITH_WDDM
-  VBoxVideoWddm_INSTTYPE       = none
-  VBoxVideoWddm_DEBUG_INSTTYPE = both
-  VBoxVideoW8_INSTTYPE         = none
-  VBoxVideoW8_DEBUG_INSTTYPE   = both
+  VBoxWddm_INSTTYPE            = none
+  VBoxWddm_DEBUG_INSTTYPE      = both
  endif
 endif # VBOX_SIGN_ADDITIONS
 

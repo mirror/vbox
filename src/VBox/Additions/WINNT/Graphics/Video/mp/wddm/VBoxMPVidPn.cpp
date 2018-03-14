@@ -1341,7 +1341,7 @@ NTSTATUS VBoxVidPnUpdateModes(PVBOXMP_DEVEXT pDevExt, uint32_t u32TargetId, cons
     }
 
 #ifdef VBOX_WDDM_REPLUG_ON_MODE_CHANGE
-    /* The VBOXESC_UPDATEMODES is a hint for VBoxVideoW8.sys to use new display mode as soon as VidPn
+    /* The VBOXESC_UPDATEMODES is a hint for the driver to use new display mode as soon as VidPn
      * manager will ask for it.
      * Probably, some new interface is required to plug/unplug displays by calling
      * VBoxWddmChildStatusReportReconnected.
