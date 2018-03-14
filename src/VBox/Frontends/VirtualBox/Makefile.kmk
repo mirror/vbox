@@ -222,6 +222,10 @@ VirtualBox_INCS = \
 	$(VBOX_GRAPHICS_INCS)
 
 
+#
+# VirtualBox - GUI Application.
+# Compiling/linking flags.
+#
 ifneq ($(KBUILD_TARGET),win)
 VirtualBox_CXXFLAGS += -Wno-switch
 endif
@@ -243,15 +247,6 @@ else
  VirtualBox_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
  VirtualBox_LDFLAGS.win   += /SUBSYSTEM:console
 endif
-
-# delay loading causes VM process crashes due to the misbehave of the current QtOpenGLVBox4.dll we use
-# (i.e. it does not create the ogl context properly when loaded this way)
-#
-# @todo: investigate a better work-around and enable back delay loading since it is needed to avoid
-# crashes caused by buggy ogl drivers for the case 2D is not used (i.e. no ogl stuff loaded)
-#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
-# VirtualBox_LDFLAGS.win += /DelayLoad:QtOpenGLVBox4.dll /DelayLoad:OPENGL32.dll
-#endif
 
 VirtualBox_LDFLAGS.darwin = \
 	-framework AppKit -framework Carbon -framework IOKit \
@@ -308,7 +303,10 @@ ifdef VBOX_WITH_CROGL
 endif
 
 
+#
+# VirtualBox - GUI Application.
 # Headers containing definitions of classes that use the Q_OBJECT macro.
+#
 VirtualBox_QT_MOCHDRS = \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
@@ -544,6 +542,10 @@ VirtualBox_QT_MOCHDRS = \
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VirtualBox_QT_MOCHDRS += \
+	src/net/UIDownloader.h \
+	src/net/UIDownloaderAdditions.h \
+	src/net/UIDownloaderExtensionPack.h \
+	src/net/UIDownloaderUserManual.h \
 	src/net/UINetworkManager.h \
 	src/net/UINetworkManagerDialog.h \
 	src/net/UINetworkManagerIndicator.h \
@@ -552,10 +554,6 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 	src/net/UINetworkReply.h \
 	src/net/UINetworkCustomer.h \
 	src/net/UIUpdateManager.h \
-	src/net/UIDownloader.h \
-	src/net/UIDownloaderAdditions.h \
-	src/net/UIDownloaderExtensionPack.h \
-	src/net/UIDownloaderUserManual.h \
 	src/settings/global/UIGlobalSettingsProxy.h \
 	src/settings/global/UIGlobalSettingsUpdate.h
 endif
@@ -570,9 +568,13 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 endif
 
 VirtualBox_QT_MOCHDRS.darwin += \
-    src/platform/darwin/UIWindowMenuManager.h
+	src/platform/darwin/UIWindowMenuManager.h
 
+
+#
+# VirtualBox - GUI Application.
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
+#
 VirtualBox_QT_MOCSRCS = \
 	src/extensions/QIArrowSplitter.cpp \
 	src/extensions/QISplitter.cpp \
@@ -633,6 +635,11 @@ ifdef VBOX_WITH_XPCOM
 	src/globals/COMDefs.cpp
 endif
 
+
+#
+# VirtualBox - GUI Application.
+# Sources.
+#
 VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/VBoxAboutDlg.cpp \
@@ -880,7 +887,7 @@ VirtualBox_SOURCES = \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-VirtualBox_SOURCES += \
+ VirtualBox_SOURCES += \
 	src/net/UINetworkManager.cpp \
 	src/net/UINetworkManagerDialog.cpp \
 	src/net/UINetworkManagerIndicator.cpp \
@@ -952,9 +959,6 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
 	src/VBoxGLSupportInfo.cpp
 endif
 
-#
-# Drag and drop support.
-#
 ifdef VBOX_WITH_DRAG_AND_DROP
  VirtualBox_SOURCES += \
 	src/runtime/UIDnDHandler.cpp
