@@ -55,9 +55,7 @@ public:
     static QString removeMultipleDelimiters(const QString &path);
     static QString removeTrailingDelimiters(const QString &path);
     static QString addStartDelimiter(const QString &path);
-    static QString removeAllDelimiters(const QString &path);
 
-    //    static QString removeTrailingDelimiters(const QString &path);
     static QString sanitize(const QString &path);
     /** Merge prefix and suffix by making sure they have a single '/' in between */
     static QString mergePaths(const QString &path, const QString &baseName);
@@ -355,11 +353,11 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pView(0)
     , m_pModel(0)
     , m_pLocationLabel(0)
-    , m_pGoHome(0)
     , m_pMainLayout(0)
     , m_pCurrentLocationEdit(0)
     , m_pToolBar(0)
     , m_pGoUp(0)
+    , m_pGoHome(0)
     , m_pRefresh(0)
     , m_pDelete(0)
     , m_pRename(0)
@@ -510,7 +508,7 @@ void UIGuestControlFileTable::prepareActions()
     {
         m_pCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
         m_pToolBar->addAction(m_pCopy);
-        m_pCopy->setEnabled(false);
+        //m_pCopy->setEnabled(false);
     }
 
     m_pCut = new QAction(this);
@@ -654,7 +652,7 @@ void UIGuestControlFileTable::goIntoDirectory(const QModelIndex &itemIndex)
     changeLocation(itemIndex);
 }
 
-void UIGuestControlFileTable::goIntoDirectory(const QVector<QString> &pathTrail)
+void UIGuestControlFileTable::goIntoDirectory(const QList<QString> &pathTrail)
 {
     UIFileTableItem *parent = getStartDirectoryItem();
 
@@ -765,9 +763,7 @@ void UIGuestControlFileTable::sltCreateNewDirectory()
            rows and update the tabel view: */
         sltRefresh();
     }
-
 }
-
 
 void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
 {
@@ -927,6 +923,16 @@ QStringList UIGuestControlFileTable::selectedItemPathList()
     return pathList;
 }
 
+CGuestFsObjInfo UIGuestControlFileTable::guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const
+{
+    if (comGuestSession.isNull())
+        return CGuestFsObjInfo();
+    CGuestFsObjInfo comFsObjInfo = comGuestSession.FsObjQueryInfo(path, true /*aFollowSymlinks*/);
+    if (!comFsObjInfo.isOk())
+        return CGuestFsObjInfo();
+    return comFsObjInfo;
+}
+
 
 /*********************************************************************************************************************************
 *   UIGuestFileTable implementation.                                                                                             *
@@ -935,7 +941,6 @@ QStringList UIGuestControlFileTable::selectedItemPathList()
 UIGuestFileTable::UIGuestFileTable(QWidget *pParent /*= 0*/)
     :UIGuestControlFileTable(pParent)
 {
-    configureObjects();
     retranslateUi();
 }
 
@@ -1028,7 +1033,18 @@ void UIGuestFileTable::deleteByItem(UIFileTableItem *item)
 
 void UIGuestFileTable::goToHomeDirectory()
 {
-    /** @todo not implemented in guest control yet: */
+    if (m_comGuestSession.isNull())
+        return;
+    if (!m_pRootItem || m_pRootItem->childCount() <= 0)
+        return;
+    UIFileTableItem *startDirItem = m_pRootItem->child(0);
+    if (!startDirItem)
+        return;
+
+    QString userHome = UIPathOperations::sanitize(m_comGuestSession.GetUserHome());
+    QList<QString> pathTrail = userHome.split(UIPathOperations::delimiter);
+
+    goIntoDirectory(pathTrail);
 }
 
 bool UIGuestFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
@@ -1044,12 +1060,6 @@ bool UIGuestFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
         return false;
     item->setPath(newPath);
     return true;
-}
-
-void UIGuestFileTable::configureObjects()
-{
-    if (m_pGoHome)
-        m_pGoHome->setEnabled(false);
 }
 
 bool UIGuestFileTable::createDirectory(const QString &path, const QString &directoryName)
@@ -1089,16 +1099,23 @@ bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QSt
         return false;
 
     /* Currently API expects a path including a file name for file copy*/
-    KFsObjType objectType = fsObjectType(guestSourcePath);
+    CGuestFsObjInfo fileInfo = guestFsObjectInfo(guestSourcePath, m_comGuestSession);
+    KFsObjType objectType = fileInfo.GetType();
     if (objectType == KFsObjType_File)
     {
-        // QString destinatioFilePath =  mergePaths(hostDestinationPath, const QString &Path, const QString &baseName);
+        QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
+        /* API expects a full file path as destionation: */
+        QString destinatioFilePath =  UIPathOperations::mergePaths(hostDestinationPath, UIPathOperations::getObjectName(guestSourcePath));
+        /** @todo listen to CProgress object to monitor copy operation: */
+        /*CProgress comProgress =*/ m_comGuestSession.FileCopyFromGuest(guestSourcePath, destinatioFilePath, flags);
 
     }
-
-    QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
-    /** @todo listen to CProgress object to monitor copy operation: */
-    /*CProgress comProgress = */m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, hostDestinationPath, aFlags);
+    else if (objectType == KFsObjType_Directory)
+    {
+        QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
+        /** @todo listen to CProgress object to monitor copy operation: */
+        /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, hostDestinationPath, aFlags);
+    }
     if (!m_comGuestSession.isOk())
         return false;
     return true;
@@ -1108,20 +1125,35 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
 {
     if (m_comGuestSession.isNull())
         return false;
-    QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
-    /** @todo listen to CProgress object to monitor copy operation: */
-    /*CProgress comProgress = */m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, guestDestinationPath, aFlags);
-    return true;
-}
+    QFileInfo hostFileInfo(hostSourcePath);
+    if (!hostFileInfo.exists())
+        return false;
 
-KFsObjType UIGuestFileTable::fsObjectType(const QString& path)
-{
-    if (m_comGuestSession.isNull())
-        return KFsObjType_Unknown;
-    CGuestFsObjInfo comFsObjInfo = m_comGuestSession.FsObjQueryInfo(path, false /*aFollowSymlinks*/);
-    if (!comFsObjInfo.isOk() || m_comGuestSession.isOk())
-        return KFsObjType_Unknown;
-    return comFsObjInfo.GetType();
+    /* Currently API expects a path including a file name for file copy*/
+    if (hostFileInfo.isFile() || hostFileInfo.isSymLink())
+    {
+    }
+    else if(hostFileInfo.isDir())
+    {
+    }
+    // {
+    //     QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
+    //     /* API expects a full file path as destionation: */
+    //     QString destinatioFilePath =  UIPathOperations::mergePaths(guestDestinationPath,
+    //                                                                UIPathOperations::getObjectName(hostSourcePath));
+    //     /** @todo listen to CProgress object to monitor copy operation: */
+    //     /*CProgress comProgress =*/ m_comGuestSession.FileCopyToGuest(hostSourcePath, destinatioFilePath, flags);
+
+    // }
+    // else if (objectType == KFsObjType_Directory)
+    // {
+    //     QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
+    //     /** @todo listen to CProgress object to monitor copy operation: */
+    //     /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, guestDestinationPath, aFlags);
+    // }
+    // if (!m_comGuestSession.isOk())
+    //     return false;
+    return true;
 }
 
 
@@ -1211,7 +1243,7 @@ void UIHostFileTable::goToHomeDirectory()
 
     // UIFileTableItem *rootDirectoryItem
     QDir homeDirectory(QDir::homePath());
-    QVector<QString> pathTrail;//(QDir::rootPath());
+    QList<QString> pathTrail;//(QDir::rootPath());
     do{
 
         pathTrail.push_front(homeDirectory.absolutePath());

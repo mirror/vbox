@@ -189,7 +189,6 @@ void UIGuestSessionCreateWidget::retranslateUi()
         m_pCreateButton->setText(UIVMInformationDialog::tr("Create Session"));
     if (m_pCloseButton)
         m_pCloseButton->setText(UIVMInformationDialog::tr("Close Session"));
-
 }
 
 void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
@@ -360,7 +359,6 @@ void UIGuestControlFileManager::prepareObjects()
                 m_pToolBar->addAction(m_pCopyHostToGuest);
                 m_pToolBar->addWidget(bottomSpacerWidget);
 
-
                 containerLayout->addWidget(m_pToolBar);
             }
 
@@ -485,8 +483,8 @@ void UIGuestControlFileManager::sltCopyGuestToHost()
     if (!m_pGuestFileTable || !m_pHostFileTable)
         return;
     QString hostDestinationPath = m_pHostFileTable->currentDirectoryPath();
-    printf("current host path %s\n", hostDestinationPath.toStdString().c_str());
     m_pGuestFileTable->copyGuestToHost(hostDestinationPath);
+    m_pHostFileTable->refresh();
 }
 
 void UIGuestControlFileManager::sltCopyHostToGuest()
@@ -494,9 +492,8 @@ void UIGuestControlFileManager::sltCopyHostToGuest()
     if (!m_pGuestFileTable || !m_pHostFileTable)
         return;
     QStringList hostSourcePathList = m_pHostFileTable->selectedItemPathList();
-    for(int i = 0; i < hostSourcePathList.size(); ++i)
-        printf("%s\n", hostSourcePathList[i].toStdString().c_str());
     m_pGuestFileTable->copyHostToGuest(hostSourcePathList);
+    m_pGuestFileTable->refresh();
 }
 
 void UIGuestControlFileManager::initFileTable()

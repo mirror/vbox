@@ -109,6 +109,7 @@ public:
     QString     currentDirectoryPath() const;
     /** Returns the paths of the selected items (if any) as a list */
     QStringList selectedItemPathList();
+    virtual void refresh();
 
 protected:
 
@@ -119,19 +120,18 @@ protected:
     void insertItemsToTree(QMap<QString,UIFileTableItem*> &map, UIFileTableItem *parent,
                            bool isDirectoryMap, bool isStartDir);
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) = 0;
-    virtual void refresh();
     virtual void deleteByItem(UIFileTableItem *item) = 0;
     virtual void goToHomeDirectory() = 0;
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName) = 0;
     virtual bool createDirectory(const QString &path, const QString &directoryName) = 0;
     void             goIntoDirectory(const QModelIndex &itemIndex);
     /** Follow the path trail, open directories as we go and descend */
-    void             goIntoDirectory(const QVector<QString> &pathTrail);
+    void             goIntoDirectory(const QList<QString> &pathTrail);
     /** Go into directory pointed by the @p item */
     void             goIntoDirectory(UIFileTableItem *item);
     UIFileTableItem* indexData(const QModelIndex &index) const;
     void keyPressEvent(QKeyEvent * pEvent);
-
+    CGuestFsObjInfo guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
 
 
     UIFileTableItem         *m_pRootItem;
@@ -142,7 +142,6 @@ protected:
     QTableView              *m_pView;
     UIGuestControlFileModel *m_pModel;
     QILabel                 *m_pLocationLabel;
-    QAction                  *m_pGoHome;
 
 protected slots:
 
@@ -167,11 +166,12 @@ private:
     QILineEdit      *m_pCurrentLocationEdit;
     UIToolBar       *m_pToolBar;
     QAction         *m_pGoUp;
-
+    QAction         *m_pGoHome;
     QAction         *m_pRefresh;
     QAction         *m_pDelete;
     QAction         *m_pRename;
     QAction         *m_pCreateNewDirectory;
+
 
     QAction         *m_pCopy;
     QAction         *m_pCut;
@@ -204,12 +204,10 @@ protected:
 
 private:
 
-    KFsObjType fsObjectType(const QString& path);
     bool copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath);
     bool copyHostToGuest(const QString& hostSourcePath, const QString &guestDestinationPath);
 
-    void configureObjects();
-    CGuestSession m_comGuestSession;
+    mutable CGuestSession m_comGuestSession;
 
 };
 
