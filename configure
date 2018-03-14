@@ -380,6 +380,14 @@ check_environment()
         LIB='lib/64'
       fi
       ;;
+    sparc64|sparcv9)
+        BUILD_MACHINE='sparc64'
+        BUILD_CPU='blend'
+        ;;
+    sparc32|sparc|sparcv8|sparcv7|sparcv8e)
+        BUILD_MACHINE='sparc32'
+        BUILD_CPU='blend'
+        ;;
     *)
       log_failure "Cannot determine system"
       exit 1
