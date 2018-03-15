@@ -2397,7 +2397,6 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
 #define CPUMHWVIRTDUMP_VMX      RT_BIT(1)
 #define CPUMHWVIRTDUMP_COMMON   RT_BIT(2)
 #define CPUMHWVIRTDUMP_LAST     CPUMHWVIRTDUMP_VMX
-#define CPUMHWVIRTDUMP_ALL      (CPUMHWVIRTDUMP_COMMON | CPUMHWVIRTDUMP_VMX | CPUMHWVIRTDUMP_SVM)
 
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     static const char *const s_aHwvirtModes[] = { "No/inactive", "SVM", "VMX", "Common" };
@@ -2406,7 +2405,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
     AssertCompile(CPUMHWVIRTDUMP_LAST <= RT_ELEMENTS(s_aHwvirtModes));
     Assert(idxHwvirtState < RT_ELEMENTS(s_aHwvirtModes));
     const char *pcszHwvirtMode   = s_aHwvirtModes[idxHwvirtState];
-    uint32_t const fDumpState    = idxHwvirtState; /* | CPUMHWVIRTDUMP_ALL */
+    uint32_t fDumpState          = idxHwvirtState | CPUMHWVIRTDUMP_COMMON;
 
     /*
      * Dump it.
@@ -2414,8 +2413,12 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
     pHlp->pfnPrintf(pHlp, "VCPU[%u] hardware virtualization state:\n", pVCpu->idCpu);
 
     if (fDumpState & CPUMHWVIRTDUMP_COMMON)
+    {
+        pHlp->pfnPrintf(pHlp, "fGif                           = %RTbool\n", pCtx->hwvirt.fGif);
         pHlp->pfnPrintf(pHlp, "fLocalForcedActions            = %#RX32\n",  pCtx->hwvirt.fLocalForcedActions);
-    pHlp->pfnPrintf(pHlp, "%s hwvirt state%s\n", pcszHwvirtMode, fDumpState ? ":" : "");
+    }
+    pHlp->pfnPrintf(pHlp, "%s hwvirt state%s\n", pcszHwvirtMode, (fDumpState & (CPUMHWVIRTDUMP_SVM | CPUMHWVIRTDUMP_VMX)) ?
+                                                                 ":" : "");
     if (fDumpState & CPUMHWVIRTDUMP_SVM)
     {
         char szEFlags[80];
@@ -2452,7 +2455,6 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
                         pCtx->hwvirt.svm.HostState.gdtr.cbGdt);
         pHlp->pfnPrintf(pHlp, "    idtr                       = %016RX64:%04x\n", pCtx->hwvirt.svm.HostState.idtr.pIdt,
                         pCtx->hwvirt.svm.HostState.idtr.cbIdt);
-        pHlp->pfnPrintf(pHlp, "  fGif                       = %u\n",        pCtx->hwvirt.fGif);
         pHlp->pfnPrintf(pHlp, "  cPauseFilter               = %RU16\n",     pCtx->hwvirt.svm.cPauseFilter);
         pHlp->pfnPrintf(pHlp, "  cPauseFilterThreshold      = %RU32\n",     pCtx->hwvirt.svm.cPauseFilterThreshold);
         pHlp->pfnPrintf(pHlp, "  fInterceptEvents           = %u\n",        pCtx->hwvirt.svm.fInterceptEvents);
