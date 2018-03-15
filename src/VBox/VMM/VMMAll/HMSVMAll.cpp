@@ -553,6 +553,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
 VMM_INT_DECL(bool) HMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
+    Assert(pCtx->hwvirt.fGif);
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     X86EFLAGS fEFlags;
     if (pVmcbNstGstCache->fVIntrMasking)
@@ -584,6 +585,7 @@ VMM_INT_DECL(bool) HMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
     AssertReleaseFailedReturn(false);
 #else
     Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
+    Assert(pCtx->hwvirt.fGif);
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
 
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
