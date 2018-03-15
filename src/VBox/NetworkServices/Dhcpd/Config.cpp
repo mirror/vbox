@@ -192,10 +192,75 @@ Config *Config::compat(int argc, char **argv)
 }
 
 
+static const RTGETOPTDEF g_aOptions[] =
+{
+    { "--config",       'c',    RTGETOPT_REQ_STRING },
+};
+
+
+Config *Config::create(int argc, char **argv)
+{
+    RTGETOPTSTATE State;
+    int rc;
+
+    rc = RTGetOptInit(&State, argc, argv,
+                      g_aOptions, RT_ELEMENTS(g_aOptions), 1,
+                      RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRCReturn(rc, NULL);
+
+    std::unique_ptr<Config> config;
+    for (;;)
+    {
+        RTGETOPTUNION Val;
+
+        rc = RTGetOpt(&State, &Val);
+        if (rc == 0)            /* done */
+            break;
+
+        switch (rc)
+        {
+            case 'c': /* --config */
+                if (config.get() != NULL)
+                {
+                    printf("Duplicate option: --config '%s'\n", Val.psz);
+                    return NULL;
+                }
+
+                printf("reading config from %s\n", Val.psz);
+                config.reset(Config::read(Val.psz));
+                if (config.get() == NULL)
+                    return NULL;
+
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                RTMsgError("Unexpected command line argument: '%s'", Val.psz);
+                return NULL;
+
+            default:
+                RTGetOptPrintError(rc, &Val);
+                return NULL;
+        }
+    }
+
+    if (config.get() == NULL)
+        return NULL;
+
+    if (!config->isSane())
+        return NULL;
+
+    config->sanitizeBaseName();
+
+    return config.release();
+}
+
+
 Config *Config::read(const char *pszFileName)
 {
+    std::unique_ptr<Config> config(new Config());
+
     RT_NOREF(pszFileName);
-    return NULL;                /* not yet */
+    return config.release();
 }
 
 

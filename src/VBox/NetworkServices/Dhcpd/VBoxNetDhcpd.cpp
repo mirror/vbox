@@ -579,6 +579,8 @@ int VBoxNetDhcpd::main(int argc, char **argv)
 
     if (argc < 2)
         m_Config = Config::hardcoded();
+    else if (strcmp(argv[1], "--config") == 0)
+        m_Config = Config::create(argc, argv);
     else
         m_Config = Config::compat(argc, argv);
 
