@@ -922,6 +922,10 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           "-----\nGRUB Loading stage2..\n\n\n\n" ),
         ( True,  ktReason_OSInstall_GRUB_hang,
           "-----\nGRUB Loading stage2...\n\n\n\n" ), # the 3 dot hang appears to be less frequent
+        ( True,  ktReason_OSInstall_GRUB_hang,
+          "-----\nGRUB Loading stage2....\n\n\n\n" ), # the 4 dot hang appears to be very infrequent
+        ( True,  ktReason_OSInstall_GRUB_hang,
+          "-----\nGRUB Loading stage2.....\n\n\n\n" ), # the 5 dot hang appears to be more frequent again
         ( True,  ktReason_OSInstall_Udev_hang,
           "\nStarting udev:\n\n\n\n" ),
         ( True,  ktReason_Panic_BootManagerC000000F,
