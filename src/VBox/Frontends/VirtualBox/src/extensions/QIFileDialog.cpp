@@ -19,7 +19,10 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* VBox includes */
+/* Qt includes: */
+# include <QEventLoop>
+
+/* GUI includes: */
 # include "VBoxGlobal.h"
 # include "UIModalWindowManager.h"
 # include "UIMessageCenter.h"
@@ -28,7 +31,6 @@
 # ifdef VBOX_WS_WIN
 /* Qt includes */
 #  include <QEvent>
-#  include <QEventLoop>
 #  include <QThread>
 
 /* WinAPI includes */
