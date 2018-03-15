@@ -29,6 +29,9 @@
  *  - Caps Lock and Scroll Lock are normal keys from the keyboard's point of view.
  *    However, Num Lock is not and the keyboard internally tracks its state.
  *  - The way Print Screen works in scan set 1/2 is totally insane.
+ *  - A PS/2 keyboard can send at most 1,000 to 1,500 bytes per second. There is
+ *    software which relies on that fact and assumes that a scan code can be
+ *    read twice before the next scan code comes in.
  */
 
 
@@ -111,6 +114,9 @@
 /* Default typematic value. */
 #define KBD_DFL_RATE_DELAY  0x2B
 
+/* Input throttling delay in milliseconds. */
+#define KBD_THROTTLE_DELAY  1
+
 /** Define a simple PS/2 input device queue. */
 #define DEF_PS2Q_TYPE(name, size)   \
      typedef struct {               \
@@ -131,13 +137,6 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
-/** Scancode translator state.  */
-typedef enum {
-    SS_IDLE,    /**< Starting state. */
-    SS_EXT,     /**< E0 byte was received. */
-    SS_EXT1     /**< E1 byte was received. */
-} scan_state_t;
 
 /** Typematic state. */
 typedef enum {
@@ -187,30 +186,36 @@ typedef struct PS2K
     unsigned            uTypematicDelay;
     /** Typematic repeat period in milliseconds. */
     unsigned            uTypematicRepeat;
-#if HC_ARCH_BITS == 32
-    uint32_t            Alignment0;
-#endif
+    /** Set if the throttle delay is currently active. */
+    bool                fThrottleActive;
+    /** Set if the input rate should be throttled. */
+    bool                fThrottleEnabled;
+
+    uint8_t             Alignment0[2];
 
     /** Command delay timer - RC Ptr. */
     PTMTIMERRC          pKbdDelayTimerRC;
     /** Typematic timer - RC Ptr. */
     PTMTIMERRC          pKbdTypematicTimerRC;
+    /** Input throttle timer - RC Ptr. */
+    PTMTIMERRC          pThrottleTimerRC;
 
     /** The device critical section protecting everything - R3 Ptr */
     R3PTRTYPE(PPDMCRITSECT) pCritSectR3;
+
     /** Command delay timer - R3 Ptr. */
     PTMTIMERR3          pKbdDelayTimerR3;
     /** Typematic timer - R3 Ptr. */
     PTMTIMERR3          pKbdTypematicTimerR3;
-    RTR3PTR             Alignment2;
+    /** Input throttle timer - R3 Ptr. */
+    PTMTIMERR3          pThrottleTimerR3;
 
     /** Command delay timer - R0 Ptr. */
     PTMTIMERR0          pKbdDelayTimerR0;
     /** Typematic timer - R0 Ptr. */
     PTMTIMERR0          pKbdTypematicTimerR0;
-
-    scan_state_t        XlatState;      /// @todo temporary
-    uint32_t            Alignment1;
+    /** Input throttle timer - R0 Ptr. */
+    PTMTIMERR0          pThrottleTimerR0;
 
     /**
      * Keyboard port - LUN#0.
@@ -575,6 +580,19 @@ static void ps2kNotifyLedsState(PPS2K pThis, uint8_t u8State)
     pThis->Keyboard.pDrv->pfnLedStatusChange(pThis->Keyboard.pDrv, enmLeds);
 
 }
+
+/**
+ * Query the number of items currently in a queue.
+ *
+ * @param   pQ                  Pointer to the queue.
+ *
+ * @return  uint32_t            Number of items in queue.
+ */
+static uint32_t ps2kInQueue(GeneriQ *pQ)
+{
+    return pQ->cUsed;
+}
+
 #endif /* IN_RING3 */
 
 /**
@@ -784,7 +802,14 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pb)
      */
     rc = ps2kRemoveQueue((GeneriQ *)&pThis->cmdQ, pb);
     if (rc != VINF_SUCCESS && !pThis->u8CurrCmd && pThis->fScanning)
-        rc = ps2kRemoveQueue((GeneriQ *)&pThis->keyQ, pb);
+        if (!pThis->fThrottleActive)
+        {
+            rc = ps2kRemoveQueue((GeneriQ *)&pThis->keyQ, pb);
+            if (pThis->fThrottleEnabled) {
+                pThis->fThrottleActive = true;
+                TMTimerSetMillies(pThis->CTX_SUFF(pThrottleTimer), KBD_THROTTLE_DELAY);
+            }
+        }
 
     LogFlowFunc(("keyboard sends 0x%02x (%svalid data)\n", *pb, rc == VINF_SUCCESS ? "" : "not "));
     return rc;
@@ -1004,6 +1029,39 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
     KBCUpdateInterrupts(pThis->pParent);
 
     return VINF_SUCCESS;
+}
+
+/* Throttling timer to emulate the finite keyboard communication speed. A PS/2 keyboard is
+ * limited by the serial link speed and cannot send much more than 1,000 bytes per second.
+ * Some software (notably Borland Pascal and programs built with its run-time) relies on
+ * being able to read an incoming scan-code twice. Throttling the data rate enables such
+ * software to function, while human typists cannot tell any difference.
+ *
+ * Note: The throttling is currently only done for keyboard data, not command responses.
+ * The throttling could and perhaps should be done for any data (including command
+ * response) scoming from PS/2 devices, both keyboard and auxiliary. That is not currently
+ * done because it would needlessly slow things down.
+ */
+static DECLCALLBACK(void) ps2kThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+{
+    RT_NOREF2(pDevIns, pTimer);
+    PPS2K       pThis = (PS2K *)pvUser;
+    unsigned    uHaveData;
+
+    /* Grab the lock to avoid races with event delivery or EMTs. */
+    int rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
+    AssertReleaseRC(rc);
+
+    /* If data is available, poke the KBC. Once the data
+     * is actually read, the timer may be re-triggered.
+     */
+    pThis->fThrottleActive = false;
+    uHaveData = ps2kInQueue((GeneriQ *)&pThis->keyQ);
+    LogFlowFunc(("Have%s bytes\n", uHaveData ? "" : " no"));
+    if (uHaveData)
+        KBCUpdateInterrupts(pThis->pParent);
+
+    PDMCritSectLeave(pThis->pCritSectR3);
 }
 
 /* Timer handler for emulating typematic keys. Note that only the last key
@@ -1364,6 +1422,7 @@ void PS2KReset(PPS2K pThis)
     LogFlowFunc(("Resetting PS2K\n"));
 
     pThis->fScanning         = true;
+    pThis->fThrottleActive   = false;
     pThis->u8ScanSet         = 2;
     pThis->u8CurrCmd         = 0;
     pThis->u8Modifiers       = 0;
@@ -1389,12 +1448,19 @@ void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
     NOREF(offDelta);
 }
 
-int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
+int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance, PCFGMNODE pCfg)
 {
     RT_NOREF2(pDevIns, iInstance);
     LogFlowFunc(("iInstance=%d\n", iInstance));
 
     pThis->pParent = pParent;
+
+    bool fThrottleEnabled;
+    int rc = CFGMR3QueryBoolDef(pCfg, "KbdThrottleEnabled", &fThrottleEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to query \"KbdThrottleEnabled\" from the config"));
+    Log(("KbdThrottleEnabled=%u\n", fThrottleEnabled));
+    pThis->fThrottleEnabled = fThrottleEnabled;
 
     /* Initialize the queues. */
     pThis->keyQ.cSize = KBD_KEY_QUEUE_SIZE;
@@ -1409,11 +1475,23 @@ int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
     pThis->pCritSectR3 = pDevIns->pCritSectRoR3;
 
     /*
-     * Create the typematic delay/repeat timer. Does not use virtual time!
+     * Create the input rate throttling timer. Does not use virtual time!
      */
     PTMTIMER pTimer;
-    int rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2kTypematicTimer, pThis,
-                                    TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Typematic Timer", &pTimer);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2kThrottleTimer, pThis,
+                                    TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Throttle Timer", &pTimer);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pThis->pThrottleTimerR3 = pTimer;
+    pThis->pThrottleTimerR0 = TMTimerR0Ptr(pTimer);
+    pThis->pThrottleTimerRC = TMTimerRCPtr(pTimer);
+
+    /*
+     * Create the typematic delay/repeat timer. Does not use virtual time!
+     */
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2kTypematicTimer, pThis,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Typematic Timer", &pTimer);
     if (RT_FAILURE(rc))
         return rc;
 

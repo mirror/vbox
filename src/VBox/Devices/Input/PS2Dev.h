@@ -45,7 +45,7 @@ typedef struct PS2K *PPS2K;
 int  PS2KByteToKbd(PPS2K pThis, uint8_t cmd);
 int  PS2KByteFromKbd(PPS2K pThis, uint8_t *pVal);
 
-int  PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance);
+int  PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance, PCFGMNODE pCfg);
 int  PS2KAttach(PPS2K pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
 void PS2KReset(PPS2K pThis);
 void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);

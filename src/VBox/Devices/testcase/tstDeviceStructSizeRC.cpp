@@ -438,12 +438,16 @@ int main()
     GEN_CHECK_OFF(PS2K, keyQ);
     GEN_CHECK_OFF(PS2K, cmdQ);
     GEN_CHECK_OFF(PS2K, uTypematicDelay);
+    GEN_CHECK_OFF(PS2K, fThrottleActive);
     GEN_CHECK_OFF(PS2K, pKbdDelayTimerRC);
     GEN_CHECK_OFF(PS2K, pKbdDelayTimerR3);
     GEN_CHECK_OFF(PS2K, pKbdDelayTimerR0);
     GEN_CHECK_OFF(PS2K, pKbdTypematicTimerRC);
     GEN_CHECK_OFF(PS2K, pKbdTypematicTimerR3);
     GEN_CHECK_OFF(PS2K, pKbdTypematicTimerR0);
+    GEN_CHECK_OFF(PS2K, pThrottleTimerRC);
+    GEN_CHECK_OFF(PS2K, pThrottleTimerR3);
+    GEN_CHECK_OFF(PS2K, pThrottleTimerR0);
     GEN_CHECK_OFF(PS2K, pCritSectR3);
     GEN_CHECK_OFF(PS2K, Keyboard.IBase);
     GEN_CHECK_OFF(PS2K, Keyboard.IPort);

@@ -962,7 +962,7 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0R0Enabled\0KbdThrottleEnabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
     rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
     if (RT_FAILURE(rc))
@@ -980,7 +980,7 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
-    rc = PS2KConstruct(&pThis->Kbd, pDevIns, pThis, iInstance);
+    rc = PS2KConstruct(&pThis->Kbd, pDevIns, pThis, iInstance, pCfg);
     if (RT_FAILURE(rc))
         return rc;
 
