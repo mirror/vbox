@@ -25,8 +25,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
-# include "UIMachine.h"
-# include "UISelectorWindow.h"
+# include "UIStarter.h"
 # include "UIModalWindowManager.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils.h"
@@ -461,7 +460,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Create modal-window manager: */
         UIModalWindowManager::create();
 
-        /* Create global UI instance: */
+        /* Create UI starter: */
+        UIStarter::create();
+        /* Create global app instance: */
         VBoxGlobal::create();
 
         /* Simulate try-catch block: */
@@ -470,6 +471,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             /* Exit if VBoxGlobal is not valid: */
             if (!vboxGlobal().isValid())
                 break;
+
+            /* Init link between UI starter and global app instance: */
+            gStarter->init();
 
             /* Exit if VBoxGlobal pre-processed arguments: */
             if (vboxGlobal().processArgs())
@@ -482,16 +486,21 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
                 qApp->setQuitOnLastWindowClosed(false);
             }
 
-            /* Request to Show UI _after_ QApplication started: */
-            QMetaObject::invokeMethod(&vboxGlobal(), "showUI", Qt::QueuedConnection);
+            /* Request to Show UI _after_ QApplication executed: */
+            QMetaObject::invokeMethod(gStarter, "sltShowUI", Qt::QueuedConnection);
 
             /* Start application: */
             iResultCode = a.exec();
+
+            /* Break link between UI starter and global app instance: */
+            gStarter->deinit();
         }
         while (0);
 
-        /* Destroy global UI instance: */
+        /* Destroy global app instance: */
         VBoxGlobal::destroy();
+        /* Destroy UI starter: */
+        UIStarter::destroy();
 
         /* Destroy modal-window manager: */
         UIModalWindowManager::destroy();

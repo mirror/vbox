@@ -447,6 +447,11 @@ public:
 
 signals:
 
+    /** Asks listener to recreate UI. */
+    void sigAskToRestartUI();
+    /** Ask listener to open URLs. */
+    void sigAskToOpenURLs();
+
     /** Notifies listeners about the VBoxSVC availability change. */
     void sigVBoxSVCAvailabilityChange();
 
@@ -473,9 +478,6 @@ protected slots:
 
     /** Handles @a manager request for emergency session shutdown. */
     void sltHandleCommitDataRequest(QSessionManager &manager);
-
-    /** Shows UI. */
-    void showUI();
 
     /** Handles the VBoxSVC availability change. */
     void sltHandleVBoxSVCAvailabilityChange(bool fAvailable);

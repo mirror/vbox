@@ -52,7 +52,6 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
-# include "UISelectorWindow.h"
 # include "UIMessageCenter.h"
 # include "UIPopupCenter.h"
 # include "QIMessageBox.h"
@@ -3633,9 +3632,10 @@ bool VBoxGlobal::processArgs()
     }
     if (!list.isEmpty())
     {
+        /* Store the URLs: */
         m_ArgUrlList = list;
-        UISelectorWindow::create();
-        QTimer::singleShot(0, gpSelectorWindow, SLOT(sltOpenUrls()));
+        /* Ask UIStarter to open them: */
+        emit sigAskToOpenURLs();
     }
     return fResult;
 }
@@ -4060,13 +4060,6 @@ void VBoxGlobal::cleanup()
     deletePidfile();
 #endif /* VBOX_GUI_WITH_PIDFILE */
 
-    /* Destroy the GUI root windows _BEFORE_
-     * the media related code which could race us: */
-    if (gpSelectorWindow)
-        UISelectorWindow::destroy();
-    if (gpMachine)
-        UIMachine::destroy();
-
     /* Starting medium-enumerator cleanup: */
     m_mediumEnumeratorDtorRwLock.lockForWrite();
     {
@@ -4219,9 +4212,8 @@ void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
                 UIExtraDataManager::destroy();
                 UIExtraDataManager::instance();
                 UIVirtualBoxEventHandler::instance();
-                /* Recreate/show selector-window: */
-                UISelectorWindow::destroy();
-                UISelectorWindow::create();
+                /* Ask UIStarter to restart UI: */
+                emit sigAskToRestartUI();
             }
         }
     }
@@ -4380,43 +4372,6 @@ bool VBoxGlobal::isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-
-void VBoxGlobal::showUI()
-{
-    /* Show Selector UI: */
-    if (!isVMConsoleProcess())
-    {
-        /* Make sure Selector UI is permitted, quit if not: */
-        if (gEDataManager->guiFeatureEnabled(GUIFeatureType_NoSelector))
-        {
-            msgCenter().cannotStartSelector();
-            return QApplication::quit();
-        }
-
-        /* Create/show selector-window: */
-        UISelectorWindow::create();
-
-#ifdef VBOX_BLEEDING_EDGE
-        /* Show EXPERIMENTAL BUILD warning: */
-        msgCenter().showExperimentalBuildWarning();
-#else /* !VBOX_BLEEDING_EDGE */
-# ifndef DEBUG
-        /* Show BETA warning if necessary: */
-        const QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
-        if (   vboxVersion.contains("BETA")
-            && gEDataManager->preventBetaBuildWarningForVersion() != vboxVersion)
-            msgCenter().showBetaBuildWarning();
-# endif /* !DEBUG */
-#endif /* !VBOX_BLEEDING_EDGE */
-    }
-    /* Show Runtime UI: */
-    else
-    {
-        /* Make sure machine is started, quit if not: */
-        if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
-            return QApplication::quit();
-    }
-}
 
 bool VBoxGlobal::switchToMachine(CMachine &machine)
 {

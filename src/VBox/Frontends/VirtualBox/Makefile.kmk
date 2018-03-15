@@ -352,6 +352,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/UIModalWindowManager.h \
 	src/globals/UIPopupCenter.h \
 	src/globals/UIShortcutPool.h \
+	src/globals/UIStarter.h \
 	src/globals/UIThreadPool.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxUtils.h \
@@ -694,6 +695,7 @@ VirtualBox_SOURCES = \
 	src/globals/UIModalWindowManager.cpp \
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIShortcutPool.cpp \
+	src/globals/UIStarter.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/globals/VBoxGlobal.cpp \
 	src/hostnetwork/UIHostNetworkDetailsWidget.cpp \
