@@ -970,7 +970,7 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = VERR_MAX_PROCS_REACHED;
+    int rc = VERR_GSTCTL_MAX_OBJECTS_REACHED;
     if (mData.mNumObjects >= VBOX_GUESTCTRL_MAX_OBJECTS)
         return rc;
 
@@ -1348,7 +1348,7 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo,
         return VERR_NOT_SUPPORTED;
     }
 
-    int rc = VERR_MAX_PROCS_REACHED;
+    int rc = VERR_GSTCTL_MAX_OBJECTS_REACHED;
     if (mData.mNumObjects >= VBOX_GUESTCTRL_MAX_OBJECTS)
         return rc;
 
@@ -1567,7 +1567,7 @@ Utf8Str GuestSession::i_guestErrorToString(int rcGuest)
             strError += Utf8StrFmt(tr("Invalid user/password credentials"));
             break;
 
-        case VERR_MAX_PROCS_REACHED:
+        case VERR_GSTCTL_MAX_OBJECTS_REACHED:
             strError += Utf8StrFmt(tr("Maximum number of concurrent guest processes has been reached"));
             break;
 
@@ -2128,7 +2128,7 @@ int GuestSession::i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = VERR_MAX_PROCS_REACHED;
+    int rc = VERR_GSTCTL_MAX_OBJECTS_REACHED;
     if (mData.mNumObjects >= VBOX_GUESTCTRL_MAX_OBJECTS)
         return rc;
 
@@ -3795,7 +3795,7 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
                 hr = setErrorVrc(vrc, tr("Failed to start guest process: %Rrc"), vrc);
             }
         }
-        else if (vrc == VERR_MAX_PROCS_REACHED)
+        else if (vrc == VERR_GSTCTL_MAX_OBJECTS_REACHED)
             hr = setErrorVrc(vrc, tr("Maximum number of concurrent guest processes per session (%u) reached"),
                              VBOX_GUESTCTRL_MAX_OBJECTS);
         else

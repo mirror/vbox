@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -743,7 +743,7 @@ Global::vboxStatusCodeToCOM(int aVBoxStatus)
         case VERR_GENERAL_FAILURE:              return E_FAIL;
         case VERR_ACCESS_DENIED:                return E_ACCESSDENIED;
 
-        /* VirtualBox COM status codes */
+        /* VirtualBox COM status codes. */
         case VERR_COM_OBJECT_NOT_FOUND:         return VBOX_E_OBJECT_NOT_FOUND;
         case VERR_COM_INVALID_VM_STATE:         return VBOX_E_INVALID_VM_STATE;
         case VERR_COM_VM_ERROR:                 return VBOX_E_VM_ERROR;
@@ -761,6 +761,10 @@ Global::vboxStatusCodeToCOM(int aVBoxStatus)
         case VERR_UNRESOLVED_ERROR:             return E_FAIL;
         case VERR_NOT_EQUAL:                    return VBOX_E_FILE_ERROR;
         case VERR_FILE_NOT_FOUND:               return VBOX_E_OBJECT_NOT_FOUND;
+
+        /* Guest Control errors. */
+        case VERR_GSTCTL_MAX_OBJECTS_REACHED:   return VBOX_E_MAXIMUM_REACHED;
+        case VERR_GSTCTL_GUEST_ERROR:           return VBOX_E_GSTCTL_GUEST_ERROR;
 
         default:
             AssertMsgFailed(("%Rrc\n", aVBoxStatus));

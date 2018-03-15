@@ -434,6 +434,18 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_MAXIMUM_REACHED" value="0x80BB000E">
+    <desc>
+      A maximum has been reached.
+    </desc>
+  </result>
+
+  <result name="VBOX_E_GSTCTL_GUEST_ERROR" value="0x80BB000F">
+    <desc>
+      Guest Control reported an error from the guest side.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
@@ -11881,8 +11893,8 @@ and "VAR" for unsetting. -->
       there a methods for creating guest processes.
 
       There can be up to 2048 objects (guest processes, files and directories)
-      a time per guest session.  Exceeding the limit will result in an error.
-<!-- @todo r=bird: Add specific VBOX_E_XXX error for this and document it here! -->
+      a time per guest session.  Exceeding the limit will result in an error (see
+      the corresponding functions for more).
 
       When done with either of these objects, including the guest session itself,
       use the appropriate close() method to let the object do its cleanup work.
@@ -12205,6 +12217,9 @@ and "VAR" for unsetting. -->
         <result name="VBOX_E_IPRT_ERROR">
           Error while opening the directory.
         </result>
+        <result name="VBOX_E_MAXIMUM_REACHED">
+          The maximum of concurrent guest directories has been reached.
+        </result>
       </desc>
       <param name="path" type="wstring" dir="in">
         <desc>Path to the directory to open. Guest path style.</desc>
@@ -12512,6 +12527,9 @@ and "VAR" for unsetting. -->
         <result name="VBOX_E_IPRT_ERROR">
           Error while opening the file.
         </result>
+        <result name="VBOX_E_MAXIMUM_REACHED">
+          The maximum of concurrent guest files has been reached.
+        </result>
       </desc>
       <param name="path" type="wstring" dir="in">
         <desc>Path to file to open.  Guest path style.</desc>
@@ -12794,6 +12812,10 @@ and "VAR" for unsetting. -->
 
         <result name="VBOX_E_IPRT_ERROR">
           Error creating guest process.
+        </result>
+
+        <result name="VBOX_E_MAXIMUM_REACHED">
+          The maximum of concurrent guest processes has been reached.
         </result>
       </desc>
       <param name="executable" type="wstring" dir="in">
@@ -13920,16 +13942,17 @@ and "VAR" for unsetting. -->
         user account in the guest are not allowed reasons of security.
 
         There can be a maximum of 32 sessions at once per VM.  An error will
-        be returned if this has been reached. <!-- This should actually read:
-        VBOX_E_IPRT_ERROR will be return if this limit has been reached.
-        However, keep in mind that VBOX_E_IPRT_ERROR can be returned for about
-        88 unrelated reasons, so you don't know what happend unless you parse
-        the error text. (bird) -->
-<!-- @todo r=bird: Seriously, add an dedicated VBOX_E_MAX_GUEST_SESSIONS status
-for this condition.  Do the same for all other maximums and things that could be
-useful to the API client. -->
+        be returned if this has been reached.
 
         For more information please consult <link to="IGuestSession"/>
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Error creating guest session.
+        </result>
+
+        <result name="VBOX_E_MAXIMUM_REACHED">
+          The maximum of concurrent guest sessions has been reached.
+        </result>
       </desc>
       <param name="user" type="wstring" dir="in">
         <desc>
