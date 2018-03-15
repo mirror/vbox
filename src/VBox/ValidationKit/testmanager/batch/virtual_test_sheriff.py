@@ -225,9 +225,9 @@ class VirtualTestSheriffCaseFile(object):
         on the raw pixels.
         Returns SHA-2 digest string on success, None on failure.
         """
-        (oFile, _, _) = self.oTestSet.openFile(oFile.sFile, 'rb');
+        (oImgFile, _, _) = self.oTestSet.openFile(oFile.sFile, 'rb');
         try:
-            abImageFile = oFile.read();
+            abImageFile = oImgFile.read();
         except Exception as oXcpt:
             self.oSheriff.vprint(u'Error reading the "%s" image file: %s' % (oFile.sFile, oXcpt,))
         else:
