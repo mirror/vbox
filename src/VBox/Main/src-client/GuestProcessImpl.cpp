@@ -1969,7 +1969,7 @@ int GuestProcessTool::init(GuestSession *pGuestSession, const GuestProcessStartu
     /* Make sure the process is hidden. */
     mStartupInfo.mFlags |= ProcessCreateFlag_Hidden;
 
-    int vrc = pSession->i_processCreateExInternal(mStartupInfo, pProcess);
+    int vrc = pSession->i_processCreateEx(mStartupInfo, pProcess);
     if (RT_SUCCESS(vrc))
     {
         int vrcGuest = VINF_SUCCESS;

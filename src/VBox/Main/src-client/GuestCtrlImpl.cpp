@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -546,7 +546,7 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
     {
         Assert(!pSession.isNull());
         int rcGuest;
-        rc = pSession->i_startSessionInternal(&rcGuest);
+        rc = pSession->i_startSession(&rcGuest);
         if (RT_FAILURE(rc))
         {
             /** @todo Handle rcGuest! */

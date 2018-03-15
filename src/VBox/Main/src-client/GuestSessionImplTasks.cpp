@@ -216,7 +216,7 @@ int GuestSessionTask::directoryCreate(const com::Utf8Str &strPath,
 
     GuestFsObjData objData; int rcGuest;
 
-    int rc = mSession->i_directoryQueryInfoInternal(strPath, fFollowSymlinks, objData, &rcGuest);
+    int rc = mSession->i_directoryQueryInfo(strPath, fFollowSymlinks, objData, &rcGuest);
     if (RT_SUCCESS(rc))
     {
         return VWRN_ALREADY_EXISTS;
@@ -231,7 +231,7 @@ int GuestSessionTask::directoryCreate(const com::Utf8Str &strPath,
                 {
                     case VERR_FILE_NOT_FOUND:
                     case VERR_PATH_NOT_FOUND:
-                        rc = mSession->i_directoryCreateInternal(strPath.c_str(), uMode, enmDirecotryCreateFlags, &rcGuest);
+                        rc = mSession->i_directoryCreate(strPath.c_str(), uMode, enmDirecotryCreateFlags, &rcGuest);
                         break;
                     default:
                         break;
@@ -291,7 +291,7 @@ int GuestSessionTask::fileCopyFromEx(const Utf8Str &strSource, const Utf8Str &st
      */
     GuestFsObjData objData;
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int rc = mSession->i_fileQueryInfoInternal(strSource, false /*fFollowSymlinks*/, objData, &rcGuest);
+    int rc = mSession->i_fileQueryInfo(strSource, false /*fFollowSymlinks*/, objData, &rcGuest);
     if (RT_FAILURE(rc))
     {
         switch (rc)
@@ -329,7 +329,7 @@ int GuestSessionTask::fileCopyFromEx(const Utf8Str &strSource, const Utf8Str &st
 
     /* Startup process. */
     ComObjPtr<GuestProcess> pProcess;
-    rc = mSession->i_processCreateExInternal(procInfo, pProcess);
+    rc = mSession->i_processCreateEx(procInfo, pProcess);
     if (RT_SUCCESS(rc))
         rc = pProcess->i_startProcess(msTimeout, &rcGuest);
 
@@ -594,7 +594,7 @@ int GuestSessionTask::fileCopyToEx(const Utf8Str &strSource, const Utf8Str &strD
 
     /* Startup process. */
     ComObjPtr<GuestProcess> pProcess;
-    int rc = mSession->i_processCreateExInternal(procInfo, pProcess);
+    int rc = mSession->i_processCreateEx(procInfo, pProcess);
 
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     if (RT_SUCCESS(rc))
@@ -916,7 +916,7 @@ int SessionTaskOpen::Run(void)
     AutoCaller autoCaller(mSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int vrc = mSession->i_startSessionInternal(NULL /*pvrcGuest*/);
+    int vrc = mSession->i_startSession(NULL /*pvrcGuest*/);
     /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);
@@ -994,7 +994,7 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
     dirOpenInfo.mFlags  = 0; /** @todo Handle flags? */
 
     ComObjPtr <GuestDirectory> pDir; int rcGuest;
-    rc = mSession->i_directoryOpenInternal(dirOpenInfo, pDir, &rcGuest);
+    rc = mSession->i_directoryOpen(dirOpenInfo, pDir, &rcGuest);
 
     if (RT_FAILURE(rc))
     {
@@ -1418,7 +1418,7 @@ int SessionTaskCopyFileTo::Run(void)
     {
         int rcGuest;
         GuestFsObjData objData;
-        rc = mSession->i_fsQueryInfoInternal(mDest, true /* fFollowSymlinks */, objData, &rcGuest);
+        rc = mSession->i_fsQueryInfo(mDest, true /* fFollowSymlinks */, objData, &rcGuest);
         if (RT_SUCCESS(rc))
         {
             if (objData.mType != FsObjType_Directory)
@@ -1662,7 +1662,7 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
         GuestFsObjData objData;
         int64_t cbSizeOnGuest;
         int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-        rc = pSession->i_fileQuerySizeInternal(strFileDest, false /*fFollowSymlinks*/, &cbSizeOnGuest, &rcGuest);
+        rc = pSession->i_fileQuerySize(strFileDest, false /*fFollowSymlinks*/, &cbSizeOnGuest, &rcGuest);
         if (   RT_SUCCESS(rc)
             && cbSize == (uint64_t)cbSizeOnGuest)
         {
@@ -1973,7 +1973,7 @@ int SessionTaskUpdateAdditions::Run(void)
 
             /* Create the installation directory. */
             int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-            rc = pSession->i_directoryCreateInternal(strUpdateDir, 755 /* Mode */, DirectoryCreateFlag_Parents, &rcGuest);
+            rc = pSession->i_directoryCreate(strUpdateDir, 755 /* Mode */, DirectoryCreateFlag_Parents, &rcGuest);
             if (RT_FAILURE(rc))
             {
                 switch (rc)

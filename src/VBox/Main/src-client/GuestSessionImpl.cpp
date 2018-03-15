@@ -729,8 +729,8 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
     return vrc;
 }
 
-int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode,
-                                            uint32_t uFlags, int *prcGuest)
+int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode,
+                                    uint32_t uFlags, int *prcGuest)
 {
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
 
@@ -796,14 +796,14 @@ inline bool GuestSession::i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDire
     return false;
 }
 
-int GuestSession::i_directoryQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks,
-                                               GuestFsObjData &objData, int *prcGuest)
+int GuestSession::i_directoryQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks,
+                                       GuestFsObjData &objData, int *prcGuest)
 {
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
 
     LogFlowThisFunc(("strPath=%s, fFollowSymlinks=%RTbool\n", strPath.c_str(), fFollowSymlinks));
 
-    int vrc = i_fsQueryInfoInternal(strPath, fFollowSymlinks, objData, prcGuest);
+    int vrc = i_fsQueryInfo(strPath, fFollowSymlinks, objData, prcGuest);
     if (RT_SUCCESS(vrc))
     {
         vrc = objData.mType == FsObjType_Directory
@@ -855,8 +855,7 @@ int GuestSession::i_directoryRemoveFromList(GuestDirectory *pDirectory)
     return rc;
 }
 
-int GuestSession::i_directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFlags,
-                                            int *prcGuest)
+int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t uFlags, int *prcGuest)
 {
     AssertReturn(!(uFlags & ~DIRREMOVE_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
@@ -896,8 +895,8 @@ int GuestSession::i_directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFl
     return vrc;
 }
 
-int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath,
-                                             bool fDirectory, Utf8Str &strName, int *prcGuest)
+int GuestSession::i_objectCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strPath,
+                                     bool fDirectory, Utf8Str &strName, int *prcGuest)
 {
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
 
@@ -961,8 +960,8 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
     return vrc;
 }
 
-int GuestSession::i_directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo,
-                                          ComObjPtr<GuestDirectory> &pDirectory, int *prcGuest)
+int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
+                                  ComObjPtr<GuestDirectory> &pDirectory, int *prcGuest)
 {
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
 
@@ -1301,7 +1300,7 @@ int GuestSession::i_fileRemoveFromList(GuestFile *pFile)
     return rc;
 }
 
-int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *prcGuest)
+int GuestSession::i_fileRemove(const Utf8Str &strPath, int *prcGuest)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
@@ -1332,8 +1331,8 @@ int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *prcGuest)
     return vrc;
 }
 
-int GuestSession::i_fileOpenInternal(const GuestFileOpenInfo &openInfo,
-                                     ComObjPtr<GuestFile> &pFile, int *prcGuest)
+int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo,
+                             ComObjPtr<GuestFile> &pFile, int *prcGuest)
 {
     LogFlowThisFunc(("strFile=%s, enmAccessMode=%d (%s) enmOpenAction=%d (%s) uCreationMode=%RU32 mfOpenEx=%RU32\n",
                      openInfo.mFileName.c_str(), openInfo.mAccessMode, openInfo.mpszAccessMode,
@@ -1434,11 +1433,11 @@ int GuestSession::i_fileOpenInternal(const GuestFileOpenInfo &openInfo,
     return rc;
 }
 
-int GuestSession::i_fileQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *prcGuest)
+int GuestSession::i_fileQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *prcGuest)
 {
     LogFlowThisFunc(("strPath=%s fFollowSymlinks=%RTbool\n", strPath.c_str(), fFollowSymlinks));
 
-    int vrc = i_fsQueryInfoInternal(strPath, fFollowSymlinks, objData, prcGuest);
+    int vrc = i_fsQueryInfo(strPath, fFollowSymlinks, objData, prcGuest);
     if (RT_SUCCESS(vrc))
     {
         vrc = objData.mType == FsObjType_File
@@ -1449,12 +1448,12 @@ int GuestSession::i_fileQueryInfoInternal(const Utf8Str &strPath, bool fFollowSy
     return vrc;
 }
 
-int GuestSession::i_fileQuerySizeInternal(const Utf8Str &strPath, bool fFollowSymlinks, int64_t *pllSize, int *prcGuest)
+int GuestSession::i_fileQuerySize(const Utf8Str &strPath, bool fFollowSymlinks, int64_t *pllSize, int *prcGuest)
 {
     AssertPtrReturn(pllSize, VERR_INVALID_POINTER);
 
     GuestFsObjData objData;
-    int vrc = i_fileQueryInfoInternal(strPath, fFollowSymlinks, objData, prcGuest);
+    int vrc = i_fileQueryInfo(strPath, fFollowSymlinks, objData, prcGuest);
     if (RT_SUCCESS(vrc))
         *pllSize = objData.mObjectSize;
 
@@ -1471,7 +1470,7 @@ int GuestSession::i_fileQuerySizeInternal(const Utf8Str &strPath, bool fFollowSy
  * @param   prcGuest            Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
  *                              Any other return code indicates some host side error.
  */
-int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *prcGuest)
+int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *prcGuest)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
@@ -1721,7 +1720,7 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
     return vrc;
 }
 
-int GuestSession::i_startSessionInternal(int *prcGuest)
+int GuestSession::i_startSession(int *prcGuest)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1856,7 +1855,7 @@ void GuestSession::i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask)
     if (FAILED(autoCaller.rc()))
         return;
 
-    int vrc = pSession->i_startSessionInternal(NULL /* Guest rc, ignored */);
+    int vrc = pSession->i_startSession(NULL /* Guest rc, ignored */);
 /** @todo
  *
  * r=bird: Is it okay to ignore @a vrc here?
@@ -1869,7 +1868,7 @@ void GuestSession::i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask)
     NOREF(vrc);
 }
 
-int GuestSession::i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *prcGuest)
+int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *prcGuest)
 {
     AssertReturn(!(uFlags & ~PATHRENAME_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
 
@@ -2079,7 +2078,7 @@ int GuestSession::i_processRemoveFromList(GuestProcess *pProcess)
  * @param   procInfo
  * @param   pProcess
  */
-int GuestSession::i_processCreateExInternal(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProcess)
+int GuestSession::i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProcess)
 {
     LogFlowFunc(("mExe=%s, mFlags=%x, mTimeoutMS=%RU32\n",
                  procInfo.mExecutable.c_str(), procInfo.mFlags, procInfo.mTimeoutMS));
@@ -2955,7 +2954,7 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
     HRESULT hr = S_OK;
 
     ComObjPtr <GuestDirectory> pDirectory; int rcGuest;
-    int rc = i_directoryCreateInternal(aPath, (uint32_t)aMode, fFlags, &rcGuest);
+    int rc = i_directoryCreate(aPath, (uint32_t)aMode, fFlags, &rcGuest);
     if (RT_FAILURE(rc))
     {
         if (GuestProcess::i_isGuestError(rc))
@@ -2999,9 +2998,7 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
     HRESULT hr = S_OK;
 
     int rcGuest;
-    int rc = i_objectCreateTempInternal(aTemplateName,
-                                        aPath,
-                                        true /* Directory */, aDirectory, &rcGuest);
+    int rc = i_objectCreateTemp(aTemplateName, aPath, true /* Directory */, aDirectory, &rcGuest);
     if (!RT_SUCCESS(rc))
     {
         switch (rc)
@@ -3030,7 +3027,7 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
     HRESULT hr = S_OK;
 
     GuestFsObjData objData; int rcGuest;
-    int rc = i_directoryQueryInfoInternal(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
+    int rc = i_directoryQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
     if (RT_SUCCESS(rc))
         *aExists = objData.mType == FsObjType_Directory;
     else
@@ -3090,7 +3087,7 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
     openInfo.mFlags = fFlags;
 
     ComObjPtr <GuestDirectory> pDirectory; int rcGuest;
-    int rc = i_directoryOpenInternal(openInfo, pDirectory, &rcGuest);
+    int rc = i_directoryOpen(openInfo, pDirectory, &rcGuest);
     if (RT_SUCCESS(rc))
     {
         /* Return directory object to the caller. */
@@ -3134,7 +3131,7 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
     uint32_t uFlags = 0;
 
     int rcGuest;
-    int vrc = i_directoryRemoveInternal(aPath, uFlags, &rcGuest);
+    int vrc = i_directoryRemove(aPath, uFlags, &rcGuest);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
@@ -3195,7 +3192,7 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
     uint32_t uFlags = DIRREMOVE_FLAG_RECURSIVE
                     | DIRREMOVE_FLAG_CONTENT_AND_DIR;
     int rcGuest;
-    int vrc = i_directoryRemoveInternal(aPath, uFlags, &rcGuest);
+    int vrc = i_directoryRemove(aPath, uFlags, &rcGuest);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
@@ -3354,7 +3351,7 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
     }
 
     GuestFsObjData objData; int rcGuest;
-    int vrc = i_fileQueryInfoInternal(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
+    int vrc = i_fileQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
         *aExists = TRUE;
@@ -3467,7 +3464,7 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
 
     ComObjPtr <GuestFile> pFile;
     int rcGuest;
-    int vrc = i_fileOpenInternal(openInfo, pFile, &rcGuest);
+    int vrc = i_fileOpen(openInfo, pFile, &rcGuest);
     if (RT_SUCCESS(vrc))
         /* Return directory object to the caller. */
         hr = pFile.queryInterfaceTo(aFile.asOutParam());
@@ -3502,7 +3499,7 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
     HRESULT hr = S_OK;
 
     int64_t llSize; int rcGuest;
-    int vrc = i_fileQuerySizeInternal(aPath, aFollowSymlinks != FALSE,  &llSize, &rcGuest);
+    int vrc = i_fileQuerySize(aPath, aFollowSymlinks != FALSE,  &llSize, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
         *aSize = llSize;
@@ -3533,7 +3530,7 @@ HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlink
 
     GuestFsObjData objData;
     int rcGuest;
-    int vrc = i_fsQueryInfoInternal(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
+    int vrc = i_fsQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
         *aExists = TRUE;
@@ -3569,7 +3566,7 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
     HRESULT hrc = S_OK;
 
     GuestFsObjData Info; int rcGuest;
-    int vrc = i_fsQueryInfoInternal(aPath, aFollowSymlinks != FALSE, Info, &rcGuest);
+    int vrc = i_fsQueryInfo(aPath, aFollowSymlinks != FALSE, Info, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
         ComObjPtr<GuestFsObjInfo> ptrFsObjInfo;
@@ -3606,7 +3603,7 @@ HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
     HRESULT hrc = S_OK;
 
     int rcGuest;
-    int vrc = i_fileRemoveInternal(aPath, &rcGuest);
+    int vrc = i_fileRemove(aPath, &rcGuest);
     if (RT_FAILURE(vrc))
     {
         if (GuestProcess::i_isGuestError(vrc))
@@ -3653,7 +3650,7 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
 
     /* Call worker to do the job. */
     int rcGuest;
-    int vrc = i_pathRenameInternal(aSource, aDestination, fBackend, &rcGuest);
+    int vrc = i_pathRename(aSource, aDestination, fBackend, &rcGuest);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
@@ -3776,7 +3773,7 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
          * Create a guest process object.
          */
         ComObjPtr<GuestProcess> pProcess;
-        vrc = i_processCreateExInternal(procInfo, pProcess);
+        vrc = i_processCreateEx(procInfo, pProcess);
         if (RT_SUCCESS(vrc))
         {
             ComPtr<IGuestProcess> pIProcess;
