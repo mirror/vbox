@@ -117,8 +117,7 @@ typedef struct HostCommand
     uint32_t AddRef(void)
     {
 #ifdef DEBUG_andy
-        LogFlowFunc(("Adding reference pHostCmd=%p, CID=%RU32, new refCount=%RU32\n",
-                     this, mContextID, mRefCount + 1));
+        LogFlowThisFunc(("[Cmd %RU32] Adding reference, new refCount=%RU32\n", mMsgType, mRefCount + 1));
 #endif
         return ++mRefCount;
     }
@@ -126,8 +125,7 @@ typedef struct HostCommand
     uint32_t Release(void)
     {
 #ifdef DEBUG_andy
-        LogFlowFunc(("Releasing reference pHostCmd=%p, CID=%RU32, new refCount=%RU32\n",
-                     this, mContextID, mRefCount - 1));
+        LogFlowThisFunc(("[Cmd %RU32] Releasing reference, new refCount=%RU32\n", mMsgType, mRefCount - 1));
 #endif
         /* Release reference for current command. */
         Assert(mRefCount);
@@ -147,8 +145,7 @@ typedef struct HostCommand
      */
     int Allocate(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     {
-        LogFlowFunc(("Allocating pHostCmd=%p, uMsg=%RU32, cParms=%RU32, paParms=%p\n",
-                     this, uMsg, cParms, paParms));
+        LogFlowThisFunc(("[Cmd %RU32] Allocating cParms=%RU32, paParms=%p\n", uMsg, cParms, paParms));
 
         if (!cParms) /* At least one parameter (context ID) must be present. */
             return VERR_INVALID_PARAMETER;
@@ -244,11 +241,10 @@ typedef struct HostCommand
      */
     void Free(void)
     {
-        AssertMsg(mRefCount == 0, ("pHostCmd=%p, CID=%RU32 still being used by a client (%RU32 refs), cannot free yet\n",
-                                   this, mContextID, mRefCount));
+        AssertMsg(mRefCount == 0, ("uMsg=%RU32, CID=%RU32 still being used by a client (%RU32 refs), cannot free yet\n",
+                                   mMsgType, mContextID, mRefCount));
 
-        LogFlowFunc(("Freeing host command pHostCmd=%p, CID=%RU32, mMsgType=%RU32, mParmCount=%RU32, mpParms=%p\n",
-                     this, mContextID, mMsgType, mParmCount, mpParms));
+        LogFlowThisFunc(("[Cmd %RU32] Freeing\n", mMsgType));
 
         for (uint32_t i = 0; i < mParmCount; i++)
         {
@@ -285,8 +281,8 @@ typedef struct HostCommand
      */
     int CopyTo(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms) const
     {
-        LogFlowFunc(("pHostCmd=%p, mMsgType=%RU32, mParmCount=%RU32, mContextID=%RU32 (Session %RU32)\n",
-                     this, mMsgType, mParmCount, mContextID, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(mContextID)));
+        LogFlowThisFunc(("[Cmd %RU32] mParmCount=%RU32, mContextID=%RU32 (Session %RU32)\n",
+                         mMsgType, mParmCount, mContextID, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(mContextID)));
 
         int rc = VINF_SUCCESS;
         if (cDstParms != mParmCount)
@@ -379,16 +375,14 @@ typedef struct HostCommand
 
         int rc;
 
-        LogFlowFunc(("pHostCmd=%p, mMsgType=%RU32, mParmCount=%RU32, mpParms=%p\n",
-                     this, mMsgType, mParmCount, mpParms));
+        LogFlowThisFunc(("[Cmd %RU32] mParmCount=%RU32, mpParms=%p\n", mMsgType, mParmCount, mpParms));
 
         /* Does the current host command need more parameter space which
          * the client does not provide yet? */
         if (mParmCount > pConnection->mNumParms)
         {
-            LogFlowFunc(("pHostCmd=%p requires %RU32 parms, only got %RU32 from client\n",
-                         this, mParmCount, pConnection->mNumParms));
-
+            LogFlowThisFunc(("[Cmd %RU32] Requires %RU32 parms, only got %RU32 from client\n",
+                             mMsgType, mParmCount, pConnection->mNumParms));
             /*
             * So this call apparently failed because the guest wanted to peek
             * how much parameters it has to supply in order to successfully retrieve
@@ -419,8 +413,7 @@ typedef struct HostCommand
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
 
-        LogFlowFunc(("pHostCmd=%p, mMsgType=%RU32, mParmCount=%RU32, mpParms=%p\n",
-                     this, mMsgType, mParmCount, mpParms));
+        LogFlowThisFunc(("[Cmd %RU32] mParmCount=%RU32, mpParms=%p\n", mMsgType, mParmCount, mpParms));
 
         if (pConnection->mNumParms >= 2)
         {
@@ -428,8 +421,8 @@ typedef struct HostCommand
             pConnection->mParms[1].setUInt32(mParmCount); /* Required parameters for message */
         }
         else
-            LogFlowFunc(("Warning: Client has not (yet) submitted enough parameters (%RU32, must be at least 2) to at least peak for the next message\n",
-                         pConnection->mNumParms));
+            LogFlowThisFunc(("Warning: Client has not (yet) submitted enough parameters (%RU32, must be at least 2) to at least peak for the next message\n",
+                             pConnection->mNumParms));
 
         /*
          * Always return VERR_TOO_MUCH_DATA data here to
@@ -523,8 +516,7 @@ typedef struct ClientState
 
         if (pHostCmd->Release() == 0)
         {
-            LogFlowFunc(("[Client %RU32] Destroying pHostCmd=%p\n",
-                         mID, (*curItem)));
+            LogFlowThisFunc(("[Client %RU32] Destroying command %RU32\n", mID, pHostCmd->mMsgType));
 
             delete pHostCmd;
             pHostCmd = NULL;
@@ -659,8 +651,8 @@ typedef struct ClientState
                       mID, pConnection, mHostCmdRc, mHostCmdTries, mPeekCount));
 
         mHostCmdRc = SendReply(pConnection, pHostCmd);
-        LogFlowFunc(("[Client %RU32] Processing pHostCmd=%p ended with rc=%Rrc\n",
-                     mID, pHostCmd, mHostCmdRc));
+
+        LogFlowThisFunc(("[Client %RU32] Processing command %RU32 ended with rc=%Rrc\n", mID, pHostCmd->mMsgType, mHostCmdRc));
 
         bool fRemove = false;
         if (RT_FAILURE(mHostCmdRc))
@@ -694,8 +686,8 @@ typedef struct ClientState
         else
             fRemove = true; /* Everything went fine, remove it. */
 
-        LogFlowFunc(("[Client %RU32] Tried pHostCmd=%p for %RU32 times, (last result=%Rrc, fRemove=%RTbool)\n",
-                     mID, pHostCmd, mHostCmdTries, mHostCmdRc, fRemove));
+        LogFlowThisFunc(("[Client %RU32] Tried command %RU32 for %RU32 times, (last result=%Rrc, fRemove=%RTbool)\n",
+                         mID, pHostCmd->mMsgType, mHostCmdTries, mHostCmdRc, fRemove));
 
         if (RT_SUCCESS(rc)) /** @todo r=bird: confusing statement+state, rc hasn't been touched since the top and is always VINF_SUCCESS. */
             rc = mHostCmdRc;
@@ -761,8 +753,8 @@ typedef struct ClientState
                 HostCommand *pHostCmd = (*curCmd);
                 AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
 
-                LogFlowFunc(("[Client %RU32] Current host command is pHostCmd=%p, CID=%RU32, cmdType=%RU32, cmdParms=%RU32, refCount=%RU32\n",
-                             mID, pHostCmd, pHostCmd->mContextID, pHostCmd->mMsgType, pHostCmd->mParmCount, pHostCmd->mRefCount));
+                LogFlowThisFunc(("[Client %RU32] Current host command is %RU32 (CID=%RU32, cParms=%RU32, refCount=%RU32)\n",
+                                 mID, pHostCmd->mMsgType, pHostCmd->mContextID, pHostCmd->mParmCount, pHostCmd->mRefCount));
 
                 rc = Run(&mPendingCon, pHostCmd);
             }
@@ -849,8 +841,8 @@ typedef struct ClientState
         AssertPtr(mSvcHelpers);
         mSvcHelpers->pfnCallComplete(pConnection->mHandle, rc);
 
-        LogFlowFunc(("[Client %RU32] mPeekCount=%RU32, pConnection=%p, pHostCmd=%p, replyRc=%Rrc\n",
-                     mID, mPeekCount, pConnection, pHostCmd, rc));
+        LogFlowThisFunc(("[Client %RU32] Command %RU32 ended with %Rrc (mPeekCount=%RU32, pConnection=%p)\n",
+                         mID, pHostCmd->mMsgType, rc, mPeekCount, pConnection));
         return rc;
     }
 
