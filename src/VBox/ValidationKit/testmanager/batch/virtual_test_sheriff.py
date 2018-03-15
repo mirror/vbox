@@ -488,6 +488,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_NetworkMisconfiguration              = ( 'Host',              'Network misconfiguration' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
+    ktReason_OSInstall_Udev_hang                       = ( 'O/S Install',       'udev hang' );
     ktReason_OSInstall_Sata_no_BM                      = ( 'O/S Install',       'SATA busmaster bit not set' );
     ktReason_Panic_BootManagerC000000F                 = ( 'Panic',             'Hardware Changed' );
     ktReason_BootManager_Image_corrupt                 = ( 'Unknown',           'BOOTMGR Image corrupt' );
@@ -921,6 +922,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           "-----\nGRUB Loading stage2..\n\n\n\n" ),
         ( True,  ktReason_OSInstall_GRUB_hang,
           "-----\nGRUB Loading stage2...\n\n\n\n" ), # the 3 dot hang appears to be less frequent
+        ( True,  ktReason_OSInstall_Udev_hang,
+          "\nStarting udev:\n\n\n\n" ),
         ( True,  ktReason_Panic_BootManagerC000000F,
           "Windows failed to start. A recent hardware or software change might be the" ),
         ( True,  ktReason_BootManager_Image_corrupt,
