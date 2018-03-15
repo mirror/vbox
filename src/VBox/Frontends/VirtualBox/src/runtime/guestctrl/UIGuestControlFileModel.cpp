@@ -37,8 +37,6 @@ UIGuestControlFileModel::UIGuestControlFileModel(QObject *parent)
     , m_pParent(qobject_cast<UIGuestControlFileTable*>(parent))
 {
     QList<QVariant> rootData;
-    // rootData << "Title" << "Summary";
-    // rootItem = new UIFileTableItem(rootData);
 }
 
 UIFileTableItem* UIGuestControlFileModel::rootItem() const
@@ -121,8 +119,15 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
             else
                 return QIcon(":/sf_32px.png");
         }
-        else
-            return QIcon(":/vm_open_filemanager_16px");
+        else if (item->isFile())
+            return QIcon(":/vm_open_filemanager_16px.png");
+        else if (item->isSymLink())
+        {
+            if (item->isTargetADirectory())
+                return QIcon(":/sf_read_16px.png");
+            else
+                return QIcon(":/drag_drop_16px.png");
+        }
     }
 
     return QVariant();
@@ -245,7 +250,7 @@ bool UIGuestControlFileModel::insertRows(int position, int rows, const QModelInd
 
     QList<QVariant> data;
     data << "New Item" << 0 << QDateTime::currentDateTime();
-    UIFileTableItem *newItem = new UIFileTableItem(data, true, parentItem);
+    UIFileTableItem *newItem = new UIFileTableItem(data, parentItem, FileObjectType_Directory);
     parentItem->appendChild(newItem);
     endInsertRows();
 

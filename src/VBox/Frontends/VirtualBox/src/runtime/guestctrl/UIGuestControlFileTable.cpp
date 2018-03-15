@@ -229,11 +229,13 @@ QString UIStringInputDialog::getString() const
 *********************************************************************************************************************************/
 
 
-UIFileTableItem::UIFileTableItem(const QList<QVariant> &data, bool isDirectory, UIFileTableItem *parent)
+UIFileTableItem::UIFileTableItem(const QList<QVariant> &data,
+                                 UIFileTableItem *parent, FileObjectType type)
     : m_itemData(data)
     , m_parentItem(parent)
-    , m_bIsDirectory(isDirectory)
     , m_bIsOpened(false)
+    , m_isTargetADirectory(false)
+    , m_type(type)
 {
 }
 
@@ -294,13 +296,22 @@ int UIFileTableItem::row() const
 {
     if (m_parentItem)
         return m_parentItem->m_childItems.indexOf(const_cast<UIFileTableItem*>(this));
-
     return 0;
 }
 
 bool UIFileTableItem::isDirectory() const
 {
-    return m_bIsDirectory;
+    return m_type == FileObjectType_Directory;
+}
+
+bool UIFileTableItem::isSymLink() const
+{
+    return m_type == FileObjectType_SymLink;
+}
+
+bool UIFileTableItem::isFile() const
+{
+    return m_type == FileObjectType_File;
 }
 
 void UIFileTableItem::clearChildren()
@@ -335,11 +346,36 @@ void UIFileTableItem::setPath(const QString &path)
 
 bool UIFileTableItem::isUpDirectory() const
 {
-    if (!m_bIsDirectory)
+    if (!isDirectory())
         return false;
     if (data(0) == QString(".."))
         return true;
     return false;
+}
+
+FileObjectType UIFileTableItem::type() const
+{
+    return m_type;
+}
+
+const QString &UIFileTableItem::targetPath() const
+{
+    return m_strTargetPath;
+}
+
+void UIFileTableItem::setTargetPath(const QString &path)
+{
+    m_strTargetPath = path;
+}
+
+bool UIFileTableItem::isTargetADirectory() const
+{
+    return m_isTargetADirectory;
+}
+
+void UIFileTableItem::setIsTargetADirectory(bool flag)
+{
+    m_isTargetADirectory = flag;
 }
 
 
@@ -499,7 +535,7 @@ void UIGuestControlFileTable::prepareActions()
     if (m_pCreateNewDirectory)
     {
         connect(m_pCreateNewDirectory, &QAction::triggered, this, &UIGuestControlFileTable::sltCreateNewDirectory);
-        m_pCreateNewDirectory->setIcon(UIIconPool::iconSet(QString(":/sf_32px.png")));
+        m_pCreateNewDirectory->setIcon(UIIconPool::iconSet(QString(":/sf_add_16px.png")));
         m_pToolBar->addAction(m_pCreateNewDirectory);
     }
 
@@ -557,11 +593,11 @@ void UIGuestControlFileTable::initializeFileTree()
 
     QList<QVariant> headData;
     headData << "Name" << "Size" << "Change Time";
-    m_pRootItem = new UIFileTableItem(headData, true, 0);
-
+    m_pRootItem = new UIFileTableItem(headData, 0, FileObjectType_Directory);
     QList<QVariant> startDirData;
     startDirData << "/" << 4096 << QDateTime();
-    UIFileTableItem* startItem = new UIFileTableItem(startDirData, true, m_pRootItem);
+    UIFileTableItem* startItem = new UIFileTableItem(startDirData, m_pRootItem, FileObjectType_Directory);
+
     startItem->setPath("/");
     m_pRootItem->appendChild(startItem);
 
@@ -577,14 +613,14 @@ void UIGuestControlFileTable::initializeFileTree()
 void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
                                                 UIFileTableItem *parent, bool isDirectoryMap, bool isStartDir)
 {
-    /* Make sure we have a ".." item within directories, and make sure it does not include for the start dir: */
+    /* Make sure we have a ".." item within directories, and make sure it is not there for the start dir: */
     if (isDirectoryMap)
     {
         if (!map.contains("..")  && !isStartDir)
         {
             QList<QVariant> data;
             data << ".." << 4096;
-            UIFileTableItem *item = new UIFileTableItem(data, isDirectoryMap, parent);
+            UIFileTableItem *item = new UIFileTableItem(data, parent, FileObjectType_Directory);
             item->setIsOpened(false);
             map.insert("..", item);
         }
@@ -632,14 +668,22 @@ void UIGuestControlFileTable::sltRefresh()
 
 void UIGuestControlFileTable::goIntoDirectory(const QModelIndex &itemIndex)
 {
-    UIFileTableItem *item = static_cast<UIFileTableItem*>(itemIndex.internalPointer());
+    if (!m_pModel)
+        return;
+
+    /* Make sure the colum is 0: */
+    QModelIndex index = m_pModel->index(itemIndex.row(), 0, itemIndex.parent());
+    if (!index.isValid())
+        return;
+
+    UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
     if (!item)
         return;
 
     /* check if we need to go up: */
     if (item->isUpDirectory())
     {
-        QModelIndex parentIndex = m_pModel->parent(m_pModel->parent(itemIndex));
+        QModelIndex parentIndex = m_pModel->parent(m_pModel->parent(index));
         if (parentIndex.isValid())
             changeLocation(parentIndex);
         return;
@@ -649,7 +693,7 @@ void UIGuestControlFileTable::goIntoDirectory(const QModelIndex &itemIndex)
         return;
     if (!item->isOpened())
        readDirectory(item->path(),item);
-    changeLocation(itemIndex);
+    changeLocation(index);
 }
 
 void UIGuestControlFileTable::goIntoDirectory(const QList<QString> &pathTrail)
@@ -988,19 +1032,26 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
             QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/1000000);
 
             data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize()) << changeTime;
-            bool isDirectory = (fsInfo.GetType() == KFsObjType_Directory);
-            UIFileTableItem *item = new UIFileTableItem(data, isDirectory, parent);
+            FileObjectType fileType = getFileType(fsInfo);
+            UIFileTableItem *item = new UIFileTableItem(data, parent, fileType);
             item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
-            if (isDirectory)
+            if (fileType == FileObjectType_Directory)
             {
                 directories.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
             }
-            else
+            else if(fileType == FileObjectType_File)
             {
                 files.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
             }
+            /** @todo Seems like our API is not able to detect symlinks: */
+            else if(fileType == FileObjectType_SymLink)
+            {
+                files.insert(fsInfo.GetName(), item);
+                item->setIsOpened(false);
+            }
+
             fsInfo = directory.Read();
         }
         insertItemsToTree(directories, parent, true, isStartDir);
@@ -1123,7 +1174,6 @@ bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QSt
 
 bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QString &guestDestinationPath)
 {
-    Q_UNUSED(guestDestinationPath);
     if (m_comGuestSession.isNull())
         return false;
     QFileInfo hostFileInfo(hostSourcePath);
@@ -1133,30 +1183,36 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
     /* Currently API expects a path including a file name for file copy*/
     if (hostFileInfo.isFile() || hostFileInfo.isSymLink())
     {
+        QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
+        /* API expects a full file path as destionation: */
+        QString destinationFilePath =  UIPathOperations::mergePaths(guestDestinationPath, UIPathOperations::getObjectName(hostSourcePath));
+        /** @todo listen to CProgress object to monitor copy operation: */
+        /*CProgress comProgress =*/ m_comGuestSession.FileCopyFromGuest(hostSourcePath, destinationFilePath, flags);
     }
     else if(hostFileInfo.isDir())
     {
+        QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
+        /** @todo listen to CProgress object to monitor copy operation: */
+        /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, guestDestinationPath, aFlags);
     }
-    // {
-    //     QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
-    //     /* API expects a full file path as destionation: */
-    //     QString destinatioFilePath =  UIPathOperations::mergePaths(guestDestinationPath,
-    //                                                                UIPathOperations::getObjectName(hostSourcePath));
-    //     /** @todo listen to CProgress object to monitor copy operation: */
-    //     /*CProgress comProgress =*/ m_comGuestSession.FileCopyToGuest(hostSourcePath, destinatioFilePath, flags);
-
-    // }
-    // else if (objectType == KFsObjType_Directory)
-    // {
-    //     QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
-    //     /** @todo listen to CProgress object to monitor copy operation: */
-    //     /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, guestDestinationPath, aFlags);
-    // }
-    // if (!m_comGuestSession.isOk())
-    //     return false;
+    if (!m_comGuestSession.isOk())
+        return false;
     return true;
 }
 
+FileObjectType UIGuestFileTable::getFileType(const CFsObjInfo &fsInfo)
+{
+    if (fsInfo.isNull() || !fsInfo.isOk())
+        return FileObjectType_Unknown;
+    if (fsInfo.GetType() == KFsObjType_Directory)
+         return FileObjectType_Directory;
+    else if (fsInfo.GetType() == KFsObjType_File)
+        return FileObjectType_File;
+    else if (fsInfo.GetType() == KFsObjType_Symlink)
+        return FileObjectType_SymLink;
+
+    return FileObjectType_Other;
+}
 
 /*********************************************************************************************************************************
 *   UIHostFileTable implementation.                                                                                              *
@@ -1193,10 +1249,18 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     for (int i = 0; i < entries.size(); ++i)
     {
         const QFileInfo &fileInfo = entries.at(i);
+
         QList<QVariant> data;
         data << fileInfo.fileName() << fileInfo.size() << fileInfo.lastModified();
-        UIFileTableItem *item = new UIFileTableItem(data, fileInfo.isDir(), parent);
+        UIFileTableItem *item = new UIFileTableItem(data, parent, getFileType(fileInfo));
         item->setPath(fileInfo.absoluteFilePath());
+        /* if the item is a symlink set the target path and
+           check the target if it is a directory: */
+        if (fileInfo.isSymLink())
+        {
+            item->setTargetPath(fileInfo.symLinkTarget());
+            item->setIsTargetADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
+        }
         if (fileInfo.isDir())
         {
             directories.insert(fileInfo.fileName(), item);
@@ -1207,7 +1271,6 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
             files.insert(fileInfo.fileName(), item);
             item->setIsOpened(false);
         }
-
     }
     insertItemsToTree(directories, parent, true, isStartDir);
     insertItemsToTree(files, parent, false, isStartDir);
@@ -1278,6 +1341,22 @@ bool UIHostFileTable::createDirectory(const QString &path, const QString &direct
     }
 
     return true;
+}
+
+FileObjectType UIHostFileTable::getFileType(const QFileInfo &fsInfo)
+{
+    if (!fsInfo.exists())
+        return FileObjectType_Unknown;
+    /* first check if it is symlink becacuse for Qt
+       being smylin and directory/file is not mutually exclusive: */
+    if (fsInfo.isSymLink())
+        return FileObjectType_SymLink;
+    else if (fsInfo.isFile())
+        return FileObjectType_File;
+    else if (fsInfo.isDir())
+        return FileObjectType_Directory;
+
+    return FileObjectType_Other;
 }
 
 #include "UIGuestControlFileTable.moc"

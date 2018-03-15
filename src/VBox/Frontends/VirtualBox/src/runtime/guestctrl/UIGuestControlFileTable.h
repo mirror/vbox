@@ -31,6 +31,7 @@
 
 /* Forward declarations: */
 class QAction;
+class QFileInfo;
 class QILabel;
 class QILineEdit;
 class QGridLayout;
@@ -39,6 +40,16 @@ class UIGuestControlFileModel;
 class UIGuestControlFileTable;
 class UIToolBar;
 
+enum FileObjectType
+{
+    FileObjectType_File = 0,
+    FileObjectType_Directory,
+    FileObjectType_SymLink,
+    FileObjectType_Other,
+    FileObjectType_Unknown,
+    FileObjectType_Max
+};
+
 /*********************************************************************************************************************************
 *   UIFileTableItem definition.                                                                                                  *
 *********************************************************************************************************************************/
@@ -46,7 +57,9 @@ class UIToolBar;
 class UIFileTableItem
 {
 public:
-    explicit UIFileTableItem(const QList<QVariant> &data, bool isDirectory, UIFileTableItem *parentItem);
+
+    explicit UIFileTableItem(const QList<QVariant> &data,
+                             UIFileTableItem *parentItem, FileObjectType type);
     ~UIFileTableItem();
 
     void appendChild(UIFileTableItem *child);
@@ -62,6 +75,9 @@ public:
     UIFileTableItem *parentItem();
 
     bool isDirectory() const;
+    bool isSymLink() const;
+    bool isFile() const;
+
     bool isOpened() const;
     void setIsOpened(bool flag);
 
@@ -72,16 +88,28 @@ public:
     bool isUpDirectory() const;
     void clearChildren();
 
+    FileObjectType   type() const;
+
+    const QString &targetPath() const;
+    void setTargetPath(const QString &path);
+
+    bool isTargetADirectory() const;
+    void setIsTargetADirectory(bool flag);
+
 private:
     QList<UIFileTableItem*>         m_childItems;
     /** Used to find children by path */
     QMap<QString, UIFileTableItem*> m_childMap;
     QList<QVariant>  m_itemData;
     UIFileTableItem *m_parentItem;
-    bool             m_bIsDirectory;
     bool             m_bIsOpened;
     /** Full absolute path of the item. Without the trailing '/' */
     QString          m_strPath;
+    /** If this is a symlink m_targetPath keeps the absolute path of the target */
+    QString          m_strTargetPath;
+    /** True if this is a symlink and the target is a directory */
+    bool             m_isTargetADirectory;
+    FileObjectType   m_type;
 
 };
 
@@ -204,6 +232,7 @@ protected:
 
 private:
 
+    static FileObjectType getFileType(const CFsObjInfo &fsInfo);
     bool copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath);
     bool copyHostToGuest(const QString& hostSourcePath, const QString &guestDestinationPath);
 
@@ -223,6 +252,7 @@ public:
 
 protected:
 
+    static FileObjectType getFileType(const QFileInfo &fsInfo);
     void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void deleteByItem(UIFileTableItem *item) /* override */;

@@ -405,11 +405,13 @@ void UIGuestControlFileManager::prepareConnections()
 
 void UIGuestControlFileManager::sltGuestSessionUnregistered(CGuestSession guestSession)
 {
-    if (!guestSession.isOk())
+    if (guestSession.isNull())
         return;
-    if (guestSession == m_comGuestSession && m_comGuestSession.isOk())
+    if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
+    {
         m_comGuestSession.detach();
-    postSessionClosed();
+        postSessionClosed();
+    }
 }
 
 void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString strPassword)
