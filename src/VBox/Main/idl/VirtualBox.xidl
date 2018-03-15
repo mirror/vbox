@@ -11867,8 +11867,9 @@ and "VAR" for unsetting. -->
       the session object via <link to="IGuest::createSession"/>.
 
       There can be a maximum of 32 sessions at once per VM, whereas session 0
-      is reserved for the root session.
-<!-- r=bird: Is the root session part of the maximum of 32?? Not really clear. -->
+      always is reserved for the root session (the root session is part of that
+      limit).
+
       This root session is controlling all other guest sessions and also is
       responsible for actions which require system level privileges.
 
