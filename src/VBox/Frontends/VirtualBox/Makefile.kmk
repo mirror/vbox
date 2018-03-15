@@ -672,6 +672,7 @@ VirtualBox_SOURCES = \
 	src/extensions/QIStatusBar.cpp \
 	src/extensions/QIStatusBarIndicator.cpp \
 	src/extensions/QITableView.cpp \
+	src/extensions/QIToolButton.cpp \
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
