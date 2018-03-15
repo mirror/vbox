@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,47 +15,70 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QIDialogButtonBox_h__
-#define __QIDialogButtonBox_h__
+#ifndef ___QIDialogButtonBox_h___
+#define ___QIDialogButtonBox_h___
 
-#include "QIWithRetranslateUI.h"
-
-/* Qt includes */
+/* Qt includes: */
 #include <QDialogButtonBox>
 #include <QPointer>
 
-class QBoxLayout;
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
 
+/* Forward declarations: */
+class QBoxLayout;
+class QPushButton;
 class UIHelpButton;
 
-class QIDialogButtonBox: public QIWithRetranslateUI<QDialogButtonBox>
+/** QDialogButtonBox subclass extending standard functionality. */
+class QIDialogButtonBox : public QIWithRetranslateUI<QDialogButtonBox>
 {
+    Q_OBJECT;
+
 public:
-    QIDialogButtonBox (QWidget *aParent = 0) :QIWithRetranslateUI<QDialogButtonBox> (aParent) {}
-    QIDialogButtonBox (Qt::Orientation aOrientation, QWidget *aParent = 0) :QIWithRetranslateUI<QDialogButtonBox> (aParent) { setOrientation (aOrientation); }
-    QIDialogButtonBox (StandardButtons aButtons, Qt::Orientation aOrientation = Qt::Horizontal, QWidget *aParent = 0);
 
-    QPushButton *button (StandardButton aWhich) const;
+    /** Constructs dialog-button-box passing @a pParent to the base-class. */
+    QIDialogButtonBox(QWidget *pParent = 0);
+    /** Constructs dialog-button-box passing @a pParent to the base-class.
+      * @param  enmOrientation  Brings the button-box orientation. */
+    QIDialogButtonBox(Qt::Orientation enmOrientation, QWidget *pParent = 0);
+    /** Constructs dialog-button-box passing @a pParent to the base-class.
+      * @param  enmButtonTypes  Brings the set of button types.
+      * @param  enmOrientation  Brings the button-box orientation. */
+    QIDialogButtonBox(StandardButtons enmButtonTypes, Qt::Orientation enmOrientation = Qt::Horizontal, QWidget *pParent = 0);
 
-    QPushButton *addButton (const QString &aText, ButtonRole aRole);
-    QPushButton *addButton (StandardButton aButton);
+    /** Returns the button of requested @a enmButtonType. */
+    QPushButton *button(StandardButton enmButtonType) const;
 
-    void setStandardButtons (StandardButtons aButtons);
+    /** Adds button with passed @a strText for specified @a enmRole. */
+    QPushButton *addButton(const QString &strText, ButtonRole enmRole);
+    /** Adds standard button of passed @a enmButtonType. */
+    QPushButton *addButton(StandardButton enmButtonType);
 
-    void addExtraWidget (QWidget *aWidget);
-    void addExtraLayout (QLayout *aLayout);
+    /** Defines a set of standard @a enmButtonTypes. */
+    void setStandardButtons(StandardButtons enmButtonTypes);
+
+    /** Adds extra @a pWidget. */
+    void addExtraWidget(QWidget *pWidget);
+    /** Adds extra @a pLayout. */
+    void addExtraLayout(QLayout *pLayout);
 
 protected:
 
-    QBoxLayout *boxLayout() const;
-    int findEmptySpace (QBoxLayout *aLayout) const;
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
-    void retranslateUi();
+    /** Returns button layout. */
+    QBoxLayout *boxLayout() const;
+
+    /** Searchs for empty @a pLayout space. */
+    int findEmptySpace(QBoxLayout *pLayout) const;
 
 private:
 
-    QPointer<UIHelpButton> mHelpButton;
+    /** Holds the Help button reference. */
+    QPointer<UIHelpButton> m_pHelpButton;
 };
 
-#endif /* __QIDialogButtonBox_h__ */
+#endif /* !___QIDialogButtonBox_h___ */
 
