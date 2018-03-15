@@ -1445,6 +1445,7 @@ void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns)
     LogFlowFunc(("Relocating PS2K\n"));
     pThis->pKbdDelayTimerRC     = TMTimerRCPtr(pThis->pKbdDelayTimerR3);
     pThis->pKbdTypematicTimerRC = TMTimerRCPtr(pThis->pKbdTypematicTimerR3);
+    pThis->pThrottleTimerRC     = TMTimerRCPtr(pThis->pThrottleTimerR3);
     NOREF(offDelta);
 }
 
