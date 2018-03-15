@@ -21,11 +21,12 @@
 
 /* Qt includes: */
 # include <QFrame>
+# include <QHBoxLayout>
+# include <QHeaderView>
 # include <QLabel>
 # include <QMenuBar>
-# include <QHeaderView>
-# include <QPushButton>
 # include <QProgressBar>
+# include <QPushButton>
 
 /* GUI includes: */
 # include "VBoxGlobal.h"

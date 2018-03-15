@@ -21,7 +21,9 @@
 
 /* Qt includes: */
 # include <QCloseEvent>
+# include <QGridLayout>
 # include <QProcess>
+# include <QStyle>
 # include <QTimer>
 
 /* GUI includes: */

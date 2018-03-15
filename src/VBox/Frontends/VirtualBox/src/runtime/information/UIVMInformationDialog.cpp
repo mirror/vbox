@@ -20,8 +20,9 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QScrollBar>
 # include <QPushButton>
+# include <QScrollBar>
+# include <QVBoxLayout>
 
 /* GUI includes: */
 # include "UIVMInformationDialog.h"

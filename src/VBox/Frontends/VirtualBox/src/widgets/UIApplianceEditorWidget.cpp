@@ -20,14 +20,15 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QCheckBox>
 # include <QComboBox>
 # include <QDir>
-# include <QCheckBox>
 # include <QHeaderView>
 # include <QLabel>
 # include <QLineEdit>
 # include <QSpinBox>
 # include <QTextEdit>
+# include <QVBoxLayout>
 
 /* GUI includes: */
 # include "QITreeView.h"

@@ -21,9 +21,10 @@
 
 /* Qt includes: */
 # include <QAccessibleWidget>
-# include <QTimer>
-# include <QPainter>
 # include <QHBoxLayout>
+# include <QPainter>
+# include <QStyle>
+# include <QTimer>
 
 /* GUI includes: */
 # include "UIIndicatorsPool.h"

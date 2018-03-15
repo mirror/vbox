@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QMenu>
+# include <QSpacerItem>
 # include <QTimer>
 
 /* GUI includes: */

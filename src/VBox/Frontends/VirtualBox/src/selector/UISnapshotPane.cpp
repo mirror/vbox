@@ -30,6 +30,7 @@
 # include <QReadWriteLock>
 # include <QScrollBar>
 # include <QTimer>
+# include <QVBoxLayout>
 # include <QWriteLocker>
 
 /* GUI includes: */

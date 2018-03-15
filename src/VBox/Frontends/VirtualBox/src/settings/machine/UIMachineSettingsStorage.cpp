@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QHeaderView>
 # include <QItemEditorFactory>
+# include <QMenu>
 # include <QMouseEvent>
 # include <QScrollBar>
 # include <QStylePainter>

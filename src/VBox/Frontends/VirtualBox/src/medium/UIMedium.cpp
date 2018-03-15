@@ -18,8 +18,11 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
+# include <QApplication>
 # include <QDir>
+
 /* GUI includes: */
 # include "UIMedium.h"
 # include "VBoxGlobal.h"
@@ -27,9 +30,11 @@
 # include "UIErrorString.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
+
 /* COM includes: */
 # include "CMachine.h"
 # include "CSnapshot.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 QString UIMedium::m_sstrNullID = QUuid().toString().remove('{').remove('}');

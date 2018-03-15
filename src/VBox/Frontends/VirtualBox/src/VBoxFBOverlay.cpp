@@ -27,6 +27,7 @@
 #  include <iprt/win/windows.h> /* QGLWidget drags in Windows.h; -Wall forces us to use wrapper. */
 #  include <iprt/stdint.h>      /* QGLWidget drags in stdint.h; -Wall forces us to use wrapper. */
 # endif
+# include <QApplication>
 # include <QGLWidget>
 # include <QFile>
 # include <QTextStream>

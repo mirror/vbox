@@ -19,6 +19,9 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Qt includes: */
+# include <QEventLoop>
+
 /* GUI includes: */
 # include "QIDialog.h"
 # include "VBoxGlobal.h"

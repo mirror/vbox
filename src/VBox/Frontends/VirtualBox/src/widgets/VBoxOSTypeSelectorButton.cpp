@@ -19,13 +19,14 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* VBox includes */
-# include "VBoxOSTypeSelectorButton.h"
-# include "VBoxGlobal.h"
-
 /* Qt includes */
 # include <QMenu>
 # include <QSignalMapper>
+# include <QStyle>
+
+/* GUI includes */
+# include "VBoxOSTypeSelectorButton.h"
+# include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 

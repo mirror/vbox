@@ -20,9 +20,11 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAction>
 # include <QGraphicsScene>
 # include <QGraphicsSceneContextMenuEvent>
 # include <QGraphicsView>
+# include <QMenu>
 
 /* GUI includes: */
 # include "UIGDetails.h"

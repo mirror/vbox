@@ -19,11 +19,12 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes: */
+/* Qt includes: */
 # include <QDir>
 # include <QFile>
+# include <QVariant>
 
-/* Local includes: */
+/* GUI includes: */
 # include "UIDownloaderAdditions.h"
 # include "UINetworkReply.h"
 # include "QIFileDialog.h"

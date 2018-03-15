@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QHeaderView>
+# include <QMenu>
 # include <QTimer>
 
 /* GUI includes: */

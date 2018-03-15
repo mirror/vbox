@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QHeaderView>
+# include <QMenu>
 
 /* GUI includes: */
 # include "QIFileDialog.h"

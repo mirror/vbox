@@ -20,12 +20,14 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QDir>
 # include <QDialogButtonBox>
+# include <QDir>
 # include <QEvent>
 # include <QLabel>
 # include <QPainter>
 # include <QPushButton>
+# include <QStyle>
+# include <QVBoxLayout>
 
 /* GUI includes: */
 # include "UIConverter.h"

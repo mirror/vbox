@@ -21,13 +21,15 @@
 
 /* Qt includes: */
 # include <QApplication>
-# include <QTimer>
 # include <QLabel>
 # include <QMenu>
 # include <QMoveEvent>
-# include <QToolButton>
-# include <QStateMachine>
 # include <QPainter>
+# include <QStateMachine>
+# include <QStyle>
+# include <QTimer>
+# include <QToolButton>
+# include <QVBoxLayout>
 # include <QWindow>
 # ifdef VBOX_WS_X11
 #  include <QWindowStateChangeEvent>

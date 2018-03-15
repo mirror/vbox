@@ -23,6 +23,7 @@
 # include <QGraphicsSceneContextMenuEvent>
 # include <QMenu>
 # include <QPainter>
+# include <QStyle>
 # include <QTimer>
 
 /* GUI includes: */

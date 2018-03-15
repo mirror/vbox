@@ -19,11 +19,12 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes: */
+/* Qt includes: */
 # include <QAbstractButton>
 # include <QLayout>
+# include <QStyle>
 
-/* Local includes: */
+/* GUI includes: */
 # include "UIIconPool.h"
 # include "UIWizard.h"
 # include "UIWizardPage.h"

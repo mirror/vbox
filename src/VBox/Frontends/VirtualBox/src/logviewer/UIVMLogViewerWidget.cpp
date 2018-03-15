@@ -22,14 +22,16 @@
 /* Qt includes: */
 # include <QDateTime>
 # include <QDir>
-# include <QVBoxLayout>
-# if defined(RT_OS_SOLARIS)
-#  include <QFontDatabase>
-# endif
+# include <QMenu>
 # include <QPainter>
 # include <QPlainTextEdit>
 # include <QScrollBar>
+# include <QStyle>
 # include <QTextBlock>
+# include <QVBoxLayout>
+# ifdef RT_OS_SOLARIS
+#  include <QFontDatabase>
+# endif
 
 /* GUI includes: */
 # include "QIFileDialog.h"

@@ -20,13 +20,14 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QVBoxLayout>
-# include <QHBoxLayout>
-# include <QGridLayout>
-# include <QLabel>
-# include <QRadioButton>
 # include <QCheckBox>
+# include <QGridLayout>
+# include <QHBoxLayout>
+# include <QLabel>
 # include <QPushButton>
+# include <QRadioButton>
+# include <QStyle>
+# include <QVBoxLayout>
 
 /* GUI includes: */
 # include "UIIconPool.h"

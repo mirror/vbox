@@ -19,6 +19,9 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Qt includes: */
+# include <QStyle>
+
 /* GUI includes: */
 # include "UIGDetailsSet.h"
 # include "UIGDetailsModel.h"

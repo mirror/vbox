@@ -22,6 +22,8 @@
 /* Qt includes: */
 # include <QMenuBar>
 # include <QPushButton>
+# include <QStyle>
+# include <QVBoxLayout>
 
 /* GUI includes: */
 # include "QIDialogButtonBox.h"

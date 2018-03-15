@@ -20,21 +20,22 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QMutex>
 # include <QMetaEnum>
+# include <QMutex>
 # include <QRegularExpression>
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-#  include <QMenuBar>
-#  include <QListView>
-#  include <QTableView>
+#  include <QComboBox>
 #  include <QHeaderView>
-#  include <QSortFilterProxyModel>
-#  include <QStyledItemDelegate>
-#  include <QPainter>
 #  include <QLabel>
 #  include <QLineEdit>
-#  include <QComboBox>
+#  include <QListView>
+#  include <QMenuBar>
+#  include <QPainter>
 #  include <QPushButton>
+#  include <QSortFilterProxyModel>
+#  include <QStyledItemDelegate>
+#  include <QTableView>
+#  include <QVBoxLayout>
 # endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* GUI includes: */

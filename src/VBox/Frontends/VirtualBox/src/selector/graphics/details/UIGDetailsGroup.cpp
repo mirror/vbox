@@ -21,6 +21,7 @@
 
 /* Qt include: */
 # include <QGraphicsScene>
+# include <QStyle>
 
 /* GUI includes: */
 # include "UIGDetailsGroup.h"

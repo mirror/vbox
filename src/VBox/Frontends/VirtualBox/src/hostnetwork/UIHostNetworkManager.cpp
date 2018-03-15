@@ -23,6 +23,7 @@
 # include <QHeaderView>
 # include <QMenuBar>
 # include <QPushButton>
+# include <QVBoxLayout>
 
 /* GUI includes: */
 # include "QIDialogButtonBox.h"

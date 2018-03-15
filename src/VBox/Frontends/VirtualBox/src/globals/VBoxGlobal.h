@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,23 +19,15 @@
 #define ___VBoxGlobal_h___
 
 /* Qt includes: */
-#include <QApplication>
-#include <QLayout>
-#include <QMenu>
-#include <QStyle>
-#include <QHash>
 #include <QFileIconProvider>
 #include <QReadWriteLock>
-#ifdef VBOX_WS_MAC
-# include <QSet>
-#endif /* VBOX_WS_MAC */
 
 /* GUI includes: */
 #include "UIDefs.h"
 #include "UIMediumDefs.h"
 #ifdef VBOX_WS_X11
 # include "VBoxX11Helper.h"
-#endif /* VBOX_WS_X11 */
+#endif
 
 /* COM includes: */
 #include "VBox/com/Guid.h"
@@ -48,28 +40,23 @@
 /* Other includes: */
 #ifdef VBOX_WS_X11
 # include <X11/Xdefs.h>
-#endif /* VBOX_WS_X11 */
+#endif
 
 /* Forward declarations: */
-class QAction;
-class QLabel;
+class QMenu;
 class QToolButton;
-class UIMachine;
+class QSessionManager;
+class QSpinBox;
+class CHostVideoInputDevice;
 class CMachine;
 class CMedium;
 class CUSBDevice;
-class CHostVideoInputDevice;
-class QSpinBox;
-class UIMediumEnumerator;
 class UIMedium;
+class UIMediumEnumerator;
 class UIIconPoolGeneral;
 class UIThreadPool;
 
-// VBoxGlobal class
-////////////////////////////////////////////////////////////////////////////////
-
-class VBoxUpdateDlg;
-
+/** QObject subclass containing common GUI functionality. */
 class VBoxGlobal : public QObject
 {
     Q_OBJECT

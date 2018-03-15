@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QHeaderView>
 # include <QHelpEvent>
+# include <QMenu>
 # include <QToolTip>
 
 /* GUI includes: */

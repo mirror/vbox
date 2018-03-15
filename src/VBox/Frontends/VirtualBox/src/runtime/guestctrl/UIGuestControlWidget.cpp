@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QApplication>
+# include <QMenu>
 # include <QSplitter>
 # include <QVBoxLayout>
 

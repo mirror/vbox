@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QApplication>
+# include <QHBoxLayout>
 # include <QKeyEvent>
 # include <QStyleOption>
 # include <QStylePainter>

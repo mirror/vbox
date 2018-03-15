@@ -23,10 +23,11 @@
 # include <QComboBox>
 # include <QFrame>
 # include <QHBoxLayout>
-# if defined(RT_OS_SOLARIS)
+# include <QLabel>
+# include <QStyle>
+# ifdef RT_OS_SOLARIS
 #  include <QFontDatabase>
 # endif
-# include <QLabel>
 
 /* GUI includes: */
 # include "QIToolButton.h"
