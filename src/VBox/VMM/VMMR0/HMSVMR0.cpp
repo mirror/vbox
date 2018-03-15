@@ -57,9 +57,23 @@
         else \
             STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[(u64ExitCode) & MASK_EXITREASON_STAT]); \
         } while (0)
+
+# ifdef VBOX_WITH_NESTED_HWVIRT
+#  define HMSVM_NESTED_EXITCODE_STAM_COUNTER_INC(u64ExitCode) do { \
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll); \
+        if ((u64ExitCode) == SVM_EXIT_NPF) \
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatNestedExitReasonNpf); \
+        else \
+            STAM_COUNTER_INC(&pVCpu->hm.s.paStatNestedExitReasonR0[(u64ExitCode) & MASK_EXITREASON_STAT]); \
+        } while (0)
+# endif
 #else
-# define HMSVM_EXITCODE_STAM_COUNTER_INC(u64ExitCode) do { } while (0)
-#endif
+# define HMSVM_EXITCODE_STAM_COUNTER_INC(u64ExitCode)           do { } while (0)
+# ifdef VBOX_WITH_NESTED_HWVIRT
+#  define HMSVM_NESTED_EXITCODE_STAM_COUNTER_INC(u64ExitCode)   do { } while (0)
+# endif
+#endif /* !VBOX_WITH_STATISTICS */
+
 
 /** If we decide to use a function table approach this can be useful to
  *  switch to a "static DECLCALLBACK(int)". */
@@ -2537,10 +2551,10 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
     /*
      * Guest Virtual GIF (Global Interrupt Flag).
      */
-    if (   pVmcb->ctrl.IntCtrl.n.u1VGifEnable == 1
-        && !CPUMIsGuestInSvmNestedHwVirtMode(pMixedCtx))
+    if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable == 1)
     {
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.fVGif);
+        Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pMixedCtx));
         pMixedCtx->hwvirt.fGif = pVmcb->ctrl.IntCtrl.n.u1VGif;
     }
 #endif
@@ -4878,7 +4892,7 @@ static int hmR0SvmRunGuestCodeNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint3
         }
 
         /* Handle the #VMEXIT. */
-        HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
+        HMSVM_NESTED_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
         VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pCtx->hwvirt.svm.CTX_SUFF(pVmcb));
         rc = hmR0SvmHandleExitNested(pVCpu, pCtx, &SvmTransient);

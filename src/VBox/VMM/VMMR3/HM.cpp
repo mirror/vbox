@@ -1042,28 +1042,28 @@ static int hmR3InitCPU(PVM pVM)
 
 #undef HM_REG_COUNTER
 
-        pVCpu->hm.s.paStatExitReason = NULL;
+        const char *const *papszDesc = ASMIsIntelCpu() || ASMIsViaCentaurCpu() ? &g_apszVTxExitReasons[0]
+                                                                               : &g_apszAmdVExitReasons[0];
 
+        /*
+         * Guest Exit reason stats.
+         */
+        pVCpu->hm.s.paStatExitReason = NULL;
         rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT * sizeof(*pVCpu->hm.s.paStatExitReason), 0 /* uAlignment */, MM_TAG_HM,
                           (void **)&pVCpu->hm.s.paStatExitReason);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
+        AssertRCReturn(rc, rc);
+        for (int j = 0; j < MAX_EXITREASON_STAT; j++)
         {
-            const char *const *papszDesc = ASMIsIntelCpu() || ASMIsViaCentaurCpu() ?
-                                           &g_apszVTxExitReasons[0] : &g_apszAmdVExitReasons[0];
-            for (int j = 0; j < MAX_EXITREASON_STAT; j++)
+            if (papszDesc[j])
             {
-                if (papszDesc[j])
-                {
-                    rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.paStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                         STAMUNIT_OCCURENCES, papszDesc[j], "/HM/CPU%d/Exit/Reason/%02x", i, j);
-                    AssertRC(rc);
-                }
+                rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.paStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                                     STAMUNIT_OCCURENCES, papszDesc[j], "/HM/CPU%d/Exit/Reason/%02x", i, j);
+                AssertRCReturn(rc, rc);
             }
-            rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitReasonNpf, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                 "Nested page fault", "/HM/CPU%d/Exit/Reason/#NPF", i);
-            AssertRC(rc);
         }
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitReasonNpf, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                             "Nested page fault", "/HM/CPU%d/Exit/Reason/#NPF", i);
+        AssertRCReturn(rc, rc);
         pVCpu->hm.s.paStatExitReasonR0 = MMHyperR3ToR0(pVM, pVCpu->hm.s.paStatExitReason);
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         Assert(pVCpu->hm.s.paStatExitReasonR0 != NIL_RTR0PTR || !HMIsEnabled(pVM));
@@ -1071,6 +1071,37 @@ static int hmR3InitCPU(PVM pVM)
         Assert(pVCpu->hm.s.paStatExitReasonR0 != NIL_RTR0PTR);
 # endif
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+        /*
+         * Nested-guest Exit reason stats.
+         */
+        pVCpu->hm.s.paStatNestedExitReason = NULL;
+        rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT * sizeof(*pVCpu->hm.s.paStatNestedExitReason), 0 /* uAlignment */, MM_TAG_HM,
+                          (void **)&pVCpu->hm.s.paStatNestedExitReason);
+        AssertRCReturn(rc, rc);
+        for (int j = 0; j < MAX_EXITREASON_STAT; j++)
+        {
+            if (papszDesc[j])
+            {
+                rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.paStatNestedExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                                     STAMUNIT_OCCURENCES, papszDesc[j], "/HM/CPU%d/NestedExit/Reason/%02x", i, j);
+                AssertRC(rc);
+            }
+        }
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatNestedExitReasonNpf, STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                             STAMUNIT_OCCURENCES, "Nested page fault", "/HM/CPU%d/NestedExit/Reason/#NPF", i);
+        AssertRCReturn(rc, rc);
+        pVCpu->hm.s.paStatNestedExitReasonR0 = MMHyperR3ToR0(pVM, pVCpu->hm.s.paStatNestedExitReason);
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+        Assert(pVCpu->hm.s.paStatNestedExitReasonR0 != NIL_RTR0PTR || !HMIsEnabled(pVM));
+# else
+        Assert(pVCpu->hm.s.paStatNestedExitReasonR0 != NIL_RTR0PTR);
+# endif
+#endif
+
+        /*
+         * Injected events stats.
+         */
         rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 256, 8, MM_TAG_HM, (void **)&pVCpu->hm.s.paStatInjectedIrqs);
         AssertRCReturn(rc, rc);
         pVCpu->hm.s.paStatInjectedIrqsR0 = MMHyperR3ToR0(pVM, pVCpu->hm.s.paStatInjectedIrqs);
