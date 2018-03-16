@@ -42,13 +42,6 @@
 #include <iprt/err.h>
 
 
-extern const char *gVBoxLangSubDir;
-extern const char *gVBoxLangFileBase;
-extern const char *gVBoxLangFileExt;
-extern const char *gVBoxLangIDRegExp;
-extern const char *gVBoxBuiltInLangName;
-
-
 /** Global settings: Language page data structure. */
 struct UIDataSettingsGlobalLanguage
 {
@@ -394,20 +387,22 @@ void UIGlobalSettingsLanguage::reloadLanguageTree(const QString &strLanguageId)
     char szNlsPath[RTPATH_MAX];
     int rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
     AssertRC(rc);
-    QString strNlsPath = QString(szNlsPath) + gVBoxLangSubDir;
+    QString strNlsPath = QString(szNlsPath) + VBoxGlobal::vboxLanguageSubDirectory();
     QDir nlsDir(strNlsPath);
-    QStringList files = nlsDir.entryList(QStringList(QString("%1*%2").arg(gVBoxLangFileBase, gVBoxLangFileExt)), QDir::Files);
+    QStringList files = nlsDir.entryList(QStringList(QString("%1*%2").arg(VBoxGlobal::vboxLanguageFileBase(),
+                                                                          VBoxGlobal::vboxLanguageFileExtension())),
+                                         QDir::Files);
 
     QTranslator translator;
     /* Add the default language: */
     new UILanguageItem(m_pLanguageTree);
     /* Add the built-in language: */
-    new UILanguageItem(m_pLanguageTree, translator, gVBoxBuiltInLangName, true /* built-in */);
+    new UILanguageItem(m_pLanguageTree, translator, VBoxGlobal::vboxBuiltInLanguageName(), true /* built-in */);
     /* Add all existing languages */
     for (QStringList::Iterator it = files.begin(); it != files.end(); ++it)
     {
         QString strFileName = *it;
-        QRegExp regExp(QString(gVBoxLangFileBase) + gVBoxLangIDRegExp);
+        QRegExp regExp(VBoxGlobal::vboxLanguageFileBase() + VBoxGlobal::vboxLanguageIdRegExp());
         int iPos = regExp.indexIn(strFileName);
         if (iPos == -1)
             continue;

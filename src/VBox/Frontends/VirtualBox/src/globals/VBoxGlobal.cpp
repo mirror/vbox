@@ -186,15 +186,15 @@ using namespace UIExtraDataDefs;
 
 
 /* static */
-bool VBoxGlobal::m_sfCleanupInProgress = false;
-VBoxGlobal* VBoxGlobal::m_spInstance = 0;
-VBoxGlobal* VBoxGlobal::instance() { return m_spInstance; }
+VBoxGlobal *VBoxGlobal::s_pInstance = 0;
+bool        VBoxGlobal::s_fCleanupInProgress = false;
+QString     VBoxGlobal::s_strLoadedLanguageId = vboxBuiltInLanguageName();
 
 /* static */
 void VBoxGlobal::create()
 {
     /* Make sure instance is NOT created yet: */
-    if (m_spInstance)
+    if (s_pInstance)
     {
         AssertMsgFailed(("VBoxGlobal instance is already created!"));
         return;
@@ -203,14 +203,14 @@ void VBoxGlobal::create()
     /* Create instance: */
     new VBoxGlobal;
     /* Prepare instance: */
-    m_spInstance->prepare();
+    s_pInstance->prepare();
 }
 
 /* static */
 void VBoxGlobal::destroy()
 {
     /* Make sure instance is NOT destroyed yet: */
-    if (!m_spInstance)
+    if (!s_pInstance)
     {
         AssertMsgFailed(("VBoxGlobal instance is already destroyed!"));
         return;
@@ -220,10 +220,10 @@ void VBoxGlobal::destroy()
      * 1. By default, automatically on QApplication::aboutToQuit() signal.
      * 2. But if QApplication was not started at all and we perform
      *    early shutdown, we should do cleanup ourselves. */
-    if (m_spInstance->isValid())
-        m_spInstance->cleanup();
+    if (s_pInstance->isValid())
+        s_pInstance->cleanup();
     /* Destroy instance: */
-    delete m_spInstance;
+    delete s_pInstance;
 }
 
 VBoxGlobal::VBoxGlobal()
@@ -259,13 +259,13 @@ VBoxGlobal::VBoxGlobal()
     , m_pThreadPool(0)
 {
     /* Assign instance: */
-    m_spInstance = this;
+    s_pInstance = this;
 }
 
 VBoxGlobal::~VBoxGlobal()
 {
     /* Unassign instance: */
-    m_spInstance = 0;
+    s_pInstance = 0;
 }
 
 /* static */
@@ -1273,7 +1273,7 @@ void VBoxGlobal::startMediumEnumeration()
         return;
 
     /* Ignore the request during VBoxGlobal cleanup: */
-    if (m_sfCleanupInProgress)
+    if (s_fCleanupInProgress)
         return;
 
     /* If asked to restore snapshot, don't do this till *after* we're done
@@ -1747,12 +1747,6 @@ bool VBoxGlobal::isDOSType (const QString &aOSTypeId)
     return false;
 }
 
-const char *gVBoxLangSubDir = "/nls";
-const char *gVBoxLangFileBase = "VirtualBox_";
-const char *gVBoxLangFileExt = ".qm";
-const char *gVBoxLangIDRegExp = "(([a-z]{2})(?:_([A-Z]{2}))?)|(C)";
-const char *gVBoxBuiltInLangName   = "C";
-
 class VBoxTranslator : public QTranslator
 {
 public:
@@ -1775,7 +1769,36 @@ private:
 };
 
 static VBoxTranslator *sTranslator = 0;
-static QString sLoadedLangId = gVBoxBuiltInLangName;
+
+/* static */
+QString VBoxGlobal::vboxLanguageSubDirectory()
+{
+    return "/nls";
+}
+
+/* static */
+QString VBoxGlobal::vboxLanguageFileBase()
+{
+    return "VirtualBox_";
+}
+
+/* static */
+QString VBoxGlobal::vboxLanguageFileExtension()
+{
+    return ".qm";
+}
+
+/* static */
+QString VBoxGlobal::vboxLanguageIdRegExp()
+{
+    return "(([a-z]{2})(?:_([A-Z]{2}))?)|(C)";
+}
+
+/* static */
+QString VBoxGlobal::vboxBuiltInLanguageName()
+{
+    return "C";
+}
 
 /**
  *  Returns the loaded (active) language ID.
@@ -1792,7 +1815,7 @@ static QString sLoadedLangId = gVBoxBuiltInLangName;
 /* static */
 QString VBoxGlobal::languageId()
 {
-    return sLoadedLangId;
+    return s_strLoadedLanguageId;
 }
 
 /**
@@ -1807,7 +1830,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     QString langId = aLangId.isEmpty() ?
         VBoxGlobal::systemLanguageId() : aLangId;
     QString languageFileName;
-    QString selectedLangId = gVBoxBuiltInLangName;
+    QString selectedLangId = vboxBuiltInLanguageName();
 
     /* If C is selected we change it temporary to en. This makes sure any extra
      * "en" translation file will be loaded. This is necessary for loading the
@@ -1825,29 +1848,29 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
     AssertRC (rc);
 
-    QString nlsPath = QString(szNlsPath) + gVBoxLangSubDir;
+    QString nlsPath = QString(szNlsPath) + vboxLanguageSubDirectory();
     QDir nlsDir (nlsPath);
 
     Assert (!langId.isEmpty());
-    if (!langId.isEmpty() && langId != gVBoxBuiltInLangName)
+    if (!langId.isEmpty() && langId != vboxBuiltInLanguageName())
     {
-        QRegExp regExp (gVBoxLangIDRegExp);
+        QRegExp regExp (vboxLanguageIdRegExp());
         int pos = regExp.indexIn (langId);
         /* the language ID should match the regexp completely */
         AssertReturnVoid (pos == 0);
 
         QString lang = regExp.cap (2);
 
-        if (nlsDir.exists (gVBoxLangFileBase + langId + gVBoxLangFileExt))
+        if (nlsDir.exists (vboxLanguageFileBase() + langId + vboxLanguageFileExtension()))
         {
-            languageFileName = nlsDir.absoluteFilePath (gVBoxLangFileBase + langId +
-                                                        gVBoxLangFileExt);
+            languageFileName = nlsDir.absoluteFilePath (vboxLanguageFileBase() + langId +
+                                                        vboxLanguageFileExtension());
             selectedLangId = langId;
         }
-        else if (nlsDir.exists (gVBoxLangFileBase + lang + gVBoxLangFileExt))
+        else if (nlsDir.exists (vboxLanguageFileBase() + lang + vboxLanguageFileExtension()))
         {
-            languageFileName = nlsDir.absoluteFilePath (gVBoxLangFileBase + lang +
-                                                        gVBoxLangFileExt);
+            languageFileName = nlsDir.absoluteFilePath (vboxLanguageFileBase() + lang +
+                                                        vboxLanguageFileExtension());
             selectedLangId = lang;
         }
         else
@@ -1858,7 +1881,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
             if (!aLangId.isNull() && langId != "en")
                 msgCenter().cannotFindLanguage (langId, nlsPath);
             /* selectedLangId remains built-in here */
-            AssertReturnVoid (selectedLangId == gVBoxBuiltInLangName);
+            AssertReturnVoid (selectedLangId == vboxBuiltInLanguageName());
         }
     }
 
@@ -1877,7 +1900,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     bool loadOk = true;
     if (sTranslator)
     {
-        if (selectedLangId != gVBoxBuiltInLangName)
+        if (selectedLangId != vboxBuiltInLanguageName())
         {
             Assert (!languageFileName.isNull());
             loadOk = sTranslator->loadFile (languageFileName);
@@ -1891,21 +1914,21 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
         loadOk = false;
 
     if (loadOk)
-        sLoadedLangId = selectedLangId;
+        s_strLoadedLanguageId = selectedLangId;
     else
     {
         msgCenter().cannotLoadLanguage (languageFileName);
-        sLoadedLangId = gVBoxBuiltInLangName;
+        s_strLoadedLanguageId = vboxBuiltInLanguageName();
     }
 
     /* Try to load the corresponding Qt translation */
-    if (sLoadedLangId != gVBoxBuiltInLangName && sLoadedLangId != "en")
+    if (languageId() != vboxBuiltInLanguageName() && languageId() != "en")
     {
 #ifdef Q_OS_UNIX
         /* We use system installations of Qt on Linux systems, so first, try
          * to load the Qt translation from the system location. */
         languageFileName = QLibraryInfo::location(QLibraryInfo::TranslationsPath) + "/qt_" +
-                           sLoadedLangId + gVBoxLangFileExt;
+                           languageId() + vboxLanguageFileExtension();
         QTranslator *qtSysTr = new QTranslator (sTranslator);
         Assert (qtSysTr);
         if (qtSysTr && qtSysTr->load (languageFileName))
@@ -1920,8 +1943,8 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
          * Oracle translation is always the best one. */
 #endif
         languageFileName =  nlsDir.absoluteFilePath (QString ("qt_") +
-                                                     sLoadedLangId +
-                                                     gVBoxLangFileExt);
+                                                     languageId() +
+                                                     vboxLanguageFileExtension());
         QTranslator *qtTr = new QTranslator (sTranslator);
         Assert (qtTr);
         if (qtTr && (loadOk = qtTr->load (languageFileName)))
@@ -1934,7 +1957,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
             msgCenter().cannotLoadLanguage (languageFileName);
     }
     if (fResetToC)
-        sLoadedLangId = "C";
+        s_strLoadedLanguageId = vboxBuiltInLanguageName();
 #ifdef VBOX_WS_MAC
     /* Qt doesn't translate the items in the Application menu initially.
      * Manually trigger an update. */
@@ -4043,7 +4066,7 @@ void VBoxGlobal::cleanup()
     /// @todo Shouldn't that be protected with a mutex or something?
     /* Remember that the cleanup is in progress preventing any unwanted
      * stuff which could be called from the other threads: */
-    m_sfCleanupInProgress = true;
+    s_fCleanupInProgress = true;
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Shutdown update manager: */

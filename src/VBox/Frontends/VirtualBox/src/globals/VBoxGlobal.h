@@ -81,12 +81,12 @@ public:
     };
 
     /* Static API: Create/destroy stuff: */
-    static VBoxGlobal* instance();
+    static VBoxGlobal *instance() { return s_pInstance; }
     static void create();
     static void destroy();
 
     bool isValid() { return mValid; }
-    bool isCleaningUp() { return m_sfCleanupInProgress; }
+    bool isCleaningUp() { return s_fCleanupInProgress; }
 
     static QString qtRTVersionString();
     static uint qtRTVersion();
@@ -338,6 +338,16 @@ public:
 
     static bool isDOSType (const QString &aOSTypeId);
 
+    /** Returns VBox language sub-directory. */
+    static QString vboxLanguageSubDirectory();
+    /** Returns VBox language file-base. */
+    static QString vboxLanguageFileBase();
+    /** Returns VBox language file-extension. */
+    static QString vboxLanguageFileExtension();
+    /** Returns VBox language ID reg-exp. */
+    static QString vboxLanguageIdRegExp();
+    /** Returns built in language name. */
+    static QString vboxBuiltInLanguageName();
     static QString languageId();
     static void loadLanguage (const QString &aLangId = QString::null);
     QString helpFile() const;
@@ -633,14 +643,19 @@ private:
     /** Holds the thread-pool instance. */
     UIThreadPool *m_pThreadPool;
 
-    /* API: Instance stuff: */
-    static bool m_sfCleanupInProgress;
-    static VBoxGlobal* m_spInstance;
-    friend VBoxGlobal& vboxGlobal();
+    /** Holds the singleton VBoxGlobal instance. */
+    static VBoxGlobal *s_pInstance;
+    /** Holds whether VBoxGlobal cleanup is in progress. */
+    static bool        s_fCleanupInProgress;
+    /** Holds the currently loaded language ID. */
+    static QString     s_strLoadedLanguageId;
+
+    /** Allows for shortcut access. */
+    friend VBoxGlobal &vboxGlobal();
 };
 
-/* Shortcut to the static VBoxGlobal::instance() method: */
-inline VBoxGlobal& vboxGlobal() { return *VBoxGlobal::instance(); }
+/** Singleton VBoxGlobal 'official' name. */
+inline VBoxGlobal &vboxGlobal() { return *VBoxGlobal::instance(); }
 
 #endif /* !___VBoxGlobal_h___ */
 
