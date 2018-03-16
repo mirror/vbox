@@ -87,7 +87,8 @@ void UIVMLogViewerPanel::prepareWidgets()
     m_pCloseButton = new QIToolButton;
     if (m_pCloseButton)
     {
-        m_pCloseButton->setIcon(m_pCloseButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
+        //m_pCloseButton->setIcon(UIIconPool::iconSet(":/log_viewer_close_16px.png"));
+        m_pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
         m_pMainLayout->addWidget(m_pCloseButton, 0, Qt::AlignLeft);
     }
 }

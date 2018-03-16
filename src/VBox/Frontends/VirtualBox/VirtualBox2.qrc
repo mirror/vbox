@@ -1,5 +1,12 @@
 <RCC>
-    <qresource prefix="/">
+    <qresource suffix="/">
+        <file alias="os_openbsd_64.png">images/os_openbsd_64.png</file>
+        <file alias="os_openbsd.png">images/os_openbsd.png</file>
+        <file alias="os_opensuse_64.png">images/os_opensuse_64.png</file>
+        <file alias="os_opensuse.png">images/os_opensuse.png</file>
+        <file alias="os_oracle_64.png">images/os_oracle_64.png</file>
+        <file alias="os_oracle.png">images/os_oracle.png</file>
+        <file alias="os_oraclesolaris_64.png">images/os_oraclesolaris_64.png</file>
         <file alias="os_oraclesolaris.png">images/os_oraclesolaris.png</file>
         <file alias="os_os2ecs.png">images/os_os2ecs.png</file>
         <file alias="os_os2_other.png">images/os_os2_other.png</file>

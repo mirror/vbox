@@ -31,6 +31,7 @@
 # include <QTextBlock>
 
 /* GUI includes: */
+# include "UIIconPool.h"
 # include "UIVMLogViewerTextEdit.h"
 # include "UIVMLogViewerWidget.h"
 
@@ -89,7 +90,7 @@ protected:
     virtual void paintEvent(QPaintEvent *pEvent) /* override */
     {
         QScrollBar::paintEvent(pEvent);
-        /* Put a red line to marking position: */
+        /* Put a red line to mark the bookmark positions: */
         for (int i = 0; i < m_markingsVector.size(); ++i)
         {
             QPointF p1 = QPointF(0, m_markingsVector[i] * height());
@@ -159,6 +160,7 @@ UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
     , m_bShownTextIsFiltered(false)
     , m_bShowLineNumbers(true)
     , m_bWrapLines(false)
+    , m_bHasContextMenu(false)
 {
     setMouseTracking(true);
     //setStyleSheet("background-color: rgba(240, 240, 240, 75%) ");
@@ -244,7 +246,9 @@ void UIVMLogViewerTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
                 painter.fillPath(path, QColor(204, 255, 51, 125));
                 painter.drawPath(path);
             }
-            if ((blockNumber + 1) == m_mouseCursorLine && underMouse())
+            /* Draw a unfilled red rectangled around the line number to indicate line the mouse cursor is currently
+               hovering on. Do this only if mouse is over the ext edit or the context menu is around: */
+            if ((blockNumber + 1) == m_mouseCursorLine && (underMouse() || m_bHasContextMenu))
             {
                 painter.setPen(Qt::red);
                 painter.drawRect(0, top, m_pLineNumberArea->width(), m_pLineNumberArea->fontMetrics().lineSpacing());
@@ -316,19 +320,32 @@ void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
         QPlainTextEdit::contextMenuEvent(pEvent);
         return;
     }
-
+    m_bHasContextMenu = true;
     QMenu *menu = createStandardContextMenu();
+
+
     QAction *pAction = menu->addAction(UIVMLogViewerWidget::tr("Bookmark"));
-    m_iContextMenuBookmark = bookmarkForPos(pEvent->pos());
     if (pAction)
+    {
+        pAction->setCheckable(true);
+        QPair<int, QString> menuBookmark = bookmarkForPos(pEvent->pos());
+        pAction->setChecked(m_bookmarkLineSet.contains(menuBookmark.first));
+        if (pAction->isChecked())
+            pAction->setIcon(UIIconPool::iconSet(":/log_viewer_bookmark_on_16px.png"));
+        else
+            pAction->setIcon(UIIconPool::iconSet(":/log_viewer_bookmark_off_16px.png"));
+
+        m_iContextMenuBookmark = menuBookmark;
         connect(pAction, &QAction::triggered, this, &UIVMLogViewerTextEdit::sltBookmark);
 
+    }
     menu->exec(pEvent->globalPos());
 
     if (pAction)
         disconnect(pAction, &QAction::triggered, this, &UIVMLogViewerTextEdit::sltBookmark);
 
     delete menu;
+    m_bHasContextMenu = false;
 }
 
 void UIVMLogViewerTextEdit::resizeEvent(QResizeEvent *pEvent)
@@ -375,7 +392,7 @@ void UIVMLogViewerTextEdit::sltUpdateLineNumberArea(const QRect &rect, int dy)
 
 void UIVMLogViewerTextEdit::sltBookmark()
 {
-    emit sigAddBookmark(m_iContextMenuBookmark);
+    toggleBookmark(m_iContextMenuBookmark);
 }
 
 void UIVMLogViewerTextEdit::setScrollBarMarkingsVector(const QVector<float> &vector)

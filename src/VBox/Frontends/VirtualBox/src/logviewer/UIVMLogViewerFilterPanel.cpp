@@ -64,10 +64,17 @@ public:
     UIVMFilterLineEdit(QWidget *parent = 0)
         :QLineEdit(parent)
         , m_pRemoveTermButton(0)
+        , m_iRemoveTermButtonSize(16)
+        , m_iTrailingSpaceCount(1)
     {
         setReadOnly(true);
         home(false);
         createButtons();
+       /** Try to guess the width of the space between filter terms so that remove button
+                we display when a term is selected does not hide the next/previous word: */
+        int spaceWidth = fontMetrics().width(' ');
+        if (spaceWidth != 0)
+            m_iTrailingSpaceCount = (m_iRemoveTermButtonSize / spaceWidth) + 1;
     }
 
     void addFilterTerm(const QString& filterTermString)
@@ -77,7 +84,8 @@ public:
         else
         {
             QString newString(filterTermString);
-            insert(newString.prepend(' '));
+            QString space(m_iTrailingSpaceCount, QChar(' '));
+            insert(newString.prepend(space));
         }
     }
 
@@ -111,7 +119,7 @@ protected:
         {
             m_pRemoveTermButton->show();
             int buttonY = 0.5 * (height() - 16);
-            int buttonSize = 16;
+            int buttonSize = m_iRemoveTermButtonSize;
             int charWidth = fontMetrics().width('x');
             int buttonLeft = cursorRect().right() - 0.5 * charWidth;
             /* If buttonLeft is in far left of the line edit, move the
@@ -136,7 +144,7 @@ private slots:
             return;
         emit sigFilterTermRemoved(selectedText());
         /* Remove the string from text() including the trailing space: */
-        setText(text().remove(selectionStart(), selectedText().length()+1));
+        setText(text().remove(selectionStart(), selectedText().length() + m_iTrailingSpaceCount));
     }
 
     /* The whole content is removed. Listeners are notified: */
@@ -172,6 +180,8 @@ private:
 
     QToolButton *m_pRemoveTermButton;
     QToolButton *m_pClearAllButton;
+    const int    m_iRemoveTermButtonSize;
+    int          m_iTrailingSpaceCount;
 };
 
 UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
@@ -371,7 +381,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
     m_pAddFilterTermButton = new QIToolButton;
     if (m_pAddFilterTermButton)
     {
-        m_pAddFilterTermButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+        m_pAddFilterTermButton->setIcon(UIIconPool::iconSet(":/log_viewer_filter_add_16px.png"));
         mainLayout()->addWidget(m_pAddFilterTermButton,0);
     }
 
@@ -483,7 +493,7 @@ void UIVMLogViewerFilterPanel::retranslateUi()
 {
     UIVMLogViewerPanel::retranslateUi();
     m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Enter filtering string here."));
-    m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add filter term. (Enter"));
+    m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add filter term. (Enter)"));
     m_pResultLabel->setText(UIVMLogViewerWidget::tr("Showing %1/%2").arg(m_iFilteredLineCount).arg(m_iUnfilteredLineCount));
     m_pFilterTermsLineEdit->setToolTip(UIVMLogViewerWidget::tr("The filter terms list. Select one to remove or click the button on the right side to remove them all."));
     m_pRadioButtonContainer->setToolTip(UIVMLogViewerWidget::tr("The type of boolean operator for filter operation."));

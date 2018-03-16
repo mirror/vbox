@@ -254,13 +254,13 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
        if (m_pPreviousButton)
        {
            pContainerLayout->addWidget(m_pPreviousButton);
-           m_pPreviousButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+           m_pPreviousButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_backward_16px.png"));
        }
 
        m_pNextButton = new QIToolButton;
        if (m_pNextButton){
            pContainerLayout->addWidget(m_pNextButton);
-           m_pNextButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+           m_pNextButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_forward_16px.png"));
        }
     }
 
@@ -359,7 +359,7 @@ void UIVMLogViewerSearchPanel::retranslateUi()
         m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
 
     if (m_pNextButton)
-        m_pNextButton->setToolTip(UIVMLogViewerWidget::tr("Search for the previous occurrence of the string (F3)"));
+        m_pNextButton->setToolTip(UIVMLogViewerWidget::tr("Search for the next occurrence of the string (F3)"));
 
     if (m_pPreviousButton)
         m_pPreviousButton->setToolTip(UIVMLogViewerWidget::tr("Search for the previous occurrence of the string (Shift+F3)"));

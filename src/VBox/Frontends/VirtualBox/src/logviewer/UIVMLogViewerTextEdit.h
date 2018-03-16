@@ -108,6 +108,7 @@ private:
     bool                 m_bWrapLines;
     QString              m_strBackgroungText;
     friend class UILineNumberArea;
+    bool                 m_bHasContextMenu;
 };
 
 

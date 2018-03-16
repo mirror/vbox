@@ -115,7 +115,7 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     if (m_pGotoSelectedBookmark)
     {
         mainLayout()->addWidget(m_pGotoSelectedBookmark, 0);
-        m_pGotoSelectedBookmark->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+        m_pGotoSelectedBookmark->setIcon(UIIconPool::iconSet(":/log_viewer_goto_selected_bookmark_16px.png"));
     }
 
     m_pNextPreviousButtonContainer = new QFrame;
@@ -137,13 +137,13 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     if (m_pPreviousButton)
     {
         pContainerLayout->addWidget(m_pPreviousButton);
-        m_pPreviousButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack, this));
+        m_pPreviousButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_previous_bookmark_16px.png"));
     }
 
     m_pNextButton = new QIToolButton;
     if (m_pNextButton){
         pContainerLayout->addWidget(m_pNextButton);
-        m_pNextButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowForward, this));
+        m_pNextButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_next_bookmark_16px.png"));
     }
     }
 
@@ -151,13 +151,14 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     if (m_pDeleteCurrentButton)
     {
         mainLayout()->addWidget(m_pDeleteCurrentButton, 0);
-        m_pDeleteCurrentButton->setIcon(m_pDeleteCurrentButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
+        m_pDeleteCurrentButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_current_bookmark_16px.png"));
     }
 
     m_pDeleteAllButton = new QIToolButton(this);
     if (m_pDeleteAllButton)
     {
         mainLayout()->addWidget(m_pDeleteAllButton, 2);
+        m_pDeleteAllButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_all_bookmarks_16px.png"));
     }
 
     mainLayout()->addStretch(3);
