@@ -3062,6 +3062,7 @@ class TxsConnectTask(TdTaskBase):
                 except:
                     reporter.fatalXcpt();
                 else:
+                    reporter.log('TxsConnectTask: opening session to ip "%s"' % (sIpAddr));
                     self._openTcpSession(sIpAddr, cMsIdleFudge = 5000);
                     return None;
 
