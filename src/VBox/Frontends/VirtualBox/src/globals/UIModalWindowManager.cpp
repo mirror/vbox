@@ -20,14 +20,15 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
+# include "UIMachine.h"
 # include "UIModalWindowManager.h"
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-#  include "UINetworkManagerDialog.h"
 #  include "UINetworkManager.h"
+#  include "UINetworkManagerDialog.h"
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-# include "UISelectorWindow.h"
 # include "UIProgressDialog.h"
-# include "VBoxGlobal.h"
+# include "UISelectorWindow.h"
 
 /* Other VBox includes: */
 # include <VBox/sup.h>
@@ -91,9 +92,10 @@ QWidget* UIModalWindowManager::mainWindowShown() const
     if (vboxGlobal().isVMConsoleProcess())
     {
         /* It will be currently active machine-window if visible: */
-        if (vboxGlobal().activeMachineWindow() &&
-            vboxGlobal().activeMachineWindow()->isVisible())
-            return vboxGlobal().activeMachineWindow();
+        if (gpMachine &&
+            gpMachine->activeWindow() &&
+            gpMachine->activeWindow()->isVisible())
+            return gpMachine->activeWindow();
     }
     /* For VM selector process: */
     else

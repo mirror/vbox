@@ -129,9 +129,6 @@ public:
     /** Returns the thread-pool instance. */
     UIThreadPool* threadPool() const { return m_pThreadPool; }
 
-    /** Returns currently active virtual machine window. */
-    QWidget* activeMachineWindow() const;
-
     bool is3DAvailableWorker() const;
     bool is3DAvailable() const { if (m3DAvailable < 0) return is3DAvailableWorker(); return m3DAvailable != 0; }
 

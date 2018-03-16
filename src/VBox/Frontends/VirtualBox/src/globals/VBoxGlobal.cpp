@@ -65,7 +65,6 @@
 #  include "UINetworkManager.h"
 #  include "UIUpdateManager.h"
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-# include "UIMachine.h"
 # include "UIConverter.h"
 # include "UIMediumEnumerator.h"
 # include "UIMedium.h"
@@ -336,13 +335,6 @@ MacOSXRelease VBoxGlobal::determineOsRelease()
     return MacOSXRelease_Old;
 }
 #endif /* VBOX_WS_MAC */
-
-QWidget* VBoxGlobal::activeMachineWindow() const
-{
-    if (isVMConsoleProcess() && gpMachine && gpMachine->activeWindow())
-        return gpMachine->activeWindow();
-    return 0;
-}
 
 /**
  * Inner worker that for lazily querying for 3D support.
@@ -1636,7 +1628,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
     {
         machine.SaveSettings();
         if (!machine.isOk())
-            msgCenter().cannotSaveMachineSettings(machine, activeMachineWindow());
+            msgCenter().cannotSaveMachineSettings(machine, windowManager().mainWindowShown());
     }
 
     /* Close session to editable machine if necessary: */
