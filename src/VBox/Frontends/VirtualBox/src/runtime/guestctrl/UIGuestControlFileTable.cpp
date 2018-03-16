@@ -27,6 +27,7 @@
 # include <QItemDelegate>
 # include <QGridLayout>
 # include <QPushButton>
+# include <QMenu>
 
 /* GUI includes: */
 # include "QIDialog.h"
@@ -48,6 +49,11 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
+/*********************************************************************************************************************************
+*   UIPathOperations definition.                                                                                                 *
+*********************************************************************************************************************************/
+
 /** A collection of utility functions for some path string manipulations */
 class UIPathOperations
 {
@@ -68,6 +74,78 @@ public:
 
     static const QChar delimiter;
 };
+
+
+/*********************************************************************************************************************************
+*   UIGuestControlFileView definition.                                                                                           *
+*********************************************************************************************************************************/
+
+/** Using QITableView causes the following problem when I click on the table items
+    Qt WARNING: Cannot creat accessible child interface for object:  UIGuestControlFileView.....
+    so for now subclass QTableView */
+class UIGuestControlFileView : public QTableView
+{
+    Q_OBJECT;
+signals:
+
+    void sigGoUp();
+    void sigGoHome();
+    void sigRefresh();
+    void sigRename();
+    void sigCreateNewDirectory();
+    void sigDelete();
+    void sigCut();
+    void sigCopy();
+    void sigPaste();
+
+public:
+
+    UIGuestControlFileView(QWidget * parent = 0);
+    bool hasSelection() const;
+
+protected:
+    void contextMenuEvent(QContextMenuEvent *pEvent);
+};
+
+
+/*********************************************************************************************************************************
+*   UIFileDelegate definition.                                                                                                   *
+*********************************************************************************************************************************/
+/** A QItemDelegate child class to disable dashed lines drawn around selected cells in QTableViews */
+class UIFileDelegate : public QItemDelegate
+{
+
+    Q_OBJECT;
+
+protected:
+        virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
+};
+
+
+/*********************************************************************************************************************************
+*   UIFileStringInputDialog definition.                                                                                          *
+*********************************************************************************************************************************/
+
+/** A QIDialog child including a line edit whose text exposed when the dialog is accepted */
+class UIStringInputDialog : public QIDialog
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIStringInputDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    QString getString() const;
+
+private:
+
+    QILineEdit      *m_pLineEdit;
+
+};
+
+/*********************************************************************************************************************************
+*   UIPathOperations implementation.                                                                                      *
+*********************************************************************************************************************************/
 
 const QChar UIPathOperations::delimiter = QChar('/');
 
@@ -155,45 +233,122 @@ QString UIPathOperations::constructNewItemPath(const QString &previousPath, cons
     return sanitize(mergePaths(getPathExceptObjectName(previousPath), newBaseName));
 }
 
-
 /*********************************************************************************************************************************
-*   UIFileDelegate definition.                                                                                                   *
-*********************************************************************************************************************************/
-/** A QItemDelegate child class to disable dashed lines drawn around selected cells in QTableViews */
-class UIFileDelegate : public QItemDelegate
-{
-
-    Q_OBJECT;
-
-protected:
-        virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
-};
-
-
-/*********************************************************************************************************************************
-*   UIFileStringInputDialog definition.                                                                                          *
+*   UIGuestControlFileView implementation.                                                                                      *
 *********************************************************************************************************************************/
 
-/** A QIDialog child including a line edit whose text exposed when the dialog is accepted */
-class UIStringInputDialog : public QIDialog
+UIGuestControlFileView::UIGuestControlFileView(QWidget * parent)
+    :QTableView(parent)
 {
+}
 
-    Q_OBJECT;
+void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
+{
+    bool selectionAvaible = hasSelection();
 
-public:
+    QMenu *menu = new QMenu(this);
+    if (!menu)
+        return;
 
-    UIStringInputDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
-    QString getString() const;
+    QAction *pActionGoUp = menu->addAction(UIVMInformationDialog::tr("Go up"));
+    if (pActionGoUp)
+    {
+        pActionGoUp->setIcon(UIIconPool::iconSet(QString(":/arrow_up_10px_x2.png")));
+        connect(pActionGoUp, &QAction::triggered, this, &UIGuestControlFileView::sigGoUp);
+    }
+    QAction *pActionGoHome = menu->addAction(UIVMInformationDialog::tr("Go home"));
+    if (pActionGoHome)
+    {
+        pActionGoHome->setIcon(UIIconPool::iconSet(QString(":/nw_24px.png")));
+        connect(pActionGoHome, &QAction::triggered, this, &UIGuestControlFileView::sigGoHome);
+    }
 
-private:
+    QAction *pActionRefresh = menu->addAction(UIVMInformationDialog::tr("Refresh"));
+    if (pActionRefresh)
+    {
+        pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_22px.png")));
+        connect(pActionRefresh, &QAction::triggered, this, &UIGuestControlFileView::sigRefresh);
+    }
 
-    QILineEdit      *m_pLineEdit;
+    menu->addSeparator();
+    QAction *pActionDelete = menu->addAction(UIVMInformationDialog::tr("Delete"));
+    if (pActionDelete)
+    {
+        pActionDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
+        pActionDelete->setEnabled(selectionAvaible);
+        connect(pActionDelete, &QAction::triggered, this, &UIGuestControlFileView::sigDelete);
+    }
 
-    // virtual void accept() /* override */;
-    // virtual void reject() /* override */;
+    QAction *pActionRename = menu->addAction(UIVMInformationDialog::tr("Rename"));
+    if (pActionRename)
+    {
+        pActionRename->setIcon(UIIconPool::iconSet(QString(":/name_16px_x2.png")));
+        pActionRename->setEnabled(selectionAvaible);
+        pActionRename->setEnabled(selectionAvaible);
+        connect(pActionRename, &QAction::triggered, this, &UIGuestControlFileView::sigRename);
+    }
 
-};
+    QAction *pActionCreateNewDirectory = menu->addAction(UIVMInformationDialog::tr("Create New Directory"));
+    if (pActionCreateNewDirectory)
+    {
+        pActionCreateNewDirectory->setIcon(UIIconPool::iconSet(QString(":/sf_add_16px.png")));
+        connect(pActionCreateNewDirectory, &QAction::triggered, this, &UIGuestControlFileView::sigCreateNewDirectory);
+    }
 
+    QAction *pActionCopy = menu->addAction(UIVMInformationDialog::tr("Copy"));
+    if (pActionCopy)
+    {
+        pActionCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
+        pActionCopy->setEnabled(selectionAvaible);
+        connect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
+    }
+
+    QAction *pActionCut = menu->addAction(UIVMInformationDialog::tr("Cut"));
+    if (pActionCut)
+    {
+        pActionCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
+        pActionCut->setEnabled(selectionAvaible);
+        connect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
+    }
+
+    QAction *pActionPaste = menu->addAction(UIVMInformationDialog::tr("Paste"));
+    if (pActionPaste)
+    {
+        pActionPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
+        connect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
+    }
+
+    menu->exec(pEvent->globalPos());
+
+    if (pActionGoUp)
+        disconnect(pActionGoUp, &QAction::triggered, this, &UIGuestControlFileView::sigGoUp);
+    if (pActionGoHome)
+        disconnect(pActionGoHome, &QAction::triggered, this, &UIGuestControlFileView::sigGoHome);
+    if (pActionRefresh)
+        disconnect(pActionRefresh, &QAction::triggered, this, &UIGuestControlFileView::sigRefresh);
+    if (pActionDelete)
+        disconnect(pActionDelete, &QAction::triggered, this, &UIGuestControlFileView::sigDelete);
+    if (pActionRename)
+        disconnect(pActionRename, &QAction::triggered, this, &UIGuestControlFileView::sigRename);
+    if (pActionCreateNewDirectory)
+        disconnect(pActionCreateNewDirectory, &QAction::triggered, this, &UIGuestControlFileView::sigCreateNewDirectory);
+    if (pActionCopy)
+        disconnect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
+    if (pActionCut)
+        disconnect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
+    if (pActionPaste)
+        disconnect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
+
+    delete menu;
+}
+
+bool UIGuestControlFileView::hasSelection() const
+{
+    QItemSelectionModel *pSelectionModel =  selectionModel();
+    if (!pSelectionModel)
+        return false;
+    return pSelectionModel->hasSelection();
+}
 
 /*********************************************************************************************************************************
 *   UIFileStringInputDialog implementation.                                                                                      *
@@ -462,7 +617,7 @@ void UIGuestControlFileTable::prepareObjects()
         return;
 
 
-    m_pView = new QTableView;
+    m_pView = new UIGuestControlFileView;
     if (m_pView)
     {
         m_pView->setShowGrid(false);
@@ -478,8 +633,29 @@ void UIGuestControlFileTable::prepareObjects()
         /* Make the columns take all the avaible space: */
         //m_pView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-        connect(m_pView, &QTableView::doubleClicked,
+        connect(m_pView, &UIGuestControlFileView::doubleClicked,
                 this, &UIGuestControlFileTable::sltItemDoubleClicked);
+
+        connect(m_pView, &UIGuestControlFileView::sigGoUp,
+                this, &UIGuestControlFileTable::sltGoUp);
+        connect(m_pView, &UIGuestControlFileView::sigGoHome,
+                this, &UIGuestControlFileTable::sltGoHome);
+        connect(m_pView, &UIGuestControlFileView::sigRefresh,
+                this, &UIGuestControlFileTable::sltRefresh);
+        connect(m_pView, &UIGuestControlFileView::sigDelete,
+                this, &UIGuestControlFileTable::sltDelete);
+        connect(m_pView, &UIGuestControlFileView::sigRename,
+                this, &UIGuestControlFileTable::sltRename);
+
+        connect(m_pView, &UIGuestControlFileView::sigCreateNewDirectory,
+                this, &UIGuestControlFileTable::sltCreateNewDirectory);
+
+        connect(m_pView, &UIGuestControlFileView::sigCopy,
+                this, &UIGuestControlFileTable::sltCopy);
+        connect(m_pView, &UIGuestControlFileView::sigCut,
+                this, &UIGuestControlFileTable::sltCut);
+        connect(m_pView, &UIGuestControlFileView::sigPaste,
+                this, &UIGuestControlFileTable::sltPaste);
 
     }
 }
@@ -544,7 +720,7 @@ void UIGuestControlFileTable::prepareActions()
     {
         m_pCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
         m_pToolBar->addAction(m_pCopy);
-        //m_pCopy->setEnabled(false);
+        connect(m_pCopy, &QAction::triggered, this, &UIGuestControlFileTable::sltCopy);
     }
 
     m_pCut = new QAction(this);
@@ -552,7 +728,7 @@ void UIGuestControlFileTable::prepareActions()
     {
         m_pCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
         m_pToolBar->addAction(m_pCut);
-        m_pCut->setEnabled(false);
+        connect(m_pCut, &QAction::triggered, this, &UIGuestControlFileTable::sltCut);
     }
 
     m_pPaste = new QAction(this);
@@ -560,7 +736,7 @@ void UIGuestControlFileTable::prepareActions()
     {
         m_pPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
         m_pToolBar->addAction(m_pPaste);
-        m_pPaste->setEnabled(false);
+        connect(m_pPaste, &QAction::triggered, this, &UIGuestControlFileTable::sltPaste);
     }
 }
 
@@ -809,6 +985,18 @@ void UIGuestControlFileTable::sltCreateNewDirectory()
     }
 }
 
+void UIGuestControlFileTable::sltCopy()
+{
+}
+
+void UIGuestControlFileTable::sltCut()
+{
+}
+
+void UIGuestControlFileTable::sltPaste()
+{
+}
+
 void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
 {
     UIFileTableItem *treeItem = indexData(itemIndex);
@@ -855,10 +1043,9 @@ void UIGuestControlFileTable::retranslateUi()
 
     if (m_pCreateNewDirectory)
     {
-        m_pCreateNewDirectory->setText(UIVMInformationDialog::tr("Create a new directory"));
-        m_pCreateNewDirectory->setToolTip(UIVMInformationDialog::tr("Create a new directory"));
-        m_pCreateNewDirectory->setStatusTip(UIVMInformationDialog::tr("Create a new directory"));
-
+        m_pCreateNewDirectory->setText(UIVMInformationDialog::tr("Create new directory"));
+        m_pCreateNewDirectory->setToolTip(UIVMInformationDialog::tr("Create new directory"));
+        m_pCreateNewDirectory->setStatusTip(UIVMInformationDialog::tr("Create new directory"));
     }
 
     if (m_pCopy)
@@ -1280,6 +1467,8 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
 
 void UIHostFileTable::deleteByItem(UIFileTableItem *item)
 {
+    if (item->isUpDirectory())
+        return;
     if (!item->isDirectory())
     {
         QDir itemToDelete;//(item->path());

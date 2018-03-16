@@ -37,7 +37,7 @@ class QILineEdit;
 class QGridLayout;
 class UIFileTableItem;
 class UIGuestControlFileModel;
-class UIGuestControlFileTable;
+class UIGuestControlFileView;
 class UIToolBar;
 
 enum FileObjectType
@@ -113,6 +113,7 @@ private:
 
 };
 
+
 /** This class serves a base class for file table. Currently a guest version
     and a host version are derived from this base. Each of these children
     populates the UIGuestControlFileModel by scanning the file system
@@ -164,10 +165,7 @@ protected:
 
     UIFileTableItem         *m_pRootItem;
 
-    /** Using QITableView causes the following problem when I click on the table items
-        Qt WARNING: Cannot creat accessible child interface for object:  UIGuestControlFileView.....
-        so for now subclass QTableView */
-    QTableView              *m_pView;
+    UIGuestControlFileView  *m_pView;
     UIGuestControlFileModel *m_pModel;
     QILabel                 *m_pLocationLabel;
 
@@ -179,6 +177,9 @@ protected slots:
     void sltRefresh();
     void sltDelete();
     void sltRename();
+    void sltCopy();
+    void sltCut();
+    void sltPaste();
     void sltCreateNewDirectory();
 
 private:
