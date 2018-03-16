@@ -417,14 +417,6 @@ public:
 
     static QString documentsPath();
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    static bool isAcceleration2DVideoAvailable();
-
-    /** additional video memory required for the best 2D support performance
-     *  total amount of VRAM required is thus calculated as requiredVideoMemory + required2DOffscreenVideoMemory  */
-    static quint64 required2DOffscreenVideoMemory();
-#endif
-
 #ifdef VBOX_WITH_CRHGSMI
     static bool isWddmCompatibleOsType(const QString &strGuestOSTypeId);
 #endif /* VBOX_WITH_CRHGSMI */
@@ -506,8 +498,7 @@ private:
     void comWrappersReinit();
 
 #ifdef VBOX_WS_WIN
-    /** Wraps WinAPI ShutdownBlockReasonCreate function.
-      * @remark  This function defined starting from Vista only. */
+    /** Wraps WinAPI ShutdownBlockReasonCreate function. */
     static BOOL ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason);
 #endif
 
@@ -598,12 +589,9 @@ private:
     /** @} */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Whether the debugger should be accessible or not.
-     * Use --dbg, the env.var. VBOX_GUI_DBG_ENABLED,
-     *     --debug or the env.var. VBOX_GUI_DBG_AUTO_SHOW to enable. */
+    /** Whether the debugger should be accessible or not. */
     mutable int m_fDbgEnabled;
-    /** Whether to show the debugger automatically with the console.
-     * Use --debug or the env.var. VBOX_GUI_DBG_AUTO_SHOW to enable. */
+    /** Whether to show the debugger automatically with the console. */
     mutable int m_fDbgAutoShow;
     /** Whether to show the command line window when m_fDbgAutoShow is set. */
     mutable int m_fDbgAutoShowCommandLine;

@@ -85,9 +85,6 @@
 #  include "UIMachineWindowFullscreen.h"
 #  include "UIMachineWindowSeamless.h"
 # endif /* VBOX_WS_MAC */
-# ifdef VBOX_WITH_VIDEOHWACCEL
-#  include "VBoxFBOverlay.h"
-# endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* COM includes: */
 # include "CMachine.h"
@@ -3249,23 +3246,6 @@ QString VBoxGlobal::documentsPath()
             return QDir::homePath();
     }
 }
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-/* static */
-bool VBoxGlobal::isAcceleration2DVideoAvailable()
-{
-    return VBoxQGLOverlay::isAcceleration2DVideoAvailable();
-}
-
-/** additional video memory required for the best 2D support performance
- *  total amount of VRAM required is thus calculated as requiredVideoMemory + required2DOffscreenVideoMemory  */
-/* static */
-quint64 VBoxGlobal::required2DOffscreenVideoMemory()
-{
-    return VBoxQGLOverlay::required2DOffscreenVideoMemory();
-}
-
-#endif
 
 #ifdef VBOX_WITH_CRHGSMI
 /* static */

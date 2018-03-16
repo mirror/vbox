@@ -247,7 +247,7 @@ bool UISession::initialize()
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Log whether 2D video acceleration is enabled: */
     LogRel(("GUI: 2D video acceleration is %s\n",
-           machine().GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable()
+           machine().GetAccelerate2DVideoEnabled() && VBoxQGLOverlay::isAcceleration2DVideoAvailable()
            ? "enabled" : "disabled"));
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
