@@ -233,8 +233,9 @@ QString UIPathOperations::constructNewItemPath(const QString &previousPath, cons
     return sanitize(mergePaths(getPathExceptObjectName(previousPath), newBaseName));
 }
 
+
 /*********************************************************************************************************************************
-*   UIGuestControlFileView implementation.                                                                                      *
+*   UIGuestControlFileView implementation.                                                                                       *
 *********************************************************************************************************************************/
 
 UIGuestControlFileView::UIGuestControlFileView(QWidget * parent)
@@ -349,6 +350,7 @@ bool UIGuestControlFileView::hasSelection() const
         return false;
     return pSelectionModel->hasSelection();
 }
+
 
 /*********************************************************************************************************************************
 *   UIFileStringInputDialog implementation.                                                                                      *
