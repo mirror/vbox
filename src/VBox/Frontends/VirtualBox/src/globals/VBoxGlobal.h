@@ -451,8 +451,10 @@ signals:
 
     /** Asks listener to recreate UI. */
     void sigAskToRestartUI();
-    /** Ask listener to open URLs. */
+    /** Asks listener to open URLs. */
     void sigAskToOpenURLs();
+    /** Asks listener to commit data. */
+    void sigAskToCommitData();
 
     /** Notifies listeners about the VBoxSVC availability change. */
     void sigVBoxSVCAvailabilityChange();

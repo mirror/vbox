@@ -66,7 +66,6 @@
 #  include "UIUpdateManager.h"
 # endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 # include "UIMachine.h"
-# include "UISession.h"
 # include "UIConverter.h"
 # include "UIMediumEnumerator.h"
 # include "UIMedium.h"
@@ -4145,13 +4144,8 @@ void VBoxGlobal::sltHandleCommitDataRequest(QSessionManager &manager)
 {
     LogRel(("GUI: VBoxGlobal::sltHandleCommitDataRequest: Emergency shutdown initiated\n"));
 
-    /* For VM process: */
-    if (vboxGlobal().isVMConsoleProcess())
-    {
-        /* Temporary override the default close action to 'SaveState' if necessary: */
-        if (gpMachine->uisession()->defaultCloseAction() == MachineCloseAction_Invalid)
-            gpMachine->uisession()->setDefaultCloseAction(MachineCloseAction_SaveState);
-    }
+    /* Ask listener to commit data: */
+    emit sigAskToCommitData();
 
     /* Ask session manager to postpone shutdown until we done: */
     manager.cancel();
