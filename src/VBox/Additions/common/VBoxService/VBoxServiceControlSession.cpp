@@ -629,48 +629,70 @@ static int vgsvcGstCtrlSessionHandlePathRename(PVBOXSERVICECTRLSESSION pSession,
 }
 
 
+/**
+ * Handles getting the user's documents directory.
+ *
+ * @returns VBox status code.
+ * @param   pSession        Guest session.
+ * @param   pHostCtx        Host context.
+ */
 static int vgsvcGstCtrlSessionHandlePathUserDocuments(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    char szPath[RTPATH_MAX];
-    int rc = RTPathUserDocuments(szPath, sizeof(szPath));
-
-    /* Report back in any case. */
-    int rc2 = VbglR3GuestCtrlMsgReplyEx(pHostCtx, rc, 0 /* Type */,
-                                        szPath, (uint32_t)strlen(szPath) + 1 /* Include terminating zero */);
-    if (RT_FAILURE(rc2))
-        VGSvcError("Failed to report user documents, rc=%Rrc\n", rc2);
+    int rc = VbglR3GuestCtrlPathGetUserDocuments(pHostCtx);
     if (RT_SUCCESS(rc))
-        rc = rc2;
+    {
+        char szPath[RTPATH_MAX];
+        rc = RTPathUserDocuments(szPath, sizeof(szPath));
 
 #ifdef DEBUG
-    VGSvcVerbose(4, "User documents is '%s', rc=%Rrc\n", szPath, rc);
+        VGSvcVerbose(2, "User documents is '%s', rc=%Rrc\n", szPath, rc);
 #endif
+        /* Report back in any case. */
+        int rc2 = VbglR3GuestCtrlMsgReplyEx(pHostCtx, rc, 0 /* Type */,
+                                            szPath, (uint32_t)strlen(szPath) + 1 /* Include terminating zero */);
+        if (RT_FAILURE(rc2))
+            VGSvcError("Failed to report user documents, rc=%Rrc\n", rc2);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
     return rc;
 }
 
 
+/**
+ * Handles getting the user's home directory.
+ *
+ * @returns VBox status code.
+ * @param   pSession        Guest session.
+ * @param   pHostCtx        Host context.
+ */
 static int vgsvcGstCtrlSessionHandlePathUserHome(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    char szPath[RTPATH_MAX];
-    int rc = RTPathUserHome(szPath, sizeof(szPath));
-
-    /* Report back in any case. */
-    int rc2 = VbglR3GuestCtrlMsgReplyEx(pHostCtx, rc, 0 /* Type */,
-                                        szPath, (uint32_t)strlen(szPath) + 1 /* Include terminating zero */);
-    if (RT_FAILURE(rc2))
-        VGSvcError("Failed to report user home, rc=%Rrc\n", rc2);
+    int rc = VbglR3GuestCtrlPathGetUserHome(pHostCtx);
     if (RT_SUCCESS(rc))
-        rc = rc2;
+    {
+        char szPath[RTPATH_MAX];
+        rc = RTPathUserHome(szPath, sizeof(szPath));
 
 #ifdef DEBUG
-    VGSvcVerbose(4, "User home is '%s', rc=%Rrc\n", szPath, rc);
+        VGSvcVerbose(2, "User home is '%s', rc=%Rrc\n", szPath, rc);
 #endif
+        /* Report back in any case. */
+        int rc2 = VbglR3GuestCtrlMsgReplyEx(pHostCtx, rc, 0 /* Type */,
+                                            szPath, (uint32_t)strlen(szPath) + 1 /* Include terminating zero */);
+        if (RT_FAILURE(rc2))
+            VGSvcError("Failed to report user home, rc=%Rrc\n", rc2);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
     return rc;
 }
 

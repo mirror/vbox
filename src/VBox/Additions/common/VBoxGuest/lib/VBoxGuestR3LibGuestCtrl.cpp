@@ -368,6 +368,40 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
 }
 
 
+VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserDocuments(PVBGLR3GUESTCTRLCMDCTX pCtx)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 1, VERR_INVALID_PARAMETER);
+
+    HGCMMsgPathUserDocuments Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+        Msg.context.GetUInt32(&pCtx->uContextID);
+
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 1, VERR_INVALID_PARAMETER);
+
+    HGCMMsgPathUserHome Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+        Msg.context.GetUInt32(&pCtx->uContextID);
+
+    return rc;
+}
+
+
 /**
  * Allocates and gets host data, based on the message id.
  *

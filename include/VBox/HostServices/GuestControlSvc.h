@@ -519,6 +519,20 @@ typedef struct HGCMMsgPathRename
     HGCMFunctionParameter flags;
 } HGCMMsgPathRename;
 
+typedef struct HGCMMsgPathUserDocuments
+{
+    VBGLIOCHGCMCALL hdr;
+    /** UInt32: Context ID. */
+    HGCMFunctionParameter context;
+} HGCMMsgPathUserDocuments;
+
+typedef struct HGCMMsgPathUserHome
+{
+    VBGLIOCHGCMCALL hdr;
+    /** UInt32: Context ID. */
+    HGCMFunctionParameter context;
+} HGCMMsgPathUserHome;
+
 /**
  * Executes a command inside the guest.
  */
