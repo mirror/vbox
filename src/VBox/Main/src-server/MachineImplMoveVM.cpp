@@ -1007,10 +1007,12 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
             rc = pMedium->COMGETTER(DeviceType)(&deviceType);
             if (FAILED(rc)) throw rc;
 
+            /* Drop lock early because IMedium::SetLocation needs to get the VirtualBox one. */
+            machineLock.release();
+
             ComPtr<IProgress> moveDiskProgress;
             rc = pMedium->SetLocation(bstrLocation.raw(), moveDiskProgress.asOutParam());
             /* Wait until the async process has finished. */
-            machineLock.release();
 
             rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
 
