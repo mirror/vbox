@@ -41,7 +41,6 @@ ValidationKitTestsApi_EXEC_SOURCES := \
 ValidationKitTestsApi_SOURCES := \
 	$(wildcard \
 		$(PATH_SUB_CURRENT)/*.ova \
-		$(PATH_SUB_CURRENT)/*.pem \
 		)
 
 VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsApi_EXEC_SOURCES)
