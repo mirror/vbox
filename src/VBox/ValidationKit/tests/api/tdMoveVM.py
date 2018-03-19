@@ -32,6 +32,7 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os
 import sys
+import time
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -58,6 +59,7 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
         """
         Execute the sub-testcase.
         """
+        reporter.log('ValidationKit folder is "%s"' % (g_ksValidationKitDir,))
         return  self.testVMMove()
 
     #
@@ -109,6 +111,8 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
 
         if fRc is False:
             oVM = None
+
+#       del oSession
 
         return oVM
 
@@ -204,9 +208,9 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
 
         try:
             #create test machine
-            aMachine = self.createTestMachine()
+            oMachine = self.createTestMachine()
 
-            if aMachine is None:
+            if oMachine is None:
                 reporter.error('Failed to create test machine')
 
             #create temporary subdirectory in the current working directory
@@ -215,15 +219,15 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
             os.mkdir(sNewLoc, 0o775)
 
             sController='SATA Controller'
-            aoMediumAttachments = aMachine.getMediumAttachmentsOfController(sController)
+            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
 
             #lock machine
             #get session machine
-            oSession = self.oTstDrv.openSession(aMachine)
+            oSession = self.oTstDrv.openSession(oMachine)
             fRc = True
 
             sMoveLoc = sNewLoc + os.sep
-            #1 case.
+############# 1 case. ##########################################################################################
             #   All disks attached to VM are located outside the VM's folder.
             #   There are no any snapshots and logs.
             #   In this case only VM setting file should be moved (.vbox file)
@@ -233,28 +237,31 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
             if fRc is False:
                 reporter.log('Couldn\'t save machine settings')
 
-            #2 case.
+############# 2 case. ##########################################################################################
             #   All disks attached to VM are located inside the VM's folder.
             #   There are no any snapshots and logs.
-            sLoc = sMoveLoc + aMachine.name + os.sep
+            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
             sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_2d_scenario')
             os.mkdir(sMoveLoc, 0o775)
-            aoMediumAttachments = aMachine.getMediumAttachmentsOfController(sController)
+            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
             oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
             oSubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
+
+            del oSubTstDrvMoveMedium1Instance
+
             fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
 
             fRc = fRc and oSession.saveSettings()
             if fRc is False:
                 reporter.log('Couldn\'t save machine settings')
 
-            #3 case.
+############# 3 case. ##########################################################################################
             #   There are snapshots.
-            sLoc = sMoveLoc + aMachine.name + os.sep
+            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
             sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
             os.mkdir(sMoveLoc, 0o775)
 
-            cSnap = 5
+            cSnap = 2
             for counter in range(1,cSnap+1):
                 strSnapshot = 'Snapshot' + str(counter)
                 fRc = fRc and oSession.takeSnapshot(strSnapshot)
@@ -262,13 +269,222 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
                     reporter.error('Error: Can\'t take snapshot "%s".' % (strSnapshot,))
                     reporter.testFailure('Error: Can\'t take snapshot "%s".' % (strSnapshot,))
 
-            aoMediumAttachments = aMachine.getMediumAttachmentsOfController(sController)
+            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
             if fRc is True:
                 fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
 
             fRc = fRc and oSession.saveSettings()
             if fRc is False:
                 reporter.log('Couldn\'t save machine settings')
+
+############# 4 case. ##########################################################################################
+            #   There are one or more save state files in the snapshots folder
+            #   and some files in the logs folder.
+            #   Here we run VM, next stop it in the "save" state.
+            #   And next move VM
+
+            #Close and delete Session object because after starting VM we get new instance of session
+#           fRc = oSession.close() and fRc
+#           if fRc is False:
+#               reporter.log('Couldn\'t close machine session')
+#
+#           del oSession
+#
+#           #Run VM and get new Session object
+#           oSession = self.oTstDrv.startVm(oMachine)
+#
+#           #some time interval should be here for not closing VM just after start
+#           time.sleep(1)
+#
+#           if oMachine.state != self.oTstDrv.oVBoxMgr.constants.MachineState_Running:
+#               reporter.log("Machine '%s' is not Running" % (oMachine.name))
+#               fRc = False
+#
+#           oConsole = oSession.o.console
+#
+#           #logic comes from handleControlVM()
+#           #Pause VM using console object
+#           fRc = oConsole.pause() and fRc
+#
+#           #Check VM state
+#           if oMachine.state == self.oTstDrv.oVBoxMgr.constants.MachineState_Paused:
+#               reporter.log("Machine '%s' is Paused" % (oMachine.name))
+#               fRc = True
+#
+#           #call Session::saveState()
+#           if fRc is True:
+#               oProgress = oSession.o.machine.saveState()
+#               rc = self.oTstDrv.waitOnProgress(oProgress,1000)
+#               self.oTstDrv.sleep(2)
+#
+#           #Close and delete Session object because this session hasn't been locked
+#           #but locking is needed to run moveVMToLocation().
+#           #if to use the current session object we'll get the error "The session is not locked (session state: Unlocked)"
+#           fRc = oSession.close() and fRc
+#           if fRc is False:
+#               reporter.log('Couldn\'t close machine session')
+#
+#           del oSession
+#           del oConsole
+#
+#           sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
+#           sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_4th_scenario')
+#           os.mkdir(sMoveLoc, 0o775)
+#
+#           #Create a new Session object
+#           #It seems that it's possible to lock VM only via creating a pure Session object (not SessionWrapper as it was before)
+#           #and call Machine::lockMachine()
+#           oVirtualBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
+#           oNewSession = self.oTstDrv.oVBoxMgr.mgr.getSessionObject(oVirtualBox)
+#
+#           oMachine.lockMachine(oNewSession, self.oTstDrv.oVBoxMgr.constants.LockType_Write)
+#           fRc = self.moveVMToLocation(sMoveLoc, oNewSession.machine) and fRc
+#           oNewSession.unlockMachine()
+#
+#           del oNewSession
+#
+#           #call Session::discardSavedState()
+#           #for this we delete oNewSession object earlier and creating SessionWrapper object here
+#           oSession = self.oTstDrv.openSession(oMachine)
+#           fRc = oSession.o.machine.discardSavedState(True)
+#           reporter.log('Discard save machine state')
+#
+#           del oMachine
+#           del oVirtualBox
+#
+#           if fRc is False:
+#               reporter.log('Failed to discard the saved state of machine')
+
+############## 5 case. ##########################################################################################
+            #There is an ISO image (.iso) attached to the VM.
+            #Prerequisites - there is IDE Controller and there are no any images attached to it.
+            fRc = True
+            oVirtualBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
+            oMachine = oVirtualBox.findMachine('test-vm-move')
+            if oMachine == None:
+                reporter.log("Machine '%s' is unknown" % (oMachine.name))
+                return False
+
+            del oVirtualBox
+
+            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
+            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_5th_scenario')
+            os.mkdir(sMoveLoc, 0o775)
+            sISOLoc = os.path.join(g_ksValidationKitDir + os.sep, 'tests' + os.sep + 'api' + os.sep + 'tdMoveVM.iso')
+            if not os.path.exists(sISOLoc):
+                reporter.log('ISO file does not exist at "%s"' % (sISOLoc,))
+                fRc = False
+
+            #attach ISO image to the IDE controller
+            if fRc is True:
+                sController='IDE Controller'
+                aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+                iPort = len(aoMediumAttachments)
+                reporter.log('sISOLoc "%s", sController "%s", iPort "%s"' % (sISOLoc,sController,iPort))
+                fRc = oSession.attachDvd(sISOLoc, sController, iPort, iDevice = 0)
+
+            fRc = fRc and oSession.saveSettings()
+            if fRc is False:
+                reporter.log('Couldn\'t save machine settings')
+
+            reporter.log('fRc after oSession.attachDvd "%s"' % (fRc))
+
+            #move ISO image to the VM settings folder
+            if fRc is True:
+                aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+                reporter.log('number of attachments on IDE Controller is "%s"' % (len(aoMediumAttachments)))
+                for oAttachment in aoMediumAttachments:
+                    sActualFilePath = oAttachment.medium.location
+                    reporter.log('medium location is "%s"' % (sActualFilePath))
+
+                oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
+                oSubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
+
+            if fRc is True:
+                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+
+            fRc = fRc and oSession.saveSettings()
+            if fRc is False:
+                reporter.log('Couldn\'t save machine settings')
+
+            #back ISO image to the original destination
+            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+            oSubTstDrvMoveMedium1Instance.setLocation(sActualFilePath, aoMediumAttachments)
+            del oSubTstDrvMoveMedium1Instance
+
+            #detach ISO image
+            fRc = oSession.detachHd(sController, iPort, 0)
+
+            fRc = fRc and oSession.saveSettings()
+            if fRc is False:
+                reporter.log('Couldn\'t save machine settings')
+
+############# 6 case. ##########################################################################################
+            #There is a floppy image (.img) attached to the VM.
+            #Prerequisites - there is Floppy Controller and there are no any images attached to it.
+            fRc = True
+            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
+            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_6th_scenario')
+            os.mkdir(sMoveLoc, 0o775)
+            sFloppyLoc = os.path.join(g_ksValidationKitDir + os.sep, 'tests' + os.sep + 'api' + os.sep + 'tdMoveVM.img')
+            if not os.path.exists(sISOLoc):
+                reporter.log('Floppy disk does not exist at "%s"' % (sISOLoc,))
+                fRc = False
+
+            # attach floppy image
+            if fRc is True:
+                sController='Floppy Controller'
+                reporter.log('sFloppyLoc "%s", sController "%s"' % (sFloppyLoc,sController))
+                fRc = fRc and oSession.attachFloppy(sFloppyLoc, sController, 0, 0)
+
+            fRc = fRc and oSession.saveSettings()
+            if fRc is False:
+                reporter.log('Couldn\'t save machine settings')
+
+            reporter.log('fRc after oSession.attachFloppy "%s"' % (fRc))
+
+            #move Floppy image to the VM settings folder
+            if fRc is True:
+                aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+                reporter.log('number of attachments on Floppy Controller is "%s"' % (len(aoMediumAttachments)))
+                for oAttachment in aoMediumAttachments:
+                    sActualFilePath = oAttachment.medium.location
+                    reporter.log('medium location is "%s"' % (sActualFilePath))
+
+                oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
+                oSubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
+
+            if fRc is True:
+                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+
+            #back Floppy image to the original destination
+            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+            oSubTstDrvMoveMedium1Instance.setLocation(sActualFilePath, aoMediumAttachments)
+            del oSubTstDrvMoveMedium1Instance
+
+            #detach Floppy image
+            fRc = oSession.detachHd(sController, 0, 0)
+
+            fRc = fRc and oSession.saveSettings()
+            if fRc is False:
+                reporter.log('Couldn\'t save machine settings')
+#
+############# 7 case. ##########################################################################################
+#           #   There are shareable disk and immutable disk attached to the VM.
+#           #
+#
+#           fRc = fRc and oSession.saveSettings()
+#           if fRc is False:
+#               reporter.log('Couldn\'t save machine settings')
+#
+############# 8 case. ##########################################################################################
+#           #   There is "read-only" disk attached to the VM.
+#           #
+#
+#           fRc = fRc and oSession.saveSettings()
+#           if fRc is False:
+#               reporter.log('Couldn\'t save machine settings')
+
 
             fRc = oSession.close() and fRc
             if fRc is False:
