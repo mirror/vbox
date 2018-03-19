@@ -26,14 +26,16 @@
 # include <QHeaderView>
 # include <QItemDelegate>
 # include <QGridLayout>
-# include <QPushButton>
 # include <QMenu>
+# include <QTextEdit>
+# include <QPushButton>
 
 /* GUI includes: */
 # include "QIDialog.h"
 # include "QIDialogButtonBox.h"
 # include "QILabel.h"
 # include "QILineEdit.h"
+# include "QIMessageBox.h"
 # include "UIErrorString.h"
 # include "UIIconPool.h"
 # include "UIGuestControlFileTable.h"
@@ -85,7 +87,9 @@ public:
     so for now subclass QTableView */
 class UIGuestControlFileView : public QTableView
 {
+
     Q_OBJECT;
+
 signals:
 
     void sigGoUp();
@@ -97,6 +101,9 @@ signals:
     void sigCut();
     void sigCopy();
     void sigPaste();
+    void sigShowProperties();
+
+    void sigSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
 
 public:
 
@@ -104,6 +111,7 @@ public:
     bool hasSelection() const;
 
 protected:
+    virtual void selectionChanged(const QItemSelection & selected, const QItemSelection & deselected) /*override */;
     void contextMenuEvent(QContextMenuEvent *pEvent);
 };
 
@@ -144,7 +152,30 @@ private:
 };
 
 /*********************************************************************************************************************************
-*   UIPathOperations implementation.                                                                                      *
+*   UIPropertiesDialog definition.                                                                                          *
+*********************************************************************************************************************************/
+
+/** A QIDialog child to display properties of a file object */
+class UIPropertiesDialog : public QIDialog
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIPropertiesDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    void setPropertyText(const QString &strProperty);
+
+private:
+
+    QVBoxLayout    *m_pMainLayout;
+    QTextEdit *m_pInfoEdit;
+
+};
+
+
+/*********************************************************************************************************************************
+*   UIPathOperations implementation.                                                                                             *
 *********************************************************************************************************************************/
 
 const QChar UIPathOperations::delimiter = QChar('/');
@@ -319,6 +350,15 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
         connect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
     }
 
+    menu->addSeparator();
+    QAction *pActionShowProperties = menu->addAction(UIVMInformationDialog::tr("Properties"));
+    if (pActionShowProperties)
+    {
+        pActionShowProperties->setIcon(UIIconPool::iconSet(QString(":/session_info_32px.png")));
+        pActionShowProperties->setEnabled(selectionAvaible);
+        connect(pActionShowProperties, &QAction::triggered, this, &UIGuestControlFileView::sigShowProperties);
+    }
+
     menu->exec(pEvent->globalPos());
 
     if (pActionGoUp)
@@ -339,6 +379,8 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
         disconnect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
     if (pActionPaste)
         disconnect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
+    if (pActionShowProperties)
+        disconnect(pActionShowProperties, &QAction::triggered, this, &UIGuestControlFileView::sigShowProperties);
 
     delete menu;
 }
@@ -349,6 +391,12 @@ bool UIGuestControlFileView::hasSelection() const
     if (!pSelectionModel)
         return false;
     return pSelectionModel->hasSelection();
+}
+
+void UIGuestControlFileView::selectionChanged(const QItemSelection & selected, const QItemSelection & deselected)
+{
+    emit sigSelectionChanged(selected, deselected);
+    QTableView::selectionChanged(selected, deselected);
 }
 
 
@@ -378,6 +426,42 @@ QString UIStringInputDialog::getString() const
     if (!m_pLineEdit)
         return QString();
     return m_pLineEdit->text();
+}
+
+
+/*********************************************************************************************************************************
+*   UIPropertiesDialog implementation.                                                                                           *
+*********************************************************************************************************************************/
+
+UIPropertiesDialog::UIPropertiesDialog(QWidget *pParent, Qt::WindowFlags flags)
+    :QIDialog(pParent, flags)
+    , m_pMainLayout(new QVBoxLayout)
+    , m_pInfoEdit(new QTextEdit)
+{
+    setLayout(m_pMainLayout);
+
+    if (m_pMainLayout)
+        m_pMainLayout->addWidget(m_pInfoEdit);
+    if (m_pInfoEdit)
+    {
+        // m_pInfoEdit->setTextFormat(Qt::RichText);
+        m_pInfoEdit->setReadOnly(true);
+        m_pInfoEdit->setFrameStyle(QFrame::NoFrame);
+        //  m_pInfoEdit->setText("Line 1\nLine 2\n\nLine 4");
+        //  m_pInfoEdit->setWordWrap(true);
+    }
+    QIDialogButtonBox *pButtonBox =
+        new QIDialogButtonBox(QDialogButtonBox::Ok, Qt::Horizontal, this);
+    m_pMainLayout->addWidget(pButtonBox);
+    connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIStringInputDialog::accept);
+}
+
+void UIPropertiesDialog::setPropertyText(const QString &strProperty)
+{
+    if (!m_pInfoEdit)
+        return;
+
+    m_pInfoEdit->setText(strProperty);
 }
 
 
@@ -558,6 +642,7 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pCopy(0)
     , m_pCut(0)
     , m_pPaste(0)
+    , m_pShowProperties(0)
 
 {
     prepareObjects();
@@ -648,16 +733,18 @@ void UIGuestControlFileTable::prepareObjects()
                 this, &UIGuestControlFileTable::sltDelete);
         connect(m_pView, &UIGuestControlFileView::sigRename,
                 this, &UIGuestControlFileTable::sltRename);
-
         connect(m_pView, &UIGuestControlFileView::sigCreateNewDirectory,
                 this, &UIGuestControlFileTable::sltCreateNewDirectory);
-
         connect(m_pView, &UIGuestControlFileView::sigCopy,
                 this, &UIGuestControlFileTable::sltCopy);
         connect(m_pView, &UIGuestControlFileView::sigCut,
                 this, &UIGuestControlFileTable::sltCut);
         connect(m_pView, &UIGuestControlFileView::sigPaste,
                 this, &UIGuestControlFileTable::sltPaste);
+        connect(m_pView, &UIGuestControlFileView::sigShowProperties,
+                this, &UIGuestControlFileTable::sltShowProperties);
+        connect(m_pView, &UIGuestControlFileView::sigSelectionChanged,
+                this, &UIGuestControlFileTable::sltSelectionChanged);
 
     }
 }
@@ -699,6 +786,7 @@ void UIGuestControlFileTable::prepareActions()
         connect(m_pDelete, &QAction::triggered, this, &UIGuestControlFileTable::sltDelete);
         m_pDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
         m_pToolBar->addAction(m_pDelete);
+        m_selectionDependentActions.push_back(m_pDelete);
     }
 
     m_pRename = new QAction(this);
@@ -707,6 +795,7 @@ void UIGuestControlFileTable::prepareActions()
         connect(m_pRename, &QAction::triggered, this, &UIGuestControlFileTable::sltRename);
         m_pRename->setIcon(UIIconPool::iconSet(QString(":/name_16px_x2.png")));
         m_pToolBar->addAction(m_pRename);
+        m_selectionDependentActions.push_back(m_pRename);
     }
 
     m_pCreateNewDirectory = new QAction(this);
@@ -723,6 +812,7 @@ void UIGuestControlFileTable::prepareActions()
         m_pCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
         m_pToolBar->addAction(m_pCopy);
         connect(m_pCopy, &QAction::triggered, this, &UIGuestControlFileTable::sltCopy);
+        m_selectionDependentActions.push_back(m_pCopy);
     }
 
     m_pCut = new QAction(this);
@@ -731,6 +821,7 @@ void UIGuestControlFileTable::prepareActions()
         m_pCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
         m_pToolBar->addAction(m_pCut);
         connect(m_pCut, &QAction::triggered, this, &UIGuestControlFileTable::sltCut);
+        m_selectionDependentActions.push_back(m_pCut);
     }
 
     m_pPaste = new QAction(this);
@@ -739,7 +830,20 @@ void UIGuestControlFileTable::prepareActions()
         m_pPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
         m_pToolBar->addAction(m_pPaste);
         connect(m_pPaste, &QAction::triggered, this, &UIGuestControlFileTable::sltPaste);
+        m_pPaste->setEnabled(false);
     }
+
+    m_pToolBar->addSeparator();
+
+    m_pShowProperties = new QAction(this);
+    {
+        m_pShowProperties->setIcon(UIIconPool::iconSet(QString(":/session_info_32px.png")));
+        m_pToolBar->addAction(m_pShowProperties);
+        connect(m_pShowProperties, &QAction::triggered, this, &UIGuestControlFileTable::sltShowProperties);
+        m_selectionDependentActions.push_back(m_pShowProperties);
+    }
+
+    disableSelectionDependentActions();
 }
 
 void UIGuestControlFileTable::updateCurrentLocationEdit(const QString& strLocation)
@@ -989,14 +1093,64 @@ void UIGuestControlFileTable::sltCreateNewDirectory()
 
 void UIGuestControlFileTable::sltCopy()
 {
+
+    m_copyCutBuffer = selectedItemPathList();
+    if (!m_copyCutBuffer.isEmpty())
+        m_pPaste->setEnabled(true);
+    else
+        m_pPaste->setEnabled(false);
 }
 
 void UIGuestControlFileTable::sltCut()
 {
+    m_copyCutBuffer = selectedItemPathList();
+    if (!m_copyCutBuffer.isEmpty())
+        m_pPaste->setEnabled(true);
+    else
+        m_pPaste->setEnabled(false);
 }
 
 void UIGuestControlFileTable::sltPaste()
 {
+    // paste them
+    m_copyCutBuffer.clear();
+    m_pPaste->setEnabled(false);
+}
+
+void UIGuestControlFileTable::sltShowProperties()
+{
+    QString fsPropertyString = fsObjectPropertyString();
+    if (fsPropertyString.isEmpty())
+        return;
+
+    UIPropertiesDialog *dialog = new UIPropertiesDialog();
+    dialog->setPropertyText(fsPropertyString);
+    dialog->execute();
+
+
+
+    // QIMessageBox *pFsObjectPropertiesBox = new QIMessageBox("Properties",
+    //                                                         fsPropertyString,
+    //                                                         AlertIconType_Information,
+    //                                                         AlertButton_Ok| AlertButtonOption_Escape, 0, 0, this);
+    // pFsObjectPropertiesBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::MinimumExpanding);
+
+
+    //     //pFsObjectPropertiesBox->setFixedWidth(300);
+    // pFsObjectPropertiesBox->exec();
+
+    // delete pFsObjectPropertiesBox;
+}
+
+void UIGuestControlFileTable::sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected)
+{
+    /* Disable all the action that operate on some selection: */
+    if (!deselected.isEmpty() && selected.isEmpty())
+        disableSelectionDependentActions();
+
+    /* Enable all the action that operate on some selection: */
+    if (deselected.isEmpty() && !selected.isEmpty())
+        enableSelectionDependentActions();
 }
 
 void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
@@ -1071,6 +1225,13 @@ void UIGuestControlFileTable::retranslateUi()
         m_pPaste->setText(UIVMInformationDialog::tr("Paste the copied item(s)"));
         m_pPaste->setToolTip(UIVMInformationDialog::tr("Paste the copied item(s)"));
         m_pPaste->setStatusTip(UIVMInformationDialog::tr("Paste the copied item(s)"));
+    }
+
+    if (m_pShowProperties)
+    {
+        m_pShowProperties->setText(UIVMInformationDialog::tr("Show the properties of the selected item(s)"));
+        m_pShowProperties->setToolTip(UIVMInformationDialog::tr("Show the properties of the selected item(s)"));
+        m_pShowProperties->setStatusTip(UIVMInformationDialog::tr("Show the properties of the selected item(s)"));
     }
 }
 
@@ -1166,6 +1327,50 @@ CGuestFsObjInfo UIGuestControlFileTable::guestFsObjectInfo(const QString& path, 
     return comFsObjInfo;
 }
 
+void UIGuestControlFileTable::enableSelectionDependentActions()
+{
+    for (int i = 0; i < m_selectionDependentActions.size(); ++i)
+    {
+        if (m_selectionDependentActions[i])
+            m_selectionDependentActions[i]->setEnabled(true);
+    }
+}
+
+void UIGuestControlFileTable::disableSelectionDependentActions()
+{
+    /* Disable all the action that operate on some selection: */
+    for (int i = 0; i < m_selectionDependentActions.size(); ++i)
+    {
+        if (m_selectionDependentActions[i])
+            m_selectionDependentActions[i]->setEnabled(false);
+    }
+}
+
+QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
+{
+    QString strType("Unknown");
+    switch(type)
+    {
+        case FileObjectType_File:
+            strType = "File";
+            break;
+        case FileObjectType_Directory:
+            strType = "Directory";
+            break;
+        case FileObjectType_SymLink:
+            strType = "Symbolic Link";
+            break;
+        case FileObjectType_Other:
+            strType = "Other";
+            break;
+
+        case FileObjectType_Unknown:
+        default:
+            break;
+    }
+    return strType;
+}
+
 
 /*********************************************************************************************************************************
 *   UIGuestFileTable implementation.                                                                                             *
@@ -1221,21 +1426,21 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
             QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/1000000);
 
             data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize()) << changeTime;
-            FileObjectType fileType = getFileType(fsInfo);
-            UIFileTableItem *item = new UIFileTableItem(data, parent, fileType);
+            FileObjectType fsObjectType = fileType(fsInfo);
+            UIFileTableItem *item = new UIFileTableItem(data, parent, fsObjectType);
             item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
-            if (fileType == FileObjectType_Directory)
+            if (fsObjectType == FileObjectType_Directory)
             {
                 directories.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
             }
-            else if(fileType == FileObjectType_File)
+            else if(fsObjectType == FileObjectType_File)
             {
                 files.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
             }
             /** @todo Seems like our API is not able to detect symlinks: */
-            else if(fileType == FileObjectType_SymLink)
+            else if(fsObjectType == FileObjectType_SymLink)
             {
                 files.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
@@ -1389,7 +1594,7 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
     return true;
 }
 
-FileObjectType UIGuestFileTable::getFileType(const CFsObjInfo &fsInfo)
+FileObjectType UIGuestFileTable::fileType(const CFsObjInfo &fsInfo)
 {
     if (fsInfo.isNull() || !fsInfo.isOk())
         return FileObjectType_Unknown;
@@ -1401,6 +1606,11 @@ FileObjectType UIGuestFileTable::getFileType(const CFsObjInfo &fsInfo)
         return FileObjectType_SymLink;
 
     return FileObjectType_Other;
+}
+
+QString UIGuestFileTable::fsObjectPropertyString()
+{
+    return QString();
 }
 
 
@@ -1442,7 +1652,7 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
 
         QList<QVariant> data;
         data << fileInfo.fileName() << fileInfo.size() << fileInfo.lastModified();
-        UIFileTableItem *item = new UIFileTableItem(data, parent, getFileType(fileInfo));
+        UIFileTableItem *item = new UIFileTableItem(data, parent, fileType(fileInfo));
         item->setPath(fileInfo.absoluteFilePath());
         /* if the item is a symlink set the target path and
            check the target if it is a directory: */
@@ -1535,7 +1745,7 @@ bool UIHostFileTable::createDirectory(const QString &path, const QString &direct
     return true;
 }
 
-FileObjectType UIHostFileTable::getFileType(const QFileInfo &fsInfo)
+FileObjectType UIHostFileTable::fileType(const QFileInfo &fsInfo)
 {
     if (!fsInfo.exists())
         return FileObjectType_Unknown;
@@ -1549,6 +1759,45 @@ FileObjectType UIHostFileTable::getFileType(const QFileInfo &fsInfo)
         return FileObjectType_Directory;
 
     return FileObjectType_Other;
+}
+
+QString UIHostFileTable::fsObjectPropertyString()
+{
+    QStringList selectedObjects = selectedItemPathList();
+    if (selectedObjects.isEmpty())
+        return QString();
+    if (selectedObjects.size() == 1)
+    {
+        if (selectedObjects.at(0).isNull())
+            return QString();
+        QFileInfo fileInfo(selectedObjects.at(0));
+        if (!fileInfo.exists())
+            return QString();
+        QString propertyString;
+        /* Name: */
+        propertyString += "<b>Name:</b> " + fileInfo.fileName() + "\n";
+        if (!fileInfo.suffix().isEmpty())
+            propertyString += "." + fileInfo.suffix();
+        propertyString += "<br/>";
+        /* Size: */
+        propertyString += "<b>Size:</b> " + QString::number(fileInfo.size()) + QString(" bytes");
+        propertyString += "<br/>";
+        /* Type: */
+        propertyString += "<b>Type:</b> " + fileTypeString(fileType(fileInfo));
+        propertyString += "<br/>";
+        /* Creation Date: */
+        propertyString += "<b>Created:</b> " + fileInfo.created().toString();
+        propertyString += "<br/>";
+        /* Last Modification Date: */
+        propertyString += "<b>Modified:</b> " + fileInfo.lastModified().toString();
+        propertyString += "<br/>";
+        /* Owner: */
+        propertyString += "<b>Owner:</b> " + fileInfo.owner();
+
+
+        return propertyString;
+    }
+    return QString();
 }
 
 #include "UIGuestControlFileTable.moc"

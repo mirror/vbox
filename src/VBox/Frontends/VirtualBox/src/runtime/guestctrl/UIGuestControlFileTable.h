@@ -153,6 +153,8 @@ protected:
     virtual void goToHomeDirectory() = 0;
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName) = 0;
     virtual bool createDirectory(const QString &path, const QString &directoryName) = 0;
+    virtual QString fsObjectPropertyString() = 0;
+    static QString fileTypeString(FileObjectType type);
     void             goIntoDirectory(const QModelIndex &itemIndex);
     /** Follow the path trail, open directories as we go and descend */
     void             goIntoDirectory(const QList<QString> &pathTrail);
@@ -169,7 +171,7 @@ protected:
     UIGuestControlFileModel *m_pModel;
     QILabel                 *m_pLocationLabel;
 
-protected slots:
+private slots:
 
     void sltItemDoubleClicked(const QModelIndex &index);
     void sltGoUp();
@@ -180,7 +182,9 @@ protected slots:
     void sltCopy();
     void sltCut();
     void sltPaste();
+    void sltShowProperties();
     void sltCreateNewDirectory();
+    void sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
 
 private:
 
@@ -191,6 +195,8 @@ private:
     UIFileTableItem *getStartDirectoryItem();
     /** Shows a modal dialog with a line edit for user to enter a new directory name and return the entered string*/
     QString         getNewDirectoryName();
+    void            enableSelectionDependentActions();
+    void            disableSelectionDependentActions();
     QGridLayout     *m_pMainLayout;
     QILineEdit      *m_pCurrentLocationEdit;
     UIToolBar       *m_pToolBar;
@@ -200,12 +206,15 @@ private:
     QAction         *m_pDelete;
     QAction         *m_pRename;
     QAction         *m_pCreateNewDirectory;
-
-
     QAction         *m_pCopy;
     QAction         *m_pCut;
     QAction         *m_pPaste;
-
+    QAction         *m_pShowProperties;
+    /** The vector of action which need some selection to work on like cut, copy etc. */
+    QVector<QAction*> m_selectionDependentActions;
+    /** The absolue path list of the file objects which user has chosen to cut/copy. this
+        list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
+    QStringList       m_copyCutBuffer;
     friend class UIGuestControlFileModel;
 };
 
@@ -230,10 +239,11 @@ protected:
     virtual void goToHomeDirectory() /* override */;
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
     virtual bool createDirectory(const QString &path, const QString &directoryName);
+    virtual QString fsObjectPropertyString() /* override */;
 
 private:
 
-    static FileObjectType getFileType(const CFsObjInfo &fsInfo);
+    static FileObjectType fileType(const CFsObjInfo &fsInfo);
     bool copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath);
     bool copyHostToGuest(const QString& hostSourcePath, const QString &guestDestinationPath);
 
@@ -253,13 +263,15 @@ public:
 
 protected:
 
-    static FileObjectType getFileType(const QFileInfo &fsInfo);
+    static FileObjectType fileType(const QFileInfo &fsInfo);
     void retranslateUi() /* override */;
     virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void deleteByItem(UIFileTableItem *item) /* override */;
     virtual void goToHomeDirectory() /* override */;
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
     virtual bool createDirectory(const QString &path, const QString &directoryName);
+    virtual QString fsObjectPropertyString() /* override */;
+
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
