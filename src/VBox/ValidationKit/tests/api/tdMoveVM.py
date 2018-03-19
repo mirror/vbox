@@ -150,10 +150,10 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
             sActualFilePath = oAttachment.medium.location
             if os.path.abspath(sFilePath) != os.path.abspath(sActualFilePath):
                 reporter.log('medium location expected to be "%s" but is "%s"' % (sFilePath, sActualFilePath))
-                fRc = False;
+                fRc = False
             if not os.path.exists(sFilePath):
                 reporter.log('medium file does not exist at "%s"' % (sFilePath,))
-                fRc = False;
+                fRc = False
         return fRc
 
     #
@@ -175,7 +175,7 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
         reporter.testStart('machine moving')
 
         if not self.oTstDrv.importVBoxApi():
-            return False;
+            return False
 
         isSupported = self.checkAPIVersion()
 
@@ -283,77 +283,38 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
             #   Here we run VM, next stop it in the "save" state.
             #   And next move VM
 
-            #Close and delete Session object because after starting VM we get new instance of session
-#           fRc = oSession.close() and fRc
-#           if fRc is False:
-#               reporter.log('Couldn\'t close machine session')
-#
-#           del oSession
-#
-#           #Run VM and get new Session object
-#           oSession = self.oTstDrv.startVm(oMachine)
-#
-#           #some time interval should be here for not closing VM just after start
-#           time.sleep(1)
-#
-#           if oMachine.state != self.oTstDrv.oVBoxMgr.constants.MachineState_Running:
-#               reporter.log("Machine '%s' is not Running" % (oMachine.name))
-#               fRc = False
-#
-#           oConsole = oSession.o.console
-#
-#           #logic comes from handleControlVM()
-#           #Pause VM using console object
-#           fRc = oConsole.pause() and fRc
-#
-#           #Check VM state
-#           if oMachine.state == self.oTstDrv.oVBoxMgr.constants.MachineState_Paused:
-#               reporter.log("Machine '%s' is Paused" % (oMachine.name))
-#               fRc = True
-#
-#           #call Session::saveState()
-#           if fRc is True:
-#               oProgress = oSession.o.machine.saveState()
-#               rc = self.oTstDrv.waitOnProgress(oProgress,1000)
-#               self.oTstDrv.sleep(2)
-#
-#           #Close and delete Session object because this session hasn't been locked
-#           #but locking is needed to run moveVMToLocation().
-#           #if to use the current session object we'll get the error "The session is not locked (session state: Unlocked)"
-#           fRc = oSession.close() and fRc
-#           if fRc is False:
-#               reporter.log('Couldn\'t close machine session')
-#
-#           del oSession
-#           del oConsole
-#
-#           sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
-#           sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_4th_scenario')
-#           os.mkdir(sMoveLoc, 0o775)
-#
-#           #Create a new Session object
-#           #It seems that it's possible to lock VM only via creating a pure Session object (not SessionWrapper as it was before)
-#           #and call Machine::lockMachine()
-#           oVirtualBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
-#           oNewSession = self.oTstDrv.oVBoxMgr.mgr.getSessionObject(oVirtualBox)
-#
-#           oMachine.lockMachine(oNewSession, self.oTstDrv.oVBoxMgr.constants.LockType_Write)
-#           fRc = self.moveVMToLocation(sMoveLoc, oNewSession.machine) and fRc
-#           oNewSession.unlockMachine()
-#
-#           del oNewSession
-#
-#           #call Session::discardSavedState()
-#           #for this we delete oNewSession object earlier and creating SessionWrapper object here
-#           oSession = self.oTstDrv.openSession(oMachine)
-#           fRc = oSession.o.machine.discardSavedState(True)
-#           reporter.log('Discard save machine state')
-#
-#           del oMachine
-#           del oVirtualBox
-#
-#           if fRc is False:
-#               reporter.log('Failed to discard the saved state of machine')
+            #Close Session object because after starting VM we get new instance of session
+            fRc = oSession.close() and fRc
+            if fRc is False:
+                reporter.log('Couldn\'t close machine session')
+ 
+            #Run VM and get new Session object
+            oSession = self.oTstDrv.startVm(oMachine)
+ 
+            #some time interval should be here for not closing VM just after start
+            time.sleep(1)
+ 
+            if oMachine.state != self.oTstDrv.oVBoxMgr.constants.MachineState_Running:
+                reporter.log("Machine '%s' is not Running" % (oMachine.name))
+                fRc = False
+
+            #call Session::saveState(), already closes session unless it failed
+            fRc = fRc and oSession.saveState()
+            self.oTstDrv.terminateVmBySession(oSession)
+
+            if fRc: 
+                sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
+                sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_4th_scenario')
+                os.mkdir(sMoveLoc, 0o775)
+ 
+                #create a new Session object for moving VM
+                oSession = self.oTstDrv.openSession(oMachine)
+                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+
+                # cleaning up: get rid of saved state 
+                fRc = fRc and oSession.o.machine.discardSavedState(True)
+                if fRc is False:
+                    reporter.log('Failed to discard the saved state of machine')
 
 ############## 5 case. ##########################################################################################
             #There is an ISO image (.iso) attached to the VM.
