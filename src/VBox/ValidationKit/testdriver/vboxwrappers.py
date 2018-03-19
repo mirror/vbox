@@ -2505,6 +2505,40 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.waitOnDirectSessionClose(self.oVM, 5000);         # fudge
         return self.waitForTask(30 * 1000);                            # fudge
 
+    def saveState(self, fPause = True):
+        """
+        Saves state of the VM.
+
+        Returns True on success.
+        Returns False on IConsole::saveState() failure.
+        Returns None if the progress object returns Failure.
+        """
+
+        if     fPause is True \
+           and self.oVM.state is vboxcon.MachineState_Running:
+            self.o.console.pause();
+        if self.oVM.state is not vboxcon.MachineState_Paused:
+            vbox.reportError(oProgress, 'pause for "%s" failed' % (self.sName));
+        # Try saving state.
+        try:
+            if self.fpApiVer >= 5.0:
+                oProgress = self.o.machine.saveState()
+            else:
+                oProgress = self.o.console.saveState();
+        except:
+            reporter.logXcpt('IMachine::saveState failed on %s' % (self.sName));
+            return False;
+
+        # Wait for saving state operation to complete.
+        rc = self.oTstDrv.waitOnProgress(oProgress);
+        if rc < 0:
+            self.close();
+            return None;
+
+        # Wait for the VM to really terminate or we'll fail to open a new session to it.
+        self.oTstDrv.waitOnDirectSessionClose(self.oVM, 5000);         # fudge
+        return self.waitForTask(30 * 1000);                            # fudge
+
     def restoreSnapshot(self, oSnapshot, fFudgeOnFailure = True):
         """
         Restores the given snapshot.
