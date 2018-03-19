@@ -51,8 +51,10 @@ public:
     /** Registers new parent @a pWindow above the passed @a pParentWindow or as separate stack. */
     void registerNewParent(QWidget *pWindow, QWidget *pParentWindow = 0);
 
-    /** Returns main application window. */
-    QWidget *mainWindowShown() const;
+    /** Defines the main application @a pWindow shown. */
+    void setMainWindowShown(QWidget *pWindow) { m_pMainWindowShown = pWindow; }
+    /** Returns the main application window shown. */
+    QWidget *mainWindowShown() const { return m_pMainWindowShown; }
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /** Returns network manager or main window shown. */
     QWidget* networkManagerOrMainWindowShown() const;
@@ -78,6 +80,9 @@ private:
 
     /** Holds the list of the top-level window stacks. */
     QList<QList<QWidget*> > m_windows;
+
+    /** Holds the main application window shown. */
+    QWidget *m_pMainWindowShown;
 
     /** Holds the static singleton instance. */
     static UIModalWindowManager *s_pInstance;

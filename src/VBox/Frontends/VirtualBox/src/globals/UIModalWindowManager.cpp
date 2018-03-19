@@ -20,15 +20,12 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIMachine.h"
 # include "UIModalWindowManager.h"
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 #  include "UINetworkManager.h"
 #  include "UINetworkManagerDialog.h"
 # endif
 # include "UIProgressDialog.h"
-# include "UISelectorWindow.h"
 
 /* Other VBox includes: */
 # include <VBox/sup.h>
@@ -69,6 +66,7 @@ void UIModalWindowManager::destroy()
 }
 
 UIModalWindowManager::UIModalWindowManager()
+    : m_pMainWindowShown(0)
 {
     /* Assign instance: */
     s_pInstance = this;
@@ -78,36 +76,6 @@ UIModalWindowManager::~UIModalWindowManager()
 {
     /* Unassign instance: */
     s_pInstance = 0;
-}
-
-QWidget *UIModalWindowManager::mainWindowShown() const
-{
-    /* It may happen that this method is called before VBoxGlobal initialization
-     * or after initialization had failed (for example, to show some message).
-     * Return NULL pointer in such cases: */
-    if (!VBoxGlobal::instance() || !vboxGlobal().isValid())
-        return 0;
-
-    /* For VM console process: */
-    if (vboxGlobal().isVMConsoleProcess())
-    {
-        /* It will be currently active machine-window if visible: */
-        if (gpMachine &&
-            gpMachine->activeWindow() &&
-            gpMachine->activeWindow()->isVisible())
-            return gpMachine->activeWindow();
-    }
-    /* For VM selector process: */
-    else
-    {
-        /* It will be the selector window if visible: */
-        if (gpSelectorWindow &&
-            gpSelectorWindow->isVisible())
-            return gpSelectorWindow;
-    }
-
-    /* NULL by default: */
-    return 0;
 }
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER

@@ -259,13 +259,53 @@ void UIMachineWindow::retranslateUi()
     updateAppearanceOf(UIVisualElement_WindowTitle);
 }
 
+bool UIMachineWindow::event(QEvent *pEvent)
+{
+    /* Call to base-class: */
+    const bool fResult = QIWithRetranslateUI2<QMainWindow>::event(pEvent);
+
+    /* Handle particular events: */
+    switch (pEvent->type())
+    {
+        case QEvent::WindowActivate:
+        {
+            /* Initiate registration in the modal window manager: */
+            windowManager().setMainWindowShown(this);
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Return result: */
+    return fResult;
+}
+
 void UIMachineWindow::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
     QMainWindow::showEvent(pEvent);
 
+    /* Initiate registration in the modal window manager: */
+    windowManager().setMainWindowShown(this);
+
     /* Update appearance for indicator-pool: */
     updateAppearanceOf(UIVisualElement_IndicatorPoolStuff);
+}
+
+void UIMachineWindow::hideEvent(QHideEvent *pEvent)
+{
+    /* Update registration in the modal window manager: */
+    if (windowManager().mainWindowShown() == this)
+    {
+        if (machineLogic()->activeMachineWindow())
+            windowManager().setMainWindowShown(machineLogic()->activeMachineWindow());
+        else
+            windowManager().setMainWindowShown(machineLogic()->mainMachineWindow());
+    }
+
+    /* Call to base-class: */
+    QMainWindow::hideEvent(pEvent);
 }
 
 void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
