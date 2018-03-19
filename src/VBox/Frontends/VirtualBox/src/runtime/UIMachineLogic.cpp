@@ -195,7 +195,7 @@ void UIMachineLogic::prepare()
     /* Prepare menu: */
     prepareMenu();
 
-    /* Prepare machine window(s): */
+    /* Prepare machine-window(s): */
     prepareMachineWindows();
 
 #ifdef VBOX_WS_MAC
@@ -235,7 +235,7 @@ void UIMachineLogic::cleanup()
     /* Cleanup menu: */
     cleanupMenu();
 
-    /* Cleanup machine window(s): */
+    /* Cleanup machine-window(s): */
     cleanupMachineWindows();
 
     /* Cleanup handlers: */
@@ -315,13 +315,14 @@ UIMachineWindow* UIMachineLogic::mainMachineWindow() const
     /* Null if machine-window(s) not yet created: */
     if (!isMachineWindowsCreated())
         return 0;
-    /* First machine-window otherwise: */
-    return machineWindows().first();
+
+    /* First machine-window by default: */
+    return machineWindows().value(0);
 }
 
 UIMachineWindow* UIMachineLogic::activeMachineWindow() const
 {
-    /* Return null if windows are not created yet: */
+    /* Null if machine-window(s) not yet created: */
     if (!isMachineWindowsCreated())
         return 0;
 
@@ -333,7 +334,7 @@ UIMachineWindow* UIMachineLogic::activeMachineWindow() const
             return pIteratedWindow;
     }
 
-    /* Return main machine window: */
+    /* Main machine-window by default: */
     return mainMachineWindow();
 }
 
@@ -1739,7 +1740,7 @@ void UIMachineLogic::sltShowInformationDialog()
         return;
 
     /* Invoke VM information dialog: */
-    UIVMInformationDialog::invoke(mainMachineWindow());
+    UIVMInformationDialog::invoke(activeMachineWindow());
 }
 
 void UIMachineLogic::sltReset()

@@ -35,6 +35,7 @@
 /* Forward declarations: */
 class QCloseEvent;
 class QGridLayout;
+class QShowEvent;
 class QSpacerItem;
 class UIActionPool;
 class UISession;
@@ -124,8 +125,8 @@ protected:
     /* Translate stuff: */
     void retranslateUi();
 
-    /** Show event handler. */
-    void showEvent(QShowEvent *pShowEvent);
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
 
     /** Close event handler. */
     void closeEvent(QCloseEvent *pCloseEvent);

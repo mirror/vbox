@@ -44,6 +44,7 @@ class QMenu;
 class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
+class UIMachineWindow;
 class UIActionPool;
 class CUSBDevice;
 class CNetworkAdapter;
@@ -125,6 +126,7 @@ public:
     UIMachineLogic* machineLogic() const;
     QWidget* mainMachineWindow() const;
     WId mainMachineWindowId() const;
+    UIMachineWindow *activeMachineWindow() const;
     QCursor cursor() const { return m_cursor; }
 
     /** @name Branding stuff.

@@ -166,7 +166,7 @@ bool UISession::initialize()
 
     /* Notify user about mouse&keyboard auto-capturing: */
     if (gEDataManager->autoCaptureEnabled())
-        popupCenter().remindAboutAutoCapture(machineLogic()->activeMachineWindow());
+        popupCenter().remindAboutAutoCapture(activeMachineWindow());
 
     /* Check if we are in teleportation waiting mode.
      * In that case no first run wizard is necessary. */
@@ -500,6 +500,11 @@ QWidget* UISession::mainMachineWindow() const
 WId UISession::mainMachineWindowId() const
 {
     return mainMachineWindow()->winId();
+}
+
+UIMachineWindow *UISession::activeMachineWindow() const
+{
+    return machineLogic() ? machineLogic()->activeMachineWindow() : 0;
 }
 
 bool UISession::isVisualStateAllowed(UIVisualStateType state) const
@@ -1781,7 +1786,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     /* Adjust device-pixel-ratio: */
     /// @todo In case of multi-monitor setup check whether device-pixel-ratio and cursor are screen specific.
     /* Get screen-id of main-window: */
-    const ulong uScreenID = machineLogic()->activeMachineWindow()->screenId();
+    const ulong uScreenID = activeMachineWindow()->screenId();
     /* Get device-pixel-ratio: */
     const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
     /* Adjust device-pixel-ratio if necessary: */
@@ -1795,7 +1800,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     /* Adjust device-pixel-ratio: */
     /// @todo In case of multi-monitor setup check whether device-pixel-ratio and cursor are screen specific.
     /* Get screen-id of main-window: */
-    const ulong uScreenID = machineLogic()->activeMachineWindow()->screenId();
+    const ulong uScreenID = activeMachineWindow()->screenId();
     /* Get device-pixel-ratio: */
     const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
     /* Adjust device-pixel-ratio if necessary: */
@@ -1907,7 +1912,7 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediu
         const CMedium comMedium = comVBox.OpenMedium(strMediumName, enmDeviceType, KAccessMode_ReadWrite, false /* fForceNewUuid */);
         if (!comVBox.isOk() || comMedium.isNull())
         {
-            popupCenter().cannotOpenMedium(machineLogic()->activeMachineWindow(), comVBox, enmMediumType, strMediumName);
+            popupCenter().cannotOpenMedium(activeMachineWindow(), comVBox, enmMediumType, strMediumName);
             return false;
         }
 
@@ -1950,7 +1955,7 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediu
     QList<ExactStorageSlot> sStorageSlots = aFreeStorageSlots + aBusyStorageSlots;
     if (sStorageSlots.isEmpty())
     {
-        popupCenter().cannotMountImage(machineLogic()->activeMachineWindow(), machineName(), strMediumName);
+        popupCenter().cannotMountImage(activeMachineWindow(), machineName(), strMediumName);
         return false;
     }
 
@@ -1966,7 +1971,7 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediu
     /* Show error message if necessary: */
     if (!machine().isOk())
     {
-        msgCenter().cannotRemountMedium(machine(), guiMedium, true /* mount? */, false /* retry? */, mainMachineWindow());
+        msgCenter().cannotRemountMedium(machine(), guiMedium, true /* mount? */, false /* retry? */, activeMachineWindow());
         return false;
     }
 
@@ -1976,7 +1981,7 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediu
     /* Show error message if necessary: */
     if (!machine().isOk())
     {
-        popupCenter().cannotSaveMachineSettings(machineLogic()->activeMachineWindow(), machine());
+        popupCenter().cannotSaveMachineSettings(activeMachineWindow(), machine());
         return false;
     }
 

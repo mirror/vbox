@@ -131,9 +131,9 @@ void UIMachine::destroy()
 
 QWidget* UIMachine::activeWindow() const
 {
-    if (machineLogic() &&  machineLogic()->activeMachineWindow())
-        return machineLogic()->activeMachineWindow();
-    return 0;
+    return   machineLogic() && machineLogic()->activeMachineWindow()
+           ? machineLogic()->activeMachineWindow()
+           : 0;
 }
 
 void UIMachine::asyncChangeVisualState(UIVisualStateType visualState)

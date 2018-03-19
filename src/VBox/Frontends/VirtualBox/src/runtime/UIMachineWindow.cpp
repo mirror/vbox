@@ -259,10 +259,10 @@ void UIMachineWindow::retranslateUi()
     updateAppearanceOf(UIVisualElement_WindowTitle);
 }
 
-void UIMachineWindow::showEvent(QShowEvent *pShowEvent)
+void UIMachineWindow::showEvent(QShowEvent *pEvent)
 {
-    /* Call to base class: */
-    QMainWindow::showEvent(pShowEvent);
+    /* Call to base-class: */
+    QMainWindow::showEvent(pEvent);
 
     /* Update appearance for indicator-pool: */
     updateAppearanceOf(UIVisualElement_IndicatorPoolStuff);
