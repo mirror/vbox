@@ -287,13 +287,13 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             fRc = oSession.close() and fRc
             if fRc is False:
                 reporter.log('Couldn\'t close machine session')
- 
+
             #Run VM and get new Session object
             oSession = self.oTstDrv.startVm(oMachine)
- 
+
             #some time interval should be here for not closing VM just after start
             time.sleep(1)
- 
+
             if oMachine.state != self.oTstDrv.oVBoxMgr.constants.MachineState_Running:
                 reporter.log("Machine '%s' is not Running" % (oMachine.name))
                 fRc = False
@@ -302,16 +302,16 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             fRc = fRc and oSession.saveState()
             self.oTstDrv.terminateVmBySession(oSession)
 
-            if fRc: 
+            if fRc:
                 sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
                 sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_4th_scenario')
                 os.mkdir(sMoveLoc, 0o775)
- 
+
                 #create a new Session object for moving VM
                 oSession = self.oTstDrv.openSession(oMachine)
                 fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
 
-                # cleaning up: get rid of saved state 
+                # cleaning up: get rid of saved state
                 fRc = fRc and oSession.o.machine.discardSavedState(True)
                 if fRc is False:
                     reporter.log('Failed to discard the saved state of machine')
