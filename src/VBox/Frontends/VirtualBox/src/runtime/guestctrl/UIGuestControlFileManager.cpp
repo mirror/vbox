@@ -35,7 +35,8 @@
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UIGuestControlFileManager.h"
-# include "UIGuestControlFileTable.h"
+# include "UIGuestFileTable.h"
+# include "UIHostFileTable.h"
 # include "UIGuestControlInterface.h"
 # include "UIToolBar.h"
 # include "UIVMInformationDialog.h"
@@ -49,14 +50,7 @@
 # include "CGuestProcess.h"
 # include "CGuestSession.h"
 # include "CGuestSessionStateChangedEvent.h"
-
-
-
-
-
-
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 
 class UIGuestSessionCreateWidget : public QIWithRetranslateUI<QWidget>
 {

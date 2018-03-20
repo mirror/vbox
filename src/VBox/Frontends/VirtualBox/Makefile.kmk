@@ -405,6 +405,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/guestctrl/UIGuestControlInterface.h \
 	src/runtime/guestctrl/UIGuestControlTreeItem.h \
 	src/runtime/guestctrl/UIGuestControlWidget.h \
+	src/runtime/guestctrl/UIGuestFileTable.h \
+	src/runtime/guestctrl/UIHostFileTable.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
 	src/runtime/normal/UIMachineViewNormal.h \
@@ -751,6 +753,8 @@ VirtualBox_SOURCES = \
 	src/runtime/guestctrl/UIGuestControlInterface.cpp \
 	src/runtime/guestctrl/UIGuestControlTreeItem.cpp \
 	src/runtime/guestctrl/UIGuestControlWidget.cpp \
+	src/runtime/guestctrl/UIGuestFileTable.cpp \
+	src/runtime/guestctrl/UIHostFileTable.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \

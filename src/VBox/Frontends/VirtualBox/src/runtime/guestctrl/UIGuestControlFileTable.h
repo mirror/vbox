@@ -50,10 +50,29 @@ enum FileObjectType
     FileObjectType_Max
 };
 
-/*********************************************************************************************************************************
-*   UIFileTableItem definition.                                                                                                  *
-*********************************************************************************************************************************/
+/** A collection of simple utility functions to manipulate path strings */
+class UIPathOperations
+{
+public:
+    static QString removeMultipleDelimiters(const QString &path);
+    static QString removeTrailingDelimiters(const QString &path);
+    static QString addStartDelimiter(const QString &path);
 
+    static QString sanitize(const QString &path);
+    /** Merge prefix and suffix by making sure they have a single '/' in between */
+    static QString mergePaths(const QString &path, const QString &baseName);
+    /** Returns the last part of the @p path. That is the filename or directory name without the path */
+    static QString getObjectName(const QString &path);
+    /** Remove the object name and return the path */
+    static QString getPathExceptObjectName(const QString &path);
+    /** Replace the last part of the @p previusPath with newBaseName */
+    static QString constructNewItemPath(const QString &previousPath, const QString &newBaseName);
+
+    static const QChar delimiter;
+};
+
+/** A UIFileTableItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
+    by these instances is the data source for the UIGuestControlFileModel */
 class UIFileTableItem
 {
 public:
@@ -117,8 +136,7 @@ private:
 /** This class serves a base class for file table. Currently a guest version
     and a host version are derived from this base. Each of these children
     populates the UIGuestControlFileModel by scanning the file system
-    differently. The file structre kept in this class as a tree and all
-    the interfacing is done thru this class.*/
+    differently. The file structre kept in this class as a tree. */
 class UIGuestControlFileTable : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -216,64 +234,6 @@ private:
         list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
     QStringList       m_copyCutBuffer;
     friend class UIGuestControlFileModel;
-};
-
-/** This class scans the guest file system by using the VBox API
-    and populates the UIGuestControlFileModel*/
-class UIGuestFileTable : public UIGuestControlFileTable
-{
-    Q_OBJECT;
-
-public:
-
-    UIGuestFileTable(QWidget *pParent = 0);
-    void initGuestFileTable(const CGuestSession &session);
-    void copyGuestToHost(const QString& hostDestinationPath);
-    void copyHostToGuest(const QStringList &hostSourcePathList);
-
-protected:
-
-    void retranslateUi() /* override */;
-    virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
-    virtual void deleteByItem(UIFileTableItem *item) /* override */;
-    virtual void goToHomeDirectory() /* override */;
-    virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
-    virtual bool createDirectory(const QString &path, const QString &directoryName);
-    virtual QString fsObjectPropertyString() /* override */;
-
-private:
-
-    static FileObjectType fileType(const CFsObjInfo &fsInfo);
-    static FileObjectType fileType(const CGuestFsObjInfo &fsInfo);
-
-    bool copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath);
-    bool copyHostToGuest(const QString& hostSourcePath, const QString &guestDestinationPath);
-
-    mutable CGuestSession m_comGuestSession;
-
-};
-
-/** This class scans the host file system by using the Qt
-    and populates the UIGuestControlFileModel*/
-class UIHostFileTable : public UIGuestControlFileTable
-{
-    Q_OBJECT;
-
-public:
-
-    UIHostFileTable(QWidget *pParent = 0);
-
-protected:
-
-    static FileObjectType fileType(const QFileInfo &fsInfo);
-    void retranslateUi() /* override */;
-    virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
-    virtual void deleteByItem(UIFileTableItem *item) /* override */;
-    virtual void goToHomeDirectory() /* override */;
-    virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
-    virtual bool createDirectory(const QString &path, const QString &directoryName);
-    virtual QString fsObjectPropertyString() /* override */;
-
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
