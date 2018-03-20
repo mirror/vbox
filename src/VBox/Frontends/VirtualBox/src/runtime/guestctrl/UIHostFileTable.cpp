@@ -193,6 +193,8 @@ QString UIHostFileTable::fsObjectPropertyString()
         propertyString += "<br/>";
         /* Size: */
         propertyString += "<b>Size:</b> " + QString::number(fileInfo.size()) + QString(" bytes");
+        if (fileInfo.size() >= 1024)
+            propertyString += " (" + humanReadableSize(fileInfo.size()) + ")";
         propertyString += "<br/>";
         /* Type: */
         propertyString += "<b>Type:</b> " + fileTypeString(fileType(fileInfo));
@@ -206,8 +208,32 @@ QString UIHostFileTable::fsObjectPropertyString()
         /* Owner: */
         propertyString += "<b>Owner:</b> " + fileInfo.owner();
 
-
+        if (fileInfo.isDir())
+            directoryStatisticsRecursive(fileInfo.absoluteFilePath());
         return propertyString;
     }
     return QString();
+}
+
+void UIHostFileTable::directoryStatisticsRecursive(const QString &path)
+{
+    QDir dir(path);
+    if (!dir.exists())
+        return;
+
+    QFileInfoList entryList = dir.entryInfoList();
+    for (int i = 0; i < entryList.size(); ++i)
+    {
+
+        const QFileInfo &entryInfo = entryList.at(i);
+        if (entryInfo.baseName().isEmpty() || entryInfo.baseName() == "." || entryInfo.baseName() == "..")
+            continue;
+
+        if (entryInfo.isSymLink())
+            continue;
+        if (entryInfo.isDir())
+        {
+            directoryStatisticsRecursive(entryInfo.absoluteFilePath());
+        }
+    }
 }

@@ -181,7 +181,7 @@ protected:
     UIFileTableItem* indexData(const QModelIndex &index) const;
     void keyPressEvent(QKeyEvent * pEvent);
     CGuestFsObjInfo guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
-
+    static QString humanReadableSize(ULONG64 size);
 
     UIFileTableItem         *m_pRootItem;
 

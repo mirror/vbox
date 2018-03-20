@@ -1332,4 +1332,23 @@ QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
     return strType;
 }
 
+QString UIGuestControlFileTable::humanReadableSize(ULONG64 size)
+{
+    int i = 0;
+    double dSize = size;
+    const char* units[] = {" B", " kB", " MB", " GB", " TB", " PB", " EB", " ZB", " YB"};
+    while (size > 1024) {
+        size /= 1024;
+        dSize /= (double)1024;
+        i++;
+    }
+    if (i > 8)
+        return QString();
+
+    QString strResult(QString::number(dSize, 'f', 2));
+    strResult += units[i];
+    return strResult;
+}
+
+
 #include "UIGuestControlFileTable.moc"

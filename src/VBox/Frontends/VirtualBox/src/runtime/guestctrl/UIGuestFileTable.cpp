@@ -147,7 +147,8 @@ void UIGuestFileTable::goToHomeDirectory()
     if (!startDirItem)
         return;
 
-    QString userHome = UIPathOperations::sanitize(m_comGuestSession.GetUserHome());
+    QString userHome = UIPathOperations::sanitize(m_comGuestSession.GetUserHome()).remove(0,1);
+
     QList<QString> pathTrail = userHome.split(UIPathOperations::delimiter);
 
     goIntoDirectory(pathTrail);
@@ -305,13 +306,15 @@ QString UIGuestFileTable::fsObjectPropertyString()
         propertyString += "<b>Name:</b> " + UIPathOperations::getObjectName(fileInfo.GetName()) + "\n";
         propertyString += "<br/>";
         /* Size: */
-        propertyString += "<b>Size:</b> " + QString::number(fileInfo.GetObjectSize()) + QString(" bytes");
+        LONG64 size = fileInfo.GetObjectSize();
+        propertyString += "<b>Size:</b> " + QString::number(size) + QString(" bytes");
+        if (size >= 1024)
+            propertyString += " (" + humanReadableSize(size) + ")";
         propertyString += "<br/>";
         /* Type: */
         propertyString += "<b>Type:</b> " + fileTypeString(fileType(fileInfo));
         propertyString += "<br/>";
         /* Creation Date: */
-        //     LONG64 GetChangeTime() const;
         propertyString += "<b>Created:</b> " + QDateTime::fromMSecsSinceEpoch(fileInfo.GetChangeTime()/1000000).toString();
         propertyString += "<br/>";
         /* Last Modification Date: */

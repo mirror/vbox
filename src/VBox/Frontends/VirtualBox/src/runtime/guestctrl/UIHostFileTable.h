@@ -42,6 +42,12 @@ protected:
     virtual bool createDirectory(const QString &path, const QString &directoryName);
     virtual QString fsObjectPropertyString() /* override */;
 
+private:
+
+    /** Read the directory with the path @p path recursively and collect #of objects and
+        total size */
+    void directoryStatisticsRecursive(const QString &path);
+
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
