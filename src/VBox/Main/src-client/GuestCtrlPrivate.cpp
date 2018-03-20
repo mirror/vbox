@@ -680,6 +680,14 @@ int GuestBase::cancelWaitEvents(void)
     return rc;
 }
 
+/**
+ * Handles generic messages not bound to a specific object type.
+ *
+ * @return VBox status code. VERR_NOT_FOUND if no handler has been found or VERR_NOT_SUPPORTED
+ *         if this class does not support the specified callback.
+ * @param  pCtxCb               Host callback context.
+ * @param  pSvcCb               Service callback data.
+ */
 int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
 {
     LogFlowFunc(("pCtxCb=%p, pSvcCb=%p\n", pCtxCb, pSvcCb));
@@ -691,8 +699,7 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
 
     try
     {
-        LogFlowFunc(("uFunc=%RU32, cParms=%RU32\n",
-                     pCtxCb->uFunction, pSvcCb->mParms));
+        Log2Func(("uFunc=%RU32, cParms=%RU32\n", pCtxCb->uFunction, pSvcCb->mParms));
 
         switch (pCtxCb->uFunction)
         {
@@ -715,8 +722,6 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
 
                     GuestWaitEventPayload evPayload(dataCb.uType, dataCb.pvPayload, dataCb.cbPayload);
                     vrc = signalWaitEventInternal(pCtxCb, dataCb.rc, &evPayload);
-                    if (vrc == VERR_NOT_FOUND)
-                        vrc = VINF_SUCCESS;
                 }
                 else
                     vrc = VERR_INVALID_PARAMETER;
@@ -765,15 +770,29 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
     return VINF_SUCCESS;
 }
 
-int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID,
-                                 GuestWaitEvent **ppEvent)
+/**
+ * Registers (creates) a new wait event based on a given session and object ID.
+ *
+ * From those IDs an unique context ID (CID) will be built, which only can be
+ * around once at a time.
+ *
+ * @returns IPRT status code. VERR_ALREADY_EXISTS if an event with the given session
+ *          and object ID already has been registered.
+ *
+ * @param   uSessionID              Session ID to register wait event for.
+ * @param   uObjectID               Object ID to register wait event for.
+ * @param   ppEvent                 Pointer to registered (created) wait event on success.
+ *                                  Must be destroyed with unregisterWaitEvent().
+ */
+int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID, GuestWaitEvent **ppEvent)
 {
     GuestEventTypes eventTypesEmpty;
-    return registerWaitEvent(uSessionID, uObjectID, eventTypesEmpty, ppEvent);
+    return registerWaitEventEx(uSessionID, uObjectID, eventTypesEmpty, ppEvent);
 }
 
 /**
- * Registers (creates) a new wait event based on a given session and object ID.
+ * Registers (creates) a new wait event based on a given session, object ID
+ * and a list of event types to wait for.
  *
  * From those IDs an unique context ID (CID) will be built, which only can be
  * around once at a time.
@@ -787,9 +806,8 @@ int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID,
  * @param   ppEvent                 Pointer to registered (created) wait event on success.
  *                                  Must be destroyed with unregisterWaitEvent().
  */
-int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID,
-                                 const GuestEventTypes &lstEvents,
-                                 GuestWaitEvent **ppEvent)
+int GuestBase::registerWaitEventEx(uint32_t uSessionID, uint32_t uObjectID, const GuestEventTypes &lstEvents,
+                                   GuestWaitEvent **ppEvent)
 {
     AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
 
@@ -1106,7 +1124,7 @@ int GuestObject::registerWaitEvent(const GuestEventTypes &lstEvents,
                                    GuestWaitEvent **ppEvent)
 {
     AssertPtr(mSession);
-    return GuestBase::registerWaitEvent(mSession->i_getId(), mObjectID, lstEvents, ppEvent);
+    return GuestBase::registerWaitEventEx(mSession->i_getId(), mObjectID, lstEvents, ppEvent);
 }
 
 int GuestObject::sendCommand(uint32_t uFunction,

@@ -57,12 +57,10 @@ void GuestDirectory::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestDirectory::init(Console *pConsole, GuestSession *pSession,
-                         ULONG uDirID, const GuestDirectoryOpenInfo &openInfo)
+int GuestDirectory::init(Console *pConsole, GuestSession *pSession, ULONG aObjectID, const GuestDirectoryOpenInfo &openInfo)
 {
-    LogFlowThisFunc(("pConsole=%p, pSession=%p, uDirID=%RU32, strPath=%s, strFilter=%s, uFlags=%x\n",
-                     pConsole, pSession, uDirID, openInfo.mPath.c_str(), openInfo.mFilter.c_str(),
-                     openInfo.mFlags));
+    LogFlowThisFunc(("pConsole=%p, pSession=%p, aObjectID=%RU32, strPath=%s, strFilter=%s, uFlags=%x\n",
+                     pConsole, pSession, aObjectID, openInfo.mPath.c_str(), openInfo.mFilter.c_str(), openInfo.mFlags));
 
     AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -71,12 +69,12 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    int vrc = bindToSession(pConsole, pSession, uDirID /* Object ID */);
+    int vrc = bindToSession(pConsole, pSession, aObjectID);
     if (RT_SUCCESS(vrc))
     {
-        mSession = pSession;
+        mSession  = pSession;
+        mObjectID = aObjectID;
 
-        mData.mID = uDirID;
         mData.mOpenInfo = openInfo;
     }
 
@@ -261,7 +259,7 @@ int GuestDirectory::i_closeInternal(int *prcGuest)
         return rc;
 
     AssertPtr(mSession);
-    int rc2 = mSession->i_directoryRemoveFromList(this);
+    int rc2 = mSession->i_directoryUnregister(this);
     if (RT_SUCCESS(rc))
         rc = rc2;
 

@@ -30,6 +30,8 @@
 
 #include <iprt/isofs.h> /* For UpdateAdditions. */
 
+#include <deque>
+
 class Guest;
 class GuestSessionTaskInternalOpen;
 
@@ -492,32 +494,60 @@ private:
      *  To retrieve the process' guest PID use the Id() method of the IProcess interface. */
     typedef std::map <uint32_t, ComObjPtr<GuestProcess> > SessionProcesses;
 
+    /** Guest session object type enumeration. */
+    enum SESSIONOBJECTTYPE
+    {
+        /** Anonymous object. */
+        SESSIONOBJECTTYPE_ANONYMOUS  = 0,
+        /** Session object. */
+        SESSIONOBJECTTYPE_SESSION    = 1,
+        /** Directory object. */
+        SESSIONOBJECTTYPE_DIRECTORY  = 2,
+        /** File object. */
+        SESSIONOBJECTTYPE_FILE       = 3,
+        /** Process object. */
+        SESSIONOBJECTTYPE_PROCESS    = 4,
+        /** The usual 32-bit hack. */
+        SESSIONOBJECTTYPE_32BIT_HACK = 0x7fffffff
+    };
+
+    struct SessionObject
+    {
+        /** Creation timestamp (in ms). */
+        uint64_t          tsCreatedMs;
+        /** The object type. */
+        SESSIONOBJECTTYPE enmType;
+    };
+
+    /** Map containing all objects bound to a guest session.
+     *  The key specifies the (global) context ID. */
+    typedef std::map <uint32_t, SessionObject> SessionObjects;
+    /** Queue containing context IDs which are no longer in use.
+     *  Useful for quickly retrieving a new, unused context ID. */
+    typedef std::deque <uint32_t>              SessionObjectsFree;
+
 public:
     /** @name Public internal methods.
      * @todo r=bird: Most of these are public for no real reason...
      * @{ */
-    int                     i_copyToGuestCreateDir(const com::Utf8Str &aDestination, uint32_t fFlags, int *pGuestRc);
     int                     i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestRc);
     inline bool             i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDirectory> *pDir);
-    int                     i_directoryRemoveFromList(GuestDirectory *pDirectory);
+    int                     i_directoryUnregister(GuestDirectory *pDirectory);
     int                     i_directoryRemove(const Utf8Str &strPath, uint32_t uFlags, int *pGuestRc);
     int                     i_directoryCreate(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pGuestRc);
-    int                     i_objectCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory,
-                                               Utf8Str &strName, int *pGuestRc);
     int                     i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
                                             ComObjPtr<GuestDirectory> &pDirectory, int *pGuestRc);
     int                     i_directoryQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc);
-    int                     i_dispatchToDirectory(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
-    int                     i_dispatchToFile(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int                     i_dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
-    int                     i_dispatchToProcess(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int                     i_dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     inline bool             i_fileExists(uint32_t uFileID, ComObjPtr<GuestFile> *pFile);
-    int                     i_fileRemoveFromList(GuestFile *pFile);
+    int                     i_fileUnregister(GuestFile *pFile);
     int                     i_fileRemove(const Utf8Str &strPath, int *pGuestRc);
     int                     i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestFile> &pFile, int *pGuestRc);
     int                     i_fileQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc);
     int                     i_fileQuerySize(const Utf8Str &strPath, bool fFollowSymlinks, int64_t *pllSize, int *pGuestRc);
+    int                     i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory,
+                                           Utf8Str &strName, int *pGuestRc);
     int                     i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc);
     const GuestCredentials &i_getCredentials(void);
     EventSource            *i_getEventSource(void) { return mEventSource; }
@@ -532,10 +562,13 @@ public:
     static void             i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask);
     Guest                  *i_getParent(void) { return mParent; }
     uint32_t                i_getProtocolVersion(void) { return mData.mProtocolVersion; }
+    int                     i_objectRegister(SESSIONOBJECTTYPE enmType, uint32_t *puObjectID);
+    int                     i_objectRegisterEx(SESSIONOBJECTTYPE enmType, uint32_t fFlags, uint32_t *puObjectID);
+    int                     i_objectUnregister(uint32_t uObjectID);
     int                     i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *pGuestRc);
     int                     i_pathUserDocuments(Utf8Str &strPath, int *prcGuest);
     int                     i_pathUserHome(Utf8Str &strPath, int *prcGuest);
-    int                     i_processRemoveFromList(GuestProcess *pProcess);
+    int                     i_processUnregister(GuestProcess *pProcess);
     int                     i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             i_processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);
     inline int              i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
@@ -570,6 +603,9 @@ private:
         GuestCredentials            mCredentials;
         /** The session's startup info. */
         GuestSessionStartupInfo     mSession;
+        /** The session's object ID.
+         *  Needed for registering wait events which are bound directly to this session. */
+        uint32_t                    mObjectID;
         /** The session's current status. */
         GuestSessionStatus_T        mStatus;
         /** The set of environment changes for the session for use when
@@ -585,15 +621,17 @@ private:
         SessionFiles                mFiles;
         /** Process objects bound to this session. */
         SessionProcesses            mProcesses;
+        /** Map of registered session objects (files, directories, ...). */
+        SessionObjects              mObjects;
+        /** Queue of object IDs which are not used anymore (free list).
+         *  Acts as a "free list" for the mObjects map. */
+        SessionObjectsFree          mObjectsFree;
         /** Guest control protocol version to be used.
          *  Guest Additions < VBox 4.3 have version 1,
          *  any newer version will have version 2. */
         uint32_t                    mProtocolVersion;
         /** Session timeout (in ms). */
         uint32_t                    mTimeout;
-        /** Total number of session objects (processes,
-         *  files, ...). */
-        uint32_t                    mNumObjects;
         /** The last returned session status
          *  returned from the guest side. */
         int                         mRC;
@@ -610,9 +648,10 @@ private:
             , mDirectories(rThat.mDirectories)
             , mFiles(rThat.mFiles)
             , mProcesses(rThat.mProcesses)
+            , mObjects(rThat.mObjects)
+            , mObjectsFree(rThat.mObjectsFree)
             , mProtocolVersion(rThat.mProtocolVersion)
             , mTimeout(rThat.mTimeout)
-            , mNumObjects(rThat.mNumObjects)
             , mRC(rThat.mRC)
         { }
         ~Data(void)

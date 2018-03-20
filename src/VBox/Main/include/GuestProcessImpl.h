@@ -39,7 +39,7 @@ public:
      * @{ */
     DECLARE_EMPTY_CTOR_DTOR(GuestProcess)
 
-    int     init(Console *aConsole, GuestSession *aSession, ULONG aProcessID,
+    int     init(Console *aConsole, GuestSession *aSession, ULONG aObjectID,
                  const GuestProcessStartupInfo &aProcInfo, const GuestEnvironment *pBaseEnv);
     void    uninit(void);
     HRESULT FinalConstruct(void);
@@ -146,7 +146,8 @@ private:
         GuestEnvironment const  *mpSessionBaseEnv;
         /** Exit code if process has been terminated. */
         LONG                     mExitCode;
-        /** PID reported from the guest. */
+        /** PID reported from the guest.
+         *  Note: This is *not* the internal object ID! */
         ULONG                    mPID;
         /** The current process status. */
         ProcessStatus_T          mStatus;

@@ -79,8 +79,9 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
      * No locking, as this is purely a notification which does not make any
      * changes to the object state.
      */
-    LogFlowFunc(("pvExtension=%p, u32Function=%RU32, pvParms=%p, cbParms=%RU32\n",
-                 pvExtension, u32Function, pvData, cbData));
+    Log2Func(("pvExtension=%p, u32Function=%RU32, pvParms=%p, cbParms=%RU32\n",
+              pvExtension, u32Function, pvData, cbData));
+
     ComObjPtr<Guest> pGuest = reinterpret_cast<Guest *>(pvExtension);
     Assert(!pGuest.isNull());
 
@@ -92,29 +93,34 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
      * - Dispatch the whole stuff to the appropriate session (if still exists)
      */
     if (cbData != sizeof(VBOXGUESTCTRLHOSTCALLBACK))
-        return VERR_NOT_SUPPORTED;
-    PVBOXGUESTCTRLHOSTCALLBACK pSvcCb = (PVBOXGUESTCTRLHOSTCALLBACK)pvData;
+    {
+        AssertMsgFailed(("Guest control host callback data has wrong size (expected %zu, got %zu)\n",
+                         sizeof(VBOXGUESTCTRLHOSTCALLBACK), cbData));
+        return VINF_SUCCESS; /* Never return any errors back to the guest here. */
+    }
+
+    const PVBOXGUESTCTRLHOSTCALLBACK pSvcCb = (PVBOXGUESTCTRLHOSTCALLBACK)pvData;
     AssertPtr(pSvcCb);
 
-    if (!pSvcCb->mParms) /* At least context ID must be present. */
-        return VERR_INVALID_PARAMETER;
+    if (pSvcCb->mParms) /* At least context ID must be present. */
+    {
+        uint32_t uContextID;
+        int rc = pSvcCb->mpaParms[0].getUInt32(&uContextID);
+        AssertMsgRCReturn(rc, ("Unable to extract callback context ID, pvData=%p\n", pSvcCb),
+                          VINF_SUCCESS /* Never return any errors back to the guest here */);
 
-    uint32_t uContextID;
-    int rc = pSvcCb->mpaParms[0].getUInt32(&uContextID);
-    AssertMsgRCReturn(rc, ("Unable to extract callback context ID, pvData=%p\n", pSvcCb), rc);
-#ifdef DEBUG
-    LogFlowFunc(("CID=%RU32, uSession=%RU32, uObject=%RU32, uCount=%RU32\n",
-                 uContextID,
-                 VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID),
-                 VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID),
-                 VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID)));
-#endif
+        VBOXGUESTCTRLHOSTCBCTX ctxCb = { u32Function, uContextID };
+        rc = pGuest->i_dispatchToSession(&ctxCb, pSvcCb);
 
-    VBOXGUESTCTRLHOSTCBCTX ctxCb = { u32Function, uContextID };
-    rc = pGuest->i_dispatchToSession(&ctxCb, pSvcCb);
+        Log2Func(("CID=%RU32, uSession=%RU32, uObject=%RU32, uCount=%RU32, rc=%Rrc\n",
+                  uContextID,
+                  VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID),
+                  VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID),
+                  VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID), rc));
+    }
 
-    LogFlowFunc(("Returning rc=%Rrc\n", rc));
-    return rc;
+    /* Never return any errors back to the guest here. */
+    return VINF_SUCCESS;
 }
 
 // private methods
@@ -127,18 +133,15 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
     AssertPtrReturn(pCtxCb, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("uFunction=%RU32, uContextID=%RU32, uProtocol=%RU32\n",
-                  pCtxCb->uFunction, pCtxCb->uContextID, pCtxCb->uProtocol));
+    Log2Func(("uFunction=%RU32, uContextID=%RU32, uProtocol=%RU32\n", pCtxCb->uFunction, pCtxCb->uContextID, pCtxCb->uProtocol));
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    uint32_t uSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtxCb->uContextID);
-#ifdef DEBUG
-    LogFlowFunc(("uSessionID=%RU32 (%zu total)\n",
-                 uSessionID, mData.mGuestSessions.size()));
-#endif
-    GuestSessions::const_iterator itSession
-        = mData.mGuestSessions.find(uSessionID);
+    const uint32_t uSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtxCb->uContextID);
+
+    Log2Func(("uSessionID=%RU32 (%zu total)\n", uSessionID, mData.mGuestSessions.size()));
+
+    GuestSessions::const_iterator itSession = mData.mGuestSessions.find(uSessionID);
 
     int rc;
     if (itSession != mData.mGuestSessions.end())
@@ -187,41 +190,26 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                     rc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
                     break;
 
+                /* Process stuff. */
                 case GUEST_EXEC_STATUS:
                 case GUEST_EXEC_OUTPUT:
                 case GUEST_EXEC_INPUT_STATUS:
                 case GUEST_EXEC_IO_NOTIFY:
-                    rc = pSession->i_dispatchToProcess(pCtxCb, pSvcCb);
+                    rc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
                     break;
 
+                /* File stuff. */
                 case GUEST_FILE_NOTIFY:
-                    rc = pSession->i_dispatchToFile(pCtxCb, pSvcCb);
+                    rc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
                     break;
 
+                /* Session stuff. */
                 case GUEST_SESSION_NOTIFY:
                     rc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
                     break;
 
                 default:
-                    /*
-                     * Try processing generic messages which might
-                     * (or might not) supported by certain objects.
-                     * If the message either is not found or supported
-                     * by the approprirate object, try handling it
-                     * in this session object.
-                     */
                     rc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
-                    if (   rc == VERR_NOT_FOUND
-                        || rc == VERR_NOT_SUPPORTED)
-                    {
-                        alock.acquire();
-
-                        rc = pSession->dispatchGeneric(pCtxCb, pSvcCb);
-                    }
-#ifndef DEBUG_andy
-                    if (rc == VERR_NOT_IMPLEMENTED)
-                        AssertMsgFailed(("Received not handled function %RU32\n", pCtxCb->uFunction));
-#endif
                     break;
             }
         }

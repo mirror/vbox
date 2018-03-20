@@ -177,11 +177,11 @@ void GuestProcess::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestProcess::init(Console *aConsole, GuestSession *aSession, ULONG aProcessID,
+int GuestProcess::init(Console *aConsole, GuestSession *aSession, ULONG aObjectID,
                        const GuestProcessStartupInfo &aProcInfo, const GuestEnvironment *pBaseEnv)
 {
-    LogFlowThisFunc(("aConsole=%p, aSession=%p, aProcessID=%RU32 pBaseEnv=%p\n",
-                     aConsole, aSession, aProcessID, pBaseEnv));
+    LogFlowThisFunc(("aConsole=%p, aSession=%p, aObjectID=%RU32, pBaseEnv=%p\n",
+                     aConsole, aSession, aObjectID, pBaseEnv));
 
     AssertPtrReturn(aConsole, VERR_INVALID_POINTER);
     AssertPtrReturn(aSession, VERR_INVALID_POINTER);
@@ -192,7 +192,7 @@ int GuestProcess::init(Console *aConsole, GuestSession *aSession, ULONG aProcess
 
     HRESULT hr;
 
-    int vrc = bindToSession(aConsole, aSession, aProcessID /* Object ID */);
+    int vrc = bindToSession(aConsole, aSession, aObjectID);
     if (RT_SUCCESS(vrc))
     {
         hr = unconst(mEventSource).createObject();
@@ -292,10 +292,12 @@ void GuestProcess::uninit(void)
         mData.mpSessionBaseEnv = NULL;
     }
 
+    AssertPtr(mSession);
+    mSession->i_processUnregister(this);
+
     baseUninit();
 
-    LogFlowThisFunc(("Returning rc=%Rrc, rcGuest=%Rrc\n",
-                     vrc, rcGuest));
+    LogFlowThisFunc(("Returning rc=%Rrc, rcGuest=%Rrc\n", vrc, rcGuest));
     RT_NOREF_PV(vrc);
 }
 
@@ -336,7 +338,7 @@ HRESULT GuestProcess::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
         hrc = Global::vboxStatusCodeToCOM(vrc);
     }
     else
-        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by installed Guest Additions"));
     LogFlowThisFuncLeave();
     return hrc;
 #endif
@@ -1803,8 +1805,7 @@ HRESULT GuestProcess::terminate()
     HRESULT hr = S_OK;
 
     int rcGuest;
-    int vrc = i_terminateProcess(30 * 1000 /* Timeout in ms */,
-                                 &rcGuest);
+    int vrc = i_terminateProcess(30 * 1000 /* Timeout in ms */, &rcGuest);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
@@ -1830,7 +1831,7 @@ HRESULT GuestProcess::terminate()
     /* Remove process from guest session list. Now only API clients
      * still can hold references to it. */
     AssertPtr(mSession);
-    int rc2 = mSession->i_processRemoveFromList(this);
+    int rc2 = mSession->i_processUnregister(this);
     if (RT_SUCCESS(vrc))
         vrc = rc2;
 
@@ -1951,7 +1952,14 @@ GuestProcessTool::GuestProcessTool(void)
 
 GuestProcessTool::~GuestProcessTool(void)
 {
-    terminate(30 * 1000, NULL /* prcGuest */);
+     if (!pProcess.isNull())
+     {
+         /* Terminate (and unregister) process. */
+         pProcess->uninit();
+
+         /* Release reference. */
+         pProcess.setNull();
+     }
 }
 
 int GuestProcessTool::init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
@@ -2438,12 +2446,9 @@ int GuestProcessTool::terminate(uint32_t uTimeoutMS, int *prcGuest)
 {
     LogFlowThisFuncEnter();
 
-    int rc = VINF_SUCCESS;
+    int rc;
     if (!pProcess.isNull())
-    {
         rc = pProcess->i_terminateProcess(uTimeoutMS, prcGuest);
-        pProcess.setNull();
-    }
     else
         rc = VERR_NOT_FOUND;
 

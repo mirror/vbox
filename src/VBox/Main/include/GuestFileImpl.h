@@ -122,8 +122,6 @@ private:
         GuestFileOpenInfo       mOpenInfo;
         /** The file's initial size on open. */
         uint64_t                mInitialSize;
-        /** The file's ID. */
-        uint32_t                mID;
         /** The current file status. */
         FileStatus_T            mStatus;
         /** The last returned process status

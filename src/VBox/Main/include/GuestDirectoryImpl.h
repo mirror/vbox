@@ -36,7 +36,7 @@ public:
      * @{ */
     DECLARE_EMPTY_CTOR_DTOR(GuestDirectory)
 
-    int     init(Console *pConsole, GuestSession *pSession, ULONG uDirID, const GuestDirectoryOpenInfo &openInfo);
+    int     init(Console *pConsole, GuestSession *pSession, ULONG aObjectID, const GuestDirectoryOpenInfo &openInfo);
     void    uninit(void);
 
     HRESULT FinalConstruct(void);
@@ -78,8 +78,6 @@ private:
     {
         /** The directory's open info. */
         GuestDirectoryOpenInfo     mOpenInfo;
-        /** The directory's ID. */
-        uint32_t                   mID;
         /** The process tool instance to use. */
         GuestProcessTool           mProcessTool;
     } mData;

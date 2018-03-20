@@ -134,14 +134,14 @@ void GuestFile::FinalRelease(void)
  * @return  IPRT status code.
  * @param   pConsole                Pointer to console object.
  * @param   pSession                Pointer to session object.
- * @param   uFileID                 Host-based file ID (part of the context ID).
+ * @param   aObjectID               The object's ID.
  * @param   openInfo                File opening information.
  */
 int GuestFile::init(Console *pConsole, GuestSession *pSession,
-                    ULONG uFileID, const GuestFileOpenInfo &openInfo)
+                    ULONG aObjectID, const GuestFileOpenInfo &openInfo)
 {
-    LogFlowThisFunc(("pConsole=%p, pSession=%p, uFileID=%RU32, strPath=%s\n",
-                     pConsole, pSession, uFileID, openInfo.mFileName.c_str()));
+    LogFlowThisFunc(("pConsole=%p, pSession=%p, aObjectID=%RU32, strPath=%s\n",
+                     pConsole, pSession, aObjectID, openInfo.mFileName.c_str()));
 
     AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -150,12 +150,11 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
-    int vrc = bindToSession(pConsole, pSession, uFileID /* Object ID */);
+    int vrc = bindToSession(pConsole, pSession, aObjectID);
     if (RT_SUCCESS(vrc))
     {
         mSession = pSession;
 
-        mData.mID = uFileID;
         mData.mInitialSize = 0;
         mData.mStatus = FileStatus_Undefined;
         mData.mOpenInfo = openInfo;
@@ -277,7 +276,7 @@ HRESULT GuestFile::getId(ULONG *aId)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aId = mData.mID;
+    *aId = mObjectID;
 
     return S_OK;
 }
@@ -380,7 +379,7 @@ int GuestFile::i_closeFile(int *prcGuest)
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
     paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mData.mID /* Guest file ID */);
+    paParms[i++].setUInt32(mObjectID /* Guest file ID */);
 
     vrc = sendCommand(HOST_FILE_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -452,8 +451,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         int rc2 = i_setFileStatus(FileStatus_Error, rcGuest);
         AssertRC(rc2);
 
-        rc2 = signalWaitEventInternal(pCbCtx,
-                                      rcGuest, NULL /* pPayload */);
+        rc2 = signalWaitEventInternal(pCbCtx, rcGuest, NULL /* pPayload */);
         AssertRC(rc2);
 
         return VINF_SUCCESS; /* Report to the guest. */
@@ -475,8 +473,8 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
             {
                 pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.open.uHandle);
 
-                AssertMsg(mData.mID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
-                          ("File ID %RU32 does not match context ID %RU32\n", mData.mID,
+                AssertMsg(mObjectID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
+                          ("File ID %RU32 does not match object ID %RU32\n", mObjectID,
                            VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
 
                 /* Set the process status. */
@@ -686,8 +684,7 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 
     vrc = sendCommand(HOST_FILE_OPEN, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = i_waitForStatusChange(pEvent, uTimeoutMS,
-                                    NULL /* FileStatus */, prcGuest);
+        vrc = i_waitForStatusChange(pEvent, uTimeoutMS, NULL /* FileStatus */, prcGuest);
 
     unregisterWaitEvent(pEvent);
 
@@ -729,7 +726,7 @@ int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
     paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mData.mID /* File handle */);
+    paParms[i++].setUInt32(mObjectID /* File handle */);
     paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
 
     alock.release(); /* Drop write lock before sending. */
@@ -784,7 +781,7 @@ int GuestFile::i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutM
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
     paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mData.mID /* File handle */);
+    paParms[i++].setUInt32(mObjectID /* File handle */);
     paParms[i++].setUInt64(uOffset /* Offset (in bytes) to start reading */);
     paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
 
@@ -841,7 +838,7 @@ int GuestFile::i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
     paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mData.mID /* File handle */);
+    paParms[i++].setUInt32(mObjectID /* File handle */);
     paParms[i++].setUInt32(eSeekType /* Seek method */);
     /** @todo uint64_t vs. int64_t! */
     paParms[i++].setUInt64((uint64_t)iOffset /* Offset (in bytes) to start reading */);
@@ -1090,7 +1087,7 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
     VBOXHGCMSVCPARM paParms[8];
     int i = 0;
     paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mData.mID /* File handle */);
+    paParms[i++].setUInt32(mObjectID /* File handle */);
     paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
     paParms[i++].setPointer(pvData, cbData);
 
@@ -1149,7 +1146,7 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
     VBOXHGCMSVCPARM paParms[8];
     int i = 0;
     paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mData.mID /* File handle */);
+    paParms[i++].setUInt32(mObjectID /* File handle */);
     paParms[i++].setUInt64(uOffset /* Offset where to starting writing */);
     paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
     paParms[i++].setPointer(pvData, cbData);
@@ -1188,7 +1185,7 @@ HRESULT GuestFile::close()
      * work first and then return an error. */
 
     AssertPtr(mSession);
-    int rc2 = mSession->i_fileRemoveFromList(this);
+    int rc2 = mSession->i_fileUnregister(this);
     if (RT_SUCCESS(rc))
         rc = rc2;
 

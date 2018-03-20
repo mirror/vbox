@@ -685,8 +685,7 @@ public:
 
     /** The session's friendly name. Optional. */
     Utf8Str                     mName;
-    /** The session's unique ID. Used to encode
-     *  a context ID. */
+    /** The session's unique ID. Used to encode a context ID. */
     uint32_t                    mID;
     /** Flag indicating if this is an internal session
      *  or not. Internal session are not accessible by
@@ -906,27 +905,13 @@ public:
 
     GuestWaitEventPayload(uint32_t uTypePayload,
                           const void *pvPayload, uint32_t cbPayload)
+        : uType(0),
+          cbData(0),
+          pvData(NULL)
     {
-        if (cbPayload)
-        {
-            pvData = RTMemAlloc(cbPayload);
-            if (pvData)
-            {
-                uType = uTypePayload;
-
-                memcpy(pvData, pvPayload, cbPayload);
-                cbData = cbPayload;
-            }
-            else /* Throw IPRT error. */
-                throw VERR_NO_MEMORY;
-        }
-        else
-        {
-            uType = uTypePayload;
-
-            pvData = NULL;
-            cbData = 0;
-        }
+        int rc = copyFrom(uTypePayload, pvPayload, cbPayload);
+        if (RT_FAILURE(rc))
+            throw rc;
     }
 
     virtual ~GuestWaitEventPayload(void)
@@ -946,6 +931,7 @@ public:
     {
         if (pvData)
         {
+            Assert(cbData);
             RTMemFree(pvData);
             cbData = 0;
             pvData = NULL;
@@ -955,24 +941,7 @@ public:
 
     int CopyFromDeep(const GuestWaitEventPayload &payload)
     {
-        Clear();
-
-        int rc = VINF_SUCCESS;
-        if (payload.cbData)
-        {
-            Assert(payload.cbData);
-            pvData = RTMemAlloc(payload.cbData);
-            if (pvData)
-            {
-                memcpy(pvData, payload.pvData, payload.cbData);
-                cbData = payload.cbData;
-                uType = payload.uType;
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-
-        return rc;
+        return copyFrom(payload.uType, payload.pvData, payload.cbData);
     }
 
     const void* Raw(void) const { return pvData; }
@@ -988,11 +957,49 @@ public:
         const char  *pszStr = (const char *)pvData;
               size_t cbStr  = cbData;
 
-        if (!RTStrValidateEncodingEx(pszStr, cbStr,
-                                     RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED | RTSTR_VALIDATE_ENCODING_EXACT_LENGTH))
+        if (RT_FAILURE(RTStrValidateEncodingEx(pszStr, cbStr,
+                                               RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED | RTSTR_VALIDATE_ENCODING_EXACT_LENGTH)))
+        {
+            AssertFailed();
             return "";
+        }
 
         return Utf8Str(pszStr, cbStr);
+    }
+
+protected:
+
+    int copyFrom(uint32_t uTypePayload, const void *pvPayload, uint32_t cbPayload)
+    {
+        if (cbPayload > _64K) /* Paranoia. */
+            return VERR_TOO_MUCH_DATA;
+
+        Clear();
+
+        int rc = VINF_SUCCESS;
+
+        if (cbPayload)
+        {
+            pvData = RTMemAlloc(cbPayload);
+            if (pvData)
+            {
+                uType = uTypePayload;
+
+                memcpy(pvData, pvPayload, cbPayload);
+                cbData = cbPayload;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+        {
+            uType = uTypePayload;
+
+            pvData = NULL;
+            cbData = 0;
+        }
+
+        return rc;
     }
 
 protected:
@@ -1002,7 +1009,7 @@ protected:
     /** Size (in bytes) of payload. */
     uint32_t cbData;
     /** Pointer to actual payload data. */
-    void *pvData;
+    void    *pvData;
 };
 
 class GuestWaitEventBase
@@ -1113,7 +1120,7 @@ public:
     int dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32_t *puContextID);
     int registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID, GuestWaitEvent **ppEvent);
-    int registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID, const GuestEventTypes &lstEvents, GuestWaitEvent **ppEvent);
+    int registerWaitEventEx(uint32_t uSessionID, uint32_t uObjectID, const GuestEventTypes &lstEvents, GuestWaitEvent **ppEvent);
     int unregisterWaitEvent(GuestWaitEvent *pEvent);
     int waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, VBoxEventType_T *pType, IEvent **ppEvent);
 
