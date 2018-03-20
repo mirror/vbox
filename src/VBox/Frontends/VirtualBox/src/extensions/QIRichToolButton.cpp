@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,10 +21,10 @@
 
 /* Qt includes: */
 # include <QHBoxLayout>
-# include <QLabel>
-# include <QStylePainter>
-# include <QStyleOptionFocusRect>
 # include <QKeyEvent>
+# include <QLabel>
+# include <QStyleOptionFocusRect>
+# include <QStylePainter>
 
 /* GUI includes: */
 # include "QIRichToolButton.h"
@@ -76,7 +76,6 @@ void QIRichToolButton::paintEvent(QPaintEvent *pEvent)
         option.rect = geometry();
         painter.drawPrimitive(QStyle::PE_FrameFocusRect, option);
     }
-
     /* Call to base-class: */
     QWidget::paintEvent(pEvent);
 }
