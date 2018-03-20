@@ -18,16 +18,17 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Qt includes: */
+# include <QBoxLayout>
+# include <QEvent>
+# include <QPushButton>
 
+/* GUI includes: */
 # include "QIDialogButtonBox.h"
 # include "UISpecialControls.h"
 
+/* Other VBox includes: */
 # include <iprt/assert.h>
-
-/* Qt includes */
-# include <QPushButton>
-# include <QEvent>
-# include <QBoxLayout>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
