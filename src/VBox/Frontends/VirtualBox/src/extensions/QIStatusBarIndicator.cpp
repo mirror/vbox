@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,12 +20,12 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QApplication>
+# include <QHBoxLayout>
+# include <QLabel>
 # include <QIcon>
 # include <QPainter>
-# include <QHBoxLayout>
-# include <QApplication>
 # include <QStyle>
-# include <QLabel>
 # ifdef VBOX_WS_MAC
 #  include <QContextMenuEvent>
 # endif /* VBOX_WS_MAC */
@@ -39,6 +39,9 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class QIStatusBarIndicator implementation.                                                                                   *
+*********************************************************************************************************************************/
 
 QIStatusBarIndicator::QIStatusBarIndicator(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
@@ -50,10 +53,11 @@ QIStatusBarIndicator::QIStatusBarIndicator(QWidget *pParent /* = 0 */)
 #ifdef VBOX_WS_MAC
 void QIStatusBarIndicator::mousePressEvent(QMouseEvent *pEvent)
 {
-    /* Do this for the left mouse button event only, cause in the case of the
-     * right mouse button it could happen that the context menu event is
-     * triggered twice. Also this isn't necessary for the middle mouse button
-     * which would be some kind of overstated. */
+    // WORKAROUND:
+    // Do this for the left mouse button event only, cause in the case of the
+    // right mouse button it could happen that the context menu event is
+    // triggered twice. Also this isn't necessary for the middle mouse button
+    // which would be some kind of overstated.
     if (pEvent->button() == Qt::LeftButton)
     {
         QContextMenuEvent cme(QContextMenuEvent::Mouse, pEvent->pos(), pEvent->globalPos());
@@ -79,6 +83,10 @@ void QIStatusBarIndicator::contextMenuEvent(QContextMenuEvent *pEvent)
 }
 
 
+/*********************************************************************************************************************************
+*   Class QIStateStatusBarIndicator implementation.                                                                              *
+*********************************************************************************************************************************/
+
 QIStateStatusBarIndicator::QIStateStatusBarIndicator(QWidget *pParent /* = 0 */)
   : QIStatusBarIndicator(pParent)
   , m_iState(0)
@@ -101,7 +109,7 @@ void QIStateStatusBarIndicator::setStateIcon(int iState, const QIcon &icon)
     m_icons[iState] = icon;
 }
 
-void QIStateStatusBarIndicator::paintEvent(QPaintEvent*)
+void QIStateStatusBarIndicator::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     drawContents(&painter);
@@ -113,6 +121,10 @@ void QIStateStatusBarIndicator::drawContents(QPainter *pPainter)
         pPainter->drawPixmap(contentsRect().topLeft(), m_icons.value(m_iState).pixmap(m_size));
 }
 
+
+/*********************************************************************************************************************************
+*   Class QITextStatusBarIndicator implementation.                                                                               *
+*********************************************************************************************************************************/
 
 QITextStatusBarIndicator::QITextStatusBarIndicator(QWidget *pParent /* = 0 */)
     : QIStatusBarIndicator(pParent)
