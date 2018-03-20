@@ -27,12 +27,6 @@
 #include <VBox/GuestHost/DragAndDrop.h>
 #include <VBox/HostServices/DragAndDropSvc.h>
 
-#ifdef LOG_GROUP
- #undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_GUEST_DND
-#include <VBox/log.h>
-
 /**
  * Forward prototype declarations.
  */
