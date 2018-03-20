@@ -312,7 +312,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
                 fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
 
                 # cleaning up: get rid of saved state
-                fRc = fRc and oSession.o.machine.discardSavedState(True)
+                fRc = fRc and oSession.discardSavedState(True)
                 if fRc is False:
                     reporter.log('Failed to discard the saved state of machine')
 
