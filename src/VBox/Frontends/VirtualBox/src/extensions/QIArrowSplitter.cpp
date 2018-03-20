@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,14 +21,14 @@
 
 /* Qt includes: */
 # include <QApplication>
-# include <QStyle>
 # include <QHBoxLayout>
+# include <QStyle>
 # include <QTextEdit>
 
 /* GUI includes: */
 # include "QIArrowSplitter.h"
-# include "QIArrowButtonSwitch.h"
 # include "QIArrowButtonPress.h"
+# include "QIArrowButtonSwitch.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIIconPool.h"
 
@@ -36,7 +36,6 @@
 # include "iprt/assert.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 
 
 /** QTextEdit extension
@@ -49,7 +48,7 @@ class QIDetailsBrowser : public QTextEdit
 
 public:
 
-    /** Constructor, passes @a pParent to the QTextEdit constructor. */
+    /** Constructs details-browser passing @a pParent to the base-class. */
     QIDetailsBrowser(QWidget *pParent = 0);
 
     /** Returns minimum size-hint. */
@@ -60,6 +59,11 @@ public:
     /** Update scroll-bars. */
     void updateScrollBars();
 };
+
+
+/*********************************************************************************************************************************
+*   Class QIDetailsBrowser implementation.                                                                                       *
+*********************************************************************************************************************************/
 
 QIDetailsBrowser::QIDetailsBrowser(QWidget *pParent /* = 0 */)
     : QTextEdit(pParent)
@@ -116,6 +120,10 @@ void QIDetailsBrowser::updateScrollBars()
     setVerticalScrollBarPolicy(verticalPolicy);
 }
 
+
+/*********************************************************************************************************************************
+*   Class QIArrowSplitter implementation.                                                                                        *
+*********************************************************************************************************************************/
 
 QIArrowSplitter::QIArrowSplitter(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -227,6 +235,12 @@ void QIArrowSplitter::sltSwitchDetailsPageNext()
     updateDetails();
 }
 
+void QIArrowSplitter::retranslateUi()
+{
+    /* Update details: */
+    updateDetails();
+}
+
 void QIArrowSplitter::prepare()
 {
     /* Create main-layout: */
@@ -310,12 +324,6 @@ void QIArrowSplitter::prepare()
 
     /* Apply size-policy finally: */
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-}
-
-void QIArrowSplitter::retranslateUi()
-{
-    /* Update details: */
-    updateDetails();
 }
 
 void QIArrowSplitter::updateDetails()

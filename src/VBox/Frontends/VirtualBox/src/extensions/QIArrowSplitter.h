@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,12 +42,12 @@ class QIArrowSplitter : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    /** Notifies listeners about size-hint change: */
+    /** Notifies listeners about size-hint change. */
     void sigSizeHintChange();
 
 public:
 
-    /** Constructor, passes @a pParent to the QWidget constructor. */
+    /** Constructs arrow splitter passing @a pParent to the base-class. */
     QIArrowSplitter(QWidget *pParent = 0);
 
     /** Returns minimum size-hint. */
@@ -76,33 +76,36 @@ public slots:
     /** Navigates through details-list forward. */
     void sltSwitchDetailsPageNext();
 
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
-
-    /** Retranslation routine. */
-    void retranslateUi();
 
     /** Updates details. */
     void updateDetails();
 
-    /** Holds the main-layout. */
+    /** Holds the main-layout instance. */
     QVBoxLayout *m_pMainLayout;
 
-    /** Holds the switch-button. */
+    /** Holds the switch-button instance. */
     QIArrowButtonSwitch *m_pSwitchButton;
-    /** Holds the back-button. */
-    QIArrowButtonPress *m_pBackButton;
-    /** Holds the next-button. */
-    QIArrowButtonPress *m_pNextButton;
+    /** Holds the back-button instance. */
+    QIArrowButtonPress  *m_pBackButton;
+    /** Holds the next-button instance. */
+    QIArrowButtonPress  *m_pNextButton;
 
     /** Holds the details-browser. */
     QIDetailsBrowser *m_pDetailsBrowser;
     /** Holds details-list. */
-    QStringPairList m_details;
+    QStringPairList   m_details;
     /** Holds details-list index. */
-    int m_iDetailsIndex;
+    int               m_iDetailsIndex;
 };
 
 #endif /* !___QIArrowSplitter_h___ */
+
