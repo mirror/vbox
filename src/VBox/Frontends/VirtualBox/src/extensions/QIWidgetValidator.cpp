@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,11 +26,14 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class QObjectValidator implementation.                                                                                       *
+*********************************************************************************************************************************/
 
 QObjectValidator::QObjectValidator(QValidator *pValidator, QObject *pParent /* = 0 */)
     : QObject(pParent)
     , m_pValidator(pValidator)
-    , m_state(QValidator::Invalid)
+    , m_enmState(QValidator::Invalid)
 {
     /* Prepare: */
     prepare();
@@ -43,16 +46,16 @@ void QObjectValidator::sltValidate(QString strInput /* = QString() */)
 
     /* Validate: */
     int iPosition = 0;
-    const QValidator::State state = m_pValidator->validate(strInput, iPosition);
+    const QValidator::State enmState = m_pValidator->validate(strInput, iPosition);
 
     /* If validity state changed: */
-    if (m_state != state)
+    if (m_enmState != enmState)
     {
         /* Update last validity state: */
-        m_state = state;
+        m_enmState = enmState;
 
         /* Notifies listener(s) about validity change: */
-        emit sigValidityChange(m_state);
+        emit sigValidityChange(m_enmState);
     }
 }
 
@@ -69,11 +72,9 @@ void QObjectValidator::prepare()
 }
 
 
-QObjectValidatorGroup::QObjectValidatorGroup(QObject *pParent)
-    : QObject(pParent)
-    , m_fResult(false)
-{
-}
+/*********************************************************************************************************************************
+*   Class QObjectValidatorGroup implementation.                                                                                  *
+*********************************************************************************************************************************/
 
 void QObjectValidatorGroup::addObjectValidator(QObjectValidator *pObjectValidator)
 {
@@ -91,7 +92,7 @@ void QObjectValidatorGroup::addObjectValidator(QObjectValidator *pObjectValidato
             this, &QObjectValidatorGroup::sltValidate);
 }
 
-void QObjectValidatorGroup::sltValidate(QValidator::State state)
+void QObjectValidatorGroup::sltValidate(QValidator::State enmState)
 {
     /* Determine sender object-validator: */
     QObjectValidator *pObjectValidatorSender = qobject_cast<QObjectValidator*>(sender());
@@ -99,7 +100,7 @@ void QObjectValidatorGroup::sltValidate(QValidator::State state)
     AssertReturnVoid(pObjectValidatorSender && m_group.contains(pObjectValidatorSender));
 
     /* Update internal map: */
-    m_group[pObjectValidatorSender] = toResult(state);
+    m_group[pObjectValidatorSender] = toResult(enmState);
 
     /* Enumerate all the registered object-validators: */
     bool fResult = true;
@@ -122,18 +123,15 @@ void QObjectValidatorGroup::sltValidate(QValidator::State state)
 }
 
 /* static */
-bool QObjectValidatorGroup::toResult(QValidator::State state)
+bool QObjectValidatorGroup::toResult(QValidator::State enmState)
 {
-    return state == QValidator::Acceptable;
+    return enmState == QValidator::Acceptable;
 }
 
 
-UIPageValidator::UIPageValidator(QObject *pParent, UISettingsPage *pPage)
-    : QObject(pParent)
-    , m_pPage(pPage)
-    , m_fIsValid(true)
-{
-}
+/*********************************************************************************************************************************
+*   Class UIPageValidator implementation.                                                                                        *
+*********************************************************************************************************************************/
 
 QPixmap UIPageValidator::warningPixmap() const
 {
@@ -164,25 +162,35 @@ void UIPageValidator::revalidate()
 }
 
 
-QValidator::State QIULongValidator::validate (QString &aInput, int &aPos) const
+/*********************************************************************************************************************************
+*   Class QIULongValidator implementation.                                                                                       *
+*********************************************************************************************************************************/
+
+QValidator::State QIULongValidator::validate(QString &strInput, int &iPosition) const
 {
-    Q_UNUSED (aPos);
+    Q_UNUSED(iPosition);
 
-    QString stripped = aInput.trimmed();
+    /* Get the stripped string: */
+    QString strStripped = strInput.trimmed();
 
-    if (stripped.isEmpty() ||
-        stripped.toUpper() == QString ("0x").toUpper())
+    /* 'Intermediate' for empty string or started from '0x': */
+    if (strStripped.isEmpty() ||
+        strStripped.toUpper() == QString("0x").toUpper())
         return Intermediate;
 
-    bool ok;
-    ulong entered = aInput.toULong (&ok, 0);
+    /* Convert to ulong: */
+    bool fOk;
+    ulong uEntered = strInput.toULong(&fOk, 0);
 
-    if (!ok)
+    /* 'Invalid' if failed to convert: */
+    if (!fOk)
         return Invalid;
 
-    if (entered >= mBottom && entered <= mTop)
+    /* 'Acceptable' if fits the bounds: */
+    if (uEntered >= m_uBottom && uEntered <= m_uTop)
         return Acceptable;
 
-    return (entered > mTop ) ? Invalid : Intermediate;
+    /* 'Invalid' if more than top, 'Intermediate' if less than bottom: */
+    return uEntered > m_uTop ? Invalid : Intermediate;
 }
 
