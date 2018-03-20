@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,11 +26,12 @@
 
 /* Forward declarations: */
 class QCheckBox;
+class QLabel;
+class QPushButton;
 class QIArrowSplitter;
 class QIDialogButtonBox;
 class QILabel;
-class QLabel;
-class QPushButton;
+
 
 /** Button types. */
 enum AlertButton
@@ -44,6 +45,7 @@ enum AlertButton
     AlertButtonMask           = 0xFF   /* 00000000 11111111 */
 };
 
+
 /** Button options. */
 enum AlertButtonOption
 {
@@ -52,6 +54,7 @@ enum AlertButtonOption
     AlertButtonOptionMask     = 0x300  /* 00000011 00000000 */
 };
 
+
 /** Alert options. */
 enum AlertOption
 {
@@ -59,6 +62,7 @@ enum AlertOption
     AlertOption_CheckBox      = 0x800, /* 00001000 00000000 */
     AlertOptionMask           = 0xFC00 /* 11111100 00000000 */
 };
+
 
 /** Icon types. */
 enum AlertIconType
@@ -71,21 +75,21 @@ enum AlertIconType
     AlertIconType_GuruMeditation
 };
 
-/** QIDialog extension
-  * representing GUI alerts. */
+
+/** QIDialog extension representing GUI alerts. */
 class QIMessageBox : public QIDialog
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructor, passes @a pParent to the QIDialog constructor.
-      * @param strTitle   defines title,
-      * @param strMessage defines message,
-      * @param iconType   defines icon-type,
-      * @param iButton1   specifies integer-code for the 1st button,
-      * @param iButton2   specifies integer-code for the 2nd button,
-      * @param iButton3   specifies integer-code for the 3rd button. */
+    /** Constructs message-box passing @a pParent to the base-class.
+      * @param  strTitle    Brings the title.
+      * @param  strMessage  Brings the message.
+      * @param  iconType    Brings the icon-type.
+      * @param  iButton1    Brings the integer-code for the 1st button.
+      * @param  iButton2    Brings the integer-code for the 2nd button.
+      * @param  iButton3    Brings the integer-code for the 3rd button. */
     QIMessageBox(const QString &strTitle, const QString &strMessage, AlertIconType iconType,
                  int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, QWidget *pParent = 0);
 
@@ -102,6 +106,14 @@ public:
     /** Defines @a iButton @a strText. */
     void setButtonText(int iButton, const QString &strText);
 
+protected:
+
+    /** Handles polish @a pEvent. */
+    virtual void polishEvent(QShowEvent *pEvent) /* override */;
+
+    /** Handles close @a pEvent. */
+    virtual void closeEvent(QCloseEvent *pEvent) /* override */;
+
 private slots:
 
     /** Updates dialog size: */
@@ -111,7 +123,7 @@ private slots:
     void sltCopy() const;
 
     /** Closes dialog like user would press the Cancel button. */
-    virtual void reject();
+    virtual void reject() /* override */;
 
     /** Closes dialog like user would press the 1st button. */
     void sltDone1() { m_fDone = true; done(m_iButton1 & AlertButtonMask); }
@@ -122,19 +134,14 @@ private slots:
 
 private:
 
-    /** Prepares message-box. */
+    /** Prepares all. */
     void prepare();
 
     /** Prepares focus. */
     void prepareFocus();
 
     /** Push-button factory. */
-    QPushButton* createButton(int iButton);
-
-    /** Polish-event handler. */
-    void polishEvent(QShowEvent *pPolishEvent);
-    /** Close-event handler. */
-    void closeEvent(QCloseEvent *pCloseEvent);
+    QPushButton *createButton(int iButton);
 
     /** Visibility update routine for details-container. */
     void updateDetailsContainer();
@@ -183,6 +190,7 @@ private:
     /** Defines whether message was accepted. */
     bool m_fDone : 1;
 };
+
 
 #endif /* !___QIMessageBox_h___ */
 

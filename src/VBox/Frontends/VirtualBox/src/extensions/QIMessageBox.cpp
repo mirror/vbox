@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,20 +20,20 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QVBoxLayout>
-# include <QHBoxLayout>
-# include <QClipboard>
-# include <QLabel>
 # include <QCheckBox>
+# include <QClipboard>
+# include <QHBoxLayout>
+# include <QLabel>
+# include <QMimeData>
 # include <QPushButton>
 # include <QStyle>
-# include <QMimeData>
+# include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIMessageBox.h"
-# include "QILabel.h"
 # include "QIArrowSplitter.h"
 # include "QIDialogButtonBox.h"
+# include "QILabel.h"
+# include "QIMessageBox.h"
 # include "UIIconPool.h"
 
 /* Other VBox includes: */
@@ -120,6 +120,30 @@ void QIMessageBox::setButtonText(int iButton, const QString &strText)
         case 1: if (m_pButton2) m_pButton2->setText(strText); break;
         case 2: if (m_pButton3) m_pButton3->setText(strText); break;
         default: break;
+    }
+}
+
+void QIMessageBox::polishEvent(QShowEvent *pPolishEvent)
+{
+    /* Tune text-label size: */
+    m_pLabelText->useSizeHintForWidth(m_pLabelText->width());
+    m_pLabelText->updateGeometry();
+
+    /* Call to base-class: */
+    QIDialog::polishEvent(pPolishEvent);
+
+    /* Update size finally: */
+    sltUpdateSize();
+}
+
+void QIMessageBox::closeEvent(QCloseEvent *pCloseEvent)
+{
+    if (m_fDone)
+        pCloseEvent->accept();
+    else
+    {
+        pCloseEvent->ignore();
+        reject();
     }
 }
 
@@ -286,7 +310,7 @@ void QIMessageBox::prepareFocus()
     }
 }
 
-QPushButton* QIMessageBox::createButton(int iButton)
+QPushButton *QIMessageBox::createButton(int iButton)
 {
     /* Not for AlertButton_NoButton: */
     if (iButton == 0)
@@ -316,30 +340,6 @@ QPushButton* QIMessageBox::createButton(int iButton)
 
     /* Return button: */
     return pButton;
-}
-
-void QIMessageBox::polishEvent(QShowEvent *pPolishEvent)
-{
-    /* Tune text-label size: */
-    m_pLabelText->useSizeHintForWidth(m_pLabelText->width());
-    m_pLabelText->updateGeometry();
-
-    /* Call to base-class: */
-    QIDialog::polishEvent(pPolishEvent);
-
-    /* Update size finally: */
-    sltUpdateSize();
-}
-
-void QIMessageBox::closeEvent(QCloseEvent *pCloseEvent)
-{
-    if (m_fDone)
-        pCloseEvent->accept();
-    else
-    {
-        pCloseEvent->ignore();
-        reject();
-    }
 }
 
 void QIMessageBox::updateDetailsContainer()
