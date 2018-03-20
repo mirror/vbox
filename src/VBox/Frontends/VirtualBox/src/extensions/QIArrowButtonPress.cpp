@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,10 +28,10 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-QIArrowButtonPress::QIArrowButtonPress(QIArrowButtonPress::ButtonType buttonType,
+QIArrowButtonPress::QIArrowButtonPress(QIArrowButtonPress::ButtonType enmButtonType,
                                        QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QIRichToolButton>(pParent)
-    , m_buttonType(buttonType)
+    , m_enmButtonType(enmButtonType)
 {
     /* Retranslate UI: */
     retranslateUi();
@@ -40,7 +40,7 @@ QIArrowButtonPress::QIArrowButtonPress(QIArrowButtonPress::ButtonType buttonType
 void QIArrowButtonPress::retranslateUi()
 {
     /* Retranslate: */
-    switch (m_buttonType)
+    switch (m_enmButtonType)
     {
         case ButtonType_Back: setText(tr("&Back")); break;
         case ButtonType_Next: setText(tr("&Next")); break;
@@ -54,8 +54,8 @@ void QIArrowButtonPress::keyPressEvent(QKeyEvent *pEvent)
     switch (pEvent->key())
     {
         /* Animate-click for the Space key: */
-        case Qt::Key_PageUp: if (m_buttonType == ButtonType_Next) return animateClick(); break;
-        case Qt::Key_PageDown: if (m_buttonType == ButtonType_Back) return animateClick(); break;
+        case Qt::Key_PageUp:   if (m_enmButtonType == ButtonType_Next) return animateClick(); break;
+        case Qt::Key_PageDown: if (m_enmButtonType == ButtonType_Back) return animateClick(); break;
         default: break;
     }
     /* Call to base-class: */
