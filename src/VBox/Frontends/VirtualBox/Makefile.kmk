@@ -625,8 +625,6 @@ endif
 
 VirtualBox_QT_MOCSRCS.darwin += \
 	src/platform/darwin/UIWindowMenuManager.cpp
-VirtualBox_QT_MOCSRCS.win += \
-	src/extensions/QIFileDialog.cpp
 VirtualBox_QT_MOCSRCS.linux += \
 	src/globals/UIDesktopWidgetWatchdog.cpp
 VirtualBox_QT_MOCSRCS.solaris += \

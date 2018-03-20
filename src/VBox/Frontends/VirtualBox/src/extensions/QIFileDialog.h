@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,40 +15,74 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QIFileDialog_h__
-#define __QIFileDialog_h__
+#ifndef ___QIFileDialog_h___
+#define ___QIFileDialog_h___
 
-/* Qt includes */
+/* Qt includes: */
 #include <QFileDialog>
 
+/** QFileDialog subclass simplifying access to it's static stuff. */
 class QIFileDialog : public QFileDialog
 {
     Q_OBJECT;
 
+    /** Constructs our own file-dialog passing @a pParent and enmFlags to the base-class.
+      * Doesn't mean to be used directly, cause this subclass is a bunch of statics. */
+    QIFileDialog(QWidget *pParent, Qt::WindowFlags enmFlags);
+
 public:
 
-    QIFileDialog (QWidget *aParent, Qt::WindowFlags aFlags);
+    /** Returns an existing directory selected by the user.
+      * @param  strDir            Brings the dir to start from.
+      * @param  pParent           Brings the parent.
+      * @param  strCaption        Brings the dialog caption.
+      * @param  fDirOnly          Brings whether dialog should show dirs only.
+      * @param  fResolveSymLinks  Brings whether dialog should resolve sym-links. */
+    static QString getExistingDirectory(const QString &strDir, QWidget *pParent,
+                                        const QString &strCaption = QString(),
+                                        bool fDirOnly = true,
+                                        bool fResolveSymLinks = true);
 
-    static QString getExistingDirectory (const QString &aDir, QWidget *aParent,
-                                         const QString &aCaption = QString::null,
-                                         bool aDirOnly = true,
-                                         bool resolveSymlinks = true);
+    /** Returns a file name selected by the user. The file does not have to exist.
+      * @param  strStartWith        Brings the full file path to start from.
+      * @param  strFilters          Brings the filters.
+      * @param  pParent             Brings the parent.
+      * @param  strCaption          Brings the dialog caption.
+      * @param  pStrSelectedFilter  Brings the selected filter.
+      * @param  fResolveSymLinks    Brings whether dialog should resolve sym-links.
+      * @param  fConfirmOverwrite   Brings whether dialog should confirm overwrite. */
+    static QString getSaveFileName(const QString &strStartWith, const QString &strFilters, QWidget *pParent,
+                                   const QString &strCaption, QString *pStrSelectedFilter = 0,
+                                   bool fResolveSymLinks = true, bool fConfirmOverwrite = false);
 
-    static QString getSaveFileName (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
-                                    const QString &aCaption, QString *aSelectedFilter = 0,
-                                    bool aResolveSymLinks = true, bool fConfirmOverwrite = false);
+    /** Returns an existing file selected by the user. If the user presses Cancel, it returns a null string.
+      * @param  strStartWith        Brings the full file path to start from.
+      * @param  strFilters          Brings the filters.
+      * @param  pParent             Brings the parent.
+      * @param  strCaption          Brings the dialog caption.
+      * @param  pStrSelectedFilter  Brings the selected filter.
+      * @param  fResolveSymLinks    Brings whether dialog should resolve sym-links. */
+    static QString getOpenFileName(const QString &strStartWith, const QString &strFilters, QWidget *pParent,
+                                   const QString &strCaption, QString *pStrSelectedFilter = 0,
+                                   bool fResolveSymLinks = true);
 
-    static QString getOpenFileName (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
-                                    const QString &aCaption, QString *aSelectedFilter = 0,
-                                    bool aResolveSymLinks = true);
+    /** Returns one or more existing files selected by the user.
+      * @param  strStartWith        Brings the full file path to start from.
+      * @param  strFilters          Brings the filters.
+      * @param  pParent             Brings the parent.
+      * @param  strCaption          Brings the dialog caption.
+      * @param  pStrSelectedFilter  Brings the selected filter.
+      * @param  fResolveSymLinks    Brings whether dialog should resolve sym-links.
+      * @param  fSingleFile         Brings whether dialog should allow chosing single file only. */
+    static QStringList getOpenFileNames(const QString &strStartWith, const QString &strFilters, QWidget *pParent,
+                                        const QString &strCaption, QString *pStrSelectedFilter = 0,
+                                        bool fResolveSymLinks = true,
+                                        bool fSingleFile = false);
 
-    static QStringList getOpenFileNames (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
-                                         const QString &aCaption, QString *aSelectedFilter = 0,
-                                         bool aResolveSymLinks = true,
-                                         bool aSingleFile = false);
-
-    static QString getFirstExistingDir (const QString &aStartDir);
+    /** Search for the first directory that exists starting from the
+      * passed one @a strStartDir and going up through its parents. */
+    static QString getFirstExistingDir(const QString &strStartDir);
 };
 
-#endif /* __QIFileDialog_h__ */
+#endif /* !___QIFileDialog_h___ */
 
