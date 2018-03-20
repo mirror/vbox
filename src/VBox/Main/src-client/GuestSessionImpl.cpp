@@ -2017,7 +2017,7 @@ int GuestSession::i_processUnregister(GuestProcess *pProcess)
     /* Make sure to consume the pointer before the one of the iterator gets released. */
     ComObjPtr<GuestProcess> pProc = pProcess;
 
-    uint32_t uPID;
+    ULONG uPID;
     HRESULT hr = pProc->COMGETTER(PID)(&uPID);
     ComAssertComRC(hr);
 
