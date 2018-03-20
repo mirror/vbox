@@ -47,7 +47,7 @@ from testdriver import vboxcon
 from testdriver import vboxwrappers
 from tdMoveMedium1 import SubTstDrvMoveMedium1
 
-class SubTstDrvMoveVM(base.SubTestDriverBase):
+class SubTstDrvMoveVM1(base.SubTestDriverBase):
     """
     Sub-test driver for VM Move Test #1.
     """
@@ -461,5 +461,5 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from tdApi1 import tdApi1
-    sys.exit(tdApi1([SubTstDrvMoveVM]).main(sys.argv))
+    sys.exit(tdApi1([SubTstDrvMoveVM1]).main(sys.argv))
 

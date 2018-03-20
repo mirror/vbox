@@ -83,7 +83,7 @@ if __name__ == '__main__':
     from tdAppliance1 import SubTstDrvAppliance1
     from tdMoveMedium1 import SubTstDrvMoveMedium1
     from tdTreeDepth1 import SubTstDrvTreeDepth1
-    from tdMoveVM import SubTstDrvMoveVM
+    from tdMoveVM1 import SubTstDrvMoveVM1
     sys.exit(tdApi1([SubTstDrvPython1, SubTstDrvAppliance1, SubTstDrvMoveMedium1,
-                     SubTstDrvTreeDepth1, SubTstDrvMoveVM]).main(sys.argv))
+                     SubTstDrvTreeDepth1, SubTstDrvMoveVM1]).main(sys.argv))
 
