@@ -3920,6 +3920,15 @@ AuthResult AUTHCALL AuthEntry(
 
         <listitem><para>Guest Control APIs were changed as follows:
           <itemizedlist>
+            <listitem><para><link linkend="IGuest__createSession">IGuest::createSession()</link>,
+              <link linkend="IGuestSession__processCreate">IGuestSession::processCreate()</link>,
+              <link linkend="IGuestSession__processCreateEx">IGuestSession::processCreateEx()</link>,
+              <link linkend="IGuestSession__directoryOpen">IGuestSession::directoryOpen()</link> and
+              <link linkend="IGuestSession__fileOpen">IGuestSession::fileOpen()</link> now will
+              return the new error code VBOX_E_MAXIMUM_REACHED if the limit for the according object
+              group has been reached.</para>
+            </listitem>
+
             <listitem><para>The enumerations FileOpenExFlags, FsObjMoveFlags and DirectoryCopyFlags have
               been renamed to <link linkend="FileOpenExFlag">FileOpenExFlag</link>,
               <link linkend="FsObjMoveFlag">FsObjMoveFlag</link> and <link linkend="DirectoryCopyFlag">DirectoryCopyFlag</link>
