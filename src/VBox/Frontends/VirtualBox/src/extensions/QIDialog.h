@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,6 @@
 /* Forward declarations: */
 class QEventLoop;
 
-
 /** QDialog extension providing the GUI with
   * the advanced capabilities like delayed show. */
 class QIDialog : public QDialog
@@ -34,8 +33,8 @@ class QIDialog : public QDialog
 
 public:
 
-    /** Constructs the dialog passing @a pParent and @a flags to the base-class. */
-    QIDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    /** Constructs the dialog passing @a pParent and @a enmFlags to the base-class. */
+    QIDialog(QWidget *pParent = 0, Qt::WindowFlags enmFlags = 0);
 
     /** Defines whether the dialog is @a fVisible. */
     void setVisible(bool fVisible);
@@ -43,13 +42,12 @@ public:
 public slots:
 
     /** Shows the dialog as a modal one, blocking until the user closes it.
-      * @param  fShow              detemines whether the dialog should be shown instantly.
-      * @param  fApplicationModal  determine whether the dialog should be application-modal. */
+      * @param  fShow              Brings whether the dialog should be shown instantly.
+      * @param  fApplicationModal  Brings whether the dialog should be application-modal. */
     virtual int execute(bool fShow = true, bool fApplicationModal = false);
 
-    /** Shows the dialog as a modal one, blocking until the user closes it.
-      * @note  Provided for compatibility with various Qt versions. */
-    virtual int exec() /* overload for Qt4, override for Qt5 */ { return execute(); }
+    /** Shows the dialog as a modal one, blocking until the user closes it. */
+    virtual int exec() /* override */ { return execute(); }
 
 protected:
 
