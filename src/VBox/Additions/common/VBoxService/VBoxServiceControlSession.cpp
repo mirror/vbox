@@ -994,7 +994,8 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
      */
     bool const fImpersonated = RT_BOOL(pSession->fFlags & (  VBOXSERVICECTRLSESSION_FLAG_SPAWN
                                                            | VBOXSERVICECTRLSESSION_FLAG_ANONYMOUS));
-    int rc;
+    int rc = VERR_NOT_SUPPORTED; /* Play safe by default. */
+
     switch (uMsg)
     {
         case HOST_SESSION_CLOSE:
@@ -1006,8 +1007,6 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
         case HOST_DIR_REMOVE:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleDirRemove(pSession, pHostCtx);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_EXEC_CMD:
@@ -1033,85 +1032,72 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
         case HOST_FILE_OPEN:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileOpen(pSession, pHostCtx);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_CLOSE:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileClose(pSession, pHostCtx);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_READ:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileRead(pSession, pHostCtx, pvScratchBuf, cbScratchBuf);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_READ_AT:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileReadAt(pSession, pHostCtx, pvScratchBuf, cbScratchBuf);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_WRITE:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileWrite(pSession, pHostCtx, pvScratchBuf, cbScratchBuf);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_WRITE_AT:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileWriteAt(pSession, pHostCtx, pvScratchBuf, cbScratchBuf);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_SEEK:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileSeek(pSession, pHostCtx);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_FILE_TELL:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileTell(pSession, pHostCtx);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_PATH_RENAME:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandlePathRename(pSession, pHostCtx);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_PATH_USER_DOCUMENTS:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandlePathUserDocuments(pSession, pHostCtx);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
         case HOST_PATH_USER_HOME:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandlePathUserHome(pSession, pHostCtx);
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
 
-        default:
-            rc = VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID);
-            VGSvcVerbose(3, "Unsupported message (uMsg=%RU32, cParms=%RU32) from host, skipping\n", uMsg, pHostCtx->uNumParms);
+        default: /* Not supported, see next code block. */
             break;
     }
+
+    if (rc == VERR_NOT_SUPPORTED)
+    {
+        VGSvcVerbose(3, "Unsupported message (uMsg=%RU32, cParms=%RU32) from host, skipping\n", uMsg, pHostCtx->uNumParms);
+
+        /* Tell the host service to skip the message. */
+        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID);
+
+        rc = VINF_SUCCESS;
+    }
+    /* Note: Other replies must be reported to the host service by the appropriate command handlers above. */
 
     if (RT_FAILURE(rc))
         VGSvcError("Error while handling message (uMsg=%RU32, cParms=%RU32), rc=%Rrc\n", uMsg, pHostCtx->uNumParms, rc);
