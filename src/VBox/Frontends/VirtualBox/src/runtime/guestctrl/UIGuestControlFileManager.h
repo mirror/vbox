@@ -33,6 +33,7 @@
 #include "UIMainEventListener.h"
 
 /* Forward declarations: */
+class QHBoxLayout;
 class QPlainTextEdit;
 class QVBoxLayout;
 class QSplitter;
@@ -72,6 +73,7 @@ private:
     void prepareObjects();
     void prepareGuestListener();
     void prepareConnections();
+    void prepareToolBar();
     bool createSession(const QString& strUserName, const QString& strPassword,
                        const QString& strDomain = QString() /* not used currently */);
 
@@ -100,6 +102,8 @@ private:
     UIToolBar        *m_pToolBar;
     QAction          *m_pCopyGuestToHost;
     QAction          *m_pCopyHostToGuest;
+    QWidget          *m_pFileTableContainerWidget;
+    QHBoxLayout      *m_pFileTableContainerLayout;
 
     UIGuestSessionCreateWidget *m_pSessionCreateWidget;
     UIGuestFileTable           *m_pGuestFileTable;

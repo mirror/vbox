@@ -231,6 +231,9 @@ UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGu
     , m_pLogOutput(0)
     , m_pToolBar(0)
     , m_pCopyGuestToHost(0)
+    , m_pCopyHostToGuest(0)
+    , m_pFileTableContainerWidget(0)
+    , m_pFileTableContainerLayout(0)
     , m_pSessionCreateWidget(0)
     , m_pGuestFileTable(0)
     , m_pHostFileTable(0)
@@ -303,68 +306,36 @@ void UIGuestControlFileManager::prepareObjects()
         m_pVerticalSplitter->setHandleWidth(2);
     }
 
-    QWidget *fileTableContainer = new QWidget;
-    QHBoxLayout *containerLayout = new QHBoxLayout;
-    if (fileTableContainer)
+    m_pFileTableContainerWidget = new QWidget;
+    m_pFileTableContainerLayout = new QHBoxLayout;
+
+    if (m_pFileTableContainerWidget)
     {
-        if (containerLayout)
+        if (m_pFileTableContainerLayout)
         {
-            fileTableContainer->setLayout(containerLayout);
-            containerLayout->setSpacing(0);
-            containerLayout->setContentsMargins(0, 0, 0, 0);
+            m_pFileTableContainerWidget->setLayout(m_pFileTableContainerLayout);
+            m_pFileTableContainerLayout->setSpacing(0);
+            m_pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
             m_pGuestFileTable = new UIGuestFileTable;
             m_pGuestFileTable->setEnabled(false);
-            if (m_pGuestFileTable)
-            {
-                connect(m_pGuestFileTable, &UIGuestFileTable::sigLogOutput,
-                        this, &UIGuestControlFileManager::sltReceieveLogOutput);
-                containerLayout->addWidget(m_pGuestFileTable);
-            }
-            m_pToolBar = new UIToolBar;
-            if (m_pToolBar)
-            {
-                m_pToolBar->setOrientation(Qt::Vertical);
-                m_pToolBar->setEnabled(false);
-
-                /* Add to dummy QWidget to toolbar to center the action icons vertically: */
-                QWidget *topSpacerWidget = new QWidget(this);
-                topSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-                topSpacerWidget->setVisible(true);
-                QWidget *bottomSpacerWidget = new QWidget(this);
-                bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-                bottomSpacerWidget->setVisible(true);
-
-                m_pCopyGuestToHost = new QAction(this);
-                if(m_pCopyGuestToHost)
-                {
-                    m_pCopyGuestToHost->setIcon(UIIconPool::iconSet(QString(":/arrow_right_10px_x2.png")));
-                    connect(m_pCopyGuestToHost, &QAction::triggered, this, &UIGuestControlFileManager::sltCopyGuestToHost);
-                }
-
-                m_pCopyHostToGuest = new QAction(this);
-                if (m_pCopyHostToGuest)
-                {
-                    m_pCopyHostToGuest->setIcon(UIIconPool::iconSet(QString(":/arrow_left_10px_x2.png")));
-                    connect(m_pCopyHostToGuest, &QAction::triggered, this, &UIGuestControlFileManager::sltCopyHostToGuest);
-                }
-
-                m_pToolBar->addWidget(topSpacerWidget);
-                m_pToolBar->addAction(m_pCopyGuestToHost);
-                m_pToolBar->addAction(m_pCopyHostToGuest);
-                m_pToolBar->addWidget(bottomSpacerWidget);
-
-                containerLayout->addWidget(m_pToolBar);
-            }
 
             m_pHostFileTable = new UIHostFileTable;
             if (m_pHostFileTable)
             {
                 connect(m_pHostFileTable, &UIHostFileTable::sigLogOutput,
                         this, &UIGuestControlFileManager::sltReceieveLogOutput);
-                containerLayout->addWidget(m_pHostFileTable);
+                m_pFileTableContainerLayout->addWidget(m_pHostFileTable);
             }
+            prepareToolBar();
+             if (m_pGuestFileTable)
+            {
+                connect(m_pGuestFileTable, &UIGuestFileTable::sigLogOutput,
+                        this, &UIGuestControlFileManager::sltReceieveLogOutput);
+                m_pFileTableContainerLayout->addWidget(m_pGuestFileTable);
+            }
+
         }
-        m_pVerticalSplitter->addWidget(fileTableContainer);
+        m_pVerticalSplitter->addWidget(m_pFileTableContainerWidget);
     }
 
 
@@ -379,6 +350,45 @@ void UIGuestControlFileManager::prepareObjects()
 
     m_pVerticalSplitter->setStretchFactor(0, 3);
     m_pVerticalSplitter->setStretchFactor(1, 1);
+}
+
+void UIGuestControlFileManager::prepareToolBar()
+{
+    m_pToolBar = new UIToolBar;
+    if (!m_pToolBar)
+        return;
+
+    m_pToolBar->setOrientation(Qt::Vertical);
+    m_pToolBar->setEnabled(false);
+
+    /* Add to dummy QWidget to toolbar to center the action icons vertically: */
+    QWidget *topSpacerWidget = new QWidget(this);
+    topSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    topSpacerWidget->setVisible(true);
+    QWidget *bottomSpacerWidget = new QWidget(this);
+    bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    bottomSpacerWidget->setVisible(true);
+
+    m_pCopyGuestToHost = new QAction(this);
+    if(m_pCopyGuestToHost)
+    {
+        m_pCopyGuestToHost->setIcon(UIIconPool::iconSet(QString(":/arrow_left_10px_x2.png")));
+        connect(m_pCopyGuestToHost, &QAction::triggered, this, &UIGuestControlFileManager::sltCopyGuestToHost);
+    }
+
+    m_pCopyHostToGuest = new QAction(this);
+    if (m_pCopyHostToGuest)
+    {
+        m_pCopyHostToGuest->setIcon(UIIconPool::iconSet(QString(":/arrow_right_10px_x2.png")));
+        connect(m_pCopyHostToGuest, &QAction::triggered, this, &UIGuestControlFileManager::sltCopyHostToGuest);
+    }
+
+    m_pToolBar->addWidget(topSpacerWidget);
+    m_pToolBar->addAction(m_pCopyGuestToHost);
+    m_pToolBar->addAction(m_pCopyHostToGuest);
+    m_pToolBar->addWidget(bottomSpacerWidget);
+
+    m_pFileTableContainerLayout->addWidget(m_pToolBar);
 }
 
 void UIGuestControlFileManager::prepareConnections()

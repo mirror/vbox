@@ -37,7 +37,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
 UIGuestFileTable::UIGuestFileTable(QWidget *pParent /*= 0*/)
     :UIGuestControlFileTable(pParent)
 {
