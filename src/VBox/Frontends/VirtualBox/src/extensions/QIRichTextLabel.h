@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,14 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QIRichTextLabel_h__
-#define __QIRichTextLabel_h__
+#ifndef ___QIRichTextLabel_h___
+#define ___QIRichTextLabel_h___
 
-/* Global includes: */
+/* Qt includes: */
 #include <QTextEdit>
 
-/* QLabel analog to reflect rich-text,
- * Based on private QTextEdit functionality: */
+/** QLabel analog to reflect rich-text,
+ ** based on private QTextEdit functionality. */
 class QIRichTextLabel : public QWidget
 {
     Q_OBJECT;
@@ -30,37 +30,39 @@ class QIRichTextLabel : public QWidget
 
 public:
 
-    /* Constructor: */
+    /** Constructs rich text-label passing @a pParent to the base-class. */
     QIRichTextLabel(QWidget *pParent = 0);
 
-    /* Text getter: */
+    /** Returns text. */
     QString text() const;
 
-    /* Register image: */
+    /** Registers @a image under a passed @a strName. */
     void registerImage(const QImage &image, const QString &strName);
 
-    /* Word-wrap mode getter/setter: */
+    /** Returns word wrapping policy. */
     QTextOption::WrapMode wordWrapMode() const;
+    /** Defines word wrapping @a policy. */
     void setWordWrapMode(QTextOption::WrapMode policy);
 
-    /* API: Event-filter stuff: */
+    /** Installs event filter for a passed @ pFilterObj. */
     void installEventFilter(QObject *pFilterObj);
 
 public slots:
 
-    /* Minimum text-width setter: */
+    /** Defines @a iMinimumTextWidth. */
     void setMinimumTextWidth(int iMinimumTextWidth);
 
-    /* Text setter: */
+    /** Defines @a strText. */
     void setText(const QString &strText);
 
 private:
 
-    /* QTextEdit private member: */
+    /** Holds the text-editor instance. */
     QTextEdit *m_pTextEdit;
 
-    /* Minimum text-width: */
+    /** Holds the minimum text-width. */
     int m_iMinimumTextWidth;
 };
 
-#endif // __QIRichTextLabel_h__
+#endif /* !___QIRichTextLabel_h___ */
+
