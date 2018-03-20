@@ -990,10 +990,14 @@ AssertCompileMemberOffset(SVMVMCB, guest,        0x400);
 AssertCompileMemberOffset(SVMVMCB, u8Reserved10, 0x698);
 AssertCompileSize(SVMVMCB, 0x1000);
 
-/** SVM nested-guest VMCB cache.
+/**
+ * SVM nested-guest VMCB cache.
  *
- *  A state structure for holding information across AMD-V VMRUN/\#VMEXIT
- *  operation during execution of the nested-guest, restored on \#VMEXIT.
+ * A state structure for holding information across AMD-V VMRUN/\#VMEXIT
+ * operation during execution of the nested-guest, restored on \#VMEXIT.
+ *
+ * @remarks Please update hmR3InfoNstGuestVmcbCache() when changes are made to
+ *           this structure.
  */
 #pragma pack(1)
 typedef struct SVMNESTEDVMCBCACHE

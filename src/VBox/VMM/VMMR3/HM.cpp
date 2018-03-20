@@ -381,6 +381,7 @@ DECLINLINE(const char *) hmSvmGetSpecialExitReasonDesc(uint16_t uExit)
 *********************************************************************************************************************************/
 static DECLCALLBACK(int)  hmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)  hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static DECLCALLBACK(void) hmR3InfoSvmNstGstVmcbCache(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) hmR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) hmR3InfoEventPending(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static int                hmR3InitCPU(PVM pVM);
@@ -443,6 +444,10 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 
     rc = DBGFR3InfoRegisterInternalEx(pVM, "hmeventpending", "Dumps the pending HM event.", hmR3InfoEventPending,
                                       DBGFINFO_FLAGS_ALL_EMTS);
+    AssertRCReturn(rc, rc);
+
+    rc = DBGFR3InfoRegisterInternalEx(pVM, "svmvmcbcache", "Dumps the HM SVM nested-guest VMCB cache.",
+                                      hmR3InfoSvmNstGstVmcbCache, DBGFINFO_FLAGS_ALL_EMTS);
     AssertRCReturn(rc, rc);
 
     /*
@@ -3732,5 +3737,59 @@ static DECLCALLBACK(void) hmR3InfoEventPending(PVM pVM, PCDBGFINFOHLP pHlp, cons
     }
     else
         pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");
+}
+
+
+/**
+ * Displays the SVM nested-guest VMCB cache.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pHlp        The info helper functions.
+ * @param   pszArgs     Arguments, ignored.
+ */
+static DECLCALLBACK(void) hmR3InfoSvmNstGstVmcbCache(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    NOREF(pszArgs);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
+    bool const fSvmEnabled = HMR3IsSvmEnabled(pVM->pUVM);
+    if (   fSvmEnabled
+        && pVM->cpum.ro.GuestFeatures.fSvm)
+    {
+        PCCPUMCTX            pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+        PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+        pHlp->pfnPrintf(pHlp, "CPU[%u]: HM nested-guest VMCB cache\n", pVCpu->idCpu);
+        pHlp->pfnPrintf(pHlp, "  fHMCachedVmcb     = %#RTbool\n", pCtx->hwvirt.svm.fHMCachedVmcb);
+        pHlp->pfnPrintf(pHlp, "  u16InterceptRdCRx = %#RX16\n",   pVmcbNstGstCache->u16InterceptRdCRx);
+        pHlp->pfnPrintf(pHlp, "  u16InterceptWrCRx = %#RX16\n",   pVmcbNstGstCache->u16InterceptWrCRx);
+        pHlp->pfnPrintf(pHlp, "  u16InterceptRdDRx = %#RX16\n",   pVmcbNstGstCache->u16InterceptRdDRx);
+        pHlp->pfnPrintf(pHlp, "  u16InterceptWrDRx = %#RX16\n",   pVmcbNstGstCache->u16InterceptWrDRx);
+        pHlp->pfnPrintf(pHlp, "  u32InterceptXcpt  = %#RX32\n",   pVmcbNstGstCache->u32InterceptXcpt);
+        pHlp->pfnPrintf(pHlp, "  u64InterceptCtrl  = %#RX64\n",   pVmcbNstGstCache->u64InterceptCtrl);
+        pHlp->pfnPrintf(pHlp, "  u64IOPMPhysAddr   = %#RX64\n",   pVmcbNstGstCache->u64IOPMPhysAddr);
+        pHlp->pfnPrintf(pHlp, "  u64MSRPMPhysAddr  = %#RX64\n",   pVmcbNstGstCache->u64MSRPMPhysAddr);
+        pHlp->pfnPrintf(pHlp, "  u64TSCOffset      = %#RX64\n",   pVmcbNstGstCache->u64TSCOffset);
+        pHlp->pfnPrintf(pHlp, "  u32VmcbCleanBits  = %#RX32\n",   pVmcbNstGstCache->u32VmcbCleanBits);
+        pHlp->pfnPrintf(pHlp, "  TLBCtrl           = %#RX64\n",   pVmcbNstGstCache->TLBCtrl);
+        pHlp->pfnPrintf(pHlp, "    u32ASID           = %#RX64\n", pVmcbNstGstCache->TLBCtrl.n.u32ASID);
+        pHlp->pfnPrintf(pHlp, "    u8TLBFlush        = %#RX64\n", pVmcbNstGstCache->TLBCtrl.n.u8TLBFlush);
+        pHlp->pfnPrintf(pHlp, "  u1NestedPaging    = %RTbool\n",  pVmcbNstGstCache->u1NestedPaging);
+        pHlp->pfnPrintf(pHlp, "  u1LbrVirt         = %RTbool\n",  pVmcbNstGstCache->u1LbrVirt);
+        pHlp->pfnPrintf(pHlp, "  u64CR0            = %#RX64\n",   pVmcbNstGstCache->u64CR0);
+        pHlp->pfnPrintf(pHlp, "  u64CR3            = %#RX64\n",   pVmcbNstGstCache->u64CR3);
+        pHlp->pfnPrintf(pHlp, "  u64CR4            = %#RX64\n",   pVmcbNstGstCache->u64CR4);
+        pHlp->pfnPrintf(pHlp, "  u64EFER           = %#RX64\n",   pVmcbNstGstCache->u64EFER);
+        pHlp->pfnPrintf(pHlp, "  u64DBGCTL         = %#RX64\n",   pVmcbNstGstCache->u64DBGCTL);
+        pHlp->pfnPrintf(pHlp, "  fVIntrMasking     = %RTbool\n",  pVmcbNstGstCache->fVIntrMasking);
+    }
+    else
+    {
+        if (!fSvmEnabled)
+            pHlp->pfnPrintf(pHlp, "HM SVM is not enabled for this VM!\n");
+        else
+            pHlp->pfnPrintf(pHlp, "SVM feature is not exposed to the guest!\n");
+    }
 }
 
