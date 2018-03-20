@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,7 +33,7 @@ class QIArrowButtonSwitch : public QIRichToolButton
 
 public:
 
-    /** Constructor, passes @a pParent to the QIRichToolButton constructor. */
+    /** Constructs button passing @a pParent to the base-class. */
     QIArrowButtonSwitch(QWidget *pParent = 0);
 
     /** Defines the @a iconCollapsed and the @a iconExpanded. */
@@ -46,13 +46,13 @@ public:
 
 protected slots:
 
-    /** Button-click handler. */
+    /** Handles button-click. */
     virtual void sltButtonClicked();
 
 protected:
 
-    /** Key-press-event handler. */
-    virtual void keyPressEvent(QKeyEvent *pEvent);
+    /** Handles key-press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
 
 private:
 
@@ -69,3 +69,4 @@ private:
 };
 
 #endif /* !___QIArrowButtonSwitch_h___ */
+
