@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,28 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QIProcess_h__
-#define __QIProcess_h__
+#ifndef ___QIProcess_h___
+#define ___QIProcess_h___
 
 /* Qt includes: */
 #include <QProcess>
 
-/* QProcess reimplementation for VBox GUI needs: */
+/** QProcess extension for VBox GUI needs. */
 class QIProcess : public QProcess
 {
     Q_OBJECT;
 
+    /** Constructs our own file-dialog passing @a pParent to the base-class.
+      * Doesn't mean to be used directly, cause this subclass is a bunch of statics. */
+    QIProcess(QObject *pParent = 0);
+
 public:
 
-    /* Static single-shot method to execute some script: */
+    /** Execute certain script specified by @a strProcessName
+      * and wait up to specified @a iTimeout amount of time for responce. */
     static QByteArray singleShot(const QString &strProcessName,
-                                 int iTimeout = 5000 /* wait for data maximum 5 seconds */);
-
-protected:
-
-    /* Constructor: */
-    QIProcess(QObject *pParent = 0);
+                                 int iTimeout = 5000);
 };
 
-#endif /* __QIProcess_h__ */
+#endif /* !___QIProcess_h___ */
 
