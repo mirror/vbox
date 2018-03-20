@@ -319,116 +319,116 @@ class SubTstDrvMoveVM(base.SubTestDriverBase):
 ############## 5 case. ##########################################################################################
             #There is an ISO image (.iso) attached to the VM.
             #Prerequisites - there is IDE Controller and there are no any images attached to it.
-            fRc = True
-            oVirtualBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
-            oMachine = oVirtualBox.findMachine('test-vm-move')
-            if oMachine == None:
-                reporter.log("Machine '%s' is unknown" % (oMachine.name))
-                return False
-
-            del oVirtualBox
-
-            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
-            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_5th_scenario')
-            os.mkdir(sMoveLoc, 0o775)
-            sISOLoc = os.path.join(g_ksValidationKitDir + os.sep, 'tests' + os.sep + 'api' + os.sep + 'tdMoveVM.iso')
-            if not os.path.exists(sISOLoc):
-                reporter.log('ISO file does not exist at "%s"' % (sISOLoc,))
-                fRc = False
-
-            #attach ISO image to the IDE controller
-            if fRc is True:
-                sController='IDE Controller'
-                aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
-                iPort = len(aoMediumAttachments)
-                reporter.log('sISOLoc "%s", sController "%s", iPort "%s"' % (sISOLoc,sController,iPort))
-                fRc = oSession.attachDvd(sISOLoc, sController, iPort, iDevice = 0)
-
-            fRc = fRc and oSession.saveSettings()
-            if fRc is False:
-                reporter.log('Couldn\'t save machine settings')
-
-            reporter.log('fRc after oSession.attachDvd "%s"' % (fRc))
-
-            #move ISO image to the VM settings folder
-            if fRc is True:
-                aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
-                reporter.log('number of attachments on IDE Controller is "%s"' % (len(aoMediumAttachments)))
-                for oAttachment in aoMediumAttachments:
-                    sActualFilePath = oAttachment.medium.location
-                    reporter.log('medium location is "%s"' % (sActualFilePath))
-
-                oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
-                oSubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
-
-            if fRc is True:
-                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
-
-            fRc = fRc and oSession.saveSettings()
-            if fRc is False:
-                reporter.log('Couldn\'t save machine settings')
-
-            #back ISO image to the original destination
-            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
-            oSubTstDrvMoveMedium1Instance.setLocation(sActualFilePath, aoMediumAttachments)
-            del oSubTstDrvMoveMedium1Instance
-
-            #detach ISO image
-            fRc = oSession.detachHd(sController, iPort, 0)
-
-            fRc = fRc and oSession.saveSettings()
-            if fRc is False:
-                reporter.log('Couldn\'t save machine settings')
+#           fRc = True
+#           oVirtualBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
+#           oMachine = oVirtualBox.findMachine('test-vm-move')
+#           if oMachine == None:
+#               reporter.log("Machine '%s' is unknown" % (oMachine.name))
+#               return False
+#
+#           del oVirtualBox
+#
+#           sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
+#           sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_5th_scenario')
+#           os.mkdir(sMoveLoc, 0o775)
+#           sISOLoc = os.path.join(g_ksValidationKitDir + os.sep, 'tests' + os.sep + 'api' + os.sep + 'tdMoveVM.iso')
+#           if not os.path.exists(sISOLoc):
+#               reporter.log('ISO file does not exist at "%s"' % (sISOLoc,))
+#               fRc = False
+#
+#           #attach ISO image to the IDE controller
+#           if fRc is True:
+#               sController='IDE Controller'
+#               aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+#               iPort = len(aoMediumAttachments)
+#               reporter.log('sISOLoc "%s", sController "%s", iPort "%s"' % (sISOLoc,sController,iPort))
+#               fRc = oSession.attachDvd(sISOLoc, sController, iPort, iDevice = 0)
+#
+#           fRc = fRc and oSession.saveSettings()
+#           if fRc is False:
+#               reporter.log('Couldn\'t save machine settings')
+#
+#           reporter.log('fRc after oSession.attachDvd "%s"' % (fRc))
+#
+#           #move ISO image to the VM settings folder
+#           if fRc is True:
+#               aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+#               reporter.log('number of attachments on IDE Controller is "%s"' % (len(aoMediumAttachments)))
+#               for oAttachment in aoMediumAttachments:
+#                   sActualFilePath = oAttachment.medium.location
+#                   reporter.log('medium location is "%s"' % (sActualFilePath))
+#
+#               oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
+#               oSubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
+#
+#           if fRc is True:
+#               fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+#
+#           fRc = fRc and oSession.saveSettings()
+#           if fRc is False:
+#               reporter.log('Couldn\'t save machine settings')
+#
+#           #back ISO image to the original destination
+#           aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+#           oSubTstDrvMoveMedium1Instance.setLocation(sActualFilePath, aoMediumAttachments)
+#           del oSubTstDrvMoveMedium1Instance
+#
+#           #detach ISO image
+#           fRc = oSession.detachHd(sController, iPort, 0)
+#
+#           fRc = fRc and oSession.saveSettings()
+#           if fRc is False:
+#               reporter.log('Couldn\'t save machine settings')
 
 ############# 6 case. ##########################################################################################
             #There is a floppy image (.img) attached to the VM.
             #Prerequisites - there is Floppy Controller and there are no any images attached to it.
-            fRc = True
-            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
-            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_6th_scenario')
-            os.mkdir(sMoveLoc, 0o775)
-            sFloppyLoc = os.path.join(g_ksValidationKitDir + os.sep, 'tests' + os.sep + 'api' + os.sep + 'tdMoveVM.img')
-            if not os.path.exists(sISOLoc):
-                reporter.log('Floppy disk does not exist at "%s"' % (sISOLoc,))
-                fRc = False
-
-            # attach floppy image
-            if fRc is True:
-                sController='Floppy Controller'
-                reporter.log('sFloppyLoc "%s", sController "%s"' % (sFloppyLoc,sController))
-                fRc = fRc and oSession.attachFloppy(sFloppyLoc, sController, 0, 0)
-
-            fRc = fRc and oSession.saveSettings()
-            if fRc is False:
-                reporter.log('Couldn\'t save machine settings')
-
-            reporter.log('fRc after oSession.attachFloppy "%s"' % (fRc))
-
-            #move Floppy image to the VM settings folder
-            if fRc is True:
-                aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
-                reporter.log('number of attachments on Floppy Controller is "%s"' % (len(aoMediumAttachments)))
-                for oAttachment in aoMediumAttachments:
-                    sActualFilePath = oAttachment.medium.location
-                    reporter.log('medium location is "%s"' % (sActualFilePath))
-
-                oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
-                oSubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
-
-            if fRc is True:
-                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
-
-            #back Floppy image to the original destination
-            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
-            oSubTstDrvMoveMedium1Instance.setLocation(sActualFilePath, aoMediumAttachments)
-            del oSubTstDrvMoveMedium1Instance
-
-            #detach Floppy image
-            fRc = oSession.detachHd(sController, 0, 0)
-
-            fRc = fRc and oSession.saveSettings()
-            if fRc is False:
-                reporter.log('Couldn\'t save machine settings')
+#           fRc = True
+#           sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
+#           sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_6th_scenario')
+#           os.mkdir(sMoveLoc, 0o775)
+#           sFloppyLoc = os.path.join(g_ksValidationKitDir + os.sep, 'tests' + os.sep + 'api' + os.sep + 'tdMoveVM.img')
+#           if not os.path.exists(sISOLoc):
+#               reporter.log('Floppy disk does not exist at "%s"' % (sISOLoc,))
+#               fRc = False
+#
+#           # attach floppy image
+#           if fRc is True:
+#               sController='Floppy Controller'
+#               reporter.log('sFloppyLoc "%s", sController "%s"' % (sFloppyLoc,sController))
+#               fRc = fRc and oSession.attachFloppy(sFloppyLoc, sController, 0, 0)
+#
+#           fRc = fRc and oSession.saveSettings()
+#           if fRc is False:
+#               reporter.log('Couldn\'t save machine settings')
+#
+#           reporter.log('fRc after oSession.attachFloppy "%s"' % (fRc))
+#
+#           #move Floppy image to the VM settings folder
+#           if fRc is True:
+#               aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+#               reporter.log('number of attachments on Floppy Controller is "%s"' % (len(aoMediumAttachments)))
+#               for oAttachment in aoMediumAttachments:
+#                   sActualFilePath = oAttachment.medium.location
+#                   reporter.log('medium location is "%s"' % (sActualFilePath))
+#
+#               oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
+#               oSubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
+#
+#           if fRc is True:
+#               fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+#
+#           #back Floppy image to the original destination
+#           aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+#           oSubTstDrvMoveMedium1Instance.setLocation(sActualFilePath, aoMediumAttachments)
+#           del oSubTstDrvMoveMedium1Instance
+#
+#           #detach Floppy image
+#           fRc = oSession.detachHd(sController, 0, 0)
+#
+#           fRc = fRc and oSession.saveSettings()
+#           if fRc is False:
+#               reporter.log('Couldn\'t save machine settings')
 #
 ############# 7 case. ##########################################################################################
 #           #   There are shareable disk and immutable disk attached to the VM.
