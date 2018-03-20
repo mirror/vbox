@@ -3457,14 +3457,18 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
             }
             else
             {
-                Log4(("Pending NMI\n"));
+                if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_NMI))
+                {
+                    Log4(("Intercepting NMI -> #VMEXIT\n"));
+                    return IEMExecSvmVmexit(pVCpu, SVM_EXIT_NMI, 0, 0);
+                }
 
+                Log4(("Pending NMI\n"));
                 SVMEVENT Event;
                 Event.u = 0;
                 Event.n.u1Valid  = 1;
                 Event.n.u8Vector = X86_XCPT_NMI;
                 Event.n.u3Type   = SVM_EVENT_NMI;
-
                 hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
                 hmR0SvmSetIretIntercept(pVmcbNstGst);
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
@@ -3502,13 +3506,11 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
                 if (RT_SUCCESS(rc))
                 {
                     Log4(("Injecting external interrupt u8Interrupt=%#x\n", u8Interrupt));
-
                     SVMEVENT Event;
                     Event.u = 0;
                     Event.n.u1Valid  = 1;
                     Event.n.u8Vector = u8Interrupt;
                     Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
-
                     hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
                 }
                 else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
