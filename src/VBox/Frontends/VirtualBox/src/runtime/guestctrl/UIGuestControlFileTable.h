@@ -244,6 +244,8 @@ protected:
 private:
 
     static FileObjectType fileType(const CFsObjInfo &fsInfo);
+    static FileObjectType fileType(const CGuestFsObjInfo &fsInfo);
+
     bool copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath);
     bool copyHostToGuest(const QString& hostSourcePath, const QString &guestDestinationPath);
 

@@ -56,7 +56,8 @@
 *   UIPathOperations definition.                                                                                                 *
 *********************************************************************************************************************************/
 
-/** A collection of utility functions for some path string manipulations */
+/** A collection of utility functions for so
+me path string manipulations */
 class UIPathOperations
 {
 public:
@@ -444,11 +445,8 @@ UIPropertiesDialog::UIPropertiesDialog(QWidget *pParent, Qt::WindowFlags flags)
         m_pMainLayout->addWidget(m_pInfoEdit);
     if (m_pInfoEdit)
     {
-        // m_pInfoEdit->setTextFormat(Qt::RichText);
         m_pInfoEdit->setReadOnly(true);
         m_pInfoEdit->setFrameStyle(QFrame::NoFrame);
-        //  m_pInfoEdit->setText("Line 1\nLine 2\n\nLine 4");
-        //  m_pInfoEdit->setWordWrap(true);
     }
     QIDialogButtonBox *pButtonBox =
         new QIDialogButtonBox(QDialogButtonBox::Ok, Qt::Horizontal, this);
@@ -1124,22 +1122,11 @@ void UIGuestControlFileTable::sltShowProperties()
         return;
 
     UIPropertiesDialog *dialog = new UIPropertiesDialog();
+    if (!dialog)
+        return;
+    dialog->setWindowTitle("Properties");
     dialog->setPropertyText(fsPropertyString);
     dialog->execute();
-
-
-
-    // QIMessageBox *pFsObjectPropertiesBox = new QIMessageBox("Properties",
-    //                                                         fsPropertyString,
-    //                                                         AlertIconType_Information,
-    //                                                         AlertButton_Ok| AlertButtonOption_Escape, 0, 0, this);
-    // pFsObjectPropertiesBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::MinimumExpanding);
-
-
-    //     //pFsObjectPropertiesBox->setFixedWidth(300);
-    // pFsObjectPropertiesBox->exec();
-
-    // delete pFsObjectPropertiesBox;
 }
 
 void UIGuestControlFileTable::sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected)
@@ -1608,8 +1595,58 @@ FileObjectType UIGuestFileTable::fileType(const CFsObjInfo &fsInfo)
     return FileObjectType_Other;
 }
 
+FileObjectType UIGuestFileTable::fileType(const CGuestFsObjInfo &fsInfo)
+{
+    if (fsInfo.isNull() || !fsInfo.isOk())
+        return FileObjectType_Unknown;
+    if (fsInfo.GetType() == KFsObjType_Directory)
+         return FileObjectType_Directory;
+    else if (fsInfo.GetType() == KFsObjType_File)
+        return FileObjectType_File;
+    else if (fsInfo.GetType() == KFsObjType_Symlink)
+        return FileObjectType_SymLink;
+
+    return FileObjectType_Other;
+}
+
+
 QString UIGuestFileTable::fsObjectPropertyString()
 {
+    if (m_comGuestSession.isNull())
+        return QString();
+
+    QStringList selectedObjects = selectedItemPathList();
+    if (selectedObjects.isEmpty())
+        return QString();
+    if (selectedObjects.size() == 1)
+    {
+        if (selectedObjects.at(0).isNull())
+            return QString();
+        CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), true);
+        if (!m_comGuestSession.isOk())
+            return QString();
+
+        QString propertyString;
+        /* Name: */
+        propertyString += "<b>Name:</b> " + UIPathOperations::getObjectName(fileInfo.GetName()) + "\n";
+        propertyString += "<br/>";
+        /* Size: */
+        propertyString += "<b>Size:</b> " + QString::number(fileInfo.GetObjectSize()) + QString(" bytes");
+        propertyString += "<br/>";
+        /* Type: */
+        propertyString += "<b>Type:</b> " + fileTypeString(fileType(fileInfo));
+        propertyString += "<br/>";
+        /* Creation Date: */
+        //     LONG64 GetChangeTime() const;
+        propertyString += "<b>Created:</b> " + QDateTime::fromMSecsSinceEpoch(fileInfo.GetChangeTime()/1000000).toString();
+        propertyString += "<br/>";
+        /* Last Modification Date: */
+        propertyString += "<b>Modified:</b> " + QDateTime::fromMSecsSinceEpoch(fileInfo.GetModificationTime()/1000000).toString();
+        propertyString += "<br/>";
+        /* Owner: */
+        propertyString += "<b>Owner:</b> " + fileInfo.GetUserName();
+        return propertyString;
+    }
     return QString();
 }
 
