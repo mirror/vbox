@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,11 +25,13 @@
 /* COM includes: */
 #include "COMEnums.h"
 
+/* Define GUI log group: */
+// WORKAROUND:
+// This define should go *before* VBox/log.h include!
 #ifndef VBOX_WITH_PRECOMPILED_HEADERS
-/* Define GUI log group.
- * This define should go *before* VBox/log.h include: */
-#define LOG_GROUP LOG_GROUP_GUI
+# define LOG_GROUP LOG_GROUP_GUI
 #endif
+
 /* Other VBox includes: */
 #include <VBox/log.h>
 #include <VBox/com/defs.h>
@@ -43,35 +45,29 @@
 #else /* !DEBUG */
 # define AssertWrapperOk(w)          do {} while (0)
 # define AssertWrapperOkMsg(w, m)    do {} while (0)
-#endif /* DEBUG */
+#endif /* !DEBUG */
 
 #ifndef SIZEOF_ARRAY
 # define SIZEOF_ARRAY(a) (sizeof(a) / sizeof(a[0]))
-#endif /* SIZEOF_ARRAY */
+#endif
+
 
 /** Global namespace. */
 namespace UIDefs
 {
-    /* Additional Qt event types: */
+    /** Additional Qt event types. */
     enum UIEventType
     {
-          ResizeEventType = QEvent::User + 101
-        , SetRegionEventType
-        , ModifierKeyChangeEventType
-#ifdef VBOX_WS_WIN
-        , ShellExecuteEventType
-#endif /* VBOX_WS_WIN */
-        , ActivateActionEventType
+        ActivateActionEventType = QEvent::User + 101,
 #ifdef VBOX_WS_MAC
-        , ShowWindowEventType
-#endif /* VBOX_WS_MAC */
-        , AddVDMUrlsEventType
+        ShowWindowEventType,
+#endif
 #ifdef VBOX_GUI_USE_QGL
-        , VHWACommandProcessType
-#endif /* VBOX_GUI_USE_QGL */
+        VHWACommandProcessType,
+#endif
     };
 
-    /* Size formatting types: */
+    /** Size formatting types. */
     enum FormatSize
     {
         FormatSize_Round,
@@ -79,20 +75,25 @@ namespace UIDefs
         FormatSize_RoundUp
     };
 
-    /* File name declarations: */
+    /** Default guest additions image name. */
     extern const char* GUI_GuestAdditionsName;
+    /** Default extension pack name. */
     extern const char* GUI_ExtPackName;
 
-    /* File extensions declarations: */
+    /** Allowed VBox file extensions. */
     extern QStringList VBoxFileExts;
+    /** Allowed VBox Extension Pack file extensions. */
     extern QStringList VBoxExtPackFileExts;
+    /** Allowed OVF file extensions. */
     extern QStringList OVFFileExts;
+    /** Allowed OPC file extensions. */
     extern QStringList OPCFileExts;
 }
 using namespace UIDefs /* if header included */;
 
+
 #ifdef VBOX_WS_MAC
-/** Mac OS X: Known OS releases. */
+/** Known macOS releases. */
 enum MacOSXRelease
 {
     MacOSXRelease_Old,
@@ -106,7 +107,8 @@ enum MacOSXRelease
 };
 #endif /* VBOX_WS_MAC */
 
-/** Common UI: Size suffixes. */
+
+/** Size suffixes. */
 enum SizeSuffix
 {
     SizeSuffix_Byte = 0,
@@ -118,7 +120,8 @@ enum SizeSuffix
     SizeSuffix_Max
 };
 
-/** Common UI: Storage-slot struct. */
+
+/** Storage-slot struct. */
 struct StorageSlot
 {
     StorageSlot() : bus(KStorageBus_Null), port(0), device(0) {}
@@ -138,7 +141,8 @@ struct StorageSlot
 };
 Q_DECLARE_METATYPE(StorageSlot);
 
-/** Common UI: Storage-slot struct extension with exact controller name. */
+
+/** Storage-slot struct extension with exact controller name. */
 struct ExactStorageSlot : public StorageSlot
 {
     ExactStorageSlot(const QString &strController,
@@ -149,4 +153,6 @@ struct ExactStorageSlot : public StorageSlot
     QString controller;
 };
 
+
 #endif /* !___UIDefs_h___ */
+
