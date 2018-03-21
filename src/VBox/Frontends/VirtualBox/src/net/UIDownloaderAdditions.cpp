@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,12 +25,12 @@
 # include <QVariant>
 
 /* GUI includes: */
-# include "UIDownloaderAdditions.h"
-# include "UINetworkReply.h"
 # include "QIFileDialog.h"
 # include "VBoxGlobal.h"
+# include "UIDownloaderAdditions.h"
 # include "UIMessageCenter.h"
 # include "UIModalWindowManager.h"
+# include "UINetworkReply.h"
 # include "UIVersion.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -40,27 +40,21 @@
 
 
 /* static */
-UIDownloaderAdditions* UIDownloaderAdditions::m_spInstance = 0;
+UIDownloaderAdditions *UIDownloaderAdditions::s_pInstance = 0;
 
 /* static */
-UIDownloaderAdditions* UIDownloaderAdditions::create()
+UIDownloaderAdditions *UIDownloaderAdditions::create()
 {
-    if (!m_spInstance)
-        m_spInstance = new UIDownloaderAdditions;
-    return m_spInstance;
-}
-
-/* static */
-UIDownloaderAdditions* UIDownloaderAdditions::current()
-{
-    return m_spInstance;
+    if (!s_pInstance)
+        s_pInstance = new UIDownloaderAdditions;
+    return s_pInstance;
 }
 
 UIDownloaderAdditions::UIDownloaderAdditions()
 {
     /* Prepare instance: */
-    if (!m_spInstance)
-        m_spInstance = this;
+    if (!s_pInstance)
+        s_pInstance = this;
 
     /* Get version number and adjust it for test and trunk builds. The server only has official releases. */
     const QString strVersion = UIVersion(vboxGlobal().vboxVersionStringNormalized()).effectiveRelasedVersion().toString();
@@ -81,11 +75,10 @@ UIDownloaderAdditions::UIDownloaderAdditions()
 UIDownloaderAdditions::~UIDownloaderAdditions()
 {
     /* Cleanup instance: */
-    if (m_spInstance == this)
-        m_spInstance = 0;
+    if (s_pInstance == this)
+        s_pInstance = 0;
 }
 
-/* virtual override */
 const QString UIDownloaderAdditions::description() const
 {
     return UIDownloader::description().arg(tr("VirtualBox Guest Additions"));
@@ -98,7 +91,6 @@ bool UIDownloaderAdditions::askForDownloadingConfirmation(UINetworkReply *pReply
 
 void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
 {
-    /* Read received data into the buffer: */
     m_receivedData = pReply->readAll();
 }
 

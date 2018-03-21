@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,123 +15,130 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/// This class requires proper doxy.
-/// For now I'm keeping the old style consistent.
+#ifndef ___UIDownloader_h___
+#define ___UIDownloader_h___
 
-#ifndef __UIDownloader_h__
-#define __UIDownloader_h__
-
-/* Global includes: */
+/* Qt includes: */
 #include <QUrl>
 #include <QList>
 
-/* Local includes: */
-#include "UINetworkDefs.h"
+/* GUI includes: */
 #include "UINetworkCustomer.h"
+#include "UINetworkDefs.h"
 
 /* Forward declarations: */
+class QString;
 class UINetworkReply;
 
-/* Downloader interface.
- * UINetworkCustomer class extension which allows background http downloading. */
+/** Downloader interface.
+  * UINetworkCustomer class extension which allows background http downloading. */
 class UIDownloader : public UINetworkCustomer
 {
     Q_OBJECT;
 
 signals:
 
-    /* Signal to start acknowledging: */
+    /** Signals to start acknowledging. */
     void sigToStartAcknowledging();
-    /* Signal to start downloading: */
+    /** Signals to start downloading. */
     void sigToStartDownloading();
-    /* Signal to start verifying: */
+    /** Signals to start verifying. */
     void sigToStartVerifying();
 
 public:
 
-    /* Starting routine: */
+    /** Starts the sequence. */
     void start();
 
 protected slots:
 
-    /* Acknowledging part: */
+    /** Performs acknowledging part. */
     void sltStartAcknowledging();
-    /* Downloading part: */
+    /** Performs downloading part. */
     void sltStartDownloading();
-    /* Verifying part: */
+    /** Performs verifying part. */
     void sltStartVerifying();
 
 protected:
 
-    /* UIDownloader states: */
+    /** UIDownloader states. */
     enum UIDownloaderState
     {
         UIDownloaderState_Null,
         UIDownloaderState_Acknowledging,
         UIDownloaderState_Downloading,
-        UIDownloaderState_Verifying,
+        UIDownloaderState_Verifying
     };
 
-    /* Constructor: */
+    /** Constructs downloader. */
     UIDownloader();
 
-    /* Source stuff,
-     * allows to set/get one or more sources to try to download from: */
+    /** Appends subsequent source to try to download from. */
     void addSource(const QString &strSource) { m_sources << QUrl(strSource); }
+    /** Defines the only one source to try to download from. */
     void setSource(const QString &strSource) { m_sources.clear(); addSource(strSource); }
-    const QList<QUrl>& sources() const { return m_sources; }
-    const QUrl& source() const { return m_source; }
+    /** Returns a list of sources to try to download from. */
+    const QList<QUrl> &sources() const { return m_sources; }
+    /** Returns a current source to try to download from. */
+    const QUrl &source() const { return m_source; }
 
-    /* Target stuff,
-     * allows to set/get downloaded file destination: */
+    /** Defines the @a strTarget file-path used to save downloaded file to. */
     void setTarget(const QString &strTarget) { m_strTarget = strTarget; }
-    const QString& target() const { return m_strTarget; }
+    /** Returns the target file-path used to save downloaded file to. */
+    const QString &target() const { return m_strTarget; }
 
-    /* SHA-256 stuff,
-     * allows to set/get SHA-256 sum dictionary file for downloaded source. */
-    QString pathSHA256SumsFile() const { return m_strPathSHA256SumsFile; }
+    /** Defines the @a strPathSHA256SumsFile. */
     void setPathSHA256SumsFile(const QString &strPathSHA256SumsFile) { m_strPathSHA256SumsFile = strPathSHA256SumsFile; }
+    /** Returns the SHA-256 sums file-path. */
+    QString pathSHA256SumsFile() const { return m_strPathSHA256SumsFile; }
 
     /** Returns description of the current network operation. */
     virtual const QString description() const;
 
-    /* Start delayed acknowledging: */
+    /** Starts delayed acknowledging. */
     void startDelayedAcknowledging() { emit sigToStartAcknowledging(); }
-    /* Start delayed downloading: */
+    /** Starts delayed downloading. */
     void startDelayedDownloading() { emit sigToStartDownloading(); }
-    /* Start delayed verifying: */
+    /** Starts delayed verifying. */
     void startDelayedVerifying() { emit sigToStartVerifying(); }
 
-    /* Network-reply progress handler: */
+    /** Handles network-reply progress for @a iReceived bytes of @a iTotal. */
     void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal);
-    /* Network-reply cancel handler: */
-    void processNetworkReplyCanceled(UINetworkReply *pNetworkReply);
-    /* Network-reply finish handler: */
-    void processNetworkReplyFinished(UINetworkReply *pNetworkReply);
+    /** Handles network-reply cancel request for @a pReply. */
+    void processNetworkReplyCanceled(UINetworkReply *pReply);
+    /** Handles network-reply finish for @a pReply. */
+    void processNetworkReplyFinished(UINetworkReply *pReply);
 
-    /* Handle acknowledging result: */
-    virtual void handleAcknowledgingResult(UINetworkReply *pNetworkReply);
-    /* Handle downloading result: */
-    virtual void handleDownloadingResult(UINetworkReply *pNetworkReply);
-    /* Handle verifying result: */
-    virtual void handleVerifyingResult(UINetworkReply *pNetworkReply);
+    /** Handles acknowledging result. */
+    virtual void handleAcknowledgingResult(UINetworkReply *pReply);
+    /** Handles downloading result. */
+    virtual void handleDownloadingResult(UINetworkReply *pReply);
+    /** Handles verifying result. */
+    virtual void handleVerifyingResult(UINetworkReply *pReply);
 
-    /* Pure virtual function to ask user about downloading confirmation: */
-    virtual bool askForDownloadingConfirmation(UINetworkReply *pNetworkReply) = 0;
-    /* Pure virtual function to handle downloaded object: */
-    virtual void handleDownloadedObject(UINetworkReply *pNetworkReply) = 0;
-    /* Base virtual function to handle verified object: */
-    virtual void handleVerifiedObject(UINetworkReply * /* pNetworkReply */) {}
+    /** Asks user for downloading confirmation for passed @a pReply. */
+    virtual bool askForDownloadingConfirmation(UINetworkReply *pReply) = 0;
+    /** Handles downloaded object for passed @a pReply. */
+    virtual void handleDownloadedObject(UINetworkReply *pReply) = 0;
+    /** Handles verified object for passed @a pReply. */
+    virtual void handleVerifiedObject(UINetworkReply *pReply) { Q_UNUSED(pReply); }
 
 private:
 
-    /* Private variables: */
+    /** Holds the downloader state. */
     UIDownloaderState m_state;
+
+    /** Holds the downloading sources. */
     QList<QUrl> m_sources;
-    QUrl m_source;
+    /** Holds the current downloading source. */
+    QUrl        m_source;
+
+    /** Holds the downloading target path. */
     QString m_strTarget;
+
+    /** Holds the SHA-256 sums file path. */
     QString m_strPathSHA256SumsFile;
 };
 
-#endif // __UIDownloader_h__
+#endif /* !___UIDownloader_h___ */
 

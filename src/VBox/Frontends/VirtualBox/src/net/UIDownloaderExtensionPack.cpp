@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,12 +25,12 @@
 # include <QVariant>
 
 /* GUI includes: */
-# include "UIDownloaderExtensionPack.h"
-# include "UINetworkReply.h"
 # include "QIFileDialog.h"
 # include "VBoxGlobal.h"
+# include "UIDownloaderExtensionPack.h"
 # include "UIMessageCenter.h"
 # include "UIModalWindowManager.h"
+# include "UINetworkReply.h"
 # include "UIVersion.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -40,27 +40,21 @@
 
 
 /* static */
-UIDownloaderExtensionPack* UIDownloaderExtensionPack::m_spInstance = 0;
+UIDownloaderExtensionPack *UIDownloaderExtensionPack::s_pInstance = 0;
 
 /* static */
-UIDownloaderExtensionPack* UIDownloaderExtensionPack::create()
+UIDownloaderExtensionPack *UIDownloaderExtensionPack::create()
 {
-    if (!m_spInstance)
-        m_spInstance = new UIDownloaderExtensionPack;
-    return m_spInstance;
-}
-
-/* static */
-UIDownloaderExtensionPack* UIDownloaderExtensionPack::current()
-{
-    return m_spInstance;
+    if (!s_pInstance)
+        s_pInstance = new UIDownloaderExtensionPack;
+    return s_pInstance;
 }
 
 UIDownloaderExtensionPack::UIDownloaderExtensionPack()
 {
     /* Prepare instance: */
-    if (!m_spInstance)
-        m_spInstance = this;
+    if (!s_pInstance)
+        s_pInstance = this;
 
     /* Get version number and adjust it for test and trunk builds. The server only has official releases. */
     const QString strVersion = UIVersion(vboxGlobal().vboxVersionStringNormalized()).effectiveRelasedVersion().toString();
@@ -82,11 +76,10 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
 UIDownloaderExtensionPack::~UIDownloaderExtensionPack()
 {
     /* Cleanup instance: */
-    if (m_spInstance == this)
-        m_spInstance = 0;
+    if (s_pInstance == this)
+        s_pInstance = 0;
 }
 
-/* virtual override */
 const QString UIDownloaderExtensionPack::description() const
 {
     return UIDownloader::description().arg(tr("VirtualBox Extension Pack"));
@@ -99,7 +92,6 @@ bool UIDownloaderExtensionPack::askForDownloadingConfirmation(UINetworkReply *pR
 
 void UIDownloaderExtensionPack::handleDownloadedObject(UINetworkReply *pReply)
 {
-    /* Read received data into the buffer: */
     m_receivedData = pReply->readAll();
 }
 
