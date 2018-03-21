@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,12 +19,12 @@
 #define ___UIExtraDataManager_h___
 
 /* Qt includes: */
-#include <QObject>
 #include <QMap>
+#include <QObject>
+#include <QSize>
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 # include <QPointer>
-#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-#include <QSize>
+#endif
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
@@ -33,7 +33,7 @@
 class UIExtraDataEventHandler;
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 class UIExtraDataManagerWindow;
-#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+#endif
 
 /** Defines the map of extra data values. The index is an extra-data key. */
 typedef QMap<QString, QString> ExtraDataMap;
@@ -87,14 +87,12 @@ signals:
 #ifdef VBOX_WS_MAC
     /** Notifies about the HiDPI optimization type change. */
     void sigHiDPIOptimizationTypeChange(const QString &strMachineID);
-#endif
 
-#ifdef RT_OS_DARWIN
     /** Mac OS X: Notifies about 'dock icon' appearance change. */
     void sigDockIconAppearanceChange(bool fEnabled);
     /** Mac OS X: Notifies about 'dock icon overlay' appearance change. */
     void sigDockIconOverlayAppearanceChange(bool fEnabled);
-#endif /* RT_OS_DARWIN */
+#endif /* VBOX_WS_MAC */
 
 public:
 
@@ -109,7 +107,7 @@ public:
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** Static show and raise API. */
     static void openWindow(QWidget *pCenterWidget);
-#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+#endif
 
     /** @name Base
       * @{ */
@@ -155,7 +153,7 @@ public:
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
         /** Returns version for which user wants to prevent BETA build warning. */
         QString preventBetaBuildWarningForVersion();
-#endif /* !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG) */
+#endif
     /** @} */
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -402,7 +400,7 @@ public:
 #ifndef VBOX_WS_MAC
         /** Except Mac OS X: Returns redefined machine-window name postfix. */
         QString machineWindowNamePostfix(const QString &strID);
-#endif /* !VBOX_WS_MAC */
+#endif
 
         /** Returns geometry for machine-window with @a uScreenIndex in @a visualStateType. */
         QRect machineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QString &strID);
@@ -697,7 +695,7 @@ private:
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** Open window. */
     void open(QWidget *pCenterWidget);
-#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+#endif
 
     /** Retrieves an extra-data key from both machine and global sources.
       *
@@ -741,7 +739,7 @@ private:
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** Holds Extra-data Manager window instance. */
     QPointer<UIExtraDataManagerWindow> m_pWindow;
-#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+#endif
 };
 
 /** Singleton Extra-data Manager 'official' name. */

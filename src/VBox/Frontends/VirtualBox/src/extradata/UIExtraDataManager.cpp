@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,34 +39,34 @@
 # endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
+# include "UIActionPool.h"
+# include "UIConverter.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIHostComboEditor.h"
 # include "UIMainEventListener.h"
-# include "VBoxGlobal.h"
-# include "UIActionPool.h"
-# include "UIConverter.h"
-# include "UISettingsDefs.h"
 # include "UIMessageCenter.h"
+# include "UISettingsDefs.h"
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-#  include "VBoxUtils.h"
-#  include "UIVirtualBoxEventHandler.h"
-#  include "UIIconPool.h"
-#  include "UIToolBar.h"
-#  include "QIMainWindow.h"
-#  include "QIWidgetValidator.h"
+#  include "QIDialog.h"
 #  include "QIDialogButtonBox.h"
 #  include "QIFileDialog.h"
+#  include "QIMainWindow.h"
 #  include "QISplitter.h"
-#  include "QIDialog.h"
+#  include "QIWidgetValidator.h"
+#  include "VBoxUtils.h"
+#  include "UIIconPool.h"
+#  include "UIToolBar.h"
+#  include "UIVirtualBoxEventHandler.h"
 # endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* COM includes: */
 # include "COMEnums.h"
 # include "CEventListener.h"
 # include "CEventSource.h"
-# include "CVirtualBox.h"
 # include "CMachine.h"
+# include "CVirtualBox.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -136,6 +136,11 @@ private:
     /** Protects sltPreprocessExtraDataChange. */
     QMutex m_mutex;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIExtraDataEventHandler implementation.                                                                                *
+*********************************************************************************************************************************/
 
 UIExtraDataEventHandler::UIExtraDataEventHandler(QObject *pParent)
     : QObject(pParent)
@@ -273,6 +278,7 @@ void UIExtraDataEventHandler::sltPreprocessExtraDataChange(QString strMachineID,
 
 
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+
 /** Data fields. */
 enum Field
 {
@@ -310,6 +316,11 @@ private:
     /** Spacing. */
     int m_iSpacing;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIChooserPaneDelegate implementation.                                                                                  *
+*********************************************************************************************************************************/
 
 UIChooserPaneDelegate::UIChooserPaneDelegate(QObject *pParent)
     : QStyledItemDelegate(pParent)
@@ -701,6 +712,11 @@ private:
         QAction *m_pActionSave;
     /** @} */
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIExtraDataManagerWindow implementation.                                                                               *
+*********************************************************************************************************************************/
 
 UIExtraDataManagerWindow::UIExtraDataManagerWindow()
     : m_pMainLayout(0), m_pToolBar(0), m_pSplitter(0)
@@ -2018,8 +2034,13 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_ExtraDataManager_Geometry << GUI_ExtraDataManager_SplitterHints
            << GUI_LogWindowGeometry;
 }
+
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
+
+/*********************************************************************************************************************************
+*   Class UIExtraDataManager implementation.                                                                                     *
+*********************************************************************************************************************************/
 
 /* static */
 UIExtraDataManager *UIExtraDataManager::m_spInstance = 0;
