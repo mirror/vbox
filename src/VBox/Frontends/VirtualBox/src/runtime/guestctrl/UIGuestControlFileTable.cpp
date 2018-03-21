@@ -37,6 +37,7 @@
 # include "QILineEdit.h"
 # include "QIMessageBox.h"
 # include "UIErrorString.h"
+# include "UIGuestFileTable.h"
 # include "UIIconPool.h"
 # include "UIGuestControlFileTable.h"
 # include "UIGuestControlFileModel.h"
@@ -256,6 +257,8 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
     QMenu *menu = new QMenu(this);
     if (!menu)
         return;
+    /* I know this is ugly: */
+    bool isGuestFileTable = qobject_cast<UIGuestFileTable*>(parent());
 
     QAction *pActionGoUp = menu->addAction(UIVMInformationDialog::tr("Go up"));
     if (pActionGoUp)
@@ -302,27 +305,34 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
         connect(pActionCreateNewDirectory, &QAction::triggered, this, &UIGuestControlFileView::sigCreateNewDirectory);
     }
 
-    QAction *pActionCopy = menu->addAction(UIVMInformationDialog::tr("Copy"));
-    if (pActionCopy)
-    {
-        pActionCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
-        pActionCopy->setEnabled(selectionAvaible);
-        connect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
-    }
+    QAction *pActionCopy = 0;
+    QAction *pActionCut = 0;
+    QAction *pActionPaste = 0;
 
-    QAction *pActionCut = menu->addAction(UIVMInformationDialog::tr("Cut"));
-    if (pActionCut)
+    if (isGuestFileTable)
     {
-        pActionCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
-        pActionCut->setEnabled(selectionAvaible);
-        connect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
-    }
+        pActionCopy = menu->addAction(UIVMInformationDialog::tr("Copy"));
+        if (pActionCopy)
+        {
+            pActionCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_22px.png")));
+            pActionCopy->setEnabled(selectionAvaible);
+            connect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
+        }
 
-    QAction *pActionPaste = menu->addAction(UIVMInformationDialog::tr("Paste"));
-    if (pActionPaste)
-    {
-        pActionPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
-        connect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
+        pActionCut = menu->addAction(UIVMInformationDialog::tr("Cut"));
+        if (pActionCut)
+        {
+            pActionCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_22px.png")));
+            pActionCut->setEnabled(selectionAvaible);
+            connect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
+        }
+
+        pActionPaste = menu->addAction(UIVMInformationDialog::tr("Paste"));
+        if (pActionPaste)
+        {
+            pActionPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
+            connect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
+        }
     }
 
     menu->addSeparator();
@@ -348,12 +358,15 @@ void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
         disconnect(pActionRename, &QAction::triggered, this, &UIGuestControlFileView::sigRename);
     if (pActionCreateNewDirectory)
         disconnect(pActionCreateNewDirectory, &QAction::triggered, this, &UIGuestControlFileView::sigCreateNewDirectory);
-    if (pActionCopy)
-        disconnect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
-    if (pActionCut)
-        disconnect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
-    if (pActionPaste)
-        disconnect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
+    if (isGuestFileTable)
+    {
+        if (pActionCopy)
+            disconnect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
+        if (pActionCut)
+            disconnect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
+        if (pActionPaste)
+            disconnect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
+    }
     if (pActionShowProperties)
         disconnect(pActionShowProperties, &QAction::triggered, this, &UIGuestControlFileView::sigShowProperties);
 
@@ -438,9 +451,21 @@ void UIPropertiesDialog::setPropertyText(const QString &strProperty)
 
 
 /*********************************************************************************************************************************
-*   UIFileTableItem implementation.                                                                                              *
+*   UIDirectoryStatistics implementation.
+                                                                                        *
 *********************************************************************************************************************************/
 
+UIDirectoryStatistics::UIDirectoryStatistics()
+    : m_totalSize(0)
+    , m_uFileCount(0)
+    , m_uDirectoryCount(0)
+    , m_uSymlinkCount(0)
+{}
+
+
+/*********************************************************************************************************************************
+*   UIFileTableItem implementation.                                                                                              *
+*********************************************************************************************************************************/
 
 UIFileTableItem::UIFileTableItem(const QList<QVariant> &data,
                                  UIFileTableItem *parent, FileObjectType type)
@@ -602,6 +627,10 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pView(0)
     , m_pModel(0)
     , m_pLocationLabel(0)
+    , m_iKiloByte(1000)
+    , m_pCopy(0)
+    , m_pCut(0)
+    , m_pPaste(0)
     , m_pMainLayout(0)
     , m_pCurrentLocationEdit(0)
     , m_pToolBar(0)
@@ -611,11 +640,7 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pDelete(0)
     , m_pRename(0)
     , m_pCreateNewDirectory(0)
-    , m_pCopy(0)
-    , m_pCut(0)
-    , m_pPaste(0)
     , m_pShowProperties(0)
-
 {
     prepareObjects();
     prepareActions();
@@ -689,8 +714,6 @@ void UIGuestControlFileTable::prepareObjects()
         m_pView->setEditTriggers(QAbstractItemView::NoEditTriggers);
         /* Minimize the row height: */
         m_pView->verticalHeader()->setDefaultSectionSize(m_pView->verticalHeader()->minimumSectionSize());
-        /* Make the columns take all the avaible space: */
-        //m_pView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
         connect(m_pView, &UIGuestControlFileView::doubleClicked,
                 this, &UIGuestControlFileTable::sltItemDoubleClicked);
@@ -846,10 +869,10 @@ void UIGuestControlFileTable::initializeFileTree()
         reset();
 
     QList<QVariant> headData;
-    headData << "Name" << "Size" << "Change Time";
+    headData << "Name" << "Size" << "Change Time" << "Owner";
     m_pRootItem = new UIFileTableItem(headData, 0, FileObjectType_Directory);
     QList<QVariant> startDirData;
-    startDirData << "/" << 4096 << QDateTime();
+    startDirData << "/" << 4096 << QDateTime() << "";
     UIFileTableItem* startItem = new UIFileTableItem(startDirData, m_pRootItem, FileObjectType_Directory);
 
     startItem->setPath("/");
@@ -857,7 +880,6 @@ void UIGuestControlFileTable::initializeFileTree()
 
     startItem->setIsOpened(false);
     /* Read the root directory and get the list: */
-
     readDirectory("/", startItem, true);
     m_pView->setRootIndex(m_pModel->rootIndex());
     m_pModel->signalUpdate();
@@ -873,7 +895,7 @@ void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &
         if (!map.contains("..")  && !isStartDir)
         {
             QList<QVariant> data;
-            data << ".." << 4096;
+            data << ".." << 4096 << "";
             UIFileTableItem *item = new UIFileTableItem(data, parent, FileObjectType_Directory);
             item->setIsOpened(false);
             map.insert("..", item);
@@ -1337,9 +1359,9 @@ QString UIGuestControlFileTable::humanReadableSize(ULONG64 size)
     int i = 0;
     double dSize = size;
     const char* units[] = {" B", " kB", " MB", " GB", " TB", " PB", " EB", " ZB", " YB"};
-    while (size > 1024) {
-        size /= 1024;
-        dSize /= (double)1024;
+    while (size > m_iKiloByte) {
+        size /= m_iKiloByte;
+        dSize /= (double) m_iKiloByte;
         i++;
     }
     if (i > 8)

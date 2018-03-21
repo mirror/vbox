@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAction>
 # include <QDateTime>
 # include <QDir>
 
@@ -35,6 +36,7 @@ UIHostFileTable::UIHostFileTable(QWidget *pParent /* = 0 */)
 {
     initializeFileTree();
     retranslateUi();
+    prepareActions();
 }
 
 void UIHostFileTable::retranslateUi()
@@ -42,6 +44,18 @@ void UIHostFileTable::retranslateUi()
     if (m_pLocationLabel)
         m_pLocationLabel->setText(UIVMInformationDialog::tr("Host System"));
     UIGuestControlFileTable::retranslateUi();
+}
+
+void UIHostFileTable::prepareActions()
+{
+    /* Hide cut, copy, and paste for now. We will implement those
+       when we have an API for host file operations: */
+    if (m_pCopy)
+        m_pCopy->setVisible(false);
+    if (m_pCut)
+        m_pCut->setVisible(false);
+    if (m_pPaste)
+        m_pPaste->setVisible(false);
 }
 
 void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir /*= false*/)
@@ -63,8 +77,11 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
         const QFileInfo &fileInfo = entries.at(i);
 
         QList<QVariant> data;
-        data << fileInfo.fileName() << fileInfo.size() << fileInfo.lastModified();
+        data << fileInfo.fileName() << fileInfo.size()
+             << fileInfo.lastModified() << fileInfo.owner();
         UIFileTableItem *item = new UIFileTableItem(data, parent, fileType(fileInfo));
+        if (!item)
+            continue;
         item->setPath(fileInfo.absoluteFilePath());
         /* if the item is a symlink set the target path and
            check the target if it is a directory: */
@@ -193,7 +210,7 @@ QString UIHostFileTable::fsObjectPropertyString()
         propertyString += "<br/>";
         /* Size: */
         propertyString += "<b>Size:</b> " + QString::number(fileInfo.size()) + QString(" bytes");
-        if (fileInfo.size() >= 1024)
+        if (fileInfo.size() >= m_iKiloByte)
             propertyString += " (" + humanReadableSize(fileInfo.size()) + ")";
         propertyString += "<br/>";
         /* Type: */
@@ -209,13 +226,24 @@ QString UIHostFileTable::fsObjectPropertyString()
         propertyString += "<b>Owner:</b> " + fileInfo.owner();
 
         if (fileInfo.isDir())
-            directoryStatisticsRecursive(fileInfo.absoluteFilePath());
+        {
+            propertyString += "<br/>";
+            UIDirectoryStatistics directoryStatistics;
+            directoryStatisticsRecursive(fileInfo.absoluteFilePath(), directoryStatistics);
+            propertyString += "<b>Total Size:</b> " + QString::number(directoryStatistics.m_totalSize) + QString(" bytes");
+            if (directoryStatistics.m_totalSize >= m_iKiloByte)
+                propertyString += " (" + humanReadableSize(directoryStatistics.m_totalSize) + ")";
+            propertyString += "<br/>";
+            propertyString += "<b>File Count:</b> " + QString::number(directoryStatistics.m_uFileCount);
+
+        }
         return propertyString;
     }
     return QString();
 }
 
-void UIHostFileTable::directoryStatisticsRecursive(const QString &path)
+/** @todo Move the following function to a worker thread as it may take atbitrarly long time */
+void UIHostFileTable::directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics)
 {
     QDir dir(path);
     if (!dir.exists())
@@ -224,16 +252,18 @@ void UIHostFileTable::directoryStatisticsRecursive(const QString &path)
     QFileInfoList entryList = dir.entryInfoList();
     for (int i = 0; i < entryList.size(); ++i)
     {
-
         const QFileInfo &entryInfo = entryList.at(i);
         if (entryInfo.baseName().isEmpty() || entryInfo.baseName() == "." || entryInfo.baseName() == "..")
             continue;
-
+        statistics.m_totalSize += entryInfo.size();
         if (entryInfo.isSymLink())
-            continue;
-        if (entryInfo.isDir())
+            statistics.m_uSymlinkCount++;
+        else if(entryInfo.isFile())
+            statistics.m_uFileCount++;
+        else if (entryInfo.isDir())
         {
-            directoryStatisticsRecursive(entryInfo.absoluteFilePath());
+            statistics.m_uDirectoryCount++;
+            directoryStatisticsRecursive(entryInfo.absoluteFilePath(), statistics);
         }
     }
 }

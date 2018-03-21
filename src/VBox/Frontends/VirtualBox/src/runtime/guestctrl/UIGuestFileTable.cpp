@@ -86,10 +86,14 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
             QList<QVariant> data;
             QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/1000000);
 
-            data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize()) << changeTime;
+            data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize())
+                 << changeTime << fsInfo.GetUserName();
             FileObjectType fsObjectType = fileType(fsInfo);
             UIFileTableItem *item = new UIFileTableItem(data, parent, fsObjectType);
+            if (!item)
+                continue;
             item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
+
             if (fsObjectType == FileObjectType_Directory)
             {
                 directories.insert(fsInfo.GetName(), item);
@@ -146,7 +150,7 @@ void UIGuestFileTable::goToHomeDirectory()
     UIFileTableItem *startDirItem = m_pRootItem->child(0);
     if (!startDirItem)
         return;
-
+    //printf("user home %s\n", m_comGuestSession.GetUserHome().toStdString().c_str());
     QString userHome = UIPathOperations::sanitize(m_comGuestSession.GetUserHome()).remove(0,1);
 
     QList<QString> pathTrail = userHome.split(UIPathOperations::delimiter);

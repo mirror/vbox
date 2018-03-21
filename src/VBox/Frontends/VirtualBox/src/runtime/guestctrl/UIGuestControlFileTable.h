@@ -115,7 +115,11 @@ public:
     bool isTargetADirectory() const;
     void setIsTargetADirectory(bool flag);
 
+    const QString &owner() const;
+    void setOwner(const QString &owner);
+
 private:
+
     QList<UIFileTableItem*>         m_childItems;
     /** Used to find children by path */
     QMap<QString, UIFileTableItem*> m_childMap;
@@ -132,6 +136,15 @@ private:
 
 };
 
+class UIDirectoryStatistics
+{
+public:
+    UIDirectoryStatistics();
+    ULONG64    m_totalSize;
+    unsigned   m_uFileCount;
+    unsigned   m_uDirectoryCount;
+    unsigned   m_uSymlinkCount;
+};
 
 /** This class serves a base class for file table. Currently a guest version
     and a host version are derived from this base. Each of these children
@@ -181,13 +194,18 @@ protected:
     UIFileTableItem* indexData(const QModelIndex &index) const;
     void keyPressEvent(QKeyEvent * pEvent);
     CGuestFsObjInfo guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
-    static QString humanReadableSize(ULONG64 size);
+    QString humanReadableSize(ULONG64 size);
 
     UIFileTableItem         *m_pRootItem;
 
     UIGuestControlFileView  *m_pView;
     UIGuestControlFileModel *m_pModel;
     QILabel                 *m_pLocationLabel;
+    const unsigned           m_iKiloByte;
+    QAction                 *m_pCopy;
+    QAction                 *m_pCut;
+    QAction                 *m_pPaste;
+
 
 private slots:
 
@@ -224,9 +242,6 @@ private:
     QAction         *m_pDelete;
     QAction         *m_pRename;
     QAction         *m_pCreateNewDirectory;
-    QAction         *m_pCopy;
-    QAction         *m_pCut;
-    QAction         *m_pPaste;
     QAction         *m_pShowProperties;
     /** The vector of action which need some selection to work on like cut, copy etc. */
     QVector<QAction*> m_selectionDependentActions;

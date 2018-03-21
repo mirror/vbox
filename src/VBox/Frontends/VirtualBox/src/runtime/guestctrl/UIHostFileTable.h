@@ -46,7 +46,8 @@ private:
 
     /** Read the directory with the path @p path recursively and collect #of objects and
         total size */
-    void directoryStatisticsRecursive(const QString &path);
+    void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics);
+    void prepareActions();
 
 };
 
