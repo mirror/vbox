@@ -128,11 +128,11 @@ void QIShadeSplitterHandle::paintEvent(QPaintEvent *pEvent)
 }
 
 
-#ifdef VBOX_WS_MAC
-
 /*********************************************************************************************************************************
 *   Class QIDarwinSplitterHandle implementation.                                                                                 *
 *********************************************************************************************************************************/
+
+#ifdef VBOX_WS_MAC
 
 QIDarwinSplitterHandle::QIDarwinSplitterHandle(Qt::Orientation enmOrientation, QISplitter *pParent)
     : QSplitterHandle(enmOrientation, pParent)
