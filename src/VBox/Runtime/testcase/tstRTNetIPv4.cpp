@@ -96,6 +96,21 @@
     } while (0)
 
 
+#define CHECKISADDR(String, fExpected)                                  \
+    do {                                                                \
+        bool fRc = RTNetIsIPv4AddrStr(String);                          \
+        if (fRc != fExpected)                                           \
+        {                                                               \
+            RTTestIFailed("at line %d: '%s':"                           \
+                          " expected %RTbool got %RTbool\n",            \
+                          __LINE__, (String), fExpected, fRc);          \
+        }                                                               \
+    } while (0)
+
+#define IS_ADDR(String)  CHECKISADDR((String), true)
+#define NOT_ADDR(String) CHECKISADDR((String), false)
+
+
 #define CHECKANY(String, fExpected)                                     \
     do {                                                                \
         bool fRc = RTNetStrIsIPv4AddrAny(String);                       \
@@ -255,13 +270,18 @@ int main()
      * check trailers
      */
     CHECKADDREX("1.2.3.4",  "",   VINF_SUCCESS,           0x01020304);
-    CHECKADDREX("1.2.3.4",  " ",  VINF_SUCCESS,           0x01020304);
-    CHECKADDREX("1.2.3.4",  "x",  VINF_SUCCESS,           0x01020304);
+    CHECKADDREX("1.2.3.4",  " ",  VWRN_TRAILING_SPACES,   0x01020304);
+    CHECKADDREX("1.2.3.4",  "x",  VWRN_TRAILING_CHARS,    0x01020304);
     CHECKADDREX("1.2.3.444", "",  VERR_INVALID_PARAMETER,          0);
 
+    /* NB: RTNetIsIPv4AddrStr does NOT allow leading/trailing whitespace */
+    IS_ADDR("1.2.3.4");
+    NOT_ADDR(" 1.2.3.4");
+    NOT_ADDR("1.2.3.4 ");
+    NOT_ADDR("1.2.3.4x");
 
     IS_ANY("0.0.0.0");
-    IS_ANY("\t 0.0.0.0 \t");
+    IS_ANY("\t 0.0.0.0 \t");    /* ... but RTNetStrIsIPv4AddrAny does */
 
     NOT_ANY("1.1.1.1");         /* good address, but not INADDR_ANY */
     NOT_ANY("0.0.0.0x");        /* bad address */

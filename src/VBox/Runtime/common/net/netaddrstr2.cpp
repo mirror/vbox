@@ -71,7 +71,7 @@ DECLHIDDEN(int) rtNetStrToIPv4AddrEx(const char *pcszAddr, PRTNETADDRIPV4 pAddr,
 
     if (ppszNext != NULL)
         *ppszNext = pszNext;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -93,11 +93,7 @@ RTDECL(int) RTNetStrToIPv4Addr(const char *pcszAddr, PRTNETADDRIPV4 pAddr)
 
     pcszAddr = RTStrStripL(pcszAddr);
     rc = rtNetStrToIPv4AddrEx(pcszAddr, pAddr, &pszNext);
-    if (rc != VINF_SUCCESS)
-        return VERR_INVALID_PARAMETER;
-
-    pszNext = RTStrStripL(pszNext);
-    if (*pszNext != '\0')
+    if (RT_FAILURE(rc) || rc == VWRN_TRAILING_CHARS)
         return VERR_INVALID_PARAMETER;
 
     return VINF_SUCCESS;
@@ -137,11 +133,7 @@ RTDECL(bool) RTNetStrIsIPv4AddrAny(const char *pcszAddr)
 
     pcszAddr = RTStrStripL(pcszAddr);
     rc = rtNetStrToIPv4AddrEx(pcszAddr, &addrIPv4, &pszNext);
-    if (rc != VINF_SUCCESS)
-        return false;
-
-    pszNext = RTStrStripL(pszNext);
-    if (*pszNext != '\0')
+    if (RT_FAILURE(rc) || rc == VWRN_TRAILING_CHARS)
         return false;
 
     if (addrIPv4.u != 0u)       /* INADDR_ANY? */
