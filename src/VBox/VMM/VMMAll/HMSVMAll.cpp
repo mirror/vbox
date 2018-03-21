@@ -149,16 +149,22 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
         PSVMVMCBSTATESAVE   pVmcbNstGstState = &pVmcbNstGst->guest;
         PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
 
+        /*
+         * The fields that are guaranteed to be read-only during SVM guest execution
+         * can safely be restored from our VMCB cache. Other fields like control registers
+         * can potentially be modified (if the nested-hypervisor is not intercepting writes)
+         * and thus we save the actual virtual CPU values of these registers.
+         */
         pVmcbNstGstCtrl->u16InterceptRdCRx             = pNstGstVmcbCache->u16InterceptRdCRx;
         pVmcbNstGstCtrl->u16InterceptWrCRx             = pNstGstVmcbCache->u16InterceptWrCRx;
         pVmcbNstGstCtrl->u16InterceptRdDRx             = pNstGstVmcbCache->u16InterceptRdDRx;
         pVmcbNstGstCtrl->u16InterceptWrDRx             = pNstGstVmcbCache->u16InterceptWrDRx;
         pVmcbNstGstCtrl->u32InterceptXcpt              = pNstGstVmcbCache->u32InterceptXcpt;
         pVmcbNstGstCtrl->u64InterceptCtrl              = pNstGstVmcbCache->u64InterceptCtrl;
-        pVmcbNstGstState->u64CR0                       = pNstGstVmcbCache->u64CR0;
-        pVmcbNstGstState->u64CR3                       = pNstGstVmcbCache->u64CR3;
-        pVmcbNstGstState->u64CR4                       = pNstGstVmcbCache->u64CR4;
-        pVmcbNstGstState->u64EFER                      = pNstGstVmcbCache->u64EFER;
+        pVmcbNstGstState->u64CR0                       = pCtx->cr0;
+        pVmcbNstGstState->u64CR3                       = pCtx->cr3;
+        pVmcbNstGstState->u64CR4                       = pCtx->cr4;
+        pVmcbNstGstState->u64EFER                      = pCtx->msrEFER;
         pVmcbNstGstState->u64DBGCTL                    = pNstGstVmcbCache->u64DBGCTL;
         pVmcbNstGstCtrl->u32VmcbCleanBits              = pNstGstVmcbCache->u32VmcbCleanBits;
         pVmcbNstGstCtrl->u64IOPMPhysAddr               = pNstGstVmcbCache->u64IOPMPhysAddr;

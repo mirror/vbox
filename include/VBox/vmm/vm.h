@@ -159,7 +159,7 @@ typedef struct VMCPU
 #ifdef ___HMInternal_h
         struct HMCPU    s;
 #endif
-        uint8_t             padding[5824];      /* multiple of 64 */
+        uint8_t             padding[5888];      /* multiple of 64 */
     } hm;
 
     /** EM part. */
@@ -266,7 +266,7 @@ typedef struct VMCPU
     STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[1592];
+    uint8_t                 abAlignment2[1528];
 
     /** PGM part. */
     union VMCPUUNIONPGM

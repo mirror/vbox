@@ -893,6 +893,10 @@ static int hmR3InitCPU(PVM pVM)
                              "Profiling of VMXR0LoadGuestState",
                              "/PROF/CPU%d/HM/StatLoadGuestState", i);
         AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatLoadGuestFpuState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
+                             "Profiling of CPUMR0LoadGuestFPU",
+                             "/PROF/CPU%d/HM/StatLoadGuestFpuState", i);
+        AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatInGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of VMLAUNCH/VMRESUME.",
                              "/PROF/CPU%d/HM/InGC", i);
@@ -1018,6 +1022,7 @@ static int hmR3InitCPU(PVM pVM)
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatLoadMinimal,            "/HM/CPU%d/Load/Minimal", "VM-entry loading minimal guest-state.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatLoadFull,               "/HM/CPU%d/Load/Full", "VM-entry loading the full guest-state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadFull,               "/HM/CPU%d/Load/GuestFpu", "VM-entry loading the guest-FPU state.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelBase,   "/HM/CPU%d/VMXCheck/RMSelBase", "Could not use VMX due to unsuitable real-mode selector base.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelLimit,  "/HM/CPU%d/VMXCheck/RMSelLimit", "Could not use VMX due to unsuitable real-mode selector limit.");

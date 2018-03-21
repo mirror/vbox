@@ -9069,16 +9069,24 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
 
 #ifdef HMVMX_ALWAYS_SWAP_FPU_STATE
     if (!CPUMIsGuestFPUStateActive(pVCpu))
+    {
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestFpuState, x);
         if (CPUMR0LoadGuestFPU(pVM, pVCpu) == VINF_CPUM_HOST_CR0_MODIFIED)
             HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestFpuState, x);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadGuestFpu);
+    }
     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
 #endif
 
     if (   pVCpu->hm.s.fPreloadGuestFpu
         && !CPUMIsGuestFPUStateActive(pVCpu))
     {
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestFpuState, x);
         if (CPUMR0LoadGuestFPU(pVM, pVCpu) == VINF_CPUM_HOST_CR0_MODIFIED)
             HMCPU_CF_SET(pVCpu, HM_CHANGED_HOST_CONTEXT);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestFpuState, x);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadGuestFpu);
         Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR0));
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
     }

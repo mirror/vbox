@@ -179,23 +179,24 @@
  * SMIs can and do happen in normal operation. We need not intercept them
  * while executing the guest or nested-guest.
  */
-#define HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS           (  SVM_CTRL_INTERCEPT_INTR        \
-                                                         | SVM_CTRL_INTERCEPT_NMI         \
-                                                         | SVM_CTRL_INTERCEPT_INIT        \
-                                                         | SVM_CTRL_INTERCEPT_RDPMC       \
-                                                         | SVM_CTRL_INTERCEPT_CPUID       \
-                                                         | SVM_CTRL_INTERCEPT_RSM         \
-                                                         | SVM_CTRL_INTERCEPT_HLT         \
-                                                         | SVM_CTRL_INTERCEPT_IOIO_PROT   \
-                                                         | SVM_CTRL_INTERCEPT_MSR_PROT    \
-                                                         | SVM_CTRL_INTERCEPT_INVLPGA     \
-                                                         | SVM_CTRL_INTERCEPT_SHUTDOWN    \
-                                                         | SVM_CTRL_INTERCEPT_FERR_FREEZE \
-                                                         | SVM_CTRL_INTERCEPT_VMRUN       \
-                                                         | SVM_CTRL_INTERCEPT_SKINIT      \
-                                                         | SVM_CTRL_INTERCEPT_WBINVD      \
-                                                         | SVM_CTRL_INTERCEPT_MONITOR     \
-                                                         | SVM_CTRL_INTERCEPT_MWAIT       \
+#define HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS           (  SVM_CTRL_INTERCEPT_INTR          \
+                                                         | SVM_CTRL_INTERCEPT_NMI           \
+                                                         | SVM_CTRL_INTERCEPT_INIT          \
+                                                         | SVM_CTRL_INTERCEPT_RDPMC         \
+                                                         | SVM_CTRL_INTERCEPT_CPUID         \
+                                                         | SVM_CTRL_INTERCEPT_RSM           \
+                                                         | SVM_CTRL_INTERCEPT_HLT           \
+                                                         | SVM_CTRL_INTERCEPT_IOIO_PROT     \
+                                                         | SVM_CTRL_INTERCEPT_MSR_PROT      \
+                                                         | SVM_CTRL_INTERCEPT_INVLPGA       \
+                                                         | SVM_CTRL_INTERCEPT_SHUTDOWN      \
+                                                         | SVM_CTRL_INTERCEPT_FERR_FREEZE   \
+                                                         | SVM_CTRL_INTERCEPT_VMRUN         \
+                                                         | SVM_CTRL_INTERCEPT_SKINIT        \
+                                                         | SVM_CTRL_INTERCEPT_WBINVD        \
+                                                         | SVM_CTRL_INTERCEPT_MONITOR       \
+                                                         | SVM_CTRL_INTERCEPT_MWAIT         \
+                                                         | SVM_CTRL_INTERCEPT_CR0_SEL_WRITE \
                                                          | SVM_CTRL_INTERCEPT_XSETBV)
 
 /** @name VMCB Clean Bits.
@@ -359,7 +360,6 @@ static FNSVMEXITHANDLER hmR0SvmExitVmmCall;
 static FNSVMEXITHANDLER hmR0SvmExitPause;
 static FNSVMEXITHANDLER hmR0SvmExitIret;
 static FNSVMEXITHANDLER hmR0SvmExitXcptPF;
-static FNSVMEXITHANDLER hmR0SvmExitXcptNM;
 static FNSVMEXITHANDLER hmR0SvmExitXcptUD;
 static FNSVMEXITHANDLER hmR0SvmExitXcptMF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptDB;
@@ -950,10 +950,11 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->ctrl.u64InterceptCtrl =   HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS
                                        | SVM_CTRL_INTERCEPT_VMMCALL;
 
-        /* CR0, CR4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
+        /*
+         * CR0, CR4 reads/writes must be intercepted, as our shadow values may differ from the guest's.
+         * These interceptions might be relaxed later during VM execution if the conditions allow.
+         */
         pVmcb->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
-
-        /* CR0, CR4 writes must be intercepted for the same reasons as above. */
         pVmcb->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4);
 
         /* Intercept all DRx reads and writes by default. Changed later on. */
@@ -1425,57 +1426,62 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMC
  */
 static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
-    uint64_t u64GuestCR0 = pCtx->cr0;
+    /* The guest FPU is now always pre-loaded before executing guest code, see @bugref{7243#c101}. */
+    Assert(CPUMIsGuestFPUStateActive(pVCpu));
+
+    uint64_t const uGuestCr0  = pCtx->cr0;
+    uint64_t       uShadowCr0 = uGuestCr0;
 
     /* Always enable caching. */
-    u64GuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);
+    uShadowCr0 &= ~(X86_CR0_CD | X86_CR0_NW);
 
-    /*
-     * When Nested Paging is not available use shadow page tables and intercept #PFs (the latter done in SVMR0SetupVM()).
-     */
+    /* When Nested Paging is not available use shadow page tables and intercept #PFs (the latter done in SVMR0SetupVM()). */
     if (!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
     {
-        u64GuestCR0 |= X86_CR0_PG      /* When Nested Paging is not available, use shadow page tables. */
-                    |  X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
+        uShadowCr0 |= X86_CR0_PG      /* Use shadow page tables. */
+                   |  X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
     }
 
     /*
-     * Guest FPU bits.
+     * If the shadow and guest CR0 are identical we can avoid intercepting CR0 reads.
+     *
+     * CR0 writes still needs interception as PGM requires tracking paging mode changes, see @bugref{6944}.
+     * We also don't ever want to honor weird things like cache disable from the guest. However, we can
+     * avoid intercepting changes to the TS & MP bits by clearing the CR0 write intercept below and keeping
+     * SVM_CTRL_INTERCEPT_CR0_SEL_WRITE instead.
      */
-    bool fInterceptNM = false;
-    bool fInterceptMF = false;
-    u64GuestCR0 |= X86_CR0_NE;         /* Use internal x87 FPU exceptions handling rather than external interrupts. */
-    if (CPUMIsGuestFPUStateActive(pVCpu))
+    if (uShadowCr0 == uGuestCr0)
     {
-        /* Catch floating point exceptions if we need to report them to the guest in a different way. */
-        if (!(pCtx->cr0 & X86_CR0_NE))
+        if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         {
-            Log4(("hmR0SvmLoadSharedCR0: Intercepting Guest CR0.MP Old-style FPU handling!!!\n"));
-            fInterceptMF = true;
+            pVmcb->ctrl.u16InterceptRdCRx &= ~RT_BIT(0);
+            pVmcb->ctrl.u16InterceptWrCRx &= ~RT_BIT(0);
+            Assert(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_CR0_SEL_WRITE);
+        }
+        else
+        {
+            /* If the nested-hypervisor intercepts CR0 reads/writes, we need to continue intercepting them. */
+            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+            Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
+            pVmcb->ctrl.u16InterceptRdCRx = (pVmcb->ctrl.u16InterceptRdCRx       & ~RT_BIT(0))
+                                          | (pVmcbNstGstCache->u16InterceptRdCRx &  RT_BIT(0));
+            pVmcb->ctrl.u16InterceptWrCRx = (pVmcb->ctrl.u16InterceptWrCRx       & ~RT_BIT(0))
+                                          | (pVmcbNstGstCache->u16InterceptWrCRx &  RT_BIT(0));
         }
     }
     else
     {
-        fInterceptNM = true;           /* Guest FPU inactive, #VMEXIT on #NM for lazy FPU loading. */
-        u64GuestCR0 |= X86_CR0_TS      /* Guest can task switch quickly and do lazy FPU syncing. */
-                    |  X86_CR0_MP;     /* FWAIT/WAIT should not ignore CR0.TS and should generate #NM. */
+        pVmcb->ctrl.u16InterceptRdCRx |= RT_BIT(0);
+        pVmcb->ctrl.u16InterceptWrCRx |= RT_BIT(0);
     }
+    pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
-    /*
-     * Update the exception intercept bitmap.
-     */
-    if (fInterceptNM)
-        hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_NM);
-    else
-        hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_NM);
-
-    if (fInterceptMF)
-        hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_MF);
-    else
-        hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_MF);
-
-    pVmcb->guest.u64CR0 = u64GuestCR0;
-    pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+    Assert(RT_HI_U32(uShadowCr0) == 0);
+    if (pVmcb->guest.u64CR0 != uShadowCr0)
+    {
+        pVmcb->guest.u64CR0 = uShadowCr0;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+    }
 }
 
 
@@ -2045,6 +2051,9 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
          *
          * - VMMCALL: Exclude the outer guest intercept as when it's also not intercepted by
          *   the nested-guest, the physical CPU raises a \#UD exception as expected.
+         *
+         * - SVM_CTRL_INTERCEPT_CR0_SEL_WRITE: Is always required as we want to track PGM mode
+         *   changes and not honor cache disable changes even by the nested-guest.
          */
         pVmcbNstGst->ctrl.u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & ~(  SVM_CTRL_INTERCEPT_VINTR
                                                                                  | SVM_CTRL_INTERCEPT_VMMCALL))
@@ -2317,7 +2326,7 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     PCSVMVMCBCTRL       pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
     PCSVMVMCBSTATESAVE  pVmcbNstGstState = &pVmcbNstGst->guest;
-    PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
 
     /*
      * Cache the nested-guest programmed VMCB fields if we have not cached it yet.
@@ -2329,25 +2338,25 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     bool const fWasCached = pCtx->hwvirt.svm.fHMCachedVmcb;
     if (!fWasCached)
     {
-        pNstGstVmcbCache->u16InterceptRdCRx = pVmcbNstGstCtrl->u16InterceptRdCRx;
-        pNstGstVmcbCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrCRx;
-        pNstGstVmcbCache->u16InterceptRdDRx = pVmcbNstGstCtrl->u16InterceptRdDRx;
-        pNstGstVmcbCache->u16InterceptWrDRx = pVmcbNstGstCtrl->u16InterceptWrDRx;
-        pNstGstVmcbCache->u32InterceptXcpt  = pVmcbNstGstCtrl->u32InterceptXcpt;
-        pNstGstVmcbCache->u64InterceptCtrl  = pVmcbNstGstCtrl->u64InterceptCtrl;
-        pNstGstVmcbCache->u64CR0            = pVmcbNstGstState->u64CR0;
-        pNstGstVmcbCache->u64CR3            = pVmcbNstGstState->u64CR3;
-        pNstGstVmcbCache->u64CR4            = pVmcbNstGstState->u64CR4;
-        pNstGstVmcbCache->u64EFER           = pVmcbNstGstState->u64EFER;
-        pNstGstVmcbCache->u64DBGCTL         = pVmcbNstGstState->u64DBGCTL;
-        pNstGstVmcbCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
-        pNstGstVmcbCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
-        pNstGstVmcbCache->u64TSCOffset      = pVmcbNstGstCtrl->u64TSCOffset;
-        pNstGstVmcbCache->u32VmcbCleanBits  = pVmcbNstGstCtrl->u32VmcbCleanBits;
-        pNstGstVmcbCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
-        pNstGstVmcbCache->TLBCtrl           = pVmcbNstGstCtrl->TLBCtrl;
-        pNstGstVmcbCache->u1NestedPaging    = pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging;
-        pNstGstVmcbCache->u1LbrVirt         = pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt;
+        pVmcbNstGstCache->u16InterceptRdCRx = pVmcbNstGstCtrl->u16InterceptRdCRx;
+        pVmcbNstGstCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrCRx;
+        pVmcbNstGstCache->u16InterceptRdDRx = pVmcbNstGstCtrl->u16InterceptRdDRx;
+        pVmcbNstGstCache->u16InterceptWrDRx = pVmcbNstGstCtrl->u16InterceptWrDRx;
+        pVmcbNstGstCache->u32InterceptXcpt  = pVmcbNstGstCtrl->u32InterceptXcpt;
+        pVmcbNstGstCache->u64InterceptCtrl  = pVmcbNstGstCtrl->u64InterceptCtrl;
+        pVmcbNstGstCache->u64CR0            = pVmcbNstGstState->u64CR0;
+        pVmcbNstGstCache->u64CR3            = pVmcbNstGstState->u64CR3;
+        pVmcbNstGstCache->u64CR4            = pVmcbNstGstState->u64CR4;
+        pVmcbNstGstCache->u64EFER           = pVmcbNstGstState->u64EFER;
+        pVmcbNstGstCache->u64DBGCTL         = pVmcbNstGstState->u64DBGCTL;
+        pVmcbNstGstCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
+        pVmcbNstGstCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
+        pVmcbNstGstCache->u64TSCOffset      = pVmcbNstGstCtrl->u64TSCOffset;
+        pVmcbNstGstCache->u32VmcbCleanBits  = pVmcbNstGstCtrl->u32VmcbCleanBits;
+        pVmcbNstGstCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
+        pVmcbNstGstCache->TLBCtrl           = pVmcbNstGstCtrl->TLBCtrl;
+        pVmcbNstGstCache->u1NestedPaging    = pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging;
+        pVmcbNstGstCache->u1LbrVirt         = pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt;
         pCtx->hwvirt.svm.fHMCachedVmcb      = true;
         Log4(("hmR0SvmVmRunCacheVmcb: Cached VMCB fields\n"));
     }
@@ -2568,9 +2577,16 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
     /*
-     * Guest Control registers: CR2, CR3 (handled at the end) - accesses to other control registers are always intercepted.
+     * Guest Control registers: CR0, CR2, CR3 (handled at the end) - accesses to other control registers are always intercepted.
      */
     pMixedCtx->cr2        = pVmcb->guest.u64CR2;
+
+    /* If we're not intercepting changes to CR0 TS & MP bits, sync those bits here. */
+    if (!(pVmcb->ctrl.u16InterceptWrCRx & RT_BIT(0)))
+    {
+        pMixedCtx->cr0 = (pMixedCtx->cr0      & ~(X86_CR0_TS | X86_CR0_MP))
+                       | (pVmcb->guest.u64CR0 &  (X86_CR0_TS | X86_CR0_MP));
+    }
 
     /*
      * Guest MSRs.
@@ -4246,10 +4262,12 @@ static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
     PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     hmR0SvmInjectPendingEvent(pVCpu, pCtx, pVmcbNstGst);
 
-    if (   pVCpu->hm.s.fPreloadGuestFpu
-        && !CPUMIsGuestFPUStateActive(pVCpu))
+    if (!CPUMIsGuestFPUStateActive(pVCpu))
     {
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestFpuState, x);
         CPUMR0LoadGuestFPU(pVM, pVCpu); /* (Ignore rc, no need to set HM_CHANGED_HOST_CONTEXT for SVM.) */
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestFpuState, x);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadGuestFpu);
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
     }
 
@@ -4358,10 +4376,12 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
     hmR0SvmInjectPendingEvent(pVCpu, pCtx, pVmcb);
 
-    if (   pVCpu->hm.s.fPreloadGuestFpu
-        && !CPUMIsGuestFPUStateActive(pVCpu))
+    if (!CPUMIsGuestFPUStateActive(pVCpu))
     {
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestFpuState, x);
         CPUMR0LoadGuestFPU(pVM, pVCpu); /* (Ignore rc, no need to set HM_CHANGED_HOST_CONTEXT for SVM.) */
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestFpuState, x);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadGuestFpu);
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
     }
 
@@ -5133,14 +5153,6 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             return hmR0SvmExitXcptPFNested(pVCpu, pCtx,pSvmTransient);
         }
 
-        case SVM_EXIT_EXCEPTION_7:   /* X86_XCPT_NM */
-        {
-            if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_NM))
-                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
-            hmR0SvmSetPendingXcptNM(pVCpu);
-            return VINF_SUCCESS;
-        }
-
         case SVM_EXIT_EXCEPTION_6:   /* X86_XCPT_UD */
         {
             if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_UD))
@@ -5153,8 +5165,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         {
             if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_MF))
                 return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
-            hmR0SvmSetPendingXcptMF(pVCpu);
-            return VINF_SUCCESS;
+            return hmR0SvmExitXcptMF(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_EXCEPTION_1:   /* X86_XCPT_DB */
@@ -5188,10 +5199,17 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             return hmR0SvmExitReadCRx(pVCpu, pCtx, pSvmTransient);
         }
 
+        case SVM_EXIT_CR0_SEL_WRITE:
+        {
+            if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_CR0_SEL_WRITE))
+                return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+            return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
+        }
+
         case SVM_EXIT_WRITE_CR0:
         case SVM_EXIT_WRITE_CR3:
         case SVM_EXIT_WRITE_CR4:
-        case SVM_EXIT_WRITE_CR8:   /** @todo Shouldn't writes to CR8 go to V_TPR instead since we run with V_INTR_MASKING set?? */
+        case SVM_EXIT_WRITE_CR8:   /** @todo Shouldn't writes to CR8 go to V_TPR instead since we run with V_INTR_MASKING set? */
         {
             uint8_t const uCr = uExitCode - SVM_EXIT_WRITE_CR0;
             Log4(("hmR0SvmHandleExitNested: Write CR%u: uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uCr, uExitInfo1, uExitInfo2));
@@ -5293,7 +5311,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 /* The exceptions not handled here are already handled individually above (as they occur more frequently). */
                 case SVM_EXIT_EXCEPTION_0:     /*case SVM_EXIT_EXCEPTION_1:*/   case SVM_EXIT_EXCEPTION_2:
                 /*case SVM_EXIT_EXCEPTION_3:*/   case SVM_EXIT_EXCEPTION_4:     case SVM_EXIT_EXCEPTION_5:
-                /*case SVM_EXIT_EXCEPTION_6:*/ /*case SVM_EXIT_EXCEPTION_7:*/   case SVM_EXIT_EXCEPTION_8:
+                /*case SVM_EXIT_EXCEPTION_6:*/   case SVM_EXIT_EXCEPTION_7:     case SVM_EXIT_EXCEPTION_8:
                 case SVM_EXIT_EXCEPTION_9:       case SVM_EXIT_EXCEPTION_10:    case SVM_EXIT_EXCEPTION_11:
                 case SVM_EXIT_EXCEPTION_12:      case SVM_EXIT_EXCEPTION_13:  /*case SVM_EXIT_EXCEPTION_14:*/
                 case SVM_EXIT_EXCEPTION_15:      case SVM_EXIT_EXCEPTION_16:  /*case SVM_EXIT_EXCEPTION_17:*/
@@ -5475,9 +5493,6 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
         case SVM_EXIT_EXCEPTION_14:  /* X86_XCPT_PF */
             return hmR0SvmExitXcptPF(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_7:   /* X86_XCPT_NM */
-            return hmR0SvmExitXcptNM(pVCpu, pCtx, pSvmTransient);
-
         case SVM_EXIT_EXCEPTION_6:   /* X86_XCPT_UD */
             return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
 
@@ -5507,12 +5522,13 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
         case SVM_EXIT_READ_CR4:
             return hmR0SvmExitReadCRx(pVCpu, pCtx, pSvmTransient);
 
+        case SVM_EXIT_CR0_SEL_WRITE:
         case SVM_EXIT_WRITE_CR0:
         case SVM_EXIT_WRITE_CR3:
         case SVM_EXIT_WRITE_CR4:
         case SVM_EXIT_WRITE_CR8:
         {
-            uint8_t const uCr = uExitCode - SVM_EXIT_WRITE_CR0;
+            uint8_t const uCr = uExitCode == SVM_EXIT_CR0_SEL_WRITE ? 0 : uExitCode - SVM_EXIT_WRITE_CR0;
             Log4(("hmR0SvmHandleExit: Write CR%u\n", uCr)); NOREF(uCr);
             return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
         }
@@ -5614,7 +5630,7 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
                 case SVM_EXIT_EXCEPTION_4:             /* X86_XCPT_OF */
                 case SVM_EXIT_EXCEPTION_5:             /* X86_XCPT_BR */
                 /*   SVM_EXIT_EXCEPTION_6: */          /* X86_XCPT_UD - Handled above. */
-                /*   SVM_EXIT_EXCEPTION_7: */          /* X86_XCPT_NM - Handled above. */
+                case SVM_EXIT_EXCEPTION_7:             /* X86_XCPT_NM */
                 case SVM_EXIT_EXCEPTION_8:             /* X86_XCPT_DF */
                 case SVM_EXIT_EXCEPTION_9:             /* X86_XCPT_CO_SEG_OVERRUN */
                 case SVM_EXIT_EXCEPTION_10:            /* X86_XCPT_TS */
@@ -6520,7 +6536,8 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    uint8_t const iCrReg = pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0;
+    uint64_t const uExitCode = pSvmTransient->u64ExitCode;
+    uint8_t  const iCrReg    = uExitCode == SVM_EXIT_CR0_SEL_WRITE ? 0 : (pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0);
     Assert(iCrReg <= 15);
 
     VBOXSTRICTRC rcStrict = VERR_SVM_IPE_5;
@@ -7374,60 +7391,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * \#VMEXIT handler for device-not-available exceptions (SVM_EXIT_EXCEPTION_7).
- * Conditional \#VMEXIT.
- */
-HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
-{
-    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-
-    /* Paranoia; Ensure we cannot be called as a result of event delivery. */
-    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
-    Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid); NOREF(pVmcb);
-
-    /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
-    VMMRZCallRing3Disable(pVCpu);
-    HM_DISABLE_PREEMPT();
-
-    int rc;
-    /* If the guest FPU was active at the time of the #NM exit, then it's a guest fault. */
-    if (pSvmTransient->fWasGuestFPUStateActive)
-    {
-        rc = VINF_EM_RAW_GUEST_TRAP;
-        Assert(CPUMIsGuestFPUStateActive(pVCpu) || HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR0));
-    }
-    else
-    {
-#ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-        Assert(!pSvmTransient->fWasGuestFPUStateActive);
-#endif
-        rc = CPUMR0Trap07Handler(pVCpu->CTX_SUFF(pVM), pVCpu); /* (No need to set HM_CHANGED_HOST_CONTEXT for SVM.) */
-        Assert(   rc == VINF_EM_RAW_GUEST_TRAP
-               || ((rc == VINF_SUCCESS || rc == VINF_CPUM_HOST_CR0_MODIFIED) && CPUMIsGuestFPUStateActive(pVCpu)));
-    }
-
-    HM_RESTORE_PREEMPT();
-    VMMRZCallRing3Enable(pVCpu);
-
-    if (rc == VINF_SUCCESS || rc == VINF_CPUM_HOST_CR0_MODIFIED)
-    {
-        /* Guest FPU state was activated, we'll want to change CR0 FPU intercepts before the next VM-reentry. */
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
-        pVCpu->hm.s.fPreloadGuestFpu = true;
-    }
-    else
-    {
-        /* Forward #NM to the guest. */
-        Assert(rc == VINF_EM_RAW_GUEST_TRAP);
-        hmR0SvmSetPendingXcptNM(pVCpu);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNM);
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
  * \#VMEXIT handler for undefined opcode (SVM_EXIT_EXCEPTION_6).
  * Conditional \#VMEXIT.
  */
@@ -7480,7 +7443,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /* Paranoia; Ensure we cannot be called as a result of event delivery. */
-    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+    PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
     Assert(!pVmcb->ctrl.ExitIntInfo.n.u1Valid); NOREF(pVmcb);
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
@@ -7493,9 +7456,15 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         int rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
         if (RT_SUCCESS(rc))
         {
+#ifdef VBOX_WITH_NESTED_HWVIRT
+            if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
+                && HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_FERR_FREEZE))
+            {
+                return VBOXSTRICTRC_TODO(IEMExecSvmVmexit(pVCpu, SVM_EXIT_FERR_FREEZE, 0, 0));
+            }
+#endif
             /* Convert a #MF into a FERR -> IRQ 13. See @bugref{6117}. */
-            /** @todo FERR intercept when in nested-guest mode?   */
-            rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13, 1, 0 /* uTagSrc */);
+            rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13 /* u8Irq */, 1 /* u8Level */, 0 /* uTagSrc */);
             if (RT_SUCCESS(rc))
                 pCtx->rip += cbOp;
         }

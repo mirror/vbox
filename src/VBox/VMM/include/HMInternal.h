@@ -973,6 +973,7 @@ typedef struct HMCPU
     STAMPROFILEADV          StatExitMovCRx;
     STAMPROFILEADV          StatExitXcptNmi;
     STAMPROFILEADV          StatLoadGuestState;
+    STAMPROFILEADV          StatLoadGuestFpuState;
     STAMPROFILEADV          StatInGC;
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
@@ -1083,6 +1084,7 @@ typedef struct HMCPU
 
     STAMCOUNTER             StatLoadMinimal;
     STAMCOUNTER             StatLoadFull;
+    STAMCOUNTER             StatLoadGuestFpu;
 
     STAMCOUNTER             StatVmxCheckBadRmSelBase;
     STAMCOUNTER             StatVmxCheckBadRmSelLimit;

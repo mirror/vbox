@@ -326,7 +326,7 @@
 /** Intercept VINTR (virtual maskable interrupt). */
 #define SVM_CTRL_INTERCEPT_VINTR              RT_BIT_64(4)
 /** Intercept CR0 writes that change bits other than CR0.TS or CR0.MP */
-#define SVM_CTRL_INTERCEPT_CR0_SEL_WRITES     RT_BIT_64(5)
+#define SVM_CTRL_INTERCEPT_CR0_SEL_WRITE      RT_BIT_64(5)
 /** Intercept reads of IDTR. */
 #define SVM_CTRL_INTERCEPT_IDTR_READS         RT_BIT_64(6)
 /** Intercept reads of GDTR. */
