@@ -551,6 +551,15 @@ void BIOSCALL ata_detect(void)
                 else
                     fdpt = ebda_seg :> &EbdaData->fdpt1;
 
+#if 0
+                /* Place the FDPT outside of conventional memory. Needed for
+                 * 286 XENIX 2.1.3/2.2.1 because it completely wipes out
+                 * the EBDA and low memory. Hack!
+                 */
+                fdpt = MK_FP(0xE200, 0xf00);
+                fdpt += device;
+#endif
+
                 /* Set the INT 41h or 46h pointer. */
                 int_vec  = MK_FP(0, (0x41 + device * 5) * sizeof(void __far *));
                 *int_vec = fdpt;
@@ -559,6 +568,8 @@ void BIOSCALL ata_detect(void)
                  * to be done at POST time with lots of ugly assembler code, which
                  * isn't worth the effort of converting from AMI to Award CMOS
                  * format. Just do it here. */
+                fdpt->resvd1 = fdpt->resvd2 = 0;
+
                 fdpt->lcyl  = lgeo.cylinders;
                 fdpt->lhead = lgeo.heads;
                 fdpt->sig   = 0xa0;

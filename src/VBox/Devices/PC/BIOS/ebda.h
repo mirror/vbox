@@ -147,10 +147,10 @@ typedef struct {
     uint8_t     lhead;
     uint8_t     sig;
     uint8_t     spt;
-    uint8_t     resvd1[4];
+    uint32_t    resvd1;
     uint16_t    cyl;
     uint8_t     head;
-    uint8_t     resvd2[2];
+    uint16_t    resvd2;
     uint8_t     lspt;
     uint8_t     csum;
 } fdpt_t;
