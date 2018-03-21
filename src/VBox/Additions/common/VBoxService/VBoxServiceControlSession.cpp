@@ -1092,6 +1092,42 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
     {
         VGSvcVerbose(3, "Unsupported message (uMsg=%RU32, cParms=%RU32) from host, skipping\n", uMsg, pHostCtx->uNumParms);
 
+        /**
+         * !!! HACK ALERT BEGIN !!!
+         * As peeking for the current message by VbglR3GuestCtrlMsgWaitFor() / GUEST_MSG_WAIT only gives us the message type and
+         * the number of parameters, but *not* the actual context ID the message is bound to, try to retrieve it here.
+         *
+         * This is needed in order to reply to the host with the current context ID, without breaking existing clients.
+         * Not doing this isn't fatal, but will make host clients wait longer (timing out) for not implemented messages.
+         ** @todo Get rid of this as soon as we have a protocl bump (v4).
+         */
+        struct HGCMMsgSkip
+        {
+            VBGLIOCHGCMCALL hdr;
+            /** UInt32: Context ID. */
+            HGCMFunctionParameter context;
+        };
+
+        HGCMMsgSkip Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pHostCtx->uClientID, GUEST_MSG_WAIT, pHostCtx->uNumParms);
+
+        /* Don't want to drag in VbglHGCMParmUInt32Set(). */
+        Msg.context.type      = VMMDevHGCMParmType_32bit;
+        Msg.context.u.value64 = 0; /* init unused bits to 0 */
+        Msg.context.u.value32 = 0;
+
+        /* Retrieve the context ID of the message which is not supported and put it in pHostCtx. */
+        int rc2 = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc2))
+            Msg.context.GetUInt32(&pHostCtx->uContextID);
+
+        /** !!!                !!!
+         *  !!! HACK ALERT END !!!
+         *  !!!                !!! */
+
+        rc2 = VbglR3GuestCtrlMsgReply(pHostCtx, VERR_NOT_SUPPORTED);
+        AssertRC(rc2);
+
         /* Tell the host service to skip the message. */
         VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID);
 
