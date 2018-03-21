@@ -5246,16 +5246,16 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 IEM_SVM_UPDATE_NRIP(pVCpu);
                 IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_WRITE_CR0, enmAccessCrX, iGReg);
             }
-            if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CR0_SEL_WRITES))
+            if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CR0_SEL_WRITE))
             {
                 /* 'lmsw' intercepts regardless of whether the TS/MP bits are actually toggled. */
                 if (   enmAccessCrX == IEMACCESSCRX_LMSW
                     || (uNewCrX & ~(X86_CR0_TS | X86_CR0_MP)) != (uOldCrX & ~(X86_CR0_TS | X86_CR0_MP)))
                 {
                     Assert(enmAccessCrX != IEMACCESSCRX_CLTS);
-                    Log(("iemCImpl_load_Cr%#x: TS/MP bit changed or lmsw instr: Guest intercept -> #VMEXIT\n", iCrReg));
+                    Log(("iemCImpl_load_Cr%#x: lmsw or bits other than TS/MP changed: Guest intercept -> #VMEXIT\n", iCrReg));
                     IEM_SVM_UPDATE_NRIP(pVCpu);
-                    IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_CR0_SEL_WRITE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+                    IEM_RETURN_SVM_CRX_VMEXIT(pVCpu, SVM_EXIT_CR0_SEL_WRITE, enmAccessCrX, iGReg);
                 }
             }
 
