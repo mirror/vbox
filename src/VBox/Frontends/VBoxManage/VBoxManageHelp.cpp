@@ -1029,7 +1029,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
     if (fCategory & USAGE_GETEXTRADATA)
         RTStrmPrintf(pStrm,
                            "%s getextradata %s    global|<uuid|vmname>\n"
-                     "                            <key>|enumerate\n"
+                     "                            <key>|[enumerate]\n"
                      "\n", SEP);
 
     if (fCategory & USAGE_SETEXTRADATA)
