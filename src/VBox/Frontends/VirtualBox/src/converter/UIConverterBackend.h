@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,14 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIConverterBackend_h__
-#define __UIConverterBackend_h__
+#ifndef ___UIConverterBackend_h___
+#define ___UIConverterBackend_h___
 
 /* Qt includes: */
-#include <QString>
 #include <QColor>
 #include <QIcon>
 #include <QPixmap>
+#include <QString>
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -31,42 +31,44 @@
 /* Other VBox includes: */
 #include <iprt/assert.h>
 
+
 /* Determines if 'Object of type X' can be converted to object of other type.
  * This function always returns 'false' until re-determined for specific object type. */
 template<class X> bool canConvert() { return false; }
 
 /* Converts passed 'Object X' to QColor.
  * This function returns null QColor for any object type until re-determined for specific one. */
-template<class X> QColor toColor(const X & /* xobject */) { Assert(0); return QColor(); }
+template<class X> QColor toColor(const X & /* xobject */) { AssertFailed(); return QColor(); }
 
 /* Converts passed 'Object X' to QIcon.
  * This function returns null QIcon for any object type until re-determined for specific one. */
-template<class X> QIcon toIcon(const X & /* xobject */) { Assert(0); return QIcon(); }
+template<class X> QIcon toIcon(const X & /* xobject */) { AssertFailed(); return QIcon(); }
 
 /* Converts passed 'Object X' to QPixmap.
  * This function returns null QPixmap for any object type until re-determined for specific one. */
-template<class X> QPixmap toWarningPixmap(const X & /* xobject */) { Assert(0); return QPixmap(); }
+template<class X> QPixmap toWarningPixmap(const X & /* xobject */) { AssertFailed(); return QPixmap(); }
 
 /* Converts passed 'Object of type X' to QString.
  * This function returns null QString for any object type until re-determined for specific one. */
-template<class X> QString toString(const X & /* xobject */) { Assert(0); return QString(); }
+template<class X> QString toString(const X & /* xobject */) { AssertFailed(); return QString(); }
 /* Converts passed QString to 'Object of type X'.
  * This function returns default constructed object for any object type until re-determined for specific one. */
-template<class X> X fromString(const QString & /* strData */) { Assert(0); return X(); }
+template<class X> X fromString(const QString & /* strData */) { AssertFailed(); return X(); }
 
 /* Converts passed 'Object of type X' to non-translated QString.
  * This function returns null QString for any object type until re-determined for specific one. */
-template<class X> QString toInternalString(const X & /* xobject */) { Assert(0); return QString(); }
+template<class X> QString toInternalString(const X & /* xobject */) { AssertFailed(); return QString(); }
 /* Converts passed non-translated QString to 'Object of type X'.
  * This function returns default constructed object for any object type until re-determined for specific one. */
-template<class X> X fromInternalString(const QString & /* strData */) { Assert(0); return X(); }
+template<class X> X fromInternalString(const QString & /* strData */) { AssertFailed(); return X(); }
 
 /* Converts passed 'Object of type X' to abstract integer.
  * This function returns 0 for any object type until re-determined for specific one. */
-template<class X> int toInternalInteger(const X & /* xobject */) { Assert(0); return 0; }
+template<class X> int toInternalInteger(const X & /* xobject */) { AssertFailed(); return 0; }
 /* Converts passed abstract integer to 'Object of type X'.
  * This function returns default constructed object for any object type until re-determined for specific one. */
-template<class X> X fromInternalInteger(const int & /* iData */) { Assert(0); return X(); }
+template<class X> X fromInternalInteger(const int & /* iData */) { AssertFailed(); return X(); }
+
 
 /* Declare global canConvert specializations: */
 template<> bool canConvert<SizeSuffix>();
@@ -105,6 +107,7 @@ template<> bool canConvert<MiniToolbarAlignment>();
 template<> bool canConvert<InformationElementType>();
 template<> bool canConvert<MaxGuestResolutionPolicy>();
 
+
 /* Declare COM canConvert specializations: */
 template<> bool canConvert<KMachineState>();
 template<> bool canConvert<KSessionState>();
@@ -129,6 +132,7 @@ template<> bool canConvert<KStorageBus>();
 template<> bool canConvert<KStorageControllerType>();
 template<> bool canConvert<KChipsetType>();
 template<> bool canConvert<KNATProtocol>();
+
 
 /* Declare global conversion specializations: */
 template<> QString toString(const SizeSuffix &sizeSuffix);
@@ -207,6 +211,7 @@ template<> QIcon toIcon(const InformationElementType &informationElementType);
 template<> QString toInternalString(const MaxGuestResolutionPolicy &enmMaxGuestResolutionPolicy);
 template<> MaxGuestResolutionPolicy fromInternalString<MaxGuestResolutionPolicy>(const QString &strMaxGuestResolutionPolicy);
 
+
 /* Declare COM conversion specializations: */
 template<> QColor toColor(const KMachineState &state);
 template<> QIcon toIcon(const KMachineState &state);
@@ -242,5 +247,6 @@ template<> KAudioControllerType fromString<KAudioControllerType>(const QString &
 template<> KAuthType fromString<KAuthType>(const QString &strType);
 template<> KStorageControllerType fromString<KStorageControllerType>(const QString &strType);
 
-#endif /* __UIConverterBackend_h__ */
+
+#endif /* !___UIConverterBackend_h___ */
 

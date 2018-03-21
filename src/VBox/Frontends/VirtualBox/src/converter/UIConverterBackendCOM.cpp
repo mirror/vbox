@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIConverterBackend implementation.
+ * VBox Qt GUI - UIConverterBackendCOM implementation.
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,6 +58,7 @@ template<> bool canConvert<KStorageBus>() { return true; }
 template<> bool canConvert<KStorageControllerType>() { return true; }
 template<> bool canConvert<KChipsetType>() { return true; }
 template<> bool canConvert<KNATProtocol>() { return true; }
+
 
 /* QColor <= KMachineState: */
 template<> QColor toColor(const KMachineState &state)
@@ -279,12 +280,8 @@ template<> QString toString(const KMediumType &type)
 /* QString <= KMediumVariant: */
 template<> QString toString(const KMediumVariant &variant)
 {
-#ifdef _MSC_VER
-# pragma warning(push)
-# pragma warning(disable:4063) /* warning C4063: case '65537' is not a valid value for switch of enum 'KMediumVariant' */
-#endif
     /* Note: KMediumVariant_Diff and KMediumVariant_Fixed are so far mutually exclusive: */
-    switch (variant)
+    switch ((int)variant)
     {
         case KMediumVariant_Standard:
             return QApplication::translate("VBoxGlobal", "Dynamically allocated storage", "MediumVariant");
@@ -311,9 +308,6 @@ template<> QString toString(const KMediumVariant &variant)
         default:
             AssertMsgFailed(("No text for %d", variant)); break;
     }
-#ifdef _MSC_VER
-# pragma warning(pop)
-#endif
     return QString();
 }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,9 +25,9 @@
 # include <QRegularExpression>
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
 # include "UIConverterBackend.h"
 # include "UIIconPool.h"
-# include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -72,6 +72,7 @@ template<> bool canConvert<MiniToolbarAlignment>() { return true; }
 #endif
 template<> bool canConvert<InformationElementType>() { return true; }
 template<> bool canConvert<MaxGuestResolutionPolicy>() { return true; }
+
 
 /* QString <= SizeSuffix: */
 template<> QString toString(const SizeSuffix &sizeSuffix)

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,101 +15,114 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIConverter_h__
-#define __UIConverter_h__
+#ifndef ___UIConverter_h___
+#define ___UIConverter_h___
 
 /* GUI includes: */
 #include "UIConverterBackend.h"
 
-/* High-level interface for different conversions between GUI classes: */
+/** High-level interface for different conversions between GUI classes.
+  * @todo Replace singleton with static template interface. */
 class UIConverter
 {
 public:
 
-    /* Singleton instance: */
-    static UIConverter* instance() { return m_spInstance; }
+    /** Returns singleton instance. */
+    static UIConverter *instance() { return s_pInstance; }
 
-    /* Prepare/cleanup: */
+    /** Prepares everything. */
     static void prepare();
+    /** Cleanups everything. */
     static void cleanup();
 
-    /* QColor <= template class: */
+    /** Converts QColor <= template class. */
     template<class T> QColor toColor(const T &data) const
     {
         if (canConvert<T>())
             return ::toColor(data);
-        Assert(0); return QColor();
+        AssertFailed();
+        return QColor();
     }
 
-    /* QIcon <= template class: */
+    /** Converts QIcon <= template class. */
     template<class T> QIcon toIcon(const T &data) const
     {
         if (canConvert<T>())
             return ::toIcon(data);
-        Assert(0); return QIcon();
+        AssertFailed();
+        return QIcon();
     }
-    /* QPixmap <= template class: */
+    /** Converts QPixmap <= template class. */
     template<class T> QPixmap toWarningPixmap(const T &data) const
     {
         if (canConvert<T>())
             return ::toWarningPixmap(data);
-        Assert(0); return QPixmap();
+        AssertFailed();
+        return QPixmap();
     }
 
-    /* QString <= template class: */
+    /** Converts QString <= template class. */
     template<class T> QString toString(const T &data) const
     {
         if (canConvert<T>())
             return ::toString(data);
-        Assert(0); return QString();
+        AssertFailed();
+        return QString();
     }
-    /* Template class <= QString: */
+    /** Converts template class <= QString. */
     template<class T> T fromString(const QString &strData) const
     {
         if (canConvert<T>())
             return ::fromString<T>(strData);
-        Assert(0); return T();
+        AssertFailed();
+        return T();
     }
 
-    /* QString <= template class: */
+    /** Converts QString <= template class. */
     template<class T> QString toInternalString(const T &data) const
     {
         if (canConvert<T>())
             return ::toInternalString(data);
-        Assert(0); return QString();
+        AssertFailed();
+        return QString();
     }
-    /* Template class <= QString: */
+    /** Converts template class <= QString. */
     template<class T> T fromInternalString(const QString &strData) const
     {
         if (canConvert<T>())
             return ::fromInternalString<T>(strData);
-        Assert(0); return T();
+        AssertFailed();
+        return T();
     }
 
-    /* int <= template class: */
+    /** Converts int <= template class. */
     template<class T> int toInternalInteger(const T &data) const
     {
         if (canConvert<T>())
             return ::toInternalInteger(data);
-        Assert(0); return 0;
+        AssertFailed();
+        return 0;
     }
-    /* Template class <= int: */
+    /** Converts template class <= int. */
     template<class T> T fromInternalInteger(const int &iData) const
     {
         if (canConvert<T>())
             return ::fromInternalInteger<T>(iData);
-        Assert(0); return T();
+        AssertFailed();
+        return T();
     }
 
 private:
 
-    /* Constructor: */
+    /** Constructs converter. */
     UIConverter() {}
 
-    /* Static instance: */
-    static UIConverter *m_spInstance;
+    /** Holds the static instance. */
+    static UIConverter *s_pInstance;
 };
+
+/** Singleton UI converter 'official' name. */
 #define gpConverter UIConverter::instance()
 
-#endif /* __UIConverter_h__ */
+#endif /* !___UIConverter_h___ */
 
