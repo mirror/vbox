@@ -153,7 +153,7 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
          * The fields that are guaranteed to be read-only during SVM guest execution
          * can safely be restored from our VMCB cache. Other fields like control registers
          * can potentially be modified (if the nested-hypervisor is not intercepting writes)
-         * and thus we save the actual virtual CPU values of these registers.
+         * and thus we restore the actual virtual CPU values of these registers.
          */
         pVmcbNstGstCtrl->u16InterceptRdCRx             = pNstGstVmcbCache->u16InterceptRdCRx;
         pVmcbNstGstCtrl->u16InterceptWrCRx             = pNstGstVmcbCache->u16InterceptWrCRx;
