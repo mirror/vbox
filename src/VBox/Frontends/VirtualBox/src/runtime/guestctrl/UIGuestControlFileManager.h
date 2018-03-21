@@ -37,11 +37,16 @@ class QHBoxLayout;
 class QPlainTextEdit;
 class QVBoxLayout;
 class QSplitter;
+class QITabWidget;
 class CGuestSessionStateChangedEvent;
+class UIFileOperationsList;
+class UIGuestControlConsole;
+class UIGuestControlInterface;
 class UIGuestFileTable;
 class UIHostFileTable;
 class UIGuestSessionCreateWidget;
 class UIToolBar;
+
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
@@ -90,24 +95,29 @@ private:
     void postSessionClosed();
 
     template<typename T>
-    QStringList   getFsObjInfoStringList(const T &fsObjectInfo) const;
+    QStringList       getFsObjInfoStringList(const T &fsObjectInfo) const;
 
-    const int         m_iMaxRecursionDepth;
-    CGuest            m_comGuest;
-    CGuestSession     m_comGuestSession;
+    const int           m_iMaxRecursionDepth;
+    CGuest              m_comGuest;
+    CGuestSession       m_comGuestSession;
 
-    QVBoxLayout      *m_pMainLayout;
-    QSplitter        *m_pVerticalSplitter;
-    QPlainTextEdit   *m_pLogOutput;
-    UIToolBar        *m_pToolBar;
-    QAction          *m_pCopyGuestToHost;
-    QAction          *m_pCopyHostToGuest;
-    QWidget          *m_pFileTableContainerWidget;
-    QHBoxLayout      *m_pFileTableContainerLayout;
+    QVBoxLayout        *m_pMainLayout;
+    QSplitter          *m_pVerticalSplitter;
+    QPlainTextEdit     *m_pLogOutput;
+    UIToolBar          *m_pToolBar;
+    QAction            *m_pCopyGuestToHost;
+    QAction            *m_pCopyHostToGuest;
+    QWidget            *m_pFileTableContainerWidget;
+    QHBoxLayout        *m_pFileTableContainerLayout;
+    QITabWidget        *m_pTabWidget;
+    UIFileOperationsList       *m_pFileOperationsList;
+    UIGuestControlConsole    *m_pConsole;
+    UIGuestControlInterface  *m_pControlInterface;
 
     UIGuestSessionCreateWidget *m_pSessionCreateWidget;
     UIGuestFileTable           *m_pGuestFileTable;
     UIHostFileTable            *m_pHostFileTable;
+
     ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
     ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
     CEventListener m_comSessionListener;

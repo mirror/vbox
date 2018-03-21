@@ -31,13 +31,16 @@
 /* GUI includes: */
 # include "QILabel.h"
 # include "QILineEdit.h"
+# include "QITabWidget.h"
+# include "QITreeWidget.h"
 # include "QIWithRetranslateUI.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
+# include "UIGuestControlConsole.h"
 # include "UIGuestControlFileManager.h"
 # include "UIGuestFileTable.h"
-# include "UIHostFileTable.h"
 # include "UIGuestControlInterface.h"
+# include "UIHostFileTable.h"
 # include "UIToolBar.h"
 # include "UIVMInformationDialog.h"
 # include "VBoxGlobal.h"
@@ -51,6 +54,24 @@
 # include "CGuestSession.h"
 # include "CGuestSessionStateChangedEvent.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+/*********************************************************************************************************************************
+*   UIFileOperationsList definition.                                                                                   *
+*********************************************************************************************************************************/
+
+class UIFileOperationsList : public QITreeWidget
+{
+    Q_OBJECT;
+public:
+
+    UIFileOperationsList(QWidget *pParent = 0);
+
+private:
+};
+
+/*********************************************************************************************************************************
+*   UIGuestSessionCreateWidget definition.                                                                                   *
+*********************************************************************************************************************************/
 
 class UIGuestSessionCreateWidget : public QIWithRetranslateUI<QWidget>
 {
@@ -90,6 +111,13 @@ private:
 
 };
 
+/*********************************************************************************************************************************
+*   UIFileOperationsList implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIFileOperationsList::UIFileOperationsList(QWidget *pParent)
+    :QITreeWidget(pParent)
+{}
 
 
 /*********************************************************************************************************************************
@@ -234,6 +262,8 @@ UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGu
     , m_pCopyHostToGuest(0)
     , m_pFileTableContainerWidget(0)
     , m_pFileTableContainerLayout(0)
+    , m_pTabWidget(0)
+    , m_pFileOperationsList(0)
     , m_pSessionCreateWidget(0)
     , m_pGuestFileTable(0)
     , m_pHostFileTable(0)
@@ -267,6 +297,11 @@ void UIGuestControlFileManager::retranslateUi()
         m_pCopyHostToGuest->setToolTip(UIVMInformationDialog::tr("Copy the selected object(s) from host to guest"));
         m_pCopyHostToGuest->setStatusTip(UIVMInformationDialog::tr("Copy the selected object(s) from host to guest"));
     }
+
+
+    m_pTabWidget->setTabText(0, tr("Log"));
+    m_pTabWidget->setTabText(1, tr("File Operations"));
+    m_pTabWidget->setTabText(2, tr("Terminal"));
 
 }
 
@@ -338,15 +373,26 @@ void UIGuestControlFileManager::prepareObjects()
         m_pVerticalSplitter->addWidget(m_pFileTableContainerWidget);
     }
 
+    m_pTabWidget = new QITabWidget;
+    if (m_pTabWidget)
+    {
+        m_pVerticalSplitter->addWidget(m_pTabWidget);
+        m_pTabWidget->setTabPosition(QTabWidget::South);
+    }
 
     m_pLogOutput = new QPlainTextEdit;
     if (m_pLogOutput)
     {
-        //m_pLogOutput->setMaximumHeight(80);
+        m_pTabWidget->addTab(m_pLogOutput, "Log");
         m_pLogOutput->setReadOnly(true);
-        m_pVerticalSplitter->addWidget(m_pLogOutput);
     }
 
+    m_pFileOperationsList = new UIFileOperationsList;
+    if (m_pFileOperationsList)
+    {
+        m_pTabWidget->addTab(m_pFileOperationsList, "File Operatiions");
+        m_pFileOperationsList->header()->hide();
+    }
 
     m_pVerticalSplitter->setStretchFactor(0, 3);
     m_pVerticalSplitter->setStretchFactor(1, 1);

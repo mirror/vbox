@@ -136,16 +136,9 @@ void UIHostFileTable::goToHomeDirectory()
     if (!startDirItem)
         return;
 
-    // UIFileTableItem *rootDirectoryItem
-    QDir homeDirectory(QDir::homePath());
-    QList<QString> pathTrail;//(QDir::rootPath());
-    do{
-
-        pathTrail.push_front(homeDirectory.absolutePath());
-        homeDirectory.cdUp();
-    }while(!homeDirectory.isRoot());
-
-    goIntoDirectory(pathTrail);
+    QString userHome = UIPathOperations::sanitize(QDir::homePath());
+    QList<QString> pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+    goIntoDirectory(pathList);
 }
 
 bool UIHostFileTable::renameItem(UIFileTableItem *item, QString newBaseName)

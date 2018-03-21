@@ -150,12 +150,10 @@ void UIGuestFileTable::goToHomeDirectory()
     UIFileTableItem *startDirItem = m_pRootItem->child(0);
     if (!startDirItem)
         return;
-    //printf("user home %s\n", m_comGuestSession.GetUserHome().toStdString().c_str());
-    QString userHome = UIPathOperations::sanitize(m_comGuestSession.GetUserHome()).remove(0,1);
 
-    QList<QString> pathTrail = userHome.split(UIPathOperations::delimiter);
-
-    goIntoDirectory(pathTrail);
+    QString userHome = UIPathOperations::sanitize(m_comGuestSession.GetUserHome());
+    QList<QString> pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+    goIntoDirectory(pathList);
 }
 
 bool UIGuestFileTable::renameItem(UIFileTableItem *item, QString newBaseName)

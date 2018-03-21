@@ -67,16 +67,20 @@ public:
     static QString getPathExceptObjectName(const QString &path);
     /** Replace the last part of the @p previusPath with newBaseName */
     static QString constructNewItemPath(const QString &previousPath, const QString &newBaseName);
-
+    /** Split the path and return it as a QStringList, top most being the 0th element. No delimiters */
+    QStringList pathTrail(const QString &path);
     static const QChar delimiter;
 };
 
 /** A UIFileTableItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
-    by these instances is the data source for the UIGuestControlFileModel */
+    by these instances is the data source for the UIGuestControlFileModel. */
 class UIFileTableItem
 {
 public:
 
+    /** @p data contains values to be shown in table view's colums. data[0] is assumed to be
+        the name of the file object which is the file name including extension or name of the
+        directory */
     explicit UIFileTableItem(const QList<QVariant> &data,
                              UIFileTableItem *parentItem, FileObjectType type);
     ~UIFileTableItem();
@@ -118,11 +122,14 @@ public:
     const QString &owner() const;
     void setOwner(const QString &owner);
 
+    QString name() const;
+
 private:
 
     QList<UIFileTableItem*>         m_childItems;
     /** Used to find children by path */
     QMap<QString, UIFileTableItem*> m_childMap;
+    /** It is required that m_itemData[0] is name (QString) of the file object */
     QList<QVariant>  m_itemData;
     UIFileTableItem *m_parentItem;
     bool             m_bIsOpened;

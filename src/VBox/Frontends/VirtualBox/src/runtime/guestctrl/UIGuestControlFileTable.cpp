@@ -240,6 +240,12 @@ QString UIPathOperations::constructNewItemPath(const QString &previousPath, cons
     return sanitize(mergePaths(getPathExceptObjectName(previousPath), newBaseName));
 }
 
+QStringList UIPathOperations::pathTrail(const QString &path)
+{
+    QList<QString> pathList = path.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+    return pathList;
+}
+
 
 /*********************************************************************************************************************************
 *   UIGuestControlFileView implementation.                                                                                       *
@@ -488,7 +494,8 @@ void UIFileTableItem::appendChild(UIFileTableItem *item)
     if (!item)
         return;
     m_childItems.append(item);
-    m_childMap.insert(item->path(), item);
+
+    m_childMap.insert(item->name(), item);
 }
 
 UIFileTableItem *UIFileTableItem::child(int row) const
@@ -516,6 +523,13 @@ int UIFileTableItem::columnCount() const
 QVariant UIFileTableItem::data(int column) const
 {
     return m_itemData.value(column);
+}
+
+QString UIFileTableItem::name() const
+{
+    if (m_itemData.isEmpty() || !m_itemData[0].canConvert(QMetaType::QString))
+        return QString();
+    return m_itemData[0].toString();
 }
 
 void UIFileTableItem::setData(const QVariant &data, int index)
