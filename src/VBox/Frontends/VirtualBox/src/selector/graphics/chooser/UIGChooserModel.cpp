@@ -31,12 +31,13 @@
 # include <QDrag>
 
 /* GUI includes: */
+# include "QIMessageBox.h"
+# include "VBoxGlobal.h"
 # include "UIGChooser.h"
 # include "UIGChooserModel.h"
 # include "UIGChooserItemGroup.h"
 # include "UIGChooserItemMachine.h"
 # include "UIExtraDataDefs.h"
-# include "VBoxGlobal.h"
 # include "UIMessageCenter.h"
 # include "UIExtraDataManager.h"
 # include "UIActionPoolSelector.h"
