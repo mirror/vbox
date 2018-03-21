@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2015-2017 Oracle Corporation
+ * Copyright (C) 2015-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -223,42 +223,42 @@ void UIInvisibleWindow::resizeEvent(QResizeEvent *pEvent)
 *********************************************************************************************************************************/
 
 /* static */
-UIDesktopWidgetWatchdog *UIDesktopWidgetWatchdog::m_spInstance = 0;
+UIDesktopWidgetWatchdog *UIDesktopWidgetWatchdog::s_pInstance = 0;
 
 /* static */
 void UIDesktopWidgetWatchdog::create()
 {
     /* Make sure instance isn't created: */
-    AssertReturnVoid(!m_spInstance);
+    AssertReturnVoid(!s_pInstance);
 
     /* Create/prepare instance: */
     new UIDesktopWidgetWatchdog;
-    AssertReturnVoid(m_spInstance);
-    m_spInstance->prepare();
+    AssertReturnVoid(s_pInstance);
+    s_pInstance->prepare();
 }
 
 /* static */
 void UIDesktopWidgetWatchdog::destroy()
 {
     /* Make sure instance is created: */
-    AssertReturnVoid(m_spInstance);
+    AssertReturnVoid(s_pInstance);
 
     /* Cleanup/destroy instance: */
-    m_spInstance->cleanup();
-    delete m_spInstance;
-    AssertReturnVoid(!m_spInstance);
+    s_pInstance->cleanup();
+    delete s_pInstance;
+    AssertReturnVoid(!s_pInstance);
 }
 
 UIDesktopWidgetWatchdog::UIDesktopWidgetWatchdog()
 {
     /* Initialize instance: */
-    m_spInstance = this;
+    s_pInstance = this;
 }
 
 UIDesktopWidgetWatchdog::~UIDesktopWidgetWatchdog()
 {
     /* Deinitialize instance: */
-    m_spInstance = 0;
+    s_pInstance = 0;
 }
 
 int UIDesktopWidgetWatchdog::overallDesktopWidth() const

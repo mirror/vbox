@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2015-2017 Oracle Corporation
+ * Copyright (C) 2015-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,14 +23,13 @@
 #ifdef VBOX_WS_X11
 # include <QVector>
 # include <QRect>
-#endif /* VBOX_WS_X11 */
+#endif
 
 /* Forward declarations: */
 class QScreen;
 
-/** Singleton QObject extension used as
-  * a desktop-widget watchdog aware
-  * of the host-screen geometry changes. */
+/** Singleton QObject extension used as desktop-widget
+  * watchdog aware of the host-screen geometry changes. */
 class UIDesktopWidgetWatchdog : public QObject
 {
     Q_OBJECT;
@@ -54,12 +53,12 @@ signals:
 #ifdef VBOX_WS_X11
     /** Notifies about work-area recalculated for the host-screen with @a iHostScreenIndex. */
     void sigHostScreenWorkAreaRecalculated(int iHostScreenIndex);
-#endif /* VBOX_WS_X11 */
+#endif
 
 public:
 
     /** Returns the static instance of the desktop-widget watchdog. */
-    static UIDesktopWidgetWatchdog *instance() { return m_spInstance; }
+    static UIDesktopWidgetWatchdog *instance() { return s_pInstance; }
 
     /** Creates the static instance of the desktop-widget watchdog. */
     static void create();
@@ -120,7 +119,7 @@ private slots:
 #if QT_VERSION == 0
     /** Stupid moc does not warn if it cannot find headers! */
     void QT_VERSION_NOT_DEFINED
-#else
+#else /* QT_VERSION != 0 */
     /** Handles @a pHostScreen adding. */
     void sltHostScreenAdded(QScreen *pHostScreen);
     /** Handles @a pHostScreen removing. */
@@ -129,12 +128,12 @@ private slots:
     void sltHandleHostScreenResized(const QRect &geometry);
     /** Handles host-screen work-area resize to passed @a availableGeometry. */
     void sltHandleHostScreenWorkAreaResized(const QRect &availableGeometry);
-#endif
+#endif /* QT_VERSION != 0 */
 
 #ifdef VBOX_WS_X11
     /** Handles @a availableGeometry calculation result for the host-screen with @a iHostScreenIndex. */
     void sltHandleHostScreenAvailableGeometryCalculated(int iHostScreenIndex, QRect availableGeometry);
-#endif /* VBOX_WS_X11 */
+#endif
 
 private:
 
@@ -144,7 +143,7 @@ private:
     void cleanup();
 
     /** Holds the static instance of the desktop-widget watchdog. */
-    static UIDesktopWidgetWatchdog *m_spInstance;
+    static UIDesktopWidgetWatchdog *s_pInstance;
 
 #ifdef VBOX_WS_X11
     /** Updates host-screen configuration according to new @a cHostScreenCount.
