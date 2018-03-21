@@ -1277,9 +1277,6 @@ int Service::clientMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callH
  * A client tells this service that the current command can be skipped and therefore can be removed
  * from the internal command list.
  *
- * This also tells the host callback(s) waiting for a reply for this command that this command
- * has been skipped by returning VERR_NOT_SUPPORTED to the host.
- *
  * @return VBox status code.
  * @param  u32ClientID                  The client's ID.
  * @param  callHandle                   The client's call handle.
@@ -1301,26 +1298,11 @@ int Service::clientMsgSkip(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
     AssertMsg(itClientState != mClientStateMap.end(), ("Client ID=%RU32 not found when it should be present\n", u32ClientID));
     if (itClientState != mClientStateMap.end())
     {
-        const HostCommand *pCurCmd = itClientState->second.GetCurrent();
-        if (pCurCmd)
-        {
-            /* Tell the host that the guest did not handle the current command. */
-            uint32_t cHstParms = 0;
-            VBOXHGCMSVCPARM aHstParms[4];
-            aHstParms[cHstParms++].setUInt32(pCurCmd->mContextID);
-            aHstParms[cHstParms++].setUInt32(0); /* Notification type (None / generic). */
-            aHstParms[cHstParms++].setUInt32((uint32_t)VERR_NOT_SUPPORTED); /** @todo int vs. uint32_t! */
-            aHstParms[cHstParms++].setPointer(NULL, 0); /* Payload (none). */
-
-            itClientState->second.DequeueCurrent();
-
-            rc = hostCallback(GUEST_MSG_REPLY, cHstParms, aHstParms);
-        }
-        else
-            rc = VERR_NOT_FOUND; /* Should never happen. */
+        itClientState->second.DequeueCurrent();
+        rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_NOT_FOUND; /* Ditto. */
+        rc = VERR_NOT_FOUND;
 
     LogFlowFunc(("[Client %RU32] Skipped current message, rc=%Rrc\n", u32ClientID, rc));
     return rc;
