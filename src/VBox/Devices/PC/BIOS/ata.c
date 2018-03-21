@@ -551,6 +551,9 @@ void BIOSCALL ata_detect(void)
                 else
                     fdpt = ebda_seg :> &EbdaData->fdpt1;
 
+                fdpt = MK_FP(0xE200, 0xf00);
+                fdpt += device;
+
                 /* Set the INT 41h or 46h pointer. */
                 int_vec  = MK_FP(0, (0x41 + device * 5) * sizeof(void __far *));
                 *int_vec = fdpt;
@@ -559,6 +562,7 @@ void BIOSCALL ata_detect(void)
                  * to be done at POST time with lots of ugly assembler code, which
                  * isn't worth the effort of converting from AMI to Award CMOS
                  * format. Just do it here. */
+                _fmemset(fdpt, 0, sizeof(*fdpt));
                 fdpt->lcyl  = lgeo.cylinders;
                 fdpt->lhead = lgeo.heads;
                 fdpt->sig   = 0xa0;

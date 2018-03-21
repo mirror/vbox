@@ -408,7 +408,10 @@ void BIOSCALL int15_function(sys_regs_t r)
         }
         break;
 
-    case 0x41:
+        /* These are here just to avoid warnings being logged. */
+    case 0x22:  /* Locate ROM BASIC (tough when we don't have any.) */
+    case 0x41:  /* PC Convertible, wait for external events. */
+    case 0xC7:  /* PS/2, get memory map. */
         SET_CF();
         SET_AH(UNSUPPORTED_FUNCTION);
         break;
