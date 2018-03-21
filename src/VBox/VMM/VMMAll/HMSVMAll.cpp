@@ -152,8 +152,8 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * The fields that are guaranteed to be read-only during SVM guest execution
          * can safely be restored from our VMCB cache. Other fields like control registers
-         * can potentially be modified (if the nested-hypervisor is not intercepting writes)
-         * and thus we restore the actual virtual CPU values of these registers.
+         * are already updated by hardware-assisted SVM or by IEM. We only restore those
+         * fields that are potentially modified by hardware-assisted SVM.
          */
         pVmcbNstGstCtrl->u16InterceptRdCRx             = pNstGstVmcbCache->u16InterceptRdCRx;
         pVmcbNstGstCtrl->u16InterceptWrCRx             = pNstGstVmcbCache->u16InterceptWrCRx;
@@ -161,10 +161,6 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
         pVmcbNstGstCtrl->u16InterceptWrDRx             = pNstGstVmcbCache->u16InterceptWrDRx;
         pVmcbNstGstCtrl->u32InterceptXcpt              = pNstGstVmcbCache->u32InterceptXcpt;
         pVmcbNstGstCtrl->u64InterceptCtrl              = pNstGstVmcbCache->u64InterceptCtrl;
-        pVmcbNstGstState->u64CR0                       = pCtx->cr0;
-        pVmcbNstGstState->u64CR3                       = pCtx->cr3;
-        pVmcbNstGstState->u64CR4                       = pCtx->cr4;
-        pVmcbNstGstState->u64EFER                      = pCtx->msrEFER;
         pVmcbNstGstState->u64DBGCTL                    = pNstGstVmcbCache->u64DBGCTL;
         pVmcbNstGstCtrl->u32VmcbCleanBits              = pNstGstVmcbCache->u32VmcbCleanBits;
         pVmcbNstGstCtrl->u64IOPMPhysAddr               = pNstGstVmcbCache->u64IOPMPhysAddr;
