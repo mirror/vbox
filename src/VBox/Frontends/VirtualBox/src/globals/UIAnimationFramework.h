@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,106 +15,155 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIAnimationFramework_h__
-#define __UIAnimationFramework_h__
+#ifndef ___UIAnimationFramework_h___
+#define ___UIAnimationFramework_h___
 
 /* Qt includes: */
 #include <QObject>
 
 /* Forward declaration: */
-class QStateMachine;
-class QState;
 class QPropertyAnimation;
+class QState;
+class QStateMachine;
 
-/* UIAnimation factory: */
+
+/** QObject subclass used as animation factory. */
 class UIAnimation : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifiers: State-change stuff: */
+    /** Notifies listener about 'Start' state entered. */
     void sigStateEnteredStart();
+    /** Notifies listener about 'Final' state entered. */
     void sigStateEnteredFinal();
 
 public:
 
-    /* API: Factory stuff: */
-    static UIAnimation* installPropertyAnimation(QWidget *pTarget, const char *pszPropertyName,
+    /** Installs property animation.
+      * @param  pTarget                    Brings the object being animated.
+      * @param  pszPropertyName            Brings the name of property being animated.
+      * @param  pszValuePropertyNameStart  Brings the name of the property holding 'start' value.
+      * @param  pszValuePropertyNameFinal  Brings the name of the property holding 'final' value.
+      * @param  pszSignalForward           Brings the signal to start forward animation.
+      * @param  pszSignalReverse           Brings the signal to start reverse animation.
+      * @param  fReverse                   Brings whether the animation should be inverted.
+      * @param  iAnimationDuration         Brings the animation duration. */
+    static UIAnimation *installPropertyAnimation(QWidget *pTarget, const char *pszPropertyName,
                                                  const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
                                                  const char *pszSignalForward, const char *pszSignalReverse,
                                                  bool fReverse = false, int iAnimationDuration = 300);
 
-    /* API: Update stuff: */
+    /** Updates the animation, fetching new initial values. */
     void update();
 
-protected:
+private:
 
-    /* Constructor: */
+    /** Constructs animation. Doesn't mean to be used directly.
+      * @param  pParent                    Brings the object animation being applied to.
+      * @param  pszPropertyName            Brings the name of property being animated.
+      * @param  pszValuePropertyNameStart  Brings the name of the property holding 'start' value.
+      * @param  pszValuePropertyNameFinal  Brings the name of the property holding 'final' value.
+      * @param  pszSignalForward           Brings the signal to start forward animation.
+      * @param  pszSignalReverse           Brings the signal to start reverse animation.
+      * @param  fReverse                   Brings whether the animation should be inverted.
+      * @param  iAnimationDuration         Brings the animation duration. */
     UIAnimation(QWidget *pParent, const char *pszPropertyName,
                 const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
                 const char *pszSignalForward, const char *pszSignalReverse,
                 bool fReverse, int iAnimationDuration);
 
-private:
-
-    /* Helper: Prepare stuff: */
+    /** Prepares all. */
     void prepare();
 
-    /* Variables: General stuff: */
+    /** Holds the name of property being animated. */
     const char *m_pszPropertyName;
+
+    /** Holds the name of the property holding 'start' value. */
     const char *m_pszValuePropertyNameStart;
+    /** Holds the name of the property holding 'final' value. */
     const char *m_pszValuePropertyNameFinal;
+
+    /** Holds the signal to start forward animation. */
     const char *m_pszSignalForward;
+    /** Holds the signal to start reverse animation. */
     const char *m_pszSignalReverse;
+
+    /** Holds whether the animation should be inverted. */
     bool m_fReverse;
+
+    /** Holds the animation duration. */
     int m_iAnimationDuration;
 
-    /* Variables: Animation-machine stuff: */
-    QStateMachine *m_pAnimationMachine;
-    QState *m_pStateStart;
-    QState *m_pStateFinal;
+    /** Holds the animation machine instance. */
+    QStateMachine      *m_pAnimationMachine;
+    /** Holds the instance of the animation 'Start' state. */
+    QState             *m_pStateStart;
+    /** Holds the instance of the animation 'Final' state. */
+    QState             *m_pStateFinal;
+    /** Holds the instance of the 'Forward' animation. */
     QPropertyAnimation *m_pForwardAnimation;
+    /** Holds the instance of the 'Reverse' animation. */
     QPropertyAnimation *m_pReverseAnimation;
 };
 
-/* UIAnimationLoop factory: */
+
+/** QObject subclass used as animation loop factory. */
 class UIAnimationLoop : public QObject
 {
     Q_OBJECT;
 
 public:
 
-    /* API: Factory stuff: */
-    static UIAnimationLoop* installAnimationLoop(QWidget *pTarget, const char *pszPropertyName,
+    /** Installs property animation.
+      * @param  pTarget                    Brings the object being animated.
+      * @param  pszPropertyName            Brings the name of property being animated.
+      * @param  pszValuePropertyNameStart  Brings the name of the property holding 'start' value.
+      * @param  pszValuePropertyNameFinal  Brings the name of the property holding 'final' value.
+      * @param  iAnimationDuration         Brings the animation duration. */
+    static UIAnimationLoop *installAnimationLoop(QWidget *pTarget, const char *pszPropertyName,
                                                  const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
                                                  int iAnimationDuration = 300);
 
-    /* API: Update stuff: */
+    /** Updates the animation, fetching new initial values. */
     void update();
 
-    /* API: Loop stuff: */
+    /** Starts the loop. */
     void start();
+    /** Stops the loop. */
     void stop();
 
-protected:
+private:
 
-    /* Constructor: */
+    /** Constructs animation loop. Doesn't mean to be used directly.
+      * @param  pParent                    Brings the object animation being applied to.
+      * @param  pszPropertyName            Brings the name of property being animated.
+      * @param  pszValuePropertyNameStart  Brings the name of the property holding 'start' value.
+      * @param  pszValuePropertyNameFinal  Brings the name of the property holding 'final' value.
+      * @param  iAnimationDuration         Brings the animation duration. */
     UIAnimationLoop(QWidget *pParent, const char *pszPropertyName,
                     const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
                     int iAnimationDuration);
 
-private:
-
-    /* Helper: Prepare stuff: */
+    /** Prepares all. */
     void prepare();
 
-    /* Variables: */
+    /** Holds the name of property being animated. */
     const char *m_pszPropertyName;
+
+    /** Holds the name of the property holding 'start' value. */
     const char *m_pszValuePropertyNameStart;
+    /** Holds the name of the property holding 'final' value. */
     const char *m_pszValuePropertyNameFinal;
+
+    /** Holds the animation duration. */
     int m_iAnimationDuration;
+
+    /** Holds the instance of the animation. */
     QPropertyAnimation *m_pAnimation;
 };
 
-#endif /* __UIAnimationFramework_h__ */
+
+#endif /* !___UIAnimationFramework_h___ */
+

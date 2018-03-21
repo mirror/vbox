@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,10 +20,10 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QWidget>
-# include <QStateMachine>
 # include <QPropertyAnimation>
 # include <QSignalTransition>
+# include <QStateMachine>
+# include <QWidget>
 
 /* GUI includes: */
 # include "UIAnimationFramework.h"
@@ -34,11 +34,15 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class UIAnimation implementation.                                                                                            *
+*********************************************************************************************************************************/
+
 /* static */
 UIAnimation* UIAnimation::installPropertyAnimation(QWidget *pTarget, const char *pszPropertyName,
                                                    const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
                                                    const char *pszSignalForward, const char *pszSignalReverse,
-                                                   bool fReverse /* = false*/, int iAnimationDuration /* = 300*/)
+                                                   bool fReverse /* = false */, int iAnimationDuration /* = 300 */)
 {
     /* Return newly created animation-machine: */
     return new UIAnimation(pTarget, pszPropertyName,
@@ -47,17 +51,17 @@ UIAnimation* UIAnimation::installPropertyAnimation(QWidget *pTarget, const char 
                            fReverse, iAnimationDuration);
 }
 
-/* static */
-UIAnimationLoop* UIAnimationLoop::installAnimationLoop(QWidget *pTarget, const char *pszPropertyName,
-                                                       const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
-                                                       int iAnimationDuration /* = 300*/)
+void UIAnimation::update()
 {
-    /* Return newly created animation-loop: */
-    return new UIAnimationLoop(pTarget, pszPropertyName,
-                               pszValuePropertyNameStart, pszValuePropertyNameFinal,
-                               iAnimationDuration);
+    /* Update 'forward' animation: */
+    m_pForwardAnimation->setStartValue(parent()->property(m_pszValuePropertyNameStart));
+    m_pForwardAnimation->setEndValue(parent()->property(m_pszValuePropertyNameFinal));
+    m_pStateStart->assignProperty(parent(), m_pszPropertyName, parent()->property(m_pszValuePropertyNameStart));
+    /* Update 'reverse' animation: */
+    m_pReverseAnimation->setStartValue(parent()->property(m_pszValuePropertyNameFinal));
+    m_pReverseAnimation->setEndValue(parent()->property(m_pszValuePropertyNameStart));
+    m_pStateFinal->assignProperty(parent(), m_pszPropertyName, parent()->property(m_pszValuePropertyNameFinal));
 }
-
 
 UIAnimation::UIAnimation(QWidget *pParent, const char *pszPropertyName,
                          const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
@@ -116,18 +120,40 @@ void UIAnimation::prepare()
     m_pAnimationMachine->start();
 }
 
-void UIAnimation::update()
+
+/*********************************************************************************************************************************
+*   Class UIAnimation implementation.                                                                                            *
+*********************************************************************************************************************************/
+
+/* static */
+UIAnimationLoop* UIAnimationLoop::installAnimationLoop(QWidget *pTarget, const char *pszPropertyName,
+                                                       const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
+                                                       int iAnimationDuration /* = 300*/)
 {
-    /* Update 'forward' animation: */
-    m_pForwardAnimation->setStartValue(parent()->property(m_pszValuePropertyNameStart));
-    m_pForwardAnimation->setEndValue(parent()->property(m_pszValuePropertyNameFinal));
-    m_pStateStart->assignProperty(parent(), m_pszPropertyName, parent()->property(m_pszValuePropertyNameStart));
-    /* Update 'reverse' animation: */
-    m_pReverseAnimation->setStartValue(parent()->property(m_pszValuePropertyNameFinal));
-    m_pReverseAnimation->setEndValue(parent()->property(m_pszValuePropertyNameStart));
-    m_pStateFinal->assignProperty(parent(), m_pszPropertyName, parent()->property(m_pszValuePropertyNameFinal));
+    /* Return newly created animation-loop: */
+    return new UIAnimationLoop(pTarget, pszPropertyName,
+                               pszValuePropertyNameStart, pszValuePropertyNameFinal,
+                               iAnimationDuration);
 }
 
+void UIAnimationLoop::update()
+{
+    /* Update animation: */
+    m_pAnimation->setStartValue(parent()->property(m_pszValuePropertyNameStart));
+    m_pAnimation->setEndValue(parent()->property(m_pszValuePropertyNameFinal));
+}
+
+void UIAnimationLoop::start()
+{
+    /* Start animation: */
+    m_pAnimation->start();
+}
+
+void UIAnimationLoop::stop()
+{
+    /* Stop animation: */
+    m_pAnimation->stop();
+}
 
 UIAnimationLoop::UIAnimationLoop(QWidget *pParent, const char *pszPropertyName,
                                  const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
@@ -151,24 +177,5 @@ void UIAnimationLoop::prepare()
 
     /* Fetch animation-borders: */
     update();
-}
-
-void UIAnimationLoop::update()
-{
-    /* Update animation: */
-    m_pAnimation->setStartValue(parent()->property(m_pszValuePropertyNameStart));
-    m_pAnimation->setEndValue(parent()->property(m_pszValuePropertyNameFinal));
-}
-
-void UIAnimationLoop::start()
-{
-    /* Start animation: */
-    m_pAnimation->start();
-}
-
-void UIAnimationLoop::stop()
-{
-    /* Stop animation: */
-    m_pAnimation->stop();
 }
 
