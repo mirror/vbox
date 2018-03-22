@@ -69,7 +69,7 @@ DECLEXPORT(double) crReadUnalignedDouble( const void *buffer );
     ( (type *) (cr_unpackData + (offset)) )
 
 #define DATA_POINTER_CHECK( offset ) \
-    ( (cr_unpackDataEnd ? cr_unpackData + (offset) < cr_unpackDataEnd : TRUE) )
+    ( (cr_unpackDataEnd ? cr_unpackData + (offset) < cr_unpackDataEnd : true) )
 
 #define INCR_DATA_PTR( delta ) \
     cr_unpackData += (delta)
