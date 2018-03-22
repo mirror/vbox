@@ -29,11 +29,12 @@
 # include <QTimer>
 
 /* GUI includes: */
+# include "QIFileDialog.h"
+# include "QIMessageBox.h"
 # include "QIWidgetValidator.h"
+# include "VBoxGlobal.h"
 # include "UIIconPool.h"
 # include "UIWizardNewVD.h"
-# include "VBoxGlobal.h"
-# include "QIFileDialog.h"
 # include "UIErrorString.h"
 # include "UIMessageCenter.h"
 # include "UIMachineSettingsStorage.h"
