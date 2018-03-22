@@ -1444,6 +1444,19 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
     }
 
     /*
+     * Use the #MF style of legacy-FPU error reporting for now as IEM needs work
+     * if we want to fully emulate it properly. AMD-V has MSRs that lets us isolate
+     * the host from it, but IEM needs work, see @bugref{7243#c103}.
+     */
+    if (!(uGuestCr0 & X86_CR0_NE))
+    {
+        uShadowCr0 |= X86_CR0_NE;
+        hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_MF);
+    }
+    else
+        hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_MF);
+
+    /*
      * If the shadow and guest CR0 are identical we can avoid intercepting CR0 reads.
      *
      * CR0 writes still needs interception as PGM requires tracking paging mode changes, see @bugref{6944}.
