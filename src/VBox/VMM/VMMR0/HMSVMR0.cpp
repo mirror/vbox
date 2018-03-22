@@ -1444,9 +1444,9 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
     }
 
     /*
-     * Use the #MF style of legacy-FPU error reporting for now as IEM needs work
-     * if we want to fully emulate it properly. AMD-V has MSRs that lets us isolate
-     * the host from it, but IEM needs work, see @bugref{7243#c103}.
+     * Use the #MF style of legacy-FPU error reporting for now as IEM needs work if we want to fully
+     * emulate it properly. AMD-V has MSRs that lets us isolate the host from it, but IEM/REM needs
+     * work, see @bugref{7243#c103}.
      */
     if (!(uGuestCr0 & X86_CR0_NE))
     {
