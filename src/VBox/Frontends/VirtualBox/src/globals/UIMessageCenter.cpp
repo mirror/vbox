@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,9 +27,10 @@
 # include <QProcess>
 # ifdef VBOX_WS_MAC
 #  include <QPushButton>
-# endif /* VBOX_WS_MAC */
+# endif
 
 /* GUI includes: */
+# include "QIMessageBox.h"
 # include "VBoxGlobal.h"
 # include "UIConverter.h"
 # include "UIMessageCenter.h"
@@ -46,15 +47,14 @@
 # ifdef VBOX_OSE
 #  include "UIDownloaderUserManual.h"
 # endif /* VBOX_OSE */
-# include "UIMachine.h"
 # include "VBoxAboutDlg.h"
 # include "UIHostComboEditor.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
-# endif /* VBOX_WS_MAC */
+# endif
 # ifdef VBOX_WS_WIN
 #  include <Htmlhelp.h>
-# endif /* VBOX_WS_WIN */
+# endif
 
 /* COM includes: */
 # include "CNATNetwork.h"
@@ -90,14 +90,14 @@
 
 
 /* static */
-UIMessageCenter* UIMessageCenter::m_spInstance = 0;
-UIMessageCenter* UIMessageCenter::instance() { return m_spInstance; }
+UIMessageCenter *UIMessageCenter::s_pInstance = 0;
+UIMessageCenter *UIMessageCenter::instance() { return s_pInstance; }
 
 /* static */
 void UIMessageCenter::create()
 {
     /* Make sure instance is NOT created yet: */
-    if (m_spInstance)
+    if (s_pInstance)
     {
         AssertMsgFailed(("UIMessageCenter instance is already created!"));
         return;
@@ -106,28 +106,23 @@ void UIMessageCenter::create()
     /* Create instance: */
     new UIMessageCenter;
     /* Prepare instance: */
-    m_spInstance->prepare();
+    s_pInstance->prepare();
 }
 
 /* static */
 void UIMessageCenter::destroy()
 {
     /* Make sure instance is NOT destroyed yet: */
-    if (!m_spInstance)
+    if (!s_pInstance)
     {
         AssertMsgFailed(("UIMessageCenter instance is already destroyed!"));
         return;
     }
 
     /* Cleanup instance: */
-    m_spInstance->cleanup();
+    s_pInstance->cleanup();
     /* Destroy instance: */
-    delete m_spInstance;
-}
-
-bool UIMessageCenter::warningShown(const QString &strWarningName) const
-{
-    return m_warnings.contains(strWarningName);
+    delete s_pInstance;
 }
 
 void UIMessageCenter::setWarningShown(const QString &strWarningName, bool fWarningShown) const
@@ -138,7 +133,12 @@ void UIMessageCenter::setWarningShown(const QString &strWarningName, bool fWarni
         m_warnings.removeAll(strWarningName);
 }
 
-int UIMessageCenter::message(QWidget *pParent, MessageType type,
+bool UIMessageCenter::warningShown(const QString &strWarningName) const
+{
+    return m_warnings.contains(strWarningName);
+}
+
+int UIMessageCenter::message(QWidget *pParent, MessageType enmType,
                              const QString &strMessage,
                              const QString &strDetails,
                              const char *pcszAutoConfirmId /* = 0*/,
@@ -154,7 +154,7 @@ int UIMessageCenter::message(QWidget *pParent, MessageType type,
     {
         /* We have to throw a blocking signal
          * to show a message-box in the GUI thread: */
-        emit sigToShowMessageBox(pParent, type,
+        emit sigToShowMessageBox(pParent, enmType,
                                  strMessage, strDetails,
                                  iButton1, iButton2, iButton3,
                                  strButtonText1, strButtonText2, strButtonText3,
@@ -163,30 +163,30 @@ int UIMessageCenter::message(QWidget *pParent, MessageType type,
         return 0;
     }
     /* In usual case we can chow a message-box directly: */
-    return showMessageBox(pParent, type,
+    return showMessageBox(pParent, enmType,
                           strMessage, strDetails,
                           iButton1, iButton2, iButton3,
                           strButtonText1, strButtonText2, strButtonText3,
                           QString(pcszAutoConfirmId));
 }
 
-void UIMessageCenter::error(QWidget *pParent, MessageType type,
+void UIMessageCenter::error(QWidget *pParent, MessageType enmType,
                            const QString &strMessage,
                            const QString &strDetails,
                            const char *pcszAutoConfirmId /* = 0*/) const
 {
-    message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
+    message(pParent, enmType, strMessage, strDetails, pcszAutoConfirmId,
             AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape);
 }
 
-bool UIMessageCenter::errorWithQuestion(QWidget *pParent, MessageType type,
+bool UIMessageCenter::errorWithQuestion(QWidget *pParent, MessageType enmType,
                                         const QString &strMessage,
                                         const QString &strDetails,
                                         const char *pcszAutoConfirmId /* = 0*/,
                                         const QString &strOkButtonText /* = QString()*/,
                                         const QString &strCancelButtonText /* = QString()*/) const
 {
-    return (message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
+    return (message(pParent, enmType, strMessage, strDetails, pcszAutoConfirmId,
                     AlertButton_Ok | AlertButtonOption_Default,
                     AlertButton_Cancel | AlertButtonOption_Escape,
                     0 /* third button */,
@@ -196,14 +196,14 @@ bool UIMessageCenter::errorWithQuestion(QWidget *pParent, MessageType type,
             AlertButtonMask) == AlertButton_Ok;
 }
 
-void UIMessageCenter::alert(QWidget *pParent, MessageType type,
+void UIMessageCenter::alert(QWidget *pParent, MessageType enmType,
                            const QString &strMessage,
                            const char *pcszAutoConfirmId /* = 0*/) const
 {
-    error(pParent, type, strMessage, QString(), pcszAutoConfirmId);
+    error(pParent, enmType, strMessage, QString(), pcszAutoConfirmId);
 }
 
-int UIMessageCenter::question(QWidget *pParent, MessageType type,
+int UIMessageCenter::question(QWidget *pParent, MessageType enmType,
                               const QString &strMessage,
                               const char *pcszAutoConfirmId/* = 0*/,
                               int iButton1 /* = 0*/,
@@ -213,11 +213,11 @@ int UIMessageCenter::question(QWidget *pParent, MessageType type,
                               const QString &strButtonText2 /* = QString()*/,
                               const QString &strButtonText3 /* = QString()*/) const
 {
-    return message(pParent, type, strMessage, QString(), pcszAutoConfirmId,
+    return message(pParent, enmType, strMessage, QString(), pcszAutoConfirmId,
                    iButton1, iButton2, iButton3, strButtonText1, strButtonText2, strButtonText3);
 }
 
-bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType type,
+bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType enmType,
                                      const QString &strMessage,
                                      const char *pcszAutoConfirmId /* = 0*/,
                                      const QString &strOkButtonText /* = QString()*/,
@@ -225,7 +225,7 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType type,
                                      bool fDefaultFocusForOk /* = true*/) const
 {
     return fDefaultFocusForOk ?
-           ((question(pParent, type, strMessage, pcszAutoConfirmId,
+           ((question(pParent, enmType, strMessage, pcszAutoConfirmId,
                       AlertButton_Ok | AlertButtonOption_Default,
                       AlertButton_Cancel | AlertButtonOption_Escape,
                       0 /* third button */,
@@ -233,7 +233,7 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType type,
                       strCancelButtonText,
                       QString() /* third button */) &
              AlertButtonMask) == AlertButton_Ok) :
-           ((question(pParent, type, strMessage, pcszAutoConfirmId,
+           ((question(pParent, enmType, strMessage, pcszAutoConfirmId,
                       AlertButton_Ok,
                       AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                       0 /* third button */,
@@ -243,14 +243,14 @@ bool UIMessageCenter::questionBinary(QWidget *pParent, MessageType type,
              AlertButtonMask) == AlertButton_Ok);
 }
 
-int UIMessageCenter::questionTrinary(QWidget *pParent, MessageType type,
+int UIMessageCenter::questionTrinary(QWidget *pParent, MessageType enmType,
                                      const QString &strMessage,
                                      const char *pcszAutoConfirmId /* = 0*/,
                                      const QString &strChoice1ButtonText /* = QString()*/,
                                      const QString &strChoice2ButtonText /* = QString()*/,
                                      const QString &strCancelButtonText /* = QString()*/) const
 {
-    return question(pParent, type, strMessage, pcszAutoConfirmId,
+    return question(pParent, enmType, strMessage, pcszAutoConfirmId,
                     AlertButton_Choice1,
                     AlertButton_Choice2 | AlertButtonOption_Default,
                     AlertButton_Cancel | AlertButtonOption_Escape,
@@ -259,7 +259,7 @@ int UIMessageCenter::questionTrinary(QWidget *pParent, MessageType type,
                     strCancelButtonText);
 }
 
-int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
+int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType enmType,
                                        const QString &strMessage,
                                        const QString &strOptionText,
                                        bool fDefaultOptionValue /* = true */,
@@ -277,7 +277,7 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
     /* Assign corresponding title and icon: */
     QString strTitle;
     AlertIconType icon;
-    switch (type)
+    switch (enmType)
     {
         default:
         case MessageType_Info:
@@ -1096,12 +1096,12 @@ int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) c
                           false /* ok button by default? */);
 }
 
-void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
+void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType enmType,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0*/)
 {
     QString strMessage;
-    switch (type)
+    switch (enmType)
     {
         case UIMediumType_HardDisk:
         {
@@ -1352,11 +1352,11 @@ void UIMessageCenter::cannotResizeHardDiskStorage(const CProgress &comProgress, 
           UIErrorString::formatErrorInfo(comProgress));
 }
 
-void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType enmType, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /* = 0*/) const
 {
     /* Prepare the message: */
     QString strMessage;
-    switch (type)
+    switch (enmType)
     {
         case UIMediumType_HardDisk:
         {
@@ -1437,7 +1437,7 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
     return false;
 }
 
-void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType /* type */, const QString &strLocation, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     /* Show the error: */
     error(pParent, MessageType_Error,
@@ -1777,7 +1777,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     /* Prepare variables: */
     CConsole console1 = console;
     KMachineState state = console1.GetState();
-    MessageType type;
+    MessageType enmType;
     QString severity;
 
     /// @todo Move to Runtime UI!
@@ -1793,19 +1793,19 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     /* Compose type, severity, advance confirm id: */
     if (fFatal)
     {
-        type = MessageType_Critical;
+        enmType = MessageType_Critical;
         severity = tr("<nobr>Fatal Error</nobr>", "runtime error info");
         autoConfimId += "fatal.";
     }
     else if (state == KMachineState_Paused)
     {
-        type = MessageType_Error;
+        enmType = MessageType_Error;
         severity = tr("<nobr>Non-Fatal Error</nobr>", "runtime error info");
         autoConfimId += "error.";
     }
     else
     {
-        type = MessageType_Warning;
+        enmType = MessageType_Warning;
         severity = tr("<nobr>Warning</nobr>", "runtime error info");
         autoConfimId += "warning.";
     }
@@ -1828,17 +1828,17 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
         formatted = "<qt>" + formatted + "</qt>";
 
     /* Show the error: */
-    if (type == MessageType_Critical)
+    if (enmType == MessageType_Critical)
     {
-        error(0, type,
+        error(0, enmType,
               tr("<p>A fatal error has occurred during virtual machine execution! "
                  "The virtual machine will be powered off. Please copy the following error message "
                  "using the clipboard to help diagnose the problem:</p>"),
               formatted, autoConfimId.data());
     }
-    else if (type == MessageType_Error)
+    else if (enmType == MessageType_Error)
     {
-        error(0, type,
+        error(0, enmType,
               tr("<p>An error has occurred during virtual machine execution! "
                  "The error details are shown below. You may try to correct the error "
                  "and resume the virtual machine execution.</p>"),
@@ -1846,7 +1846,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     }
     else
     {
-        error(0, type,
+        error(0, enmType,
               tr("<p>The virtual machine execution may run into an error condition as described below. "
                  "We suggest that you take an appropriate action to avert the error.</p>"),
               formatted, autoConfimId.data());
@@ -2627,14 +2627,14 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 #endif
 }
 
-void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType type,
+void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType enmType,
                                         const QString &strMessage, const QString &strDetails,
                                         int iButton1, int iButton2, int iButton3,
                                         const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                                         const QString &strAutoConfirmId) const
 {
     /* Now we can show a message-box directly: */
-    showMessageBox(pParent, type,
+    showMessageBox(pParent, enmType,
                    strMessage, strDetails,
                    iButton1, iButton2, iButton3,
                    strButtonText1, strButtonText2, strButtonText3,
@@ -2644,13 +2644,13 @@ void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType type,
 UIMessageCenter::UIMessageCenter()
 {
     /* Assign instance: */
-    m_spInstance = this;
+    s_pInstance = this;
 }
 
 UIMessageCenter::~UIMessageCenter()
 {
     /* Unassign instance: */
-    m_spInstance = 0;
+    s_pInstance = 0;
 }
 
 void UIMessageCenter::prepare()
@@ -2695,7 +2695,7 @@ void UIMessageCenter::cleanup()
      /* Nothing for now... */
 }
 
-int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
+int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
                                     const QString &strMessage, const QString &strDetails,
                                     int iButton1, int iButton2, int iButton3,
                                     const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
@@ -2729,7 +2729,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
     /* Choose title and icon: */
     QString title;
     AlertIconType icon;
-    switch (type)
+    switch (enmType)
     {
         default:
         case MessageType_Info:
