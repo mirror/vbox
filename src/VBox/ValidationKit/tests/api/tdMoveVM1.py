@@ -334,7 +334,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             fRc = True
             oVirtualBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
             oMachine = oVirtualBox.findMachine('test-vm-move')
-            if oMachine == None:
+            if oMachine is None:
                 reporter.log("Machine '%s' is unknown" % (oMachine.name))
                 return False
 
