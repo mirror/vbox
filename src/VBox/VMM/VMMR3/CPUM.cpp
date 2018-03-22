@@ -1282,7 +1282,6 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     {
         memset(pCtx->hwvirt.svm.CTX_SUFF(pVmcb), 0, SVM_VMCB_PAGES << PAGE_SHIFT);
         pCtx->hwvirt.svm.uMsrHSavePa = 0;
-        pCtx->hwvirt.svm.GCPhysVmcb = 0;
     }
 }
 
