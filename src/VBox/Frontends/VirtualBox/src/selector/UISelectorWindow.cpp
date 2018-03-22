@@ -35,7 +35,7 @@
 # include "UIErrorString.h"
 # include "UIExtraDataManager.h"
 # include "UIGChooser.h"
-# include "UIGlobalSettingsExtension.h"
+# include "UIUpdateManager.h"
 # include "UIHostNetworkManager.h"
 # include "UIMedium.h"
 # include "UIMediumManager.h"
@@ -69,6 +69,9 @@
 # ifndef VBOX_WS_MAC
 #  include "UIMenuBar.h"
 # endif
+
+/* COM includes: */
+# include "CSystemProperties.h"
 
 /* Other VBox stuff: */
 # include <iprt/buildconfig.h>
@@ -398,7 +401,7 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
                 /* Prevent update manager from proposing us to update EP: */
                 vboxGlobal().setEPInstallationRequested(true);
                 /* Propose the user to install EP described by the arguments @a list. */
-                UIGlobalSettingsExtension::doInstallation(strFile, QString(), this, NULL);
+                UIUpdateManager::doExtPackInstallation(strFile, QString(), this, NULL);
                 /* Allow update manager to propose us to update EP: */
                 vboxGlobal().setEPInstallationRequested(false);
             }
