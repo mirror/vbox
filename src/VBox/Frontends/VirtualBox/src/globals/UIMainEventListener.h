@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,8 +19,8 @@
 #define ___UIMainEventListener_h___
 
 /* Qt includes: */
-#include <QObject>
 #include <QList>
+#include <QObject>
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -35,6 +35,9 @@
 #include <VBox/com/listeners.h>
 
 /* Forward declarations: */
+class QPoint;
+class QSize;
+class QString;
 class UIMainEventListeningThread;
 class CEventListener;
 class CEventSource;
@@ -54,95 +57,110 @@ class CGuestSessionStateChangedEvent;
  * queue and deliver it later on. */
 
 /** Main event listener. */
-class UIMainEventListener: public QObject
+class UIMainEventListener : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /** Notifies about the VBoxSVC become @a fAvailable. */
-    void sigVBoxSVCAvailabilityChange(bool fAvailable);
+    /** @name VirtualBoxClient related signals
+      * @{ */
+        /** Notifies about the VBoxSVC become @a fAvailable. */
+        void sigVBoxSVCAvailabilityChange(bool fAvailable);
+    /** @} */
 
-    /** Notifies about @a state change event for the machine with @a strId. */
-    void sigMachineStateChange(QString strId, KMachineState state);
-    /** Notifies about data change event for the machine with @a strId. */
-    void sigMachineDataChange(QString strId);
-    /** Notifies about machine with @a strId was @a fRegistered. */
-    void sigMachineRegistered(QString strId, bool fRegistered);
-    /** Notifies about @a state change event for the session of the machine with @a strId. */
-    void sigSessionStateChange(QString strId, KSessionState state);
-    /** Notifies about snapshot with @a strSnapshotId was taken for the machine with @a strId. */
-    void sigSnapshotTake(QString strId, QString strSnapshotId);
-    /** Notifies about snapshot with @a strSnapshotId was deleted for the machine with @a strId. */
-    void sigSnapshotDelete(QString strId, QString strSnapshotId);
-    /** Notifies about snapshot with @a strSnapshotId was changed for the machine with @a strId. */
-    void sigSnapshotChange(QString strId, QString strSnapshotId);
-    /** Notifies about snapshot with @a strSnapshotId was restored for the machine with @a strId. */
-    void sigSnapshotRestore(QString strId, QString strSnapshotId);
+    /** @name VirtualBox related signals
+      * @{ */
+        /** Notifies about @a state change event for the machine with @a strId. */
+        void sigMachineStateChange(QString strId, KMachineState state);
+        /** Notifies about data change event for the machine with @a strId. */
+        void sigMachineDataChange(QString strId);
+        /** Notifies about machine with @a strId was @a fRegistered. */
+        void sigMachineRegistered(QString strId, bool fRegistered);
+        /** Notifies about @a state change event for the session of the machine with @a strId. */
+        void sigSessionStateChange(QString strId, KSessionState state);
+        /** Notifies about snapshot with @a strSnapshotId was taken for the machine with @a strId. */
+        void sigSnapshotTake(QString strId, QString strSnapshotId);
+        /** Notifies about snapshot with @a strSnapshotId was deleted for the machine with @a strId. */
+        void sigSnapshotDelete(QString strId, QString strSnapshotId);
+        /** Notifies about snapshot with @a strSnapshotId was changed for the machine with @a strId. */
+        void sigSnapshotChange(QString strId, QString strSnapshotId);
+        /** Notifies about snapshot with @a strSnapshotId was restored for the machine with @a strId. */
+        void sigSnapshotRestore(QString strId, QString strSnapshotId);
+    /** @} */
 
-    /** Notifies about extra-data of the machine with @a strId can be changed for the key @a strKey to value @a strValue. */
-    void sigExtraDataCanChange(QString strId, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason); /* use Qt::DirectConnection */
-    /** Notifies about extra-data of the machine with @a strId changed for the key @a strKey to value @a strValue. */
-    void sigExtraDataChange(QString strId, QString strKey, QString strValue);
+    /** @name VirtualBox Extra-data related signals
+      * @{ */
+        /** Notifies about extra-data of the machine with @a strId can be changed for the key @a strKey to value @a strValue. */
+        void sigExtraDataCanChange(QString strId, QString strKey, QString strValue, bool &fVeto, QString &strVetoReason); /* use Qt::DirectConnection */
+        /** Notifies about extra-data of the machine with @a strId changed for the key @a strKey to value @a strValue. */
+        void sigExtraDataChange(QString strId, QString strKey, QString strValue);
+    /** @} */
 
-    /** Notifies about mouse pointer become @a fVisible and his shape changed to @a fAlpha, @a hotCorner, @a size and @a shape. */
-    void sigMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
-    /** Notifies about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative, @a fSupportsMultiTouch and @a fNeedsHostCursor. */
-    void sigMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
-    /** Notifies about guest request to change the cursor position to @a uX * @a uY.
-      * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now. */
-    void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
-    /** Notifies about keyboard LEDs change for @a fNumLock, @a fCapsLock and @a fScrollLock. */
-    void sigKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
-    /** Notifies about machine @a state change. */
-    void sigStateChange(KMachineState state);
-    /** Notifies about guest additions state change. */
-    void sigAdditionsChange();
-    /** Notifies about network @a adapter state change. */
-    void sigNetworkAdapterChange(CNetworkAdapter adapter);
-    /** Notifies about storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
-    void sigStorageDeviceChange(CMediumAttachment attachment, bool fRemoved, bool fSilent);
-    /** Notifies about storage medium @a attachment state change. */
-    void sigMediumChange(CMediumAttachment attachment);
-    /** Notifies about VRDE device state change. */
-    void sigVRDEChange();
-    /** Notifies about Video Capture device state change. */
-    void sigVideoCaptureChange();
-    /** Notifies about USB controller state change. */
-    void sigUSBControllerChange();
-    /** Notifies about USB @a device state change to @a fAttached, holding additional @a error information. */
-    void sigUSBDeviceStateChange(CUSBDevice device, bool fAttached, CVirtualBoxErrorInfo error);
-    /** Notifies about shared folder state change. */
-    void sigSharedFolderChange();
-    /** Notifies about CPU execution-cap change. */
-    void sigCPUExecutionCapChange();
-    /** Notifies about guest-screen configuration change of @a type for @a uScreenId with @a screenGeo. */
-    void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
-    /** Notifies about Runtime error with @a strErrorId which is @a fFatal and have @a strMessage. */
-    void sigRuntimeError(bool fFatal, QString strErrorId, QString strMessage);
-    /** Notifies about VM window can be shown, allowing to prevent it by @a fVeto with @a strReason. */
-    void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
-    /** Notifies about VM window with specified @a winId should be shown. */
-    void sigShowWindow(qint64 &winId); /* use Qt::DirectConnection */
-    /** Notifies about audio adapter state change. */
-    void sigAudioAdapterChange();
+    /** @name Console related signals
+      * @{ */
+        /** Notifies about mouse pointer become @a fVisible and his shape changed to @a fAlpha, @a hotCorner, @a size and @a shape. */
+        void sigMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
+        /** Notifies about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative, @a fSupportsMultiTouch and @a fNeedsHostCursor. */
+        void sigMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
+        /** Notifies about guest request to change the cursor position to @a uX * @a uY.
+          * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now. */
+        void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
+        /** Notifies about keyboard LEDs change for @a fNumLock, @a fCapsLock and @a fScrollLock. */
+        void sigKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
+        /** Notifies about machine @a state change. */
+        void sigStateChange(KMachineState state);
+        /** Notifies about guest additions state change. */
+        void sigAdditionsChange();
+        /** Notifies about network @a adapter state change. */
+        void sigNetworkAdapterChange(CNetworkAdapter comAdapter);
+        /** Notifies about storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
+        void sigStorageDeviceChange(CMediumAttachment comAttachment, bool fRemoved, bool fSilent);
+        /** Notifies about storage medium @a attachment state change. */
+        void sigMediumChange(CMediumAttachment comAttachment);
+        /** Notifies about VRDE device state change. */
+        void sigVRDEChange();
+        /** Notifies about Video Capture device state change. */
+        void sigVideoCaptureChange();
+        /** Notifies about USB controller state change. */
+        void sigUSBControllerChange();
+        /** Notifies about USB @a device state change to @a fAttached, holding additional @a error information. */
+        void sigUSBDeviceStateChange(CUSBDevice comDevice, bool fAttached, CVirtualBoxErrorInfo comError);
+        /** Notifies about shared folder state change. */
+        void sigSharedFolderChange();
+        /** Notifies about CPU execution-cap change. */
+        void sigCPUExecutionCapChange();
+        /** Notifies about guest-screen configuration change of @a type for @a uScreenId with @a screenGeo. */
+        void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+        /** Notifies about Runtime error with @a strErrorId which is @a fFatal and have @a strMessage. */
+        void sigRuntimeError(bool fFatal, QString strErrorId, QString strMessage);
+        /** Notifies about VM window can be shown, allowing to prevent it by @a fVeto with @a strReason. */
+        void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
+        /** Notifies about VM window with specified @a winId should be shown. */
+        void sigShowWindow(qint64 &winId); /* use Qt::DirectConnection */
+        /** Notifies about audio adapter state change. */
+        void sigAudioAdapterChange();
+    /** @} */
 
-    /** Notifies about @a iPercent change for progress with @a strProgressId. */
-    void sigProgressPercentageChange(QString strProgressId, int iPercent);
-    /** Notifies about task complete for progress with @a strProgressId. */
-    void sigProgressTaskComplete(QString strProgressId);
+    /** @name Progress related signals
+      * @{ */
+        /** Notifies about @a iPercent change for progress with @a strProgressId. */
+        void sigProgressPercentageChange(QString strProgressId, int iPercent);
+        /** Notifies about task complete for progress with @a strProgressId. */
+        void sigProgressTaskComplete(QString strProgressId);
+    /** @} */
 
     /** @name Guest Session related signals
       * @{ */
         /** Notifies about guest session (un)registered event @a is the (un)registed guest session. */
-        void sigGuestSessionRegistered(CGuestSession guestSession);
-        void sigGuestSessionUnregistered(CGuestSession guestSession);
+        void sigGuestSessionRegistered(CGuestSession comGuestSession);
+        void sigGuestSessionUnregistered(CGuestSession comGuestSession);
 
         /** Notifies about guest process (un)registered event @a is the (un)registed guest process. */
-        void sigGuestProcessRegistered(CGuestProcess guestProcess);
-        void sigGuestProcessUnregistered(CGuestProcess guestProcess);
-        void sigGuestSessionStatedChanged(const CGuestSessionStateChangedEvent &cEvent);
-        void sigGuestProcessStateChanged(const CGuestProcessStateChangedEvent &cEvent);
+        void sigGuestProcessRegistered(CGuestProcess comGuestProcess);
+        void sigGuestProcessUnregistered(CGuestProcess comGuestProcess);
+        void sigGuestSessionStatedChanged(const CGuestSessionStateChangedEvent &comEvent);
+        void sigGuestProcessStateChanged(const CGuestProcessStateChangedEvent &comEvent);
     /** @} */
 
 public:
@@ -156,7 +174,7 @@ public:
     void uninit() {}
 
     /** Registers event @a source for passive event @a listener. */
-    void registerSource(const CEventSource &source, const CEventListener &listener);
+    void registerSource(const CEventSource &comSource, const CEventListener &comListener);
     /** Unregisters event sources. */
     void unregisterSources();
 
@@ -167,7 +185,8 @@ public:
     QList<UIMainEventListeningThread*> m_threads;
 };
 
-/* Wrap the IListener interface around our implementation class. */
+/** Wraps the IListener interface around our implementation class. */
 typedef ListenerImpl<UIMainEventListener, QObject*> UIMainEventListenerImpl;
 
 #endif /* !___UIMainEventListener_h___ */
+
