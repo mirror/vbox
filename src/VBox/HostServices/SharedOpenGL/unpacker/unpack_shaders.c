@@ -48,6 +48,12 @@ void crUnpackExtendShaderSource(void)
         pos += count*sizeof(*length);
     }
 
+    if (count >= UINT32_MAX / sizeof(char*))
+    {
+        crError("crUnpackExtendShaderSource: count %u is out of range", count);
+        return;
+    }
+
     ppStrings = crAlloc(count*sizeof(char*));
     if (!ppStrings) return;
 
