@@ -34,6 +34,7 @@
 # include <QWriteLocker>
 
 /* GUI includes: */
+# include "QIMessageBox.h"
 # include "QITreeWidget.h"
 # include "UIConverter.h"
 # include "UIExtraDataManager.h"
