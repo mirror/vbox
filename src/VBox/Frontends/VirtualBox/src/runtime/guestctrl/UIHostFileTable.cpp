@@ -167,7 +167,7 @@ bool UIHostFileTable::createDirectory(const QString &path, const QString &direct
     return true;
 }
 
-FileObjectType UIHostFileTable::fileType(const QFileInfo &fsInfo)
+/* static */ FileObjectType UIHostFileTable::fileType(const QFileInfo &fsInfo)
 {
     if (!fsInfo.exists())
         return FileObjectType_Unknown;

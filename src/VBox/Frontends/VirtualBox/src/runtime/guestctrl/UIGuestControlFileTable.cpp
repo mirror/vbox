@@ -156,7 +156,7 @@ private:
 
 const QChar UIPathOperations::delimiter = QChar('/');
 
-QString UIPathOperations::removeMultipleDelimiters(const QString &path)
+/* static */ QString UIPathOperations::removeMultipleDelimiters(const QString &path)
 {
     QString newPath(path);
     QString doubleDelimiter(2, delimiter);
@@ -166,7 +166,7 @@ QString UIPathOperations::removeMultipleDelimiters(const QString &path)
     return newPath;
 }
 
-QString UIPathOperations::removeTrailingDelimiters(const QString &path)
+/* static */ QString UIPathOperations::removeTrailingDelimiters(const QString &path)
 {
     if (path.isNull() || path.isEmpty())
         return QString();
@@ -177,7 +177,7 @@ QString UIPathOperations::removeTrailingDelimiters(const QString &path)
     return newPath;
 }
 
-QString UIPathOperations::addStartDelimiter(const QString &path)
+/* static */ QString UIPathOperations::addStartDelimiter(const QString &path)
 {
     if (path.isEmpty())
         return QString(path);
@@ -187,12 +187,12 @@ QString UIPathOperations::addStartDelimiter(const QString &path)
     return newPath;
 }
 
-QString UIPathOperations::sanitize(const QString &path)
+/* static */ QString UIPathOperations::sanitize(const QString &path)
 {
     return addStartDelimiter(removeTrailingDelimiters(removeMultipleDelimiters(path)));
 }
 
-QString UIPathOperations::mergePaths(const QString &path, const QString &baseName)
+/* static */ QString UIPathOperations::mergePaths(const QString &path, const QString &baseName)
 {
     QString newBase(baseName);
     newBase = newBase.remove(delimiter);
@@ -207,7 +207,7 @@ QString UIPathOperations::mergePaths(const QString &path, const QString &baseNam
     return sanitize(newPath);
 }
 
-QString UIPathOperations::getObjectName(const QString &path)
+/* static */ QString UIPathOperations::getObjectName(const QString &path)
 {
     if (path.length() <= 1)
         return QString(path);
@@ -221,7 +221,7 @@ QString UIPathOperations::getObjectName(const QString &path)
     return strTemp.right(strTemp.length() - lastSlashPosition - 1);
 }
 
-QString UIPathOperations::getPathExceptObjectName(const QString &path)
+/* static */ QString UIPathOperations::getPathExceptObjectName(const QString &path)
 {
     if (path.length() <= 1)
         return QString(path);
@@ -233,14 +233,14 @@ QString UIPathOperations::getPathExceptObjectName(const QString &path)
     return strTemp.left(lastSlashPosition + 1);
 }
 
-QString UIPathOperations::constructNewItemPath(const QString &previousPath, const QString &newBaseName)
+/* static */ QString UIPathOperations::constructNewItemPath(const QString &previousPath, const QString &newBaseName)
 {
     if (previousPath.length() <= 1)
          return QString(previousPath);
     return sanitize(mergePaths(getPathExceptObjectName(previousPath), newBaseName));
 }
 
-QStringList UIPathOperations::pathTrail(const QString &path)
+/* static */ QStringList UIPathOperations::pathTrail(const QString &path)
 {
     QList<QString> pathList = path.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
     return pathList;
@@ -943,7 +943,14 @@ void UIGuestControlFileTable::sltGoUp()
     if (!currentRoot.isValid())
         return;
     if (currentRoot != m_pModel->rootIndex())
-        changeLocation(currentRoot.parent());
+    {
+        QModelIndex parentIndex = currentRoot.parent();
+        if (parentIndex.isValid())
+        {
+            changeLocation(currentRoot.parent());
+            m_pView->selectRow(currentRoot.row());
+        }
+    }
 }
 
 void UIGuestControlFileTable::sltGoHome()
@@ -1254,6 +1261,11 @@ void UIGuestControlFileTable::keyPressEvent(QKeyEvent * pEvent)
     {
         sltDelete();
     }
+    else if (pEvent->key() == Qt::Key_Backspace)
+    {
+        sltGoUp();
+    }
+
     QWidget::keyPressEvent(pEvent);
 }
 
@@ -1343,7 +1355,7 @@ void UIGuestControlFileTable::disableSelectionDependentActions()
     }
 }
 
-QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
+/* static */ QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
 {
     QString strType("Unknown");
     switch(type)

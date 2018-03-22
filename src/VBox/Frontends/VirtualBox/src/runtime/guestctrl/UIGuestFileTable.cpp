@@ -258,7 +258,7 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
     return true;
 }
 
-FileObjectType UIGuestFileTable::fileType(const CFsObjInfo &fsInfo)
+/* static */ FileObjectType UIGuestFileTable::fileType(const CFsObjInfo &fsInfo)
 {
     if (fsInfo.isNull() || !fsInfo.isOk())
         return FileObjectType_Unknown;
@@ -272,7 +272,7 @@ FileObjectType UIGuestFileTable::fileType(const CFsObjInfo &fsInfo)
     return FileObjectType_Other;
 }
 
-FileObjectType UIGuestFileTable::fileType(const CGuestFsObjInfo &fsInfo)
+/* static */ FileObjectType UIGuestFileTable::fileType(const CGuestFsObjInfo &fsInfo)
 {
     if (fsInfo.isNull() || !fsInfo.isOk())
         return FileObjectType_Unknown;

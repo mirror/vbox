@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QAbstractItemModel>
+# include <QCheckBox>
 # include <QHBoxLayout>
 # include <QHeaderView>
 # include <QPlainTextEdit>
@@ -96,18 +97,16 @@ protected:
 private slots:
 
     void sltCreateButtonClick();
+    void sltShowHidePassword(bool flag);
 
 private:
     void         prepareWidgets();
     QILineEdit   *m_pUserNameEdit;
     QILineEdit   *m_pPasswordEdit;
-
-    QILabel      *m_pUserNameLabel;
-    QILabel      *m_pPasswordLabel;
     QPushButton  *m_pCreateButton;
     QPushButton  *m_pCloseButton;
-
-    QHBoxLayout *m_pMainLayout;
+    QHBoxLayout  *m_pMainLayout;
+    QCheckBox    *m_pShowPasswordCheckBox;
 
 };
 
@@ -128,11 +127,10 @@ UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 *
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pUserNameEdit(0)
     , m_pPasswordEdit(0)
-    , m_pUserNameLabel(0)
-    , m_pPasswordLabel(0)
     , m_pCreateButton(0)
     , m_pCloseButton(0)
     , m_pMainLayout(0)
+    , m_pShowPasswordCheckBox(0)
 {
     prepareWidgets();
 }
@@ -142,26 +140,29 @@ void UIGuestSessionCreateWidget::prepareWidgets()
     m_pMainLayout = new QHBoxLayout(this);
     if (!m_pMainLayout)
         return;
+
     m_pUserNameEdit = new QILineEdit;
     if (m_pUserNameEdit)
     {
-        m_pMainLayout->addWidget(m_pUserNameEdit);
+        m_pMainLayout->addWidget(m_pUserNameEdit, 2);
+        m_pUserNameEdit->setPlaceholderText("User Name");
     }
-    m_pUserNameLabel = new QILabel;
-    if (m_pUserNameLabel)
-    {
-        m_pMainLayout->addWidget(m_pUserNameLabel);
-    }
+
     m_pPasswordEdit = new QILineEdit;
     if (m_pPasswordEdit)
     {
-        m_pMainLayout->addWidget(m_pPasswordEdit);
+        m_pMainLayout->addWidget(m_pPasswordEdit, 2);
+        m_pPasswordEdit->setPlaceholderText("Password");
+        m_pPasswordEdit->setEchoMode(QLineEdit::Password);
     }
 
-    m_pPasswordLabel = new QILabel;
-    if (m_pPasswordLabel)
+    m_pShowPasswordCheckBox = new QCheckBox;
+    if (m_pShowPasswordCheckBox)
     {
-        m_pMainLayout->addWidget(m_pPasswordLabel);
+        m_pShowPasswordCheckBox->setText("Show Password");
+        m_pMainLayout->addWidget(m_pShowPasswordCheckBox);
+        connect(m_pShowPasswordCheckBox, &QCheckBox::toggled,
+                this, &UIGuestSessionCreateWidget::sltShowHidePassword);
     }
 
     m_pCreateButton = new QPushButton;
@@ -177,7 +178,7 @@ void UIGuestSessionCreateWidget::prepareWidgets()
         m_pMainLayout->addWidget(m_pCloseButton);
         connect(m_pCloseButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sigCloseButtonClick);
     }
-
+    m_pMainLayout->insertStretch(-1, 1);
     retranslateUi();
 }
 
@@ -187,26 +188,30 @@ void UIGuestSessionCreateWidget::sltCreateButtonClick()
         emit sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
 }
 
+void UIGuestSessionCreateWidget::sltShowHidePassword(bool flag)
+{
+    if (!m_pPasswordEdit)
+        return;
+    if (flag)
+        m_pPasswordEdit->setEchoMode(QLineEdit::Normal);
+    else
+        m_pPasswordEdit->setEchoMode(QLineEdit::Password);
+}
+
 void UIGuestSessionCreateWidget::retranslateUi()
 {
     if (m_pUserNameEdit)
     {
         m_pUserNameEdit->setToolTip(UIVMInformationDialog::tr("User name to authenticate session creation"));
+        m_pUserNameEdit->setPlaceholderText(UIVMInformationDialog::tr("User Name"));
+
     }
     if (m_pPasswordEdit)
     {
         m_pPasswordEdit->setToolTip(UIVMInformationDialog::tr("Password to authenticate session creation"));
+        m_pPasswordEdit->setPlaceholderText(UIVMInformationDialog::tr("Password"));
     }
-    if (m_pUserNameLabel)
-    {
-        m_pUserNameLabel->setToolTip(UIVMInformationDialog::tr("User name to authenticate session creation"));
-        m_pUserNameLabel->setText(UIVMInformationDialog::tr("User name"));
-    }
-    if (m_pPasswordLabel)
-    {
-        m_pPasswordLabel->setToolTip(UIVMInformationDialog::tr("Password to authenticate session creation"));
-        m_pPasswordLabel->setText(UIVMInformationDialog::tr("Password"));
-    }
+
     if (m_pCreateButton)
         m_pCreateButton->setText(UIVMInformationDialog::tr("Create Session"));
     if (m_pCloseButton)
@@ -227,22 +232,26 @@ void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
 
 void UIGuestSessionCreateWidget::switchSessionCreateMode()
 {
-    m_pUserNameEdit->setEnabled(true);
-    m_pPasswordEdit->setEnabled(true);
-    m_pUserNameLabel->setEnabled(true);
-    m_pPasswordLabel->setEnabled(true);
-    m_pCreateButton->setEnabled(true);
-    m_pCloseButton->setEnabled(false);
+    if (m_pUserNameEdit)
+        m_pUserNameEdit->setEnabled(true);
+    if (m_pPasswordEdit)
+        m_pPasswordEdit->setEnabled(true);
+    if (m_pCreateButton)
+        m_pCreateButton->setEnabled(true);
+    if (m_pCloseButton)
+        m_pCloseButton->setEnabled(false);
 }
 
 void UIGuestSessionCreateWidget::switchSessionCloseMode()
 {
-    m_pUserNameEdit->setEnabled(false);
-    m_pPasswordEdit->setEnabled(false);
-    m_pUserNameLabel->setEnabled(false);
-    m_pPasswordLabel->setEnabled(false);
-    m_pCreateButton->setEnabled(false);
-    m_pCloseButton->setEnabled(true);
+    if (m_pUserNameEdit)
+        m_pUserNameEdit->setEnabled(false);
+    if (m_pPasswordEdit)
+        m_pPasswordEdit->setEnabled(false);
+    if (m_pCreateButton)
+        m_pCreateButton->setEnabled(false);
+    if (m_pCloseButton)
+        m_pCloseButton->setEnabled(true);
 }
 
 
