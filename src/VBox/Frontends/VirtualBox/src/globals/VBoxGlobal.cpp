@@ -52,6 +52,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "VBoxLicenseViewer.h"
 # include "UIMessageCenter.h"
 # include "UIPopupCenter.h"
 # include "QIMessageBox.h"
@@ -74,10 +75,7 @@
 # include "UIDesktopWidgetWatchdog.h"
 # ifdef VBOX_WS_X11
 #  include "UIHostComboEditor.h"
-#  ifndef VBOX_OSE
-#   include "VBoxLicenseViewer.h"
-#  endif /* VBOX_OSE */
-# endif /* VBOX_WS_X11 */
+# endif
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
 #  include "UIMachineWindowFullscreen.h"
