@@ -55,7 +55,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
     def __init__(self, oTstDrv):
         base.SubTestDriverBase.__init__(self, 'move-vm', oTstDrv)
-        self.asRsrcs = self.getResourceSet()
+        self.asRsrcs = self.__getResourceSet()
 
         for oRes in self.asRsrcs:
             reporter.log('Resource is "%s"' % (oRes,))
@@ -168,7 +168,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return False
 
-    def getResourceSet(self):
+    def __getResourceSet(self):
         # Construct the resource list the first time it's queried.
         if self.oTstDrv.asRsrcs is None:
             self.oTstDrv.asRsrcs = []
@@ -176,6 +176,121 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             self.oTstDrv.asRsrcs.append('5.3/floppy/tdMoveVM.img')
 
         return self.oTstDrv.asRsrcs
+
+    def __testScenario_4(self, oMachine, sNewLoc, sOldLoc = 0):
+
+        #Run VM and get new Session object
+        oSession = self.oTstDrv.startVm(oMachine)
+
+        #some time interval should be here for not closing VM just after start
+        time.sleep(1)
+
+        if oMachine.state != self.oTstDrv.oVBoxMgr.constants.MachineState_Running:
+            reporter.log("Machine '%s' is not Running" % (oMachine.name))
+            fRc = False
+
+        #call Session::saveState(), already closes session unless it failed
+        fRc = oSession.saveState()
+        self.oTstDrv.terminateVmBySession(oSession)
+
+        if fRc:
+            #create a new Session object for moving VM
+            oSession = self.oTstDrv.openSession(oMachine)
+            fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine) and fRc
+
+            # cleaning up: get rid of saved state
+            fRc = fRc and oSession.discardSavedState(True)
+            if fRc is False:
+                reporter.log('Failed to discard the saved state of machine')
+
+            fRc = oSession.close() and fRc
+            if fRc is False:
+                reporter.log('Couldn\'t close machine session')
+
+        return fRc
+
+    def __testScenario_5(self, oMachine, sNewLoc, sOldLoc = 0):
+
+        fRc = True
+        #create a new Session object
+        oSession = self.oTstDrv.openSession(oMachine)
+
+        sISOLoc = '5.3/isos/tdMoveVM1.iso'
+        reporter.log("sHost is '%s', sResourcePath is '%s'" % (self.oTstDrv.sHost, self.oTstDrv.sResourcePath))
+        sISOLoc = self.oTstDrv.getFullResourceName(sISOLoc)
+
+        if not os.path.exists(sISOLoc):
+            reporter.log('ISO file does not exist at "%s"' % (sISOLoc,))
+            fRc = False
+
+        #Copy ISO image from the common resource folder into machine folder
+        shutil.copy(sISOLoc, sOldLoc)
+
+        #attach ISO image to the IDE controller
+        if fRc is True:
+            #set actual ISO location
+            sISOLoc = sOldLoc + os.sep + 'tdMoveVM1.iso'
+            sController='IDE Controller'
+            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+            iPort = len(aoMediumAttachments)
+            reporter.log('sISOLoc "%s", sController "%s", iPort "%s"' % (sISOLoc,sController,iPort))
+            fRc = oSession.attachDvd(sISOLoc, sController, iPort, iDevice = 0)
+
+        if fRc is True:
+            fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine) and fRc
+
+        #detach ISO image
+        fRc = oSession.detachHd(sController, iPort, 0)
+
+        fRc = fRc and oSession.saveSettings()
+        if fRc is False:
+            reporter.log('Couldn\'t save machine settings after 5th scenario')
+
+        fRc = oSession.close() and fRc
+        if fRc is False:
+            reporter.log('Couldn\'t close machine session')
+
+        return fRc
+
+    def __testScenario_6(self, oMachine, sNewLoc, sOldLoc = 0):
+
+        fRc = True
+        #create a new Session object
+        oSession = self.oTstDrv.openSession(oMachine)
+
+        sFloppyLoc = '5.3/floppy/tdMoveVM1.img'
+        sFloppyLoc = self.oTstDrv.getFullResourceName(sFloppyLoc)
+
+        if not os.path.exists(sFloppyLoc):
+            reporter.log('Floppy disk does not exist at "%s"' % (sFloppyLoc,))
+            fRc = False
+
+        #Copy floppy image from the common resource folder into machine folder
+        shutil.copy(sFloppyLoc, sOldLoc)
+
+        # attach floppy image
+        if fRc is True:
+            #set actual floppy location
+            sFloppyLoc = sOldLoc + os.sep + 'tdMoveVM1.img'
+            sController='Floppy Controller'
+            reporter.log('sFloppyLoc "%s", sController "%s"' % (sFloppyLoc,sController))
+            fRc = fRc and oSession.attachFloppy(sFloppyLoc, sController, 0, 0)
+
+        if fRc is True:
+            fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine) and fRc
+
+        #detach floppy image
+        fRc = oSession.detachHd(sController, 0, 0)
+
+        fRc = fRc and oSession.saveSettings()
+        if fRc is False:
+            reporter.log('Couldn\'t save machine settings after 6th scenario')
+
+        fRc = oSession.close() and fRc
+        if fRc is False:
+            reporter.log('Couldn\'t close machine session')
+
+        return fRc
 
     #
     #testVMMove
@@ -215,8 +330,6 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         #6. There is a floppy image (.img) attached to the VM.
         #
         #7. There are shareable disk and immutable disk attached to the VM.
-        #
-        #8. There is "read-only" disk attached to the VM.
 
         try:
             #create test machine
@@ -227,8 +340,8 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
             #create temporary subdirectory in the current working directory
             sOrigLoc = self.oTstDrv.sScratchPath
-            sNewLoc = os.path.join(sOrigLoc, 'moveFolder')
-            os.mkdir(sNewLoc, 0o775)
+            sBaseLoc = os.path.join(sOrigLoc, 'moveFolder')
+            os.mkdir(sBaseLoc, 0o775)
 
             sController='SATA Controller'
             aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
@@ -238,12 +351,12 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             oSession = self.oTstDrv.openSession(oMachine)
             fRc = True
 
-            sMoveLoc = sNewLoc + os.sep
+            sNewLoc = sBaseLoc + os.sep
 ############# 1 case. ##########################################################################################
             #   All disks attached to VM are located outside the VM's folder.
             #   There are no any snapshots and logs.
             #   In this case only VM setting file should be moved (.vbox file)
-            fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+            fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine) and fRc
 
             fRc = fRc and oSession.saveSettings()
             if fRc is False:
@@ -252,16 +365,16 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 ############# 2 case. ##########################################################################################
             #   All disks attached to VM are located inside the VM's folder.
             #   There are no any snapshots and logs.
-            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
-            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_2d_scenario')
-            os.mkdir(sMoveLoc, 0o775)
+            sOldLoc = sNewLoc + os.sep + oMachine.name + os.sep
+            sNewLoc = os.path.join(sOrigLoc, 'moveFolder_2d_scenario')
+            os.mkdir(sNewLoc, 0o775)
             aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
             oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
-            oSubTstDrvMoveMedium1Instance.setLocation(sLoc, aoMediumAttachments)
+            oSubTstDrvMoveMedium1Instance.setLocation(sOldLoc, aoMediumAttachments)
 
             del oSubTstDrvMoveMedium1Instance
 
-            fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+            fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine) and fRc
 
             fRc = fRc and oSession.saveSettings()
             if fRc is False:
@@ -269,9 +382,9 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
 ############# 3 case. ##########################################################################################
             #   There are snapshots.
-            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
-            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
-            os.mkdir(sMoveLoc, 0o775)
+            sOldLoc = sNewLoc + os.sep + oMachine.name + os.sep
+            sNewLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
+            os.mkdir(sNewLoc, 0o775)
 
             cSnap = 2
             for counter in range(1,cSnap+1):
@@ -283,7 +396,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
             aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
             if fRc is True:
-                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
+                fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine) and fRc
 
             fRc = fRc and oSession.saveSettings()
             if fRc is False:
@@ -295,119 +408,36 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             #   Here we run VM, next stop it in the "save" state.
             #   And next move VM
 
+            sOldLoc = sNewLoc + os.sep + oMachine.name + os.sep
+            sNewLoc = os.path.join(sOrigLoc, 'moveFolder_4th_scenario')
+            os.mkdir(sNewLoc, 0o775)
+
             #Close Session object because after starting VM we get new instance of session
             fRc = oSession.close() and fRc
             if fRc is False:
                 reporter.log('Couldn\'t close machine session')
 
-            #Run VM and get new Session object
-            oSession = self.oTstDrv.startVm(oMachine)
+            del oSession
 
-            #some time interval should be here for not closing VM just after start
-            time.sleep(1)
-
-            if oMachine.state != self.oTstDrv.oVBoxMgr.constants.MachineState_Running:
-                reporter.log("Machine '%s' is not Running" % (oMachine.name))
-                fRc = False
-
-            #call Session::saveState(), already closes session unless it failed
-            fRc = fRc and oSession.saveState()
-            self.oTstDrv.terminateVmBySession(oSession)
-
-            if fRc:
-                sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
-                sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_4th_scenario')
-                os.mkdir(sMoveLoc, 0o775)
-
-                #create a new Session object for moving VM
-                oSession = self.oTstDrv.openSession(oMachine)
-                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
-
-                # cleaning up: get rid of saved state
-                fRc = fRc and oSession.discardSavedState(True)
-                if fRc is False:
-                    reporter.log('Failed to discard the saved state of machine')
+            self.__testScenario_4(oMachine, sNewLoc)
 
 ############## 5 case. ##########################################################################################
             #There is an ISO image (.iso) attached to the VM.
             #Prerequisites - there is IDE Controller and there are no any images attached to it.
-            fRc = True
-            oVirtualBox = self.oTstDrv.oVBoxMgr.getVirtualBox()
-            oMachine = oVirtualBox.findMachine('test-vm-move')
-            if oMachine is None:
-                reporter.log("Machine '%s' is unknown" % (oMachine.name))
-                return False
 
-            del oVirtualBox
-
-            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
-            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_5th_scenario')
-            os.mkdir(sMoveLoc, 0o775)
-            sISOLoc = '5.3/isos/tdMoveVM1.iso'
-            reporter.log("sHost is '%s', sResourcePath is '%s'" % (self.oTstDrv.sHost, self.oTstDrv.sResourcePath))
-            sISOLoc = self.oTstDrv.getFullResourceName(sISOLoc)
-
-            if not os.path.exists(sISOLoc):
-                reporter.log('ISO file does not exist at "%s"' % (sISOLoc,))
-                fRc = False
-
-            #Copy ISO image from the common resource folder into machine folder
-            shutil.copy(sISOLoc, sLoc)
-
-            #attach ISO image to the IDE controller
-            if fRc is True:
-                #set actual ISO location
-                sISOLoc = sLoc + os.sep + 'tdMoveVM1.iso'
-                sController='IDE Controller'
-                aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
-                iPort = len(aoMediumAttachments)
-                reporter.log('sISOLoc "%s", sController "%s", iPort "%s"' % (sISOLoc,sController,iPort))
-                fRc = oSession.attachDvd(sISOLoc, sController, iPort, iDevice = 0)
-
-            if fRc is True:
-                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
-
-            #detach ISO image
-            fRc = oSession.detachHd(sController, iPort, 0)
-
-            fRc = fRc and oSession.saveSettings()
-            if fRc is False:
-                reporter.log('Couldn\'t save machine settings after 5th scenario')
+            sOldLoc = sNewLoc + os.sep + oMachine.name + os.sep
+            sNewLoc = os.path.join(sOrigLoc, 'moveFolder_5th_scenario')
+            os.mkdir(sNewLoc, 0o775)
+            self.__testScenario_5(oMachine, sNewLoc, sOldLoc)
 
 ############# 6 case. ##########################################################################################
             #There is a floppy image (.img) attached to the VM.
             #Prerequisites - there is Floppy Controller and there are no any images attached to it.
-            fRc = True
-            sLoc = sMoveLoc + os.sep + oMachine.name + os.sep
-            sMoveLoc = os.path.join(sOrigLoc, 'moveFolder_6th_scenario')
-            os.mkdir(sMoveLoc, 0o775)
-            sFloppyLoc = '5.3/floppy/tdMoveVM1.img'
-            sFloppyLoc = self.oTstDrv.getFullResourceName(sFloppyLoc)
 
-            if not os.path.exists(sFloppyLoc):
-                reporter.log('Floppy disk does not exist at "%s"' % (sFloppyLoc,))
-                fRc = False
-
-            #Copy floppy image from the common resource folder into machine folder
-            shutil.copy(sFloppyLoc, sLoc)
-
-            # attach floppy image
-            if fRc is True:
-                #set actual floppy location
-                sFloppyLoc = sLoc + os.sep + 'tdMoveVM1.img'
-                sController='Floppy Controller'
-                reporter.log('sFloppyLoc "%s", sController "%s"' % (sFloppyLoc,sController))
-                fRc = fRc and oSession.attachFloppy(sFloppyLoc, sController, 0, 0)
-
-            if fRc is True:
-                fRc = self.moveVMToLocation(sMoveLoc, oSession.o.machine) and fRc
-
-            #detach floppy image
-            fRc = oSession.detachHd(sController, 0, 0)
-
-            fRc = fRc and oSession.saveSettings()
-            if fRc is False:
-                reporter.log('Couldn\'t save machine settings after 6th scenario')
+            sOldLoc = sNewLoc + os.sep + oMachine.name + os.sep
+            sNewLoc = os.path.join(sOrigLoc, 'moveFolder_6th_scenario')
+            os.mkdir(sNewLoc, 0o775)
+            self.__testScenario_6(oMachine, sNewLoc, sOldLoc)
 
 ############# 7 case. ##########################################################################################
 #           #   There are shareable disk and immutable disk attached to the VM.
@@ -417,10 +447,6 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 #           if fRc is False:
 #               reporter.log('Couldn\'t save machine settings')
 #
-
-            fRc = oSession.close() and fRc
-            if fRc is False:
-                reporter.log('Couldn\'t close machine session')
 
             assert fRc is True
         except:
