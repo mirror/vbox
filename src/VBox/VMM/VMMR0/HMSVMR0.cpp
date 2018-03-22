@@ -358,6 +358,7 @@ static FNSVMEXITHANDLER hmR0SvmExitVIntr;
 static FNSVMEXITHANDLER hmR0SvmExitTaskSwitch;
 static FNSVMEXITHANDLER hmR0SvmExitVmmCall;
 static FNSVMEXITHANDLER hmR0SvmExitPause;
+static FNSVMEXITHANDLER hmR0SvmExitFerrFreeze;
 static FNSVMEXITHANDLER hmR0SvmExitIret;
 static FNSVMEXITHANDLER hmR0SvmExitXcptPF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptUD;
@@ -5234,7 +5235,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         {
             if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_FERR_FREEZE))
                 return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
-            return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
+            return hmR0SvmExitFerrFreeze(pVCpu, pCtx, pSvmTransient);
         }
 
         case SVM_EXIT_INVLPG:
@@ -5525,8 +5526,10 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
         case SVM_EXIT_VINTR:
             return hmR0SvmExitVIntr(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_INTR:
         case SVM_EXIT_FERR_FREEZE:
+            return hmR0SvmExitFerrFreeze(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_INTR:
         case SVM_EXIT_NMI:
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
 
@@ -7234,6 +7237,20 @@ HMSVM_EXIT_DECL hmR0SvmExitPause(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 
 
 /**
+ * \#VMEXIT handler for FERR intercept (SVM_EXIT_FERR_FREEZE). Conditional
+ * \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitFerrFreeze(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    Assert(!(pCtx->cr0 & X86_CR0_NE));
+
+    Log4(("hmR0SvmExitFerrFreeze: Raising IRQ 13 in response to #FERR\n"));
+    return PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13 /* u8Irq */, 1 /* u8Level */, 0 /* uTagSrc */);
+}
+
+
+/**
  * \#VMEXIT handler for IRET (SVM_EXIT_IRET). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -7440,13 +7457,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         int rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
         if (RT_SUCCESS(rc))
         {
-#ifdef VBOX_WITH_NESTED_HWVIRT
-            if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
-                && HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_FERR_FREEZE))
-            {
-                return VBOXSTRICTRC_TODO(IEMExecSvmVmexit(pVCpu, SVM_EXIT_FERR_FREEZE, 0, 0));
-            }
-#endif
             /* Convert a #MF into a FERR -> IRQ 13. See @bugref{6117}. */
             rc = PDMIsaSetIrq(pVCpu->CTX_SUFF(pVM), 13 /* u8Irq */, 1 /* u8Level */, 0 /* uTagSrc */);
             if (RT_SUCCESS(rc))
