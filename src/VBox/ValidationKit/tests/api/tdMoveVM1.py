@@ -177,7 +177,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return self.oTstDrv.asRsrcs
 
-    def __testScenario_4(self, oMachine, sNewLoc, sOldLoc = 0):
+    def __testScenario_4(self, oMachine, sNewLoc):
 
         #Run VM and get new Session object
         oSession = self.oTstDrv.startVm(oMachine)
@@ -209,7 +209,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return fRc
 
-    def __testScenario_5(self, oMachine, sNewLoc, sOldLoc = 0):
+    def __testScenario_5(self, oMachine, sNewLoc, sOldLoc):
 
         fRc = True
         #create a new Session object
@@ -252,7 +252,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return fRc
 
-    def __testScenario_6(self, oMachine, sNewLoc, sOldLoc = 0):
+    def __testScenario_6(self, oMachine, sNewLoc, sOldLoc):
 
         fRc = True
         #create a new Session object
