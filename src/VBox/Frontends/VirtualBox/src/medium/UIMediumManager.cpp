@@ -29,17 +29,18 @@
 # include <QPushButton>
 
 /* GUI includes: */
+# include "QIDialogButtonBox.h"
+# include "QIFileDialog.h"
+# include "QILabel.h"
+# include "QIMessageBox.h"
+# include "QITabWidget.h"
+# include "QITreeWidget.h"
 # include "VBoxGlobal.h"
 # include "UIExtraDataManager.h"
 # include "UIMediumDetailsWidget.h"
 # include "UIMediumManager.h"
 # include "UIWizardCloneVD.h"
 # include "UIMessageCenter.h"
-# include "QIFileDialog.h"
-# include "QITabWidget.h"
-# include "QITreeWidget.h"
-# include "QILabel.h"
-# include "QIDialogButtonBox.h"
 # include "UIToolBar.h"
 # include "UIIconPool.h"
 # include "UIMedium.h"
