@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,33 +15,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UINetworkManager_h__
-#define __UINetworkManager_h__
+#ifndef ___UINetworkManager_h___
+#define ___UINetworkManager_h___
 
 /* Qt includes: */
 #include <QObject>
 #include <QUuid>
 
-/* Local inludes: */
+/* GUI inludes: */
 #include "UINetworkDefs.h"
 
 /* Forward declarations: */
 class QUrl;
 class QWidget;
-class UINetworkRequest;
 class UINetworkCustomer;
 class UINetworkManagerDialog;
 class UINetworkManagerIndicator;
+class UINetworkRequest;
 
-/* QObject class reimplementation.
- * Providing network access for VirtualBox application purposes. */
+/** QObject class extension.
+  * Providing network access for VirtualBox application purposes. */
 class UINetworkManager : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /* Ask listeners (network-requests) to cancel: */
+    /** Asks listeners (network-requests) to cancel. */
     void sigCancelNetworkRequests();
 
     /** Requests to add @a pNetworkRequest to network-manager state-indicators. */
@@ -51,19 +51,20 @@ signals:
 
 public:
 
-    /* Instance: */
-    static UINetworkManager* instance() { return m_pInstance; }
-
-    /* Create/destroy singleton: */
+    /** Creates singleton instance. */
     static void create();
+    /** Destroys singleton instance. */
     static void destroy();
 
-    /* Pointer to network-manager dialog: */
-    UINetworkManagerDialog* window() const;
+    /** Returns the singleton instance. */
+    static UINetworkManager *instance() { return s_pInstance; }
+
+    /** Returns pointer to network-manager dialog. */
+    UINetworkManagerDialog *window() const;
 
     /** Creates network-manager state-indicator.
       * @remarks To be cleaned up by the caller. */
-    UINetworkManagerIndicator* createIndicator() const;
+    UINetworkManagerIndicator *createIndicator() const;
 
     /** Registers @a pNetworkRequest in network-manager. */
     void registerNetworkRequest(UINetworkRequest *pNetworkRequest);
@@ -72,58 +73,63 @@ public:
 
 public slots:
 
-    /* Show network-manager dialog: */
+    /** Shows network-manager dialog. */
     void show();
 
 protected:
 
-    /* Allow UINetworkCustomer to create network-request: */
+    /** Allows UINetworkCustomer to create network-request. */
     friend class UINetworkCustomer;
+
     /** Creates network-request of the passed @a type
       * on the basis of the passed @a urls and the @a requestHeaders for the @a pCustomer specified. */
-    void createNetworkRequest(UINetworkRequestType type, const QList<QUrl> &urls,
+    void createNetworkRequest(UINetworkRequestType enmType, const QList<QUrl> &urls,
                               const UserDictionary &requestHeaders, UINetworkCustomer *pCustomer);
 
 private:
 
-    /* Constructor/destructor: */
+    /** Constructs network manager. */
     UINetworkManager();
+    /** Destructs network manager. */
     ~UINetworkManager();
 
-    /* Prepare/cleanup: */
+    /** Prepares all. */
     void prepare();
+    /** Cleanups all. */
     void cleanup();
 
-    /* Network-request prepare helper: */
+    /** Prepares @a pNetworkRequest. */
     void prepareNetworkRequest(UINetworkRequest *pNetworkRequest);
-    /* Network-request cleanup helper: */
+    /** Cleanups network-request with passed @a uuid. */
     void cleanupNetworkRequest(QUuid uuid);
-    /* Network-requests cleanup helper: */
+    /** Cleanups all network-requests. */
     void cleanupNetworkRequests();
 
 private slots:
 
-    /* Slot to handle network-request progress: */
+    /** Handles progress for @a iReceived amount of bytes among @a iTotal for request specified by @a uuid. */
     void sltHandleNetworkRequestProgress(const QUuid &uuid, qint64 iReceived, qint64 iTotal);
-    /* Slot to handle network-request cancel: */
+    /** Handles canceling of request specified by @a uuid. */
     void sltHandleNetworkRequestCancel(const QUuid &uuid);
-    /* Slot to handle network-request finish: */
+    /** Handles finishing of request specified by @a uuid. */
     void sltHandleNetworkRequestFinish(const QUuid &uuid);
-    /* Slot to handle network-request failure: */
+    /** Handles @a strError of request specified by @a uuid. */
     void sltHandleNetworkRequestFailure(const QUuid &uuid, const QString &strError);
 
 private:
 
-    /* Instance: */
-    static UINetworkManager *m_pInstance;
+    /** Holds the singleton instance. */
+    static UINetworkManager *s_pInstance;
 
-    /* Network-request map: */
+    /** Holds the map of current requests. */
     QMap<QUuid, UINetworkRequest*> m_requests;
 
-    /* Network-manager dialog: */
+    /** Holds the network manager dialog instance. */
     UINetworkManagerDialog *m_pNetworkManagerDialog;
 };
+
+/** Singleton Network Manager 'official' name. */
 #define gNetworkManager UINetworkManager::instance()
 
-#endif // __UINetworkManager_h__
+#endif /* !___UINetworkManager_h___ */
 

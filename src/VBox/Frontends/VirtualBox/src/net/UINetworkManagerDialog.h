@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,73 +15,79 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UINetworkManagerDialog_h__
-#define __UINetworkManagerDialog_h__
+#ifndef ___UINetworkManagerDialog_h___
+#define ___UINetworkManagerDialog_h___
 
-/* Global includes: */
+/* Qt includes: */
 #include <QMainWindow>
 #include <QMap>
 #include <QUuid>
 
-/* Local includes: */
+/* GUI includes: */
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class UINetworkRequest;
-class QVBoxLayout;
 class QLabel;
+class QUuid;
+class QVBoxLayout;
 class QIDialogButtonBox;
+class UINetworkRequest;
 class UINetworkRequestWidget;
 
-/* QMainWindow reimplementation to reflect network-requests: */
+/** QMainWindow reimplementation to reflect network-requests. */
 class UINetworkManagerDialog : public QIWithRetranslateUI<QMainWindow>
 {
     Q_OBJECT;
 
 signals:
 
-    /* Ask listener (network-manager) to cancel all network-requests: */
+    /** Asks listener (network-manager) to cancel all network-requests. */
     void sigCancelNetworkRequests();
 
 public slots:
 
-    /* Show the dialog, make sure its visible: */
+    /** Shows the dialog, make sure its visible. */
     void showNormal();
 
 protected:
 
-    /* Allow creation of UINetworkManagerDialog to UINetworkManager: */
+    /** Allows creation of UINetworkManagerDialog to UINetworkManager. */
     friend class UINetworkManager;
-    /* Constructor: */
+    /** Constructs Network Manager Dialog. */
     UINetworkManagerDialog();
 
-    /* Allow adding/removing network-request widgets to UINetworkRequest: */
+    /** Allows adding/removing network-request widgets to UINetworkRequest. */
     friend class UINetworkRequest;
-    /* Add network-request widget: */
+    /** Adds network-request widget. */
     void addNetworkRequestWidget(UINetworkRequest *pNetworkRequest);
-    /* Remove network-request widget: */
+    /** Removes network-request widget. */
     void removeNetworkRequestWidget(const QUuid &uuid);
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+
+    /** Handles key-press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
 
 private slots:
 
-    /* Handler for 'Cancel All' button-press: */
+    /** Handles 'Cancel All' button-press. */
     void sltHandleCancelAllButtonPress();
 
 private:
 
-    /* Translation stuff: */
-    void retranslateUi();
-
-    /* Overloaded event-handlers: */
-    void showEvent(QShowEvent *pShowEvent);
-    void keyPressEvent(QKeyEvent *pKeyPressEvent);
-
-    /* Widgets: */
-    QLabel *m_pLabel;
-    QVBoxLayout *m_pWidgetsLayout;
-    QIDialogButtonBox *m_pButtonBox;
-    QMap<QUuid, UINetworkRequestWidget*> m_widgets;
+    /** Holds the label instance. */
+    QLabel                               *m_pLabel;
+    /** Holds the widget layout instance. */
+    QVBoxLayout                          *m_pWidgetsLayout;
+    /** Holds the dialog-button-box instance. */
+    QIDialogButtonBox                    *m_pButtonBox;
+    /** Holds the map of the network request widget instances. */
+    QMap<QUuid, UINetworkRequestWidget*>  m_widgets;
 };
 
-#endif // __UINetworkManagerDialog_h__
+#endif /* !___UINetworkManagerDialog_h___ */
 

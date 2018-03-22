@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,10 +20,10 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
+# include "UIIconPool.h"
 # include "UINetworkManagerIndicator.h"
 # include "UINetworkRequest.h"
-# include "UIIconPool.h"
-# include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -37,6 +37,53 @@ UINetworkManagerIndicator::UINetworkManagerIndicator()
 
     /* Translate content: */
     retranslateUi();
+}
+
+void UINetworkManagerIndicator::updateAppearance()
+{
+    /* First of all, we are hiding LED in case of 'idle' state: */
+    if (state() == UINetworkManagerIndicatorState_Idle && !isHidden())
+        hide();
+
+    /* Prepare description: */
+    QString strDecription;
+    /* Check if there are any network-requests: */
+    if (!m_ids.isEmpty())
+    {
+        /* Prepare table: */
+        QString strTable("<table>%1</table>");
+        QString strBodyItem("<tr><td>%1</td><td>&nbsp;</td><td>%2</td></tr>");
+        QString strParagraph("<p>%1</p>");
+        QString strBoldNobreak("<nobr><b>%1</b></nobr>");
+        QString strNobreak("<nobr>%1</nobr>");
+        QString strItalic("<i>%1</i>");
+        /* Prepare header: */
+        QString strHeader(strBoldNobreak.arg(tr("Current network operations:")));
+        /* Prepare table body: */
+        QString strBody;
+        for (int i = 0; i < m_data.size(); ++i)
+        {
+            const UINetworkRequestData &data = m_data[i];
+            const QString &strDescription = data.description;
+            QString strStatus(data.failed ? tr("failed", "network operation") :
+                                            tr("(%1 of %2)")
+                                               .arg(vboxGlobal().formatSize(data.bytesReceived))
+                                               .arg(vboxGlobal().formatSize(data.bytesTotal)));
+            QString strBodyLine(strBodyItem.arg(strNobreak.arg(strDescription)).arg(strNobreak.arg(strStatus)));
+            strBody += strBodyLine;
+        }
+        /* Compose description: */
+        strDecription = strParagraph.arg(strHeader + strTable.arg(strBody)) +
+                        strParagraph.arg(strNobreak.arg(strItalic.arg(tr("Double-click for more information."))));
+    }
+    else
+        strDecription = QString();
+    /* Set description: */
+    setToolTip(strDecription);
+
+    /* Finally, we are showing LED in case of state is not 'idle': */
+    if (state() != UINetworkManagerIndicatorState_Idle && isHidden())
+        show();
 }
 
 void UINetworkManagerIndicator::sltAddNetworkManagerIndicatorDescription(UINetworkRequest *pNetworkRequest)
@@ -80,6 +127,12 @@ void UINetworkManagerIndicator::sldRemoveNetworkManagerIndicatorDescription(cons
 
     /* Update appearance: */
     recalculateIndicatorState();
+}
+
+void UINetworkManagerIndicator::retranslateUi()
+{
+    /* Update appearance: */
+    updateAppearance();
 }
 
 void UINetworkManagerIndicator::sltSetProgressToStarted(const QUuid &uuid)
@@ -150,12 +203,6 @@ void UINetworkManagerIndicator::sltSetProgress(const QUuid &uuid, qint64 iReceiv
     updateAppearance();
 }
 
-void UINetworkManagerIndicator::retranslateUi()
-{
-    /* Update appearance: */
-    updateAppearance();
-}
-
 void UINetworkManagerIndicator::recalculateIndicatorState()
 {
     /* Check if there are network-requests at all: */
@@ -192,52 +239,5 @@ void UINetworkManagerIndicator::recalculateIndicatorState()
 
     /* Update appearance finally: */
     updateAppearance();
-}
-
-void UINetworkManagerIndicator::updateAppearance()
-{
-    /* First of all, we are hiding LED in case of 'idle' state: */
-    if (state() == UINetworkManagerIndicatorState_Idle && !isHidden())
-        hide();
-
-    /* Prepare description: */
-    QString strDecription;
-    /* Check if there are any network-requests: */
-    if (!m_ids.isEmpty())
-    {
-        /* Prepare table: */
-        QString strTable("<table>%1</table>");
-        QString strBodyItem("<tr><td>%1</td><td>&nbsp;</td><td>%2</td></tr>");
-        QString strParagraph("<p>%1</p>");
-        QString strBoldNobreak("<nobr><b>%1</b></nobr>");
-        QString strNobreak("<nobr>%1</nobr>");
-        QString strItalic("<i>%1</i>");
-        /* Prepare header: */
-        QString strHeader(strBoldNobreak.arg(tr("Current network operations:")));
-        /* Prepare table body: */
-        QString strBody;
-        for (int i = 0; i < m_data.size(); ++i)
-        {
-            const UINetworkRequestData &data = m_data[i];
-            const QString &strDescription = data.description;
-            QString strStatus(data.failed ? tr("failed", "network operation") :
-                                            tr("(%1 of %2)")
-                                               .arg(vboxGlobal().formatSize(data.bytesReceived))
-                                               .arg(vboxGlobal().formatSize(data.bytesTotal)));
-            QString strBodyLine(strBodyItem.arg(strNobreak.arg(strDescription)).arg(strNobreak.arg(strStatus)));
-            strBody += strBodyLine;
-        }
-        /* Compose description: */
-        strDecription = strParagraph.arg(strHeader + strTable.arg(strBody)) +
-                        strParagraph.arg(strNobreak.arg(strItalic.arg(tr("Double-click for more information."))));
-    }
-    else
-        strDecription = QString();
-    /* Set description: */
-    setToolTip(strDecription);
-
-    /* Finally, we are showing LED in case of state is not 'idle': */
-    if (state() != UINetworkManagerIndicatorState_Idle && isHidden())
-        show();
 }
 

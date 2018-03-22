@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,21 +29,15 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UINetworkCustomer::UINetworkCustomer()
-    : QObject(0)
-    , m_fForceCall(true)
-{
-}
-
-UINetworkCustomer::UINetworkCustomer(QObject *pParent, bool fForceCall)
+UINetworkCustomer::UINetworkCustomer(QObject *pParent /* = 0 */, bool fForceCall /* = true */)
     : QObject(pParent)
     , m_fForceCall(fForceCall)
 {
 }
 
-void UINetworkCustomer::createNetworkRequest(UINetworkRequestType type, const QList<QUrl> urls,
+void UINetworkCustomer::createNetworkRequest(UINetworkRequestType enmType, const QList<QUrl> urls,
                                              const UserDictionary requestHeaders /* = UserDictionary() */)
 {
-    gNetworkManager->createNetworkRequest(type, urls, requestHeaders, this);
+    gNetworkManager->createNetworkRequest(enmType, urls, requestHeaders, this);
 }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,38 +15,38 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UINetworkCustomer_h__
-#define __UINetworkCustomer_h__
+#ifndef ___UINetworkCustomer_h___
+#define ___UINetworkCustomer_h___
 
-/* Global includes: */
+/* Qt includes: */
 #include <QObject>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UINetworkDefs.h"
 
 /* Forward declarations: */
 class UINetworkReply;
 class QUrl;
 
-/* Interface to access UINetworkManager protected functionality: */
+/** Interface to access UINetworkManager protected functionality. */
 class UINetworkCustomer : public QObject
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructors: */
-    UINetworkCustomer();
-    UINetworkCustomer(QObject *pParent, bool fForceCall);
+    /** Constructs network customer passing @a pParent to the base-class.
+      * @param  fForceCall  Brings whether this customer has forced privelegies. */
+    UINetworkCustomer(QObject *pParent = 0, bool fForceCall = true);
 
-    /* Getters: */
+    /** Returns whether this customer has forced privelegies. */
     bool isItForceCall() const { return m_fForceCall; }
 
-    /* Network-reply progress handler: */
+    /** Handles network reply progress for @a iReceived amount of bytes among @a iTotal. */
     virtual void processNetworkReplyProgress(qint64 iReceived, qint64 iTotal) = 0;
-    /* Network-reply cancel handler: */
+    /** Handles network reply canceling for a passed @a pReply. */
     virtual void processNetworkReplyCanceled(UINetworkReply *pReply) = 0;
-    /* Network-reply finish handler: */
+    /** Handles network reply finishing for a passed @a pReply. */
     virtual void processNetworkReplyFinished(UINetworkReply *pReply) = 0;
 
     /** Returns description of the current network operation. */
@@ -55,14 +55,14 @@ public:
 protected:
 
     /** Creates network-request of the passed @a type on the basis of the passed @a urls and the @a requestHeaders. */
-    void createNetworkRequest(UINetworkRequestType type, const QList<QUrl> urls,
+    void createNetworkRequest(UINetworkRequestType enmType, const QList<QUrl> urls,
                               const UserDictionary requestHeaders = UserDictionary());
 
 private:
 
-    /* Variables: */
+    /** Holds whether this customer has forced privelegies. */
     bool m_fForceCall;
 };
 
-#endif // __UINetworkCustomer_h__
+#endif /* !___UINetworkCustomer_h___ */
 

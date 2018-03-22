@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,13 +30,13 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UINetworkRequest::UINetworkRequest(UINetworkRequestType type,
+UINetworkRequest::UINetworkRequest(UINetworkRequestType enmType,
                                    const QList<QUrl> &urls,
                                    const UserDictionary &requestHeaders,
                                    UINetworkCustomer *pCustomer,
                                    UINetworkManager *pNetworkManager)
     : QObject(pNetworkManager)
-    , m_type(type)
+    , m_enmType(enmType)
     , m_urls(urls)
     , m_requestHeaders(requestHeaders)
     , m_pCustomer(pCustomer)
@@ -196,7 +196,7 @@ void UINetworkRequest::prepare()
 void UINetworkRequest::prepareNetworkReply()
 {
     /* Create network-reply: */
-    m_pReply = new UINetworkReply(m_type, m_url, m_requestHeaders);
+    m_pReply = new UINetworkReply(m_enmType, m_url, m_requestHeaders);
     AssertPtrReturnVoid(m_pReply.data());
     {
         /* Prepare network-reply: */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,10 +66,10 @@ signals:
 
 public:
 
-    /** Constructs network-request of the passed @a type
+    /** Constructs network-request of the passed @a enmType
       * on the basis of the passed @a urls and the @a requestHeaders
       * for the @a pCustomer and @a pNetworkManager specified. */
-    UINetworkRequest(UINetworkRequestType type,
+    UINetworkRequest(UINetworkRequestType enmType,
                      const QList<QUrl> &urls,
                      const UserDictionary &requestHeaders,
                      UINetworkCustomer *pCustomer,
@@ -117,7 +117,7 @@ private:
     void cleanup();
 
     /** Holds the request type. */
-    const UINetworkRequestType m_type;
+    const UINetworkRequestType m_enmType;
     /** Holds the request urls. */
     const QList<QUrl> m_urls;
     /** Holds the request headers. */

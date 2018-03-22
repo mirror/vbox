@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,24 +19,24 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes: */
+/* Qt includes: */
 # include <QVBoxLayout>
 # include <QLabel>
 # include <QPushButton>
 # include <QStatusBar>
 # include <QKeyEvent>
 
-/* Local includes: */
-# include "UINetworkManagerDialog.h"
-# include "UINetworkManager.h"
-# include "UINetworkRequest.h"
-# include "UINetworkRequestWidget.h"
-# include "UINetworkCustomer.h"
-# include "UIIconPool.h"
+/* GUI includes: */
+# include "QIDialogButtonBox.h"
 # include "VBoxGlobal.h"
+# include "UIIconPool.h"
 # include "UIMessageCenter.h"
 # include "UIModalWindowManager.h"
-# include "QIDialogButtonBox.h"
+# include "UINetworkCustomer.h"
+# include "UINetworkManager.h"
+# include "UINetworkManagerDialog.h"
+# include "UINetworkRequest.h"
+# include "UINetworkRequestWidget.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
