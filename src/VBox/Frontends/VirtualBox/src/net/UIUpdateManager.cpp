@@ -29,10 +29,10 @@
 /* GUI includes: */
 # include "QIProcess.h"
 # include "VBoxGlobal.h"
+# include "VBoxLicenseViewer.h"
 # include "VBoxUtils.h"
 # include "UIDownloaderExtensionPack.h"
 # include "UIExtraDataManager.h"
-# include "UIGlobalSettingsExtension.h"
 # include "UIMessageCenter.h"
 # include "UIModalWindowManager.h"
 # include "UINetworkManager.h"
@@ -43,7 +43,9 @@
 
 /* COM includes: */
 # include "CExtPack.h"
+# include "CExtPackFile.h"
 # include "CExtPackManager.h"
+# include "CSystemProperties.h"
 
 /* Other VBox includes: */
 # include <iprt/path.h>
@@ -489,7 +491,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const
 {
     /* Warn the user about extension pack was downloaded and saved, propose to install it: */
     if (msgCenter().proposeInstallExtentionPack(GUI_ExtPackName, strSource, QDir::toNativeSeparators(strTarget)))
-        UIGlobalSettingsExtension::doInstallation(strTarget, strDigest, windowManager().networkManagerOrMainWindowShown(), 0);
+        UIUpdateManager::doExtPackInstallation(strTarget, strDigest, windowManager().networkManagerOrMainWindowShown(), NULL);
     /* Propose to delete the downloaded extension pack: */
     if (msgCenter().proposeDeleteExtentionPack(QDir::toNativeSeparators(strTarget)))
     {
@@ -567,6 +569,94 @@ void UIUpdateManager::shutdown()
 
     /* Delete instance: */
     delete s_pInstance;
+}
+
+/* static */
+void UIUpdateManager::doExtPackInstallation(QString const &strFilePath, QString const &strDigest,
+                                            QWidget *pParent, QString *pstrExtPackName)
+{
+    /* Open the extpack tarball via IExtPackManager: */
+    CExtPackManager comManager = vboxGlobal().virtualBox().GetExtensionPackManager();
+    CExtPackFile comExtPackFile;
+    if (strDigest.isEmpty())
+        comExtPackFile = comManager.OpenExtPackFile(strFilePath);
+    else
+    {
+        QString strFileAndHash = QString("%1::SHA-256=%2").arg(strFilePath).arg(strDigest);
+        comExtPackFile = comManager.OpenExtPackFile(strFileAndHash);
+    }
+    if (!comManager.isOk())
+    {
+        msgCenter().cannotOpenExtPack(strFilePath, comManager, pParent);
+        return;
+    }
+
+    if (!comExtPackFile.GetUsable())
+    {
+        msgCenter().warnAboutBadExtPackFile(strFilePath, comExtPackFile, pParent);
+        return;
+    }
+
+    const QString strPackName = comExtPackFile.GetName();
+    const QString strPackDescription = comExtPackFile.GetDescription();
+    const QString strPackVersion = QString("%1r%2%3").arg(comExtPackFile.GetVersion()).arg(comExtPackFile.GetRevision()).arg(comExtPackFile.GetEdition());
+
+    /* Check if there is a version of the extension pack already
+     * installed on the system and let the user decide what to do about it. */
+    CExtPack comExtPackCur = comManager.Find(strPackName);
+    bool fReplaceIt = comExtPackCur.isOk();
+    if (fReplaceIt)
+    {
+        QString strPackVersionCur = QString("%1r%2%3").arg(comExtPackCur.GetVersion()).arg(comExtPackCur.GetRevision()).arg(comExtPackCur.GetEdition());
+        if (!msgCenter().confirmReplaceExtensionPack(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
+            return;
+    }
+    /* If it's a new package just ask for general confirmation. */
+    else
+    {
+        if (!msgCenter().confirmInstallExtensionPack(strPackName, strPackVersion, strPackDescription, pParent))
+            return;
+    }
+
+    /* Display the license dialog if required by the extension pack. */
+    if (comExtPackFile.GetShowLicense())
+    {
+        QString strLicense = comExtPackFile.GetLicense();
+        VBoxLicenseViewer licenseViewer(pParent);
+        if (licenseViewer.showLicenseFromString(strLicense) != QDialog::Accepted)
+            return;
+    }
+
+    /* Install the selected package.
+     * Set the package name return value before doing
+     * this as the caller should do a refresh even on failure. */
+    QString strDisplayInfo;
+#ifdef VBOX_WS_WIN
+    if (pParent)
+        strDisplayInfo.sprintf("hwnd=%#llx", (uint64_t)(uintptr_t)pParent->winId());
+#endif
+    /* Prepare installation progress: */
+    CProgress comProgress = comExtPackFile.Install(fReplaceIt, strDisplayInfo);
+    if (comExtPackFile.isOk())
+    {
+        /* Show installation progress: */
+        /** @todo move this tr into UIUpdateManager context */
+        msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIGlobalSettingsExtension",
+                                                                              "Extensions"),
+                                            ":/progress_install_guest_additions_90px.png", pParent);
+        if (!comProgress.GetCanceled())
+        {
+            if (comProgress.isOk() && comProgress.GetResultCode() == 0)
+                msgCenter().warnAboutExtPackInstalled(strPackName, pParent);
+            else
+                msgCenter().cannotInstallExtPack(comProgress, strFilePath, pParent);
+        }
+    }
+    else
+        msgCenter().cannotInstallExtPack(comExtPackFile, strFilePath, pParent);
+
+    if (pstrExtPackName)
+        *pstrExtPackName = strPackName;
 }
 
 void UIUpdateManager::sltForceCheck()

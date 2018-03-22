@@ -41,13 +41,6 @@ public:
     /** Destructs Extension settings page. */
     ~UIGlobalSettingsExtension();
 
-    /** Initiates the extension pack installation process.
-      * @param  strFilePath      Brings the extension pack file path.
-      * @param  strDigest        Brings the extension pack file digest.
-      * @param  pParent          Brings the parent dialog reference.
-      * @param  pstrExtPackName  Brings the extension pack name. */
-    static void doInstallation(QString const &strFilePath, QString const &strDigest, QWidget *pParent, QString *pstrExtPackName);
-
 protected:
 
     /** Loads data into the cache from corresponding external object(s),
