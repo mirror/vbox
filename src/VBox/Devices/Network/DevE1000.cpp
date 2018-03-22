@@ -1782,7 +1782,101 @@ DECLINLINE(int) e1kGetDescType(E1KTXDESC *pDesc)
 }
 
 
-#if defined(E1K_WITH_RXD_CACHE) && defined(IN_RING3) /* currently only used in ring-3 due to stack space requirements of the caller */
+#ifdef E1K_WITH_RXD_CACHE
+/**
+ * Return the number of RX descriptor that belong to the hardware.
+ *
+ * @returns the number of available descriptors in RX ring.
+ * @param   pThis       The device state structure.
+ * @thread  ???
+ */
+DECLINLINE(uint32_t) e1kGetRxLen(PE1KSTATE pThis)
+{
+    /**
+     *  Make sure RDT won't change during computation. EMT may modify RDT at
+     *  any moment.
+     */
+    uint32_t rdt = RDT;
+    return (RDH > rdt ? RDLEN/sizeof(E1KRXDESC) : 0) + rdt - RDH;
+}
+
+DECLINLINE(unsigned) e1kRxDInCache(PE1KSTATE pThis)
+{
+    return pThis->nRxDFetched > pThis->iRxDCurrent ?
+        pThis->nRxDFetched - pThis->iRxDCurrent : 0;
+}
+
+DECLINLINE(unsigned) e1kRxDIsCacheEmpty(PE1KSTATE pThis)
+{
+    return pThis->iRxDCurrent >= pThis->nRxDFetched;
+}
+
+/**
+ * Load receive descriptors from guest memory. The caller needs to be in Rx
+ * critical section.
+ *
+ * We need two physical reads in case the tail wrapped around the end of RX
+ * descriptor ring.
+ *
+ * @returns the actual number of descriptors fetched.
+ * @param   pThis       The device state structure.
+ * @param   pDesc       Pointer to descriptor union.
+ * @param   addr        Physical address in guest context.
+ * @thread  EMT, RX
+ */
+DECLINLINE(unsigned) e1kRxDPrefetch(PE1KSTATE pThis)
+{
+    /* We've already loaded pThis->nRxDFetched descriptors past RDH. */
+    unsigned nDescsAvailable    = e1kGetRxLen(pThis) - e1kRxDInCache(pThis);
+    unsigned nDescsToFetch      = RT_MIN(nDescsAvailable, E1K_RXD_CACHE_SIZE - pThis->nRxDFetched);
+    unsigned nDescsTotal        = RDLEN / sizeof(E1KRXDESC);
+    Assert(nDescsTotal != 0);
+    if (nDescsTotal == 0)
+        return 0;
+    unsigned nFirstNotLoaded    = (RDH + e1kRxDInCache(pThis)) % nDescsTotal;
+    unsigned nDescsInSingleRead = RT_MIN(nDescsToFetch, nDescsTotal - nFirstNotLoaded);
+    E1kLog3(("%s e1kRxDPrefetch: nDescsAvailable=%u nDescsToFetch=%u "
+             "nDescsTotal=%u nFirstNotLoaded=0x%x nDescsInSingleRead=%u\n",
+             pThis->szPrf, nDescsAvailable, nDescsToFetch, nDescsTotal,
+             nFirstNotLoaded, nDescsInSingleRead));
+    if (nDescsToFetch == 0)
+        return 0;
+    E1KRXDESC* pFirstEmptyDesc = &pThis->aRxDescriptors[pThis->nRxDFetched];
+    PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
+                      ((uint64_t)RDBAH << 32) + RDBAL + nFirstNotLoaded * sizeof(E1KRXDESC),
+                      pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KRXDESC));
+    // uint64_t addrBase = ((uint64_t)RDBAH << 32) + RDBAL;
+    // unsigned i, j;
+    // for (i = pThis->nRxDFetched; i < pThis->nRxDFetched + nDescsInSingleRead; ++i)
+    // {
+    //     pThis->aRxDescAddr[i] = addrBase + (nFirstNotLoaded + i - pThis->nRxDFetched) * sizeof(E1KRXDESC);
+    //     E1kLog3(("%s aRxDescAddr[%d] = %p\n", pThis->szPrf, i, pThis->aRxDescAddr[i]));
+    // }
+    E1kLog3(("%s Fetched %u RX descriptors at %08x%08x(0x%x), RDLEN=%08x, RDH=%08x, RDT=%08x\n",
+             pThis->szPrf, nDescsInSingleRead,
+             RDBAH, RDBAL + RDH * sizeof(E1KRXDESC),
+             nFirstNotLoaded, RDLEN, RDH, RDT));
+    if (nDescsToFetch > nDescsInSingleRead)
+    {
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
+                          ((uint64_t)RDBAH << 32) + RDBAL,
+                          pFirstEmptyDesc + nDescsInSingleRead,
+                          (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KRXDESC));
+        // Assert(i == pThis->nRxDFetched  + nDescsInSingleRead);
+        // for (j = 0; i < pThis->nRxDFetched + nDescsToFetch; ++i, ++j)
+        // {
+        //     pThis->aRxDescAddr[i] = addrBase + j * sizeof(E1KRXDESC);
+        //     E1kLog3(("%s aRxDescAddr[%d] = %p\n", pThis->szPrf, i, pThis->aRxDescAddr[i]));
+        // }
+        E1kLog3(("%s Fetched %u RX descriptors at %08x%08x\n",
+                 pThis->szPrf, nDescsToFetch - nDescsInSingleRead,
+                 RDBAH, RDBAL));
+    }
+    pThis->nRxDFetched += nDescsToFetch;
+    return nDescsToFetch;
+}
+
+# ifdef IN_RING3 /* currently only used in ring-3 due to stack space requirements of the caller */
 /**
  * Dump receive descriptor to debug log.
  *
@@ -1812,7 +1906,8 @@ static void e1kPrintRDesc(PE1KSTATE pThis, E1KRXDESC *pDesc)
              E1K_SPEC_VLAN(pDesc->status.u16Special),
              E1K_SPEC_PRI(pDesc->status.u16Special)));
 }
-#endif /* E1K_WITH_RXD_CACHE && IN_RING3 */
+# endif /* IN_RING3 */
+#endif /* E1K_WITH_RXD_CACHE */
 
 /**
  * Dump transmit descriptor to debug log.
@@ -2004,6 +2099,26 @@ DECLINLINE(void) e1kAdvanceRDH(PE1KSTATE pThis)
     //e1kCsEnter(pThis, RT_SRC_POS);
     if (++RDH * sizeof(E1KRXDESC) >= RDLEN)
         RDH = 0;
+#ifdef E1K_WITH_RXD_CACHE
+    /*
+     * We need to fetch descriptors now as the guest may advance RDT all the way
+     * to RDH as soon as we generate RXDMT0 interrupt. This is mostly to provide
+     * compatibility with Phar Lap ETS, see @bugref(7346). Note that we do not
+     * check if the receiver is enabled. It must be, otherwise we won't get here
+     * in the first place.
+     *
+     * Note that we should have moved both RDH and iRxDCurrent by now.
+     */
+    if (e1kRxDIsCacheEmpty(pThis))
+    {
+        /* Cache is empty, reset it and check if we can fetch more. */
+        pThis->iRxDCurrent = pThis->nRxDFetched = 0;
+        E1kLog3(("%s e1kAdvanceRDH: Rx cache is empty, RDH=%x RDT=%x "
+                 "iRxDCurrent=%x nRxDFetched=%x\n",
+                 pThis->szPrf, RDH, RDT, pThis->iRxDCurrent, pThis->nRxDFetched));
+        e1kRxDPrefetch(pThis);
+    }
+#endif /* E1K_WITH_RXD_CACHE */
     /*
      * Compute current receive queue length and fire RXDMT0 interrupt
      * if we are low on receive buffers
@@ -2032,99 +2147,6 @@ DECLINLINE(void) e1kAdvanceRDH(PE1KSTATE pThis)
 #endif /* IN_RING3 */
 
 #ifdef E1K_WITH_RXD_CACHE
-
-/**
- * Return the number of RX descriptor that belong to the hardware.
- *
- * @returns the number of available descriptors in RX ring.
- * @param   pThis       The device state structure.
- * @thread  ???
- */
-DECLINLINE(uint32_t) e1kGetRxLen(PE1KSTATE pThis)
-{
-    /**
-     *  Make sure RDT won't change during computation. EMT may modify RDT at
-     *  any moment.
-     */
-    uint32_t rdt = RDT;
-    return (RDH > rdt ? RDLEN/sizeof(E1KRXDESC) : 0) + rdt - RDH;
-}
-
-DECLINLINE(unsigned) e1kRxDInCache(PE1KSTATE pThis)
-{
-    return pThis->nRxDFetched > pThis->iRxDCurrent ?
-        pThis->nRxDFetched - pThis->iRxDCurrent : 0;
-}
-
-DECLINLINE(unsigned) e1kRxDIsCacheEmpty(PE1KSTATE pThis)
-{
-    return pThis->iRxDCurrent >= pThis->nRxDFetched;
-}
-
-/**
- * Load receive descriptors from guest memory. The caller needs to be in Rx
- * critical section.
- *
- * We need two physical reads in case the tail wrapped around the end of RX
- * descriptor ring.
- *
- * @returns the actual number of descriptors fetched.
- * @param   pThis       The device state structure.
- * @param   pDesc       Pointer to descriptor union.
- * @param   addr        Physical address in guest context.
- * @thread  EMT, RX
- */
-DECLINLINE(unsigned) e1kRxDPrefetch(PE1KSTATE pThis)
-{
-    /* We've already loaded pThis->nRxDFetched descriptors past RDH. */
-    unsigned nDescsAvailable    = e1kGetRxLen(pThis) - e1kRxDInCache(pThis);
-    unsigned nDescsToFetch      = RT_MIN(nDescsAvailable, E1K_RXD_CACHE_SIZE - pThis->nRxDFetched);
-    unsigned nDescsTotal        = RDLEN / sizeof(E1KRXDESC);
-    Assert(nDescsTotal != 0);
-    if (nDescsTotal == 0)
-        return 0;
-    unsigned nFirstNotLoaded    = (RDH + e1kRxDInCache(pThis)) % nDescsTotal;
-    unsigned nDescsInSingleRead = RT_MIN(nDescsToFetch, nDescsTotal - nFirstNotLoaded);
-    E1kLog3(("%s e1kRxDPrefetch: nDescsAvailable=%u nDescsToFetch=%u "
-             "nDescsTotal=%u nFirstNotLoaded=0x%x nDescsInSingleRead=%u\n",
-             pThis->szPrf, nDescsAvailable, nDescsToFetch, nDescsTotal,
-             nFirstNotLoaded, nDescsInSingleRead));
-    if (nDescsToFetch == 0)
-        return 0;
-    E1KRXDESC* pFirstEmptyDesc = &pThis->aRxDescriptors[pThis->nRxDFetched];
-    PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
-                      ((uint64_t)RDBAH << 32) + RDBAL + nFirstNotLoaded * sizeof(E1KRXDESC),
-                      pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KRXDESC));
-    // uint64_t addrBase = ((uint64_t)RDBAH << 32) + RDBAL;
-    // unsigned i, j;
-    // for (i = pThis->nRxDFetched; i < pThis->nRxDFetched + nDescsInSingleRead; ++i)
-    // {
-    //     pThis->aRxDescAddr[i] = addrBase + (nFirstNotLoaded + i - pThis->nRxDFetched) * sizeof(E1KRXDESC);
-    //     E1kLog3(("%s aRxDescAddr[%d] = %p\n", pThis->szPrf, i, pThis->aRxDescAddr[i]));
-    // }
-    E1kLog3(("%s Fetched %u RX descriptors at %08x%08x(0x%x), RDLEN=%08x, RDH=%08x, RDT=%08x\n",
-             pThis->szPrf, nDescsInSingleRead,
-             RDBAH, RDBAL + RDH * sizeof(E1KRXDESC),
-             nFirstNotLoaded, RDLEN, RDH, RDT));
-    if (nDescsToFetch > nDescsInSingleRead)
-    {
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
-                          ((uint64_t)RDBAH << 32) + RDBAL,
-                          pFirstEmptyDesc + nDescsInSingleRead,
-                          (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KRXDESC));
-        // Assert(i == pThis->nRxDFetched  + nDescsInSingleRead);
-        // for (j = 0; i < pThis->nRxDFetched + nDescsToFetch; ++i, ++j)
-        // {
-        //     pThis->aRxDescAddr[i] = addrBase + j * sizeof(E1KRXDESC);
-        //     E1kLog3(("%s aRxDescAddr[%d] = %p\n", pThis->szPrf, i, pThis->aRxDescAddr[i]));
-        // }
-        E1kLog3(("%s Fetched %u RX descriptors at %08x%08x\n",
-                 pThis->szPrf, nDescsToFetch - nDescsInSingleRead,
-                 RDBAH, RDBAL));
-    }
-    pThis->nRxDFetched += nDescsToFetch;
-    return nDescsToFetch;
-}
 
 # ifdef IN_RING3 /* currently only used in ring-3 due to stack space requirements of the caller */
 
@@ -2174,8 +2196,12 @@ DECLINLINE(void) e1kRxDPut(PE1KSTATE pThis, E1KRXDESC* pDesc)
     PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
                           e1kDescAddr(RDBAH, RDBAL, RDH),
                           pDesc, sizeof(E1KRXDESC));
-    e1kAdvanceRDH(pThis);
+    /*
+     * We need to print the descriptor before advancing RDH as it may fetch new
+     * descriptors into the cache.
+     */
     e1kPrintRDesc(pThis, pDesc);
+    e1kAdvanceRDH(pThis);
 }
 
 /**
@@ -2196,7 +2222,7 @@ static DECLCALLBACK(void) e1kStoreRxFragment(PE1KSTATE pThis, E1KRXDESC *pDesc, 
     STAM_PROFILE_ADV_STOP(&pThis->StatReceiveStore, a);
 }
 
-# endif
+# endif /* IN_RING3 */
 
 #else /* !E1K_WITH_RXD_CACHE */
 
@@ -3183,6 +3209,7 @@ static int e1kRegWriteRDT(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         E1kLog(("%s e1kRegWriteRDT\n",  pThis->szPrf));
+#ifndef E1K_WITH_RXD_CACHE
         /*
          * Some drivers advance RDT too far, so that it equals RDH. This
          * somehow manages to work with real hardware but not with this
@@ -3197,6 +3224,7 @@ static int e1kRegWriteRDT(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
             else
                 value = RDH - 1;
         }
+#endif /* !E1K_WITH_RXD_CACHE */
         rc = e1kRegWriteDefault(pThis, offset, index, value);
 #ifdef E1K_WITH_RXD_CACHE
         /*
