@@ -7380,6 +7380,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
 
     /* Paranoia; Ensure we cannot be called as a result of event delivery. */
     PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
