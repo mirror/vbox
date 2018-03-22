@@ -444,6 +444,16 @@ public:
     static void setWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString);
 #endif
 
+    /** Initiates the extension pack installation process.
+      * @param  strFilePath      Brings the extension pack file path.
+      * @param  strDigest        Brings the extension pack file digest.
+      * @param  pParent          Brings the parent dialog reference.
+      * @param  pstrExtPackName  Brings the extension pack name. */
+    static void doExtPackInstallation(QString const &strFilePath,
+                                      QString const &strDigest,
+                                      QWidget *pParent,
+                                      QString *pstrExtPackName);
+
 signals:
 
     /** Asks listener to recreate UI. */

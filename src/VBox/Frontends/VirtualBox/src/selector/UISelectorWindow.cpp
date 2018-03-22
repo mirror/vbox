@@ -35,7 +35,6 @@
 # include "UIErrorString.h"
 # include "UIExtraDataManager.h"
 # include "UIGChooser.h"
-# include "UIUpdateManager.h"
 # include "UIHostNetworkManager.h"
 # include "UIMedium.h"
 # include "UIMediumManager.h"
@@ -401,7 +400,7 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
                 /* Prevent update manager from proposing us to update EP: */
                 vboxGlobal().setEPInstallationRequested(true);
                 /* Propose the user to install EP described by the arguments @a list. */
-                UIUpdateManager::doExtPackInstallation(strFile, QString(), this, NULL);
+                VBoxGlobal::doExtPackInstallation(strFile, QString(), this, NULL);
                 /* Allow update manager to propose us to update EP: */
                 vboxGlobal().setEPInstallationRequested(false);
             }
