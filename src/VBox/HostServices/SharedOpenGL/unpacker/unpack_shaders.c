@@ -40,24 +40,45 @@ void crUnpackExtendShaderSource(void)
     GLint *pLocalLength = DATA_POINTER(20, GLint);
     char **ppStrings = NULL;
     GLsizei i, j, jUpTo;
-    int pos=20+count*sizeof(*pLocalLength);
+    int pos, pos_check;
 
-    if (hasNonLocalLen>0)
-    {
-        length = DATA_POINTER(pos, GLint);
-        pos += count*sizeof(*length);
-    }
-
-    if (count >= UINT32_MAX / sizeof(char*))
+    if (count >= UINT32_MAX / sizeof(char *) / 4)
     {
         crError("crUnpackExtendShaderSource: count %u is out of range", count);
         return;
     }
 
-    ppStrings = crAlloc(count*sizeof(char*));
+    pos = 20 + count * sizeof(*pLocalLength);
+
+    if (hasNonLocalLen > 0)
+    {
+        length = DATA_POINTER(pos, GLint);
+        pos += count * sizeof(*length);
+    }
+
+    pos_check = pos; 
+
+    if (!DATA_POINTER_CHECK(pos_check))
+    {
+        crError("crUnpackExtendShaderSource: pos %d is out of range", pos_check);
+        return;
+    }
+
+    for (i = 0; i < count; ++i)
+    {
+        if (pLocalLength[i] <= 0 || pos_check >= INT32_MAX - pLocalLength[i] || !DATA_POINTER_CHECK(pos_check))
+        {
+            crError("crUnpackExtendShaderSource: pos %d is out of range", pos_check);
+            return;
+        }
+
+        pos_check += pLocalLength[i];
+    }
+
+    ppStrings = crAlloc(count * sizeof(char*));
     if (!ppStrings) return;
 
-    for (i=0; i<count; ++i)
+    for (i = 0; i < count; ++i)
     {
         ppStrings[i] = DATA_POINTER(pos, char);
         pos += pLocalLength[i];
