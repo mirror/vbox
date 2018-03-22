@@ -56,7 +56,7 @@ void crUnpackExtendShaderSource(void)
         pos += count * sizeof(*length);
     }
 
-    pos_check = pos; 
+    pos_check = pos;
 
     if (!DATA_POINTER_CHECK(pos_check))
     {
