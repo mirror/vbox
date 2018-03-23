@@ -1852,76 +1852,102 @@ typedef PROCESS_BASIC_INFORMATION *PPROCESS_BASIC_INFORMATION;
 
 typedef enum _PROCESSINFOCLASS
 {
-    ProcessBasicInformation = 0,        /**<  0 / 0x00 */
-    ProcessQuotaLimits,                 /**<  1 / 0x01 */
-    ProcessIoCounters,                  /**<  2 / 0x02 */
-    ProcessVmCounters,                  /**<  3 / 0x03 */
-    ProcessTimes,                       /**<  4 / 0x04 */
-    ProcessBasePriority,                /**<  5 / 0x05 */
-    ProcessRaisePriority,               /**<  6 / 0x06 */
-    ProcessDebugPort,                   /**<  7 / 0x07 */
-    ProcessExceptionPort,               /**<  8 / 0x08 */
-    ProcessAccessToken,                 /**<  9 / 0x09 */
-    ProcessLdtInformation,              /**< 10 / 0x0a */
-    ProcessLdtSize,                     /**< 11 / 0x0b */
-    ProcessDefaultHardErrorMode,        /**< 12 / 0x0c */
-    ProcessIoPortHandlers,              /**< 13 / 0x0d */
-    ProcessPooledUsageAndLimits,        /**< 14 / 0x0e */
-    ProcessWorkingSetWatch,             /**< 15 / 0x0f */
-    ProcessUserModeIOPL,                /**< 16 / 0x10 */
-    ProcessEnableAlignmentFaultFixup,   /**< 17 / 0x11 */
-    ProcessPriorityClass,               /**< 18 / 0x12 */
-    ProcessWx86Information,             /**< 19 / 0x13 */
-    ProcessHandleCount,                 /**< 20 / 0x14 */
-    ProcessAffinityMask,                /**< 21 / 0x15 */
-    ProcessPriorityBoost,               /**< 22 / 0x16 */
-    ProcessDeviceMap,                   /**< 23 / 0x17 */
-    ProcessSessionInformation,          /**< 24 / 0x18 */
-    ProcessForegroundInformation,       /**< 25 / 0x19 */
-    ProcessWow64Information,            /**< 26 / 0x1a */
-    ProcessImageFileName,               /**< 27 / 0x1b */
-    ProcessLUIDDeviceMapsEnabled,       /**< 28 / 0x1c */
-    ProcessBreakOnTermination,          /**< 29 / 0x1d */
-    ProcessDebugObjectHandle,           /**< 30 / 0x1e */
-    ProcessDebugFlags,                  /**< 31 / 0x1f */
-    ProcessHandleTracing,               /**< 32 / 0x20 */
-    ProcessIoPriority,                  /**< 33 / 0x21 */
-    ProcessExecuteFlags,                /**< 34 / 0x22 */
-    ProcessTlsInformation,              /**< 35 / 0x23 */
-    ProcessCookie,                      /**< 36 / 0x24 */
-    ProcessImageInformation,            /**< 37 / 0x25 */
-    ProcessCycleTime,                   /**< 38 / 0x26 */
-    ProcessPagePriority,                /**< 39 / 0x27 */
-    ProcessInstrumentationCallbak,      /**< 40 / 0x28 */
-    ProcessThreadStackAllocation,       /**< 41 / 0x29 */
-    ProcessWorkingSetWatchEx,           /**< 42 / 0x2a */
-    ProcessImageFileNameWin32,          /**< 43 / 0x2b */
-    ProcessImageFileMapping,            /**< 44 / 0x2c */
-    ProcessAffinityUpdateMode,          /**< 45 / 0x2d */
-    ProcessMemoryAllocationMode,        /**< 46 / 0x2e */
-    ProcessGroupInformation,            /**< 47 / 0x2f */
-    ProcessTokenVirtualizationEnabled,  /**< 48 / 0x30 */
-    ProcessConsoleHostProcess,          /**< 49 / 0x31 */
-    ProcessWindowsInformation,          /**< 50 / 0x32 */
-    ProcessUnknown51,
-    ProcessUnknown52,
-    ProcessUnknown53,
-    ProcessUnknown54,
-    ProcessUnknown55,
-    ProcessUnknown56,
-    ProcessUnknown57,
-    ProcessUnknown58,
-    ProcessUnknown59,
-    ProcessUnknown60,
-    ProcessUnknown61,
-    ProcessUnknown62,
-    ProcessUnknown63,
-    ProcessUnknown64,
-    ProcessUnknown65,
-    ProcessUnknown66,
-    ProcessMaybe_KeSetCpuSetsProcess,   /**< 67 / 0x43 - is correct, then PROCESS_SET_LIMITED_INFORMATION & audiog.exe; W10. */
-    MaxProcessInfoClass                 /**< 68 / 0x44 */
+    ProcessBasicInformation = 0,                /**<  0 / 0x00 */
+    ProcessQuotaLimits,                         /**<  1 / 0x01 */
+    ProcessIoCounters,                          /**<  2 / 0x02 */
+    ProcessVmCounters,                          /**<  3 / 0x03 */
+    ProcessTimes,                               /**<  4 / 0x04 */
+    ProcessBasePriority,                        /**<  5 / 0x05 */
+    ProcessRaisePriority,                       /**<  6 / 0x06 */
+    ProcessDebugPort,                           /**<  7 / 0x07 */
+    ProcessExceptionPort,                       /**<  8 / 0x08 */
+    ProcessAccessToken,                         /**<  9 / 0x09 */
+    ProcessLdtInformation,                      /**< 10 / 0x0a */
+    ProcessLdtSize,                             /**< 11 / 0x0b */
+    ProcessDefaultHardErrorMode,                /**< 12 / 0x0c */
+    ProcessIoPortHandlers,                      /**< 13 / 0x0d */
+    ProcessPooledUsageAndLimits,                /**< 14 / 0x0e */
+    ProcessWorkingSetWatch,                     /**< 15 / 0x0f */
+    ProcessUserModeIOPL,                        /**< 16 / 0x10 */
+    ProcessEnableAlignmentFaultFixup,           /**< 17 / 0x11 */
+    ProcessPriorityClass,                       /**< 18 / 0x12 */
+    ProcessWx86Information,                     /**< 19 / 0x13 */
+    ProcessHandleCount,                         /**< 20 / 0x14 */
+    ProcessAffinityMask,                        /**< 21 / 0x15 */
+    ProcessPriorityBoost,                       /**< 22 / 0x16 */
+    ProcessDeviceMap,                           /**< 23 / 0x17 */
+    ProcessSessionInformation,                  /**< 24 / 0x18 */
+    ProcessForegroundInformation,               /**< 25 / 0x19 */
+    ProcessWow64Information,                    /**< 26 / 0x1a */
+    ProcessImageFileName,                       /**< 27 / 0x1b */
+    ProcessLUIDDeviceMapsEnabled,               /**< 28 / 0x1c */
+    ProcessBreakOnTermination,                  /**< 29 / 0x1d */
+    ProcessDebugObjectHandle,                   /**< 30 / 0x1e */
+    ProcessDebugFlags,                          /**< 31 / 0x1f */
+    ProcessHandleTracing,                       /**< 32 / 0x20 */
+    ProcessIoPriority,                          /**< 33 / 0x21 */
+    ProcessExecuteFlags,                        /**< 34 / 0x22 */
+    ProcessTlsInformation,                      /**< 35 / 0x23 */
+    ProcessCookie,                              /**< 36 / 0x24 */
+    ProcessImageInformation,                    /**< 37 / 0x25 */
+    ProcessCycleTime,                           /**< 38 / 0x26 */
+    ProcessPagePriority,                        /**< 39 / 0x27 */
+    ProcessInstrumentationCallbak,              /**< 40 / 0x28 */
+    ProcessThreadStackAllocation,               /**< 41 / 0x29 */
+    ProcessWorkingSetWatchEx,                   /**< 42 / 0x2a */
+    ProcessImageFileNameWin32,                  /**< 43 / 0x2b */
+    ProcessImageFileMapping,                    /**< 44 / 0x2c */
+    ProcessAffinityUpdateMode,                  /**< 45 / 0x2d */
+    ProcessMemoryAllocationMode,                /**< 46 / 0x2e */
+    ProcessGroupInformation,                    /**< 47 / 0x2f */
+    ProcessTokenVirtualizationEnabled,          /**< 48 / 0x30 */
+    ProcessOwnerInformation,                    /**< 49 / 0x31 */
+    ProcessWindowInformation,                   /**< 50 / 0x32 */
+    ProcessHandleInformation,                   /**< 51 / 0x33 */
+    ProcessMitigationPolicy,                    /**< 52 / 0x34 */
+    ProcessDynamicFunctionTableInformation,     /**< 53 / 0x35 */
+    ProcessHandleCheckingMode,                  /**< 54 / 0x36 */
+    ProcessKeepAliveCount,                      /**< 55 / 0x37 */
+    ProcessRevokeFileHandles,                   /**< 56 / 0x38 */
+    ProcessWorkingSetControl,                   /**< 57 / 0x39 */
+    ProcessHandleTable,                         /**< 58 / 0x3a */
+    ProcessCheckStackExtentsMode,               /**< 59 / 0x3b */
+    ProcessCommandLineInformation,              /**< 60 / 0x3c */
+    ProcessProtectionInformation,               /**< 61 / 0x3d */
+    ProcessMemoryExhaustion,                    /**< 62 / 0x3e */
+    ProcessFaultInformation,                    /**< 63 / 0x3f */
+    ProcessTelemetryIdInformation,              /**< 64 / 0x40 */
+    ProcessCommitReleaseInformation,            /**< 65 / 0x41 */
+    ProcessDefaultCpuSetsInformation,           /**< 66 / 0x42 - aka ProcessReserved1Information */
+    ProcessAllowedCpuSetsInformation,           /**< 67 / 0x43 - aka ProcessReserved2Information; PROCESS_SET_LIMITED_INFORMATION & audiog.exe; W10 */
+    ProcessSubsystemProcess,                    /**< 68 / 0x44 */
+    ProcessJobMemoryInformation,                /**< 69 / 0x45 */
+    ProcessInPrivate,                           /**< 70 / 0x46 */
+    ProcessRaiseUMExceptionOnInvalidHandleClose,/**< 71 / 0x47 */
+    ProcessIumChallengeResponse,                /**< 72 / 0x48 */
+    ProcessChildProcessInformation,             /**< 73 / 0x49 */
+    ProcessHighGraphicsPriorityInformation,     /**< 74 / 0x4a */
+    ProcessSubsystemInformation,                /**< 75 / 0x4b */
+    ProcessEnergyValues,                        /**< 76 / 0x4c */
+    ProcessPowerThrottlingState,                /**< 77 / 0x4d */
+    ProcessReserved3Information,                /**< 78 / 0x4e */
+    ProcessWin32kSyscallFilterInformation,      /**< 79 / 0x4f */
+    ProcessDisableSystemAllowedCpuSets,         /**< 80 / 0x50 */
+    ProcessWakeInformation,                     /**< 81 / 0x51 */
+    ProcessEnergyTrackingState,                 /**< 82 / 0x52 */
+    ProcessManageWritesToExecutableMemory,      /**< 83 / 0x53 */
+    ProcessCaptureTrustletLiveDump,             /**< 84 / 0x54 */
+    ProcessTelemetryCoverage,                   /**< 85 / 0x55 */
+    ProcessEnclaveInformation,                  /**< 86 / 0x56 */
+    ProcessEnableReadWriteVmLogging,            /**< 87 / 0x57 */
+    ProcessUptimeInformation,                   /**< 88 / 0x58 */
+    ProcessImageSection,                        /**< 89 / 0x59 */
+    ProcessDebugAuthInformation,                /**< 90 / 0x5a */
+    ProcessSystemResourceManagement,            /**< 92 / 0x5b */
+    ProcessSequenceNumber,                      /**< 93 / 0x5c */
+    MaxProcessInfoClass
 } PROCESSINFOCLASS;
+AssertCompile(ProcessSequenceNumber == 0x5c);
 NTSYSAPI NTSTATUS NTAPI NtQueryInformationProcess(HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG);
 
 typedef enum _THREADINFOCLASS
