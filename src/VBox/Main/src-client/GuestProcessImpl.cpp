@@ -292,9 +292,6 @@ void GuestProcess::uninit(void)
         mData.mpSessionBaseEnv = NULL;
     }
 
-    AssertPtr(mSession);
-    mSession->i_processUnregister(this);
-
     baseUninit();
 
     LogFlowThisFunc(("Returning rc=%Rrc, rcGuest=%Rrc\n", vrc, rcGuest));
