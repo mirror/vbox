@@ -3327,7 +3327,7 @@ ifdef VBOX_SIGNING_MODE
   # @param 5  Disables dual signing if non-empty.
   #
   # @remarks The parameters are the same as VBOX_SIGN_FILE_FN.
-  VBOX_SIGN_IMAGE_PLAN_B_FN = $(warning VBOX_SIGN_IMAGE_PLAN_B_FN: 1=$1 2=$2 3=$3 4=$4 5=$5)$(VBOX_SIGNTOOL) \
+  VBOX_SIGN_IMAGE_PLAN_B_FN = $(VBOX_SIGNTOOL) \
   	sign /fd sha1\
   	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
   	$(VBOX_CERTIFICATE_STORE_ARGS) \
