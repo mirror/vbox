@@ -1467,8 +1467,7 @@ else
 VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST =
 endif
 
-# ASSUMES the 32-bit edition has been built already. Also for serializing VM access.
-validationkit-build-win.amd64: validationkit-build-win.x86
+validationkit-build-win.amd64:
 ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_VALIDATIONKIT_BUILD.amd64) all $(VBOX_VALIDATIONKIT_HOST_BUILD_TWEAK)
 else
