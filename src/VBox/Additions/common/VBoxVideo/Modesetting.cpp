@@ -78,10 +78,11 @@ DECLHIDDEN(bool) VBoxVGACfgAvailable(void)
  * I.e. use this function only if VBoxVGACfgAvailable returns true.
  *
  * @returns Whether the value is supported.
- * @param  u16Id     Identifier of the configuration value (VBE_DISPI_CFG_ID_*).
- * @param  pu32Value Where to store value from the host.
+ * @param  u16Id       Identifier of the configuration value (VBE_DISPI_CFG_ID_*).
+ * @param  pu32Value   Where to store value from the host.
+ * @param  u32DefValue What to assign to *pu32Value if the value is not supported.
  */
-DECLHIDDEN(bool) VBoxVGACfgQuery(uint16_t u16Id, uint32_t *pu32Value)
+DECLHIDDEN(bool) VBoxVGACfgQuery(uint16_t u16Id, uint32_t *pu32Value, uint32_t u32DefValue)
 {
     uint32_t u32;
     VBVO_PORT_WRITE_U16(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_CFG);
@@ -94,6 +95,7 @@ DECLHIDDEN(bool) VBoxVGACfgQuery(uint16_t u16Id, uint32_t *pu32Value)
         return true;
     }
 
+    *pu32Value = u32DefValue;
     return false;
 }
 

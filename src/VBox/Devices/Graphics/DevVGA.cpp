@@ -853,19 +853,18 @@ static uint32_t vbe_read_cfg(PVGASTATE pThis)
     const uint16_t u16Id = u16Cfg & VBE_DISPI_CFG_MASK_ID;
     const bool fQuerySupport = RT_BOOL(u16Cfg & VBE_DISPI_CFG_MASK_SUPPORT);
 
+    uint32_t val = 0;
     switch (u16Id)
     {
-        case VBE_DISPI_CFG_ID_VERSION:
-           return fQuerySupport ? 1 : 0;
-        case VBE_DISPI_CFG_ID_VRAM_SIZE:
-           return fQuerySupport ? 1 : pThis->vram_size;
-        case VBE_DISPI_CFG_ID_3D:
-           return fQuerySupport ? 1 : pThis->f3DEnabled;
-        case VBE_DISPI_CFG_ID_VMSVGA:
-           return fQuerySupport ? 1 : pThis->fVMSVGAEnabled;
+        case VBE_DISPI_CFG_ID_VERSION:   val = 1; break;
+        case VBE_DISPI_CFG_ID_VRAM_SIZE: val = pThis->vram_size; break;
+        case VBE_DISPI_CFG_ID_3D:        val = pThis->f3DEnabled; break;
+        case VBE_DISPI_CFG_ID_VMSVGA:    val = pThis->fVMSVGAEnabled; break;
         default:
            return 0; /* Not supported. */
     }
+
+    return fQuerySupport ? 1 : val;
 }
 
 static uint32_t vbe_ioport_read_index(PVGASTATE pThis, uint32_t addr)

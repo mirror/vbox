@@ -126,7 +126,7 @@ DECLHIDDEN(void) VBoxVBVASetupBufferContext(PVBVABUFFERCONTEXT pCtx,
 
 DECLHIDDEN(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx);
 DECLHIDDEN(bool)     VBoxVGACfgAvailable(void);
-DECLHIDDEN(bool)     VBoxVGACfgQuery(uint16_t u16Id, uint32_t *pu32Value);
+DECLHIDDEN(bool)     VBoxVGACfgQuery(uint16_t u16Id, uint32_t *pu32Value, uint32_t u32DefValue);
 DECLHIDDEN(uint32_t) VBoxVideoGetVRAMSize(void);
 DECLHIDDEN(bool)     VBoxVideoAnyWidthAllowed(void);
 DECLHIDDEN(uint16_t) VBoxHGSMIGetScreenFlags(PHGSMIGUESTCOMMANDCONTEXT pCtx);
