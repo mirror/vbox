@@ -81,6 +81,17 @@ void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<QPair<int, QS
             this, &UIVMLogViewerBookmarksPanel::sltBookmarkSelected);
 }
 
+void UIVMLogViewerBookmarksPanel::disableEnableBookmarking(bool flag)
+{
+    m_pBookmarksComboBox->setEnabled(flag);
+    m_pGotoSelectedBookmark->setEnabled(flag);
+    m_pDeleteAllButton->setEnabled(flag);
+    m_pDeleteCurrentButton->setEnabled(flag);
+    m_pNextButton->setEnabled(flag);
+    m_pPreviousButton->setEnabled(flag);
+    m_pNextPreviousButtonContainer->setEnabled(flag);
+}
+
 void UIVMLogViewerBookmarksPanel::setBookmarkIndex(int index)
 {
     if (!m_pBookmarksComboBox)

@@ -43,13 +43,15 @@ public:
 
     UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
 
-    /* Adds a single bookmark to an existing list of bookmarks. Possibly called
+    /** Adds a single bookmark to an existing list of bookmarks. Possibly called
        by UIVMLogViewerWidget when user adds a bookmark thru context menu etc. */
     void addBookmark(const QPair<int, QString> &newBookmark);
-    /* Clear the bookmark list and show this list instead. Probably done after
+    /** Clear the bookmark list and show this list instead. Probably done after
        user switches to another log page tab etc. */
     void setBookmarksList(const QVector<QPair<int, QString> > &bookmarkList);
     void updateBookmarkList(const QVector<QPair<int, QString> > &bookmarkVector);
+    /** Disable/enable all the widget except the close button */
+    void disableEnableBookmarking(bool flag);
 
 public slots:
 
@@ -71,7 +73,7 @@ private slots:
 
 private:
 
-    /* @a index is the index of the curent bookmark. */
+    /** @a index is the index of the curent bookmark. */
     void setBookmarkIndex(int index);
 
     const int     m_iMaxBookmarkTextLength;
