@@ -1949,6 +1949,10 @@ typedef enum _PROCESSINFOCLASS
 } PROCESSINFOCLASS;
 AssertCompile(ProcessSequenceNumber == 0x5c);
 NTSYSAPI NTSTATUS NTAPI NtQueryInformationProcess(HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG);
+#if ARCH_BITS == 32
+/** 64-bit API pass thru to WOW64 processes. */
+NTSYSAPI NTSTATUS NTAPI NtWow64QueryInformationProcess64(HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG);
+#endif
 
 typedef enum _THREADINFOCLASS
 {
@@ -2516,38 +2520,39 @@ typedef RTL_DRIVE_LETTER_CURDIR *PRTL_DRIVE_LETTER_CURDIR;
 
 typedef struct _RTL_USER_PROCESS_PARAMETERS
 {
-    ULONG           MaximumLength;                      /**< 0x00 / 0x00 */
-    ULONG           Length;                             /**< 0x / 0x04 */
-    ULONG           Flags;                              /**< 0x / 0x08 */
-    ULONG           DebugFlags;                         /**< 0x / 0x0c */
-    HANDLE          ConsoleHandle;                      /**< 0x / 0x10 */
-    ULONG           ConsoleFlags;                       /**< 0x / 0x14 */
-    HANDLE          StandardInput;                      /**< 0x / 0x18 */
-    HANDLE          StandardOutput;                     /**< 0x / 0x1c */
-    HANDLE          StandardError;                      /**< 0x / 0x20 */
-    CURDIR          CurrentDirectory;                   /**< 0x / 0x24 */
-    UNICODE_STRING  DllPath;                            /**< 0x / 0x30 */
-    UNICODE_STRING  ImagePathName;                      /**< 0x / 0x38 */
-    UNICODE_STRING  CommandLine;                        /**< 0x / 0x40 */
-    PWSTR           Environment;                        /**< 0x / 0x48 */
-    ULONG           StartingX;                          /**< 0x / 0x4c */
-    ULONG           StartingY;                          /**< 0x / 0x50 */
-    ULONG           CountX;                             /**< 0x / 0x54 */
-    ULONG           CountY;                             /**< 0x / 0x58 */
-    ULONG           CountCharsX;                        /**< 0x / 0x5c */
-    ULONG           CountCharsY;                        /**< 0x / 0x60 */
-    ULONG           FillAttribute;                      /**< 0x / 0x64 */
-    ULONG           WindowFlags;                        /**< 0x / 0x68 */
-    ULONG           ShowWindowFlags;                    /**< 0x / 0x6c */
-    UNICODE_STRING  WindowTitle;                        /**< 0x / 0x70 */
-    UNICODE_STRING  DesktopInfo;                        /**< 0x / 0x78 */
-    UNICODE_STRING  ShellInfo;                          /**< 0x / 0x80 */
-    UNICODE_STRING  RuntimeInfo;                        /**< 0x / 0x88 */
-    RTL_DRIVE_LETTER_CURDIR  CurrentDirectories[0x20];  /**< 0x / 0x90 */
-    SIZE_T          EnvironmentSize;                    /**< 0x / 0x - Added in Vista */
-    SIZE_T          EnvironmentVersion;                 /**< 0x / 0x - Added in Windows 7. */
-    PVOID           PackageDependencyData;              /**< 0x / 0x - Added Windows 8? */
-    ULONG           ProcessGroupId;                     /**< 0x / 0x - Added Windows 8? */
+    ULONG           MaximumLength;                      /**< 0x000 / 0x000 */
+    ULONG           Length;                             /**< 0x004 / 0x004 */
+    ULONG           Flags;                              /**< 0x008 / 0x008 */
+    ULONG           DebugFlags;                         /**< 0x00c / 0x00c */
+    HANDLE          ConsoleHandle;                      /**< 0x010 / 0x010 */
+    ULONG           ConsoleFlags;                       /**< 0x018 / 0x014 */
+    HANDLE          StandardInput;                      /**< 0x020 / 0x018 */
+    HANDLE          StandardOutput;                     /**< 0x028 / 0x01c */
+    HANDLE          StandardError;                      /**< 0x030 / 0x020 */
+    CURDIR          CurrentDirectory;                   /**< 0x038 / 0x024 */
+    UNICODE_STRING  DllPath;                            /**< 0x050 / 0x030 */
+    UNICODE_STRING  ImagePathName;                      /**< 0x060 / 0x038 */
+    UNICODE_STRING  CommandLine;                        /**< 0x070 / 0x040 */
+    PWSTR           Environment;                        /**< 0x080 / 0x048 */
+    ULONG           StartingX;                          /**< 0x088 / 0x04c */
+    ULONG           StartingY;                          /**< 0x090 / 0x050 */
+    ULONG           CountX;                             /**< 0x094 / 0x054 */
+    ULONG           CountY;                             /**< 0x098 / 0x058 */
+    ULONG           CountCharsX;                        /**< 0x09c / 0x05c */
+    ULONG           CountCharsY;                        /**< 0x0a0 / 0x060 */
+    ULONG           FillAttribute;                      /**< 0x0a4 / 0x064 */
+    ULONG           WindowFlags;                        /**< 0x0a8 / 0x068 */
+    ULONG           ShowWindowFlags;                    /**< 0x0ac / 0x06c */
+    UNICODE_STRING  WindowTitle;                        /**< 0x0b0 / 0x070 */
+    UNICODE_STRING  DesktopInfo;                        /**< 0x0c0 / 0x078 */
+    UNICODE_STRING  ShellInfo;                          /**< 0x0d0 / 0x080 */
+    UNICODE_STRING  RuntimeInfo;                        /**< 0x0e0 / 0x088 */
+    RTL_DRIVE_LETTER_CURDIR  CurrentDirectories[0x20];  /**< 0x0f0 / 0x090 */
+    SIZE_T          EnvironmentSize;                    /**< 0x3f0 / 0x - Added in Vista */
+    SIZE_T          EnvironmentVersion;                 /**< 0x3f8 / 0x - Added in Windows 7. */
+    PVOID           PackageDependencyData;              /**< 0x400 / 0x - Added Windows 8? */
+    ULONG           ProcessGroupId;                     /**< 0x408 / 0x - Added Windows 8? */
+    ULONG           LoaderThreads;                      /**< 0x40c / 0x - Added Windows 10? */
 } RTL_USER_PROCESS_PARAMETERS;
 typedef RTL_USER_PROCESS_PARAMETERS *PRTL_USER_PROCESS_PARAMETERS;
 #define RTL_USER_PROCESS_PARAMS_FLAG_NORMALIZED     1
