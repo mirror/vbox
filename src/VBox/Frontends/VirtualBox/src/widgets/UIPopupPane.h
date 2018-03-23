@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,23 +15,32 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIPopupPane_h__
-#define __UIPopupPane_h__
+#ifndef ___UIPopupPane_h___
+#define ___UIPopupPane_h___
 
 /* Qt includes: */
-#include <QWidget>
 #include <QMap>
+#include <QWidget>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 
 /* Forward declaration: */
-class UIPopupPaneMessage;
-class UIPopupPaneDetails;
-class UIPopupPaneButtonPane;
+class QEvent;
+class QObject;
+class QPainter;
+class QPaintEvent;
+class QRect;
+class QShowEvent;
+class QSize;
+class QString;
+class QWidget;
 class UIAnimation;
+class UIPopupPaneDetails;
+class UIPopupPaneMessage;
+class UIPopupPaneButtonPane;
 
-/* Popup-pane prototype: */
+/** QWidget extension used as popup-center pane prototype. */
 class UIPopupPane : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -44,142 +53,190 @@ class UIPopupPane : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    /* Notifiers: Show/hide stuff: */
+    /** Asks to show itself asynchronously. */
     void sigToShow();
+    /** Asks to hide itself asynchronously. */
     void sigToHide();
+    /** Asks to show itself instantly. */
     void sigShow();
+    /** Asks to hide itself instantly. */
     void sigHide();
 
-    /* Notifiers: Hover stuff: */
+    /** Notifies about hover enter. */
     void sigHoverEnter();
+    /** Notifies about hover leave. */
     void sigHoverLeave();
 
-    /* Notifiers: Focus stuff: */
+    /** Notifies about focus enter. */
     void sigFocusEnter();
+    /** Notifies about focus leave. */
     void sigFocusLeave();
 
-    /* Notifiers: Layout stuff: */
+    /** Proposes pane @a iWidth. */
     void sigProposePaneWidth(int iWidth);
+    /** Proposes details pane @a iHeight. */
     void sigProposeDetailsPaneHeight(int iHeight);
+    /** Notifies about size-hint changed. */
     void sigSizeHintChanged();
 
-    /* Notifier: Complete stuff: */
+    /** Asks to close with @a iResultCode. */
     void sigDone(int iResultCode) const;
 
 public:
 
-    /* Constructor: */
+    /** Constructs popup-pane.
+      * @param  pParent             Brings the parent.
+      * @param  strMessage          Brings the pane message.
+      * @param  strDetails          Brings the pane details.
+      * @param  buttonDescriptions  Brings the button descriptions. */
     UIPopupPane(QWidget *pParent,
                 const QString &strMessage, const QString &strDetails,
                 const QMap<int, QString> &buttonDescriptions);
 
-    /* API: Recall stuff: */
+    /** Recalls itself. */
     void recall();
 
-    /* API: Text stuff: */
+    /** Defines the @a strMessage. */
     void setMessage(const QString &strMessage);
+    /** Defines the @a strDetails. */
     void setDetails(const QString &strDetails);
 
-    /* API: Layout stuff: */
+    /** Returns minimum size-hint. */
     QSize minimumSizeHint() const { return m_minimumSizeHint; }
+    /** Defines @a minimumSizeHint. */
     void setMinimumSizeHint(const QSize &minimumSizeHint);
+    /** Lays the content out. */
     void layoutContent();
 
 public slots:
 
-    /* Handler: Layout stuff: */
+    /** Handles proposal for a @a newSize. */
     void sltHandleProposalForSize(QSize newSize);
 
 private slots:
 
-    /* Handler: Show/hide stuff: */
+    /** Marks pane as fully shown. */
     void sltMarkAsShown();
 
-    /* Handler: Layout stuff: */
+    /** Updates size-hint. */
     void sltUpdateSizeHint();
 
-    /* Handler: Button stuff: */
+    /** Handles a click of button with @a iButtonID. */
     void sltButtonClicked(int iButtonID);
 
 private:
 
-    /* Type definitions: */
+    /** A pair of strings. */
     typedef QPair<QString, QString> QStringPair;
+    /** A list of string pairs. */
     typedef QList<QStringPair> QStringPairList;
 
-    /* Helpers: Prepare stuff: */
+    /** Prepares all. */
     void prepare();
+    /** Prepares background. */
     void prepareBackground();
+    /** Prepares content. */
     void prepareContent();
+    /** Prepares animation. */
     void prepareAnimation();
 
-    /* Helpers: Translate stuff: */
-    void retranslateUi();
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+    /** Translats tool-tips. */
     void retranslateToolTips();
 
-    /* Handler: Event-filter stuff: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+    /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
 
-    /* Handlers: Event stuff: */
-    void showEvent(QShowEvent *pEvent);
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent); /* override */;
+    /** Handles first show @a pEvent. */
     void polishEvent(QShowEvent *pEvent);
-    void paintEvent(QPaintEvent *pEvent);
 
-    /* Helpers: Paint stuff: */
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+
+    /** Assigns clipping of @a rect geometry for passed @a painter. */
     void configureClipping(const QRect &rect, QPainter &painter);
+    /** Paints background of @a rect geometry using @a painter. */
     void paintBackground(const QRect &rect, QPainter &painter);
+    /** Paints frame of @a rect geometry using @a painter. */
     void paintFrame(QPainter &painter);
 
-    /* Helper: Complete stuff: */
+    /** Closes pane with @a iResultCode. */
     void done(int iResultCode);
 
-    /* Property: Show/hide stuff: */
+    /** Returns size-hint in hidden state. */
     QSize hiddenSizeHint() const { return m_hiddenSizeHint; }
+    /** Returns size-hint in shown state. */
     QSize shownSizeHint() const { return m_shownSizeHint; }
 
-    /* Property: Hover stuff: */
+    /** Returns default opacity. */
     int defaultOpacity() const { return m_iDefaultOpacity; }
+    /** Returns hovered opacity. */
     int hoveredOpacity() const { return m_iHoveredOpacity; }
+    /** Returns current opacity. */
     int opacity() const { return m_iOpacity; }
+    /** Defines current @a iOpacity. */
     void setOpacity(int iOpacity) { m_iOpacity = iOpacity; update(); }
 
-    /* Helpers: Details stuff: */
+    /** Returns details text. */
     QString prepareDetailsText() const;
+    /** Prepares passed @a aDetailsList. */
     void prepareDetailsList(QStringPairList &aDetailsList) const;
 
-    /* Variables: General stuff: */
+    /** Holds whether the pane was polished. */
     bool m_fPolished;
+
+    /** Holds the pane ID. */
     const QString m_strId;
+
+    /** Holds the layout margin. */
     const int m_iLayoutMargin;
+    /** Holds the layout spacing. */
     const int m_iLayoutSpacing;
+
+    /** Holds the minimum size-hint. */
     QSize m_minimumSizeHint;
 
-    /* Variables: Text stuff: */
-    QString m_strMessage, m_strDetails;
+    /** Holds the pane message. */
+    QString m_strMessage;
+    /** Holds the pane details. */
+    QString m_strDetails;
 
-    /* Variables: Button stuff: */
+    /** Holds the button descriptions. */
     QMap<int, QString> m_buttonDescriptions;
 
-    /* Variables: Show/hide stuff: */
-    bool m_fShown;
+    /** Holds whether the pane is shown fully. */
+    bool         m_fShown;
+    /** Holds the show/hide animation instance. */
     UIAnimation *m_pShowAnimation;
-    QSize m_hiddenSizeHint;
-    QSize m_shownSizeHint;
+    /** Holds the size-hint of pane in hidden state. */
+    QSize        m_hiddenSizeHint;
+    /** Holds the size-hint of pane in shown state. */
+    QSize        m_shownSizeHint;
 
-    /* Variables: Focus stuff: */
+    /** Holds whether the pane can loose focus. */
     bool m_fCanLooseFocus;
+    /** Holds whether the pane is focused. */
     bool m_fFocused;
 
-    /* Variables: Hover stuff: */
-    bool m_fHovered;
+    /** Holds whether the pane is hovered. */
+    bool      m_fHovered;
+    /** Holds the default opacity. */
     const int m_iDefaultOpacity;
+    /** Holds the hovered opacity. */
     const int m_iHoveredOpacity;
-    int m_iOpacity;
+    /** Holds the current opacity. */
+    int       m_iOpacity;
 
-    /* Widgets: */
+    /** Holds the message pane instance. */
     UIPopupPaneMessage    *m_pMessagePane;
+    /** Holds the details pane instance. */
     UIPopupPaneDetails    *m_pDetailsPane;
+    /** Holds the buttons pane instance. */
     UIPopupPaneButtonPane *m_pButtonPane;
 };
 
-#endif /* __UIPopupPane_h__ */
+#endif /* !___UIPopupPane_h___ */
+
