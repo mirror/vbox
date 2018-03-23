@@ -253,7 +253,7 @@ void crUnpack( const void *data, const void *data_end, const void *opcodes,
 
     unpack_opcodes = (const unsigned char *)opcodes;
     cr_unpackData = (const unsigned char *)data;
-    cr_unpackDataEnd = (const unsigned char *)data;
+    cr_unpackDataEnd = (const unsigned char *)data_end;
 
 #if defined(CR_UNPACK_DEBUG_OPCODES) || defined(CR_UNPACK_DEBUG_LAST_OPCODES)
     crDebug("crUnpack: %d opcodes", num_opcodes);
