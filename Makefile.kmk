@@ -1044,21 +1044,24 @@ VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST =
 endif
 
 # ASSUMES the 32-bit edition has been built already. Also for serializing VM access.
-additions-build-win.amd64: additions-build-win.x86
 ifeq ($(KBUILD_TARGET),win)
+additions-build-win.amd64-just-build:
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
+additions-build-win.amd64: additions-build-win.x86 additions-build-win.amd64-just-build
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing
 else
+additions-build-win.amd64: additions-build-win.x86
 	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/amd64 additions build+pack)
 	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_WIN_AMD64_IP) " echo $@ && cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing "
 	$(call VBOX_BLD_VM_MSG_END__,Windows/amd64 additions build+pack)
 endif
 
-additions-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)
+additions-build-win.x86:
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing
 else
+additions-build-win.x86:
 	$(call VBOX_BLD_VM_MSG_BEGIN,Windows/x86 additions build.pack)
 	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_WIN_X86_IP) " echo $@ && cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
 	$(call VBOX_BLD_VM_MSG_END__,Windows/x86 additions build+pack)
