@@ -922,6 +922,44 @@ endif
 #
 VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
 
+
+#
+# Combined package build (windows only).
+#
+# The combined package is created by the x86 environment, so we do the amd64
+# packaging in the build phase since it's just a few very slow jobs.  We hold
+# back the x86 build until the amd64 packaging starts, to try encourage
+# parallel execution.
+#
+# Note! VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER=1 is required because the additions
+#       packing must be done in amd64 mode as it picks files from the x86 build.
+#
+
+VBOX_COMBINED_PACKAGE_DEFS := \
+	VBOX_WITH_COMBINED_PACKAGE=1 \
+	VBOX_WITH_ALL_DOXYGEN_TARGETS= \
+	VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER=1
+
+combined-package-fetch:
+	+ $(KMK) -C tools $(VBOX_COMBINED_PACKAGE_DEFS) KBUILD_TARGET_ARCH=amd64 BUILD_TARGET_ARCH=amd64
+	+ $(KMK) -C tools $(VBOX_COMBINED_PACKAGE_DEFS) KBUILD_TARGET_ARCH=x86   BUILD_TARGET_ARCH=x86
+
+combined-package-build-amd64:
+	+ $(KMK) docs all $(VBOX_COMBINED_PACKAGE_DEFS) KBUILD_TARGET_ARCH=amd64 BUILD_TARGET_ARCH=amd64
+
+combined-package-build-amd64-packing: combined-package-build-amd64
+	+ $(KMK) packing  $(VBOX_COMBINED_PACKAGE_DEFS) KBUILD_TARGET_ARCH=amd64 BUILD_TARGET_ARCH=amd64
+
+combined-package-build-x86: combined-package-build-amd64
+	+ $(KMK) docs all $(VBOX_COMBINED_PACKAGE_DEFS) KBUILD_TARGET_ARCH=x86 BUILD_TARGET_ARCH=x86
+
+combined-package-build: combined-package-build-amd64-packing combined-package-build-x86
+
+combined-package-packing:
+	+ $(KMK) packing   $(VBOX_COMBINED_PACKAGE_DEFS) KBUILD_TARGET_ARCH=x86   BUILD_TARGET_ARCH=x86
+
+
+
 #
 # Common rsync bits.
 #
