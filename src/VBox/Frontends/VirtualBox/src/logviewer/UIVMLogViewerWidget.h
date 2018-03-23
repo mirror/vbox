@@ -19,6 +19,7 @@
 #define ___UIVMLogViewerWidget_h___
 
 /* Qt includes: */
+#include <QKeySequence>
 #include <QWidget>
 /* #include <QMap> */
 #include <QPair>
@@ -50,6 +51,10 @@ class UIVMLogViewerSettingsPanel;
 class UIVMLogViewerWidget  : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
+
+signals:
+
+    void sigSetCloseButtonShortCut(QKeySequence);
 
 public:
     /** Constructs the VM Log-Viewer by passing @a pParent to QWidget base-class constructor.
@@ -161,6 +166,13 @@ private:
     void hidePanel(UIVMLogViewerPanel* panel);
     void showPanel(UIVMLogViewerPanel* panel);
 
+    /** Make sure escape key is assigned to only a single widget. This is done by checking
+        several things in the following order:
+        - when there are no more panels visible assign it to the parent dialog
+        - grab it from the dialog as soon as a panel becomes visible again
+        - assigned it to the most recently "unhidden" panel */
+    void manageEscapeShortCut();
+
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
 
@@ -180,6 +192,7 @@ private:
         UIVMLogViewerBookmarksPanel *m_pBookmarksPanel;
         UIVMLogViewerSettingsPanel  *m_pSettingsPanel;
         QMap<UIVMLogViewerPanel*, QAction*> m_panelActionMap;
+        QList<UIVMLogViewerPanel*>          m_visiblePanelsList;
     /** @} */
     QVBoxLayout         *m_pMainLayout;
 

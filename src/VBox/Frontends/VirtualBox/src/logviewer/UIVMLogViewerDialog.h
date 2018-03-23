@@ -36,7 +36,6 @@ class QDialogButtonBox;
 class QVBoxLayout;
 class UIVMLogViewerDialog;
 
-
 /** QIManagerDialogFactory  used as a factory for Virtual Media Manager dialog. */
 class UIVMLogViewerDialogFactory : public QIManagerDialogFactory
 {
@@ -72,6 +71,10 @@ protected:
     /** @} */
     /* Reads the related extradata to determine if the dialog should be maximized. */
     virtual bool shouldBeMaximized() const /* override */;
+
+private slots:
+
+    void sltSetCloseButtonShortCut(QKeySequence shortCut);
 
 private:
 

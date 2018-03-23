@@ -379,6 +379,7 @@ void UIVMLogViewerWidget::prepare()
     m_panelActionMap.insert(m_pSearchPanel, m_pActionFind);
     m_panelActionMap.insert(m_pFilterPanel, m_pActionFilter);
     m_panelActionMap.insert(m_pSettingsPanel, m_pActionSettings);
+    manageEscapeShortCut();
 }
 
 void UIVMLogViewerWidget::prepareWidgets()
@@ -763,9 +764,11 @@ void UIVMLogViewerWidget::hidePanel(UIVMLogViewerPanel* panel)
     QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
     if (iterator != m_panelActionMap.end())
     {
-        if (iterator.value()->isChecked())
+        if (iterator.value() && iterator.value()->isChecked())
             iterator.value()->setChecked(false);
     }
+    m_visiblePanelsList.removeOne(panel);
+    manageEscapeShortCut();
 }
 
 void UIVMLogViewerWidget::showPanel(UIVMLogViewerPanel* panel)
@@ -778,6 +781,27 @@ void UIVMLogViewerWidget::showPanel(UIVMLogViewerPanel* panel)
         if (!iterator.value()->isChecked())
             iterator.value()->setChecked(true);
     }
+    m_visiblePanelsList.push_back(panel);
+    manageEscapeShortCut();
+}
+
+void UIVMLogViewerWidget::manageEscapeShortCut()
+{
+    /* if there is no visible panels give the escape shortcut to parent dialog: */
+    if (m_visiblePanelsList.isEmpty())
+    {
+        emit sigSetCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
+        return;
+    }
+    /* Take the escape shortcut from the dialog: */
+    sigSetCloseButtonShortCut(QKeySequence());
+    /* Just loop thru the visible panel list and set the esc key to the
+       panel which made visible latest */
+    for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
+    {
+        m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
+    }
+    m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
 }
 
 QPlainTextEdit* UIVMLogViewerWidget::logPage(int pIndex) const

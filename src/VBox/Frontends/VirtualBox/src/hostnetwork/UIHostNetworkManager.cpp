@@ -1156,4 +1156,3 @@ UIHostNetworkManagerWidget *UIHostNetworkManager::widget()
 {
     return qobject_cast<UIHostNetworkManagerWidget*>(QIManagerDialog::widget());
 }
-

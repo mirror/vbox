@@ -84,6 +84,8 @@ void UIVMLogViewerDialog::configureCentralWidget()
 #endif
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
+        connect(pWidget, &UIVMLogViewerWidget::sigSetCloseButtonShortCut,
+                this, &UIVMLogViewerDialog::sltSetCloseButtonShortCut);
     }
 }
 
@@ -96,6 +98,7 @@ void UIVMLogViewerDialog::configure()
 void UIVMLogViewerDialog::finalize()
 {
     retranslateUi();
+    button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
 }
 
 void UIVMLogViewerDialog::loadSettings()
@@ -147,4 +150,10 @@ void UIVMLogViewerDialog::saveSettings() const
 bool UIVMLogViewerDialog::shouldBeMaximized() const
 {
     return gEDataManager->logWindowShouldBeMaximized();
+}
+
+void UIVMLogViewerDialog::sltSetCloseButtonShortCut(QKeySequence shortCut)
+{
+    if (button(ButtonType_Close))
+        button(ButtonType_Close)->setShortcut(shortCut);
 }

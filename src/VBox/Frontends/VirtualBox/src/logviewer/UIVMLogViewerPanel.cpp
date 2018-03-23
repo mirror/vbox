@@ -48,6 +48,13 @@ UIVMLogViewerPanel::UIVMLogViewerPanel(QWidget *pParent, UIVMLogViewerWidget *pV
     prepare();
 }
 
+void UIVMLogViewerPanel::setCloseButtonShortCut(QKeySequence shortCut)
+{
+    if (!m_pCloseButton)
+        return;
+    m_pCloseButton->setShortcut(shortCut);
+}
+
 UIVMLogViewerWidget* UIVMLogViewerPanel::viewer()
 {
     return m_pViewer;
@@ -87,7 +94,6 @@ void UIVMLogViewerPanel::prepareWidgets()
     m_pCloseButton = new QIToolButton;
     if (m_pCloseButton)
     {
-        //m_pCloseButton->setIcon(UIIconPool::iconSet(":/log_viewer_close_16px.png"));
         m_pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
         m_pMainLayout->addWidget(m_pCloseButton, 0, Qt::AlignLeft);
     }
@@ -96,7 +102,7 @@ void UIVMLogViewerPanel::prepareWidgets()
 void UIVMLogViewerPanel::prepareConnections()
 {
     if (m_pCloseButton)
-        connect(m_pCloseButton, &QIToolButton::clicked, this, &QIToolButton::hide);
+        connect(m_pCloseButton, &QIToolButton::clicked, this, &UIVMLogViewerPanel::hide);
 }
 
 void UIVMLogViewerPanel::retranslateUi()
