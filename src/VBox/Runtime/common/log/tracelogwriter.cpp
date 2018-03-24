@@ -377,7 +377,6 @@ DECLINLINE(int) rtTraceLogWrStream(PRTTRACELOGWRINT pThis, const void *pvBuf, si
  *
  * @returns Total number of bytes for the event data associated with this event.
  * @param   pEvt                Pointer to the event structure to initialise.
- * @param   u64SeqNo            The sequence number to use.
  * @param   pEvtDescInt         The internal event descriptor to format the data accordingly to.
  * @param   fFlags              Flags to use for this event.
  * @param   pacbRawData         Array of raw data size indicators.
@@ -416,7 +415,7 @@ DECLINLINE(size_t) rtTraceLogWrEvtInit(PTRACELOGEVT pEvt,
  * @returns IPRT status code.
  * @param   pThis               The trace log writer instance.
  * @param   pEvt                Pointer to the initialised event structure.
- * @param   pEvtData            The raw event data.
+ * @param   pvEvtData           The raw event data.
  * @param   cbEvtData           Size of the event data.
  * @param   pacbRawData         Pointer to the array of size indicators for non static
  *                              raw data in the event data stream.
@@ -606,7 +605,7 @@ static int rtTraceLogWrEvtDescAdd(PRTTRACELOGWRINT pThis, PCRTTRACELOGEVTDESC pE
 
 
 /**
- * @copydoc{FNRTTRACELOGWRSTREAM}
+ * @copydoc FNRTTRACELOGWRSTREAM
  */
 static DECLCALLBACK(int) rtTraceLogWrFileStream(void *pvUser, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
 {
@@ -616,7 +615,7 @@ static DECLCALLBACK(int) rtTraceLogWrFileStream(void *pvUser, const void *pvBuf,
 
 
 /**
- * @copydoc{FNRTTRACELOGSTREAMCLOSE}
+ * @copydoc FNRTTRACELOGSTREAMCLOSE
  */
 static DECLCALLBACK(int) rtTraceLogWrFileStreamClose(void *pvUser)
 {
@@ -686,7 +685,7 @@ RTDECL(int) RTTraceLogWrCreateFile(PRTTRACELOGWR phTraceLogWr, const char *pszDe
 
 
 /**
- * @copydoc{FNRTTRACELOGWRSTREAM}
+ * @copydoc FNRTTRACELOGWRSTREAM
  */
 static DECLCALLBACK(int) rtTraceLogWrTcpStream(void *pvUser, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
 {
@@ -701,7 +700,7 @@ static DECLCALLBACK(int) rtTraceLogWrTcpStream(void *pvUser, const void *pvBuf, 
 
 
 /**
- * @copydoc{FNRTTRACELOGSTREAMCLOSE}
+ * @copydoc FNRTTRACELOGSTREAMCLOSE
  */
 static DECLCALLBACK(int) rtTraceLogWrTcpStreamClose(void *pvUser)
 {

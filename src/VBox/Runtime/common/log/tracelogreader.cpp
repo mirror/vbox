@@ -1097,7 +1097,7 @@ static DECLCALLBACK(int) rtTraceLogRdrEvtDataRecvd(PRTTRACELOGRDRINT pThis, RTTR
 
 
 /**
- * @copydoc{FNRTTRACELOGRDRSTREAM}
+ * @copydoc FNRTTRACELOGRDRSTREAM
  */
 static DECLCALLBACK(int) rtTraceLogRdrFileStream(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbRead,
                                                  RTMSINTERVAL cMsTimeout)
@@ -1109,7 +1109,7 @@ static DECLCALLBACK(int) rtTraceLogRdrFileStream(void *pvUser, void *pvBuf, size
 
 
 /**
- * @copydoc{FNRTTRACELOGSTREAMCLOSE}
+ * @copydoc FNRTTRACELOGSTREAMCLOSE
  */
 static DECLCALLBACK(int) rtTraceLogRdrFileStreamClose(void *pvUser)
 {
