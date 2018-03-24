@@ -396,6 +396,7 @@ RTDECL(int) RTTraceLogWrEvtAdd(RTTRACELOGWR hTraceLogWr, PCRTTRACELOGEVTDESC pEv
  *
  * @returns IPRT status code.
  * @param   hTraceLogWr         The trace log writer instance handle.
+ * @param   pEvtDesc            The event descriptor used for formatting the data.
  * @param   fFlags              Flags to use for this event.
  * @param   uGrpId              A unique group ID for grouped events.
  * @param   uParentGrpId        A parent group ID this event originated from.
