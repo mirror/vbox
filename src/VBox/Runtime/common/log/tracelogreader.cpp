@@ -1219,7 +1219,7 @@ static int rtTraceLogRdrEvtResolveData(PRTTRACELOGRDREVTINT pEvt, const char *ps
             return VINF_SUCCESS;
         }
 
-        offData += rtTraceLogRdrEvtItemGetSz(pEvt->pRdr, pEvtItemDesc, pEvt->pacbRawData, &idxRawData);
+        offData += (uint32_t)rtTraceLogRdrEvtItemGetSz(pEvt->pRdr, pEvtItemDesc, pEvt->pacbRawData, &idxRawData);
     }
 
     return VERR_NOT_FOUND;
@@ -1246,7 +1246,7 @@ static int rtTraceLogRdrEvtFillVal(PRTTRACELOGRDREVTINT pEvt, uint32_t offData, 
     switch (pEvtItemDesc->enmType)
     {
         case RTTRACELOGTYPE_BOOL:
-            pVal->u.f = *pbData;
+            pVal->u.f = *(bool *)pbData;
             break;
         case RTTRACELOGTYPE_UINT8:
             pVal->u.u8 = *pbData;
@@ -1660,7 +1660,7 @@ RTDECL(int) RTTraceLogRdrIteratorQueryEvent(RTTRACELOGRDRIT hIt, PRTTRACELOGRDRE
 RTDECL(uint64_t) RTTraceLogRdrEvtGetSeqNo(RTTRACELOGRDREVT hRdrEvt)
 {
     PRTTRACELOGRDREVTINT pEvt = hRdrEvt;
-    AssertPtrReturn(pEvt, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pEvt, 0);
 
     return pEvt->u64SeqNo;
 }
@@ -1669,7 +1669,7 @@ RTDECL(uint64_t) RTTraceLogRdrEvtGetSeqNo(RTTRACELOGRDREVT hRdrEvt)
 RTDECL(uint64_t) RTTraceLogRdrEvtGetTs(RTTRACELOGRDREVT hRdrEvt)
 {
     PRTTRACELOGRDREVTINT pEvt = hRdrEvt;
-    AssertPtrReturn(pEvt, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pEvt, 0);
 
     return pEvt->u64Ts;
 }
@@ -1678,7 +1678,7 @@ RTDECL(uint64_t) RTTraceLogRdrEvtGetTs(RTTRACELOGRDREVT hRdrEvt)
 RTDECL(bool) RTTraceLogRdrEvtIsGrouped(RTTRACELOGRDREVT hRdrEvt)
 {
     PRTTRACELOGRDREVTINT pEvt = hRdrEvt;
-    AssertPtrReturn(pEvt, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pEvt, false);
 
     return pEvt->idGrp != 0;
 }
@@ -1724,7 +1724,7 @@ RTDECL(int) RTTraceLogRdrEvtFillVals(RTTRACELOGRDREVT hRdrEvt, unsigned idxItemS
     for (unsigned i = 0; i < idxItemStart; i++)
     {
         PCRTTRACELOGEVTITEMDESC pEvtItemDesc = &pEvtDesc->aEvtItemDesc[i];
-        offData += rtTraceLogRdrEvtItemGetSz(pEvt->pRdr, pEvtItemDesc, pEvt->pacbRawData, &idxRawData);
+        offData += (uint32_t)rtTraceLogRdrEvtItemGetSz(pEvt->pRdr, pEvtItemDesc, pEvt->pacbRawData, &idxRawData);
     }
 
     int rc = VINF_SUCCESS;
@@ -1735,7 +1735,7 @@ RTDECL(int) RTTraceLogRdrEvtFillVals(RTTRACELOGRDREVT hRdrEvt, unsigned idxItemS
         size_t cbData = rtTraceLogRdrEvtItemGetSz(pEvt->pRdr, pEvtItemDesc, pEvt->pacbRawData, &idxRawData);
 
         rc = rtTraceLogRdrEvtFillVal(pEvt, offData, cbData, pEvtItemDesc, &paVals[i - idxItemStart]);
-        offData += cbData;
+        offData += (uint32_t)cbData;
     }
 
     *pcVals = idxItemEnd - idxItemStart;

@@ -387,7 +387,7 @@ DECLINLINE(size_t) rtTraceLogWrEvtInit(PTRACELOGEVT pEvt,
                                        RTTRACELOGEVTGRPID uGrpId, RTTRACELOGEVTGRPID uParentGrpId,
                                        size_t *pacbRawData)
 {
-    size_t cbEvtData = pEvtDescInt->cbEvtData;
+    uint32_t cbEvtData = pEvtDescInt->cbEvtData;
     for (unsigned i = 0; i < pEvtDescInt->cRawDataNonStatic; i++)
         cbEvtData += pacbRawData[i];
 
@@ -484,7 +484,7 @@ static int rtTraceLogWrInit(PRTTRACELOGWRINT pThis, const char *pszDesc)
     Hdr.u32Endianess = TRACELOG_HDR_ENDIANESS; /* Endianess marker. */
     Hdr.u32Version   = TRACELOG_VERSION;
     Hdr.fFlags       = 0;
-    Hdr.cbStrDesc    = pszDesc ? strlen(pszDesc) : 0;
+    Hdr.cbStrDesc    = pszDesc ? (uint32_t)strlen(pszDesc) : 0;
     Hdr.cbTypePtr    = sizeof(uintptr_t);
     Hdr.cbTypeSize   = sizeof(size_t);
     Hdr.u64TsStart   = RTTimeNanoTS();
@@ -558,8 +558,8 @@ static int rtTraceLogWrEvtDescAdd(PRTTRACELOGWRINT pThis, PCRTTRACELOGEVTDESC pE
                     memcpy(&EvtDesc.szMagic[0], TRACELOG_EVTDESC_MAGIC, sizeof(EvtDesc.szMagic));
                     EvtDesc.u32Id       = pEvtDescInt->u32Id;
                     EvtDesc.u32Severity = rtTraceLogWrConvSeverityToStream(pEvtDescInt->EvtDesc.enmSeverity);
-                    EvtDesc.cbStrId     = strlen(pEvtDescInt->EvtDesc.pszId);
-                    EvtDesc.cbStrDesc   = pEvtDescInt->EvtDesc.pszDesc ? strlen(pEvtDescInt->EvtDesc.pszDesc) : 0;
+                    EvtDesc.cbStrId     = (uint32_t)strlen(pEvtDescInt->EvtDesc.pszId);
+                    EvtDesc.cbStrDesc   = pEvtDescInt->EvtDesc.pszDesc ? (uint32_t)strlen(pEvtDescInt->EvtDesc.pszDesc) : 0;
                     EvtDesc.cEvtItems   = pEvtDescInt->EvtDesc.cEvtItems;
                     rc = rtTraceLogWrStream(pThis, &EvtDesc, sizeof(EvtDesc));
                     if (RT_SUCCESS(rc))
@@ -577,10 +577,10 @@ static int rtTraceLogWrEvtDescAdd(PRTTRACELOGWRINT pThis, PCRTTRACELOGEVTDESC pE
 
                             RT_ZERO(EvtItemDesc);
                             memcpy(&EvtItemDesc.szMagic[0], TRACELOG_EVTITEMDESC_MAGIC, sizeof(EvtItemDesc.szMagic));
-                            EvtItemDesc.cbStrName = strlen(pEvtItemDesc->pszName);
-                            EvtItemDesc.cbStrDesc = pEvtItemDesc->pszDesc ? strlen(pEvtItemDesc->pszDesc) : 0;
+                            EvtItemDesc.cbStrName = (uint32_t)strlen(pEvtItemDesc->pszName);
+                            EvtItemDesc.cbStrDesc = pEvtItemDesc->pszDesc ? (uint32_t)strlen(pEvtItemDesc->pszDesc) : 0;
                             EvtItemDesc.u32Type   = rtTraceLogWrConvTypeToStream(pEvtItemDesc->enmType);
-                            EvtItemDesc.cbRawData = pEvtItemDesc->cbRawData;
+                            EvtItemDesc.cbRawData = (uint32_t)pEvtItemDesc->cbRawData;
                             rc = rtTraceLogWrStream(pThis, &EvtItemDesc, sizeof(EvtItemDesc));
                             if (RT_SUCCESS(rc))
                                 rc = rtTraceLogWrStream(pThis, pEvtItemDesc->pszName, EvtItemDesc.cbStrName);
