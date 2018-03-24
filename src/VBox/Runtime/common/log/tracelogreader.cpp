@@ -92,7 +92,7 @@ typedef enum RTTRACELOGRDRSTATE
     /** The event data is being received. */
     RTTRACELOGRDRSTATE_RECV_EVT_DATA,
     /** 32bit hack. */
-    RTTRACELOGRDRSTATE_32BIT_HACK = 0x7fffffff,
+    RTTRACELOGRDRSTATE_32BIT_HACK = 0x7fffffff
 } RTTRACELOGRDRSTATE;
 
 
