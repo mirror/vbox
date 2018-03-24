@@ -282,7 +282,7 @@ static PFNRTTRACELOGRDRSTATEHANDLER g_apfnStateHandlers[] =
 /**
  * Wrapper around the stream in callback.
  *
- * @retruns IPRT status code returned by the stream callback.
+ * @returns IPRT status code returned by the stream callback.
  * @param   pThis               The trace log reader instance.
  * @param   pvBuf               The data to stream.
  * @param   cbBuf               Number of bytes to read in.
@@ -465,7 +465,7 @@ static RTTRACELOGTYPE rtTraceLogRdrConvType(uint32_t u32Type)
  * Converts the type enum to the size of the the event item data in bytes.
  *
  * @returns Event item data size in bytes.
- * @aram    pEvtItemDesc        The event item descriptor.
+ * @param   pEvtItemDesc        The event item descriptor.
  */
 static size_t rtTraceLogRdrGetEvtItemDataSz(PRTTRACELOGRDRINT pThis, PCRTTRACELOGEVTITEMDESC pEvtItemDesc)
 {
