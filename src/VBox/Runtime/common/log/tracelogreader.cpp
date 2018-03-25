@@ -1008,7 +1008,7 @@ static DECLCALLBACK(int) rtTraceLogRdrEvtMarkerRecvd(PRTTRACELOGRDRINT pThis, RT
                 pEvt->pEvtDesc    = pEvtDesc;
                 pEvt->cbEvtData   = pEvtStrm->cbEvtData;
                 pEvt->pacbRawData = pEvtDesc->cRawDataNonStatic ? (size_t *)&pEvt->abEvtData[pEvtStrm->cbEvtData] : NULL;
-                /** @todo: Group handling and parenting. */
+                /** @todo Group handling and parenting. */
 
                 pThis->pEvtCur = pEvt;
                 size_t cbEvtDataRecv = pEvtStrm->cRawEvtDataSz * pThis->cbTypeSize + pEvtStrm->cbEvtData;

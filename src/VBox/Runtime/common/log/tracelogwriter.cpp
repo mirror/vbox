@@ -425,7 +425,7 @@ DECLINLINE(size_t) rtTraceLogWrEvtInit(PTRACELOGEVT pEvt,
 DECLINLINE(int) rtTraceLogWrEvtStream(PRTTRACELOGWRINT pThis, PTRACELOGEVT pEvt, const void *pvEvtData,
                                       size_t cbEvtData, size_t *pacbRawData)
 {
-    /** @todo: Get rid of locking. */
+    /** @todo Get rid of locking. */
     int rc = RTSemMutexRequest(pThis->hMtx, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
