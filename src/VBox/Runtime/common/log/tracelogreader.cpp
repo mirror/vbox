@@ -465,6 +465,7 @@ static RTTRACELOGTYPE rtTraceLogRdrConvType(uint32_t u32Type)
  * Converts the type enum to the size of the the event item data in bytes.
  *
  * @returns Event item data size in bytes.
+ * @param   pThis               The trace log reader instance.
  * @param   pEvtItemDesc        The event item descriptor.
  */
 static size_t rtTraceLogRdrGetEvtItemDataSz(PRTTRACELOGRDRINT pThis, PCRTTRACELOGEVTITEMDESC pEvtItemDesc)
