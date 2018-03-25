@@ -243,6 +243,7 @@ typedef DECLCALLBACK(int) FNRTTRACELOGRDRSTATEHANDLER(PRTTRACELOGRDRINT pThis, R
 /** Pointer to a trace log reader state handler. */
 typedef FNRTTRACELOGRDRSTATEHANDLER *PFNRTTRACELOGRDRSTATEHANDLER;
 
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
