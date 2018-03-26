@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,7 @@
 class QLabel;
 class UIAnimation;
 
-/* Popup-pane text-pane prototype class: */
+/** QWidget extension providing GUI with popup-pane message-pane prototype class. */
 class UIPopupPaneMessage : public QWidget
 {
     Q_OBJECT;
@@ -35,67 +35,88 @@ class UIPopupPaneMessage : public QWidget
 
 signals:
 
-    /* Notifiers: Parent propagation stuff: */
+    /** Notifies about focus enter. */
     void sigFocusEnter();
+    /** Notifies about focus enter. */
     void sigFocusLeave();
 
-    /* Notifier: Layout stuff: */
+    /** Notifies about size-hint change. */
     void sigSizeHintChanged();
 
 public:
 
-    /* Constructor: */
+    /** Constructs message-pane passing @a pParent to the base-class.
+      * @param  strText   Brings the message text.
+      * @param  fFcoused  Brings whether the pane is focused. */
     UIPopupPaneMessage(QWidget *pParent, const QString &strText, bool fFocused);
 
-    /* API: Text stuff: */
+    /** Defines the message @a strText. */
     void setText(const QString &strText);
 
-    /* API: Layout stuff: */
+    /** Returns the message minimum size-hint. */
     QSize minimumSizeHint() const;
+    /** Defines the message @a minimumSizeHint. */
     void setMinimumSizeHint(const QSize &minimumSizeHint);
+    /** Lays the content out. */
     void layoutContent();
 
-    /* Property: Focus stuff: */
+    /** Returns the collapsed size-hint. */
     QSize collapsedSizeHint() const { return m_collapsedSizeHint; }
+    /** Returns the expanded size-hint. */
     QSize expandedSizeHint() const { return m_expandedSizeHint; }
 
 private slots:
 
-    /* Handler: Layout stuff: */
+    /** Handles proposal for @a iWidth. */
     void sltHandleProposalForWidth(int iWidth);
 
-    /* Handlers: Focus stuff: */
+    /** Handles focus enter. */
     void sltFocusEnter();
+    /** Handles focus leave. */
     void sltFocusLeave();
 
 private:
 
-    /* Helpers: Prepare stuff: */
+    /** Prepares all. */
     void prepare();
+    /** Prepares content. */
     void prepareContent();
+    /** Prepares animations. */
     void prepareAnimation();
 
-    /* Helper: Layout stuff: */
+    /** Updates size-hint. */
     void updateSizeHint();
 
-    /* Static helper: Font stuff: */
+    /** Adjusts @a font. */
     static QFont tuneFont(QFont font);
 
-    /* Variables: Layout stuff: */
+    /** Holds the layout margin. */
     const int m_iLayoutMargin;
+    /** Holds the layout spacing. */
     const int m_iLayoutSpacing;
+
+    /** Holds the label size-hint. */
     QSize m_labelSizeHint;
+    /** Holds the collapsed size-hint. */
     QSize m_collapsedSizeHint;
+    /** Holds the expanded size-hint. */
     QSize m_expandedSizeHint;
+    /** Holds the minimum size-hint. */
     QSize m_minimumSizeHint;
 
-    /* Variables: Widget stuff: */
+    /** Holds the text. */
     QString m_strText;
+
+    /** Holds the label instance. */
     QLabel *m_pLabel;
+
+    /** Holds the desired label width. */
     int m_iDesiredLabelWidth;
 
-    /* Variables: Focus stuff: */
+    /** Holds whether message-pane is focused. */
     bool m_fFocused;
+
+    /** Holds the animation instance. */
     UIAnimation *m_pAnimation;
 };
 

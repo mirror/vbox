@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,8 +23,8 @@
 # include <QCheckBox>
 
 /* GUI includes: */
-# include "UIPopupPaneMessage.h"
 # include "UIAnimationFramework.h"
+# include "UIPopupPaneMessage.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -147,6 +147,7 @@ void UIPopupPaneMessage::prepareContent()
 {
     /* Create label: */
     m_pLabel = new QLabel(this);
+    if (m_pLabel)
     {
         /* Configure label: */
         m_pLabel->setFont(tuneFont(m_pLabel->font()));
