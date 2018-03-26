@@ -587,7 +587,6 @@ Binding *Db::allocateBinding(const DhcpClientMessage &req)
         return NULL;
 
     Assert(b->id() == id);
-    Assert(b->state() == Binding::FREE || b->state() >= Binding::OFFERED);
 
     /*
      * XXX: handle requests for specific lease time!
