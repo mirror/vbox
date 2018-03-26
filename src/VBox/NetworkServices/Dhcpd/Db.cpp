@@ -252,6 +252,7 @@ Binding *Binding::fromXML(const xml::ElementNode *ndLease)
             std::vector<uint8_t> rawopt(pBytes, pBytes + cbBytes);
             id = OptClientId(rawopt);
         }
+        delete[] pBytes;
     }
 
     /*
