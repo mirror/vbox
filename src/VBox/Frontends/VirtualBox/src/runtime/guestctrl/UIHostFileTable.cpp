@@ -23,6 +23,8 @@
 # include <QAction>
 # include <QDateTime>
 # include <QDir>
+# include <QMutex>
+# include <QThread>
 
 /* GUI includes: */
 # include "QILabel.h"
@@ -31,8 +33,100 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   UIHostDirectoryDiskUsageComputer definition.                                                                                 *
+*********************************************************************************************************************************/
+
+/** Open directories recursively and sum the disk usage. Don't block the GUI thread while doing this */
+class UIHostDirectoryDiskUsageComputer : public QThread
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigResultUpdated(UIDirectoryStatistics, QString);
+
+public:
+
+    UIHostDirectoryDiskUsageComputer(QObject *parent, QString strStartPath);
+    void stopRecursion();
+
+private:
+
+    /** Read the directory with the path @p path recursively and collect #of objects and
+        total size */
+    void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics);
+    void                  run();
+    QString               m_strStartPath;
+    UIDirectoryStatistics m_resultStatistics;
+    bool                  m_bContinueRunning;
+    QMutex                m_mutex;
+};
+
+
+/*********************************************************************************************************************************
+*   UIHostDirectoryDiskUsageComputer implementation.                                                                             *
+*********************************************************************************************************************************/
+
+UIHostDirectoryDiskUsageComputer::UIHostDirectoryDiskUsageComputer(QObject *parent, QString strStartPath)
+    :QThread(parent)
+    , m_strStartPath(strStartPath)
+    , m_bContinueRunning(true)
+{
+}
+
+void UIHostDirectoryDiskUsageComputer::run()
+{
+    directoryStatisticsRecursive(m_strStartPath, m_resultStatistics);
+}
+
+/** @todo Move the following function to a worker thread as it may take atbitrarly long time */
+void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics)
+{
+    QDir dir(path);
+    if (!dir.exists())
+        return;
+
+    if (!m_bContinueRunning)
+        return;
+
+    sigResultUpdated(statistics, path);
+
+    QFileInfoList entryList = dir.entryInfoList();
+    for (int i = 0; i < entryList.size(); ++i)
+    {
+        const QFileInfo &entryInfo = entryList.at(i);
+        if (entryInfo.baseName().isEmpty() || entryInfo.baseName() == "." || entryInfo.baseName() == "..")
+            continue;
+        statistics.m_totalSize += entryInfo.size();
+        if (entryInfo.isSymLink())
+            statistics.m_uSymlinkCount++;
+        else if(entryInfo.isFile())
+            statistics.m_uFileCount++;
+        else if (entryInfo.isDir())
+        {
+            statistics.m_uDirectoryCount++;
+            directoryStatisticsRecursive(entryInfo.absoluteFilePath(), statistics);
+        }
+    }
+}
+
+void UIHostDirectoryDiskUsageComputer::stopRecursion()
+{
+    m_mutex.lock();
+    m_bContinueRunning = false;
+    m_mutex.unlock();
+
+}
+
+
+/*********************************************************************************************************************************
+*   UIHostFileTable implementation.                                                                                              *
+*********************************************************************************************************************************/
+
 UIHostFileTable::UIHostFileTable(QWidget *pParent /* = 0 */)
     :UIGuestControlFileTable(pParent)
+    , m_pPropertiesDialog(0)
 {
     initializeFileTree();
     retranslateUi();
@@ -218,45 +312,74 @@ QString UIHostFileTable::fsObjectPropertyString()
         /* Owner: */
         propertyString += "<b>Owner:</b> " + fileInfo.owner();
 
-        if (fileInfo.isDir())
-        {
-            propertyString += "<br/>";
-            UIDirectoryStatistics directoryStatistics;
-            directoryStatisticsRecursive(fileInfo.absoluteFilePath(), directoryStatistics);
-            propertyString += "<b>Total Size:</b> " + QString::number(directoryStatistics.m_totalSize) + QString(" bytes");
-            if (directoryStatistics.m_totalSize >= m_iKiloByte)
-                propertyString += " (" + humanReadableSize(directoryStatistics.m_totalSize) + ")";
-            propertyString += "<br/>";
-            propertyString += "<b>File Count:</b> " + QString::number(directoryStatistics.m_uFileCount);
-
-        }
+        // if (fileInfo.isDir())
+        // {
+        //     propertyString += "<br/>";
+        //     UIDirectoryStatistics directoryStatistics;
+        //     directoryStatisticsRecursive(fileInfo.absoluteFilePath(), directoryStatistics);
+        //     propertyString += "<b>Total Size:</b> " + QString::number(directoryStatistics.m_totalSize) + QString(" bytes");
+        //     if (directoryStatistics.m_totalSize >= m_iKiloByte)
+        //         propertyString += " (" + humanReadableSize(directoryStatistics.m_totalSize) + ")";
+        //     propertyString += "<br/>";
+        //     propertyString += "<b>File Count:</b> " + QString::number(directoryStatistics.m_uFileCount);
+        // }
         return propertyString;
     }
     return QString();
 }
 
-/** @todo Move the following function to a worker thread as it may take atbitrarly long time */
-void UIHostFileTable::directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics)
+void  UIHostFileTable::showProperties()
 {
-    QDir dir(path);
-    if (!dir.exists())
+    qRegisterMetaType<UIDirectoryStatistics>();
+    QString fsPropertyString = fsObjectPropertyString();
+    if (fsPropertyString.isEmpty())
         return;
 
-    QFileInfoList entryList = dir.entryInfoList();
-    for (int i = 0; i < entryList.size(); ++i)
+    m_pPropertiesDialog = new UIPropertiesDialog();
+    if (!m_pPropertiesDialog)
+        return;
+
+    UIHostDirectoryDiskUsageComputer *directoryThread = 0;
+
+    QStringList selectedObjects = selectedItemPathList();
+    if (selectedObjects.size() == 1)
     {
-        const QFileInfo &entryInfo = entryList.at(i);
-        if (entryInfo.baseName().isEmpty() || entryInfo.baseName() == "." || entryInfo.baseName() == "..")
-            continue;
-        statistics.m_totalSize += entryInfo.size();
-        if (entryInfo.isSymLink())
-            statistics.m_uSymlinkCount++;
-        else if(entryInfo.isFile())
-            statistics.m_uFileCount++;
-        else if (entryInfo.isDir())
+        QFileInfo fileInfo(selectedObjects.at(0));
+        if (fileInfo.exists() && fileInfo.isDir())
         {
-            statistics.m_uDirectoryCount++;
-            directoryStatisticsRecursive(entryInfo.absoluteFilePath(), statistics);
+            directoryThread = new UIHostDirectoryDiskUsageComputer(this, fileInfo.absoluteFilePath());
+            if (directoryThread)
+            {
+                connect(directoryThread, &UIHostDirectoryDiskUsageComputer::sigResultUpdated,
+                        this, &UIHostFileTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
+                directoryThread->start();
+            }
+
         }
     }
+    m_pPropertiesDialog->setWindowTitle("Properties");
+    m_pPropertiesDialog->setPropertyText(fsPropertyString);
+    m_pPropertiesDialog->execute();
+    if (directoryThread)
+    {
+        if (directoryThread->isRunning())
+        {
+            directoryThread->stopRecursion();
+            //directoryThread->wait();
+        }
+        disconnect(directoryThread, &UIHostDirectoryDiskUsageComputer::sigResultUpdated,
+                this, &UIHostFileTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
+        //delete directoryThread;
+    }
+    delete m_pPropertiesDialog;
+    m_pPropertiesDialog = 0;
 }
+
+void UIHostFileTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics, QString path)
+{
+    if (!m_pPropertiesDialog)
+        return;
+    m_pPropertiesDialog->addDirectoryStatistics(statistics);
+}
+
+#include "UIHostFileTable.moc"

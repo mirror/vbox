@@ -41,14 +41,17 @@ protected:
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
     virtual bool createDirectory(const QString &path, const QString &directoryName);
     virtual QString fsObjectPropertyString() /* override */;
+    virtual void  showProperties() /* override */;
+
+private slots:
+
+    void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics, QString path);
 
 private:
 
-    /** Read the directory with the path @p path recursively and collect #of objects and
-        total size */
-    void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics);
     void prepareActions();
 
+    UIPropertiesDialog *m_pPropertiesDialog;
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */

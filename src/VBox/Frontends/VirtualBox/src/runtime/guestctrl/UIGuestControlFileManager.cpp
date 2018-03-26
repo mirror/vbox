@@ -347,7 +347,7 @@ void UIGuestControlFileManager::prepareObjects()
     {
         m_pMainLayout->addWidget(m_pVerticalSplitter);
         m_pVerticalSplitter->setOrientation(Qt::Vertical);
-        m_pVerticalSplitter->setHandleWidth(2);
+        m_pVerticalSplitter->setHandleWidth(4);
     }
 
     m_pFileTableContainerWidget = new QWidget;

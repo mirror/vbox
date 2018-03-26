@@ -26,15 +26,19 @@
 #include "CGuestSession.h"
 
 /* GUI includes: */
+#include "QIDialog.h"
 #include "QITableView.h"
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QAction;
 class QFileInfo;
+
 class QILabel;
 class QILineEdit;
 class QGridLayout;
+class QTextEdit;
+class QVBoxLayout;
 class UIFileTableItem;
 class UIGuestControlFileModel;
 class UIGuestControlFileView;
@@ -48,6 +52,37 @@ enum FileObjectType
     FileObjectType_Other,
     FileObjectType_Unknown,
     FileObjectType_Max
+};
+
+class UIDirectoryStatistics
+{
+public:
+    UIDirectoryStatistics();
+    ULONG64    m_totalSize;
+    unsigned   m_uFileCount;
+    unsigned   m_uDirectoryCount;
+    unsigned   m_uSymlinkCount;
+};
+
+Q_DECLARE_METATYPE(UIDirectoryStatistics);
+
+/** A QIDialog child to display properties of a file object */
+class UIPropertiesDialog : public QIDialog
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIPropertiesDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    void setPropertyText(const QString &strProperty);
+    void addDirectoryStatistics(UIDirectoryStatistics statictics);
+
+private:
+
+    QVBoxLayout    *m_pMainLayout;
+    QTextEdit *m_pInfoEdit;
+    QString   m_strProperty;
 };
 
 /** A collection of simple utility functions to manipulate path strings */
@@ -143,15 +178,6 @@ private:
 
 };
 
-class UIDirectoryStatistics
-{
-public:
-    UIDirectoryStatistics();
-    ULONG64    m_totalSize;
-    unsigned   m_uFileCount;
-    unsigned   m_uDirectoryCount;
-    unsigned   m_uSymlinkCount;
-};
 
 /** This class serves a base class for file table. Currently a guest version
     and a host version are derived from this base. Each of these children
@@ -178,6 +204,10 @@ public:
     QStringList selectedItemPathList();
     virtual void refresh();
 
+    static const unsigned    m_iKiloByte;
+    static QString humanReadableSize(ULONG64 size);
+
+
 protected:
 
     void retranslateUi();
@@ -192,6 +222,7 @@ protected:
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName) = 0;
     virtual bool createDirectory(const QString &path, const QString &directoryName) = 0;
     virtual QString fsObjectPropertyString() = 0;
+    virtual void  showProperties() = 0;
     static QString fileTypeString(FileObjectType type);
     void             goIntoDirectory(const QModelIndex &itemIndex);
     /** Follow the path trail, open directories as we go and descend */
@@ -201,14 +232,12 @@ protected:
     UIFileTableItem* indexData(const QModelIndex &index) const;
     void keyPressEvent(QKeyEvent * pEvent);
     CGuestFsObjInfo guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
-    QString humanReadableSize(ULONG64 size);
 
     UIFileTableItem         *m_pRootItem;
 
     UIGuestControlFileView  *m_pView;
     UIGuestControlFileModel *m_pModel;
     QILabel                 *m_pLocationLabel;
-    const unsigned           m_iKiloByte;
     QAction                 *m_pCopy;
     QAction                 *m_pCut;
     QAction                 *m_pPaste;

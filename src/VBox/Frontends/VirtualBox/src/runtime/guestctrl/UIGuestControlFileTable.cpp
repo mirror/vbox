@@ -127,28 +127,6 @@ private:
 
 };
 
-/*********************************************************************************************************************************
-*   UIPropertiesDialog definition.                                                                                          *
-*********************************************************************************************************************************/
-
-/** A QIDialog child to display properties of a file object */
-class UIPropertiesDialog : public QIDialog
-{
-
-    Q_OBJECT;
-
-public:
-
-    UIPropertiesDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
-    void setPropertyText(const QString &strProperty);
-
-private:
-
-    QVBoxLayout    *m_pMainLayout;
-    QTextEdit *m_pInfoEdit;
-
-};
-
 
 /*********************************************************************************************************************************
 *   UIPathOperations implementation.                                                                                             *
@@ -451,10 +429,35 @@ void UIPropertiesDialog::setPropertyText(const QString &strProperty)
 {
     if (!m_pInfoEdit)
         return;
-
-    m_pInfoEdit->setText(strProperty);
+    m_strProperty = strProperty;
+    m_pInfoEdit->setHtml(strProperty);
 }
 
+void UIPropertiesDialog::addDirectoryStatistics(UIDirectoryStatistics directoryStatistics)
+{
+    if (!m_pInfoEdit)
+        return;
+    // QString propertyString = m_pInfoEdit->toHtml();
+    // propertyString += "<b>Total Size:</b> " + QString::number(directoryStatistics.m_totalSize) + QString(" bytes");
+    // if (directoryStatistics.m_totalSize >= UIGuestControlFileTable::m_iKiloByte)
+    //     propertyString += " (" + UIGuestControlFileTable::humanReadableSize(directoryStatistics.m_totalSize) + ")";
+    // propertyString += "<br/>";
+    // propertyString += "<b>File Count:</b> " + QString::number(directoryStatistics.m_uFileCount);
+
+    // m_pInfoEdit->setHtml(propertyString);
+
+    QString detailsString(m_strProperty);
+    detailsString += "<br/>";
+    detailsString += "<b>Total Size:</b> " + QString::number(directoryStatistics.m_totalSize) + QString(" bytes");
+    if (directoryStatistics.m_totalSize >= UIGuestControlFileTable::m_iKiloByte)
+        detailsString += " (" + UIGuestControlFileTable::humanReadableSize(directoryStatistics.m_totalSize) + ")";
+    detailsString += "<br/>";
+
+    detailsString += "<b>File Count:</b> " + QString::number(directoryStatistics.m_uFileCount);
+
+    m_pInfoEdit->setHtml(detailsString);
+
+}
 
 /*********************************************************************************************************************************
 *   UIDirectoryStatistics implementation.
@@ -634,14 +637,13 @@ void UIFileTableItem::setIsTargetADirectory(bool flag)
 /*********************************************************************************************************************************
 *   UIGuestControlFileTable implementation.                                                                                      *
 *********************************************************************************************************************************/
-
+const unsigned UIGuestControlFileTable::m_iKiloByte = 1000;
 UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_pRootItem(0)
     , m_pView(0)
     , m_pModel(0)
     , m_pLocationLabel(0)
-    , m_iKiloByte(1000)
     , m_pCopy(0)
     , m_pCut(0)
     , m_pPaste(0)
@@ -1134,16 +1136,7 @@ void UIGuestControlFileTable::sltPaste()
 
 void UIGuestControlFileTable::sltShowProperties()
 {
-    QString fsPropertyString = fsObjectPropertyString();
-    if (fsPropertyString.isEmpty())
-        return;
-
-    UIPropertiesDialog *dialog = new UIPropertiesDialog();
-    if (!dialog)
-        return;
-    dialog->setWindowTitle("Properties");
-    dialog->setPropertyText(fsPropertyString);
-    dialog->execute();
+    showProperties();
 }
 
 void UIGuestControlFileTable::sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected)
@@ -1380,7 +1373,7 @@ void UIGuestControlFileTable::disableSelectionDependentActions()
     return strType;
 }
 
-QString UIGuestControlFileTable::humanReadableSize(ULONG64 size)
+/* static */ QString UIGuestControlFileTable::humanReadableSize(ULONG64 size)
 {
     int i = 0;
     double dSize = size;

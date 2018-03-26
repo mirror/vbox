@@ -328,3 +328,18 @@ QString UIGuestFileTable::fsObjectPropertyString()
     }
     return QString();
 }
+
+void UIGuestFileTable::showProperties()
+{
+    QString fsPropertyString = fsObjectPropertyString();
+    if (fsPropertyString.isEmpty())
+        return;
+
+    UIPropertiesDialog *dialog = new UIPropertiesDialog();
+    if (!dialog)
+        return;
+    dialog->setWindowTitle("Properties");
+    dialog->setPropertyText(fsPropertyString);
+    dialog->execute();
+    delete dialog;
+}

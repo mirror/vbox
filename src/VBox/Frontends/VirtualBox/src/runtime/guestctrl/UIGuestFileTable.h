@@ -47,7 +47,7 @@ protected:
     virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
     virtual bool createDirectory(const QString &path, const QString &directoryName);
     virtual QString fsObjectPropertyString() /* override */;
-
+    virtual void  showProperties() /* override */;
 private:
 
     static FileObjectType fileType(const CFsObjInfo &fsInfo);
