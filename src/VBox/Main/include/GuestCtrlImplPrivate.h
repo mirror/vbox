@@ -198,9 +198,6 @@ public:
         size_t cArray = rArray.size();
         for (size_t i = 0; i < cArray; i++)
         {
-            if (rArray[i].isEmpty())
-                continue;
-
             int rc = RTEnvPutEx(m_hEnv, rArray[i].c_str());
             if (RT_FAILURE(rc))
                 return rc;
