@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIPopupPaneButtonPane_h__
-#define __UIPopupPaneButtonPane_h__
+#ifndef ___UIPopupPaneButtonPane_h___
+#define ___UIPopupPaneButtonPane_h___
 
 /* Qt includes: */
 #include <QWidget>
@@ -24,56 +24,72 @@
 
 /* Forward declarations: */
 class QHBoxLayout;
+class QIcon;
 class QKeyEvent;
+class QString;
 class QIToolButton;
 
-/* Popup-pane button-pane prototype class: */
+/** QWidget extension providing GUI with popup-pane button-pane prototype class. */
 class UIPopupPaneButtonPane : public QWidget
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifier: Button stuff: */
+    /** Notifies about button with @a iButtonID being clicked. */
     void sigButtonClicked(int iButtonID);
 
 public:
 
-    /* Constructor: */
+    /** Constructs popup-button pane passing @a pParent to the base-class. */
     UIPopupPaneButtonPane(QWidget *pParent = 0);
 
-    /* API: Button stuff: */
+    /** Defines @a buttonDescriptions. */
     void setButtons(const QMap<int, QString> &buttonDescriptions);
+    /** Returns default button. */
     int defaultButton() const { return m_iDefaultButton; }
+    /** Returns escape button. */
     int escapeButton() const { return m_iEscapeButton; }
 
 private slots:
 
-    /* Handler: Button stuff: */
+    /** Handles button click. */
     void sltButtonClicked();
 
 private:
 
-    /* Helpers: Prepare/cleanup stuff: */
+    /** Prepares all. */
     void prepare();
+    /** Prepares layouts. */
     void prepareLayouts();
+    /** Prepares buttons. */
     void prepareButtons();
+    /** Cleanups buttons. */
     void cleanupButtons();
 
-    /* Handler: Event stuff: */
-    void keyPressEvent(QKeyEvent *pEvent);
+    /** Handles key-press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
 
-    /* Static helpers: Button stuff: */
-    static QIToolButton* addButton(int iButtonID, const QString &strToolTip);
+    /** Adds button with @a iButtonID and @a strToolTip. */
+    static QIToolButton *addButton(int iButtonID, const QString &strToolTip);
+    /** Returns default tool-tip for button @a iButtonID. */
     static QString defaultToolTip(int iButtonID);
+    /** Returns default icon for button @a iButtonID. */
     static QIcon defaultIcon(int iButtonID);
 
-    /* Variables: Widget stuff: */
+    /** Holds the button layout. */
     QHBoxLayout *m_pButtonLayout;
-    QMap<int, QString> m_buttonDescriptions;
+
+    /** Holds the button descriptions. */
+    QMap<int, QString>       m_buttonDescriptions;
+    /** Holds the button instances. */
     QMap<int, QIToolButton*> m_buttons;
+
+    /** Holds default button. */
     int m_iDefaultButton;
+    /** Holds escape button. */
     int m_iEscapeButton;
 };
 
-#endif /* __UIPopupPaneButtonPane_h__ */
+#endif /* !___UIPopupPaneButtonPane_h___ */
+
