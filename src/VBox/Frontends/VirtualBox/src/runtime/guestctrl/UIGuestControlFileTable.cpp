@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QAction>
+# include <QComboBox>
 # include <QDateTime>
 # include <QDir>
 # include <QHeaderView>
@@ -648,7 +649,7 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pCut(0)
     , m_pPaste(0)
     , m_pMainLayout(0)
-    , m_pCurrentLocationEdit(0)
+    , m_pLocationComboBox(0)
     , m_pToolBar(0)
     , m_pGoUp(0)
     , m_pGoHome(0)
@@ -675,8 +676,14 @@ void UIGuestControlFileTable::reset()
     m_pRootItem = 0;
     if (m_pModel)
         m_pModel->endReset();
-    if (m_pCurrentLocationEdit)
-        m_pCurrentLocationEdit->clear();
+    if (m_pLocationComboBox)
+    {
+        disconnect(m_pLocationComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
+                   this, &UIGuestControlFileTable::sltLocationComboCurrentChange);
+        m_pLocationComboBox->clear();
+        connect(m_pLocationComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
+                this, &UIGuestControlFileTable::sltLocationComboCurrentChange);
+    }
 }
 
 void UIGuestControlFileTable::emitLogOutput(const QString& strOutput)
@@ -705,12 +712,15 @@ void UIGuestControlFileTable::prepareObjects()
         m_pMainLayout->addWidget(m_pLocationLabel, 1, 0, 1, 1);
     }
 
-    m_pCurrentLocationEdit = new QILineEdit;
-    if (m_pCurrentLocationEdit)
+    m_pLocationComboBox = new QComboBox;
+    if (m_pLocationComboBox)
     {
-        m_pMainLayout->addWidget(m_pCurrentLocationEdit, 1, 1, 1, 4);
-        m_pCurrentLocationEdit->setReadOnly(true);
+        m_pMainLayout->addWidget(m_pLocationComboBox, 1, 1, 1, 4);
+        m_pLocationComboBox->setEditable(false);
+        connect(m_pLocationComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
+                this, &UIGuestControlFileTable::sltLocationComboCurrentChange);
     }
+
 
     m_pModel = new UIGuestControlFileModel(this);
     if (!m_pModel)
@@ -859,9 +869,16 @@ void UIGuestControlFileTable::prepareActions()
 
 void UIGuestControlFileTable::updateCurrentLocationEdit(const QString& strLocation)
 {
-    if (!m_pCurrentLocationEdit)
+    if (!m_pLocationComboBox)
         return;
-    m_pCurrentLocationEdit->setText(strLocation);
+    int itemIndex = m_pLocationComboBox->findText(strLocation,
+                                                  Qt::MatchExactly | Qt::MatchCaseSensitive);
+    if (itemIndex == -1)
+    {
+        m_pLocationComboBox->insertItem(m_pLocationComboBox->count(), strLocation);
+        itemIndex = m_pLocationComboBox->count() - 1;
+    }
+    m_pLocationComboBox->setCurrentIndex(itemIndex);
 }
 
 void UIGuestControlFileTable::changeLocation(const QModelIndex &index)
@@ -884,22 +901,23 @@ void UIGuestControlFileTable::initializeFileTree()
     if (m_pRootItem)
         reset();
 
+    const QString startPath("/");
     QList<QVariant> headData;
     headData << "Name" << "Size" << "Change Time" << "Owner";
     m_pRootItem = new UIFileTableItem(headData, 0, FileObjectType_Directory);
     QList<QVariant> startDirData;
-    startDirData << "/" << 4096 << QDateTime() << "";
+    startDirData << startPath << 4096 << QDateTime() << "";
     UIFileTableItem* startItem = new UIFileTableItem(startDirData, m_pRootItem, FileObjectType_Directory);
 
-    startItem->setPath("/");
+    startItem->setPath(startPath);
     m_pRootItem->appendChild(startItem);
 
     startItem->setIsOpened(false);
     /* Read the root directory and get the list: */
-    readDirectory("/", startItem, true);
+    readDirectory(startPath, startItem, true);
     m_pView->setRootIndex(m_pModel->rootIndex());
     m_pModel->signalUpdate();
-
+    updateCurrentLocationEdit(startPath);
 }
 
 void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
@@ -1148,6 +1166,16 @@ void UIGuestControlFileTable::sltSelectionChanged(const QItemSelection & selecte
     /* Enable all the action that operate on some selection: */
     if (deselected.isEmpty() && !selected.isEmpty())
         enableSelectionDependentActions();
+}
+
+void UIGuestControlFileTable::sltLocationComboCurrentChange(const QString &strLocation)
+{
+    QString comboLocation(UIPathOperations::sanitize(strLocation));
+    if (comboLocation == currentDirectoryPath())
+        return;
+
+    QList<QString> pathList = comboLocation.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+    goIntoDirectory(pathList);
 }
 
 void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)

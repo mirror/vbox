@@ -115,7 +115,7 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
         }
         insertItemsToTree(directories, parent, true, isStartDir);
         insertItemsToTree(files, parent, false, isStartDir);
-        updateCurrentLocationEdit(strPath);
+        //updateCurrentLocationEdit(strPath);
     }
     directory.Close();
 }

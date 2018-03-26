@@ -34,6 +34,7 @@
 class QAction;
 class QFileInfo;
 
+class QComboBox;
 class QILabel;
 class QILineEdit;
 class QGridLayout;
@@ -257,6 +258,7 @@ private slots:
     void sltShowProperties();
     void sltCreateNewDirectory();
     void sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
+    void sltLocationComboCurrentChange(const QString &strLocation);
 
 private:
 
@@ -270,7 +272,7 @@ private:
     void            enableSelectionDependentActions();
     void            disableSelectionDependentActions();
     QGridLayout     *m_pMainLayout;
-    QILineEdit      *m_pCurrentLocationEdit;
+    QComboBox       *m_pLocationComboBox;
     UIToolBar       *m_pToolBar;
     QAction         *m_pGoUp;
     QAction         *m_pGoHome;
