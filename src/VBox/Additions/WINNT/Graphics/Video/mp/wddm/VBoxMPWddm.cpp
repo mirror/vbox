@@ -725,13 +725,6 @@ VBOXWDDM_HGSMICMD_TYPE vboxWddmHgsmiGetCmdTypeFromOffset(PVBOXMP_DEVEXT pDevExt,
     return VBOXWDDM_HGSMICMD_TYPE_UNDEFINED;
 }
 
-typedef struct VBOXWDDM_HWRESOURCES
-{
-    PHYSICAL_ADDRESS phVRAM;
-    ULONG cbVRAM;
-    ULONG ulApertureSize;
-} VBOXWDDM_HWRESOURCES, *PVBOXWDDM_HWRESOURCES;
-
 NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pDevExt, PDXGK_DEVICE_INFO pDeviceInfo, PVBOXWDDM_HWRESOURCES pHwResources)
 {
     RT_NOREF(pDevExt);
@@ -819,6 +812,13 @@ static void vboxWddmDevExtZeroinit(PVBOXMP_DEVEXT pDevExt, CONST PDEVICE_OBJECT 
     VBoxVidPnSourcesInit(pDevExt->aSources, RT_ELEMENTS(pDevExt->aSources), 0);
 
     VBoxVidPnTargetsInit(pDevExt->aTargets, RT_ELEMENTS(pDevExt->aTargets), 0);
+
+    uint32_t u32 = 0;
+    if (VBoxVGACfgAvailable())
+    {
+        VBoxVGACfgQuery(VBE_DISPI_CFG_ID_VMSVGA, &u32, 0);
+    }
+    pDevExt->enmHwType = u32 ? VBOX_HWTYPE_VMSVGA : VBOX_HWTYPE_CROGL;
 }
 
 static void vboxWddmSetupDisplaysLegacy(PVBOXMP_DEVEXT pDevExt)
@@ -1138,8 +1138,7 @@ NTSTATUS DxgkDdiStartDevice(
         Status = pDevExt->u.primary.DxgkInterface.DxgkCbGetDeviceInformation (pDevExt->u.primary.DxgkInterface.DeviceHandle, &DeviceInfo);
         if (Status == STATUS_SUCCESS)
         {
-            VBOXWDDM_HWRESOURCES HwRc;
-            Status = vboxWddmPickResources(pDevExt, &DeviceInfo, &HwRc);
+            Status = vboxWddmPickResources(pDevExt, &DeviceInfo, &pDevExt->HwResources);
             if (Status == STATUS_SUCCESS)
             {
 #ifdef VBOX_WITH_CROGL
@@ -1168,7 +1167,7 @@ NTSTATUS DxgkDdiStartDevice(
                  * with old guest additions.
                  */
                 VBoxSetupDisplaysHGSMI(VBoxCommonFromDeviceExt(pDevExt),
-                                       HwRc.phVRAM, HwRc.ulApertureSize, HwRc.cbVRAM,
+                                       pDevExt->HwResources.phVRAM, pDevExt->HwResources.ulApertureSize, pDevExt->HwResources.cbVRAM,
                                        VBVACAPS_COMPLETEGCMD_BY_IOREAD | VBVACAPS_IRQ);
                 if (VBoxCommonFromDeviceExt(pDevExt)->bHGSMI)
                 {
@@ -7594,6 +7593,7 @@ DriverEntry(
     int rc = VbglR0InitClient();
     if (RT_SUCCESS(rc))
     {
+        /* Check whether 3D is required by the guest. */
         if (major > 6)
         {
             /* Windows 10 and newer. */
@@ -7619,42 +7619,86 @@ DriverEntry(
 
         LOG(("3D is %srequired!", f3DRequired? "": "NOT "));
 
-        Status = STATUS_SUCCESS;
-#ifdef VBOX_WITH_CROGL
-        VBoxMpCrCtlConInit();
+        /* Check whether 3D is provided by the host. */
+        VBOX_HWTYPE enmHwType = VBOX_HWTYPE_CROGL;
+        BOOL f3DSupported = FALSE;
 
-        /* always need to do the check to request host caps */
-        LOG(("Doing the 3D check.."));
-        if (!VBoxMpCrCtlConIs3DSupported())
-#endif
+        if (VBoxVGACfgAvailable())
         {
-            /* No 3D support by the host. */
-            if (VBoxQueryWinVersion() >= WINVERSION_8)
+            /* New configuration query interface is available. */
+            uint32_t u32;
+            if (VBoxVGACfgQuery(VBE_DISPI_CFG_ID_VERSION, &u32, 0))
             {
-                /* Use display only driver for Win8+. */
-                g_VBoxDisplayOnly = 1;
-
-                /* Black list some builds. */
-                if (major == 6 && minor == 4 && build == 9841)
-                {
-                    /* W10 Technical preview crashes with display-only driver. */
-                    LOGREL(("3D is NOT supported by the host, fallback to the system video driver."));
-                    Status = STATUS_UNSUCCESSFUL;
-                }
-                else
-                {
-                    LOGREL(("3D is NOT supported by the host, falling back to display-only mode.."));
-                }
+                LOGREL(("VGA configuration version %d", u32));
             }
-            else
+
+            VBoxVGACfgQuery(VBE_DISPI_CFG_ID_3D, &u32, 0);
+            f3DSupported = RT_BOOL(u32);
+
+            VBoxVGACfgQuery(VBE_DISPI_CFG_ID_VMSVGA, &u32, 0);
+            if (u32)
             {
-                if (f3DRequired)
+                enmHwType = VBOX_HWTYPE_VMSVGA;
+            }
+        }
+
+        BOOL fCmdVbva = FALSE;
+        if (enmHwType == VBOX_HWTYPE_CROGL)
+        {
+            /* Try to establish connection to the host 3D service. */
+#ifdef VBOX_WITH_CROGL
+            VBoxMpCrCtlConInit();
+
+            /* always need to do the check to request host caps */
+            LOG(("Doing the 3D check.."));
+            f3DSupported = VBoxMpCrCtlConIs3DSupported();
+
+            fCmdVbva = RT_BOOL(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_CMDVBVA);
+#endif
+        }
+        else if (enmHwType == VBOX_HWTYPE_VMSVGA)
+        {
+            fCmdVbva = TRUE;
+        }
+        else
+        {
+            Status = STATUS_UNSUCCESSFUL;
+        }
+
+        LOGREL(("WDDM: 3D is %ssupported, hardware type %d", f3DSupported? "": "not ", enmHwType));
+
+        if (NT_SUCCESS(Status))
+        {
+            if (!f3DSupported)
+            {
+                /* No 3D support by the host. */
+                if (VBoxQueryWinVersion() >= WINVERSION_8)
                 {
-                    LOGREL(("3D is NOT supported by the host, but is required for the current guest version using this driver.."));
-                    Status = STATUS_UNSUCCESSFUL;
+                    /* Use display only driver for Win8+. */
+                    g_VBoxDisplayOnly = 1;
+
+                    /* Black list some builds. */
+                    if (major == 6 && minor == 4 && build == 9841)
+                    {
+                        /* W10 Technical preview crashes with display-only driver. */
+                        LOGREL(("3D is NOT supported by the host, fallback to the system video driver."));
+                        Status = STATUS_UNSUCCESSFUL;
+                    }
+                    else
+                    {
+                        LOGREL(("3D is NOT supported by the host, falling back to display-only mode.."));
+                    }
                 }
                 else
-                    LOGREL(("3D is NOT supported by the host, but is NOT required for the current guest version using this driver, continuing with Disabled 3D.."));
+                {
+                    if (f3DRequired)
+                    {
+                        LOGREL(("3D is NOT supported by the host, but is required for the current guest version using this driver.."));
+                        Status = STATUS_UNSUCCESSFUL;
+                    }
+                    else
+                        LOGREL(("3D is NOT supported by the host, but is NOT required for the current guest version using this driver, continuing with Disabled 3D.."));
+                }
             }
         }
 
@@ -7671,17 +7715,20 @@ DriverEntry(
                 }
                 else
                 {
-                    Status = vboxWddmInitFullGraphicsDriver(DriverObject, RegistryPath,
-#ifdef VBOX_WITH_CROGL
-                            !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_CMDVBVA)
-#else
-                            FALSE
-#endif
-                            );
+                    Status = vboxWddmInitFullGraphicsDriver(DriverObject, RegistryPath, fCmdVbva);
                 }
 
                 if (NT_SUCCESS(Status))
+                {
+                    /*
+                     * Successfully initialized the driver.
+                     */
                     return Status;
+                }
+
+                /*
+                 * Cleanup on failure.
+                 */
 
 #ifdef VBOX_WITH_CROGL
                 VBoxVrTerm();
