@@ -813,12 +813,26 @@ static void vboxWddmDevExtZeroinit(PVBOXMP_DEVEXT pDevExt, CONST PDEVICE_OBJECT 
 
     VBoxVidPnTargetsInit(pDevExt->aTargets, RT_ELEMENTS(pDevExt->aTargets), 0);
 
+    BOOLEAN f3DSupported = FALSE;
     uint32_t u32 = 0;
     if (VBoxVGACfgAvailable())
     {
+        VBoxVGACfgQuery(VBE_DISPI_CFG_ID_3D, &u32, 0);
+        f3DSupported = RT_BOOL(u32);
+
         VBoxVGACfgQuery(VBE_DISPI_CFG_ID_VMSVGA, &u32, 0);
     }
+
     pDevExt->enmHwType = u32 ? VBOX_HWTYPE_VMSVGA : VBOX_HWTYPE_CROGL;
+
+    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+    {
+        pDevExt->f3DEnabled = VBoxMpCrCtlConIs3DSupported();
+    }
+    else
+    {
+        pDevExt->f3DEnabled = f3DSupported;
+    }
 }
 
 static void vboxWddmSetupDisplaysLegacy(PVBOXMP_DEVEXT pDevExt)
@@ -1142,8 +1156,6 @@ NTSTATUS DxgkDdiStartDevice(
             if (Status == STATUS_SUCCESS)
             {
 #ifdef VBOX_WITH_CROGL
-                pDevExt->f3DEnabled = VBoxMpCrCtlConIs3DSupported();
-
                 if (pDevExt->f3DEnabled)
                 {
                     pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
