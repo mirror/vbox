@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -84,6 +84,10 @@ static bool rtAssertShouldPanicWorker(void)
     /* 'breakpoint' or 'panic' means default behaviour. */
     if (!strcmp(psz, "breakpoint") || !strcmp(psz, "panic"))
         return true;
+
+    /* 'disabled' does not trigger a breakpoint. */
+    if (!strcmp(psz, "disabled"))
+        return false;
 
 #ifdef VBOX_RTASSERT_WITH_WAIT
     /* 'wait' - execute a sigwait(3) while a debugger is attached. */
