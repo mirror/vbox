@@ -1389,12 +1389,13 @@ int SessionTaskCopyFileTo::Run(void)
         return VERR_INVALID_PARAMETER;
     }
 
-    const char *pszFileName = RTPathFilename(mSource.c_str());
+    const char *pszFileName = mSource.c_str();
 
     if (   !pszFileName
         || !RTFileExists(pszFileName))
     {
-        setProgressErrorMsg(VBOX_E_IPRT_ERROR, Utf8StrFmt(GuestSession::tr("Source file not valid or does not exist")));
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                            Utf8StrFmt(GuestSession::tr("Source file \"%s\" not valid or does not exist"), pszFileName));
         return VERR_FILE_NOT_FOUND;
     }
 
