@@ -951,12 +951,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->ctrl.u64InterceptCtrl =   HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS
                                        | SVM_CTRL_INTERCEPT_VMMCALL;
 
-        /*
-         * CR0, CR4 reads/writes must be intercepted, as our shadow values may differ from the guest's.
-         * These interceptions might be relaxed later during VM execution if the conditions allow.
-         */
-        pVmcb->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
-        pVmcb->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4);
+        /* CR4 writes must always be intercepted for tracking PGM mode changes. */
+        pVmcb->ctrl.u16InterceptWrCRx = RT_BIT(4);
 
         /* Intercept all DRx reads and writes by default. Changed later on. */
         pVmcb->ctrl.u16InterceptRdDRx = 0xffff;
@@ -1084,6 +1080,25 @@ DECLINLINE(PSVMVMCB) hmR0SvmGetCurrentVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     RT_NOREF(pCtx);
 #endif
     return pVCpu->hm.s.svm.pVmcb;
+}
+
+
+/**
+ * Gets a pointer to the nested-guest VMCB cache.
+ *
+ * @returns Pointer to the nested-guest VMCB cache.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ */
+DECLINLINE(PSVMNESTEDVMCBCACHE) hmR0SvmGetNestedVmcbCache(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); RT_NOREF(pCtx);
+    return &pVCpu->hm.s.svm.NstGstVmcbCache;
+#else
+    RT_NOREF2(pVCpu, pCtx);
+    return NULL;
+#endif
 }
 
 
@@ -1392,8 +1407,7 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMC
         /* Only remove the intercept if the nested-guest is also not intercepting it! */
         if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         {
-            Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
-            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu, pCtx);
             fRemoveXcpt = !(pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(u32Xcpt));
         }
 #else
@@ -1474,8 +1488,7 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
         else
         {
             /* If the nested-hypervisor intercepts CR0 reads/writes, we need to continue intercepting them. */
-            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-            Assert(pCtx->hwvirt.svm.fHMCachedVmcb);
+            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu, pCtx);
             pVmcb->ctrl.u16InterceptRdCRx = (pVmcb->ctrl.u16InterceptRdCRx       & ~RT_BIT(0))
                                           | (pVmcbNstGstCache->u16InterceptRdCRx &  RT_BIT(0));
             pVmcb->ctrl.u16InterceptWrCRx = (pVmcb->ctrl.u16InterceptWrCRx       & ~RT_BIT(0))
@@ -1558,8 +1571,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
      */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR4))
     {
-        uint64_t u64GuestCR4 = pCtx->cr4;
-        Assert(RT_HI_U32(u64GuestCR4) == 0);
+        uint64_t uShadowCr4 = pCtx->cr4;
         if (!pVM->hm.s.fNestedPaging)
         {
             switch (pVCpu->hm.s.enmShadowMode)
@@ -1570,13 +1582,13 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
                     return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 
                 case PGMMODE_32_BIT:        /* 32-bit paging. */
-                    u64GuestCR4 &= ~X86_CR4_PAE;
+                    uShadowCr4 &= ~X86_CR4_PAE;
                     break;
 
                 case PGMMODE_PAE:           /* PAE paging. */
                 case PGMMODE_PAE_NX:        /* PAE paging with NX enabled. */
                     /** Must use PAE paging as we could use physical memory > 4 GB */
-                    u64GuestCR4 |= X86_CR4_PAE;
+                    uShadowCr4 |= X86_CR4_PAE;
                     break;
 
                 case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
@@ -1594,11 +1606,32 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
             }
         }
 
-        pVmcb->guest.u64CR4 = u64GuestCR4;
-        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
-
         /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
-        pVCpu->hm.s.fLoadSaveGuestXcr0 = (u64GuestCR4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+        pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+
+        /* Avoid intercepting CR4 reads if the guest and shadow CR4 values are identical. */
+        if (uShadowCr4 == pCtx->cr4)
+        {
+            if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+                pVmcb->ctrl.u16InterceptRdCRx &= ~RT_BIT(4);
+            else
+            {
+                /* If the nested-hypervisor intercepts CR4 reads, we need to continue intercepting them. */
+                PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu, pCtx);
+                pVmcb->ctrl.u16InterceptRdCRx = (pVmcb->ctrl.u16InterceptRdCRx       & ~RT_BIT(4))
+                                              | (pVmcbNstGstCache->u16InterceptRdCRx &  RT_BIT(4));
+            }
+        }
+        else
+            pVmcb->ctrl.u16InterceptRdCRx |= RT_BIT(4);
+
+        /* CR4 writes are always intercepted (both guest, nested-guest) from tracking PGM mode changes. */
+        Assert(pVmcb->ctrl.u16InterceptWrCRx & RT_BIT(4));
+
+        /* Update VMCB with the shadow CR4 the appropriate VMCB clean bits. */
+        Assert(RT_HI_U32(uShadowCr4) == 0);
+        pVmcb->guest.u64CR4 = uShadowCr4;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_CRX_EFER | HMSVM_VMCB_CLEAN_INTERCEPTS);
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR4);
     }
@@ -2020,9 +2053,8 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
         pVmcbNstGst->ctrl.u16InterceptRdCRx |= pVmcb->ctrl.u16InterceptRdCRx;
         pVmcbNstGst->ctrl.u16InterceptWrCRx |= pVmcb->ctrl.u16InterceptWrCRx;
 
-        /* Always intercept CR0, CR4 reads and writes as we alter them. */
-        pVmcbNstGst->ctrl.u16InterceptRdCRx |= RT_BIT(0) | RT_BIT(4);
-        pVmcbNstGst->ctrl.u16InterceptWrCRx |= RT_BIT(0) | RT_BIT(4);
+        /* Always intercept CR4 writes for tracking PGM mode changes. */
+        pVmcbNstGst->ctrl.u16InterceptWrCRx |= RT_BIT(4);
 
         /* Without nested paging, intercept CR3 reads and writes as we load shadow page tables. */
         if (!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
@@ -2972,8 +3004,7 @@ static void hmR0SvmUpdateTscOffsettingNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     bool const fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &uTscOffset, &fParavirtTsc);
 
     PSVMVMCBCTRL         pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
-    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); RT_NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu, pCtx);
 
     /*
      * Only avoid intercepting if we determined the host TSC (++) is stable enough
@@ -4277,7 +4308,8 @@ static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
     /* Setup TSC offsetting. */
     RTCPUID idCurrentCpu = hmR0GetCurrentCpu()->idCpu;
     if (   pSvmTransient->fUpdateTscOffsetting
-        || idCurrentCpu != pVCpu->hm.s.idLastCpu)
+        || idCurrentCpu != pVCpu->hm.s.idLastCpu)   /** @todo is this correct for nested-guests where
+                                                              nested-VCPU<->physical-CPU mapping doesn't exist. */
     {
         hmR0SvmUpdateTscOffsettingNested(pVM, pVCpu, pCtx, pVmcbNstGst);
         pSvmTransient->fUpdateTscOffsetting = false;
@@ -4534,9 +4566,9 @@ static void hmR0SvmPostRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx,
     ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for EMT poking. */
 
     /* TSC read must be done early for maximum accuracy. */
-    PSVMVMCB             pVmcbNstGst     = pMixedCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    PSVMVMCBCTRL         pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
-    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    PSVMVMCB             pVmcbNstGst      = pMixedCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    PSVMVMCBCTRL         pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu, pMixedCtx);
     if (!(pVmcbNstGstCtrl->u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSC))
     {
         /*
