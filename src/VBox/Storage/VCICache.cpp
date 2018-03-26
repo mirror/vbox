@@ -1425,7 +1425,7 @@ static int vciCreateImage(PVCICACHE pCache, uint64_t cbSize,
 
         /* Setup the root tree. */
         memset(&NodeRoot, 0, sizeof(VciTreeNode));
-        NodeRoot.u8Type = RT_H2LE_U32(VCI_TREE_NODE_TYPE_LEAF);
+        NodeRoot.u8Type = VCI_TREE_NODE_TYPE_LEAF;
 
         rc = vdIfIoIntFileWriteSync(pCache->pIfIo, pCache->pStorage, offTreeRoot,
                                     &NodeRoot, VCI_BYTE2BLOCK(sizeof(VciTreeNode)));

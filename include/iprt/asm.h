@@ -1509,8 +1509,12 @@ DECLINLINE(void) ASMSerializeInstructionRdTscp(void)
  */
 #if (defined(RT_ARCH_X86) && ARCH_BITS == 16) || defined(IN_GUEST)
 # define ASMSerializeInstruction() ASMSerializeInstructionIRet()
-#else
+#elif defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 # define ASMSerializeInstruction() ASMSerializeInstructionCpuId()
+#elif defined(RT_ARCH_SPARC64)
+RTDECL(void) ASMSerializeInstruction(void);
+#else
+# error "Port me"
 #endif
 
 
