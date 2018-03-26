@@ -1029,12 +1029,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             fRc, oTxsSession = self.testGuestCtrlDirRead(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
-        # FIXME: Failing test.
-        # reporter.testStart('Copy to guest');
-        # fSkip = 'copy_to' not in self.asTests or fRc is False;
-        # if fSkip is False:
-        #     fRc, oTxsSession = self.testGuestCtrlCopyTo(oSession, oTxsSession, oTestVm);
-        # reporter.testDone(fSkip);
+        reporter.testStart('Copy to guest');
+        fSkip = 'copy_to' not in self.asTests or fRc is False;
+        if fSkip is False:
+            fRc, oTxsSession = self.testGuestCtrlCopyTo(oSession, oTxsSession, oTestVm);
+        reporter.testDone(fSkip);
 
         reporter.testStart('Copy from guest');
         fSkip = 'copy_from' not in self.asTests or fRc is False;
@@ -1089,20 +1088,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             else:
                 curProgress = oGuestSession.copyFrom(sSrc, sDst, aFlags);
             if curProgress is not None:
-                oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self, "gctrlCopyFrm");
+                oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlFileCopyFrom");
                 try:
-                    iRc = oProgress.waitForOperation(0, fIgnoreErrors = True);
-                    if iRc != 0:
-                        reporter.log('Waiting for copyFrom failed');
+                    oProgress.wait();
+                    if not oProgress.isSuccess():
+                        oProgress.logResult(fIgnoreErrors = True);
                         fRc = False;
                 except:
-                    reporter.logXcpt('Copy from waiting exception for sSrc="%s", sDst="%s":' \
-                                     % (sSrc, sDst));
-                    fRc = False;
+                    reporter.logXcpt('Waiting exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
+                fRc = False;
+            else:
+                reporter.error('No progress object returned');
+                fRc = False;
         except:
             # Just log, don't assume an error here (will be done in the main loop then).
-            reporter.logXcpt('Copy from exception for sSrc="%s", sDst="%s":' \
-                             % (sSrc, sDst));
+            reporter.logXcpt('Copy from exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
             fRc = False;
 
         return fRc;
@@ -1119,171 +1119,22 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             else:
                 curProgress = oGuestSession.copyTo(sSrc, sDst, aFlags);
             if curProgress is not None:
-                oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self, "gctrlCopyTo");
+                oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlCopyFileTo");
                 try:
-                    iRc = oProgress.waitForOperation(0, fIgnoreErrors = True);
-                    if iRc != 0:
-                        reporter.log('Waiting for copyTo failed');
+                    oProgress.wait();
+                    if not oProgress.isSuccess():
+                        oProgress.logResult(fIgnoreErrors = True);
                         fRc = False;
                 except:
-                    reporter.logXcpt('Copy to waiting exception for sSrc="%s", sDst="%s":' \
-                                     % (sSrc, sDst));
+                    reporter.logXcpt('Wait exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
                     fRc = False;
             else:
                 reporter.error('No progress object returned');
+                fRc = False;
         except:
             # Just log, don't assume an error here (will be done in the main loop then).
-            reporter.logXcpt('Copy to exception for sSrc="%s", sDst="%s":' \
-                             % (sSrc, sDst));
+            reporter.logXcpt('Copy to exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
             fRc = False;
-
-        return fRc;
-
-    def gctrlCopyFrom(self, oTest, oRes, oGuestSession, subDir = ''): # pylint: disable=R0914
-        """
-        Copies files / directories to the host.
-        Source always contains the absolute path, subDir all paths
-        below it.
-        """
-        ## @todo r=bird: The use subDir and sSubDir in this method is extremely confusing!!
-        #                Just follow the coding guidelines and ALWAYS use prefixes, please!
-        fRc = True; # Be optimistic.
-
-        sSrc = oTest.sSrc;
-        sDst = oTest.sDst;
-        aFlags = oTest.aFlags;
-
-        if     sSrc == "" \
-            or os.path.isfile(sSrc):
-            return self.gctrlCopyFileFrom(oGuestSession, \
-                                          sSrc, sDst, aFlags);
-        sSrcAbs = sSrc;
-        if subDir != "":
-            sSrcAbs = os.path.join(sSrc, subDir);
-        sFilter = ""; # No filter.
-
-        sDstAbs = os.path.join(sDst, subDir);
-        reporter.log2('Copying guest directory "%s" to host "%s"' % (sSrcAbs, sDstAbs));
-
-        try:
-            #reporter.log2('Directory="%s", filter="%s", aFlags="%s"' % (sCurDir, sFilter, aFlags));
-            oCurDir = oGuestSession.directoryOpen(sSrcAbs, sFilter, aFlags);
-            while fRc:
-                try:
-                    oFsObjInfo = oCurDir.read();
-                    if     oFsObjInfo.name == "." \
-                        or oFsObjInfo.name == "..":
-                        #reporter.log2('\tSkipping "%s"' % (oFsObjInfo.name,));
-                        continue; # Skip "." and ".." entries.
-                    if oFsObjInfo.type is vboxcon.FsObjType_Directory:
-                        #reporter.log2('\tDirectory "%s"' % (oFsObjInfo.name,));
-                        sDirCreate = sDst;
-                        if subDir != "":
-                            sDirCreate = os.path.join(sDirCreate, subDir);
-                        sDirCreate = os.path.join(sDirCreate, oFsObjInfo.name);
-                        try:
-                            reporter.log2('\tCreating directory "%s"' % (sDirCreate,));
-                            os.makedirs(sDirCreate);
-                            sSubDir = oFsObjInfo.name;
-                            if subDir != "":
-                                sSubDir = os.path.join(subDir, oFsObjInfo.name);
-                            self.gctrlCopyFrom(oTest, oRes, oGuestSession, sSubDir);
-                        except (OSError) as e:
-                            if e.errno == errno.EEXIST:
-                                pass;
-                            else:
-                                # Just log, don't assume an error here (will be done in the main loop then).
-                                reporter.logXcpt('\tDirectory creation exception for directory="%s":' % (sSubDir,));
-                                raise;
-                    elif oFsObjInfo.type is vboxcon.FsObjType_File:
-                        #reporter.log2('\tFile "%s"' % (oFsObjInfo.name,));
-                        sSourceFile = os.path.join(sSrcAbs, oFsObjInfo.name);
-                        sDestFile = os.path.join(sDstAbs, oFsObjInfo.name);
-                        self.gctrlCopyFileFrom(oGuestSession, sSourceFile, sDestFile, aFlags);
-                    elif oFsObjInfo.type is vboxcon.FsObjType_Symlink:
-                        #reporter.log2('\tSymlink "%s" -- not tested yet' % oFsObjInfo.name);
-                        pass;
-                    else:
-                        reporter.error('\tDirectory "%s" contains invalid directory entry "%s" (%d)' \
-                                       % (sSubDir, oFsObjInfo.name, oFsObjInfo.type));
-                        fRc = False;
-                except Exception as oXcpt:
-                    # No necessarily an error -- could be VBOX_E_OBJECT_NOT_FOUND. See reference.
-                    if vbox.ComError.equal(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
-                        #reporter.log2('\tNo more directory entries for "%s"' % (sCurDir,));
-                        break
-                    # Just log, don't assume an error here (will be done in the main loop then).
-                    reporter.logXcpt('\tDirectory read exception for directory="%s":' % (sSrcAbs,));
-                    fRc = False;
-                    break;
-            oCurDir.close();
-        except:
-            # Just log, don't assume an error here (will be done in the main loop then).
-            reporter.logXcpt('\tDirectory open exception for directory="%s":' % (sSrcAbs,));
-            fRc = False;
-
-        return fRc;
-
-    def gctrlCopyTo(self, oTest, oGuestSession, subDir = ''): # pylint: disable=R0914
-        """
-        Copies files / directories to the guest.
-        Source always contains the absolute path,
-        subDir all paths below it.
-        """
-        fRc = True; # Be optimistic.
-
-        sSrc = oTest.sSrc;
-        sDst = oTest.sDst;
-        aFlags = oTest.aFlags;
-
-        reporter.log2('sSrc=%s, sDst=%s, aFlags=%s' % (sSrc, sDst, aFlags));
-
-        sSrcAbs = sSrc;
-        if subDir != "":
-            sSrcAbs = os.path.join(sSrc, subDir);
-
-        # Note: Current test might want to test copying empty sources
-        if     not os.path.exists(sSrcAbs) \
-            or os.path.isfile(sSrcAbs):
-            return self.gctrlCopyFileTo(oGuestSession, \
-                                        sSrcAbs, sDst, aFlags);
-
-        sDstAbs = os.path.join(sDst, subDir);
-        reporter.log2('Copying host directory "%s" to guest "%s"' % (sSrcAbs, sDstAbs));
-
-        try:
-            # Note: Symlinks intentionally not considered here.
-            for (sDirCurrent, oDirs, oFiles) in os.walk(sSrcAbs, topdown=True):
-                for sFile in oFiles:
-                    sCurFile = os.path.join(sDirCurrent, sFile);
-                    reporter.log2('Processing host file "%s"' % (sCurFile,));
-                    sFileDest = os.path.join(sDstAbs, os.path.relpath(sCurFile, sSrcAbs));
-                    reporter.log2('Copying file to "%s"' % (sFileDest,));
-                    fRc = self.gctrlCopyFileTo(oGuestSession, \
-                                               sCurFile, sFileDest, aFlags);
-                    if fRc is False:
-                        break;
-
-                if fRc is False:
-                    break;
-
-                for sSubDir in oDirs:
-                    sCurDir = os.path.join(sDirCurrent, sSubDir);
-                    reporter.log2('Processing host dir "%s"' % (sCurDir,));
-                    sDirDest = os.path.join(sDstAbs, os.path.relpath(sCurDir, sSrcAbs));
-                    reporter.log2('Creating guest dir "%s"' % (sDirDest,));
-                    oGuestSession.directoryCreate(sDirDest, \
-                                                  700, [ vboxcon.DirectoryCreateFlag_Parents ]);
-                    if fRc is False:
-                        break;
-
-                if fRc is False:
-                    break;
-        except:
-            # Just log, don't assume an error here (will be done in the main loop then).
-            reporter.logXcpt('Copy to exception for sSrc="%s", sDst="%s":' \
-                             % (sSrcAbs, sDst));
-            return False;
 
         return fRc;
 
@@ -3365,8 +3216,31 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
-            fRc2 = self.gctrlCopyTo(curTest, curGuestSession);
+
+            fRc2 = False;
+            if os.path.isdir(curTest.sSrc):
+                try:
+                    curProgress = curGuestSession.directoryCopyToGuest(curTest.sSrc, curTest.sDst, curTest.aFlags);
+                    if curProgress is not None:
+                        oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlDirCopyTo");
+                        try:
+                            oProgress.wait();
+                            if not oProgress.isSuccess():
+                                oProgress.logResult(fIgnoreErrors = True);
+                                fRc = False;
+                        except:
+                            reporter.logXcpt('Waiting exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
+                            fRc2 = False;
+                    else:
+                        reporter.error('No progress object returned');
+                        fRc2 = False;
+                except:
+                    fRc2 = False;
+            else:
+                fRc2 = self.gctrlCopyFileTo(curGuestSession, curTest.sSrc, curTest.sDst, curTest.aFlags);
+
             curTest.closeSession();
+
             if fRc2 is curRes.fRc:
                 ## @todo Verify the copied results (size, checksum?).
                 pass;
@@ -3462,7 +3336,38 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
-            fRc2 = self.gctrlCopyFrom(curTest, curRes, curGuestSession);
+
+            try:
+                if self.oTstDrv.fpApiVer >= 5.0:
+                    oFsInfo = curGuestSession.fsObjQueryInfo(curTest.sSrc, True); # fFollowSymlinks
+                else:
+                    oFsInfo = curGuestSession.fileQueryInfo(curTest.sSrc);
+
+                if oFsInfo.type is vboxcon.FsObjType_Directory:
+                    curProgress = curGuestSession.directoryCopyFrom(curTest.sSrc, curTest.sDst, curTest.aFlags);
+                    if curProgress is not None:
+                        oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlDirCopyFrom");
+                        try:
+                            oProgress.wait();
+                            if not oProgress.isSuccess():
+                                oProgress.logResult(fIgnoreErrors = True);
+                                fRc2 = False;
+                        except:
+                            reporter.logXcpt('Waiting exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
+                            fRc2 = False;
+                    else:
+                        reporter.error('No progress object returned');
+                        fRc2 = False;
+                elif oFsInfo.type is vboxcon.FsObjType_File:
+                    fRc2 = self.gctrlCopyFileFrom(curGuestSession, curTest.sSrc, curTest.sDst, curTest.aFlags);
+                else:
+                    reporter.log2('Element "%s" not handled (yet), skipping' % oFsInfo.name);
+                    pass;
+
+            except:
+                reporter.logXcpt('Query information exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
+                fRc2 = False;
+
             curTest.closeSession();
             if fRc2 is curRes.fRc:
                 ## @todo Verify the copied results (size, checksum?).
@@ -3560,16 +3465,18 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             try:
                 curProgress = curTest.oTest.oGuest.updateGuestAdditions(curTest.sSrc, curTest.aArgs, curTest.aFlags);
                 if curProgress is not None:
-                    oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self, "gctrlUpGA");
+                    oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlUpGA");
                     try:
-                        iRc = oProgress.waitForOperation(0, fIgnoreErrors = True);
-                        if iRc != 0:
-                            reporter.log('Waiting for updating Guest Additions failed');
+                        oProgress.wait();
+                        if not oProgress.isSuccess():
+                            oProgress.logResult(fIgnoreErrors = True);
                             fRc = False;
                     except:
-                        reporter.logXcpt('Updating Guest Additions waiting exception for sSrc="%s", aFlags="%s":' \
-                                         % (curTest.sSrc, curTest.aFlags));
+                        reporter.logXcpt('Waiting exception for updating Guest Additions:');
                         fRc = False;
+                else:
+                    reporter.error('No progress object returned');
+                    fRc = False;
             except:
                 # Just log, don't assume an error here (will be done in the main loop then).
                 reporter.logXcpt('Updating Guest Additions exception for sSrc="%s", aFlags="%s":' \
@@ -3737,4 +3644,3 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
 
 if __name__ == '__main__':
     sys.exit(tdAddGuestCtrl().main(sys.argv));
-
