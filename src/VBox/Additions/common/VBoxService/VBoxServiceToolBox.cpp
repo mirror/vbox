@@ -1499,6 +1499,9 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
             case VERR_PATH_NOT_FOUND:
                 return (RTEXITCODE)VBOXSERVICETOOLBOX_STAT_EXITCODE_PATH_NOT_FOUND;
 
+            case VERR_NET_PATH_NOT_FOUND:
+                return (RTEXITCODE)VBOXSERVICETOOLBOX_STAT_EXITCODE_NET_PATH_NOT_FOUND;
+
             default:
 #ifdef DEBUG_andy
                 AssertMsgFailed(("Exit code for %Rrc not implemented\n", rc));

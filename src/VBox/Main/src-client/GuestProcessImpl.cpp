@@ -2505,10 +2505,11 @@ int GuestProcessTool::exitCodeToRc(const char *pszTool, int32_t iExitCode)
     {
         switch (iExitCode)
         {
-            case VBOXSERVICETOOLBOX_STAT_EXITCODE_ACCESS_DENIED:  return VERR_ACCESS_DENIED;
-            case VBOXSERVICETOOLBOX_STAT_EXITCODE_FILE_NOT_FOUND: return VERR_FILE_NOT_FOUND;
-            case VBOXSERVICETOOLBOX_STAT_EXITCODE_PATH_NOT_FOUND: return VERR_PATH_NOT_FOUND;
-            default:                                              break;
+            case VBOXSERVICETOOLBOX_STAT_EXITCODE_ACCESS_DENIED:      return VERR_ACCESS_DENIED;
+            case VBOXSERVICETOOLBOX_STAT_EXITCODE_FILE_NOT_FOUND:     return VERR_FILE_NOT_FOUND;
+            case VBOXSERVICETOOLBOX_STAT_EXITCODE_PATH_NOT_FOUND:     return VERR_PATH_NOT_FOUND;
+            case VBOXSERVICETOOLBOX_STAT_EXITCODE_NET_PATH_NOT_FOUND: return VERR_NET_PATH_NOT_FOUND;
+            default:                                                  break;
         }
     }
     else if (!RTStrICmp(pszTool, VBOXSERVICE_TOOL_MKDIR))
