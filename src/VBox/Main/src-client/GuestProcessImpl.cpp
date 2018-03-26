@@ -2521,9 +2521,8 @@ int GuestProcessTool::exitCodeToRc(const char *pszTool, int32_t iExitCode)
         }
     }
 
-#ifdef DEBUG_andy
-    AssertMsgFailed(("Exit code %d for tool '%s' not handled\n", iExitCode, pszTool));
-#endif
+    LogFunc(("Warning: Exit code %d not handled for tool '%s', returning VERR_GENERAL_FAILURE\n", iExitCode, pszTool));
+
     if (iExitCode == RTEXITCODE_SYNTAX)
         return VERR_INTERNAL_ERROR_5;
     return VERR_GENERAL_FAILURE;
