@@ -3222,7 +3222,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 try:
                     curProgress = curGuestSession.directoryCopyToGuest(curTest.sSrc, curTest.sDst, curTest.aFlags);
                     if curProgress is not None:
-                        oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlDirCopyTo");
+                        oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, \
+                                                                 "gctrlDirCopyTo");
                         try:
                             oProgress.wait();
                             if not oProgress.isSuccess():
@@ -3346,7 +3347,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 if oFsInfo.type is vboxcon.FsObjType_Directory:
                     curProgress = curGuestSession.directoryCopyFrom(curTest.sSrc, curTest.sDst, curTest.aFlags);
                     if curProgress is not None:
-                        oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlDirCopyFrom");
+                        oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, \
+                                                                 "gctrlDirCopyFrom");
                         try:
                             oProgress.wait();
                             if not oProgress.isSuccess():
@@ -3362,7 +3364,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     fRc2 = self.gctrlCopyFileFrom(curGuestSession, curTest.sSrc, curTest.sDst, curTest.aFlags);
                 else:
                     reporter.log2('Element "%s" not handled (yet), skipping' % oFsInfo.name);
-                    pass;
 
             except:
                 reporter.logXcpt('Query information exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
