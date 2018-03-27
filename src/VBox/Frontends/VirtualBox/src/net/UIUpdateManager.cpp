@@ -29,7 +29,6 @@
 /* GUI includes: */
 # include "QIProcess.h"
 # include "VBoxGlobal.h"
-# include "VBoxLicenseViewer.h"
 # include "VBoxUtils.h"
 # include "UIDownloaderExtensionPack.h"
 # include "UIExtraDataManager.h"
