@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,11 +32,10 @@ class UIToolBar : public QToolBar
 
 public:
 
-    /** Constructor, passes @a pParent to the QToolBar constructor. */
+    /** Constructs tool-bar passing @a pParent to the base-class. */
     UIToolBar(QWidget *pParent = 0);
 
-    /** Defines whether tool-bar should use text-labels.
-      * Default value if @a false. */
+    /** Defines whether tool-bar should use text-labels. */
     void setUseTextLabels(bool fEnable);
 
 #ifdef VBOX_WS_MAC
@@ -50,7 +49,7 @@ public:
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
 
     /** Holds the parent main-window isntance. */
@@ -58,3 +57,4 @@ private:
 };
 
 #endif /* !___UIToolBar_h___ */
+

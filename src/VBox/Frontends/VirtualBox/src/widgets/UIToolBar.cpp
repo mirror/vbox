@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,9 +27,9 @@
 # include "UIToolBar.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils.h"
-# endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+# endif
 
-#endif /* VBOX_WS_MAC */
+#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 UIToolBar::UIToolBar(QWidget *pParent /* = 0 */)
@@ -67,10 +67,11 @@ void UIToolBar::setShowToolBarButton(bool fShow)
 
 void UIToolBar::updateLayout()
 {
-    /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
-       the necessary size of the toolbar is increased. Also for some languages
-       the with doesn't match if the text increase. So manually adjust the size
-       after changing the text. */
+    // WORKAROUND:
+    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
+    // the necessary size of the toolbar is increased. Also for some languages
+    // the with doesn't match if the text increase. So manually adjust the size
+    // after changing the text.
     QSizePolicy sp = sizePolicy();
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     adjustSize();
@@ -87,8 +88,8 @@ void UIToolBar::prepare()
     setMovable(false);
 
 #ifdef VBOX_WS_MAC
-        setStyleSheet("QToolBar { border: 0px none black; }");
-#endif /* VBOX_WS_MAC */
+    setStyleSheet("QToolBar { border: 0px none black; }");
+#endif
 
     /* Configure tool-bar' layout: */
     if (layout())
