@@ -331,6 +331,8 @@ namespace UIExtraDataDefs
         extern const char *GUI_InformationWindowGeometry;
         /** Holds information-window elements. */
         extern const char *GUI_InformationWindowElements;
+        extern const char *GUI_GuestSessionManagerTabSplitterHints;
+        extern const char *GUI_GuestFileManagerTabSplitterHints;
     /** @} */
 
     /** @name Virtual Machine: Close dialog
@@ -814,4 +816,3 @@ enum MaxGuestResolutionPolicy
 
 
 #endif /* !___UIExtraDataDefs_h___ */
-

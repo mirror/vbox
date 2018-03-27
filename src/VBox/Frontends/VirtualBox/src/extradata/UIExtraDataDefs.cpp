@@ -190,6 +190,8 @@ const char *UIExtraDataDefs::GUI_Scaling_Optimization = "GUI/Scaling/Optimizatio
 /* Virtual Machine: Information dialog: */
 const char *UIExtraDataDefs::GUI_InformationWindowGeometry = "GUI/InformationWindowGeometry";
 const char *UIExtraDataDefs::GUI_InformationWindowElements = "GUI/InformationWindowElements";
+const char *UIExtraDataDefs::GUI_GuestSessionManagerTabSplitterHints = "GUI/GuestSessionManagerTabSplitterHints";
+const char *UIExtraDataDefs::GUI_GuestFileManagerTabSplitterHints = "GUI/GuestFileManagerTabSplitterHints";
 
 /* Virtual Machine: Close dialog: */
 const char *UIExtraDataDefs::GUI_DefaultCloseAction = "GUI/DefaultCloseAction";
@@ -205,4 +207,3 @@ const char *UIExtraDataDefs::GUI_Dbg_AutoShow = "GUI/Dbg/AutoShow";
 
 /* Virtual Machine: Log-viewer: */
 const char *UIExtraDataDefs::GUI_LogWindowGeometry = "GUI/LogWindowGeometry";
-

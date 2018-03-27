@@ -93,6 +93,8 @@ private:
     void initFileTable();
     void postSessionCreated();
     void postSessionClosed();
+    void saveSettings();
+    void loadSettings();
 
     template<typename T>
     QStringList       getFsObjInfoStringList(const T &fsObjectInfo) const;

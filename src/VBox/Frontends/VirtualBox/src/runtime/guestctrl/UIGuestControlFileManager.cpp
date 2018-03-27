@@ -281,6 +281,7 @@ UIGuestControlFileManager::UIGuestControlFileManager(QWidget *pParent, const CGu
     prepareObjects();
     prepareConnections();
     retranslateUi();
+    loadSettings();
 }
 
 UIGuestControlFileManager::~UIGuestControlFileManager()
@@ -289,6 +290,7 @@ UIGuestControlFileManager::~UIGuestControlFileManager()
         cleanupListener(m_pQtGuestListener, m_comGuestListener, m_comGuest.GetEventSource());
     if (m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
+    saveSettings();
 }
 
 void UIGuestControlFileManager::retranslateUi()
@@ -679,7 +681,7 @@ void UIGuestControlFileManager::cleanupListener(ComObjPtr<UIMainEventListenerImp
 }
 
 template<typename T>
-QStringList   UIGuestControlFileManager::getFsObjInfoStringList(const T &fsObjectInfo) const
+QStringList UIGuestControlFileManager::getFsObjInfoStringList(const T &fsObjectInfo) const
 {
     QStringList objectInfo;
     if (!fsObjectInfo.isOk())
@@ -694,6 +696,24 @@ QStringList   UIGuestControlFileManager::getFsObjInfoStringList(const T &fsObjec
     // strObjectInfo.append("ChangeTime", QString::number(fsObjectInfo.GetChangeTime()));
 
     return objectInfo;
+}
+
+void UIGuestControlFileManager::saveSettings()
+{
+    if (!m_pVerticalSplitter)
+        return;
+    gEDataManager->setGuestFileManagerTabSplitterHints(m_pVerticalSplitter->sizes());
+}
+
+void UIGuestControlFileManager::loadSettings()
+{
+    if (!m_pVerticalSplitter)
+        return;
+    QList<int> splitterHints = gEDataManager->guestFileManagerTabSplitterHints();
+    if (splitterHints.size() != 2)
+        return;
+    if (splitterHints[0] != 0 && splitterHints[1] != 0)
+        m_pVerticalSplitter->setSizes(splitterHints);
 }
 
 #include "UIGuestControlFileManager.moc"

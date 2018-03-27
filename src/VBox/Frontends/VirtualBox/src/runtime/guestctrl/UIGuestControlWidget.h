@@ -47,6 +47,7 @@ class UIGuestControlWidget : public QWidget
 public:
 
     UIGuestControlWidget(QWidget *pParent, const CGuest &comGuest);
+    ~UIGuestControlWidget();
 
 private slots:
 
@@ -70,6 +71,8 @@ private:
     void updateTreeWidget();
     void cleanupListener();
     void addGuestSession(CGuestSession guestSession);
+    void saveSettings();
+    void loadSettings();
 
     CGuest                    m_comGuest;
     QVBoxLayout              *m_pMainLayout;

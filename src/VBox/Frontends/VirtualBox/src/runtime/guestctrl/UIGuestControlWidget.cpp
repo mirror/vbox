@@ -178,6 +178,12 @@ UIGuestControlWidget::UIGuestControlWidget(QWidget *pParent, const CGuest &comGu
     prepareObjects();
     prepareConnections();
     initGuestSessionTree();
+    loadSettings();
+}
+
+UIGuestControlWidget::~UIGuestControlWidget()
+{
+    saveSettings();
 }
 
 void UIGuestControlWidget::prepareObjects()
@@ -220,8 +226,8 @@ void UIGuestControlWidget::prepareObjects()
         setFocusProxy(m_pConsole);
     }
 
-    m_pSplitter->setStretchFactor(0, 9);
-    m_pSplitter->setStretchFactor(1, 4);
+    m_pSplitter->setStretchFactor(0, 2);
+    m_pSplitter->setStretchFactor(1, 1);
 
     updateTreeWidget();
 }
@@ -422,6 +428,24 @@ void UIGuestControlWidget::sltGuestSessionUnregistered(CGuestSession guestSessio
         }
     }
     delete selectedItem;
+}
+
+void UIGuestControlWidget::saveSettings()
+{
+    if (!m_pSplitter)
+        return;
+    gEDataManager->setGuestSessionManagerTabSplitterHints(m_pSplitter->sizes());
+}
+
+void UIGuestControlWidget::loadSettings()
+{
+    if (!m_pSplitter)
+        return;
+    QList<int> splitterHints = gEDataManager->guestSessionManagerTabSplitterHints();
+    if (splitterHints.size() != 2)
+        return;
+    if (splitterHints[0] != 0 && splitterHints[1] != 0)
+        m_pSplitter->setSizes(splitterHints);
 }
 
 #include "UIGuestControlWidget.moc"

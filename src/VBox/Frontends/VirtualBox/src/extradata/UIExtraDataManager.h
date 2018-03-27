@@ -612,6 +612,10 @@ public:
         QMap<InformationElementType, bool> informationWindowElements();
         /** Defines information-window @a elements. */
         void setInformationWindowElements(const QMap<InformationElementType, bool> &elements);
+        void setGuestSessionManagerTabSplitterHints(const QList<int> &hints);
+        void setGuestFileManagerTabSplitterHints(const QList<int> &hints);
+        QList<int> guestSessionManagerTabSplitterHints();
+        QList<int> guestFileManagerTabSplitterHints();
     /** @} */
 
     /** @name Virtual Machine: Close dialog
@@ -746,4 +750,3 @@ private:
 #define gEDataManager UIExtraDataManager::instance()
 
 #endif /* !___UIExtraDataManager_h___ */
-

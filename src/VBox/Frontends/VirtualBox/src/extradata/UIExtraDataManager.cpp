@@ -2026,6 +2026,8 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_ScaleFactor << GUI_Scaling_Optimization
            << GUI_InformationWindowGeometry
            << GUI_InformationWindowElements
+           << GUI_GuestSessionManagerTabSplitterHints
+           << GUI_GuestFileManagerTabSplitterHints
            << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
            << GUI_LastCloseAction << GUI_CloseActionHook
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -4057,6 +4059,55 @@ void UIExtraDataManager::setInformationWindowGeometry(const QRect &geometry, boo
     setExtraDataStringList(GUI_InformationWindowGeometry, data, strID);
 }
 
+
+void UIExtraDataManager::setGuestSessionManagerTabSplitterHints(const QList<int> &hints)
+{
+    QStringList data;
+    data << (hints.size() > 0 ? QString::number(hints[0]) : QString());
+    data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_GuestSessionManagerTabSplitterHints, data);
+}
+
+QList<int> UIExtraDataManager::guestSessionManagerTabSplitterHints()
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_GuestSessionManagerTabSplitterHints);
+
+    /* Parse loaded data: */
+    QList<int> hints;
+    hints << (data.size() > 0 ? data[0].toInt() : 0);
+    hints << (data.size() > 1 ? data[1].toInt() : 0);
+
+    /* Return hints: */
+    return hints;
+}
+
+void UIExtraDataManager::setGuestFileManagerTabSplitterHints(const QList<int> &hints)
+{
+    QStringList data;
+    data << (hints.size() > 0 ? QString::number(hints[0]) : QString());
+    data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_GuestFileManagerTabSplitterHints, data);
+}
+
+QList<int> UIExtraDataManager::guestFileManagerTabSplitterHints()
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_GuestFileManagerTabSplitterHints);
+
+    /* Parse loaded data: */
+    QList<int> hints;
+    hints << (data.size() > 0 ? data[0].toInt() : 0);
+    hints << (data.size() > 1 ? data[1].toInt() : 0);
+
+    /* Return hints: */
+    return hints;
+}
+
 QMap<InformationElementType, bool> UIExtraDataManager::informationWindowElements()
 {
     /* Get corresponding extra-data: */
@@ -4577,4 +4628,3 @@ QString UIExtraDataManager::extraDataKeyPerScreen(const QString &strBase, ulong 
 }
 
 #include "UIExtraDataManager.moc"
-
