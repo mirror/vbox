@@ -29,6 +29,7 @@
 # include "QIStyledItemDelegate.h"
 # include "QITableView.h"
 # include "QIWidgetValidator.h"
+# include "VBoxGlobal.h"
 # include "UIActionPool.h"
 # include "UIGlobalSettingsInput.h"
 # include "UIHostComboEditor.h"
@@ -897,8 +898,8 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
                                strShortcutKey.startsWith(GUI_Input_SelectorShortcuts) ? m_pSelectorTable : 0;
         AssertPtr(pParent);
         oldInputData.shortcuts() << UIDataShortcutRow(pParent, strShortcutKey, VBoxGlobal::removeAccelMark(shortcut.description()),
-                                                 shortcut.sequence().toString(QKeySequence::NativeText),
-                                                 shortcut.defaultSequence().toString(QKeySequence::NativeText));
+                                                      shortcut.sequence().toString(QKeySequence::NativeText),
+                                                      shortcut.defaultSequence().toString(QKeySequence::NativeText));
     }
     oldInputData.setAutoCapture(gEDataManager->autoCaptureEnabled());
 
