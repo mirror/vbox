@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Oracle Corporation
+ * Copyright (C) 2011-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,14 +28,14 @@
 /* Using declarations: */
 using namespace UISettingsDefs;
 
-ConfigurationAccessLevel UISettingsDefs::configurationAccessLevel(KSessionState sessionState, KMachineState machineState)
+ConfigurationAccessLevel UISettingsDefs::configurationAccessLevel(KSessionState enmSessionState, KMachineState enmMachineState)
 {
     /* Depending on passed arguments: */
-    switch (machineState)
+    switch (enmMachineState)
     {
         case KMachineState_PoweredOff:
         case KMachineState_Teleported:
-        case KMachineState_Aborted:    return sessionState == KSessionState_Unlocked ?
+        case KMachineState_Aborted:    return enmSessionState == KSessionState_Unlocked ?
                                               ConfigurationAccessLevel_Full :
                                               ConfigurationAccessLevel_Partial_PoweredOff;
         case KMachineState_Saved:      return ConfigurationAccessLevel_Partial_Saved;
