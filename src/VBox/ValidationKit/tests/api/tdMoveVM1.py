@@ -376,7 +376,8 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         #detach ISO image
         fRes = oSession.detachHd(sController, iPort, 0)
         if fRes is False:
-            reporter.log('5th scenario: Couldn\'t detach image from the controller %s port %s device %s' % (sController, iPort, 0))
+            reporter.log('5th scenario: Couldn\'t detach image from the controller %s 
+                         port %s device %s' % (sController, iPort, 0))
 
         fRes = oSession.saveSettings()
         if fRes is False:
@@ -575,7 +576,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
             os.mkdir(sNewLoc, 0o775)
 
-            #At moment, it's used only one snapshot due to the difficulty to get 
+            #At moment, it's used only one snapshot due to the difficulty to get
             #all attachments of the machine (i.e. not only attached at moment)
             cSnap = 1
 
@@ -594,7 +595,8 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             if fRc is True:
                 for oAttachment in aoMediumAttachments:
                     sRes = oAttachment.medium.location.rpartition(os.sep)
-                    dsReferenceFiles['SnapshotFile'].add(sNewLoc + os.sep + oMachine.name + os.sep + 'Snapshots' + os.sep + sRes[2])
+                    dsReferenceFiles['SnapshotFile'].add(sNewLoc + os.sep + oMachine.name + os.sep + 
+                                                         'Snapshots' + os.sep + sRes[2])
 
                 sSettingFile = os.path.join(sNewLoc, os.path.join(oMachine.name, oMachine.name + '.vbox'))
                 dsReferenceFiles['SettingsFile'].add(sSettingFile)
