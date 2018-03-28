@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,52 +19,93 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-# include "VBoxLicenseViewer.h"
-# include "QIDialogButtonBox.h"
-# include "UIMessageCenter.h"
-
-/* Qt includes */
-# include <QTextBrowser>
-# include <QPushButton>
-# include <QVBoxLayout>
-# include <QScrollBar>
+/* Qt includes: */
 # include <QFile>
+# include <QPushButton>
+# include <QScrollBar>
+# include <QTextBrowser>
+# include <QVBoxLayout>
+
+/* GUI includes: */
+# include "QIDialogButtonBox.h"
+# include "VBoxLicenseViewer.h"
+# include "UIMessageCenter.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 VBoxLicenseViewer::VBoxLicenseViewer(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QDialog>(pParent)
-    , mLicenseText (0)
-    , mAgreeButton (0)
-    , mDisagreeButton (0)
+    , m_pLicenseBrowser(0)
+    , m_pButtonAgree(0)
+    , m_pButtonDisagree(0)
 {
-#ifndef VBOX_WS_WIN
-    /* Application icon. On Win32, it's built-in to the executable. */
-    setWindowIcon (QIcon (":/VirtualBox_48px.png"));
+#if !(defined(VBOX_WS_WIN) || defined(VBOX_WS_MAC))
+    /* Assign application icon: */
+    setWindowIcon(QIcon(":/VirtualBox_48px.png"));
 #endif
 
-    mLicenseText = new QTextBrowser (this);
-    mAgreeButton = new QPushButton (this);
-    mDisagreeButton = new QPushButton (this);
-    QDialogButtonBox *dbb = new QIDialogButtonBox (this);
-    dbb->addButton (mAgreeButton, QDialogButtonBox::AcceptRole);
-    dbb->addButton (mDisagreeButton, QDialogButtonBox::RejectRole);
+    /* Create main layout: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    if (pMainLayout)
+    {
+        /* Create license browser: */
+        m_pLicenseBrowser = new QTextBrowser(this);
+        if (m_pLicenseBrowser)
+        {
+            /* Configure license browser: */
+            m_pLicenseBrowser->verticalScrollBar()->installEventFilter(this);
+            connect(m_pLicenseBrowser->verticalScrollBar(), &QScrollBar::valueChanged,
+                    this, &VBoxLicenseViewer::sltHandleScrollBarMoved);
 
-    connect (mLicenseText->verticalScrollBar(), SIGNAL (valueChanged (int)),
-             SLOT (onScrollBarMoving (int)));
-    connect (mAgreeButton, SIGNAL (clicked()), SLOT (accept()));
-    connect (mDisagreeButton, SIGNAL (clicked()), SLOT (reject()));
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLicenseBrowser);
+        }
 
-    QVBoxLayout *mainLayout = new QVBoxLayout (this);
-    mainLayout->addWidget (mLicenseText);
-    mainLayout->addWidget (dbb);
+        /* Create agree button: */
+        /** todo rework buttons to be a part of button-box itself */
+        QDialogButtonBox *pDialogButtonBox = new QIDialogButtonBox;
+        if (pDialogButtonBox)
+        {
+            /* Create agree button: */
+            m_pButtonAgree = new QPushButton;
+            if (m_pButtonAgree)
+            {
+                /* Configure button: */
+                connect(m_pButtonAgree, &QPushButton::clicked, this, &QDialog::accept);
 
-    mLicenseText->verticalScrollBar()->installEventFilter (this);
+                /* Add into button-box: */
+                pDialogButtonBox->addButton(m_pButtonAgree, QDialogButtonBox::AcceptRole);
+            }
 
-    resize (600, 450);
+            /* Create agree button: */
+            m_pButtonDisagree = new QPushButton;
+            if (m_pButtonDisagree)
+            {
+                /* Configure button: */
+                connect(m_pButtonDisagree, &QPushButton::clicked, this, &QDialog::reject);
 
+                /* Add into button-box: */
+                pDialogButtonBox->addButton(m_pButtonDisagree, QDialogButtonBox::RejectRole);
+            }
+        }
+
+        /* Add into layout: */
+        pMainLayout->addWidget(pDialogButtonBox);
+    }
+
+    /* Configure self: */
+    resize(600, 450);
+
+    /* Apply language settings: */
     retranslateUi();
+}
+
+int VBoxLicenseViewer::showLicenseFromString(const QString &strLicenseText)
+{
+    /* Set license text: */
+    m_pLicenseBrowser->setText(strLicenseText);
+    return exec();
 }
 
 int VBoxLicenseViewer::showLicenseFromFile(const QString &strLicenseFileName)
@@ -72,9 +113,7 @@ int VBoxLicenseViewer::showLicenseFromFile(const QString &strLicenseFileName)
     /* Read license file: */
     QFile file(strLicenseFileName);
     if (file.open(QIODevice::ReadOnly))
-    {
         return showLicenseFromString(file.readAll());
-    }
     else
     {
         msgCenter().cannotOpenLicenseFile(strLicenseFileName, this);
@@ -82,59 +121,60 @@ int VBoxLicenseViewer::showLicenseFromFile(const QString &strLicenseFileName)
     }
 }
 
-int VBoxLicenseViewer::showLicenseFromString(const QString &strLicenseText)
+bool VBoxLicenseViewer::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    /* Set license text: */
-    mLicenseText->setText(strLicenseText);
-    return exec();
+    /* Handle known event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Hide:
+            if (pObject == m_pLicenseBrowser->verticalScrollBar())
+                /* Doesn't work on wm's like ion3 where the window starts maximized: isActiveWindow() */
+                sltUnlockButtons();
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QDialog::eventFilter(pObject, pEvent);
+}
+
+void VBoxLicenseViewer::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    QDialog::showEvent(pEvent);
+
+    /* Enable/disable buttons accordingly: */
+    bool fScrollBarHidden =    !m_pLicenseBrowser->verticalScrollBar()->isVisible()
+                            && !(windowState() & Qt::WindowMinimized);
+    m_pButtonAgree->setEnabled(fScrollBarHidden);
+    m_pButtonDisagree->setEnabled(fScrollBarHidden);
 }
 
 void VBoxLicenseViewer::retranslateUi()
 {
-    setWindowTitle (tr ("VirtualBox License"));
+    /* Translate dialog title: */
+    setWindowTitle(tr("VirtualBox License"));
 
-    mAgreeButton->setText (tr ("I &Agree"));
-    mDisagreeButton->setText (tr ("I &Disagree"));
+    /* Translate buttons: */
+    m_pButtonAgree->setText(tr("I &Agree"));
+    m_pButtonDisagree->setText(tr("I &Disagree"));
 }
 
 int VBoxLicenseViewer::exec()
 {
+    /* Nothing wrong with that, just hiding slot: */
     return QDialog::exec();
 }
 
-void VBoxLicenseViewer::onScrollBarMoving (int aValue)
+void VBoxLicenseViewer::sltHandleScrollBarMoved(int iValue)
 {
-    if (aValue == mLicenseText->verticalScrollBar()->maximum())
-        unlockButtons();
+    if (iValue == m_pLicenseBrowser->verticalScrollBar()->maximum())
+        sltUnlockButtons();
 }
 
-void VBoxLicenseViewer::unlockButtons()
+void VBoxLicenseViewer::sltUnlockButtons()
 {
-    mAgreeButton->setEnabled (true);
-    mDisagreeButton->setEnabled (true);
-}
-
-void VBoxLicenseViewer::showEvent (QShowEvent *aEvent)
-{
-    QDialog::showEvent (aEvent);
-    bool isScrollBarHidden = !mLicenseText->verticalScrollBar()->isVisible()
-        && !(windowState() & Qt::WindowMinimized);
-    mAgreeButton->setEnabled (isScrollBarHidden);
-    mDisagreeButton->setEnabled (isScrollBarHidden);
-}
-
-bool VBoxLicenseViewer::eventFilter (QObject *aObject, QEvent *aEvent)
-{
-    switch (aEvent->type())
-    {
-        case QEvent::Hide:
-            if (aObject == mLicenseText->verticalScrollBar())
-                /* Doesn't work on wm's like ion3 where the window starts
-                 * maximized: isActiveWindow() */
-                unlockButtons();
-        default:
-            break;
-    }
-    return QDialog::eventFilter (aObject, aEvent);
+    m_pButtonAgree->setEnabled(true);
+    m_pButtonDisagree->setEnabled(true);
 }
 
