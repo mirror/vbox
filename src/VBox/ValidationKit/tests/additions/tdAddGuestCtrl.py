@@ -8,7 +8,7 @@ VirtualBox Validation Kit - Guest Control Tests.
 
 __copyright__ = \
 """
-Copyright (C) 2010-2017 Oracle Corporation
+Copyright (C) 2010-2018 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -3169,13 +3169,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResult(fRc = False) ],
                 # Copying single files.
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = 'C:\\non-exist\\'),
+                               sDst = os.path.join(sScratch, 'C:\\non-exist\\')),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = 'C:\\non\\exist\\'),
+                               sDst = os.path.join(sScratch, 'C:\\non\\exist\\')),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = 'C:\\non\\exist\\renamedfile.dll'),
+                               sDst = os.path.join(sScratch, 'C:\\non\\exist\\renamedfile.dll')),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
                                sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
@@ -3183,25 +3183,28 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
                                sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
                   tdTestResult(fRc = True) ],
-                # Destination is a directory, should fail.
+                # Destination is a directory.
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
                                sDst = sScratch),
-                  tdTestResult(fRc = False) ]
+                  tdTestResult(fRc = True) ],
+                # Copy over file again into same directory (overwrite).
+                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                               sDst = sScratch),
+                  tdTestResult(fRc = True) ],
                 ## @todo Add testing the CopyTo flags here!
-            ]);
+                ]);
 
-            if self.oTstDrv.sHost == 'win':
-                ## @todo Check for Windows (7) host.
+            if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
                 aaTests.extend([
                     # Copying directories with contain files we don't have read access to.
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\security',
-                                   sDst = sScratch),
-                      tdTestResult(fRc = False) ],
+                                    sDst = sScratch),
+                        tdTestResult(fRc = False) ],
                     # Copying directories with regular files.
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Help',
-                                   sDst = sScratch),
-                      tdTestResult(fRc = True) ]
-                ]);
+                                    sDst = sScratch),
+                        tdTestResult(fRc = True) ]
+                    ]);
         else:
             reporter.log('No OS-specific tests for non-Windows yet!');
 
@@ -3291,38 +3294,36 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'z:\\'),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = '\\\\uncrulez\\foo'),
-
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'non-exist',
                                  sDst = os.path.join(sScratch, 'non-exist.dll')),
-                  tdTestResult(fRc = False) ]
+                  tdTestResult(fRc = False) ],
+                # Copying single files.
+                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                 sDst = 'C:\\non-exist\\'),
+                  tdTestResult(fRc = False) ],
+                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                 sDst = 'C:\\non\\exist\\'),
+                  tdTestResult(fRc = False) ],
+                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                 sDst = 'C:\\non\\exist\\renamedfile.dll'),
+                  tdTestResult(fRc = False) ],
+                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                 sDst = os.path.join(sScratch, 'renamedfile.dll')),
+                  tdTestResult(fRc = True) ],
+                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                 sDst = os.path.join(sScratch, 'renamedfile.dll')),
+                  tdTestResult(fRc = True) ],
+                #  Destination is a directory, should fail.
+                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                 sDst = sScratch),
+                  tdTestResult(fRc = False) ],
+                # Copying directories.
+                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
+                                 sDst = sScratch),
+                  tdTestResult(fRc = True) ]
                 ## @todo Add testing the CopyFrom aFlags here!
             ]);
-
-            if self.oTstDrv.sHost == 'win':
-                aaTests.extend([
-                    # FIXME: Failing test.
-                    # Copying single files.
-                    # [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                    #                sDst = 'C:\\non-exist\\'), tdTestResult(fRc = False) ],
-                    # [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                    #                sDst = 'C:\\non\\exist\\'), tdTestResult(fRc = False) ],
-                    # [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                    #                sDst = 'C:\\non\\exist\\renamedfile.dll'), tdTestResult(fRc = False) ],
-                    # [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                    #                sDst = os.path.join(sScratch, 'renamedfile.dll')), tdTestResult(fRc = True) ],
-                    # [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                    #                sDst = os.path.join(sScratch, 'renamedfile.dll')), tdTestResult(fRc = True) ],
-                    # Destination is a directory, should fail.
-                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                     sDst = sScratch),
-                      tdTestResult(fRc = False) ],
-                    # Copying directories.
-                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
-                                     sDst = sScratch),
-                      tdTestResult(fRc = True) ]
-                    ## @todo Add testing the CopyFrom aFlags here!
-                ]);
         else:
             reporter.log('No OS-specific tests for non-Windows yet!');
 
