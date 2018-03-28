@@ -11767,7 +11767,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виртуальный экран настроен на использование глубины цвета &lt;b&gt;%1&amp;nbsp;бит&lt;/b&gt;. Для достижения наилучшей производительности измените этот атрибут на &lt;b&gt;%2&amp;nbsp;бит&lt;/b&gt;. Обычно это можно сделать из диалога настройки&lt;b&gt;Параметров экрана&lt;/b&gt; панели управления гостевой операционной системы.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виртуальный экран настроен на использование глубины цвета &lt;b&gt;%1&amp;nbsp;бит&lt;/b&gt;. Для достижения наилучшей производительности измените этот атрибут на &lt;b&gt;%2&amp;nbsp;бит&lt;/b&gt;. Обычно это можно сделать из диалога настройки &lt;b&gt;Параметров экрана&lt;/b&gt; панели управления гостевой операционной системы.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
