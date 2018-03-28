@@ -88,8 +88,14 @@ public:
     bool hasSelection() const;
 
 protected:
+
     virtual void selectionChanged(const QItemSelection & selected, const QItemSelection & deselected) /*override */;
     void contextMenuEvent(QContextMenuEvent *pEvent);
+
+private:
+
+    void configure();
+
 };
 
 
@@ -233,6 +239,18 @@ const QChar UIPathOperations::delimiter = QChar('/');
 UIGuestControlFileView::UIGuestControlFileView(QWidget * parent)
     :QTableView(parent)
 {
+    configure();
+}
+
+void UIGuestControlFileView::configure()
+{
+    setShowGrid(false);
+    setSelectionBehavior(QAbstractItemView::SelectRows);
+    verticalHeader()->setVisible(false);
+    setEditTriggers(QAbstractItemView::NoEditTriggers);
+    /* Minimize the row height: */
+    verticalHeader()->setDefaultSectionSize(verticalHeader()->minimumSectionSize());
+    setAlternatingRowColors(true);
 }
 
 void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
@@ -470,7 +488,8 @@ UIDirectoryStatistics::UIDirectoryStatistics()
     , m_uFileCount(0)
     , m_uDirectoryCount(0)
     , m_uSymlinkCount(0)
-{}
+{
+}
 
 
 /*********************************************************************************************************************************
@@ -730,16 +749,9 @@ void UIGuestControlFileTable::prepareObjects()
     m_pView = new UIGuestControlFileView;
     if (m_pView)
     {
-        m_pView->setShowGrid(false);
-        m_pView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_pView->verticalHeader()->setVisible(false);
-
         m_pMainLayout->addWidget(m_pView, 2, 0, 5, 5);
         m_pView->setModel(m_pModel);
         m_pView->setItemDelegate(new UIFileDelegate);
-        m_pView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        /* Minimize the row height: */
-        m_pView->verticalHeader()->setDefaultSectionSize(m_pView->verticalHeader()->minimumSectionSize());
 
         connect(m_pView, &UIGuestControlFileView::doubleClicked,
                 this, &UIGuestControlFileTable::sltItemDoubleClicked);

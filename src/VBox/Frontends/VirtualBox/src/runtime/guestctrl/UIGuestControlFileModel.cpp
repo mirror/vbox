@@ -36,7 +36,6 @@ UIGuestControlFileModel::UIGuestControlFileModel(QObject *parent)
     : QAbstractItemModel(parent)
     , m_pParent(qobject_cast<UIGuestControlFileTable*>(parent))
 {
-    QList<QVariant> rootData;
 }
 
 UIFileTableItem* UIGuestControlFileModel::rootItem() const
