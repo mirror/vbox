@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,105 +18,50 @@
 #ifndef ___VBoxUtils_h___
 #define ___VBoxUtils_h___
 
-#include <iprt/types.h>
-
-/* Qt includes */
+/* Qt includes: */
 #include <QMouseEvent>
 #include <QWidget>
 #include <QTextBrowser>
 
-/** QObject reimplementation,
-  * providing passed QObject with property assignation routine. */
+/* GUI includes: */
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
+
+/* Other VBox includes: */
+#include <iprt/types.h>
+
+
+/** QObject subclass,
+  * allowing to apply string-property value for a certain QObject. */
 class QObjectPropertySetter : public QObject
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructor. */
+    /** Constructs setter for a property with certain @a strName, passing @a pParent to the base-class. */
     QObjectPropertySetter(QObject *pParent, const QString &strName)
-        : QObject(pParent), m_strName(strName) {}
+        : QObject(pParent), m_strName(strName)
+    {}
 
 public slots:
 
-    /** Assigns property value. */
+    /** Assigns string property @a strValue. */
     void sltAssignProperty(const QString &strValue)
-        { parent()->setProperty(m_strName.toLatin1().constData(), strValue); }
+    {
+        parent()->setProperty(m_strName.toLatin1().constData(), strValue);
+    }
 
 private:
 
-    /** Holds property name. */
+    /** Holds the property name. */
     const QString m_strName;
 };
 
-/**
- *  Simple class which simulates focus-proxy rule redirecting widget
- *  assigned shortcut to desired widget.
- */
-class QIFocusProxy : protected QObject
-{
-    Q_OBJECT;
 
-public:
-
-    QIFocusProxy (QWidget *aFrom, QWidget *aTo)
-        : QObject (aFrom), mFrom (aFrom), mTo (aTo)
-    {
-        mFrom->installEventFilter (this);
-    }
-
-protected:
-
-    bool eventFilter (QObject *aObject, QEvent *aEvent)
-    {
-        if (aObject == mFrom && aEvent->type() == QEvent::Shortcut)
-        {
-            mTo->setFocus();
-            return true;
-        }
-        return QObject::eventFilter (aObject, aEvent);
-    }
-
-    QWidget *mFrom;
-    QWidget *mTo;
-};
-
-/**
- *  QTextEdit reimplementation to feat some extended requirements.
- */
-class QRichTextEdit : public QTextEdit
-{
-    Q_OBJECT;
-
-public:
-
-    QRichTextEdit (QWidget *aParent = 0) : QTextEdit (aParent) {}
-
-    void setViewportMargins (int aLeft, int aTop, int aRight, int aBottom)
-    {
-        QTextEdit::setViewportMargins (aLeft, aTop, aRight, aBottom);
-    }
-};
-
-/**
- *  QTextBrowser reimplementation to feat some extended requirements.
- */
-class QRichTextBrowser : public QTextBrowser
-{
-    Q_OBJECT;
-
-public:
-
-    QRichTextBrowser (QWidget *aParent) : QTextBrowser (aParent) {}
-
-    void setViewportMargins (int aLeft, int aTop, int aRight, int aBottom)
-    {
-        QTextBrowser::setViewportMargins (aLeft, aTop, aRight, aBottom);
-    }
-};
-
-/** Object containing functionality
-  * to (de)serialize proxy settings. */
+/** Simple class,
+  * containing functionality to (de)serialize proxy settings. */
 class UIProxyManager
 {
 public:
@@ -129,7 +74,7 @@ public:
         ProxyState_Auto
     };
 
-    /** Constructs object which parses passed @a strProxySettings. */
+    /** Constructs proxy-manager which parses @a strProxySettings. */
     UIProxyManager(const QString &strProxySettings = QString())
         : m_enmProxyState(ProxyState_Auto)
         , m_fAuthEnabled(false)
@@ -179,16 +124,16 @@ public:
     /** Returns the proxy state. */
     ProxyState proxyState() const { return m_enmProxyState; }
     /** Returns the proxy host. */
-    const QString& proxyHost() const { return m_strProxyHost; }
+    const QString &proxyHost() const { return m_strProxyHost; }
     /** Returns the proxy port. */
-    const QString& proxyPort() const { return m_strProxyPort; }
+    const QString &proxyPort() const { return m_strProxyPort; }
 
     /** Returns whether the proxy auth is enabled. */
     bool authEnabled() const { return m_fAuthEnabled; }
     /** Returns the proxy auth login. */
-    const QString& authLogin() const { return m_strAuthLogin; }
+    const QString &authLogin() const { return m_strAuthLogin; }
     /** Returns the proxy auth password. */
-    const QString& authPassword() const { return m_strAuthPassword; }
+    const QString &authPassword() const { return m_strAuthPassword; }
 
     /** Defines the proxy @a enmState. */
     void setProxyState(ProxyState enmState) { m_enmProxyState = enmState; }
@@ -206,10 +151,10 @@ public:
 
 private:
 
-    /** Converts passed @a state to corresponding #QString. */
-    static QString proxyStateToString(ProxyState state)
+    /** Converts passed @a enmState to corresponding #QString. */
+    static QString proxyStateToString(ProxyState enmState)
     {
-        switch (state)
+        switch (enmState)
         {
             case ProxyState_Disabled: return QString("ProxyDisabled");
             case ProxyState_Enabled:  return QString("ProxyEnabled");
@@ -231,23 +176,20 @@ private:
     }
 
     /** Holds the proxy state. */
-    ProxyState m_enmProxyState;
+    ProxyState  m_enmProxyState;
     /** Holds the proxy host. */
-    QString m_strProxyHost;
+    QString     m_strProxyHost;
     /** Holds the proxy port. */
-    QString m_strProxyPort;
+    QString     m_strProxyPort;
 
     /** Holds whether the proxy auth is enabled. */
-    bool m_fAuthEnabled;
+    bool     m_fAuthEnabled;
     /** Holds the proxy auth login. */
-    QString m_strAuthLogin;
+    QString  m_strAuthLogin;
     /** Holds the proxy auth password. */
-    QString m_strAuthPassword;
+    QString  m_strAuthPassword;
 };
 
-#ifdef VBOX_WS_MAC
-# include "VBoxUtils-darwin.h"
-#endif /* VBOX_WS_MAC */
 
-#endif // !___VBoxUtils_h___
+#endif /* !___VBoxUtils_h___ */
 
