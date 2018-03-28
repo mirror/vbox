@@ -1389,13 +1389,13 @@ int SessionTaskCopyFileTo::Run(void)
         return VERR_INVALID_PARAMETER;
     }
 
-    const char *pszFileName = mSource.c_str();
+    const char *pszSrcFile = mSource.c_str();
 
-    if (   !pszFileName
-        || !RTFileExists(pszFileName))
+    if (   !pszSrcFile
+        || !RTFileExists(pszSrcFile))
     {
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                            Utf8StrFmt(GuestSession::tr("Source file \"%s\" not valid or does not exist"), pszFileName));
+                            Utf8StrFmt(GuestSession::tr("Source file \"%s\" not valid or does not exist"), pszSrcFile));
         return VERR_FILE_NOT_FOUND;
     }
 
@@ -1407,7 +1407,8 @@ int SessionTaskCopyFileTo::Run(void)
         return VERR_NOT_IMPLEMENTED;
     }
 
-    /** @todo Try to lock the destination directory on the guest here first? */
+    /** @todo Try to lock the destination file / directory on the guest here first? */
+    char *pszDstFile = NULL;
 
     int rc = VINF_SUCCESS;
 
@@ -1425,13 +1426,18 @@ int SessionTaskCopyFileTo::Run(void)
             if (objData.mType != FsObjType_Directory)
             {
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Path \"%s\" is not a directory on guest"), mDest.c_str()));
+                                    Utf8StrFmt(GuestSession::tr("Path \"%s\" is not a directory on guest"), pszDstFile));
                 rc = VERR_NOT_A_DIRECTORY;
             }
             else
             {
-                AssertPtr(pszFileName);
-                mDest += pszFileName;
+                /* Build the final file name with destination path (on the guest). */
+                char szDstPath[RTPATH_MAX];
+                RTStrPrintf2(szDstPath, sizeof(szDstPath), "%s", mDest.c_str());
+
+                RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilename(pszSrcFile));
+
+                pszDstFile = RTStrDup(szDstPath);
             }
         }
         else
@@ -1446,22 +1452,29 @@ int SessionTaskCopyFileTo::Run(void)
                 default:
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                         Utf8StrFmt(GuestSession::tr("Unable to query information for directory \"%s\" on the guest: %Rrc"),
-                                                   mDest.c_str(), rc));
+                                                   pszDstFile, rc));
                     break;
             }
         }
     }
+    else
+        pszDstFile = RTStrDup(mDest.c_str());
 
     if (RT_SUCCESS(rc))
     {
+        AssertPtrReturn(pszDstFile, VERR_NO_MEMORY);
+
         if (mSourceFile) /* Use existing file handle. */
-            rc = fileCopyToEx(mSource, mDest, (FileCopyFlag_T)mFileCopyFlags, mSourceFile, mSourceOffset, mSourceSize);
+            rc = fileCopyToEx(pszSrcFile, pszDstFile, (FileCopyFlag_T)mFileCopyFlags, mSourceFile, mSourceOffset, mSourceSize);
         else
-            rc = fileCopyTo(mSource, mDest, (FileCopyFlag_T)mFileCopyFlags);
+            rc = fileCopyTo(pszSrcFile, pszDstFile, (FileCopyFlag_T)mFileCopyFlags);
 
         if (RT_SUCCESS(rc))
             rc = setProgressSuccess();
     }
+
+    if (pszDstFile)
+        RTStrFree(pszDstFile);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
