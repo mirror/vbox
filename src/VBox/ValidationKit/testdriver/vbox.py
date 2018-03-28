@@ -1037,7 +1037,8 @@ class TestDriver(base.TestDriver):                                              
                 sGdbCmdLine = '%s --args %s --pidfile %s' % (sGdb, sVBoxSVC, self.sVBoxSvcPidFile);
                 reporter.log('term="%s" gdb="%s"' % (sTerm, sGdbCmdLine));
                 os.environ['SHELL'] = self.sOrgShell; # Non-working shell may cause gdb and/or the term problems.
-                self.oVBoxSvcProcess = base.Process.spawnp(sTerm, sTerm, '-e', sGdbCmdLine); ## @todo -e  is deprecated; use "-- <args>".
+                ## @todo -e  is deprecated; use "-- <args>".
+                self.oVBoxSvcProcess = base.Process.spawnp(sTerm, sTerm, '-e', sGdbCmdLine);
                 os.environ['SHELL'] = self.sOurShell;
                 if self.oVBoxSvcProcess is not None:
                     reporter.log('Press enter or return after starting VBoxSVC in the debugger...');
