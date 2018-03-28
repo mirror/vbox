@@ -566,9 +566,6 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             sBaseLoc = os.path.join(sOrigLoc, 'moveFolder')
             os.mkdir(sBaseLoc, 0o775)
 
-            sController=self.dsKeys['StandardImage']
-            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
-
             #lock machine
             #get session machine
             oSession = self.oTstDrv.openSession(oMachine)
