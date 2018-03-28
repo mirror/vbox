@@ -687,13 +687,7 @@ QStringList UIGuestControlFileManager::getFsObjInfoStringList(const T &fsObjectI
     if (!fsObjectInfo.isOk())
         return objectInfo;
 
-    //objectInfo << QString(UIGuestControlInterface::getFsObjTypeString(fsObjectInfo.GetType()).append("\t"));
     objectInfo << fsObjectInfo.GetName();
-    //objectInfo << QString::number(fsObjectInfo.GetObjectSize());
-
-    /* Currently I dont know a way to convert these into a meaningful date/time: */
-    // strObjectInfo.append("BirthTime", QString::number(fsObjectInfo.GetBirthTime()));
-    // strObjectInfo.append("ChangeTime", QString::number(fsObjectInfo.GetChangeTime()));
 
     return objectInfo;
 }

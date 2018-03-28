@@ -45,7 +45,7 @@ protected:
 
 private slots:
 
-    void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics, QString path);
+    void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics);
 
 private:
 
