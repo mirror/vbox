@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - X11 helpers..
+ * VBox Qt GUI - VBox X11 helper functions.
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +16,8 @@
  */
 
 /* Qt includes: */
-#include <QX11Info>
 #include <QString>
+#include <QX11Info>
 
 /* GUI includes: */
 #include "VBoxX11Helper.h"
@@ -25,12 +25,14 @@
 /* Other VBox includes: */
 #include <iprt/cdefs.h>
 
-/* rhel3 build hack */
+// WORKAROUND:
+// rhel3 build hack
 RT_C_DECLS_BEGIN
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/dpms.h>
 RT_C_DECLS_END
+
 
 static int  gX11ScreenSaverTimeout;
 static BOOL gX11ScreenSaverDpmsAvailable;
@@ -107,8 +109,8 @@ X11WMType X11WindowManagerType()
 void X11ScreenSaverSettingsInit()
 {
     int     dummy;
-    Display *display = QX11Info::display();
-    gX11ScreenSaverDpmsAvailable = DPMSQueryExtension(display, &dummy, &dummy);
+    Display *pDisplay = QX11Info::display();
+    gX11ScreenSaverDpmsAvailable = DPMSQueryExtension(pDisplay, &dummy, &dummy);
 }
 
 void X11ScreenSaverSettingsSave()
@@ -124,23 +126,23 @@ void X11ScreenSaverSettingsSave()
 
     int     dummy;
     CARD16  dummy2;
-    Display *display = QX11Info::display();
+    Display *pDisplay = QX11Info::display();
 
-    XGetScreenSaver(display, &gX11ScreenSaverTimeout, &dummy, &dummy, &dummy);
+    XGetScreenSaver(pDisplay, &gX11ScreenSaverTimeout, &dummy, &dummy, &dummy);
     if (gX11ScreenSaverDpmsAvailable)
-        DPMSInfo(display, &dummy2, &gX11DpmsState);
+        DPMSInfo(pDisplay, &dummy2, &gX11DpmsState);
 }
 
 void X11ScreenSaverSettingsRestore()
 {
-    int     timeout, interval, preferBlank, allowExp;
-    Display *display = QX11Info::display();
+    int     iTimeout, iInterval, iPreferBlank, iAllowExp;
+    Display *pDisplay = QX11Info::display();
 
-    XGetScreenSaver(display, &timeout, &interval, &preferBlank, &allowExp);
-    timeout = gX11ScreenSaverTimeout;
-    XSetScreenSaver(display, timeout, interval, preferBlank, allowExp);
+    XGetScreenSaver(pDisplay, &iTimeout, &iInterval, &iPreferBlank, &iAllowExp);
+    iTimeout = gX11ScreenSaverTimeout;
+    XSetScreenSaver(pDisplay, iTimeout, iInterval, iPreferBlank, iAllowExp);
 
     if (gX11DpmsState && gX11ScreenSaverDpmsAvailable)
-        DPMSEnable(display);
+        DPMSEnable(pDisplay);
 }
 

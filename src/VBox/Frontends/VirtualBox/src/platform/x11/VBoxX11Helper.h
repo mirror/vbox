@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,6 +18,7 @@
 #ifndef ___VBoxX11Helpers_h___
 #define ___VBoxX11Helpers_h___
 
+
 /** X11: Known Window Manager types. */
 enum X11WMType
 {
@@ -29,6 +30,7 @@ enum X11WMType
     X11WMType_Mutter,
     X11WMType_Xfwm4,
 };
+
 
 /** X11: Determines and returns whether the compositing manager is running. */
 bool X11IsCompositingManagerRunning();
@@ -42,6 +44,7 @@ void X11ScreenSaverSettingsInit();
 void X11ScreenSaverSettingsSave();
 /** X11: Restores previously saved screen saver settings. */
 void X11ScreenSaverSettingsRestore();
+
 
 #endif /* !___VBoxX11Helpers_h___ */
 
