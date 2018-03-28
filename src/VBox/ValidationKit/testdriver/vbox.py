@@ -8,7 +8,7 @@ VirtualBox Specific base testdriver.
 
 __copyright__ = \
 """
-Copyright (C) 2010-2017 Oracle Corporation
+Copyright (C) 2010-2018 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -1037,7 +1037,7 @@ class TestDriver(base.TestDriver):                                              
                 sGdbCmdLine = '%s --args %s --pidfile %s' % (sGdb, sVBoxSVC, self.sVBoxSvcPidFile);
                 reporter.log('term="%s" gdb="%s"' % (sTerm, sGdbCmdLine));
                 os.environ['SHELL'] = self.sOrgShell; # Non-working shell may cause gdb and/or the term problems.
-                self.oVBoxSvcProcess = base.Process.spawnp(sTerm, sTerm, '-e', sGdbCmdLine);
+                self.oVBoxSvcProcess = base.Process.spawnp(sTerm, sTerm, '-e', sGdbCmdLine); ## @todo -e  is deprecated; use "-- <args>".
                 os.environ['SHELL'] = self.sOurShell;
                 if self.oVBoxSvcProcess is not None:
                     reporter.log('Press enter or return after starting VBoxSVC in the debugger...');
