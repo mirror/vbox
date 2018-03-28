@@ -3112,12 +3112,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         if oTestVm.isWindows():
             sUser = "Administrator";
+            sScratch = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo\\";
         else:
             sUser = "vbox";
         sPassword = "password";
-
-        if oTestVm.isWindows():
-            sScratch = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo\\";
 
         if oTxsSession.syncMkDir('${SCRATCH}/testGuestCtrlCopyTo') is False:
             reporter.error('Could not create scratch directory on guest');
@@ -3195,16 +3193,17 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 ]);
 
             if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
-                aaTests.extend([
-                    # Copying directories with contain files we don't have read access to.
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\security',
-                                    sDst = sScratch),
-                        tdTestResult(fRc = False) ],
-                    # Copying directories with regular files.
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Help',
-                                    sDst = sScratch),
-                        tdTestResult(fRc = True) ]
-                    ]);
+                if self.oTstDrv.sHost == "win":
+                    aaTests.extend([
+                        # Copying directories with contain files we don't have read access to.
+                        [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\security',
+                                       sDst = sScratch),
+                            tdTestResult(fRc = False) ],
+                        # Copying directories with regular files.
+                        [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Help',
+                                       sDst = sScratch),
+                            tdTestResult(fRc = True) ]
+                        ]);
         else:
             reporter.log('No OS-specific tests for non-Windows yet!');
 
