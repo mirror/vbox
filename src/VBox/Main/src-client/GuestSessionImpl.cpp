@@ -2522,10 +2522,13 @@ HRESULT GuestSession::close()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    HRESULT hr = i_isReadyExternal();
+    if (FAILED(hr))
+        return hr;
+
     /* Close session on guest. */
     int rcGuest = VINF_SUCCESS;
-    int rc = i_closeSession(0 /* Flags */, 30 * 1000 /* Timeout */,
-                            &rcGuest);
+    int rc = i_closeSession(0 /* Flags */, 30 * 1000 /* Timeout */, &rcGuest);
     /* On failure don't return here, instead do all the cleanup
      * work first and then return an error. */
 
@@ -2579,9 +2582,11 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
     if (fFlags)
         return setError(E_NOTIMPL, tr("Flag(s) not yet implemented"));
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
-    HRESULT hr = S_OK;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     try
     {
@@ -2593,45 +2598,45 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
         }
         catch(...)
         {
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFileFrom object"));
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFileFrom object"));
             throw;
         }
 
 
-        hr = pTask->Init(Utf8StrFmt(tr("Copying \"%s\" from guest to \"%s\" on the host"), aSource.c_str(), aDest.c_str()));
-        if (FAILED(hr))
+        hrc = pTask->Init(Utf8StrFmt(tr("Copying \"%s\" from guest to \"%s\" on the host"), aSource.c_str(), aDest.c_str()));
+        if (FAILED(hrc))
         {
             delete pTask;
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Creating progress object for SessionTaskCopyFileFrom object failed"));
-            throw hr;
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Creating progress object for SessionTaskCopyFileFrom object failed"));
+            throw hrc;
         }
 
-        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
 
-        if (SUCCEEDED(hr))
+        if (SUCCEEDED(hrc))
         {
             /* Return progress to the caller. */
             pProgress = pTask->GetProgressObject();
-            hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
+            hrc = pProgress.queryInterfaceTo(aProgress.asOutParam());
         }
         else
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Starting thread for copying file \"%s\" from guest to \"%s\" on the host failed "),
-                          aSource.c_str(), aDest.c_str());
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Starting thread for copying file \"%s\" from guest to \"%s\" on the host failed "),
+                           aSource.c_str(), aDest.c_str());
 
     }
     catch(std::bad_alloc &)
     {
-        hr = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
     catch(HRESULT eHR)
     {
-        hr = eHR;
+        hrc = eHR;
         LogFlowThisFunc(("Exception was caught in the function \n"));
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
@@ -2654,9 +2659,11 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
     if (fFlags)
         return setError(E_NOTIMPL, tr("Flag(s) not yet implemented"));
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
-    HRESULT hr = S_OK;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     try
     {
@@ -2668,43 +2675,43 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
         }
         catch(...)
         {
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFileTo object"));
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFileTo object"));
             throw;
         }
 
-        hr = pTask->Init(Utf8StrFmt(tr("Copying \"%s\" from host to \"%s\" on the guest"), aSource.c_str(), aDest.c_str()));
-        if (FAILED(hr))
+        hrc = pTask->Init(Utf8StrFmt(tr("Copying \"%s\" from host to \"%s\" on the guest"), aSource.c_str(), aDest.c_str()));
+        if (FAILED(hrc))
         {
             delete pTask;
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Creating progress object for SessionTaskCopyFileTo object failed"));
-            throw hr;
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Creating progress object for SessionTaskCopyFileTo object failed"));
+            throw hrc;
         }
 
-        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
 
-        if (SUCCEEDED(hr))
+        if (SUCCEEDED(hrc))
         {
             /* Return progress to the caller. */
             pProgress = pTask->GetProgressObject();
-            hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
+            hrc = pProgress.queryInterfaceTo(aProgress.asOutParam());
         }
         else
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Starting thread for copying file \"%s\" from host to \"%s\" on the guest failed "),
-                          aSource.c_str(), aDest.c_str());
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Starting thread for copying file \"%s\" from host to \"%s\" on the guest failed "),
+                           aSource.c_str(), aDest.c_str());
     }
     catch(std::bad_alloc &)
     {
-        hr = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
     catch(HRESULT eHR)
     {
-        hr = eHR;
+        hrc = eHR;
         LogFlowThisFunc(("Exception was caught in the function \n"));
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::directoryCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
@@ -2738,9 +2745,11 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
             return setError(E_INVALIDARG, tr("Invalid flags specified"));
     }
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
-    HRESULT hr = S_OK;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     try
     {
@@ -2753,44 +2762,44 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
         }
         catch(...)
         {
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyDirFrom object"));
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyDirFrom object"));
             throw;
         }
 
-        hr = pTask->Init(Utf8StrFmt(tr("Copying directory \"%s\" from guest to \"%s\" on the host"),
-                                    aSource.c_str(), aDestination.c_str()));
-        if (FAILED(hr))
+        hrc = pTask->Init(Utf8StrFmt(tr("Copying directory \"%s\" from guest to \"%s\" on the host"),
+                                     aSource.c_str(), aDestination.c_str()));
+        if (FAILED(hrc))
         {
             delete pTask;
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Creating progress object for SessionTaskCopyDirFrom object failed"));
-            throw hr;
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Creating progress object for SessionTaskCopyDirFrom object failed"));
+            throw hrc;
         }
 
-        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
 
-        if (SUCCEEDED(hr))
+        if (SUCCEEDED(hrc))
         {
             /* Return progress to the caller. */
             pProgress = pTask->GetProgressObject();
-            hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
+            hrc = pProgress.queryInterfaceTo(aProgress.asOutParam());
         }
         else
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Starting thread for copying directory \"%s\" from guest to \"%s\" on the host failed"),
-                          aSource.c_str(), aDestination.c_str());
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Starting thread for copying directory \"%s\" from guest to \"%s\" on the host failed"),
+                           aSource.c_str(), aDestination.c_str());
     }
     catch(std::bad_alloc &)
     {
-        hr = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
     catch(HRESULT eHR)
     {
-        hr = eHR;
+        hrc = eHR;
         LogFlowThisFunc(("Exception was caught in the function\n"));
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
@@ -2820,9 +2829,11 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
             return setError(E_INVALIDARG, tr("Invalid flags specified"));
     }
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
-    HRESULT hr = S_OK;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     try
     {
@@ -2835,44 +2846,44 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
         }
         catch(...)
         {
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyDirTo object"));
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyDirTo object"));
             throw;
         }
 
-        hr = pTask->Init(Utf8StrFmt(tr("Copying directory \"%s\" from host to \"%s\" on the guest"),
-                                    aSource.c_str(), aDestination.c_str()));
-        if (FAILED(hr))
+        hrc = pTask->Init(Utf8StrFmt(tr("Copying directory \"%s\" from host to \"%s\" on the guest"),
+                                     aSource.c_str(), aDestination.c_str()));
+        if (FAILED(hrc))
         {
             delete pTask;
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Creating progress object for SessionTaskCopyDirTo object failed"));
-            throw hr;
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Creating progress object for SessionTaskCopyDirTo object failed"));
+            throw hrc;
         }
 
-        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
 
-        if (SUCCEEDED(hr))
+        if (SUCCEEDED(hrc))
         {
             /* Return progress to the caller. */
             pProgress = pTask->GetProgressObject();
-            hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
+            hrc = pProgress.queryInterfaceTo(aProgress.asOutParam());
         }
         else
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Starting thread for copying directory \"%s\" from host to \"%s\" on the guest failed"),
-                          aSource.c_str(), aDestination.c_str());
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Starting thread for copying directory \"%s\" from host to \"%s\" on the guest failed"),
+                           aSource.c_str(), aDestination.c_str());
     }
     catch(std::bad_alloc &)
     {
-        hr = E_OUTOFMEMORY;
+        hrc = E_OUTOFMEMORY;
     }
     catch(HRESULT eHR)
     {
-        hr = eHR;
+        hrc = eHR;
         LogFlowThisFunc(("Exception was caught in the function\n"));
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
@@ -2894,7 +2905,9 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
                 return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), fFlags);
     }
 
-    HRESULT hr = S_OK;
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     ComObjPtr <GuestDirectory> pDirectory; int rcGuest;
     int rc = i_directoryCreate(aPath, (uint32_t)aMode, fFlags, &rcGuest);
@@ -2902,29 +2915,29 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
     {
         if (GuestProcess::i_isGuestError(rc))
         {
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %s"),
-                                                GuestDirectory::i_guestErrorToString(rcGuest).c_str());
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %s"),
+                                                 GuestDirectory::i_guestErrorToString(rcGuest).c_str());
         }
         else
         {
             switch (rc)
             {
                 case VERR_INVALID_PARAMETER:
-                    hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Invalid parameters given"));
+                    hrc = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Invalid parameters given"));
                     break;
 
                 case VERR_BROKEN_PIPE:
-                    hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Unexpectedly aborted"));
+                    hrc = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: Unexpectedly aborted"));
                     break;
 
                 default:
-                    hr = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %Rrc"), rc);
+                    hrc = setError(VBOX_E_IPRT_ERROR, tr("Directory creation failed: %Rrc"), rc);
                     break;
             }
         }
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath,
@@ -2938,7 +2951,9 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory name specified"));
 
-    HRESULT hr = S_OK;
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     int rcGuest;
     int rc = i_fsCreateTemp(aTemplateName, aPath, true /* Directory */, aDirectory, &rcGuest);
@@ -2947,17 +2962,17 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
         switch (rc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::i_setErrorExternal(this, rcGuest);
+                hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
                 break;
 
             default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Temporary directory creation \"%s\" with template \"%s\" failed: %Rrc"),
-                             aPath.c_str(), aTemplateName.c_str(), rc);
+               hrc = setError(VBOX_E_IPRT_ERROR, tr("Temporary directory creation \"%s\" with template \"%s\" failed: %Rrc"),
+                              aPath.c_str(), aTemplateName.c_str(), rc);
                break;
         }
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
@@ -2967,7 +2982,9 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to check existence for specified"));
 
-    HRESULT hr = S_OK;
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     GuestFsObjData objData; int rcGuest;
     int rc = i_directoryQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
@@ -2985,21 +3002,21 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
                         *aExists = FALSE;
                         break;
                     default:
-                        hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory existence \"%s\" failed: %s"),
-                                      aPath.c_str(), GuestProcess::i_guestErrorToString(rcGuest).c_str());
+                        hrc = setError(VBOX_E_IPRT_ERROR, tr("Querying directory existence \"%s\" failed: %s"),
+                                                             aPath.c_str(), GuestProcess::i_guestErrorToString(rcGuest).c_str());
                         break;
                 }
                 break;
             }
 
             default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory existence \"%s\" failed: %Rrc"),
-                             aPath.c_str(), rc);
+               hrc = setError(VBOX_E_IPRT_ERROR, tr("Querying directory existence \"%s\" failed: %Rrc"),
+                                                    aPath.c_str(), rc);
                break;
         }
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8Str &aFilter,
@@ -3022,7 +3039,9 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
             return setError(E_INVALIDARG, tr("Open flags (%#x) not implemented yet"), fFlags);
     }
 
-    HRESULT hr = S_OK;
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     GuestDirectoryOpenInfo openInfo;
     openInfo.mPath = aPath;
@@ -3034,29 +3053,29 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
     if (RT_SUCCESS(rc))
     {
         /* Return directory object to the caller. */
-        hr = pDirectory.queryInterfaceTo(aDirectory.asOutParam());
+        hrc = pDirectory.queryInterfaceTo(aDirectory.asOutParam());
     }
     else
     {
         switch (rc)
         {
             case VERR_INVALID_PARAMETER:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory \"%s\" failed; invalid parameters given"),
-                                                   aPath.c_str());
+               hrc = setError(VBOX_E_IPRT_ERROR, tr("Opening directory \"%s\" failed; invalid parameters given"),
+                                                    aPath.c_str());
                break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestDirectory::i_setErrorExternal(this, rcGuest);
+                hrc = GuestDirectory::i_setErrorExternal(this, rcGuest);
                 break;
 
             default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory \"%s\" failed: %Rrc"),
-                             aPath.c_str(),rc);
+               hrc = setError(VBOX_E_IPRT_ERROR, tr("Opening directory \"%s\" failed: %Rrc"),
+                                                    aPath.c_str(),rc);
                break;
         }
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
@@ -3066,9 +3085,9 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to remove specified"));
 
-    HRESULT hr = i_isReadyExternal();
-    if (FAILED(hr))
-        return hr;
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     /* No flags; only remove the directory when empty. */
     uint32_t uFlags = 0;
@@ -3080,22 +3099,22 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
         switch (vrc)
         {
             case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Handling removing guest directories not supported by installed Guest Additions"));
+                hrc = setError(VBOX_E_IPRT_ERROR,
+                               tr("Handling removing guest directories not supported by installed Guest Additions"));
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestDirectory::i_setErrorExternal(this, rcGuest);
+                hrc = GuestDirectory::i_setErrorExternal(this, rcGuest);
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Removing guest directory \"%s\" failed: %Rrc"),
-                              aPath.c_str(), vrc);
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("Removing guest directory \"%s\" failed: %Rrc"),
+                                                     aPath.c_str(), vrc);
                 break;
         }
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const std::vector<DirectoryRemoveRecFlag_T> &aFlags,
@@ -3110,26 +3129,26 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
 /** @todo r=bird: Must check that the flags matches the hardcoded behavior
  *        further down!! */
 
-    HRESULT hr = i_isReadyExternal();
-    if (FAILED(hr))
-        return hr;
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     ComObjPtr<Progress> pProgress;
-    hr = pProgress.createObject();
-    if (SUCCEEDED(hr))
-        hr = pProgress->init(static_cast<IGuestSession *>(this),
-                             Bstr(tr("Removing guest directory")).raw(),
-                             TRUE /*aCancelable*/);
-    if (FAILED(hr))
-        return hr;
+    hrc = pProgress.createObject();
+    if (SUCCEEDED(hrc))
+        hrc = pProgress->init(static_cast<IGuestSession *>(this),
+                              Bstr(tr("Removing guest directory")).raw(),
+                              TRUE /*aCancelable*/);
+    if (FAILED(hrc))
+        return hrc;
 
     /* Note: At the moment we don't supply progress information while
      *       deleting a guest directory recursively. So just complete
      *       the progress object right now. */
      /** @todo Implement progress reporting on guest directory deletion! */
-    hr = pProgress->i_notifyComplete(S_OK);
-    if (FAILED(hr))
-        return hr;
+    hrc = pProgress->i_notifyComplete(S_OK);
+    if (FAILED(hrc))
+        return hrc;
 
     /* Remove the directory + all its contents. */
     uint32_t uFlags = DIRREMOVE_FLAG_RECURSIVE
@@ -3141,17 +3160,17 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
         switch (vrc)
         {
             case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR,
+                hrc = setError(VBOX_E_IPRT_ERROR,
                               tr("Handling removing guest directories recursively not supported by installed Guest Additions"));
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestFile::i_setErrorExternal(this, rcGuest);
+                hrc = GuestFile::i_setErrorExternal(this, rcGuest);
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Recursively removing guest directory \"%s\" failed: %Rrc"),
-                              aPath.c_str(), vrc);
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("Recursively removing guest directory \"%s\" failed: %Rrc"),
+                                                     aPath.c_str(), vrc);
                 break;
         }
     }
@@ -3160,7 +3179,7 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
         pProgress.queryInterfaceTo(aProgress.asOutParam());
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::environmentScheduleSet(const com::Utf8Str &aName, const com::Utf8Str &aValue)
@@ -3293,6 +3312,10 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
         return S_OK;
     }
 
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
+
     GuestFsObjData objData; int rcGuest;
     int vrc = i_fileQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
     if (RT_SUCCESS(vrc))
@@ -3301,12 +3324,10 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
         return S_OK;
     }
 
-    HRESULT hr = S_OK;
-
     switch (vrc)
     {
         case VERR_GSTCTL_GUEST_ERROR:
-            hr = GuestProcess::i_setErrorExternal(this, rcGuest);
+            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
             break;
 
 /** @todo r=bird: what about VERR_PATH_NOT_FOUND and VERR_FILE_NOT_FOUND?
@@ -3316,12 +3337,12 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
             break;
 
         default:
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file information for \"%s\" failed: %Rrc"),
-                          aPath.c_str(), vrc);
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Querying file information for \"%s\" failed: %Rrc"),
+                                                 aPath.c_str(), vrc);
             break;
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
@@ -3341,9 +3362,9 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No file to open specified"));
 
-    HRESULT hr = i_isReadyExternal();
-    if (FAILED(hr))
-        return hr;
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     GuestFileOpenInfo openInfo;
     openInfo.mFileName = aPath;
@@ -3410,28 +3431,28 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     int vrc = i_fileOpen(openInfo, pFile, &rcGuest);
     if (RT_SUCCESS(vrc))
         /* Return directory object to the caller. */
-        hr = pFile.queryInterfaceTo(aFile.asOutParam());
+        hrc = pFile.queryInterfaceTo(aFile.asOutParam());
     else
     {
         switch (vrc)
         {
             case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR,
+                hrc = setError(VBOX_E_IPRT_ERROR,
                               tr("Handling guest files not supported by installed Guest Additions"));
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestFile::i_setErrorExternal(this, rcGuest);
+                hrc = GuestFile::i_setErrorExternal(this, rcGuest);
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Opening guest file \"%s\" failed: %Rrc"),
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("Opening guest file \"%s\" failed: %Rrc"),
                               aPath.c_str(), vrc);
                 break;
         }
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymlinks, LONG64 *aSize)
@@ -3439,7 +3460,9 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
     if (aPath.isEmpty())
         return setError(E_INVALIDARG, tr("No path specified"));
 
-    HRESULT hr = S_OK;
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     int64_t llSize; int rcGuest;
     int vrc = i_fileQuerySize(aPath, aFollowSymlinks != FALSE,  &llSize, &rcGuest);
@@ -3451,13 +3474,13 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
     {
         if (GuestProcess::i_isGuestError(vrc))
         {
-            hr = GuestProcess::i_setErrorExternal(this, rcGuest);
+            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
         }
         else
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file size failed: %Rrc"), vrc);
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Querying file size failed: %Rrc"), vrc);
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
@@ -3465,9 +3488,11 @@ HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlink
     if (aPath.isEmpty())
         return setError(E_INVALIDARG, tr("No path specified"));
 
-    LogFlowThisFunc(("aPath=%s, aFollowSymlinks=%RTbool\n", aPath.c_str(), RT_BOOL(aFollowSymlinks)));
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
-    HRESULT hrc = S_OK;
+    LogFlowThisFunc(("aPath=%s, aFollowSymlinks=%RTbool\n", aPath.c_str(), RT_BOOL(aFollowSymlinks)));
 
     *aExists = false;
 
@@ -3504,9 +3529,11 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
     if (aPath.isEmpty())
         return setError(E_INVALIDARG, tr("No path specified"));
 
-    LogFlowThisFunc(("aPath=%s, aFollowSymlinks=%RTbool\n", aPath.c_str(), RT_BOOL(aFollowSymlinks)));
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
-    HRESULT hrc = S_OK;
+    LogFlowThisFunc(("aPath=%s, aFollowSymlinks=%RTbool\n", aPath.c_str(), RT_BOOL(aFollowSymlinks)));
 
     GuestFsObjData Info; int rcGuest;
     int vrc = i_fsQueryInfo(aPath, aFollowSymlinks != FALSE, Info, &rcGuest);
@@ -3541,9 +3568,11 @@ HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
     if (RT_UNLIKELY(aPath.isEmpty()))
         return setError(E_INVALIDARG, tr("No path specified"));
 
-    LogFlowThisFunc(("aPath=%s\n", aPath.c_str()));
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
-    HRESULT hrc = S_OK;
+    LogFlowThisFunc(("aPath=%s\n", aPath.c_str()));
 
     int rcGuest;
     int vrc = i_fileRemove(aPath, &rcGuest);
@@ -3572,9 +3601,9 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
 
     LogFlowThisFunc(("aSource=%s, aDestination=%s\n", aSource.c_str(), aDestination.c_str()));
 
-    HRESULT hr = i_isReadyExternal();
-    if (FAILED(hr))
-        return hr;
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     /* Combine, validate and convert flags. */
     uint32_t fApiFlags = 0;
@@ -3599,23 +3628,23 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
         switch (vrc)
         {
             case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR,
+                hrc = setError(VBOX_E_IPRT_ERROR,
                               tr("Handling renaming guest directories not supported by installed Guest Additions"));
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = setError(VBOX_E_IPRT_ERROR,
+                hrc = setError(VBOX_E_IPRT_ERROR,
                               tr("Renaming guest directory failed: %Rrc"), rcGuest);
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Renaming guest directory \"%s\" failed: %Rrc"),
-                              aSource.c_str(), vrc);
+                hrc = setError(VBOX_E_IPRT_ERROR, tr("Renaming guest directory \"%s\" failed: %Rrc"),
+                                                     aSource.c_str(), vrc);
                 break;
         }
     }
 
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::fsObjMove(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
@@ -3801,11 +3830,13 @@ HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWait
 {
     LogFlowThisFuncEnter();
 
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
+
     /*
      * Note: Do not hold any locks here while waiting!
      */
-    HRESULT hr = S_OK;
-
     int rcGuest; GuestSessionWaitResult_T waitResult;
     int vrc = i_waitFor(aWaitFor, aTimeoutMS, waitResult, &rcGuest);
     if (RT_SUCCESS(vrc))
@@ -3815,7 +3846,7 @@ HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWait
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestSession::i_setErrorExternal(this, rcGuest);
+                hrc = GuestSession::i_setErrorExternal(this, rcGuest);
                 break;
 
             case VERR_TIMEOUT:
@@ -3825,22 +3856,26 @@ HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWait
             default:
             {
                 const char *pszSessionName = mData.mSession.mName.c_str();
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Waiting for guest session \"%s\" failed: %Rrc"),
-                                 pszSessionName ? pszSessionName : tr("Unnamed"), vrc);
+                hrc = setError(VBOX_E_IPRT_ERROR,
+                               tr("Waiting for guest session \"%s\" failed: %Rrc"),
+                                  pszSessionName ? pszSessionName : tr("Unnamed"), vrc);
                 break;
             }
         }
     }
 
     LogFlowFuncLeaveRC(vrc);
-    return hr;
+    return hrc;
 }
 
 HRESULT GuestSession::waitForArray(const std::vector<GuestSessionWaitForFlag_T> &aWaitFor, ULONG aTimeoutMS,
                                    GuestSessionWaitResult_T *aReason)
 {
     LogFlowThisFuncEnter();
+
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
 
     /*
      * Note: Do not hold any locks here while waiting!
