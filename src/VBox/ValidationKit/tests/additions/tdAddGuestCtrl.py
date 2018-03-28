@@ -32,6 +32,9 @@ __version__ = "$Revision$"
 # Disable bitching about too many arguments per function.
 # pylint: disable=R0913
 
+# Disable bitching about semicolons at the end of lines.
+# pylint: disable=W0301
+
 ## @todo Convert map() usage to a cleaner alternative Python now offers.
 # pylint: disable=W0141
 
