@@ -274,6 +274,79 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return self.oTstDrv.asRsrcs
 
+    def __testScenario_2(self, oSession, oMachine, sNewLoc, sOldLoc):
+
+        sController = self.dsKeys['StandardImage']
+        aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+        oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
+        oSubTstDrvMoveMedium1Instance.setLocation(sOldLoc, aoMediumAttachments)
+
+        del oSubTstDrvMoveMedium1Instance
+
+        dsReferenceFiles = defaultdict(set)
+
+        for s in self.asImagesNames:
+            reporter.log('"%s"' % (s,))
+            dsReferenceFiles['StandardImage'].add(sNewLoc + os.sep + oMachine.name + os.sep + s)
+
+        sSettingFile = os.path.join(sNewLoc, os.path.join(oMachine.name, oMachine.name + '.vbox'))
+        dsReferenceFiles['SettingsFile'].add(sSettingFile)
+
+        fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine)
+
+        if fRc is True:
+            fRc = self.checkLocation(oSession.o.machine, dsReferenceFiles)
+            if fRc is False:
+                reporter.testFailure('!!!!!!!!!!!!!!!!!! 2nd scenario: Check locations failed... !!!!!!!!!!!!!!!!!!')
+        else:
+            reporter.testFailure('!!!!!!!!!!!!!!!!!! 2nd scenario: Move VM failed... !!!!!!!!!!!!!!!!!!')
+
+        fRes = oSession.saveSettings()
+        if fRes is False:
+            reporter.log('2nd scenario: Couldn\'t save machine settings')
+
+        return fRc
+
+    def __testScenario_3(self, oSession, oMachine, sNewLoc):
+
+        #At moment, it's used only one snapshot due to the difficulty to get
+        #all attachments of the machine (i.e. not only attached at moment)
+        cSnap = 1
+
+        for counter in range(1,cSnap+1):
+            strSnapshot = 'Snapshot' + str(counter)
+            fRc = oSession.takeSnapshot(strSnapshot)
+            if fRc is False:
+                reporter.testFailure('3rd scenario: Can\'t take snapshot "%s"' % (strSnapshot,))
+
+        dsReferenceFiles = defaultdict(set)
+
+        sController = self.dsKeys['StandardImage']
+        aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
+        if fRc is True:
+            for oAttachment in aoMediumAttachments:
+                sRes = oAttachment.medium.location.rpartition(os.sep)
+                dsReferenceFiles['SnapshotFile'].add(sNewLoc + os.sep + oMachine.name + os.sep +
+                                                     'Snapshots' + os.sep + sRes[2])
+
+            sSettingFile = os.path.join(sNewLoc, os.path.join(oMachine.name, oMachine.name + '.vbox'))
+            dsReferenceFiles['SettingsFile'].add(sSettingFile)
+
+            fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine)
+
+        if fRc is True:
+            fRc = self.checkLocation(oSession.o.machine, dsReferenceFiles)
+            if fRc is False:
+                reporter.testFailure('!!!!!!!!!!!!!!!!!! 3rd scenario: Check locations failed... !!!!!!!!!!!!!!!!!!')
+        else:
+            reporter.testFailure('!!!!!!!!!!!!!!!!!! 3rd scenario: Move VM failed... !!!!!!!!!!!!!!!!!!')
+
+        fRes = oSession.saveSettings()
+        if fRes is False:
+            reporter.log('3d scenario: Couldn\'t save machine settings')
+
+        return fRc
+
     def __testScenario_4(self, oMachine, sNewLoc):
 
         #Run VM and get new Session object
@@ -537,37 +610,10 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             sOldLoc = sNewLoc + oMachine.name + os.sep
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_2d_scenario')
             os.mkdir(sNewLoc, 0o775)
-            sController = self.dsKeys['StandardImage']
-            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
-            oSubTstDrvMoveMedium1Instance = SubTstDrvMoveMedium1(self.oTstDrv)
-            oSubTstDrvMoveMedium1Instance.setLocation(sOldLoc, aoMediumAttachments)
 
-            del oSubTstDrvMoveMedium1Instance
-
-            #always clear before each scenario
-            dsReferenceFiles.clear()
-
-            for s in self.asImagesNames:
-                reporter.log('"%s"' % (s,))
-                dsReferenceFiles['StandardImage'].add(sNewLoc + os.sep + oMachine.name + os.sep + s)
-
-            sSettingFile = os.path.join(sNewLoc, os.path.join(oMachine.name, oMachine.name + '.vbox'))
-            dsReferenceFiles['SettingsFile'].add(sSettingFile)
-
-            fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine)
-
-            if fRc is True:
-                fRc = self.checkLocation(oSession.o.machine, dsReferenceFiles)
-                if fRc is False:
-                    reporter.testFailure('!!!!!!!!!!!!!!!!!! 2nd scenario: Check locations failed... !!!!!!!!!!!!!!!!!!')
-                    return reporter.testDone()[1] == 0
-            else:
-                reporter.testFailure('!!!!!!!!!!!!!!!!!! 2nd scenario: Move VM failed... !!!!!!!!!!!!!!!!!!')
-                return reporter.testDone()[1] == 0
-
-            fRc = oSession.saveSettings()
+            fRc = self.__testScenario_2(oSession, oMachine, sNewLoc, sOldLoc)
             if fRc is False:
-                reporter.testFailure('2nd scenario: Couldn\'t save machine settings')
+                return reporter.testDone()[1] == 0
 
 ############# 3 case. ##########################################################################################
             #   There are snapshots.
@@ -575,45 +621,9 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
             os.mkdir(sNewLoc, 0o775)
 
-            #At moment, it's used only one snapshot due to the difficulty to get
-            #all attachments of the machine (i.e. not only attached at moment)
-            cSnap = 1
-
-            for counter in range(1,cSnap+1):
-                strSnapshot = 'Snapshot' + str(counter)
-                fRc = fRc and oSession.takeSnapshot(strSnapshot)
-                if fRc is False:
-                    reporter.testFailure('3rd scenario: Can\'t take snapshot "%s"' % (strSnapshot,))
-                    return reporter.testDone()[1] == 0
-
-            #always clear before each scenario
-            dsReferenceFiles.clear()
-
-            sController = self.dsKeys['StandardImage']
-            aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
-            if fRc is True:
-                for oAttachment in aoMediumAttachments:
-                    sRes = oAttachment.medium.location.rpartition(os.sep)
-                    dsReferenceFiles['SnapshotFile'].add(sNewLoc + os.sep + oMachine.name + os.sep +
-                                                         'Snapshots' + os.sep + sRes[2])
-
-                sSettingFile = os.path.join(sNewLoc, os.path.join(oMachine.name, oMachine.name + '.vbox'))
-                dsReferenceFiles['SettingsFile'].add(sSettingFile)
-
-                fRc = self.moveVMToLocation(sNewLoc, oSession.o.machine)
-
-            if fRc is True:
-                fRc = self.checkLocation(oSession.o.machine, dsReferenceFiles)
-                if fRc is False:
-                    reporter.testFailure('!!!!!!!!!!!!!!!!!! 3rd scenario: Check locations failed... !!!!!!!!!!!!!!!!!!')
-                    return reporter.testDone()[1] == 0
-            else:
-                reporter.testFailure('!!!!!!!!!!!!!!!!!! 3rd scenario: Move VM failed... !!!!!!!!!!!!!!!!!!')
-                return reporter.testDone()[1] == 0
-
-            fRc = oSession.saveSettings()
+            fRc = self.__testScenario_3(oSession, oMachine, sNewLoc)
             if fRc is False:
-                reporter.testFailure('3d scenario: Couldn\'t save machine settings')
+                return reporter.testDone()[1] == 0
 
 ############# 4 case. ##########################################################################################
             #   There are one or more save state files in the snapshots folder
