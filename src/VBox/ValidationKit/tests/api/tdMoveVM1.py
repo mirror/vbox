@@ -376,8 +376,8 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         #detach ISO image
         fRes = oSession.detachHd(sController, iPort, 0)
         if fRes is False:
-            reporter.log('5th scenario: Couldn\'t detach image from the controller %s 
-                         port %s device %s' % (sController, iPort, 0))
+            reporter.log('5th scenario: Couldn\'t detach image from the controller %s '
+                         'port %s device %s' % (sController, iPort, 0))
 
         fRes = oSession.saveSettings()
         if fRes is False:
