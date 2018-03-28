@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,74 +33,62 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
-#include <XKeyboard.h>
+#include "XKeyboard.h"
 
 /* Other VBox includes: */
-#include <VBox/VBoxKeyboard.h>
+#include "VBox/VBoxKeyboard.h"
 
 /* External includes: */
 #include <X11/XKBlib.h>
 #include <X11/keysym.h>
 
 
-/* VBoxKeyboard uses the deprecated XKeycodeToKeysym(3) API, but uses it safely.
- */
+/* VBoxKeyboard uses the deprecated XKeycodeToKeysym(3) API, but uses it safely. */
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 static unsigned gfByLayoutOK = 1;
 static unsigned gfByTypeOK = 1;
 static unsigned gfByXkbOK = 1;
 
-/**
- * DEBUG function
- * Print a key to the release log in the format needed for the Wine
- * layout tables.
- */
-static void printKey(Display *display, int keyc)
+/** Prints a key to the release log in the format needed for the Wine layout tables. */
+static void printKey(Display *pDisplay, int cKeys)
 {
-    bool was_escape = false;
+    bool fWasEscape = false;
 
     for (int i = 0; i < 2; ++i)
     {
-        int keysym = XKeycodeToKeysym (display, keyc, i);
+        int iKeySym = XKeycodeToKeysym(pDisplay, cKeys, i);
 
-        int val = keysym & 0xff;
-        if ('\\' == val)
+        int iValue = iKeySym & 0xff;
+        if ('\\' == iValue)
         {
             LogRel(("\\\\"));
         }
-        else if ('"' == val)
+        else if ('"' == iValue)
         {
             LogRel(("\\\""));
         }
-        else if ((val > 32) && (val < 127))
+        else if ((iValue > 32) && (iValue < 127))
         {
-            if (
-                   was_escape
-                && (
-                       ((val >= '0') && (val <= '9'))
-                    || ((val >= 'A') && (val <= 'F'))
-                    || ((val >= 'a') && (val <= 'f'))
-                   )
-               )
+            if (   fWasEscape
+                && (   ((iValue >= '0') && (iValue <= '9'))
+                    || ((iValue >= 'A') && (iValue <= 'F'))
+                    || ((iValue >= 'a') && (iValue <= 'f'))))
             {
                 LogRel(("\"\""));
             }
-            LogRel(("%c", (char) val));
+            LogRel(("%c", (char)iValue));
         }
         else
         {
-            LogRel(("\\x%x", val));
-            was_escape = true;
+            LogRel(("\\x%x", iValue));
+            fWasEscape = true;
         }
     }
 }
 
-/**
- * DEBUG function
- * Dump the keyboard layout to the release log.
- */
-static void dumpLayout(Display *display)
+/** Dumps the keyboard layout to the release log. */
+static void dumpLayout(Display *pDisplay)
 {
     LogRel(("Your keyboard layout does not appear to be fully supported by\n"
             "VirtualBox. If you are experiencing keyboard problems this.\n"
@@ -109,57 +97,54 @@ static void dumpLayout(Display *display)
             "The correct table for your layout is:\n"));
     /* First, build up a table of scan-to-key code mappings */
     unsigned scanToKeycode[512] = { 0 };
-    int minKey, maxKey;
-    XDisplayKeycodes(display, &minKey, &maxKey);
-    for (int i = minKey; i < maxKey; ++i)
-        scanToKeycode[X11DRV_KeyEvent(display, i)] = i;
+    int iMinKey, iMaxKey;
+    XDisplayKeycodes(pDisplay, &iMinKey, &iMaxKey);
+    for (int i = iMinKey; i < iMaxKey; ++i)
+        scanToKeycode[X11DRV_KeyEvent(pDisplay, i)] = i;
     LogRel(("\""));
-    printKey(display, scanToKeycode[0x29]); /* `~ */
+    printKey(pDisplay, scanToKeycode[0x29]); /* `~ */
     for (int i = 2; i <= 0xd; ++i) /* 1! - =+ */
     {
         LogRel(("\",\""));
-        printKey(display, scanToKeycode[i]);
+        printKey(pDisplay, scanToKeycode[i]);
     }
     LogRel(("\",\n"));
     LogRel(("\""));
-    printKey(display, scanToKeycode[0x10]); /* qQ */
+    printKey(pDisplay, scanToKeycode[0x10]); /* qQ */
     for (int i = 0x11; i <= 0x1b; ++i) /* wW - ]} */
     {
         LogRel(("\",\""));
-        printKey(display, scanToKeycode[i]);
+        printKey(pDisplay, scanToKeycode[i]);
     }
     LogRel(("\",\n"));
     LogRel(("\""));
-    printKey(display, scanToKeycode[0x1e]); /* aA */
+    printKey(pDisplay, scanToKeycode[0x1e]); /* aA */
     for (int i = 0x1f; i <= 0x28; ++i) /* sS - '" */
     {
         LogRel(("\",\""));
-        printKey(display, scanToKeycode[i]);
+        printKey(pDisplay, scanToKeycode[i]);
     }
     LogRel(("\",\""));
-    printKey(display, scanToKeycode[0x2b]); /* \| */
+    printKey(pDisplay, scanToKeycode[0x2b]); /* \| */
     LogRel(("\",\n"));
     LogRel(("\""));
-    printKey(display, scanToKeycode[0x2c]); /* zZ */
+    printKey(pDisplay, scanToKeycode[0x2c]); /* zZ */
     for (int i = 0x2d; i <= 0x35; ++i) /* xX - /? */
     {
         LogRel(("\",\""));
-        printKey(display, scanToKeycode[i]);
+        printKey(pDisplay, scanToKeycode[i]);
     }
     LogRel(("\",\""));
-    printKey(display, scanToKeycode[0x56]); /* The 102nd key */
+    printKey(pDisplay, scanToKeycode[0x56]); /* The 102nd key */
     LogRel(("\",\""));
-    printKey(display, scanToKeycode[0x73]); /* The Brazilian key */
+    printKey(pDisplay, scanToKeycode[0x73]); /* The Brazilian key */
     LogRel(("\",\""));
-    printKey(display, scanToKeycode[0x7d]); /* The Yen key */
+    printKey(pDisplay, scanToKeycode[0x7d]); /* The Yen key */
     LogRel(("\"\n\n"));
 }
 
-/**
- * DEBUG function
- * Dump the keyboard type tables to the release log.
- */
-static void dumpType(Display *display)
+/** Dumps the keyboard type tables to the release log. */
+static void dumpType(Display *pDisplay)
 {
     LogRel(("Your keyboard type does not appear to be known to VirtualBox. If\n"
             "you are experiencing keyboard problems this information may help us\n"
@@ -169,7 +154,7 @@ static void dumpType(Display *display)
             "The tables for your keyboard are:\n"));
     for (unsigned i = 0; i < 256; ++i)
     {
-        LogRel(("0x%x", X11DRV_KeyEvent(display, i)));
+        LogRel(("0x%x", X11DRV_KeyEvent(pDisplay, i)));
         if (i < 255)
             LogRel((", "));
         if (15 == (i % 16))
@@ -177,52 +162,90 @@ static void dumpType(Display *display)
     }
     LogRel(("and\n"));
     LogRel(("NULL, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x,\n0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n",
-            XKeysymToKeycode(display, XK_Control_L),
-            XKeysymToKeycode(display, XK_Shift_L),
-            XKeysymToKeycode(display, XK_Caps_Lock),
-            XKeysymToKeycode(display, XK_Tab),
-            XKeysymToKeycode(display, XK_Escape),
-            XKeysymToKeycode(display, XK_Return),
-            XKeysymToKeycode(display, XK_Up),
-            XKeysymToKeycode(display, XK_Down),
-            XKeysymToKeycode(display, XK_Left),
-            XKeysymToKeycode(display, XK_Right),
-            XKeysymToKeycode(display, XK_F1),
-            XKeysymToKeycode(display, XK_F2),
-            XKeysymToKeycode(display, XK_F3),
-            XKeysymToKeycode(display, XK_F4),
-            XKeysymToKeycode(display, XK_F5),
-            XKeysymToKeycode(display, XK_F6),
-            XKeysymToKeycode(display, XK_F7),
-            XKeysymToKeycode(display, XK_F8)));
+            XKeysymToKeycode(pDisplay, XK_Control_L),
+            XKeysymToKeycode(pDisplay, XK_Shift_L),
+            XKeysymToKeycode(pDisplay, XK_Caps_Lock),
+            XKeysymToKeycode(pDisplay, XK_Tab),
+            XKeysymToKeycode(pDisplay, XK_Escape),
+            XKeysymToKeycode(pDisplay, XK_Return),
+            XKeysymToKeycode(pDisplay, XK_Up),
+            XKeysymToKeycode(pDisplay, XK_Down),
+            XKeysymToKeycode(pDisplay, XK_Left),
+            XKeysymToKeycode(pDisplay, XK_Right),
+            XKeysymToKeycode(pDisplay, XK_F1),
+            XKeysymToKeycode(pDisplay, XK_F2),
+            XKeysymToKeycode(pDisplay, XK_F3),
+            XKeysymToKeycode(pDisplay, XK_F4),
+            XKeysymToKeycode(pDisplay, XK_F5),
+            XKeysymToKeycode(pDisplay, XK_F6),
+            XKeysymToKeycode(pDisplay, XK_F7),
+            XKeysymToKeycode(pDisplay, XK_F8)));
 }
 
-/*
- * This function builds a table mapping the X server's scan codes to PC
- * keyboard scan codes.  The logic of the function is that while the
- * X server may be using a different set of scan codes (if for example
- * it is running on a non-PC machine), the keyboard layout should be similar
- * to a PC layout.  So we look at the symbols attached to each key on the
- * X server, find the PC layout which is closest to it and remember the
- * mappings.
- */
-bool initXKeyboard(Display *dpy, int (*remapScancodes)[2])
+/** Builds a table mapping the X server's scan codes to PC keyboard scan codes.
+  * The logic of the function is that while the X server may be using a different
+  * set of scan codes (if for example it is running on a non-PC machine), the
+  * keyboard layout should be similar to a PC layout.  So we look at the symbols
+  * attached to each key on the X server, find the PC layout which is closest to
+  * it and remember the mappings. */
+bool initXKeyboard(Display *pDisplay, int (*remapScancodes)[2])
 {
-    X11DRV_InitKeyboard(dpy, &gfByLayoutOK, &gfByTypeOK, &gfByXkbOK,
-                        remapScancodes);
-    /* It will almost always work to some extent */
+    X11DRV_InitKeyboard(pDisplay, &gfByLayoutOK, &gfByTypeOK, &gfByXkbOK, remapScancodes);
+
+    /* It will almost always work to some extent.. */
     return true;
 }
 
-/**
- * Do deferred logging after initialisation
- */
-void doXKeyboardLogging(Display *dpy)
+void initMappedX11Keyboard(Display *pDisplay, const QString &remapScancodes)
+{
+    /* Initialize X11 keyboard including the remapping specified in the
+     * global property GUI/RemapScancodes. This property is a string of
+     * comma-separated x=y pairs, where x is the X11 keycode and y is the
+     * keyboard scancode that is emitted when the key attached to the X11
+     * keycode is pressed. */
+
+    int (*scancodes)[2] = NULL;
+    int (*scancodesTail)[2] = NULL;
+
+    if (remapScancodes != QString())
+    {
+        QStringList tuples = remapScancodes.split(",", QString::SkipEmptyParts);
+        scancodes = scancodesTail = new int [tuples.size()+1][2];
+        for (int i = 0; i < tuples.size(); ++i)
+        {
+            QStringList keyc2scan = tuples.at(i).split("=");
+            (*scancodesTail)[0] = keyc2scan.at(0).toUInt();
+            (*scancodesTail)[1] = keyc2scan.at(1).toUInt();
+            /* Do not advance on (ignore) identity mappings as this
+             * is the stop signal to initXKeyboard and friends: */
+            if ((*scancodesTail)[0] != (*scancodesTail)[1])
+                ++scancodesTail;
+        }
+        (*scancodesTail)[0] = (*scancodesTail)[1] = 0;
+    }
+
+    /* Initialize the X keyboard subsystem: */
+    initXKeyboard(pDisplay, scancodes);
+
+    if (scancodes)
+        delete scancodes;
+}
+
+unsigned handleXKeyEvent(Display *pDisplay, unsigned int iDetail)
+{
+    /* Call the WINE event handler: */
+    unsigned iKey = X11DRV_KeyEvent(pDisplay, iDetail);
+    LogRel3(("VBoxKeyboard: converting keycode %d to scancode %s0x%x\n",
+             iDetail, iKey > 0x100 ? "0xe0 " : "", iKey & 0xff));
+    return iKey;
+}
+
+void doXKeyboardLogging(Display *pDisplay)
 {
     if (((1 == gfByTypeOK) || (1 == gfByXkbOK)) && (gfByLayoutOK != 1))
-        dumpLayout(dpy);
+        dumpLayout(pDisplay);
     if (((1 == gfByLayoutOK) || (1 == gfByXkbOK)) && (gfByTypeOK != 1))
-        dumpType(dpy);
+        dumpType(pDisplay);
     if ((gfByLayoutOK != 1) && (gfByTypeOK != 1) && (gfByXkbOK != 1))
     {
         LogRel(("Failed to recognize the keyboard mapping or to guess it based on\n"
@@ -239,59 +262,12 @@ void doXKeyboardLogging(Display *dpy)
         LogRel(("\n"));
     }
     LogRel(("X Server details: vendor: %s, release: %d, protocol version: %d.%d, display string: %s\n",
-            ServerVendor(dpy), VendorRelease(dpy), ProtocolVersion(dpy),
-            ProtocolRevision(dpy), DisplayString(dpy)));
+            ServerVendor(pDisplay), VendorRelease(pDisplay), ProtocolVersion(pDisplay),
+            ProtocolRevision(pDisplay), DisplayString(pDisplay)));
     LogRel(("Using %s for keycode to scan code conversion\n",
               gfByXkbOK ? "XKB"
             : gfByTypeOK ? "known keycode mapping"
             : "host keyboard layout detection"));
-}
-
-/*
- * Translate an X server scancode to a PC keyboard scancode.
- */
-unsigned handleXKeyEvent(Display *pDisplay, unsigned int iDetail)
-{
-    // call the WINE event handler
-    unsigned key = X11DRV_KeyEvent(pDisplay, iDetail);
-    LogRel3(("VBoxKeyboard: converting keycode %d to scancode %s0x%x\n",
-             iDetail, key > 0x100 ? "0xe0 " : "", key & 0xff));
-    return key;
-}
-
-/**
- * Initialize X11 keyboard including the remapping specified in the
- * global property GUI/RemapScancodes. This property is a string of
- * comma-separated x=y pairs, where x is the X11 keycode and y is the
- * keyboard scancode that is emitted when the key attached to the X11
- * keycode is pressed.
- */
-void initMappedX11Keyboard(Display *pDisplay, const QString &remapScancodes)
-{
-    int (*scancodes)[2] = NULL;
-    int (*scancodesTail)[2] = NULL;
-
-    if (remapScancodes != QString::null)
-    {
-        QStringList tuples = remapScancodes.split(",", QString::SkipEmptyParts);
-        scancodes = scancodesTail = new int [tuples.size()+1][2];
-        for (int i = 0; i < tuples.size(); ++i)
-        {
-            QStringList keyc2scan = tuples.at(i).split("=");
-            (*scancodesTail)[0] = keyc2scan.at(0).toUInt();
-            (*scancodesTail)[1] = keyc2scan.at(1).toUInt();
-            /* Do not advance on (ignore) identity mappings as this is
-               the stop signal to initXKeyboard and friends */
-            if ((*scancodesTail)[0] != (*scancodesTail)[1])
-                scancodesTail++;
-        }
-        (*scancodesTail)[0] = (*scancodesTail)[1] = 0;
-    }
-    /* initialize the X keyboard subsystem */
-    initXKeyboard (pDisplay ,scancodes);
-
-    if (scancodes)
-        delete scancodes;
 }
 
 unsigned long wrapXkbKeycodeToKeysym(Display *pDisplay, unsigned char cCode,
@@ -302,3 +278,4 @@ unsigned long wrapXkbKeycodeToKeysym(Display *pDisplay, unsigned char cCode,
         return cSym;
     return XKeycodeToKeysym(pDisplay, cCode, cGroup * 2 + cIndex % 2);
 }
+
