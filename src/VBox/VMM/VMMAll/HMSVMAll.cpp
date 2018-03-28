@@ -316,7 +316,7 @@ VMM_INT_DECL(TRPMEVENT) HMSvmEventToTrpmEventType(PCSVMEVENT pEvent)
  * @param   puMsrpmBit  Where to store the bit offset starting at the byte
  *                      returned in @a pbOffMsrpm.
  */
-VMM_INT_DECL(int) HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint32_t *puMsrpmBit)
+VMM_INT_DECL(int) HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit)
 {
     Assert(pbOffMsrpm);
     Assert(puMsrpmBit);
@@ -334,8 +334,9 @@ VMM_INT_DECL(int) HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm
     if (idMsr <= 0x00001fff)
     {
         /* Pentium-compatible MSRs. */
-        *pbOffMsrpm = 0;
-        *puMsrpmBit = idMsr << 1;
+        uint32_t const bitoffMsr = idMsr << 1;
+        *pbOffMsrpm = bitoffMsr >> 3;
+        *puMsrpmBit = bitoffMsr & 7;
         return VINF_SUCCESS;
     }
 
@@ -343,8 +344,9 @@ VMM_INT_DECL(int) HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm
         && idMsr <= 0xc0001fff)
     {
         /* AMD Sixth Generation x86 Processor MSRs. */
-        *pbOffMsrpm = 0x800;
-        *puMsrpmBit = (idMsr - 0xc0000000) << 1;
+        uint32_t const bitoffMsr = (idMsr - 0xc0000000) << 1;
+        *pbOffMsrpm = 0x800 + (bitoffMsr >> 3);
+        *puMsrpmBit = bitoffMsr & 7;
         return VINF_SUCCESS;
     }
 
@@ -352,8 +354,9 @@ VMM_INT_DECL(int) HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm
         && idMsr <= 0xc0011fff)
     {
         /* AMD Seventh and Eighth Generation Processor MSRs. */
-        *pbOffMsrpm = 0x1000;
-        *puMsrpmBit = (idMsr - 0xc0010000) << 1;
+        uint32_t const bitoffMsr = (idMsr - 0xc0010000) << 1;
+        *pbOffMsrpm = 0x1000 + (bitoffMsr >> 3);
+        *puMsrpmBit = bitoffMsr & 7;
         return VINF_SUCCESS;
     }
 
