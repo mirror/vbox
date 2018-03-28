@@ -49,12 +49,6 @@ from testdriver import vboxcon
 from testdriver import vboxwrappers
 from tdMoveMedium1 import SubTstDrvMoveMedium1
 
-class SubTstDrvMoveVM1Error(Exception):
-    def __init__(self, desc):
-        self.desc = desc
-    def __str__(self):
-        return repr(self.desc)
-
 class SubTstDrvMoveVM1(base.SubTestDriverBase):
     """
     Sub-test driver for VM Move Test #1.
