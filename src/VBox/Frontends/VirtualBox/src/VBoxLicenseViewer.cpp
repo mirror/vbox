@@ -63,7 +63,7 @@ VBoxLicenseViewer::VBoxLicenseViewer(QWidget *pParent /* = 0 */)
         }
 
         /* Create agree button: */
-        /** todo rework buttons to be a part of button-box itself */
+        /** @todo rework buttons to be a part of button-box itself */
         QDialogButtonBox *pDialogButtonBox = new QIDialogButtonBox;
         if (pDialogButtonBox)
         {
