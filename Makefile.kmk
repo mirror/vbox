@@ -1165,7 +1165,7 @@ additions-build-os2.rsync-into-vm:
 
 additions-build-os2.build-it: #additions-build-os2.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,OS/2 additions build+pack)
-	$(TIME_EXT) -- rsh -l vbox $(VBOX_BLD_VM_OS2_IP) "cd e:\\tinderbox\\$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && e: && kbuild\\bin\\os2.x86\\kmk_ash tools\\env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
+	$(TIME_EXT) -- $(REDIRECT_EXT) --stdin-pipe -- rsh -l vbox $(VBOX_BLD_VM_OS2_IP) "cd e:\\tinderbox\\$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && e: && kbuild\\bin\\os2.x86\\kmk_ash tools\\env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
 	$(call VBOX_BLD_VM_MSG_END__,OS/2 additions build+pack)
 
 additions-build-os2.rsync-out-of-vm: additions-build-os2.build-it
@@ -1575,7 +1575,7 @@ validationkit-build-os2.rsync-into-vm:
 
 validationkit-build-os2.build-it: validationkit-build-os2.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,OS/2 Validation Kit)
-	$(TIME_EXT) -- rsh -l vbox $(VBOX_BLD_VM_OS2_IP) "cd e:\\tinderbox\\$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && e: && kbuild\\bin\\os2.x86\\kmk_ash tools\\env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all"
+	$(TIME_EXT) -- $(REDIRECT_EXT) --stdin-pipe -- rsh -l vbox $(VBOX_BLD_VM_OS2_IP) "cd e:\\tinderbox\\$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && e: && kbuild\\bin\\os2.x86\\kmk_ash tools\\env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all"
 	$(call VBOX_BLD_VM_MSG_END__,OS/2 Validation Kit)
 
 validationkit-build-os2.rsync-out-of-vm: validationkit-build-os2.build-it
