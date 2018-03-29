@@ -67,7 +67,7 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession, ULONG aObjec
 
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+    AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
     int vrc = bindToSession(pConsole, pSession, aObjectID);
     if (RT_SUCCESS(vrc))
