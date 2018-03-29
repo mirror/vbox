@@ -2597,8 +2597,6 @@ class TestDriver(base.TestDriver):                                              
             sLogDest = 'file=%s' % sLogFile;
         sEnv = 'VBOX_LOG=%s\nVBOX_LOG_FLAGS=%s\nVBOX_LOG_DEST=nodeny %s\nVBOX_RELEASE_LOG_FLAGS=append time' \
              % (self.sLogSessionGroups, self.sLogSessionFlags, sLogDest,);
-        # Extra audio logging
-        sEnv += '\nVBOX_RELEASE_LOG=drv_audio.e.l.l2+drv_host_audio.e.l.l2'
         if sType == 'gui':
             sEnv += '\nVBOX_GUI_DBG_ENABLED=1'
         if asEnv is not None and asEnv:
