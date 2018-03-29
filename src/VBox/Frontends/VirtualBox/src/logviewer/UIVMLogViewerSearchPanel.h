@@ -30,7 +30,6 @@ class QFrame;
 class QHBoxLayout;
 class QLabel;
 class QIToolButton;
-class UISearchField;
 class UIVMLogViewerSearchField;
 class UIVMLogViewerWidget;
 

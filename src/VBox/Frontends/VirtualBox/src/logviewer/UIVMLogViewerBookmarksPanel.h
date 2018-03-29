@@ -25,7 +25,6 @@
 class QComboBox;
 class QFrame;
 class QIToolButton;
-class UIRoundRectSegmentedButton;
 
 /** UIVMLogViewerPanel extension providing GUI for bookmark management. Show a list of bookmarks currently set
   for displayed log page. It has controls to navigate and clear bookmarks. */

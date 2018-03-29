@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VBoxSpecialButtons declarations.
+ * VBox Qt GUI - UISpecialControls declarations.
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,266 +18,168 @@
 #ifndef ___VBoxSpecialControls_h__
 #define ___VBoxSpecialControls_h__
 
-/* VBox includes */
-#include "QIWithRetranslateUI.h"
-
-/* Qt includes */
+/* Qt includes: */
 #include <QPushButton>
+#ifndef VBOX_DARWIN_USE_NATIVE_CONTROLS
+# include <QLineEdit>
+#endif
+
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
+# include "UICocoaSpecialControls.h"
+#else
+# include "QIToolButton.h"
+#endif
+
+/* Forward declarations: */
+#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
+class UICocoaButton;
+#endif
+
 
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
 
-/* VBox includes */
-#include "UICocoaSpecialControls.h"
-
-/********************************************************************************
- *
- * A mini cancel button in the native Cocoa version.
- *
- ********************************************************************************/
-class UIMiniCancelButton: public QAbstractButton
+/** QAbstractButton subclass, used as mini cancel button. */
+class UIMiniCancelButton : public QAbstractButton
 {
     Q_OBJECT;
 
 public:
+
+    /** Constructs mini cancel-button passing @a pParent to the base-class. */
     UIMiniCancelButton(QWidget *pParent = 0);
 
+    /** Defines button @a strText. */
     void setText(const QString &strText) { m_pButton->setText(strText); }
-    void setToolTip(const QString &strTip) { m_pButton->setToolTip(strTip); }
+    /** Defines button @a strToolTip. */
+    void setToolTip(const QString &strToolTip) { m_pButton->setToolTip(strToolTip); }
+    /** Removes button border. */
     void removeBorder() {}
 
 protected:
-    void paintEvent(QPaintEvent * /* pEvent */) {}
-    void resizeEvent(QResizeEvent *pEvent);
+
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */ { Q_UNUSED(pEvent); }
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
 
 private:
+
+    /** Holds the wrapped cocoa button instance. */
     UICocoaButton *m_pButton;
 };
 
-/********************************************************************************
- *
- * A reset button in the native Cocoa version.
- *
- ********************************************************************************/
-class UIResetButton: public QAbstractButton
+
+/** QAbstractButton subclass, used as mini cancel button. */
+class UIHelpButton : public QPushButton
 {
     Q_OBJECT;
 
 public:
-    UIResetButton(QWidget *pParent = 0);
 
-    void setText(const QString &strText) { m_pButton->setText(strText); }
-    void setToolTip(const QString &strTip) { m_pButton->setToolTip(strTip); }
-    void removeBorder() {}
-
-protected:
-    void paintEvent(QPaintEvent * /* pEvent */) {}
-    void resizeEvent(QResizeEvent *pEvent);
-
-private:
-    UICocoaButton *m_pButton;
-};
-
-/********************************************************************************
- *
- * A help button in the native Cocoa version.
- *
- ********************************************************************************/
-class UIHelpButton: public QPushButton
-{
-    Q_OBJECT;
-
-public:
+    /** Constructs help-button passing @a pParent to the base-class. */
     UIHelpButton(QWidget *pParent = 0);
 
-    void setToolTip(const QString &strTip) { m_pButton->setToolTip(strTip); }
+    /** Defines button @a strToolTip. */
+    void setToolTip(const QString &strToolTip) { m_pButton->setToolTip(strToolTip); }
 
-    void initFrom(QPushButton * /* pOther */) {}
+    /** Inits this button from pOther. */
+    void initFrom(QPushButton *pOther) { Q_UNUSED(pOther); }
 
 protected:
-    void paintEvent(QPaintEvent * /* pEvent */) {}
+
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */ { Q_UNUSED(pEvent); }
 
 private:
+
+    /** Holds the wrapped cocoa button instance. */
     UICocoaButton *m_pButton;
 };
 
-/********************************************************************************
- *
- * A segmented button in the native Cocoa version.
- *
- ********************************************************************************/
-class UIRoundRectSegmentedButton: public UICocoaSegmentedButton
+#else /* !VBOX_DARWIN_USE_NATIVE_CONTROLS */
+
+/** QAbstractButton subclass, used as mini cancel button. */
+class UIMiniCancelButton : public QIWithRetranslateUI<QIToolButton>
 {
     Q_OBJECT;
 
 public:
-    UIRoundRectSegmentedButton(QWidget *pParent, int cCount);
-};
 
-class UITexturedSegmentedButton: public UICocoaSegmentedButton
-{
-    Q_OBJECT;
-
-public:
-    UITexturedSegmentedButton(QWidget *pParent, int cCount);
-};
-
-/********************************************************************************
- *
- * A search field in the native Cocoa version.
- *
- ********************************************************************************/
-class UISearchField: public UICocoaSearchField
-{
-    Q_OBJECT;
-
-public:
-    UISearchField(QWidget *pParent);
-};
-
-#else /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-
-/* VBox includes */
-#include "QIToolButton.h"
-
-/* Qt includes */
-#include <QLineEdit>
-
-/* Qt forward declarations */
-class QSignalMapper;
-
-/********************************************************************************
- *
- * A mini cancel button for the other OS's.
- *
- ********************************************************************************/
-class UIMiniCancelButton: public QIWithRetranslateUI<QIToolButton>
-{
-    Q_OBJECT;
-
-public:
+    /** Constructs mini cancel-button passing @a pParent to the base-class. */
     UIMiniCancelButton(QWidget *pParent = 0);
 
 protected:
-    void retranslateUi() {};
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */ {};
 };
 
-/********************************************************************************
- *
- * A reset button for the other OS's (same as the cancel button for now)
- *
- ********************************************************************************/
-class UIResetButton: public UIMiniCancelButton
+
+/** QAbstractButton subclass, used as mini cancel button. */
+class UIHelpButton : public QIWithRetranslateUI<QPushButton>
 {
     Q_OBJECT;
 
 public:
-    UIResetButton(QWidget *pParent = 0)
-      : UIMiniCancelButton(pParent) {}
-};
 
-/********************************************************************************
- *
- * A help button for the other OS's.
- *
- ********************************************************************************/
-class UIHelpButton: public QIWithRetranslateUI<QPushButton>
-{
-    Q_OBJECT;
-
-public:
+    /** Constructs help-button passing @a pParent to the base-class. */
     UIHelpButton(QWidget *pParent = 0);
-#ifdef VBOX_WS_MAC
+
+# ifdef VBOX_WS_MAC
+    /** Destructs help-button. */
     ~UIHelpButton();
-    QSize sizeHint() const;
-#endif /* VBOX_WS_MAC */
 
+    /** Returns size-hint. */
+    QSize sizeHint() const;
+# endif /* VBOX_WS_MAC */
+
+    /** Inits this button from pOther. */
     void initFrom(QPushButton *pOther);
 
 protected:
+
+    /** Handles translation event. */
     void retranslateUi();
 
-#ifdef VBOX_WS_MAC
-    void paintEvent(QPaintEvent *pEvent);
+# ifdef VBOX_WS_MAC
+    /** Handles button hit as certain @a position. */
+    bool hitButton(const QPoint &position) const;
 
-    bool hitButton(const QPoint &pos) const;
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 
-    void mousePressEvent(QMouseEvent *pEvent);
-    void mouseReleaseEvent(QMouseEvent *pEvent);
-    void leaveEvent(QEvent *pEvent);
+    /** Handles mouse-press @a pEvent. */
+    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    /** Handles mouse-release @a pEvent. */
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
+    /** Handles mouse-leave @a pEvent. */
+    virtual void leaveEvent(QEvent *pEvent) /* override */;
 
 private:
-    /* Private member vars */
+
+    /** Holds the pressed button instance. */
     bool m_pButtonPressed;
 
+    /** Holds the button size. */
     QSize m_size;
+
+    /** Holds the normal pixmap instance. */
     QPixmap *m_pNormalPixmap;
+    /** Holds the pressed pixmap instance. */
     QPixmap *m_pPressedPixmap;
+
+    /** Holds the button mask instance. */
     QImage *m_pMask;
+
+    /** Holds the button rect. */
     QRect m_BRect;
-#endif /* VBOX_WS_MAC */
+# endif /* VBOX_WS_MAC */
 };
 
-/********************************************************************************
- *
- * A segmented button for the other OS's.
- *
- ********************************************************************************/
-class UIRoundRectSegmentedButton: public QWidget
-{
-    Q_OBJECT;
+#endif /* !VBOX_DARWIN_USE_NATIVE_CONTROLS */
 
-public:
-    UIRoundRectSegmentedButton(QWidget *pParent, int aCount);
-    ~UIRoundRectSegmentedButton();
 
-    int count() const;
-
-    void setTitle(int iSegment, const QString &aTitle);
-    void setToolTip(int iSegment, const QString &strTip);
-    void setIcon(int iSegment, const QIcon &icon);
-    void setEnabled(int iSegment, bool fEnabled);
-
-    void setSelected(int iSegment);
-    void animateClick(int iSegment);
-
-signals:
-    void clicked(int iSegment);
-
-protected:
-    /* Protected member vars */
-    QList<QIToolButton*> m_pButtons;
-    QSignalMapper *m_pSignalMapper;
-};
-
-class UITexturedSegmentedButton: public UIRoundRectSegmentedButton
-{
-    Q_OBJECT;
-
-public:
-    UITexturedSegmentedButton(QWidget *pParent, int cCount);
-};
-
-/********************************************************************************
- *
- * A search field  for the other OS's.
- *
- ********************************************************************************/
-class UISearchField: public QLineEdit
-{
-    Q_OBJECT;
-
-public:
-    UISearchField(QWidget *pParent);
-
-    void markError();
-    void unmarkError();
-
-private:
-    /* Private member vars */
-    QBrush m_baseBrush;
-};
-
-#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-
-#endif /* ___VBoxSpecialControls_h__ */
+#endif /* !___UISpecialControls_h___ */
 
