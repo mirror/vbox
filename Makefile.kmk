@@ -1021,6 +1021,12 @@ else
 endif
 
 #
+# For killing old build jobs in the OS/2 VM before rsyncing.
+#
+VBOX_BLD_VM_OS2_KKILL_STUFF = $(REDIRECT_EXT) --stdin-pipe -- rsh -l vbox $(VBOX_BLD_VM_OS2_IP) "kkill -All -Tree kmk.exe gcc.exe & sleep.exe 1 & kkill -All gcc.exe emxomfld.exe as.exe kmk.exe "
+
+
+#
 # Build the additions, all of them.
 #
 # This is currently tailored (hardcoded) for the additions
@@ -1156,6 +1162,7 @@ additions-build-os2.x86:
 additions-build-os2.rsync-into-vm:
  else
 additions-build-os2.rsync-into-vm:
+	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
 	$(TIME_EXT) -- $(call VBOX_RSYNC_IN_FN,os2,*) \
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Additions/WINNT/**' \
@@ -1169,6 +1176,7 @@ additions-build-os2.build-it: #additions-build-os2.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,OS/2 additions build+pack)
 
 additions-build-os2.rsync-out-of-vm: additions-build-os2.build-it
+	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
 	$(TIME_EXT) -- rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
 .NOTPARALLEL: additions-build-os2.rsync-into-vm
@@ -1566,6 +1574,7 @@ validationkit-build-os2.x86:
 validationkit-build-os2.rsync-into-vm:
 else # !OS/2
 validationkit-build-os2.rsync-into-vm:
+	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
 	$(TIME_EXT) -- $(call VBOX_RSYNC_IN_FN,os2,*) \
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Additions/WINNT/**' \
@@ -1579,6 +1588,7 @@ validationkit-build-os2.build-it: validationkit-build-os2.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,OS/2 Validation Kit)
 
 validationkit-build-os2.rsync-out-of-vm: validationkit-build-os2.build-it
+	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
 	$(TIME_EXT) -- rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
 .PHONY:       validationkit-build-os2.rsync-into-vm validationkit-build-os2.rsync-out-of-vm validationkit-build-os2.build-it
