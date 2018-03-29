@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -210,8 +210,9 @@ private:
     bool         m_fEnded;
 
     /** Holds the personal event-loop instance. */
-    QPointer<QEventLoop> m_pEventLoop;
+    QPointer<QEventLoop>  m_pEventLoop;
 };
+
 
 #endif /* !___UIProgressDialog_h___ */
 

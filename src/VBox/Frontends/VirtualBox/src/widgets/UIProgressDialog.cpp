@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,7 +67,7 @@ public:
     /** Constructs event proxy object on the basis of passed @a pParent. */
     UIProgressEventHandler(QObject *pParent, const CProgress &comProgress);
     /** Destructs event proxy object. */
-    ~UIProgressEventHandler();
+    virtual ~UIProgressEventHandler() /* override */;
 
 protected:
 
@@ -91,12 +91,12 @@ protected:
 private:
 
     /** Holds the progress wrapper. */
-    CProgress m_comProgress;
+    CProgress  m_comProgress;
 
     /** Holds the Qt event listener instance. */
-    ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
+    ComObjPtr<UIMainEventListenerImpl>  m_pQtListener;
     /** Holds the COM event listener instance. */
-    CEventListener m_comEventListener;
+    CEventListener                      m_comEventListener;
 };
 
 
@@ -206,13 +206,13 @@ void UIProgressEventHandler::cleanup()
 
 const char *UIProgressDialog::m_spcszOpDescTpl = "%1 ... (%2/%3)";
 
-UIProgressDialog::UIProgressDialog(CProgress &progress,
+UIProgressDialog::UIProgressDialog(CProgress &comProgress,
                                    const QString &strTitle,
                                    QPixmap *pImage /* = 0 */,
                                    int cMinDuration /* = 2000 */,
                                    QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QIDialog>(pParent, Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint)
-    , m_comProgress(progress)
+    , m_comProgress(comProgress)
     , m_strTitle(strTitle)
     , m_pImage(pImage)
     , m_cMinDuration(cMinDuration)
@@ -316,7 +316,7 @@ void UIProgressDialog::reject()
         sltCancelOperation();
 }
 
-void UIProgressDialog::timerEvent(QTimerEvent*)
+void UIProgressDialog::timerEvent(QTimerEvent *)
 {
     /* Call the timer event handling delegate: */
     handleTimerEvent();
@@ -330,7 +330,7 @@ void UIProgressDialog::closeEvent(QCloseEvent *pEvent)
         pEvent->ignore();
 }
 
-void UIProgressDialog::sltHandleProgressPercentageChange(QString /* strProgressId */, int iPercent)
+void UIProgressDialog::sltHandleProgressPercentageChange(QString, int iPercent)
 {
     /* New mode only: */
     AssertReturnVoid(!m_fLegacyHandling);
@@ -340,7 +340,7 @@ void UIProgressDialog::sltHandleProgressPercentageChange(QString /* strProgressI
     updateProgressPercentage(iPercent);
 }
 
-void UIProgressDialog::sltHandleProgressTaskComplete(QString /* strProgressId */)
+void UIProgressDialog::sltHandleProgressTaskComplete(QString)
 {
     /* New mode only: */
     AssertReturnVoid(!m_fLegacyHandling);
@@ -691,9 +691,9 @@ void UIProgressDialog::handleTimerEvent()
 *   Class UIProgress implementation.                                                                                             *
 *********************************************************************************************************************************/
 
-UIProgress::UIProgress(CProgress &progress, QObject *pParent /* = 0 */)
+UIProgress::UIProgress(CProgress &comProgress, QObject *pParent /* = 0 */)
     : QObject(pParent)
-    , m_comProgress(progress)
+    , m_comProgress(comProgress)
     , m_cOperations(m_comProgress.GetOperationCount())
     , m_fEnded(false)
 {
@@ -731,7 +731,7 @@ void UIProgress::run(int iRefreshInterval)
     killTimer(id);
 }
 
-void UIProgress::timerEvent(QTimerEvent*)
+void UIProgress::timerEvent(QTimerEvent *)
 {
     /* Make sure the UIProgress still 'running': */
     if (m_fEnded)
@@ -764,4 +764,6 @@ void UIProgress::timerEvent(QTimerEvent*)
     }
 }
 
+
 #include "UIProgressDialog.moc"
+
