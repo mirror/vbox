@@ -37,6 +37,92 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
+/*********************************************************************************************************************************
+*   UIGuestDirectoryDiskUsageComputer definition.                                                                                *
+*********************************************************************************************************************************/
+
+/** Open directories recursively and sum the disk usage. Don't block the GUI thread while doing this */
+class UIGuestDirectoryDiskUsageComputer : public UIDirectoryDiskUsageComputer
+{
+    Q_OBJECT;
+
+public:
+
+    UIGuestDirectoryDiskUsageComputer(QObject *parent, QStringList strStartPath, const CGuestSession &session);
+
+protected:
+
+    virtual void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics) /* override */;
+
+private:
+
+    CGuestSession m_comGuestSession;
+};
+
+
+/*********************************************************************************************************************************
+*   UIGuestDirectoryDiskUsageComputer implementation.                                                                            *
+*********************************************************************************************************************************/
+
+UIGuestDirectoryDiskUsageComputer::UIGuestDirectoryDiskUsageComputer(QObject *parent, QStringList pathList, const CGuestSession &session)
+    :UIDirectoryDiskUsageComputer(parent, pathList)
+    , m_comGuestSession(session)
+{
+}
+
+void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics)
+{
+    if (m_comGuestSession.isNull())
+        return;
+    if (!m_bContinueRunning)
+        return;
+    CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(path, true);
+
+    if (!m_comGuestSession.isOk())
+        return;
+
+    /* if the object is a file or a symlink then read the size and return: */
+    if (fileInfo.GetType() == KFsObjType_File)
+    {
+        statistics.m_totalSize += fileInfo.GetObjectSize();
+        ++statistics.m_uFileCount;
+        sigResultUpdated(statistics);
+        return;
+    }
+    else if (fileInfo.GetType() == KFsObjType_Symlink)
+    {
+        statistics.m_totalSize += fileInfo.GetObjectSize();
+        ++statistics.m_uSymlinkCount;
+        sigResultUpdated(statistics);
+        return;
+    }
+
+    if (fileInfo.GetType() != KFsObjType_Directory)
+        return;
+    /* Open the directory to start reading its content: */
+    QVector<KDirectoryOpenFlag> flag(KDirectoryOpenFlag_None);
+    CGuestDirectory directory = m_comGuestSession.DirectoryOpen(path, /*aFilter*/ "", flag);
+
+    if (directory.isOk())
+    {
+        CFsObjInfo fsInfo = directory.Read();
+        while (fsInfo.isOk())
+        {
+            if (fsInfo.GetType() == KFsObjType_File)
+                statistics.m_uFileCount++;
+            else if (fsInfo.GetType() == KFsObjType_Symlink)
+                statistics.m_uSymlinkCount++;
+            else if(fsInfo.GetType() == KFsObjType_Directory)
+            {
+                QString dirPath = UIPathOperations::mergePaths(path, fsInfo.GetName());
+                directoryStatisticsRecursive(dirPath, statistics);
+            }
+        }
+    }
+    sigResultUpdated(statistics);
+}
+
 UIGuestFileTable::UIGuestFileTable(QWidget *pParent /*= 0*/)
     :UIGuestControlFileTable(pParent)
 {
@@ -289,9 +375,6 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
 
 QString UIGuestFileTable::fsObjectPropertyString()
 {
-    if (m_comGuestSession.isNull())
-        return QString();
-
     QStringList selectedObjects = selectedItemPathList();
     if (selectedObjects.isEmpty())
         return QString();
@@ -299,11 +382,13 @@ QString UIGuestFileTable::fsObjectPropertyString()
     {
         if (selectedObjects.at(0).isNull())
             return QString();
+
         CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), true);
         if (!m_comGuestSession.isOk())
             return QString();
 
         QString propertyString;
+
         /* Name: */
         propertyString += "<b>Name:</b> " + UIPathOperations::getObjectName(fileInfo.GetName()) + "\n";
         propertyString += "<br/>";
@@ -326,20 +411,86 @@ QString UIGuestFileTable::fsObjectPropertyString()
         propertyString += "<b>Owner:</b> " + fileInfo.GetUserName();
         return propertyString;
     }
-    return QString();
+
+    int fileCount = 0;
+    int directoryCount = 0;
+    ULONG64 totalSize = 0;
+
+    for(int i = 0; i < selectedObjects.size(); ++i)
+    {
+        CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), true);
+        if (!m_comGuestSession.isOk())
+            continue;
+        FileObjectType type = fileType(fileInfo);
+
+        if (type == FileObjectType_File)
+            ++fileCount;
+        if (type == FileObjectType_Directory)
+            ++directoryCount;
+        totalSize += fileInfo.GetObjectSize();
+    }
+    QString propertyString;
+    propertyString += "<b>Selected:</b> " + QString::number(fileCount) + " files ";
+    propertyString += "and " + QString::number(directoryCount) + " directories";
+    propertyString += "<br/>";
+    propertyString += "<b>Size:</b> " + QString::number(totalSize) + QString(" bytes");
+    if (totalSize >= m_iKiloByte)
+        propertyString += " (" + humanReadableSize(totalSize) + ")";
+
+    return propertyString;
 }
 
 void UIGuestFileTable::showProperties()
 {
+    if (m_comGuestSession.isNull())
+        return;
     QString fsPropertyString = fsObjectPropertyString();
     if (fsPropertyString.isEmpty())
         return;
 
-    UIPropertiesDialog *dialog = new UIPropertiesDialog();
-    if (!dialog)
+    delete m_pPropertiesDialog;
+
+    m_pPropertiesDialog = new UIPropertiesDialog();
+    if (!m_pPropertiesDialog)
         return;
-    dialog->setWindowTitle("Properties");
-    dialog->setPropertyText(fsPropertyString);
-    dialog->execute();
-    delete dialog;
+
+    QStringList selectedObjects = selectedItemPathList();
+    if (selectedObjects.size() == 0)
+        return;
+    UIGuestDirectoryDiskUsageComputer *directoryThread = 0;
+
+    /** @todo I have decided to look into this afterwards when API is more mature, for
+        currently this stuff runs into an assert in Main: */
+    /* if the selection include a directory or it is a multiple selection the create a worker thread
+       to compute total size of the selection (recusively) */
+    // bool createWorkerThread = (selectedObjects.size() > 1);
+    // if (!createWorkerThread &&
+    //     fileType(m_comGuestSession.FsObjQueryInfo(selectedObjects[0], true)) == FileObjectType_Directory)
+    //     createWorkerThread = true;
+    // if (createWorkerThread)
+    // {
+    //     directoryThread = new UIGuestDirectoryDiskUsageComputer(this, selectedObjects, m_comGuestSession);
+    //     if (directoryThread)
+    //     {
+    //         connect(directoryThread, &UIGuestDirectoryDiskUsageComputer::sigResultUpdated,
+    //                 this, &UIGuestFileTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
+    //         directoryThread->start();
+    //     }
+    // }
+
+    m_pPropertiesDialog->setWindowTitle("Properties");
+    m_pPropertiesDialog->setPropertyText(fsPropertyString);
+    m_pPropertiesDialog->execute();
+
+    if (directoryThread)
+    {
+        if (directoryThread->isRunning())
+            directoryThread->stopRecursion();
+        disconnect(directoryThread, &UIGuestDirectoryDiskUsageComputer::sigResultUpdated,
+                   this, &UIGuestFileTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
+    }
+
+    delete m_pPropertiesDialog;
 }
+
+#include "UIGuestFileTable.moc"

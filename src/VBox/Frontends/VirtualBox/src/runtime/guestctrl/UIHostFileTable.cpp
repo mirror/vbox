@@ -23,8 +23,6 @@
 # include <QAction>
 # include <QDateTime>
 # include <QDir>
-# include <QMutex>
-# include <QThread>
 
 /* GUI includes: */
 # include "QILabel.h"
@@ -38,29 +36,17 @@
 *********************************************************************************************************************************/
 
 /** Open directories recursively and sum the disk usage. Don't block the GUI thread while doing this */
-class UIHostDirectoryDiskUsageComputer : public QThread
+class UIHostDirectoryDiskUsageComputer : public UIDirectoryDiskUsageComputer
 {
     Q_OBJECT;
-
-signals:
-
-    void sigResultUpdated(UIDirectoryStatistics);
 
 public:
 
     UIHostDirectoryDiskUsageComputer(QObject *parent, QStringList strStartPath);
-    void stopRecursion();
 
-private:
+protected:
 
-    /** Read the directory with the path @p path recursively and collect #of objects and
-        total size */
-    void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics);
-    void                  run();
-    QStringList           m_pathList;
-    UIDirectoryStatistics m_resultStatistics;
-    bool                  m_bContinueRunning;
-    QMutex                m_mutex;
+    virtual void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics) /* override */;
 };
 
 
@@ -69,19 +55,10 @@ private:
 *********************************************************************************************************************************/
 
 UIHostDirectoryDiskUsageComputer::UIHostDirectoryDiskUsageComputer(QObject *parent, QStringList pathList)
-    :QThread(parent)
-    , m_pathList(pathList)
-    , m_bContinueRunning(true)
+    :UIDirectoryDiskUsageComputer(parent, pathList)
 {
 }
 
-void UIHostDirectoryDiskUsageComputer::run()
-{
-    for (int i = 0; i < m_pathList.size(); ++i)
-        directoryStatisticsRecursive(m_pathList[i], m_resultStatistics);
-}
-
-/** @todo Move the following function to a worker thread as it may take atbitrarly long time */
 void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics)
 {
 
@@ -131,14 +108,6 @@ void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStrin
     sigResultUpdated(statistics);
 }
 
-void UIHostDirectoryDiskUsageComputer::stopRecursion()
-{
-    m_mutex.lock();
-    m_bContinueRunning = false;
-    m_mutex.unlock();
-
-}
-
 
 /*********************************************************************************************************************************
 *   UIHostFileTable implementation.                                                                                              *
@@ -146,7 +115,6 @@ void UIHostDirectoryDiskUsageComputer::stopRecursion()
 
 UIHostFileTable::UIHostFileTable(QWidget *pParent /* = 0 */)
     :UIGuestControlFileTable(pParent)
-    , m_pPropertiesDialog(0)
 {
     initializeFileTree();
     retranslateUi();
@@ -368,6 +336,8 @@ void  UIHostFileTable::showProperties()
     if (fsPropertyString.isEmpty())
         return;
 
+    delete m_pPropertiesDialog;
+
     m_pPropertiesDialog = new UIPropertiesDialog();
     if (!m_pPropertiesDialog)
         return;
@@ -402,13 +372,6 @@ void  UIHostFileTable::showProperties()
     }
     delete m_pPropertiesDialog;
     m_pPropertiesDialog = 0;
-}
-
-void UIHostFileTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics)
-{
-    if (!m_pPropertiesDialog)
-        return;
-    m_pPropertiesDialog->addDirectoryStatistics(statistics);
 }
 
 #include "UIHostFileTable.moc"

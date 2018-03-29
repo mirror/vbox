@@ -43,15 +43,9 @@ protected:
     virtual QString fsObjectPropertyString() /* override */;
     virtual void  showProperties() /* override */;
 
-private slots:
-
-    void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics);
-
 private:
 
     void prepareActions();
-
-    UIPropertiesDialog *m_pPropertiesDialog;
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */

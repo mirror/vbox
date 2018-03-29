@@ -599,6 +599,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
 	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
 	src/runtime/guestctrl/UIGuestControlWidget.cpp \
+	src/runtime/guestctrl/UIGuestFileTable.cpp \
 	src/runtime/guestctrl/UIHostFileTable.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIDesktopPane.cpp \

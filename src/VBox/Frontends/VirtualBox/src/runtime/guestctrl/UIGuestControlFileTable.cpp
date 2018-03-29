@@ -136,6 +136,31 @@ private:
 
 
 /*********************************************************************************************************************************
+*   UIHostDirectoryDiskUsageComputer implementation.                                                                             *
+*********************************************************************************************************************************/
+
+UIDirectoryDiskUsageComputer::UIDirectoryDiskUsageComputer(QObject *parent, QStringList pathList)
+    :QThread(parent)
+    , m_pathList(pathList)
+    , m_bContinueRunning(true)
+{
+}
+
+void UIDirectoryDiskUsageComputer::run()
+{
+    for (int i = 0; i < m_pathList.size(); ++i)
+        directoryStatisticsRecursive(m_pathList[i], m_resultStatistics);
+}
+
+void UIDirectoryDiskUsageComputer::stopRecursion()
+{
+    m_mutex.lock();
+    m_bContinueRunning = false;
+    m_mutex.unlock();
+}
+
+
+/*********************************************************************************************************************************
 *   UIPathOperations implementation.                                                                                             *
 *********************************************************************************************************************************/
 
@@ -667,6 +692,7 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pCopy(0)
     , m_pCut(0)
     , m_pPaste(0)
+    , m_pPropertiesDialog(0)
     , m_pMainLayout(0)
     , m_pLocationComboBox(0)
     , m_pToolBar(0)
@@ -1431,5 +1457,11 @@ void UIGuestControlFileTable::disableSelectionDependentActions()
     return strResult;
 }
 
+void UIGuestControlFileTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics)
+{
+    if (!m_pPropertiesDialog)
+        return;
+    m_pPropertiesDialog->addDirectoryStatistics(statistics);
+}
 
 #include "UIGuestControlFileTable.moc"

@@ -19,6 +19,8 @@
 #define ___UIGuestControlFileTable_h___
 
 /* Qt includes: */
+# include <QMutex>
+#include <QThread>
 #include <QWidget>
 
 /* COM includes: */
@@ -66,6 +68,36 @@ public:
 };
 
 Q_DECLARE_METATYPE(UIDirectoryStatistics);
+
+
+/** Examines the paths in @p strStartPath and collects some staticstics from them recursively (in case directories)
+    Runs on a worker thread to avoid GUI freezes. UIGuestFileTable and UIHostFileTable uses specialized children
+    of this class since the call made on file objects are different */
+class UIDirectoryDiskUsageComputer : public QThread
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigResultUpdated(UIDirectoryStatistics);
+
+public:
+
+    UIDirectoryDiskUsageComputer(QObject *parent, QStringList strStartPath);
+    void stopRecursion();
+
+protected:
+
+    /** Read the directory with the path @p path recursively and collect #of objects and
+        total size */
+    virtual void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics) = 0;
+    void                  run();
+    QStringList           m_pathList;
+    UIDirectoryStatistics m_resultStatistics;
+    bool                  m_bContinueRunning;
+    QMutex                m_mutex;
+};
+
 
 /** A QIDialog child to display properties of a file object */
 class UIPropertiesDialog : public QIDialog
@@ -242,7 +274,11 @@ protected:
     QAction                 *m_pCopy;
     QAction                 *m_pCut;
     QAction                 *m_pPaste;
+    UIPropertiesDialog      *m_pPropertiesDialog;
 
+protected slots:
+
+    void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics);
 
 private slots:
 
