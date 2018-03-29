@@ -215,6 +215,8 @@ public:
 
     int init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, bool fAsync, int *pGuestRc);
 
+    void uninit(void);
+
     int getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock);
 
     int getRc(void) const;

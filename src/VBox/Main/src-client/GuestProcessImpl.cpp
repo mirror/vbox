@@ -1957,14 +1957,7 @@ GuestProcessTool::GuestProcessTool(void)
 
 GuestProcessTool::~GuestProcessTool(void)
 {
-     if (!pProcess.isNull())
-     {
-         /* Terminate (and unregister) process. */
-         pProcess->uninit();
-
-         /* Release reference. */
-         pProcess.setNull();
-     }
+    uninit();
 }
 
 int GuestProcessTool::init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
@@ -2003,6 +1996,21 @@ int GuestProcessTool::init(GuestSession *pGuestSession, const GuestProcessStartu
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
+}
+
+void GuestProcessTool::uninit(void)
+{
+    if (!pProcess.isNull())
+    {
+        /* Terminate (and unregister) process. */
+        pProcess->uninit();
+
+        /* Release reference. */
+        pProcess.setNull();
+    }
+
+    if (pSession)
+        pSession.setNull();
 }
 
 int GuestProcessTool::getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock)
