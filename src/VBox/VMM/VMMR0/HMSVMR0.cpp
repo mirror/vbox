@@ -3030,18 +3030,18 @@ static void hmR0SvmUpdateTscOffsettingNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     {
         pVmcbNstGstCtrl->u64InterceptCtrl &= ~(SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
+
+        /* Apply the nested-guest VMCB's TSC offset over the guest one. */
+        uTscOffset = HMSvmNstGstApplyTscOffset(pVCpu, uTscOffset);
+
+        /* Update the nested-guest VMCB with the combined TSC offset (of guest and nested-guest). */
+        pVmcbNstGstCtrl->u64TSCOffset = uTscOffset;
     }
     else
     {
         pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
-
-    /* Apply the nested-guest VMCB's TSC offset over the guest one. */
-    uTscOffset = HMSvmNstGstApplyTscOffset(pVCpu, uTscOffset);
-
-    /* Update the nested-guest VMCB with the combined TSC offset (of guest and nested-guest). */
-    pVmcbNstGstCtrl->u64TSCOffset = uTscOffset;
 
     /* Finally update the VMCB clean bits since we touched the intercepts as well as the TSC offset. */
     pVmcbNstGstCtrl->u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
