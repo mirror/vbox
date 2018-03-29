@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +26,6 @@
 
 /* Forward declarations: */
 class UIVirtualBoxEventHandlerProxy;
-
 
 /** Singleton QObject extension
   * providing GUI with the CVirtualBoxClient and CVirtualBox event-sources. */
@@ -58,9 +57,9 @@ signals:
 
 public:
 
-    /** Returns singleton instance created by the factory. */
-    static UIVirtualBoxEventHandler* instance();
-    /** Destroys singleton instance created by the factory. */
+    /** Returns singleton instance. */
+    static UIVirtualBoxEventHandler *instance();
+    /** Destroys singleton instance. */
     static void destroy();
 
 protected:
@@ -68,24 +67,21 @@ protected:
     /** Constructs VirtualBox event handler. */
     UIVirtualBoxEventHandler();
 
-    /** @name Prepare cascade.
-      * @{ */
-        /** Prepares all. */
-        void prepare();
-        /** Prepares connections. */
-        void prepareConnections();
-    /** @} */
+    /** Prepares all. */
+    void prepare();
+    /** Prepares connections. */
+    void prepareConnections();
 
 private:
 
-    /** Holds the singleton static VirtualBox event handler instance. */
-    static UIVirtualBoxEventHandler *m_spInstance;
+    /** Holds the singleton instance. */
+    static UIVirtualBoxEventHandler *s_pInstance;
 
     /** Holds the VirtualBox event proxy instance. */
     UIVirtualBoxEventHandlerProxy *m_pProxy;
 };
 
-/** Defines the globally known name for the VirtualBox event handler instance. */
+/** Singleton VirtualBox Event Handler 'official' name. */
 #define gVBoxEvents UIVirtualBoxEventHandler::instance()
 
 #endif /* !___UIVirtualBoxEventHandler_h___ */
