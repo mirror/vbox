@@ -634,10 +634,10 @@ void GuestBase::baseUninit(void)
 {
     LogFlowThisFuncEnter();
 
-    int rc = RTCritSectDelete(&mWaitEventCritSect);
-    NOREF(rc);
+    int rc2 = RTCritSectDelete(&mWaitEventCritSect);
+    AssertRC(rc2);
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(rc2);
     /* No return value. */
 }
 
