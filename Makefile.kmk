@@ -920,7 +920,11 @@ endif
 #
 # Alias for kmk_time.  Used by both the additions and validation kit build setups.
 #
-VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
+ifeq ($(KBUILD_HOST),win)
+VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time$(HOSTSUFF_EXE) --unquoted --
+else
+VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time$(HOSTSUFF_EXE) --
+endif
 
 
 #
