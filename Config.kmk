@@ -2426,7 +2426,7 @@ ifdef VBOX_WITH_CROGL
  VBOX_PATH_CROGL_GENFILES    = $(PATH_OBJ)/VBoxOGLgen
  VBOX_PATH_CROGL_INCLUDE     = $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/include
  VBOX_CROGL_API_FILES        = $(VBOX_PATH_CROGL_GLAPI)/apiutil.py $(VBOX_PATH_CROGL_GLAPI)/APIspec.txt
- VBOX_CROGL_PYTHON_ENV       = $(REDIRECT) $(if $1,-E 'PYTHONPATH=$1',) $(if $2,-o $2,) $(if $3,-i $3) --
+ VBOX_CROGL_PYTHON_ENV       = $(REDIRECT) $(if $1,-E 'PYTHONPATH=$1',) $(if $2,-o '$2',) -0 '$(if $3,$3,/dev/null)' --
 
  if1of ($(KBUILD_HOST), os2 win)
   VBOX_PATH_CROGL_PYTHON_INCLUDE = $(VBOX_PATH_CROGL_GLAPI);$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer;$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
