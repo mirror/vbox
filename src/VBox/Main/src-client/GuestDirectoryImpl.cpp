@@ -333,10 +333,10 @@ HRESULT GuestDirectory::i_setErrorExternal(VirtualBoxBase *pInterface, int rcGue
 /////////////////////////////////////////////////////////////////////////////
 HRESULT GuestDirectory::close()
 {
-    LogFlowThisFuncEnter();
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
 
@@ -368,10 +368,10 @@ HRESULT GuestDirectory::close()
 
 HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 {
-    LogFlowThisFuncEnter();
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
 

@@ -1176,6 +1176,9 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
 /////////////////////////////////////////////////////////////////////////////
 HRESULT GuestFile::close()
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     LogFlowThisFuncEnter();
 
     /* Close file on guest. */
@@ -1216,8 +1219,13 @@ HRESULT GuestFile::querySize(LONG64 *aSize)
 
 HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
+
+    LogFlowThisFuncEnter();
 
     aData.resize(aToRead);
 
@@ -1252,8 +1260,13 @@ HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aDat
 HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
+
+    LogFlowThisFuncEnter();
 
     aData.resize(aToRead);
 
@@ -1287,7 +1300,8 @@ HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::
 
 HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOffset)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT hr = S_OK;
 
@@ -1310,6 +1324,8 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOf
             return setError(E_INVALIDARG, tr("Invalid seek type specified"));
             break; /* Never reached. */
     }
+
+    LogFlowThisFuncEnter();
 
     uint64_t uNewOffset;
     int vrc = i_seekAt(aOffset, eSeekType,
@@ -1346,14 +1362,16 @@ HRESULT GuestFile::setSize(LONG64 aSize)
 
 HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG *aWritten)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
 
     uint32_t cbData = (uint32_t)aData.size();
     void *pvData = cbData > 0? (void *)&aData.front(): NULL;
-    int vrc = i_writeData(aTimeoutMS, pvData, cbData,
-                          (uint32_t*)aWritten);
+    int vrc = i_writeData(aTimeoutMS, pvData, cbData, (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
@@ -1373,14 +1391,16 @@ HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG
 HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG *aWritten)
 
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
 
     uint32_t cbData = (uint32_t)aData.size();
     void *pvData = cbData > 0? (void *)&aData.front(): NULL;
-    int vrc = i_writeData(aTimeoutMS, pvData, cbData,
-                          (uint32_t*)aWritten);
+    int vrc = i_writeData(aTimeoutMS, pvData, cbData, (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)

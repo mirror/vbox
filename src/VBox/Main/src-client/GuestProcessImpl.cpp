@@ -1757,10 +1757,13 @@ int GuestProcess::i_writeData(uint32_t uHandle, uint32_t uFlags,
 
 HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
+
+    LogFlowThisFuncEnter();
 
     aData.resize(aToRead);
 
@@ -1799,6 +1802,11 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
 
 HRESULT GuestProcess::terminate()
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    LogFlowThisFuncEnter();
+
     HRESULT hr = S_OK;
 
     int rcGuest;
@@ -1836,10 +1844,13 @@ HRESULT GuestProcess::terminate()
     return hr;
 }
 
-HRESULT GuestProcess::waitFor(ULONG aWaitFor,
-                              ULONG aTimeoutMS,
-                              ProcessWaitResult_T *aReason)
+HRESULT GuestProcess::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, ProcessWaitResult_T *aReason)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    LogFlowThisFuncEnter();
+
     /*
      * Note: Do not hold any locks here while waiting!
      */
@@ -1879,9 +1890,6 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor,
 HRESULT GuestProcess::waitForArray(const std::vector<ProcessWaitForFlag_T> &aWaitFor,
                                    ULONG aTimeoutMS, ProcessWaitResult_T *aReason)
 {
-    /*
-     * Note: Do not hold any locks here while waiting!
-     */
     uint32_t fWaitFor = ProcessWaitForFlag_None;
     for (size_t i = 0; i < aWaitFor.size(); i++)
         fWaitFor |= aWaitFor[i];
@@ -1892,6 +1900,9 @@ HRESULT GuestProcess::waitForArray(const std::vector<ProcessWaitForFlag_T> &aWai
 HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE> &aData,
                             ULONG aTimeoutMS, ULONG *aWritten)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
@@ -1929,9 +1940,6 @@ HRESULT GuestProcess::writeArray(ULONG aHandle, const std::vector<ProcessInputFl
 {
     LogFlowThisFuncEnter();
 
-    /*
-     * Note: Do not hold any locks here while writing!
-     */
     ULONG fWrite = ProcessInputFlag_None;
     for (size_t i = 0; i < aFlags.size(); i++)
         fWrite |= aFlags[i];

@@ -2517,10 +2517,10 @@ int GuestSession::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFl
 
 HRESULT GuestSession::close()
 {
-    LogFlowThisFuncEnter();
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    LogFlowThisFuncEnter();
 
     HRESULT hr = i_isReadyExternal();
     if (FAILED(hr))
@@ -2565,7 +2565,8 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
                                         const std::vector<FileCopyFlag_T> &aFlags,
                                         ComPtr<IProgress> &aProgress)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No source specified"));
@@ -2585,6 +2586,8 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2642,7 +2645,8 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
 HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
                                       const std::vector<FileCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No source specified"));
@@ -2662,6 +2666,8 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2724,7 +2730,8 @@ HRESULT GuestSession::directoryCopy(const com::Utf8Str &aSource, const com::Utf8
 HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                              const std::vector<DirectoryCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No source directory specified"));
@@ -2748,6 +2755,8 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2805,7 +2814,8 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
 HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                            const std::vector<DirectoryCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No source directory specified"));
@@ -2832,6 +2842,8 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2889,7 +2901,8 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
 HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
                                       const std::vector<DirectoryCreateFlag_T> &aFlags)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to create specified"));
@@ -2908,6 +2921,8 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     ComObjPtr <GuestDirectory> pDirectory; int rcGuest;
     int rc = i_directoryCreate(aPath, (uint32_t)aMode, fFlags, &rcGuest);
@@ -2944,7 +2959,9 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
                                           BOOL aSecure, com::Utf8Str &aDirectory)
 {
     RT_NOREF(aMode, aSecure);
-    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aTemplateName.c_str()) == NULL || *(aTemplateName.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No template specified"));
@@ -2954,6 +2971,8 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     int rcGuest;
     int rc = i_fsCreateTemp(aTemplateName, aPath, true /* Directory */, aDirectory, &rcGuest);
@@ -2977,7 +2996,8 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
 
 HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to check existence for specified"));
@@ -2985,6 +3005,8 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     GuestFsObjData objData; int rcGuest;
     int rc = i_directoryQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
@@ -3022,7 +3044,8 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
 HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8Str &aFilter,
                                     const std::vector<DirectoryOpenFlag_T> &aFlags, ComPtr<IGuestDirectory> &aDirectory)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to open specified"));
@@ -3042,6 +3065,8 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     GuestDirectoryOpenInfo openInfo;
     openInfo.mPath = aPath;
@@ -3080,7 +3105,8 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
 
 HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to remove specified"));
@@ -3088,6 +3114,8 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     /* No flags; only remove the directory when empty. */
     uint32_t uFlags = 0;
@@ -3121,7 +3149,9 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
                                                ComPtr<IProgress> &aProgress)
 {
     RT_NOREF(aFlags);
-    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to remove recursively specified"));
@@ -3132,6 +3162,8 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     ComObjPtr<Progress> pProgress;
     hrc = pProgress.createObject();
@@ -3184,13 +3216,16 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
 
 HRESULT GuestSession::environmentScheduleSet(const com::Utf8Str &aName, const com::Utf8Str &aValue)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT hrc;
     if (RT_LIKELY(aName.isNotEmpty()))
     {
         if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
         {
+            LogFlowThisFuncEnter();
+
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
             int vrc = mData.mEnvironmentChanges.setVariable(aName, aValue);
             if (RT_SUCCESS(vrc))
@@ -3210,12 +3245,16 @@ HRESULT GuestSession::environmentScheduleSet(const com::Utf8Str &aName, const co
 
 HRESULT GuestSession::environmentScheduleUnset(const com::Utf8Str &aName)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     HRESULT hrc;
     if (RT_LIKELY(aName.isNotEmpty()))
     {
         if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
         {
+            LogFlowThisFuncEnter();
+
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
             int vrc = mData.mEnvironmentChanges.unsetVariable(aName);
             if (RT_SUCCESS(vrc))
@@ -3235,12 +3274,16 @@ HRESULT GuestSession::environmentScheduleUnset(const com::Utf8Str &aName)
 
 HRESULT GuestSession::environmentGetBaseVariable(const com::Utf8Str &aName, com::Utf8Str &aValue)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     HRESULT hrc;
     if (RT_LIKELY(aName.isNotEmpty()))
     {
         if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
         {
+            LogFlowThisFuncEnter();
+
             AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
             if (mData.mpBaseEnvironment)
             {
@@ -3267,13 +3310,18 @@ HRESULT GuestSession::environmentGetBaseVariable(const com::Utf8Str &aName, com:
 
 HRESULT GuestSession::environmentDoesBaseVariableExist(const com::Utf8Str &aName, BOOL *aExists)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     *aExists = FALSE;
+
     HRESULT hrc;
     if (RT_LIKELY(aName.isNotEmpty()))
     {
         if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
         {
+            LogFlowThisFuncEnter();
+
             AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
             if (mData.mpBaseEnvironment)
             {
@@ -3304,7 +3352,8 @@ HRESULT GuestSession::fileCreateTemp(const com::Utf8Str &aTemplateName, ULONG aM
 
 HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
     {
@@ -3315,6 +3364,8 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     GuestFsObjData objData; int rcGuest;
     int vrc = i_fileQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
@@ -3349,6 +3400,7 @@ HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, FileAccessMode_T aAcce
                                ULONG aCreationMode, ComPtr<IGuestFile> &aFile)
 {
     LogFlowThisFuncEnter();
+
     const std::vector<FileOpenExFlag_T> EmptyFlags;
     return fileOpenEx(aPath, aAccessMode, aOpenAction, FileSharingMode_All, aCreationMode, EmptyFlags, aFile);
 }
@@ -3357,7 +3409,8 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
                                  FileSharingMode_T aSharingMode, ULONG aCreationMode,
                                  const std::vector<FileOpenExFlag_T> &aFlags, ComPtr<IGuestFile> &aFile)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No file to open specified"));
@@ -3365,6 +3418,8 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
         return hrc;
+
+    LogFlowThisFuncEnter();
 
     GuestFileOpenInfo openInfo;
     openInfo.mFileName = aPath;
@@ -3457,6 +3512,9 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
 
 HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymlinks, LONG64 *aSize)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     if (aPath.isEmpty())
         return setError(E_INVALIDARG, tr("No path specified"));
 
@@ -3485,6 +3543,9 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
 
 HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     if (aPath.isEmpty())
         return setError(E_INVALIDARG, tr("No path specified"));
 
@@ -3526,6 +3587,9 @@ HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlink
 
 HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSymlinks, ComPtr<IGuestFsObjInfo> &aInfo)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     if (aPath.isEmpty())
         return setError(E_INVALIDARG, tr("No path specified"));
 
@@ -3565,6 +3629,9 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
 
 HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     if (RT_UNLIKELY(aPath.isEmpty()))
         return setError(E_INVALIDARG, tr("No path specified"));
 
@@ -3593,13 +3660,14 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
                                   const com::Utf8Str &aDestination,
                                   const std::vector<FsObjRenameFlag_T> &aFlags)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     if (RT_UNLIKELY(aSource.isEmpty()))
         return setError(E_INVALIDARG, tr("No source path specified"));
 
     if (RT_UNLIKELY(aDestination.isEmpty()))
         return setError(E_INVALIDARG, tr("No destination path specified"));
-
-    LogFlowThisFunc(("aSource=%s, aDestination=%s\n", aSource.c_str(), aDestination.c_str()));
 
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
@@ -3611,6 +3679,8 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
         fApiFlags |= aFlags[i];
     if (fApiFlags & ~((uint32_t)FsObjRenameFlag_NoReplace | (uint32_t)FsObjRenameFlag_Replace))
         return setError(E_INVALIDARG, tr("Unknown rename flag: %#x"), fApiFlags);
+
+    LogFlowThisFunc(("aSource=%s, aDestination=%s\n", aSource.c_str(), aDestination.c_str()));
 
     AssertCompile(FsObjRenameFlag_NoReplace == 0);
     AssertCompile(FsObjRenameFlag_Replace != 0);
@@ -3669,7 +3739,6 @@ HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const std::
     LogFlowThisFuncEnter();
 
     std::vector<LONG> affinityIgnored;
-
     return processCreateEx(aExecutable, aArguments, aEnvironment, aFlags, aTimeoutMS, ProcessPriority_Default,
                            affinityIgnored, aGuestProcess);
 }
@@ -3680,7 +3749,12 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
                                       ProcessPriority_T aPriority, const std::vector<LONG> &aAffinity,
                                       ComPtr<IGuestProcess> &aGuestProcess)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT hr = i_isReadyExternal();
+    if (FAILED(hr))
+        return hr;
 
     /** @todo r=bird: Check input better? aPriority is passed on to the guest
      * without any validation.  Flags not existing in this vbox version are
@@ -3700,12 +3774,7 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
             return setError(E_INVALIDARG, tr("No command to execute specified"));
     }
 
-    /*
-     * Check the session.
-     */
-    HRESULT hr = i_isReadyExternal();
-    if (FAILED(hr))
-        return hr;
+    LogFlowThisFuncEnter();
 
     /*
      * Build the process startup info.
@@ -3783,10 +3852,13 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
 HRESULT GuestSession::processGet(ULONG aPid, ComPtr<IGuestProcess> &aGuestProcess)
 
 {
-    LogFlowThisFunc(("PID=%RU32\n", aPid));
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (aPid == 0)
         return setError(E_INVALIDARG, tr("No valid process ID (PID) specified"));
+
+    LogFlowThisFunc(("PID=%RU32\n", aPid));
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -3828,11 +3900,14 @@ HRESULT GuestSession::symlinkRead(const com::Utf8Str &aSymlink, const std::vecto
 
 HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWaitResult_T *aReason)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Note: No call to i_isReadyExternal() needed here, as the session might not has been started (yet). */
+
     LogFlowThisFuncEnter();
 
-    HRESULT hrc = i_isReadyExternal();
-    if (FAILED(hrc))
-        return hrc;
+    HRESULT hrc = S_OK;
 
     /*
      * Note: Do not hold any locks here while waiting!
@@ -3871,11 +3946,12 @@ HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWait
 HRESULT GuestSession::waitForArray(const std::vector<GuestSessionWaitForFlag_T> &aWaitFor, ULONG aTimeoutMS,
                                    GuestSessionWaitResult_T *aReason)
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT hrc = i_isReadyExternal();
-    if (FAILED(hrc))
-        return hrc;
+    /* Note: No call to i_isReadyExternal() needed here, as the session might not has been started (yet). */
+
+    LogFlowThisFuncEnter();
 
     /*
      * Note: Do not hold any locks here while waiting!
@@ -3886,4 +3962,3 @@ HRESULT GuestSession::waitForArray(const std::vector<GuestSessionWaitForFlag_T> 
 
     return WaitFor(fWaitFor, aTimeoutMS, aReason);
 }
-

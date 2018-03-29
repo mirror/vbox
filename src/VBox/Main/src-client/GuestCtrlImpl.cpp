@@ -371,11 +371,14 @@ HRESULT Guest::createSession(const com::Utf8Str &aUser, const com::Utf8Str &aPas
     ReturnComNotImplemented();
 #else /* VBOX_WITH_GUEST_CONTROL */
 
-    LogFlowFuncEnter();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Do not allow anonymous sessions (with system rights) with public API. */
     if (RT_UNLIKELY(!aUser.length()))
         return setError(E_INVALIDARG, tr("No user name specified"));
+
+    LogFlowFuncEnter();
 
     GuestSessionStartupInfo startupInfo;
     startupInfo.mName = aSessionName;
