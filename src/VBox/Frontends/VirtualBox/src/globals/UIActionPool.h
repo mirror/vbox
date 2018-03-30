@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +27,8 @@
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
+class QKeySequence;
+class QString;
 class UIActionPolymorphic;
 class UIActionPolymorphicMenu;
 class UIActionPool;
@@ -56,9 +58,9 @@ enum UIActionIndex
 {
     /* 'Application' menu actions: */
     UIActionIndex_M_Application,
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     UIActionIndex_M_Application_S_About,
-#endif /* RT_OS_DARWIN */
+#endif
     UIActionIndex_M_Application_S_Preferences,
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     UIActionIndex_M_Application_S_NetworkAccessManager,
@@ -67,11 +69,11 @@ enum UIActionIndex
     UIActionIndex_M_Application_S_ResetWarnings,
     UIActionIndex_M_Application_S_Close,
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /* 'Window' menu actions: */
     UIActionIndex_M_Window,
     UIActionIndex_M_Window_S_Minimize,
-#endif /* RT_OS_DARWIN */
+#endif
 
     /* 'Help' menu actions: */
     UIActionIndex_Menu_Help,
@@ -80,9 +82,9 @@ enum UIActionIndex
     UIActionIndex_Simple_BugTracker,
     UIActionIndex_Simple_Forums,
     UIActionIndex_Simple_Oracle,
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
     UIActionIndex_Simple_About,
-#endif /* !RT_OS_DARWIN */
+#endif
 
     /* Maximum index: */
     UIActionIndex_Max
@@ -104,7 +106,7 @@ class UIMenu : public QMenu
 
 public:
 
-    /** Constructor. */
+    /** Constructs menu. */
     UIMenu();
 
     /** Defines whether tool-tip should be shown. */
@@ -124,7 +126,7 @@ public:
 
 protected:
 
-    /** General event handler. */
+    /** Handles any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent);
 
 private:
@@ -149,21 +151,21 @@ class UIAction : public QAction
 public:
 
     /** Returns action type. */
-    UIActionType type() const { return m_type; }
+    UIActionType type() const { return m_enmType; }
 
     /** Returns menu contained by this action. */
-    UIMenu* menu() const;
+    UIMenu *menu() const;
 
     /** Returns action-pool this action belongs to. */
-    UIActionPool* actionPool() const { return m_pActionPool; }
+    UIActionPool *actionPool() const { return m_pActionPool; }
 
     /** Casts action to polymorphic-action. */
-    UIActionPolymorphic* toActionPolymorphic();
+    UIActionPolymorphic *toActionPolymorphic();
     /** Casts action to polymorphic-menu-action. */
-    UIActionPolymorphicMenu* toActionPolymorphicMenu();
+    UIActionPolymorphicMenu *toActionPolymorphicMenu();
 
     /** Returns current action name. */
-    const QString& name() const { return m_strName; }
+    const QString &name() const { return m_strName; }
     /** Defines current action name. */
     void setName(const QString &strName);
 
@@ -188,12 +190,13 @@ public:
 
     /** Retranslates action. */
     virtual void retranslateUi() = 0;
-    virtual ~UIAction() { delete menu(); }
+    virtual ~UIAction() /* override */ { delete menu(); }
 
 protected:
 
-    /** Constructor. */
-    UIAction(UIActionPool *pParent, UIActionType type);
+    /** Constructs action passing @a pParent to the base-class.
+      * @param  enmType  Brings the action type. */
+    UIAction(UIActionPool *pParent, UIActionType enmType);
 
     /** Returns current action name in menu. */
     QString nameInMenu() const;
@@ -204,19 +207,19 @@ protected:
 private:
 
     /** Holds the action type. */
-    UIActionType m_type;
+    UIActionType  m_enmType;
 
     /** Holds the reference to the action-pool this action belongs to. */
-    UIActionPool *m_pActionPool;
+    UIActionPool     *m_pActionPool;
     /** Holds the type of the action-pool this action belongs to. */
-    UIActionPoolType m_actionPoolType;
+    UIActionPoolType  m_enmActionPoolType;
 
     /** Holds the action name. */
-    QString m_strName;
+    QString       m_strName;
     /** Holds the action shortcut. */
-    QKeySequence m_shortcut;
+    QKeySequence  m_shortcut;
     /** Holds whether action shortcut hidden. */
-    bool m_fShortcutHidden;
+    bool          m_fShortcutHidden;
 };
 
 
@@ -227,10 +230,14 @@ class UIActionMenu : public UIAction
 
 protected:
 
-    /** Constructor, taking normal icon name and name for disabled analog. */
+    /** Constructs menu action passing @a pParent to the base-class.
+      * @param  strIcon          Brings the normal-icon name.
+      * @param  strIconDisabled  Brings the disabled-icon name. */
     UIActionMenu(UIActionPool *pParent,
-                 const QString &strIcon = QString(), const QString &strIconDis = QString());
-    /** Constructor, taking copy of existing icon. */
+                 const QString &strIcon = QString(),
+                 const QString &strIconDisabled = QString());
+    /** Constructs menu action passing @a pParent to the base-class.
+      * @param  icon  Brings the icon. */
     UIActionMenu(UIActionPool *pParent,
                  const QIcon &icon);
 
@@ -254,14 +261,22 @@ class UIActionSimple : public UIAction
 
 protected:
 
-    /** Constructor, taking normal icon name and name for disabled analog. */
+    /** Constructs simple action passing @a pParent to the base-class.
+      * @param  strIcon          Brings the normal-icon name.
+      * @param  strIconDisabled  Brings the disabled-icon name. */
     UIActionSimple(UIActionPool *pParent,
-                   const QString &strIcon = QString(), const QString &strIconDisabled = QString());
-    /** Constructor, taking normal, small icon names and names for disabled analogs. */
+                   const QString &strIcon = QString(),
+                   const QString &strIconDisabled = QString());
+    /** Constructs simple action passing @a pParent to the base-class.
+      * @param  strIconNormal          Brings the normal-icon name.
+      * @param  strIconSmall           Brings the small-icon name.
+      * @param  strIconNormalDisabled  Brings the normal-disabled-icon name.
+      * @param  strIconSmallDisabled   Brings the small-disabled-icon name. */
     UIActionSimple(UIActionPool *pParent,
                    const QString &strIconNormal, const QString &strIconSmall,
                    const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
-    /** Constructor, taking copy of existing icon. */
+    /** Constructs simple action passing @a pParent to the base-class.
+      * @param  icon  Brings the icon. */
     UIActionSimple(UIActionPool *pParent,
                    const QIcon& icon);
 };
@@ -274,14 +289,21 @@ class UIActionToggle : public UIAction
 
 protected:
 
-    /** Constructor, taking normal icon name and name for disabled analog. */
+    /** Constructs toggle action passing @a pParent to the base-class.
+      * @param  strIcon          Brings the normal-icon name.
+      * @param  strIconDisabled  Brings the disabled-icon name. */
     UIActionToggle(UIActionPool *pParent,
                    const QString &strIcon = QString(), const QString &strIconDisabled = QString());
-    /** Constructor, taking normal on/off icon names and names for disabled analogs. */
+    /** Constructs toggle action passing @a pParent to the base-class.
+      * @param  strIconOn           Brings the on-icon name.
+      * @param  strIconOff          Brings the off-icon name.
+      * @param  strIconOnDisabled   Brings the on-disabled-icon name.
+      * @param  strIconOffDisabled  Brings the off-disabled-icon name. */
     UIActionToggle(UIActionPool *pParent,
                    const QString &strIconOn, const QString &strIconOff,
                    const QString &strIconOnDisabled, const QString &strIconOffDisabled);
-    /** Constructor, taking copy of existing icon. */
+    /** Constructs toggle action passing @a pParent to the base-class.
+      * @param  icon  Brings the icon. */
     UIActionToggle(UIActionPool *pParent,
                    const QIcon &icon);
 
@@ -306,16 +328,23 @@ public:
 
 protected:
 
-    /** Constructor, taking normal icon name and name for disabled analog. */
+    /** Constructs polymorphic action passing @a pParent to the base-class.
+      * @param  strIcon          Brings the normal-icon name.
+      * @param  strIconDisabled  Brings the disabled-icon name. */
     UIActionPolymorphic(UIActionPool *pParent,
-                  const QString &strIcon = QString(), const QString &strIconDisabled = QString());
-    /** Constructor, taking normal, small icon names and names for disabled analogs. */
+                        const QString &strIcon = QString(), const QString &strIconDisabled = QString());
+    /** Constructs polymorphic action passing @a pParent to the base-class.
+      * @param  strIconNormal          Brings the normal-icon name.
+      * @param  strIconSmall           Brings the small-icon name.
+      * @param  strIconNormalDisabled  Brings the normal-disabled-icon name.
+      * @param  strIconSmallDisabled   Brings the small-disabled-icon name. */
     UIActionPolymorphic(UIActionPool *pParent,
-                  const QString &strIconNormal, const QString &strIconSmall,
-                  const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
-    /** Constructor, taking copy of existing icon. */
+                        const QString &strIconNormal, const QString &strIconSmall,
+                        const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
+    /** Constructs polymorphic action passing @a pParent to the base-class.
+      * @param  icon  Brings the icon. */
     UIActionPolymorphic(UIActionPool *pParent,
-                  const QIcon& icon);
+                        const QIcon& icon);
 
 private:
 
@@ -338,18 +367,25 @@ public:
 
 protected:
 
-    /** Constructor, taking normal icon name and name for disabled analog. */
+    /** Constructs polymorphic menu action passing @a pParent to the base-class.
+      * @param  strIcon          Brings the normal-icon name.
+      * @param  strIconDisabled  Brings the disabled-icon name. */
     UIActionPolymorphicMenu(UIActionPool *pParent,
-                            const QString &strIcon = QString(), const QString &strIconDis = QString());
-    /** Constructor, taking normal, small icon names and names for disabled analogs. */
+                            const QString &strIcon = QString(), const QString &strIconDisabled = QString());
+    /** Constructs polymorphic menu action passing @a pParent to the base-class.
+      * @param  strIconNormal          Brings the normal-icon name.
+      * @param  strIconSmall           Brings the small-icon name.
+      * @param  strIconNormalDisabled  Brings the normal-disabled-icon name.
+      * @param  strIconSmallDisabled   Brings the small-disabled-icon name. */
     UIActionPolymorphicMenu(UIActionPool *pParent,
                             const QString &strIconNormal, const QString &strIconSmall,
                             const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
-    /** Constructor, taking copy of existing icon. */
+    /** Constructs polymorphic menu action passing @a pParent to the base-class.
+      * @param  icon  Brings the icon. */
     UIActionPolymorphicMenu(UIActionPool *pParent,
                             const QIcon &icon);
 
-    /** Destructor. */
+    /** Destructs polymorphic menu action. */
     ~UIActionPolymorphicMenu();
 
     /** Defines whether tool-tip should be shown. */
@@ -373,7 +409,7 @@ private:
     /** Holds the menu instance. */
     UIMenu *m_pMenu;
     /** Holds current action state. */
-    int m_iState;
+    int     m_iState;
 };
 
 
@@ -402,53 +438,53 @@ signals:
 #ifdef VBOX_WS_MAC
     /** Notifies about @a pAction hovered. */
     void sigActionHovered(UIAction *pAction);
-#endif /* VBOX_WS_MAC */
+#endif
 
 public:
 
-    /** Static factory constructor. */
-    static UIActionPool* create(UIActionPoolType type);
-    /** Static factory destructor. */
+    /** Creates singleton instance. */
+    static UIActionPool *create(UIActionPoolType enmType);
+    /** Destroys singleton instance. */
     static void destroy(UIActionPool *pActionPool);
 
-    /** Static factory constructor (temporary),
-      * used to initialize shortcuts-pool from action-pool of passed @a type. */
-    static void createTemporary(UIActionPoolType type);
+    /** Creates temporary singleton instance,
+      * used to initialize shortcuts-pool from action-pool of passed @a enmType. */
+    static void createTemporary(UIActionPoolType enmType);
 
     /** Cast action-pool to Runtime one. */
-    UIActionPoolRuntime* toRuntime();
+    UIActionPoolRuntime *toRuntime();
     /** Cast action-pool to Selector one. */
-    UIActionPoolSelector* toSelector();
+    UIActionPoolSelector *toSelector();
 
     /** Returns action-pool type. */
-    UIActionPoolType type() const { return m_type; }
+    UIActionPoolType type() const { return m_enmType; }
 
     /** Returns the action for the passed @a iIndex. */
-    UIAction* action(int iIndex) const { return m_pool.value(iIndex); }
+    UIAction *action(int iIndex) const { return m_pool.value(iIndex); }
     /** Returns all the actions action-pool contains. */
     QList<UIAction*> actions() const { return m_pool.values(); }
 
     /** Returns whether the menu with passed @a type is allowed in menu-bar. */
     bool isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType type) const;
-    /** Defines menu-bar @a restriction for passed @a level. */
-    void setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuType restriction);
+    /** Defines menu-bar @a enmRestriction for passed @a level. */
+    void setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuType enmRestriction);
 
     /** Returns whether the action with passed @a type is allowed in the 'Application' menu. */
     bool isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType type) const;
-    /** Defines 'Application' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuApplication(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuApplicationActionType restriction);
+    /** Defines 'Application' menu @a enmRestriction for passed @a level. */
+    void setRestrictionForMenuApplication(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuApplicationActionType enmRestriction);
 
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Returns whether the action with passed @a type is allowed in the 'Window' menu. */
     bool isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType type) const;
-    /** Mac OS X: Defines 'Window' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuWindow(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuWindowActionType restriction);
+    /** Mac OS X: Defines 'Window' menu @a enmRestriction for passed @a level. */
+    void setRestrictionForMenuWindow(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuWindowActionType enmRestriction);
 #endif /* VBOX_WS_MAC */
 
     /** Returns whether the action with passed @a type is allowed in the 'Help' menu. */
-    bool isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const;
-    /** Defines 'Help' menu @a restriction for passed @a level. */
-    void setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuHelpActionType restriction);
+    bool isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType enmType) const;
+    /** Defines 'Help' menu @a enmRestriction for passed @a level. */
+    void setRestrictionForMenuHelp(UIActionRestrictionLevel enmLevel, UIExtraDataMetaDefs::MenuHelpActionType enmRestriction);
 
     /** Hot-key processing delegate. */
     bool processHotKey(const QKeySequence &key);
@@ -476,46 +512,46 @@ protected slots:
 
 protected:
 
-    /** Constructor of the action-pool of passed @a type. */
-    UIActionPool(UIActionPoolType type, bool fTemporary = false);
+    /** Constructs probably @a fTemporary action-pool of passed @a enmType. */
+    UIActionPool(UIActionPoolType enmType, bool fTemporary = false);
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
-    /** Prepare pool routine. */
+    /** Prepares pool. */
     virtual void preparePool();
-    /** Prepare connections routine. */
+    /** Prepares connections. */
     virtual void prepareConnections();
-    /** Cleanup connections routine. */
+    /** Cleanups connections. */
     virtual void cleanupConnections() {}
-    /** Cleanup pool routine. */
+    /** Cleanups pool. */
     virtual void cleanupPool();
-    /** Cleanup routine. */
+    /** Cleanups all. */
     void cleanup();
 
-    /** Update configuration routine. */
+    /** Updates configuration. */
     virtual void updateConfiguration();
 
-    /** Update menu routine. */
+    /** Updates menu with certain @a iIndex. */
     virtual void updateMenu(int iIndex);
-    /** Update menus routine. */
+    /** Updates menus. */
     virtual void updateMenus() = 0;
-    /** Update 'Application' menu routine. */
+    /** Updates 'Application' menu. */
     virtual void updateMenuApplication();
-#ifdef RT_OS_DARWIN
-    /** Mac OS X: Update 'Window' menu routine. */
+#ifdef VBOX_WS_MAC
+    /** Mac OS X: Updates 'Window' menu. */
     virtual void updateMenuWindow();
-#endif /* RT_OS_DARWIN */
-    /** Update 'Help' menu routine. */
+#endif
+    /** Updates 'Help' menu. */
     virtual void updateMenuHelp();
 
-    /** Update shortcuts. */
+    /** Updates shortcuts. */
     virtual void updateShortcuts();
 
-    /** Translation handler. */
-    virtual void retranslateUi();
+    /** Hadles translation event. */
+    virtual void retranslateUi() /* override */;
 
-    /** General event handler. */
-    virtual bool event(QEvent *pEvent);
+    /** Handles any Qt @a pEvent */
+    virtual bool event(QEvent *pEvent) /* override */;
 
     /** Adds action into corresponding menu. */
     bool addAction(UIMenu *pMenu, UIAction *pAction, bool fReallyAdd = true);
@@ -523,27 +559,29 @@ protected:
     bool addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fReallyAdd = true);
 
     /** Holds the action-pool type. */
-    const UIActionPoolType m_type;
+    const UIActionPoolType  m_enmType;
     /** Holds whether this action-pool is temporary. */
-    const bool m_fTemporary;
+    const bool              m_fTemporary;
 
     /** Holds the map of actions. */
-    QMap<int, UIAction*> m_pool;
+    QMap<int, UIAction*>          m_pool;
     /** Holds the map of validation handlers. */
-    QMap<int, PointerToFunction> m_menuUpdateHandlers;
+    QMap<int, PointerToFunction>  m_menuUpdateHandlers;
     /** Holds the set of invalidated action indexes. */
-    QSet<int> m_invalidations;
+    QSet<int>                     m_invalidations;
 
     /** Holds restricted menu types. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuType> m_restrictedMenus;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuType>                   m_restrictedMenus;
     /** Holds restricted action types of the 'Application' menu. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuApplicationActionType> m_restrictedActionsMenuApplication;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuApplicationActionType>  m_restrictedActionsMenuApplication;
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Holds restricted action types of the 'Window' menu. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuWindowActionType> m_restrictedActionsMenuWindow;
-#endif /* VBOX_WS_MAC */
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuWindowActionType>       m_restrictedActionsMenuWindow;
+#endif
     /** Holds restricted action types of the Help menu. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuHelpActionType> m_restrictedActionsMenuHelp;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuHelpActionType>         m_restrictedActionsMenuHelp;
 };
 
+
 #endif /* !___UIActionPool_h___ */
+

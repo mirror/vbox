@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,14 +24,14 @@
 # include <QToolTip>
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
 # include "UIActionPool.h"
 # include "UIActionPoolSelector.h"
 # include "UIActionPoolRuntime.h"
-# include "UIShortcutPool.h"
 # include "UIConverter.h"
 # include "UIIconPool.h"
-# include "VBoxGlobal.h"
 # include "UIMessageCenter.h"
+# include "UIShortcutPool.h"
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 #  include "UIExtraDataManager.h"
 #  include "UINetworkManager.h"
@@ -41,34 +41,38 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-
 /** QEvent extension
   * representing action-activation event. */
 class ActivateActionEvent : public QEvent
 {
 public:
 
-    /** Constructor. */
+    /** Constructs @a pAction event. */
     ActivateActionEvent(QAction *pAction)
         : QEvent((QEvent::Type)ActivateActionEventType)
-        , m_pAction(pAction) {}
+        , m_pAction(pAction)
+    {}
 
-    /** Returns the action this event corresponding to. */
-    QAction* action() const { return m_pAction; }
+    /** Returns the action this event corresponds to. */
+    QAction *action() const { return m_pAction; }
 
 private:
 
-    /** Ho0lds the action this event corresponding to. */
+    /** Holds the action this event corresponds to. */
     QAction *m_pAction;
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIMenu implementation.                                                                                                 *
+*********************************************************************************************************************************/
 
 UIMenu::UIMenu()
     : m_fShowToolTip(false)
 #ifdef VBOX_WS_MAC
     , m_fConsumable(false)
     , m_fConsumed(false)
-#endif /* VBOX_WS_MAC */
+#endif
 {
 }
 
@@ -97,11 +101,15 @@ bool UIMenu::event(QEvent *pEvent)
 }
 
 
-UIAction::UIAction(UIActionPool *pParent, UIActionType type)
+/*********************************************************************************************************************************
+*   Class UIAction implementation.                                                                                               *
+*********************************************************************************************************************************/
+
+UIAction::UIAction(UIActionPool *pParent, UIActionType enmType)
     : QAction(pParent)
-    , m_type(type)
+    , m_enmType(enmType)
     , m_pActionPool(pParent)
-    , m_actionPoolType(pParent->type())
+    , m_enmActionPoolType(pParent->type())
     , m_fShortcutHidden(false)
 {
     /* By default there is no specific menu role.
@@ -115,17 +123,17 @@ UIAction::UIAction(UIActionPool *pParent, UIActionType type)
 #endif
 }
 
-UIMenu* UIAction::menu() const
+UIMenu *UIAction::menu() const
 {
     return QAction::menu() ? qobject_cast<UIMenu*>(QAction::menu()) : 0;
 }
 
-UIActionPolymorphic* UIAction::toActionPolymorphic()
+UIActionPolymorphic *UIAction::toActionPolymorphic()
 {
     return qobject_cast<UIActionPolymorphic*>(this);
 }
 
-UIActionPolymorphicMenu* UIAction::toActionPolymorphicMenu()
+UIActionPolymorphicMenu *UIAction::toActionPolymorphicMenu()
 {
     return qobject_cast<UIActionPolymorphicMenu*>(this);
 }
@@ -141,7 +149,7 @@ void UIAction::setName(const QString &strName)
 void UIAction::setShortcut(const QKeySequence &shortcut)
 {
     /* Only for selector's action-pool: */
-    if (m_actionPoolType == UIActionPoolType_Selector)
+    if (m_enmActionPoolType == UIActionPoolType_Selector)
     {
         /* If shortcut is visible: */
         if (!m_fShortcutHidden)
@@ -171,7 +179,7 @@ void UIAction::hideShortcut()
 QString UIAction::nameInMenu() const
 {
     /* Action-name format depends on action-pool type: */
-    switch (m_actionPoolType)
+    switch (m_enmActionPoolType)
     {
         /* Unchanged name for Selector UI: */
         case UIActionPoolType_Selector: return name();
@@ -185,7 +193,7 @@ QString UIAction::nameInMenu() const
 void UIAction::updateText()
 {
     /* Action-text format depends on action-pool type: */
-    switch (m_actionPoolType)
+    switch (m_enmActionPoolType)
     {
         /* The same as menu name for Selector UI: */
         case UIActionPoolType_Selector:
@@ -200,12 +208,16 @@ void UIAction::updateText()
 }
 
 
+/*********************************************************************************************************************************
+*   Class UIActionMenu implementation.                                                                                           *
+*********************************************************************************************************************************/
+
 UIActionMenu::UIActionMenu(UIActionPool *pParent,
-                           const QString &strIcon, const QString &strIconDis)
+                           const QString &strIcon, const QString &strIconDisabled)
     : UIAction(pParent, UIActionType_Menu)
 {
     if (!strIcon.isNull())
-        setIcon(UIIconPool::iconSet(strIcon, strIconDis));
+        setIcon(UIIconPool::iconSet(strIcon, strIconDisabled));
     prepare();
 }
 
@@ -241,6 +253,10 @@ void UIActionMenu::updateText()
 }
 
 
+/*********************************************************************************************************************************
+*   Class UIActionSimple implementation.                                                                                         *
+*********************************************************************************************************************************/
+
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
                                const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
     : UIAction(pParent, UIActionType_Simple)
@@ -258,12 +274,16 @@ UIActionSimple::UIActionSimple(UIActionPool *pParent,
 }
 
 UIActionSimple::UIActionSimple(UIActionPool *pParent,
-                               const QIcon& icon)
+                               const QIcon &icon)
     : UIAction(pParent, UIActionType_Simple)
 {
     setIcon(icon);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIActionToggle implementation.                                                                                         *
+*********************************************************************************************************************************/
 
 UIActionToggle::UIActionToggle(UIActionPool *pParent,
                                const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
@@ -298,6 +318,10 @@ void UIActionToggle::prepare()
 }
 
 
+/*********************************************************************************************************************************
+*   Class UIActionPolymorphic implementation.                                                                                    *
+*********************************************************************************************************************************/
+
 UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
                                          const QString &strIcon /* = QString() */, const QString &strIconDisabled /* = QString() */)
     : UIAction(pParent, UIActionType_Polymorphic)
@@ -325,6 +349,10 @@ UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
         setIcon(icon);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIActionPolymorphicMenu implementation.                                                                                *
+*********************************************************************************************************************************/
 
 UIActionPolymorphicMenu::UIActionPolymorphicMenu(UIActionPool *pParent,
                                                  const QString &strIcon, const QString &strIconDisabled)
@@ -408,18 +436,20 @@ void UIActionPolymorphicMenu::updateText()
 }
 
 
+/** Menu action extension, used as 'Application' menu class. */
 class UIActionMenuApplication : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuApplication(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
         menu()->setConsumable(true);
-#endif /* RT_OS_DARWIN */
+#endif
         retranslateUi();
     }
 
@@ -432,22 +462,26 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Application); }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
         setName(QApplication::translate("UIActionPool", "&VirtualBox"));
-#else /* !RT_OS_DARWIN */
+#else
         setName(QApplication::translate("UIActionPool", "&File"));
-#endif /* !RT_OS_DARWIN */
+#endif
     }
 };
 
+
+/** Simple action extension, used as 'Close' action class. */
 class UIActionSimplePerformClose : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformClose(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/exit_16px.png")
     {
@@ -463,11 +497,13 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Close); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("Close");
     }
 
+    /** Returns default shortcut. */
     QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const
     {
         switch (actionPoolType)
@@ -478,22 +514,26 @@ protected:
         return QKeySequence();
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Close..."));
         setStatusTip(QApplication::translate("UIActionPool", "Close the virtual machine"));
     }
 };
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
+/** Menu action extension, used as 'Window' menu class. */
 class UIActionMenuWindow : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuWindow(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
@@ -504,20 +544,25 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Window); }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Window"));
     }
 };
 
+
+/** Simple action extension, used as 'Minimize' action class. */
 class UIActionSimpleMinimize : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleMinimize(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
@@ -528,25 +573,30 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType_Minimize); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("Minimize");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Minimize"));
         setStatusTip(QApplication::translate("UIActionPool", "Minimize active window"));
     }
 };
-#endif /* RT_OS_DARWIN */
+#endif /* VBOX_WS_MAC */
 
+
+/** Menu action extension, used as 'Help' menu class. */
 class UIActionMenuHelp : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuHelp(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
@@ -562,18 +612,22 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Help); }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Help"));
     }
 };
 
+
+/** Simple action extension, used as 'Contents' action class. */
 class UIActionSimpleContents : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleContents(UIActionPool *pParent)
         : UIActionSimple(pParent, UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_DialogHelp))
     {
@@ -589,11 +643,13 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Contents); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("Help");
     }
 
+    /** Returns default shortcut. */
     QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const
     {
         switch (actionPoolType)
@@ -604,19 +660,23 @@ protected:
         return QKeySequence();
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Contents..."));
         setStatusTip(QApplication::translate("UIActionPool", "Show help contents"));
     }
 };
 
+
+/** Simple action extension, used as 'Web Site' action class. */
 class UIActionSimpleWebSite : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleWebSite(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/site_16px.png")
     {
@@ -632,24 +692,29 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_WebSite); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("Web");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&VirtualBox Web Site..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product web site"));
     }
 };
 
+
+/** Simple action extension, used as 'Bug Tracker' action class. */
 class UIActionSimpleBugTracker : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleBugTracker(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/site_bugtracker_16px.png")
     {
@@ -665,24 +730,29 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_BugTracker); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("BugTracker");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&VirtualBox Bug Tracker..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product bug tracker"));
     }
 };
 
+
+/** Simple action extension, used as 'Forums' action class. */
 class UIActionSimpleForums : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleForums(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/site_forum_16px.png")
     {
@@ -698,24 +768,29 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Forums); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("Forums");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&VirtualBox Forums..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product forums"));
     }
 };
 
+
+/** Simple action extension, used as 'Oracle' action class. */
 class UIActionSimpleOracle : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleOracle(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/site_oracle_16px.png")
     {
@@ -731,24 +806,29 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Oracle); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("Oracle");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Oracle Web Site..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the Oracle web site"));
     }
 };
 
+
+/** Simple action extension, used as 'Reset Warnings' action class. */
 class UIActionSimpleResetWarnings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleResetWarnings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/reset_warnings_16px.png")
     {
@@ -765,25 +845,30 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("ResetWarnings");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Reset All Warnings"));
         setStatusTip(QApplication::translate("UIActionPool", "Go back to showing all suppressed warnings and messages"));
     }
 };
 
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+/** Simple action extension, used as 'Network Access Manager' action class. */
 class UIActionSimpleNetworkAccessManager : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleNetworkAccessManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/download_manager_16px.png")
     {
@@ -800,24 +885,29 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("NetworkAccessManager");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Network Operations Manager..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display the Network Operations Manager window"));
     }
 };
 
+
+/** Simple action extension, used as 'Check for Updates' action class. */
 class UIActionSimpleCheckForUpdates : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleCheckForUpdates(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/refresh_16px.png", ":/refresh_disabled_16px.png")
     {
@@ -834,12 +924,14 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("Update");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "C&heck for Updates..."));
         setStatusTip(QApplication::translate("UIActionPool", "Check for a new VirtualBox version"));
@@ -847,12 +939,15 @@ protected:
 };
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
+
+/** Simple action extension, used as 'About' action class. */
 class UIActionSimpleAbout : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleAbout(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/about_16px.png")
     {
@@ -865,49 +960,54 @@ protected:
     /** Returns action extra-data ID. */
     virtual int extraDataID() const
     {
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
         return UIExtraDataMetaDefs::MenuApplicationActionType_About;
-#else /* !RT_OS_DARWIN */
+#else
         return UIExtraDataMetaDefs::MenuHelpActionType_About;
-#endif /* !RT_OS_DARWIN */
+#endif
     }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const
     {
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_About);
-#else /* !RT_OS_DARWIN */
+#else
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_About);
-#endif /* !RT_OS_DARWIN */
+#endif
     }
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const
     {
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
         return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_About);
-#else /* !RT_OS_DARWIN */
+#else
         return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_About);
-#endif /* !RT_OS_DARWIN */
+#endif
     }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("About");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&About VirtualBox..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display a window with product information"));
     }
 };
 
+
+/** Simple action extension, used as 'Preferences' action class. */
 class UIActionSimplePreferences : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePreferences(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/global_settings_16px.png")
     {
@@ -924,11 +1024,13 @@ protected:
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences); }
 
+    /** Returns shortcut extra-data ID. */
     QString shortcutExtraDataID() const
     {
         return QString("Preferences");
     }
 
+    /** Returns default shortcut. */
     QKeySequence defaultShortcut(UIActionPoolType) const
     {
         switch (actionPool()->type())
@@ -939,7 +1041,8 @@ protected:
         return QKeySequence();
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Preferences...", "global preferences window"));
         setStatusTip(QApplication::translate("UIActionPool", "Display the global preferences window"));
@@ -947,11 +1050,15 @@ protected:
 };
 
 
+/*********************************************************************************************************************************
+*   Class UIActionPool implementation.                                                                                           *
+*********************************************************************************************************************************/
+
 /* static */
-UIActionPool* UIActionPool::create(UIActionPoolType type)
+UIActionPool *UIActionPool::create(UIActionPoolType enmType)
 {
     UIActionPool *pActionPool = 0;
-    switch (type)
+    switch (enmType)
     {
         case UIActionPoolType_Selector: pActionPool = new UIActionPoolSelector; break;
         case UIActionPoolType_Runtime: pActionPool = new UIActionPoolRuntime; break;
@@ -971,10 +1078,10 @@ void UIActionPool::destroy(UIActionPool *pActionPool)
 }
 
 /* static */
-void UIActionPool::createTemporary(UIActionPoolType type)
+void UIActionPool::createTemporary(UIActionPoolType enmType)
 {
     UIActionPool *pActionPool = 0;
-    switch (type)
+    switch (enmType)
     {
         case UIActionPoolType_Selector: pActionPool = new UIActionPoolSelector(true); break;
         case UIActionPoolType_Runtime: pActionPool = new UIActionPoolRuntime(true); break;
@@ -986,77 +1093,77 @@ void UIActionPool::createTemporary(UIActionPoolType type)
     delete pActionPool;
 }
 
-UIActionPool::UIActionPool(UIActionPoolType type, bool fTemporary /* = false */)
-    : m_type(type)
+UIActionPool::UIActionPool(UIActionPoolType enmType, bool fTemporary /* = false */)
+    : m_enmType(enmType)
     , m_fTemporary(fTemporary)
 {
 }
 
-UIActionPoolRuntime* UIActionPool::toRuntime()
+UIActionPoolRuntime *UIActionPool::toRuntime()
 {
     return qobject_cast<UIActionPoolRuntime*>(this);
 }
 
-UIActionPoolSelector* UIActionPool::toSelector()
+UIActionPoolSelector *UIActionPool::toSelector()
 {
     return qobject_cast<UIActionPoolSelector*>(this);
 }
 
-bool UIActionPool::isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType type) const
+bool UIActionPool::isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType enmType) const
 {
-    foreach (const UIExtraDataMetaDefs::MenuType &restriction, m_restrictedMenus.values())
-        if (restriction & type)
+    foreach (const UIExtraDataMetaDefs::MenuType &enmRestriction, m_restrictedMenus.values())
+        if (enmRestriction & enmType)
             return false;
     return true;
 }
 
-void UIActionPool::setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuType restriction)
+void UIActionPool::setRestrictionForMenuBar(UIActionRestrictionLevel enmLevel, UIExtraDataMetaDefs::MenuType enmRestriction)
 {
-    m_restrictedMenus[level] = restriction;
+    m_restrictedMenus[enmLevel] = enmRestriction;
     updateMenus();
 }
 
-bool UIActionPool::isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType type) const
+bool UIActionPool::isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType enmType) const
 {
-    foreach (const UIExtraDataMetaDefs::MenuApplicationActionType &restriction, m_restrictedActionsMenuApplication.values())
-        if (restriction & type)
+    foreach (const UIExtraDataMetaDefs::MenuApplicationActionType &enmRestriction, m_restrictedActionsMenuApplication.values())
+        if (enmRestriction & enmType)
             return false;
     return true;
 }
 
-void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuApplicationActionType restriction)
+void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel enmLevel, UIExtraDataMetaDefs::MenuApplicationActionType enmRestriction)
 {
-    m_restrictedActionsMenuApplication[level] = restriction;
+    m_restrictedActionsMenuApplication[enmLevel] = enmRestriction;
     m_invalidations << UIActionIndex_M_Application;
 }
 
 #ifdef VBOX_WS_MAC
-bool UIActionPool::isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType type) const
+bool UIActionPool::isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType enmType) const
 {
-    foreach (const UIExtraDataMetaDefs::MenuWindowActionType &restriction, m_restrictedActionsMenuWindow.values())
-        if (restriction & type)
+    foreach (const UIExtraDataMetaDefs::MenuWindowActionType &enmRestriction, m_restrictedActionsMenuWindow.values())
+        if (enmRestriction & enmType)
             return false;
     return true;
 }
 
-void UIActionPool::setRestrictionForMenuWindow(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuWindowActionType restriction)
+void UIActionPool::setRestrictionForMenuWindow(UIActionRestrictionLevel enmLevel, UIExtraDataMetaDefs::MenuWindowActionType enmRestriction)
 {
-    m_restrictedActionsMenuWindow[level] = restriction;
+    m_restrictedActionsMenuWindow[enmLevel] = enmRestriction;
     m_invalidations << UIActionIndex_M_Window;
 }
 #endif /* VBOX_WS_MAC */
 
-bool UIActionPool::isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const
+bool UIActionPool::isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType enmType) const
 {
-    foreach (const UIExtraDataMetaDefs::MenuHelpActionType &restriction, m_restrictedActionsMenuHelp.values())
-        if (restriction & type)
+    foreach (const UIExtraDataMetaDefs::MenuHelpActionType &enmRestriction, m_restrictedActionsMenuHelp.values())
+        if (enmRestriction & enmType)
             return false;
     return true;
 }
 
-void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuHelpActionType restriction)
+void UIActionPool::setRestrictionForMenuHelp(UIActionRestrictionLevel enmLevel, UIExtraDataMetaDefs::MenuHelpActionType enmRestriction)
 {
-    m_restrictedActionsMenuHelp[level] = restriction;
+    m_restrictedActionsMenuHelp[enmLevel] = enmRestriction;
     m_invalidations << UIActionIndex_Menu_Help;
 }
 
@@ -1110,22 +1217,22 @@ void UIActionPool::preparePool()
 {
     /* Create 'Application' actions: */
     m_pool[UIActionIndex_M_Application] = new UIActionMenuApplication(this);
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     m_pool[UIActionIndex_M_Application_S_About] = new UIActionSimpleAbout(this);
-#endif /* RT_OS_DARWIN */
+#endif
     m_pool[UIActionIndex_M_Application_S_Preferences] = new UIActionSimplePreferences(this);
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     m_pool[UIActionIndex_M_Application_S_NetworkAccessManager] = new UIActionSimpleNetworkAccessManager(this);
     m_pool[UIActionIndex_M_Application_S_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#endif
     m_pool[UIActionIndex_M_Application_S_ResetWarnings] = new UIActionSimpleResetWarnings(this);
     m_pool[UIActionIndex_M_Application_S_Close] = new UIActionSimplePerformClose(this);
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /* Create 'Window' actions: */
     m_pool[UIActionIndex_M_Window] = new UIActionMenuWindow(this);
     m_pool[UIActionIndex_M_Window_S_Minimize] = new UIActionSimpleMinimize(this);
-#endif /* RT_OS_DARWIN */
+#endif
 
     /* Create 'Help' actions: */
     m_pool[UIActionIndex_Menu_Help] = new UIActionMenuHelp(this);
@@ -1134,15 +1241,15 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_Simple_BugTracker] = new UIActionSimpleBugTracker(this);
     m_pool[UIActionIndex_Simple_Forums] = new UIActionSimpleForums(this);
     m_pool[UIActionIndex_Simple_Oracle] = new UIActionSimpleOracle(this);
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
-#endif /* !RT_OS_DARWIN */
+#endif
 
     /* Prepare update-handlers for known menus: */
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     m_menuUpdateHandlers[UIActionIndex_M_Application].ptf = &UIActionPool::updateMenuApplication;
     m_menuUpdateHandlers[UIActionIndex_M_Window].ptf = &UIActionPool::updateMenuWindow;
-#endif /* RT_OS_DARWIN */
+#endif
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
 
     /* Invalidate all known menus: */
@@ -1155,16 +1262,16 @@ void UIActionPool::preparePool()
 void UIActionPool::prepareConnections()
 {
     /* 'Application' menu connections: */
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     connect(action(UIActionIndex_M_Application_S_About), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltShowHelpAboutDialog, Qt::UniqueConnection);
-#endif /* RT_OS_DARWIN */
+#endif
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     connect(action(UIActionIndex_M_Application_S_NetworkAccessManager), &UIAction::triggered,
             gNetworkManager, &UINetworkManager::show, Qt::UniqueConnection);
     connect(action(UIActionIndex_M_Application_S_CheckForUpdates), &UIAction::triggered,
             gUpdateManager, &UIUpdateManager::sltForceCheck, Qt::UniqueConnection);
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#endif
     connect(action(UIActionIndex_M_Application_S_ResetWarnings), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltResetSuppressedMessages, Qt::UniqueConnection);
 
@@ -1179,10 +1286,10 @@ void UIActionPool::prepareConnections()
             &msgCenter(), &UIMessageCenter::sltShowForums, Qt::UniqueConnection);
     connect(action(UIActionIndex_Simple_Oracle), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltShowOracle, Qt::UniqueConnection);
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
     connect(action(UIActionIndex_Simple_About), &UIAction::triggered,
             &msgCenter(), &UIMessageCenter::sltShowHelpAboutDialog, Qt::UniqueConnection);
-#endif /* !RT_OS_DARWIN */
+#endif
 }
 
 void UIActionPool::cleanupPool()
@@ -1264,50 +1371,50 @@ void UIActionPool::updateMenuApplication()
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndex_M_Application)->menu();
     AssertPtrReturnVoid(pMenu);
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     AssertReturnVoid(pMenu->isConsumable());
-#endif /* RT_OS_DARWIN */
+#endif
     /* Clear contents: */
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     if (!pMenu->isConsumed())
-#endif /* RT_OS_DARWIN */
+#endif
         pMenu->clear();
 
     /* Separator: */
     bool fSeparator = false;
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /* 'About' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_About)) || fSeparator;
-#endif /* RT_OS_DARWIN */
+#endif
 
     /* 'Preferences' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_Preferences)) || fSeparator;
 
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
     /* Separator: */
     if (fSeparator)
     {
         pMenu->addSeparator();
         fSeparator = false;
     }
-#endif /* !RT_OS_DARWIN */
+#endif
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* 'Network Manager' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_NetworkAccessManager)) || fSeparator;
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#endif
     /* 'Reset Warnings' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_ResetWarnings)) || fSeparator;
 
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
     /* Separator: */
     if (fSeparator)
     {
         pMenu->addSeparator();
         fSeparator = false;
     }
-#endif /* !RT_OS_DARWIN */
+#endif
 
     /* 'Close' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_Close)) || fSeparator;
@@ -1316,7 +1423,7 @@ void UIActionPool::updateMenuApplication()
     m_invalidations.remove(UIActionIndex_M_Application);
 }
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
 void UIActionPool::updateMenuWindow()
 {
     /* Get corresponding menu: */
@@ -1340,7 +1447,7 @@ void UIActionPool::updateMenuWindow()
 
     /* This menu always remains invalid.. */
 }
-#endif /* RT_OS_DARWIN */
+#endif /* VBOX_WS_MAC */
 
 void UIActionPool::updateMenuHelp()
 {
@@ -1371,10 +1478,10 @@ void UIActionPool::updateMenuHelp()
         fSeparator = false;
     }
 
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
     /* 'About' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_Simple_About)) || fSeparator;;
-#endif /* !RT_OS_DARWIN */
+#endif
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_Menu_Help);
@@ -1414,18 +1521,18 @@ bool UIActionPool::addAction(UIMenu *pMenu, UIAction *pAction, bool fReallyAdd /
     /* Check if action is allowed: */
     const bool fIsActionAllowed = pAction->isAllowed();
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /* Check if menu is consumable: */
     const bool fIsMenuConsumable = pMenu->isConsumable();
     /* Check if menu is NOT yet consumed: */
     const bool fIsMenuConsumed = pMenu->isConsumed();
-#endif /* RT_OS_DARWIN */
+#endif
 
     /* Make this action visible
      * depending on clearance state. */
     pAction->setVisible(fIsActionAllowed);
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /* If menu is consumable: */
     if (fIsMenuConsumable)
     {
@@ -1435,7 +1542,7 @@ bool UIActionPool::addAction(UIMenu *pMenu, UIAction *pAction, bool fReallyAdd /
     }
     /* If menu is NOT consumable: */
     else
-#endif /* RT_OS_DARWIN */
+#endif
     {
         /* Add action only if is allowed: */
         if (fIsActionAllowed && fReallyAdd)
@@ -1454,22 +1561,22 @@ bool UIActionPool::addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fRea
     /* Get action's menu: */
     UIMenu *pMenu = pAction->menu();
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /* Check if menu is consumable: */
     const bool fIsMenuConsumable = pMenu->isConsumable();
     /* Check if menu is NOT yet consumed: */
     const bool fIsMenuConsumed = pMenu->isConsumed();
-#endif /* RT_OS_DARWIN */
+#endif
 
     /* Make this action visible
      * depending on clearance state. */
     pAction->setVisible(   fIsActionAllowed
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
                         && !fIsMenuConsumable
-#endif /* RT_OS_DARWIN */
+#endif
                         );
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /* If menu is consumable: */
     if (fIsMenuConsumable)
     {
@@ -1479,7 +1586,7 @@ bool UIActionPool::addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fRea
     }
     /* If menu is NOT consumable: */
     else
-#endif /* RT_OS_DARWIN */
+#endif
     {
         /* Add action only if is allowed: */
         if (fIsActionAllowed && fReallyAdd)
