@@ -289,7 +289,7 @@ HRESULT MachineMoveVM::init()
             for (size_t i = 0; i < llMedias.size(); ++i)
             {
                 LONG64  cbSize = 0;
-                MEDIUMTASKCHAIN &mtc = llMedias.at(i);
+                MEDIUMTASKCHAINMOVE &mtc = llMedias.at(i);
                 for (size_t a = mtc.chain.size(); a > 0; --a)
                 {
                     Bstr bstrLocation;
@@ -306,7 +306,7 @@ HRESULT MachineMoveVM::init()
                         rc = plMedium->COMGETTER(Size)(&cbSize);
                         if (FAILED(rc)) throw rc;
 
-                        std::pair<std::map<Utf8Str, MEDIUMTASK>::iterator,bool> ret;
+                        std::pair<std::map<Utf8Str, MEDIUMTASKMOVE>::iterator,bool> ret;
                         ret = finalMediumsMap.insert(std::make_pair(name, mtc.chain[a - 1]));
                         if (ret.second == true)
                         {
@@ -331,7 +331,7 @@ HRESULT MachineMoveVM::init()
             for (size_t i = 0; i < llSaveStateFiles.size(); ++i)
             {
                 uint64_t cbFile = 0;
-                SAVESTATETASK &sst = llSaveStateFiles.at(i);
+                SAVESTATETASKMOVE &sst = llSaveStateFiles.at(i);
 
                 Utf8Str name = sst.strSaveStateFile;
                 /*if a state file is located in the actual VM folder it will be added to the actual list */
@@ -340,7 +340,7 @@ HRESULT MachineMoveVM::init()
                     vrc = RTFileQuerySize(name.c_str(), &cbFile);
                     if (RT_SUCCESS(vrc))
                     {
-                        std::pair<std::map<Utf8Str, SAVESTATETASK>::iterator,bool> ret;
+                        std::pair<std::map<Utf8Str, SAVESTATETASKMOVE>::iterator,bool> ret;
                         ret = finalSaveStateFilesMap.insert(std::make_pair(name, sst));
                         if (ret.second == true)
                         {
@@ -607,10 +607,10 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                                                         strTrgSnapshotFolder.c_str(), vrc);
             }
 
-            std::map<Utf8Str, SAVESTATETASK>::iterator itState = taskMoveVM->finalSaveStateFilesMap.begin();
+            std::map<Utf8Str, SAVESTATETASKMOVE>::iterator itState = taskMoveVM->finalSaveStateFilesMap.begin();
             while (itState != taskMoveVM->finalSaveStateFilesMap.end())
             {
-                const SAVESTATETASK &sst = itState->second;
+                const SAVESTATETASKMOVE &sst = itState->second;
                 const Utf8Str &strTrgSaveState = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER,
                                                             RTPathFilename(sst.strSaveStateFile.c_str()));
 
@@ -939,7 +939,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
     LogFlowFuncLeave();
 }
 
-HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfDisks,
+HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& listOfDisks,
                                     const Utf8Str* strTargetFolder)
 {
     HRESULT rc = S_OK;
@@ -949,10 +949,10 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
     AutoWriteLock  machineLock(machine COMMA_LOCKVAL_SRC_POS);
 
     try{
-        std::map<Utf8Str, MEDIUMTASK>::const_iterator itMedium = listOfDisks.begin();
+        std::map<Utf8Str, MEDIUMTASKMOVE>::const_iterator itMedium = listOfDisks.begin();
         while(itMedium != listOfDisks.end())
         {
-            const MEDIUMTASK &mt = itMedium->second;
+            const MEDIUMTASKMOVE &mt = itMedium->second;
             ComPtr<IMedium> pMedium = mt.pMedium;
             Utf8Str strTargetImageName;
             Bstr bstrLocation;
@@ -1013,10 +1013,11 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
             ComPtr<IProgress> moveDiskProgress;
             rc = pMedium->SetLocation(bstrLocation.raw(), moveDiskProgress.asOutParam());
             /* Wait until the async process has finished. */
-
             rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
 
+            /*acquire the lock back*/
             machineLock.acquire();
+
             if (FAILED(rc)) throw rc;
 
             LogRelFunc(("Moving %s has been finished\n", strTargetImageName.c_str()));
@@ -1051,15 +1052,15 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASK>& listOfD
     return rc;
 }
 
-HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATETASK>& listOfFiles,
+HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATETASKMOVE>& listOfFiles,
                                                const Utf8Str& sourcePath, const Utf8Str& targetPath)
 {
     HRESULT rc = S_OK;
 
-    std::map<Utf8Str, SAVESTATETASK>::const_iterator itState = listOfFiles.begin();
+    std::map<Utf8Str, SAVESTATETASKMOVE>::const_iterator itState = listOfFiles.begin();
     while (itState != listOfFiles.end())
     {
-        const SAVESTATETASK &sst = itState->second;
+        const SAVESTATETASKMOVE &sst = itState->second;
 
         if (sst.snapshotUuid != Guid::Empty)
         {
@@ -1291,7 +1292,7 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
                 continue;
             }
 
-            MEDIUMTASKCHAIN mtc;
+            MEDIUMTASKCHAINMOVE mtc;
             mtc.devType = deviceType;
 
             while (!pMedium.isNull())
@@ -1312,7 +1313,7 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
                 rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                MEDIUMTASK mt;
+                MEDIUMTASKMOVE mt;// = {false, "basename", NULL, 0, 0};
                 mt.strBaseName = bstrLocation;
                 Utf8Str strFolder = vmFolders[VBox_SnapshotFolder];
                 if (strFolder.isNotEmpty() && mt.strBaseName.contains(strFolder))
@@ -1345,7 +1346,7 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
     for (size_t i = 0; i < llMedias.size(); ++i)
     {
         uint32_t uIdx = 0;
-        MEDIUMTASKCHAIN &mtc = llMedias.at(i);
+        MEDIUMTASKCHAINMOVE &mtc = llMedias.at(i);
         for (size_t a = mtc.chain.size(); a > 0; --a)
             mtc.chain[a - 1].uIdx = uIdx++;
     }
@@ -1360,7 +1361,7 @@ HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine)
     if (FAILED(rc)) return rc;
     if (!bstrSrcSaveStatePath.isEmpty())
     {
-        SAVESTATETASK sst;
+        SAVESTATETASKMOVE sst;
 
         sst.snapshotUuid = machine->i_getSnapshotId();
         sst.strSaveStateFile = bstrSrcSaveStatePath;
@@ -1378,7 +1379,7 @@ HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine)
     return S_OK;
 }
 
-void MachineMoveVM::updateProgressStats(MEDIUMTASKCHAIN &mtc, ULONG &uCount, ULONG &uTotalWeight) const
+void MachineMoveVM::updateProgressStats(MEDIUMTASKCHAINMOVE &mtc, ULONG &uCount, ULONG &uTotalWeight) const
 {
 
     /* Currently the copying of diff images involves reading at least
@@ -1390,7 +1391,7 @@ void MachineMoveVM::updateProgressStats(MEDIUMTASKCHAIN &mtc, ULONG &uCount, ULO
     ULONG uMaxWeight = 0;
     for (size_t e = mtc.chain.size(); e > 0; --e)
     {
-        MEDIUMTASK &mt = mtc.chain.at(e - 1);
+        MEDIUMTASKMOVE &mt = mtc.chain.at(e - 1);
         mt.uWeight += uMaxWeight;
 
         /* Calculate progress data */
