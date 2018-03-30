@@ -2045,30 +2045,30 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 *********************************************************************************************************************************/
 
 /* static */
-UIExtraDataManager *UIExtraDataManager::m_spInstance = 0;
+UIExtraDataManager *UIExtraDataManager::s_pInstance = 0;
 const QString UIExtraDataManager::GlobalID = QUuid().toString().remove(QRegExp("[{}]"));
 
 /* static */
 UIExtraDataManager* UIExtraDataManager::instance()
 {
     /* Create/prepare instance if not yet exists: */
-    if (!m_spInstance)
+    if (!s_pInstance)
     {
         new UIExtraDataManager;
-        m_spInstance->prepare();
+        s_pInstance->prepare();
     }
     /* Return instance: */
-    return m_spInstance;
+    return s_pInstance;
 }
 
 /* static */
 void UIExtraDataManager::destroy()
 {
     /* Destroy/cleanup instance if still exists: */
-    if (m_spInstance)
+    if (s_pInstance)
     {
-        m_spInstance->cleanup();
-        delete m_spInstance;
+        s_pInstance->cleanup();
+        delete s_pInstance;
     }
 }
 
@@ -2244,13 +2244,13 @@ UIExtraDataManager::UIExtraDataManager()
     : m_pHandler(0)
 {
     /* Connect to static instance: */
-    m_spInstance = this;
+    s_pInstance = this;
 }
 
 UIExtraDataManager::~UIExtraDataManager()
 {
     /* Disconnect from static instance: */
-    m_spInstance = 0;
+    s_pInstance = 0;
 }
 
 EventHandlingType UIExtraDataManager::eventHandlingType()
