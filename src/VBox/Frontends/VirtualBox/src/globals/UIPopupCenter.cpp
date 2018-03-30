@@ -25,7 +25,6 @@
 # include "UIErrorString.h"
 # include "UIExtraDataManager.h"
 # include "UIHostComboEditor.h"
-# include "UIMachineWindow.h"
 # include "UIPopupCenter.h"
 # include "UIPopupStack.h"
 
@@ -382,7 +381,7 @@ QString UIPopupCenter::popupStackID(QWidget *pParent)
     AssertPtrReturn(pParent, QString());
 
     /* Special handling for Runtime UI: */
-    if (qobject_cast<UIMachineWindow*>(pParent))
+    if (pParent->inherits("UIMachineWindow"))
         return QString("UIMachineWindow");
 
     /* Common handling for other cases: */
