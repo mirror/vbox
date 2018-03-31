@@ -305,27 +305,27 @@ BOOLEAN VBoxMPSetColorRegisters(PVBOXMP_DEVEXT pExt, PVIDEO_CLUT pClut, PSTATUS_
  */
 BOOLEAN VBoxMPSetPointerAttr(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_ATTRIBUTES pPointerAttrs, uint32_t cbLen, PSTATUS_BLOCK pStatus)
 {
-    BOOLEAN bRC;
+    BOOLEAN fRc;
 
     LOGF_ENTER();
 
     if (VBoxQueryHostWantsAbsolute())
     {
-        bRC = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pExt), pPointerAttrs, cbLen);
+        fRc = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pExt), pPointerAttrs, cbLen);
     }
     else
     {
         LOG(("Fallback to sw pointer."));
-        bRC = FALSE;
+        fRc = FALSE;
     }
 
-    if (!bRC)
+    if (!fRc)
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
     }
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 
 
@@ -335,7 +335,7 @@ BOOLEAN VBoxMPSetPointerAttr(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_ATTRIBUTES pPoi
  */
 BOOLEAN VBoxMPEnablePointer(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, PSTATUS_BLOCK pStatus)
 {
-    BOOLEAN bRC = TRUE;
+    BOOLEAN fRc = TRUE;
     LOGF_ENTER();
 
     if (VBoxQueryHostWantsAbsolute())
@@ -352,9 +352,9 @@ BOOLEAN VBoxMPEnablePointer(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, PSTATUS_BLOCK 
 
 
             /* Pass info to the host. */
-            bRC = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pExt), &attrs, sizeof(attrs));
+            fRc = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pExt), &attrs, sizeof(attrs));
 
-            if (bRC)
+            if (fRc)
             {
                 /* Update device state. */
                 pExt->pPrimary->u.primary.fMouseHidden = !bEnable;
@@ -363,16 +363,16 @@ BOOLEAN VBoxMPEnablePointer(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, PSTATUS_BLOCK 
     }
     else
     {
-        bRC = FALSE;
+        fRc = FALSE;
     }
 
-    if (!bRC)
+    if (!fRc)
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
     }
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 
 /* Called for IOCTL_VIDEO_QUERY_POINTER_POSITION.
@@ -381,7 +381,7 @@ BOOLEAN VBoxMPEnablePointer(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, PSTATUS_BLOCK 
 BOOLEAN VBoxMPQueryPointerPosition(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_POSITION pPos, PSTATUS_BLOCK pStatus)
 {
     uint16_t PosX, PosY;
-    BOOLEAN bRC = TRUE;
+    BOOLEAN fRc = TRUE;
     LOGF_ENTER();
 
     if (VBoxQueryPointerPos(&PosX, &PosY))
@@ -396,11 +396,11 @@ BOOLEAN VBoxMPQueryPointerPosition(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_POSITION 
     else
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
-        bRC = FALSE;
+        fRc = FALSE;
     }
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 
 /* Called for IOCTL_VIDEO_QUERY_POINTER_CAPABILITIES.
@@ -434,7 +434,7 @@ BOOLEAN VBoxMPQueryPointerCapabilities(PVBOXMP_DEVEXT pExt, PVIDEO_POINTER_CAPAB
 BOOLEAN VBoxMPVBVAEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResult, PSTATUS_BLOCK pStatus)
 {
     int rc;
-    BOOLEAN bRC = TRUE;
+    BOOLEAN fRc = TRUE;
     LOGF_ENTER();
 
     rc = VBoxVbvaEnable(pExt, bEnable, pResult);
@@ -446,11 +446,11 @@ BOOLEAN VBoxMPVBVAEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT 
     else
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
-        bRC = FALSE;
+        fRc = FALSE;
     }
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 
 /* Called for IOCTL_VIDEO_VBOX_SETVISIBLEREGION.
@@ -459,7 +459,7 @@ BOOLEAN VBoxMPVBVAEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT 
 BOOLEAN VBoxMPSetVisibleRegion(uint32_t cRects, RTRECT *pRects, PSTATUS_BLOCK pStatus)
 {
     int rc;
-    BOOLEAN bRC = FALSE;
+    BOOLEAN fRc = FALSE;
     LOGF_ENTER();
 
     VMMDevVideoSetVisibleRegion *req = NULL;
@@ -474,7 +474,7 @@ BOOLEAN VBoxMPSetVisibleRegion(uint32_t cRects, RTRECT *pRects, PSTATUS_BLOCK pS
 
         if (RT_SUCCESS(rc))
         {
-            bRC=TRUE;
+            fRc=TRUE;
         }
 
         VbglR0GRFree(&req->header);
@@ -484,13 +484,13 @@ BOOLEAN VBoxMPSetVisibleRegion(uint32_t cRects, RTRECT *pRects, PSTATUS_BLOCK pS
         WARN(("VbglR0GRAlloc rc = %#xrc", rc));
     }
 
-    if (!bRC)
+    if (!fRc)
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
     }
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 
 /* Called for IOCTL_VIDEO_HGSMI_QUERY_PORTPROCS.
@@ -498,7 +498,7 @@ BOOLEAN VBoxMPSetVisibleRegion(uint32_t cRects, RTRECT *pRects, PSTATUS_BLOCK pS
  */
 BOOLEAN VBoxMPHGSMIQueryPortProcs(PVBOXMP_DEVEXT pExt, HGSMIQUERYCPORTPROCS *pProcs, PSTATUS_BLOCK pStatus)
 {
-    BOOLEAN bRC = TRUE;
+    BOOLEAN fRc = TRUE;
     LOGF_ENTER();
 
     if (VBoxCommonFromDeviceExt(pExt)->bHGSMI)
@@ -511,11 +511,11 @@ BOOLEAN VBoxMPHGSMIQueryPortProcs(PVBOXMP_DEVEXT pExt, HGSMIQUERYCPORTPROCS *pPr
     else
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
-        bRC=FALSE;
+        fRc=FALSE;
     }
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 
 /* Called for IOCTL_VIDEO_HGSMI_QUERY_CALLBACKS.
@@ -523,7 +523,7 @@ BOOLEAN VBoxMPHGSMIQueryPortProcs(PVBOXMP_DEVEXT pExt, HGSMIQUERYCPORTPROCS *pPr
  */
 BOOLEAN VBoxMPHGSMIQueryCallbacks(PVBOXMP_DEVEXT pExt, HGSMIQUERYCALLBACKS *pCallbacks, PSTATUS_BLOCK pStatus)
 {
-    BOOLEAN bRC = TRUE;
+    BOOLEAN fRc = TRUE;
     LOGF_ENTER();
 
     if (VBoxCommonFromDeviceExt(pExt)->bHGSMI)
@@ -537,12 +537,12 @@ BOOLEAN VBoxMPHGSMIQueryCallbacks(PVBOXMP_DEVEXT pExt, HGSMIQUERYCALLBACKS *pCal
     else
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
-        bRC=FALSE;
+        fRc=FALSE;
     }
 
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 
 /* Called for IOCTL_VIDEO_QUERY_HGSMI_INFO.
@@ -550,7 +550,7 @@ BOOLEAN VBoxMPHGSMIQueryCallbacks(PVBOXMP_DEVEXT pExt, HGSMIQUERYCALLBACKS *pCal
  */
 BOOLEAN VBoxMPQueryHgsmiInfo(PVBOXMP_DEVEXT pExt, QUERYHGSMIRESULT *pResult, PSTATUS_BLOCK pStatus)
 {
-    BOOLEAN bRC = TRUE;
+    BOOLEAN fRc = TRUE;
     LOGF_ENTER();
 
     if (VBoxCommonFromDeviceExt(pExt)->bHGSMI)
@@ -567,11 +567,11 @@ BOOLEAN VBoxMPQueryHgsmiInfo(PVBOXMP_DEVEXT pExt, QUERYHGSMIRESULT *pResult, PST
     else
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
-        bRC=FALSE;
+        fRc=FALSE;
     }
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 
 /* Called for IOCTL_VIDEO_HGSMI_HANDLER_ENABLE.
@@ -579,7 +579,7 @@ BOOLEAN VBoxMPQueryHgsmiInfo(PVBOXMP_DEVEXT pExt, QUERYHGSMIRESULT *pResult, PST
  */
 BOOLEAN VBoxMPHgsmiHandlerEnable(PVBOXMP_DEVEXT pExt, HGSMIHANDLERENABLE *pChannel, PSTATUS_BLOCK pStatus)
 {
-    BOOLEAN bRC = TRUE;
+    BOOLEAN fRc = TRUE;
     LOGF_ENTER();
 
     if (VBoxCommonFromDeviceExt(pExt)->bHGSMI)
@@ -588,17 +588,17 @@ BOOLEAN VBoxMPHgsmiHandlerEnable(PVBOXMP_DEVEXT pExt, HGSMIHANDLERENABLE *pChann
         if (RT_FAILURE(rc))
         {
             pStatus->Status = ERROR_INVALID_NAME;
-            bRC=FALSE;
+            fRc=FALSE;
         }
     }
     else
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
-        bRC=FALSE;
+        fRc=FALSE;
     }
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -607,7 +607,7 @@ BOOLEAN VBoxMPHgsmiHandlerEnable(PVBOXMP_DEVEXT pExt, HGSMIHANDLERENABLE *pChann
  */
 BOOLEAN VBoxMPVhwaQueryInfo(PVBOXMP_DEVEXT pExt, VHWAQUERYINFO *pInfo, PSTATUS_BLOCK pStatus)
 {
-    BOOLEAN bRC = TRUE;
+    BOOLEAN fRc = TRUE;
     LOGF_ENTER();
 
     if (VBoxCommonFromDeviceExt(pExt)->bHGSMI)
@@ -619,17 +619,17 @@ BOOLEAN VBoxMPVhwaQueryInfo(PVBOXMP_DEVEXT pExt, VHWAQUERYINFO *pInfo, PSTATUS_B
     else
     {
         pStatus->Status = ERROR_INVALID_FUNCTION;
-        bRC=FALSE;
+        fRc=FALSE;
     }
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
 #endif
 
 BOOLEAN VBoxMPQueryRegistryFlags(PVBOXMP_DEVEXT pExt, ULONG *pulFlags, PSTATUS_BLOCK pStatus)
 {
-    BOOLEAN bRC = TRUE;
+    BOOLEAN fRc = TRUE;
     LOGF_ENTER();
 
     VBOXMPCMNREGISTRY Registry;
@@ -656,5 +656,5 @@ BOOLEAN VBoxMPQueryRegistryFlags(PVBOXMP_DEVEXT pExt, ULONG *pulFlags, PSTATUS_B
     VBOXMP_WARN_VPS_NOBP(rc);
 
     LOGF_LEAVE();
-    return bRC;
+    return fRc;
 }
