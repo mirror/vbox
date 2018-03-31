@@ -1572,6 +1572,49 @@
 #endif
 
 
+/** @name Untrusted data classifications.
+ * @{ */
+/** @def RT_UNTRUSTED_USER
+ * For marking non-volatile (race free) data from user mode as untrusted.
+ * This is just for visible documentation. */
+#define RT_UNTRUSTED_USER
+/** @def RT_UNTRUSTED_VOLATILE_USER
+ * For marking volatile data shared with user mode as untrusted.
+ * This is more than just documentation as it specifies the 'volatile' keyword,
+ * because the guest could modify the data at any time. */
+#define RT_UNTRUSTED_VOLATILE_USER      volatile
+
+/** @def RT_UNTRUSTED_GUEST
+ * For marking non-volatile (race free) data from the guest as untrusted.
+ * This is just for visible documentation. */
+#define RT_UNTRUSTED_GUEST
+/** @def RT_UNTRUSTED_VOLATILE_GUEST
+ * For marking volatile data shared with the guest as untrusted.
+ * This is more than just documentation as it specifies the 'volatile' keyword,
+ * because the guest could modify the data at any time. */
+#define RT_UNTRUSTED_VOLATILE_GUEST     volatile
+
+/** @def RT_UNTRUSTED_HOST
+ * For marking non-volatile (race free) data from the host as untrusted.
+ * This is just for visible documentation. */
+#define RT_UNTRUSTED_HOST
+/** @def RT_UNTRUSTED_VOLATILE_HOST
+ * For marking volatile data shared with the host as untrusted.
+ * This is more than just documentation as it specifies the 'volatile' keyword,
+ * because the host could modify the data at any time. */
+#define RT_UNTRUSTED_VOLATILE_HOST      volatile
+
+/** @def RT_UNTRUSTED_HSTGST
+ * For marking non-volatile (race free) data from the host/gust as untrusted.
+ * This is just for visible documentation. */
+#define RT_UNTRUSTED_HSTGST
+/** @def RT_UNTRUSTED_VOLATILE_HSTGST
+ * For marking volatile data shared with the host/guest as untrusted.
+ * This is more than just documentation as it specifies the 'volatile' keyword,
+ * because the host could modify the data at any time. */
+#define RT_UNTRUSTED_VOLATILE_HSTGST    volatile
+/** @} */
+
 
 /** @def RT_LIKELY
  * Give the compiler a hint that an expression is very likely to hold true.
