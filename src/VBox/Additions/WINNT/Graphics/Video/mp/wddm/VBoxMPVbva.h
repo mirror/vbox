@@ -238,8 +238,9 @@ int VBoxCmdVbvaConConnect(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva,
 int VBoxCmdVbvaConDisconnect(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32ClientID);
 VBOXCMDVBVA_CRCMD_CMD* VBoxCmdVbvaConCmdAlloc(PVBOXMP_DEVEXT pDevExt, uint32_t cbCmd);
 void VBoxCmdVbvaConCmdFree(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA_CRCMD_CMD* pCmd);
-int VBoxCmdVbvaConCmdSubmitAsync(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA_CRCMD_CMD* pCmd, FNVBOXSHGSMICMDCOMPLETION pfnCompletion, void *pvCompletion);
-int VBoxCmdVbvaConCmdCompletionData(void *pvCmd, VBOXCMDVBVA_CRCMD_CMD **ppCmd);
+int VBoxCmdVbvaConCmdSubmitAsync(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA_CRCMD_CMD* pCmd,
+                                 PFNVBOXSHGSMICMDCOMPLETION pfnCompletion, void *pvCompletion);
+int VBoxCmdVbvaConCmdCompletionData(void RT_UNTRUSTED_VOLATILE_HOST *pvCmd, VBOXCMDVBVA_CRCMD_CMD RT_UNTRUSTED_VOLATILE_HOST **ppCmd);
 int VBoxCmdVbvaConCmdResize(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const uint32_t *pTargetMap, const POINT * pVScreenPos, uint16_t fFlags);
 #endif /* #ifdef VBOX_WITH_CROGL */
 

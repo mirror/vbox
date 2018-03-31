@@ -1391,7 +1391,7 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
     NTSTATUS Status = STATUS_SUCCESS;
     UINT cbCmd = VBOXVDMACMD_SIZE_FROMBODYSIZE(RT_OFFSETOF(VBOXVDMACMD_CHROMIUM_CMD, aBuffers[cBuffers]));
 
-    PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate(&pDevExt->u.primary.Vdma, cbCmd);
+    VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr = vboxVdmaCBufDrCreate(&pDevExt->u.primary.Vdma, cbCmd);
     if (pDr)
     {
         // vboxVdmaCBufDrCreate zero initializes the pDr
@@ -1437,7 +1437,7 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
         if (Status == STATUS_SUCCESS)
         {
             PVBOXVDMADDI_CMD pDdiCmd = VBOXVDMADDI_CMD_FROM_BUF_DR(pDr);
-            vboxVdmaDdiCmdInit(pDdiCmd, 0, 0, vboxVideoAMgrAllocSubmitCompletion, pDr);
+            vboxVdmaDdiCmdInit(pDdiCmd, 0, 0, vboxVideoAMgrAllocSubmitCompletion, (void *)pDr);
             /* mark command as submitted & invisible for the dx runtime since dx did not originate it */
             vboxVdmaDdiCmdSubmittedNotDx(pDdiCmd);
             int rc = vboxVdmaCBufDrSubmit(pDevExt, &pDevExt->u.primary.Vdma, pDr);
@@ -1807,8 +1807,9 @@ NTSTATUS vboxWddmThreadCreate(PKTHREAD * ppThread, PKSTART_ROUTINE pStartRoutine
 static int vboxWddmWdProgram(PVBOXMP_DEVEXT pDevExt, uint32_t cMillis)
 {
     int rc = VINF_SUCCESS;
-    PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx,
-                                                               sizeof(VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
+    VBOXVDMA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCmd
+        = (VBOXVDMA_CTL RT_UNTRUSTED_VOLATILE_GUEST *)VBoxSHGSMICommandAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx,
+                                                                             sizeof(VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
     if (pCmd)
     {
         pCmd->enmCtl = VBOXVDMA_CTL_TYPE_WATCHDOG;
@@ -1844,7 +1845,7 @@ static int vboxWddmWdProgram(PVBOXMP_DEVEXT pDevExt, uint32_t cMillis)
             } while (0);
         }
 
-        VBoxSHGSMICommandFree (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pCmd);
+        VBoxSHGSMICommandFree(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pCmd);
     }
     else
     {

@@ -71,15 +71,15 @@ DECLHIDDEN(int) VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  u8Ch     the HGSMI channel to be used, set to the descriptor
  * @param  u16Op    the HGSMI command to be sent, set to the descriptor
  */
-DECLHIDDEN(void *) VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                        HGSMISIZE cbData,
-                                        uint8_t u8Ch,
-                                        uint16_t u16Op)
+DECLHIDDEN(void RT_UNTRUSTED_VOLATILE_HOST *) VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                                                   HGSMISIZE cbData,
+                                                                   uint8_t u8Ch,
+                                                                   uint16_t u16Op)
 {
 #ifdef VBOX_WDDM_MINIPORT
-    return VBoxSHGSMIHeapAlloc (&pCtx->heapCtx, cbData, u8Ch, u16Op);
+    return VBoxSHGSMIHeapAlloc(&pCtx->heapCtx, cbData, u8Ch, u16Op);
 #else
-    return HGSMIHeapAlloc (&pCtx->heapCtx, cbData, u8Ch, u16Op);
+    return HGSMIHeapAlloc(&pCtx->heapCtx, cbData, u8Ch, u16Op);
 #endif
 }
 
@@ -90,13 +90,12 @@ DECLHIDDEN(void *) VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  pCtx      the context containing the heap used
  * @param  pvBuffer  the pointer returned by @a VBoxHGSMIBufferAlloc
  */
-DECLHIDDEN(void) VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                     void *pvBuffer)
+DECLHIDDEN(void) VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx, void  RT_UNTRUSTED_VOLATILE_HOST *pvBuffer)
 {
 #ifdef VBOX_WDDM_MINIPORT
-    VBoxSHGSMIHeapFree (&pCtx->heapCtx, pvBuffer);
+    VBoxSHGSMIHeapFree(&pCtx->heapCtx, pvBuffer);
 #else
-    HGSMIHeapFree (&pCtx->heapCtx, pvBuffer);
+    HGSMIHeapFree(&pCtx->heapCtx, pvBuffer);
 #endif
 }
 
@@ -106,11 +105,10 @@ DECLHIDDEN(void) VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @param  pCtx      the context containing the heap used
  * @param  pvBuffer  the pointer returned by @a VBoxHGSMIBufferAlloc
  */
-DECLHIDDEN(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                      void *pvBuffer)
+DECLHIDDEN(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx, void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer)
 {
     /* Initialize the buffer and get the offset for port IO. */
-    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (HGSMIGUESTCMDHEAP_GET(&pCtx->heapCtx), pvBuffer);
+    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset(HGSMIGUESTCMDHEAP_GET(&pCtx->heapCtx), pvBuffer);
 
     Assert(offBuffer != HGSMIOFFSET_VOID);
     if (offBuffer != HGSMIOFFSET_VOID)

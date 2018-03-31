@@ -34,6 +34,8 @@
  * Since the X.Org driver is single threaded and works using an allocate,
  * submit and free pattern, we replace the generic allocator with a simple
  * Boolean.  Need more be said?
+ *
+ * bird> Yes, it's buggy. You never set fAllocated. See HGSMIMAAlloc().
  */
 
 #include <VBoxVideoIPRT.h>
@@ -63,47 +65,40 @@ void HGSMIMAUninit(HGSMIMADATA *pMA)
     (void)pMA;
 }
 
-static HGSMIOFFSET HGSMIMAPointerToOffset(const HGSMIMADATA *pMA, const void *pv)
+static HGSMIOFFSET HGSMIMAPointerToOffset(const HGSMIMADATA *pMA, const void RT_UNTRUSTED_VOLATILE_GUEST *pv)
 {
     if (HGSMIAreaContainsPointer(&pMA->area, pv))
-    {
         return HGSMIPointerToOffset(&pMA->area, pv);
-    }
 
     AssertFailed();
     return HGSMIOFFSET_VOID;
 }
 
-static void *HGSMIMAOffsetToPointer(const HGSMIMADATA *pMA, HGSMIOFFSET off)
+static void RT_UNTRUSTED_VOLATILE_GUEST *HGSMIMAOffsetToPointer(const HGSMIMADATA *pMA, HGSMIOFFSET off)
 {
     if (HGSMIAreaContainsOffset(&pMA->area, off))
-    {
         return HGSMIOffsetToPointer(&pMA->area, off);
-    }
 
     AssertFailed();
     return NULL;
 }
 
-void *HGSMIMAAlloc(HGSMIMADATA *pMA, HGSMISIZE cb)
+void RT_UNTRUSTED_VOLATILE_GUEST *HGSMIMAAlloc(HGSMIMADATA *pMA, HGSMISIZE cb)
 {
     (void)cb;
     if (pMA->fAllocated)
         return NULL;
     HGSMIOFFSET off = pMA->area.offBase;
     return HGSMIMAOffsetToPointer(pMA, off);
-    pMA->fAllocated = true;
+    pMA->fAllocated = true; /** @todo r=bird: Errr. what's this doing *after* the return statement? */
 }
 
-void HGSMIMAFree(HGSMIMADATA *pMA, void *pv)
+void HGSMIMAFree(HGSMIMADATA *pMA, void RT_UNTRUSTED_VOLATILE_GUEST *pv)
 {
     HGSMIOFFSET off = HGSMIMAPointerToOffset(pMA, pv);
     if (off != HGSMIOFFSET_VOID)
-    {
         pMA->fAllocated = false;
-    }
     else
-    {
         AssertFailed();
-    }
 }
+

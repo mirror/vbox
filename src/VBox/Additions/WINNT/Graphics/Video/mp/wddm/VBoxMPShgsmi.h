@@ -29,24 +29,32 @@ typedef struct VBOXSHGSMI
     HGSMIHEAP Heap;
 } VBOXSHGSMI, *PVBOXSHGSMI;
 
-typedef DECLCALLBACK(void) FNVBOXSHGSMICMDCOMPLETION(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext);
+typedef DECLCALLBACK(void) FNVBOXSHGSMICMDCOMPLETION(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvCmd, void *pvContext);
 typedef FNVBOXSHGSMICMDCOMPLETION *PFNVBOXSHGSMICMDCOMPLETION;
 
-typedef DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION) FNVBOXSHGSMICMDCOMPLETION_IRQ(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext, void **ppvCompletion);
+typedef DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION) FNVBOXSHGSMICMDCOMPLETION_IRQ(PVBOXSHGSMI pHeap,
+                                                                               void RT_UNTRUSTED_VOLATILE_HOST *pvCmd,
+                                                                               void *pvContext, void **ppvCompletion);
 typedef FNVBOXSHGSMICMDCOMPLETION_IRQ *PFNVBOXSHGSMICMDCOMPLETION_IRQ;
 
 
-const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynchEvent(PVBOXSHGSMI pHeap, PVOID pvBuff, RTSEMEVENT hEventSem);
-const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepSynch(PVBOXSHGSMI pHeap, PVOID pCmd);
-const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynch(PVBOXSHGSMI pHeap, PVOID pvBuff, PFNVBOXSHGSMICMDCOMPLETION pfnCompletion, PVOID pvCompletion, uint32_t fFlags);
-const VBOXSHGSMIHEADER* VBoxSHGSMICommandPrepAsynchIrq(PVBOXSHGSMI pHeap, PVOID pvBuff, PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCompletion, PVOID pvCompletion, uint32_t fFlags);
+const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *
+    VBoxSHGSMICommandPrepAsynchEvent(PVBOXSHGSMI pHeap, PVOID pvBuff, RTSEMEVENT hEventSem);
+const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *
+    VBoxSHGSMICommandPrepSynch(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvCmd);
+const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *
+    VBoxSHGSMICommandPrepAsynch(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvBuff,
+                                PFNVBOXSHGSMICMDCOMPLETION pfnCompletion,  PVOID pvCompletion, uint32_t fFlags);
+const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *
+    VBoxSHGSMICommandPrepAsynchIrq(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvBuff,
+                                   PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCompletion, PVOID pvCompletion, uint32_t fFlags);
 
-void VBoxSHGSMICommandDoneAsynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader);
-int VBoxSHGSMICommandDoneSynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader);
-void VBoxSHGSMICommandCancelAsynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader);
-void VBoxSHGSMICommandCancelSynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader);
+void VBoxSHGSMICommandDoneAsynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHeader);
+int  VBoxSHGSMICommandDoneSynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHeader);
+void VBoxSHGSMICommandCancelAsynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHeader);
+void VBoxSHGSMICommandCancelSynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHeader);
 
-DECLINLINE(HGSMIOFFSET) VBoxSHGSMICommandOffset(const PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER* pHeader)
+DECLINLINE(HGSMIOFFSET) VBoxSHGSMICommandOffset(const PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHeader)
 {
     return HGSMIHeapBufferOffset(&pHeap->Heap, (void*)pHeader);
 }
@@ -60,12 +68,12 @@ DECLINLINE(HGSMIOFFSET) VBoxSHGSMICommandPtrOffset(const PVBOXSHGSMI pHeap, cons
 
 int VBoxSHGSMIInit(PVBOXSHGSMI pHeap, void *pvBase, HGSMISIZE cbArea, HGSMIOFFSET offBase, const HGSMIENV *pEnv);
 void VBoxSHGSMITerm(PVBOXSHGSMI pHeap);
-void* VBoxSHGSMIHeapAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData, uint8_t u8Channel, uint16_t u16ChannelInfo);
-void VBoxSHGSMIHeapFree(PVBOXSHGSMI pHeap, void *pvBuffer);
-void* VBoxSHGSMIHeapBufferAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData);
-void VBoxSHGSMIHeapBufferFree(PVBOXSHGSMI pHeap, void *pvBuffer);
-void* VBoxSHGSMICommandAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData, uint8_t u8Channel, uint16_t u16ChannelInfo);
-void VBoxSHGSMICommandFree(PVBOXSHGSMI pHeap, void *pvBuffer);
+void RT_UNTRUSTED_VOLATILE_HOST *VBoxSHGSMIHeapAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData, uint8_t u8Channel, uint16_t u16ChannelInfo);
+void VBoxSHGSMIHeapFree(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer);
+void RT_UNTRUSTED_VOLATILE_HOST *VBoxSHGSMIHeapBufferAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData);
+void VBoxSHGSMIHeapBufferFree(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer);
+void RT_UNTRUSTED_VOLATILE_HOST *VBoxSHGSMICommandAlloc(PVBOXSHGSMI pHeap, HGSMISIZE cbData, uint8_t u8Channel, uint16_t u16ChannelInfo);
+void VBoxSHGSMICommandFree(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer);
 int VBoxSHGSMICommandProcessCompletion(PVBOXSHGSMI pHeap, VBOXSHGSMIHEADER* pCmd, bool bIrq, struct VBOXVTLIST * pPostProcessList);
 int VBoxSHGSMICommandPostprocessCompletion(PVBOXSHGSMI pHeap, struct VBOXVTLIST * pPostProcessList);
 

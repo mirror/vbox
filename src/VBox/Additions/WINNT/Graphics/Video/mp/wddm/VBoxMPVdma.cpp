@@ -341,7 +341,8 @@ void vboxVdmaCrSubmitWriteReadAsyncGenericCompletion(PVBOXMP_CRSHGSMITRANSPORT p
     VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(pCon, pvCtx);
 }
 
-NTSTATUS vboxVdmaCrSubmitWriteReadAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCrPacker, uint32_t u32CrConClientID, PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION pfnCompletion, void *pvCompletion)
+NTSTATUS vboxVdmaCrSubmitWriteReadAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCrPacker, uint32_t u32CrConClientID,
+                                        PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION pfnCompletion, void *pvCompletion)
 {
     Assert(u32CrConClientID);
     NTSTATUS Status = STATUS_SUCCESS;
@@ -546,11 +547,11 @@ static NTSTATUS vboxVdmaProcessVRegCmdLegacy(PVBOXMP_DEVEXT pDevExt,
                 goto done;
             }
 
-            void *pvCommandBuffer = NULL;
-            uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE;
-            cbCommandBuffer += VBOXMP_CRCMD_SIZE_WINDOWVISIBLEREGIONS(cVRects);
-
-            pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
+            ;
+            uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE
+                                     + VBOXMP_CRCMD_SIZE_WINDOWVISIBLEREGIONS(cVRects);
+            void RT_UNTRUSTED_VOLATILE_HOST *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport,
+                                                                                               cbCommandBuffer);
             if (!pvCommandBuffer)
             {
                 WARN(("VBoxMpCrShgsmiTransportBufAlloc failed!"));
@@ -602,7 +603,7 @@ static NTSTATUS vboxVdmaProcessVRegCmdLegacy(PVBOXMP_DEVEXT pDevExt,
         cbCommandBuffer += VBOXMP_CRCMD_SIZE_WINDOWSIZE;
     }
 
-    void *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
+    void RT_UNTRUSTED_VOLATILE_HOST *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
     if (!pvCommandBuffer)
     {
         WARN(("VBoxMpCrShgsmiTransportBufAlloc failed!"));
@@ -877,13 +878,15 @@ typedef struct VBOXVDMA_CRRXGENERICSYNC
     KEVENT Event;
 } VBOXVDMA_CRRXGENERICSYNC, *PVBOXVDMA_CRRXGENERICSYNC;
 
-static DECLCALLBACK(void) vboxVdmaCrRxGenericSyncCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc, void *pvRx, uint32_t cbRx, void *pvCtx)
+/** @callback_method_impl{PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION}   */
+static DECLCALLBACK(void) vboxVdmaCrRxGenericSyncCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc,
+                                                            void RT_UNTRUSTED_VOLATILE_HOST *pvRx, uint32_t cbRx, void *pvCtx)
 {
     PVBOXMP_VDMACR_WRITEREADCOMPLETION pvCompletionData = (PVBOXMP_VDMACR_WRITEREADCOMPLETION)pvCtx;
     PVBOXVDMA_CRRXGENERICSYNC pData = (PVBOXVDMA_CRRXGENERICSYNC)pvCompletionData->pvContext;
     if (RT_SUCCESS(rc))
     {
-        rc = VBoxMpCrCmdRxHandler((CRMessageHeader*)pvRx, cbRx);
+        rc = VBoxMpCrCmdRxHandler((CRMessageHeader *)pvRx, cbRx);
         if (!RT_SUCCESS(rc))
         {
             WARN(("VBoxMpCrCmdRxHandler failed %d", rc));
@@ -926,7 +929,7 @@ NTSTATUS vboxVdmaCrRxGenericSync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCrPac
 typedef struct VBOXMP_CRHGSMIMGR
 {
     VBOXMP_CRPACKER CrPacker;
-    void *pvCommandBuffer;
+    void RT_UNTRUSTED_VOLATILE_HOST *pvCommandBuffer;
 } VBOXMP_CRHGSMIMGR;
 
 DECLINLINE(CRPackContext*) vboxVdmaCrHmGetPackContext(VBOXMP_CRHGSMIMGR *pMgr)
@@ -1094,7 +1097,7 @@ static NTSTATUS vboxVdmaTexPresentSubmit(PVBOXMP_DEVEXT pDevExt,
 
     uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE + VBOXMP_CRCMD_SIZE_VBOXTEXPRESENT(cRects);
     uint32_t cCommands = 1;
-    void *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
+    void RT_UNTRUSTED_VOLATILE_HOST *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
     if (!pvCommandBuffer)
     {
         WARN(("VBoxMpCrShgsmiTransportBufAlloc failed!"));
@@ -1124,7 +1127,7 @@ static NTSTATUS vboxVdmaChromiumParameteriCRSubmit(PVBOXMP_DEVEXT pDevExt,
 
     uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE + VBOXMP_CRCMD_SIZE_CHROMIUMPARAMETERICR;
     uint32_t cCommands = 1;
-    void *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
+    void RT_UNTRUSTED_VOLATILE_HOST *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
     if (!pvCommandBuffer)
     {
         WARN(("VBoxMpCrShgsmiTransportBufAlloc failed!"));
@@ -1527,14 +1530,17 @@ static int vboxVdmaInformHost(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, VBOXV
 {
     int rc = VINF_SUCCESS;
 
-    PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, sizeof (VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
+    VBOXVDMA_CTL RT_UNTRUSTED_VOLATILE_HOST *pCmd =
+        (VBOXVDMA_CTL RT_UNTRUSTED_VOLATILE_HOST *)VBoxSHGSMICommandAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx,
+                                                                           sizeof(VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
     if (pCmd)
     {
         pCmd->enmCtl = enmCtl;
         pCmd->u32Offset = pInfo->CmdHeap.Heap.area.offBase;
         pCmd->i32Result = VERR_NOT_SUPPORTED;
 
-        const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepSynch(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pCmd);
+        const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHdr = VBoxSHGSMICommandPrepSynch(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx,
+                                                                                             pCmd);
         Assert(pHdr);
         if (pHdr)
         {
@@ -1565,7 +1571,7 @@ static int vboxVdmaInformHost(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, VBOXV
             } while (0);
         }
 
-        VBoxSHGSMICommandFree (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pCmd);
+        VBoxSHGSMICommandFree(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pCmd);
     }
     else
     {
@@ -1713,18 +1719,19 @@ int vboxVdmaDestroy (PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo)
 }
 
 #ifdef VBOX_WITH_VDMA
-void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
+void vboxVdmaCBufDrFree(PVBOXVDMAINFO pInfo, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr)
 {
-    VBoxSHGSMICommandFree (&pInfo->CmdHeap, pDr);
+    VBoxSHGSMICommandFree(&pInfo->CmdHeap, pDr);
 }
 
-PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingData)
+VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *vboxVdmaCBufDrCreate(PVBOXVDMAINFO pInfo, uint32_t cbTrailingData)
 {
     uint32_t cbDr = VBOXVDMACBUF_DR_SIZE(cbTrailingData);
-    PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)VBoxSHGSMICommandAlloc (&pInfo->CmdHeap, cbDr, HGSMI_CH_VBVA, VBVA_VDMA_CMD);
+    VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr =
+        (VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *)VBoxSHGSMICommandAlloc(&pInfo->CmdHeap, cbDr, HGSMI_CH_VBVA, VBVA_VDMA_CMD);
     Assert(pDr);
     if (pDr)
-        memset (pDr, 0, cbDr);
+        memset((void *)pDr, 0, cbDr);
     else
         LOGREL(("VBoxSHGSMICommandAlloc returned NULL"));
 
@@ -1740,12 +1747,13 @@ static DECLCALLBACK(void) vboxVdmaCBufDrCompletion(PVBOXSHGSMI pHeap, void *pvCm
     vboxVdmaCBufDrFree(pInfo, (PVBOXVDMACBUF_DR)pvCmd);
 }
 
-static DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION) vboxVdmaCBufDrCompletionIrq(PVBOXSHGSMI pHeap, void *pvCmd,
-                                                                            void *pvContext, void **ppvCompletion)
+/** @callback_method_impl{FNVBOXSHGSMICMDCOMPLETION_IRQ} */
+static DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION)
+vboxVdmaCBufDrCompletionIrq(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvCmd, void *pvContext, void **ppvCompletion)
 {
     RT_NOREF(pHeap, ppvCompletion);
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvContext;
-    PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)pvCmd;
+    VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr = (VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *)pvCmd;
 
     DXGK_INTERRUPT_TYPE enmComplType;
 
@@ -1755,12 +1763,12 @@ static DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION) vboxVdmaCBufDrCompletionIrq(PVBO
     }
     else if (pDr->rc == VERR_INTERRUPTED)
     {
-        Assert(0);
+        AssertFailed();
         enmComplType = DXGK_INTERRUPT_DMA_PREEMPTED;
     }
     else
     {
-        Assert(0);
+        AssertFailed();
         enmComplType = DXGK_INTERRUPT_DMA_FAULTED;
     }
 
@@ -1774,9 +1782,10 @@ static DECLCALLBACK(PFNVBOXSHGSMICMDCOMPLETION) vboxVdmaCBufDrCompletionIrq(PVBO
 //    *ppvCompletion = pvContext;
 }
 
-int vboxVdmaCBufDrSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
+int vboxVdmaCBufDrSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr)
 {
-    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepAsynchIrq (&pInfo->CmdHeap, pDr, vboxVdmaCBufDrCompletionIrq, pDevExt, VBOXSHGSMI_FLAG_GH_ASYNCH_FORCE);
+    const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHdr =
+        VBoxSHGSMICommandPrepAsynchIrq(&pInfo->CmdHeap, pDr, vboxVdmaCBufDrCompletionIrq, pDevExt, VBOXSHGSMI_FLAG_GH_ASYNCH_FORCE);
     Assert(pHdr);
     int rc = VERR_GENERAL_FAILURE;
     if (pHdr)
@@ -1807,9 +1816,10 @@ int vboxVdmaCBufDrSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMAC
     return rc;
 }
 
-int vboxVdmaCBufDrSubmitSynch(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
+int vboxVdmaCBufDrSubmitSynch(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr)
 {
-    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepAsynch (&pInfo->CmdHeap, pDr, NULL, NULL, VBOXSHGSMI_FLAG_GH_SYNCH);
+    const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHdr = VBoxSHGSMICommandPrepAsynch(&pInfo->CmdHeap, pDr, NULL,
+                                                                                          NULL, VBOXSHGSMI_FLAG_GH_SYNCH);
     Assert(pHdr);
     int rc = VERR_GENERAL_FAILURE;
     if (pHdr)

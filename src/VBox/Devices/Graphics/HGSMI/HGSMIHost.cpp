@@ -513,54 +513,35 @@ static HGSMISIZE hgsmiHostHeapSize(HGSMIHOSTHEAP *pHeap)
     return pHeap->area.cbArea;
 }
 
-static void *hgsmiHostHeapBufferAlloc(HGSMIHOSTHEAP *pHeap,
-                                      HGSMISIZE cbBuffer)
+static void RT_UNTRUSTED_VOLATILE_GUEST *hgsmiHostHeapBufferAlloc(HGSMIHOSTHEAP *pHeap, HGSMISIZE cbBuffer)
 {
-    void *pvBuf = NULL;
+    void RT_UNTRUSTED_VOLATILE_GUEST *pvBuf = NULL;
 
     if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_MA)
-    {
         pvBuf = HGSMIMAAlloc(&pHeap->u.ma, cbBuffer);
-    }
     else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_POINTER)
-    {
         pvBuf = RTHeapSimpleAlloc(pHeap->u.legacy.u.hPtr, cbBuffer, 0);
-    }
     else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
-    {
         pvBuf = RTHeapOffsetAlloc(pHeap->u.legacy.u.hOff, cbBuffer, 0);
-    }
-
     if (pvBuf)
-    {
-        ++pHeap->cRefs;
-    }
+        ASMAtomicIncS32(&pHeap->cRefs);
 
     return pvBuf;
 }
 
-static void hgsmiHostHeapBufferFree(HGSMIHOSTHEAP *pHeap,
-                                    void *pvBuf)
+static void hgsmiHostHeapBufferFree(HGSMIHOSTHEAP *pHeap, void RT_UNTRUSTED_VOLATILE_GUEST *pvBuf)
 {
     if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_MA)
-    {
         HGSMIMAFree(&pHeap->u.ma, pvBuf);
-    }
     else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_POINTER)
-    {
-        RTHeapSimpleFree(pHeap->u.legacy.u.hPtr, pvBuf);
-    }
+        RTHeapSimpleFree(pHeap->u.legacy.u.hPtr, (void *)pvBuf);
     else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
-    {
-        RTHeapOffsetFree(pHeap->u.legacy.u.hOff, pvBuf);
-    }
-    --pHeap->cRefs;
+        RTHeapOffsetFree(pHeap->u.legacy.u.hOff, (void *)pvBuf);
+    ASMAtomicDecS32(&pHeap->cRefs);
 }
 
-static void *hgsmiHostHeapDataAlloc(HGSMIHOSTHEAP *pHeap,
-                                    HGSMISIZE cbData,
-                                    uint8_t u8Channel,
-                                    uint16_t u16ChannelInfo)
+static void RT_UNTRUSTED_VOLATILE_GUEST *hgsmiHostHeapDataAlloc(HGSMIHOSTHEAP *pHeap, HGSMISIZE cbData,
+                                                                uint8_t u8Channel, uint16_t u16ChannelInfo)
 {
     HGSMISIZE cbAlloc = HGSMIBufferRequiredSize(cbData);
     HGSMIBUFFERHEADER *pHeader = (HGSMIBUFFERHEADER *)hgsmiHostHeapBufferAlloc(pHeap, cbAlloc);
@@ -572,13 +553,12 @@ static void *hgsmiHostHeapDataAlloc(HGSMIHOSTHEAP *pHeap,
     return HGSMIBufferDataFromPtr(pHeader);
 }
 
-static void hgsmiHostHeapDataFree(HGSMIHOSTHEAP *pHeap,
-                                  void *pvData)
+static void hgsmiHostHeapDataFree(HGSMIHOSTHEAP *pHeap, void RT_UNTRUSTED_VOLATILE_GUEST *pvData)
 {
     if (   pvData
         && pHeap->u32HeapType != HGSMI_HEAP_TYPE_NULL)
     {
-        HGSMIBUFFERHEADER *pHeader = HGSMIBufferHeaderFromData(pvData);
+        HGSMIBUFFERHEADER RT_UNTRUSTED_VOLATILE_GUEST *pHeader = HGSMIBufferHeaderFromData(pvData);
         hgsmiHostHeapBufferFree(pHeap, pHeader);
     }
 }
@@ -725,7 +705,7 @@ static int hgsmiHostCommandFreeByEntry (HGSMIHOSTFIFOENTRY *pEntry)
         RTListNodeRemove(&pEntry->nodeEntry);
         hgsmiFIFOUnlock (pIns);
 
-        void *pvData = HGSMIBufferDataFromOffset(&pIns->hostHeap.area, pEntry->offBuffer);
+        void RT_UNTRUSTED_VOLATILE_GUEST *pvData = HGSMIBufferDataFromOffset(&pIns->hostHeap.area, pEntry->offBuffer);
 
         rc = hgsmiHostHeapLock (pIns);
         if (RT_SUCCESS(rc))
@@ -743,8 +723,7 @@ static int hgsmiHostCommandFreeByEntry (HGSMIHOSTFIFOENTRY *pEntry)
     return rc;
 }
 
-static int hgsmiHostCommandFree(HGSMIINSTANCE *pIns,
-                                void *pvData)
+static int hgsmiHostCommandFree(HGSMIINSTANCE *pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData)
 {
     HGSMIOFFSET offBuffer = HGSMIBufferOffsetFromData(&pIns->hostHeap.area, pvData);
     HGSMIHOSTFIFOENTRY *pEntry = NULL;
@@ -851,9 +830,7 @@ static int hgsmiHostCommandWrite(HGSMIINSTANCE *pIns,
  *                   post-processing) the command could be submitted without raising an irq.
  * @thread EMT
  */
-static int hgsmiHostCommandSubmit(HGSMIINSTANCE *pIns,
-                                  void *pvData,
-                                  bool fDoIrq)
+static int hgsmiHostCommandSubmit(HGSMIINSTANCE *pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData, bool fDoIrq)
 {
     /* Append the command to FIFO. */
     HGSMIOFFSET offBuffer = HGSMIBufferOffsetFromData(&pIns->hostHeap.area, pvData);
@@ -882,11 +859,8 @@ static int hgsmiHostCommandSubmit(HGSMIINSTANCE *pIns,
  * @param u8Channel      HGSMI channel.
  * @param u16ChannelInfo Command parameter.
  */
-int HGSMIHostCommandAlloc(HGSMIINSTANCE *pIns,
-                          void **ppvData,
-                          HGSMISIZE cbData,
-                          uint8_t u8Channel,
-                          uint16_t u16ChannelInfo)
+int HGSMIHostCommandAlloc(HGSMIINSTANCE *pIns, void RT_UNTRUSTED_VOLATILE_GUEST **ppvData, HGSMISIZE cbData,
+                          uint8_t u8Channel, uint16_t u16ChannelInfo)
 {
     LogFlowFunc(("pIns = %p, cbData = %d, u8Channel %d, u16ChannelInfo 0x%04X\n",
                  pIns, cbData, u8Channel, u16ChannelInfo));
@@ -894,10 +868,7 @@ int HGSMIHostCommandAlloc(HGSMIINSTANCE *pIns,
     int rc = hgsmiHostHeapLock(pIns);
     if (RT_SUCCESS(rc))
     {
-        void *pvData = hgsmiHostHeapDataAlloc(&pIns->hostHeap,
-                                              cbData,
-                                              u8Channel,
-                                              u16ChannelInfo);
+        void RT_UNTRUSTED_VOLATILE_GUEST *pvData = hgsmiHostHeapDataAlloc(&pIns->hostHeap, cbData, u8Channel, u16ChannelInfo);
         hgsmiHostHeapUnlock(pIns);
 
         if (pvData)
@@ -928,17 +899,13 @@ int HGSMIHostCommandAlloc(HGSMIINSTANCE *pIns,
  *               completion notification that does not require post-processing)
  *               the command could be posted without raising an irq.
  */
-int HGSMIHostCommandSubmitAndFreeAsynch(PHGSMIINSTANCE pIns,
-                                        void *pvData,
-                                        bool fDoIrq)
+int HGSMIHostCommandSubmitAndFreeAsynch(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData, bool fDoIrq)
 {
     LogFlowFunc(("pIns = %p, pvData = %p, fDoIrq = %d\n", pIns, pvData, fDoIrq));
 
     int rc;
     if (HGSMIAreaContainsPointer(&pIns->hostHeap.area, pvData))
-    {
         rc = hgsmiHostCommandSubmit(pIns, pvData, fDoIrq);
-    }
     else
     {
         AssertLogRelMsgFailed(("HGSMI[%s]: host submits invalid command %p/%p\n",
@@ -956,16 +923,13 @@ int HGSMIHostCommandSubmitAndFreeAsynch(PHGSMIINSTANCE pIns,
  * @param pIns   Pointer to HGSMI instance,
  * @param pvData The pointer returned by 'HGSMIHostCommandAlloc'.
  */
-int HGSMIHostCommandFree(HGSMIINSTANCE *pIns,
-                         void *pvData)
+int HGSMIHostCommandFree(HGSMIINSTANCE *pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData)
 {
     LogFlowFunc(("pIns = %p, pvData = %p\n", pIns, pvData));
 
     int rc;
     if (HGSMIAreaContainsPointer(&pIns->hostHeap.area, pvData))
-    {
         rc = hgsmiHostCommandFree(pIns, pvData);
-    }
     else
     {
         AssertLogRelMsgFailed(("HGSMI[%s]: the host frees invalid FIFO entry %p/%p\n",
@@ -1436,13 +1400,6 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
  * Channels management.
  */
 
-static int hgsmiChannelMapCreate(PHGSMIINSTANCE pIns, const char *pszChannel, uint8_t *pu8Channel)
-{
-    RT_NOREF(pIns, pszChannel, pu8Channel);
-    /** @todo later */
-    return VERR_NOT_SUPPORTED;
-}
-
 /* Register a new HGSMI channel by a predefined index.
  */
 int HGSMIHostChannelRegister(PHGSMIINSTANCE pIns,
@@ -1471,7 +1428,19 @@ int HGSMIHostChannelRegister(PHGSMIINSTANCE pIns,
     return rc;
 }
 
-/* Register a new HGSMI channel by name.
+#if 0 /* unused */
+
+static int hgsmiChannelMapCreate(PHGSMIINSTANCE pIns, const char *pszChannel, uint8_t *pu8Channel)
+{
+    RT_NOREF(pIns, pszChannel, pu8Channel);
+    /** @todo later */
+    return VERR_NOT_SUPPORTED;
+}
+
+/**
+ * Register a new HGSMI channel by name.
+ *
+ * @note currently unused.
  */
 int HGSMIChannelRegisterName(PHGSMIINSTANCE pIns,
                              const char *pszChannel,
@@ -1522,9 +1491,9 @@ int HGSMIChannelRegisterName(PHGSMIINSTANCE pIns,
 
     return rc;
 }
+#endif
 
-void *HGSMIOffsetToPointerHost (PHGSMIINSTANCE pIns,
-                                HGSMIOFFSET offBuffer)
+void RT_UNTRUSTED_VOLATILE_GUEST *HGSMIOffsetToPointerHost(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer)
 {
     const HGSMIAREA *pArea = &pIns->area;
 
@@ -1535,27 +1504,19 @@ void *HGSMIOffsetToPointerHost (PHGSMIINSTANCE pIns,
         return NULL;
     }
 
-    return HGSMIOffsetToPointer (pArea, offBuffer);
+    return HGSMIOffsetToPointer(pArea, offBuffer);
 }
 
 
-HGSMIOFFSET HGSMIPointerToOffsetHost (PHGSMIINSTANCE pIns,
-                                      const void *pv)
+HGSMIOFFSET HGSMIPointerToOffsetHost(PHGSMIINSTANCE pIns, const void RT_UNTRUSTED_VOLATILE_GUEST *pv)
 {
     const HGSMIAREA *pArea = &pIns->area;
+    uintptr_t off = (uintptr_t)pv - (uintptr_t)pArea->pu8Base;
+    if (off < pArea->cbArea)
+        return pArea->offBase + (HGSMIOFFSET)off;
 
-    uintptr_t pBegin = (uintptr_t)pArea->pu8Base;
-    uintptr_t pEnd = (uintptr_t)pArea->pu8Base + (pArea->cbArea - 1);
-    uintptr_t p = (uintptr_t)pv;
-
-    if (   p < pBegin
-        || p > pEnd)
-    {
-        LogFunc(("pointer %p is outside the area [%p;%p]!!!\n", pv, pBegin, pEnd));
-        return HGSMIOFFSET_VOID;
-    }
-
-    return HGSMIPointerToOffset (pArea, (HGSMIBUFFERHEADER *)pv);
+    LogFunc(("pointer %p is outside the area %p LB %#x!!!\n", pv, pArea->pu8Base, pArea->cbArea));
+    return HGSMIOFFSET_VOID;
 }
 
 
@@ -1566,7 +1527,8 @@ void *HGSMIContext (PHGSMIINSTANCE pIns)
 }
 
 /* The guest submitted a buffer. */
-static DECLCALLBACK(int) hgsmiChannelHandler (void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer)
+static DECLCALLBACK(int) hgsmiChannelHandler (void *pvHandler, uint16_t u16ChannelInfo,
+                                              RT_UNTRUSTED_VOLATILE_GUEST void *pvBuffer, HGSMISIZE cbBuffer)
 {
     int rc = VINF_SUCCESS;
 
@@ -1785,14 +1747,12 @@ static int hgsmiGuestCommandComplete (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem)
     return rc;
 }
 
-int hgsmiCompleteGuestCommand(PHGSMIINSTANCE pIns,
-        HGSMIOFFSET offBuffer,
-        bool bDoIrq)
+int hgsmiCompleteGuestCommand(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer, bool fDoIrq)
 {
     int rc = hgsmiGuestCommandComplete (pIns, offBuffer);
     if (RT_SUCCESS (rc))
     {
-        if (bDoIrq)
+        if (fDoIrq)
         {
             /* Now guest can read the FIFO, the notification is informational. */
             hgsmiNotifyGuest (pIns);
@@ -1807,21 +1767,19 @@ int hgsmiCompleteGuestCommand(PHGSMIINSTANCE pIns,
     return rc;
 }
 
-int HGSMICompleteGuestCommand(PHGSMIINSTANCE pIns,
-        void *pvMem,
-        bool bDoIrq)
+int HGSMICompleteGuestCommand(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvMem, bool fDoIrq)
 {
     LogFlowFunc(("pIns = %p, pvMem = %p\n", pIns, pvMem));
 
     int rc = VINF_SUCCESS;
 
-    HGSMIBUFFERHEADER *pHeader = HGSMIBufferHeaderFromData(pvMem);
-    HGSMIOFFSET offBuffer = HGSMIPointerToOffset(&pIns->area, pHeader);
+    HGSMIBUFFERHEADER RT_UNTRUSTED_VOLATILE_GUEST *pHeader   = HGSMIBufferHeaderFromData(pvMem);
+    HGSMIOFFSET                                    offBuffer = HGSMIPointerToOffset(&pIns->area, pHeader);
 
     Assert(offBuffer != HGSMIOFFSET_VOID);
     if (offBuffer != HGSMIOFFSET_VOID)
     {
-        rc = hgsmiCompleteGuestCommand (pIns, offBuffer, bDoIrq);
+        rc = hgsmiCompleteGuestCommand(pIns, offBuffer, fDoIrq);
         AssertRC (rc);
     }
     else

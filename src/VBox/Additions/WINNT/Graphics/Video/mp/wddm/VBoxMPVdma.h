@@ -70,9 +70,8 @@ VOID vboxVdmaDdiCmdSubmittedIrq(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd);
 NTSTATUS vboxVdmaDdiCmdCompleted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType);
 NTSTATUS vboxVdmaDdiCmdSubmitted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd);
 
-DECLINLINE(VOID) vboxVdmaDdiCmdInit(PVBOXVDMADDI_CMD pCmd,
-        uint32_t u32NodeOrdinal, uint32_t u32FenceId,
-        PFNVBOXVDMADDICMDCOMPLETE_DPC pfnComplete, PVOID pvComplete)
+DECLINLINE(VOID) vboxVdmaDdiCmdInit(PVBOXVDMADDI_CMD pCmd, uint32_t u32NodeOrdinal, uint32_t u32FenceId,
+                                    PFNVBOXVDMADDICMDCOMPLETE_DPC pfnComplete, PVOID pvComplete)
 {
     pCmd->QueueEntry.Blink = NULL;
     pCmd->QueueEntry.Flink = NULL;
@@ -282,10 +281,10 @@ DECLINLINE(HGSMIOFFSET) vboxVdmaCBufDrPtrOffset(const PVBOXVDMAINFO pInfo, const
 {
     return VBoxSHGSMICommandPtrOffset(&pInfo->CmdHeap, pvPtr);
 }
-int vboxVdmaCBufDrSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr);
-int vboxVdmaCBufDrSubmitSynch(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr);
-struct VBOXVDMACBUF_DR* vboxVdmaCBufDrCreate(PVBOXVDMAINFO pInfo, uint32_t cbTrailingData);
-void vboxVdmaCBufDrFree(PVBOXVDMAINFO pInfo, struct VBOXVDMACBUF_DR* pDr);
+int vboxVdmaCBufDrSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr);
+int vboxVdmaCBufDrSubmitSynch(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr);
+struct VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *vboxVdmaCBufDrCreate(PVBOXVDMAINFO pInfo, uint32_t cbTrailingData);
+void vboxVdmaCBufDrFree(PVBOXVDMAINFO pInfo, struct VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr);
 
 #define VBOXVDMACBUF_DR_DATA_OFFSET() (sizeof (VBOXVDMACBUF_DR))
 #define VBOXVDMACBUF_DR_SIZE(_cbData) (VBOXVDMACBUF_DR_DATA_OFFSET() + (_cbData))

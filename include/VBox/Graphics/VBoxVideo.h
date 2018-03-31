@@ -1357,16 +1357,17 @@ typedef enum
 #define VBOXSHGSMI_FLAG_GH_SYNCH                0x00000040
 
 
-DECLINLINE(uint8_t *) VBoxSHGSMIBufferData (const VBOXSHGSMIHEADER* pHeader)
+DECLINLINE(uint8_t RT_UNTRUSTED_VOLATILE_GUEST *)
+VBoxSHGSMIBufferData(const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *pHeader)
 {
-    return (uint8_t *)pHeader + sizeof (VBOXSHGSMIHEADER);
+    return (uint8_t RT_UNTRUSTED_VOLATILE_GUEST *)pHeader + sizeof(VBOXSHGSMIHEADER);
 }
 
-#define VBoxSHGSMIBufferHeaderSize() (sizeof (VBOXSHGSMIHEADER))
+#define VBoxSHGSMIBufferHeaderSize() (sizeof(VBOXSHGSMIHEADER))
 
-DECLINLINE(PVBOXSHGSMIHEADER) VBoxSHGSMIBufferHeader (const void *pvData)
+DECLINLINE(VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *) VBoxSHGSMIBufferHeader(const void RT_UNTRUSTED_VOLATILE_GUEST *pvData)
 {
-    return (PVBOXSHGSMIHEADER)((uint8_t *)pvData - sizeof (VBOXSHGSMIHEADER));
+    return (VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *)((uintptr_t)pvData - sizeof(VBOXSHGSMIHEADER));
 }
 
 #ifdef VBOX_WITH_VDMA
@@ -1390,7 +1391,7 @@ typedef struct VBOXVDMA_CTL
     VBOXVDMA_CTL_TYPE enmCtl;
     uint32_t u32Offset;
     int32_t  i32Result;
-} VBOXVDMA_CTL, *PVBOXVDMA_CTL;
+} VBOXVDMA_CTL;
 
 typedef struct VBOXVDMA_RECTL
 {

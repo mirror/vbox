@@ -451,7 +451,8 @@ static void VBoxMPSignalEvent(PVBOXMP_COMMON pCommon, uint64_t pvEvent)
 }
 
 static DECLCALLBACK(int)
-VBoxVbvaChannelGenericHandlerCB(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer)
+VBoxVbvaChannelGenericHandlerCB(void *pvHandler, uint16_t u16ChannelInfo,
+                                void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer, HGSMISIZE cbBuffer)
 {
     VBVA_CHANNELCONTEXTS *pCallbacks = (VBVA_CHANNELCONTEXTS*)pvHandler;
     LOGF_ENTER();

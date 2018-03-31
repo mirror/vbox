@@ -47,14 +47,10 @@ DECLINLINE(void) VBoxHGSMIClearIrq(PHGSMIHOSTCOMMANDCONTEXT pCtx)
     VBVO_PORT_WRITE_U32(pCtx->port, HGSMIOFFSET_VOID);
 }
 
-DECLHIDDEN(void *)   VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                          HGSMISIZE cbData,
-                                          uint8_t u8Ch,
-                                          uint16_t u16Op);
-DECLHIDDEN(void)     VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                         void *pvBuffer);
-DECLHIDDEN(int)      VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                           void *pvBuffer);
+DECLHIDDEN(void RT_UNTRUSTED_VOLATILE_HOST *) VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx, HGSMISIZE cbData,
+                                                                   uint8_t u8Ch, uint16_t u16Op);
+DECLHIDDEN(void) VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx, void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer);
+DECLHIDDEN(int)  VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx, void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer);
 /** @}  */
 
 RT_C_DECLS_END

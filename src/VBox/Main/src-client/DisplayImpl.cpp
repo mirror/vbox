@@ -2980,7 +2980,7 @@ HRESULT Display::invalidateAndUpdateScreen(ULONG aScreenId)
 HRESULT Display::completeVHWACommand(BYTE *aCommand)
 {
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    mpDrv->pVBVACallbacks->pfnVHWACommandCompleteAsync(mpDrv->pVBVACallbacks, (PVBOXVHWACMD)aCommand);
+    mpDrv->pVBVACallbacks->pfnVHWACommandCompleteAsync(mpDrv->pVBVACallbacks, (VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *)aCommand);
     return S_OK;
 #else
     return E_NOTIMPL;
@@ -3530,7 +3530,7 @@ DECLCALLBACK(void) Display::i_displayProcessDisplayDataCallback(PPDMIDISPLAYCONN
 # define S_FALSE ((HRESULT)1L)
 #endif
 
-int Display::i_handleVHWACommandProcess(PVBOXVHWACMD pCommand)
+int Display::i_handleVHWACommandProcess(int enmCmd, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand)
 {
     unsigned id = (unsigned)pCommand->iDisplay;
     if (id >= mcMonitors)
@@ -3545,6 +3545,7 @@ int Display::i_handleVHWACommandProcess(PVBOXVHWACMD pCommand)
     if (pFramebuffer == NULL || !fVHWASupported)
         return VERR_NOT_IMPLEMENTED; /* Implementation is not available. */
 
+    NOREF(enmCmd);
     HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);
     if (hr == S_FALSE)
         return VINF_SUCCESS;
@@ -3557,11 +3558,12 @@ int Display::i_handleVHWACommandProcess(PVBOXVHWACMD pCommand)
     return VERR_GENERAL_FAILURE;
 }
 
-DECLCALLBACK(int) Display::i_displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand)
+DECLCALLBACK(int) Display::i_displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, int enmCmd,
+                                                       VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    return pDrv->pDisplay->i_handleVHWACommandProcess(pCommand);
+    return pDrv->pDisplay->i_handleVHWACommandProcess(enmCmd, pCommand);
 }
 #endif
 

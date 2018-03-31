@@ -714,7 +714,7 @@ typedef struct PDMIDISPLAYPORT
 
 
 /** Pointer to a 2D graphics acceleration command. */
-typedef struct VBOXVHWACMD *PVBOXVHWACMD;
+typedef struct VBOXVHWACMD VBOXVHWACMD;
 /** Pointer to a VBVA command header. */
 typedef struct VBVACMDHDR *PVBVACMDHDR;
 /** Pointer to a const VBVA command header. */
@@ -841,13 +841,15 @@ typedef struct PDMIDISPLAYCONNECTOR
      * Process the guest Video HW Acceleration command.
      *
      * @param   pInterface          Pointer to this interface.
+     * @param   enmCmd              The command type (don't re-read from pCmd).
      * @param   pCmd                Video HW Acceleration Command to be processed.
      * @returns VINF_SUCCESS - command is completed,
      * VINF_CALLBACK_RETURN - command will by asynchronously completed via complete callback
      * VERR_INVALID_STATE - the command could not be processed (most likely because the framebuffer was disconnected) - the post should be retried later
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVHWACommandProcess,(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCmd));
+    DECLR3CALLBACKMEMBER(int, pfnVHWACommandProcess,(PPDMIDISPLAYCONNECTOR pInterface, int enmCmd,
+                                                     VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd));
 
     /**
      * Process the guest chromium command.
@@ -2268,7 +2270,8 @@ typedef struct PDMIDISPLAYVBVACALLBACKS
      * @param   pCmd                The Video HW Acceleration Command that was
      *                              completed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsync,(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd));
+    DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsync,(PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                                           VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd));
 
     DECLR3CALLBACKMEMBER(int, pfnCrHgsmiCommandCompleteAsync,(PPDMIDISPLAYVBVACALLBACKS pInterface,
                                                               struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, int rc));

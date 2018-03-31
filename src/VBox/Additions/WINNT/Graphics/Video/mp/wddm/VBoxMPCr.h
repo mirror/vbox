@@ -44,7 +44,7 @@ int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, struct VBGLIOCHGCMCAL
 typedef struct VBOXMP_CRSHGSMICON_BUFDR
 {
     uint32_t cbBuf;
-    void *pvBuf;
+    void RT_UNTRUSTED_VOLATILE_HOST *pvBuf;
 } VBOXMP_CRSHGSMICON_BUFDR, *PVBOXMP_CRSHGSMICON_BUFDR;
 
 typedef struct VBOXMP_CRSHGSMICON_BUFDR_CACHE
@@ -61,7 +61,9 @@ typedef struct VBOXMP_CRSHGSMITRANSPORT
 /** the rx buffer passed here is only valid in the context of the callback.
  * the callee must NOT free it or use outside of the callback context.
  * */
-typedef DECLCALLBACK(void) FNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc, void *pvRx, uint32_t cbRx, void *pvCtx);
+typedef DECLCALLBACK(void) FNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc,
+                                                                                    void RT_UNTRUSTED_VOLATILE_HOST *pvRx,
+                                                                                    uint32_t cbRx, void *pvCtx);
 typedef FNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION *PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION;
 
 typedef DECLCALLBACK(void) FNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc, void *pvCtx);
@@ -78,8 +80,8 @@ int VBoxMpCrShgsmiTransportCmdSubmitWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, v
 void VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void *pvContext);
 void VBoxMpCrShgsmiTransportCmdTermWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void *pvContext);
 
-void* VBoxMpCrShgsmiTransportBufAlloc(PVBOXMP_CRSHGSMITRANSPORT pCon, uint32_t cbBuffer);
-void VBoxMpCrShgsmiTransportBufFree(PVBOXMP_CRSHGSMITRANSPORT pCon, void* pvBuffer);
+void RT_UNTRUSTED_VOLATILE_HOST *VBoxMpCrShgsmiTransportBufAlloc(PVBOXMP_CRSHGSMITRANSPORT pCon, uint32_t cbBuffer);
+void VBoxMpCrShgsmiTransportBufFree(PVBOXMP_CRSHGSMITRANSPORT pCon, void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer);
 
 typedef struct VBOXMP_CRPACKER
 {
@@ -97,9 +99,10 @@ DECLINLINE(void) VBoxMpCrPackerTerm(PVBOXMP_CRPACKER pPacker)
     RT_NOREF(pPacker);
 }
 
-DECLINLINE(void) VBoxMpCrPackerTxBufferInit(PVBOXMP_CRPACKER pPacker, void *pvBuffer, uint32_t cbBuffer, uint32_t cCommands)
+DECLINLINE(void) VBoxMpCrPackerTxBufferInit(PVBOXMP_CRPACKER pPacker, void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer,
+                                            uint32_t cbBuffer, uint32_t cCommands)
 {
-    crPackInitBuffer(&pPacker->CrBuffer, pvBuffer, cbBuffer, cbBuffer, cCommands);
+    crPackInitBuffer(&pPacker->CrBuffer, (void *)pvBuffer, cbBuffer, cbBuffer, cCommands);
     crPackSetBuffer(&pPacker->CrPacker, &pPacker->CrBuffer);
 }
 
@@ -189,18 +192,18 @@ DECLINLINE(int) VBoxMpCrUnpackerRxBufferProcess(void *pvBuffer, uint32_t cbBuffe
     }
 }
 
-DECLINLINE(void*) VBoxMpCrCmdRxReadbackData(CRMessageReadback *pRx)
+DECLINLINE(void *) VBoxMpCrCmdRxReadbackData(CRMessageReadback RT_UNTRUSTED_VOLATILE_HOST *pRx)
 {
-    return pRx + 1;
+    return (void *)(pRx + 1);
 }
 
-DECLINLINE(uint32_t) VBoxMpCrCmdRxReadbackDataSize(CRMessageReadback *pRx, uint32_t cbRx)
+DECLINLINE(uint32_t) VBoxMpCrCmdRxReadbackDataSize(CRMessageReadback RT_UNTRUSTED_VOLATILE_HOST *pRx, uint32_t cbRx)
 {
     RT_NOREF(pRx);
     return cbRx - sizeof(*pRx);
 }
-int VBoxMpCrCmdRxReadbackHandler(CRMessageReadback *pRx, uint32_t cbRx);
-int VBoxMpCrCmdRxHandler(CRMessageHeader *pRx, uint32_t cbRx);
+int VBoxMpCrCmdRxReadbackHandler(CRMessageReadback RT_UNTRUSTED_VOLATILE_HOST *pRx, uint32_t cbRx);
+int VBoxMpCrCmdRxHandler(CRMessageHeader RT_UNTRUSTED_VOLATILE_HOST *pRx, uint32_t cbRx);
 
 /* must be called after calling VBoxMpCrCtlConIs3DSupported only */
 uint32_t VBoxMpCrGetHostCaps(void);

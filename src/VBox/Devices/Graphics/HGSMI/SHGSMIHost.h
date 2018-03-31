@@ -20,9 +20,8 @@
 
 #include "HGSMIHost.h"
 
-int VBoxSHGSMICommandComplete (PHGSMIINSTANCE pIns, void *pvData);
-
-void VBoxSHGSMICommandMarkAsynchCompletion (void *pvData);
+int  VBoxSHGSMICommandComplete(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData);
+void VBoxSHGSMICommandMarkAsynchCompletion(void RT_UNTRUSTED_VOLATILE_GUEST *pvData);
 
 #endif
 

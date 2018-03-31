@@ -26,9 +26,10 @@
 #define VBOXVHWA_PRIMARY_ALLOCATION(_pSrc) ((_pSrc)->pPrimaryAllocation)
 
 
-DECLINLINE(void) vboxVhwaHdrInit(VBOXVHWACMD* pHdr, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, VBOXVHWACMD_TYPE enmCmd)
+DECLINLINE(void) vboxVhwaHdrInit(VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pHdr,
+                                 D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, VBOXVHWACMD_TYPE enmCmd)
 {
-    memset(pHdr, 0, sizeof(VBOXVHWACMD));
+    memset((void *)pHdr, 0, sizeof(VBOXVHWACMD));
     pHdr->iDisplay = srcId;
     pHdr->rc = VERR_GENERAL_FAILURE;
     pHdr->enmCmd = enmCmd;
@@ -38,13 +39,13 @@ DECLINLINE(void) vboxVhwaHdrInit(VBOXVHWACMD* pHdr, D3DDDI_VIDEO_PRESENT_SOURCE_
 }
 
 #ifdef VBOXVHWA_WITH_SHGSMI
-static int vboxVhwaCommandSubmitHgsmi(struct _DEVICE_EXTENSION* pDevExt, HGSMIOFFSET offDr)
+static int vboxVhwaCommandSubmitHgsmi(struct _DEVICE_EXTENSION *pDevExt, HGSMIOFFSET offDr)
 {
     VBoxHGSMIGuestWrite(pDevExt, offDr);
     return VINF_SUCCESS;
 }
 #else
-DECLINLINE(void) vbvaVhwaCommandRelease(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd)
+DECLINLINE(void) vbvaVhwaCommandRelease(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pCmd->cRefs);
     Assert(cRefs < UINT32_MAX / 2);
@@ -54,13 +55,14 @@ DECLINLINE(void) vbvaVhwaCommandRelease(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCm
     }
 }
 
-DECLINLINE(void) vbvaVhwaCommandRetain(VBOXVHWACMD *pCmd)
+DECLINLINE(void) vbvaVhwaCommandRetain(VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd)
 {
     ASMAtomicIncU32(&pCmd->cRefs);
 }
 
 /* do not wait for completion */
-void vboxVhwaCommandSubmitAsynch(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void *pContext)
+void vboxVhwaCommandSubmitAsynch(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd,
+                                 PFNVBOXVHWACMDCOMPLETION pfnCompletion, void *pContext)
 {
     pCmd->GuestVBVAReserved1 = (uintptr_t)pfnCompletion;
     pCmd->GuestVBVAReserved2 = (uintptr_t)pContext;
@@ -68,9 +70,10 @@ void vboxVhwaCommandSubmitAsynch(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd, PFNV
 
     VBoxHGSMIBufferSubmit(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pCmd);
 
-    if(   !(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH)
-       || (   (pCmd->Flags & VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION)
-           && (pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED) ) )
+    uint32_t const fFlags = pCmd->Flags;
+    if(   !(fFlags & VBOXVHWACMD_FLAG_HG_ASYNCH)
+       || (   (fFlags & VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION)
+           && (fFlags & VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED) ) )
     {
         /* the command is completed */
         pfnCompletion(pDevExt, pCmd, pContext);
@@ -79,13 +82,15 @@ void vboxVhwaCommandSubmitAsynch(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd, PFNV
     vbvaVhwaCommandRelease(pDevExt, pCmd);
 }
 
-static DECLCALLBACK(void) vboxVhwaCompletionSetEvent(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD * pCmd, void * pvContext)
+/** @callback_method_impl{FNVBOXVHWACMDCOMPLETION} */
+static DECLCALLBACK(void)
+vboxVhwaCompletionSetEvent(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd, void *pvContext)
 {
-    RT_NOREF(pDevExt,  pCmd);
+    RT_NOREF(pDevExt, pCmd);
     RTSemEventSignal((RTSEMEVENT)pvContext);
 }
 
-void vboxVhwaCommandSubmitAsynchByEvent(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd, RTSEMEVENT hEvent)
+void vboxVhwaCommandSubmitAsynchByEvent(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd, RTSEMEVENT hEvent)
 {
     vboxVhwaCommandSubmitAsynch(pDevExt, pCmd, vboxVhwaCompletionSetEvent, hEvent);
 }
@@ -97,34 +102,32 @@ void vboxVhwaCommandCheckCompletion(PVBOXMP_DEVEXT pDevExt)
     AssertNtStatusSuccess(Status);
 }
 
-VBOXVHWACMD* vboxVhwaCommandCreate(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, VBOXVHWACMD_TYPE enmCmd, VBOXVHWACMD_LENGTH cbCmd)
+VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *vboxVhwaCommandCreate(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId,
+                                                              VBOXVHWACMD_TYPE enmCmd, VBOXVHWACMD_LENGTH cbCmd)
 {
     vboxVhwaCommandCheckCompletion(pDevExt);
+    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pHdr;
 #ifdef VBOXVHWA_WITH_SHGSMI
-    VBOXVHWACMD* pHdr = (VBOXVHWACMD*)VBoxSHGSMICommandAlloc(&pDevExt->u.primary.hgsmiAdapterHeap,
-                              cbCmd + VBOXVHWACMD_HEADSIZE(),
-                              HGSMI_CH_VBVA,
-                              VBVA_VHWA_CMD);
+    pHdr = (VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *)VBoxSHGSMICommandAlloc(&pDevExt->u.primary.hgsmiAdapterHeap,
+                                                                            cbCmd + VBOXVHWACMD_HEADSIZE(),
+                                                                            HGSMI_CH_VBVA,
+                                                                            VBVA_VHWA_CMD);
 #else
-    VBOXVHWACMD* pHdr = (VBOXVHWACMD*)VBoxHGSMIBufferAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx,
-                              cbCmd + VBOXVHWACMD_HEADSIZE(),
-                              HGSMI_CH_VBVA,
-                              VBVA_VHWA_CMD);
+    pHdr = (VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *)VBoxHGSMIBufferAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx,
+                                                                          cbCmd + VBOXVHWACMD_HEADSIZE(),
+                                                                          HGSMI_CH_VBVA,
+                                                                          VBVA_VHWA_CMD);
 #endif
     Assert(pHdr);
     if (!pHdr)
-    {
         LOGREL(("VBoxHGSMIBufferAlloc failed"));
-    }
     else
-    {
         vboxVhwaHdrInit(pHdr, srcId, enmCmd);
-    }
 
     return pHdr;
 }
 
-void vboxVhwaCommandFree(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd)
+void vboxVhwaCommandFree(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd)
 {
 #ifdef VBOXVHWA_WITH_SHGSMI
     VBoxSHGSMICommandFree(&pDevExt->u.primary.hgsmiAdapterHeap, pCmd);
@@ -133,7 +136,7 @@ void vboxVhwaCommandFree(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd)
 #endif
 }
 
-int vboxVhwaCommandSubmit(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd)
+int vboxVhwaCommandSubmit(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd)
 {
 #ifdef VBOXVHWA_WITH_SHGSMI
     const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepSynch(&pDevExt->u.primary.hgsmiAdapterHeap, pCmd);
@@ -183,7 +186,9 @@ int vboxVhwaCommandSubmit(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd)
 }
 
 #ifndef VBOXVHWA_WITH_SHGSMI
-static DECLCALLBACK(void) vboxVhwaCompletionFreeCmd(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD *pCmd, void *pvContext)
+/** @callback_method_impl{FNVBOXVHWACMDCOMPLETION} */
+static DECLCALLBACK(void)
+vboxVhwaCompletionFreeCmd(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd, void *pvContext)
 {
     RT_NOREF(pvContext);
     vboxVhwaCommandFree(pDevExt, pCmd);
@@ -196,7 +201,7 @@ void vboxVhwaCompletionListProcess(PVBOXMP_DEVEXT pDevExt, VBOXVTLIST *pList)
     {
         /* need to save next since the command may be released in a pfnCallback and thus its data might be invalid */
         pNext = pCur->pNext;
-        VBOXVHWACMD *pCmd = VBOXVHWA_LISTENTRY2CMD(pCur);
+        VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd = VBOXVHWA_LISTENTRY2CMD(pCur);
         PFNVBOXVHWACMDCOMPLETION pfnCallback = (PFNVBOXVHWACMDCOMPLETION)pCmd->GuestVBVAReserved1;
         void *pvCallback = (void*)pCmd->GuestVBVAReserved2;
         pfnCallback(pDevExt, pCmd, pvCallback);
@@ -205,7 +210,7 @@ void vboxVhwaCompletionListProcess(PVBOXMP_DEVEXT pDevExt, VBOXVTLIST *pList)
 
 #endif
 
-void vboxVhwaCommandSubmitAsynchAndComplete(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD* pCmd)
+void vboxVhwaCommandSubmitAsynchAndComplete(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd)
 {
 #ifdef VBOXVHWA_WITH_SHGSMI
 # error "port me"
@@ -230,17 +235,11 @@ void vboxVhwaFreeHostInfo2(PVBOXMP_DEVEXT pDevExt, VBOXVHWACMD_QUERYINFO2* pInfo
 
 VBOXVHWACMD_QUERYINFO1* vboxVhwaQueryHostInfo1(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
-    VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_QUERY_INFO1, sizeof(VBOXVHWACMD_QUERYINFO1));
-    VBOXVHWACMD_QUERYINFO1 *pInfo1;
+    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_QUERY_INFO1,
+                                                                         sizeof(VBOXVHWACMD_QUERYINFO1));
+    AssertReturnStmt(pCmd, LOGREL(("vboxVhwaCommandCreate failed")), NULL);
 
-    Assert(pCmd);
-    if (!pCmd)
-    {
-        LOGREL(("vboxVhwaCommandCreate failed"));
-        return NULL;
-    }
-
-    pInfo1 = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO1);
+    VBOXVHWACMD_QUERYINFO1 *pInfo1 = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO1);
     pInfo1->u.in.guestVersion.maj = VBOXVHWA_VERSION_MAJ;
     pInfo1->u.in.guestVersion.min = VBOXVHWA_VERSION_MIN;
     pInfo1->u.in.guestVersion.bld = VBOXVHWA_VERSION_BLD;
@@ -248,13 +247,9 @@ VBOXVHWACMD_QUERYINFO1* vboxVhwaQueryHostInfo1(PVBOXMP_DEVEXT pDevExt, D3DDDI_VI
 
     int rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
     AssertRC(rc);
-    if(RT_SUCCESS(rc))
-    {
-        if(RT_SUCCESS(pCmd->rc))
-        {
+    if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(pCmd->rc))
             return VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO1);
-        }
-    }
 
     vboxVhwaCommandFree(pDevExt, pCmd);
     return NULL;
@@ -262,16 +257,11 @@ VBOXVHWACMD_QUERYINFO1* vboxVhwaQueryHostInfo1(PVBOXMP_DEVEXT pDevExt, D3DDDI_VI
 
 VBOXVHWACMD_QUERYINFO2* vboxVhwaQueryHostInfo2(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, uint32_t numFourCC)
 {
-    VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_QUERY_INFO2, VBOXVHWAINFO2_SIZE(numFourCC));
-    VBOXVHWACMD_QUERYINFO2 *pInfo2;
-    Assert(pCmd);
-    if (!pCmd)
-    {
-        LOGREL(("vboxVhwaCommandCreate failed"));
-        return NULL;
-    }
+    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_QUERY_INFO2,
+                                                                         VBOXVHWAINFO2_SIZE(numFourCC));
+    AssertReturnStmt(pCmd, LOGREL(("vboxVhwaCommandCreate failed")), NULL);
 
-    pInfo2 = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO2);
+    VBOXVHWACMD_QUERYINFO2 *pInfo2 = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO2);
     pInfo2->numFourCC = numFourCC;
 
     int rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
@@ -294,18 +284,10 @@ VBOXVHWACMD_QUERYINFO2* vboxVhwaQueryHostInfo2(PVBOXMP_DEVEXT pDevExt, D3DDDI_VI
 
 int vboxVhwaEnable(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
-    int rc = VERR_GENERAL_FAILURE;
-    VBOXVHWACMD* pCmd;
+    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_ENABLE, 0);
+    AssertReturnStmt(pCmd, LOGREL(("vboxVhwaCommandCreate failed")), VERR_GENERAL_FAILURE);
 
-    pCmd = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_ENABLE, 0);
-    Assert(pCmd);
-    if (!pCmd)
-    {
-        LOGREL(("vboxVhwaCommandCreate failed"));
-        return rc;
-    }
-
-    rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
+    int rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
     AssertRC(rc);
     if(RT_SUCCESS(rc))
     {
@@ -324,20 +306,12 @@ int vboxVhwaDisable(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId
 {
     vboxVhwaCommandCheckCompletion(pDevExt);
 
-    int rc = VERR_GENERAL_FAILURE;
-    VBOXVHWACMD* pCmd;
+    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd  = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_DISABLE, 0);
+    AssertReturnStmt(pCmd, LOGREL(("vboxVhwaCommandCreate failed")), VERR_GENERAL_FAILURE);
 
-    pCmd = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_DISABLE, 0);
-    Assert(pCmd);
-    if (!pCmd)
-    {
-        LOGREL(("vboxVhwaCommandCreate failed"));
-        return rc;
-    }
-
-    rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
+    int rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
     AssertRC(rc);
-    if(RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if(RT_SUCCESS(pCmd->rc))
             rc = VINF_SUCCESS;
@@ -510,10 +484,10 @@ int vboxVhwaHlpDestroySurface(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pSurf
     if (!pSurf->hHostHandle)
         return VERR_INVALID_STATE;
 
-    VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, VidPnSourceId,
-            VBOXVHWACMD_TYPE_SURF_DESTROY, sizeof(VBOXVHWACMD_SURF_DESTROY));
+    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd = vboxVhwaCommandCreate(pDevExt, VidPnSourceId, VBOXVHWACMD_TYPE_SURF_DESTROY,
+                                                                         sizeof(VBOXVHWACMD_SURF_DESTROY));
     Assert(pCmd);
-    if(pCmd)
+    if (pCmd)
     {
         VBOXVHWACMD_SURF_DESTROY * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_DESTROY);
 
@@ -635,8 +609,8 @@ int vboxVhwaHlpCreateSurface(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pSurf,
         D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
     /* the first thing we need is to post create primary */
-    VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, VidPnSourceId,
-                VBOXVHWACMD_TYPE_SURF_CREATE, sizeof(VBOXVHWACMD_SURF_CREATE));
+    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd = vboxVhwaCommandCreate(pDevExt, VidPnSourceId, VBOXVHWACMD_TYPE_SURF_CREATE,
+                                                                         sizeof(VBOXVHWACMD_SURF_CREATE));
     Assert(pCmd);
     if (pCmd)
     {
@@ -670,8 +644,8 @@ int vboxVhwaHlpCreateSurface(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pSurf,
 int vboxVhwaHlpGetSurfInfoForSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pSurf, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
     /* the first thing we need is to post create primary */
-    VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, VidPnSourceId,
-            VBOXVHWACMD_TYPE_SURF_GETINFO, sizeof(VBOXVHWACMD_SURF_GETINFO));
+    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd = vboxVhwaCommandCreate(pDevExt, VidPnSourceId, VBOXVHWACMD_TYPE_SURF_GETINFO,
+                                                                         sizeof(VBOXVHWACMD_SURF_GETINFO));
     Assert(pCmd);
     if (pCmd)
     {
@@ -843,10 +817,11 @@ int vboxVhwaHlpOverlayFlip(PVBOXWDDM_OVERLAY pOverlay, const DXGKARG_FLIPOVERLAY
     {
         PVBOXWDDM_OVERLAYFLIP_INFO pOurInfo = (PVBOXWDDM_OVERLAYFLIP_INFO)pFlipInfo->pPrivateDriverData;
 
-        VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId,
-                VBOXVHWACMD_TYPE_SURF_FLIP, sizeof(VBOXVHWACMD_SURF_FLIP));
+        VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd = vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId,
+                                                                             VBOXVHWACMD_TYPE_SURF_FLIP,
+                                                                             sizeof(VBOXVHWACMD_SURF_FLIP));
         Assert(pCmd);
-        if(pCmd)
+        if (pCmd)
         {
             VBOXVHWACMD_SURF_FLIP * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_FLIP);
 
@@ -914,8 +889,9 @@ int vboxVhwaHlpColorFill(PVBOXWDDM_OVERLAY pOverlay, PVBOXWDDM_DMA_PRIVATEDATA_C
     Assert(pAlloc->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
 
     int rc;
-    VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId,
-                VBOXVHWACMD_TYPE_SURF_FLIP, RT_OFFSETOF(VBOXVHWACMD_SURF_COLORFILL, u.in.aRects[pCF->ClrFill.Rects.cRects]));
+    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd =
+        vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId, VBOXVHWACMD_TYPE_SURF_FLIP,
+                              RT_OFFSETOF(VBOXVHWACMD_SURF_COLORFILL, u.in.aRects[pCF->ClrFill.Rects.cRects]));
     Assert(pCmd);
     if(pCmd)
     {
@@ -1002,10 +978,11 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
     {
         PVBOXWDDM_OVERLAY_INFO pOurInfo = (PVBOXWDDM_OVERLAY_INFO)pOverlayInfo->pPrivateDriverData;
 
-        VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId,
-                VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE, sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
+        VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST * pCmd = vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId,
+                                                                              VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE,
+                                                                              sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
         Assert(pCmd);
-        if(pCmd)
+        if (pCmd)
         {
             VBOXVHWACMD_SURF_OVERLAY_UPDATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_OVERLAY_UPDATE);
 

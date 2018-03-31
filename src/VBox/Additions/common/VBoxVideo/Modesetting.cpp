@@ -151,15 +151,15 @@ DECLHIDDEN(int) VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 {
     int rc;
     /* Issue the screen info command. */
-    void *p = VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVAINFOVIEW) * u32Count,
-                                   HGSMI_CH_VBVA, VBVA_INFO_VIEW);
-    if (p)
+    VBVAINFOVIEW RT_UNTRUSTED_VOLATILE_HOST *pInfo =
+        (VBVAINFOVIEW RT_UNTRUSTED_VOLATILE_HOST *)VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVAINFOVIEW) * u32Count,
+                                                                        HGSMI_CH_VBVA, VBVA_INFO_VIEW);
+    if (pInfo)
     {
-        VBVAINFOVIEW *pInfo = (VBVAINFOVIEW *)p;
-        rc = pfnFill(pvData, pInfo, u32Count);
+        rc = pfnFill(pvData, (VBVAINFOVIEW *)pInfo /* lazy bird */, u32Count);
         if (RT_SUCCESS(rc))
-            VBoxHGSMIBufferSubmit (pCtx, p);
-        VBoxHGSMIBufferFree(pCtx, p);
+            VBoxHGSMIBufferSubmit(pCtx, pInfo);
+        VBoxHGSMIBufferFree(pCtx, pInfo);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -293,18 +293,11 @@ DECLHIDDEN(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint16_t fFlags)
 {
     /* Issue the screen info command. */
-    void *p = VBoxHGSMIBufferAlloc(pCtx,
-                                   sizeof (VBVAINFOSCREEN),
-                                   HGSMI_CH_VBVA,
-                                   VBVA_INFO_SCREEN);
-    if (!p)
+    VBVAINFOSCREEN RT_UNTRUSTED_VOLATILE_HOST *pScreen =
+        (VBVAINFOSCREEN RT_UNTRUSTED_VOLATILE_HOST *)VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVAINFOSCREEN),
+                                                                          HGSMI_CH_VBVA, VBVA_INFO_SCREEN);
+    if (pScreen != NULL)
     {
-        // LogFunc(("HGSMIHeapAlloc failed\n"));
-    }
-    else
-    {
-        VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)p;
-
         pScreen->u32ViewIndex    = cDisplay;
         pScreen->i32OriginX      = cOriginX;
         pScreen->i32OriginY      = cOriginY;
@@ -315,9 +308,13 @@ DECLHIDDEN(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         pScreen->u16BitsPerPixel = cBPP;
         pScreen->u16Flags        = fFlags;
 
-        VBoxHGSMIBufferSubmit(pCtx, p);
+        VBoxHGSMIBufferSubmit(pCtx, pScreen);
 
-        VBoxHGSMIBufferFree(pCtx, p);
+        VBoxHGSMIBufferFree(pCtx, pScreen);
+    }
+    else
+    {
+        // LogFunc(("HGSMIHeapAlloc failed\n"));
     }
 }
 
@@ -337,7 +334,7 @@ DECLHIDDEN(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 DECLHIDDEN(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx, int32_t  cOriginX, int32_t  cOriginY,
                                                  uint32_t cWidth, uint32_t cHeight)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     VBVAREPORTINPUTMAPPING *p;
     // Log(("%s: cOriginX=%d, cOriginY=%d, cWidth=%u, cHeight=%u\n", __PRETTY_FUNCTION__, (int)cOriginX, (int)cOriginX,
     //      (unsigned)cWidth, (unsigned)cHeight));
@@ -376,35 +373,30 @@ DECLHIDDEN(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                       unsigned cScreens, VBVAMODEHINT *paHints)
 {
     int rc;
-    void *p;
+    VBVAQUERYMODEHINTS RT_UNTRUSTED_VOLATILE_HOST *pQuery;
 
-    AssertPtr(paHints);
-    if (!VALID_PTR(paHints))
-        return VERR_INVALID_POINTER;
-
-    p = VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVAQUERYMODEHINTS)
-                                       + cScreens * sizeof(VBVAMODEHINT),
-                             HGSMI_CH_VBVA, VBVA_QUERY_MODE_HINTS);
-    if (!p)
+    AssertPtrReturn(paHints, VERR_INVALID_POINTER);
+    pQuery = (VBVAQUERYMODEHINTS RT_UNTRUSTED_VOLATILE_HOST *)VBoxHGSMIBufferAlloc(pCtx,
+                                                                                      sizeof(VBVAQUERYMODEHINTS)
+                                                                                   +  cScreens * sizeof(VBVAMODEHINT),
+                                                                                   HGSMI_CH_VBVA, VBVA_QUERY_MODE_HINTS);
+    if (pQuery != NULL)
     {
-        // LogFunc(("HGSMIHeapAlloc failed\n"));
-        return VERR_NO_MEMORY;
-    }
-    else
-    {
-        VBVAQUERYMODEHINTS *pQuery   = (VBVAQUERYMODEHINTS *)p;
-
         pQuery->cHintsQueried        = cScreens;
         pQuery->cbHintStructureGuest = sizeof(VBVAMODEHINT);
         pQuery->rc                   = VERR_NOT_SUPPORTED;
 
-        VBoxHGSMIBufferSubmit(pCtx, p);
+        VBoxHGSMIBufferSubmit(pCtx, pQuery);
         rc = pQuery->rc;
         if (RT_SUCCESS(rc))
-            memcpy(paHints, ((uint8_t *)p) + sizeof(VBVAQUERYMODEHINTS),
-                   cScreens * sizeof(VBVAMODEHINT));
+            memcpy(paHints, (void *)(pQuery + 1), cScreens * sizeof(VBVAMODEHINT));
 
-        VBoxHGSMIBufferFree(pCtx, p);
+        VBoxHGSMIBufferFree(pCtx, pQuery);
+    }
+    else
+    {
+        // LogFunc(("HGSMIHeapAlloc failed\n"));
+        rc = VERR_NO_MEMORY;
     }
     return rc;
 }

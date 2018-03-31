@@ -2397,7 +2397,7 @@ static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
  *
  * @note    cbCmdDr is at least sizeof(VBOXVDMACBUF_DR).
  */
-static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmdDr, uint32_t cbCmdDr)
+static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmdDr, uint32_t cbCmdDr)
 {
     uint32_t cbDmaCmd = 0;
     uint8_t *pbRam = pVdma->pVGAState->vram_ptrR3;
@@ -2947,7 +2947,7 @@ static DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD hThreadSelf, void *pvUser
  *                      sizeof(VBOXVDMACBUF_DR).
  * @thread  VDMA
  */
-static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd, uint32_t cbCmd)
+static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd)
 {
     PHGSMIINSTANCE pHgsmi = pVdma->pHgsmi;
     int rc;
@@ -2957,18 +2957,19 @@ static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd, u
         /*
          * Get the command buffer (volatile).
          */
-        uint16_t const  cbCmdBuf = pCmd->cbBuf;
-        const uint8_t  *pbCmdBuf;
+        uint16_t const  cbCmdBuf  = pCmd->cbBuf;
+        uint32_t const  fCmdFlags = pCmd->fFlags;
+        const uint8_t  *pbCmdBuf; /** @todo fixme later */
         PGMPAGEMAPLOCK  Lock;
         bool            bReleaseLocked = false;
-        if (pCmd->fFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
+        if (fCmdFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
         {
             pbCmdBuf = VBOXVDMACBUF_DR_TAIL(pCmd, const uint8_t);
             rc = VINF_SUCCESS;
             AssertBreakStmt((uintptr_t)&pbCmdBuf[cbCmdBuf] <= (uintptr_t)&((uint8_t *)pCmd)[cbCmd],
                             rc = VERR_INVALID_PARAMETER);
         }
-        else if (pCmd->fFlags & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET)
+        else if (fCmdFlags & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET)
         {
             uint64_t offVRam = pCmd->Location.offVramBuf;
             pbCmdBuf = (uint8_t const *)pVdma->pVGAState->vram_ptrR3 + offVRam;
@@ -3164,12 +3165,13 @@ void vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
  * @param   pCmd    The control command to handle.  Considered volatile.
  * @param   cbCmd   The size of the command.  At least sizeof(VBOXVDMA_CTL).
  */
-void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd, uint32_t cbCmd)
+void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, VBOXVDMA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd)
 {
     RT_NOREF(cbCmd);
     PHGSMIINSTANCE pIns = pVdma->pHgsmi;
 
     VBOXVDMA_CTL_TYPE enmCtl = pCmd->enmCtl;
+    ASMCompilerBarrier();
     switch (enmCtl)
     {
         case VBOXVDMA_CTL_TYPE_ENABLE:
@@ -3203,7 +3205,7 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd, uint32_t cb
  * @param   pCmd    The command to handle.  Considered volatile.
  * @param   cbCmd   The size of the command.  At least sizeof(VBOXVDMACBUF_DR).
  */
-void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd, uint32_t cbCmd)
+void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd)
 {
 #ifdef VBOX_WITH_CRHGSMI
     /* chromium commands are processed by crhomium hgcm thread independently from our internal cmd processing pipeline
@@ -3281,7 +3283,8 @@ static int vdmaVBVACtlGenericSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL_SOURCE en
 /**
  * Handler for vboxCmdVBVACmdCtl()/VBOXCMDVBVACTL_TYPE_3DCTL.
  */
-static int vdmaVBVACtlGenericGuestSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL_TYPE enmType, VBOXCMDVBVA_CTL *pCtl, uint32_t cbCtl)
+static int vdmaVBVACtlGenericGuestSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL_TYPE enmType,
+                                         VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl, uint32_t cbCtl)
 {
     Assert(cbCtl >= sizeof(VBOXCMDVBVA_CTL)); /* Checked by callers caller, vbvaChannelHandler(). */
 
@@ -3790,7 +3793,7 @@ DECLCALLBACK(int) vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface
  * @param   cbCtl               The size of it.  This is at least
  *                              sizeof(VBOXCMDVBVA_CTL).
  */
-int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL *pCtl, uint32_t cbCtl)
+int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl, uint32_t cbCtl)
 {
     struct VBOXVDMAHOST *pVdma = pVGAState->pVdma;
     switch (pCtl->u32Type)

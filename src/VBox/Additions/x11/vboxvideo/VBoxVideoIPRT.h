@@ -93,12 +93,14 @@ RT_C_DECLS_END
       assert((expr)); \
   } while (0)
 # define AssertPtr assert
+# define AssertPtrReturn(pv, rcRet) do { assert(pv); if (pv) {} else return(rcRet); } while(0)
 # define AssertRC(expr) assert (!expr)
 #else
 # define Assert(expr) do { } while(0)
 # define AssertFailed() do { } while(0)
 # define AssertMsg(expr, msg) do { } while(0)
-# define AssertPtr(expr) do { } while(0)
+# define AssertPtr(ptr) do { } while(0)
+# define AssertPtrReturn(pv, rcRet) do { if (pv) {} else return(rcRet); } while(0)
 # define AssertRC(expr) do { } while(0)
 #endif
 
@@ -135,6 +137,12 @@ RT_C_DECLS_END
 #ifndef UINT32_C
 # define UINT32_C(Value) (Value ## U)
 #endif
+#define RT_UNTRUSTED_GUEST
+#define RT_UNTRUSTED_VOLATILE_GUEST  volatile
+#define RT_UNTRUSTED_HOST
+#define RT_UNTRUSTED_VOLATILE_HOST   volatile
+#define RT_UNTRUSTED_HSTGST
+#define RT_UNTRUSTED_VOLATILE_HSTGST volatile
 
 #define likely _X_LIKELY
 #define unlikely _X_UNLIKELY

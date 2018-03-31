@@ -210,32 +210,30 @@ static void vboxWddmPopulateDmaAllocInfoWithOffset(PVBOXWDDM_DMA_ALLOCINFO pInfo
 
 int vboxWddmGhDisplayPostInfoScreen(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const POINT * pVScreenPos, uint16_t fFlags)
 {
-    void *p = VBoxHGSMIBufferAlloc (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx,
-                                      sizeof (VBVAINFOSCREEN),
-                                      HGSMI_CH_VBVA,
-                                      VBVA_INFO_SCREEN);
-    if (!p)
+    VBVAINFOSCREEN RT_UNTRUSTED_VOLATILE_HOST *pScreen =
+        (VBVAINFOSCREEN RT_UNTRUSTED_VOLATILE_HOST *)VBoxHGSMIBufferAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx,
+                                                                          sizeof(VBVAINFOSCREEN),
+                                                                          HGSMI_CH_VBVA,
+                                                                          VBVA_INFO_SCREEN);
+    if (!pScreen != NULL)
     {
         WARN(("VBoxHGSMIBufferAlloc failed"));
-
         return VERR_OUT_OF_RESOURCES;
     }
-
-    VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)p;
 
     int rc = vboxWddmScreenInfoInit(pScreen, pAllocData, pVScreenPos, fFlags);
     if (RT_SUCCESS(rc))
     {
-        pScreen->u32StartOffset  = 0; //(uint32_t)offVram; /* we pretend the view is located at the start of each framebuffer */
+        pScreen->u32StartOffset = 0; //(uint32_t)offVram; /* we pretend the view is located at the start of each framebuffer */
 
-        rc = VBoxHGSMIBufferSubmit (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, p);
+        rc = VBoxHGSMIBufferSubmit(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pScreen);
         if (RT_FAILURE(rc))
             WARN(("VBoxHGSMIBufferSubmit failed %d", rc));
     }
     else
         WARN(("VBoxHGSMIBufferSubmit failed %d", rc));
 
-    VBoxHGSMIBufferFree (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, p);
+    VBoxHGSMIBufferFree(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pScreen);
 
     return rc;
 }
@@ -250,30 +248,24 @@ int vboxWddmGhDisplayPostInfoView(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_D
     }
 
     /* Issue the screen info command. */
-    void *p = VBoxHGSMIBufferAlloc (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx,
-                                      sizeof (VBVAINFOVIEW),
-                                      HGSMI_CH_VBVA,
-                                      VBVA_INFO_VIEW);
-    if (!p)
+    VBVAINFOVIEW RT_UNTRUSTED_VOLATILE_HOST *pView =
+        (VBVAINFOVIEW RT_UNTRUSTED_VOLATILE_HOST *)VBoxHGSMIBufferAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx,
+                                                                        sizeof(VBVAINFOVIEW), HGSMI_CH_VBVA, VBVA_INFO_VIEW);
+    if (!pView)
     {
         WARN(("VBoxHGSMIBufferAlloc failed"));
         return VERR_OUT_OF_RESOURCES;
     }
-
-    VBVAINFOVIEW *pView = (VBVAINFOVIEW *)p;
-
     pView->u32ViewIndex     = pAllocData->SurfDesc.VidPnSourceId;
     pView->u32ViewOffset    = (uint32_t)offVram; /* we pretend the view is located at the start of each framebuffer */
     pView->u32ViewSize      = vboxWddmVramCpuVisibleSegmentSize(pDevExt)/VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
-
     pView->u32MaxScreenSize = pView->u32ViewSize;
 
-    int rc = VBoxHGSMIBufferSubmit (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, p);
+    int rc = VBoxHGSMIBufferSubmit (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pView);
     if (RT_FAILURE(rc))
         WARN(("VBoxHGSMIBufferSubmit failed %d", rc));
 
-    VBoxHGSMIBufferFree (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, p);
-
+    VBoxHGSMIBufferFree(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pView);
     return rc;
 }
 
@@ -1560,7 +1552,8 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
             }
 
             uint16_t chInfo;
-            uint8_t *pvCmd = HGSMIBufferDataAndChInfoFromOffset (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx.Heap.area, offCmd, &chInfo);
+            uint8_t RT_UNTRUSTED_VOLATILE_HOST *pvCmd =
+                HGSMIBufferDataAndChInfoFromOffset(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx.Heap.area, offCmd, &chInfo);
             if (!pvCmd)
             {
                 WARN(("zero cmd"));
@@ -1571,7 +1564,8 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
             {
                 case VBVA_CMDVBVA_CTL:
                 {
-                    int rc = VBoxSHGSMICommandProcessCompletion (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, (VBOXSHGSMIHEADER*)pvCmd, TRUE /*bool bIrq*/ , &CtlList);
+                    int rc = VBoxSHGSMICommandProcessCompletion(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx,
+                                                                (VBOXSHGSMIHEADER *)pvCmd, TRUE /*bool bIrq*/ , &CtlList);
                     AssertRC(rc);
                     break;
                 }
@@ -1717,7 +1711,8 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
                     if (pHeap)
                     {
                         uint16_t chInfo;
-                        uint8_t *pvCmd = HGSMIBufferDataAndChInfoFromOffset(&pHeap->Heap.area, offCmd, &chInfo);
+                        uint8_t RT_UNTRUSTED_VOLATILE_GUEST *pvCmd =
+                            HGSMIBufferDataAndChInfoFromOffset(&pHeap->Heap.area, offCmd, &chInfo);
                         Assert(pvCmd);
                         if (pvCmd)
                         {
@@ -3961,7 +3956,7 @@ DxgkDdiBuildPagingBufferLegacy(
                 break;
             }
             UINT cbCmd = VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_TRANSFER);
-            PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, cbCmd);
+            VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HOST *pDr = vboxVdmaCBufDrCreate(&pDevExt->u.primary.Vdma, cbCmd);
             Assert(pDr);
             if (pDr)
             {

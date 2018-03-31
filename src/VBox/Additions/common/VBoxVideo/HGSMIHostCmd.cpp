@@ -75,16 +75,13 @@ static void HGSMINotifyHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx, HGSMIOFFSE
  * @param  pvMem  pointer into the heap as mapped in @a pCtx to the command to
  *                be completed
  */
-DECLHIDDEN(void) VBoxHGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx,
-                                          void *pvMem)
+DECLHIDDEN(void) VBoxHGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx, void RT_UNTRUSTED_VOLATILE_HOST *pvMem)
 {
-    HGSMIBUFFERHEADER *pHdr = HGSMIBufferHeaderFromData(pvMem);
+    HGSMIBUFFERHEADER RT_UNTRUSTED_VOLATILE_GUEST *pHdr = HGSMIBufferHeaderFromData(pvMem);
     HGSMIOFFSET offMem = HGSMIPointerToOffset(&pCtx->areaCtx, pHdr);
     Assert(offMem != HGSMIOFFSET_VOID);
-    if(offMem != HGSMIOFFSET_VOID)
-    {
+    if (offMem != HGSMIOFFSET_VOID)
         HGSMINotifyHostCmdComplete(pCtx, offMem);
-    }
 }
 
 
