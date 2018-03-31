@@ -38,7 +38,7 @@
 #include "HGSMIChannels.h"
 #include "HGSMIMemAlloc.h"
 
-/*
+/**
  * Basic mechanism for the HGSMI is to prepare and pass data buffer to the host and the guest.
  * Data inside these buffers are opaque for the HGSMI and are interpreted by higher levels.
  *
@@ -75,38 +75,49 @@
 
 typedef struct HGSMIHEAP
 {
-    HGSMIAREA area; /* Description. */
-    HGSMIMADATA ma; /* Memory allocator */
+    HGSMIAREA area; /**< Description. */
+    HGSMIMADATA ma; /**< Memory allocator */
 } HGSMIHEAP;
 
 /* The size of the array of channels. Array indexes are uint8_t. Note: the value must not be changed. */
 #define HGSMI_NUMBER_OF_CHANNELS 0x100
 
-/* Channel handler called when the guest submits a buffer. */
+/**
+ * Channel handler called when the guest submits a buffer.
+ *
+ * @returns stuff
+ * @param   pvHandler       Value specified when registring.
+ * @param   u16ChannelInfo  Command code.
+ * @param   pvBuffer        HGSMI buffer with command data.  This is shared with
+ *                          the guest.  Consider untrusted and volatile!
+ * @param   cbBuffer        Size of command data.
+ * @thread  EMT on the host side.
+ */
 typedef DECLCALLBACK(int) FNHGSMICHANNELHANDLER(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer);
+/** Pointer to a channel handler callback. */
 typedef FNHGSMICHANNELHANDLER *PFNHGSMICHANNELHANDLER;
 
-/* Information about a handler: pfn + context. */
+/** Information about a handler: pfn + context. */
 typedef struct _HGSMICHANNELHANDLER
 {
     PFNHGSMICHANNELHANDLER pfnHandler;
     void *pvHandler;
 } HGSMICHANNELHANDLER;
 
-/* Channel description. */
+/** Channel description. */
 typedef struct _HGSMICHANNEL
 {
-    HGSMICHANNELHANDLER handler;       /* The channel handler. */
-    const char *pszName;               /* NULL for hardcoded channels or RTStrDup'ed name. */
-    uint8_t u8Channel;                 /* The channel id, equal to the channel index in the array. */
-    uint8_t u8Flags;                   /* HGSMI_CH_F_* */
+    HGSMICHANNELHANDLER handler;       /**< The channel handler. */
+    const char *pszName;               /**< NULL for hardcoded channels or RTStrDup'ed name. */
+    uint8_t u8Channel;                 /**< The channel id, equal to the channel index in the array. */
+    uint8_t u8Flags;                   /**< HGSMI_CH_F_* */
 } HGSMICHANNEL;
 
 typedef struct _HGSMICHANNELINFO
 {
-    HGSMICHANNEL Channels[HGSMI_NUMBER_OF_CHANNELS]; /* Channel handlers indexed by the channel id.
-                                                      * The array is accessed under the instance lock.
-                                                      */
+    /** Channel handlers indexed by the channel id.
+     * The array is accessed under the instance lock. */
+    HGSMICHANNEL Channels[HGSMI_NUMBER_OF_CHANNELS];
 }  HGSMICHANNELINFO;
 
 
