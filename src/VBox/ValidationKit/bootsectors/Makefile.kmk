@@ -201,7 +201,7 @@ bootsector2-vbinstst-64-1_CLEAN = \
 	$(bootsector2-vbinstst-64-1_0_OUTDIR)/bs2-vbinstst-64-1.asm
 
 $$(bootsector2-vbinstst-64-1_0_OUTDIR)/bs2-vbinstst-64-1.asm: $(VBOX_VBINSTST_GEN) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $(VBOX_VBINSTST_GEN) --target bs2-r0-64-big --output-base $(basename $@) --test-size medium
+	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $(VBOX_VBINSTST_GEN) --target bs2-r0-64-big --output-base $(basename $@) --test-size medium
 
 MISCBINS += bootsector2-vbinstst-32-1
 bootsector2-vbinstst-32-1_TEMPLATE = VBoxBsTestImg
@@ -219,7 +219,7 @@ bootsector2-vbinstst-32-1_CLEAN = \
 	$(bootsector2-vbinstst-32-1_0_OUTDIR)/bs2-vbinstst-32-1.asm
 
 $$(bootsector2-vbinstst-32-1_0_OUTDIR)/bs2-vbinstst-32-1.asm: $(VBOX_VBINSTST_GEN) | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $(VBOX_VBINSTST_GEN) --target bs2-r0-32-big --output-base $(basename $@) --test-size medium
+	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $(VBOX_VBINSTST_GEN) --target bs2-r0-32-big --output-base $(basename $@) --test-size medium
 
  endif
 endif # bird-only
@@ -339,7 +339,7 @@ $$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16: \
 		$(PATH_SUB_CURRENT)/../../VMM/VMMAll/IEMAllInstructionsPython.py \
 		$(PATH_SUB_CURRENT)/../../VMM/VMMAll/IEMAllInstructions*.cpp.h \
                | $$(dir $$@)
-	$(VBOX_BLD_PYTHON) $< $@
+	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $< $@
 
 endif # VBOX_WITH_BS3KIT
 
