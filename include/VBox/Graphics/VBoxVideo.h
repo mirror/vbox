@@ -346,49 +346,55 @@ typedef enum
     , VBOXVHWACMD_TYPE_HH_SAVESTATE_LOADPERFORM
 } VBOXVHWACMD_TYPE;
 
-/* the command processing was asynch, set by the host to indicate asynch command completion
- * must not be cleared once set, the command completion is performed by issuing a host->guest completion command
- * while keeping this flag unchanged */
-#define VBOXVHWACMD_FLAG_HG_ASYNCH               0x00010000
-/* asynch completion is performed by issuing the event */
-#define VBOXVHWACMD_FLAG_GH_ASYNCH_EVENT         0x00000001
-/* issue interrupt on asynch completion */
-#define VBOXVHWACMD_FLAG_GH_ASYNCH_IRQ           0x00000002
-/* guest does not do any op on completion of this command, the host may copy the command and indicate that it does not need the command anymore
+/** The command processing was asynch, set by the host to indicate asynch
+ * command completion. Must not be cleared once set, the command completion is
+ * performed by issuing a host->guest completion command while keeping this
+ * flag unchanged */
+#define VBOXVHWACMD_FLAG_HG_ASYNCH               UINT32_C(0x00010000)
+/** asynch completion is performed by issuing the event */
+#define VBOXVHWACMD_FLAG_GH_ASYNCH_EVENT         UINT32_C(0x00000001)
+/** issue interrupt on asynch completion */
+#define VBOXVHWACMD_FLAG_GH_ASYNCH_IRQ           UINT32_C(0x00000002)
+/** Guest does not do any op on completion of this command, the host may copy
+ * the command and indicate that it does not need the command anymore
  * by setting the VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED flag */
-#define VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION  0x00000004
-/* the host has copied the VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION command and returned it to the guest */
-#define VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED      0x00020000
-/* this is the host->host cmd, i.e. a configuration command posted by the host to the framebuffer */
-#define VBOXVHWACMD_FLAG_HH_CMD                  0x10000000
+#define VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION  UINT32_C(0x00000004)
+/** the host has copied the VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION command and returned it to the guest */
+#define VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED      UINT32_C(0x00020000)
+/** this is the host->host cmd, i.e. a configuration command posted by the host to the framebuffer */
+#define VBOXVHWACMD_FLAG_HH_CMD                  UINT32_C(0x10000000)
 
 typedef struct VBOXVHWACMD
 {
-    VBOXVHWACMD_TYPE enmCmd; /* command type */
-    volatile int32_t rc; /* command result */
-    int32_t iDisplay; /* display index */
-    volatile int32_t Flags; /* ored VBOXVHWACMD_FLAG_xxx values */
-    uint64_t GuestVBVAReserved1; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
-    uint64_t GuestVBVAReserved2; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
+    VBOXVHWACMD_TYPE enmCmd;     /**< command type */
+    volatile int32_t rc;         /**< command result */
+    int32_t iDisplay;            /**< display index */
+    volatile int32_t Flags;      /**< ORed VBOXVHWACMD_FLAG_xxx values */
+    uint64_t GuestVBVAReserved1; /**< field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
+    uint64_t GuestVBVAReserved2; /**< field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
     volatile uint32_t cRefs;
     int32_t Reserved;
     union
     {
         struct VBOXVHWACMD *pNext;
-        uint32_t             offNext;
-        uint64_t Data; /* the body is 64-bit aligned */
+        uint32_t            offNext;
+        uint64_t Data;                  /**< the body is 64-bit aligned */
     } u;
     char body[1];
 } VBOXVHWACMD;
 
-#define VBOXVHWACMD_HEADSIZE() (RT_OFFSETOF(VBOXVHWACMD, body))
-#define VBOXVHWACMD_SIZE_FROMBODYSIZE(_s) (VBOXVHWACMD_HEADSIZE() + (_s))
-#define VBOXVHWACMD_SIZE(_tCmd) (VBOXVHWACMD_SIZE_FROMBODYSIZE(sizeof(_tCmd)))
+#define VBOXVHWACMD_HEADSIZE()                          (RT_OFFSETOF(VBOXVHWACMD, body))
+#define VBOXVHWACMD_SIZE_FROMBODYSIZE(a_cbBody)         (VBOXVHWACMD_HEADSIZE() + (a_cbBody))
+#define VBOXVHWACMD_SIZE(a_tTypeCmd)                    (VBOXVHWACMD_SIZE_FROMBODYSIZE(sizeof(a_tTypeCmd)))
 typedef unsigned int VBOXVHWACMD_LENGTH;
 typedef uint64_t VBOXVHWA_SURFHANDLE;
-#define VBOXVHWA_SURFHANDLE_INVALID 0ULL
-#define VBOXVHWACMD_BODY(_p, _t) ((_t*)(_p)->body)
-#define VBOXVHWACMD_HEAD(_pb) ((VBOXVHWACMD*)((uint8_t *)(_pb) - RT_OFFSETOF(VBOXVHWACMD, body)))
+#define VBOXVHWA_SURFHANDLE_INVALID                     UINT64_C(0)
+#define VBOXVHWACMD_BODY(a_pHdr, a_TypeBody)            ( (a_TypeBody RT_UNTRUSTED_VOLATILE_HSTGST *)&(a_pHdr)->body[0] )
+#if !defined(IN_GUEST) && defined(IN_RING3)
+# define VBOXVHWACMD_BODY_HOST_HEAP(a_pHdr, a_TypeBody) ( (a_TypeBody *)&(a_pHdr)->body[0] )
+#endif
+#define VBOXVHWACMD_HEAD(a_pBody)\
+    ( (VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HSTGST *)((uint8_t *)(a_pBody) - RT_OFFSETOF(VBOXVHWACMD, body)))
 
 typedef struct VBOXVHWA_RECTL
 {
@@ -967,12 +973,13 @@ typedef struct VBVAHOSTCMD
         uint64_t Data; /* the body is 64-bit aligned */
     } u;
     char body[1];
-}VBVAHOSTCMD;
+} VBVAHOSTCMD;
 
-#define VBVAHOSTCMD_SIZE(_size) (sizeof(VBVAHOSTCMD) + (_size))
-#define VBVAHOSTCMD_BODY(_pCmd, _tBody) ((_tBody*)(_pCmd)->body)
-#define VBVAHOSTCMD_HDR(_pBody) ((VBVAHOSTCMD*)(((uint8_t*)_pBody) - RT_OFFSETOF(VBVAHOSTCMD, body)))
-#define VBVAHOSTCMD_HDRSIZE (RT_OFFSETOF(VBVAHOSTCMD, body))
+#define VBVAHOSTCMD_SIZE(a_cb)                  (sizeof(VBVAHOSTCMD) + (a_cb))
+#define VBVAHOSTCMD_BODY(a_pCmd, a_TypeBody)    ((a_TypeBody RT_UNTRUSTED_VOLATILE_HSTGST *)&(a_pCmd)->body[0])
+#define VBVAHOSTCMD_HDR(a_pBody) \
+    ( (VBVAHOSTCMD RT_UNTRUSTED_VOLATILE_HSTGST *)( (uint8_t *)(a_pBody) - RT_OFFSETOF(VBVAHOSTCMD, body)) )
+#define VBVAHOSTCMD_HDRSIZE                     (RT_OFFSETOF(VBVAHOSTCMD, body))
 
 #pragma pack()
 

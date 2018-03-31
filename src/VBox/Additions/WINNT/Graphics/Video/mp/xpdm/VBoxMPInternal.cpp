@@ -355,14 +355,16 @@ static VBVAHOSTCMD *VBoxVbvaReverseList(VBVAHOSTCMD *pList)
     return pFirst;
 }
 
-DECLCALLBACK(void) VBoxMPHGSMIHostCmdCompleteCB(HVBOXVIDEOHGSMI hHGSMI, struct VBVAHOSTCMD *pCmd)
+/** @callback_method_impl{FNVBOXVIDEOHGSMICOMPLETION} */
+DECLCALLBACK(void) VBoxMPHGSMIHostCmdCompleteCB(HVBOXVIDEOHGSMI hHGSMI, struct VBVAHOSTCMD RT_UNTRUSTED_VOLATILE_HOST *pCmd)
 {
     PHGSMIHOSTCOMMANDCONTEXT pCtx = &((PVBOXMP_COMMON)hHGSMI)->hostCtx;
     VBoxHGSMIHostCmdComplete(pCtx, pCmd);
 }
 
+/** @callback_method_impl{FNVBOXVIDEOHGSMICOMMANDS} */
 DECLCALLBACK(int) VBoxMPHGSMIHostCmdRequestCB(HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel,
-                                              uint32_t iDisplay, struct VBVAHOSTCMD **ppCmd)
+                                              uint32_t iDisplay, struct VBVAHOSTCMD RT_UNTRUSTED_VOLATILE_HOST **ppCmd)
 {
     LOGF_ENTER();
 
@@ -378,29 +380,28 @@ DECLCALLBACK(int) VBoxMPHGSMIHostCmdRequestCB(HVBOXVIDEOHGSMI hHGSMI, uint8_t u8
     VBoxHGSMIProcessHostQueue(pCtx);
 
     HGSMICHANNEL *pChannel = HGSMIChannelFindById(&pCtx->channels, u8Channel);
-    if(pChannel)
+    if (pChannel)
     {
         VBVA_CHANNELCONTEXTS * pContexts = (VBVA_CHANNELCONTEXTS *)pChannel->handler.pvHandler;
         VBVADISP_CHANNELCONTEXT *pDispContext = VBoxVbvaFindHandlerInfo(pContexts, iDisplay);
 
-        if(pDispContext)
+        if (pDispContext)
         {
             VBVAHOSTCMD *pCmd;
             do
             {
                 pCmd = ASMAtomicReadPtrT(&pDispContext->pCmd, VBVAHOSTCMD *);
             } while (!ASMAtomicCmpXchgPtr(&pDispContext->pCmd, NULL, pCmd));
+
             *ppCmd = VBoxVbvaReverseList(pCmd);
 
             LOGF_LEAVE();
             return VINF_SUCCESS;
         }
-        else
-        {
-            WARN(("!pDispContext for display %d", iDisplay));
-        }
+        WARN(("!pDispContext for display %d", iDisplay));
     }
 
+    *ppCmd = NULL;
     LOGF_LEAVE();
     return VERR_INVALID_PARAMETER;
 }
@@ -509,11 +510,13 @@ VBoxVbvaChannelGenericHandlerCB(void *pvHandler, uint16_t u16ChannelInfo,
                             Assert(pFirst == pLast);
                             break;
                         }
+
                         case VBVAHG_EVENT:
                         {
-                            VBVAHOSTCMDEVENT *pEventCmd = VBVAHOSTCMD_BODY(pCur, VBVAHOSTCMDEVENT);
+                            VBVAHOSTCMDEVENT RT_UNTRUSTED_VOLATILE_HOST *pEventCmd = VBVAHOSTCMD_BODY(pCur, VBVAHOSTCMDEVENT);
                             VBoxMPSignalEvent(pCallbacks->pCommon, pEventCmd->pEvent);
                         }
+
                         default:
                         {
                             Assert(u16ChannelInfo==VBVAHG_EVENT);

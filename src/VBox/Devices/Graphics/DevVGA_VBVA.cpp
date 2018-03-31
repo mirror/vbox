@@ -1173,7 +1173,7 @@ static int vbvaVHWAHHCommandPost(PVGASTATE pVGAState, VBOXVHWACMD* pCmd)
     return rc;
 }
 
-int vbvaVHWAConstruct (PVGASTATE pVGAState)
+int vbvaVHWAConstruct(PVGASTATE pVGAState)
 {
     pVGAState->pendingVhwaCommands.cPending = 0;
     RTListInit(&pVGAState->pendingVhwaCommands.PendingList);
@@ -1184,7 +1184,7 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
     {
         uint32_t iDisplay = 0;
         int rc = VINF_SUCCESS;
-        VBOXVHWACMD_HH_CONSTRUCT * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_CONSTRUCT);
+        VBOXVHWACMD_HH_CONSTRUCT *pBody = VBOXVHWACMD_BODY_HOST_HEAP(pCmd, VBOXVHWACMD_HH_CONSTRUCT);
 
         do
         {
@@ -1198,8 +1198,10 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
             pBody->cbVRAM = pVGAState->vram_size;
 
             rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
+            ASMCompilerBarrier();
+
             AssertRC(rc);
-            if(RT_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = pCmd->rc;
                 AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
@@ -1229,7 +1231,7 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
     return VERR_OUT_OF_RESOURCES;
 }
 
-int vbvaVHWAReset (PVGASTATE pVGAState)
+int vbvaVHWAReset(PVGASTATE pVGAState)
 {
     vbvaVHWACommandClearAllPending(pVGAState);
 
@@ -1381,7 +1383,7 @@ DECLCALLBACK(int) vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterf
                     memset((void *)pHostCmd, 0 , VBVAHOSTCMD_SIZE(sizeof(VBVAHOSTCMDEVENT)));
                     pHostCmd->iDstID = pCmd->iDisplay;
                     pHostCmd->customOpCode = 0;
-                    VBVAHOSTCMDEVENT *pBody = VBVAHOSTCMD_BODY(pHostCmd, VBVAHOSTCMDEVENT);
+                    VBVAHOSTCMDEVENT RT_UNTRUSTED_VOLATILE_GUEST *pBody = VBVAHOSTCMD_BODY(pHostCmd, VBVAHOSTCMDEVENT);
                     pBody->pEvent = pCmd->GuestVBVAReserved1;
                 }
             }
@@ -1402,7 +1404,8 @@ DECLCALLBACK(int) vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterf
                         memset((void *)pHostCmd, 0 , VBVAHOSTCMD_SIZE(sizeof(VBVAHOSTCMDVHWACMDCOMPLETE)));
                         pHostCmd->iDstID = pCmd->iDisplay;
                         pHostCmd->customOpCode = VBVAHG_DCUSTOM_VHWA_CMDCOMPLETE;
-                        VBVAHOSTCMDVHWACMDCOMPLETE *pBody = VBVAHOSTCMD_BODY(pHostCmd, VBVAHOSTCMDVHWACMDCOMPLETE);
+                        VBVAHOSTCMDVHWACMDCOMPLETE RT_UNTRUSTED_VOLATILE_GUEST *pBody
+                            = VBVAHOSTCMD_BODY(pHostCmd, VBVAHOSTCMDVHWACMDCOMPLETE);
                         pBody->offCmd = offCmd;
                     }
                 }
@@ -1746,7 +1749,7 @@ int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             if (RT_SUCCESS(rc))
             {
                 vbvaVHWAHHCommandReinit(pCmd, VBOXVHWACMD_TYPE_HH_SAVESTATE_SAVEPERFORM, 0);
-                VBOXVHWACMD_HH_SAVESTATE_SAVEPERFORM *pSave = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_SAVESTATE_SAVEPERFORM);
+                VBOXVHWACMD_HH_SAVESTATE_SAVEPERFORM *pSave = VBOXVHWACMD_BODY_HOST_HEAP(pCmd, VBOXVHWACMD_HH_SAVESTATE_SAVEPERFORM);
                 pSave->pSSM = pSSM;
                 vbvaVHWAHHPost (pVGAState, pCmd, vboxVBVASaveStatePerformPreCb, NULL, &VhwaData);
                 rc = VhwaData.rc;
@@ -1984,7 +1987,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersio
                 {
                     VBOXVBVASAVEDSTATECBDATA VhwaData = {0};
                     VhwaData.pSSM = pSSM;
-                    VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM *pLoad = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM);
+                    VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM *pLoad = VBOXVHWACMD_BODY_HOST_HEAP(pCmd, VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM);
                     pLoad->pSSM = pSSM;
                     vbvaVHWAHHPost (pVGAState, pCmd, vboxVBVALoadStatePerformPreCb, vboxVBVALoadStatePerformPostCb, &VhwaData);
                     rc = VhwaData.rc;

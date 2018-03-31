@@ -481,7 +481,7 @@ int VBoxDispVBVAInit(PVBOXDISPDEV pDev)
     return VINF_SUCCESS;
 }
 
-void VBoxDispVBVAHostCommandComplete(PVBOXDISPDEV pDev, VBVAHOSTCMD *pCmd)
+void VBoxDispVBVAHostCommandComplete(PVBOXDISPDEV pDev, VBVAHOSTCMD RT_UNTRUSTED_VOLATILE_HOST *pCmd)
 {
     pDev->hgsmi.mp.pfnCompletionHandler(pDev->hgsmi.mp.hContext, pCmd);
 }

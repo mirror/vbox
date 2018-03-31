@@ -130,7 +130,7 @@ int VBoxDispSetPalette8BPP(PVBOXDISPDEV pDev);
 
 /* VBVA related */
 int VBoxDispVBVAInit(PVBOXDISPDEV pDev);
-void VBoxDispVBVAHostCommandComplete(PVBOXDISPDEV pDev, VBVAHOSTCMD *pCmd);
+void VBoxDispVBVAHostCommandComplete(PVBOXDISPDEV pDev, VBVAHOSTCMD RT_UNTRUSTED_VOLATILE_HOST *pCmd);
 
 void vrdpReportDirtyRect(PVBOXDISPDEV pDev, RECTL *prcl);
 void vbvaReportDirtyRect(PVBOXDISPDEV pDev, RECTL *prcl);
