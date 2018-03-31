@@ -174,7 +174,8 @@ static int vboxCmdVbvaCtlSubmitSync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMD
     return rc;
 }
 
-static int vboxCmdVbvaCtlSubmitAsync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CTL * pCtl, FNVBOXSHGSMICMDCOMPLETION pfnCompletion, void *pvCompletion)
+static int vboxCmdVbvaCtlSubmitAsync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_HOST *pCtl,
+                                     FNVBOXSHGSMICMDCOMPLETION pfnCompletion, void RT_UNTRUSTED_VOLATILE_HOST *pvCompletion)
 {
     const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHdr = VBoxSHGSMICommandPrepAsynch(&pHGSMICtx->heapCtx, pCtl, pfnCompletion,
                                                                                           pvCompletion, VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ);
@@ -1311,9 +1312,11 @@ int VBoxCmdVbvaConDisconnect(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_
     return vboxCmdVbvaConDisconnect(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, u32ClientID);
 }
 
-VBOXCMDVBVA_CRCMD_CMD* vboxCmdVbvaConCmdAlloc(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t cbCmd)
+static VBOXCMDVBVA_CRCMD_CMD RT_UNTRUSTED_VOLATILE_HOST *vboxCmdVbvaConCmdAlloc(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, uint32_t cbCmd)
 {
-    VBOXCMDVBVA_CTL_3DCTL_CMD *pCmd = (VBOXCMDVBVA_CTL_3DCTL_CMD*)vboxCmdVbvaCtlCreate(pHGSMICtx, sizeof (VBOXCMDVBVA_CTL_3DCTL_CMD) + cbCmd);
+    VBOXCMDVBVA_CTL_3DCTL_CMD RT_UNTRUSTED_VOLATILE_HOST *pCmd =
+        (VBOXCMDVBVA_CTL_3DCTL_CMD RT_UNTRUSTED_VOLATILE_HOST *)vboxCmdVbvaCtlCreate(pHGSMICtx,
+                                                                                     sizeof(VBOXCMDVBVA_CTL_3DCTL_CMD) + cbCmd);
     if (!pCmd)
     {
         WARN(("vboxCmdVbvaCtlCreate failed"));
@@ -1329,33 +1332,34 @@ VBOXCMDVBVA_CRCMD_CMD* vboxCmdVbvaConCmdAlloc(PHGSMIGUESTCOMMANDCONTEXT pHGSMICt
     pCmd->Cmd.Cmd.u.i8Result = -1;
     pCmd->Cmd.Cmd.u2.u32FenceID = 0;
 
-    return (VBOXCMDVBVA_CRCMD_CMD*)(pCmd+1);
+    return (VBOXCMDVBVA_CRCMD_CMD RT_UNTRUSTED_VOLATILE_HOST *)(pCmd + 1);
 }
 
-void vboxCmdVbvaConCmdFree(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CRCMD_CMD *pCmd)
+void vboxCmdVbvaConCmdFree(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CRCMD_CMD RT_UNTRUSTED_VOLATILE_HOST *pCmd)
 {
     VBOXCMDVBVA_CTL_3DCTL_CMD RT_UNTRUSTED_VOLATILE_HOST *pHdr = ((VBOXCMDVBVA_CTL_3DCTL_CMD RT_UNTRUSTED_VOLATILE_HOST *)pCmd) - 1;
     vboxCmdVbvaCtlFree(pHGSMICtx, &pHdr->Hdr);
 }
 
-int vboxCmdVbvaConSubmitAsync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CRCMD_CMD* pCmd, FNVBOXSHGSMICMDCOMPLETION pfnCompletion, void *pvCompletion)
+int vboxCmdVbvaConSubmitAsync(PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx, VBOXCMDVBVA_CRCMD_CMD RT_UNTRUSTED_VOLATILE_HOST *pCmd,
+                              FNVBOXSHGSMICMDCOMPLETION pfnCompletion, void RT_UNTRUSTED_VOLATILE_HOST *pvCompletion)
 {
-    VBOXCMDVBVA_CTL_3DCTL_CMD *pHdr = ((VBOXCMDVBVA_CTL_3DCTL_CMD*)pCmd)-1;
+    VBOXCMDVBVA_CTL_3DCTL_CMD RT_UNTRUSTED_VOLATILE_HOST *pHdr = ((VBOXCMDVBVA_CTL_3DCTL_CMD RT_UNTRUSTED_VOLATILE_HOST *)pCmd)-1;
     return vboxCmdVbvaCtlSubmitAsync(pHGSMICtx, &pHdr->Hdr, pfnCompletion, pvCompletion);
 }
 
-VBOXCMDVBVA_CRCMD_CMD* VBoxCmdVbvaConCmdAlloc(PVBOXMP_DEVEXT pDevExt, uint32_t cbCmd)
+VBOXCMDVBVA_CRCMD_CMD RT_UNTRUSTED_VOLATILE_HOST *VBoxCmdVbvaConCmdAlloc(PVBOXMP_DEVEXT pDevExt, uint32_t cbCmd)
 {
     return vboxCmdVbvaConCmdAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, cbCmd);
 }
 
-void VBoxCmdVbvaConCmdFree(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA_CRCMD_CMD *pCmd)
+void VBoxCmdVbvaConCmdFree(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA_CRCMD_CMD RT_UNTRUSTED_VOLATILE_HOST *pCmd)
 {
     vboxCmdVbvaConCmdFree(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pCmd);
 }
 
-int VBoxCmdVbvaConCmdSubmitAsync(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA_CRCMD_CMD* pCmd,
-                                 PFNVBOXSHGSMICMDCOMPLETION pfnCompletion, void *pvCompletion)
+int VBoxCmdVbvaConCmdSubmitAsync(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA_CRCMD_CMD RT_UNTRUSTED_VOLATILE_HOST *pCmd,
+                                 PFNVBOXSHGSMICMDCOMPLETION pfnCompletion, void RT_UNTRUSTED_VOLATILE_HOST *pvCompletion)
 {
     return vboxCmdVbvaConSubmitAsync(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, pCmd, pfnCompletion, pvCompletion);
 }

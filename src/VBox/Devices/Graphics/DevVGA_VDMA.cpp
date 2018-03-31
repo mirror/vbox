@@ -220,7 +220,8 @@ static int  vdmaVBVANotifyDisable(PVGASTATE pVGAState);
 static void VBoxVBVAExHPDataCompleteCmd(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint32_t cbCmd);
 static void VBoxVBVAExHPDataCompleteCtl(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVAEXHOSTCTL *pCtl, int rc);
 static int  VBoxVDMAThreadEventNotify(PVBOXVDMATHREAD pThread);
-static int  vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, const VBOXVDMACMD_DMA_BPB_TRANSFER *pTransfer, uint32_t cbBuffer);
+static int  vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, VBOXVDMACMD_DMA_BPB_TRANSFER RT_UNTRUSTED_VOLATILE_GUEST *pTransfer,
+                                       uint32_t cbBuffer);
 static int  vdmaVBVACtlSubmitSync(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL *pCtl, VBVAEXHOSTCTL_SOURCE enmSource);
 static DECLCALLBACK(void) vdmaVBVACtlSubmitSyncCompletion(VBVAEXHOSTCONTEXT *pVbva, struct VBVAEXHOSTCTL *pCtl,
                                                           int rc, void *pvContext);
@@ -2433,7 +2434,7 @@ static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_
         {
             case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
             {
-                PVBOXVDMACMD_CHROMIUM_CMD pCrCmd = VBOXVDMACMD_BODY(pDmaCmd, VBOXVDMACMD_CHROMIUM_CMD);
+                VBOXVDMACMD_CHROMIUM_CMD RT_UNTRUSTED_VOLATILE_GUEST *pCrCmd = VBOXVDMACMD_BODY(pDmaCmd, VBOXVDMACMD_CHROMIUM_CMD);
                 AssertReturn(cbBody >= sizeof(*pCrCmd), VERR_INVALID_PARAMETER);
 
                 PVGASTATE pVGAState = pVdma->pVGAState;
@@ -2453,10 +2454,11 @@ static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_
 
             case VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER:
             {
-                PVBOXVDMACMD_DMA_BPB_TRANSFER pTransfer = VBOXVDMACMD_BODY(pDmaCmd, VBOXVDMACMD_DMA_BPB_TRANSFER);
+                VBOXVDMACMD_DMA_BPB_TRANSFER RT_UNTRUSTED_VOLATILE_GUEST *pTransfer
+                    = VBOXVDMACMD_BODY(pDmaCmd, VBOXVDMACMD_DMA_BPB_TRANSFER);
                 AssertReturn(cbBody >= sizeof(*pTransfer), VERR_INVALID_PARAMETER);
 
-                rc = vboxVDMACmdExecBpbTransfer(pVdma, pTransfer, sizeof (*pTransfer));
+                rc = vboxVDMACmdExecBpbTransfer(pVdma, pTransfer, sizeof(*pTransfer));
                 AssertRC(rc);
                 if (RT_SUCCESS(rc))
                 {
@@ -2615,14 +2617,16 @@ static void vboxVDMARectlUnite(VBOXVDMA_RECTL * pRectl1, const VBOXVDMA_RECTL * 
  *                          volatile!
  * @param   cbBuffer        Number of bytes accessible at @a pBtl.
  */
-static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESENT_BLT pBlt, uint32_t cbBuffer)
+static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const VBOXVDMACMD_DMA_PRESENT_BLT RT_UNTRUSTED_VOLATILE_GUEST *pBlt,
+                              uint32_t cbBuffer)
 {
     /*
      * Validate and make a local copy of the blt command up to the rectangle array.
      */
     AssertReturn(cbBuffer >= RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects), VERR_INVALID_PARAMETER);
     VBOXVDMACMD_DMA_PRESENT_BLT BltSafe;
-    memcpy(&BltSafe, pBlt, RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects));
+    memcpy(&BltSafe, (void const *)pBlt, RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects));
+    ASMCompilerBarrier();
 
     AssertReturn(BltSafe.cDstSubRects < _8M, VERR_INVALID_PARAMETER);
     uint32_t const cbBlt = RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects[BltSafe.cDstSubRects]);
@@ -2643,7 +2647,13 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
     {
         for (uint32_t i = 0; i < BltSafe.cDstSubRects; ++i)
         {
-            VBOXVDMA_RECTL dstSubRectl = pBlt->aDstSubRects[i];
+            VBOXVDMA_RECTL dstSubRectl;
+            dstSubRectl.left   = pBlt->aDstSubRects[i].left;
+            dstSubRectl.top    = pBlt->aDstSubRects[i].top;
+            dstSubRectl.width  = pBlt->aDstSubRects[i].width;
+            dstSubRectl.height = pBlt->aDstSubRects[i].height;
+            ASMCompilerBarrier();
+
             VBOXVDMA_RECTL srcSubRectl = dstSubRectl;
 
             dstSubRectl.left += BltSafe.dstRectl.left;
@@ -2684,14 +2694,16 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
  *                          volatile!
  * @param   cbBuffer        Number of bytes accessible at @a pTransfer.
  */
-static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, const VBOXVDMACMD_DMA_BPB_TRANSFER *pTransfer, uint32_t cbBuffer)
+static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, VBOXVDMACMD_DMA_BPB_TRANSFER RT_UNTRUSTED_VOLATILE_GUEST *pTransfer,
+                                      uint32_t cbBuffer)
 {
     /*
      * Make a copy of the command (it's volatile).
      */
     AssertReturn(cbBuffer >= sizeof(*pTransfer), VERR_INVALID_PARAMETER);
-    VBOXVDMACMD_DMA_BPB_TRANSFER const TransferSafeCopy = *pTransfer;
-    pTransfer = &TransferSafeCopy;
+    VBOXVDMACMD_DMA_BPB_TRANSFER TransferSafeCopy;
+    memcpy(&TransferSafeCopy, (void const *)pTransfer, sizeof(TransferSafeCopy));
+    ASMCompilerBarrier();
 
     PVGASTATE   pVGAState    = pVdma->pVGAState;
     PPDMDEVINS  pDevIns      = pVGAState->pDevInsR3;
@@ -2716,25 +2728,6 @@ static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, const VBOXVDMACMD_DMA
      */
     uint32_t    cbTransfered = 0;
     int         rc           = VINF_SUCCESS;
-
-    if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_SRC_VRAMOFFSET)
-    {
-        if (RT_LIKELY(   pTransfer->cbTransferSize <= pVGAState->vram_size
-                      && pTransfer->Src.offVramBuf <= pVGAState->vram_size - pTransfer->cbTransferSize))
-        { /* likely */ }
-        else
-            return VERR_INVALID_PARAMETER;
-    }
-
-    if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_DST_VRAMOFFSET)
-    {
-        if (RT_LIKELY(   pTransfer->cbTransferSize <= pVGAState->vram_size
-                      && pTransfer->Dst.offVramBuf <= pVGAState->vram_size - pTransfer->cbTransferSize))
-        { /* likely */ }
-        else
-            return VERR_INVALID_PARAMETER;
-    }
-
     do
     {
         uint32_t cbSubTransfer = cbTransfer;
@@ -2838,7 +2831,7 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pbBuffer, uint32_
 
             case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
             {
-                const PVBOXVDMACMD_DMA_PRESENT_BLT pBlt = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_PRESENT_BLT);
+                VBOXVDMACMD_DMA_PRESENT_BLT RT_UNTRUSTED_VOLATILE_GUEST *pBlt = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_PRESENT_BLT);
                 cbProcessed = vboxVDMACmdExecBlt(pVdma, pBlt, cbBuffer - VBOXVDMACMD_HEADER_SIZE());
                 Assert(cbProcessed >= 0);
                 break;
@@ -2846,7 +2839,8 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pbBuffer, uint32_
 
             case VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER:
             {
-                const PVBOXVDMACMD_DMA_BPB_TRANSFER pTransfer = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_BPB_TRANSFER);
+                VBOXVDMACMD_DMA_BPB_TRANSFER RT_UNTRUSTED_VOLATILE_GUEST *pTransfer
+                    = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_BPB_TRANSFER);
                 cbProcessed = vboxVDMACmdExecBpbTransfer(pVdma, pTransfer, cbBuffer - VBOXVDMACMD_HEADER_SIZE());
                 Assert(cbProcessed >= 0);
                 break;

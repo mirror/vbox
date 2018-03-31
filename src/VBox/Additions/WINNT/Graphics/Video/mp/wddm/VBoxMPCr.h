@@ -63,22 +63,26 @@ typedef struct VBOXMP_CRSHGSMITRANSPORT
  * */
 typedef DECLCALLBACK(void) FNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc,
                                                                                     void RT_UNTRUSTED_VOLATILE_HOST *pvRx,
-                                                                                    uint32_t cbRx, void *pvCtx);
+                                                                                    uint32_t cbRx,
+                                                                                    void RT_UNTRUSTED_VOLATILE_HOST *pvCtx);
 typedef FNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION *PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION;
 
-typedef DECLCALLBACK(void) FNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc, void *pvCtx);
+typedef DECLCALLBACK(void) FNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc,
+                                                                                void RT_UNTRUSTED_VOLATILE_HOST *pvCtx);
 typedef FNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION *PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION;
 
 int VBoxMpCrShgsmiTransportCreate(PVBOXMP_CRSHGSMITRANSPORT pCon, PVBOXMP_DEVEXT pDevExt);
 void VBoxMpCrShgsmiTransportTerm(PVBOXMP_CRSHGSMITRANSPORT pCon);
-void* VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, uint32_t u32ClientID, void *pvBuffer, uint32_t cbBuffer,
+void RT_UNTRUSTED_VOLATILE_HOST *VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT pCon,
+        uint32_t u32ClientID, void *pvBuffer, uint32_t cbBuffer,
         PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION pfnCompletion, uint32_t cbContextData);
-void* VBoxMpCrShgsmiTransportCmdCreateWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, uint32_t u32ClientID, void *pvBuffer, uint32_t cbBuffer,
+void RT_UNTRUSTED_VOLATILE_HOST *VBoxMpCrShgsmiTransportCmdCreateWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon,
+        uint32_t u32ClientID, void *pvBuffer, uint32_t cbBuffer,
         PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION pfnCompletion, uint32_t cbContextData);
-int VBoxMpCrShgsmiTransportCmdSubmitWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void *pvContext);
-int VBoxMpCrShgsmiTransportCmdSubmitWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void *pvContext);
-void VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void *pvContext);
-void VBoxMpCrShgsmiTransportCmdTermWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void *pvContext);
+int VBoxMpCrShgsmiTransportCmdSubmitWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void RT_UNTRUSTED_VOLATILE_HOST *pvContext);
+int VBoxMpCrShgsmiTransportCmdSubmitWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void RT_UNTRUSTED_VOLATILE_HOST *pvContext);
+void VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void RT_UNTRUSTED_VOLATILE_HOST *pvContext);
+void VBoxMpCrShgsmiTransportCmdTermWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, void RT_UNTRUSTED_VOLATILE_HOST *pvContext);
 
 void RT_UNTRUSTED_VOLATILE_HOST *VBoxMpCrShgsmiTransportBufAlloc(PVBOXMP_CRSHGSMITRANSPORT pCon, uint32_t cbBuffer);
 void VBoxMpCrShgsmiTransportBufFree(PVBOXMP_CRSHGSMITRANSPORT pCon, void RT_UNTRUSTED_VOLATILE_HOST *pvBuffer);

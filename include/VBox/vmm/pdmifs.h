@@ -858,7 +858,9 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   pCmd                Video HW Acceleration Command to be processed.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiCommandProcess,(PPDMIDISPLAYCONNECTOR pInterface, struct VBOXVDMACMD_CHROMIUM_CMD* pCmd, uint32_t cbCmd));
+    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiCommandProcess,(PPDMIDISPLAYCONNECTOR pInterface,
+                                                         struct VBOXVDMACMD_CHROMIUM_CMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
+                                                         uint32_t cbCmd));
 
     /**
      * Process the guest chromium control command.
@@ -867,7 +869,9 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   pCmd                Video HW Acceleration Command to be processed.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiControlProcess,(PPDMIDISPLAYCONNECTOR pInterface, struct VBOXVDMACMD_CHROMIUM_CTL* pCtl, uint32_t cbCtl));
+    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiControlProcess,(PPDMIDISPLAYCONNECTOR pInterface,
+                                                         struct VBOXVDMACMD_CHROMIUM_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl,
+                                                         uint32_t cbCtl));
 
     /**
      * Process the guest chromium control command.
@@ -879,7 +883,8 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   pvCompletion        Undocumented!
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCrHgcmCtlSubmit,(PPDMIDISPLAYCONNECTOR pInterface, struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd,
+    DECLR3CALLBACKMEMBER(int, pfnCrHgcmCtlSubmit,(PPDMIDISPLAYCONNECTOR pInterface,
+                                                  struct VBOXCRCMDCTL RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd,
                                                   PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion));
 
     /**
@@ -945,7 +950,8 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @thread  if render thread mode is on (fRenderThreadMode that was passed to pfnVBVAEnable is TRUE) - the render thread pfnVBVAEnable was called in,
      *          otherwise - the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateEnd,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, int32_t x, int32_t y, uint32_t cx, uint32_t cy));
+    DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateEnd,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, int32_t x, int32_t y,
+                                                 uint32_t cx, uint32_t cy));
 
     /**
      * Resize the display.
@@ -969,7 +975,8 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @thread  if render thread mode is on (fRenderThreadMode that was passed to pfnVBVAEnable is TRUE) - the render thread pfnVBVAEnable was called in,
      *          otherwise - the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVBVAResize,(PPDMIDISPLAYCONNECTOR pInterface, PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, void *pvVRAM, bool fResetInputMapping));
+    DECLR3CALLBACKMEMBER(int, pfnVBVAResize,(PPDMIDISPLAYCONNECTOR pInterface, PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen,
+                                             void *pvVRAM, bool fResetInputMapping));
 
     /**
      * Update the pointer shape.

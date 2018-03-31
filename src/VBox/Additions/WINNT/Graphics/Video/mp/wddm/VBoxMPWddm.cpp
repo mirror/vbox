@@ -3972,7 +3972,8 @@ DxgkDdiBuildPagingBufferLegacy(
 
                     pHdr->enmType = VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER;
                     pHdr->u32CmdSpecific = 0;
-                    VBOXVDMACMD_DMA_BPB_TRANSFER *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_DMA_BPB_TRANSFER);
+                    VBOXVDMACMD_DMA_BPB_TRANSFER RT_UNTRUSTED_VOLATILE_HOST *pBody
+                        = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_DMA_BPB_TRANSFER);
 //                    pBody->cbTransferSize = (uint32_t)pBuildPagingBuffer->Transfer.TransferSize;
                     pBody->fFlags = 0;
                     SIZE_T cSrcPages = (cbTransferSize + 0xfff ) >> 12;

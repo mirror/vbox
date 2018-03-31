@@ -125,7 +125,8 @@ void VBoxSHGSMICommandCancelSynch(PVBOXSHGSMI pHeap, const VBOXSHGSMIHEADER RT_U
 
 const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *
 VBoxSHGSMICommandPrepAsynch(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvBuff,
-                            PFNVBOXSHGSMICMDCOMPLETION pfnCompletion, PVOID pvCompletion, uint32_t fFlags)
+                            PFNVBOXSHGSMICMDCOMPLETION pfnCompletion,
+                            void RT_UNTRUSTED_VOLATILE_HOST *pvCompletion, uint32_t fFlags)
 {
     fFlags &= ~VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ;
     VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *pHeader = VBoxSHGSMIBufferHeader(pvBuff);

@@ -44,7 +44,8 @@ const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *
     VBoxSHGSMICommandPrepSynch(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvCmd);
 const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *
     VBoxSHGSMICommandPrepAsynch(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvBuff,
-                                PFNVBOXSHGSMICMDCOMPLETION pfnCompletion,  PVOID pvCompletion, uint32_t fFlags);
+                                PFNVBOXSHGSMICMDCOMPLETION pfnCompletion, void RT_UNTRUSTED_VOLATILE_HOST *pvCompletion,
+                                uint32_t fFlags);
 const VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_HOST *
     VBoxSHGSMICommandPrepAsynchIrq(PVBOXSHGSMI pHeap, void RT_UNTRUSTED_VOLATILE_HOST *pvBuff,
                                    PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCompletion, PVOID pvCompletion, uint32_t fFlags);
@@ -61,9 +62,9 @@ DECLINLINE(HGSMIOFFSET) VBoxSHGSMICommandOffset(const PVBOXSHGSMI pHeap, const V
 
 /* allows getting VRAM offset of arbitrary pointer within the SHGSMI command
  * if invalid pointer is passed in, behavior is undefined */
-DECLINLINE(HGSMIOFFSET) VBoxSHGSMICommandPtrOffset(const PVBOXSHGSMI pHeap, const void * pvPtr)
+DECLINLINE(HGSMIOFFSET) VBoxSHGSMICommandPtrOffset(const PVBOXSHGSMI pHeap, const void RT_UNTRUSTED_VOLATILE_HOST *pvPtr)
 {
-    return HGSMIPointerToOffset (&pHeap->Heap.area, (const HGSMIBUFFERHEADER *)pvPtr);
+    return HGSMIPointerToOffset(&pHeap->Heap.area, (const HGSMIBUFFERHEADER RT_UNTRUSTED_VOLATILE_HOST *)pvPtr);
 }
 
 int VBoxSHGSMIInit(PVBOXSHGSMI pHeap, void *pvBase, HGSMISIZE cbArea, HGSMIOFFSET offBase, const HGSMIENV *pEnv);

@@ -314,11 +314,11 @@ typedef struct VBOXMP_VDMACR_WRITECOMPLETION
     void *pvBufferToFree;
 } VBOXMP_VDMACR_WRITECOMPLETION, *PVBOXMP_VDMACR_WRITECOMPLETION;
 
-static DECLCALLBACK(void) vboxVdmaCrWriteCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc, void *pvCtx)
+static DECLCALLBACK(void) vboxVdmaCrWriteCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc, void RT_UNTRUSTED_VOLATILE_HOST *pvCtx)
 {
     RT_NOREF(rc);
     PVBOXMP_VDMACR_WRITECOMPLETION pData = (PVBOXMP_VDMACR_WRITECOMPLETION)pvCtx;
-    void* pvBufferToFree = pData->pvBufferToFree;
+    void *pvBufferToFree = pData->pvBufferToFree;
     if (pvBufferToFree)
         VBoxMpCrShgsmiTransportBufFree(pCon, pvBufferToFree);
 
@@ -327,22 +327,24 @@ static DECLCALLBACK(void) vboxVdmaCrWriteCompletion(PVBOXMP_CRSHGSMITRANSPORT pC
 
 typedef struct VBOXMP_VDMACR_WRITEREADCOMPLETION
 {
-    void *pvBufferToFree;
-    void *pvContext;
+    void RT_UNTRUSTED_VOLATILE_HOST *pvBufferToFree;
+    void RT_UNTRUSTED_VOLATILE_HOST *pvContext;
 } VBOXMP_VDMACR_WRITEREADCOMPLETION, *PVBOXMP_VDMACR_WRITEREADCOMPLETION;
 
-void vboxVdmaCrSubmitWriteReadAsyncGenericCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, void *pvCtx)
+void vboxVdmaCrSubmitWriteReadAsyncGenericCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, void RT_UNTRUSTED_VOLATILE_HOST *pvCtx)
 {
-    PVBOXMP_VDMACR_WRITEREADCOMPLETION pData = (PVBOXMP_VDMACR_WRITEREADCOMPLETION)pvCtx;
-    void* pvBufferToFree = pData->pvBufferToFree;
+    VBOXMP_VDMACR_WRITEREADCOMPLETION RT_UNTRUSTED_VOLATILE_HOST *pData
+        = (VBOXMP_VDMACR_WRITEREADCOMPLETION RT_UNTRUSTED_VOLATILE_HOST *)pvCtx;
+    void RT_UNTRUSTED_VOLATILE_HOST *pvBufferToFree = pData->pvBufferToFree;
     if (pvBufferToFree)
         VBoxMpCrShgsmiTransportBufFree(pCon, pvBufferToFree);
 
     VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(pCon, pvCtx);
 }
 
-NTSTATUS vboxVdmaCrSubmitWriteReadAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCrPacker, uint32_t u32CrConClientID,
-                                        PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION pfnCompletion, void *pvCompletion)
+static NTSTATUS vboxVdmaCrSubmitWriteReadAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCrPacker, uint32_t u32CrConClientID,
+                                               PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION pfnCompletion,
+                                               void RT_UNTRUSTED_VOLATILE_HOST *pvCompletion)
 {
     Assert(u32CrConClientID);
     NTSTATUS Status = STATUS_SUCCESS;
@@ -351,20 +353,22 @@ NTSTATUS vboxVdmaCrSubmitWriteReadAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER 
     void * pvBuffer = VBoxMpCrPackerTxBufferComplete(pCrPacker, &cbBuffer, &pvPackBuffer);
     if (pvBuffer)
     {
-        PVBOXMP_VDMACR_WRITEREADCOMPLETION pvCompletionData = (PVBOXMP_VDMACR_WRITEREADCOMPLETION)VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(&pDevExt->CrHgsmiTransport, u32CrConClientID, pvBuffer, cbBuffer,
-                pfnCompletion, sizeof (*pvCompletionData));
-        if (pvCompletionData)
+        VBOXMP_VDMACR_WRITEREADCOMPLETION RT_UNTRUSTED_VOLATILE_HOST *pCompletionData
+            = (VBOXMP_VDMACR_WRITEREADCOMPLETION RT_UNTRUSTED_VOLATILE_HOST  *)
+              VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(&pDevExt->CrHgsmiTransport, u32CrConClientID, pvBuffer, cbBuffer,
+                                                             pfnCompletion, sizeof(*pCompletionData));
+        if (pCompletionData)
         {
-            pvCompletionData->pvBufferToFree = pvPackBuffer;
-            pvCompletionData->pvContext = pvCompletion;
-            int rc = VBoxMpCrShgsmiTransportCmdSubmitWriteReadAsync(&pDevExt->CrHgsmiTransport, pvCompletionData);
+            pCompletionData->pvBufferToFree = pvPackBuffer;
+            pCompletionData->pvContext = pvCompletion;
+            int rc = VBoxMpCrShgsmiTransportCmdSubmitWriteReadAsync(&pDevExt->CrHgsmiTransport, pCompletionData);
             if (RT_SUCCESS(rc))
             {
                 return STATUS_SUCCESS;
             }
             WARN(("VBoxMpCrShgsmiTransportCmdSubmitWriteReadAsync failed, rc %d", rc));
             Status = STATUS_UNSUCCESSFUL;
-            VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(&pDevExt->CrHgsmiTransport, pvCompletionData);
+            VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(&pDevExt->CrHgsmiTransport, pCompletionData);
         }
         else
         {
@@ -385,19 +389,21 @@ NTSTATUS vboxVdmaCrSubmitWriteAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCr
     void * pvBuffer = VBoxMpCrPackerTxBufferComplete(pCrPacker, &cbBuffer, &pvPackBuffer);
     if (pvBuffer)
     {
-        PVBOXMP_VDMACR_WRITECOMPLETION pvCompletionData = (PVBOXMP_VDMACR_WRITECOMPLETION)VBoxMpCrShgsmiTransportCmdCreateWriteAsync(&pDevExt->CrHgsmiTransport, u32CrConClientID, pvBuffer, cbBuffer,
-                vboxVdmaCrWriteCompletion, sizeof (*pvCompletionData));
-        if (pvCompletionData)
+        VBOXMP_VDMACR_WRITECOMPLETION RT_UNTRUSTED_VOLATILE_HOST *pCompletionData
+            = (VBOXMP_VDMACR_WRITECOMPLETION RT_UNTRUSTED_VOLATILE_HOST *)
+              VBoxMpCrShgsmiTransportCmdCreateWriteAsync(&pDevExt->CrHgsmiTransport, u32CrConClientID, pvBuffer, cbBuffer,
+                                                         vboxVdmaCrWriteCompletion, sizeof(*pCompletionData));
+        if (pCompletionData)
         {
-            pvCompletionData->pvBufferToFree = pvPackBuffer;
-            int rc = VBoxMpCrShgsmiTransportCmdSubmitWriteAsync(&pDevExt->CrHgsmiTransport, pvCompletionData);
+            pCompletionData->pvBufferToFree = pvPackBuffer;
+            int rc = VBoxMpCrShgsmiTransportCmdSubmitWriteAsync(&pDevExt->CrHgsmiTransport, pCompletionData);
             if (RT_SUCCESS(rc))
             {
                 return STATUS_SUCCESS;
             }
             WARN(("VBoxMpCrShgsmiTransportCmdSubmitWriteAsync failed, rc %d", rc));
             Status = STATUS_UNSUCCESSFUL;
-            VBoxMpCrShgsmiTransportCmdTermWriteAsync(&pDevExt->CrHgsmiTransport, pvCompletionData);
+            VBoxMpCrShgsmiTransportCmdTermWriteAsync(&pDevExt->CrHgsmiTransport, pCompletionData);
         }
         else
         {
@@ -880,10 +886,12 @@ typedef struct VBOXVDMA_CRRXGENERICSYNC
 
 /** @callback_method_impl{PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION}   */
 static DECLCALLBACK(void) vboxVdmaCrRxGenericSyncCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc,
-                                                            void RT_UNTRUSTED_VOLATILE_HOST *pvRx, uint32_t cbRx, void *pvCtx)
+                                                            void RT_UNTRUSTED_VOLATILE_HOST *pvRx, uint32_t cbRx,
+                                                            void RT_UNTRUSTED_VOLATILE_HOST *pvCtx)
 {
-    PVBOXMP_VDMACR_WRITEREADCOMPLETION pvCompletionData = (PVBOXMP_VDMACR_WRITEREADCOMPLETION)pvCtx;
-    PVBOXVDMA_CRRXGENERICSYNC pData = (PVBOXVDMA_CRRXGENERICSYNC)pvCompletionData->pvContext;
+    VBOXMP_VDMACR_WRITEREADCOMPLETION RT_UNTRUSTED_VOLATILE_HOST *pCompletionData
+        = (VBOXMP_VDMACR_WRITEREADCOMPLETION RT_UNTRUSTED_VOLATILE_HOST *)pvCtx;
+    PVBOXVDMA_CRRXGENERICSYNC pData = (PVBOXVDMA_CRRXGENERICSYNC)pCompletionData->pvContext;
     if (RT_SUCCESS(rc))
     {
         rc = VBoxMpCrCmdRxHandler((CRMessageHeader *)pvRx, cbRx);
