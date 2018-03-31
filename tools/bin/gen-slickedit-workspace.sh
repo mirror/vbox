@@ -1074,11 +1074,11 @@ my_generate_project "Add-Control"   "src/VBox/Additions/common/VBoxControl"   --
 my_generate_project "Add-GuestDrv"  "src/VBox/Additions/common/VBoxGuest"     --begin-incs "include" "src/VBox/Additions/common/VBoxGuest"    --end-includes "src/VBox/Additions/common/VBoxGuest"      "include/VBox/VBoxGuest*.*"
 my_generate_project "Add-Lib"       "src/VBox/Additions/common/VBoxGuest/lib" --begin-incs "include" "src/VBox/Additions/common/VBoxGuest/lib" --end-includes "src/VBox/Additions/common/VBoxGuest/lib" "include/VBox/VBoxGuest/lib/*.*"
 my_generate_project "Add-Service"   "src/VBox/Additions/common/VBoxService"   --begin-incs "include" "src/VBox/Additions/common/VBoxService"  --end-includes "src/VBox/Additions/common/VBoxService"
-my_generate_project "Add-VBoxVideo" "src/VBox/Additions/common/VBoxVideo"   --begin-incs "include" "src/VBox/Additions/common/VBoxService"  --end-includes "src/VBox/Additions/common/VBoxService"
+my_generate_project "Add-VBoxVideo" "src/VBox/Additions/common/VBoxVideo"     --begin-incs "include" "src/VBox/Additions/common/VBoxVideo"    --end-includes "src/VBox/Additions/common/VBoxVideo"
 if test -z "$MY_OPT_MINIMAL"; then
     my_generate_project "Add-crOpenGL"  "src/VBox/Additions/common/crOpenGL"    --begin-incs "include" "src/VBox/Additions/common/crOpenGL"     --end-includes "src/VBox/Additions/common/crOpenGL"
-    my_generate_project "Add-pam"       "src/VBox/Additions/common/pam"         --begin-incs "include" "src/VBox/Additions/common/crOpenGL"     --end-includes "src/VBox/Additions/common/pam"
-    my_generate_project "Add-cmn-test"  "src/VBox/Additions/common/testcase"    --begin-incs "include" "src/VBox/Additions/WINNT/VBoxGINA"      --end-includes "src/VBox/Additions/common/testcase"
+    my_generate_project "Add-pam"       "src/VBox/Additions/common/pam"         --begin-incs "include" "src/VBox/Additions/common/pam"          --end-includes "src/VBox/Additions/common/pam"
+    my_generate_project "Add-cmn-test"  "src/VBox/Additions/common/testcase"    --begin-incs "include" "src/VBox/Additions/common/testcase"     --end-includes "src/VBox/Additions/common/testcase"
     my_generate_project "Add-CredProv"  "src/VBox/Additions/WINNT/VBoxCredProv" --begin-incs "include" "src/VBox/Additions/WINNT/VBoxCredProv"  --end-includes "src/VBox/Additions/WINNT/VBoxCredProv"
     my_generate_project "Add-GINA"      "src/VBox/Additions/WINNT/VBoxGINA"     --begin-incs "include" "src/VBox/Additions/WINNT/VBoxGINA"      --end-includes "src/VBox/Additions/WINNT/VBoxGINA"
 fi
