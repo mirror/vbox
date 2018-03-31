@@ -2558,7 +2558,7 @@ static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma, const VBOXVIDEOOFFSET 
         for (uint32_t i = 0; ; ++i)
         {
             if (   cbDstLine <= cbVRamSize
-                && (uintptr_t)pbSrcStart - (uintptr_t)pbRam <= cbVRamSize - cbDstLine
+                && (uintptr_t)pbDstStart - (uintptr_t)pbRam <= cbVRamSize - cbDstLine
                 && (uintptr_t)pbSrcStart - (uintptr_t)pbRam <= cbVRamSize - cbDstLine)
                 memcpy(pbDstStart, pbSrcStart, cbDstLine);
             else
@@ -2714,6 +2714,25 @@ static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, const VBOXVDMACMD_DMA
      */
     uint32_t    cbTransfered = 0;
     int         rc           = VINF_SUCCESS;
+
+    if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_SRC_VRAMOFFSET)
+    {
+        if (RT_LIKELY(   pTransfer->cbTransferSize <= pVGAState->vram_size
+                      && pTransfer->Src.offVramBuf <= pVGAState->vram_size - pTransfer->cbTransferSize))
+        { /* likely */ }
+        else
+            return VERR_INVALID_PARAMETER;
+    }
+
+    if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_DST_VRAMOFFSET)
+    {
+        if (RT_LIKELY(   pTransfer->cbTransferSize <= pVGAState->vram_size
+                      && pTransfer->Dst.offVramBuf <= pVGAState->vram_size - pTransfer->cbTransferSize))
+        { /* likely */ }
+        else
+            return VERR_INVALID_PARAMETER;
+    }
+
     do
     {
         uint32_t cbSubTransfer = cbTransfer;
