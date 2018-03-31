@@ -1410,22 +1410,22 @@ public:
     static void vhwaSaveExecVoid(struct SSMHANDLE * pSSM);
     static int vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version);
 
-    int vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE *pCmd);
-    int vhwaSurfaceCreate(struct VBOXVHWACMD_SURF_CREATE *pCmd);
+    int vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaSurfaceCreate(struct VBOXVHWACMD_SURF_CREATE RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
 #ifdef VBOX_WITH_WDDM
-    int vhwaSurfaceGetInfo(struct VBOXVHWACMD_SURF_GETINFO *pCmd);
+    int vhwaSurfaceGetInfo(struct VBOXVHWACMD_SURF_GETINFO RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
 #endif
-    int vhwaSurfaceDestroy(struct VBOXVHWACMD_SURF_DESTROY *pCmd);
-    int vhwaSurfaceLock(struct VBOXVHWACMD_SURF_LOCK *pCmd);
-    int vhwaSurfaceUnlock(struct VBOXVHWACMD_SURF_UNLOCK *pCmd);
-    int vhwaSurfaceBlt(struct VBOXVHWACMD_SURF_BLT *pCmd);
-    int vhwaSurfaceFlip(struct VBOXVHWACMD_SURF_FLIP *pCmd);
-    int vhwaSurfaceColorFill(struct VBOXVHWACMD_SURF_COLORFILL *pCmd);
-    int vhwaSurfaceOverlayUpdate(struct VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmf);
-    int vhwaSurfaceOverlaySetPosition(struct VBOXVHWACMD_SURF_OVERLAY_SETPOSITION *pCmd);
-    int vhwaSurfaceColorkeySet(struct VBOXVHWACMD_SURF_COLORKEY_SET *pCmd);
-    int vhwaQueryInfo1(struct VBOXVHWACMD_QUERYINFO1 *pCmd);
-    int vhwaQueryInfo2(struct VBOXVHWACMD_QUERYINFO2 *pCmd);
+    int vhwaSurfaceDestroy(struct VBOXVHWACMD_SURF_DESTROY RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaSurfaceLock(struct VBOXVHWACMD_SURF_LOCK RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaSurfaceUnlock(struct VBOXVHWACMD_SURF_UNLOCK RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaSurfaceBlt(struct VBOXVHWACMD_SURF_BLT RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaSurfaceFlip(struct VBOXVHWACMD_SURF_FLIP RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaSurfaceColorFill(struct VBOXVHWACMD_SURF_COLORFILL RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaSurfaceOverlayUpdate(struct VBOXVHWACMD_SURF_OVERLAY_UPDATE RT_UNTRUSTED_VOLATILE_GUEST *pCmf);
+    int vhwaSurfaceOverlaySetPosition(struct VBOXVHWACMD_SURF_OVERLAY_SETPOSITION RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaSurfaceColorkeySet(struct VBOXVHWACMD_SURF_COLORKEY_SET RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaQueryInfo1(struct VBOXVHWACMD_QUERYINFO1 RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
+    int vhwaQueryInfo2(struct VBOXVHWACMD_QUERYINFO2 RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
     int vhwaConstruct(struct VBOXVHWACMD_HH_CONSTRUCT *pCmd);
 
     void *vramBase() { return mpvVRAM; }
@@ -1529,7 +1529,8 @@ private:
     static int vhwaLoadOverlayData(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version);
     static int vhwaLoadVHWAEnable(VHWACommandList * pCmdList);
 
-    void vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd);
+    void vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf,
+                                    struct VBOXVHWACMD_SURF_OVERLAY_UPDATE RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
 #endif
 
     VBoxVHWADisplay mDisplay;
@@ -1753,7 +1754,7 @@ public:
     int vhwaLoadExec (struct SSMHANDLE * pSSM, uint32_t u32Version);
     void vhwaSaveExec (struct SSMHANDLE * pSSM);
 private:
-    int vhwaSurfaceUnlock (struct VBOXVHWACMD_SURF_UNLOCK *pCmd);
+    int vhwaSurfaceUnlock (struct VBOXVHWACMD_SURF_UNLOCK RT_UNTRUSTED_VOLATILE_GUEST *pCmd);
 
     void repaintMain();
     void repaintOverlay()
