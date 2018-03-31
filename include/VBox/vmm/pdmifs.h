@@ -735,7 +735,7 @@ struct VBOXVDMACMD_CHROMIUM_CTL; /* <- chromium [hgsmi] command */
 /** Pointer to a display connector interface. */
 typedef struct PDMIDISPLAYCONNECTOR *PPDMIDISPLAYCONNECTOR;
 struct VBOXCRCMDCTL;
-typedef DECLCALLBACK(void) FNCRCTLCOMPLETION(struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd, int rc, void *pvCompletion);
+typedef DECLCALLBACK(void) FNCRCTLCOMPLETION(struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd, int rc,  void *pvCompletion);
 typedef FNCRCTLCOMPLETION *PFNCRCTLCOMPLETION;
 
 /**
@@ -883,8 +883,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   pvCompletion        Undocumented!
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCrHgcmCtlSubmit,(PPDMIDISPLAYCONNECTOR pInterface,
-                                                  struct VBOXCRCMDCTL RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd,
+    DECLR3CALLBACKMEMBER(int, pfnCrHgcmCtlSubmit,(PPDMIDISPLAYCONNECTOR pInterface, struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd,
                                                   PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion));
 
     /**

@@ -794,11 +794,11 @@ int Display::i_registerSSM(PUVM pUVM)
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(void) Display::i_displayCrCmdFree(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd, int rc, void *pvCompletion)
+DECLCALLBACK(void) Display::i_displayCrCmdFree(struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd, int rc, void *pvCompletion)
 {
     RT_NOREF(pCmd, cbCmd, rc);
     Assert(pvCompletion);
-    RTMemFree(pvCompletion);
+    RTMemFree((void *)pvCompletion);
 }
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
@@ -3582,12 +3582,12 @@ void Display::i_handleCrHgsmiControlCompletion(int32_t result, uint32_t u32Funct
     mpDrv->pVBVACallbacks->pfnCrHgsmiControlCompleteAsync(mpDrv->pVBVACallbacks, pCtl, result);
 }
 
-void Display::i_handleCrHgsmiCommandProcess(PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd)
+void Display::i_handleCrHgsmiCommandProcess(VBOXVDMACMD_CHROMIUM_CMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd)
 {
     int rc = VERR_NOT_SUPPORTED;
     VBOXHGCMSVCPARM parm;
     parm.type = VBOX_HGCM_SVC_PARM_PTR;
-    parm.u.pointer.addr = pCmd;
+    parm.u.pointer.addr = (void *)pCmd;
     parm.u.pointer.size = cbCmd;
 
     if (mhCrOglSvc)
@@ -3610,12 +3610,12 @@ void Display::i_handleCrHgsmiCommandProcess(PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint
     i_handleCrHgsmiCommandCompletion(rc, SHCRGL_HOST_FN_CRHGSMI_CMD, &parm);
 }
 
-void Display::i_handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32_t cbCtl)
+void Display::i_handleCrHgsmiControlProcess(VBOXVDMACMD_CHROMIUM_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl, uint32_t cbCtl)
 {
     int rc = VERR_NOT_SUPPORTED;
     VBOXHGCMSVCPARM parm;
     parm.type = VBOX_HGCM_SVC_PARM_PTR;
-    parm.u.pointer.addr = pCtl;
+    parm.u.pointer.addr = (void *)pCtl;
     parm.u.pointer.size = cbCtl;
 
     if (mhCrOglSvc)
@@ -3660,7 +3660,8 @@ void Display::i_handleCrHgsmiControlProcess(PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint
     i_handleCrHgsmiControlCompletion(rc, SHCRGL_HOST_FN_CRHGSMI_CTL, &parm);
 }
 
-DECLCALLBACK(void) Display::i_displayCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd,
+DECLCALLBACK(void) Display::i_displayCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface,
+                                                           VBOXVDMACMD_CHROMIUM_CMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
                                                            uint32_t cbCmd)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
@@ -3668,7 +3669,8 @@ DECLCALLBACK(void) Display::i_displayCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR
     pDrv->pDisplay->i_handleCrHgsmiCommandProcess(pCmd, cbCmd);
 }
 
-DECLCALLBACK(void) Display::i_displayCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCmd,
+DECLCALLBACK(void) Display::i_displayCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface,
+                                                           VBOXVDMACMD_CHROMIUM_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
                                                            uint32_t cbCmd)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
@@ -3703,9 +3705,8 @@ DECLCALLBACK(void)  Display::i_displayCrHgcmCtlSubmitCompletion(int32_t result, 
         ((PFNCRCTLCOMPLETION)pCmd->u.pfnInternal)(pCmd, pParam->u.pointer.size, result, pvContext);
 }
 
-int  Display::i_handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
-                                    PFNCRCTLCOMPLETION pfnCompletion,
-                                    void *pvCompletion)
+int  Display::i_handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd,
+                                    PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion)
 {
     VMMDev *pVMMDev = mParent ? mParent->i_getVMMDev() : NULL;
     if (!pVMMDev)
@@ -3717,7 +3718,7 @@ int  Display::i_handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
     Assert(mhCrOglSvc);
     VBOXHGCMSVCPARM parm;
     parm.type = VBOX_HGCM_SVC_PARM_PTR;
-    parm.u.pointer.addr = pCmd;
+    parm.u.pointer.addr = (void *)pCmd;
     parm.u.pointer.size = cbCmd;
 
     pCmd->u.pfnInternal = (PFNRT)pfnCompletion;
@@ -3729,10 +3730,8 @@ int  Display::i_handleCrHgcmCtlSubmit(struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
     return rc;
 }
 
-DECLCALLBACK(int)  Display::i_displayCrHgcmCtlSubmit(PPDMIDISPLAYCONNECTOR pInterface,
-                                                     struct VBOXCRCMDCTL* pCmd, uint32_t cbCmd,
-                                                     PFNCRCTLCOMPLETION pfnCompletion,
-                                                     void *pvCompletion)
+DECLCALLBACK(int)  Display::i_displayCrHgcmCtlSubmit(PPDMIDISPLAYCONNECTOR pInterface, struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd,
+                                                     PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
