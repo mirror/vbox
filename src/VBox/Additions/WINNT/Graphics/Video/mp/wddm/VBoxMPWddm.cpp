@@ -3962,7 +3962,7 @@ DxgkDdiBuildPagingBufferLegacy(
             {
                 SIZE_T cbTransfered = 0;
                 SIZE_T cbTransferSize = pBuildPagingBuffer->Transfer.TransferSize;
-                PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
+                VBOXVDMACMD RT_UNTRUSTED_VOLATILE_HOST *pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
                 do
                 {
                     // vboxVdmaCBufDrCreate zero initializes the pDr

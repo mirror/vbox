@@ -1468,7 +1468,7 @@ typedef uint64_t VBOXVDMASURFHANDLE;
 /* command buffer follows the VBOXVDMACBUF_DR in VRAM, VBOXVDMACBUF_DR::phBuf is ignored */
 #define VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR  0x00000002
 
-/*
+/**
  * We can not submit the DMA command via VRAM since we do not have control over
  * DMA command buffer [de]allocation, i.e. we only control the buffer contents.
  * In other words the system may call one of our callbacks to fill a command buffer
@@ -1493,22 +1493,24 @@ typedef struct VBOXVDMACBUF_DR
     uint64_t aGuestData[7];
 } VBOXVDMACBUF_DR, *PVBOXVDMACBUF_DR;
 
-#define VBOXVDMACBUF_DR_TAIL(_pCmd, _t) ( (_t*)(((uint8_t*)(_pCmd)) + sizeof (VBOXVDMACBUF_DR)) )
-#define VBOXVDMACBUF_DR_FROM_TAIL(_pCmd) ( (VBOXVDMACBUF_DR*)(((uint8_t*)(_pCmd)) - sizeof (VBOXVDMACBUF_DR)) )
+#define VBOXVDMACBUF_DR_TAIL(a_pCmd, a_TailType)       \
+    ( (a_TailType      RT_UNTRUSTED_VOLATILE_HSTGST *)( ((uint8_t*)(a_pCmd)) + sizeof(VBOXVDMACBUF_DR)) )
+#define VBOXVDMACBUF_DR_FROM_TAIL(a_pCmd) \
+    ( (VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_HSTGST *)( ((uint8_t*)(a_pCmd)) - sizeof(VBOXVDMACBUF_DR)) )
 
 typedef struct VBOXVDMACMD
 {
     VBOXVDMACMD_TYPE enmType;
     uint32_t u32CmdSpecific;
-} VBOXVDMACMD, *PVBOXVDMACMD;
+} VBOXVDMACMD;
 
-#define VBOXVDMACMD_HEADER_SIZE() sizeof (VBOXVDMACMD)
-#define VBOXVDMACMD_SIZE_FROMBODYSIZE(_s) (VBOXVDMACMD_HEADER_SIZE() + (_s))
-#define VBOXVDMACMD_SIZE(_t) (VBOXVDMACMD_SIZE_FROMBODYSIZE(sizeof (_t)))
-#define VBOXVDMACMD_BODY(_pCmd, _t) ( (_t*)(((uint8_t*)(_pCmd)) + VBOXVDMACMD_HEADER_SIZE()) )
-#define VBOXVDMACMD_BODY_SIZE(_s) ( (_s) - VBOXVDMACMD_HEADER_SIZE() )
-#define VBOXVDMACMD_FROM_BODY(_pCmd) ( (VBOXVDMACMD*)(((uint8_t*)(_pCmd)) - VBOXVDMACMD_HEADER_SIZE()) )
-#define VBOXVDMACMD_BODY_FIELD_OFFSET(_ot, _t, _f) ( (_ot)(uintptr_t)( VBOXVDMACMD_BODY(0, uint8_t) + RT_OFFSETOF(_t, _f) ) )
+#define VBOXVDMACMD_HEADER_SIZE()                   sizeof(VBOXVDMACMD)
+#define VBOXVDMACMD_SIZE_FROMBODYSIZE(_s)           (VBOXVDMACMD_HEADER_SIZE() + (_s))
+#define VBOXVDMACMD_SIZE(_t)                        (VBOXVDMACMD_SIZE_FROMBODYSIZE(sizeof (_t)))
+#define VBOXVDMACMD_BODY(_pCmd, _t)                 ( (_t*)(((uint8_t*)(_pCmd)) + VBOXVDMACMD_HEADER_SIZE()) )
+#define VBOXVDMACMD_BODY_SIZE(_s)                   ( (_s) - VBOXVDMACMD_HEADER_SIZE() )
+#define VBOXVDMACMD_FROM_BODY(_pCmd)                ( (VBOXVDMACMD *)(((uint8_t*)(_pCmd)) - VBOXVDMACMD_HEADER_SIZE()) )
+#define VBOXVDMACMD_BODY_FIELD_OFFSET(_ot, _t, _f)  ( (_ot)(uintptr_t)( VBOXVDMACMD_BODY(0, uint8_t) + RT_OFFSETOF(_t, _f) ) )
 
 typedef struct VBOXVDMACMD_DMA_PRESENT_BLT
 {

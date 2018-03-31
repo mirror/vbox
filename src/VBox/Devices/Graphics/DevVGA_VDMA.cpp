@@ -2405,7 +2405,7 @@ static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_
 
     cbDmaCmd = pCmdDr->cbBuf;
 
-    PVBOXVDMACMD pDmaCmd;
+    VBOXVDMACMD RT_UNTRUSTED_VOLATILE_GUEST *pDmaCmd;
     if (pCmdDr->fFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
     {
         AssertReturn(cbCmdDr  >=           sizeof(*pCmdDr) + VBOXVDMACMD_HEADER_SIZE(), VERR_INVALID_PARAMETER);
@@ -2418,7 +2418,7 @@ static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_
         VBOXVIDEOOFFSET offBuf = pCmdDr->Location.offVramBuf;
         AssertReturn(   cbDmaCmd <= pVdma->pVGAState->vram_size
                      && offBuf <= pVdma->pVGAState->vram_size - cbDmaCmd, VERR_INVALID_PARAMETER);
-        pDmaCmd = (VBOXVDMACMD *)(pbRam + offBuf);
+        pDmaCmd = (VBOXVDMACMD RT_UNTRUSTED_VOLATILE_GUEST *)(pbRam + offBuf);
     }
     else
         pDmaCmd = NULL;
@@ -2427,7 +2427,9 @@ static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_
         Assert(cbDmaCmd >= VBOXVDMACMD_HEADER_SIZE());
         uint32_t cbBody = VBOXVDMACMD_BODY_SIZE(cbDmaCmd);
 
-        switch (pDmaCmd->enmType)
+        VBOXVDMACMD_TYPE const enmType = pDmaCmd->enmType;
+        ASMCompilerBarrier();
+        switch (enmType)
         {
             case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
             {
@@ -2479,10 +2481,10 @@ static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_
  */
 DECLCALLBACK(int) vboxVDMACrHgsmiCommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc)
 {
-    PVGASTATE           pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
-    PHGSMIINSTANCE      pIns      = pVGAState->pHGSMI;
-    VBOXVDMACMD        *pDmaHdr   = VBOXVDMACMD_FROM_BODY(pCmd);
-    VBOXVDMACBUF_DR    *pDr       = VBOXVDMACBUF_DR_FROM_TAIL(pDmaHdr);
+    PVGASTATE                                    pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
+    PHGSMIINSTANCE                               pIns      = pVGAState->pHGSMI;
+    VBOXVDMACMD RT_UNTRUSTED_VOLATILE_GUEST     *pDmaHdr   = VBOXVDMACMD_FROM_BODY(pCmd);
+    VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pDr       = VBOXVDMACBUF_DR_FROM_TAIL(pDmaHdr);
 
     AssertRC(rc);
     pDr->rc = rc;
@@ -2957,11 +2959,11 @@ static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, VBOXVDMACBUF_DR RT_UNTRU
         /*
          * Get the command buffer (volatile).
          */
-        uint16_t const  cbCmdBuf  = pCmd->cbBuf;
-        uint32_t const  fCmdFlags = pCmd->fFlags;
-        const uint8_t  *pbCmdBuf; /** @todo fixme later */
-        PGMPAGEMAPLOCK  Lock;
-        bool            bReleaseLocked = false;
+        uint16_t const                              cbCmdBuf  = pCmd->cbBuf;
+        uint32_t const                              fCmdFlags = pCmd->fFlags;
+        const uint8_t RT_UNTRUSTED_VOLATILE_GUEST  *pbCmdBuf;
+        PGMPAGEMAPLOCK                              Lock;
+        bool                                        fReleaseLocked = false;
         if (fCmdFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
         {
             pbCmdBuf = VBOXVDMACBUF_DR_TAIL(pCmd, const uint8_t);
@@ -2971,12 +2973,13 @@ static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, VBOXVDMACBUF_DR RT_UNTRU
         }
         else if (fCmdFlags & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET)
         {
-            uint64_t offVRam = pCmd->Location.offVramBuf;
-            pbCmdBuf = (uint8_t const *)pVdma->pVGAState->vram_ptrR3 + offVRam;
-            rc = VINF_SUCCESS;
+            uint64_t const offVRam = pCmd->Location.offVramBuf;
+            ASMCompilerBarrier();
             AssertBreakStmt(   offVRam <= pVdma->pVGAState->vram_size
                             && offVRam + cbCmdBuf <= pVdma->pVGAState->vram_size,
                             rc = VERR_INVALID_PARAMETER);
+            pbCmdBuf = (uint8_t const RT_UNTRUSTED_VOLATILE_GUEST *)pVdma->pVGAState->vram_ptrR3 + offVRam;
+            rc = VINF_SUCCESS;
         }
         else
         {
@@ -2988,17 +2991,17 @@ static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, VBOXVDMACBUF_DR RT_UNTRU
             rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pVdma->pVGAState->pDevInsR3, GCPhysBuf, 0 /*fFlags*/,
                                                    (const void **)&pbCmdBuf, &Lock);
             AssertRCBreak(rc); /* if (rc == VERR_PGM_PHYS_PAGE_RESERVED) -> fall back on using PGMPhysRead ?? */
-            bReleaseLocked = true;
+            fReleaseLocked = true;
         }
 
         /*
          * Process the command.
          */
-        rc = vboxVDMACmdExec(pVdma, pbCmdBuf, cbCmdBuf);
+        rc = vboxVDMACmdExec(pVdma, (uint8_t const *)pbCmdBuf, cbCmdBuf); /* @todo fixme later */
         AssertRC(rc);
 
         /* Clean up comand buffer. */
-        if (bReleaseLocked)
+        if (fReleaseLocked)
             PDMDevHlpPhysReleasePageMappingLock(pVdma->pVGAState->pDevInsR3, &Lock);
 
     } while (0);
