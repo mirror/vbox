@@ -590,7 +590,7 @@
 # define ASSERT_GUEST_FAILED()         do { } while (0)
 #endif
 
-/** @def ASSERT_GUEST_FAILEDStmt
+/** @def ASSERT_GUEST_FAILED_STMT
  * An assertion failed, hit breakpoint and execute statement.
  */
 #ifdef VBOX_STRICT_GUEST
@@ -746,7 +746,7 @@
 # define ASSERT_GUEST_MSG_FAILED(a)     do { } while (0)
 #endif
 
-/** @def ASSERT_GUEST_MSG_FAILEDReturn
+/** @def ASSERT_GUEST_MSG_FAILED_RETURN
  * An assertion failed, hit breakpoint with message (VBOX_STRICT_GUEST mode only) and return.
  *
  * @param   a       printf argument list (in parenthesis).
@@ -888,7 +888,7 @@
         } \
     } while (0)
 
-/** @def ASSERT_GUEST_LOGRELReturn
+/** @def ASSERT_GUEST_LOGREL_RETURN
  * Assert that an expression is true, return \a a_rc if it isn't.
  * Strict builds will hit a breakpoint, non-strict will only do LogRel.
  *
@@ -1367,7 +1367,7 @@
  */
 #define ASSERT_GUEST_RC_STMT_RETURN_VOID(rc, stmt)  ASSERT_GUEST_MSG_RC_STMT_RETURN_VOID(rc, ("%Rra\n", (rc)), stmt)
 
-/** @def ASSERT_GUEST_RCBreak
+/** @def ASSERT_GUEST_RC_BREAK
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
  *
  * @param   rc      iprt status code.
@@ -1396,7 +1396,7 @@
 #define ASSERT_GUEST_MSG_RC(rc, msg) \
     do { ASSERT_GUEST_MSG(RT_SUCCESS_NP(rc), msg); NOREF(rc); } while (0)
 
-/** @def ASSERT_GUEST_MSG_RCStmt
+/** @def ASSERT_GUEST_MSG_RC_STMT
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and
  * execute @a stmt if it isn't.
  *
@@ -1516,7 +1516,7 @@
  */
 #define ASSERT_GUEST_RC_SUCCESS_BREAK(rc)            ASSERT_GUEST_MSG_BREAK((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
-/** @def ASSERT_GUEST_RC_SUCCESSBreakStmt
+/** @def ASSERT_GUEST_RC_SUCCESS_STMT_BREAK
  * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and break if it isn't.
  *
  * @param   rc      iprt status code.
@@ -1593,7 +1593,7 @@
  */
 #define ASSERT_GUEST_LOGREL_RC_STMT_RETURN_VOID(rc, stmt)  ASSERT_GUEST_LOGREL_MSG_RC_STMT_RETURN_VOID(rc, ("%Rra\n", (rc)), stmt)
 
-/** @def ASSERT_GUEST_LOGREL_RCBreak
+/** @def ASSERT_GUEST_LOGREL_RC_BREAK
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and break if it isn't.
  *
  * @param   rc      iprt status code.
@@ -1622,7 +1622,7 @@
 #define ASSERT_GUEST_LOGREL_MSG_RC(rc, msg) \
     do { ASSERT_GUEST_LOGREL_MSG(RT_SUCCESS_NP(rc), msg); NOREF(rc); } while (0)
 
-/** @def ASSERT_GUEST_LOGREL_MSG_RCStmt
+/** @def ASSERT_GUEST_LOGREL_MSG_RC_STMT
  * Asserts a iprt status code successful, bitch (RT_STRICT mode only) and
  * execute @a stmt if it isn't.
  *
@@ -1742,7 +1742,7 @@
  */
 #define ASSERT_GUEST_LOGREL_RC_SUCCESS_BREAK(rc)            ASSERT_GUEST_LOGREL_MSG_BREAK((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
 
-/** @def ASSERT_GUEST_LOGREL_RC_SUCCESSBreakStmt
+/** @def ASSERT_GUEST_LOGREL_RC_SUCCESS_STMT_BREAK
  * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and break if it isn't.
  *
  * @param   rc      iprt status code.
