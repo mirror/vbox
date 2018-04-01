@@ -2991,7 +2991,7 @@ static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, VBOXVDMACBUF_DR RT_UNTRU
         /*
          * Process the command.
          */
-        rc = vboxVDMACmdExec(pVdma, (uint8_t const *)pbCmdBuf, cbCmdBuf); /* @todo fixme later */
+        rc = vboxVDMACmdExec(pVdma, (uint8_t const *)pbCmdBuf, cbCmdBuf); /** @todo fixme later */
         AssertRC(rc);
 
         /* Clean up comand buffer. */
