@@ -111,9 +111,9 @@ s/\bUINT16_MAX\b/U16_MAX/g
 s/\bUINT32_MAX\b/U32_MAX/g
 s/\bUINT32_C\b(\(.*\))/\1u/g
 s/!VALID_PTR(/WARN_ON(!/g
-s/\bRT_UNTRUSTED_VOLATILE_HOST\b/volatile/g
-s/\bRT_UNTRUSTED_VOLATILE_GUEST\b/volatile/g
-s/\bRT_UNTRUSTED_VOLATILE_HSTGST\b/volatile/g
+s/\bRT_UNTRUSTED_VOLATILE_HOST\b//g
+s/\bRT_UNTRUSTED_VOLATILE_GUEST\b//g
+s/\bRT_UNTRUSTED_VOLATILE_HSTGST\b//g
 
 # Type names:
 s/\bint32_t\b/s32/g
