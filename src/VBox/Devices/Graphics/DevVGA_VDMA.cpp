@@ -2392,96 +2392,6 @@ static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
 }
 
 /**
- * Check if this is an external command to be passed to the chromium backend.
- *
- * @retval VINF_NOT_SUPPORTED if not chromium command.
- *
- * @note    cbCmdDr is at least sizeof(VBOXVDMACBUF_DR).
- */
-static int vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmdDr, uint32_t cbCmdDr)
-{
-    /*
-     * A chromium command has a VBOXVDMACMD part, so get that first.
-     */
-    uint32_t cbDmaCmd = pCmdDr->cbBuf;
-    uint16_t fDmaCmd  = pCmdDr->fFlags;
-    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-
-    VBOXVDMACMD RT_UNTRUSTED_VOLATILE_GUEST *pDmaCmd;
-    if (fDmaCmd & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
-    {
-        AssertReturn(cbCmdDr  >=           sizeof(*pCmdDr) + VBOXVDMACMD_HEADER_SIZE(), VERR_INVALID_PARAMETER);
-        AssertReturn(cbDmaCmd >= cbCmdDr - sizeof(*pCmdDr) - VBOXVDMACMD_HEADER_SIZE(), VERR_INVALID_PARAMETER);
-
-        pDmaCmd = VBOXVDMACBUF_DR_TAIL(pCmdDr, VBOXVDMACMD);
-    }
-    else if (fDmaCmd & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET)
-    {
-        VBOXVIDEOOFFSET offBuf = pCmdDr->Location.offVramBuf;
-        AssertReturn(   cbDmaCmd <= pVdma->pVGAState->vram_size
-                     && offBuf <= pVdma->pVGAState->vram_size - cbDmaCmd, VERR_INVALID_PARAMETER);
-        uint8_t *pbRam = pVdma->pVGAState->vram_ptrR3;
-        pDmaCmd = (VBOXVDMACMD RT_UNTRUSTED_VOLATILE_GUEST *)(pbRam + offBuf);
-    }
-    else
-        return VINF_NOT_SUPPORTED;
-    Assert(cbDmaCmd >= VBOXVDMACMD_HEADER_SIZE()); /* checked by vbvaChannelHandler already */
-
-    /*
-     * Check if command type is a chromium one.
-     */
-    int rc = VINF_NOT_SUPPORTED;
-    VBOXVDMACMD_TYPE const enmType = pDmaCmd->enmType;
-    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-    if (   enmType == VBOXVDMACMD_TYPE_CHROMIUM_CMD
-        || enmType == VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER)
-    {
-        RT_UNTRUSTED_VALIDATED_FENCE();
-
-        /*
-         * Process the Cr command.
-         */
-        uint32_t cbBody = VBOXVDMACMD_BODY_SIZE(cbDmaCmd);
-        if (enmType == VBOXVDMACMD_TYPE_CHROMIUM_CMD)
-        {
-            VBOXVDMACMD_CHROMIUM_CMD RT_UNTRUSTED_VOLATILE_GUEST *pCrCmd = VBOXVDMACMD_BODY(pDmaCmd, VBOXVDMACMD_CHROMIUM_CMD);
-            AssertReturn(cbBody >= sizeof(*pCrCmd), VERR_INVALID_PARAMETER);
-
-            PVGASTATE pVGAState = pVdma->pVGAState;
-            if (pVGAState->pDrv->pfnCrHgsmiCommandProcess)
-            {
-                VBoxSHGSMICommandMarkAsynchCompletion(pCmdDr);
-                pVGAState->pDrv->pfnCrHgsmiCommandProcess(pVGAState->pDrv, pCrCmd, cbBody);
-            }
-            else
-            {
-                AssertFailed();
-                rc = VBoxSHGSMICommandComplete(pVdma->pHgsmi, pCmdDr);
-                AssertRC(rc);
-            }
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            VBOXVDMACMD_DMA_BPB_TRANSFER RT_UNTRUSTED_VOLATILE_GUEST *pTransfer
-                = VBOXVDMACMD_BODY(pDmaCmd, VBOXVDMACMD_DMA_BPB_TRANSFER);
-            AssertReturn(cbBody >= sizeof(*pTransfer), VERR_INVALID_PARAMETER);
-
-            rc = vboxVDMACmdExecBpbTransfer(pVdma, pTransfer, sizeof(*pTransfer));
-            AssertRC(rc);
-            if (RT_SUCCESS(rc))
-            {
-                pCmdDr->rc = VINF_SUCCESS;
-                rc = VBoxSHGSMICommandComplete(pVdma->pHgsmi, pCmdDr);
-                AssertRC(rc);
-                rc = VINF_SUCCESS;
-            }
-        }
-    }
-    return rc;
-}
-
-/**
  * @interface_method_impl{PDMIDISPLAYVBVACALLBACKS,pfnCrHgsmiControlCompleteAsync,
  *      Some indirect completion magic, you gotta love this code! }
  */
@@ -2537,7 +2447,10 @@ static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma, const VBOXVIDEOOFFSET 
         if (   cbToCopy <= cbVRamSize
             && (uintptr_t)(pbDstSurf + offBoth) - (uintptr_t)pbRam <= cbVRamSize - cbToCopy
             && (uintptr_t)(pbSrcSurf + offBoth) - (uintptr_t)pbRam <= cbVRamSize - cbToCopy)
+        {
+            RT_UNTRUSTED_VALIDATED_FENCE();
             memcpy(pbDstSurf + offBoth, pbSrcSurf + offBoth, cbToCopy);
+        }
         else
             return VERR_INVALID_PARAMETER;
     }
@@ -2568,7 +2481,10 @@ static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma, const VBOXVIDEOOFFSET 
             if (   cbDstLine <= cbVRamSize
                 && (uintptr_t)pbDstStart - (uintptr_t)pbRam <= cbVRamSize - cbDstLine
                 && (uintptr_t)pbSrcStart - (uintptr_t)pbRam <= cbVRamSize - cbDstLine)
+            {
+                RT_UNTRUSTED_VALIDATED_FENCE(); /** @todo this could potentially be buzzkiller. */
                 memcpy(pbDstStart, pbSrcStart, cbDstLine);
+            }
             else
                 return VERR_INVALID_PARAMETER;
             if (i == pDstRectl->height)
@@ -2630,12 +2546,11 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const VBOXVDMACMD_DMA_PRESENT
     AssertReturn(cbBuffer >= RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects), VERR_INVALID_PARAMETER);
     VBOXVDMACMD_DMA_PRESENT_BLT BltSafe;
     memcpy(&BltSafe, (void const *)pBlt, RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects));
-    ASMCompilerBarrier();
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
     AssertReturn(BltSafe.cDstSubRects < _8M, VERR_INVALID_PARAMETER);
     uint32_t const cbBlt = RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects[BltSafe.cDstSubRects]);
     AssertReturn(cbBuffer >= cbBlt, VERR_INVALID_PARAMETER);
-
 
     /*
      * We do not support stretching.
@@ -2645,8 +2560,12 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const VBOXVDMACMD_DMA_PRESENT
 
     Assert(BltSafe.cDstSubRects);
 
-    //VBOXVDMA_RECTL updateRectl = {0, 0, 0, 0}; - pointless
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
+    /*
+     * Do the work.
+     */
+    //VBOXVDMA_RECTL updateRectl = {0, 0, 0, 0}; - pointless
     if (BltSafe.cDstSubRects)
     {
         for (uint32_t i = 0; i < BltSafe.cDstSubRects; ++i)
@@ -2656,7 +2575,7 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const VBOXVDMACMD_DMA_PRESENT
             dstSubRectl.top    = pBlt->aDstSubRects[i].top;
             dstSubRectl.width  = pBlt->aDstSubRects[i].width;
             dstSubRectl.height = pBlt->aDstSubRects[i].height;
-            ASMCompilerBarrier();
+            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
             VBOXVDMA_RECTL srcSubRectl = dstSubRectl;
 
@@ -2707,7 +2626,7 @@ static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, VBOXVDMACMD_DMA_BPB_T
     AssertReturn(cbBuffer >= sizeof(*pTransfer), VERR_INVALID_PARAMETER);
     VBOXVDMACMD_DMA_BPB_TRANSFER TransferSafeCopy;
     memcpy(&TransferSafeCopy, (void const *)pTransfer, sizeof(TransferSafeCopy));
-    ASMCompilerBarrier();
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
     PVGASTATE   pVGAState    = pVdma->pVGAState;
     PPDMDEVINS  pDevIns      = pVGAState->pDevInsR3;
@@ -2726,6 +2645,7 @@ static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, VBOXVDMACMD_DMA_BPB_T
         AssertReturn(   cbTransfer <= pVGAState->vram_size
                      && TransferSafeCopy.Dst.offVramBuf <= pVGAState->vram_size - cbTransfer,
                      VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
     /*
      * Transfer loop.
@@ -2798,8 +2718,14 @@ static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, VBOXVDMACMD_DMA_BPB_T
  * @param   pVdma       Tthe VDMA channel.
  * @param   pbBuffer    Command buffer, considered volatile.
  * @param   cbBuffer    The number of bytes at @a pbBuffer.
+ * @param   pCmdDr      The command.  For setting the async flag on chromium
+ *                      requests.
+ * @param   pfAsyncCmd  Flag to set if async command completion on chromium
+ *                      requests.  Input stat is false, so it only ever need to
+ *                      be set to true.
  */
-static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pbBuffer, uint32_t cbBuffer)
+static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pbBuffer, uint32_t cbBuffer,
+                           VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmdDr, bool *pfAsyncCmd)
 {
     AssertReturn(pbBuffer, VERR_INVALID_POINTER);
 
@@ -2814,22 +2740,16 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pbBuffer, uint32_
         {
             case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
             {
-# ifdef VBOXWDDM_TEST_UHGSMI
-                static int count = 0;
-                static uint64_t start, end;
-                if (count==0)
-                {
-                    start = RTTimeNanoTS();
-                }
-                ++count;
-                if (count==100000)
-                {
-                    end = RTTimeNanoTS();
-                    float ems = (end-start)/1000000.f;
-                    LogRel(("100000 calls took %i ms, %i cps\n", (int)ems, (int)(100000.f*1000.f/ems) ));
-                }
-# endif
-                /** @todo post the buffer to chromium */
+                VBOXVDMACMD_CHROMIUM_CMD RT_UNTRUSTED_VOLATILE_GUEST *pCrCmd = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_CHROMIUM_CMD);
+                uint32_t const cbBody = VBOXVDMACMD_BODY_SIZE(cbBuffer);
+                AssertReturn(cbBody >= sizeof(*pCrCmd), VERR_INVALID_PARAMETER);
+
+                PVGASTATE pVGAState = pVdma->pVGAState;
+                AssertReturn(pVGAState->pDrv->pfnCrHgsmiCommandProcess, VERR_NOT_SUPPORTED);
+
+                VBoxSHGSMICommandMarkAsynchCompletion(pCmdDr);
+                pVGAState->pDrv->pfnCrHgsmiCommandProcess(pVGAState->pDrv, pCrCmd, cbBody);
+                *pfAsyncCmd = true;
                 return VINF_SUCCESS;
             }
 
@@ -2875,8 +2795,10 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pbBuffer, uint32_
             pbBuffer += cbProcessed;
         }
         else
+        {
+            RT_UNTRUSTED_VALIDATED_FENCE();
             return cbProcessed; /* error status */
-
+        }
     }
 }
 
@@ -2942,76 +2864,70 @@ static DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD hThreadSelf, void *pvUser
 /**
  * Worker for vboxVDMACommand.
  *
+ * @returns VBox status code of the operation.
+ * @param   pVdma       VDMA instance data.
  * @param   pCmd        The command to process.  Consider content volatile.
  * @param   cbCmd       Number of valid bytes at @a pCmd.  This is at least
  *                      sizeof(VBOXVDMACBUF_DR).
+ * @param   pfAsyncCmd  Flag to set if async command completion on chromium
+ *                      requests.  Input stat is false, so it only ever need to
+ *                      be set to true.
  * @thread  VDMA
  */
-static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd)
+static int vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
+                                  uint32_t cbCmd, bool *pfAsyncCmd)
 {
-    PHGSMIINSTANCE pHgsmi = pVdma->pHgsmi;
-    int rc;
+    /*
+     * Get the command buffer (volatile).
+     */
+    uint16_t const cbCmdBuf                = pCmd->cbBuf;
+    uint16_t const fCmdFlags               = pCmd->fFlags;
+    uint64_t const offVramBuf_or_GCPhysBuf = pCmd->Location.offVramBuf;
+    AssertCompile(sizeof(pCmd->Location.offVramBuf) == sizeof(pCmd->Location.phBuf));
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
-    do /* break loop */
+    const uint8_t RT_UNTRUSTED_VOLATILE_GUEST  *pbCmdBuf;
+    PGMPAGEMAPLOCK                              Lock;
+    bool                                        fReleaseLocked = false;
+    if (fCmdFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
     {
-        /*
-         * Get the command buffer (volatile).
-         */
-        uint16_t const cbCmdBuf                = pCmd->cbBuf;
-        uint16_t const fCmdFlags               = pCmd->fFlags;
-        uint64_t const offVramBuf_or_GCPhysBuf = pCmd->Location.offVramBuf;
-        AssertCompile(sizeof(pCmd->Location.offVramBuf) == sizeof(pCmd->Location.phBuf));
-        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+        pbCmdBuf = VBOXVDMACBUF_DR_TAIL(pCmd, const uint8_t);
+        AssertReturn((uintptr_t)&pbCmdBuf[cbCmdBuf] <= (uintptr_t)&((uint8_t *)pCmd)[cbCmd],
+                     VERR_INVALID_PARAMETER);
+        RT_UNTRUSTED_VALIDATED_FENCE();
+    }
+    else if (fCmdFlags & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET)
+    {
+        AssertReturn(   offVramBuf_or_GCPhysBuf <= pVdma->pVGAState->vram_size
+                     && offVramBuf_or_GCPhysBuf + cbCmdBuf <= pVdma->pVGAState->vram_size,
+                     VERR_INVALID_PARAMETER);
+        RT_UNTRUSTED_VALIDATED_FENCE();
 
-        const uint8_t RT_UNTRUSTED_VOLATILE_GUEST  *pbCmdBuf;
-        PGMPAGEMAPLOCK                              Lock;
-        bool                                        fReleaseLocked = false;
-        if (fCmdFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
-        {
-            pbCmdBuf = VBOXVDMACBUF_DR_TAIL(pCmd, const uint8_t);
-            AssertBreakStmt((uintptr_t)&pbCmdBuf[cbCmdBuf] <= (uintptr_t)&((uint8_t *)pCmd)[cbCmd],
-                            rc = VERR_INVALID_PARAMETER);
-            RT_UNTRUSTED_VALIDATED_FENCE();
-        }
-        else if (fCmdFlags & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET)
-        {
-            AssertBreakStmt(   offVramBuf_or_GCPhysBuf <= pVdma->pVGAState->vram_size
-                            && offVramBuf_or_GCPhysBuf + cbCmdBuf <= pVdma->pVGAState->vram_size,
-                            rc = VERR_INVALID_PARAMETER);
-            RT_UNTRUSTED_VALIDATED_FENCE();
-            pbCmdBuf = (uint8_t const RT_UNTRUSTED_VOLATILE_GUEST *)pVdma->pVGAState->vram_ptrR3 + offVramBuf_or_GCPhysBuf;
-        }
-        else
-        {
-            /* Make sure it doesn't cross a page. */
-            AssertBreakStmt((uint32_t)(offVramBuf_or_GCPhysBuf & X86_PAGE_OFFSET_MASK) + cbCmdBuf <= (uint32_t)X86_PAGE_SIZE,
-                            rc = VERR_INVALID_PARAMETER);
-            RT_UNTRUSTED_VALIDATED_FENCE();
+        pbCmdBuf = (uint8_t const RT_UNTRUSTED_VOLATILE_GUEST *)pVdma->pVGAState->vram_ptrR3 + offVramBuf_or_GCPhysBuf;
+    }
+    else
+    {
+        /* Make sure it doesn't cross a page. */
+        AssertReturn((uint32_t)(offVramBuf_or_GCPhysBuf & X86_PAGE_OFFSET_MASK) + cbCmdBuf <= (uint32_t)X86_PAGE_SIZE,
+                     VERR_INVALID_PARAMETER);
+        RT_UNTRUSTED_VALIDATED_FENCE();
 
-            rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pVdma->pVGAState->pDevInsR3, offVramBuf_or_GCPhysBuf, 0 /*fFlags*/,
+        int rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pVdma->pVGAState->pDevInsR3, offVramBuf_or_GCPhysBuf, 0 /*fFlags*/,
                                                    (const void **)&pbCmdBuf, &Lock);
-            AssertRCBreak(rc); /* if (rc == VERR_PGM_PHYS_PAGE_RESERVED) -> fall back on using PGMPhysRead ?? */
-            fReleaseLocked = true;
-        }
-
-        /*
-         * Process the command.
-         */
-        rc = vboxVDMACmdExec(pVdma, (uint8_t const *)pbCmdBuf, cbCmdBuf); /** @todo fixme later */
-        AssertRC(rc);
-
-        /* Clean up comand buffer. */
-        if (fReleaseLocked)
-            PDMDevHlpPhysReleasePageMappingLock(pVdma->pVGAState->pDevInsR3, &Lock);
-
-    } while (0);
+        AssertRCReturn(rc, rc); /* if (rc == VERR_PGM_PHYS_PAGE_RESERVED) -> fall back on using PGMPhysRead ?? */
+        fReleaseLocked = true;
+    }
 
     /*
-     * Complete the command.
+     * Process the command.
      */
-    pCmd->rc = rc;
-    rc = VBoxSHGSMICommandComplete(pHgsmi, pCmd);
+    int rc = vboxVDMACmdExec(pVdma, (uint8_t const *)pbCmdBuf, cbCmdBuf, pCmd, pfAsyncCmd); /** @todo fixme later */
     AssertRC(rc);
+
+    /* Clean up comand buffer. */
+    if (fReleaseLocked)
+        PDMDevHlpPhysReleasePageMappingLock(pVdma->pVGAState->pDevInsR3, &Lock);
+    return rc;
 }
 
 # if 0 /** @todo vboxVDMAControlProcess is unused */
@@ -3221,34 +3137,26 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, VBOXVDMA_CTL RT_UNTRUSTED_VOLAT
  */
 void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd)
 {
+    /*
+     * Process the command.
+     */
+    bool fAsyncCmd = false;
 #ifdef VBOX_WITH_CRHGSMI
-    /** @todo r=bird: This detour to vboxVDMACmdCheckCrCmd is inefficient and
-     * utterly confusing. It  should instead have been added to vboxVDMACmdExec or
-     * maybe vboxVDMACommandProcess.  Try reverse engineer wtf vboxVDMACmdExec
-     * does handle VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER.  Is it because of the case
-     * where neither VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET or
-     * VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER is set?  This code is certifiable!! */
-
-    /* chromium commands are processed by crhomium hgcm thread independently from our internal cmd processing pipeline
-     * this is why we process them specially */
-    int rc = vboxVDMACmdCheckCrCmd(pVdma, pCmd, cbCmd);
-    if (rc == VINF_SUCCESS)
-        return;
-
-    if (RT_SUCCESS(rc))
-        vboxVDMACommandProcess(pVdma, pCmd, cbCmd);
-    else
-    {
-        pCmd->rc = rc;
-        rc = VBoxSHGSMICommandComplete(pVdma->pHgsmi, pCmd);
-        AssertRC(rc);
-    }
+    int rc = vboxVDMACommandProcess(pVdma, pCmd, cbCmd, &fAsyncCmd);
 #else
     RT_NOREF(cbCmd);
-    pCmd->rc = VERR_NOT_IMPLEMENTED;
-    int rc = VBoxSHGSMICommandComplete(pVdma->pHgsmi, pCmd);
-    AssertRC(rc);
+    int rc = VERR_NOT_IMPLEMENTED;
 #endif
+
+    /*
+     * Complete the command unless it's asynchronous (e.g. chromium).
+     */
+    if (!fAsyncCmd)
+    {
+        pCmd->rc = rc;
+        int rc2 = VBoxSHGSMICommandComplete(pVdma->pHgsmi, pCmd);
+        AssertRC(rc2);
+    }
 }
 
 #ifdef VBOX_WITH_CRHGSMI
