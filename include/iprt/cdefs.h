@@ -1582,7 +1582,7 @@
  * For marking volatile data shared with user mode as untrusted.
  * This is more than just documentation as it specifies the 'volatile' keyword,
  * because the guest could modify the data at any time. */
-#define RT_UNTRUSTED_VOLATILE_USER      volatile
+#define RT_UNTRUSTED_VOLATILE_USER              volatile
 
 /** @def RT_UNTRUSTED_GUEST
  * For marking non-volatile (race free) data from the guest as untrusted.
@@ -1592,7 +1592,7 @@
  * For marking volatile data shared with the guest as untrusted.
  * This is more than just documentation as it specifies the 'volatile' keyword,
  * because the guest could modify the data at any time. */
-#define RT_UNTRUSTED_VOLATILE_GUEST     volatile
+#define RT_UNTRUSTED_VOLATILE_GUEST             volatile
 
 /** @def RT_UNTRUSTED_HOST
  * For marking non-volatile (race free) data from the host as untrusted.
@@ -1602,7 +1602,7 @@
  * For marking volatile data shared with the host as untrusted.
  * This is more than just documentation as it specifies the 'volatile' keyword,
  * because the host could modify the data at any time. */
-#define RT_UNTRUSTED_VOLATILE_HOST      volatile
+#define RT_UNTRUSTED_VOLATILE_HOST              volatile
 
 /** @def RT_UNTRUSTED_HSTGST
  * For marking non-volatile (race free) data from the host/gust as untrusted.
@@ -1612,7 +1612,25 @@
  * For marking volatile data shared with the host/guest as untrusted.
  * This is more than just documentation as it specifies the 'volatile' keyword,
  * because the host could modify the data at any time. */
-#define RT_UNTRUSTED_VOLATILE_HSTGST    volatile
+#define RT_UNTRUSTED_VOLATILE_HSTGST            volatile
+/** @} */
+
+/** @name Fences for use when handling untrusted data.
+ * @{ */
+/** For use after copying untruated volatile data to a non-volatile location.
+ * This translates to a compiler memory barrier and will help ensure that the
+ * compiler uses the non-volatile copy of the data. */
+#define RT_UNTRUSTED_NONVOLATILE_COPY_FENCE()   ASMCompilerBarrier()
+/** For use after finished validating guest input.
+ * What this translates to is architecture dependent.  On intel it will
+ * translate to a CPU load+store fence as well as a compiler memory barrier. */
+#if   defined(RT_ARCH_AMD64)
+# define RT_UNTRUSTED_VALIDATED_FENCE()         do { ASMCompilerBarrier(); ASMMemoryFenceSSE2(); } while (0)
+#elif defined(RT_ARCH_X86)
+# define RT_UNTRUSTED_VALIDATED_FENCE()         do { ASMCompilerBarrier(); ASMMemoryFence(); } while (0)
+#else
+# define RT_UNTRUSTED_VALIDATED_FENCE()         do { ASMCompilerBarrier(); } while (0)
+#endif
 /** @} */
 
 
