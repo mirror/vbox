@@ -96,7 +96,7 @@ s/\bAssert\b\([^;]*\);/WARN_ON_ONCE(!(\1));/g
 s/\bAssertCompile\b/assert_compile/g
 s/\bAssertCompileSize\b/assert_compile_size/g
 s/\bAssertPtr\b\([^;]*\);/WARN_ON_ONCE(!(\1));/g
-s/\bAssertPtrReturn\b\/assert_ptr_return/g
+s/\bAssertPtrReturn\b/assert_ptr_return/g
 /AssertPtrNullReturnVoid/d
 s/\bAssertRC\b\([^;]*\);/WARN_ON_ONCE(RT_FAILURE\1);/g
 s/\bAssertRC\b/Assert_RC_statement_should_be_on_one_line/g
