@@ -2568,9 +2568,10 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
             if (cbBuffer >= sizeof(VBVAENABLE))
             {
                 VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *pVbvaEnable = (VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer;
-
-                uint32_t       u32ScreenId;
                 const uint32_t u32Flags = pVbvaEnable->u32Flags;
+                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+
+                uint32_t u32ScreenId;
                 if (u32Flags & VBVA_F_EXTENDED)
                 {
                     if (cbBuffer >= sizeof(VBVAENABLE_EX))
@@ -2620,6 +2621,8 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
             {
                 VBVACAPS RT_UNTRUSTED_VOLATILE_GUEST *pCaps = (VBVACAPS RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer;
                 pVGAState->fGuestCaps = pCaps->fCaps;
+                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+
                 pVGAState->pDrv->pfnVBVAGuestCapabilityUpdate(pVGAState->pDrv, pVGAState->fGuestCaps);
                 pCaps->rc = rc = VINF_SUCCESS;
             }
@@ -2633,6 +2636,8 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
             {
                 VBVASCANLINECFG RT_UNTRUSTED_VOLATILE_GUEST *pCfg = (VBVASCANLINECFG RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer;
                 pVGAState->fScanLineCfg = pCfg->fFlags;
+                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+
                 pCfg->rc = rc = VINF_SUCCESS;
             }
             else
@@ -2663,7 +2668,7 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
                     inputMapping.cx = pInputMapping->cx;
                     inputMapping.cy = pInputMapping->cy;
                 }
-                ASMCompilerBarrier();
+                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
                 LogRelFlowFunc(("VBVA: ChannelHandler: VBVA_REPORT_INPUT_MAPPING: x=%RI32, y=%RI32, cx=%RU32, cy=%RU32\n",
                                 inputMapping.x, inputMapping.y, inputMapping.cx, inputMapping.cy));
@@ -2684,7 +2689,7 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
                 Report.fReportPosition = pReport->fReportPosition;
                 Report.x               = pReport->x;
                 Report.y               = pReport->y;
-                ASMCompilerBarrier();
+                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
                 LogRelFlowFunc(("VBVA: ChannelHandler: VBVA_CURSOR_POSITION: fReportPosition=%RTbool, x=%RU32, y=%RU32\n",
                                 RT_BOOL(Report.fReportPosition), Report.x, Report.y));

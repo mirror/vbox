@@ -24,6 +24,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pgm.h>
 #include <VBoxVideo.h>
+#include <VBox/AssertGuest.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/mem.h>
@@ -103,8 +104,9 @@ typedef struct VBOXVDMATHREAD
 
 typedef struct VBVAEXHOSTCONTEXT
 {
-    VBVABUFFER *pVBVA;
-    uint32_t    cbMaxData; /**< Maximum number of data bytes addressible relative to pVBVA. */
+    VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *pVBVA;
+    /** Maximum number of data bytes addressible relative to pVBVA. */
+    uint32_t                                cbMaxData;
     volatile int32_t i32State;
     volatile int32_t i32EnableState;
     volatile uint32_t u32cCtls;
@@ -147,7 +149,7 @@ typedef struct VBVAEXHOSTCTL
     {
         struct
         {
-            uint8_t * pu8Cmd;
+            void RT_UNTRUSTED_VOLATILE_GUEST *pvCmd;
             uint32_t cbCmd;
         } cmd;
 
@@ -240,9 +242,9 @@ static DECLCALLBACK(void) vdmaVBVACtlSubmitSyncCompletion(VBVAEXHOSTCONTEXT *pVb
 static VBVAEXHOSTCTL *VBoxVBVAExHCtlCreate(VBVAEXHOSTCONTEXT *pCmdVbva, VBVAEXHOSTCTL_TYPE enmType)
 {
 # ifndef VBOXVDBG_MEMCACHE_DISABLE
-    VBVAEXHOSTCTL *pCtl = (VBVAEXHOSTCTL*)RTMemCacheAlloc(pCmdVbva->CtlCache);
+    VBVAEXHOSTCTL *pCtl = (VBVAEXHOSTCTL *)RTMemCacheAlloc(pCmdVbva->CtlCache);
 # else
-    VBVAEXHOSTCTL *pCtl = (VBVAEXHOSTCTL*)RTMemAlloc(sizeof(VBVAEXHOSTCTL));
+    VBVAEXHOSTCTL *pCtl = (VBVAEXHOSTCTL *)RTMemAlloc(sizeof(VBVAEXHOSTCTL));
 # endif
     if (pCtl)
     {
@@ -281,8 +283,8 @@ static int vboxVBVAExHSProcessorAcquire(struct VBVAEXHOSTCONTEXT *pCmdVbva)
 }
 
 /**
- * Worker for vboxVBVAExHPDataGet() and VBoxVBVAExHPCheckHostCtlOnDisable() that
- * gets the next control command.
+ * Worker for vboxVBVAExHPDataGetInner() and VBoxVBVAExHPCheckHostCtlOnDisable()
+ * that gets the next control command.
  *
  * @returns Pointer to command if found, NULL if not.
  * @param   pCmdVbva        The VBVA command context.
@@ -374,7 +376,7 @@ static int VBoxVBVAExHPResume(struct VBVAEXHOSTCONTEXT *pCmdVbva)
 }
 
 /**
- * Worker for vboxVBVAExHPDataGet that processes PAUSE and RESUME requests.
+ * Worker for vboxVBVAExHPDataGetInner that processes PAUSE and RESUME requests.
  *
  * Unclear why these cannot be handled the normal way.
  *
@@ -432,7 +434,7 @@ static void vboxVBVAExHPHgEventClear(struct VBVAEXHOSTCONTEXT *pCmdVbva)
 }
 
 /**
- * Worker for vboxVBVAExHPDataGet.
+ * Worker for vboxVBVAExHPDataGetInner.
  *
  * @retval VINF_SUCCESS
  * @retval VINF_EOF
@@ -441,28 +443,31 @@ static void vboxVBVAExHPHgEventClear(struct VBVAEXHOSTCONTEXT *pCmdVbva)
  *
  * @thread VDMA
  */
-static int vboxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppbCmd, uint32_t *pcbCmd)
+static int vboxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t RT_UNTRUSTED_VOLATILE_GUEST **ppbCmd, uint32_t *pcbCmd)
 {
     Assert(pCmdVbva->i32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
     Assert(pCmdVbva->i32EnableState > VBVAEXHOSTCONTEXT_ESTATE_PAUSED);
 
-    VBVABUFFER volatile *pVBVA = pCmdVbva->pVBVA; /* This is shared with the guest, so careful! */
+    VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *pVBVA = pCmdVbva->pVBVA; /* This is shared with the guest, so careful! */
 
     /*
      * Inspect records.
      */
     uint32_t idxRecordFirst = ASMAtomicUoReadU32(&pVBVA->indexRecordFirst);
     uint32_t idxRecordFree  = ASMAtomicReadU32(&pVBVA->indexRecordFree);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     Log(("first = %d, free = %d\n", idxRecordFirst, idxRecordFree));
     if (idxRecordFirst == idxRecordFree)
         return VINF_EOF; /* No records to process. Return without assigning output variables. */
     AssertReturn(idxRecordFirst < VBVA_MAX_RECORDS, VERR_INVALID_STATE);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
     /*
      * Read the record size and check that it has been completly recorded.
      */
     uint32_t const cbRecordCurrent = ASMAtomicReadU32(&pVBVA->aRecords[idxRecordFirst].cbRecord);
     uint32_t const cbRecord        = cbRecordCurrent & ~VBVA_F_RECORD_PARTIAL;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     if (   (cbRecordCurrent & VBVA_F_RECORD_PARTIAL)
         || !cbRecord)
         return VINF_TRY_AGAIN; /* The record is being recorded, try again. */
@@ -473,17 +478,19 @@ static int vboxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppbC
      */
     uint32_t const offData   = ASMAtomicReadU32(&pVBVA->off32Data);
     uint32_t       cbMaxData = ASMAtomicReadU32(&pVBVA->cbData);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     AssertLogRelMsgStmt(cbMaxData <= pCmdVbva->cbMaxData, ("%#x vs %#x\n", cbMaxData, pCmdVbva->cbMaxData),
                         cbMaxData = pCmdVbva->cbMaxData);
     AssertLogRelMsgReturn(   cbRecord <= cbMaxData
                           && offData  <= cbMaxData - cbRecord,
                           ("offData=%#x cbRecord=%#x cbMaxData=%#x cbRecord\n", offData, cbRecord, cbMaxData),
                           VERR_INVALID_STATE);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
     /*
      * Just set the return values and we're done.
      */
-    *ppbCmd  = (uint8_t *)&pVBVA->au8Data[offData];
+    *ppbCmd = (uint8_t RT_UNTRUSTED_VOLATILE_GUEST *)&pVBVA->au8Data[offData];
     *pcbCmd = cbRecord;
     return VINF_SUCCESS;
 }
@@ -496,19 +503,23 @@ static int vboxVBVAExHPCmdGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppbC
  */
 static void VBoxVBVAExHPDataCompleteCmd(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint32_t cbCmd)
 {
-    VBVABUFFER volatile *pVBVA       = pCmdVbva->pVBVA;
+    VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *pVBVA = pCmdVbva->pVBVA;
+    if (pVBVA)
+    {
+        /* Move data head. */
+        uint32_t const  cbData      = pVBVA->cbData;
+        uint32_t const  offData     = pVBVA->off32Data;
+        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+        if (cbData > 0)
+            ASMAtomicWriteU32(&pVBVA->off32Data, (offData + cbCmd) % cbData);
+        else
+            ASMAtomicWriteU32(&pVBVA->off32Data, 0);
 
-    /* Move data head. */
-    uint32_t const       cbData      = pVBVA->cbData;
-    uint32_t const       offData     = pVBVA->off32Data;
-    if (cbData > 0)
-        ASMAtomicWriteU32(&pVBVA->off32Data, (offData + cbCmd) % cbData);
-    else
-        ASMAtomicWriteU32(&pVBVA->off32Data, 0);
-
-    /* Increment record pointer. */
-    uint32_t const       idxRecFirst = pVBVA->indexRecordFirst;
-    ASMAtomicWriteU32(&pVBVA->indexRecordFirst, (idxRecFirst + 1) % RT_ELEMENTS(pVBVA->aRecords));
+        /* Increment record pointer. */
+        uint32_t const  idxRecFirst = pVBVA->indexRecordFirst;
+        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+        ASMAtomicWriteU32(&pVBVA->indexRecordFirst, (idxRecFirst + 1) % RT_ELEMENTS(pVBVA->aRecords));
+    }
 }
 
 /**
@@ -527,10 +538,11 @@ static void VBoxVBVAExHPDataCompleteCtl(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVA
  * Worker for VBoxVBVAExHPDataGet.
  * @thread VDMA
  */
-static VBVAEXHOST_DATA_TYPE vboxVBVAExHPDataGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppCmd, uint32_t *pcbCmd)
+static VBVAEXHOST_DATA_TYPE vboxVBVAExHPDataGetInner(struct VBVAEXHOSTCONTEXT *pCmdVbva,
+                                                     uint8_t RT_UNTRUSTED_VOLATILE_GUEST **ppbCmd, uint32_t *pcbCmd)
 {
     Assert(pCmdVbva->i32State == VBVAEXHOSTCONTEXT_STATE_PROCESSING);
-    VBVAEXHOSTCTL*pCtl;
+    VBVAEXHOSTCTL *pCtl;
     bool fHostClt;
 
     for (;;)
@@ -542,13 +554,13 @@ static VBVAEXHOST_DATA_TYPE vboxVBVAExHPDataGet(struct VBVAEXHOSTCONTEXT *pCmdVb
             {
                 if (!vboxVBVAExHPCheckProcessCtlInternal(pCmdVbva, pCtl))
                 {
-                    *ppCmd = (uint8_t*)pCtl;
+                    *ppbCmd = (uint8_t RT_UNTRUSTED_VOLATILE_GUEST *)pCtl; /* Note! pCtl is host data, so trusted */
                     *pcbCmd = sizeof (*pCtl);
                     return VBVAEXHOST_DATA_TYPE_HOSTCTL;
                 }
                 continue; /* Processed by vboxVBVAExHPCheckProcessCtlInternal, get next. */
             }
-            *ppCmd = (uint8_t*)pCtl;
+            *ppbCmd = (uint8_t RT_UNTRUSTED_VOLATILE_GUEST *)pCtl; /* Note! pCtl is host data, so trusted */
             *pcbCmd = sizeof (*pCtl);
             return VBVAEXHOST_DATA_TYPE_GUESTCTL;
         }
@@ -556,7 +568,7 @@ static VBVAEXHOST_DATA_TYPE vboxVBVAExHPDataGet(struct VBVAEXHOSTCONTEXT *pCmdVb
         if (ASMAtomicUoReadS32(&pCmdVbva->i32EnableState) <= VBVAEXHOSTCONTEXT_ESTATE_PAUSED)
             return VBVAEXHOST_DATA_TYPE_NO_DATA;
 
-        int rc = vboxVBVAExHPCmdGet(pCmdVbva, ppCmd, pcbCmd);
+        int rc = vboxVBVAExHPCmdGet(pCmdVbva, ppbCmd, pcbCmd);
         switch (rc)
         {
             case VINF_SUCCESS:
@@ -579,9 +591,10 @@ static VBVAEXHOST_DATA_TYPE vboxVBVAExHPDataGet(struct VBVAEXHOSTCONTEXT *pCmdVb
  * Called by vboxVDMAWorkerThread to get the next command to process.
  * @thread VDMA
  */
-static VBVAEXHOST_DATA_TYPE VBoxVBVAExHPDataGet(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t **ppCmd, uint32_t *pcbCmd)
+static VBVAEXHOST_DATA_TYPE VBoxVBVAExHPDataGet(struct VBVAEXHOSTCONTEXT *pCmdVbva,
+                                                uint8_t RT_UNTRUSTED_VOLATILE_GUEST **ppbCmd, uint32_t *pcbCmd)
 {
-    VBVAEXHOST_DATA_TYPE enmType = vboxVBVAExHPDataGet(pCmdVbva, ppCmd, pcbCmd);
+    VBVAEXHOST_DATA_TYPE enmType = vboxVBVAExHPDataGetInner(pCmdVbva, ppbCmd, pcbCmd);
     if (enmType == VBVAEXHOST_DATA_TYPE_NO_DATA)
     {
         vboxVBVAExHPHgEventClear(pCmdVbva);
@@ -600,7 +613,7 @@ static VBVAEXHOST_DATA_TYPE VBoxVBVAExHPDataGet(struct VBVAEXHOSTCONTEXT *pCmdVb
         if (RT_SUCCESS(rc))
         {
             /* we are the processor now */
-            enmType = vboxVBVAExHPDataGet(pCmdVbva, ppCmd, pcbCmd);
+            enmType = vboxVBVAExHPDataGetInner(pCmdVbva, ppbCmd, pcbCmd);
             if (enmType == VBVAEXHOST_DATA_TYPE_NO_DATA)
             {
                 vboxVBVAExHPProcessorRelease(pCmdVbva);
@@ -619,11 +632,12 @@ static VBVAEXHOST_DATA_TYPE VBoxVBVAExHPDataGet(struct VBVAEXHOSTCONTEXT *pCmdVb
  */
 DECLINLINE(bool) vboxVBVAExHSHasCommands(struct VBVAEXHOSTCONTEXT *pCmdVbva)
 {
-    VBVABUFFER *pVBVA = pCmdVbva->pVBVA;
+    VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *pVBVA = pCmdVbva->pVBVA;
     if (pVBVA)
     {
         uint32_t indexRecordFirst = pVBVA->indexRecordFirst;
-        uint32_t indexRecordFree = pVBVA->indexRecordFree;
+        uint32_t indexRecordFree  = pVBVA->indexRecordFree;
+        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
         if (indexRecordFirst != indexRecordFree)
             return true;
@@ -716,7 +730,8 @@ DECLINLINE(bool) VBoxVBVAExHSIsDisabled(struct VBVAEXHOSTCONTEXT *pCmdVbva)
  *
  * @thread VDMA
  */
-static int VBoxVBVAExHSEnable(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVABUFFER *pVBVA, uint8_t *pbVRam, uint32_t cbVRam)
+static int VBoxVBVAExHSEnable(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *pVBVA,
+                              uint8_t *pbVRam, uint32_t cbVRam)
 {
     if (VBoxVBVAExHSIsEnabled(pCmdVbva))
     {
@@ -726,6 +741,7 @@ static int VBoxVBVAExHSEnable(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVABUFFER *pV
 
     uintptr_t offVRam = (uintptr_t)pVBVA - (uintptr_t)pbVRam;
     AssertLogRelMsgReturn(offVRam < cbVRam - sizeof(*pVBVA), ("%#p cbVRam=%#x\n", offVRam, cbVRam), VERR_OUT_OF_RANGE);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
     pCmdVbva->pVBVA     = pVBVA;
     pCmdVbva->cbMaxData = cbVRam - offVRam - RT_UOFFSETOF(VBVABUFFER, au8Data);
@@ -783,7 +799,7 @@ static int vboxVBVAExHSSaveGuestCtl(struct VBVAEXHOSTCONTEXT *pCmdVbva, VBVAEXHO
     AssertRCReturn(rc, rc);
     rc = SSMR3PutU32(pSSM, pCtl->u.cmd.cbCmd);
     AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, (uint32_t)(pCtl->u.cmd.pu8Cmd - pu8VramBase));
+    rc = SSMR3PutU32(pSSM, (uint32_t)((uintptr_t)pCtl->u.cmd.pvCmd - (uintptr_t)pu8VramBase));
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
@@ -864,7 +880,7 @@ static int vboxVBVAExHSLoadGuestCtl(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t*
 
     rc = SSMR3GetU32(pSSM, &u32);
     AssertLogRelRCReturn(rc, rc);
-    pHCtl->u.cmd.pu8Cmd = pu8VramBase + u32;
+    pHCtl->u.cmd.pvCmd = pu8VramBase + u32;
 
     RTListAppend(&pCmdVbva->GuestCtlList, &pHCtl->Node);
     ++pCmdVbva->u32cCtls;
@@ -923,7 +939,7 @@ static int VBoxVBVAExHSLoadState(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8_t* pu
  * The @a enmSource argument decides which list (guest/host) it's queued on.
  *
  */
-static int VBoxVBVAExHCtlSubmit(VBVAEXHOSTCONTEXT *pCmdVbva, VBVAEXHOSTCTL* pCtl, VBVAEXHOSTCTL_SOURCE enmSource,
+static int VBoxVBVAExHCtlSubmit(VBVAEXHOSTCONTEXT *pCmdVbva, VBVAEXHOSTCTL *pCtl, VBVAEXHOSTCTL_SOURCE enmSource,
                                 PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
 {
     int rc;
@@ -1446,7 +1462,7 @@ vboxVDMACrHgcmHandleEnableRemainingHostCommand(HVBOXCRCMDCTL_REMAINING_HOST_COMM
     if (pVdma->pCurRemainingHostCtl)
     {
         *pcbCtl = pVdma->pCurRemainingHostCtl->u.cmd.cbCmd;
-        return pVdma->pCurRemainingHostCtl->u.cmd.pu8Cmd;
+        return (uint8_t *)pVdma->pCurRemainingHostCtl->u.cmd.pvCmd;
     }
 
     *pcbCtl = 0;
@@ -1533,7 +1549,8 @@ static int vdmaVBVAEnableProcess(struct VBOXVDMAHOST *pVdma, uint32_t u32Offset)
         return VERR_INVALID_STATE;
     }
 
-    VBVABUFFER *pVBVA = (VBVABUFFER *)HGSMIOffsetToPointerHost(pVdma->pHgsmi, u32Offset);
+    VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *pVBVA
+        = (VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *)HGSMIOffsetToPointerHost(pVdma->pHgsmi, u32Offset);
     if (!pVBVA)
     {
         WARN(("invalid offset %d (%#x)\n", u32Offset, u32Offset));
@@ -1659,7 +1676,7 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
             if (VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
             {
                 if (pVdma->CrSrvInfo.pfnHostCtl)
-                    return pVdma->CrSrvInfo.pfnHostCtl(pVdma->CrSrvInfo.hSvr, pCmd->u.cmd.pu8Cmd, pCmd->u.cmd.cbCmd);
+                    return pVdma->CrSrvInfo.pfnHostCtl(pVdma->CrSrvInfo.hSvr, (uint8_t *)pCmd->u.cmd.pvCmd, pCmd->u.cmd.cbCmd);
                 WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE for disabled vdma VBVA\n"));
             }
             else
@@ -1771,6 +1788,8 @@ static int vboxVDMASetupScreenInfo(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen)
         if (   idxView < pVGAState->cMonitors
             || idxView == UINT32_C(0xFFFFFFFF))
         {
+            RT_UNTRUSTED_VALIDATED_FENCE();
+
             RT_ZERO(*pScreen);
             pScreen->u32ViewIndex = idxView;
             pScreen->u16Flags     = VBVA_SCREEN_F_ACTIVE | VBVA_SCREEN_F_DISABLED;
@@ -1784,6 +1803,7 @@ static int vboxVDMASetupScreenInfo(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen)
             if (   idxView >= pVGAState->cMonitors
                 && idxView != UINT32_C(0xFFFFFFFF))
                 return VERR_INVALID_PARAMETER;
+            RT_UNTRUSTED_VALIDATED_FENCE();
 
             /* Special case for blanking using current video mode.
              * Only 'u16Flags' and 'u32ViewIndex' field are relevant.
@@ -1825,10 +1845,14 @@ static int vboxVDMASetupScreenInfo(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen)
  *
  * @thread  VDMA
  */
-static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOXCMDVBVA_RESIZE_ENTRY *pEntry)
+static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma,
+                                                VBOXCMDVBVA_RESIZE_ENTRY RT_UNTRUSTED_VOLATILE_GUEST *pEntry)
 {
     PVGASTATE pVGAState = pVdma->pVGAState;
-    VBVAINFOSCREEN Screen = pEntry->Screen;
+
+    VBVAINFOSCREEN Screen;
+    RT_COPY_VOLATILE(Screen, pEntry->Screen);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
     /* Verify and cleanup local copy of the input data. */
     int rc = vboxVDMASetupScreenInfo(pVGAState, &Screen);
@@ -1837,9 +1861,12 @@ static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOX
         WARN(("invalid screen data\n"));
         return rc;
     }
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
     VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aTargetMap);
-    memcpy(aTargetMap, pEntry->aTargetMap, sizeof(aTargetMap));
+    RT_BCOPY_VOLATILE(aTargetMap, pEntry->aTargetMap, sizeof(aTargetMap));
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+
     ASMBitClearRange(aTargetMap, pVGAState->cMonitors, VBOX_VIDEO_MAX_SCREENS);
 
     if (pVdma->CrSrvInfo.pfnResize)
@@ -1925,7 +1952,9 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
             if (VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
             {
                 if (pVdma->CrSrvInfo.pfnGuestCtl)
-                    return pVdma->CrSrvInfo.pfnGuestCtl(pVdma->CrSrvInfo.hSvr, pCmd->u.cmd.pu8Cmd, pCmd->u.cmd.cbCmd);
+                    return pVdma->CrSrvInfo.pfnGuestCtl(pVdma->CrSrvInfo.hSvr,
+                                                        (uint8_t RT_UNTRUSTED_VOLATILE_GUEST *)pCmd->u.cmd.pvCmd,
+                                                        pCmd->u.cmd.cbCmd);
 
                 /* Unexpected. */
                 WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE in HGCM-less mode\n"));
@@ -1945,10 +1974,11 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
                     && cbCmd > 0)
                 {
                     uint32_t cElements = cbCmd / sizeof(VBOXCMDVBVA_RESIZE_ENTRY);
-                    VBOXCMDVBVA_RESIZE *pResize = (VBOXCMDVBVA_RESIZE *)pCmd->u.cmd.pu8Cmd;
+                    VBOXCMDVBVA_RESIZE RT_UNTRUSTED_VOLATILE_GUEST *pResize
+                        = (VBOXCMDVBVA_RESIZE RT_UNTRUSTED_VOLATILE_GUEST *)pCmd->u.cmd.pvCmd;
                     for (uint32_t i = 0; i < cElements; ++i)
                     {
-                        VBOXCMDVBVA_RESIZE_ENTRY *pEntry = &pResize->aEntries[i];
+                        VBOXCMDVBVA_RESIZE_ENTRY RT_UNTRUSTED_VOLATILE_GUEST *pEntry = &pResize->aEntries[i];
                         int rc = vboxVDMACrGuestCtlResizeEntryProcess(pVdma, pEntry);
                         if (RT_FAILURE(rc))
                         {
@@ -1971,10 +2001,12 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
         case VBVAEXHOSTCTL_TYPE_GHH_ENABLE:
         case VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED:
         {
-            VBVAENABLE *pEnable = (VBVAENABLE *)pCmd->u.cmd.pu8Cmd;
+            VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *pEnable = (VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *)pCmd->u.cmd.pvCmd;
             Assert(pCmd->u.cmd.cbCmd == sizeof(VBVAENABLE));
 
-            uint32_t u32Offset = pEnable->u32Offset;
+            uint32_t const u32Offset = pEnable->u32Offset;
+            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+
             int rc = vdmaVBVAEnableProcess(pVdma, u32Offset);
             if (RT_SUCCESS(rc))
             {
@@ -2029,34 +2061,27 @@ static int vboxVDMACrCmdVbvaProcessPagingEl(PPDMDEVINS pDevIns, VBOXCMDVBVAPAGEI
 {
     RTGCPHYS       GCPhysPage = (RTGCPHYS)uPageNo << X86_PAGE_SHIFT;
     PGMPAGEMAPLOCK Lock;
-    int rc;
 
     if (fIn)
     {
         const void *pvPage;
-        rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhysPage, 0, &pvPage, &Lock);
-        if (RT_SUCCESS(rc))
-        {
-            memcpy(pbVram, pvPage, PAGE_SIZE);
-            PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
-        }
-        else
-            WARN(("PDMDevHlpPhysGCPhys2CCPtrReadOnly failed %Rrc", rc));
+        int rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhysPage, 0, &pvPage, &Lock);
+        ASSERT_GUEST_LOGREL_MSG_RC_RETURN(rc, ("PDMDevHlpPhysGCPhys2CCPtrReadOnly %RGp -> %Rrc\n", GCPhysPage, rc), rc);
+
+        memcpy(pbVram, pvPage, PAGE_SIZE);
+        PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
     }
     else
     {
         void *pvPage;
-        rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, GCPhysPage, 0, &pvPage, &Lock);
-        if (RT_SUCCESS(rc))
-        {
-            memcpy(pvPage, pbVram, PAGE_SIZE);
-            PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
-        }
-        else
-            WARN(("PDMDevHlpPhysGCPhys2CCPtr failed %Rrc", rc));
+        int rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, GCPhysPage, 0, &pvPage, &Lock);
+        ASSERT_GUEST_LOGREL_MSG_RC_RETURN(rc, ("PDMDevHlpPhysGCPhys2CCPtr %RGp -> %Rrc\n", GCPhysPage, rc), rc);
+
+        memcpy(pvPage, pbVram, PAGE_SIZE);
+        PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2066,25 +2091,29 @@ static int vboxVDMACrCmdVbvaProcessPagingEl(PPDMDEVINS pDevIns, VBOXCMDVBVAPAGEI
  *
  * @thread VDMA
  */
-static int8_t vboxVDMACrCmdVbvaPageTransfer(PVGASTATE pVGAState, VBOXCMDVBVA_HDR const volatile *pHdr, uint32_t cbCmd,
-                                            const VBOXCMDVBVA_PAGING_TRANSFER_DATA *pData)
+static int8_t vboxVDMACrCmdVbvaPageTransfer(PVGASTATE pVGAState, VBOXCMDVBVA_HDR const RT_UNTRUSTED_VOLATILE_GUEST *pHdr,
+                                            uint32_t cbCmd, const VBOXCMDVBVA_PAGING_TRANSFER_DATA RT_UNTRUSTED_VOLATILE_GUEST *pData)
 {
     /*
      * Extract and validate information.
      */
-    AssertMsgReturn(cbCmd >= sizeof(VBOXCMDVBVA_PAGING_TRANSFER), ("%#x\n", cbCmd), -1);
+    ASSERT_GUEST_MSG_RETURN(cbCmd >= sizeof(VBOXCMDVBVA_PAGING_TRANSFER), ("%#x\n", cbCmd), -1);
 
     bool const fIn = RT_BOOL(pHdr->u8Flags & VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
     uint32_t cbPageNumbers = cbCmd - RT_OFFSETOF(VBOXCMDVBVA_PAGING_TRANSFER, Data.aPageNumbers);
-    AssertMsgReturn(!(cbPageNumbers % sizeof(VBOXCMDVBVAPAGEIDX)), ("%#x\n", cbPageNumbers), -1);
+    ASSERT_GUEST_MSG_RETURN(!(cbPageNumbers % sizeof(VBOXCMDVBVAPAGEIDX)), ("%#x\n", cbPageNumbers), -1);
     VBOXCMDVBVAPAGEIDX const cPages = cbPageNumbers / sizeof(VBOXCMDVBVAPAGEIDX);
 
     VBOXCMDVBVAOFFSET offVRam = pData->Alloc.u.offVRAM;
-    AssertMsgReturn(!(offVRam & X86_PAGE_OFFSET_MASK), ("%#x\n", offVRam), -1);
-    AssertMsgReturn(offVRam < pVGAState->vram_size, ("%#x vs %#x\n", offVRam, pVGAState->vram_size), -1);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+    ASSERT_GUEST_MSG_RETURN(!(offVRam & X86_PAGE_OFFSET_MASK), ("%#x\n", offVRam), -1);
+    ASSERT_GUEST_MSG_RETURN(offVRam < pVGAState->vram_size, ("%#x vs %#x\n", offVRam, pVGAState->vram_size), -1);
     uint32_t cVRamPages = (pVGAState->vram_size - offVRam) >> X86_PAGE_SHIFT;
-    AssertMsgReturn(cPages <= cVRamPages, ("cPages=%#x vs cVRamPages=%#x @ offVRam=%#x\n", cPages, cVRamPages, offVRam), -1);
+    ASSERT_GUEST_MSG_RETURN(cPages <= cVRamPages, ("cPages=%#x vs cVRamPages=%#x @ offVRam=%#x\n", cPages, cVRamPages, offVRam), -1);
+
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
     /*
      * Execute the command.
@@ -2093,8 +2122,9 @@ static int8_t vboxVDMACrCmdVbvaPageTransfer(PVGASTATE pVGAState, VBOXCMDVBVA_HDR
     for (uint32_t iPage = 0; iPage < cPages; iPage++, pbVRam += X86_PAGE_SIZE)
     {
         uint32_t uPageNo = pData->aPageNumbers[iPage];
+        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
         int rc = vboxVDMACrCmdVbvaProcessPagingEl(pVGAState->pDevInsR3, uPageNo, pbVRam, fIn);
-        AssertMsgReturn(RT_SUCCESS(rc), ("#%#x: uPageNo=%#x rc=%Rrc\n", iPage, uPageNo, rc), -1);
+        ASSERT_GUEST_MSG_RETURN(RT_SUCCESS(rc), ("#%#x: uPageNo=%#x rc=%Rrc\n", iPage, uPageNo, rc), -1);
     }
     return 0;
 }
@@ -2109,40 +2139,38 @@ static int8_t vboxVDMACrCmdVbvaPageTransfer(PVGASTATE pVGAState, VBOXCMDVBVA_HDR
  *
  * @thread VDMA
  */
-static int8_t vboxVDMACrCmdVbvaPagingFill(PVGASTATE pVGAState, VBOXCMDVBVA_PAGING_FILL *pFill)
+static int8_t vboxVDMACrCmdVbvaPagingFill(PVGASTATE pVGAState, VBOXCMDVBVA_PAGING_FILL RT_UNTRUSTED_VOLATILE_GUEST *pFill)
 {
-    VBOXCMDVBVA_PAGING_FILL FillSafe = *pFill;
-    VBOXCMDVBVAOFFSET       offVRAM  = FillSafe.offVRAM;
-    if (!(offVRAM & X86_PAGE_OFFSET_MASK))
-    {
-        if (offVRAM <= pVGAState->vram_size)
-        {
-            uint32_t cbFill = FillSafe.u32CbFill;
-            AssertStmt(!(cbFill & 3), cbFill &= ~(uint32_t)3);
+    /*
+     * Copy and validate input.
+     */
+    VBOXCMDVBVA_PAGING_FILL FillSafe;
+    RT_COPY_VOLATILE(FillSafe, *pFill);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
-            if (   cbFill < pVGAState->vram_size
-                && offVRAM <= pVGAState->vram_size - cbFill)
-            {
-                uint32_t      *pu32Vram = (uint32_t *)((uint8_t *)pVGAState->vram_ptrR3 + offVRAM);
-                uint32_t const u32Color = FillSafe.u32Pattern;
+    VBOXCMDVBVAOFFSET offVRAM = FillSafe.offVRAM;
+    ASSERT_GUEST_MSG_RETURN(!(offVRAM & X86_PAGE_OFFSET_MASK), ("offVRAM=%#x\n", offVRAM), -1);
+    ASSERT_GUEST_MSG_RETURN(offVRAM <= pVGAState->vram_size, ("offVRAM=%#x\n", offVRAM), -1);
 
-                uint32_t cLoops = cbFill / 4;
-                while (cLoops-- > 0)
-                    pu32Vram[cLoops] = u32Color;
+    uint32_t cbFill = FillSafe.u32CbFill;
+    ASSERT_GUEST_STMT(!(cbFill & 3), cbFill &= ~(uint32_t)3);
+    ASSERT_GUEST_MSG_RETURN(   cbFill < pVGAState->vram_size
+                            && offVRAM <= pVGAState->vram_size - cbFill,
+                            ("offVRAM=%#x cbFill=%#x\n", offVRAM, cbFill), -1);
 
-                return 0;
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
-            }
-            else
-                WARN(("invalid cbFill"));
+    /*
+     * Execute.
+     */
+    uint32_t      *pu32Vram = (uint32_t *)((uint8_t *)pVGAState->vram_ptrR3 + offVRAM);
+    uint32_t const u32Color = FillSafe.u32Pattern;
 
-        }
-        WARN(("invalid vram offset"));
+    uint32_t cLoops = cbFill / 4;
+    while (cLoops-- > 0)
+        pu32Vram[cLoops] = u32Color;
 
-    }
-    else
-        WARN(("offVRAM address is not on page boundary\n"));
-    return -1;
+    return 0;
 }
 
 /**
@@ -2155,29 +2183,27 @@ static int8_t vboxVDMACrCmdVbvaPagingFill(PVGASTATE pVGAState, VBOXCMDVBVA_PAGIN
  *
  * @thread VDMA
  */
-static int8_t vboxVDMACrCmdVbvaProcessCmdData(struct VBOXVDMAHOST *pVdma, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd)
+static int8_t vboxVDMACrCmdVbvaProcessCmdData(struct VBOXVDMAHOST *pVdma, const VBOXCMDVBVA_HDR RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
+                                              uint32_t cbCmd)
 {
     uint8_t bOpCode = pCmd->u8OpCode;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     switch (bOpCode)
     {
         case VBOXCMDVBVA_OPTYPE_NOPCMD:
             return 0;
 
         case VBOXCMDVBVA_OPTYPE_PAGING_TRANSFER:
-            return vboxVDMACrCmdVbvaPageTransfer(pVdma->pVGAState, pCmd, cbCmd, &((VBOXCMDVBVA_PAGING_TRANSFER *)pCmd)->Data);
+            return vboxVDMACrCmdVbvaPageTransfer(pVdma->pVGAState, pCmd, cbCmd,
+                                                 &((VBOXCMDVBVA_PAGING_TRANSFER RT_UNTRUSTED_VOLATILE_GUEST *)pCmd)->Data);
 
         case VBOXCMDVBVA_OPTYPE_PAGING_FILL:
-            if (cbCmd == sizeof(VBOXCMDVBVA_PAGING_FILL))
-                return vboxVDMACrCmdVbvaPagingFill(pVdma->pVGAState, (VBOXCMDVBVA_PAGING_FILL *)pCmd);
-            WARN(("cmd too small"));
-            return -1;
+            ASSERT_GUEST_RETURN(cbCmd == sizeof(VBOXCMDVBVA_PAGING_FILL), -1);
+            return vboxVDMACrCmdVbvaPagingFill(pVdma->pVGAState, (VBOXCMDVBVA_PAGING_FILL RT_UNTRUSTED_VOLATILE_GUEST *)pCmd);
 
         default:
-            if (pVdma->CrSrvInfo.pfnCmd)
-                return pVdma->CrSrvInfo.pfnCmd(pVdma->CrSrvInfo.hSvr, pCmd, cbCmd);
-            /* Unexpected. */
-            WARN(("no HGCM"));
-            return -1;
+            ASSERT_GUEST_RETURN(pVdma->CrSrvInfo.pfnCmd != NULL, -1);
+            return pVdma->CrSrvInfo.pfnCmd(pVdma->CrSrvInfo.hSvr, pCmd, cbCmd);
     }
 }
 
@@ -2212,10 +2238,12 @@ AssertCompile(!(X86_PAGE_SIZE % sizeof (VBOXCMDVBVAPAGEIDX)));
  *
  * @thread VDMA
  */
-static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd, bool fRecursion)
+static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMDVBVA_HDR RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
+                                       uint32_t cbCmd, bool fRecursion)
 {
     int8_t        i8Result = 0;
     uint8_t const bOpCode  = pCmd->u8OpCode;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     LogRelFlow(("VDMA: vboxVDMACrCmdVbvaProcess: ENTER, bOpCode=%u\n", bOpCode));
     switch (bOpCode)
     {
@@ -2224,14 +2252,15 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
             /*
              * Extract the command physical address and size.
              */
-            AssertMsgReturn(cbCmd >= sizeof(VBOXCMDVBVA_SYSMEMCMD), ("%#x\n", cbCmd), -1);
-            RTGCPHYS GCPhysCmd  = ((VBOXCMDVBVA_SYSMEMCMD *)pCmd)->phCmd;
+            ASSERT_GUEST_MSG_RETURN(cbCmd >= sizeof(VBOXCMDVBVA_SYSMEMCMD), ("%#x\n", cbCmd), -1);
+            RTGCPHYS GCPhysCmd  = ((VBOXCMDVBVA_SYSMEMCMD RT_UNTRUSTED_VOLATILE_GUEST *)pCmd)->phCmd;
+            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
             uint32_t cbCmdPart  = X86_PAGE_SIZE - (uint32_t)(GCPhysCmd & X86_PAGE_OFFSET_MASK);
 
             uint32_t cbRealCmd  = pCmd->u8Flags;
             cbRealCmd |= (uint32_t)pCmd->u.u8PrimaryID << 8;
-            AssertMsgReturn(cbRealCmd >= sizeof(VBOXCMDVBVA_HDR), ("%#x\n", cbRealCmd), -1);
-            AssertMsgReturn(cbRealCmd <= _1M, ("%#x\n", cbRealCmd), -1);
+            ASSERT_GUEST_MSG_RETURN(cbRealCmd >= sizeof(VBOXCMDVBVA_HDR), ("%#x\n", cbRealCmd), -1);
+            ASSERT_GUEST_MSG_RETURN(cbRealCmd <= _1M, ("%#x\n", cbRealCmd), -1);
 
             /*
              * Lock down the first page of the memory specified by the command.
@@ -2241,11 +2270,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
             PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
             VBOXCMDVBVA_HDR const *pRealCmdHdr = NULL;
             int rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhysCmd, 0, (const void **)&pRealCmdHdr, &Lock);
-            if (!RT_SUCCESS(rc))
-            {
-                WARN(("PDMDevHlpPhysGCPhys2CCPtrReadOnly failed %Rrc\n", rc));
-                return -1;
-            }
+            ASSERT_GUEST_LOGREL_MSG_RC_RETURN(rc, ("VDMA: %RGp -> %Rrc\n", GCPhysCmd, rc), -1);
             Assert((GCPhysCmd & PAGE_OFFSET_MASK) == (((uintptr_t)pRealCmdHdr) & PAGE_OFFSET_MASK));
 
             /*
@@ -2289,7 +2314,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
         case VBOXCMDVBVA_OPTYPE_COMPLEXCMD:
         {
             Assert(cbCmd >= sizeof(VBOXCMDVBVA_HDR)); /* caller already checked this */
-            AssertReturn(!fRecursion, -1);
+            ASSERT_GUEST_RETURN(!fRecursion, -1);
 
             /* Skip current command. */
             cbCmd -= sizeof(*pCmd);
@@ -2298,20 +2323,17 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
             /* Process subcommands. */
             while (cbCmd > 0)
             {
-                AssertMsgReturn(cbCmd >= sizeof(VBOXCMDVBVA_HDR), ("%#x\n", cbCmd), -1);
+                ASSERT_GUEST_MSG_RETURN(cbCmd >= sizeof(VBOXCMDVBVA_HDR), ("%#x\n", cbCmd), -1);
 
                 uint16_t cbCurCmd = pCmd->u2.complexCmdEl.u16CbCmdHost;
-                AssertMsgReturn(cbCurCmd <= cbCmd, ("cbCurCmd=%#x, cbCmd=%#x\n", cbCurCmd, cbCmd), -1);
+                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+                ASSERT_GUEST_MSG_RETURN(cbCurCmd <= cbCmd, ("cbCurCmd=%#x, cbCmd=%#x\n", cbCurCmd, cbCmd), -1);
 
                 i8Result = vboxVDMACrCmdVbvaProcess(pVdma, pCmd, cbCurCmd, true /*fRecursive*/);
-                if (i8Result < 0)
-                {
-                    WARN(("vboxVDMACrCmdVbvaProcess failed"));
-                    return i8Result;
-                }
+                ASSERT_GUEST_MSG_RETURN(i8Result >= 0, ("vboxVDMACrCmdVbvaProcess -> %d\n", i8Result), i8Result);
 
                 /* Advance to the next command. */
-                pCmd  = (VBOXCMDVBVA_HDR *)((uintptr_t)pCmd + cbCurCmd);
+                pCmd  = (VBOXCMDVBVA_HDR RT_UNTRUSTED_VOLATILE_GUEST *)((uintptr_t)pCmd + cbCurCmd);
                 cbCmd -= cbCurCmd;
             }
             return 0;
@@ -2329,14 +2351,15 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
  *
  * @thread VDMA
  */
-static void vboxVDMACrCmdProcess(struct VBOXVDMAHOST *pVdma, uint8_t* pbCmd, uint32_t cbCmd)
+static void vboxVDMACrCmdProcess(struct VBOXVDMAHOST *pVdma, uint8_t RT_UNTRUSTED_VOLATILE_GUEST *pbCmd, uint32_t cbCmd)
 {
     if (   cbCmd > 0
         && *pbCmd == VBOXCMDVBVA_OPTYPE_NOP)
     { /* nop */ }
-    else if (cbCmd >= sizeof(VBOXCMDVBVA_HDR))
+    else
     {
-        PVBOXCMDVBVA_HDR pCmd = (PVBOXCMDVBVA_HDR)pbCmd;
+        ASSERT_GUEST_RETURN_VOID(cbCmd >= sizeof(VBOXCMDVBVA_HDR));
+        VBOXCMDVBVA_HDR RT_UNTRUSTED_VOLATILE_GUEST *pCmd = (VBOXCMDVBVA_HDR RT_UNTRUSTED_VOLATILE_GUEST *)pbCmd;
 
         /* check if the command is cancelled */
         if (ASMAtomicCmpXchgU8(&pCmd->u8State, VBOXCMDVBVA_STATE_IN_PROGRESS, VBOXCMDVBVA_STATE_SUBMITTED))
@@ -2347,8 +2370,6 @@ static void vboxVDMACrCmdProcess(struct VBOXVDMAHOST *pVdma, uint8_t* pbCmd, uin
         else
             Assert(pCmd->u8State == VBOXCMDVBVA_STATE_CANCELLED);
     }
-    else
-        WARN(("invalid command size"));
 
 }
 
@@ -2545,7 +2566,7 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const VBOXVDMACMD_DMA_PRESENT
      */
     AssertReturn(cbBuffer >= RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects), VERR_INVALID_PARAMETER);
     VBOXVDMACMD_DMA_PRESENT_BLT BltSafe;
-    memcpy(&BltSafe, (void const *)pBlt, RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects));
+    RT_BCOPY_VOLATILE(&BltSafe, (void const *)pBlt, RT_UOFFSETOF(VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects));
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
     AssertReturn(BltSafe.cDstSubRects < _8M, VERR_INVALID_PARAMETER);
@@ -2625,7 +2646,7 @@ static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, VBOXVDMACMD_DMA_BPB_T
      */
     AssertReturn(cbBuffer >= sizeof(*pTransfer), VERR_INVALID_PARAMETER);
     VBOXVDMACMD_DMA_BPB_TRANSFER TransferSafeCopy;
-    memcpy(&TransferSafeCopy, (void const *)pTransfer, sizeof(TransferSafeCopy));
+    RT_COPY_VOLATILE(TransferSafeCopy, *pTransfer);
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
     PVGASTATE   pVGAState    = pVdma->pVGAState;
@@ -2819,8 +2840,8 @@ static DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD hThreadSelf, void *pvUser
 
     while (!VBoxVDMAThreadIsTerminating(&pVdma->Thread))
     {
-        uint8_t             *pbCmd   = NULL;
-        uint32_t             cbCmd   = 0;
+        uint8_t RT_UNTRUSTED_VOLATILE_GUEST *pbCmd = NULL;
+        uint32_t                             cbCmd = 0;
         VBVAEXHOST_DATA_TYPE enmType = VBoxVBVAExHPDataGet(pCmdVbva, &pbCmd, &cbCmd);
         switch (enmType)
         {
@@ -2872,7 +2893,7 @@ static DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD hThreadSelf, void *pvUser
  * @param   pfAsyncCmd  Flag to set if async command completion on chromium
  *                      requests.  Input stat is false, so it only ever need to
  *                      be set to true.
- * @thread  VDMA
+ * @thread  EMT
  */
 static int vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
                                   uint32_t cbCmd, bool *pfAsyncCmd)
@@ -3134,6 +3155,7 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, VBOXVDMA_CTL RT_UNTRUSTED_VOLAT
  * @param   pVdma   The VDMA channel.
  * @param   pCmd    The command to handle.  Considered volatile.
  * @param   cbCmd   The size of the command.  At least sizeof(VBOXVDMACBUF_DR).
+ * @thread  EMT
  */
 void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd)
 {
@@ -3169,7 +3191,8 @@ static DECLCALLBACK(void) vboxCmdVBVACmdCtlGuestCompletion(VBVAEXHOSTCONTEXT *pV
                                                            int rc, void *pvContext)
 {
     PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)pvContext;
-    VBOXCMDVBVA_CTL *pGCtl = (VBOXCMDVBVA_CTL*)(pCtl->u.cmd.pu8Cmd - sizeof (VBOXCMDVBVA_CTL));
+    VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pGCtl
+        = (VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *)((uintptr_t)pCtl->u.cmd.pvCmd - sizeof(VBOXCMDVBVA_CTL));
     AssertRC(rc);
     pGCtl->i32Result = rc;
 
@@ -3184,14 +3207,15 @@ static DECLCALLBACK(void) vboxCmdVBVACmdCtlGuestCompletion(VBVAEXHOSTCONTEXT *pV
  * Worker for vdmaVBVACtlGenericGuestSubmit() and vdmaVBVACtlOpaqueHostSubmit().
  */
 static int vdmaVBVACtlGenericSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL_SOURCE enmSource, VBVAEXHOSTCTL_TYPE enmType,
-                                    uint8_t* pu8Cmd, uint32_t cbCmd, PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
+                                    uint8_t RT_UNTRUSTED_VOLATILE_GUEST *pbCmd, uint32_t cbCmd,
+                                    PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
 {
     int            rc;
     VBVAEXHOSTCTL *pHCtl = VBoxVBVAExHCtlCreate(&pVdma->CmdVbva, enmType);
     if (pHCtl)
     {
-        pHCtl->u.cmd.pu8Cmd = pu8Cmd;
-        pHCtl->u.cmd.cbCmd  = cbCmd;
+        pHCtl->u.cmd.pvCmd = pbCmd;
+        pHCtl->u.cmd.cbCmd = cbCmd;
         rc = vdmaVBVACtlSubmit(pVdma, pHCtl, enmSource, pfnComplete, pvComplete);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
@@ -3216,8 +3240,10 @@ static int vdmaVBVACtlGenericGuestSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL_TYPE
     Assert(cbCtl >= sizeof(VBOXCMDVBVA_CTL)); /* Checked by callers caller, vbvaChannelHandler(). */
 
     VBoxSHGSMICommandMarkAsynchCompletion(pCtl);
-    int rc = vdmaVBVACtlGenericSubmit(pVdma, VBVAEXHOSTCTL_SOURCE_GUEST, enmType, (uint8_t *)(pCtl + 1),
-                                      cbCtl - sizeof(VBOXCMDVBVA_CTL), vboxCmdVBVACmdCtlGuestCompletion, pVdma);
+    int rc = vdmaVBVACtlGenericSubmit(pVdma, VBVAEXHOSTCTL_SOURCE_GUEST, enmType,
+                                      (uint8_t RT_UNTRUSTED_VOLATILE_GUEST *)(pCtl + 1),
+                                      cbCtl - sizeof(VBOXCMDVBVA_CTL),
+                                      vboxCmdVBVACmdCtlGuestCompletion, pVdma);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
@@ -3234,7 +3260,7 @@ static int vdmaVBVACtlGenericGuestSubmit(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL_TYPE
 static DECLCALLBACK(void) vboxCmdVBVACmdCtlHostCompletion(VBVAEXHOSTCONTEXT *pVbva, struct VBVAEXHOSTCTL *pCtl,
                                                           int rc, void *pvCompletion)
 {
-    VBOXCRCMDCTL* pVboxCtl = (VBOXCRCMDCTL*)pCtl->u.cmd.pu8Cmd;
+    VBOXCRCMDCTL *pVboxCtl = (VBOXCRCMDCTL *)pCtl->u.cmd.pvCmd;
     if (pVboxCtl->u.pfnInternal)
         ((PFNCRCTLCOMPLETION)pVboxCtl->u.pfnInternal)(pVboxCtl, pCtl->u.cmd.cbCmd, rc, pvCompletion);
     VBoxVBVAExHCtlFree(pVbva, pCtl);
@@ -3340,14 +3366,15 @@ static DECLCALLBACK(void) vdmaVBVACtlThreadCreatedEnable(struct VBOXVDMATHREAD *
 /**
  * Worker for vdmaVBVACtlEnableDisableSubmitInternal() and vdmaVBVACtlEnableSubmitSync().
  */
-static int vdmaVBVACtlEnableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE *pEnable, bool fPaused, PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
+static int vdmaVBVACtlEnableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *pEnable, bool fPaused,
+                                           PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
 {
     int rc;
     VBVAEXHOSTCTL *pHCtl = VBoxVBVAExHCtlCreate(&pVdma->CmdVbva,
                                                 fPaused ? VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED : VBVAEXHOSTCTL_TYPE_GHH_ENABLE);
     if (pHCtl)
     {
-        pHCtl->u.cmd.pu8Cmd = (uint8_t *)pEnable;
+        pHCtl->u.cmd.pvCmd  = pEnable;
         pHCtl->u.cmd.cbCmd  = sizeof(*pEnable);
         pHCtl->pfnComplete  = pfnComplete;
         pHCtl->pvComplete   = pvComplete;
@@ -3355,8 +3382,8 @@ static int vdmaVBVACtlEnableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE *pEna
         rc = VBoxVDMAThreadCreate(&pVdma->Thread, vboxVDMAWorkerThread, pVdma, vdmaVBVACtlThreadCreatedEnable, pHCtl);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
-        WARN(("VBoxVDMAThreadCreate failed %d\n", rc));
 
+        WARN(("VBoxVDMAThreadCreate failed %Rrc\n", rc));
         VBoxVBVAExHCtlFree(&pVdma->CmdVbva, pHCtl);
     }
     else
@@ -3410,26 +3437,25 @@ static int vdmaVBVACtlEnableSubmitSync(PVBOXVDMAHOST pVdma, uint32_t offVram, bo
 /**
  * Worker for vdmaVBVACtlEnableDisableSubmitInternal().
  */
-static int vdmaVBVACtlDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE *pEnable,
+static int vdmaVBVACtlDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *pEnable,
                                             PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
 {
     int rc;
-    VBVAEXHOSTCTL* pHCtl;
     if (VBoxVBVAExHSIsDisabled(&pVdma->CmdVbva))
     {
         WARN(("VBoxVBVAExHSIsDisabled: disabled"));
         return VINF_SUCCESS;
     }
 
-    pHCtl = VBoxVBVAExHCtlCreate(&pVdma->CmdVbva, VBVAEXHOSTCTL_TYPE_GHH_DISABLE);
+    VBVAEXHOSTCTL *pHCtl = VBoxVBVAExHCtlCreate(&pVdma->CmdVbva, VBVAEXHOSTCTL_TYPE_GHH_DISABLE);
     if (!pHCtl)
     {
         WARN(("VBoxVBVAExHCtlCreate failed\n"));
         return VERR_NO_MEMORY;
     }
 
-    pHCtl->u.cmd.pu8Cmd = (uint8_t*)pEnable;
-    pHCtl->u.cmd.cbCmd = sizeof (*pEnable);
+    pHCtl->u.cmd.pvCmd = pEnable;
+    pHCtl->u.cmd.cbCmd = sizeof(*pEnable);
     rc = vdmaVBVACtlSubmit(pVdma, pHCtl, VBVAEXHOSTCTL_SOURCE_GUEST, pfnComplete, pvComplete);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
@@ -3442,7 +3468,7 @@ static int vdmaVBVACtlDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE *pEn
 /**
  * Worker for vdmaVBVACtlEnableDisableSubmit().
  */
-static int vdmaVBVACtlEnableDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE *pEnable,
+static int vdmaVBVACtlEnableDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *pEnable,
                                                   PFNVBVAEXHOSTCTL_COMPLETE pfnComplete, void *pvComplete)
 {
     bool fEnable = (pEnable->u32Flags & (VBVA_F_ENABLE | VBVA_F_DISABLE)) == VBVA_F_ENABLE;
@@ -3454,7 +3480,7 @@ static int vdmaVBVACtlEnableDisableSubmitInternal(PVBOXVDMAHOST pVdma, VBVAENABL
 /**
  * Handler for vboxCmdVBVACmdCtl/VBOXCMDVBVACTL_TYPE_ENABLE.
  */
-static int vdmaVBVACtlEnableDisableSubmit(PVBOXVDMAHOST pVdma, VBOXCMDVBVA_CTL_ENABLE *pEnable)
+static int vdmaVBVACtlEnableDisableSubmit(PVBOXVDMAHOST pVdma, VBOXCMDVBVA_CTL_ENABLE RT_UNTRUSTED_VOLATILE_GUEST *pEnable)
 {
     VBoxSHGSMICommandMarkAsynchCompletion(&pEnable->Hdr);
     int rc = vdmaVBVACtlEnableDisableSubmitInternal(pVdma, &pEnable->Enable, vboxCmdVBVACmdCtlGuestCompletion, pVdma);
@@ -3484,35 +3510,37 @@ static DECLCALLBACK(void) vdmaVBVACtlSubmitSyncCompletion(VBVAEXHOSTCONTEXT *pVb
 }
 
 
-static int vdmaVBVACtlSubmitSync(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL* pCtl, VBVAEXHOSTCTL_SOURCE enmSource)
+/**
+ *
+ */
+static int vdmaVBVACtlSubmitSync(PVBOXVDMAHOST pVdma, VBVAEXHOSTCTL *pCtl, VBVAEXHOSTCTL_SOURCE enmSource)
 {
     VDMA_VBVA_CTL_CYNC_COMPLETION Data;
-    Data.rc = VERR_NOT_IMPLEMENTED;
+    Data.rc     = VERR_NOT_IMPLEMENTED;
+    Data.hEvent = NIL_RTSEMEVENT;
     int rc = RTSemEventCreate(&Data.hEvent);
-    if (!RT_SUCCESS(rc))
-    {
-        WARN(("RTSemEventCreate failed %Rrc\n", rc));
-        return rc;
-    }
-
-    rc = vdmaVBVACtlSubmit(pVdma, pCtl, enmSource, vdmaVBVACtlSubmitSyncCompletion, &Data);
     if (RT_SUCCESS(rc))
     {
-        rc = RTSemEventWait(Data.hEvent, RT_INDEFINITE_WAIT);
+        rc = vdmaVBVACtlSubmit(pVdma, pCtl, enmSource, vdmaVBVACtlSubmitSyncCompletion, &Data);
         if (RT_SUCCESS(rc))
         {
-            rc = Data.rc;
-            if (!RT_SUCCESS(rc))
-                WARN(("vdmaVBVACtlSubmitSyncCompletion returned %Rrc\n", rc));
+            rc = RTSemEventWait(Data.hEvent, RT_INDEFINITE_WAIT);
+            if (RT_SUCCESS(rc))
+            {
+                rc = Data.rc;
+                if (!RT_SUCCESS(rc))
+                    WARN(("vdmaVBVACtlSubmitSyncCompletion returned %Rrc\n", rc));
+            }
+            else
+                WARN(("RTSemEventWait failed %Rrc\n", rc));
         }
         else
-            WARN(("RTSemEventWait failed %Rrc\n", rc));
+            Log(("vdmaVBVACtlSubmit failed %Rrc\n", rc));
+
+        RTSemEventDestroy(Data.hEvent);
     }
     else
-        Log(("vdmaVBVACtlSubmit failed %Rrc\n", rc));
-
-    RTSemEventDestroy(Data.hEvent);
-
+        WARN(("RTSemEventCreate failed %Rrc\n", rc));
     return rc;
 }
 
@@ -3719,11 +3747,15 @@ DECLCALLBACK(int) vboxCmdVBVACmdHostCtlSync(PPDMIDISPLAYVBVACALLBACKS pInterface
  * @param   pCtl                The control command.
  * @param   cbCtl               The size of it.  This is at least
  *                              sizeof(VBOXCMDVBVA_CTL).
+ * @thread  EMT
  */
 int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl, uint32_t cbCtl)
 {
     struct VBOXVDMAHOST *pVdma = pVGAState->pVdma;
-    switch (pCtl->u32Type)
+    uint32_t uType = pCtl->u32Type;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+
+    switch (uType)
     {
         case VBOXCMDVBVACTL_TYPE_3DCTL:
             return vdmaVBVACtlGenericGuestSubmit(pVdma, VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE, pCtl, cbCtl);
@@ -3733,7 +3765,7 @@ int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE
 
         case VBOXCMDVBVACTL_TYPE_ENABLE:
             if (cbCtl == sizeof(VBOXCMDVBVA_CTL_ENABLE))
-                return vdmaVBVACtlEnableDisableSubmit(pVdma, (VBOXCMDVBVA_CTL_ENABLE *)pCtl);
+                return vdmaVBVACtlEnableDisableSubmit(pVdma, (VBOXCMDVBVA_CTL_ENABLE RT_UNTRUSTED_VOLATILE_GUEST *)pCtl);
             WARN(("incorrect enable size\n"));
             break;
         default:
@@ -3749,6 +3781,8 @@ int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE
 
 /**
  * Handler for VBVA_CMDVBVA_SUBMIT, see vbvaChannelHandler().
+ *
+ * @thread  EMT
  */
 int vboxCmdVBVACmdSubmit(PVGASTATE pVGAState)
 {
@@ -3763,6 +3797,8 @@ int vboxCmdVBVACmdSubmit(PVGASTATE pVGAState)
 
 /**
  * Handler for VBVA_CMDVBVA_FLUSH, see vbvaChannelHandler().
+ *
+ * @thread  EMT
  */
 int vboxCmdVBVACmdFlush(PVGASTATE pVGAState)
 {
@@ -3895,7 +3931,7 @@ int vboxVDMASaveStateExecPerform(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
     PVGASTATE pVGAState = pVdma->pVGAState;
     uint8_t * pu8VramBase = pVGAState->vram_ptrR3;
 
-    rc = SSMR3PutU32(pSSM, (uint32_t)(((uint8_t*)pVdma->CmdVbva.pVBVA) - pu8VramBase));
+    rc = SSMR3PutU32(pSSM, (uint32_t)((uintptr_t)pVdma->CmdVbva.pVBVA - (uintptr_t)pu8VramBase));
     AssertRCReturn(rc, rc);
 
     VBVAEXHOSTCTL HCtl;
@@ -3957,7 +3993,7 @@ int vboxVDMASaveLoadDone(struct VBOXVDMAHOST *pVdma)
     }
 
     /* sanity */
-    pHCtl->u.cmd.pu8Cmd = NULL;
+    pHCtl->u.cmd.pvCmd = NULL;
     pHCtl->u.cmd.cbCmd = 0;
 
     /* NULL completion will just free the ctl up */

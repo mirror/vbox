@@ -82,23 +82,26 @@ typedef struct VBOXCRCLIENT_INFO
 
 typedef void * HVBOXCRCMDSVR;
 
-/* enables the CrCmd interface, thus the hgcm interface gets disabled.
+/** enables the CrCmd interface, thus the hgcm interface gets disabled.
  * all subsequent calls will be done in the thread Enable was done,
  * until the Disable is called */
 typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_ENABLE)(HVBOXCRCMDSVR hSvr, VBOXCRCMD_SVRENABLE_INFO *pInfo);
-/* Opposite to Enable (see above) */
+/** Opposite to Enable (see above) */
 typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_DISABLE)(HVBOXCRCMDSVR hSvr);
-/* process command */
-typedef DECLCALLBACKPTR(int8_t, PFNVBOXCRCMD_SVR_CMD)(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd);
-/* process host control */
-typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_HOSTCTL)(HVBOXCRCMDSVR hSvr, uint8_t* pCtl, uint32_t cbCmd);
-/* process guest control */
-typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_GUESTCTL)(HVBOXCRCMDSVR hSvr, uint8_t* pCtl, uint32_t cbCmd);
-/* screen resize */
-typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_RESIZE)(HVBOXCRCMDSVR hSvr, const struct VBVAINFOSCREEN *pScreen, const uint32_t *pTargetMap);
-/* process SaveState */
+/** process command */
+typedef DECLCALLBACKPTR(int8_t, PFNVBOXCRCMD_SVR_CMD)(HVBOXCRCMDSVR hSvr,
+                                                      const VBOXCMDVBVA_HDR RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd);
+/** process host control */
+typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_HOSTCTL)(HVBOXCRCMDSVR hSvr, uint8_t *pCtl, uint32_t cbCmd);
+/** process guest control */
+typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_GUESTCTL)(HVBOXCRCMDSVR hSvr, uint8_t RT_UNTRUSTED_VOLATILE_GUEST *pCtl,
+                                                        uint32_t cbCmd);
+/** screen resize */
+typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_RESIZE)(HVBOXCRCMDSVR hSvr, const struct VBVAINFOSCREEN *pScreen,
+                                                      const uint32_t *pTargetMap);
+/** process SaveState */
 typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_SAVESTATE)(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM);
-/* process LoadState */
+/** process LoadState */
 typedef DECLCALLBACKPTR(int, PFNVBOXCRCMD_SVR_LOADSTATE)(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM, uint32_t u32Version);
 
 
