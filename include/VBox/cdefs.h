@@ -76,6 +76,8 @@
 #ifdef DOXYGEN_RUNNING
 #define VBOX_WITH_STATISTICS
 #define VBOX_STRICT
+#define VBOX_STRICT_GUEST
+#define VBOX_NO_STRICT_GUEST
 #define IN_DBG
 #define IN_DIS
 #define IN_INTNET_R0
