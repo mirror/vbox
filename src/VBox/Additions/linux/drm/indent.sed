@@ -96,6 +96,7 @@ s/\bAssert\b\([^;]*\);/WARN_ON_ONCE(!(\1));/g
 s/\bAssertCompile\b/assert_compile/g
 s/\bAssertCompileSize\b/assert_compile_size/g
 s/\bAssertPtr\b\([^;]*\);/WARN_ON_ONCE(!(\1));/g
+s/\bAssertPtrReturn\b\/assert_ptr_return/g
 /AssertPtrNullReturnVoid/d
 s/\bAssertRC\b\([^;]*\);/WARN_ON_ONCE(RT_FAILURE\1);/g
 s/\bAssertRC\b/Assert_RC_statement_should_be_on_one_line/g
@@ -110,6 +111,9 @@ s/\bUINT16_MAX\b/U16_MAX/g
 s/\bUINT32_MAX\b/U32_MAX/g
 s/\bUINT32_C\b(\(.*\))/\1u/g
 s/!VALID_PTR(/WARN_ON(!/g
+s/\bRT_UNTRUSTED_VOLATILE_HOST\b/volatile/g
+s/\bRT_UNTRUSTED_VOLATILE_GUEST\b/volatile/g
+s/\bRT_UNTRUSTED_VOLATILE_HSTGST\b/volatile/g
 
 # Type names:
 s/\bint32_t\b/s32/g
