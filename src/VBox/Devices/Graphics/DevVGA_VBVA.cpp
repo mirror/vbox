@@ -720,53 +720,53 @@ static int vbvaUpdateMousePointerShape(PVGASTATE pVGAState, VBVAMOUSESHAPEINFO *
 static int vbvaMousePointerShape(PVGASTATE pVGAState, VBVACONTEXT *pCtx,
                                  const VBVAMOUSEPOINTERSHAPE RT_UNTRUSTED_VOLATILE_GUEST *pShape, HGSMISIZE cbShape)
 {
-    VBVAMOUSEPOINTERSHAPE parms;
-    memcpy(&parms, (void *)pShape, sizeof(parms));
-    ASMCompilerBarrier();
+    /*
+     * Make non-volatile copy of the shape header and validate it.
+     */
+    VBVAMOUSEPOINTERSHAPE SafeShape;
+    RT_COPY_VOLATILE(SafeShape, *pShape);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
     LogFlowFunc(("VBVA_MOUSE_POINTER_SHAPE: i32Result 0x%x, fu32Flags 0x%x, hot spot %d,%d, size %dx%d\n",
-                 parms.i32Result,
-                 parms.fu32Flags,
-                 parms.u32HotX,
-                 parms.u32HotY,
-                 parms.u32Width,
-                 parms.u32Height));
+                 SafeShape.i32Result, SafeShape.fu32Flags, SafeShape.u32HotX, SafeShape.u32HotY, SafeShape.u32Width, SafeShape.u32Height));
 
-    const bool fVisible = RT_BOOL(parms.fu32Flags & VBOX_MOUSE_POINTER_VISIBLE);
-    const bool fAlpha =   RT_BOOL(parms.fu32Flags & VBOX_MOUSE_POINTER_ALPHA);
-    const bool fShape =   RT_BOOL(parms.fu32Flags & VBOX_MOUSE_POINTER_SHAPE);
+    const bool fVisible = RT_BOOL(SafeShape.fu32Flags & VBOX_MOUSE_POINTER_VISIBLE);
+    const bool fAlpha =   RT_BOOL(SafeShape.fu32Flags & VBOX_MOUSE_POINTER_ALPHA);
+    const bool fShape =   RT_BOOL(SafeShape.fu32Flags & VBOX_MOUSE_POINTER_SHAPE);
 
     HGSMISIZE cbPointerData = 0;
-
     if (fShape)
     {
-         if (parms.u32Width > 8192 || parms.u32Height > 8192)
-         {
-             Log(("vbvaMousePointerShape: unsupported size %ux%u\n", parms.u32Width, parms.u32Height));
-             return VERR_INVALID_PARAMETER;
-         }
+        static const uint32_t s_cxMax = 2048; //used to be: 8192;
+        static const uint32_t s_cyMax = 2048; //used to be: 8192;
+        ASSERT_GUEST_MSG_RETURN(   SafeShape.u32Width  <= s_cxMax
+                                || SafeShape.u32Height <= s_cyMax,
+                                ("Too large: %ux%u, max %ux%x\n", SafeShape.u32Width, SafeShape.u32Height, s_cxMax, s_cyMax),
+                                VERR_INVALID_PARAMETER);
 
-         cbPointerData = ((((parms.u32Width + 7) / 8) * parms.u32Height + 3) & ~3)
-                         + parms.u32Width * 4 * parms.u32Height;
+         cbPointerData = ((((SafeShape.u32Width + 7) / 8) * SafeShape.u32Height + 3) & ~3)
+                       + SafeShape.u32Width * 4 * SafeShape.u32Height;
+
+         ASSERT_GUEST_MSG_RETURN(cbPointerData <= cbShape - RT_UOFFSETOF(VBVAMOUSEPOINTERSHAPE, au8Data),
+                                 ("Insufficent pointer data: Expected %#x, got %#x\n",
+                                  cbPointerData, cbShape - RT_UOFFSETOF(VBVAMOUSEPOINTERSHAPE, au8Data) ),
+                                 VERR_INVALID_PARAMETER);
     }
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
-    if (cbPointerData > cbShape - RT_UOFFSETOF(VBVAMOUSEPOINTERSHAPE, au8Data))
-    {
-        Log(("vbvaMousePointerShape: calculated pointer data size is too big (%d bytes, limit %d)\n",
-             cbPointerData, cbShape - RT_UOFFSETOF(VBVAMOUSEPOINTERSHAPE, au8Data)));
-        return VERR_INVALID_PARAMETER;
-    }
-
+    /*
+     * Do the job.
+     */
     /* Save mouse info it will be used to restore mouse pointer after restoring saved state. */
     pCtx->mouseShapeInfo.fSet = true;
     pCtx->mouseShapeInfo.fVisible = fVisible;
     if (fShape)
     {
         /* Data related to shape. */
-        pCtx->mouseShapeInfo.u32HotX = parms.u32HotX;
-        pCtx->mouseShapeInfo.u32HotY = parms.u32HotY;
-        pCtx->mouseShapeInfo.u32Width = parms.u32Width;
-        pCtx->mouseShapeInfo.u32Height = parms.u32Height;
+        pCtx->mouseShapeInfo.u32HotX = SafeShape.u32HotX;
+        pCtx->mouseShapeInfo.u32HotY = SafeShape.u32HotY;
+        pCtx->mouseShapeInfo.u32Width = SafeShape.u32Width;
+        pCtx->mouseShapeInfo.u32Height = SafeShape.u32Height;
         pCtx->mouseShapeInfo.fAlpha = fAlpha;
 
         /* Reallocate memory buffer if necessary. */
@@ -787,14 +787,12 @@ static int vbvaMousePointerShape(PVGASTATE pVGAState, VBVACONTEXT *pCtx,
         /* Copy shape bitmaps. */
         if (pCtx->mouseShapeInfo.pu8Shape)
         {
-            memcpy(pCtx->mouseShapeInfo.pu8Shape, (void *)&pShape->au8Data[0], cbPointerData);
+            RT_BCOPY_VOLATILE(pCtx->mouseShapeInfo.pu8Shape, &pShape->au8Data[0], cbPointerData);
             pCtx->mouseShapeInfo.cbShape = cbPointerData;
         }
     }
 
-    int rc = vbvaUpdateMousePointerShape(pVGAState, &pCtx->mouseShapeInfo, fShape);
-
-    return rc;
+    return vbvaUpdateMousePointerShape(pVGAState, &pCtx->mouseShapeInfo, fShape);
 }
 
 static uint32_t vbvaViewFromBufferPtr(PHGSMIINSTANCE pIns, const VBVACONTEXT *pCtx,
