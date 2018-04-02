@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,13 +20,13 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
 # include "UIActionPoolRuntime.h"
+# include "UIConverter.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
-# include "UIShortcutPool.h"
-# include "UIConverter.h"
 # include "UIIconPool.h"
-# include "VBoxGlobal.h"
+# include "UIShortcutPool.h"
 
 /* COM includes: */
 # include "CExtPack.h"
@@ -42,1052 +42,1534 @@
 using namespace UIExtraDataDefs;
 
 
+/** Menu action extension, used as 'Machine' menu class. */
 class UIActionMenuMachineRuntime : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuMachineRuntime(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Machine; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuType_Machine;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Machine); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Machine);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Machine); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Machine);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Machine"));
     }
 };
 
+/** Simple action extension, used as 'Show Settings Dialog' action class. */
 class UIActionSimpleShowSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowSettingsDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_settings_16px.png", ":/vm_settings_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/vm_settings_16px.png", ":/vm_settings_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("SettingsDialog");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("S");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window"));
     }
 };
 
+/** Simple action extension, used as 'Perform Take Snapshot' action class. */
 class UIActionSimplePerformTakeSnapshot : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformTakeSnapshot(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/snapshot_take_16px.png", ":/snapshot_take_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/snapshot_take_16px.png", ":/snapshot_take_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("TakeSnapshot");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("T");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Take Sn&apshot..."));
         setStatusTip(QApplication::translate("UIActionPool", "Take a snapshot of the virtual machine"));
     }
 };
 
+/** Simple action extension, used as 'Show Information Dialog' action class. */
 class UIActionSimpleShowInformationDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowInformationDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("InformationDialog");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("N");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Session I&nformation..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine session information window"));
     }
 };
 
+/** Toggle action extension, used as 'Pause' action class. */
 class UIActionTogglePause : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionTogglePause(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/vm_pause_on_16px.png", ":/vm_pause_16px.png",
-                         ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png") {}
+                         ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Pause");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("P");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Pause"));
         setStatusTip(QApplication::translate("UIActionPool", "Suspend the execution of the virtual machine"));
     }
 };
 
+/** Simple action extension, used as 'Perform Reset' action class. */
 class UIActionSimplePerformReset : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformReset(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Reset");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("R");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Reset"));
         setStatusTip(QApplication::translate("UIActionPool", "Reset the virtual machine"));
     }
 };
 
+/** Simple action extension, used as 'Perform Detach' action class. */
 class UIActionSimplePerformDetach : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformDetach(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("DetachUI");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Detach GUI"));
         setStatusTip(QApplication::translate("UIActionPool", "Detach the GUI from headless VM"));
     }
 };
 
+/** Simple action extension, used as 'Perform Save State' action class. */
 class UIActionSimplePerformSaveState : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformSaveState(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("SaveState");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Save State"));
         setStatusTip(QApplication::translate("UIActionPool", "Save the state of the virtual machine"));
     }
 };
 
+/** Simple action extension, used as 'Perform Shutdown' action class. */
 class UIActionSimplePerformShutdown : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformShutdown(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Shutdown");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
 #ifdef VBOX_WS_MAC
         return QKeySequence("U");
-#else /* VBOX_WS_MAC */
+#else
         return QKeySequence("H");
-#endif /* !VBOX_WS_MAC */
+#endif
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "ACPI Sh&utdown"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the ACPI Shutdown signal to the virtual machine"));
     }
 };
 
+/** Simple action extension, used as 'Perform PowerOff' action class. */
 class UIActionSimplePerformPowerOff : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformPowerOff(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("PowerOff");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Po&wer Off"));
         setStatusTip(QApplication::translate("UIActionPool", "Power off the virtual machine"));
     }
 };
 
+
+/** Menu action extension, used as 'View' menu class. */
 class UIActionMenuView : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuView(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_View; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuType_View;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_View); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_View);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_View); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_View);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&View"));
     }
 };
 
+/** Menu action extension, used as 'View Popup' menu class. */
 class UIActionMenuViewPopup : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuViewPopup(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_View; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuType_View;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_View); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_View);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_View); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_View);
+    }
 
-    void retranslateUi() {}
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */ {}
 };
 
+/** Toggle action extension, used as 'Full-screen Mode' action class. */
 class UIActionToggleFullscreenMode : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleFullscreenMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/fullscreen_on_16px.png", ":/fullscreen_16px.png",
-                         ":/fullscreen_on_disabled_16px.png", ":/fullscreen_disabled_16px.png") {}
+                         ":/fullscreen_on_disabled_16px.png", ":/fullscreen_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("FullscreenMode");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("F");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Full-screen Mode"));
         setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and full-screen mode"));
     }
 };
 
+/** Toggle action extension, used as 'Seamless Mode' action class. */
 class UIActionToggleSeamlessMode : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleSeamlessMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/seamless_on_16px.png", ":/seamless_16px.png",
-                         ":/seamless_on_disabled_16px.png", ":/seamless_disabled_16px.png") {}
+                         ":/seamless_on_disabled_16px.png", ":/seamless_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("SeamlessMode");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("L");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Seam&less Mode"));
         setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and seamless desktop integration mode"));
     }
 };
 
-class UIActionToggleScaleMode : public UIActionToggle
+/** Toggle action extension, used as 'Scaled Mode' action class. */
+class UIActionToggleScaledMode : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
-    UIActionToggleScaleMode(UIActionPool *pParent)
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionToggleScaledMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/scale_on_16px.png", ":/scale_16px.png",
-                         ":/scale_on_disabled_16px.png", ":/scale_disabled_16px.png") {}
+                         ":/scale_on_disabled_16px.png", ":/scale_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("ScaleMode");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("C");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "S&caled Mode"));
         setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and scaled mode"));
     }
 };
 
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
+/** Simple action extension, used as 'Perform Minimize Window' action class. */
 class UIActionSimplePerformMinimizeWindow : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformMinimizeWindow(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/minimize_16px.png") {}
+        : UIActionSimple(pParent, ":/minimize_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("WindowMinimize");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("M");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Minimize Window"));
         setStatusTip(QApplication::translate("UIActionPool", "Minimize active window"));
     }
 };
-#endif /* !RT_OS_DARWIN */
+#endif /* !VBOX_WS_MAC */
 
+/** Simple action extension, used as 'Perform Window Adjust' action class. */
 class UIActionSimplePerformWindowAdjust : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformWindowAdjust(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("WindowAdjust");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("A");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Adjust Window Size"));
         setStatusTip(QApplication::translate("UIActionPool", "Adjust window size and position to best fit the guest display"));
     }
 };
 
+/** Toggle action extension, used as 'Guest Autoresize' action class. */
 class UIActionToggleGuestAutoresize : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleGuestAutoresize(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/auto_resize_on_on_16px.png", ":/auto_resize_on_16px.png",
-                         ":/auto_resize_on_on_disabled_16px.png", ":/auto_resize_on_disabled_16px.png") {}
+                         ":/auto_resize_on_on_disabled_16px.png", ":/auto_resize_on_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("GuestAutoresize");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Auto-resize &Guest Display"));
         setStatusTip(QApplication::translate("UIActionPool", "Automatically resize the guest display when the window is resized"));
     }
 };
 
+/** Simple action extension, used as 'Perform Take Snapshot' action class. */
 class UIActionSimplePerformTakeScreenshot : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformTakeScreenshot(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/screenshot_take_16px.png", ":/screenshot_take_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/screenshot_take_16px.png", ":/screenshot_take_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("TakeScreenshot");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("E");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Take Screensh&ot..."));
         setStatusTip(QApplication::translate("UIActionPool", "Take guest display screenshot"));
     }
 };
 
+/** Menu action extension, used as 'View' menu class. */
 class UIActionMenuVideoCapture : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuVideoCapture(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Video Capture"));
     }
 };
 
+/** Simple action extension, used as 'Show Video Capture Settings Dialog' action class. */
 class UIActionSimpleShowVideoCaptureSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowVideoCaptureSettingsDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/video_capture_settings_16px.png") {}
+        : UIActionSimple(pParent, ":/video_capture_settings_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("VideoCaptureSettingsDialog");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Video Capture Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display virtual machine settings window to configure video capture"));
     }
 };
 
+/** Toggle action extension, used as 'Video Capture' action class. */
 class UIActionToggleVideoCapture : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleVideoCapture(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/video_capture_on_16px.png", ":/video_capture_16px.png",
-                         ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png") {}
+                         ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("VideoCapture");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Video Capture"));
         setStatusTip(QApplication::translate("UIActionPool", "Enable guest display video capture"));
     }
 };
 
+/** Toggle action extension, used as 'VRDE Server' action class. */
 class UIActionToggleVRDEServer : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleVRDEServer(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/vrdp_on_16px.png", ":/vrdp_16px.png",
-                         ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png") {}
+                         ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("VRDPServer");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "R&emote Display"));
         setStatusTip(QApplication::translate("UIActionPool", "Allow remote desktop (RDP) connections to this machine"));
     }
 };
 
+/** Menu action extension, used as 'MenuBar' menu class. */
 class UIActionMenuMenuBar : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuMenuBar(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/menubar_16px.png", ":/menubar_disabled_16px.png") {}
+        : UIActionMenu(pParent, ":/menubar_16px.png", ":/menubar_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Menu Bar"));
     }
 };
 
+/** Simple action extension, used as 'Show MenuBar Settings Window' action class. */
 class UIActionSimpleShowMenuBarSettingsWindow : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowMenuBarSettingsWindow(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/menubar_settings_16px.png", ":/menubar_settings_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/menubar_settings_16px.png", ":/menubar_settings_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("MenuBarSettings");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Menu Bar Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display window to configure menu-bar"));
     }
 };
 
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
+/** Toggle action extension, used as 'MenuBar' action class. */
 class UIActionToggleMenuBar : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleMenuBar(UIActionPool *pParent)
         : UIActionToggle(pParent, ":/menubar_on_16px.png", ":/menubar_16px.png",
-                                  ":/menubar_on_disabled_16px.png", ":/menubar_disabled_16px.png") {}
+                                  ":/menubar_on_disabled_16px.png", ":/menubar_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("ToggleMenuBar");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Show Menu &Bar"));
         setStatusTip(QApplication::translate("UIActionPool", "Enable menu-bar"));
     }
 };
-#endif /* !RT_OS_DARWIN */
+#endif /* !VBOX_WS_MAC */
 
+/** Menu action extension, used as 'StatusBar' menu class. */
 class UIActionMenuStatusBar : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuStatusBar(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/statusbar_16px.png", ":/statusbar_disabled_16px.png") {}
+        : UIActionMenu(pParent, ":/statusbar_16px.png", ":/statusbar_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Status Bar"));
     }
 };
 
+/** Simple action extension, used as 'Show StatusBar Settings Window' action class. */
 class UIActionSimpleShowStatusBarSettingsWindow : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowStatusBarSettingsWindow(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/statusbar_settings_16px.png", ":/statusbar_settings_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/statusbar_settings_16px.png", ":/statusbar_settings_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("StatusBarSettings");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Status Bar Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display window to configure status-bar"));
     }
 };
 
+/** Toggle action extension, used as 'StatusBar' action class. */
 class UIActionToggleStatusBar : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleStatusBar(UIActionPool *pParent)
         : UIActionToggle(pParent, ":/statusbar_on_16px.png", ":/statusbar_16px.png",
-                                  ":/statusbar_on_disabled_16px.png", ":/statusbar_disabled_16px.png") {}
+                                  ":/statusbar_on_disabled_16px.png", ":/statusbar_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("ToggleStatusBar");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Show Status &Bar"));
         setStatusTip(QApplication::translate("UIActionPool", "Enable status-bar"));
     }
 };
 
+/** Menu action extension, used as 'Scale Factor' menu class. */
 class UIActionMenuScaleFactor : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuScaleFactor(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/scale_factor_16px.png", ":/scale_factor_disabled_16px.png") {}
+        : UIActionMenu(pParent, ":/scale_factor_16px.png", ":/scale_factor_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "S&cale Factor"));
     }
 };
 
+
+/** Menu action extension, used as 'Input' menu class. */
 class UIActionMenuInput : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuInput(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Input; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuType_Input;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Input); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Input);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Input); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Input);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Input"));
     }
 };
 
+/** Menu action extension, used as 'Keyboard' menu class. */
 class UIActionMenuKeyboard : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuKeyboard(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/keyboard_16px.png") {}
+        : UIActionMenu(pParent, ":/keyboard_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Keyboard"));
     }
 };
 
-class UIActionSimpleKeyboardSettings : public UIActionSimple
+/** Simple action extension, used as 'Show Keyboard Settings Dialog' action class. */
+class UIActionSimpleShowKeyboardSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    UIActionSimpleKeyboardSettings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/keyboard_settings_16px.png", ":/keyboard_settings_disabled_16px.png") {}
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleShowKeyboardSettingsDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/keyboard_settings_16px.png", ":/keyboard_settings_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("KeyboardSettings");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Keyboard Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display global preferences window to configure keyboard shortcuts"));
     }
 };
 
+/** Simple action extension, used as 'Perform Type CAD' action class. */
 class UIActionSimplePerformTypeCAD : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformTypeCAD(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("TypeCAD");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("Del");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Ctrl-Alt-Del"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Alt-Del"));
@@ -1095,35 +1577,50 @@ protected:
 };
 
 #ifdef VBOX_WS_X11
+/** X11: Simple action extension, used as 'Perform Type CABS' action class. */
 class UIActionSimplePerformTypeCABS : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformTypeCABS(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("TypeCABS");
     }
 
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("Backspace");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Ctrl-Alt-Backspace"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Alt-Backspace"));
@@ -1131,212 +1628,311 @@ protected:
 };
 #endif /* VBOX_WS_X11 */
 
+/** Simple action extension, used as 'Perform Type Ctrl Break' action class. */
 class UIActionSimplePerformTypeCtrlBreak : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformTypeCtrlBreak(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("TypeCtrlBreak");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Ctrl-Break"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Break"));
     }
 };
 
+/** Simple action extension, used as 'Perform Type Insert' action class. */
 class UIActionSimplePerformTypeInsert : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformTypeInsert(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("TypeInsert");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Insert"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Insert"));
     }
 };
 
+/** Simple action extension, used as 'Perform Type PrintScreen' action class. */
 class UIActionSimplePerformTypePrintScreen : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformTypePrintScreen(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("TypePrintScreen");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Print Screen"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Print Screen"));
     }
 };
 
+/** Simple action extension, used as 'Perform Type Alt PrintScreen' action class. */
 class UIActionSimplePerformTypeAltPrintScreen : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformTypeAltPrintScreen(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("TypeAltPrintScreen");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Alt Print Screen"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Alt Print Screen"));
     }
 };
 
+/** Menu action extension, used as 'Mouse' menu class. */
 class UIActionMenuMouse : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuMouse(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Mouse"));
     }
 };
 
+/** Toggle action extension, used as 'Mouse Integration' action class. */
 class UIActionToggleMouseIntegration : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleMouseIntegration(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/mouse_can_seamless_on_16px.png", ":/mouse_can_seamless_16px.png",
-                         ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png") {}
+                         ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("MouseIntegration");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Mouse Integration"));
         setStatusTip(QApplication::translate("UIActionPool", "Enable host mouse pointer integration"));
     }
 };
 
+
+/** Menu action extension, used as 'Devices' menu class. */
 class UIActionMenuDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuDevices(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Devices; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuType_Devices;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Devices); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Devices);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Devices); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Devices);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Devices"));
     }
 };
 
+/** Menu action extension, used as 'Hard Drives' menu class. */
 class UIActionMenuHardDrives : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuHardDrives(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/hd_16px.png", ":/hd_disabled_16px.png")
     {
@@ -1346,54 +1942,80 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Hard Disks"));
     }
 };
 
+/** Simple action extension, used as 'Show Hard Drives Settings Dialog' action class. */
 class UIActionSimpleShowHardDrivesSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowHardDrivesSettingsDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/hd_settings_16px.png", ":/hd_settings_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/hd_settings_16px.png", ":/hd_settings_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("HardDriveSettingsDialog");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Hard Disk Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display virtual machine settings window to configure hard disks"));
     }
 };
 
+/** Menu action extension, used as 'Optical Drives' menu class. */
 class UIActionMenuOpticalDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuOpticalDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/cd_16px.png", ":/cd_disabled_16px.png")
     {
@@ -1403,24 +2025,36 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Optical Drives"));
     }
 };
 
+/** Menu action extension, used as 'Floppy Drives' menu class. */
 class UIActionMenuFloppyDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuFloppyDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/fd_16px.png", ":/fd_disabled_16px.png")
     {
@@ -1430,166 +2064,246 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Floppy Drives"));
     }
 };
 
+/** Menu action extension, used as 'Audio' menu class. */
 class UIActionMenuAudio : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuAudio(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/audio_16px.png", ":/audio_all_off_16px.png") {}
+        : UIActionMenu(pParent, ":/audio_16px.png", ":/audio_all_off_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Audio"));
     }
 };
 
+/** Toggle action extension, used as 'Audio Output' action class. */
 class UIActionToggleAudioOutput : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleAudioOutput(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/audio_output_on_16px.png", ":/audio_output_16px.png",
-                         ":/audio_output_on_16px.png", ":/audio_output_16px.png") {}
+                         ":/audio_output_on_16px.png", ":/audio_output_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("ToggleAudioOutput");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Audio Output"));
         setStatusTip(QApplication::translate("UIActionPool", "Enable audio output"));
     }
 };
 
+/** Toggle action extension, used as 'Audio Input' action class. */
 class UIActionToggleAudioInput : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleAudioInput(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/audio_input_on_16px.png", ":/audio_input_16px.png",
-                         ":/audio_input_on_16px.png", ":/audio_input_16px.png") {}
+                         ":/audio_input_on_16px.png", ":/audio_input_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("ToggleAudioInput");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Audio Input"));
         setStatusTip(QApplication::translate("UIActionPool", "Enable audio input"));
     }
 };
 
+/** Menu action extension, used as 'Network Adapters' menu class. */
 class UIActionMenuNetworkAdapters : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuNetworkAdapters(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png") {}
+        : UIActionMenu(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Network"));
     }
 };
 
+/** Simple action extension, used as 'Show Network Settings Dialog' action class. */
 class UIActionSimpleShowNetworkSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowNetworkSettingsDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/nw_settings_16px.png", ":/nw_settings_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/nw_settings_16px.png", ":/nw_settings_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("NetworkSettingsDialog");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Network Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display virtual machine settings window to configure network adapters"));
     }
 };
 
+/** Menu action extension, used as 'USB Devices' menu class. */
 class UIActionMenuUSBDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuUSBDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/usb_16px.png", ":/usb_disabled_16px.png")
     {
@@ -1599,54 +2313,80 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&USB"));
     }
 };
 
+/** Simple action extension, used as 'Show USB Devices Settings Dialog' action class. */
 class UIActionSimpleShowUSBDevicesSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowUSBDevicesSettingsDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/usb_settings_16px.png", ":/usb_settings_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/usb_settings_16px.png", ":/usb_settings_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("USBDevicesSettingsDialog");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&USB Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display virtual machine settings window to configure USB devices"));
     }
 };
 
+/** Menu action extension, used as 'Web Cams' menu class. */
 class UIActionMenuWebCams : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuWebCams(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/web_camera_16px.png", ":/web_camera_disabled_16px.png")
     {
@@ -1656,144 +2396,221 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Webcams"));
     }
 };
 
+/** Menu action extension, used as 'Shared Clipboard' menu class. */
 class UIActionMenuSharedClipboard : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSharedClipboard(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/shared_clipboard_16px.png", ":/shared_clipboard_disabled_16px.png") {}
+        : UIActionMenu(pParent, ":/shared_clipboard_16px.png", ":/shared_clipboard_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Shared &Clipboard"));
     }
 };
 
+/** Menu action extension, used as 'Drag & Drop' menu class. */
 class UIActionMenuDragAndDrop : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuDragAndDrop(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/drag_drop_16px.png", ":/drag_drop_disabled_16px.png") {}
+        : UIActionMenu(pParent, ":/drag_drop_16px.png", ":/drag_drop_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Drag and Drop"));
     }
 };
 
+/** Menu action extension, used as 'Shared Folders' menu class. */
 class UIActionMenuSharedFolders : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSharedFolders(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/sf_16px.png", ":/sf_disabled_16px.png") {}
+        : UIActionMenu(pParent, ":/sf_16px.png", ":/sf_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Shared Folders"));
     }
 };
 
+/** Simple action extension, used as 'Show Shared Folders Settings Dialog' action class. */
 class UIActionSimpleShowSharedFoldersSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowSharedFoldersSettingsDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/sf_settings_16px.png", ":/sf_settings_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/sf_settings_16px.png", ":/sf_settings_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("SharedFoldersSettingsDialog");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Shared Folders Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display virtual machine settings window to configure shared folders"));
     }
 };
 
+/** Simple action extension, used as 'Perform Install Guest Tools' action class. */
 class UIActionSimplePerformInstallGuestTools : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimplePerformInstallGuestTools(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png")
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("InstallGuestAdditions");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Insert Guest Additions CD image..."));
         setStatusTip(QApplication::translate("UIActionPool", "Insert the Guest Additions disk file into the virtual optical drive"));
@@ -1801,245 +2618,342 @@ protected:
 };
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
+/** Menu action extension, used as 'Debug' menu class. */
 class UIActionMenuDebug : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuDebug(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Debug; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuType_Debug;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Debug); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Debug);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Debug); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Debug);
+    }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "De&bug"));
     }
 };
 
+/** Simple action extension, used as 'Show Statistics' action class. */
 class UIActionSimpleShowStatistics : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowStatistics(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("StatisticWindow");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Statistics...", "debug action"));
     }
 };
 
+/** Simple action extension, used as 'Show Command Line' action class. */
 class UIActionSimpleShowCommandLine : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowCommandLine(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("CommandLineWindow");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Command Line...", "debug action"));
     }
 };
 
+/** Toggle action extension, used as 'Logging' action class. */
 class UIActionToggleLogging : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleLogging(UIActionPool *pParent)
-        : UIActionToggle(pParent) {}
+        : UIActionToggle(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Logging");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Logging", "debug action"));
     }
 };
 
+/** Simple action extension, used as 'Show Log Dialog' action class. */
 class UIActionSimpleShowLogDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleShowLogDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent) {}
+        : UIActionSimple(pParent)
+    {}
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog);
+    }
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("LogWindow");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Show &Log...", "debug action"));
     }
 };
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
+/** macOS: Menu action extension, used as 'Dock' menu class. */
 class UIActionMenuDock : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuDock(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
-    void retranslateUi() {}
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */ {}
 };
 
+/** macOS: Menu action extension, used as 'Dock Settings' menu class. */
 class UIActionMenuDockSettings : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuDockSettings(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent)
+    {}
 
 protected:
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Dock Icon"));
     }
 };
 
+/** macOS: Toggle action extension, used as 'Dock Preview Monitor' action class. */
 class UIActionToggleDockPreviewMonitor : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleDockPreviewMonitor(UIActionPool *pParent)
-        : UIActionToggle(pParent) {}
+        : UIActionToggle(pParent)
+    {}
 
 protected:
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("DockPreviewMonitor");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Show Monitor Preview"));
     }
 };
 
+/** macOS: Toggle action extension, used as 'Dock Disable Monitor' action class. */
 class UIActionToggleDockDisableMonitor : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleDockDisableMonitor(UIActionPool *pParent)
-        : UIActionToggle(pParent) {}
+        : UIActionToggle(pParent)
+    {}
 
 protected:
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("DockDisableMonitor");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Show Application Icon"));
     }
 };
 
+/** macOS: Toggle action extension, used as 'Dock Icon Disable Overlay' action class. */
 class UIActionToggleDockIconDisableOverlay : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs action passing @a pParent to the base-class. */
     UIActionToggleDockIconDisableOverlay(UIActionPool *pParent)
-        : UIActionToggle(pParent) {}
+        : UIActionToggle(pParent)
+    {}
 
 protected:
 
-    QString shortcutExtraDataID() const
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("DockOverlayDisable");
     }
 
-    void retranslateUi()
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Disable Dock Icon Overlay"));
     }
 };
 #endif /* VBOX_WS_MAC */
+
+
+/*********************************************************************************************************************************
+*   Class UIActionPoolRuntime implementation.                                                                                    *
+*********************************************************************************************************************************/
 
 UIActionPoolRuntime::UIActionPoolRuntime(bool fTemporary /* = false */)
     : UIActionPool(UIActionPoolType_Runtime, fTemporary)
@@ -2250,10 +3164,10 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_ViewPopup] = new UIActionMenuViewPopup(this);
     m_pool[UIActionIndexRT_M_View_T_Fullscreen] = new UIActionToggleFullscreenMode(this);
     m_pool[UIActionIndexRT_M_View_T_Seamless] = new UIActionToggleSeamlessMode(this);
-    m_pool[UIActionIndexRT_M_View_T_Scale] = new UIActionToggleScaleMode(this);
-#ifndef RT_OS_DARWIN
+    m_pool[UIActionIndexRT_M_View_T_Scale] = new UIActionToggleScaledMode(this);
+#ifndef VBOX_WS_MAC
     m_pool[UIActionIndexRT_M_View_S_MinimizeWindow] = new UIActionSimplePerformMinimizeWindow(this);
-#endif /* !RT_OS_DARWIN */
+#endif /* !VBOX_WS_MAC */
     m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
     m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
     m_pool[UIActionIndexRT_M_View_S_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
@@ -2263,9 +3177,9 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_T_VRDEServer] = new UIActionToggleVRDEServer(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuMenuBar(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleShowMenuBarSettingsWindow(this);
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
     m_pool[UIActionIndexRT_M_View_M_MenuBar_T_Visibility] = new UIActionToggleMenuBar(this);
-#endif /* !RT_OS_DARWIN */
+#endif /* !VBOX_WS_MAC */
     m_pool[UIActionIndexRT_M_View_M_StatusBar] = new UIActionMenuStatusBar(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_S_Settings] = new UIActionSimpleShowStatusBarSettingsWindow(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_T_Visibility] = new UIActionToggleStatusBar(this);
@@ -2274,7 +3188,7 @@ void UIActionPoolRuntime::preparePool()
     /* 'Input' actions: */
     m_pool[UIActionIndexRT_M_Input] = new UIActionMenuInput(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard] = new UIActionMenuKeyboard(this);
-    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_Settings] = new UIActionSimpleKeyboardSettings(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_Settings] = new UIActionSimpleShowKeyboardSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD] = new UIActionSimplePerformTypeCAD(this);
 #ifdef VBOX_WS_X11
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS] = new UIActionSimplePerformTypeCABS(this);
@@ -2499,13 +3413,13 @@ void UIActionPoolRuntime::updateMenus()
     /* 'Debug' menu: */
     addMenu(m_mainMenus, action(UIActionIndexRT_M_Debug), vboxGlobal().isDebuggerEnabled());
     updateMenuDebug();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
 
-#ifdef RT_OS_DARWIN
+#ifdef VBOX_WS_MAC
     /* 'Window' menu: */
     addMenu(m_mainMenus, action(UIActionIndex_M_Window));
     updateMenuWindow();
-#endif /* RT_OS_DARWIN */
+#endif
 
     /* 'Help' menu: */
     addMenu(m_mainMenus, action(UIActionIndex_Menu_Help));
@@ -2757,7 +3671,7 @@ void UIActionPoolRuntime::updateMenuViewMenuBar()
 #ifndef VBOX_WS_MAC
     /* 'Toggle Menu Bar' action: */
     addAction(pMenu, action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility));
-#endif /* !VBOX_WS_MAC */
+#endif
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_View_M_MenuBar);
@@ -3034,7 +3948,7 @@ void UIActionPoolRuntime::updateMenuInputKeyboard()
 #ifdef VBOX_WS_X11
     /* 'Type CABS' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS)) || fSeparator;
-#endif /* VBOX_WS_X11 */
+#endif
     /* 'Type Ctrl-Break' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak)) || fSeparator;
     /* 'Type Insert' action: */
@@ -3253,6 +4167,7 @@ QString UIActionPoolRuntime::shortcutsExtraDataID() const
 {
     return GUI_Input_MachineShortcuts;
 }
+
 
 #include "UIActionPoolRuntime.moc"
 

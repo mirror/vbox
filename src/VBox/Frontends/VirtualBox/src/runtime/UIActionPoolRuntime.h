@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,8 +19,8 @@
 #define ___UIActionPoolRuntime_h___
 
 /* Qt includes: */
-#include <QMap>
 #include <QList>
+#include <QMap>
 
 /* GUI includes: */
 #include "UIActionPool.h"
@@ -57,9 +57,9 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_T_Fullscreen,
     UIActionIndexRT_M_View_T_Seamless,
     UIActionIndexRT_M_View_T_Scale,
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
     UIActionIndexRT_M_View_S_MinimizeWindow,
-#endif /* !RT_OS_DARWIN */
+#endif
     UIActionIndexRT_M_View_S_AdjustWindow,
     UIActionIndexRT_M_View_T_GuestAutoresize,
     UIActionIndexRT_M_View_S_TakeScreenshot,
@@ -69,9 +69,9 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_T_VRDEServer,
     UIActionIndexRT_M_View_M_MenuBar,
     UIActionIndexRT_M_View_M_MenuBar_S_Settings,
-#ifndef RT_OS_DARWIN
+#ifndef VBOX_WS_MAC
     UIActionIndexRT_M_View_M_MenuBar_T_Visibility,
-#endif /* !RT_OS_DARWIN */
+#endif
     UIActionIndexRT_M_View_M_StatusBar,
     UIActionIndexRT_M_View_M_StatusBar_S_Settings,
     UIActionIndexRT_M_View_M_StatusBar_T_Visibility,
@@ -84,7 +84,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD,
 #ifdef VBOX_WS_X11
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS,
-#endif /* VBOX_WS_X11 */
+#endif
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak,
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert,
     UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen,
@@ -119,7 +119,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Debug_S_ShowCommandLine,
     UIActionIndexRT_M_Debug_T_Logging,
     UIActionIndexRT_M_Debug_S_ShowLogDialog,
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
 
 #ifdef VBOX_WS_MAC
     /* 'Dock' menu actions: */
@@ -128,11 +128,12 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Dock_M_DockSettings_T_PreviewMonitor,
     UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor,
     UIActionIndexRT_M_Dock_M_DockSettings_T_DisableOverlay,
-#endif /* VBOX_WS_MAC */
+#endif
 
     /* Maximum index: */
     UIActionIndexRT_Max
 };
+
 
 /** UIActionPool extension
   * representing action-pool singleton for Runtime UI. */
@@ -192,7 +193,7 @@ public:
     bool isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType type) const;
     /** Defines 'Debug' menu @a restriction for passed @a level. */
     void setRestrictionForMenuDebugger(UIActionRestrictionLevel level, UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restriction);
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
 
 protected slots:
 
@@ -202,9 +203,9 @@ protected slots:
     /** Handles 'View' : 'Scale Factor' menu : @a pAction trigger. */
     void sltHandleActionTriggerViewScaleFactor(QAction *pAction);
 
-    /** Prepare 'View' : 'Virtual Screen #' menu routine (Normal, Scale). */
+    /** Prepares 'View' : 'Virtual Screen #' menu (Normal, Scale). */
     void sltPrepareMenuViewScreen();
-    /** Prepare 'View' : 'Virtual Screen #' menu routine (Fullscreen, Seamless). */
+    /** Prepares 'View' : 'Virtual Screen #' menu (Fullscreen, Seamless). */
     void sltPrepareMenuViewMultiscreen();
 
     /** Handles 'View' : 'Virtual Screen #' menu : 'Toggle' action trigger. */
@@ -216,65 +217,65 @@ protected slots:
 
 protected:
 
-    /** Constructor,
-      * @param fTemporary is used to determine whether this action-pool is temporary,
-      *                   which can be created to re-initialize shortcuts-pool. */
+    /** Constructs action-pool.
+      * @param  fTemporary  Brings whether this action-pool is temporary,
+      *                     used to (re-)initialize shortcuts-pool. */
     UIActionPoolRuntime(bool fTemporary = false);
 
-    /** Prepare pool routine. */
+    /** Prepares pool. */
     virtual void preparePool();
-    /** Prepare connections routine. */
+    /** Prepares connections. */
     virtual void prepareConnections();
 
-    /** Update configuration routine. */
+    /** Updates configuration. */
     virtual void updateConfiguration();
 
-    /** Update menu routine. */
+    /** Updates menu. */
     void updateMenu(int iIndex);
-    /** Update menus routine. */
+    /** Updates menus. */
     void updateMenus();
-    /** Update 'Machine' menu routine. */
+    /** Updates 'Machine' menu. */
     void updateMenuMachine();
-    /** Update 'View' menu routine. */
+    /** Updates 'View' menu. */
     void updateMenuView();
-    /** Update 'View' : 'Popup' menu routine. */
+    /** Updates 'View' : 'Popup' menu. */
     void updateMenuViewPopup();
-    /** Update 'View' : 'Video Capture' menu routine. */
+    /** Updates 'View' : 'Video Capture' menu. */
     void updateMenuViewVideoCapture();
-    /** Update 'View' : 'Menu Bar' menu routine. */
+    /** Updates 'View' : 'Menu Bar' menu. */
     void updateMenuViewMenuBar();
-    /** Update 'View' : 'Status Bar' menu routine. */
+    /** Updates 'View' : 'Status Bar' menu. */
     void updateMenuViewStatusBar();
-    /** Update 'View' : 'Scale Factor' menu routine. */
+    /** Updates 'View' : 'Scale Factor' menu. */
     void updateMenuViewScaleFactor();
-    /** Update 'View' : 'Virtual Screen #' @a pMenu routine (Normal, Scale). */
+    /** Updates 'View' : 'Virtual Screen #' @a pMenu (Normal, Scale). */
     void updateMenuViewScreen(QMenu *pMenu);
-    /** Update 'View' : 'Virtual Screen #' @a pMenu routine (Fullscreen, Seamless). */
+    /** Updates 'View' : 'Virtual Screen #' @a pMenu (Fullscreen, Seamless). */
     void updateMenuViewMultiscreen(QMenu *pMenu);
-    /** Update 'Input' menu routine. */
+    /** Updates 'Input' menu. */
     void updateMenuInput();
-    /** Update 'Input' : 'Keyboard' menu routine. */
+    /** Updates 'Input' : 'Keyboard' menu. */
     void updateMenuInputKeyboard();
-    /** Update 'Input' : 'Mouse' menu routine. */
+    /** Updates 'Input' : 'Mouse' menu. */
     void updateMenuInputMouse();
-    /** Update 'Devices' menu routine. */
+    /** Updates 'Devices' menu. */
     void updateMenuDevices();
-    /** Update 'Devices' : 'Hard Drives' menu routine. */
+    /** Updates 'Devices' : 'Hard Drives' menu. */
     void updateMenuDevicesHardDrives();
-    /** Update 'Devices' : 'Audio' menu routine. */
+    /** Updates 'Devices' : 'Audio' menu. */
     void updateMenuDevicesAudio();
-    /** Update 'Devices' : 'Network' menu routine. */
+    /** Updates 'Devices' : 'Network' menu. */
     void updateMenuDevicesNetwork();
-    /** Update 'Devices' : 'USB' menu routine. */
+    /** Updates 'Devices' : 'USB' menu. */
     void updateMenuDevicesUSBDevices();
-    /** Update 'Devices' : 'Shared Folders' menu routine. */
+    /** Updates 'Devices' : 'Shared Folders' menu. */
     void updateMenuDevicesSharedFolders();
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Update 'Debug' menu routine. */
+    /** Updates 'Debug' menu. */
     void updateMenuDebug();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
 
-    /** Update shortcuts. */
+    /** Updates shortcuts. */
     virtual void updateShortcuts();
 
     /** Returns extra-data ID to save keyboard shortcuts under. */
@@ -286,39 +287,41 @@ protected:
 private:
 
     /** Holds the host-screen count. */
-    int m_cHostScreens;
+    int  m_cHostScreens;
     /** Holds the guest-screen count. */
-    int m_cGuestScreens;
+    int  m_cGuestScreens;
 
     /** Holds the map of guest-screen sizes. */
-    QMap<int, QSize> m_mapGuestScreenSize;
+    QMap<int, QSize>  m_mapGuestScreenSize;
     /** Holds the map of guest-screen visibility states. */
-    QMap<int, bool>  m_mapGuestScreenIsVisible;
+    QMap<int, bool>   m_mapGuestScreenIsVisible;
 
     /** Holds whether guest supports graphics. */
-    bool m_fGuestSupportsGraphics;
+    bool  m_fGuestSupportsGraphics;
 
     /** Holds the host-to-guest mapping scheme. */
     QMap<int, int>  m_mapHostScreenForGuestScreen;
 
     /** Holds the list of Runtime UI main menus. */
-    QList<QMenu*> m_mainMenus;
+    QList<QMenu*>  m_mainMenus;
 
     /** Holds restricted action types of the Machine menu. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuMachineActionType> m_restrictedActionsMenuMachine;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuMachineActionType>   m_restrictedActionsMenuMachine;
     /** Holds restricted action types of the View menu. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuViewActionType> m_restrictedActionsMenuView;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuViewActionType>      m_restrictedActionsMenuView;
     /** Holds restricted action types of the Input menu. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuInputActionType> m_restrictedActionsMenuInput;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuInputActionType>     m_restrictedActionsMenuInput;
     /** Holds restricted action types of the Devices menu. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuDevicesActionType> m_restrictedActionsMenuDevices;
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>   m_restrictedActionsMenuDevices;
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Holds restricted action types of the Debugger menu. */
-    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType> m_restrictedActionsMenuDebug;
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>  m_restrictedActionsMenuDebug;
+#endif
 
-    /* Enable factory in base-class: */
+    /** Enables factory in base-class. */
     friend class UIActionPool;
 };
 
+
 #endif /* !___UIActionPoolRuntime_h___ */
+
