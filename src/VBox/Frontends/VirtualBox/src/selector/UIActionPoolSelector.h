@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,7 @@
 
 /* GUI includes: */
 #include "UIActionPool.h"
+
 
 /** Runtime action-pool index enum.
   * Naming convention is following:
@@ -108,6 +109,7 @@ enum UIActionIndexST
     UIActionIndexST_Max
 };
 
+
 /** UIActionPool extension
   * representing action-pool singleton for Selector UI. */
 class UIActionPoolSelector : public UIActionPool
@@ -116,32 +118,34 @@ class UIActionPoolSelector : public UIActionPool
 
 protected:
 
-    /** Constructor,
-      * @param fTemporary is used to determine whether this action-pool is temporary,
-      *                   which can be created to re-initialize shortcuts-pool. */
+    /** Constructs action-pool.
+      * @param  fTemporary  Brings whether this action-pool is temporary,
+      *                     used to (re-)initialize shortcuts-pool. */
     UIActionPoolSelector(bool fTemporary = false);
 
-    /** Prepare pool routine. */
-    virtual void preparePool();
-    /** Prepare connections routine. */
-    virtual void prepareConnections();
+    /** Prepares pool. */
+    virtual void preparePool() /* override */;
+    /** Prepares connections. */
+    virtual void prepareConnections() /* override */;
 
-    /** Update menus routine. */
-    virtual void updateMenus();
+    /** Updates menus. */
+    virtual void updateMenus() /* override */;
 
-    /** Update shortcuts. */
-    virtual void updateShortcuts();
+    /** Updates shortcuts. */
+    virtual void updateShortcuts() /* override */;
 
     /** Returns extra-data ID to save keyboard shortcuts under. */
-    virtual QString shortcutsExtraDataID() const;
+    virtual QString shortcutsExtraDataID() const /* override */;
 
     /** Returns the list of Selector UI main menus. */
-    virtual QList<QMenu*> menus() const { return QList<QMenu*>(); }
+    virtual QList<QMenu*> menus() const /* override */ { return QList<QMenu*>(); }
 
 private:
 
-    /* Enable factory in base-class: */
+    /** Enables factory in base-class. */
     friend class UIActionPool;
 };
 
+
 #endif /* !___UIActionPoolSelector_h___ */
+
