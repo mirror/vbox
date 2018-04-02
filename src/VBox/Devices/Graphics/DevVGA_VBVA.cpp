@@ -25,6 +25,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/VMMDev.h>
+#include <VBox/AssertGuest.h>
 #include <VBoxVideo.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
@@ -58,17 +59,16 @@ typedef struct VBVADATA
 {
     struct
     {
-        VBVABUFFER *pVBVA;           /* Pointer to the guest memory with the VBVABUFFER. */
-        uint8_t *pu8Data;            /* For convenience, pointer to the guest ring buffer (VBVABUFFER::au8Data). */
+        VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *pVBVA;   /**< Pointer to the guest memory with the VBVABUFFER. */
+        uint8_t RT_UNTRUSTED_VOLATILE_GUEST    *pu8Data; /**< For convenience, pointer to the guest ring buffer (VBVABUFFER::au8Data). */
     } guest;
-    uint32_t u32VBVAOffset;          /* VBVABUFFER offset in the guest VRAM. */
-    VBVAPARTIALRECORD partialRecord; /* Partial record temporary storage. */
-    uint32_t off32Data;              /* The offset where the data starts in the VBVABUFFER.
-                                      * The host code uses it instead of VBVABUFFER::off32Data.
-                                      */
-    uint32_t indexRecordFirst;       /* Index of the first filled record in VBVABUFFER::aRecords. */
-    uint32_t cbPartialWriteThreshold; /* Copy of VBVABUFFER::cbPartialWriteThreshold used by host code. */
-    uint32_t cbData;                 /* Copy of VBVABUFFER::cbData used by host code. */
+    uint32_t u32VBVAOffset;           /**< VBVABUFFER offset in the guest VRAM. */
+    VBVAPARTIALRECORD partialRecord;  /**< Partial record temporary storage. */
+    uint32_t off32Data;               /**< The offset where the data starts in the VBVABUFFER.
+                                       * The host code uses it instead of VBVABUFFER::off32Data. */
+    uint32_t indexRecordFirst;        /**< Index of the first filled record in VBVABUFFER::aRecords. */
+    uint32_t cbPartialWriteThreshold; /**< Copy of VBVABUFFER::cbPartialWriteThreshold used by host code. */
+    uint32_t cbData;                  /**< Copy of VBVABUFFER::cbData used by host code. */
 } VBVADATA;
 
 typedef struct VBVAVIEW
@@ -109,7 +109,8 @@ static void vbvaDataCleanup(VBVADATA *pVBVAData)
 {
     if (pVBVAData->guest.pVBVA)
     {
-        RT_ZERO(pVBVAData->guest.pVBVA->hostFlags);
+        pVBVAData->guest.pVBVA->hostFlags.u32HostEvents      = 0;
+        pVBVAData->guest.pVBVA->hostFlags.u32SupportedOrders = 0;
     }
 
     RTMemFree(pVBVAData->partialRecord.pu8);
@@ -118,10 +119,10 @@ static void vbvaDataCleanup(VBVADATA *pVBVAData)
     pVBVAData->u32VBVAOffset = HGSMIOFFSET_VOID;
 }
 
-/** Copies @a cb bytes from the VBVA ring buffer to the @a pu8Dst.
+/** Copies @a cb bytes from the VBVA ring buffer to the @a pbDst.
  * Used for partial records or for records which cross the ring boundary.
  */
-static bool vbvaFetchBytes(VBVADATA *pVBVAData, uint8_t *pu8Dst, uint32_t cb)
+static bool vbvaFetchBytes(VBVADATA *pVBVAData, uint8_t *pbDst, uint32_t cb)
 {
     if (cb >= pVBVAData->cbData)
     {
@@ -129,20 +130,20 @@ static bool vbvaFetchBytes(VBVADATA *pVBVAData, uint8_t *pu8Dst, uint32_t cb)
         return false;
     }
 
+    const uint8_t RT_UNTRUSTED_VOLATILE_GUEST *pbSrc = &pVBVAData->guest.pu8Data[pVBVAData->off32Data];
     const uint32_t u32BytesTillBoundary = pVBVAData->cbData - pVBVAData->off32Data;
-    const uint8_t  *pu8Src              = &pVBVAData->guest.pu8Data[pVBVAData->off32Data];
-    const int32_t i32Diff               = cb - u32BytesTillBoundary;
+    const int32_t  i32Diff              = cb - u32BytesTillBoundary;
 
     if (i32Diff <= 0)
     {
         /* Chunk will not cross buffer boundary. */
-        memcpy(pu8Dst, pu8Src, cb);
+        RT_BCOPY_VOLATILE(pbDst, pbSrc, cb);
     }
     else
     {
         /* Chunk crosses buffer boundary. */
-        memcpy(pu8Dst, pu8Src, u32BytesTillBoundary);
-        memcpy(pu8Dst + u32BytesTillBoundary, &pVBVAData->guest.pu8Data[0], i32Diff);
+        RT_BCOPY_VOLATILE(pbDst, pbSrc, u32BytesTillBoundary);
+        RT_BCOPY_VOLATILE(pbDst + u32BytesTillBoundary, &pVBVAData->guest.pu8Data[0], i32Diff);
     }
 
     /* Advance data offset and sync with guest. */
@@ -200,10 +201,11 @@ static bool vbvaPartialRead(uint32_t cbRecord, VBVADATA *pVBVAData)
     return true;
 }
 
-/* For contiguous chunks just return the address in the buffer.
- * For crossing boundary - allocate a buffer from heap.
+/**
+ * For contiguous chunks just return the address in the buffer. For crossing
+ * boundary - allocate a buffer from heap.
  */
-static bool vbvaFetchCmd(VBVADATA *pVBVAData, VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
+static bool vbvaFetchCmd(VBVADATA *pVBVAData, VBVACMDHDR RT_UNTRUSTED_VOLATILE_GUEST **ppHdr, uint32_t *pcbCmd)
 {
     VBVAPARTIALRECORD *pPartialRecord = &pVBVAData->partialRecord;
     uint32_t indexRecordFirst = pVBVAData->indexRecordFirst;
@@ -306,32 +308,31 @@ static bool vbvaFetchCmd(VBVADATA *pVBVAData, VBVACMDHDR **ppHdr, uint32_t *pcbC
         uint32_t u32BytesTillBoundary = pVBVAData->cbData - pVBVAData->off32Data;
 
         /* The pointer to data in the ring buffer. */
-        uint8_t *pu8Src = &pVBVAData->guest.pu8Data[pVBVAData->off32Data];
+        uint8_t RT_UNTRUSTED_VOLATILE_GUEST *pbSrc = &pVBVAData->guest.pu8Data[pVBVAData->off32Data];
 
         /* Fetch or point the data. */
         if (u32BytesTillBoundary >= cbRecord)
         {
             /* The command does not cross buffer boundary. Return address in the buffer. */
-            *ppHdr = (VBVACMDHDR *)pu8Src;
+            *ppHdr = (VBVACMDHDR RT_UNTRUSTED_VOLATILE_GUEST *)pbSrc;
 
             /* The data offset will be updated in vbvaReleaseCmd. */
         }
         else
         {
             /* The command crosses buffer boundary. Rare case, so not optimized. */
-            uint8_t *pu8Dst = (uint8_t *)RTMemAlloc(cbRecord);
-
-            if (!pu8Dst)
+            uint8_t *pbDst = (uint8_t *)RTMemAlloc(cbRecord);
+            if (!pbDst)
             {
                 LogFlowFunc (("could not allocate %d bytes from heap!!!\n", cbRecord));
                 return false;
             }
 
-            vbvaFetchBytes(pVBVAData, pu8Dst, cbRecord);
+            vbvaFetchBytes(pVBVAData, pbDst, cbRecord);
 
-            *ppHdr = (VBVACMDHDR *)pu8Dst;
+            *ppHdr = (VBVACMDHDR *)pbDst;
 
-            LOGVBVABUFFER(("Allocated from heap %p\n", pu8Dst));
+            LOGVBVABUFFER(("Allocated from heap %p\n", pbDst));
         }
     }
 
@@ -347,16 +348,16 @@ static bool vbvaFetchCmd(VBVADATA *pVBVAData, VBVACMDHDR **ppHdr, uint32_t *pcbC
     return true;
 }
 
-static void vbvaReleaseCmd(VBVADATA *pVBVAData, VBVACMDHDR *pHdr, uint32_t cbCmd)
+static void vbvaReleaseCmd(VBVADATA *pVBVAData, VBVACMDHDR RT_UNTRUSTED_VOLATILE_GUEST *pHdr, uint32_t cbCmd)
 {
-    VBVAPARTIALRECORD *pPartialRecord = &pVBVAData->partialRecord;
-    const uint8_t *au8RingBuffer = pVBVAData->guest.pu8Data;
+    VBVAPARTIALRECORD                          *pPartialRecord = &pVBVAData->partialRecord;
+    const uint8_t RT_UNTRUSTED_VOLATILE_GUEST  *pbRingBuffer   = pVBVAData->guest.pu8Data;
 
-    if (   (uintptr_t)pHdr >= (uintptr_t)au8RingBuffer
-        && (uintptr_t)pHdr < (uintptr_t)&au8RingBuffer[pVBVAData->cbData])
+    if (   (uintptr_t)pHdr >= (uintptr_t)pbRingBuffer
+        && (uintptr_t)pHdr < (uintptr_t)&pbRingBuffer[pVBVAData->cbData])
     {
         /* The pointer is inside ring buffer. Must be continuous chunk. */
-        Assert(pVBVAData->cbData - (uint32_t)((uint8_t *)pHdr - au8RingBuffer) >= cbCmd);
+        Assert(pVBVAData->cbData - (uint32_t)((uint8_t *)pHdr - pbRingBuffer) >= cbCmd);
 
         /* Advance data offset and sync with guest. */
         pVBVAData->off32Data = (pVBVAData->off32Data + cbCmd) % pVBVAData->cbData;
@@ -379,7 +380,7 @@ static void vbvaReleaseCmd(VBVADATA *pVBVAData, VBVACMDHDR *pHdr, uint32_t cbCmd
             Assert(!pPartialRecord->pu8 && pPartialRecord->cb == 0);
         }
 
-        RTMemFree(pHdr);
+        RTMemFree((void *)pHdr);
     }
 }
 
@@ -402,15 +403,13 @@ static int vbvaFlushProcess(unsigned uScreenId, PVGASTATE pVGAState, VBVADATA *p
 
     for (;;)
     {
-        VBVACMDHDR *phdr = NULL;
-        uint32_t cbCmd = UINT32_MAX;
-
         /* Fetch the command data. */
-        if (!vbvaFetchCmd(pVBVAData, &phdr, &cbCmd))
+        VBVACMDHDR RT_UNTRUSTED_VOLATILE_GUEST *pHdr  = NULL;
+        uint32_t                                cbCmd = UINT32_MAX;
+        if (!vbvaFetchCmd(pVBVAData, &pHdr, &cbCmd))
         {
             LogFunc(("unable to fetch command. off32Data = %d, off32Free = %d!!!\n",
-                  pVBVAData->off32Data, pVBVAData->guest.pVBVA->off32Free));
-
+                     pVBVAData->off32Data, pVBVAData->guest.pVBVA->off32Free));
             return VERR_NOT_SUPPORTED;
         }
 
@@ -437,24 +436,24 @@ static int vbvaFlushProcess(unsigned uScreenId, PVGASTATE pVGAState, VBVADATA *p
             }
 
             /* Updates the rectangle and sends the command to the VRDP server. */
-            pVGAState->pDrv->pfnVBVAUpdateProcess(pVGAState->pDrv, uScreenId, phdr, cbCmd);
+            pVGAState->pDrv->pfnVBVAUpdateProcess(pVGAState->pDrv, uScreenId, pHdr, cbCmd);
 
-            int32_t xRight  = phdr->x + phdr->w;
-            int32_t yBottom = phdr->y + phdr->h;
+            int32_t xRight  = pHdr->x + pHdr->w;
+            int32_t yBottom = pHdr->y + pHdr->h;
 
             /* These are global coords, relative to the primary screen. */
 
             LOGVBVABUFFER(("cbCmd = %d, x=%d, y=%d, w=%d, h=%d\n",
-                           cbCmd, phdr->x, phdr->y, phdr->w, phdr->h));
+                           cbCmd, pHdr->x, pHdr->y, pHdr->w, pHdr->h));
             LogRel3(("%s: update command cbCmd = %d, x=%d, y=%d, w=%d, h=%d\n",
-                     __FUNCTION__, cbCmd, phdr->x, phdr->y, phdr->w, phdr->h));
+                     __FUNCTION__, cbCmd, pHdr->x, pHdr->y, pHdr->w, pHdr->h));
 
             /* Collect all rects into one. */
             if (fDirtyEmpty)
             {
                 /* This is the first rectangle to be added. */
-                dirtyRect.xLeft   = phdr->x;
-                dirtyRect.yTop    = phdr->y;
+                dirtyRect.xLeft   = pHdr->x;
+                dirtyRect.yTop    = pHdr->y;
                 dirtyRect.xRight  = xRight;
                 dirtyRect.yBottom = yBottom;
                 fDirtyEmpty       = false;
@@ -462,14 +461,14 @@ static int vbvaFlushProcess(unsigned uScreenId, PVGASTATE pVGAState, VBVADATA *p
             else
             {
                 /* Adjust region coordinates. */
-                if (dirtyRect.xLeft > phdr->x)
+                if (dirtyRect.xLeft > pHdr->x)
                 {
-                    dirtyRect.xLeft = phdr->x;
+                    dirtyRect.xLeft = pHdr->x;
                 }
 
-                if (dirtyRect.yTop > phdr->y)
+                if (dirtyRect.yTop > pHdr->y)
                 {
-                    dirtyRect.yTop = phdr->y;
+                    dirtyRect.yTop = pHdr->y;
                 }
 
                 if (dirtyRect.xRight < xRight)
@@ -484,7 +483,7 @@ static int vbvaFlushProcess(unsigned uScreenId, PVGASTATE pVGAState, VBVADATA *p
             }
         }
 
-        vbvaReleaseCmd(pVBVAData, phdr, cbCmd);
+        vbvaReleaseCmd(pVBVAData, pHdr, cbCmd);
     }
 
     if (fUpdate)
@@ -515,14 +514,11 @@ static int vbvaFlush(PVGASTATE pVGAState, VBVACONTEXT *pCtx)
     for (uScreenId = 0; uScreenId < pCtx->cViews; uScreenId++)
     {
         VBVADATA *pVBVAData = &pCtx->aViews[uScreenId].vbva;
-
         if (pVBVAData->guest.pVBVA)
         {
             rc = vbvaFlushProcess(uScreenId, pVGAState, pVBVAData);
             if (RT_FAILURE(rc))
-            {
                 break;
-            }
         }
     }
 
@@ -557,79 +553,75 @@ static int vbvaResize(PVGASTATE pVGAState, VBVAVIEW *pView, const VBVAINFOSCREEN
     return pVGAState->pDrv->pfnVBVAResize (pVGAState->pDrv, &pView->view, &pView->screen, pu8VRAM, fResetInputMapping);
 }
 
-static int vbvaEnable(unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx, VBVABUFFER *pVBVA, uint32_t u32Offset, bool fRestored)
+static int vbvaEnable(unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx,
+                      VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *pVBVA, uint32_t u32Offset, bool fRestored)
 {
-    int rc;
+    /*
+     * Copy into non-volatile memory and validate its content.
+     */
+    VBVABUFFER VbgaSafe;
+    RT_COPY_VOLATILE(VbgaSafe, *pVBVA);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
-    /* Check if VBVABUFFER content makes sense. */
-    const VBVABUFFER parms = *pVBVA;
-
-    uint32_t cbVBVABuffer = RT_UOFFSETOF(VBVABUFFER, au8Data) + parms.cbData;
-    if (   parms.cbData > UINT32_MAX - RT_UOFFSETOF(VBVABUFFER, au8Data)
-        || cbVBVABuffer > pVGAState->vram_size
-        || u32Offset > pVGAState->vram_size - cbVBVABuffer)
-    {
-        return VERR_INVALID_PARAMETER;
-    }
-
+    uint32_t const cbVBVABuffer = RT_UOFFSETOF(VBVABUFFER, au8Data) + VbgaSafe.cbData;
+    ASSERT_GUEST_RETURN(   VbgaSafe.cbData <= UINT32_MAX - RT_UOFFSETOF(VBVABUFFER, au8Data)
+                        && cbVBVABuffer <= pVGAState->vram_size
+                        && u32Offset > pVGAState->vram_size - cbVBVABuffer,
+                        VERR_INVALID_PARAMETER);
     if (!fRestored)
     {
-        if (   parms.off32Data != 0
-            || parms.off32Free != 0
-            || parms.indexRecordFirst != 0
-            || parms.indexRecordFree != 0)
-        {
-            return VERR_INVALID_PARAMETER;
-        }
+        ASSERT_GUEST_RETURN(VbgaSafe.off32Data        == 0, VERR_INVALID_PARAMETER);
+        ASSERT_GUEST_RETURN(VbgaSafe.off32Free        == 0, VERR_INVALID_PARAMETER);
+        ASSERT_GUEST_RETURN(VbgaSafe.indexRecordFirst == 0, VERR_INVALID_PARAMETER);
+        ASSERT_GUEST_RETURN(VbgaSafe.indexRecordFree  == 0, VERR_INVALID_PARAMETER);
     }
+    ASSERT_GUEST_RETURN(   VbgaSafe.cbPartialWriteThreshold < VbgaSafe.cbData
+                        && VbgaSafe.cbPartialWriteThreshold != 0,
+                        VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
-    if (   parms.cbPartialWriteThreshold >= parms.cbData
-        || parms.cbPartialWriteThreshold == 0)
-    {
-        return VERR_INVALID_PARAMETER;
-    }
-
+    /*
+     * Okay, try do the job.
+     */
+    int rc;
     if (pVGAState->pDrv->pfnVBVAEnable)
     {
-        RT_ZERO(pVBVA->hostFlags);
+        pVBVA->hostFlags.u32HostEvents      = 0;
+        pVBVA->hostFlags.u32SupportedOrders = 0;
         rc = pVGAState->pDrv->pfnVBVAEnable(pVGAState->pDrv, uScreenId, &pVBVA->hostFlags, false);
+        if (RT_SUCCESS(rc))
+        {
+            /* pVBVA->hostFlags has been set up by pfnVBVAEnable. */
+            LogFlowFunc(("u32HostEvents=0x%08x  u32SupportedOrders=0x%08x\n",
+                         pVBVA->hostFlags.u32HostEvents, pVBVA->hostFlags.u32SupportedOrders));
+
+            VBVADATA *pVBVAData = &pCtx->aViews[uScreenId].vbva;
+            pVBVAData->guest.pVBVA             = pVBVA;
+            pVBVAData->guest.pu8Data           = &pVBVA->au8Data[0];
+            pVBVAData->u32VBVAOffset           = u32Offset;
+            pVBVAData->off32Data               = VbgaSafe.off32Data;
+            pVBVAData->indexRecordFirst        = VbgaSafe.indexRecordFirst;
+            pVBVAData->cbPartialWriteThreshold = VbgaSafe.cbPartialWriteThreshold;
+            pVBVAData->cbData                  = VbgaSafe.cbData;
+
+            if (!fRestored)
+            {
+                /** @todo Actually this function must not touch the partialRecord structure at all,
+                 * because initially it is a zero and when VBVA is disabled this should be set to zero.
+                 * But I'm not sure that no code depends on zeroing partialRecord here.
+                 * So for now (a quick fix for 4.1) just do not do this if the VM was restored,
+                 * when partialRecord might be loaded already from the saved state.
+                 */
+                pVBVAData->partialRecord.pu8 = NULL;
+                pVBVAData->partialRecord.cb = 0;
+            }
+
+            /* VBVA is working so disable the pause. */
+            pCtx->fPaused = false;
+        }
     }
     else
-    {
         rc = VERR_NOT_SUPPORTED;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        /* pVBVA->hostFlags has been set up by pfnVBVAEnable. */
-        LogFlowFunc(("u32HostEvents 0x%08X, u32SupportedOrders 0x%08X\n",
-                     pVBVA->hostFlags.u32HostEvents, pVBVA->hostFlags.u32SupportedOrders));
-
-        VBVADATA *pVBVAData = &pCtx->aViews[uScreenId].vbva;
-        pVBVAData->guest.pVBVA             = pVBVA;
-        pVBVAData->guest.pu8Data           = &pVBVA->au8Data[0];
-        pVBVAData->u32VBVAOffset           = u32Offset;
-        pVBVAData->off32Data               = parms.off32Data;
-        pVBVAData->indexRecordFirst        = parms.indexRecordFirst;
-        pVBVAData->cbPartialWriteThreshold = parms.cbPartialWriteThreshold;
-        pVBVAData->cbData                  = parms.cbData;
-
-        if (!fRestored)
-        {
-            /** @todo Actually this function must not touch the partialRecord structure at all,
-             * because initially it is a zero and when VBVA is disabled this should be set to zero.
-             * But I'm not sure that no code depends on zeroing partialRecord here.
-             * So for now (a quick fix for 4.1) just do not do this if the VM was restored,
-             * when partialRecord might be loaded already from the saved state.
-             */
-            pVBVAData->partialRecord.pu8 = NULL;
-            pVBVAData->partialRecord.cb = 0;
-        }
-
-        /* VBVA is working so disable the pause. */
-        pCtx->fPaused = false;
-    }
-
     return rc;
 }
 
@@ -810,23 +802,16 @@ static uint32_t vbvaViewFromBufferPtr(PHGSMIINSTANCE pIns, const VBVACONTEXT *pC
 {
     /* Check which view contains the buffer. */
     HGSMIOFFSET offBuffer = HGSMIPointerToOffsetHost(pIns, pvBuffer);
-
     if (offBuffer != HGSMIOFFSET_VOID)
     {
         unsigned uScreenId;
         for (uScreenId = 0; uScreenId < pCtx->cViews; uScreenId++)
         {
             const VBVAINFOVIEW *pView = &pCtx->aViews[uScreenId].view;
-
-            if (   pView->u32ViewSize > 0
-                && pView->u32ViewOffset <= offBuffer
-                && offBuffer <= pView->u32ViewOffset + pView->u32ViewSize - 1)
-            {
+            if ((uint32_t)(offBuffer - pView->u32ViewOffset) < pView->u32ViewSize)
                 return pView->u32ViewIndex;
-            }
         }
     }
-
     return UINT32_MAX;
 }
 
@@ -2115,170 +2100,139 @@ void VBVAOnResume(PVGASTATE pThis)
 
 static int vbvaHandleQueryConf32(PVGASTATE pVGAState, VBVACONF32 RT_UNTRUSTED_VOLATILE_GUEST *pConf32)
 {
-    int rc = VINF_SUCCESS;
-    PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
-    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pIns);
+    uint32_t const idxQuery = pConf32->u32Index;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+    LogFlowFunc(("VBVA_QUERY_CONF32: u32Index %d, u32Value 0x%x\n", idxQuery, pConf32->u32Value));
 
-    const uint32_t u32Index = pConf32->u32Index;
-    ASMCompilerBarrier();
-
-    LogFlowFunc(("VBVA_QUERY_CONF32: u32Index %d, u32Value 0x%x\n",
-                 u32Index, pConf32->u32Value));
-
-    if (u32Index == VBOX_VBVA_CONF32_MONITOR_COUNT)
-    {
-        pConf32->u32Value = pCtx->cViews;
-    }
-    else if (u32Index == VBOX_VBVA_CONF32_HOST_HEAP_SIZE)
-    {
-        /** @todo a value calculated from the vram size */
-        pConf32->u32Value = _64K;
-    }
-    else if (   u32Index == VBOX_VBVA_CONF32_MODE_HINT_REPORTING
-             || u32Index == VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING)
-    {
-        pConf32->u32Value = VINF_SUCCESS;
-    }
-    else if (u32Index == VBOX_VBVA_CONF32_CURSOR_CAPABILITIES)
-    {
-        pConf32->u32Value = pVGAState->fHostCursorCapabilities;
-    }
-    else if (u32Index == VBOX_VBVA_CONF32_SCREEN_FLAGS)
-    {
-        pConf32->u32Value =  VBVA_SCREEN_F_ACTIVE
-                           | VBVA_SCREEN_F_DISABLED
-                           | VBVA_SCREEN_F_BLANK
-                           | VBVA_SCREEN_F_BLANK2;
-    }
-    else if (u32Index == VBOX_VBVA_CONF32_MAX_RECORD_SIZE)
-    {
-        pConf32->u32Value = VBVA_MAX_RECORD_SIZE;
-    }
+    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pVGAState->pHGSMI);
+    uint32_t     uValue;
+    if (idxQuery == VBOX_VBVA_CONF32_MONITOR_COUNT)
+        uValue = pCtx->cViews;
+    else if (idxQuery == VBOX_VBVA_CONF32_HOST_HEAP_SIZE)
+        uValue = _64K; /** @todo a value calculated from the vram size */
+    else if (   idxQuery == VBOX_VBVA_CONF32_MODE_HINT_REPORTING
+             || idxQuery == VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING)
+        uValue = VINF_SUCCESS;
+    else if (idxQuery == VBOX_VBVA_CONF32_CURSOR_CAPABILITIES)
+        uValue = pVGAState->fHostCursorCapabilities;
+    else if (idxQuery == VBOX_VBVA_CONF32_SCREEN_FLAGS)
+        uValue = VBVA_SCREEN_F_ACTIVE
+               | VBVA_SCREEN_F_DISABLED
+               | VBVA_SCREEN_F_BLANK
+               | VBVA_SCREEN_F_BLANK2;
+    else if (idxQuery == VBOX_VBVA_CONF32_MAX_RECORD_SIZE)
+        uValue = VBVA_MAX_RECORD_SIZE;
     else
-    {
-        Log(("Unsupported VBVA_QUERY_CONF32 index %d!!!\n",
-             u32Index));
-        rc = VERR_INVALID_PARAMETER;
-    }
+        ASSERT_GUEST_MSG_FAILED_RETURN(("Invalid index %#x\n", idxQuery), VERR_INVALID_PARAMETER);
 
-    return rc;
+    pConf32->u32Value = uValue;
+    return VINF_SUCCESS;
 }
 
-static int vbvaHandleSetConf32(PVGASTATE pVGAState, VBVACONF32 RT_UNTRUSTED_VOLATILE_GUEST *pConf32)
+static int vbvaHandleSetConf32(VBVACONF32 RT_UNTRUSTED_VOLATILE_GUEST *pConf32)
 {
-    NOREF(pVGAState);
+    uint32_t const idxQuery = pConf32->u32Index;
+    uint32_t const uValue   = pConf32->u32Value;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+    LogFlowFunc(("VBVA_SET_CONF32: u32Index %d, u32Value 0x%x\n", idxQuery, uValue));
 
-    VBVACONF32 parms;
-    parms.u32Index = pConf32->u32Index;
-    parms.u32Value = pConf32->u32Value;
-    ASMCompilerBarrier();
-
-    LogFlowFunc(("VBVA_SET_CONF32: u32Index %d, u32Value 0x%x\n",
-                 parms.u32Index, parms.u32Value));
-
-    int rc = VINF_SUCCESS;
-    if (parms.u32Index == VBOX_VBVA_CONF32_MONITOR_COUNT)
-    {
-        /* do nothing. this is a const. */
-    }
-    else if (parms.u32Index == VBOX_VBVA_CONF32_HOST_HEAP_SIZE)
-    {
-        /* do nothing. this is a const. */
-    }
+    if (idxQuery == VBOX_VBVA_CONF32_MONITOR_COUNT)
+    { /* do nothing. this is a const. */ }
+    else if (idxQuery == VBOX_VBVA_CONF32_HOST_HEAP_SIZE)
+    { /* do nothing. this is a const. */ }
     else
-    {
-        Log(("Unsupported VBVA_SET_CONF32 index %d!!!\n",
-             parms.u32Index));
-        rc = VERR_INVALID_PARAMETER;
-    }
+        ASSERT_GUEST_MSG_FAILED_RETURN(("Invalid index %#x (value=%u)\n", idxQuery, uValue), VERR_INVALID_PARAMETER);
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 static int vbvaHandleInfoHeap(PVGASTATE pVGAState, const VBVAINFOHEAP RT_UNTRUSTED_VOLATILE_GUEST *pInfoHeap)
 {
-    VBVAINFOHEAP parms;
-    parms.u32HeapOffset = pInfoHeap->u32HeapOffset;
-    parms.u32HeapSize   = pInfoHeap->u32HeapSize;
-    ASMCompilerBarrier();
-    LogFlowFunc(("VBVA_INFO_HEAP: offset 0x%x, size 0x%x\n",
-                 parms.u32HeapOffset, parms.u32HeapSize));
+    uint32_t const offHeap = pInfoHeap->u32HeapOffset;
+    uint32_t const cbHeap  = pInfoHeap->u32HeapSize;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+    LogFlowFunc(("VBVA_INFO_HEAP: offset 0x%x, size 0x%x\n", offHeap, cbHeap));
 
-    return HGSMIHostHeapSetup(pVGAState->pHGSMI, parms.u32HeapOffset, parms.u32HeapSize);
+    return HGSMIHostHeapSetup(pVGAState->pHGSMI, offHeap, cbHeap);
 }
 
 int VBVAInfoView(PVGASTATE pVGAState, const VBVAINFOVIEW RT_UNTRUSTED_VOLATILE_GUEST *pView)
 {
     VBVAINFOVIEW view;
-    view.u32ViewIndex     = pView->u32ViewIndex;
-    view.u32ViewOffset    = pView->u32ViewOffset;
-    view.u32ViewSize      = pView->u32ViewSize;
-    view.u32MaxScreenSize = pView->u32MaxScreenSize;
-    ASMCompilerBarrier();
+    RT_COPY_VOLATILE(view, *pView);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
     LogFlowFunc(("VBVA_INFO_VIEW: u32ViewIndex %d, u32ViewOffset 0x%x, u32ViewSize 0x%x, u32MaxScreenSize 0x%x\n",
                  view.u32ViewIndex, view.u32ViewOffset, view.u32ViewSize, view.u32MaxScreenSize));
 
-    PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
-    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pIns);
+    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pVGAState->pHGSMI);
+    ASSERT_GUEST_LOGREL_MSG_RETURN(   view.u32ViewIndex     < pCtx->cViews
+                                   && view.u32ViewOffset    <= pVGAState->vram_size
+                                   && view.u32ViewSize      <= pVGAState->vram_size
+                                   && view.u32ViewOffset    <= pVGAState->vram_size - view.u32ViewSize
+                                   && view.u32MaxScreenSize <= view.u32ViewSize,
+                                   ("index %d(%d), offset 0x%x, size 0x%x, max 0x%x, vram size 0x%x\n",
+                                    view.u32ViewIndex, pCtx->cViews, view.u32ViewOffset, view.u32ViewSize,
+                                    view.u32MaxScreenSize, pVGAState->vram_size),
+                                   VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
-    if (   view.u32ViewIndex < pCtx->cViews
-        && view.u32ViewOffset <= pVGAState->vram_size
-        && view.u32ViewSize <= pVGAState->vram_size
-        && view.u32ViewOffset <= pVGAState->vram_size - view.u32ViewSize
-        && view.u32MaxScreenSize <= view.u32ViewSize)
-    {
-        pCtx->aViews[view.u32ViewIndex].view = view;
-        return VINF_SUCCESS;
-    }
-
-    LogRelFlow(("VBVA: InfoView: invalid data! index %d(%d), offset 0x%x, size 0x%x, max 0x%x, vram size 0x%x\n",
-                view.u32ViewIndex, pCtx->cViews, view.u32ViewOffset, view.u32ViewSize,
-                view.u32MaxScreenSize, pVGAState->vram_size));
-    return VERR_INVALID_PARAMETER;
+    pCtx->aViews[view.u32ViewIndex].view = view;
+    return VINF_SUCCESS;
 }
 
 int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN RT_UNTRUSTED_VOLATILE_GUEST *pScreen)
 {
+    /*
+     * Copy input into non-volatile buffer.
+     */
     VBVAINFOSCREEN screen;
-    memcpy(&screen, (void *)pScreen, sizeof(screen));
-    ASMCompilerBarrier();
+    RT_COPY_VOLATILE(screen, *pScreen);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     LogRel(("VBVA: InfoScreen: [%d] @%d,%d %dx%d, line 0x%x, BPP %d, flags 0x%x\n",
             screen.u32ViewIndex, screen.i32OriginX, screen.i32OriginY,
             screen.u32Width, screen.u32Height,
             screen.u32LineSize, screen.u16BitsPerPixel, screen.u16Flags));
 
-    PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
-    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pIns);
-
+    /*
+     * Validate input.
+     */
     /* Allow screen.u16BitsPerPixel == 0 because legacy guest code used it for screen blanking. */
-    if (   screen.u32ViewIndex < pCtx->cViews
-        && screen.u16BitsPerPixel <= 32
-        && screen.u32Width <= UINT16_MAX
-        && screen.u32Height <= UINT16_MAX
-        && screen.u32LineSize <= UINT16_MAX * 4)
-    {
-        const VBVAINFOVIEW *pView = &pCtx->aViews[screen.u32ViewIndex].view;
-        const uint32_t u32BytesPerPixel = (screen.u16BitsPerPixel + 7) / 8;
-        if (screen.u32Width <= screen.u32LineSize / (u32BytesPerPixel? u32BytesPerPixel: 1))
-        {
-            const uint64_t u64ScreenSize = (uint64_t)screen.u32LineSize * screen.u32Height;
-            if (   screen.u32StartOffset <= pView->u32ViewSize
-                && u64ScreenSize         <= pView->u32MaxScreenSize
-                && screen.u32StartOffset <= pView->u32ViewSize - (uint32_t)u64ScreenSize)
-            {
-                vbvaResize(pVGAState, &pCtx->aViews[screen.u32ViewIndex], &screen, true);
-                return VINF_SUCCESS;
-            }
+    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pVGAState->pHGSMI);
+    ASSERT_GUEST_LOGREL_MSG_RETURN(screen.u32ViewIndex <  pCtx->cViews,
+                                   ("Screen index %#x is out of bound (cViews=%#x)\n", screen.u32ViewIndex, pCtx->cViews),
+                                    VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_LOGREL_MSG_RETURN(   screen.u16BitsPerPixel <= 32
+                                   && screen.u32Width        <= UINT16_MAX
+                                   && screen.u32Height       <= UINT16_MAX
+                                   && screen.u32LineSize     <= UINT16_MAX * UINT32_C(4),
+                                   ("One or more values out of range: u16BitsPerPixel=%#x u32Width=%#x u32Height=%#x u32LineSize=%#x\n",
+                                    screen.u16BitsPerPixel, screen.u32Width, screen.u32Height, screen.u32LineSize),
+                                   VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
-            LogRelFlow(("VBVA: InfoScreen: invalid data! size %#RX64, max %#RX32\n",
-                        u64ScreenSize, pView->u32MaxScreenSize));
-        }
-    }
-    else
-        LogRelFlow(("VBVA: InfoScreen: invalid data! index %RU32(%RU32)\n", screen.u32ViewIndex, pCtx->cViews));
+    const VBVAINFOVIEW *pView = &pCtx->aViews[screen.u32ViewIndex].view;
+    const uint32_t      cbPerPixel = (screen.u16BitsPerPixel + 7) / 8;
+    ASSERT_GUEST_LOGREL_MSG_RETURN(screen.u32Width <= screen.u32LineSize / (cbPerPixel ? cbPerPixel : 1),
+                                   ("u32Width=%#x u32LineSize=%3x cbPerPixel=%#x\n",
+                                    screen.u32Width, screen.u32LineSize, cbPerPixel),
+                                   VERR_INVALID_PARAMETER);
 
-    return VERR_INVALID_PARAMETER;
+    const uint64_t u64ScreenSize = (uint64_t)screen.u32LineSize * screen.u32Height;
+
+    ASSERT_GUEST_LOGREL_MSG_RETURN(   screen.u32StartOffset <= pView->u32ViewSize
+                                   && u64ScreenSize         <= pView->u32MaxScreenSize
+                                   && screen.u32StartOffset <= pView->u32ViewSize - (uint32_t)u64ScreenSize,
+                                   ("u32StartOffset=%#x u32ViewSize=%#x u64ScreenSize=%#RX64 u32MaxScreenSize=%#x\n",
+                                    screen.u32StartOffset, pView->u32ViewSize, u64ScreenSize),
+                                   VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    /*
+     * Do the job.
+     */
+    vbvaResize(pVGAState, &pCtx->aViews[screen.u32ViewIndex], &screen, true);
+    return VINF_SUCCESS;
 }
 
 int VBVAGetInfoViewAndScreen(PVGASTATE pVGAState, uint32_t u32ViewIndex, VBVAINFOVIEW *pView, VBVAINFOSCREEN *pScreen)
@@ -2298,86 +2252,70 @@ int VBVAGetInfoViewAndScreen(PVGASTATE pVGAState, uint32_t u32ViewIndex, VBVAINF
     return VINF_SUCCESS;
 }
 
-static int vbvaHandleEnable(PVGASTATE pVGAState, VBVAENABLE const volatile *pVbvaEnable, uint32_t u32ScreenId)
+static int vbvaHandleEnable(PVGASTATE pVGAState, uint32_t fEnableFlags, uint32_t offEnable, uint32_t idScreen)
 {
-    int rc = VINF_SUCCESS;
+    LogFlowFunc(("VBVA_ENABLE[%u]: fEnableFlags=0x%x offEnable=%#x\n", idScreen, fEnableFlags, offEnable));
     PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
-    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pIns);
+    VBVACONTEXT   *pCtx = (VBVACONTEXT *)HGSMIContext(pIns);
 
-    if (u32ScreenId > pCtx->cViews)
-        return VERR_INVALID_PARAMETER;
-
-    uint32_t fEnableFlags = pVbvaEnable->u32Flags;
-    uint32_t offEnable    = pVbvaEnable->u32Offset;
-    ASMCompilerBarrier();
-
-    LogFlowFunc(("VBVA_ENABLE[%d]: u32Flags 0x%x u32Offset %#x\n", u32ScreenId, fEnableFlags, offEnable));
-
-    if ((fEnableFlags & (VBVA_F_ENABLE | VBVA_F_DISABLE)) == VBVA_F_ENABLE)
+    /*
+     * Validate input.
+     */
+    ASSERT_GUEST_LOGREL_MSG_RETURN(idScreen < pCtx->cViews, ("idScreen=%#x cViews=%#x\n", idScreen, pCtx->cViews), VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_LOGREL_MSG_RETURN(   (fEnableFlags & (VBVA_F_ENABLE | VBVA_F_DISABLE)) == VBVA_F_ENABLE
+                                    || (fEnableFlags & (VBVA_F_ENABLE | VBVA_F_DISABLE)) == VBVA_F_DISABLE,
+                                   ("fEnableFlags=%#x\n", fEnableFlags),
+                                   VERR_INVALID_PARAMETER);
+    if (fEnableFlags & VBVA_F_ENABLE)
     {
-        if (offEnable < pVGAState->vram_size)
-        {
-            /* Guest reported offset either absolute or relative to view. */
-            if (fEnableFlags & VBVA_F_ABSOFFSET)
-            {
-                /* Offset from VRAM start. */
-                if (   pVGAState->vram_size < RT_UOFFSETOF(VBVABUFFER, au8Data)
-                    || offEnable > pVGAState->vram_size - RT_UOFFSETOF(VBVABUFFER, au8Data))
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                }
-            }
-            else
-            {
-                /* Offset from the view start. */
-                const VBVAINFOVIEW *pView = &pCtx->aViews[u32ScreenId].view;
-                if (   pVGAState->vram_size - offEnable < pView->u32ViewOffset
-                    || pView->u32ViewSize < RT_UOFFSETOF(VBVABUFFER, au8Data)
-                    || offEnable > pView->u32ViewSize - RT_UOFFSETOF(VBVABUFFER, au8Data))
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                {
-                    offEnable += pView->u32ViewOffset;
-                }
-            }
-        }
+        ASSERT_GUEST_LOGREL_MSG_RETURN(offEnable < pVGAState->vram_size,
+                                       ("offEnable=%#x vram_size=%#x\n", offEnable, pVGAState->vram_size),
+                                       VERR_INVALID_PARAMETER);
+        if (fEnableFlags & VBVA_F_ABSOFFSET)
+            /* Offset from VRAM start. */
+            ASSERT_GUEST_LOGREL_MSG_RETURN(   pVGAState->vram_size >= RT_UOFFSETOF(VBVABUFFER, au8Data)
+                                           && offEnable <= pVGAState->vram_size - RT_UOFFSETOF(VBVABUFFER, au8Data),
+                                           ("offEnable=%#x vram_size=%#x\n", offEnable, pVGAState->vram_size),
+                                           VERR_INVALID_PARAMETER);
         else
         {
-            rc = VERR_INVALID_PARAMETER;
+            /* Offset from the view start.  We'd be using idScreen here to fence required. */
+            RT_UNTRUSTED_VALIDATED_FENCE();
+            const VBVAINFOVIEW *pView = &pCtx->aViews[idScreen].view;
+            ASSERT_GUEST_LOGREL_MSG_RETURN(   pVGAState->vram_size - offEnable >= pView->u32ViewOffset
+                                           && pView->u32ViewSize >= RT_UOFFSETOF(VBVABUFFER, au8Data)
+                                           && offEnable <= pView->u32ViewSize - RT_UOFFSETOF(VBVABUFFER, au8Data),
+                                           ("offEnable=%#x vram_size=%#x view: %#x LB %#x\n",
+                                            offEnable, pVGAState->vram_size, pView->u32ViewOffset, pView->u32ViewSize),
+                                           VERR_INVALID_PARAMETER);
+            offEnable += pView->u32ViewOffset;
         }
+        ASSERT_GUEST_LOGREL_MSG_RETURN(HGSMIIsOffsetValid(pIns, offEnable),
+                                       ("offEnable=%#x area %#x LB %#x\n",
+                                        offEnable, HGSMIGetAreaOffset(pIns), HGSMIGetAreaSize(pIns)),
+                                       VERR_INVALID_PARAMETER);
+    }
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
-        if (RT_SUCCESS(rc))
-        {
-            VBVABUFFER *pVBVA = (VBVABUFFER *)HGSMIOffsetToPointerHost(pIns, offEnable);
-            if (pVBVA)
-            {
-                /* Process any pending orders and empty the VBVA ring buffer. */
-                vbvaFlush(pVGAState, pCtx);
+    /*
+     * Execute.
+     */
+    int rc = VINF_SUCCESS;
+    if (fEnableFlags & VBVA_F_ENABLE)
+    {
+        VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *pVBVA
+            = (VBVABUFFER RT_UNTRUSTED_VOLATILE_GUEST *)HGSMIOffsetToPointerHost(pIns, offEnable);
+        ASSERT_GUEST_LOGREL_RETURN(pVBVA, VERR_INVALID_PARAMETER); /* already check above, but let's be careful. */
 
-                rc = vbvaEnable(u32ScreenId, pVGAState, pCtx, pVBVA, offEnable, false /* fRestored */);
-            }
-            else
-            {
-                Log(("Invalid VBVABUFFER offset 0x%x!!!\n", offEnable));
-                rc = VERR_INVALID_PARAMETER;
-            }
-        }
+        /* Process any pending orders and empty the VBVA ring buffer. */
+        vbvaFlush(pVGAState, pCtx);
 
+        rc = vbvaEnable(idScreen, pVGAState, pCtx, pVBVA, offEnable, false /* fRestored */);
         if (RT_FAILURE(rc))
             LogRelMax(8, ("VBVA: can not enable: %Rrc\n", rc));
     }
-    else if ((fEnableFlags & (VBVA_F_ENABLE | VBVA_F_DISABLE)) == VBVA_F_DISABLE)
-    {
-        rc = vbvaDisable(u32ScreenId, pVGAState, pCtx);
-    }
     else
-    {
-        Log(("Invalid VBVA_ENABLE flags 0x%x!!!\n", fEnableFlags));
-        rc = VERR_INVALID_PARAMETER;
-    }
-
+        rc = vbvaDisable(idScreen, pVGAState, pCtx);
     return rc;
 }
 
@@ -2511,7 +2449,7 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
 
         case VBVA_SET_CONF32:
             if (cbBuffer >= sizeof(VBVACONF32))
-                rc = vbvaHandleSetConf32(pVGAState, (VBVACONF32 RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
+                rc = vbvaHandleSetConf32((VBVACONF32 RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
             else
                 rc = VERR_INVALID_PARAMETER;
             break;
@@ -2568,24 +2506,21 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
             if (cbBuffer >= sizeof(VBVAENABLE))
             {
                 VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *pVbvaEnable = (VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer;
-                const uint32_t u32Flags = pVbvaEnable->u32Flags;
+                uint32_t const fEnableFlags = pVbvaEnable->u32Flags;
+                uint32_t const offEnable    = pVbvaEnable->u32Offset;
                 RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
-                uint32_t u32ScreenId;
-                if (u32Flags & VBVA_F_EXTENDED)
+                uint32_t idScreen;
+                if (fEnableFlags & VBVA_F_EXTENDED)
                 {
-                    if (cbBuffer >= sizeof(VBVAENABLE_EX))
-                        u32ScreenId = ((VBVAENABLE_EX RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer)->u32ScreenId;
-                    else
-                    {
-                        rc = VERR_INVALID_PARAMETER;
-                        break;
-                    }
+                    ASSERT_GUEST_STMT_BREAK(cbBuffer >= sizeof(VBVAENABLE_EX), rc = VERR_INVALID_PARAMETER);
+                    idScreen = ((VBVAENABLE_EX RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer)->u32ScreenId;
+                    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
                 }
                 else
-                    u32ScreenId = vbvaViewFromBufferPtr(pIns, pCtx, pvBuffer);
+                    idScreen = vbvaViewFromBufferPtr(pIns, pCtx, pvBuffer);
 
-                rc = vbvaHandleEnable(pVGAState, pVbvaEnable, u32ScreenId);
+                rc = vbvaHandleEnable(pVGAState, fEnableFlags, offEnable, idScreen);
                 pVbvaEnable->i32Result = rc;
             }
             break;
@@ -2593,8 +2528,8 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
         case VBVA_MOUSE_POINTER_SHAPE:
             if (cbBuffer >= sizeof(VBVAMOUSEPOINTERSHAPE))
             {
-                VBVAMOUSEPOINTERSHAPE RT_UNTRUSTED_VOLATILE_GUEST *pShape;
-                pShape = (VBVAMOUSEPOINTERSHAPE RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer;
+                VBVAMOUSEPOINTERSHAPE RT_UNTRUSTED_VOLATILE_GUEST *pShape
+                    = (VBVAMOUSEPOINTERSHAPE RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer;
                 rc = vbvaMousePointerShape(pVGAState, pCtx, pShape, cbBuffer);
                 pShape->i32Result = rc;
             }

@@ -86,7 +86,7 @@ typedef struct _DISPLAYFBINFO
     bool fVBVAEnabled;
     bool fVBVAForceResize;
     bool fRenderThreadMode;
-    PVBVAHOSTFLAGS pVBVAHostFlags;
+    VBVAHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *pVBVAHostFlags;
 #endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_CROGL
@@ -362,11 +362,11 @@ private:
 #endif
 #ifdef VBOX_WITH_HGSMI
     static DECLCALLBACK(int)   i_displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
-                                                   PVBVAHOSTFLAGS pHostFlags, bool fRenderThreadMode);
+                                                   VBVAHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *pHostFlags, bool fRenderThreadMode);
     static DECLCALLBACK(void)  i_displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
     static DECLCALLBACK(void)  i_displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
     static DECLCALLBACK(void)  i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
-                                                          PCVBVACMDHDR pCmd, size_t cbCmd);
+                                                          struct VBVACMDHDR const RT_UNTRUSTED_VOLATILE_GUEST *pCmd, size_t cbCmd);
     static DECLCALLBACK(void)  i_displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, int32_t x, int32_t y,
                                                       uint32_t cx, uint32_t cy);
     static DECLCALLBACK(int)   i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, PCVBVAINFOVIEW pView,

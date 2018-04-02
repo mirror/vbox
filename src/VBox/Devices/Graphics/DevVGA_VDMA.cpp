@@ -3086,6 +3086,8 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, VBOXVDMA_CTL RT_UNTRUSTED_VOLAT
 
     VBOXVDMA_CTL_TYPE enmCtl = pCmd->enmCtl;
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+
+    int rc;
     if (enmCtl < VBOXVDMA_CTL_TYPE_END)
     {
         RT_UNTRUSTED_VALIDATED_FENCE();
@@ -3093,33 +3095,34 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, VBOXVDMA_CTL RT_UNTRUSTED_VOLAT
         switch (enmCtl)
         {
             case VBOXVDMA_CTL_TYPE_ENABLE:
-                pCmd->i32Result = VINF_SUCCESS;
+                rc = VINF_SUCCESS;
                 break;
             case VBOXVDMA_CTL_TYPE_DISABLE:
-                pCmd->i32Result = VINF_SUCCESS;
+                rc = VINF_SUCCESS;
                 break;
             case VBOXVDMA_CTL_TYPE_FLUSH:
-                pCmd->i32Result = VINF_SUCCESS;
+                rc = VINF_SUCCESS;
                 break;
-#ifdef VBOX_VDMA_WITH_WATCHDOG
             case VBOXVDMA_CTL_TYPE_WATCHDOG:
-                pCmd->i32Result = vboxVDMAWatchDogCtl(pVdma, pCmd->u32Offset);
-                break;
+#ifdef VBOX_VDMA_WITH_WATCHDOG
+                rc = vboxVDMAWatchDogCtl(pVdma, pCmd->u32Offset);
+#else
+                rc = VERR_NOT_SUPPORTED;
 #endif
-            default:
-                WARN(("cmd not supported"));
-                pCmd->i32Result = VERR_NOT_SUPPORTED;
                 break;
+            default:
+                AssertFailedBreakStmt(rc = VERR_IPE_NOT_REACHED_DEFAULT_CASE);
         }
     }
     else
     {
         RT_UNTRUSTED_VALIDATED_FENCE();
-        WARN(("cmd not supported"));
-        pCmd->i32Result = VERR_NOT_SUPPORTED;
+        ASSERT_GUEST_FAILED();
+        rc = VERR_NOT_SUPPORTED;
     }
 
-    int rc = VBoxSHGSMICommandComplete(pIns, pCmd);
+    pCmd->i32Result = rc;
+    rc = VBoxSHGSMICommandComplete(pIns, pCmd);
     AssertRC(rc);
 }
 

@@ -902,7 +902,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @thread  if fRenderThreadMode is TRUE - the render thread, otherwise - the emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnVBVAEnable,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
-                                             PVBVAHOSTFLAGS pHostFlags, bool fRenderThreadMode));
+                                             struct VBVAHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *pHostFlags, bool fRenderThreadMode));
 
     /**
      * The specified screen leaves VBVA mode.
@@ -935,7 +935,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      *          otherwise - the emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateProcess,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
-                                                     PCVBVACMDHDR pCmd, size_t cbCmd));
+                                                     struct VBVACMDHDR const RT_UNTRUSTED_VOLATILE_GUEST *pCmd, size_t cbCmd));
 
     /**
      * A sequence of pfnVBVAUpdateProcess calls ends.

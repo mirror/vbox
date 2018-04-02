@@ -4037,7 +4037,11 @@ DECLCALLBACK(void) Display::i_displayVRecCompletion(struct VBOXCRCMDCTL *pCmd, u
 
 
 #ifdef VBOX_WITH_HGSMI
-DECLCALLBACK(int) Display::i_displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags,
+/**
+ * @interface_method_impl{PDMIDISPLAYCONNECTOR,pfnVBVAEnable}
+ */
+DECLCALLBACK(int) Display::i_displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
+                                               VBVAHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *pHostFlags,
                                                bool fRenderThreadMode)
 {
     LogRelFlowFunc(("uScreenId %d\n", uScreenId));
@@ -4064,6 +4068,9 @@ DECLCALLBACK(int) Display::i_displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface,
     return VINF_SUCCESS;
 }
 
+/**
+ * @interface_method_impl{PDMIDISPLAYCONNECTOR,pfnVBVADisable}
+ */
 DECLCALLBACK(void) Display::i_displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId)
 {
     LogRelFlowFunc(("uScreenId %d\n", uScreenId));
@@ -4123,10 +4130,16 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInte
     }
 }
 
+/**
+ * @interface_method_impl{PDMIDISPLAYCONNECTOR,pfnVBVAUpdateProcess}
+ */
 DECLCALLBACK(void) Display::i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
-                                                       PCVBVACMDHDR pCmd, size_t cbCmd)
+                                                       struct VBVACMDHDR const RT_UNTRUSTED_VOLATILE_GUEST *pCmd, size_t cbCmd)
 {
     LogFlowFunc(("uScreenId %d pCmd %p cbCmd %d, @%d,%d %dx%d\n", uScreenId, pCmd, cbCmd, pCmd->x, pCmd->y, pCmd->w, pCmd->h));
+    VBVACMDHDR hdrSaved;
+    RT_COPY_VOLATILE(hdrSaved, *pCmd);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
@@ -4138,7 +4151,7 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pIn
         if (   uScreenId == VBOX_VIDEO_PRIMARY_SCREEN
             && !pFBInfo->fDisabled)
         {
-            pDrv->pUpPort->pfnUpdateDisplayRect(pDrv->pUpPort, pCmd->x, pCmd->y, pCmd->w, pCmd->h);
+            pDrv->pUpPort->pfnUpdateDisplayRect(pDrv->pUpPort, hdrSaved.x, hdrSaved.y, hdrSaved.w, hdrSaved.h);
         }
         else if (   !pFBInfo->pSourceBitmap.isNull()
                  && !pFBInfo->fDisabled)
@@ -4159,12 +4172,12 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pIn
                                                                   &bitmapFormat);
             if (SUCCEEDED(hrc))
             {
-                uint32_t width              = pCmd->w;
-                uint32_t height             = pCmd->h;
+                uint32_t width              = hdrSaved.w;
+                uint32_t height             = hdrSaved.h;
 
                 const uint8_t *pu8Src       = pFBInfo->pu8FramebufferVRAM;
-                int32_t xSrc                = pCmd->x - pFBInfo->xOrigin;
-                int32_t ySrc                = pCmd->y - pFBInfo->yOrigin;
+                int32_t xSrc                = hdrSaved.x - pFBInfo->xOrigin;
+                int32_t ySrc                = hdrSaved.y - pFBInfo->yOrigin;
                 uint32_t u32SrcWidth        = pFBInfo->w;
                 uint32_t u32SrcHeight       = pFBInfo->h;
                 uint32_t u32SrcLineSize     = pFBInfo->u32LineSize;
@@ -4192,14 +4205,15 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pIn
         }
     }
 
-    VBVACMDHDR hdrSaved = *pCmd;
-
+    /*
+     * Here is your classic 'temporary' solution.
+     */
+    /** @todo New SendUpdate entry which can get a separate cmd header or coords. */
     VBVACMDHDR *pHdrUnconst = (VBVACMDHDR *)pCmd;
 
     pHdrUnconst->x -= (int16_t)pFBInfo->xOrigin;
     pHdrUnconst->y -= (int16_t)pFBInfo->yOrigin;
 
-    /** @todo new SendUpdate entry which can get a separate cmd header or coords. */
     pThis->mParent->i_consoleVRDPServer()->SendUpdate(uScreenId, pHdrUnconst, (uint32_t)cbCmd);
 
     *pHdrUnconst = hdrSaved;

@@ -65,6 +65,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 
+#include <VBox/AssertGuest.h>
 #include <VBox/err.h>
 #define LOG_GROUP LOG_GROUP_HGSMI
 #include <VBox/log.h>
@@ -490,16 +491,16 @@ void HGSMIClearHostGuestFlags(HGSMIINSTANCE *pIns, uint32_t flags)
  * Uses the RTHeap implementation.
  *
  */
-static int hgsmiHostHeapLock (HGSMIINSTANCE *pIns)
+static int hgsmiHostHeapLock(HGSMIINSTANCE *pIns)
 {
-    int rc = RTCritSectEnter (&pIns->hostHeapCritSect);
+    int rc = RTCritSectEnter(&pIns->hostHeapCritSect);
     AssertRC (rc);
     return rc;
 }
 
-static void hgsmiHostHeapUnlock (HGSMIINSTANCE *pIns)
+static void hgsmiHostHeapUnlock(HGSMIINSTANCE *pIns)
 {
-    int rc = RTCritSectLeave (&pIns->hostHeapCritSect);
+    int rc = RTCritSectLeave(&pIns->hostHeapCritSect);
     AssertRC (rc);
 }
 
@@ -960,61 +961,47 @@ static HGSMIENV g_hgsmiEnv =
     hgsmiEnvFree
 };
 
-int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns,
-                       HGSMIOFFSET    offHeap,
-                       HGSMISIZE      cbHeap)
+int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns, HGSMIOFFSET RT_UNTRUSTED_GUEST offHeap, HGSMISIZE RT_UNTRUSTED_GUEST cbHeap)
 {
     LogFlowFunc(("pIns %p, offHeap 0x%08X, cbHeap = 0x%08X\n", pIns, offHeap, cbHeap));
 
-    int rc = VINF_SUCCESS;
-
+    /*
+     * Validate input.
+     */
     AssertPtrReturn(pIns, VERR_INVALID_PARAMETER);
 
-    if (   offHeap >= pIns->area.cbArea
-        || cbHeap > pIns->area.cbArea
-        || offHeap > pIns->area.cbArea - cbHeap)
+    ASSERT_GUEST_LOGREL_MSG_RETURN(   offHeap <  pIns->area.cbArea
+                                   && cbHeap  <= pIns->area.cbArea
+                                   && offHeap <= pIns->area.cbArea - cbHeap,
+                                   ("Heap: %#x LB %#x; Area: %#x LB %#x\n", offHeap, cbHeap, pIns->area.offBase, pIns->area.cbArea),
+                                   VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+
+    /*
+     * Lock the heap and do the job.
+     */
+    int rc = hgsmiHostHeapLock(pIns);
+    AssertReturn(rc, rc);
+
+    /* It is possible to change the heap only if there is no pending allocations. */
+    ASSERT_GUEST_LOGREL_MSG_STMT_RETURN(pIns->hostHeap.cRefs == 0,
+                                        ("HGSMI[%s]: host heap setup ignored. %d allocated.\n", pIns->pszName, pIns->hostHeap.cRefs),
+                                        hgsmiHostHeapUnlock(pIns),
+                                        VERR_ACCESS_DENIED);
+    rc = HGSMIAreaInitialize(&pIns->hostHeap.area, pIns->area.pu8Base + offHeap, cbHeap, offHeap);
+    if (RT_SUCCESS(rc))
     {
-        AssertLogRelMsgFailed(("offHeap 0x%08X, cbHeap = 0x%08X, pIns->area.cbArea 0x%08X\n",
-                               offHeap, cbHeap, pIns->area.cbArea));
-        rc = VERR_INVALID_PARAMETER;
+        rc = HGSMIMAInit(&pIns->hostHeap.u.ma, &pIns->hostHeap.area, NULL, 0, 0, &g_hgsmiEnv);
+        if (RT_SUCCESS(rc))
+            pIns->hostHeap.u32HeapType = HGSMI_HEAP_TYPE_MA;
+        else
+            HGSMIAreaClear(&pIns->hostHeap.area);
     }
-    else
-    {
-        rc = hgsmiHostHeapLock (pIns);
 
-        if (RT_SUCCESS (rc))
-        {
-            if (pIns->hostHeap.cRefs)
-            {
-                AssertLogRelMsgFailed(("HGSMI[%s]: host heap setup ignored. %d allocated.\n",
-                                       pIns->pszName, pIns->hostHeap.cRefs));
-                /* It is possible to change the heap only if there is no pending allocations. */
-                rc = VERR_ACCESS_DENIED;
-            }
-            else
-            {
-                rc = HGSMIAreaInitialize(&pIns->hostHeap.area, pIns->area.pu8Base + offHeap, cbHeap, offHeap);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = HGSMIMAInit(&pIns->hostHeap.u.ma, &pIns->hostHeap.area, NULL, 0, 0, &g_hgsmiEnv);
-                }
-
-                if (RT_SUCCESS(rc))
-                {
-                    pIns->hostHeap.u32HeapType = HGSMI_HEAP_TYPE_MA;
-                }
-                else
-                {
-                    HGSMIAreaClear(&pIns->hostHeap.area);
-                }
-            }
-
-            hgsmiHostHeapUnlock (pIns);
-        }
-    }
+    hgsmiHostHeapUnlock(pIns);
 
     LogFlowFunc(("rc = %Rrc\n", rc));
-
     return rc;
 }
 
@@ -1517,6 +1504,40 @@ HGSMIOFFSET HGSMIPointerToOffsetHost(PHGSMIINSTANCE pIns, const void RT_UNTRUSTE
 
     LogFunc(("pointer %p is outside the area %p LB %#x!!!\n", pv, pArea->pu8Base, pArea->cbArea));
     return HGSMIOFFSET_VOID;
+}
+
+
+/**
+ * Checks if @a offBuffer is within the area of this instance.
+ *
+ * This is for use in input validations.
+ *
+ * @returns true / false.
+ * @param   pIns        The instance.
+ * @param   offBuffer   The buffer offset to check.
+ */
+bool HGSMIIsOffsetValid(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer)
+{
+    return pIns
+        && offBuffer - pIns->area.offBase < pIns->area.cbArea;
+}
+
+
+/**
+ * Returns the area offset for use in logging and assertion messages.
+ */
+HGSMIOFFSET HGSMIGetAreaOffset(PHGSMIINSTANCE pIns)
+{
+    return pIns ? pIns->area.offBase : ~(HGSMIOFFSET)0;
+}
+
+
+/**
+ * Returns the area size for use in logging and assertion messages.
+ */
+HGSMIOFFSET HGSMIGetAreaSize(PHGSMIINSTANCE pIns)
+{
+    return pIns ? pIns->area.cbArea : 0;
 }
 
 

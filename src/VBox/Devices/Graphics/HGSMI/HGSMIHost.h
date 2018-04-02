@@ -49,6 +49,10 @@ void *HGSMIContext(PHGSMIINSTANCE pIns);
 
 void RT_UNTRUSTED_VOLATILE_GUEST *HGSMIOffsetToPointerHost(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
 HGSMIOFFSET HGSMIPointerToOffsetHost(PHGSMIINSTANCE pIns, const void RT_UNTRUSTED_VOLATILE_GUEST *pv);
+bool        HGSMIIsOffsetValid(PHGSMIINSTANCE pIns, HGSMIOFFSET offBuffer);
+HGSMIOFFSET HGSMIGetAreaOffset(PHGSMIINSTANCE pIns);
+HGSMIOFFSET HGSMIGetAreaSize(PHGSMIINSTANCE pIns);
+
 
 int   HGSMIHostChannelRegister(PHGSMIINSTANCE pIns, uint8_t u8Channel,
                                PFNHGSMICHANNELHANDLER pfnChannelHandler, void *pvChannelHandler);
@@ -60,7 +64,7 @@ int HGSMIChannelRegisterName (PHGSMIINSTANCE pIns,
                               uint8_t *pu8Channel);
 #endif
 
-int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns, HGSMIOFFSET offHeap, HGSMISIZE cbHeap);
+int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns, HGSMIOFFSET RT_UNTRUSTED_GUEST offHeap, HGSMISIZE RT_UNTRUSTED_GUEST cbHeap);
 
 /*
  * Virtual hardware IO handlers.
