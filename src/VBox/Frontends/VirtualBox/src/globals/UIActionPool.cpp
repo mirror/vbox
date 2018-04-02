@@ -456,11 +456,20 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Application; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuType_Application;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Application); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Application);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Application); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Application);
+    }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
@@ -491,20 +500,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_Close; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuApplicationActionType_Close;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Close); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Close); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Close");
     }
 
     /** Returns default shortcut. */
-    QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const
+    virtual QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const /* override */
     {
         switch (actionPoolType)
         {
@@ -538,11 +556,20 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Window; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuType_Window;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Window); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Window);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Window); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Window);
+    }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
@@ -567,14 +594,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuWindowActionType_Minimize; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuWindowActionType_Minimize;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuWindowActionType_Minimize); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuWindowActionType_Minimize);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType_Minimize); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType_Minimize);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Minimize");
     }
@@ -606,11 +642,20 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Help; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuType_Help;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Help); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Help);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Help); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Help);
+    }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
@@ -637,20 +682,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_Contents; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuHelpActionType_Contents;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Contents); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Contents);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Contents); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Contents);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Help");
     }
 
     /** Returns default shortcut. */
-    QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const
+    virtual QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const /* override */
     {
         switch (actionPoolType)
         {
@@ -686,14 +740,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_WebSite; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuHelpActionType_WebSite;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_WebSite); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_WebSite);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_WebSite); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_WebSite);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Web");
     }
@@ -724,14 +787,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_BugTracker; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuHelpActionType_BugTracker;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_BugTracker); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_BugTracker);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_BugTracker); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_BugTracker);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("BugTracker");
     }
@@ -762,14 +834,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_Forums; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuHelpActionType_Forums;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Forums); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Forums);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Forums); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Forums);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Forums");
     }
@@ -800,14 +881,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_Oracle; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuHelpActionType_Oracle;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Oracle); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Oracle);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Oracle); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Oracle);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Oracle");
     }
@@ -839,14 +929,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("ResetWarnings");
     }
@@ -879,14 +978,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("NetworkAccessManager");
     }
@@ -918,14 +1026,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Update");
     }
@@ -958,7 +1075,7 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const
+    virtual int extraDataID() const /* override */
     {
 #ifdef VBOX_WS_MAC
         return UIExtraDataMetaDefs::MenuApplicationActionType_About;
@@ -967,7 +1084,7 @@ protected:
 #endif
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const
+    virtual QString extraDataKey() const /* override */
     {
 #ifdef VBOX_WS_MAC
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_About);
@@ -976,7 +1093,7 @@ protected:
 #endif
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const
+    virtual bool isAllowed() const /* override */
     {
 #ifdef VBOX_WS_MAC
         return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_About);
@@ -986,7 +1103,7 @@ protected:
     }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("About");
     }
@@ -1018,20 +1135,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_Preferences; }
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
+    }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences); }
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
+    }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences); }
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
+    }
 
     /** Returns shortcut extra-data ID. */
-    QString shortcutExtraDataID() const
+    virtual QString shortcutExtraDataID() const /* override */
     {
         return QString("Preferences");
     }
 
     /** Returns default shortcut. */
-    QKeySequence defaultShortcut(UIActionPoolType) const
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         switch (actionPool()->type())
         {
@@ -1596,6 +1722,7 @@ bool UIActionPool::addMenu(QList<QMenu*> &menuList, UIAction *pAction, bool fRea
     /* Return if action is allowed: */
     return fIsActionAllowed;
 }
+
 
 #include "UIActionPool.moc"
 
