@@ -223,17 +223,18 @@ protected:
     UIActionPoolRuntime(bool fTemporary = false);
 
     /** Prepares pool. */
-    virtual void preparePool();
+    virtual void preparePool() /* override */;
     /** Prepares connections. */
-    virtual void prepareConnections();
+    virtual void prepareConnections() /* override */;
 
     /** Updates configuration. */
-    virtual void updateConfiguration();
+    virtual void updateConfiguration() /* override */;
 
     /** Updates menu. */
-    void updateMenu(int iIndex);
+    virtual void updateMenu(int iIndex) /* override */;
     /** Updates menus. */
-    void updateMenus();
+    virtual void updateMenus() /* override */;
+
     /** Updates 'Machine' menu. */
     void updateMenuMachine();
     /** Updates 'View' menu. */
@@ -276,13 +277,13 @@ protected:
 #endif
 
     /** Updates shortcuts. */
-    virtual void updateShortcuts();
+    virtual void updateShortcuts() /* override */;
 
     /** Returns extra-data ID to save keyboard shortcuts under. */
-    virtual QString shortcutsExtraDataID() const;
+    virtual QString shortcutsExtraDataID() const /* override */;
 
     /** Returns the list of Runtime UI main menus. */
-    virtual QList<QMenu*> menus() const { return m_mainMenus; }
+    virtual QList<QMenu*> menus() const /* override */ { return m_mainMenus; }
 
 private:
 

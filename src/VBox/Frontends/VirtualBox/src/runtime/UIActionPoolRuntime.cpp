@@ -43,14 +43,14 @@ using namespace UIExtraDataDefs;
 
 
 /** Menu action extension, used as 'Machine' menu class. */
-class UIActionMenuMachineRuntime : public UIActionMenu
+class UIActionMenuRuntimeMachine : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuMachineRuntime(UIActionPool *pParent)
+    UIActionMenuRuntimeMachine(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -79,15 +79,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Settings Dialog' action class. */
-class UIActionSimpleShowSettingsDialog : public UIActionSimple
+/** Simple action extension, used as 'Show Settings' action class. */
+class UIActionSimpleRuntimeShowSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowSettingsDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_settings_16px.png", ":/vm_settings_disabled_16px.png")
     {}
 
@@ -130,14 +130,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Take Snapshot' action class. */
-class UIActionSimplePerformTakeSnapshot : public UIActionSimple
+class UIActionSimpleRuntimePerformTakeSnapshot : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformTakeSnapshot(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformTakeSnapshot(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/snapshot_take_16px.png", ":/snapshot_take_disabled_16px.png")
     {}
 
@@ -180,14 +180,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Information Dialog' action class. */
-class UIActionSimpleShowInformationDialog : public UIActionSimple
+class UIActionSimpleRuntimeShowInformationDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowInformationDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowInformationDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png")
     {}
 
@@ -230,14 +230,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Pause' action class. */
-class UIActionTogglePause : public UIActionToggle
+class UIActionToggleRuntimePause : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionTogglePause(UIActionPool *pParent)
+    UIActionToggleRuntimePause(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/vm_pause_on_16px.png", ":/vm_pause_16px.png",
                          ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png")
@@ -282,14 +282,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Reset' action class. */
-class UIActionSimplePerformReset : public UIActionSimple
+class UIActionSimpleRuntimePerformReset : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformReset(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformReset(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png")
     {}
 
@@ -332,14 +332,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Detach' action class. */
-class UIActionSimplePerformDetach : public UIActionSimple
+class UIActionSimpleRuntimePerformDetach : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformDetach(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformDetach(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png")
     {}
 
@@ -376,14 +376,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Save State' action class. */
-class UIActionSimplePerformSaveState : public UIActionSimple
+class UIActionSimpleRuntimePerformSaveState : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformSaveState(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformSaveState(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png")
     {}
 
@@ -420,14 +420,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Shutdown' action class. */
-class UIActionSimplePerformShutdown : public UIActionSimple
+class UIActionSimpleRuntimePerformShutdown : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformShutdown(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformShutdown(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png")
     {}
 
@@ -474,14 +474,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform PowerOff' action class. */
-class UIActionSimplePerformPowerOff : public UIActionSimple
+class UIActionSimpleRuntimePerformPowerOff : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformPowerOff(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformPowerOff(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png")
     {}
 
@@ -519,14 +519,14 @@ protected:
 
 
 /** Menu action extension, used as 'View' menu class. */
-class UIActionMenuView : public UIActionMenu
+class UIActionMenuRuntimeView : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuView(UIActionPool *pParent)
+    UIActionMenuRuntimeView(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -556,14 +556,14 @@ protected:
 };
 
 /** Menu action extension, used as 'View Popup' menu class. */
-class UIActionMenuViewPopup : public UIActionMenu
+class UIActionMenuRuntimeViewPopup : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuViewPopup(UIActionPool *pParent)
+    UIActionMenuRuntimeViewPopup(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -590,14 +590,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Full-screen Mode' action class. */
-class UIActionToggleFullscreenMode : public UIActionToggle
+class UIActionToggleRuntimeFullscreenMode : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleFullscreenMode(UIActionPool *pParent)
+    UIActionToggleRuntimeFullscreenMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/fullscreen_on_16px.png", ":/fullscreen_16px.png",
                          ":/fullscreen_on_disabled_16px.png", ":/fullscreen_disabled_16px.png")
@@ -642,14 +642,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Seamless Mode' action class. */
-class UIActionToggleSeamlessMode : public UIActionToggle
+class UIActionToggleRuntimeSeamlessMode : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleSeamlessMode(UIActionPool *pParent)
+    UIActionToggleRuntimeSeamlessMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/seamless_on_16px.png", ":/seamless_16px.png",
                          ":/seamless_on_disabled_16px.png", ":/seamless_disabled_16px.png")
@@ -694,14 +694,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Scaled Mode' action class. */
-class UIActionToggleScaledMode : public UIActionToggle
+class UIActionToggleRuntimeScaledMode : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleScaledMode(UIActionPool *pParent)
+    UIActionToggleRuntimeScaledMode(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/scale_on_16px.png", ":/scale_16px.png",
                          ":/scale_on_disabled_16px.png", ":/scale_disabled_16px.png")
@@ -747,14 +747,14 @@ protected:
 
 #ifndef VBOX_WS_MAC
 /** Simple action extension, used as 'Perform Minimize Window' action class. */
-class UIActionSimplePerformMinimizeWindow : public UIActionSimple
+class UIActionSimpleRuntimePerformMinimizeWindow : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformMinimizeWindow(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformMinimizeWindow(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/minimize_16px.png")
     {}
 
@@ -798,14 +798,14 @@ protected:
 #endif /* !VBOX_WS_MAC */
 
 /** Simple action extension, used as 'Perform Window Adjust' action class. */
-class UIActionSimplePerformWindowAdjust : public UIActionSimple
+class UIActionSimpleRuntimePerformWindowAdjust : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformWindowAdjust(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformWindowAdjust(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png")
     {}
 
@@ -848,14 +848,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Guest Autoresize' action class. */
-class UIActionToggleGuestAutoresize : public UIActionToggle
+class UIActionToggleRuntimeGuestAutoresize : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleGuestAutoresize(UIActionPool *pParent)
+    UIActionToggleRuntimeGuestAutoresize(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/auto_resize_on_on_16px.png", ":/auto_resize_on_16px.png",
                          ":/auto_resize_on_on_disabled_16px.png", ":/auto_resize_on_disabled_16px.png")
@@ -894,14 +894,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Take Snapshot' action class. */
-class UIActionSimplePerformTakeScreenshot : public UIActionSimple
+class UIActionSimpleRuntimePerformTakeScreenshot : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformTakeScreenshot(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformTakeScreenshot(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/screenshot_take_16px.png", ":/screenshot_take_disabled_16px.png")
     {}
 
@@ -944,14 +944,14 @@ protected:
 };
 
 /** Menu action extension, used as 'View' menu class. */
-class UIActionMenuVideoCapture : public UIActionMenu
+class UIActionMenuRuntimeVideoCapture : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuVideoCapture(UIActionPool *pParent)
+    UIActionMenuRuntimeVideoCapture(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -980,15 +980,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Video Capture Settings Dialog' action class. */
-class UIActionSimpleShowVideoCaptureSettingsDialog : public UIActionSimple
+/** Simple action extension, used as 'Show Video Capture Settings' action class. */
+class UIActionSimpleRuntimeShowVideoCaptureSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowVideoCaptureSettingsDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowVideoCaptureSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/video_capture_settings_16px.png")
     {}
 
@@ -1025,14 +1025,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Video Capture' action class. */
-class UIActionToggleVideoCapture : public UIActionToggle
+class UIActionToggleRuntimeVideoCapture : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleVideoCapture(UIActionPool *pParent)
+    UIActionToggleRuntimeVideoCapture(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/video_capture_on_16px.png", ":/video_capture_16px.png",
                          ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png")
@@ -1071,14 +1071,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'VRDE Server' action class. */
-class UIActionToggleVRDEServer : public UIActionToggle
+class UIActionToggleRuntimeVRDEServer : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleVRDEServer(UIActionPool *pParent)
+    UIActionToggleRuntimeVRDEServer(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/vrdp_on_16px.png", ":/vrdp_16px.png",
                          ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png")
@@ -1117,14 +1117,14 @@ protected:
 };
 
 /** Menu action extension, used as 'MenuBar' menu class. */
-class UIActionMenuMenuBar : public UIActionMenu
+class UIActionMenuRuntimeMenuBar : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuMenuBar(UIActionPool *pParent)
+    UIActionMenuRuntimeMenuBar(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/menubar_16px.png", ":/menubar_disabled_16px.png")
     {}
 
@@ -1154,14 +1154,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show MenuBar Settings Window' action class. */
-class UIActionSimpleShowMenuBarSettingsWindow : public UIActionSimple
+class UIActionSimpleRuntimeShowMenuBarSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowMenuBarSettingsWindow(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowMenuBarSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/menubar_settings_16px.png", ":/menubar_settings_disabled_16px.png")
     {}
 
@@ -1199,14 +1199,14 @@ protected:
 
 #ifndef VBOX_WS_MAC
 /** Toggle action extension, used as 'MenuBar' action class. */
-class UIActionToggleMenuBar : public UIActionToggle
+class UIActionToggleRuntimeMenuBar : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleMenuBar(UIActionPool *pParent)
+    UIActionToggleRuntimeMenuBar(UIActionPool *pParent)
         : UIActionToggle(pParent, ":/menubar_on_16px.png", ":/menubar_16px.png",
                                   ":/menubar_on_disabled_16px.png", ":/menubar_disabled_16px.png")
     {}
@@ -1245,14 +1245,14 @@ protected:
 #endif /* !VBOX_WS_MAC */
 
 /** Menu action extension, used as 'StatusBar' menu class. */
-class UIActionMenuStatusBar : public UIActionMenu
+class UIActionMenuRuntimeStatusBar : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuStatusBar(UIActionPool *pParent)
+    UIActionMenuRuntimeStatusBar(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/statusbar_16px.png", ":/statusbar_disabled_16px.png")
     {}
 
@@ -1282,14 +1282,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show StatusBar Settings Window' action class. */
-class UIActionSimpleShowStatusBarSettingsWindow : public UIActionSimple
+class UIActionSimpleRuntimeShowStatusBarSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowStatusBarSettingsWindow(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowStatusBarSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/statusbar_settings_16px.png", ":/statusbar_settings_disabled_16px.png")
     {}
 
@@ -1326,14 +1326,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'StatusBar' action class. */
-class UIActionToggleStatusBar : public UIActionToggle
+class UIActionToggleRuntimeStatusBar : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleStatusBar(UIActionPool *pParent)
+    UIActionToggleRuntimeStatusBar(UIActionPool *pParent)
         : UIActionToggle(pParent, ":/statusbar_on_16px.png", ":/statusbar_16px.png",
                                   ":/statusbar_on_disabled_16px.png", ":/statusbar_disabled_16px.png")
     {}
@@ -1371,14 +1371,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Scale Factor' menu class. */
-class UIActionMenuScaleFactor : public UIActionMenu
+class UIActionMenuRuntimeScaleFactor : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuScaleFactor(UIActionPool *pParent)
+    UIActionMenuRuntimeScaleFactor(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/scale_factor_16px.png", ":/scale_factor_disabled_16px.png")
     {}
 
@@ -1409,14 +1409,14 @@ protected:
 
 
 /** Menu action extension, used as 'Input' menu class. */
-class UIActionMenuInput : public UIActionMenu
+class UIActionMenuRuntimeInput : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuInput(UIActionPool *pParent)
+    UIActionMenuRuntimeInput(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -1446,14 +1446,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Keyboard' menu class. */
-class UIActionMenuKeyboard : public UIActionMenu
+class UIActionMenuRuntimeKeyboard : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuKeyboard(UIActionPool *pParent)
+    UIActionMenuRuntimeKeyboard(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/keyboard_16px.png")
     {}
 
@@ -1482,15 +1482,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Keyboard Settings Dialog' action class. */
-class UIActionSimpleShowKeyboardSettingsDialog : public UIActionSimple
+/** Simple action extension, used as 'Show Keyboard Settings' action class. */
+class UIActionSimpleRuntimeShowKeyboardSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowKeyboardSettingsDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowKeyboardSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/keyboard_settings_16px.png", ":/keyboard_settings_disabled_16px.png")
     {}
 
@@ -1527,14 +1527,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Type CAD' action class. */
-class UIActionSimplePerformTypeCAD : public UIActionSimple
+class UIActionSimpleRuntimePerformTypeCAD : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformTypeCAD(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformTypeCAD(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -1578,14 +1578,14 @@ protected:
 
 #ifdef VBOX_WS_X11
 /** X11: Simple action extension, used as 'Perform Type CABS' action class. */
-class UIActionSimplePerformTypeCABS : public UIActionSimple
+class UIActionSimpleRuntimePerformTypeCABS : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformTypeCABS(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformTypeCABS(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -1629,14 +1629,14 @@ protected:
 #endif /* VBOX_WS_X11 */
 
 /** Simple action extension, used as 'Perform Type Ctrl Break' action class. */
-class UIActionSimplePerformTypeCtrlBreak : public UIActionSimple
+class UIActionSimpleRuntimePerformTypeCtrlBreak : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformTypeCtrlBreak(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformTypeCtrlBreak(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -1673,14 +1673,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Type Insert' action class. */
-class UIActionSimplePerformTypeInsert : public UIActionSimple
+class UIActionSimpleRuntimePerformTypeInsert : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformTypeInsert(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformTypeInsert(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -1717,14 +1717,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Type PrintScreen' action class. */
-class UIActionSimplePerformTypePrintScreen : public UIActionSimple
+class UIActionSimpleRuntimePerformTypePrintScreen : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformTypePrintScreen(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformTypePrintScreen(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -1761,14 +1761,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Type Alt PrintScreen' action class. */
-class UIActionSimplePerformTypeAltPrintScreen : public UIActionSimple
+class UIActionSimpleRuntimePerformTypeAltPrintScreen : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformTypeAltPrintScreen(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformTypeAltPrintScreen(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -1805,14 +1805,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Mouse' menu class. */
-class UIActionMenuMouse : public UIActionMenu
+class UIActionMenuRuntimeMouse : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuMouse(UIActionPool *pParent)
+    UIActionMenuRuntimeMouse(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -1842,14 +1842,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Mouse Integration' action class. */
-class UIActionToggleMouseIntegration : public UIActionToggle
+class UIActionToggleRuntimeMouseIntegration : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleMouseIntegration(UIActionPool *pParent)
+    UIActionToggleRuntimeMouseIntegration(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/mouse_can_seamless_on_16px.png", ":/mouse_can_seamless_16px.png",
                          ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png")
@@ -1889,14 +1889,14 @@ protected:
 
 
 /** Menu action extension, used as 'Devices' menu class. */
-class UIActionMenuDevices : public UIActionMenu
+class UIActionMenuRuntimeDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuDevices(UIActionPool *pParent)
+    UIActionMenuRuntimeDevices(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -1926,14 +1926,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Hard Drives' menu class. */
-class UIActionMenuHardDrives : public UIActionMenu
+class UIActionMenuRuntimeHardDrives : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuHardDrives(UIActionPool *pParent)
+    UIActionMenuRuntimeHardDrives(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/hd_16px.png", ":/hd_disabled_16px.png")
     {
         setShowToolTip(true);
@@ -1964,15 +1964,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Hard Drives Settings Dialog' action class. */
-class UIActionSimpleShowHardDrivesSettingsDialog : public UIActionSimple
+/** Simple action extension, used as 'Show Hard Drives Settings' action class. */
+class UIActionSimpleRuntimeShowHardDrivesSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowHardDrivesSettingsDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowHardDrivesSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/hd_settings_16px.png", ":/hd_settings_disabled_16px.png")
     {}
 
@@ -2009,14 +2009,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Optical Drives' menu class. */
-class UIActionMenuOpticalDevices : public UIActionMenu
+class UIActionMenuRuntimeOpticalDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuOpticalDevices(UIActionPool *pParent)
+    UIActionMenuRuntimeOpticalDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/cd_16px.png", ":/cd_disabled_16px.png")
     {
         setShowToolTip(true);
@@ -2048,14 +2048,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Floppy Drives' menu class. */
-class UIActionMenuFloppyDevices : public UIActionMenu
+class UIActionMenuRuntimeFloppyDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuFloppyDevices(UIActionPool *pParent)
+    UIActionMenuRuntimeFloppyDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/fd_16px.png", ":/fd_disabled_16px.png")
     {
         setShowToolTip(true);
@@ -2087,14 +2087,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Audio' menu class. */
-class UIActionMenuAudio : public UIActionMenu
+class UIActionMenuRuntimeAudio : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuAudio(UIActionPool *pParent)
+    UIActionMenuRuntimeAudio(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/audio_16px.png", ":/audio_all_off_16px.png")
     {}
 
@@ -2124,14 +2124,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Audio Output' action class. */
-class UIActionToggleAudioOutput : public UIActionToggle
+class UIActionToggleRuntimeAudioOutput : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleAudioOutput(UIActionPool *pParent)
+    UIActionToggleRuntimeAudioOutput(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/audio_output_on_16px.png", ":/audio_output_16px.png",
                          ":/audio_output_on_16px.png", ":/audio_output_16px.png")
@@ -2170,14 +2170,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Audio Input' action class. */
-class UIActionToggleAudioInput : public UIActionToggle
+class UIActionToggleRuntimeAudioInput : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleAudioInput(UIActionPool *pParent)
+    UIActionToggleRuntimeAudioInput(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/audio_input_on_16px.png", ":/audio_input_16px.png",
                          ":/audio_input_on_16px.png", ":/audio_input_16px.png")
@@ -2216,14 +2216,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Network Adapters' menu class. */
-class UIActionMenuNetworkAdapters : public UIActionMenu
+class UIActionMenuRuntimeNetworkAdapters : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuNetworkAdapters(UIActionPool *pParent)
+    UIActionMenuRuntimeNetworkAdapters(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
     {}
 
@@ -2252,15 +2252,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Network Settings Dialog' action class. */
-class UIActionSimpleShowNetworkSettingsDialog : public UIActionSimple
+/** Simple action extension, used as 'Show Network Settings' action class. */
+class UIActionSimpleRuntimeShowNetworkSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowNetworkSettingsDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowNetworkSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/nw_settings_16px.png", ":/nw_settings_disabled_16px.png")
     {}
 
@@ -2297,14 +2297,14 @@ protected:
 };
 
 /** Menu action extension, used as 'USB Devices' menu class. */
-class UIActionMenuUSBDevices : public UIActionMenu
+class UIActionMenuRuntimeUSBDevices : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuUSBDevices(UIActionPool *pParent)
+    UIActionMenuRuntimeUSBDevices(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/usb_16px.png", ":/usb_disabled_16px.png")
     {
         setShowToolTip(true);
@@ -2335,15 +2335,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show USB Devices Settings Dialog' action class. */
-class UIActionSimpleShowUSBDevicesSettingsDialog : public UIActionSimple
+/** Simple action extension, used as 'Show USB Devices Settings' action class. */
+class UIActionSimpleRuntimeShowUSBDevicesSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowUSBDevicesSettingsDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowUSBDevicesSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/usb_settings_16px.png", ":/usb_settings_disabled_16px.png")
     {}
 
@@ -2380,14 +2380,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Web Cams' menu class. */
-class UIActionMenuWebCams : public UIActionMenu
+class UIActionMenuRuntimeWebCams : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuWebCams(UIActionPool *pParent)
+    UIActionMenuRuntimeWebCams(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/web_camera_16px.png", ":/web_camera_disabled_16px.png")
     {
         setShowToolTip(true);
@@ -2419,14 +2419,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Shared Clipboard' menu class. */
-class UIActionMenuSharedClipboard : public UIActionMenu
+class UIActionMenuRuntimeSharedClipboard : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSharedClipboard(UIActionPool *pParent)
+    UIActionMenuRuntimeSharedClipboard(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/shared_clipboard_16px.png", ":/shared_clipboard_disabled_16px.png")
     {}
 
@@ -2456,14 +2456,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Drag & Drop' menu class. */
-class UIActionMenuDragAndDrop : public UIActionMenu
+class UIActionMenuRuntimeDragAndDrop : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuDragAndDrop(UIActionPool *pParent)
+    UIActionMenuRuntimeDragAndDrop(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/drag_drop_16px.png", ":/drag_drop_disabled_16px.png")
     {}
 
@@ -2493,14 +2493,14 @@ protected:
 };
 
 /** Menu action extension, used as 'Shared Folders' menu class. */
-class UIActionMenuSharedFolders : public UIActionMenu
+class UIActionMenuRuntimeSharedFolders : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSharedFolders(UIActionPool *pParent)
+    UIActionMenuRuntimeSharedFolders(UIActionPool *pParent)
         : UIActionMenu(pParent, ":/sf_16px.png", ":/sf_disabled_16px.png")
     {}
 
@@ -2529,15 +2529,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Shared Folders Settings Dialog' action class. */
-class UIActionSimpleShowSharedFoldersSettingsDialog : public UIActionSimple
+/** Simple action extension, used as 'Show Shared Folders Settings' action class. */
+class UIActionSimpleRuntimeShowSharedFoldersSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowSharedFoldersSettingsDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowSharedFoldersSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/sf_settings_16px.png", ":/sf_settings_disabled_16px.png")
     {}
 
@@ -2574,14 +2574,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Perform Install Guest Tools' action class. */
-class UIActionSimplePerformInstallGuestTools : public UIActionSimple
+class UIActionSimpleRuntimePerformInstallGuestTools : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimplePerformInstallGuestTools(UIActionPool *pParent)
+    UIActionSimpleRuntimePerformInstallGuestTools(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png")
     {}
 
@@ -2619,14 +2619,14 @@ protected:
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 /** Menu action extension, used as 'Debug' menu class. */
-class UIActionMenuDebug : public UIActionMenu
+class UIActionMenuRuntimeDebug : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuDebug(UIActionPool *pParent)
+    UIActionMenuRuntimeDebug(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -2656,14 +2656,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Statistics' action class. */
-class UIActionSimpleShowStatistics : public UIActionSimple
+class UIActionSimpleRuntimeShowStatistics : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowStatistics(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowStatistics(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -2699,14 +2699,14 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Command Line' action class. */
-class UIActionSimpleShowCommandLine : public UIActionSimple
+class UIActionSimpleRuntimeShowCommandLine : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowCommandLine(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowCommandLine(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -2742,14 +2742,14 @@ protected:
 };
 
 /** Toggle action extension, used as 'Logging' action class. */
-class UIActionToggleLogging : public UIActionToggle
+class UIActionToggleRuntimeLogging : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleLogging(UIActionPool *pParent)
+    UIActionToggleRuntimeLogging(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {}
 
@@ -2784,15 +2784,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Log Dialog' action class. */
-class UIActionSimpleShowLogDialog : public UIActionSimple
+/** Simple action extension, used as 'Show Logs' action class. */
+class UIActionSimpleRuntimeShowLogs : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleShowLogDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowLogs(UIActionPool *pParent)
         : UIActionSimple(pParent)
     {}
 
@@ -3148,85 +3148,85 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRemap(QAction *pAction
 void UIActionPoolRuntime::preparePool()
 {
     /* 'Machine' actions: */
-    m_pool[UIActionIndexRT_M_Machine] = new UIActionMenuMachineRuntime(this);
-    m_pool[UIActionIndexRT_M_Machine_S_Settings] = new UIActionSimpleShowSettingsDialog(this);
-    m_pool[UIActionIndexRT_M_Machine_S_TakeSnapshot] = new UIActionSimplePerformTakeSnapshot(this);
-    m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleShowInformationDialog(this);
-    m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionTogglePause(this);
-    m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimplePerformReset(this);
-    m_pool[UIActionIndexRT_M_Machine_S_Detach] = new UIActionSimplePerformDetach(this);
-    m_pool[UIActionIndexRT_M_Machine_S_SaveState] = new UIActionSimplePerformSaveState(this);
-    m_pool[UIActionIndexRT_M_Machine_S_Shutdown] = new UIActionSimplePerformShutdown(this);
-    m_pool[UIActionIndexRT_M_Machine_S_PowerOff] = new UIActionSimplePerformPowerOff(this);
+    m_pool[UIActionIndexRT_M_Machine] = new UIActionMenuRuntimeMachine(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Settings] = new UIActionSimpleRuntimeShowSettings(this);
+    m_pool[UIActionIndexRT_M_Machine_S_TakeSnapshot] = new UIActionSimpleRuntimePerformTakeSnapshot(this);
+    m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleRuntimeShowInformationDialog(this);
+    m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionToggleRuntimePause(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimpleRuntimePerformReset(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Detach] = new UIActionSimpleRuntimePerformDetach(this);
+    m_pool[UIActionIndexRT_M_Machine_S_SaveState] = new UIActionSimpleRuntimePerformSaveState(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Shutdown] = new UIActionSimpleRuntimePerformShutdown(this);
+    m_pool[UIActionIndexRT_M_Machine_S_PowerOff] = new UIActionSimpleRuntimePerformPowerOff(this);
 
     /* 'View' actions: */
-    m_pool[UIActionIndexRT_M_View] = new UIActionMenuView(this);
-    m_pool[UIActionIndexRT_M_ViewPopup] = new UIActionMenuViewPopup(this);
-    m_pool[UIActionIndexRT_M_View_T_Fullscreen] = new UIActionToggleFullscreenMode(this);
-    m_pool[UIActionIndexRT_M_View_T_Seamless] = new UIActionToggleSeamlessMode(this);
-    m_pool[UIActionIndexRT_M_View_T_Scale] = new UIActionToggleScaledMode(this);
+    m_pool[UIActionIndexRT_M_View] = new UIActionMenuRuntimeView(this);
+    m_pool[UIActionIndexRT_M_ViewPopup] = new UIActionMenuRuntimeViewPopup(this);
+    m_pool[UIActionIndexRT_M_View_T_Fullscreen] = new UIActionToggleRuntimeFullscreenMode(this);
+    m_pool[UIActionIndexRT_M_View_T_Seamless] = new UIActionToggleRuntimeSeamlessMode(this);
+    m_pool[UIActionIndexRT_M_View_T_Scale] = new UIActionToggleRuntimeScaledMode(this);
 #ifndef VBOX_WS_MAC
-    m_pool[UIActionIndexRT_M_View_S_MinimizeWindow] = new UIActionSimplePerformMinimizeWindow(this);
+    m_pool[UIActionIndexRT_M_View_S_MinimizeWindow] = new UIActionSimpleRuntimePerformMinimizeWindow(this);
 #endif /* !VBOX_WS_MAC */
-    m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
-    m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
-    m_pool[UIActionIndexRT_M_View_S_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
-    m_pool[UIActionIndexRT_M_View_M_VideoCapture] = new UIActionMenuVideoCapture(this);
-    m_pool[UIActionIndexRT_M_View_M_VideoCapture_S_Settings] = new UIActionSimpleShowVideoCaptureSettingsDialog(this);
-    m_pool[UIActionIndexRT_M_View_M_VideoCapture_T_Start] = new UIActionToggleVideoCapture(this);
-    m_pool[UIActionIndexRT_M_View_T_VRDEServer] = new UIActionToggleVRDEServer(this);
-    m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuMenuBar(this);
-    m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleShowMenuBarSettingsWindow(this);
+    m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimpleRuntimePerformWindowAdjust(this);
+    m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleRuntimeGuestAutoresize(this);
+    m_pool[UIActionIndexRT_M_View_S_TakeScreenshot] = new UIActionSimpleRuntimePerformTakeScreenshot(this);
+    m_pool[UIActionIndexRT_M_View_M_VideoCapture] = new UIActionMenuRuntimeVideoCapture(this);
+    m_pool[UIActionIndexRT_M_View_M_VideoCapture_S_Settings] = new UIActionSimpleRuntimeShowVideoCaptureSettings(this);
+    m_pool[UIActionIndexRT_M_View_M_VideoCapture_T_Start] = new UIActionToggleRuntimeVideoCapture(this);
+    m_pool[UIActionIndexRT_M_View_T_VRDEServer] = new UIActionToggleRuntimeVRDEServer(this);
+    m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuRuntimeMenuBar(this);
+    m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleRuntimeShowMenuBarSettings(this);
 #ifndef VBOX_WS_MAC
-    m_pool[UIActionIndexRT_M_View_M_MenuBar_T_Visibility] = new UIActionToggleMenuBar(this);
+    m_pool[UIActionIndexRT_M_View_M_MenuBar_T_Visibility] = new UIActionToggleRuntimeMenuBar(this);
 #endif /* !VBOX_WS_MAC */
-    m_pool[UIActionIndexRT_M_View_M_StatusBar] = new UIActionMenuStatusBar(this);
-    m_pool[UIActionIndexRT_M_View_M_StatusBar_S_Settings] = new UIActionSimpleShowStatusBarSettingsWindow(this);
-    m_pool[UIActionIndexRT_M_View_M_StatusBar_T_Visibility] = new UIActionToggleStatusBar(this);
-    m_pool[UIActionIndexRT_M_View_M_ScaleFactor] = new UIActionMenuScaleFactor(this);
+    m_pool[UIActionIndexRT_M_View_M_StatusBar] = new UIActionMenuRuntimeStatusBar(this);
+    m_pool[UIActionIndexRT_M_View_M_StatusBar_S_Settings] = new UIActionSimpleRuntimeShowStatusBarSettings(this);
+    m_pool[UIActionIndexRT_M_View_M_StatusBar_T_Visibility] = new UIActionToggleRuntimeStatusBar(this);
+    m_pool[UIActionIndexRT_M_View_M_ScaleFactor] = new UIActionMenuRuntimeScaleFactor(this);
 
     /* 'Input' actions: */
-    m_pool[UIActionIndexRT_M_Input] = new UIActionMenuInput(this);
-    m_pool[UIActionIndexRT_M_Input_M_Keyboard] = new UIActionMenuKeyboard(this);
-    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_Settings] = new UIActionSimpleShowKeyboardSettingsDialog(this);
-    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD] = new UIActionSimplePerformTypeCAD(this);
+    m_pool[UIActionIndexRT_M_Input] = new UIActionMenuRuntimeInput(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard] = new UIActionMenuRuntimeKeyboard(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_Settings] = new UIActionSimpleRuntimeShowKeyboardSettings(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD] = new UIActionSimpleRuntimePerformTypeCAD(this);
 #ifdef VBOX_WS_X11
-    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS] = new UIActionSimplePerformTypeCABS(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS] = new UIActionSimpleRuntimePerformTypeCABS(this);
 #endif /* VBOX_WS_X11 */
-    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak] = new UIActionSimplePerformTypeCtrlBreak(this);
-    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert] = new UIActionSimplePerformTypeInsert(this);
-    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen] = new UIActionSimplePerformTypePrintScreen(this);
-    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen] = new UIActionSimplePerformTypeAltPrintScreen(this);
-    m_pool[UIActionIndexRT_M_Input_M_Mouse] = new UIActionMenuMouse(this);
-    m_pool[UIActionIndexRT_M_Input_M_Mouse_T_Integration] = new UIActionToggleMouseIntegration(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak] = new UIActionSimpleRuntimePerformTypeCtrlBreak(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert] = new UIActionSimpleRuntimePerformTypeInsert(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen] = new UIActionSimpleRuntimePerformTypePrintScreen(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen] = new UIActionSimpleRuntimePerformTypeAltPrintScreen(this);
+    m_pool[UIActionIndexRT_M_Input_M_Mouse] = new UIActionMenuRuntimeMouse(this);
+    m_pool[UIActionIndexRT_M_Input_M_Mouse_T_Integration] = new UIActionToggleRuntimeMouseIntegration(this);
 
     /* 'Devices' actions: */
-    m_pool[UIActionIndexRT_M_Devices] = new UIActionMenuDevices(this);
-    m_pool[UIActionIndexRT_M_Devices_M_HardDrives] = new UIActionMenuHardDrives(this);
-    m_pool[UIActionIndexRT_M_Devices_M_HardDrives_S_Settings] = new UIActionSimpleShowHardDrivesSettingsDialog(this);
-    m_pool[UIActionIndexRT_M_Devices_M_OpticalDevices] = new UIActionMenuOpticalDevices(this);
-    m_pool[UIActionIndexRT_M_Devices_M_FloppyDevices] = new UIActionMenuFloppyDevices(this);
-    m_pool[UIActionIndexRT_M_Devices_M_Audio] = new UIActionMenuAudio(this);
-    m_pool[UIActionIndexRT_M_Devices_M_Audio_T_Output] = new UIActionToggleAudioOutput(this);
-    m_pool[UIActionIndexRT_M_Devices_M_Audio_T_Input] = new UIActionToggleAudioInput(this);
-    m_pool[UIActionIndexRT_M_Devices_M_Network] = new UIActionMenuNetworkAdapters(this);
-    m_pool[UIActionIndexRT_M_Devices_M_Network_S_Settings] = new UIActionSimpleShowNetworkSettingsDialog(this);
-    m_pool[UIActionIndexRT_M_Devices_M_USBDevices] = new UIActionMenuUSBDevices(this);
-    m_pool[UIActionIndexRT_M_Devices_M_USBDevices_S_Settings] = new UIActionSimpleShowUSBDevicesSettingsDialog(this);
-    m_pool[UIActionIndexRT_M_Devices_M_WebCams] = new UIActionMenuWebCams(this);
-    m_pool[UIActionIndexRT_M_Devices_M_SharedClipboard] = new UIActionMenuSharedClipboard(this);
-    m_pool[UIActionIndexRT_M_Devices_M_DragAndDrop] = new UIActionMenuDragAndDrop(this);
-    m_pool[UIActionIndexRT_M_Devices_M_SharedFolders] = new UIActionMenuSharedFolders(this);
-    m_pool[UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings] = new UIActionSimpleShowSharedFoldersSettingsDialog(this);
-    m_pool[UIActionIndexRT_M_Devices_S_InstallGuestTools] = new UIActionSimplePerformInstallGuestTools(this);
+    m_pool[UIActionIndexRT_M_Devices] = new UIActionMenuRuntimeDevices(this);
+    m_pool[UIActionIndexRT_M_Devices_M_HardDrives] = new UIActionMenuRuntimeHardDrives(this);
+    m_pool[UIActionIndexRT_M_Devices_M_HardDrives_S_Settings] = new UIActionSimpleRuntimeShowHardDrivesSettings(this);
+    m_pool[UIActionIndexRT_M_Devices_M_OpticalDevices] = new UIActionMenuRuntimeOpticalDevices(this);
+    m_pool[UIActionIndexRT_M_Devices_M_FloppyDevices] = new UIActionMenuRuntimeFloppyDevices(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Audio] = new UIActionMenuRuntimeAudio(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Audio_T_Output] = new UIActionToggleRuntimeAudioOutput(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Audio_T_Input] = new UIActionToggleRuntimeAudioInput(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Network] = new UIActionMenuRuntimeNetworkAdapters(this);
+    m_pool[UIActionIndexRT_M_Devices_M_Network_S_Settings] = new UIActionSimpleRuntimeShowNetworkSettings(this);
+    m_pool[UIActionIndexRT_M_Devices_M_USBDevices] = new UIActionMenuRuntimeUSBDevices(this);
+    m_pool[UIActionIndexRT_M_Devices_M_USBDevices_S_Settings] = new UIActionSimpleRuntimeShowUSBDevicesSettings(this);
+    m_pool[UIActionIndexRT_M_Devices_M_WebCams] = new UIActionMenuRuntimeWebCams(this);
+    m_pool[UIActionIndexRT_M_Devices_M_SharedClipboard] = new UIActionMenuRuntimeSharedClipboard(this);
+    m_pool[UIActionIndexRT_M_Devices_M_DragAndDrop] = new UIActionMenuRuntimeDragAndDrop(this);
+    m_pool[UIActionIndexRT_M_Devices_M_SharedFolders] = new UIActionMenuRuntimeSharedFolders(this);
+    m_pool[UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings] = new UIActionSimpleRuntimeShowSharedFoldersSettings(this);
+    m_pool[UIActionIndexRT_M_Devices_S_InstallGuestTools] = new UIActionSimpleRuntimePerformInstallGuestTools(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions: */
-    m_pool[UIActionIndexRT_M_Debug] = new UIActionMenuDebug(this);
-    m_pool[UIActionIndexRT_M_Debug_S_ShowStatistics] = new UIActionSimpleShowStatistics(this);
-    m_pool[UIActionIndexRT_M_Debug_S_ShowCommandLine] = new UIActionSimpleShowCommandLine(this);
-    m_pool[UIActionIndexRT_M_Debug_T_Logging] = new UIActionToggleLogging(this);
-    m_pool[UIActionIndexRT_M_Debug_S_ShowLogDialog] = new UIActionSimpleShowLogDialog(this);
+    m_pool[UIActionIndexRT_M_Debug] = new UIActionMenuRuntimeDebug(this);
+    m_pool[UIActionIndexRT_M_Debug_S_ShowStatistics] = new UIActionSimpleRuntimeShowStatistics(this);
+    m_pool[UIActionIndexRT_M_Debug_S_ShowCommandLine] = new UIActionSimpleRuntimeShowCommandLine(this);
+    m_pool[UIActionIndexRT_M_Debug_T_Logging] = new UIActionToggleRuntimeLogging(this);
+    m_pool[UIActionIndexRT_M_Debug_S_ShowLogDialog] = new UIActionSimpleRuntimeShowLogs(this);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef VBOX_WS_MAC
