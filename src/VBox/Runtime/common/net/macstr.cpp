@@ -59,9 +59,9 @@ RTDECL(int) RTNetStrToMacAddr(const char *pszValue, PRTMAC pAddr)
     char *pszNext;
     int rc = RTStrToUInt8Ex(RTStrStripL(pszValue), &pszNext, 16, &pAddr->au8[0]);
     if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+        return VERR_INVALID_PARAMETER;
     if (*pszNext++ != ':')
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+        return VERR_INVALID_PARAMETER;
 
     /* middle */
     for (unsigned i = 1; i < 5; i++)
