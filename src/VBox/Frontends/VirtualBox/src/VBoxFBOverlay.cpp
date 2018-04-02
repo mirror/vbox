@@ -232,7 +232,7 @@ static struct VBOXVHWACMD * vhwaHHCmdCreate(VBOXVHWACMD_TYPE type, size_t size)
 {
     char *buf = (char*)malloc(VBOXVHWACMD_SIZE_FROMBODYSIZE(size));
     memset(buf, 0, size);
-    VBOXVHWACMD * pCmd = (VBOXVHWACMD*)buf;
+    VBOXVHWACMD *pCmd = (VBOXVHWACMD *)buf;
     pCmd->enmCmd = type;
     pCmd->Flags = VBOXVHWACMD_FLAG_HH_CMD;
     return pCmd;
@@ -3194,7 +3194,7 @@ int VBoxVHWAImage::vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE 
 
     char *buf = (char*)malloc(VBOXVHWACMD_SIZE(VBOXVHWACMD_SURF_CREATE));
     memset(buf, 0, sizeof(VBOXVHWACMD_SIZE(VBOXVHWACMD_SURF_CREATE)));
-    VBOXVHWACMD * pCmd = (VBOXVHWACMD*)buf;
+    VBOXVHWACMD *pCmd = (VBOXVHWACMD *)buf;
     pCmd->enmCmd = VBOXVHWACMD_TYPE_SURF_CREATE;
     pCmd->Flags = VBOXVHWACMD_FLAG_HH_CMD;
 
@@ -3346,7 +3346,7 @@ int VBoxVHWAImage::vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceB
     return rc;
 }
 
-int VBoxVHWAImage::vhwaLoadOverlayData(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version)
+int VBoxVHWAImage::vhwaLoadOverlayData(VHWACommandList *pCmdList, struct SSMHANDLE *pSSM, uint32_t u32Version)
 {
     Q_UNUSED(u32Version);
 
@@ -3509,7 +3509,7 @@ int VBoxVHWAImage::vhwaLoadVHWAEnable(VHWACommandList * pCmdList)
     if(buf)
     {
         memset(buf, 0, sizeof(VBOXVHWACMD));
-        VBOXVHWACMD * pCmd = (VBOXVHWACMD*)buf;
+        VBOXVHWACMD *pCmd = (VBOXVHWACMD *)buf;
         pCmd->enmCmd = VBOXVHWACMD_TYPE_ENABLE;
         pCmd->Flags = VBOXVHWACMD_FLAG_HH_CMD;
         pCmdList->push_back(pCmd);
@@ -4295,7 +4295,7 @@ int VBoxQGLOverlay::resetGl()
     return VINF_SUCCESS;
 }
 
-int VBoxQGLOverlay::onVHWACommand(struct VBOXVHWACMD * pCmd)
+int VBoxQGLOverlay::onVHWACommand(struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
 {
     Log(("VHWA Command >>> %#p, %d\n", pCmd, pCmd->enmCmd));
     switch(pCmd->enmCmd)
@@ -4399,7 +4399,7 @@ int VBoxQGLOverlay::onVHWACommand(struct VBOXVHWACMD * pCmd)
     /* indicate that we process and complete the command asynchronously */
     pCmd->Flags |= VBOXVHWACMD_FLAG_HG_ASYNCH;
 
-    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_VHWA, pCmd);
+    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_VHWA, (void *)pCmd);
     return VINF_CALLBACK_RETURN;
 
 }
@@ -4526,7 +4526,7 @@ void VBoxQGLOverlay::repaintMain()
     mMainDirtyRect.clear();
 }
 
-void VBoxQGLOverlay::vboxDoVHWACmd(void *cmd)
+void VBoxQGLOverlay::vboxDoVHWACmd(void RT_UNTRUSTED_VOLATILE_GUEST *cmd)
 {
     vboxDoVHWACmdExec(cmd);
 
@@ -4687,14 +4687,16 @@ int VBoxQGLOverlay::vhwaSurfaceUnlock(struct VBOXVHWACMD_SURF_UNLOCK RT_UNTRUSTE
     return rc;
 }
 
-void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
+void VBoxQGLOverlay::vboxDoVHWACmdExec(void RT_UNTRUSTED_VOLATILE_GUEST *cmd)
 {
-    struct VBOXVHWACMD * pCmd = (struct VBOXVHWACMD *)cmd;
-    switch(pCmd->enmCmd)
+    struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd = (struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *)cmd;
+    VBOXVHWACMD_TYPE enmCmd = pCmd->enmCmd;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+    switch (enmCmd)
     {
         case VBOXVHWACMD_TYPE_SURF_CANCREATE:
         {
-            VBOXVHWACMD_SURF_CANCREATE RT_UNTRUSTED_VOLATILE_GUEST  *pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CANCREATE);
+            VBOXVHWACMD_SURF_CANCREATE RT_UNTRUSTED_VOLATILE_GUEST *pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CANCREATE);
             Assert(!mGlOn == !mOverlayImage.hasSurfaces());
             initGl();
             makeCurrent();
@@ -5042,7 +5044,7 @@ VBoxVHWACommandElementProcessor::~VBoxVHWACommandElementProcessor()
     delete m_pCmdEntryCache;
 }
 
-void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
+void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void *pvData)
 {
     QObject *pNotifyObject = NULL;
 
@@ -5238,10 +5240,10 @@ void VBoxVHWACommandElementProcessor::reset(CDisplay *pDisplay)
 #ifdef VBOX_WITH_VIDEOHWACCEL
         case VBOXVHWA_PIPECMD_VHWA:
             {
-                struct VBOXVHWACMD * pCmd = pCur->vhwaCmd();
+                struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd = pCur->vhwaCmd();
                 pCmd->rc = VERR_INVALID_STATE;
                 Log(("VHWA Command <<< Async RESET %#p, %d\n", pCmd, pCmd->enmCmd));
-                pDisplay->CompleteVHWACommand((BYTE*)pCmd);
+                pDisplay->CompleteVHWACommand((BYTE *)pCmd);
             }
             break;
         case VBOXVHWA_PIPECMD_FUNC:

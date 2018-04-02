@@ -842,13 +842,18 @@ typedef struct PDMIDISPLAYCONNECTOR
      *
      * @param   pInterface          Pointer to this interface.
      * @param   enmCmd              The command type (don't re-read from pCmd).
+     * @param   fGuestCmd           Set if the command origins with the guest and
+     *                              pCmd must be considered volatile.
      * @param   pCmd                Video HW Acceleration Command to be processed.
-     * @returns VINF_SUCCESS - command is completed,
-     * VINF_CALLBACK_RETURN - command will by asynchronously completed via complete callback
-     * VERR_INVALID_STATE - the command could not be processed (most likely because the framebuffer was disconnected) - the post should be retried later
-     * @thread  The emulation thread.
+     * @retval  VINF_SUCCESS - command is completed,
+     * @retval  VINF_CALLBACK_RETURN if command will by asynchronously completed via
+     *          complete callback.
+     * @retval  VERR_INVALID_STATE if the command could not be processed (most
+     *          likely because the framebuffer was disconnected) - the post should
+     *          be retried later.
+     * @thread  EMT
      */
-    DECLR3CALLBACKMEMBER(int, pfnVHWACommandProcess,(PPDMIDISPLAYCONNECTOR pInterface, int enmCmd,
+    DECLR3CALLBACKMEMBER(int, pfnVHWACommandProcess,(PPDMIDISPLAYCONNECTOR pInterface, int enmCmd, bool fGuestCmd,
                                                      VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd));
 
     /**
@@ -856,7 +861,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      *
      * @param   pInterface          Pointer to this interface.
      * @param   pCmd                Video HW Acceleration Command to be processed.
-     * @thread  The emulation thread.
+     * @thread  EMT
      */
     DECLR3CALLBACKMEMBER(void, pfnCrHgsmiCommandProcess,(PPDMIDISPLAYCONNECTOR pInterface,
                                                          struct VBOXVDMACMD_CHROMIUM_CMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
@@ -867,7 +872,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      *
      * @param   pInterface          Pointer to this interface.
      * @param   pCmd                Video HW Acceleration Command to be processed.
-     * @thread  The emulation thread.
+     * @thread  EMT
      */
     DECLR3CALLBACKMEMBER(void, pfnCrHgsmiControlProcess,(PPDMIDISPLAYCONNECTOR pInterface,
                                                          struct VBOXVDMACMD_CHROMIUM_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl,
@@ -881,7 +886,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   cbCmd               Undocumented!
      * @param   pfnCompletion       Undocumented!
      * @param   pvCompletion        Undocumented!
-     * @thread  The emulation thread.
+     * @thread  EMT
      */
     DECLR3CALLBACKMEMBER(int, pfnCrHgcmCtlSubmit,(PPDMIDISPLAYCONNECTOR pInterface, struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd,
                                                   PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion));

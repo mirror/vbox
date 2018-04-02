@@ -982,7 +982,7 @@ int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns, HGSMIOFFSET RT_UNTRUSTED_GUEST offHe
      * Lock the heap and do the job.
      */
     int rc = hgsmiHostHeapLock(pIns);
-    AssertReturn(rc, rc);
+    AssertRCReturn(rc, rc);
 
     /* It is possible to change the heap only if there is no pending allocations. */
     ASSERT_GUEST_LOGREL_MSG_STMT_RETURN(pIns->hostHeap.cRefs == 0,

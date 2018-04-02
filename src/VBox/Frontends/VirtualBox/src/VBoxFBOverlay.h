@@ -1219,7 +1219,7 @@ typedef struct VBOXVHWAFUNCCALLBACKINFO
 class VBoxVHWACommandElement
 {
 public:
-    void setVHWACmd(struct VBOXVHWACMD * pCmd)
+    void setVHWACmd(struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
     {
         mType = VBOXVHWA_PIPECMD_VHWA;
         u.mpCmd = pCmd;
@@ -1237,7 +1237,7 @@ public:
         u.mFuncCallback = aOp;
     }
 
-    void setData(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
+    void setData(VBOXVHWA_PIPECMD_TYPE aType, void *pvData)
     {
         switch(aType)
         {
@@ -1258,7 +1258,7 @@ public:
 
     VBOXVHWA_PIPECMD_TYPE type() const {return mType;}
     const QRect & rect() const {return mRect;}
-    struct VBOXVHWACMD * vhwaCmd() const {return u.mpCmd;}
+    struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *vhwaCmd() const {return u.mpCmd;}
     const VBOXVHWAFUNCCALLBACKINFO & func() const {return u.mFuncCallback; }
 
     RTLISTNODE ListNode;
@@ -1266,7 +1266,7 @@ private:
     VBOXVHWA_PIPECMD_TYPE mType;
     union
     {
-        struct VBOXVHWACMD * mpCmd;
+        struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *mpCmd;
         VBOXVHWAFUNCCALLBACKINFO mFuncCallback;
     }u;
     QRect                 mRect;
@@ -1320,7 +1320,7 @@ public:
     VBoxVHWACommandElementProcessor();
     void init(QObject *pNotifyObject);
     ~VBoxVHWACommandElementProcessor();
-    void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData);
+    void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void *pvData);
     VBoxVHWACommandElement *getCmd();
     void doneCmd();
     void reset(CDisplay *pDisplay);
@@ -1708,7 +1708,7 @@ public:
 
     void updateAttachment(QWidget *pViewport, QObject *pPostEventObject);
 
-    int onVHWACommand (struct VBOXVHWACMD * pCommand);
+    int onVHWACommand (struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand);
 
     void onVHWACommandEvent (QEvent * pEvent);
 
@@ -1798,10 +1798,10 @@ private:
     void vboxSetGlOn (bool on);
     bool vboxGetGlOn() { return mGlOn; }
     bool vboxSynchGl();
-    void vboxDoVHWACmdExec(void *cmd);
+    void vboxDoVHWACmdExec(void RT_UNTRUSTED_VOLATILE_GUEST *cmd);
     void vboxShowOverlay (bool show);
     void vboxDoCheckUpdateViewport();
-    void vboxDoVHWACmd (void *cmd);
+    void vboxDoVHWACmd (void RT_UNTRUSTED_VOLATILE_GUEST *cmd);
     void addMainDirtyRect (const QRect & aRect);
     void vboxCheckUpdateOverlay (const QRect & rect);
     void processCmd (VBoxVHWACommandElement * pCmd);

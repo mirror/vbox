@@ -432,7 +432,7 @@ public:
             /* tell client to pend ProcessVHWACommand */
             return E_ACCESSDENIED;
         }
-        rc = mOverlay.onVHWACommand ((struct VBOXVHWACMD*)pCommand);
+        rc = mOverlay.onVHWACommand((struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *)pCommand);
         UIFrameBufferPrivate::unlock();
         if (rc == VINF_CALLBACK_RETURN)
             return S_OK;
