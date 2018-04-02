@@ -2143,6 +2143,7 @@ static int vbvaHandleSetConf32(VBVACONF32 RT_UNTRUSTED_VOLATILE_GUEST *pConf32)
     else
         ASSERT_GUEST_MSG_FAILED_RETURN(("Invalid index %#x (value=%u)\n", idxQuery, uValue), VERR_INVALID_PARAMETER);
 
+    RT_NOREF_PV(uValue);
     return VINF_SUCCESS;
 }
 
@@ -2224,7 +2225,7 @@ int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN RT_UNTRUSTED_VOLATI
                                    && u64ScreenSize         <= pView->u32MaxScreenSize
                                    && screen.u32StartOffset <= pView->u32ViewSize - (uint32_t)u64ScreenSize,
                                    ("u32StartOffset=%#x u32ViewSize=%#x u64ScreenSize=%#RX64 u32MaxScreenSize=%#x\n",
-                                    screen.u32StartOffset, pView->u32ViewSize, u64ScreenSize),
+                                    screen.u32StartOffset, pView->u32ViewSize, u64ScreenSize, pView->u32MaxScreenSize),
                                    VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
