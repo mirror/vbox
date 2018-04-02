@@ -2468,8 +2468,8 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
         case VBVA_CMDVBVA_CTL:
             if (cbBuffer >= VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXCMDVBVA_CTL))
             {
-                VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl;
-                pCtl = (VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *)VBoxSHGSMIBufferData((VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
+                VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl
+                    = (VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *)VBoxSHGSMIBufferData((VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
                 rc = vboxCmdVBVACmdCtl(pVGAState, pCtl, cbBuffer - VBoxSHGSMIBufferHeaderSize());
             }
             else
@@ -2481,8 +2481,8 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
         case VBVA_VDMA_CMD:
             if (cbBuffer >= VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXVDMACBUF_DR))
             {
-                VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmd;
-                pCmd = (VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *)VBoxSHGSMIBufferData((VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
+                VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmd
+                    = (VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *)VBoxSHGSMIBufferData((VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
                 vboxVDMACommand(pVGAState->pVdma, pCmd, cbBuffer - VBoxSHGSMIBufferHeaderSize());
                 rc = VINF_SUCCESS;
             }
@@ -2493,8 +2493,8 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
         case VBVA_VDMA_CTL:
             if (cbBuffer >= VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXVDMA_CTL))
             {
-                VBOXVDMA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCmd;
-                pCmd = (VBOXVDMA_CTL RT_UNTRUSTED_VOLATILE_GUEST *)VBoxSHGSMIBufferData((VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
+                VBOXVDMA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCmd
+                    = (VBOXVDMA_CTL RT_UNTRUSTED_VOLATILE_GUEST *)VBoxSHGSMIBufferData((VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
                 vboxVDMAControl(pVGAState->pVdma, pCmd, cbBuffer - VBoxSHGSMIBufferHeaderSize());
             }
             else

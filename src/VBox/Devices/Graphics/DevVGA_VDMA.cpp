@@ -3729,22 +3729,27 @@ int vboxCmdVBVACmdCtl(PVGASTATE pVGAState, VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE
     uint32_t uType = pCtl->u32Type;
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
-    switch (uType)
+    if (   uType == VBOXCMDVBVACTL_TYPE_3DCTL
+        || uType == VBOXCMDVBVACTL_TYPE_RESIZE
+        || uType == VBOXCMDVBVACTL_TYPE_ENABLE)
     {
-        case VBOXCMDVBVACTL_TYPE_3DCTL:
-            return vdmaVBVACtlGenericGuestSubmit(pVdma, VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE, pCtl, cbCtl);
+        RT_UNTRUSTED_VALIDATED_FENCE();
 
-        case VBOXCMDVBVACTL_TYPE_RESIZE:
-            return vdmaVBVACtlGenericGuestSubmit(pVdma, VBVAEXHOSTCTL_TYPE_GHH_RESIZE, pCtl, cbCtl);
+        switch (uType)
+        {
+            case VBOXCMDVBVACTL_TYPE_3DCTL:
+                return vdmaVBVACtlGenericGuestSubmit(pVdma, VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE, pCtl, cbCtl);
 
-        case VBOXCMDVBVACTL_TYPE_ENABLE:
-            if (cbCtl == sizeof(VBOXCMDVBVA_CTL_ENABLE))
+            case VBOXCMDVBVACTL_TYPE_RESIZE:
+                return vdmaVBVACtlGenericGuestSubmit(pVdma, VBVAEXHOSTCTL_TYPE_GHH_RESIZE, pCtl, cbCtl);
+
+            case VBOXCMDVBVACTL_TYPE_ENABLE:
+                ASSERT_GUEST_BREAK(cbCtl == sizeof(VBOXCMDVBVA_CTL_ENABLE));
                 return vdmaVBVACtlEnableDisableSubmit(pVdma, (VBOXCMDVBVA_CTL_ENABLE RT_UNTRUSTED_VOLATILE_GUEST *)pCtl);
-            WARN(("incorrect enable size\n"));
-            break;
-        default:
-            WARN(("unsupported type\n"));
-            break;
+
+            default:
+                AssertFailed();
+        }
     }
 
     pCtl->i32Result = VERR_INVALID_PARAMETER;
