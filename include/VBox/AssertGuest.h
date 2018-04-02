@@ -1115,7 +1115,7 @@
  */
 #define ASSERT_GUEST_LOGREL_FAILED() \
     do { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_PANIC(); \
     } while (0)
 
@@ -1127,7 +1127,7 @@
  */
 #define ASSERT_GUEST_LOGREL_FAILED_RETURN(a_rc) \
     do { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_PANIC(); \
         return (a_rc); \
     } while (0)
@@ -1138,7 +1138,7 @@
  */
 #define ASSERT_GUEST_LOGREL_FAILED_RETURN_VOID() \
     do { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_PANIC(); \
         return; \
     } while (0)
@@ -1150,7 +1150,7 @@
 #define ASSERT_GUEST_LOGREL_FAILED_BREAK() \
     if (1) \
     { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_PANIC(); \
         break; \
     } else \
@@ -1165,7 +1165,7 @@
 #define ASSERT_GUEST_LOGREL_FAILED_STMT_BREAK(a_Stmt) \
     if (1) \
     { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_PANIC(); \
         a_Stmt; \
         break; \
@@ -1180,7 +1180,7 @@
  */
 #define ASSERT_GUEST_LOGREL_MSG_FAILED(a) \
     do { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_LOGREL_MSG2(a); \
         ASSERT_GUEST_PANIC(); \
     } while (0)
@@ -1196,7 +1196,7 @@
  */
 #define ASSERT_GUEST_LOGREL_MSG_FAILED_STMT(a, a_Stmt) \
     do { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_LOGREL_MSG2(a); \
         ASSERT_GUEST_PANIC(); \
         a_Stmt; \
@@ -1211,7 +1211,7 @@
  */
 #define ASSERT_GUEST_LOGREL_MSG_FAILED_RETURN(a, a_rc) \
     do { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_LOGREL_MSG2(a); \
         ASSERT_GUEST_PANIC(); \
         return (a_rc); \
@@ -1228,7 +1228,7 @@
  */
 #define ASSERT_GUEST_LOGREL_MSG_FAILED_STMT_RETURN(a, a_Stmt, a_rc) \
     do { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_LOGREL_MSG2(a); \
         ASSERT_GUEST_PANIC(); \
         a_Stmt; \
@@ -1243,7 +1243,7 @@
  */
 #define ASSERT_GUEST_LOGREL_MSG_FAILED_RETURN_VOID(a) \
     do { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_LOGREL_MSG2(a); \
         ASSERT_GUEST_PANIC(); \
         return; \
@@ -1259,7 +1259,7 @@
  */
 #define ASSERT_GUEST_LOGREL_MSG_FAILED_STMT_RETURN_VOID(a, a_Stmt) \
     do { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_LOGREL_MSG2(a); \
         ASSERT_GUEST_PANIC(); \
         a_Stmt; \
@@ -1275,7 +1275,7 @@
 #define ASSERT_GUEST_LOGREL_MSG_FAILED_BREAK(a) \
     if (1)\
     { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_LOGREL_MSG2(a); \
         ASSERT_GUEST_PANIC(); \
         break; \
@@ -1292,7 +1292,7 @@
 #define ASSERT_GUEST_LOGREL_MSG_FAILED_STMT_BREAK(a, a_Stmt) \
     if (1) \
     { \
-        ASSERT_GUEST_LOGREL_MSG1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        ASSERT_GUEST_LOGREL_MSG1("failed", __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         ASSERT_GUEST_LOGREL_MSG2(a); \
         ASSERT_GUEST_PANIC(); \
         a_Stmt; \
