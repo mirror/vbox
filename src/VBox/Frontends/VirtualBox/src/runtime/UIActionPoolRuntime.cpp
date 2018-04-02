@@ -22,13 +22,10 @@
 /* GUI includes: */
 # include "UIActionPoolRuntime.h"
 # include "UIDesktopWidgetWatchdog.h"
-# include "UIMultiScreenLayout.h"
 # include "UIExtraDataManager.h"
 # include "UIShortcutPool.h"
-# include "UIFrameBuffer.h"
 # include "UIConverter.h"
 # include "UIIconPool.h"
-# include "UISession.h"
 # include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -2046,52 +2043,46 @@ protected:
 
 UIActionPoolRuntime::UIActionPoolRuntime(bool fTemporary /* = false */)
     : UIActionPool(UIActionPoolType_Runtime, fTemporary)
-    , m_pSession(0)
-    , m_pMultiScreenLayout(0)
+    , m_cHostScreens(0)
+    , m_cGuestScreens(0)
+    , m_fGuestSupportsGraphics(false)
 {
 }
 
-void UIActionPoolRuntime::setSession(UISession *pSession)
+void UIActionPoolRuntime::setHostScreenCount(int cCount)
 {
-    m_pSession = pSession;
+    m_cHostScreens = cCount;
     m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
 }
 
-void UIActionPoolRuntime::setMultiScreenLayout(UIMultiScreenLayout *pMultiScreenLayout)
+void UIActionPoolRuntime::setGuestScreenCount(int cCount)
 {
-    /* Do not allow NULL pointers: */
-    AssertPtrReturnVoid(pMultiScreenLayout);
-
-    /* Assign new multi-screen layout: */
-    m_pMultiScreenLayout = pMultiScreenLayout;
-
-    /* Connect new stuff: */
-    connect(this, SIGNAL(sigNotifyAboutTriggeringViewScreenRemap(int, int)),
-            m_pMultiScreenLayout, SLOT(sltHandleScreenLayoutChange(int, int)));
-    connect(m_pMultiScreenLayout, SIGNAL(sigScreenLayoutUpdate()),
-            this, SLOT(sltHandleScreenLayoutUpdate()));
-
-    /* Invalidate View menu: */
-    m_invalidations << UIActionIndexRT_M_View;
+    m_cGuestScreens = cCount;
+    m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
 }
 
-void UIActionPoolRuntime::unsetMultiScreenLayout(UIMultiScreenLayout *pMultiScreenLayout)
+void UIActionPoolRuntime::setGuestScreenSize(int iGuestScreen, const QSize &size)
 {
-    /* Do not allow NULL pointers: */
-    AssertPtrReturnVoid(pMultiScreenLayout);
+    m_mapGuestScreenSize[iGuestScreen] = size;
+    m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
+}
 
-    /* Disconnect old stuff: */
-    disconnect(this, SIGNAL(sigNotifyAboutTriggeringViewScreenRemap(int, int)),
-               pMultiScreenLayout, SLOT(sltHandleScreenLayoutChange(int, int)));
-    disconnect(pMultiScreenLayout, SIGNAL(sigScreenLayoutUpdate()),
-               this, SLOT(sltHandleScreenLayoutUpdate()));
+void UIActionPoolRuntime::setGuestScreenVisible(int iGuestScreen, bool fVisible)
+{
+    m_mapGuestScreenIsVisible[iGuestScreen] = fVisible;
+    m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
+}
 
-    /* Unset old multi-screen layout: */
-    if (m_pMultiScreenLayout == pMultiScreenLayout)
-        m_pMultiScreenLayout = 0;
+void UIActionPoolRuntime::setGuestSupportsGraphics(bool fSupports)
+{
+    m_fGuestSupportsGraphics = fSupports;
+    m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
+}
 
-    /* Invalidate View menu: */
-    m_invalidations << UIActionIndexRT_M_View;
+void UIActionPoolRuntime::setHostScreenForGuestScreenMap(const QMap<int, int> &map)
+{
+    m_mapHostScreenForGuestScreen = map;
+    m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
 }
 
 bool UIActionPoolRuntime::isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType type) const
@@ -2238,12 +2229,6 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRemap(QAction *pAction
     const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
     const int iHostScreenIndex = pAction->property("Host Screen Index").toInt();
     emit sigNotifyAboutTriggeringViewScreenRemap(iGuestScreenIndex, iHostScreenIndex);
-}
-
-void UIActionPoolRuntime::sltHandleScreenLayoutUpdate()
-{
-    /* Invalidate View menu: */
-    m_invalidations << UIActionIndexRT_M_View;
 }
 
 void UIActionPoolRuntime::preparePool()
@@ -2652,9 +2637,9 @@ void UIActionPoolRuntime::updateMenuView()
     /* Do we have to show resize or multiscreen menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
     const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
-    if (fAllowToShowActionResize && uisession())
+    if (fAllowToShowActionResize)
     {
-        for (int iGuestScreenIndex = 0; iGuestScreenIndex < uisession()->frameBuffers().size(); ++iGuestScreenIndex)
+        for (int iGuestScreenIndex = 0; iGuestScreenIndex < m_cGuestScreens; ++iGuestScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
@@ -2664,12 +2649,12 @@ void UIActionPoolRuntime::updateMenuView()
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
         }
     }
-    else if (fAllowToShowActionMultiscreen && multiScreenLayout())
+    else if (fAllowToShowActionMultiscreen)
     {
         /* Only for multi-screen host case: */
-        if (uisession()->hostScreens().size() > 1)
+        if (m_cHostScreens > 1)
         {
-            for (int iGuestScreenIndex = 0; iGuestScreenIndex < uisession()->frameBuffers().size(); ++iGuestScreenIndex)
+            for (int iGuestScreenIndex = 0; iGuestScreenIndex < m_cGuestScreens; ++iGuestScreenIndex)
             {
                 /* Add 'Virtual Screen %1' menu: */
                 QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
@@ -2714,9 +2699,9 @@ void UIActionPoolRuntime::updateMenuViewPopup()
 
     /* Do we have to show resize menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
-    if (fAllowToShowActionResize && uisession())
+    if (fAllowToShowActionResize)
     {
-        for (int iGuestScreenIndex = 0; iGuestScreenIndex < uisession()->frameBuffers().size(); ++iGuestScreenIndex)
+        for (int iGuestScreenIndex = 0; iGuestScreenIndex < m_cGuestScreens; ++iGuestScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
@@ -2881,9 +2866,6 @@ void UIActionPoolRuntime::updateMenuViewScaleFactor()
 
 void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
 {
-    /* Make sure UI session defined: */
-    AssertPtrReturnVoid(uisession());
-
     /* Clear contents: */
     pMenu->clear();
 
@@ -2904,9 +2886,8 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
 
     /* Get corresponding screen index and frame-buffer size: */
     const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
-    const UIFrameBuffer* pFrameBuffer = uisession()->frameBuffer(iGuestScreenIndex);
-    const QSize screenSize = QSize(pFrameBuffer->width(), pFrameBuffer->height());
-    const bool fScreenEnabled = uisession()->isScreenVisible(iGuestScreenIndex);
+    const QSize screenSize = m_mapGuestScreenSize.value(iGuestScreenIndex);
+    const bool fScreenEnabled = m_mapGuestScreenIsVisible.value(iGuestScreenIndex);
 
     /* For non-primary screens: */
     if (iGuestScreenIndex > 0)
@@ -2917,7 +2898,7 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
         AssertPtrReturnVoid(pToggleAction);
         {
             /* Configure 'toggle' action: */
-            pToggleAction->setEnabled(uisession()->isGuestSupportsGraphics());
+            pToggleAction->setEnabled(m_fGuestSupportsGraphics);
             pToggleAction->setProperty("Guest Screen Index", iGuestScreenIndex);
             pToggleAction->setCheckable(true);
             pToggleAction->setChecked(fScreenEnabled);
@@ -2941,7 +2922,7 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
             AssertPtrReturnVoid(pAction);
             {
                 /* Configure exclusive 'resize' action: */
-                pAction->setEnabled(uisession()->isGuestSupportsGraphics() && fScreenEnabled);
+                pAction->setEnabled(m_fGuestSupportsGraphics && fScreenEnabled);
                 pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 pAction->setProperty("Requested Size", size);
                 pAction->setCheckable(true);
@@ -2960,9 +2941,6 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
 
 void UIActionPoolRuntime::updateMenuViewMultiscreen(QMenu *pMenu)
 {
-    /* Make sure UI session defined: */
-    AssertPtrReturnVoid(multiScreenLayout());
-
     /* Clear contents: */
     pMenu->clear();
 
@@ -2975,17 +2953,18 @@ void UIActionPoolRuntime::updateMenuViewMultiscreen(QMenu *pMenu)
     {
         /* Configure exclusive action-group: */
         pActionGroup->setExclusive(true);
-        for (int iHostScreenIndex = 0; iHostScreenIndex < uisession()->hostScreens().size(); ++iHostScreenIndex)
+        for (int iHostScreenIndex = 0; iHostScreenIndex < m_cHostScreens; ++iHostScreenIndex)
         {
-            QAction *pAction = pActionGroup->addAction(UIMultiScreenLayout::tr("Use Host Screen %1")
+            QAction *pAction = pActionGroup->addAction(QApplication::translate("UIMultiScreenLayout",
+                                                                               "Use Host Screen %1")
                                                                                .arg(iHostScreenIndex + 1));
             AssertPtrReturnVoid(pAction);
             {
                 pAction->setCheckable(true);
                 pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 pAction->setProperty("Host Screen Index", iHostScreenIndex);
-                if (multiScreenLayout()->hasHostScreenForGuestScreen(iGuestScreenIndex) &&
-                    multiScreenLayout()->hostScreenForGuestScreen(iGuestScreenIndex) == iHostScreenIndex)
+                if (m_mapHostScreenForGuestScreen.contains(iGuestScreenIndex) &&
+                    m_mapHostScreenForGuestScreen.value(iGuestScreenIndex) == iHostScreenIndex)
                     pAction->setChecked(true);
             }
         }

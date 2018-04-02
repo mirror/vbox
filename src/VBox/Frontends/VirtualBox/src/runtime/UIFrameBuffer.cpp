@@ -24,6 +24,8 @@
 # include <QPainter>
 # include <QTransform>
 /* GUI includes: */
+# include "UIActionPool.h"
+# include "UIActionPoolRuntime.h"
 # include "UIFrameBuffer.h"
 # include "UISession.h"
 # include "UIMachineLogic.h"
@@ -1260,6 +1262,10 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     m_pMachineView->viewport()->update();
 
     unlock();
+
+    /* Make sure action-pool knows frame-buffer size: */
+    m_pMachineView->uisession()->actionPool()->toRuntime()->setGuestScreenSize(m_pMachineView->screenId(),
+                                                                               QSize(m_iWidth, m_iHeight));
 }
 
 void UIFrameBufferPrivate::performRescale()

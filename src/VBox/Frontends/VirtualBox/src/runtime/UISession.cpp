@@ -896,6 +896,9 @@ void UISession::sltAdditionsChange()
         m_fIsGuestSupportsGraphics = fIsGuestSupportsGraphics;
         m_fIsGuestSupportsSeamless = fIsGuestSupportsSeamless;
 
+        /* Make sure action-pool knows whether GA supports graphics: */
+        actionPool()->toRuntime()->setGuestSupportsGraphics(m_fIsGuestSupportsGraphics);
+
         /* Notify listeners about GA state really changed: */
         LogRel(("GUI: UISession::sltAdditionsChange: GA state really changed, notifying listeners.\n"));
         emit sigAdditionsStateActualChange();
@@ -1061,9 +1064,6 @@ void UISession::prepareActions()
     m_pActionPool = UIActionPool::create(UIActionPoolType_Runtime);
     AssertPtrReturnVoid(actionPool());
     {
-        /* Configure action-pool: */
-        actionPool()->toRuntime()->setSession(this);
-
         /* Update action restrictions: */
         updateActionRestrictions();
 
@@ -1229,18 +1229,23 @@ void UISession::prepareScreens()
             m_monitorVisibilityVector[0] = true;
     }
 
-    /* Prepare initial screen visibility status of host-desires.
-     * This is mostly dummy initialization as host-desires should get updated later in multi-screen layout.
-     * By default making host-desires same as facts. */
+    /* Prepare initial screen visibility status of host-desires (same as facts): */
     m_monitorVisibilityVectorHostDesires.resize(machine().GetMonitorCount());
     for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
         m_monitorVisibilityVectorHostDesires[iScreenIndex] = m_monitorVisibilityVector[iScreenIndex];
+
+    /* Make sure action-pool knows guest-screen visibility status: */
+    for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
+        actionPool()->toRuntime()->setGuestScreenVisible(iScreenIndex, m_monitorVisibilityVector.at(iScreenIndex));
 }
 
 void UISession::prepareFramebuffers()
 {
     /* Each framebuffer will be really prepared on first UIMachineView creation: */
     m_frameBufferVector.resize(machine().GetMonitorCount());
+
+    /* Make sure action-pool knows guest-screen count: */
+    actionPool()->toRuntime()->setGuestScreenCount(m_frameBufferVector.size());
 }
 
 void UISession::loadSessionSettings()
@@ -1367,6 +1372,9 @@ void UISession::cleanupFramebuffers()
         }
     }
     m_frameBufferVector.clear();
+
+    /* Make sure action-pool knows guest-screen count: */
+    actionPool()->toRuntime()->setGuestScreenCount(m_frameBufferVector.size());
 }
 
 void UISession::cleanupConsoleEventHandlers()
@@ -2069,6 +2077,9 @@ void UISession::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
     m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
     /* Remember 'desired' visibility status: */
     gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, vboxGlobal().managedVMUuid());
+
+    /* Make sure action-pool knows guest-screen visibility status: */
+    actionPool()->toRuntime()->setGuestScreenVisible(uScreenId, fIsMonitorVisible);
 }
 
 QSize UISession::lastFullScreenSize(ulong uScreenId) const
@@ -2134,9 +2145,13 @@ void UISession::setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer)
 
 void UISession::updateHostScreenData()
 {
+    /* Rebuild host-screen data vector: */
     m_hostScreens.clear();
     for (int iScreenIndex = 0; iScreenIndex < gpDesktop->screenCount(); ++iScreenIndex)
         m_hostScreens << gpDesktop->screenGeometry(iScreenIndex);
+
+    /* Make sure action-pool knows host-screen count: */
+    actionPool()->toRuntime()->setHostScreenCount(m_hostScreens.size());
 }
 
 void UISession::updateActionRestrictions()

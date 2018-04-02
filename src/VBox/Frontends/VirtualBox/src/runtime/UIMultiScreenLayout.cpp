@@ -53,6 +53,9 @@ UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
     /* Calculate host/guest screen count: */
     calculateHostMonitorCount();
     calculateGuestScreenCount();
+
+    /* Prpeare connections: */
+    prepareConnections();
 }
 
 void UIMultiScreenLayout::update()
@@ -169,8 +172,8 @@ void UIMultiScreenLayout::update()
         }
     }
 
-    /* Notifies about layout update: */
-    emit sigScreenLayoutUpdate();
+    /* Make sure action-pool knows whether multi-screen layout has host-screen for guest-screen: */
+    m_pMachineLogic->actionPool()->toRuntime()->setHostScreenForGuestScreenMap(m_screenMap);
 
     LogRelFlow(("UIMultiScreenLayout::update: Finished!\n"));
 }
@@ -248,6 +251,9 @@ void UIMultiScreenLayout::sltHandleScreenLayoutChange(int iRequestedGuestScreen,
     /* Swap the maps: */
     m_screenMap = tmpMap;
 
+    /* Make sure action-pool knows whether multi-screen layout has host-screen for guest-screen: */
+    m_pMachineLogic->actionPool()->toRuntime()->setHostScreenForGuestScreenMap(m_screenMap);
+
     /* Save guest-to-host mapping: */
     saveScreenMapping();
 
@@ -270,6 +276,13 @@ void UIMultiScreenLayout::calculateGuestScreenCount()
             m_guestScreens << iGuestScreen;
         else
             m_disabledGuestScreens << iGuestScreen;
+}
+
+void UIMultiScreenLayout::prepareConnections()
+{
+    /* Connect action-pool: */
+    connect(m_pMachineLogic->actionPool()->toRuntime(), &UIActionPoolRuntime::sigNotifyAboutTriggeringViewScreenRemap,
+            this, &UIMultiScreenLayout::sltHandleScreenLayoutChange);
 }
 
 void UIMultiScreenLayout::saveScreenMapping()

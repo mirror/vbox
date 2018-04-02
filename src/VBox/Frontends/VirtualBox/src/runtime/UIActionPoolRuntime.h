@@ -27,8 +27,8 @@
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
-class UISession;
-class UIMultiScreenLayout;
+class QSize;
+
 
 /** Runtime action-pool index enum.
   * Naming convention is following:
@@ -151,20 +151,21 @@ signals:
 
 public:
 
-    /** Defines UI session object reference.
-      * @note For menus which uses it to build contents. */
-    void setSession(UISession *pSession);
-    /** Returns UI session object reference. */
-    UISession* uisession() const { return m_pSession; }
+    /** Defines host-screen @a cCount. */
+    void setHostScreenCount(int cCount);
+    /** Defines guest-screen @a cCount. */
+    void setGuestScreenCount(int cCount);
 
-    /** Defines UI multi-screen layout object reference.
-      * @note For menus which uses it to build contents. */
-    void setMultiScreenLayout(UIMultiScreenLayout *pMultiScreenLayout);
-    /** Undefines UI multi-screen layout object reference.
-      * @note For menus which uses it to build contents. */
-    void unsetMultiScreenLayout(UIMultiScreenLayout *pMultiScreenLayout);
-    /** Returns UI multi-screen layout object reference. */
-    UIMultiScreenLayout* multiScreenLayout() const { return m_pMultiScreenLayout; }
+    /** Defines @a iGuestScreen @a size. */
+    void setGuestScreenSize(int iGuestScreen, const QSize &size);
+    /** Defines whether @a iGuestScreen is @a fVisible. */
+    void setGuestScreenVisible(int iGuestScreen, bool fVisible);
+
+    /** Defines whether guest supports graphics. */
+    void setGuestSupportsGraphics(bool fSupports);
+
+    /** Defines host-to-guest mapping scheme. */
+    void setHostScreenForGuestScreenMap(const QMap<int, int> &map);
 
     /** Returns whether the action with passed @a type is allowed in the 'Machine' menu. */
     bool isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType type) const;
@@ -212,9 +213,6 @@ protected slots:
     void sltHandleActionTriggerViewScreenResize(QAction *pAction);
     /** Handles 'View' : 'Virtual Screen #' menu : 'Remap' @a pAction trigger. */
     void sltHandleActionTriggerViewScreenRemap(QAction *pAction);
-
-    /** Handles screen-layout update. */
-    void sltHandleScreenLayoutUpdate();
 
 protected:
 
@@ -287,10 +285,21 @@ protected:
 
 private:
 
-    /** Holds the UI session object reference. */
-    UISession *m_pSession;
-    /** Holds the UI multi-screen layout object reference. */
-    UIMultiScreenLayout *m_pMultiScreenLayout;
+    /** Holds the host-screen count. */
+    int m_cHostScreens;
+    /** Holds the guest-screen count. */
+    int m_cGuestScreens;
+
+    /** Holds the map of guest-screen sizes. */
+    QMap<int, QSize> m_mapGuestScreenSize;
+    /** Holds the map of guest-screen visibility states. */
+    QMap<int, bool>  m_mapGuestScreenIsVisible;
+
+    /** Holds whether guest supports graphics. */
+    bool m_fGuestSupportsGraphics;
+
+    /** Holds the host-to-guest mapping scheme. */
+    QMap<int, int>  m_mapHostScreenForGuestScreen;
 
     /** Holds the list of Runtime UI main menus. */
     QList<QMenu*> m_mainMenus;

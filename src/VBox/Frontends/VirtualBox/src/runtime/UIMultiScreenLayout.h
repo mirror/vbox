@@ -34,8 +34,6 @@ class UIMultiScreenLayout : public QObject
 
 signals:
 
-    /** Notifies about layout update. */
-    void sigScreenLayoutUpdate();
     /** Notifies about layout change. */
     void sigScreenLayoutChange();
 
@@ -65,6 +63,7 @@ private:
     /* Helpers: Prepare stuff: */
     void calculateHostMonitorCount();
     void calculateGuestScreenCount();
+    void prepareConnections();
 
     /* Other helpers: */
     void saveScreenMapping();
