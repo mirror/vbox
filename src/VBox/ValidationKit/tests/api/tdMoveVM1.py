@@ -227,7 +227,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
     #checkAPIVersion
     #
     def checkAPIVersion(self):
-        if self.oTstDrv.fpApiVer >= 5.2:
+        if self.oTstDrv.fpApiVer >= 5.3:
             return True
 
         return False
