@@ -1949,51 +1949,34 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
          * See handling of VBOXCMDVBVACTL_TYPE_3DCTL in vboxCmdVBVACmdCtl().
          */
         case VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE:
-            if (VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
-            {
-                if (pVdma->CrSrvInfo.pfnGuestCtl)
-                    return pVdma->CrSrvInfo.pfnGuestCtl(pVdma->CrSrvInfo.hSvr,
-                                                        (uint8_t RT_UNTRUSTED_VOLATILE_GUEST *)pCmd->u.cmd.pvCmd,
-                                                        pCmd->u.cmd.cbCmd);
-
-                /* Unexpected. */
-                WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE in HGCM-less mode\n"));
-            }
-            else
-                WARN(("VBVAEXHOSTCTL_TYPE_GHH_BE_OPAQUE for disabled vdma VBVA\n"));
-            return VERR_INVALID_STATE;
+            ASSERT_GUEST_LOGREL_RETURN(VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva), VERR_INVALID_STATE);
+            ASSERT_GUEST_LOGREL_RETURN(pVdma->CrSrvInfo.pfnGuestCtl, VERR_INVALID_STATE);
+            return pVdma->CrSrvInfo.pfnGuestCtl(pVdma->CrSrvInfo.hSvr,
+                                                (uint8_t RT_UNTRUSTED_VOLATILE_GUEST *)pCmd->u.cmd.pvCmd,
+                                                pCmd->u.cmd.cbCmd);
 
         /*
          * See handling of VBOXCMDVBVACTL_TYPE_RESIZE in vboxCmdVBVACmdCtl().
          */
         case VBVAEXHOSTCTL_TYPE_GHH_RESIZE:
-            if (VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva))
+        {
+            ASSERT_GUEST_RETURN(VBoxVBVAExHSIsEnabled(&pVdma->CmdVbva), VERR_INVALID_STATE);
+            uint32_t cbCmd = pCmd->u.cmd.cbCmd;
+            ASSERT_GUEST_LOGREL_MSG_RETURN(   !(cbCmd % sizeof(VBOXCMDVBVA_RESIZE_ENTRY))
+                                           && cbCmd > 0,
+                                           ("cbCmd=%#x\n", cbCmd), VERR_INVALID_PARAMETER);
+
+            uint32_t const cElements = cbCmd / sizeof(VBOXCMDVBVA_RESIZE_ENTRY);
+            VBOXCMDVBVA_RESIZE RT_UNTRUSTED_VOLATILE_GUEST *pResize
+                = (VBOXCMDVBVA_RESIZE RT_UNTRUSTED_VOLATILE_GUEST *)pCmd->u.cmd.pvCmd;
+            for (uint32_t i = 0; i < cElements; ++i)
             {
-                uint32_t cbCmd = pCmd->u.cmd.cbCmd;
-                if (   !(cbCmd % sizeof(VBOXCMDVBVA_RESIZE_ENTRY))
-                    && cbCmd > 0)
-                {
-                    uint32_t cElements = cbCmd / sizeof(VBOXCMDVBVA_RESIZE_ENTRY);
-                    VBOXCMDVBVA_RESIZE RT_UNTRUSTED_VOLATILE_GUEST *pResize
-                        = (VBOXCMDVBVA_RESIZE RT_UNTRUSTED_VOLATILE_GUEST *)pCmd->u.cmd.pvCmd;
-                    for (uint32_t i = 0; i < cElements; ++i)
-                    {
-                        VBOXCMDVBVA_RESIZE_ENTRY RT_UNTRUSTED_VOLATILE_GUEST *pEntry = &pResize->aEntries[i];
-                        int rc = vboxVDMACrGuestCtlResizeEntryProcess(pVdma, pEntry);
-                        if (RT_FAILURE(rc))
-                        {
-                            WARN(("vboxVDMACrGuestCtlResizeEntryProcess failed %Rrc\n", rc));
-                            return rc;
-                        }
-                    }
-                    return VINF_SUCCESS;
-                }
-                else
-                    WARN(("invalid buffer size: cbCmd=%#x\n", cbCmd));
-                return VERR_INVALID_PARAMETER;
+                VBOXCMDVBVA_RESIZE_ENTRY RT_UNTRUSTED_VOLATILE_GUEST *pEntry = &pResize->aEntries[i];
+                int rc = vboxVDMACrGuestCtlResizeEntryProcess(pVdma, pEntry);
+                ASSERT_GUEST_LOGREL_MSG_RC_RETURN(rc, ("vboxVDMACrGuestCtlResizeEntryProcess failed for #%u: %Rrc\n", i, rc), rc);
             }
-            WARN(("VBVAEXHOSTCTL_TYPE_GHH_RESIZE for disabled vdma VBVA\n"));
-            return VERR_INVALID_STATE;
+            return VINF_SUCCESS;
+        }
 
         /*
          * See vdmaVBVACtlEnableSubmitInternal().
@@ -2001,26 +1984,21 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
         case VBVAEXHOSTCTL_TYPE_GHH_ENABLE:
         case VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED:
         {
-            VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *pEnable = (VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *)pCmd->u.cmd.pvCmd;
-            Assert(pCmd->u.cmd.cbCmd == sizeof(VBVAENABLE));
+            ASSERT_GUEST(pCmd->u.cmd.cbCmd == sizeof(VBVAENABLE));
 
+            VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *pEnable = (VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *)pCmd->u.cmd.pvCmd;
             uint32_t const u32Offset = pEnable->u32Offset;
             RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
             int rc = vdmaVBVAEnableProcess(pVdma, u32Offset);
-            if (RT_SUCCESS(rc))
-            {
-                if (enmType != VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED)
-                    return VINF_SUCCESS;
+            ASSERT_GUEST_MSG_RC_RETURN(rc, ("vdmaVBVAEnableProcess -> %Rrc\n", rc), rc);
 
+            if (enmType == VBVAEXHOSTCTL_TYPE_GHH_ENABLE_PAUSED)
+            {
                 rc = VBoxVBVAExHPPause(&pVdma->CmdVbva);
-                if (RT_SUCCESS(rc))
-                    return VINF_SUCCESS;
-                WARN(("VBoxVBVAExHPPause failed %Rrc\n", rc));
+                ASSERT_GUEST_MSG_RC_RETURN(rc, ("VBoxVBVAExHPPause -> %Rrc\n", rc), rc);
             }
-            else
-                WARN(("vdmaVBVAEnableProcess failed %Rrc\n", rc));
-            return rc;
+            return VINF_SUCCESS;
         }
 
         /*
@@ -2029,11 +2007,7 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
         case VBVAEXHOSTCTL_TYPE_GHH_DISABLE:
         {
             int rc = vdmaVBVADisableProcess(pVdma, true /* fDoHgcmEnable */);
-            if (RT_FAILURE(rc))
-            {
-                WARN(("vdmaVBVADisableProcess failed %Rrc\n", rc));
-                return rc;
-            }
+            ASSERT_GUEST_MSG_RC_RETURN(rc, ("vdmaVBVADisableProcess -> %Rrc\n", rc), rc);
 
             /* do vgaUpdateDisplayAll right away */
             VMR3ReqCallNoWait(PDMDevHlpGetVM(pVdma->pVGAState->pDevInsR3), VMCPUID_ANY,
@@ -2043,7 +2017,7 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
         }
 
         default:
-            WARN(("unexpected ctl type %Rrc\n", pCmd->enmType));
+            ASSERT_GUEST_LOGREL_MSG_FAILED(("unexpected ctl type %d\n", enmType));
             return VERR_INVALID_PARAMETER;
     }
 }
@@ -2183,8 +2157,8 @@ static int8_t vboxVDMACrCmdVbvaPagingFill(PVGASTATE pVGAState, VBOXCMDVBVA_PAGIN
  *
  * @thread VDMA
  */
-static int8_t vboxVDMACrCmdVbvaProcessCmdData(struct VBOXVDMAHOST *pVdma, const VBOXCMDVBVA_HDR RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
-                                              uint32_t cbCmd)
+static int8_t vboxVDMACrCmdVbvaProcessCmdData(struct VBOXVDMAHOST *pVdma,
+                                              const VBOXCMDVBVA_HDR RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd)
 {
     uint8_t bOpCode = pCmd->u8OpCode;
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
