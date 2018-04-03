@@ -1927,7 +1927,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             [ tdTestExec(sCmd = "%$%%%&", sUser = sUser, sPassword = sPassword),
               tdTestResultExec(fRc = False) ],
             # More stuff.
-            [ tdTestExec(sCmd = "ƒ‰‹ˆ÷‹¸", sUser = sUser, sPassword = sPassword),
+            [ tdTestExec(sCmd = u"ƒ‰‹ˆ÷‹¸", sUser = sUser, sPassword = sPassword),
               tdTestResultExec(fRc = False) ],
             [ tdTestExec(sCmd = "???://!!!", sUser = sUser, sPassword = sPassword),
               tdTestResultExec(fRc = False) ],
