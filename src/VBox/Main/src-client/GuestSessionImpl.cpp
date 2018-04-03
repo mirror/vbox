@@ -2533,7 +2533,8 @@ HRESULT GuestSession::close()
      * work first and then return an error. */
 
     /* Remove ourselves from the session list. */
-    int rc2 = mParent->i_sessionRemove(this);
+    AssertPtr(mParent);
+    int rc2 = mParent->i_sessionRemove(mData.mSession.mID);
     if (rc2 == VERR_NOT_FOUND) /* Not finding the session anymore isn't critical. */
         rc2 = VINF_SUCCESS;
 

@@ -223,49 +223,34 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
     return rc;
 }
 
-int Guest::i_sessionRemove(GuestSession *pSession)
+int Guest::i_sessionRemove(uint32_t uSessionID)
 {
-    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-
     LogFlowThisFuncEnter();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int rc = VERR_NOT_FOUND;
 
-    LogFlowThisFunc(("Removing session (ID=%RU32) ...\n", pSession->i_getId()));
+    LogFlowThisFunc(("Removing session (ID=%RU32) ...\n", uSessionID));
 
-    GuestSessions::iterator itSessions = mData.mGuestSessions.begin();
-    while (itSessions != mData.mGuestSessions.end())
-    {
-        if (pSession == itSessions->second)
-        {
-#ifdef DEBUG_andy
-            ULONG cRefs = pSession->AddRef();
-            Assert(cRefs >= 2);
-            LogFlowThisFunc(("pCurSession=%p, cRefs=%RU32\n", pSession, cRefs - 2));
-            pSession->Release();
-#endif
-            /* Make sure to consume the pointer before the one of the
-             * iterator gets released. */
-            ComObjPtr<GuestSession> pCurSession = pSession;
+    GuestSessions::const_iterator itSessions = mData.mGuestSessions.find(uSessionID);
+    if (itSessions == mData.mGuestSessions.end())
+        return VERR_NOT_FOUND;
 
-            LogFlowThisFunc(("Removing session (pSession=%p, ID=%RU32) (now total %ld sessions)\n",
-                             pSession, pSession->i_getId(), mData.mGuestSessions.size() - 1));
+    /* Make sure to consume the pointer before the one of the
+     * iterator gets released. */
+    ComObjPtr<GuestSession> pSession = itSessions->second;
 
-            rc = pSession->i_onRemove();
-            mData.mGuestSessions.erase(itSessions);
+    LogFlowThisFunc(("Removing session %RU32 (now total %ld sessions)\n",
+                     pSession, uSessionID, mData.mGuestSessions.size() ? mData.mGuestSessions.size() - 1 : 0));
 
-            alock.release(); /* Release lock before firing off event. */
+    rc = pSession->i_onRemove();
+    mData.mGuestSessions.erase(itSessions);
 
-            fireGuestSessionRegisteredEvent(mEventSource, pCurSession,
-                                            false /* Unregistered */);
-            pCurSession.setNull();
-            break;
-        }
+    alock.release(); /* Release lock before firing off event. */
 
-        ++itSessions;
-    }
+    fireGuestSessionRegisteredEvent(mEventSource, pSession, false /* Unregistered */);
+    pSession.setNull();
 
     LogFlowFuncLeaveRC(rc);
     return rc;

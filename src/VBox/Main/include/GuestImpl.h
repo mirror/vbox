@@ -104,7 +104,7 @@ public:
     VBOXOSTYPE  i_getGuestOSType(void) { return mData.mOSType; }
 #ifdef VBOX_WITH_GUEST_CONTROL
     int         i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
-    int         i_sessionRemove(GuestSession *pSession);
+    int         i_sessionRemove(uint32_t uSessionID);
     int         i_sessionCreate(const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds,
                                 ComObjPtr<GuestSession> &pGuestSession);
     inline bool i_sessionExists(uint32_t uSessionID);
