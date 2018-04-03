@@ -433,7 +433,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
     if (pSvcCbData->mParms < 3)
         return VERR_INVALID_PARAMETER;
 
-    int vrc = VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
 
     int idx = 1; /* Current parameter index. */
     CALLBACKDATA_FILE_NOTIFY dataCb;
@@ -451,9 +451,8 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         int rc2 = i_setFileStatus(FileStatus_Error, rcGuest);
         AssertRC(rc2);
 
-        rc2 = signalWaitEventInternal(pCbCtx, rcGuest, NULL /* pPayload */);
-        AssertRC(rc2);
-
+        /* Ignore rc, as the event to signal might not be there (anymore). */
+        signalWaitEventInternal(pCbCtx, rcGuest, NULL /* pPayload */);
         return VINF_SUCCESS; /* Report to the guest. */
     }
 
@@ -482,7 +481,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                 AssertRC(rc2);
             }
             else
-                vrc = VERR_NOT_SUPPORTED;
+                rc = VERR_NOT_SUPPORTED;
 
             break;
         }
@@ -516,7 +515,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                                        cbRead, ComSafeArrayAsInParam(data));
             }
             else
-                vrc = VERR_NOT_SUPPORTED;
+                rc = VERR_NOT_SUPPORTED;
             break;
         }
 
@@ -537,7 +536,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                                         dataCb.u.write.cbWritten);
             }
             else
-                vrc = VERR_NOT_SUPPORTED;
+                rc = VERR_NOT_SUPPORTED;
             break;
         }
 
@@ -557,7 +556,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                                                 dataCb.u.seek.uOffActual, 0 /* Processed */);
             }
             else
-                vrc = VERR_NOT_SUPPORTED;
+                rc = VERR_NOT_SUPPORTED;
             break;
         }
 
@@ -577,27 +576,25 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                                                 dataCb.u.tell.uOffActual, 0 /* Processed */);
             }
             else
-                vrc = VERR_NOT_SUPPORTED;
+                rc = VERR_NOT_SUPPORTED;
             break;
         }
 
         default:
-            vrc = VERR_NOT_SUPPORTED;
+            rc = VERR_NOT_SUPPORTED;
             break;
     }
 
-    if (RT_SUCCESS(vrc))
+    if (RT_SUCCESS(rc))
     {
         GuestWaitEventPayload payload(dataCb.uType, &dataCb, sizeof(dataCb));
-        int rc2 = signalWaitEventInternal(pCbCtx, rcGuest, &payload);
-        AssertRC(rc2);
+
+        /* Ignore rc, as the event to signal might not be there (anymore). */
+        signalWaitEventInternal(pCbCtx, rcGuest, &payload);
     }
 
-    LogFlowThisFunc(("uType=%RU32, rcGuest=%Rrc\n",
-                     dataCb.uType, dataCb.rc));
-
-    LogFlowFuncLeaveRC(vrc);
-    return vrc;
+    LogFlowThisFunc(("uType=%RU32, rcGuest=%Rrc, rc=%Rrc\n", dataCb.uType, rcGuest, rc));
+    return rc;
 }
 
 int GuestFile::i_onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
