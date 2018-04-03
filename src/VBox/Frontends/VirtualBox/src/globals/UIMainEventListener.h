@@ -22,6 +22,9 @@
 #include <QList>
 #include <QObject>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* COM includes: */
 #include "COMEnums.h"
 #include "CGuestProcess.h"
@@ -57,7 +60,7 @@ class CGuestSessionStateChangedEvent;
  * queue and deliver it later on. */
 
 /** Main event listener. */
-class UIMainEventListener : public QObject
+class SHARED_LIBRARY_STUFF UIMainEventListener : public QObject
 {
     Q_OBJECT;
 

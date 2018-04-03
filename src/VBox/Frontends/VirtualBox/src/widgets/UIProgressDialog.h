@@ -21,6 +21,7 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QLabel;
@@ -37,7 +38,7 @@ class CProgress;
   *    IProgress::waitForCompletion() and w/o blocking the UI thread in any other way for too long).
   * @note The CProgress instance is passed as a non-const reference to the constructor (to memorize COM errors if they happen),
   *       and therefore must not be destroyed before the created UIProgressDialog instance is destroyed. */
-class UIProgressDialog : public QIWithRetranslateUI2<QIDialog>
+class SHARED_LIBRARY_STUFF UIProgressDialog : public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
@@ -169,7 +170,7 @@ private:
   *       (to memorize COM errors if they happen), and therefore must not be destroyed
   *       before the created UIProgress instance is destroyed.
   * @todo To be moved to separate files. */
-class UIProgress : public QObject
+class SHARED_LIBRARY_STUFF UIProgress : public QObject
 {
     Q_OBJECT;
 

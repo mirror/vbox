@@ -18,6 +18,9 @@
 #ifndef ___VBoxX11Helpers_h___
 #define ___VBoxX11Helpers_h___
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 
 /** X11: Known Window Manager types. */
 enum X11WMType
@@ -33,17 +36,17 @@ enum X11WMType
 
 
 /** X11: Determines and returns whether the compositing manager is running. */
-bool X11IsCompositingManagerRunning();
+SHARED_LIBRARY_STUFF bool X11IsCompositingManagerRunning();
 
 /** X11: Determines and returns current Window Manager type. */
-X11WMType X11WindowManagerType();
+SHARED_LIBRARY_STUFF X11WMType X11WindowManagerType();
 
 /** X11: Inits the screen saver save/restore mechanism. */
-void X11ScreenSaverSettingsInit();
+SHARED_LIBRARY_STUFF void X11ScreenSaverSettingsInit();
 /** X11: Saves screen saver settings. */
-void X11ScreenSaverSettingsSave();
+SHARED_LIBRARY_STUFF void X11ScreenSaverSettingsSave();
 /** X11: Restores previously saved screen saver settings. */
-void X11ScreenSaverSettingsRestore();
+SHARED_LIBRARY_STUFF void X11ScreenSaverSettingsRestore();
 
 
 #endif /* !___VBoxX11Helpers_h___ */

@@ -23,11 +23,12 @@
 
 /* GUI includes: */
 #include "QIRichToolButton.h"
+#include "UILibraryDefs.h"
 
 /** QIRichToolButton extension
   * representing arrow tool-button with text-label,
   * can be used as collaps/expand switch in various places. */
-class QIArrowButtonSwitch : public QIRichToolButton
+class SHARED_LIBRARY_STUFF QIArrowButtonSwitch : public QIRichToolButton
 {
     Q_OBJECT;
 

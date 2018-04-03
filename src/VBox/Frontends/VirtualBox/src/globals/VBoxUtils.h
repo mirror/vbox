@@ -24,6 +24,7 @@
 #include <QTextBrowser>
 
 /* GUI includes: */
+#include "UILibraryDefs.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -34,7 +35,7 @@
 
 /** QObject subclass,
   * allowing to apply string-property value for a certain QObject. */
-class QObjectPropertySetter : public QObject
+class SHARED_LIBRARY_STUFF QObjectPropertySetter : public QObject
 {
     Q_OBJECT;
 

@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
 # include "UICocoaSpecialControls.h"
 #else
@@ -41,7 +42,7 @@ class UICocoaButton;
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
 
 /** QAbstractButton subclass, used as mini cancel button. */
-class UIMiniCancelButton : public QAbstractButton
+class SHARED_LIBRARY_STUFF UIMiniCancelButton : public QAbstractButton
 {
     Q_OBJECT;
 
@@ -72,7 +73,7 @@ private:
 
 
 /** QAbstractButton subclass, used as mini cancel button. */
-class UIHelpButton : public QPushButton
+class SHARED_LIBRARY_STUFF UIHelpButton : public QPushButton
 {
     Q_OBJECT;
 
@@ -101,7 +102,7 @@ private:
 #else /* !VBOX_DARWIN_USE_NATIVE_CONTROLS */
 
 /** QAbstractButton subclass, used as mini cancel button. */
-class UIMiniCancelButton : public QIWithRetranslateUI<QIToolButton>
+class SHARED_LIBRARY_STUFF UIMiniCancelButton : public QIWithRetranslateUI<QIToolButton>
 {
     Q_OBJECT;
 
@@ -118,7 +119,7 @@ protected:
 
 
 /** QAbstractButton subclass, used as mini cancel button. */
-class UIHelpButton : public QIWithRetranslateUI<QPushButton>
+class SHARED_LIBRARY_STUFF UIHelpButton : public QIWithRetranslateUI<QPushButton>
 {
     Q_OBJECT;
 

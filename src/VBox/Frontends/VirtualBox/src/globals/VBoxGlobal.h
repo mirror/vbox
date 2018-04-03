@@ -24,6 +24,7 @@
 
 /* GUI includes: */
 #include "UIDefs.h"
+#include "UILibraryDefs.h"
 #include "UIMediumDefs.h"
 #ifdef VBOX_WS_X11
 # include "VBoxX11Helper.h"
@@ -57,7 +58,7 @@ class UIIconPoolGeneral;
 class UIThreadPool;
 
 /** QObject subclass containing common GUI functionality. */
-class VBoxGlobal : public QObject
+class SHARED_LIBRARY_STUFF VBoxGlobal : public QObject
 {
     Q_OBJECT
 

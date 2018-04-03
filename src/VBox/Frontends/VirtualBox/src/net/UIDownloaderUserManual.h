@@ -22,7 +22,7 @@
 #include "UIDownloader.h"
 
 /** UIDownloader extension for background user-manual downloading. */
-class UIDownloaderUserManual : public UIDownloader
+class SHARED_LIBRARY_STUFF UIDownloaderUserManual : public UIDownloader
 {
     Q_OBJECT;
 

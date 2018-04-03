@@ -22,6 +22,9 @@
 #include <QMetaType>
 #include <QObject>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Other VBox includes: */
 #include <iprt/cdefs.h>
 
@@ -32,18 +35,18 @@ namespace UIExtraDataDefs
     /** @name General
       * @{ */
         /** Holds event handling type. */
-        extern const char *GUI_EventHandlingType;
+        SHARED_LIBRARY_STUFF extern const char *GUI_EventHandlingType;
     /** @} */
 
     /** @name Messaging
       * @{ */
         /** Holds the list of supressed messages for the Message/Popup center frameworks. */
-        extern const char *GUI_SuppressMessages;
+        SHARED_LIBRARY_STUFF extern const char *GUI_SuppressMessages;
         /** Holds the list of messages for the Message/Popup center frameworks with inverted check-box state. */
-        extern const char *GUI_InvertMessageOption;
+        SHARED_LIBRARY_STUFF extern const char *GUI_InvertMessageOption;
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
         /** Holds version for which user wants to prevent BETA build warning. */
-        extern const char *GUI_PreventBetaWarning;
+        SHARED_LIBRARY_STUFF extern const char *GUI_PreventBetaWarning;
 #endif
     /** @} */
 
@@ -51,286 +54,286 @@ namespace UIExtraDataDefs
     /** @name Application Update
       * @{ */
         /** Holds whether Application Update functionality enabled. */
-        extern const char *GUI_PreventApplicationUpdate;
+        SHARED_LIBRARY_STUFF extern const char *GUI_PreventApplicationUpdate;
         /** Holds Application Update data. */
-        extern const char *GUI_UpdateDate;
+        SHARED_LIBRARY_STUFF extern const char *GUI_UpdateDate;
         /** Holds Application Update check counter. */
-        extern const char *GUI_UpdateCheckCount;
+        SHARED_LIBRARY_STUFF extern const char *GUI_UpdateCheckCount;
     /** @} */
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
     /** @name Progress
       * @{ */
         /** Holds whether legacy progress handling method is requested. */
-        extern const char *GUI_Progress_LegacyMode;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Progress_LegacyMode;
     /** @} */
 
     /** @name Settings
       * @{ */
         /** Holds GUI feature list. */
-        extern const char *GUI_Customizations;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Customizations;
         /** Holds restricted Global Settings pages. */
-        extern const char *GUI_RestrictedGlobalSettingsPages;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedGlobalSettingsPages;
         /** Holds restricted Machine Settings pages. */
-        extern const char *GUI_RestrictedMachineSettingsPages;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedMachineSettingsPages;
     /** @} */
 
     /** @name Settings: General
       * @{ */
         /** Holds whether host screen-saver should be disabled. */
-        extern const char *GUI_HostScreenSaverDisabled;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HostScreenSaverDisabled;
     /** @} */
 
     /** @name Settings: Language
       * @{ */
         /** Holds GUI language ID. */
-        extern const char *GUI_LanguageID;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LanguageID;
     /** @} */
 
     /** @name Settings: Display
       * @{ */
         /** Holds maximum guest-screen resolution policy/value. */
-        extern const char *GUI_MaxGuestResolution;
+        SHARED_LIBRARY_STUFF extern const char *GUI_MaxGuestResolution;
         /** Holds whether hovered machine-window should be activated. */
-        extern const char *GUI_ActivateHoveredMachineWindow;
+        SHARED_LIBRARY_STUFF extern const char *GUI_ActivateHoveredMachineWindow;
     /** @} */
 
     /** @name Settings: Keyboard
       * @{ */
         /** Holds Selector UI shortcut overrides. */
-        extern const char *GUI_Input_SelectorShortcuts;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Input_SelectorShortcuts;
         /** Holds Runtime UI shortcut overrides. */
-        extern const char *GUI_Input_MachineShortcuts;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Input_MachineShortcuts;
         /** Holds Runtime UI host-key combination. */
-        extern const char *GUI_Input_HostKeyCombination;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Input_HostKeyCombination;
         /** Holds whether Runtime UI auto-capture is enabled. */
-        extern const char *GUI_Input_AutoCapture;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Input_AutoCapture;
         /** Holds Runtime UI remapped scan codes. */
-        extern const char *GUI_RemapScancodes;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RemapScancodes;
     /** @} */
 
     /** @name Settings: Proxy
       * @{ */
         /** Holds VBox proxy settings. */
-        extern const char *GUI_ProxySettings;
+        SHARED_LIBRARY_STUFF extern const char *GUI_ProxySettings;
     /** @} */
 
     /** @name Settings: Storage
       * @{ */
         /** Holds recent folder for hard-drives. */
-        extern const char *GUI_RecentFolderHD;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RecentFolderHD;
         /** Holds recent folder for optical-disks. */
-        extern const char *GUI_RecentFolderCD;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RecentFolderCD;
         /** Holds recent folder for floppy-disks. */
-        extern const char *GUI_RecentFolderFD;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RecentFolderFD;
         /** Holds recent folder for VISO creation content. */
-        extern const char *GUI_RecentFolderVISOContent;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RecentFolderVISOContent;
         /** Holds the list of recently used hard-drives. */
-        extern const char *GUI_RecentListHD;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RecentListHD;
         /** Holds the list of recently used optical-disks. */
-        extern const char *GUI_RecentListCD;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RecentListCD;
         /** Holds the list of recently used floppy-disks. */
-        extern const char *GUI_RecentListFD;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RecentListFD;
     /** @} */
 
     /** @name VirtualBox Manager
       * @{ */
         /** Holds selector-window geometry. */
-        extern const char *GUI_LastSelectorWindowPosition;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LastSelectorWindowPosition;
         /** Holds selector-window splitter hints. */
-        extern const char *GUI_SplitterSizes;
+        SHARED_LIBRARY_STUFF extern const char *GUI_SplitterSizes;
         /** Holds whether selector-window tool-bar visible. */
-        extern const char *GUI_Toolbar;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Toolbar;
         /** Holds whether selector-window tool-bar text visible. */
-        extern const char *GUI_Toolbar_Text;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Toolbar_Text;
         /** Holds the selector-window machine tools order. */
-        extern const char *GUI_Toolbar_MachineTools_Order;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Toolbar_MachineTools_Order;
         /** Holds the selector-window global tools order. */
-        extern const char *GUI_Toolbar_GlobalTools_Order;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Toolbar_GlobalTools_Order;
         /** Holds whether selector-window status-bar visible. */
-        extern const char *GUI_Statusbar;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Statusbar;
         /** Prefix used by composite extra-data keys,
           * which holds selector-window chooser-pane' groups definitions. */
-        extern const char *GUI_GroupDefinitions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_GroupDefinitions;
         /** Holds last item chosen in selector-window chooser-pane. */
-        extern const char *GUI_LastItemSelected;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LastItemSelected;
         /** Holds selector-window details-pane' elements. */
-        extern const char *GUI_DetailsPageBoxes;
+        SHARED_LIBRARY_STUFF extern const char *GUI_DetailsPageBoxes;
         /** Holds selector-window details-pane' preview update interval. */
-        extern const char *GUI_PreviewUpdate;
+        SHARED_LIBRARY_STUFF extern const char *GUI_PreviewUpdate;
     /** @} */
 
     /** @name Snapshot Manager
       * @{ */
         /** Holds whether Snapshot Manager details expanded. */
-        extern const char *GUI_SnapshotManager_Details_Expanded;
+        SHARED_LIBRARY_STUFF extern const char *GUI_SnapshotManager_Details_Expanded;
     /** @} */
 
     /** @name Virtual Media Manager
       * @{ */
         /** Holds whether Virtual Media Manager details expanded. */
-        extern const char *GUI_VirtualMediaManager_Details_Expanded;
+        SHARED_LIBRARY_STUFF extern const char *GUI_VirtualMediaManager_Details_Expanded;
     /** @} */
 
     /** @name Host Network Manager
       * @{ */
         /** Holds whether Host Network Manager details expanded. */
-        extern const char *GUI_HostNetworkManager_Details_Expanded;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HostNetworkManager_Details_Expanded;
     /** @} */
 
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** @name Extra-data Manager
       * @{ */
         /** Holds extra-data manager geometry. */
-        extern const char *GUI_ExtraDataManager_Geometry;
+        SHARED_LIBRARY_STUFF extern const char *GUI_ExtraDataManager_Geometry;
         /** Holds extra-data manager splitter hints. */
-        extern const char *GUI_ExtraDataManager_SplitterHints;
+        SHARED_LIBRARY_STUFF extern const char *GUI_ExtraDataManager_SplitterHints;
     /** @} */
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
     /** @name Wizards
       * @{ */
         /** Holds wizard types for which descriptions should be hidden. */
-        extern const char *GUI_HideDescriptionForWizards;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HideDescriptionForWizards;
     /** @} */
 
     /** @name Virtual Machine
       * @{ */
         /** Holds whether machine shouldn't be shown in selector-window chooser-pane. */
-        extern const char *GUI_HideFromManager;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HideFromManager;
         /** Holds whether machine shouldn't be shown in selector-window details-pane. */
-        extern const char *GUI_HideDetails;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HideDetails;
         /** Holds whether machine reconfiguration disabled. */
-        extern const char *GUI_PreventReconfiguration;
+        SHARED_LIBRARY_STUFF extern const char *GUI_PreventReconfiguration;
         /** Holds whether machine snapshot operations disabled. */
-        extern const char *GUI_PreventSnapshotOperations;
+        SHARED_LIBRARY_STUFF extern const char *GUI_PreventSnapshotOperations;
         /** Holds whether this machine is first time started. */
-        extern const char *GUI_FirstRun;
+        SHARED_LIBRARY_STUFF extern const char *GUI_FirstRun;
         /** Except Mac OS X: Holds redefined machine-window icon names. */
-        extern const char *GUI_MachineWindowIcons;
+        SHARED_LIBRARY_STUFF extern const char *GUI_MachineWindowIcons;
 #ifndef VBOX_WS_MAC
         /** Except Mac OS X: Holds redefined machine-window name postfix. */
-        extern const char *GUI_MachineWindowNamePostfix;
+        SHARED_LIBRARY_STUFF extern const char *GUI_MachineWindowNamePostfix;
 #endif
         /** Prefix used by composite extra-data keys,
           * which holds normal machine-window geometry per screen-index. */
-        extern const char *GUI_LastNormalWindowPosition;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LastNormalWindowPosition;
         /** Prefix used by composite extra-data keys,
           * which holds scaled machine-window geometry per screen-index. */
-        extern const char *GUI_LastScaleWindowPosition;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LastScaleWindowPosition;
         /** Holds machine-window geometry maximized state flag. */
-        extern const char *GUI_Geometry_State_Max;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Geometry_State_Max;
 #ifndef VBOX_WS_MAC
         /** Holds Runtime UI menu-bar availability status. */
-        extern const char *GUI_MenuBar_Enabled;
+        SHARED_LIBRARY_STUFF extern const char *GUI_MenuBar_Enabled;
 #endif
         /** Holds Runtime UI menu-bar context-menu availability status. */
-        extern const char *GUI_MenuBar_ContextMenu_Enabled;
+        SHARED_LIBRARY_STUFF extern const char *GUI_MenuBar_ContextMenu_Enabled;
         /** Holds restricted Runtime UI menu types. */
-        extern const char *GUI_RestrictedRuntimeMenus;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedRuntimeMenus;
         /** Holds restricted Runtime UI action types for 'Application' menu. */
-        extern const char *GUI_RestrictedRuntimeApplicationMenuActions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedRuntimeApplicationMenuActions;
         /** Holds restricted Runtime UI action types for Machine menu. */
-        extern const char *GUI_RestrictedRuntimeMachineMenuActions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedRuntimeMachineMenuActions;
         /** Holds restricted Runtime UI action types for View menu. */
-        extern const char *GUI_RestrictedRuntimeViewMenuActions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedRuntimeViewMenuActions;
         /** Holds restricted Runtime UI action types for Input menu. */
-        extern const char *GUI_RestrictedRuntimeInputMenuActions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedRuntimeInputMenuActions;
         /** Holds restricted Runtime UI action types for Devices menu. */
-        extern const char *GUI_RestrictedRuntimeDevicesMenuActions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedRuntimeDevicesMenuActions;
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /** Holds restricted Runtime UI action types for Debugger menu. */
-        extern const char *GUI_RestrictedRuntimeDebuggerMenuActions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedRuntimeDebuggerMenuActions;
 #endif
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Holds restricted Runtime UI action types for 'Window' menu. */
-        extern const char *GUI_RestrictedRuntimeWindowMenuActions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedRuntimeWindowMenuActions;
 #endif
         /** Holds restricted Runtime UI action types for Help menu. */
-        extern const char *GUI_RestrictedRuntimeHelpMenuActions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedRuntimeHelpMenuActions;
         /** Holds restricted Runtime UI visual-states. */
-        extern const char *GUI_RestrictedVisualStates;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedVisualStates;
         /** Holds whether full screen visual-state is requested. */
-        extern const char *GUI_Fullscreen;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Fullscreen;
         /** Holds whether seamless visual-state is requested. */
-        extern const char *GUI_Seamless;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Seamless;
         /** Holds whether scaled visual-state is requested. */
-        extern const char *GUI_Scale;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Scale;
 #ifdef VBOX_WS_X11
         /** Holds whether legacy full-screen mode is requested. */
-        extern const char *GUI_Fullscreen_LegacyMode;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Fullscreen_LegacyMode;
         /** Holds whether internal machine-window names should be unique. */
-        extern const char *GUI_DistinguishMachineWindowGroups;
+        SHARED_LIBRARY_STUFF extern const char *GUI_DistinguishMachineWindowGroups;
 #endif /* VBOX_WS_X11 */
         /** Holds whether guest-screen auto-resize according machine-window size is enabled. */
-        extern const char *GUI_AutoresizeGuest;
+        SHARED_LIBRARY_STUFF extern const char *GUI_AutoresizeGuest;
         /** Prefix used by composite extra-data keys,
           * which holds last guest-screen visibility status per screen-index. */
-        extern const char *GUI_LastVisibilityStatusForGuestScreen;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LastVisibilityStatusForGuestScreen;
         /** Prefix used by composite extra-data keys,
           * which holds last guest-screen size-hint per screen-index. */
-        extern const char *GUI_LastGuestSizeHint;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LastGuestSizeHint;
         /** Prefix used by composite extra-data keys,
           * which holds host-screen index per guest-screen index. */
-        extern const char *GUI_VirtualScreenToHostScreen;
+        SHARED_LIBRARY_STUFF extern const char *GUI_VirtualScreenToHostScreen;
         /** Holds whether automatic mounting/unmounting of guest-screens enabled. */
-        extern const char *GUI_AutomountGuestScreens;
+        SHARED_LIBRARY_STUFF extern const char *GUI_AutomountGuestScreens;
 #ifdef VBOX_WITH_VIDEOHWACCEL
         /** Holds whether 2D acceleration should use linear sretch. */
-        extern const char *GUI_Accelerate2D_StretchLinear;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_StretchLinear;
         /** Holds whether 2D acceleration should use YV12 pixel format. */
-        extern const char *GUI_Accelerate2D_PixformatYV12;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_PixformatYV12;
         /** Holds whether 2D acceleration should use UYVY pixel format. */
-        extern const char *GUI_Accelerate2D_PixformatUYVY;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_PixformatUYVY;
         /** Holds whether 2D acceleration should use YUY2 pixel format. */
-        extern const char *GUI_Accelerate2D_PixformatYUY2;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_PixformatYUY2;
         /** Holds whether 2D acceleration should use AYUV pixel format. */
-        extern const char *GUI_Accelerate2D_PixformatAYUV;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Accelerate2D_PixformatAYUV;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifndef VBOX_WS_MAC
         /** Holds whether mini-toolbar is enabled for full and seamless screens. */
-        extern const char *GUI_ShowMiniToolBar;
+        SHARED_LIBRARY_STUFF extern const char *GUI_ShowMiniToolBar;
         /** Holds whether mini-toolbar should auto-hide itself. */
-        extern const char *GUI_MiniToolBarAutoHide;
+        SHARED_LIBRARY_STUFF extern const char *GUI_MiniToolBarAutoHide;
         /** Holds mini-toolbar alignment. */
-        extern const char *GUI_MiniToolBarAlignment;
+        SHARED_LIBRARY_STUFF extern const char *GUI_MiniToolBarAlignment;
 #endif /* !VBOX_WS_MAC */
         /** Holds Runtime UI status-bar availability status. */
-        extern const char *GUI_StatusBar_Enabled;
+        SHARED_LIBRARY_STUFF extern const char *GUI_StatusBar_Enabled;
         /** Holds Runtime UI status-bar context-menu availability status. */
-        extern const char *GUI_StatusBar_ContextMenu_Enabled;
+        SHARED_LIBRARY_STUFF extern const char *GUI_StatusBar_ContextMenu_Enabled;
         /** Holds restricted Runtime UI status-bar indicators. */
-        extern const char *GUI_RestrictedStatusBarIndicators;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedStatusBarIndicators;
         /** Holds Runtime UI status-bar indicator order. */
-        extern const char *GUI_StatusBar_IndicatorOrder;
+        SHARED_LIBRARY_STUFF extern const char *GUI_StatusBar_IndicatorOrder;
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Holds whether Dock icon should be updated at runtime. */
-        extern const char *GUI_RealtimeDockIconUpdateEnabled;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RealtimeDockIconUpdateEnabled;
         /** Mac OS X: Holds guest-screen which Dock icon should reflect at runtime. */
-        extern const char *GUI_RealtimeDockIconUpdateMonitor;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RealtimeDockIconUpdateMonitor;
         /** Mac OS X: Holds whether Dock icon should have overlay disabled. */
-        extern const char *GUI_DockIconDisableOverlay;
+        SHARED_LIBRARY_STUFF extern const char *GUI_DockIconDisableOverlay;
 #endif /* VBOX_WS_MAC */
         /** Holds whether machine should pass CAD to guest. */
-        extern const char *GUI_PassCAD;
+        SHARED_LIBRARY_STUFF extern const char *GUI_PassCAD;
         /** Holds the mouse capture policy. */
-        extern const char *GUI_MouseCapturePolicy;
+        SHARED_LIBRARY_STUFF extern const char *GUI_MouseCapturePolicy;
         /** Holds redefined guru-meditation handler type. */
-        extern const char *GUI_GuruMeditationHandler;
+        SHARED_LIBRARY_STUFF extern const char *GUI_GuruMeditationHandler;
         /** Holds whether machine should perform HID LEDs synchronization. */
-        extern const char *GUI_HidLedsSync;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HidLedsSync;
         /** Holds the scale-factor. */
-        extern const char *GUI_ScaleFactor;
+        SHARED_LIBRARY_STUFF extern const char *GUI_ScaleFactor;
         /** Holds the scaling optimization type. */
-        extern const char *GUI_Scaling_Optimization;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Scaling_Optimization;
     /** @} */
 
     /** @name Virtual Machine: Information dialog
       * @{ */
         /** Holds information-window geometry. */
-        extern const char *GUI_InformationWindowGeometry;
+        SHARED_LIBRARY_STUFF extern const char *GUI_InformationWindowGeometry;
         /** Holds information-window elements. */
-        extern const char *GUI_InformationWindowElements;
+        SHARED_LIBRARY_STUFF extern const char *GUI_InformationWindowElements;
         extern const char *GUI_GuestSessionManagerTabSplitterHints;
         extern const char *GUI_GuestFileManagerTabSplitterHints;
     /** @} */
@@ -338,35 +341,35 @@ namespace UIExtraDataDefs
     /** @name Virtual Machine: Close dialog
       * @{ */
         /** Holds default machine close action. */
-        extern const char *GUI_DefaultCloseAction;
+        SHARED_LIBRARY_STUFF extern const char *GUI_DefaultCloseAction;
         /** Holds restricted machine close actions. */
-        extern const char *GUI_RestrictedCloseActions;
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedCloseActions;
         /** Holds last machine close action. */
-        extern const char *GUI_LastCloseAction;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LastCloseAction;
         /** Holds machine close hook script name as simple string. */
-        extern const char *GUI_CloseActionHook;
+        SHARED_LIBRARY_STUFF extern const char *GUI_CloseActionHook;
     /** @} */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** @name Virtual Machine: Debug UI
       * @{ */
         /** Holds whether debugger UI enabled. */
-        extern const char *GUI_Dbg_Enabled;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Dbg_Enabled;
         /** Holds whether debugger UI should be auto-shown. */
-        extern const char *GUI_Dbg_AutoShow;
+        SHARED_LIBRARY_STUFF extern const char *GUI_Dbg_AutoShow;
     /** @} */
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /** @name Virtual Machine: Log-viewer
       * @{ */
         /** Holds log-viewer geometry. */
-        extern const char *GUI_LogWindowGeometry;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LogWindowGeometry;
     /** @} */
 }
 
 
 /** Extra-data meta definitions. */
-class UIExtraDataMetaDefs : public QObject
+class SHARED_LIBRARY_STUFF UIExtraDataMetaDefs : public QObject
 {
     Q_OBJECT;
     Q_ENUMS(MenuType);

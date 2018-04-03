@@ -21,12 +21,15 @@
 /* Qt includes: */
 #include <QToolBar>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QMainWindow;
 
 /** QToolBar extension
   * with few settings presets. */
-class UIToolBar : public QToolBar
+class SHARED_LIBRARY_STUFF UIToolBar : public QToolBar
 {
     Q_OBJECT;
 

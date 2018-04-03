@@ -21,8 +21,11 @@
 /* Qt includes: */
 #include <QProcess>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /** QProcess extension for VBox GUI needs. */
-class QIProcess : public QProcess
+class SHARED_LIBRARY_STUFF QIProcess : public QProcess
 {
     Q_OBJECT;
 

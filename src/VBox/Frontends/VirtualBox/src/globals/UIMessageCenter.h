@@ -22,6 +22,7 @@
 #include <QObject>
 
 /* GUI includes: */
+#include "UILibraryDefs.h"
 #include "UIMediumDefs.h"
 
 /* COM includes: */
@@ -51,7 +52,7 @@ Q_DECLARE_METATYPE(MessageType);
 
 /** Singleton QObject extension
   * providing GUI with corresponding messages. */
-class UIMessageCenter : public QObject
+class SHARED_LIBRARY_STUFF UIMessageCenter : public QObject
 {
     Q_OBJECT;
 

@@ -22,6 +22,9 @@
 #include <QIcon>
 #include <QWidget>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QEvent;
 class QIcon;
@@ -37,7 +40,7 @@ class QWidget;
 
 /** QWidget extension,
   * wrapping content-widget with nice collapsable frame. */
-class UIPopupBox : public QWidget
+class SHARED_LIBRARY_STUFF UIPopupBox : public QWidget
 {
     Q_OBJECT;
 
@@ -173,7 +176,7 @@ private:
 
 /** QObject extension,
   * provides a container to organize groups of popup-boxes. */
-class UIPopupBoxGroup : public QObject
+class SHARED_LIBRARY_STUFF UIPopupBoxGroup : public QObject
 {
     Q_OBJECT;
 

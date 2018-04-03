@@ -23,6 +23,7 @@
 #include <QPixmap>
 
 /* GUI includes: */
+#include "UILibraryDefs.h"
 #include "UIMediumDefs.h"
 
 /* COM includes: */
@@ -78,7 +79,7 @@ struct NoDiffsCache
   * and therefore some parameters such as #size() are meaningless because they can be read only
   * from the accessible medium. The real KMediumState_NotCreated state is not necessary because
   * this class is only used with created (existing) mediums. */
-class UIMedium
+class SHARED_LIBRARY_STUFF UIMedium
 {
 public:
 

@@ -21,11 +21,12 @@
 /* GUI includes: */
 #include "QIRichToolButton.h"
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /** QIRichToolButton extension
   * representing arrow tool-button with text-label,
   * can be used as back/next buttons in various places. */
-class QIArrowButtonPress : public QIWithRetranslateUI<QIRichToolButton>
+class SHARED_LIBRARY_STUFF QIArrowButtonPress : public QIWithRetranslateUI<QIRichToolButton>
 {
     Q_OBJECT;
 

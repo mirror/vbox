@@ -23,6 +23,7 @@
 #include <QMap>
 
 /* GUI includes: */
+#include "UILibraryDefs.h"
 #include "UIPopupCenter.h"
 
 /* Forward declaration: */
@@ -36,7 +37,7 @@ class QVBoxLayout;
 class UIPopupStackViewport;
 
 /** QWidget extension providing GUI with popup-stack prototype class. */
-class UIPopupStack : public QWidget
+class SHARED_LIBRARY_STUFF UIPopupStack : public QWidget
 {
     Q_OBJECT;
 

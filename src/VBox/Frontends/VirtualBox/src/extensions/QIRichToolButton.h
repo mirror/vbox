@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QWidget>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QLabel;
 class QString;
@@ -28,7 +31,7 @@ class QIToolButton;
 
 /** QWidget extension
   * representing tool-button with separate text-label. */
-class QIRichToolButton : public QWidget
+class SHARED_LIBRARY_STUFF QIRichToolButton : public QWidget
 {
     Q_OBJECT;
 

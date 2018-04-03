@@ -23,6 +23,9 @@
 #include <QMap>
 #include <QWidget>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QIcon;
 class QLabel;
@@ -32,7 +35,7 @@ class QWidget;
 
 
 /** QWidget extension used as status-bar indicator. */
-class QIStatusBarIndicator : public QWidget
+class SHARED_LIBRARY_STUFF QIStatusBarIndicator : public QWidget
 {
     Q_OBJECT;
 
@@ -69,7 +72,7 @@ protected:
 
 
 /** QIStatusBarIndicator extension used as status-bar state indicator. */
-class QIStateStatusBarIndicator : public QIStatusBarIndicator
+class SHARED_LIBRARY_STUFF QIStateStatusBarIndicator : public QIStatusBarIndicator
 {
     Q_OBJECT;
 
@@ -111,7 +114,7 @@ private:
 
 
 /** QIStatusBarIndicator extension used as status-bar state indicator. */
-class QITextStatusBarIndicator : public QIStatusBarIndicator
+class SHARED_LIBRARY_STUFF QITextStatusBarIndicator : public QIStatusBarIndicator
 {
     Q_OBJECT;
 

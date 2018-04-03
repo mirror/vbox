@@ -25,7 +25,7 @@
 class QByteArray;
 
 /** UIDownloader extension for background additions downloading. */
-class UIDownloaderAdditions : public UIDownloader
+class SHARED_LIBRARY_STUFF UIDownloaderAdditions : public UIDownloader
 {
     Q_OBJECT;
 

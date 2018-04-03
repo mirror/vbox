@@ -23,6 +23,7 @@
 
 /* GUI includes: */
 #include "QIDialog.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QCheckBox;
@@ -77,7 +78,7 @@ enum AlertIconType
 
 
 /** QIDialog extension representing GUI alerts. */
-class QIMessageBox : public QIDialog
+class SHARED_LIBRARY_STUFF QIMessageBox : public QIDialog
 {
     Q_OBJECT;
 

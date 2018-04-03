@@ -21,8 +21,11 @@
 /* Qt includes: */
 #include <QToolButton>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /** QToolButton subclass with extended functionality. */
-class QIToolButton : public QToolButton
+class SHARED_LIBRARY_STUFF QIToolButton : public QToolButton
 {
     Q_OBJECT;
 

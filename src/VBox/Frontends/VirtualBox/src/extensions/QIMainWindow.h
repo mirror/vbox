@@ -21,9 +21,12 @@
 /* Qt includes: */
 #include <QMainWindow>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /** QMainWindow extension providing GUI
   * with the extended geometry management support. */
-class QIMainWindow : public QMainWindow
+class SHARED_LIBRARY_STUFF QIMainWindow : public QMainWindow
 {
     Q_OBJECT;
 

@@ -22,6 +22,7 @@
 #include <QObject>
 
 /* GUI includes: */
+#include "UILibraryDefs.h"
 #include "UINetworkDefs.h"
 
 /* Forward declarations: */
@@ -29,7 +30,7 @@ class UINetworkReply;
 class QUrl;
 
 /** Interface to access UINetworkManager protected functionality. */
-class UINetworkCustomer : public QObject
+class SHARED_LIBRARY_STUFF UINetworkCustomer : public QObject
 {
     Q_OBJECT;
 

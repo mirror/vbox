@@ -21,12 +21,15 @@
 /* Qt includes: */
 #include <QWidget>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QTextEdit;
 class UIAnimation;
 
 /** QWidget extension providing GUI with popup-pane details-pane prototype class. */
-class UIPopupPaneDetails : public QWidget
+class SHARED_LIBRARY_STUFF UIPopupPaneDetails : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(QSize collapsedSizeHint READ collapsedSizeHint);

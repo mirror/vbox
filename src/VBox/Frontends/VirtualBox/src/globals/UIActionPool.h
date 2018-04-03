@@ -25,6 +25,7 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QKeySequence;
@@ -100,7 +101,7 @@ enum UIActionRestrictionLevel
 
 
 /** QMenu extension. */
-class UIMenu : public QMenu
+class SHARED_LIBRARY_STUFF UIMenu : public QMenu
 {
     Q_OBJECT;
 
@@ -144,7 +145,7 @@ private:
 
 
 /** Abstract QAction extension. */
-class UIAction : public QAction
+class SHARED_LIBRARY_STUFF UIAction : public QAction
 {
     Q_OBJECT;
 
@@ -224,7 +225,7 @@ private:
 
 
 /** Abstract UIAction extension for 'Menu' action type. */
-class UIActionMenu : public UIAction
+class SHARED_LIBRARY_STUFF UIActionMenu : public UIAction
 {
     Q_OBJECT;
 
@@ -255,7 +256,7 @@ private:
 
 
 /** Abstract UIAction extension for 'Simple' action type. */
-class UIActionSimple : public UIAction
+class SHARED_LIBRARY_STUFF UIActionSimple : public UIAction
 {
     Q_OBJECT;
 
@@ -283,7 +284,7 @@ protected:
 
 
 /** Abstract UIAction extension for 'Toggle' action type. */
-class UIActionToggle : public UIAction
+class SHARED_LIBRARY_STUFF UIActionToggle : public UIAction
 {
     Q_OBJECT;
 
@@ -315,7 +316,7 @@ private:
 
 
 /** Abstract UIAction extension for 'Polymorphic' action type. */
-class UIActionPolymorphic : public UIAction
+class SHARED_LIBRARY_STUFF UIActionPolymorphic : public UIAction
 {
     Q_OBJECT;
 
@@ -354,7 +355,7 @@ private:
 
 
 /** Abstract UIAction extension for 'Polymorphic Menu' action type. */
-class UIActionPolymorphicMenu : public UIAction
+class SHARED_LIBRARY_STUFF UIActionPolymorphicMenu : public UIAction
 {
     Q_OBJECT;
 
@@ -415,7 +416,7 @@ private:
 
 /** Abstract QObject extension
   * representing action-pool interface and factory. */
-class UIActionPool : public QIWithRetranslateUI3<QObject>
+class SHARED_LIBRARY_STUFF UIActionPool : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 

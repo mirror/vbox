@@ -25,6 +25,7 @@
 /* GUI includes: */
 #include "UIActionPool.h"
 #include "UIExtraDataDefs.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QSize;
@@ -137,7 +138,7 @@ enum UIActionIndexRT
 
 /** UIActionPool extension
   * representing action-pool singleton for Runtime UI. */
-class UIActionPoolRuntime : public UIActionPool
+class SHARED_LIBRARY_STUFF UIActionPoolRuntime : public UIActionPool
 {
     Q_OBJECT;
 

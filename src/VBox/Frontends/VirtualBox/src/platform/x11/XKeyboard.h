@@ -18,22 +18,25 @@
 #ifndef ___XKeyboard_h___
 #define ___XKeyboard_h___
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QString;
 typedef struct _XDisplay Display;
 
 /** Initializes the X keyboard subsystem. */
-void initMappedX11Keyboard(Display *pDisplay, const QString &remapScancodes);
+SHARED_LIBRARY_STUFF void initMappedX11Keyboard(Display *pDisplay, const QString &remapScancodes);
 
 /** Handles native XKey events. */
-unsigned handleXKeyEvent(Display *pDisplay, unsigned int iDetail);
+SHARED_LIBRARY_STUFF unsigned handleXKeyEvent(Display *pDisplay, unsigned int iDetail);
 
 /** Handles log requests from initXKeyboard after release logging is started. */
-void doXKeyboardLogging(Display *pDisplay);
+SHARED_LIBRARY_STUFF void doXKeyboardLogging(Display *pDisplay);
 
 /** Wraps for the XkbKeycodeToKeysym(3) API which falls back to the deprecated XKeycodeToKeysym(3) if it is unavailable. */
-unsigned long wrapXkbKeycodeToKeysym(Display *pDisplay, unsigned char cCode,
-                                     unsigned int cGroup, unsigned int cIndex);
+SHARED_LIBRARY_STUFF unsigned long wrapXkbKeycodeToKeysym(Display *pDisplay, unsigned char cCode,
+                                                          unsigned int cGroup, unsigned int cIndex);
 
 #endif /* !___XKeyboard_h___ */
 

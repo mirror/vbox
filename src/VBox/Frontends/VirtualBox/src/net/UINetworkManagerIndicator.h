@@ -25,6 +25,7 @@
 /* GUI includes: */
 #include "QIStatusBarIndicator.h"
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class UINetworkRequest;
@@ -40,7 +41,7 @@ enum UINetworkManagerIndicatorState
 
 
 /** QIStateStatusBarIndicator extension for network-manager indicator. */
-class UINetworkManagerIndicator : public QIWithRetranslateUI<QIStateStatusBarIndicator>
+class SHARED_LIBRARY_STUFF UINetworkManagerIndicator : public QIWithRetranslateUI<QIStateStatusBarIndicator>
 {
     Q_OBJECT;
 

@@ -23,13 +23,16 @@
 #include <QPixmap>
 #include <QHash>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class CMachine;
 
 
 /** Interface which provides GUI with static API
   * allowing to dynamically compose icons at runtime. */
-class UIIconPool
+class SHARED_LIBRARY_STUFF UIIconPool
 {
 public:
 
@@ -102,7 +105,7 @@ private:
 
 /** UIIconPool interface extension used as general GUI icon-pool.
   * Provides GUI with guest OS types pixmap cache. */
-class UIIconPoolGeneral : public UIIconPool
+class SHARED_LIBRARY_STUFF UIIconPoolGeneral : public UIIconPool
 {
 public:
 

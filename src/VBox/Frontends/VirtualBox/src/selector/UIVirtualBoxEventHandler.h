@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QObject>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* COM includes: */
 #include "COMEnums.h"
 
@@ -29,7 +32,7 @@ class UIVirtualBoxEventHandlerProxy;
 
 /** Singleton QObject extension
   * providing GUI with the CVirtualBoxClient and CVirtualBox event-sources. */
-class UIVirtualBoxEventHandler : public QObject
+class SHARED_LIBRARY_STUFF UIVirtualBoxEventHandler : public QObject
 {
     Q_OBJECT;
 

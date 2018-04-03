@@ -24,6 +24,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declaration: */
 class QEvent;
@@ -41,7 +42,7 @@ class UIPopupPaneMessage;
 class UIPopupPaneButtonPane;
 
 /** QWidget extension used as popup-center pane prototype. */
-class UIPopupPane : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIPopupPane : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(QSize hiddenSizeHint READ hiddenSizeHint);

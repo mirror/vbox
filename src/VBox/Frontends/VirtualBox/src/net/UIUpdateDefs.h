@@ -22,6 +22,7 @@
 #include <QDate>
 
 /* GUI includes: */
+#include "UILibraryDefs.h"
 #include "UIVersion.h"
 
 
@@ -40,7 +41,7 @@ typedef QList<VBoxUpdateDay> VBoxUpdateDayList;
 
 
 /** Class used to encode/decode update data. */
-class VBoxUpdateData
+class SHARED_LIBRARY_STUFF VBoxUpdateData
 {
 public:
 

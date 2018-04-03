@@ -23,6 +23,7 @@
 #include <QUuid>
 
 /* GUI inludes: */
+#include "UILibraryDefs.h"
 #include "UINetworkDefs.h"
 
 /* Forward declarations: */
@@ -35,7 +36,7 @@ class UINetworkRequest;
 
 /** QObject class extension.
   * Providing network access for VirtualBox application purposes. */
-class UINetworkManager : public QObject
+class SHARED_LIBRARY_STUFF UINetworkManager : public QObject
 {
     Q_OBJECT;
 

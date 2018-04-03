@@ -21,8 +21,11 @@
 /* Qt includes: */
 #include <QFileDialog>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /** QFileDialog subclass simplifying access to it's static stuff. */
-class QIFileDialog : public QFileDialog
+class SHARED_LIBRARY_STUFF QIFileDialog : public QFileDialog
 {
     Q_OBJECT;
 

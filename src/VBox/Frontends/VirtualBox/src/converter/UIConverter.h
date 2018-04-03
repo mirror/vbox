@@ -23,7 +23,7 @@
 
 /** High-level interface for different conversions between GUI classes.
   * @todo Replace singleton with static template interface. */
-class UIConverter
+class SHARED_LIBRARY_STUFF UIConverter
 {
 public:
 

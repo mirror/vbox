@@ -24,6 +24,7 @@
 #include <QPointer>
 
 /* GUI includes: */
+#include "UILibraryDefs.h"
 #include "UIMediumDefs.h"
 
 /* Forward declaration: */
@@ -56,7 +57,7 @@ enum UIPopupStackOrientation
 
 /** Singleton QObject extension
   * providing GUI with various popup messages. */
-class UIPopupCenter: public QObject
+class SHARED_LIBRARY_STUFF UIPopupCenter: public QObject
 {
     Q_OBJECT;
 

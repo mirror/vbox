@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QString>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Other VBox includes: */
 #include <VBox/com/defs.h>
 
@@ -32,7 +35,7 @@ class CProgress;
 class CVirtualBoxErrorInfo;
 
 /** Namespace simplifying COM error formatting. */
-class UIErrorString
+class SHARED_LIBRARY_STUFF UIErrorString
 {
 public:
 

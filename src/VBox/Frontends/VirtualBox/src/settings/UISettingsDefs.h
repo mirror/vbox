@@ -23,6 +23,9 @@
 #include <QPair>
 #include <QString>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* COM includes: */
 #include "COMEnums.h"
 
@@ -46,8 +49,8 @@ namespace UISettingsDefs
     };
 
     /** Determines configuration access level for passed @a enmSessionState and @a enmMachineState. */
-    ConfigurationAccessLevel configurationAccessLevel(KSessionState enmSessionState,
-                                                      KMachineState enmMachineState);
+    SHARED_LIBRARY_STUFF ConfigurationAccessLevel configurationAccessLevel(KSessionState enmSessionState,
+                                                                           KMachineState enmMachineState);
 }
 
 

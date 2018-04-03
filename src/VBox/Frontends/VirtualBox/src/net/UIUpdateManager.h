@@ -21,12 +21,15 @@
 /* Qt includes: */
 #include <QObject>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class UIUpdateQueue;
 
 /** Singleton to perform new version checks
   * and update of various VirtualBox parts. */
-class UIUpdateManager : public QObject
+class SHARED_LIBRARY_STUFF UIUpdateManager : public QObject
 {
     Q_OBJECT;
 

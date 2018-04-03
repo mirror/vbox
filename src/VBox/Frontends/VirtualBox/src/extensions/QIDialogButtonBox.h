@@ -24,6 +24,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QBoxLayout;
@@ -31,7 +32,7 @@ class QPushButton;
 class UIHelpButton;
 
 /** QDialogButtonBox subclass extending standard functionality. */
-class QIDialogButtonBox : public QIWithRetranslateUI<QDialogButtonBox>
+class SHARED_LIBRARY_STUFF QIDialogButtonBox : public QIWithRetranslateUI<QDialogButtonBox>
 {
     Q_OBJECT;
 

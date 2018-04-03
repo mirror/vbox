@@ -25,8 +25,11 @@
 /* Qt includes: */
 #include <QLabel>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /** QLabel subclass extending it with advanced functionality. */
-class QILabel : public QLabel
+class SHARED_LIBRARY_STUFF QILabel : public QLabel
 {
     Q_OBJECT;
 

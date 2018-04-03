@@ -21,9 +21,12 @@
 /* Qt includes: */
 #include <QTextEdit>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /** QLabel analog to reflect rich-text,
  ** based on private QTextEdit functionality. */
-class QIRichTextLabel : public QWidget
+class SHARED_LIBRARY_STUFF QIRichTextLabel : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(QString text READ text WRITE setText);

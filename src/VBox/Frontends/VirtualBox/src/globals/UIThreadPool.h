@@ -27,6 +27,9 @@
 #include <QVector>
 #include <QWaitCondition>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class UITask;
 class UIThreadWorker;
@@ -34,7 +37,7 @@ class UIThreadWorker;
 
 /** QObject extension used as worker-thread pool.
   * Schedules COM-related GUI tasks to multiple worker-threads. */
-class UIThreadPool : public QObject
+class SHARED_LIBRARY_STUFF UIThreadPool : public QObject
 {
     Q_OBJECT;
 
@@ -113,7 +116,7 @@ private:
 
 /** QObject extension used as worker-thread task interface.
   * Describes task to be executed by the UIThreadWorker object. */
-class UITask : public QObject
+class SHARED_LIBRARY_STUFF UITask : public QObject
 {
     Q_OBJECT;
 

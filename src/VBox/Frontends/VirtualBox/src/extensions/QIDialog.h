@@ -22,12 +22,15 @@
 #include <QDialog>
 #include <QPointer>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QEventLoop;
 
 /** QDialog extension providing the GUI with
   * the advanced capabilities like delayed show. */
-class QIDialog : public QDialog
+class SHARED_LIBRARY_STUFF QIDialog : public QDialog
 {
     Q_OBJECT;
 

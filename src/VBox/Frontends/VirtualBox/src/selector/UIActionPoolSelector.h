@@ -20,6 +20,7 @@
 
 /* GUI includes: */
 #include "UIActionPool.h"
+#include "UILibraryDefs.h"
 
 
 /** Runtime action-pool index enum.
@@ -112,7 +113,7 @@ enum UIActionIndexST
 
 /** UIActionPool extension
   * representing action-pool singleton for Selector UI. */
-class UIActionPoolSelector : public UIActionPool
+class SHARED_LIBRARY_STUFF UIActionPoolSelector : public UIActionPool
 {
     Q_OBJECT;
 

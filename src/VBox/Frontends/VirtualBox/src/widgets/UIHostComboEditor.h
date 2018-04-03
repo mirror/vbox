@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QIToolButton;
@@ -43,22 +44,22 @@ class WinAltGrMonitor;
 namespace UINativeHotKey
 {
     /** Translates passed @a iKeyCode to string. */
-    QString toString(int iKeyCode);
+    SHARED_LIBRARY_STUFF QString toString(int iKeyCode);
 
     /** Returns whether passed @a iKeyCode is valid. */
-    bool isValidKey(int iKeyCode);
+    SHARED_LIBRARY_STUFF bool isValidKey(int iKeyCode);
 
     /** Translates passed @a iKeyCode in host platform
       * encoding to the corresponding set 1 PC scan code.
       * @note  Non-modifier keys will return zero. */
-    unsigned modifierToSet1ScanCode(int iKeyCode);
+    SHARED_LIBRARY_STUFF unsigned modifierToSet1ScanCode(int iKeyCode);
 
 #if defined(VBOX_WS_WIN)
     /** Distinguishes modifier VKey by @a wParam and @a lParam. */
-    int distinguishModifierVKey(int wParam, int lParam);
+    SHARED_LIBRARY_STUFF int distinguishModifierVKey(int wParam, int lParam);
 #elif defined(VBOX_WS_X11)
     /** Retranslates key names. */
-    void retranslateKeyNames();
+    SHARED_LIBRARY_STUFF void retranslateKeyNames();
 #endif
 }
 
@@ -68,28 +69,28 @@ namespace UINativeHotKey
 namespace UIHostCombo
 {
     /** Returns host-combo modifier index. */
-    int hostComboModifierIndex();
+    SHARED_LIBRARY_STUFF int hostComboModifierIndex();
     /** Returns host-combo modifier name. */
-    QString hostComboModifierName();
+    SHARED_LIBRARY_STUFF QString hostComboModifierName();
     /** Returns host-combo cached key. */
-    QString hostComboCacheKey();
+    SHARED_LIBRARY_STUFF QString hostComboCacheKey();
 
     /** Translates passed @strKeyCombo to readable string. */
-    QString toReadableString(const QString &strKeyCombo);
+    SHARED_LIBRARY_STUFF QString toReadableString(const QString &strKeyCombo);
     /** Translates passed @strKeyCombo to key codes list. */
-    QList<int> toKeyCodeList(const QString &strKeyCombo);
+    SHARED_LIBRARY_STUFF QList<int> toKeyCodeList(const QString &strKeyCombo);
 
     /** Returns a sequence of the set 1 PC scan codes for all
       * modifiers contained in the (host platform format) sequence passed. */
-    QList<unsigned> modifiersToScanCodes(const QString &strKeyCombo);
+    SHARED_LIBRARY_STUFF QList<unsigned> modifiersToScanCodes(const QString &strKeyCombo);
 
     /** Returns whether passed @a strKeyCombo is valid. */
-    bool isValidKeyCombo(const QString &strKeyCombo);
+    SHARED_LIBRARY_STUFF bool isValidKeyCombo(const QString &strKeyCombo);
 }
 
 
 /** Host-combo QString wrapper. */
-class UIHostComboWrapper
+class SHARED_LIBRARY_STUFF UIHostComboWrapper
 {
 public:
 
@@ -110,7 +111,7 @@ Q_DECLARE_METATYPE(UIHostComboWrapper);
 
 
 /** Host-combo editor widget. */
-class UIHostComboEditor : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIHostComboEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(UIHostComboWrapper combo READ combo WRITE setCombo USER true);
@@ -153,7 +154,7 @@ private:
 
 
 /** Host-combo editor widget private stuff. */
-class UIHostComboEditorPrivate : public QLineEdit
+class SHARED_LIBRARY_STUFF UIHostComboEditorPrivate : public QLineEdit
 {
     Q_OBJECT;
 

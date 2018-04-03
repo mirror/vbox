@@ -43,7 +43,7 @@ typedef QMap<QString, ExtraDataMap> MapOfExtraDataMaps;
 /** Singleton QObject extension
   * providing GUI with corresponding extra-data values,
   * and notifying it whenever any of those values changed. */
-class UIExtraDataManager : public QObject
+class SHARED_LIBRARY_STUFF UIExtraDataManager : public QObject
 {
     Q_OBJECT;
 

@@ -25,6 +25,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QLabel;
@@ -35,7 +36,7 @@ class UINetworkRequest;
 class UINetworkRequestWidget;
 
 /** QMainWindow reimplementation to reflect network-requests. */
-class UINetworkManagerDialog : public QIWithRetranslateUI<QMainWindow>
+class SHARED_LIBRARY_STUFF UINetworkManagerDialog : public QIWithRetranslateUI<QMainWindow>
 {
     Q_OBJECT;
 

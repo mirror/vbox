@@ -25,12 +25,15 @@
 # include <QRect>
 #endif
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QScreen;
 
 /** Singleton QObject extension used as desktop-widget
   * watchdog aware of the host-screen geometry changes. */
-class UIDesktopWidgetWatchdog : public QObject
+class SHARED_LIBRARY_STUFF UIDesktopWidgetWatchdog : public QObject
 {
     Q_OBJECT;
 

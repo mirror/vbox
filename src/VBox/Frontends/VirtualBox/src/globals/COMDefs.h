@@ -82,6 +82,9 @@
 #include <QStringList>
 #include <QMetaType>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /*
  * Additional COM / XPCOM defines and includes
  */
@@ -103,7 +106,7 @@ class XPCOMEventQSocketListener;
 class CVirtualBoxErrorInfo;
 
 /** Represents extended error information */
-class COMErrorInfo
+class SHARED_LIBRARY_STUFF COMErrorInfo
 {
 public:
 
@@ -186,7 +189,7 @@ private:
  * Base COM class the CInterface template and all wrapper classes are derived
  * from. Provides common functionality for all COM wrappers.
  */
-class COMBase
+class SHARED_LIBRARY_STUFF COMBase
 {
 public:
 

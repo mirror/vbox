@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QEvent;
@@ -32,7 +33,7 @@ class QVBoxLayout;
 
 /** QIDialog extension
   * used to show the About-VirtualBox dialog. */
-class VBoxAboutDlg : public QIWithRetranslateUI2<QIDialog>
+class SHARED_LIBRARY_STUFF VBoxAboutDlg : public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 

@@ -23,6 +23,7 @@
 #include <QList>
 
 /* GUI includes: */
+#include "UILibraryDefs.h"
 #include "UINetworkCustomer.h"
 #include "UINetworkDefs.h"
 
@@ -32,7 +33,7 @@ class UINetworkReply;
 
 /** Downloader interface.
   * UINetworkCustomer class extension which allows background http downloading. */
-class UIDownloader : public UINetworkCustomer
+class SHARED_LIBRARY_STUFF UIDownloader : public UINetworkCustomer
 {
     Q_OBJECT;
 

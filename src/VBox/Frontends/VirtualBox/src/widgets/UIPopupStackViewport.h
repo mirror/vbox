@@ -22,13 +22,16 @@
 #include <QWidget>
 #include <QMap>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declaration: */
 class QSize;
 class QString;
 class UIPopupPane;
 
 /** QWidget extension providing GUI with popup-stack viewport prototype class. */
-class UIPopupStackViewport : public QWidget
+class SHARED_LIBRARY_STUFF UIPopupStackViewport : public QWidget
 {
     Q_OBJECT;
 

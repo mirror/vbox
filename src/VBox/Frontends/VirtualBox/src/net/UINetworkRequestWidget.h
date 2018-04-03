@@ -20,6 +20,7 @@
 
 /* GUI inludes: */
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 #include "UIPopupBox.h"
 
 /* Forward declarations: */
@@ -33,7 +34,7 @@ class UINetworkRequest;
 class QTimer;
 
 /** UIPopupBox reimplementation to reflect network-request status. */
-class UINetworkRequestWidget : public QIWithRetranslateUI<UIPopupBox>
+class SHARED_LIBRARY_STUFF UINetworkRequestWidget : public QIWithRetranslateUI<UIPopupBox>
 {
     Q_OBJECT;
 

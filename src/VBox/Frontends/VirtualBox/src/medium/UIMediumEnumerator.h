@@ -23,6 +23,7 @@
 #include <QSet>
 
 /* GUI includes: */
+#include "UILibraryDefs.h"
 #include "UIMedium.h"
 #include "QIWithRetranslateUI.h"
 
@@ -35,7 +36,7 @@ typedef QMap<QString, CMedium> CMediumMap;
 
 /* Medium-enumerator prototype.
  * Manages access to medium information using thread-pool interface. */
-class UIMediumEnumerator : public QIWithRetranslateUI3<QObject>
+class SHARED_LIBRARY_STUFF UIMediumEnumerator : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 

@@ -22,6 +22,9 @@
 #include <QWidget>
 #include <QMap>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QHBoxLayout;
 class QIcon;
@@ -30,7 +33,7 @@ class QString;
 class QIToolButton;
 
 /** QWidget extension providing GUI with popup-pane button-pane prototype class. */
-class UIPopupPaneButtonPane : public QWidget
+class SHARED_LIBRARY_STUFF UIPopupPaneButtonPane : public QWidget
 {
     Q_OBJECT;
 

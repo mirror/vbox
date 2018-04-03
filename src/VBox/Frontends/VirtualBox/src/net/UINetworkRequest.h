@@ -23,6 +23,7 @@
 #include <QPointer>
 
 /* GUI inludes: */
+#include "UILibraryDefs.h"
 #include "UINetworkDefs.h"
 #include "UINetworkReply.h"
 
@@ -34,7 +35,7 @@ class UINetworkRequestWidget;
 class UINetworkCustomer;
 
 /** QObject extension used as network-request container. */
-class UINetworkRequest : public QObject
+class SHARED_LIBRARY_STUFF UINetworkRequest : public QObject
 {
     Q_OBJECT;
 

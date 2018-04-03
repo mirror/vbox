@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QString>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* COM includes: */
 #include "COMEnums.h"
 
@@ -42,10 +45,10 @@ namespace UIMediumDefs
     };
 
     /** Converts global medium type (KDeviceType) to local (UIMediumType). */
-    UIMediumType mediumTypeToLocal(KDeviceType globalType);
+    SHARED_LIBRARY_STUFF UIMediumType mediumTypeToLocal(KDeviceType globalType);
 
     /** Convert local medium type (UIMediumType) to global (KDeviceType). */
-    KDeviceType mediumTypeToGlobal(UIMediumType localType);
+    SHARED_LIBRARY_STUFF KDeviceType mediumTypeToGlobal(UIMediumType localType);
 }
 /* Using this namespace globally: */
 using namespace UIMediumDefs;

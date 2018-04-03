@@ -21,11 +21,14 @@
 /* Qt includes: */
 #include <QSplitter>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QSplitterHandle;
 
 /** QSplitter subclass with extended functionality. */
-class QISplitter : public QSplitter
+class SHARED_LIBRARY_STUFF QISplitter : public QSplitter
 {
     Q_OBJECT;
 

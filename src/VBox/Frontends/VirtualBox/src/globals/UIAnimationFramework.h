@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QObject>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declaration: */
 class QPropertyAnimation;
 class QState;
@@ -28,7 +31,7 @@ class QStateMachine;
 
 
 /** QObject subclass used as animation factory. */
-class UIAnimation : public QObject
+class SHARED_LIBRARY_STUFF UIAnimation : public QObject
 {
     Q_OBJECT;
 
@@ -110,7 +113,7 @@ private:
 
 
 /** QObject subclass used as animation loop factory. */
-class UIAnimationLoop : public QObject
+class SHARED_LIBRARY_STUFF UIAnimationLoop : public QObject
 {
     Q_OBJECT;
 
