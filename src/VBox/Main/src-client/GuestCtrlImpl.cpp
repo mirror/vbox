@@ -242,7 +242,7 @@ int Guest::i_sessionRemove(uint32_t uSessionID)
     ComObjPtr<GuestSession> pSession = itSessions->second;
 
     LogFlowThisFunc(("Removing session %RU32 (now total %ld sessions)\n",
-                     pSession, uSessionID, mData.mGuestSessions.size() ? mData.mGuestSessions.size() - 1 : 0));
+                     uSessionID, mData.mGuestSessions.size() ? mData.mGuestSessions.size() - 1 : 0));
 
     rc = pSession->i_onRemove();
     mData.mGuestSessions.erase(itSessions);
