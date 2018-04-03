@@ -841,6 +841,23 @@ bool UIMessageCenter::confirmStartMultipleMachines(const QString &strNames) cons
                           "confirmStartMultipleMachines" /* auto-confirm id */);
 }
 
+void UIMessageCenter::cannotMoveMachine(const CMachine &machine, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to move the virtual machine <b>%1</b>.")
+          .arg(CMachine(machine).GetName()),
+          UIErrorString::formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotMoveMachine(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to move the virtual machine <b>%1</b>.")
+          .arg(strMachineName),
+          UIErrorString::formatErrorInfo(progress));
+}
+
+
 int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const
 {
     return fAlsoCreateNewSnapshot ?
@@ -2807,4 +2824,3 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     /* Return result-code: */
     return iResultCode;
 }
-

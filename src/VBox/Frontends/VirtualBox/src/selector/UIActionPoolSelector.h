@@ -73,6 +73,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Machine_S_Add,
     UIActionIndexST_M_Machine_S_Settings,
     UIActionIndexST_M_Machine_S_Clone,
+    UIActionIndexST_M_Machine_S_Move,
     UIActionIndexST_M_Machine_S_Remove,
     UIActionIndexST_M_Machine_S_AddGroup,
     UIActionIndexST_M_Machine_M_StartOrShow,

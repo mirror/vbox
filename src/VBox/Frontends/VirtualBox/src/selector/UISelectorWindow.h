@@ -156,6 +156,8 @@ private slots:
                                           const QString &strID = QString());
         /** Handles call to open Clone Machine wizard. */
         void sltOpenCloneMachineWizard();
+        /** Handles the Move Machine action. */
+        void sltPerformMoveMachine();
         /** Handles call to start or show machine. */
         void sltPerformStartOrShowMachine();
         /** Handles call to start machine in normal mode. */
@@ -386,4 +388,3 @@ private:
 #define gpSelectorWindow UISelectorWindow::instance()
 
 #endif /* !___UISelectorWindow_h___ */
-

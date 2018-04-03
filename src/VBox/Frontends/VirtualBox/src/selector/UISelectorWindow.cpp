@@ -670,7 +670,7 @@ void UISelectorWindow::sltOpenMachineSettingsDialog(const QString &strCategoryRe
     actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setData(false);
 }
 
-void UISelectorWindow::sltOpenCloneMachineWizard()
+void UISelectorWindow::sltOpenCLonemachinewizard()
 {
     /* Get current item: */
     UIVMItem *pItem = currentItem();
@@ -690,6 +690,44 @@ void UISelectorWindow::sltOpenCloneMachineWizard()
 
     /* Unlock the action allowing further calls: */
     actionPool()->action(UIActionIndexST_M_Machine_S_Clone)->setEnabled(true);
+}
+
+void UISelectorWindow::sltPerformMoveMachine()
+{
+    UIVMItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+
+    /* Open a session thru which we will modify the machine: */
+    CSession session = vboxGlobal().openSession(pItem->id(), KLockType_Write);
+    if (session.isNull())
+        return;
+
+    /* Get session machine: */
+    CMachine machine = session.GetMachine();
+    AssertMsgReturnVoid(!machine.isNull(), ("Invalid Machine!\n"));
+
+    /* Open a file dialog for the user to select a destination folder. Start with the default machine folder: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    QString strBaseFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+    QString strTitle = tr("Select a destination folder to move the selected virtual machine");
+    QString strDestinationFolder = QIFileDialog::getExistingDirectory(strBaseFolder, this, strTitle);
+    if (strDestinationFolder.isEmpty())
+    {
+        session.UnlockMachine();
+        return;
+    }
+    CProgress progress = machine.MoveTo(strDestinationFolder, "basic");
+
+    if (machine.isOk())
+    {
+        /* Show machine move progress: */
+        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_clone_90px.png");
+        if (!progress.isOk() || progress.GetResultCode() != 0)
+            msgCenter().cannotMoveMachine(progress, machine.GetName());
+    }
+    else
+        msgCenter().cannotMoveMachine(machine);
+    session.UnlockMachine();
 }
 
 void UISelectorWindow::sltPerformStartOrShowMachine()
@@ -1661,6 +1699,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
     addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
     addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
+    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
     addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
     addAction(actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup));
     addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
@@ -1679,6 +1718,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup));
     pMenu->addSeparator();
@@ -1701,6 +1741,7 @@ void UISelectorWindow::prepareMenuMachine(QMenu *pMenu)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_Add)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_Settings)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_Clone)
+                     << actionPool()->action(UIActionIndexST_M_Machine_S_Move)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_Remove)
                      << actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup)
                      << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)
@@ -2069,6 +2110,7 @@ void UISelectorWindow::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Add), SIGNAL(triggered()), this, SLOT(sltOpenAddMachineDialog()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Settings), SIGNAL(triggered()), this, SLOT(sltOpenMachineSettingsDialog()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Clone), SIGNAL(triggered()), this, SLOT(sltOpenCloneMachineWizard()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Move), SIGNAL(triggered()), this, SLOT(sltPerformMoveMachine()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), SIGNAL(triggered()), this, SLOT(sltPerformStartOrShowMachine()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_T_Pause), SIGNAL(toggled(bool)), this, SLOT(sltPerformPauseOrResumeMachine(bool)));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Reset), SIGNAL(triggered()), this, SLOT(sltPerformResetMachine()));
@@ -2364,6 +2406,7 @@ void UISelectorWindow::updateActionsAppearance()
     /* Enable/disable machine actions: */
     actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Settings, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Clone)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Clone, items));
+    actionPool()->action(UIActionIndexST_M_Machine_S_Move)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Move, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Remove)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Remove, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_AddGroup, items));
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_T_Pause, items));
@@ -2475,6 +2518,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
                    pItem->configurationAccessLevel() != ConfigurationAccessLevel_Null;
         }
         case UIActionIndexST_M_Machine_S_Clone:
+        case UIActionIndexST_M_Machine_S_Move:
         {
             return !m_pPaneChooser->isGroupSavingInProgress() &&
                    items.size() == 1 &&

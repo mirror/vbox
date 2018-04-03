@@ -655,6 +655,40 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Perform Move Machine' action class. */
+class UIActionSimpleSelectorMachinePerformMove : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorMachinePerformMove(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("MoveVM");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+M");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Move..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Move selected virtual machine"));
+    }
+};
+
 /** Simple action extension, used as 'Perform Remove Machine' action class. */
 class UIActionSimpleSelectorMachinePerformRemove : public UIActionSimple
 {
@@ -1570,6 +1604,7 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_Add] = new UIActionSimpleSelectorMachinePerformAdd(this);
     m_pool[UIActionIndexST_M_Machine_S_Settings] = new UIActionSimpleSelectorMachineShowSettings(this);
     m_pool[UIActionIndexST_M_Machine_S_Clone] = new UIActionSimpleSelectorMachinePerformClone(this);
+    m_pool[UIActionIndexST_M_Machine_S_Move] = new UIActionSimpleSelectorMachinePerformMove(this);
     m_pool[UIActionIndexST_M_Machine_S_Remove] = new UIActionSimpleSelectorMachinePerformRemove(this);
     m_pool[UIActionIndexST_M_Machine_S_AddGroup] = new UIActionSimpleSelectorMachinePerformGroup(this);
     m_pool[UIActionIndexST_M_Machine_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
@@ -1639,4 +1674,3 @@ QString UIActionPoolSelector::shortcutsExtraDataID() const
 
 
 #include "UIActionPoolSelector.moc"
-
