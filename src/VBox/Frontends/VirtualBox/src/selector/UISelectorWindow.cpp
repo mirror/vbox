@@ -670,7 +670,7 @@ void UISelectorWindow::sltOpenMachineSettingsDialog(const QString &strCategoryRe
     actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setData(false);
 }
 
-void UISelectorWindow::sltOpenCLonemachinewizard()
+void UISelectorWindow::sltOpenCloneMachineWizard()
 {
     /* Get current item: */
     UIVMItem *pItem = currentItem();
