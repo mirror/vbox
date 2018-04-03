@@ -566,7 +566,7 @@ static int vbvaEnable(unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx
     uint32_t const cbVBVABuffer = RT_UOFFSETOF(VBVABUFFER, au8Data) + VbgaSafe.cbData;
     ASSERT_GUEST_RETURN(   VbgaSafe.cbData <= UINT32_MAX - RT_UOFFSETOF(VBVABUFFER, au8Data)
                         && cbVBVABuffer <= pVGAState->vram_size
-                        && u32Offset > pVGAState->vram_size - cbVBVABuffer,
+                        && u32Offset <= pVGAState->vram_size - cbVBVABuffer,
                         VERR_INVALID_PARAMETER);
     if (!fRestored)
     {
