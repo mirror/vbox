@@ -233,7 +233,7 @@ int Guest::i_sessionRemove(uint32_t uSessionID)
 
     LogFlowThisFunc(("Removing session (ID=%RU32) ...\n", uSessionID));
 
-    GuestSessions::const_iterator itSessions = mData.mGuestSessions.find(uSessionID);
+    GuestSessions::iterator itSessions = mData.mGuestSessions.find(uSessionID);
     if (itSessions == mData.mGuestSessions.end())
         return VERR_NOT_FOUND;
 
