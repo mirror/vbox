@@ -3406,13 +3406,15 @@ void VBoxVHWAImage::vhwaSaveExec(struct SSMHANDLE *pSSM)
      */
     const SurfList & primaryList = mDisplay.primaries().surfaces();
     uint32_t cPrimary = (uint32_t)primaryList.size();
-    if (cPrimary &&
-            (mDisplay.getVGA() == NULL || mDisplay.getVGA()->handle() == VBOXVHWA_SURFHANDLE_INVALID))
+    if (   cPrimary
+        && (   mDisplay.getVGA() == NULL
+            || mDisplay.getVGA()->handle() == VBOXVHWA_SURFHANDLE_INVALID))
     {
         cPrimary -= 1;
     }
 
     int rc = SSMR3PutU32(pSSM, cPrimary);
+    AssertRCReturnVoid(rc);
     if (cPrimary)
     {
         for (SurfList::const_iterator pr = primaryList.begin(); pr != primaryList.end(); ++ pr)
