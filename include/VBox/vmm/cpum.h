@@ -1482,7 +1482,6 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
     return HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, uVector);
 }
 
-
 /**
  * Checks if the guest VMCB has virtual-interrupt masking enabled.
  *
@@ -1500,7 +1499,6 @@ DECLINLINE(bool) CPUMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx)
         return pVmcb->ctrl.IntCtrl.n.u1VIntrMasking;
     return HMIsGuestSvmVirtIntrMasking(pVCpu, pCtx);
 }
-
 
 /**
  * Updates the NextRIP (NRIP) field in the nested-guest VMCB.
