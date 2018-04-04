@@ -2064,6 +2064,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # First batch: One session per guest process.
         #
+        reporter.log('One session per guest process ...');
         for (i, aTest) in enumerate(aaTests):
             curTest = aTest[0]; # tdTestExec, use an index, later.
             curRes  = aTest[1]; # tdTestResultExec
@@ -2081,9 +2082,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         # No sessions left?
         if fRc is True:
-            cSessions = len(self.oTstDrv.oVBoxMgr.getArray(oSession.o.console.guest, 'sessions'));
+            aSessions = self.oTstDrv.oVBoxMgr.getArray(oSession.o.console.guest, 'sessions');
+            cSessions   = len(aSessions);
             if cSessions is not 0:
-                reporter.error('Found %d stale session(s), expected 0' % (cSessions,));
+                reporter.error('Found %d stale session(s), expected 0:' % (cSessions,));
+                for (i, aSession) in enumerate(aSessions):
+                    reporter.log('\tStale session #%d ("%s")' % (aSession.id, aSession.name));
                 fRc = False;
 
         if fRc is False:
