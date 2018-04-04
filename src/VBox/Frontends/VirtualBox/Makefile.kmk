@@ -322,6 +322,10 @@ ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
 
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ VirtualBox_LDFLAGS.darwin += -framework OpenGL
+endif
+
 
 #
 # VirtualBox - GUI Application.
@@ -363,7 +367,6 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_LIBS.solaris   += GL
  VirtualBox_LIBS.linux     += GL
  VirtualBox_LIBS.freebsd   += GL
- VirtualBox_LDFLAGS.darwin += -framework OpenGL
 endif
 ifdef VBOX_WITH_CROGL
  VirtualBox_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
@@ -1269,7 +1272,7 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 endif
 
 VBoxGlobal_SOURCES.win += \
-       src/platform/win/VBoxUtils-win.cpp
+	src/platform/win/VBoxUtils-win.cpp
 
 
 #
