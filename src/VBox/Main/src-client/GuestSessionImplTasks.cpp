@@ -48,18 +48,19 @@
 *********************************************************************************************************************************/
 
 /**
- * Update file flags.
+ * (Guest Additions) ISO file flags.
+ * Needed for handling Guest Additions updates.
  */
-#define UPDATEFILE_FLAG_NONE                0
+#define ISOFILE_FLAG_NONE                0
 /** Copy over the file from host to the
  *  guest. */
-#define UPDATEFILE_FLAG_COPY_FROM_ISO       RT_BIT(0)
+#define ISOFILE_FLAG_COPY_FROM_ISO       RT_BIT(0)
 /** Execute file on the guest after it has
  *  been successfully transfered. */
-#define UPDATEFILE_FLAG_EXECUTE             RT_BIT(7)
+#define ISOFILE_FLAG_EXECUTE             RT_BIT(7)
 /** File is optional, does not have to be
  *  existent on the .ISO. */
-#define UPDATEFILE_FLAG_OPTIONAL            RT_BIT(8)
+#define ISOFILE_FLAG_OPTIONAL            RT_BIT(8)
 
 
 // session task classes
@@ -2041,7 +2042,7 @@ int SessionTaskUpdateAdditions::Run(void)
                                 { "vbox-sha256-r3.cer", "CERT/VBOX_SHA256_R3.CER" },
                                 { "oracle-vbox.cer",    "CERT/ORACLE_VBOX.CER" },
                             };
-                            uint32_t fCopyCertUtil = UPDATEFILE_FLAG_COPY_FROM_ISO;
+                            uint32_t fCopyCertUtil = ISOFILE_FLAG_COPY_FROM_ISO;
                             for (uint32_t i = 0; i < RT_ELEMENTS(s_aCertFiles); i++)
                             {
                                 /* Skip if not present on the ISO. */
@@ -2053,9 +2054,9 @@ int SessionTaskUpdateAdditions::Run(void)
 
                                 /* Copy the certificate certificate. */
                                 Utf8Str const strDstCert(strUpdateDir + s_aCertFiles[i].pszDst);
-                                mFiles.push_back(InstallerFile(s_aCertFiles[i].pszIso,
-                                                               strDstCert,
-                                                               UPDATEFILE_FLAG_COPY_FROM_ISO | UPDATEFILE_FLAG_OPTIONAL));
+                                mFiles.push_back(ISOFile(s_aCertFiles[i].pszIso,
+                                                         strDstCert,
+                                                         ISOFILE_FLAG_COPY_FROM_ISO | ISOFILE_FLAG_OPTIONAL));
 
                                 /* Out certificate installation utility. */
                                 /* First pass: Copy over the file (first time only) + execute it to remove any
@@ -2066,10 +2067,10 @@ int SessionTaskUpdateAdditions::Run(void)
                                 siCertUtilRem.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
                                 siCertUtilRem.mArguments.push_back(strDstCert);
                                 siCertUtilRem.mArguments.push_back(strDstCert);
-                                mFiles.push_back(InstallerFile("CERT/VBOXCERTUTIL.EXE",
-                                                               strUpdateDir + "VBoxCertUtil.exe",
-                                                               fCopyCertUtil | UPDATEFILE_FLAG_EXECUTE | UPDATEFILE_FLAG_OPTIONAL,
-                                                               siCertUtilRem));
+                                mFiles.push_back(ISOFile("CERT/VBOXCERTUTIL.EXE",
+                                                         strUpdateDir + "VBoxCertUtil.exe",
+                                                         fCopyCertUtil | ISOFILE_FLAG_EXECUTE | ISOFILE_FLAG_OPTIONAL,
+                                                         siCertUtilRem));
                                 fCopyCertUtil = 0;
                                 /* Second pass: Only execute (but don't copy) again, this time installng the
                                  *              recent certificates just copied over. */
@@ -2079,20 +2080,20 @@ int SessionTaskUpdateAdditions::Run(void)
                                 siCertUtilAdd.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
                                 siCertUtilAdd.mArguments.push_back(strDstCert);
                                 siCertUtilAdd.mArguments.push_back(strDstCert);
-                                mFiles.push_back(InstallerFile("CERT/VBOXCERTUTIL.EXE",
-                                                               strUpdateDir + "VBoxCertUtil.exe",
-                                                               UPDATEFILE_FLAG_EXECUTE | UPDATEFILE_FLAG_OPTIONAL,
-                                                               siCertUtilAdd));
+                                mFiles.push_back(ISOFile("CERT/VBOXCERTUTIL.EXE",
+                                                         strUpdateDir + "VBoxCertUtil.exe",
+                                                         ISOFILE_FLAG_EXECUTE | ISOFILE_FLAG_OPTIONAL,
+                                                         siCertUtilAdd));
                             }
                         }
                         /* The installers in different flavors, as we don't know (and can't assume)
                          * the guest's bitness. */
-                        mFiles.push_back(InstallerFile("VBOXWINDOWSADDITIONS_X86.EXE",
-                                                       strUpdateDir + "VBoxWindowsAdditions-x86.exe",
-                                                       UPDATEFILE_FLAG_COPY_FROM_ISO));
-                        mFiles.push_back(InstallerFile("VBOXWINDOWSADDITIONS_AMD64.EXE",
-                                                       strUpdateDir + "VBoxWindowsAdditions-amd64.exe",
-                                                       UPDATEFILE_FLAG_COPY_FROM_ISO));
+                        mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS_X86.EXE",
+                                                 strUpdateDir + "VBoxWindowsAdditions-x86.exe",
+                                                 ISOFILE_FLAG_COPY_FROM_ISO));
+                        mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS_AMD64.EXE",
+                                                 strUpdateDir + "VBoxWindowsAdditions-amd64.exe",
+                                                 ISOFILE_FLAG_COPY_FROM_ISO));
                         /* The stub loader which decides which flavor to run. */
                         GuestProcessStartupInfo siInstaller;
                         siInstaller.mName = "VirtualBox Windows Guest Additions Installer";
@@ -2116,9 +2117,9 @@ int SessionTaskUpdateAdditions::Run(void)
                          * complete the progress object now so that the caller can do other work. */
                         if (mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly)
                             siInstaller.mFlags |= ProcessCreateFlag_WaitForProcessStartOnly;
-                        mFiles.push_back(InstallerFile("VBOXWINDOWSADDITIONS.EXE",
-                                                       strUpdateDir + "VBoxWindowsAdditions.exe",
-                                                       UPDATEFILE_FLAG_COPY_FROM_ISO | UPDATEFILE_FLAG_EXECUTE, siInstaller));
+                        mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS.EXE",
+                                                 strUpdateDir + "VBoxWindowsAdditions.exe",
+                                                 ISOFILE_FLAG_COPY_FROM_ISO | ISOFILE_FLAG_EXECUTE, siInstaller));
                         break;
                     }
                     case eOSType_Linux:
@@ -2142,13 +2143,13 @@ int SessionTaskUpdateAdditions::Run(void)
 
                 LogRel(("Copying over Guest Additions update files to the guest ...\n"));
 
-                std::vector<InstallerFile>::const_iterator itFiles = mFiles.begin();
+                std::vector<ISOFile>::const_iterator itFiles = mFiles.begin();
                 while (itFiles != mFiles.end())
                 {
-                    if (itFiles->fFlags & UPDATEFILE_FLAG_COPY_FROM_ISO)
+                    if (itFiles->fFlags & ISOFILE_FLAG_COPY_FROM_ISO)
                     {
                         bool fOptional = false;
-                        if (itFiles->fFlags & UPDATEFILE_FLAG_OPTIONAL)
+                        if (itFiles->fFlags & ISOFILE_FLAG_OPTIONAL)
                             fOptional = true;
                         rc = copyFileToGuest(pSession, &iso, itFiles->strSource, itFiles->strDest,
                                                fOptional, NULL /* cbSize */);
@@ -2182,10 +2183,10 @@ int SessionTaskUpdateAdditions::Run(void)
 
                 LogRel(("Executing Guest Additions update files ...\n"));
 
-                std::vector<InstallerFile>::iterator itFiles = mFiles.begin();
+                std::vector<ISOFile>::iterator itFiles = mFiles.begin();
                 while (itFiles != mFiles.end())
                 {
-                    if (itFiles->fFlags & UPDATEFILE_FLAG_EXECUTE)
+                    if (itFiles->fFlags & ISOFILE_FLAG_EXECUTE)
                     {
                         rc = runFileOnGuest(pSession, itFiles->mProcInfo);
                         if (RT_FAILURE(rc))

@@ -260,19 +260,19 @@ protected:
      * Structure representing a file to
      * get off the .ISO, copied to the guest.
      */
-    struct InstallerFile
+    struct ISOFile
     {
-        InstallerFile(const Utf8Str &aSource,
-                      const Utf8Str &aDest,
-                      uint32_t       aFlags = 0)
+        ISOFile(const Utf8Str &aSource,
+                const Utf8Str &aDest,
+                uint32_t       aFlags = 0)
             : strSource(aSource),
               strDest(aDest),
               fFlags(aFlags) { }
 
-        InstallerFile(const Utf8Str          &aSource,
-                      const Utf8Str          &aDest,
-                      uint32_t                aFlags,
-                      const GuestProcessStartupInfo &aStartupInfo)
+        ISOFile(const Utf8Str                 &aSource,
+                const Utf8Str                 &aDest,
+                uint32_t                       aFlags,
+                const GuestProcessStartupInfo &aStartupInfo)
             : strSource(aSource),
               strDest(aDest),
               fFlags(aFlags),
@@ -287,7 +287,7 @@ protected:
         Utf8Str                 strSource;
         /** Destination file on the guest. */
         Utf8Str                 strDest;
-        /** File flags. */
+        /** ISO file flags (see ISOFILE_FLAG_ defines). */
         uint32_t                fFlags;
         /** Optional arguments if this file needs to be
          *  executed. */
@@ -299,7 +299,7 @@ protected:
     int runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo);
 
     /** Files to handle. */
-    std::vector<InstallerFile> mFiles;
+    std::vector<ISOFile> mFiles;
     /** The (optionally) specified Guest Additions .ISO on the host
      *  which will be used for the updating process. */
     Utf8Str                    mSource;
