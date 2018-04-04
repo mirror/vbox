@@ -892,11 +892,13 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
         m_logPageList.resize(m_pTabWidget->count());
         m_logPageList[tabIndex] = pLogPage;
 
-        /* Set the log string of the UIVMLogPage: */
-        pLogPage->setLogString(strLogContent);
         /* Set text edit since we want to display this text: */
         if (!noLogsToShow)
+        {
             pLogPage->setTextEditText(strLogContent);
+            /* Set the log string of the UIVMLogPage: */
+            pLogPage->setLogString(strLogContent);
+        }
         /* In case there are some errors append the error text as html: */
         else
         {
