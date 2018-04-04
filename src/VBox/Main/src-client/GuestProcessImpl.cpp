@@ -2000,17 +2000,14 @@ int GuestProcessTool::init(GuestSession *pGuestSession, const GuestProcessStartu
 
 void GuestProcessTool::uninit(void)
 {
-    if (!pProcess.isNull())
-    {
-        /* Terminate (and unregister) process. */
-        pProcess->uninit();
+    /* Make sure the process is terminated and unregistered from the guest session. */
+    int rcGuestIgnored;
+    int rc2 = terminate(30 * 1000 /* 30s timeout */, &rcGuestIgnored);
+    AssertRC(rc2);
 
-        /* Release reference. */
-        pProcess.setNull();
-    }
-
-    if (pSession)
-        pSession.setNull();
+    /* Release references. */
+    pProcess.setNull();
+    pSession.setNull();
 }
 
 int GuestProcessTool::getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock)
