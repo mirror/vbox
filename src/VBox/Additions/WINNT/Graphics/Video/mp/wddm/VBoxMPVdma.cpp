@@ -1181,6 +1181,13 @@ NTSTATUS VBoxVdmaChromiumParameteriCRSubmit(PVBOXMP_DEVEXT pDevExt, uint32_t tar
 
 static NTSTATUS vboxVdmaCrCtlGetDefaultClientId(PVBOXMP_DEVEXT pDevExt, uint32_t *pu32ClienID)
 {
+    if (pDevExt->enmHwType != VBOX_HWTYPE_CROGL)
+    {
+        /* Should not be called at all in this case. */
+        AssertFailed();
+        return STATUS_UNSUCCESSFUL;
+    }
+
     if (!pDevExt->u32CrConDefaultClientID)
     {
         if (!pDevExt->f3DEnabled)
@@ -1328,6 +1335,12 @@ static NTSTATUS vboxVdmaProcessVReg(PVBOXMP_DEVEXT pDevExt,
 
 NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData)
 {
+    if (pDevExt->enmHwType != VBOX_HWTYPE_CROGL)
+    {
+        /* Not used in this case. */
+        return STATUS_SUCCESS;
+    }
+
     uint32_t u32CrConClientID;
     NTSTATUS Status = vboxVdmaCrCtlGetDefaultClientId(pDevExt, &u32CrConClientID);
     if (!NT_SUCCESS(Status))

@@ -1148,23 +1148,33 @@ NTSTATUS DxgkDdiStartDevice(
             if (Status == STATUS_SUCCESS)
             {
 #ifdef VBOX_WITH_CROGL
-                if (pDevExt->f3DEnabled)
+                if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
                 {
-                    pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
-                    pDevExt->fCmdVbvaEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_CMDVBVA);
+                    if (pDevExt->f3DEnabled)
+                    {
+                        pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
+                        pDevExt->fCmdVbvaEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_CMDVBVA);
 # if 0
-                    pDevExt->fComplexTopologiesEnabled = pDevExt->fCmdVbvaEnabled;
+                        pDevExt->fComplexTopologiesEnabled = pDevExt->fCmdVbvaEnabled;
 # else
-                    pDevExt->fComplexTopologiesEnabled = FALSE;
+                        pDevExt->fComplexTopologiesEnabled = FALSE;
 # endif
+                    }
+                    else
+                    {
+                        pDevExt->fTexPresentEnabled = FALSE;
+                        pDevExt->fCmdVbvaEnabled = FALSE;
+                        pDevExt->fComplexTopologiesEnabled = FALSE;
+                    }
+#endif
                 }
                 else
                 {
+                    pDevExt->f3DEnabled = FALSE;
                     pDevExt->fTexPresentEnabled = FALSE;
                     pDevExt->fCmdVbvaEnabled = FALSE;
                     pDevExt->fComplexTopologiesEnabled = FALSE;
                 }
-#endif
 
                 /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported.
                  * The host will however support both old and new interface to keep compatibility
@@ -1366,7 +1376,7 @@ NTSTATUS DxgkDdiStopDevice(
     NTSTATUS Status = STATUS_SUCCESS;
 
 #ifdef VBOX_WITH_CROGL
-    if (pDevExt->u32CrConDefaultClientID)
+    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL && pDevExt->u32CrConDefaultClientID)
         VBoxMpCrCtlConDisconnect(pDevExt, &pDevExt->CrCtlCon, pDevExt->u32CrConDefaultClientID);
 
     VBoxMpCrShgsmiTransportTerm(&pDevExt->CrHgsmiTransport);
@@ -2324,9 +2334,14 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                     VBOXWDDM_QI * pQi = (VBOXWDDM_QI*)pQueryAdapterInfo->pOutputData;
                     memset (pQi, 0, sizeof (VBOXWDDM_QI));
                     pQi->u32Version = VBOXVIDEOIF_VERSION;
+                    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+                    {
 #ifdef VBOX_WITH_CROGL
-                    pQi->u32VBox3DCaps = VBoxMpCrGetHostCaps();
+                        pQi->u32VBox3DCaps = VBoxMpCrGetHostCaps();
 #endif
+                    }
+                    else
+                        pQi->u32VBox3DCaps = 0;
                     pQi->cInfos = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
@@ -2838,7 +2853,7 @@ DxgkDdiDestroyAllocation(
         vboxWddmAllocationCleanupAssignment(pDevExt, pAlloc);
         /* wait for all current allocation-related ops are completed */
         vboxWddmAllocationCleanup(pDevExt, pAlloc);
-        if (pAlloc->hSharedHandle && pAlloc->AllocData.hostID)
+        if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL && pAlloc->hSharedHandle && pAlloc->AllocData.hostID)
             VBoxVdmaChromiumParameteriCRSubmit(pDevExt, GL_PIN_TEXTURE_CLEAR_CR, pAlloc->AllocData.hostID);
         vboxWddmAllocationDestroy(pAlloc);
     }
@@ -4544,7 +4559,10 @@ DxgkDdiEscape(
             {
                 if (pEscape->PrivateDriverDataSize == sizeof (*pEscapeHdr))
                 {
-                    pEscapeHdr->u32CmdSpecific = VBoxMpCrGetHostCaps();
+                    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+                        pEscapeHdr->u32CmdSpecific = VBoxMpCrGetHostCaps();
+                    else
+                        pEscapeHdr->u32CmdSpecific = 0;
                     Status = STATUS_SUCCESS;
                 }
                 else
@@ -6880,15 +6898,18 @@ DxgkDdiCreateContext(
                 vboxWddmDisplaySettingsCheckPos(pDevExt, i);
             }
 
-#ifdef VBOX_WITH_CROGL
-            if (!VBOXWDDM_IS_DISPLAYONLY() && pDevExt->f3DEnabled)
+            if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
             {
-                VBoxMpCrPackerInit(&pContext->CrPacker);
-                int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pContext->u32CrConClientID);
-                if (!RT_SUCCESS(rc))
-                    WARN(("VBoxMpCrCtlConConnect failed rc (%d), ignoring for system context", rc));
-            }
+#ifdef VBOX_WITH_CROGL
+                if (!VBOXWDDM_IS_DISPLAYONLY() && pDevExt->f3DEnabled)
+                {
+                    VBoxMpCrPackerInit(&pContext->CrPacker);
+                    int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pContext->u32CrConClientID);
+                    if (!RT_SUCCESS(rc))
+                        WARN(("VBoxMpCrCtlConConnect failed rc (%d), ignoring for system context", rc));
+                }
 #endif
+            }
             Status = STATUS_SUCCESS;
         }
         else
@@ -6928,17 +6949,20 @@ DxgkDdiCreateContext(
                                     {
                                         if (pDevExt->f3DEnabled)
                                         {
-                                            int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
-                                                pInfo->crVersionMajor, pInfo->crVersionMinor,
-                                                &pContext->u32CrConClientID);
-                                            if (RT_SUCCESS(rc))
+                                            if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
                                             {
-                                                VBoxMpCrPackerInit(&pContext->CrPacker);
-                                            }
-                                            else
-                                            {
-                                                WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
-                                                Status = STATUS_UNSUCCESSFUL;
+                                                int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
+                                                    pInfo->crVersionMajor, pInfo->crVersionMinor,
+                                                    &pContext->u32CrConClientID);
+                                                if (RT_SUCCESS(rc))
+                                                {
+                                                    VBoxMpCrPackerInit(&pContext->CrPacker);
+                                                }
+                                                else
+                                                {
+                                                    WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
+                                                    Status = STATUS_UNSUCCESSFUL;
+                                                }
                                             }
                                         }
                                         else
@@ -6980,13 +7004,16 @@ DxgkDdiCreateContext(
                             {
                                 if (pDevExt->f3DEnabled)
                                 {
-                                    int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
-                                        pInfo->crVersionMajor, pInfo->crVersionMinor,
-                                        &pContext->u32CrConClientID);
-                                    if (!RT_SUCCESS(rc))
+                                    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
                                     {
-                                        WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
-                                        Status = STATUS_UNSUCCESSFUL;
+                                        int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
+                                            pInfo->crVersionMajor, pInfo->crVersionMinor,
+                                            &pContext->u32CrConClientID);
+                                        if (!RT_SUCCESS(rc))
+                                        {
+                                            WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
+                                            Status = STATUS_UNSUCCESSFUL;
+                                        }
                                     }
                                 }
                                 else
@@ -7117,7 +7144,7 @@ DxgkDdiDestroyContext(
     }
 
 #ifdef VBOX_WITH_CROGL
-    if (pContext->u32CrConClientID)
+    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL && pContext->u32CrConClientID)
     {
         VBoxMpCrCtlConDisconnect(pDevExt, &pDevExt->CrCtlCon, pContext->u32CrConClientID);
     }
@@ -7250,6 +7277,7 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
     SrcAllocData.pSwapchain = NULL;
 
     RECT UpdateRect;
+    RT_ZERO(UpdateRect);
     BOOLEAN bUpdateRectInited = FALSE;
 
     for (UINT i = 0; i < pPresentDisplayOnly->NumMoves; ++i)
