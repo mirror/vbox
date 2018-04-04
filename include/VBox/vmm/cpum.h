@@ -1497,10 +1497,7 @@ DECLINLINE(bool) CPUMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx)
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     Assert(pVmcb);
     if (!pCtx->hwvirt.svm.fHMCachedVmcb)
-    {
-        PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-        return pVmcbCtrl->IntCtrl.n.u1VIntrMasking;
-    }
+        return pVmcb->ctrl.IntCtrl.n.u1VIntrMasking;
     return HMIsGuestSvmVirtIntrMasking(pVCpu, pCtx);
 }
 
