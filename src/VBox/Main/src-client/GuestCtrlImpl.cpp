@@ -21,6 +21,7 @@
 #include "GuestImpl.h"
 #ifdef VBOX_WITH_GUEST_CONTROL
 # include "GuestSessionImpl.h"
+# include "GuestSessionImplTasks.h"
 # include "GuestCtrlImplPrivate.h"
 #endif
 

@@ -27,6 +27,7 @@
 # error "VBOX_WITH_GUEST_CONTROL must defined in this file"
 #endif
 #include "GuestSessionImpl.h"
+#include "GuestSessionImplTasks.h"
 #include "GuestCtrlImplPrivate.h"
 
 #include "Global.h"
