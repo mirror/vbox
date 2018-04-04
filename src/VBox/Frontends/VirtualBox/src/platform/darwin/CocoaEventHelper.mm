@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,37 +15,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
+/* GUI includes: */
 #include "CocoaEventHelper.h"
 #include "DarwinKeyboard.h"
 
-/* Global includes */
+/* External includes: */
 #import <Cocoa/Cocoa.h>
 #import <AppKit/NSEvent.h>
 #include <Carbon/Carbon.h>
 
-/**
- * Calls the -(NSUInteger)modifierFlags method on a NSEvent object.
- *
- * @return  The Cocoa event modifier mask.
- * @param   pEvent          The Cocoa event.
- */
-unsigned long darwinEventModifierFlags(ConstNativeNSEventRef pEvent)
-{
-    return [pEvent modifierFlags];
-}
 
-/**
- * Calls the -(NSUInteger)modifierFlags method on a NSEvent object and
- * converts the flags to carbon style.
- *
- * @return  The Carbon modifier mask.
- * @param   pEvent          The Cocoa event.
- */
 uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent)
 {
-    NSUInteger  fCocoa  = [pEvent modifierFlags];
-    uint32_t    fCarbon = 0;
+    NSUInteger fCocoa = [pEvent modifierFlags];
+    uint32_t fCarbon = 0;
     if (fCocoa)
     {
         if (fCocoa & NSAlphaShiftKeyMask)
@@ -117,15 +100,9 @@ uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent)
     return fCarbon;
 }
 
-/**
- * Get the name for a Cocoa event type.
- *
- * @returns Read-only name string.
- * @param   eEvtType        The Cocoa event type.
- */
-const char *darwinEventTypeName(unsigned long eEvtType)
+const char *darwinEventTypeName(unsigned long enmEventType)
 {
-    switch (eEvtType)
+    switch (enmEventType)
     {
 #define EVT_CASE(nm) case nm: return #nm
         EVT_CASE(NSLeftMouseDown);
@@ -165,26 +142,20 @@ const char *darwinEventTypeName(unsigned long eEvtType)
     }
 }
 
-/**
- * Debug helper function for dumping a Cocoa event to stdout.
- *
- * @param   pszPrefix       Message prefix.
- * @param   pEvent          The Cocoa event.
- */
 void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent)
 {
-    NSEventType         eEvtType = [pEvent type];
-    NSUInteger          fEvtMask = [pEvent modifierFlags];
-    NSWindow           *pEvtWindow = [pEvent window];
-    NSInteger           iEvtWindow = [pEvent windowNumber];
-    NSGraphicsContext  *pEvtGraphCtx = [pEvent context];
+    NSEventType enmEventType = [pEvent type];
+    NSUInteger fEventMask = [pEvent modifierFlags];
+    NSWindow *pEventWindow = [pEvent window];
+    NSInteger iEventWindow = [pEvent windowNumber];
+    NSGraphicsContext *pEventGraphicsContext = [pEvent context];
 
     printf("%s%p: Type=%lu Modifiers=%08lx pWindow=%p #Wnd=%ld pGraphCtx=%p %s\n",
-           pszPrefix, (void*)pEvent, (unsigned long)eEvtType, (unsigned long)fEvtMask, (void*)pEvtWindow,
-           (long)iEvtWindow, (void*)pEvtGraphCtx, darwinEventTypeName(eEvtType));
+           pszPrefix, (void*)pEvent, (unsigned long)enmEventType, (unsigned long)fEventMask, (void*)pEventWindow,
+           (long)iEventWindow, (void*)pEventGraphicsContext, darwinEventTypeName(enmEventType));
 
-    /* dump type specific into. */
-    switch (eEvtType)
+    /* Dump type specific info: */
+    switch (enmEventType)
     {
         case NSLeftMouseDown:
         case NSLeftMouseUp:
@@ -239,7 +210,7 @@ void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent)
                                 | NX_DEVICERALTKEYMASK | NX_DEVICERCTLKEYMASK;
 
             printf("    KeyCode=%04x", (int)[pEvent keyCode]);
-#define PRINT_MOD(cnst, nm) do { if (fEvtMask & (cnst)) printf(" %s", #nm); } while (0)
+#define PRINT_MOD(cnst, nm) do { if (fEventMask & (cnst)) printf(" %s", #nm); } while (0)
             /* device-independent: */
             PRINT_MOD(NSAlphaShiftKeyMask, "AlphaShift");
             PRINT_MOD(NSShiftKeyMask, "Shift");
@@ -260,7 +231,7 @@ void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent)
             PRINT_MOD(NX_DEVICERCTLKEYMASK,   "$R-Ctrl");
 #undef  PRINT_MOD
 
-            fOddBits = fEvtMask & ~fOddBits;
+            fOddBits = fEventMask & ~fOddBits;
             if (fOddBits)
                 printf(" fOddBits=%#08lx", (unsigned long)fOddBits);
 #undef  KNOWN_BITS

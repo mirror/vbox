@@ -1,11 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - Declarations of utility functions for handling Darwin Cocoa
- * specific event handling tasks.
+ * VBox Qt GUI - Declarations of utility functions for handling Darwin Cocoa specific event-handling tasks.
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,25 +18,32 @@
 #ifndef ___CocoaEventHelper_h
 #define ___CocoaEventHelper_h
 
+/* Other VBox includes: */
+#include <iprt/cdefs.h>
 #include <VBox/VBoxCocoa.h>
-#include <iprt/cdefs.h> /* for RT_C_DECLS_BEGIN/RT_C_DECLS_END & stuff */
 
+/* Cocoa declarations: */
 ADD_COCOA_NATIVE_REF(NSEvent);
+
 
 RT_C_DECLS_BEGIN
 
-/********************************************************************************
- *
- * Event/Keyboard helpers (OS System native)
- *
- ********************************************************************************/
-unsigned long darwinEventModifierFlags(ConstNativeNSEventRef pEvent);
+/** Calls the -(NSUInteger)modifierFlags method on @a pEvent object and converts the flags to carbon style. */
 uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent);
-const char *darwinEventTypeName(unsigned long eEvtType);
+
+/** Get the name for a Cocoa @a enmEventType. */
+const char *darwinEventTypeName(unsigned long enmEventType);
+
+/** Debug helper function for dumping a Cocoa event to stdout.
+  * @param   pszPrefix  Brings the message prefix.
+  * @param   pEvent     Brings the Cocoa event. */
 void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent);
+
+/** Posts stripped mouse event based on passed @a pEvent. */
 void darwinPostStrippedMouseEvent(ConstNativeNSEventRef pEvent);
 
 RT_C_DECLS_END
+
 
 #endif /* !___CocoaEventHelper_h */
 
