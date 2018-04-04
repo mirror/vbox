@@ -5114,7 +5114,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
             if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             {
                 PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-                if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
+                if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, pCtx))
                 {
                     crX = pVmcbCtrl->IntCtrl.n.u8VTPR & 0xf;
                     break;
@@ -5530,7 +5530,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
 
                 PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
                 pVmcbCtrl->IntCtrl.n.u8VTPR = uNewCrX;
-                if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
+                if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, pCtx))
                 {
                     rcStrict = VINF_SUCCESS;
                     break;
