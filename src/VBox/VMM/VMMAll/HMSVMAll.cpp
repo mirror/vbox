@@ -542,6 +542,21 @@ VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
 
 
 /**
+ * Checks if the guest VMCB has virtual-interrupts masking enabled.
+ *
+ * @returns true if virtual-interrupts are masked, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the context.
+ */
+VMM_INT_DECL(bool) HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return pVmcbNstGstCache->fVIntrMasking;
+}
+
+
+/**
  * Checks whether the SVM nested-guest is in a state to receive physical (APIC)
  * interrupts.
  *

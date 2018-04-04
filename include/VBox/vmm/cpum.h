@@ -1467,7 +1467,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx
  * Checks if the guest VMCB has the specified exception intercept active.
  *
  * @returns @c true if in intercept is active, @c false otherwise.
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uVector     The exception / interrupt vector.
  */
@@ -1482,12 +1482,37 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
     return HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, uVector);
 }
 
+
+/**
+ * Checks if the guest VMCB has virtual-interrupt masking enabled.
+ *
+ * @returns @c true if virtual-interrupts are masked, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ *
+ * @remarks Should only be called when SVM feature is exposed to the guest.
+ */
+DECLINLINE(bool) CPUMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    Assert(pVmcb);
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+    {
+        PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+        return pVmcbCtrl->IntCtrl.n.u1VIntrMasking;
+    }
+    return HMIsGuestSvmVirtIntrMasking(pVCpu, pCtx);
+}
+
+
 /**
  * Updates the NextRIP (NRIP) field in the nested-guest VMCB.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   cbInstr     The length of the current instruction in bytes.
+ *
+ * @remarks Should only be called when SVM feature is exposed to the guest.
  */
 DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cbInstr)
 {

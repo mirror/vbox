@@ -1136,6 +1136,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx
 VMM_INT_DECL(bool) HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr);
 VMM_INT_DECL(bool) HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr);
 VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector);
+VMM_INT_DECL(bool) HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(bool) HMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(bool) HMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
 
