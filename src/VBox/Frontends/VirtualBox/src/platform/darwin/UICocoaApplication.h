@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "VBoxCocoaHelper.h"
 #include "VBoxUtils-darwin.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QObject;
@@ -49,7 +50,7 @@ typedef void (*PfnStandardWindowButtonCallbackForQWidget)(StandardWindowButtonTy
 
 
 /** Singleton prototype for our private NSApplication object. */
-class UICocoaApplication
+class SHARED_LIBRARY_STUFF UICocoaApplication
 {
 public:
 

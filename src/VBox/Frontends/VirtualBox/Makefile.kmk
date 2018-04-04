@@ -182,6 +182,7 @@ VBoxGlobal_DEFS.linux   = VBOX_WS_X11
 VBoxGlobal_DEFS.solaris = VBOX_WS_X11
 VBoxGlobal_DEFS.win     = VBOX_WS_WIN
 VBoxGlobal_DEFS.debug   = VBOX_CHECK_STATE # QT_FATAL_ASSERT
+VBoxGlobal_DEFS.darwin  += VBOX_DARWIN_USE_NATIVE_CONTROLS
 #VBoxGlobal_DEFS.win     += UNICODE QT_DLL
 VBoxGlobal_DEFS         += \
 	$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VBOX_GUI_WITH_SHARED_LIBRARY) \
@@ -324,6 +325,30 @@ endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_LDFLAGS.darwin += -framework OpenGL
+endif
+
+
+#
+# VirtualBox - GUI Global Shared Library.
+# Compiling/linking flags.
+#
+
+## @todo we're using a number of deprecated APIs, please fix and remove these!
+ifdef VBOX_WITH_NEW_XCODE
+ VBoxGlobal_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
+ VBoxGlobal_OBJCFLAGS.darwin   += -Wno-error=deprecated-declarations
+ VBoxGlobal_OBJCXXFLAGS.darwin += -Wno-error=deprecated-declarations
+else
+ VBoxGlobal_CXXFLAGS.darwin    += -Wno-deprecated-declarations
+ VBoxGlobal_OBJCFLAGS.darwin   += -Wno-deprecated-declarations
+ VBoxGlobal_OBJCXXFLAGS.darwin += -Wno-deprecated-declarations
+endif
+
+VBoxGlobal_LDFLAGS.darwin = \
+	-framework AppKit -framework Carbon -framework IOKit
+
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ VBoxGlobal_LDFLAGS.darwin += -framework OpenGL
 endif
 
 
@@ -680,6 +705,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
 	src/extensions/QIArrowButtonPress.h \
+	src/extensions/QIArrowButtonSwitch.h \
 	src/extensions/QIArrowSplitter.h \
 	src/extensions/QIDialog.h \
 	src/extensions/QIDialogButtonBox.h \
@@ -738,6 +764,9 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 	src/net/UINetworkReply.h \
 	src/net/UIUpdateManager.h
 endif
+
+VBoxGlobal_QT_MOCHDRS.darwin += \
+	src/platform/darwin/UICocoaSpecialControls.h
 
 
 #
@@ -1067,14 +1096,8 @@ VirtualBox_SOURCES.win += \
 	src/platform/win/WinKeyboard.cpp
 
 VirtualBox_SOURCES.darwin += \
-	src/platform/darwin/CocoaEventHelper.mm \
-	src/platform/darwin/DarwinKeyboard.cpp \
-	src/platform/darwin/UICocoaApplication.mm \
-	src/platform/darwin/UICocoaSpecialControls.mm \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
-	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm \
-	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
-	src/platform/darwin/VBoxUtils-darwin.cpp
+	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_SOURCES.darwin += \
@@ -1183,6 +1206,15 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 
  VirtualBox_SOURCES.win += \
 	src/platform/win/VBoxUtils-win.cpp
+
+ VirtualBox_SOURCES.darwin += \
+	src/platform/darwin/CocoaEventHelper.mm \
+	src/platform/darwin/DarwinKeyboard.cpp \
+	src/platform/darwin/UICocoaApplication.mm \
+	src/platform/darwin/UICocoaSpecialControls.mm \
+	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
+	src/platform/darwin/VBoxUtils-darwin.cpp
+
 endif
 
 
@@ -1272,6 +1304,14 @@ endif
 
 VBoxGlobal_SOURCES.win += \
 	src/platform/win/VBoxUtils-win.cpp
+
+VBoxGlobal_SOURCES.darwin += \
+	src/platform/darwin/CocoaEventHelper.mm \
+	src/platform/darwin/DarwinKeyboard.cpp \
+	src/platform/darwin/UICocoaApplication.mm \
+	src/platform/darwin/UICocoaSpecialControls.mm \
+	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
+	src/platform/darwin/VBoxUtils-darwin.cpp
 
 
 #
@@ -1639,7 +1679,8 @@ ifdef VBOX_WITH_TESTCASES
  PROGRAMS.darwin += tstDarwinKeyboard
  tstDarwinKeyboard_TEMPLATE = VBOXR3TSTEXE
  tstDarwinKeyboard_DEFS.x86 = USE_HID_FOR_MODIFIERS
- tstDarwinKeyboard_INCS = include
+ tstDarwinKeyboard_INCS = \
+ 	$(VBOX_GUI_INC_DIRS)
  tstDarwinKeyboard_SOURCES = \
  	src/platform/darwin/tstDarwinKeyboard.cpp \
  	src/platform/darwin/DarwinKeyboard.cpp
@@ -1648,6 +1689,9 @@ ifdef VBOX_WITH_TESTCASES
  tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
  tstDarwinKeyboard_LIBS = \
  	$(LIB_RUNTIME)
+ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+  tstDarwinKeyboard_LIBS += $(PATH_STAGE_DLL)/VBoxGlobal$(VBOX_SUFF_DLL)
+ endif
 endif
 
 

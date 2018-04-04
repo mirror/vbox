@@ -24,13 +24,14 @@
 
 /* GUI includes: */
 #include "VBoxCocoaHelper.h"
+#include "UILibraryDefs.h"
 
 /* Add typedefs for Cocoa types: */
 ADD_COCOA_NATIVE_REF(NSButton);
 
 /** QMacCocoaViewContainer extension,
   * used as cocoa button container. */
-class UICocoaButton : public QMacCocoaViewContainer
+class SHARED_LIBRARY_STUFF UICocoaButton : public QMacCocoaViewContainer
 {
     Q_OBJECT
 
