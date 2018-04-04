@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UICocoaApplication - C++ interface to NSApplication for handling -sendEvent.
+ * VBox Qt GUI - UICocoaApplication class implementation.
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,45 +18,49 @@
 /* GUI includes: */
 #include "UICocoaApplication.h"
 
-/* Global includes */
-#import <AppKit/NSEvent.h>
-#import <AppKit/NSApplication.h>
-#import <Foundation/NSArray.h>
-#import <AppKit/NSWindow.h>
-#import <AppKit/NSButton.h>
-
+/* Other VBox includes: */
 #include <iprt/assert.h>
 
+/* External includes: */
+#import <AppKit/NSApplication.h>
+#import <AppKit/NSButton.h>
+#import <AppKit/NSEvent.h>
+#import <AppKit/NSWindow.h>
+#import <Foundation/NSArray.h>
+
+
 /** Class for tracking a callback. */
-@interface CallbackData: NSObject
+@interface CallbackData : NSObject
 {
 @public
-    /** Mask of events to send to this callback. */
-    uint32_t            fMask;
-    /** The callback. */
-    PFNVBOXCACALLBACK   pfnCallback;
-    /** The user argument. */
-    void               *pvUser;
+    /** Holds the mask of events to send to this callback. */
+    uint32_t           fMask;
+    /** Holds the callback. */
+    PFNVBOXCACALLBACK  pfnCallback;
+    /** Holds the user argument. */
+    void              *pvUser;
 }
-- (id) initWithMask:(uint32)mask callback:(PFNVBOXCACALLBACK)callback user:(void*)user;
+- (id)initWithMask :(uint32)mask callback :(PFNVBOXCACALLBACK)callback user :(void *)user;
 @end /* @interface CallbackData  */
 
 @implementation CallbackData
-- (id) initWithMask:(uint32)mask callback:(PFNVBOXCACALLBACK)callback user:(void*)user
+/** Performs initialization. */
+- (id)initWithMask :(uint32)mask callback :(PFNVBOXCACALLBACK)callback user :(void *)user
 {
     self = [super init];
     if (self)
     {
         fMask = mask;
         pfnCallback = callback;
-        pvUser =  user;
+        pvUser = user;
     }
     return self;
 }
 @end /* @implementation CallbackData  */
 
-/** Class for event handling */
-@interface UICocoaApplicationPrivate: NSApplication
+
+/** Class for event handling. */
+@interface UICocoaApplicationPrivate : NSApplication
 {
     /** The event mask for which there currently are callbacks. */
     uint32_t        m_fMask;
@@ -64,42 +68,44 @@
     NSMutableArray *m_pCallbacks;
 }
 - (id)init;
-- (void)sendEvent:(NSEvent *)theEvent;
-- (void)setCallback:(uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser;
-- (void)unsetCallback:(uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser;
+- (void)sendEvent :(NSEvent *)theEvent;
+- (void)setCallback :(uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser;
+- (void)unsetCallback :(uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser;
 
-- (void)registerToNotificationOfWorkspace :(NSString*)pstrNotificationName;
-- (void)unregisterFromNotificationOfWorkspace :(NSString*)pstrNotificationName;
+- (void)registerToNotificationOfWorkspace :(NSString *)pstrNotificationName;
+- (void)unregisterFromNotificationOfWorkspace :(NSString *)pstrNotificationName;
 
-- (void)registerToNotificationOfWindow :(NSString*)pstrNotificationName :(NSWindow*)pWindow;
-- (void)unregisterFromNotificationOfWindow :(NSString*)pstrNotificationName :(NSWindow*)pWindow;
+- (void)registerToNotificationOfWindow :(NSString *)pstrNotificationName :(NSWindow *)pWindow;
+- (void)unregisterFromNotificationOfWindow :(NSString *)pstrNotificationName :(NSWindow *)pWindow;
 
-- (void)notificationCallbackOfObject :(NSNotification*)notification;
-- (void)notificationCallbackOfWindow :(NSNotification*)notification;
+- (void)notificationCallbackOfObject :(NSNotification *)notification;
+- (void)notificationCallbackOfWindow :(NSNotification *)notification;
 
-- (void)registerSelectorForStandardWindowButton :(NSWindow*)pWindow :(StandardWindowButtonType)enmButtonType;
-- (void)selectorForStandardWindowButton :(NSButton*)pButton;
+- (void)registerSelectorForStandardWindowButton :(NSWindow *)pWindow :(StandardWindowButtonType)enmButtonType;
+- (void)selectorForStandardWindowButton :(NSButton *)pButton;
 @end /* @interface UICocoaApplicationPrivate */
 
 @implementation UICocoaApplicationPrivate
--(id) init
+/** Performs initialization. */
+- (id) init
 {
     self = [super init];
     if (self)
         m_pCallbacks = [[NSMutableArray alloc] init];
 
-    /* Gently disable El Capitan tries to break everything with the Enter Full Screen action.
-     * S.a. https://developer.apple.com/library/mac/releasenotes/AppKit/RN-AppKit/ for reference. */
+    // WORKAROUND:
+    // Gently disable El Capitan tries to break everything with the Enter Full Screen action.
+    // S.a. https://developer.apple.com/library/mac/releasenotes/AppKit/RN-AppKit/ for reference.
     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"NSFullScreenMenuItemEverywhere"];
 
     return self;
 }
 
--(void) sendEvent:(NSEvent *)pEvent
+/** Sends an event.
+  * @param  pEvent  Brings the event to be sent. */
+- (void) sendEvent :(NSEvent *)pEvent
 {
-    /*
-     * Check if the type matches any of the registered callbacks.
-     */
+    /* Check if the type matches any of the registered callbacks. */
     uint32_t const fMask = m_fMask;
 #if 0 /* for debugging */
     ::darwinPrintEvent("sendEvent: ", pEvent);
@@ -110,9 +116,7 @@
         uint32_t fEvtMask = RT_LIKELY(EvtType < 32) ? RT_BIT_32(EvtType) : 0;
         if (fMask & fEvtMask)
         {
-            /*
-             * Do the callouts in LIFO order.
-             */
+            /* Do the callouts in LIFO order. */
             for (CallbackData *pData in [m_pCallbacks reverseObjectEnumerator])
             {
                 if (pData->fMask & fEvtMask)
@@ -125,48 +129,38 @@
         }
     }
 
-    /*
-     * Get on with it.
-     */
+    /* Get on with it. */
     [super sendEvent:pEvent];
 }
 
-/**
- * Register an event callback.
- *
- * @param   fMask           The event mask for which the callback is to be invoked.
- * @param   pfnCallback     The callback function.
- * @param   pvUser          The user argument.
- */
--(void) setCallback: (uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser
+/** Registers an event callback.
+  * @param  fMask        Brings the event mask for which the callback is to be invoked.
+  * @param  pfnCallback  Brings the callback function.
+  * @param  pvUser       Brings the user argument. */
+- (void) setCallback :(uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser
 {
-    /* Add the callback data to the array */
-    CallbackData *pData = [[[CallbackData alloc] initWithMask: fMask callback: pfnCallback user: pvUser] autorelease];
-    [m_pCallbacks addObject: pData];
+    /* Add the callback data to the array: */
+    CallbackData *pData = [[[CallbackData alloc] initWithMask:fMask callback:pfnCallback user:pvUser] autorelease];
+    [m_pCallbacks addObject:pData];
 
-    /* Update the global mask */
+    /* Update the global mask: */
     m_fMask |= fMask;
 }
 
-/**
- * Deregister an event callback.
- *
- * @param   fMask           Same as setCallback.
- * @param   pfnCallback     Same as setCallback.
- * @param   pvUser          Same as setCallback.
- */
--(void) unsetCallback: (uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser
+/** Deregisters an event callback.
+  * @param  fMask        Brings the event mask for which the callback is to be invoked.
+  * @param  pfnCallback  Brings the callback function.
+  * @param  pvUser       Brings the user argument. */
+- (void) unsetCallback: (uint32_t)fMask :(PFNVBOXCACALLBACK)pfnCallback :(void *)pvUser
 {
-    /*
-     * Loop the event array LIFO fashion searching for a matching callback.
-     */
+    /* Loop the event array LIFO fashion searching for a matching callback. */
     for (CallbackData *pData in [m_pCallbacks reverseObjectEnumerator])
     {
         if (   pData->pfnCallback == pfnCallback
             && pData->pvUser      == pvUser
             && pData->fMask       == fMask)
         {
-            [m_pCallbacks removeObject: pData];
+            [m_pCallbacks removeObject:pData];
             break;
         }
     }
@@ -176,8 +170,8 @@
     m_fMask = fNewMask;
 }
 
-/** Register to cocoa notification @a pstrNotificationName. */
-- (void) registerToNotificationOfWorkspace :(NSString*)pstrNotificationName
+/** Registers to cocoa notification @a pstrNotificationName. */
+- (void) registerToNotificationOfWorkspace :(NSString *)pstrNotificationName
 {
     /* Register notification observer: */
     NSNotificationCenter *pNotificationCenter = [[NSWorkspace sharedWorkspace] notificationCenter];
@@ -188,7 +182,7 @@
 }
 
 /** Unregister @a pWindow from cocoa notification @a pstrNotificationName. */
-- (void) unregisterFromNotificationOfWorkspace :(NSString*)pstrNotificationName
+- (void) unregisterFromNotificationOfWorkspace :(NSString *)pstrNotificationName
 {
     /* Uninstall notification observer: */
     NSNotificationCenter *pNotificationCenter = [[NSWorkspace sharedWorkspace] notificationCenter];
@@ -198,7 +192,7 @@
 }
 
 /** Register @a pWindow to cocoa notification @a pstrNotificationName. */
-- (void) registerToNotificationOfWindow :(NSString*)pstrNotificationName :(NSWindow*)pWindow
+- (void) registerToNotificationOfWindow :(NSString *)pstrNotificationName :(NSWindow *)pWindow
 {
     /* Register notification observer: */
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -208,7 +202,7 @@
 }
 
 /** Unregister @a pWindow from cocoa notification @a pstrNotificationName. */
-- (void) unregisterFromNotificationOfWindow :(NSString*)pstrNotificationName :(NSWindow*)pWindow
+- (void) unregisterFromNotificationOfWindow :(NSString *)pstrNotificationName :(NSWindow *)pWindow
 {
     /* Uninstall notification observer: */
     [[NSNotificationCenter defaultCenter] removeObserver:self
@@ -217,7 +211,7 @@
 }
 
 /** Redirects cocoa @a notification to UICocoaApplication instance. */
-- (void) notificationCallbackOfObject :(NSNotification*)notification
+- (void) notificationCallbackOfObject :(NSNotification *)notification
 {
     /* Get current notification name: */
     NSString *pstrName = [notification name];
@@ -240,7 +234,7 @@
 }
 
 /** Redirects cocoa @a notification to UICocoaApplication instance. */
-- (void) notificationCallbackOfWindow :(NSNotification*)notification
+- (void) notificationCallbackOfWindow :(NSNotification *)notification
 {
     /* Get current notification name: */
     NSString *pstrName = [notification name];
@@ -250,7 +244,7 @@
 }
 
 /** Registers selector for standard window @a enmButtonType of the passed @a pWindow. */
-- (void)registerSelectorForStandardWindowButton :(NSWindow*)pWindow :(StandardWindowButtonType)enmButtonType
+- (void)registerSelectorForStandardWindowButton :(NSWindow *)pWindow :(StandardWindowButtonType)enmButtonType
 {
     /* Retrieve corresponding button: */
     NSButton *pButton = Nil;
@@ -268,13 +262,13 @@
     /* Register selector if button exists: */
     if (pButton != Nil)
     {
-        [pButton setTarget :self];
-        [pButton setAction :@selector(selectorForStandardWindowButton:)];
+        [pButton setTarget:self];
+        [pButton setAction:@selector(selectorForStandardWindowButton:)];
     }
 }
 
 /** Redirects selector of the standard window @a pButton to UICocoaApplication instance callback. */
-- (void)selectorForStandardWindowButton :(NSButton*)pButton
+- (void)selectorForStandardWindowButton :(NSButton *)pButton
 {
     /* Check if Option key is currently held: */
     const bool fWithOptionKey = [NSEvent modifierFlags] & NSAlternateKeyMask;
@@ -284,26 +278,32 @@
 }
 @end /* @implementation UICocoaApplicationPrivate */
 
-/* C++ singleton for our private NSApplication object */
-UICocoaApplication* UICocoaApplication::m_pInstance = 0;
+
+/*********************************************************************************************************************************
+*   Class UICocoaApplication implementation.                                                                                     *
+*********************************************************************************************************************************/
+
+/* static */
+UICocoaApplication* UICocoaApplication::s_pInstance = 0;
 
 /* static */
 UICocoaApplication* UICocoaApplication::instance()
 {
-    if (!m_pInstance)
-        m_pInstance = new UICocoaApplication();
+    if (!s_pInstance)
+        s_pInstance = new UICocoaApplication;
 
-    return m_pInstance;
+    return s_pInstance;
 }
 
 UICocoaApplication::UICocoaApplication()
 {
-    /* Make sure our private NSApplication object is created */
+    /* Make sure our private NSApplication object is created: */
     m_pNative = (UICocoaApplicationPrivate*)[UICocoaApplicationPrivate sharedApplication];
-    /* Create one auto release pool which is in place for all the
-       initialization and deinitialization stuff. That is when the
-       NSApplication is not running the run loop (there is a separate auto
-       release pool defined). */
+    // WORKAROUND":
+    // Create one auto release pool which is in place for all the
+    // initialization and deinitialization stuff. That is when the
+    // NSApplication is not running the run loop (there is a separate
+    // auto release pool defined).
     m_pPool = [[NSAutoreleasePool alloc] init];
 }
 
@@ -393,7 +393,9 @@ void UICocoaApplication::unregisterFromNotificationOfWindow(const QString &strNa
     [m_pNative unregisterFromNotificationOfWindow :pstrNativeNotificationName :pWindow];
 }
 
-void UICocoaApplication::nativeNotificationProxyForObject(NativeNSStringRef pstrNotificationName, const QMap<QString, QString> &userInfo)
+void UICocoaApplication::nativeNotificationProxyForObject(NativeNSStringRef pstrNotificationName,
+                                                          const QMap<QString,
+                                                          QString> &userInfo)
 {
     /* Get notification name: */
     QString strNotificationName = darwinFromNativeString(pstrNotificationName);
@@ -428,7 +430,8 @@ void UICocoaApplication::registerCallbackForStandardWindowButton(QWidget *pWidge
                                                                  PfnStandardWindowButtonCallbackForQWidget pCallback)
 {
     /* Make sure it is not registered yet: */
-    AssertReturnVoid(!m_stdWindowButtonCallbacks.contains(pWidget) || !m_stdWindowButtonCallbacks.value(pWidget).contains(enmButtonType));
+    AssertReturnVoid(   !m_stdWindowButtonCallbacks.contains(pWidget)
+                     || !m_stdWindowButtonCallbacks.value(pWidget).contains(enmButtonType));
 
     /* Remember callback: */
     m_stdWindowButtonCallbacks[pWidget][enmButtonType] = pCallback;
@@ -441,7 +444,8 @@ void UICocoaApplication::registerCallbackForStandardWindowButton(QWidget *pWidge
 void UICocoaApplication::unregisterCallbackForStandardWindowButton(QWidget *pWidget, StandardWindowButtonType enmButtonType)
 {
     /* Make sure it is registered yet: */
-    AssertReturnVoid(m_stdWindowButtonCallbacks.contains(pWidget) && m_stdWindowButtonCallbacks.value(pWidget).contains(enmButtonType));
+    AssertReturnVoid(   m_stdWindowButtonCallbacks.contains(pWidget)
+                     && m_stdWindowButtonCallbacks.value(pWidget).contains(enmButtonType));
 
     /* Forget callback: */
     m_stdWindowButtonCallbacks[pWidget].remove(enmButtonType);
@@ -451,6 +455,7 @@ void UICocoaApplication::unregisterCallbackForStandardWindowButton(QWidget *pWid
 
 void UICocoaApplication::nativeCallbackProxyForStandardWindowButton(NativeNSButtonRef pButton, bool fWithOptionKey)
 {
+    // WORKAROUND:
     // Why not using nested foreach, will you ask?
     // It's because Qt 4.x has shadowing issue in Q_FOREACH macro.
     // Bug record QTBUG-33585 opened for Qt 4.8.4 and closed as _won't fix_ by one of Qt devs.
@@ -460,7 +465,8 @@ void UICocoaApplication::nativeCallbackProxyForStandardWindowButton(NativeNSButt
     for (int iWidgetIndex = 0; iWidgetIndex < widgets.size(); ++iWidgetIndex)
     {
         QWidget *pWidget = widgets.at(iWidgetIndex);
-        const QMap<StandardWindowButtonType, PfnStandardWindowButtonCallbackForQWidget> callbacks = m_stdWindowButtonCallbacks.value(pWidget);
+        const QMap<StandardWindowButtonType, PfnStandardWindowButtonCallbackForQWidget> callbacks
+            = m_stdWindowButtonCallbacks.value(pWidget);
         const QList<StandardWindowButtonType> buttonTypes = callbacks.keys();
         for (int iButtonTypeIndex = 0; iButtonTypeIndex < buttonTypes.size(); ++iButtonTypeIndex)
         {

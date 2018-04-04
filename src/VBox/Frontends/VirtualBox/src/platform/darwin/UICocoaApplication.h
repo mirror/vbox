@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UICocoaApplication - C++ interface to NSApplication for handling -sendEvent.
+ * VBox Qt GUI - UICocoaApplication class declaration.
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___darwin_VBoxCocoaApplication_h
-#define ___darwin_VBoxCocoaApplication_h
+#ifndef ___VBoxCocoaApplication_h___
+#define ___VBoxCocoaApplication_h___
 
 /* Qt includes: */
 #include <QMap>
@@ -25,22 +25,19 @@
 #include "VBoxCocoaHelper.h"
 #include "VBoxUtils-darwin.h"
 
+/* Forward declarations: */
+class QObject;
+class QWidget;
+
+/* Cocoa declarations: */
 ADD_COCOA_NATIVE_REF(UICocoaApplicationPrivate);
 ADD_COCOA_NATIVE_REF(NSAutoreleasePool);
 ADD_COCOA_NATIVE_REF(NSString);
 ADD_COCOA_NATIVE_REF(NSWindow);
 ADD_COCOA_NATIVE_REF(NSButton);
 
-/* Forward declarations: */
-class QObject;
-class QWidget;
 
-/** Event handler callback.
- * @returns true if handled, false if not.
- * @param   pvCocoaEvent    The Cocoa event.
- * @param   pvCarbonEvent   The Carbon event.
- * @param   pvUser          The user argument.
- */
+/** Event handler callback. */
 typedef bool (*PFNVBOXCACALLBACK)(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
 
 /** Native notification callback type for QObject. */
@@ -50,16 +47,17 @@ typedef void (*PfnNativeNotificationCallbackForQWidget)(const QString &strNative
 /** Standard window button callback type for QWidget. */
 typedef void (*PfnStandardWindowButtonCallbackForQWidget)(StandardWindowButtonType emnButtonType, bool fWithOptionKey, QWidget *pWidget);
 
-/* C++ singleton for our private NSApplication object. */
+
+/** Singleton prototype for our private NSApplication object. */
 class UICocoaApplication
 {
 public:
 
-    /** Returns singleton access instance. */
-    static UICocoaApplication* instance();
+    /** Returns singleton instance. */
+    static UICocoaApplication *instance();
 
-    /** Destructor. */
-    ~UICocoaApplication();
+    /** Destructs cocoa application. */
+    virtual ~UICocoaApplication();
 
     /** Returns whether application is currently active. */
     bool isActive() const;
@@ -96,25 +94,25 @@ public:
 
 private:
 
-    /** Constructor. */
+    /** Constructs cocoa application. */
     UICocoaApplication();
 
     /** Holds the singleton access instance. */
-    static UICocoaApplication *m_pInstance;
+    static UICocoaApplication *s_pInstance;
 
     /** Holds the private NSApplication instance. */
-    NativeUICocoaApplicationPrivateRef m_pNative;
+    NativeUICocoaApplicationPrivateRef  m_pNative;
     /** Holds the private NSAutoreleasePool instance. */
-    NativeNSAutoreleasePoolRef m_pPool;
+    NativeNSAutoreleasePoolRef          m_pPool;
 
     /** Map of notification callbacks registered for corresponding QObject(s). */
-    QMap<QObject*, QMap<QString, PfnNativeNotificationCallbackForQObject> > m_objectCallbacks;
+    QMap<QObject*, QMap<QString, PfnNativeNotificationCallbackForQObject> >  m_objectCallbacks;
     /** Map of notification callbacks registered for corresponding QWidget(s). */
-    QMap<QWidget*, QMap<QString, PfnNativeNotificationCallbackForQWidget> > m_widgetCallbacks;
+    QMap<QWidget*, QMap<QString, PfnNativeNotificationCallbackForQWidget> >  m_widgetCallbacks;
 
     /** Map of callbacks registered for standard window button(s) of corresponding QWidget(s). */
-    QMap<QWidget*, QMap<StandardWindowButtonType, PfnStandardWindowButtonCallbackForQWidget> > m_stdWindowButtonCallbacks;
+    QMap<QWidget*, QMap<StandardWindowButtonType, PfnStandardWindowButtonCallbackForQWidget> >  m_stdWindowButtonCallbacks;
 };
 
-#endif /* ___darwin_VBoxCocoaApplication_h */
+#endif /* !___VBoxCocoaApplication_h___ */
 
