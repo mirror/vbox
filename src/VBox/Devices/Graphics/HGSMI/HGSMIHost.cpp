@@ -1534,16 +1534,16 @@ int HGSMICreate(PHGSMIINSTANCE *ppIns,
     AssertPtrReturn(pu8MemBase, VERR_INVALID_PARAMETER);
 
     int rc;
-    PHGSMIINSTANCE pIns = (PHGSMIINSTANCE)RTMemAllocZ(sizeof (HGSMIINSTANCE) + cbContext);
+    PHGSMIINSTANCE pIns = (PHGSMIINSTANCE)RTMemAllocZ(sizeof(HGSMIINSTANCE) + cbContext);
     if (pIns)
     {
-        rc = HGSMIAreaInitialize (&pIns->area, pu8MemBase, cbMem, offBase);
+        rc = HGSMIAreaInitialize(&pIns->area, pu8MemBase, cbMem, offBase);
         if (RT_SUCCESS (rc))
-            rc = RTCritSectInit (&pIns->instanceCritSect);
+            rc = RTCritSectInit(&pIns->instanceCritSect);
         if (RT_SUCCESS (rc))
-            rc = RTCritSectInit (&pIns->hostHeapCritSect);
+            rc = RTCritSectInit(&pIns->hostHeapCritSect);
         if (RT_SUCCESS (rc))
-            rc = RTCritSectInit (&pIns->hostFIFOCritSect);
+            rc = RTCritSectInit(&pIns->hostFIFOCritSect);
         if (RT_SUCCESS (rc))
         {
             pIns->pVM            = pVM;
@@ -1574,7 +1574,7 @@ int HGSMICreate(PHGSMIINSTANCE *ppIns,
     return rc;
 }
 
-uint32_t HGSMIReset (PHGSMIINSTANCE pIns)
+uint32_t HGSMIReset(PHGSMIINSTANCE pIns)
 {
     uint32_t flags = 0;
     if (pIns->pHGFlags)
@@ -1591,7 +1591,7 @@ uint32_t HGSMIReset (PHGSMIINSTANCE pIns)
     {}
 
 #ifdef VBOX_WITH_WDDM
-    while(hgsmiProcessGuestCmdCompletion(pIns) != HGSMIOFFSET_VOID)
+    while (hgsmiProcessGuestCmdCompletion(pIns) != HGSMIOFFSET_VOID)
     {}
 #endif
 

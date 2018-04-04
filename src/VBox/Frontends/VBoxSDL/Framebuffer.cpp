@@ -620,9 +620,9 @@ STDMETHODIMP VBoxSDLFB::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
     return S_OK;
 }
 
-STDMETHODIMP VBoxSDLFB::ProcessVHWACommand(BYTE *pCommand)
+STDMETHODIMP VBoxSDLFB::ProcessVHWACommand(BYTE *pCommand, LONG enmCmd, BOOL fGuestCmd)
 {
-    RT_NOREF(pCommand);
+    RT_NOREF(pCommand, enmCmd, fGuestCmd);
     return E_NOTIMPL;
 }
 

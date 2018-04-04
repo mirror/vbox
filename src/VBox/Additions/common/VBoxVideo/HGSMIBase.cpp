@@ -164,8 +164,7 @@ DECLHIDDEN(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t u32I
     VBVACONF32 *p;
 
     /* Allocate the IO buffer. */
-    p = (VBVACONF32 *)VBoxHGSMIBufferAlloc(pCtx, sizeof(*p), HGSMI_CH_VBVA,
-                                           VBVA_QUERY_CONF32);
+    p = (VBVACONF32 *)VBoxHGSMIBufferAlloc(pCtx, sizeof(*p), HGSMI_CH_VBVA, VBVA_QUERY_CONF32);
     if (!p)
         return VERR_NO_MEMORY;
 

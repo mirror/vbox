@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox frontends: Framebuffer (FB, DirectFB):
- * Implementation of VBoxDirectFB class
+ * VBoxFB - implementation of VBoxDirectFB class.
  */
 
 /*
@@ -347,8 +346,9 @@ NS_IMETHODIMP VBoxDirectFB::SetVisibleRegion(PRUint8 *rectangles, PRUint32 count
     return NS_OK;
 }
 
-NS_IMETHODIMP VBoxDirectFB::ProcessVHWACommand(PRUint8 *command)
+NS_IMETHODIMP VBoxDirectFB::ProcessVHWACommand(PRUint8 *command, LONG enmCmd, BOOL fGuestCmd)
 {
+    RT_NOREF(command, enmCmd, fGuestCmd);
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 

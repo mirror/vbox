@@ -84,7 +84,7 @@ DECLHIDDEN(int)      VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                               uint32_t offVRAMHostArea,
                                               uint32_t cbHostArea);
 DECLHIDDEN(int)      VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                    uint32_t u32Index, uint32_t *pulValue);
+                                        uint32_t u32Index, uint32_t *pulValue);
 DECLHIDDEN(int)      VBoxQueryConfHGSMIDef(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                            uint32_t u32Index, uint32_t u32DefValue, uint32_t *pulValue);
 DECLHIDDEN(int)      VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,

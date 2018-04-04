@@ -3545,8 +3545,7 @@ int Display::i_handleVHWACommandProcess(int enmCmd, bool fGuestCmd, VBOXVHWACMD 
     if (pFramebuffer == NULL || !fVHWASupported)
         return VERR_NOT_IMPLEMENTED; /* Implementation is not available. */
 
-    RT_NOREF(enmCmd, fGuestCmd);
-    HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE *)pCommand);
+    HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE *)pCommand, enmCmd, fGuestCmd);
     if (hr == S_FALSE)
         return VINF_SUCCESS;
     if (SUCCEEDED(hr))

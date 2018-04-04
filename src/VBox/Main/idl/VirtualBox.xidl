@@ -17014,7 +17014,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IFramebuffer" extends="$unknown"
-    uuid="8b82295f-415f-1aa1-17fd-9fbbac8edf44"
+    uuid="1e8d3f27-b45c-48ae-8b36-d35e83d207aa"
     wsmap="managed"
     >
     <attribute name="width" type="unsigned long" readonly="yes">
@@ -17232,6 +17232,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <param name="command" type="octet" mod="ptr" dir="in">
         <desc>Pointer to VBOXVHWACMD containing the command to execute.</desc>
+      </param>
+      <param name="enmCmd" type="long" dir="in">
+        <desc>The validated VBOXVHWACMD::enmCmd value from the command.</desc>
+      </param>
+      <param name="fromGuest" type="boolean" dir="in">
+        <desc>Set when the command origins from the guest, clear if host.</desc>
       </param>
     </method>
 

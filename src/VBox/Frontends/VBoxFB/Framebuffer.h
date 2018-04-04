@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Framebuffer (FB, DirectFB):
- * Declaration of VBoxDirectFB class
+ * VBoxFB - Declaration of VBoxDirectFB class.
  */
 
 /*
@@ -50,7 +48,7 @@ public:
     NS_IMETHOD GetVisibleRegion(PRUint8 *aRectangles, PRUint32 aCount, PRUint32 *aCountCopied);
     NS_IMETHOD SetVisibleRegion(PRUint8 *aRectangles, PRUint32 aCount);
 
-    NS_IMETHOD ProcessVHWACommand(PRUint8 *pCommand);
+    NS_IMETHOD ProcessVHWACommand(PRUint8 *pCommand, LONG enmCmd, BOOL fGuestCmd);
 
     NS_IMETHOD Notify3DEvent(PRUint32 type, PRUint8 *reserved);
 private:
@@ -69,5 +67,5 @@ private:
 };
 
 
-#endif // __H_FRAMEBUFFER
+#endif // !__H_FRAMEBUFFER
 

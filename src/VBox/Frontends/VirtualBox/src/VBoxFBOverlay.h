@@ -1219,10 +1219,12 @@ typedef struct VBOXVHWAFUNCCALLBACKINFO
 class VBoxVHWACommandElement
 {
 public:
-    void setVHWACmd(struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
+    void setVHWACmd(struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd, int enmCmd, bool fGuestCmd)
     {
         mType = VBOXVHWA_PIPECMD_VHWA;
-        u.mpCmd = pCmd;
+        u.s.mpCmd = pCmd;
+        u.s.menmCmd = enmCmd;
+        u.s.mfGuestCmd = fGuestCmd;
     }
 
     void setPaintCmd(const QRect & aRect)
@@ -1237,28 +1239,31 @@ public:
         u.mFuncCallback = aOp;
     }
 
-    void setData(VBOXVHWA_PIPECMD_TYPE aType, void *pvData)
+    void setData(VBOXVHWA_PIPECMD_TYPE aType, void *pvData, int /*VBOXVHWACMD_TYPE*/ enmCmd, bool fGuestCmd = false)
     {
-        switch(aType)
+        switch (aType)
         {
         case VBOXVHWA_PIPECMD_PAINT:
-            setPaintCmd(*((QRect*)pvData));
+            setPaintCmd(*((QRect *)pvData));
             break;
         case VBOXVHWA_PIPECMD_VHWA:
-            setVHWACmd((struct VBOXVHWACMD *)pvData);
+            setVHWACmd((struct VBOXVHWACMD *)pvData, enmCmd, fGuestCmd);
             break;
         case VBOXVHWA_PIPECMD_FUNC:
             setFunc(*((VBOXVHWAFUNCCALLBACKINFO *)pvData));
             break;
         default:
-            Assert(0);
+            AssertFailed();
+            mType = (VBOXVHWA_PIPECMD_TYPE)0;
             break;
         }
     }
 
     VBOXVHWA_PIPECMD_TYPE type() const {return mType;}
     const QRect & rect() const {return mRect;}
-    struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *vhwaCmd() const {return u.mpCmd;}
+    struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *vhwaCmdPtr() const      { return u.s.mpCmd; }
+    int /*VBOXVHWACMD_TYPE*/                        vhwaCmdType() const     { return u.s.menmCmd; }
+    bool                                            vhwaIsGuestCmd() const  { return u.s.mfGuestCmd; }
     const VBOXVHWAFUNCCALLBACKINFO & func() const {return u.mFuncCallback; }
 
     RTLISTNODE ListNode;
@@ -1266,9 +1271,14 @@ private:
     VBOXVHWA_PIPECMD_TYPE mType;
     union
     {
-        struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *mpCmd;
+        struct
+        {
+            struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *mpCmd;
+            int /*VBOXVHWACMD_TYPE*/                        menmCmd;
+            bool                                            mfGuestCmd;
+        } s;
         VBOXVHWAFUNCCALLBACKINFO mFuncCallback;
-    }u;
+    } u;
     QRect                 mRect;
 };
 
@@ -1320,7 +1330,7 @@ public:
     VBoxVHWACommandElementProcessor();
     void init(QObject *pNotifyObject);
     ~VBoxVHWACommandElementProcessor();
-    void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void *pvData);
+    void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void *pvData, int /*VBOXVHWACMD_TYPE*/ enmCmdInt, bool fGuestCmd);
     VBoxVHWACommandElement *getCmd();
     void doneCmd();
     void reset(CDisplay *pDisplay);
@@ -1708,7 +1718,8 @@ public:
 
     void updateAttachment(QWidget *pViewport, QObject *pPostEventObject);
 
-    int onVHWACommand (struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand);
+    int onVHWACommand(struct VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand,
+                      int /*VBOXVHWACMD_TYPE*/ enmCmdInt, bool fGuestCmd);
 
     void onVHWACommandEvent (QEvent * pEvent);
 
@@ -1798,10 +1809,10 @@ private:
     void vboxSetGlOn (bool on);
     bool vboxGetGlOn() { return mGlOn; }
     bool vboxSynchGl();
-    void vboxDoVHWACmdExec(void RT_UNTRUSTED_VOLATILE_GUEST *cmd);
+    void vboxDoVHWACmdExec(void RT_UNTRUSTED_VOLATILE_GUEST *pvCmd, int /*VBOXVHWACMD_TYPE*/ enmCmdInt, bool fGuestCmd);
     void vboxShowOverlay (bool show);
     void vboxDoCheckUpdateViewport();
-    void vboxDoVHWACmd (void RT_UNTRUSTED_VOLATILE_GUEST *cmd);
+    void vboxDoVHWACmd(void RT_UNTRUSTED_VOLATILE_GUEST *pvCmd, int /*VBOXVHWACMD_TYPE*/ enmCmd, bool fGuestCmd);
     void addMainDirtyRect (const QRect & aRect);
     void vboxCheckUpdateOverlay (const QRect & rect);
     void processCmd (VBoxVHWACommandElement * pCmd);
