@@ -53,6 +53,7 @@ public:
 
 protected:
 
+    virtual void run() /* override */;
     virtual void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics) /* override */;
 
 private:
@@ -71,12 +72,29 @@ UIGuestDirectoryDiskUsageComputer::UIGuestDirectoryDiskUsageComputer(QObject *pa
 {
 }
 
+void UIGuestDirectoryDiskUsageComputer::run()
+{
+    /* Initialize COM: */
+    COMBase::InitializeCOM(false);
+    UIDirectoryDiskUsageComputer::run();
+    /* Cleanup COM: */
+    COMBase::CleanupCOM();
+}
+
 void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics)
 {
     if (m_comGuestSession.isNull())
         return;
-    if (!m_bContinueRunning)
+    /* Prevent modification of the continue flag while reading: */
+    m_mutex.lock();
+    /* Check if m_fOkToContinue is set to false. if so just end recursion: */
+    if (!isOkToContinue())
+    {
+        m_mutex.unlock();
         return;
+    }
+    m_mutex.unlock();
+
     CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(path, true);
 
     if (!m_comGuestSession.isOk())
@@ -460,7 +478,8 @@ void UIGuestFileTable::showProperties()
     UIGuestDirectoryDiskUsageComputer *directoryThread = 0;
 
     /** @todo I have decided to look into this afterwards when API is more mature, for
-        currently this stuff runs into an assert in Main: */
+        currently this stuff runs into an assert in Main. this may be because that I will have to init deinit
+        COM. see UIThreadWorker: */
     /* if the selection include a directory or it is a multiple selection the create a worker thread
        to compute total size of the selection (recusively) */
     // bool createWorkerThread = (selectedObjects.size() > 1);

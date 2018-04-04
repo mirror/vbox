@@ -57,6 +57,7 @@ enum FileObjectType
     FileObjectType_Max
 };
 
+/** A simple struck to store some statictics for a directory. Mainly used by  UIDirectoryDiskUsageComputer instances. */
 class UIDirectoryStatistics
 {
 public:
@@ -71,8 +72,8 @@ Q_DECLARE_METATYPE(UIDirectoryStatistics);
 
 
 /** Examines the paths in @p strStartPath and collects some staticstics from them recursively (in case directories)
-    Runs on a worker thread to avoid GUI freezes. UIGuestFileTable and UIHostFileTable uses specialized children
-    of this class since the call made on file objects are different */
+ *  Runs on a worker thread to avoid GUI freezes. UIGuestFileTable and UIHostFileTable uses specialized children
+ *  of this class since the calls made on file objects are different. */
 class UIDirectoryDiskUsageComputer : public QThread
 {
     Q_OBJECT;
@@ -84,18 +85,25 @@ signals:
 public:
 
     UIDirectoryDiskUsageComputer(QObject *parent, QStringList strStartPath);
+    /** Sets the m_fOkToContinue to false. This results an early termination
+      * of the  directoryStatisticsRecursive member function. */
     void stopRecursion();
 
 protected:
 
-    /** Read the directory with the path @p path recursively and collect #of objects and
-        total size */
+    /** Read the directory with the path @p path recursively and collect #of objects and  total size */
     virtual void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics) = 0;
-    void                  run();
+    virtual void           run() /* override */;
+    /** Returns the m_fOkToContinue flag */
+    bool                  isOkToContinue() const;
+    /** Stores a list of paths whose statistics are accumulated, can be file, directory etc: */
     QStringList           m_pathList;
     UIDirectoryStatistics m_resultStatistics;
-    bool                  m_bContinueRunning;
     QMutex                m_mutex;
+
+private:
+
+    bool     m_fOkToContinue;
 };
 
 
@@ -147,8 +155,8 @@ class UIFileTableItem
 public:
 
     /** @p data contains values to be shown in table view's colums. data[0] is assumed to be
-        the name of the file object which is the file name including extension or name of the
-        directory */
+     *  the name of the file object which is the file name including extension or name of the
+     *  directory */
     explicit UIFileTableItem(const QList<QVariant> &data,
                              UIFileTableItem *parentItem, FileObjectType type);
     ~UIFileTableItem();
@@ -213,9 +221,9 @@ private:
 
 
 /** This class serves a base class for file table. Currently a guest version
-    and a host version are derived from this base. Each of these children
-    populates the UIGuestControlFileModel by scanning the file system
-    differently. The file structre kept in this class as a tree. */
+ *  and a host version are derived from this base. Each of these children
+ *  populates the UIGuestControlFileModel by scanning the file system
+ *  differently. The file structre kept in this class as a tree. */
 class UIGuestControlFileTable : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -249,25 +257,24 @@ protected:
     void initializeFileTree();
     void insertItemsToTree(QMap<QString,UIFileTableItem*> &map, UIFileTableItem *parent,
                            bool isDirectoryMap, bool isStartDir);
-    virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) = 0;
-    virtual void deleteByItem(UIFileTableItem *item) = 0;
-    virtual void goToHomeDirectory() = 0;
-    virtual bool renameItem(UIFileTableItem *item, QString newBaseName) = 0;
-    virtual bool createDirectory(const QString &path, const QString &directoryName) = 0;
-    virtual QString fsObjectPropertyString() = 0;
-    virtual void  showProperties() = 0;
-    static QString fileTypeString(FileObjectType type);
+    virtual void     readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) = 0;
+    virtual void     deleteByItem(UIFileTableItem *item) = 0;
+    virtual void     goToHomeDirectory() = 0;
+    virtual bool     renameItem(UIFileTableItem *item, QString newBaseName) = 0;
+    virtual bool     createDirectory(const QString &path, const QString &directoryName) = 0;
+    virtual QString  fsObjectPropertyString() = 0;
+    virtual void     showProperties() = 0;
+    static QString   fileTypeString(FileObjectType type);
     void             goIntoDirectory(const QModelIndex &itemIndex);
-    /** Follow the path trail, open directories as we go and descend */
+    /** Follows the path trail, opens directories as it descends */
     void             goIntoDirectory(const QList<QString> &pathTrail);
-    /** Go into directory pointed by the @p item */
+    /** Goes into directory pointed by the @p item */
     void             goIntoDirectory(UIFileTableItem *item);
     UIFileTableItem* indexData(const QModelIndex &index) const;
-    void keyPressEvent(QKeyEvent * pEvent);
-    CGuestFsObjInfo guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
+    void             keyPressEvent(QKeyEvent * pEvent);
+    CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
 
     UIFileTableItem         *m_pRootItem;
-
     UIGuestControlFileView  *m_pView;
     UIGuestControlFileModel *m_pModel;
     QILabel                 *m_pLocationLabel;
@@ -301,7 +308,7 @@ private:
     void             prepareObjects();
     void             prepareActions();
     void             deleteByIndex(const QModelIndex &itemIndex);
-    /** Return the UIFileTableItem for path / which is a direct (and single) child of m_pRootItem */
+    /** Returns the UIFileTableItem for path / which is a direct (and single) child of m_pRootItem */
     UIFileTableItem *getStartDirectoryItem();
     /** Shows a modal dialog with a line edit for user to enter a new directory name and return the entered string*/
     QString         getNewDirectoryName();
@@ -320,10 +327,9 @@ private:
     /** The vector of action which need some selection to work on like cut, copy etc. */
     QVector<QAction*> m_selectionDependentActions;
     /** The absolue path list of the file objects which user has chosen to cut/copy. this
-        list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
+      * list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
     QStringList       m_copyCutBuffer;
     friend class UIGuestControlFileModel;
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
-

@@ -25,8 +25,8 @@
 /* GUI includes: */
 #include "UIGuestControlFileTable.h"
 
-/** This class scans the guest file system by using the VBox API
-    and populates the UIGuestControlFileModel*/
+/** This class scans the guest file system by using the VBox Guest Control API
+ *  and populates the UIGuestControlFileModel*/
 class UIGuestFileTable : public UIGuestControlFileTable
 {
     Q_OBJECT;
@@ -62,4 +62,3 @@ private:
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
-
