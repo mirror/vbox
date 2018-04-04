@@ -2824,3 +2824,4 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     /* Return result-code: */
     return iResultCode;
 }
+

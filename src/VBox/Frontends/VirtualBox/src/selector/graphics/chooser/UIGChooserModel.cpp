@@ -2239,3 +2239,4 @@ void UIGroupOrderSaveThread::run()
     /* COM cleanup: */
     COMBase::CleanupCOM();
 }
+

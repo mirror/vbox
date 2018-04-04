@@ -2771,3 +2771,4 @@ bool UISelectorWindow::isAtLeastOneItemRunning(const QList<UIVMItem*> &items)
             return true;
     return false;
 }
+

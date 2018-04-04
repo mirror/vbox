@@ -1674,3 +1674,4 @@ QString UIActionPoolSelector::shortcutsExtraDataID() const
 
 
 #include "UIActionPoolSelector.moc"
+

@@ -319,3 +319,4 @@ void UIToolsPaneMachine::cleanup()
         delete pWidget;
     }
 }
+

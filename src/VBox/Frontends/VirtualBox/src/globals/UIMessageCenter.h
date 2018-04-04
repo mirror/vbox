@@ -537,3 +537,4 @@ inline UIMessageCenter &msgCenter() { return *UIMessageCenter::instance(); }
 
 
 #endif /* !___UIMessageCenter_h___ */
+
