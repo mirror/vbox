@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- * Common GUI Library - Darwin Keyboard routines.
- *
- * @todo Move this up somewhere so that the two SDL GUIs can use parts of this code too (-HID stuff).
+ * VBox Qt GUI - Declarations of utility functions for handling Darwin Keyboard specific tasks.
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,50 +15,48 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
-/*********************************************************************************************************************************
-*   Header Files                                                                                                                 *
-*********************************************************************************************************************************/
+/* Defines: */
 #define LOG_GROUP LOG_GROUP_GUI
-
 #define VBOX_WITH_KBD_LEDS_SYNC
 //#define VBOX_WITHOUT_KBD_LEDS_SYNC_FILTERING
 
+/* GUI includes: */
 #include "DarwinKeyboard.h"
+#ifndef USE_HID_FOR_MODIFIERS
+# include "CocoaEventHelper.h"
+#endif
+
+/* Other VBox includes: */
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <iprt/time.h>
 #include <iprt/mem.h>
+#include <iprt/time.h>
 #include <VBox/log.h>
 #ifdef DEBUG_PRINTF
 # include <iprt/stream.h>
 #endif
-
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
 # include <iprt/err.h>
 # include <iprt/semaphore.h>
 # include <VBox/sup.h>
-# include <IOKit/IOMessage.h>
-# include <IOKit/usb/IOUSBLib.h>
-# include <IOKit/IOMessage.h>
 #endif
 
-#ifdef USE_HID_FOR_MODIFIERS
-# include <mach/mach.h>
-# include <mach/mach_error.h>
-# include <IOKit/hid/IOHIDUsageTables.h>
-# include <CoreFoundation/CoreFoundation.h>
-#endif
-
-#include <IOKit/IOKitLib.h>
-#include <IOKit/IOCFPlugIn.h>
-#include <IOKit/usb/USB.h>
-#include <IOKit/hid/IOHIDLib.h>
+/* External includes: */
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
-
-#ifndef USE_HID_FOR_MODIFIERS
-# include "CocoaEventHelper.h"
+#include <IOKit/IOCFPlugIn.h>
+#include <IOKit/IOKitLib.h>
+#include <IOKit/hid/IOHIDLib.h>
+#include <IOKit/usb/USB.h>
+#ifdef USE_HID_FOR_MODIFIERS
+# include <CoreFoundation/CoreFoundation.h>
+# include <IOKit/hid/IOHIDUsageTables.h>
+# include <mach/mach.h>
+# include <mach/mach_error.h>
+#endif
+#ifdef VBOX_WITH_KBD_LEDS_SYNC
+# include <IOKit/IOMessage.h>
+# include <IOKit/usb/IOUSBLib.h>
 #endif
 
 
@@ -80,10 +76,7 @@ extern CGError CGSSetGlobalHotKeyOperatingMode(CGSConnection Connection, CGSGlob
 RT_C_DECLS_END
 
 
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
+/* Defined Constants And Macros: */
 #define QZ_RMETA        0x36
 #define QZ_LMETA        0x37
 #define QZ_LSHIFT       0x38
@@ -93,41 +86,31 @@ RT_C_DECLS_END
 #define QZ_RSHIFT       0x3C
 #define QZ_RALT         0x3D
 #define QZ_RCTRL        0x3E
-/* Found the definition of the fn-key in:
- * http://stuff.mit.edu/afs/sipb/project/darwin/src/modules/IOHIDFamily/IOHIDSystem/IOHIKeyboardMapper.cpp &
- * http://stuff.mit.edu/afs/sipb/project/darwin/src/modules/AppleADBKeyboard/AppleADBKeyboard.cpp
- * Maybe we need this in the future.*/
+// Found the definition of the fn-key in:
+// http://stuff.mit.edu/afs/sipb/project/darwin/src/modules/IOHIDFamily/IOHIDSystem/IOHIKeyboardMapper.cpp &
+// http://stuff.mit.edu/afs/sipb/project/darwin/src/modules/AppleADBKeyboard/AppleADBKeyboard.cpp
+// Maybe we need this in the future.
 #define QZ_FN           0x3F
 #define QZ_NUMLOCK      0x47
-
-/** short hand for an extended key. */
+/** Short hand for an extended key. */
 #define K_EX            VBOXKEY_EXTENDED
-/** short hand for a modifier key. */
+/** Short hand for a modifier key. */
 #define K_MOD           VBOXKEY_MODIFIER
-/** short hand for a lock key. */
+/** Short hand for a lock key. */
 #define K_LOCK          VBOXKEY_LOCK
-
 #ifdef USE_HID_FOR_MODIFIERS
-
 /** An attempt at catching reference leaks. */
-#define MY_CHECK_CREFS(cRefs)   do { AssertMsg(cRefs < 25, ("%ld\n", cRefs)); NOREF(cRefs); } while (0)
-
+# define MY_CHECK_CREFS(cRefs)   do { AssertMsg(cRefs < 25, ("%ld\n", cRefs)); NOREF(cRefs); } while (0)
 #endif
 
 
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-/**
- * This is derived partially from SDL_QuartzKeys.h and partially from testing.
- *
- * (The funny thing about the virtual scan codes on the mac is that they aren't
- * offically documented, which is rather silly to say the least. Thus, the need
- * for looking at SDL and other odd places for docs.)
- */
+/** This is derived partially from SDL_QuartzKeys.h and partially from testing.
+  * (The funny thing about the virtual scan codes on the mac is that they aren't
+  * offically documented, which is rather silly to say the least. Thus, the need
+  * for looking at SDL and other odd places for docs.) */
 static const uint16_t g_aDarwinToSet1[] =
 {
- /*  set-1                           SDL_QuartzKeys.h    */
+    /* set-1                           SDL_QuartzKeys.h */
     0x1e,                       /* QZ_a            0x00 */
     0x1f,                       /* QZ_s            0x01 */
     0x20,                       /* QZ_d            0x02 */
@@ -262,18 +245,18 @@ static const uint16_t g_aDarwinToSet1[] =
 };
 
 
-/** Whether we've connected or not. */
+/** Holds whether we've connected or not. */
 static bool g_fConnectedToCGS = false;
-/** Cached connection. */
+/** Holds the cached connection. */
 static CGSConnection g_CGSConnection;
 
 
 #ifdef USE_HID_FOR_MODIFIERS
 
-/** The IO Master Port. */
+/** Holds the IO Master Port. */
 static mach_port_t g_MasterPort = NULL;
 
-/** Keyboards in the cache. */
+/** Holds the amount of keyboards in the cache. */
 static unsigned g_cKeyboards = 0;
 /** Array of cached keyboard data. */
 static struct KeyboardCacheData
@@ -283,7 +266,7 @@ static struct KeyboardCacheData
     /** The queue interface. */
     IOHIDQueueInterface   **ppHidQueueInterface;
 
-    /* cookie translation array. */
+    /** Cookie translation array. */
     struct KeyboardCacheCookie
     {
         /** The cookie. */
@@ -294,81 +277,87 @@ static struct KeyboardCacheData
     /** Number of cookies in the array. */
     unsigned                cCookies;
 }                   g_aKeyboards[128];
-/** The keyboard cache creation timestamp. */
+/** Holds the keyboard cache creation timestamp. */
 static uint64_t     g_u64KeyboardTS = 0;
 
-/** HID queue status. */
+/** Holds the HID queue status. */
 static bool         g_fHIDQueueEnabled;
-/** The current modifier mask. */
+/** Holds the current modifier mask. */
 static uint32_t     g_fHIDModifierMask;
-/** The old modifier mask. */
+/** Holds the old modifier mask. */
 static uint32_t     g_fOldHIDModifierMask;
 
 #endif /* USE_HID_FOR_MODIFIERS */
 
+
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
 
 #define VBOX_BOOL_TO_STR_STATE(x) (x) ? "ON" : "OFF"
-/* HID LEDs synchronization data: LED states. */
-typedef struct VBoxLedState_t {
-    bool fNumLockOn;                        /** A state of NUM LOCK */
-    bool fCapsLockOn;                       /** A state of CAPS LOCK */
-    bool fScrollLockOn;                     /** A state of SCROLL LOCK */
+/** HID LEDs synchronization data: LED states. */
+typedef struct VBoxLedState_t
+{
+    /** Holds the state of NUM LOCK. */
+    bool fNumLockOn;
+    /** Holds the  state of CAPS LOCK. */
+    bool fCapsLockOn;
+    /** Holds the  state of SCROLL LOCK. */
+    bool fScrollLockOn;
 } VBoxLedState_t;
 
-/* HID LEDs synchronization data: keyboard states. */
-typedef struct VBoxKbdState_t {
-    IOHIDDeviceRef    pDevice;              /** A reference to IOKit HID device */
-    VBoxLedState_t    LED;                  /** LED states */
-    void             *pParentContainer;     /** A pointer to a VBoxHidsState_t instance where VBoxKbdState_t instance is stored */
-    CFIndex           idxPosition;          /** Position in global storage (used to simplify CFArray navigation when removing detached device) */
-    uint64_t          cCapsLockTimeout;     /** KBD CAPS LOCK key hold timeout (some Apple keyboards only) */
-    uint32_t          idLocation;           /** HID Location ID: unique for an USB device registered in the system */
+/** HID LEDs synchronization data: keyboard states. */
+typedef struct VBoxKbdState_t
+{
+    /** Holds the reference to IOKit HID device. */
+    IOHIDDeviceRef    pDevice;
+    /** Holds the LED states. */
+    VBoxLedState_t    LED;
+    /** Holds the  pointer to a VBoxHidsState_t instance where VBoxKbdState_t instance is stored. */
+    void             *pParentContainer;
+    /** Holds the position in global storage (used to simplify CFArray navigation when removing detached device). */
+    CFIndex           idxPosition;
+    /** Holds the KBD CAPS LOCK key hold timeout (some Apple keyboards only). */
+    uint64_t          cCapsLockTimeout;
+    /** Holds the HID Location ID: unique for an USB device registered in the system. */
+    uint32_t          idLocation;
 } VBoxKbdState_t;
 
-/* A struct that used to pass input event info from IOKit callback to a Carbon one */
-typedef struct VBoxKbdEvent_t {
+/** A struct that used to pass input event info from IOKit callback to a Carbon one */
+typedef struct VBoxKbdEvent_t
+{
     VBoxKbdState_t *pKbd;
     uint32_t        iKeyCode;
     uint64_t        tsKeyDown;
 } VBoxKbdEvent_t;
 
-/* HID LEDs synchronization data: IOKit specific data. */
-typedef struct VBoxHidsState_t {
-    IOHIDManagerRef     hidManagerRef;      /** IOKit HID manager reference */
-    CFMutableArrayRef   pDeviceCollection;  /** This array consists of VBoxKbdState_t elements */
-    VBoxLedState_t      guestState;         /** LED states that were stored during last broadcast and reflect a guest LED states */
+/** HID LEDs synchronization data: IOKit specific data. */
+typedef struct VBoxHidsState_t
+{
+    /** Holds the IOKit HID manager reference. */
+    IOHIDManagerRef     hidManagerRef;
+    /** Holds the array which consists of VBoxKbdState_t elements. */
+    CFMutableArrayRef   pDeviceCollection;
+    /** Holds the LED states that were stored during last broadcast and reflect a guest LED states. */
+    VBoxLedState_t      guestState;
 
-    CFMutableArrayRef   pFifoEventQueue;    /** This queue will be appended in IOKit input callback. Carbon input callback will extract data from it */
-    RTSEMMUTEX          fifoEventQueueLock; /** Lock for pFifoEventQueue */
+    /** Holds the queue which will be appended in IOKit input callback. Carbon input callback will extract data from it. */
+    CFMutableArrayRef   pFifoEventQueue;
+    /** Holds the lock for pFifoEventQueue. */
+    RTSEMMUTEX          fifoEventQueueLock;
 
-    io_iterator_t         pUsbHidDeviceMatchNotify;     /** IOService notification reference: USB HID device matching */
-    io_iterator_t         pUsbHidGeneralInterestNotify; /** IOService notification reference: USB HID general interest
-                                                            notifications (IOService messages) */
-    IONotificationPortRef pNotificationPrortRef;        /** IOService notification port reference: used for both notification
-                                                            types - device match and device general interest message */
+    /** Holds the IOService notification reference: USB HID device matching. */
+    io_iterator_t         pUsbHidDeviceMatchNotify;
+    /** Holds the IOService notification reference: USB HID general interest notifications (IOService messages). */
+    io_iterator_t         pUsbHidGeneralInterestNotify;
+    /** Holds the IOService notification port reference: device match and device general interest message. */
+    IONotificationPortRef pNotificationPrortRef;
 
-    /* Carbon events data */
     CFMachPortRef       pTapRef;
     CFRunLoopSourceRef  pLoopSourceRef;
 } VBoxHidsState_t;
-#endif /* !VBOX_WITH_KBD_LEDS_SYNC */
+
+#endif /* VBOX_WITH_KBD_LEDS_SYNC */
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-#ifdef USE_HID_FOR_MODIFIERS
-static void darwinBruteForcePropertySearch(CFDictionaryRef DictRef, struct KeyboardCacheData *pKeyboardEntry);
-#endif
-
-
-/**
- * Converts a darwin (virtual) key code to a set 1 scan code.
- *
- * @returns set 1 scan code.
- * @param   uKeyCode        The darwin key code.
- */
 unsigned DarwinKeycodeToSet1Scancode(unsigned uKeyCode)
 {
     if (uKeyCode >= RT_ELEMENTS(g_aDarwinToSet1))
@@ -376,697 +365,29 @@ unsigned DarwinKeycodeToSet1Scancode(unsigned uKeyCode)
     return g_aDarwinToSet1[uKeyCode];
 }
 
-
-/**
- * Converts a single modifier to a set 1 scan code.
- *
- * @returns Set 1 scan code.
- * @returns ~0U if more than one modifier is set.
- * @param   fModifiers      The darwin modifier mask.
- */
-unsigned DarwinModifierMaskToSet1Scancode(UInt32 fModifiers)
-{
-    unsigned uScanCode = DarwinModifierMaskToDarwinKeycode(fModifiers);
-    if (uScanCode < RT_ELEMENTS(g_aDarwinToSet1))
-        uScanCode = g_aDarwinToSet1[uScanCode];
-    else
-        Assert(uScanCode == ~0U);
-    return uScanCode;
-}
-
-
-/**
- * Converts a single modifier to a darwin keycode.
- *
- * @returns Darwin keycode.
- * @returns 0 if none of the support masks were set.
- * @returns ~0U if more than one modifier is set.
- * @param   fModifiers      The darwin modifier mask.
- */
-unsigned DarwinModifierMaskToDarwinKeycode(UInt32 fModifiers)
-{
-    unsigned uKeyCode;
-
-    /** @todo find symbols for these keycodes... */
-    fModifiers &= shiftKey | rightShiftKey | controlKey | rightControlKey | optionKey | rightOptionKey | cmdKey
-                | kEventKeyModifierRightCmdKeyMask | kEventKeyModifierNumLockMask | alphaLock | kEventKeyModifierFnMask;
-    if (fModifiers == shiftKey)
-        uKeyCode = QZ_LSHIFT;
-    else if (fModifiers == rightShiftKey)
-        uKeyCode = QZ_RSHIFT;
-    else if (fModifiers == controlKey)
-        uKeyCode = QZ_LCTRL;
-    else if (fModifiers == rightControlKey)
-        uKeyCode = QZ_RCTRL;
-    else if (fModifiers == optionKey)
-        uKeyCode = QZ_LALT;
-    else if (fModifiers == rightOptionKey)
-        uKeyCode = QZ_RALT;
-    else if (fModifiers == cmdKey)
-        uKeyCode = QZ_LMETA;
-    else if (fModifiers == kEventKeyModifierRightCmdKeyMask /* hack */)
-        uKeyCode = QZ_RMETA;
-    else if (fModifiers == alphaLock)
-        uKeyCode = QZ_CAPSLOCK;
-    else if (fModifiers == kEventKeyModifierNumLockMask)
-        uKeyCode = QZ_NUMLOCK;
-    else if (fModifiers == kEventKeyModifierFnMask)
-        uKeyCode = QZ_FN;
-    else if (fModifiers == 0)
-        uKeyCode = 0;
-    else
-        uKeyCode = ~0U; /* multiple */
-    return uKeyCode;
-}
-
-
-/**
- * Converts a darwin keycode to a modifier mask.
- *
- * @returns Darwin modifier mask.
- * @returns 0 if the keycode isn't a modifier we know.
- * @param   uKeyCode        The darwin
- */
-UInt32 DarwinKeyCodeToDarwinModifierMask(unsigned uKeyCode)
-{
-    UInt32 fModifiers;
-
-    /** @todo find symbols for these keycodes... */
-    if (uKeyCode == QZ_LSHIFT)
-        fModifiers = shiftKey;
-    else if (uKeyCode == QZ_RSHIFT)
-        fModifiers = rightShiftKey;
-    else if (uKeyCode == QZ_LCTRL)
-        fModifiers = controlKey;
-    else if (uKeyCode == QZ_RCTRL)
-        fModifiers = rightControlKey;
-    else if (uKeyCode == QZ_LALT)
-        fModifiers = optionKey;
-    else if (uKeyCode == QZ_RALT)
-        fModifiers = rightOptionKey;
-    else if (uKeyCode == QZ_LMETA)
-        fModifiers = cmdKey;
-    else if (uKeyCode == QZ_RMETA)
-        fModifiers = kEventKeyModifierRightCmdKeyMask; /* hack */
-    else if (uKeyCode == QZ_CAPSLOCK)
-        fModifiers = alphaLock;
-    else if (uKeyCode == QZ_NUMLOCK)
-        fModifiers = kEventKeyModifierNumLockMask;
-    else if (uKeyCode == QZ_FN)
-        fModifiers = kEventKeyModifierFnMask;
-    else
-        fModifiers = 0;
-    return fModifiers;
-}
-
-
-/**
- * Disables or enabled global hot keys.
- *
- * @param   fDisable    Pass 'true' to disable the hot keys, pass 'false' to re-enable them.
- */
-void DarwinDisableGlobalHotKeys(bool fDisable)
-{
-    static unsigned s_cComplaints = 0;
-
-    /*
-     * Lazy connect to the core graphics service.
-     */
-    if (!g_fConnectedToCGS)
-    {
-        g_CGSConnection = _CGSDefaultConnection();
-        g_fConnectedToCGS = true;
-    }
-
-    /*
-     * Get the current mode.
-     */
-    CGSGlobalHotKeyOperatingMode enmMode = kCGSGlobalHotKeyInvalid;
-    CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmMode);
-    if (    enmMode != kCGSGlobalHotKeyEnable
-        &&  enmMode != kCGSGlobalHotKeyDisable
-        &&  enmMode != kCGSGlobalHotKeyDisableExceptUniversalAccess)
-    {
-        AssertMsgFailed(("%d\n", enmMode));
-        if (s_cComplaints++ < 32)
-            LogRel(("DarwinDisableGlobalHotKeys: Unexpected enmMode=%d\n", enmMode));
-        return;
-    }
-
-    /*
-     * Calc the new mode.
-     */
-    if (fDisable)
-    {
-        if (enmMode != kCGSGlobalHotKeyEnable)
-            return;
-        enmMode = kCGSGlobalHotKeyDisableExceptUniversalAccess;
-    }
-    else
-    {
-        if (enmMode != kCGSGlobalHotKeyDisableExceptUniversalAccess)
-            return;
-        enmMode = kCGSGlobalHotKeyEnable;
-    }
-
-    /*
-     * Try set it and check the actual result.
-     */
-    CGSSetGlobalHotKeyOperatingMode(g_CGSConnection, enmMode);
-    CGSGlobalHotKeyOperatingMode enmNewMode = kCGSGlobalHotKeyInvalid;
-    CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmNewMode);
-    if (enmNewMode != enmMode)
-    {
-        /* If the screensaver kicks in we should ignore failure here. */
-        AssertMsg(enmMode == kCGSGlobalHotKeyEnable, ("enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
-        if (s_cComplaints++ < 32)
-            LogRel(("DarwinDisableGlobalHotKeys: Failed to change mode; enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
-    }
-}
-
-#ifdef USE_HID_FOR_MODIFIERS
-
-/**
- * Callback function for consuming queued events.
- *
- * @param   pvTarget    queue?
- * @param   rcIn        ?
- * @param   pvRefcon    Pointer to the keyboard cache entry.
- * @param   pvSender    ?
- */
-static void darwinQueueCallback(void *pvTarget, IOReturn rcIn, void *pvRefcon, void *pvSender)
-{
-    struct KeyboardCacheData *pKeyboardEntry = (struct KeyboardCacheData *)pvRefcon;
-    if (!pKeyboardEntry->ppHidQueueInterface)
-        return;
-    NOREF(pvTarget);
-    NOREF(rcIn);
-    NOREF(pvSender);
-
-    /*
-     * Consume the events.
-     */
-    g_fOldHIDModifierMask = g_fHIDModifierMask;
-    for (;;)
-    {
-#ifdef DEBUG_PRINTF
-        RTPrintf("dbg-ev: "); RTStrmFlush(g_pStdOut);
-#endif
-        IOHIDEventStruct Event;
-        AbsoluteTime ZeroTime = {0,0};
-        IOReturn rc = (*pKeyboardEntry->ppHidQueueInterface)->getNextEvent(pKeyboardEntry->ppHidQueueInterface,
-                                                                           &Event, ZeroTime, 0);
-        if (rc != kIOReturnSuccess)
-            break;
-
-        /* Translate the cookie value to a modifier mask. */
-        uint32_t fMask = 0;
-        unsigned i = pKeyboardEntry->cCookies;
-        while (i-- > 0)
-        {
-            if (pKeyboardEntry->aCookies[i].Cookie == Event.elementCookie)
-            {
-                fMask = pKeyboardEntry->aCookies[i].fMask;
-                break;
-            }
-        }
-
-        /*
-         * Adjust the modifier mask.
-         *
-         * Note that we don't bother to deal with anyone pressing the same modifier
-         * on 2 or more keyboard. That's not worth the effort involved.
-         */
-        if (Event.value)
-            g_fHIDModifierMask |= fMask;
-        else
-            g_fHIDModifierMask &= ~fMask;
-#ifdef DEBUG_PRINTF
-        RTPrintf("t=%d c=%#x v=%#x cblv=%d lv=%p m=%#X\n", Event.type, Event.elementCookie, Event.value, Event.longValueSize, Event.value, fMask); RTStrmFlush(g_pStdOut);
-#endif
-    }
-#ifdef DEBUG_PRINTF
-    RTPrintf("dbg-ev: done\n"); RTStrmFlush(g_pStdOut);
-#endif
-}
-
-
-
-/**
- * Element enumeration callback.
- */
-static void darwinBruteForcePropertySearchApplier(const void *pvValue, void *pvCacheEntry)
-{
-    if (CFGetTypeID(pvValue) == CFDictionaryGetTypeID())
-        darwinBruteForcePropertySearch((CFMutableDictionaryRef)pvValue, (struct KeyboardCacheData *)pvCacheEntry);
-}
-
-
-/**
- * Recurses thru the keyboard properties looking for certain keys.
- *
- * @remark  Yes, this can probably be done in a more efficient way. If you
- *          know how to do this, don't hesitate to let us know!
- */
-static void darwinBruteForcePropertySearch(CFDictionaryRef DictRef, struct KeyboardCacheData *pKeyboardEntry)
-{
-    CFTypeRef ObjRef;
-
-    /*
-     * Check for the usage page and usage key we want.
-     */
-    long lUsage;
-    ObjRef = CFDictionaryGetValue(DictRef, CFSTR(kIOHIDElementUsageKey));
-    if (    ObjRef
-        &&  CFGetTypeID(ObjRef) == CFNumberGetTypeID()
-        &&  CFNumberGetValue((CFNumberRef)ObjRef, kCFNumberLongType, &lUsage))
-    {
-        switch (lUsage)
-        {
-            case kHIDUsage_KeyboardLeftControl:
-            case kHIDUsage_KeyboardLeftShift:
-            case kHIDUsage_KeyboardLeftAlt:
-            case kHIDUsage_KeyboardLeftGUI:
-            case kHIDUsage_KeyboardRightControl:
-            case kHIDUsage_KeyboardRightShift:
-            case kHIDUsage_KeyboardRightAlt:
-            case kHIDUsage_KeyboardRightGUI:
-            {
-                long lPage;
-                ObjRef = CFDictionaryGetValue(DictRef, CFSTR(kIOHIDElementUsagePageKey));
-                if (    !ObjRef
-                    ||  CFGetTypeID(ObjRef) != CFNumberGetTypeID()
-                    ||  !CFNumberGetValue((CFNumberRef)ObjRef, kCFNumberLongType, &lPage)
-                    ||  lPage != kHIDPage_KeyboardOrKeypad)
-                    break;
-
-                if (pKeyboardEntry->cCookies >= RT_ELEMENTS(pKeyboardEntry->aCookies))
-                {
-                    AssertMsgFailed(("too many cookies!\n"));
-                    break;
-                }
-
-                /*
-                 * Get the cookie and modifier mask.
-                 */
-                long lCookie;
-                ObjRef = CFDictionaryGetValue(DictRef, CFSTR(kIOHIDElementCookieKey));
-                if (    !ObjRef
-                    ||  CFGetTypeID(ObjRef) != CFNumberGetTypeID()
-                    ||  !CFNumberGetValue((CFNumberRef)ObjRef, kCFNumberLongType, &lCookie))
-                    break;
-
-                uint32_t fMask;
-                switch (lUsage)
-                {
-                    case kHIDUsage_KeyboardLeftControl : fMask = controlKey; break;
-                    case kHIDUsage_KeyboardLeftShift   : fMask = shiftKey; break;
-                    case kHIDUsage_KeyboardLeftAlt     : fMask = optionKey; break;
-                    case kHIDUsage_KeyboardLeftGUI     : fMask = cmdKey; break;
-                    case kHIDUsage_KeyboardRightControl: fMask = rightControlKey; break;
-                    case kHIDUsage_KeyboardRightShift  : fMask = rightShiftKey; break;
-                    case kHIDUsage_KeyboardRightAlt    : fMask = rightOptionKey; break;
-                    case kHIDUsage_KeyboardRightGUI    : fMask = kEventKeyModifierRightCmdKeyMask; break;
-                    default: AssertMsgFailed(("%ld\n",lUsage)); fMask = 0; break;
-                }
-
-                /*
-                 * If we've got a queue, add the cookie to the queue.
-                 */
-                if (pKeyboardEntry->ppHidQueueInterface)
-                {
-                    IOReturn rc = (*pKeyboardEntry->ppHidQueueInterface)->addElement(pKeyboardEntry->ppHidQueueInterface, (IOHIDElementCookie)lCookie, 0);
-                    AssertMsg(rc == kIOReturnSuccess, ("rc=%d\n", rc));
-#ifdef DEBUG_PRINTF
-                    RTPrintf("dbg-add: u=%#lx c=%#lx\n", lUsage, lCookie);
-#endif
-                }
-
-                /*
-                 * Add the cookie to the keyboard entry.
-                 */
-                pKeyboardEntry->aCookies[pKeyboardEntry->cCookies].Cookie = (IOHIDElementCookie)lCookie;
-                pKeyboardEntry->aCookies[pKeyboardEntry->cCookies].fMask = fMask;
-                ++pKeyboardEntry->cCookies;
-                break;
-            }
-        }
-    }
-
-
-    /*
-     * Get the elements key and recursively iterate the elements looking
-     * for they key cookies.
-     */
-    ObjRef = CFDictionaryGetValue(DictRef, CFSTR(kIOHIDElementKey));
-    if (    ObjRef
-        &&  CFGetTypeID(ObjRef) == CFArrayGetTypeID())
-    {
-        CFArrayRef ArrayObjRef = (CFArrayRef)ObjRef;
-        CFRange Range = {0, CFArrayGetCount(ArrayObjRef)};
-        CFArrayApplyFunction(ArrayObjRef, Range, darwinBruteForcePropertySearchApplier, pKeyboardEntry);
-    }
-}
-
-
-/**
- * Creates a keyboard cache entry.
- *
- * @returns true if the entry was created successfully, otherwise false.
- * @param   pKeyboardEntry      Pointer to the entry.
- * @param   KeyboardDevice      The keyboard device to create the entry for.
- *
- */
-static bool darwinHIDKeyboardCacheCreateEntry(struct KeyboardCacheData *pKeyboardEntry, io_object_t KeyboardDevice)
-{
-    unsigned long cRefs = 0;
-    memset(pKeyboardEntry, 0, sizeof(*pKeyboardEntry));
-
-    /*
-     * Query the HIDDeviceInterface for this HID (keyboard) object.
-     */
-    SInt32 Score = 0;
-    IOCFPlugInInterface **ppPlugInInterface = NULL;
-    IOReturn rc = IOCreatePlugInInterfaceForService(KeyboardDevice, kIOHIDDeviceUserClientTypeID,
-                                                    kIOCFPlugInInterfaceID, &ppPlugInInterface, &Score);
-    if (rc == kIOReturnSuccess)
-    {
-        IOHIDDeviceInterface **ppHidDeviceInterface = NULL;
-        HRESULT hrc = (*ppPlugInInterface)->QueryInterface(ppPlugInInterface,
-                                                           CFUUIDGetUUIDBytes(kIOHIDDeviceInterfaceID),
-                                                           (LPVOID *)&ppHidDeviceInterface);
-        cRefs = (*ppPlugInInterface)->Release(ppPlugInInterface); MY_CHECK_CREFS(cRefs);
-        ppPlugInInterface = NULL;
-        if (hrc == S_OK)
-        {
-            rc = (*ppHidDeviceInterface)->open(ppHidDeviceInterface, 0);
-            if (rc == kIOReturnSuccess)
-            {
-                /*
-                 * create a removal callback.
-                 */
-                /** @todo */
-
-
-                /*
-                 * Create the queue so we can insert elements while searching the properties.
-                 */
-                IOHIDQueueInterface   **ppHidQueueInterface = (*ppHidDeviceInterface)->allocQueue(ppHidDeviceInterface);
-                if (ppHidQueueInterface)
-                {
-                    rc = (*ppHidQueueInterface)->create(ppHidQueueInterface, 0, 32);
-                    if (rc != kIOReturnSuccess)
-                    {
-                        AssertMsgFailed(("rc=%d\n", rc));
-                        cRefs = (*ppHidQueueInterface)->Release(ppHidQueueInterface); MY_CHECK_CREFS(cRefs);
-                        ppHidQueueInterface = NULL;
-                    }
-                }
-                else
-                    AssertFailed();
-                pKeyboardEntry->ppHidQueueInterface = ppHidQueueInterface;
-
-                /*
-                 * Brute force getting of attributes.
-                 */
-                /** @todo read up on how to do this in a less resource intensive way! Suggestions are welcome! */
-                CFMutableDictionaryRef PropertiesRef = 0;
-                kern_return_t krc = IORegistryEntryCreateCFProperties(KeyboardDevice, &PropertiesRef, kCFAllocatorDefault, kNilOptions);
-                if (krc == KERN_SUCCESS)
-                {
-                    darwinBruteForcePropertySearch(PropertiesRef, pKeyboardEntry);
-                    CFRelease(PropertiesRef);
-                }
-                else
-                    AssertMsgFailed(("krc=%#x\n", krc));
-
-                if (ppHidQueueInterface)
-                {
-                    /*
-                     * Now install our queue callback.
-                     */
-                    CFRunLoopSourceRef RunLoopSrcRef = NULL;
-                    rc = (*ppHidQueueInterface)->createAsyncEventSource(ppHidQueueInterface, &RunLoopSrcRef);
-                    if (rc == kIOReturnSuccess)
-                    {
-                        CFRunLoopRef RunLoopRef = (CFRunLoopRef)GetCFRunLoopFromEventLoop(GetMainEventLoop());
-                        CFRunLoopAddSource(RunLoopRef, RunLoopSrcRef, kCFRunLoopDefaultMode);
-                    }
-
-                    /*
-                     * Now install our queue callback.
-                     */
-                    rc = (*ppHidQueueInterface)->setEventCallout(ppHidQueueInterface, darwinQueueCallback, ppHidQueueInterface, pKeyboardEntry);
-                    if (rc != kIOReturnSuccess)
-                        AssertMsgFailed(("rc=%d\n", rc));
-                }
-
-                /*
-                 * Complete the new keyboard cache entry.
-                 */
-                pKeyboardEntry->ppHidDeviceInterface = ppHidDeviceInterface;
-                pKeyboardEntry->ppHidQueueInterface = ppHidQueueInterface;
-                return true;
-            }
-
-            AssertMsgFailed(("rc=%d\n", rc));
-            cRefs = (*ppHidDeviceInterface)->Release(ppHidDeviceInterface); MY_CHECK_CREFS(cRefs);
-        }
-        else
-            AssertMsgFailed(("hrc=%#x\n", hrc));
-    }
-    else
-        AssertMsgFailed(("rc=%d\n", rc));
-
-    return false;
-}
-
-
-/**
- * Destroys a keyboard cache entry.
- *
- * @param   pKeyboardEntry      The entry.
- */
-static void darwinHIDKeyboardCacheDestroyEntry(struct KeyboardCacheData *pKeyboardEntry)
-{
-    unsigned long cRefs;
-
-    /*
-     * Destroy the queue
-     */
-    if (pKeyboardEntry->ppHidQueueInterface)
-    {
-        IOHIDQueueInterface **ppHidQueueInterface = pKeyboardEntry->ppHidQueueInterface;
-        pKeyboardEntry->ppHidQueueInterface = NULL;
-
-        /* stop it just in case we haven't done so. doesn't really matter I think. */
-        (*ppHidQueueInterface)->stop(ppHidQueueInterface);
-
-        /* deal with the run loop source. */
-        CFRunLoopSourceRef RunLoopSrcRef = (*ppHidQueueInterface)->getAsyncEventSource(ppHidQueueInterface);
-        if (RunLoopSrcRef)
-        {
-            CFRunLoopRef RunLoopRef = (CFRunLoopRef)GetCFRunLoopFromEventLoop(GetMainEventLoop());
-            CFRunLoopRemoveSource(RunLoopRef, RunLoopSrcRef, kCFRunLoopDefaultMode);
-
-            CFRelease(RunLoopSrcRef);
-        }
-
-        /* dispose of and release the queue. */
-        (*ppHidQueueInterface)->dispose(ppHidQueueInterface);
-        cRefs = (*ppHidQueueInterface)->Release(ppHidQueueInterface); MY_CHECK_CREFS(cRefs);
-    }
-
-    /*
-     * Release the removal hook?
-     */
-    /** @todo */
-
-    /*
-     * Close and release the device interface.
-     */
-    if (pKeyboardEntry->ppHidDeviceInterface)
-    {
-        IOHIDDeviceInterface **ppHidDeviceInterface = pKeyboardEntry->ppHidDeviceInterface;
-        pKeyboardEntry->ppHidDeviceInterface = NULL;
-
-        (*ppHidDeviceInterface)->close(ppHidDeviceInterface);
-        cRefs = (*ppHidDeviceInterface)->Release(ppHidDeviceInterface); MY_CHECK_CREFS(cRefs);
-    }
-}
-
-
-/**
- * Zap the keyboard cache.
- */
-static void darwinHIDKeyboardCacheZap(void)
-{
-    /*
-     * Release the old cache data first.
-     */
-    while (g_cKeyboards > 0)
-    {
-        unsigned i = --g_cKeyboards;
-        darwinHIDKeyboardCacheDestroyEntry(&g_aKeyboards[i]);
-    }
-}
-
-
-/**
- * Updates the cached keyboard data.
- *
- * @todo The current implementation is very brute force...
- *       Rewrite it so that it doesn't flush the cache completely but simply checks whether
- *       anything has changed in the HID config. With any luck, there might even be a callback
- *       or something we can poll for HID config changes...
- *       setRemovalCallback() is a start...
- */
-static void darwinHIDKeyboardCacheDoUpdate(void)
-{
-    g_u64KeyboardTS = RTTimeMilliTS();
-
-    /*
-     * Dispense with the old cache data.
-     */
-    darwinHIDKeyboardCacheZap();
-
-    /*
-     * Open the master port on the first invocation.
-     */
-    if (!g_MasterPort)
-    {
-        kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort);
-        AssertReturnVoid(krc == KERN_SUCCESS);
-    }
-
-    /*
-     * Create a matching dictionary for searching for keyboards devices.
-     */
-    static const UInt32 s_Page = kHIDPage_GenericDesktop;
-    static const UInt32 s_Usage = kHIDUsage_GD_Keyboard;
-    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOHIDDeviceKey);
-    AssertReturnVoid(RefMatchingDict);
-    CFDictionarySetValue(RefMatchingDict, CFSTR(kIOHIDPrimaryUsagePageKey),
-                         CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &s_Page));
-    CFDictionarySetValue(RefMatchingDict, CFSTR(kIOHIDPrimaryUsageKey),
-                         CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &s_Usage));
-
-    /*
-     * Perform the search and get a collection of keyboard devices.
-     */
-    io_iterator_t Keyboards = NULL;
-    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &Keyboards);
-    AssertMsgReturnVoid(rc == kIOReturnSuccess, ("rc=%d\n", rc));
-    RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
-
-    /*
-     * Enumerate the keyboards and query the cache data.
-     */
-    unsigned i = 0;
-    io_object_t KeyboardDevice;
-    while (   i < RT_ELEMENTS(g_aKeyboards)
-           && (KeyboardDevice = IOIteratorNext(Keyboards)) != 0)
-    {
-        if (darwinHIDKeyboardCacheCreateEntry(&g_aKeyboards[i], KeyboardDevice))
-            i++;
-        IOObjectRelease(KeyboardDevice);
-    }
-    g_cKeyboards = i;
-
-    IOObjectRelease(Keyboards);
-}
-
-
-/**
- * Updates the keyboard cache if it's time to do it again.
- */
-static void darwinHIDKeyboardCacheUpdate(void)
-{
-    if (    !g_cKeyboards
-        /*||  g_u64KeyboardTS - RTTimeMilliTS() > 7500*/ /* 7.5sec */)
-        darwinHIDKeyboardCacheDoUpdate();
-}
-
-
-/**
- * Queries the modifier keys from the (IOKit) HID Manager.
- *
- * @returns Carbon modifier mask with right/left set correctly.
- */
-static UInt32 darwinQueryHIDModifiers(void)
-{
-    /*
-     * Iterate thru the keyboards collecting their modifier masks.
-     */
-    UInt32 fHIDModifiers = 0;
-    unsigned i = g_cKeyboards;
-    while (i-- > 0)
-    {
-        IOHIDDeviceInterface **ppHidDeviceInterface = g_aKeyboards[i].ppHidDeviceInterface;
-        if (!ppHidDeviceInterface)
-            continue;
-
-        unsigned j = g_aKeyboards[i].cCookies;
-        while (j-- > 0)
-        {
-            IOHIDEventStruct HidEvent;
-            IOReturn rc = (*ppHidDeviceInterface)->getElementValue(ppHidDeviceInterface,
-                                                                   g_aKeyboards[i].aCookies[j].Cookie,
-                                                                   &HidEvent);
-            if (rc == kIOReturnSuccess)
-            {
-                if (HidEvent.value)
-                    fHIDModifiers |= g_aKeyboards[i].aCookies[j].fMask;
-            }
-            else
-                AssertMsgFailed(("rc=%#x\n", rc));
-        }
-    }
-
-    return fHIDModifiers;
-}
-
-#endif /* USE_HID_FOR_MODIFIERS */
-
-/**
- * Left / right adjust the modifier mask using the current
- * keyboard state.
- *
- * @returns left/right adjusted fModifiers.
- * @param   fModifiers      The mask to adjust.
- * @param   pvCocoaEvent    The associated Cocoa keyboard event. This is NULL
- *                          when using HID for modifier corrections.
- *
- */
 UInt32 DarwinAdjustModifierMask(UInt32 fModifiers, const void *pvCocoaEvent)
 {
-    /*
-     * Check if there is anything to adjust and perform the adjustment.
-     */
+    /* Check if there is anything to adjust and perform the adjustment. */
     if (fModifiers & (shiftKey | rightShiftKey | controlKey | rightControlKey | optionKey | rightOptionKey | cmdKey | kEventKeyModifierRightCmdKeyMask))
     {
 #ifndef USE_HID_FOR_MODIFIERS
-        /*
-         * Convert the Cocoa modifiers to Carbon ones (the Cocoa modifier
-         * definitions are tucked away in Objective-C headers, unfortunately).
-         *
-         * Update: CGEventTypes.h includes what looks like the Cocoa modifiers
-         *         and the NX_* defines should be available as well. We should look
-         *         into ways to intercept the CG (core graphics) events in the Carbon
-         *         based setup and get rid of all this HID mess.
-         */
+        // WORKAROUND:
+        // Convert the Cocoa modifiers to Carbon ones (the Cocoa modifier
+        // definitions are tucked away in Objective-C headers, unfortunately).
+        //
+        // Update: CGEventTypes.h includes what looks like the Cocoa modifiers
+        //         and the NX_* defines should be available as well. We should look
+        //         into ways to intercept the CG (core graphics) events in the Carbon
+        //         based setup and get rid of all this HID mess. */
         AssertPtr(pvCocoaEvent);
         //::darwinPrintEvent("dbg-adjMods: ", pvCocoaEvent);
         uint32_t fAltModifiers = ::darwinEventModifierFlagsXlated(pvCocoaEvent);
-
 #else  /* USE_HID_FOR_MODIFIERS */
-        /*
-         * Update the keyboard cache.
-         */
+        /* Update the keyboard cache. */
         darwinHIDKeyboardCacheUpdate();
         const UInt32 fAltModifiers = g_fHIDModifierMask;
-
 #endif /* USE_HID_FOR_MODIFIERS */
+
 #ifdef DEBUG_PRINTF
         RTPrintf("dbg-fAltModifiers=%#x fModifiers=%#x", fAltModifiers, fModifiers);
 #endif
@@ -1104,27 +425,542 @@ UInt32 DarwinAdjustModifierMask(UInt32 fModifiers, const void *pvCocoaEvent)
     return fModifiers;
 }
 
+unsigned DarwinModifierMaskToSet1Scancode(UInt32 fModifiers)
+{
+    unsigned uScanCode = DarwinModifierMaskToDarwinKeycode(fModifiers);
+    if (uScanCode < RT_ELEMENTS(g_aDarwinToSet1))
+        uScanCode = g_aDarwinToSet1[uScanCode];
+    else
+        Assert(uScanCode == ~0U);
+    return uScanCode;
+}
 
-/**
- * Start grabbing keyboard events.
- *
- * This only concerns itself with modifiers and disabling global hotkeys (if requested).
- *
- * @param   fGlobalHotkeys      Whether to disable global hotkeys or not.
- */
-void     DarwinGrabKeyboard(bool fGlobalHotkeys)
+unsigned DarwinModifierMaskToDarwinKeycode(UInt32 fModifiers)
+{
+    unsigned uKeyCode;
+
+    /** @todo find symbols for these keycodes... */
+    fModifiers &= shiftKey | rightShiftKey | controlKey | rightControlKey | optionKey | rightOptionKey | cmdKey
+                | kEventKeyModifierRightCmdKeyMask | kEventKeyModifierNumLockMask | alphaLock | kEventKeyModifierFnMask;
+    if (fModifiers == shiftKey)
+        uKeyCode = QZ_LSHIFT;
+    else if (fModifiers == rightShiftKey)
+        uKeyCode = QZ_RSHIFT;
+    else if (fModifiers == controlKey)
+        uKeyCode = QZ_LCTRL;
+    else if (fModifiers == rightControlKey)
+        uKeyCode = QZ_RCTRL;
+    else if (fModifiers == optionKey)
+        uKeyCode = QZ_LALT;
+    else if (fModifiers == rightOptionKey)
+        uKeyCode = QZ_RALT;
+    else if (fModifiers == cmdKey)
+        uKeyCode = QZ_LMETA;
+    else if (fModifiers == kEventKeyModifierRightCmdKeyMask /* hack */)
+        uKeyCode = QZ_RMETA;
+    else if (fModifiers == alphaLock)
+        uKeyCode = QZ_CAPSLOCK;
+    else if (fModifiers == kEventKeyModifierNumLockMask)
+        uKeyCode = QZ_NUMLOCK;
+    else if (fModifiers == kEventKeyModifierFnMask)
+        uKeyCode = QZ_FN;
+    else if (fModifiers == 0)
+        uKeyCode = 0;
+    else
+        uKeyCode = ~0U; /* multiple */
+    return uKeyCode;
+}
+
+UInt32 DarwinKeyCodeToDarwinModifierMask(unsigned uKeyCode)
+{
+    UInt32 fModifiers;
+
+    /** @todo find symbols for these keycodes... */
+    if (uKeyCode == QZ_LSHIFT)
+        fModifiers = shiftKey;
+    else if (uKeyCode == QZ_RSHIFT)
+        fModifiers = rightShiftKey;
+    else if (uKeyCode == QZ_LCTRL)
+        fModifiers = controlKey;
+    else if (uKeyCode == QZ_RCTRL)
+        fModifiers = rightControlKey;
+    else if (uKeyCode == QZ_LALT)
+        fModifiers = optionKey;
+    else if (uKeyCode == QZ_RALT)
+        fModifiers = rightOptionKey;
+    else if (uKeyCode == QZ_LMETA)
+        fModifiers = cmdKey;
+    else if (uKeyCode == QZ_RMETA)
+        fModifiers = kEventKeyModifierRightCmdKeyMask; /* hack */
+    else if (uKeyCode == QZ_CAPSLOCK)
+        fModifiers = alphaLock;
+    else if (uKeyCode == QZ_NUMLOCK)
+        fModifiers = kEventKeyModifierNumLockMask;
+    else if (uKeyCode == QZ_FN)
+        fModifiers = kEventKeyModifierFnMask;
+    else
+        fModifiers = 0;
+    return fModifiers;
+}
+
+
+void DarwinDisableGlobalHotKeys(bool fDisable)
+{
+    static unsigned s_cComplaints = 0;
+
+    /* Lazy connect to the core graphics service. */
+    if (!g_fConnectedToCGS)
+    {
+        g_CGSConnection = _CGSDefaultConnection();
+        g_fConnectedToCGS = true;
+    }
+
+    /* Get the current mode. */
+    CGSGlobalHotKeyOperatingMode enmMode = kCGSGlobalHotKeyInvalid;
+    CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmMode);
+    if (    enmMode != kCGSGlobalHotKeyEnable
+        &&  enmMode != kCGSGlobalHotKeyDisable
+        &&  enmMode != kCGSGlobalHotKeyDisableExceptUniversalAccess)
+    {
+        AssertMsgFailed(("%d\n", enmMode));
+        if (s_cComplaints++ < 32)
+            LogRel(("DarwinDisableGlobalHotKeys: Unexpected enmMode=%d\n", enmMode));
+        return;
+    }
+
+    /* Calc the new mode. */
+    if (fDisable)
+    {
+        if (enmMode != kCGSGlobalHotKeyEnable)
+            return;
+        enmMode = kCGSGlobalHotKeyDisableExceptUniversalAccess;
+    }
+    else
+    {
+        if (enmMode != kCGSGlobalHotKeyDisableExceptUniversalAccess)
+            return;
+        enmMode = kCGSGlobalHotKeyEnable;
+    }
+
+    /* Try set it and check the actual result. */
+    CGSSetGlobalHotKeyOperatingMode(g_CGSConnection, enmMode);
+    CGSGlobalHotKeyOperatingMode enmNewMode = kCGSGlobalHotKeyInvalid;
+    CGSGetGlobalHotKeyOperatingMode(g_CGSConnection, &enmNewMode);
+    if (enmNewMode != enmMode)
+    {
+        /* If the screensaver kicks in we should ignore failure here. */
+        AssertMsg(enmMode == kCGSGlobalHotKeyEnable, ("enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
+        if (s_cComplaints++ < 32)
+            LogRel(("DarwinDisableGlobalHotKeys: Failed to change mode; enmNewMode=%d enmMode=%d\n", enmNewMode, enmMode));
+    }
+}
+
+
+#ifdef USE_HID_FOR_MODIFIERS
+
+/** Callback function for consuming queued events.
+  * @param   pvTarget  Brings the queue?
+  * @param   rcIn      Brigns what?
+  * @param   pvRefcon  Brings the pointer to the keyboard cache entry.
+  * @param   pvSender  Brings what? */
+static void darwinQueueCallback(void *pvTarget, IOReturn rcIn, void *pvRefcon, void *pvSender)
+{
+    struct KeyboardCacheData *pKeyboardEntry = (struct KeyboardCacheData *)pvRefcon;
+    if (!pKeyboardEntry->ppHidQueueInterface)
+        return;
+    NOREF(pvTarget);
+    NOREF(rcIn);
+    NOREF(pvSender);
+
+    /* Consume the events. */
+    g_fOldHIDModifierMask = g_fHIDModifierMask;
+    for (;;)
+    {
+#ifdef DEBUG_PRINTF
+        RTPrintf("dbg-ev: "); RTStrmFlush(g_pStdOut);
+#endif
+        IOHIDEventStruct Event;
+        AbsoluteTime ZeroTime = {0,0};
+        IOReturn rc = (*pKeyboardEntry->ppHidQueueInterface)->getNextEvent(pKeyboardEntry->ppHidQueueInterface,
+                                                                           &Event, ZeroTime, 0);
+        if (rc != kIOReturnSuccess)
+            break;
+
+        /* Translate the cookie value to a modifier mask. */
+        uint32_t fMask = 0;
+        unsigned i = pKeyboardEntry->cCookies;
+        while (i-- > 0)
+        {
+            if (pKeyboardEntry->aCookies[i].Cookie == Event.elementCookie)
+            {
+                fMask = pKeyboardEntry->aCookies[i].fMask;
+                break;
+            }
+        }
+
+        /* Adjust the modifier mask. */
+        if (Event.value)
+            g_fHIDModifierMask |= fMask;
+        else
+            g_fHIDModifierMask &= ~fMask;
+#ifdef DEBUG_PRINTF
+        RTPrintf("t=%d c=%#x v=%#x cblv=%d lv=%p m=%#X\n", Event.type, Event.elementCookie, Event.value, Event.longValueSize, Event.value, fMask); RTStrmFlush(g_pStdOut);
+#endif
+    }
+#ifdef DEBUG_PRINTF
+    RTPrintf("dbg-ev: done\n"); RTStrmFlush(g_pStdOut);
+#endif
+}
+
+/* Forward declaration for darwinBruteForcePropertySearch. */
+static void darwinBruteForcePropertySearch(CFDictionaryRef DictRef, struct KeyboardCacheData *pKeyboardEntry);
+
+/** Element enumeration callback. */
+static void darwinBruteForcePropertySearchApplier(const void *pvValue, void *pvCacheEntry)
+{
+    if (CFGetTypeID(pvValue) == CFDictionaryGetTypeID())
+        darwinBruteForcePropertySearch((CFMutableDictionaryRef)pvValue, (struct KeyboardCacheData *)pvCacheEntry);
+}
+
+/** Recurses through the keyboard properties looking for certain keys. */
+static void darwinBruteForcePropertySearch(CFDictionaryRef DictRef, struct KeyboardCacheData *pKeyboardEntry)
+{
+    CFTypeRef ObjRef;
+
+    /* Check for the usage page and usage key we want. */
+    long lUsage;
+    ObjRef = CFDictionaryGetValue(DictRef, CFSTR(kIOHIDElementUsageKey));
+    if (    ObjRef
+        &&  CFGetTypeID(ObjRef) == CFNumberGetTypeID()
+        &&  CFNumberGetValue((CFNumberRef)ObjRef, kCFNumberLongType, &lUsage))
+    {
+        switch (lUsage)
+        {
+            case kHIDUsage_KeyboardLeftControl:
+            case kHIDUsage_KeyboardLeftShift:
+            case kHIDUsage_KeyboardLeftAlt:
+            case kHIDUsage_KeyboardLeftGUI:
+            case kHIDUsage_KeyboardRightControl:
+            case kHIDUsage_KeyboardRightShift:
+            case kHIDUsage_KeyboardRightAlt:
+            case kHIDUsage_KeyboardRightGUI:
+            {
+                long lPage;
+                ObjRef = CFDictionaryGetValue(DictRef, CFSTR(kIOHIDElementUsagePageKey));
+                if (    !ObjRef
+                    ||  CFGetTypeID(ObjRef) != CFNumberGetTypeID()
+                    ||  !CFNumberGetValue((CFNumberRef)ObjRef, kCFNumberLongType, &lPage)
+                    ||  lPage != kHIDPage_KeyboardOrKeypad)
+                    break;
+
+                if (pKeyboardEntry->cCookies >= RT_ELEMENTS(pKeyboardEntry->aCookies))
+                {
+                    AssertMsgFailed(("too many cookies!\n"));
+                    break;
+                }
+
+                /* Get the cookie and modifier mask. */
+                long lCookie;
+                ObjRef = CFDictionaryGetValue(DictRef, CFSTR(kIOHIDElementCookieKey));
+                if (    !ObjRef
+                    ||  CFGetTypeID(ObjRef) != CFNumberGetTypeID()
+                    ||  !CFNumberGetValue((CFNumberRef)ObjRef, kCFNumberLongType, &lCookie))
+                    break;
+
+                uint32_t fMask;
+                switch (lUsage)
+                {
+                    case kHIDUsage_KeyboardLeftControl : fMask = controlKey; break;
+                    case kHIDUsage_KeyboardLeftShift   : fMask = shiftKey; break;
+                    case kHIDUsage_KeyboardLeftAlt     : fMask = optionKey; break;
+                    case kHIDUsage_KeyboardLeftGUI     : fMask = cmdKey; break;
+                    case kHIDUsage_KeyboardRightControl: fMask = rightControlKey; break;
+                    case kHIDUsage_KeyboardRightShift  : fMask = rightShiftKey; break;
+                    case kHIDUsage_KeyboardRightAlt    : fMask = rightOptionKey; break;
+                    case kHIDUsage_KeyboardRightGUI    : fMask = kEventKeyModifierRightCmdKeyMask; break;
+                    default: AssertMsgFailed(("%ld\n",lUsage)); fMask = 0; break;
+                }
+
+                /* If we've got a queue, add the cookie to the queue. */
+                if (pKeyboardEntry->ppHidQueueInterface)
+                {
+                    IOReturn rc = (*pKeyboardEntry->ppHidQueueInterface)->addElement(pKeyboardEntry->ppHidQueueInterface, (IOHIDElementCookie)lCookie, 0);
+                    AssertMsg(rc == kIOReturnSuccess, ("rc=%d\n", rc));
+#ifdef DEBUG_PRINTF
+                    RTPrintf("dbg-add: u=%#lx c=%#lx\n", lUsage, lCookie);
+#endif
+                }
+
+                /* Add the cookie to the keyboard entry. */
+                pKeyboardEntry->aCookies[pKeyboardEntry->cCookies].Cookie = (IOHIDElementCookie)lCookie;
+                pKeyboardEntry->aCookies[pKeyboardEntry->cCookies].fMask = fMask;
+                ++pKeyboardEntry->cCookies;
+                break;
+            }
+        }
+    }
+
+
+    /* Get the elements key and recursively iterate the elements looking for they key cookies. */
+    ObjRef = CFDictionaryGetValue(DictRef, CFSTR(kIOHIDElementKey));
+    if (    ObjRef
+        &&  CFGetTypeID(ObjRef) == CFArrayGetTypeID())
+    {
+        CFArrayRef ArrayObjRef = (CFArrayRef)ObjRef;
+        CFRange Range = {0, CFArrayGetCount(ArrayObjRef)};
+        CFArrayApplyFunction(ArrayObjRef, Range, darwinBruteForcePropertySearchApplier, pKeyboardEntry);
+    }
+}
+
+/** Creates a keyboard cache entry.
+  * @param  pKeyboardEntry  Brings the pointer to the entry.
+  * @param  KeyboardDevice  Brings the keyboard device to create the entry for. */
+static bool darwinHIDKeyboardCacheCreateEntry(struct KeyboardCacheData *pKeyboardEntry, io_object_t KeyboardDevice)
+{
+    unsigned long cRefs = 0;
+    memset(pKeyboardEntry, 0, sizeof(*pKeyboardEntry));
+
+    /* Query the HIDDeviceInterface for this HID (keyboard) object. */
+    SInt32 Score = 0;
+    IOCFPlugInInterface **ppPlugInInterface = NULL;
+    IOReturn rc = IOCreatePlugInInterfaceForService(KeyboardDevice, kIOHIDDeviceUserClientTypeID,
+                                                    kIOCFPlugInInterfaceID, &ppPlugInInterface, &Score);
+    if (rc == kIOReturnSuccess)
+    {
+        IOHIDDeviceInterface **ppHidDeviceInterface = NULL;
+        HRESULT hrc = (*ppPlugInInterface)->QueryInterface(ppPlugInInterface,
+                                                           CFUUIDGetUUIDBytes(kIOHIDDeviceInterfaceID),
+                                                           (LPVOID *)&ppHidDeviceInterface);
+        cRefs = (*ppPlugInInterface)->Release(ppPlugInInterface); MY_CHECK_CREFS(cRefs);
+        ppPlugInInterface = NULL;
+        if (hrc == S_OK)
+        {
+            rc = (*ppHidDeviceInterface)->open(ppHidDeviceInterface, 0);
+            if (rc == kIOReturnSuccess)
+            {
+                /* Create a removal callback. */
+                /** @todo */
+
+                /* Create the queue so we can insert elements while searching the properties. */
+                IOHIDQueueInterface   **ppHidQueueInterface = (*ppHidDeviceInterface)->allocQueue(ppHidDeviceInterface);
+                if (ppHidQueueInterface)
+                {
+                    rc = (*ppHidQueueInterface)->create(ppHidQueueInterface, 0, 32);
+                    if (rc != kIOReturnSuccess)
+                    {
+                        AssertMsgFailed(("rc=%d\n", rc));
+                        cRefs = (*ppHidQueueInterface)->Release(ppHidQueueInterface); MY_CHECK_CREFS(cRefs);
+                        ppHidQueueInterface = NULL;
+                    }
+                }
+                else
+                    AssertFailed();
+                pKeyboardEntry->ppHidQueueInterface = ppHidQueueInterface;
+
+                /* Brute force getting of attributes. */
+                /** @todo read up on how to do this in a less resource intensive way! Suggestions are welcome! */
+                CFMutableDictionaryRef PropertiesRef = 0;
+                kern_return_t krc = IORegistryEntryCreateCFProperties(KeyboardDevice, &PropertiesRef, kCFAllocatorDefault, kNilOptions);
+                if (krc == KERN_SUCCESS)
+                {
+                    darwinBruteForcePropertySearch(PropertiesRef, pKeyboardEntry);
+                    CFRelease(PropertiesRef);
+                }
+                else
+                    AssertMsgFailed(("krc=%#x\n", krc));
+
+                if (ppHidQueueInterface)
+                {
+                    /* Now install our queue callback. */
+                    CFRunLoopSourceRef RunLoopSrcRef = NULL;
+                    rc = (*ppHidQueueInterface)->createAsyncEventSource(ppHidQueueInterface, &RunLoopSrcRef);
+                    if (rc == kIOReturnSuccess)
+                    {
+                        CFRunLoopRef RunLoopRef = (CFRunLoopRef)GetCFRunLoopFromEventLoop(GetMainEventLoop());
+                        CFRunLoopAddSource(RunLoopRef, RunLoopSrcRef, kCFRunLoopDefaultMode);
+                    }
+
+                    /* Now install our queue callback. */
+                    rc = (*ppHidQueueInterface)->setEventCallout(ppHidQueueInterface, darwinQueueCallback, ppHidQueueInterface, pKeyboardEntry);
+                    if (rc != kIOReturnSuccess)
+                        AssertMsgFailed(("rc=%d\n", rc));
+                }
+
+                /* Complete the new keyboard cache entry. */
+                pKeyboardEntry->ppHidDeviceInterface = ppHidDeviceInterface;
+                pKeyboardEntry->ppHidQueueInterface = ppHidQueueInterface;
+                return true;
+            }
+
+            AssertMsgFailed(("rc=%d\n", rc));
+            cRefs = (*ppHidDeviceInterface)->Release(ppHidDeviceInterface); MY_CHECK_CREFS(cRefs);
+        }
+        else
+            AssertMsgFailed(("hrc=%#x\n", hrc));
+    }
+    else
+        AssertMsgFailed(("rc=%d\n", rc));
+
+    return false;
+}
+
+/** Destroys a keyboard cache entry. */
+static void darwinHIDKeyboardCacheDestroyEntry(struct KeyboardCacheData *pKeyboardEntry)
+{
+    unsigned long cRefs;
+
+    /* Destroy the queue. */
+    if (pKeyboardEntry->ppHidQueueInterface)
+    {
+        IOHIDQueueInterface **ppHidQueueInterface = pKeyboardEntry->ppHidQueueInterface;
+        pKeyboardEntry->ppHidQueueInterface = NULL;
+
+        /* Stop it just in case we haven't done so. doesn't really matter I think. */
+        (*ppHidQueueInterface)->stop(ppHidQueueInterface);
+
+        /* Deal with the run loop source. */
+        CFRunLoopSourceRef RunLoopSrcRef = (*ppHidQueueInterface)->getAsyncEventSource(ppHidQueueInterface);
+        if (RunLoopSrcRef)
+        {
+            CFRunLoopRef RunLoopRef = (CFRunLoopRef)GetCFRunLoopFromEventLoop(GetMainEventLoop());
+            CFRunLoopRemoveSource(RunLoopRef, RunLoopSrcRef, kCFRunLoopDefaultMode);
+
+            CFRelease(RunLoopSrcRef);
+        }
+
+        /* Dispose of and release the queue. */
+        (*ppHidQueueInterface)->dispose(ppHidQueueInterface);
+        cRefs = (*ppHidQueueInterface)->Release(ppHidQueueInterface); MY_CHECK_CREFS(cRefs);
+    }
+
+    /* Release the removal hook? */
+    /** @todo */
+
+    /* Close and release the device interface. */
+    if (pKeyboardEntry->ppHidDeviceInterface)
+    {
+        IOHIDDeviceInterface **ppHidDeviceInterface = pKeyboardEntry->ppHidDeviceInterface;
+        pKeyboardEntry->ppHidDeviceInterface = NULL;
+
+        (*ppHidDeviceInterface)->close(ppHidDeviceInterface);
+        cRefs = (*ppHidDeviceInterface)->Release(ppHidDeviceInterface); MY_CHECK_CREFS(cRefs);
+    }
+}
+
+/** Zap the keyboard cache. */
+static void darwinHIDKeyboardCacheZap(void)
+{
+    /* Release the old cache data first. */
+    while (g_cKeyboards > 0)
+    {
+        unsigned i = --g_cKeyboards;
+        darwinHIDKeyboardCacheDestroyEntry(&g_aKeyboards[i]);
+    }
+}
+
+/** Updates the cached keyboard data.
+  * @todo The current implementation is very brute force...
+  *       Rewrite it so that it doesn't flush the cache completely but simply checks whether
+  *       anything has changed in the HID config. With any luck, there might even be a callback
+  *       or something we can poll for HID config changes...
+  *       setRemovalCallback() is a start... */
+static void darwinHIDKeyboardCacheDoUpdate(void)
+{
+    g_u64KeyboardTS = RTTimeMilliTS();
+
+    /* Dispense with the old cache data. */
+    darwinHIDKeyboardCacheZap();
+
+    /* Open the master port on the first invocation. */
+    if (!g_MasterPort)
+    {
+        kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort);
+        AssertReturnVoid(krc == KERN_SUCCESS);
+    }
+
+    /* Create a matching dictionary for searching for keyboards devices. */
+    static const UInt32 s_Page = kHIDPage_GenericDesktop;
+    static const UInt32 s_Usage = kHIDUsage_GD_Keyboard;
+    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOHIDDeviceKey);
+    AssertReturnVoid(RefMatchingDict);
+    CFDictionarySetValue(RefMatchingDict, CFSTR(kIOHIDPrimaryUsagePageKey),
+                         CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &s_Page));
+    CFDictionarySetValue(RefMatchingDict, CFSTR(kIOHIDPrimaryUsageKey),
+                         CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &s_Usage));
+
+    /* Perform the search and get a collection of keyboard devices. */
+    io_iterator_t Keyboards = NULL;
+    IOReturn rc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &Keyboards);
+    AssertMsgReturnVoid(rc == kIOReturnSuccess, ("rc=%d\n", rc));
+    RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
+
+    /* Enumerate the keyboards and query the cache data. */
+    unsigned i = 0;
+    io_object_t KeyboardDevice;
+    while (   i < RT_ELEMENTS(g_aKeyboards)
+           && (KeyboardDevice = IOIteratorNext(Keyboards)) != 0)
+    {
+        if (darwinHIDKeyboardCacheCreateEntry(&g_aKeyboards[i], KeyboardDevice))
+            i++;
+        IOObjectRelease(KeyboardDevice);
+    }
+    g_cKeyboards = i;
+
+    IOObjectRelease(Keyboards);
+}
+
+/** Updates the keyboard cache if it's time to do it again. */
+static void darwinHIDKeyboardCacheUpdate(void)
+{
+    if (    !g_cKeyboards
+        /*||  g_u64KeyboardTS - RTTimeMilliTS() > 7500*/ /* 7.5sec */)
+        darwinHIDKeyboardCacheDoUpdate();
+}
+
+/** Queries the modifier keys from the (IOKit) HID Manager. */
+static UInt32 darwinQueryHIDModifiers(void)
+{
+    /* Iterate thru the keyboards collecting their modifier masks. */
+    UInt32 fHIDModifiers = 0;
+    unsigned i = g_cKeyboards;
+    while (i-- > 0)
+    {
+        IOHIDDeviceInterface **ppHidDeviceInterface = g_aKeyboards[i].ppHidDeviceInterface;
+        if (!ppHidDeviceInterface)
+            continue;
+
+        unsigned j = g_aKeyboards[i].cCookies;
+        while (j-- > 0)
+        {
+            IOHIDEventStruct HidEvent;
+            IOReturn rc = (*ppHidDeviceInterface)->getElementValue(ppHidDeviceInterface,
+                                                                   g_aKeyboards[i].aCookies[j].Cookie,
+                                                                   &HidEvent);
+            if (rc == kIOReturnSuccess)
+            {
+                if (HidEvent.value)
+                    fHIDModifiers |= g_aKeyboards[i].aCookies[j].fMask;
+            }
+            else
+                AssertMsgFailed(("rc=%#x\n", rc));
+        }
+    }
+
+    return fHIDModifiers;
+}
+
+#endif /* USE_HID_FOR_MODIFIERS */
+
+
+void DarwinGrabKeyboard(bool fGlobalHotkeys)
 {
     LogFlow(("DarwinGrabKeyboard: fGlobalHotkeys=%RTbool\n", fGlobalHotkeys));
 
 #ifdef USE_HID_FOR_MODIFIERS
-    /*
-     * Update the keyboard cache.
-     */
+    /* Update the keyboard cache. */
     darwinHIDKeyboardCacheUpdate();
 
-    /*
-     * Start the keyboard queues and query the current mask.
-     */
+    /* Start the keyboard queues and query the current mask. */
     g_fHIDQueueEnabled = true;
 
     unsigned i = g_cKeyboards;
@@ -1137,30 +973,20 @@ void     DarwinGrabKeyboard(bool fGlobalHotkeys)
     g_fHIDModifierMask = darwinQueryHIDModifiers();
 #endif /* USE_HID_FOR_MODIFIERS */
 
-    /*
-     * Disable hotkeys if requested.
-     */
+    /* Disable hotkeys if requested. */
     if (fGlobalHotkeys)
         DarwinDisableGlobalHotKeys(true);
 }
 
-
-/**
- * Reverses the actions taken by DarwinGrabKeyboard.
- */
-void     DarwinReleaseKeyboard(void)
+void DarwinReleaseKeyboard()
 {
     LogFlow(("DarwinReleaseKeyboard\n"));
 
-    /*
-     * Re-enable hotkeys.
-     */
+    /* Re-enable hotkeys. */
     DarwinDisableGlobalHotKeys(false);
 
 #ifdef USE_HID_FOR_MODIFIERS
-    /*
-     * Stop and drain the keyboard queues.
-     */
+    /* Stop and drain the keyboard queues. */
     g_fHIDQueueEnabled = false;
 
 #if 0
@@ -1186,11 +1012,7 @@ void     DarwinReleaseKeyboard(void)
         }
     }
 #else
-
-    /*
-     * Kill the keyboard cache.
-     * This will hopefully fix the crash in getElementValue()/fillElementValue()...
-     */
+    /* Kill the keyboard cache. */
     darwinHIDKeyboardCacheZap();
 #endif
 
@@ -1199,15 +1021,17 @@ void     DarwinReleaseKeyboard(void)
 #endif /* USE_HID_FOR_MODIFIERS */
 }
 
+
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
-/** Prepare dictionary that will be used to match HID LED device(s) while discovering. */
+
+/** Prepares dictionary that will be used to match HID LED device(s) while discovering. */
 static CFDictionaryRef darwinQueryLedDeviceMatchingDictionary()
 {
     CFDictionaryRef deviceMatchingDictRef;
 
-    /* Use two (key, value) pairs:
-     *      - (kIOHIDDeviceUsagePageKey, kHIDPage_GenericDesktop),
-     *      - (kIOHIDDeviceUsageKey,     kHIDUsage_GD_Keyboard). */
+    // Use two (key, value) pairs:
+    //      - (kIOHIDDeviceUsagePageKey, kHIDPage_GenericDesktop),
+    //      - (kIOHIDDeviceUsageKey,     kHIDUsage_GD_Keyboard). */
 
     CFNumberRef usagePageKeyCFNumberRef; int usagePageKeyCFNumberValue = kHIDPage_GenericDesktop;
     CFNumberRef usageKeyCFNumberRef;     int usageKeyCFNumberValue     = kHIDUsage_GD_Keyboard;
@@ -1250,8 +1074,8 @@ static CFDictionaryRef darwinQueryLedElementMatchingDictionary()
 {
     CFDictionaryRef elementMatchingDictRef;
 
-    /* Use only one (key, value) pair to match LED device element:
-     *      - (kIOHIDElementUsagePageKey, kHIDPage_LEDs).  */
+    // Use only one (key, value) pair to match LED device element:
+    //      - (kIOHIDElementUsagePageKey, kHIDPage_LEDs).  */
 
     CFNumberRef usagePageKeyCFNumberRef; int usagePageKeyCFNumberValue = kHIDPage_LEDs;
 
@@ -1471,9 +1295,9 @@ static uint32_t darwinHidLocationId(IOHIDDeviceRef pHidDeviceRef)
 }
 
 /** Some keyboard devices might freeze after LEDs manipulation. We filter out such devices here.
- * In the list below, devices that known to have such issues. If you want to add new device,
- * then add it here. Currently, we only filter devices by Vendor ID.
- * In future it might make sense to take Product ID into account as well. */
+  * In the list below, devices that known to have such issues. If you want to add new device,
+  * then add it here. Currently, we only filter devices by Vendor ID.
+  * In future it might make sense to take Product ID into account as well. */
 static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
 {
 #ifndef VBOX_WITHOUT_KBD_LEDS_SYNC_FILTERING
@@ -1501,7 +1325,7 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
 }
 
 /** IOKit key press callback helper: take care about key-down event.
- * This code should be executed within a critical section under pHidState->fifoEventQueueLock. */
+  * This code should be executed within a critical section under pHidState->fifoEventQueueLock. */
 static void darwinHidInputCbKeyDown(VBoxKbdState_t *pKbd, uint32_t iKeyCode, VBoxHidsState_t *pHidState)
 {
     VBoxKbdEvent_t *pEvent = (VBoxKbdEvent_t *)malloc(sizeof(VBoxKbdEvent_t));
@@ -1522,18 +1346,17 @@ static void darwinHidInputCbKeyDown(VBoxKbdState_t *pKbd, uint32_t iKeyCode, VBo
 }
 
 /** IOkit and Carbon key press callbacks helper: CapsLock timeout checker.
- *
- * Returns FALSE if CAPS LOCK timeout not occurred and its state still was not switched (Apple kbd).
- * Returns TRUE if CAPS LOCK timeout occurred and its state was switched (Apple kbd).
- * Returns TRUE for non-Apple kbd. */
+  *
+  * Returns FALSE if CAPS LOCK timeout not occurred and its state still was not switched (Apple kbd).
+  * Returns TRUE if CAPS LOCK timeout occurred and its state was switched (Apple kbd).
+  * Returns TRUE for non-Apple kbd. */
 static bool darwinKbdCapsEventMatches(VBoxKbdEvent_t *pEvent, bool fCapsLed)
 {
-    /* CapsLock timeout is only applicable if conditions
-     * below are satisfied:
-     *
-     * a) Key pressed on Apple keyboard
-     * b) CapsLed is OFF at the moment when CapsLock key is pressed
-     */
+    // CapsLock timeout is only applicable if conditions
+    // below are satisfied:
+    //
+    // a) Key pressed on Apple keyboard
+    // b) CapsLed is OFF at the moment when CapsLock key is pressed
 
     bool fAppleKeyboard = (pEvent->pKbd->cCapsLockTimeout > 0);
 
@@ -1549,14 +1372,14 @@ static bool darwinKbdCapsEventMatches(VBoxKbdEvent_t *pEvent, bool fCapsLed)
 }
 
 /** IOKit key press callback helper: take care about key-up event.
- * This code should be executed within a critical section under pHidState->fifoEventQueueLock. */
+  * This code should be executed within a critical section under pHidState->fifoEventQueueLock. */
 static void darwinHidInputCbKeyUp(VBoxKbdState_t *pKbd, uint32_t iKeyCode, VBoxHidsState_t *pHidState)
 {
     CFIndex         iQueue = 0;
     VBoxKbdEvent_t *pEvent = NULL;
 
-    /* Key-up event assumes that key-down event occured previously. If so, an event
-     * data should be in event queue. Attempt to find it. */
+    // Key-up event assumes that key-down event occured previously. If so, an event
+    // data should be in event queue. Attempt to find it.
     for (CFIndex i = 0; i < CFArrayGetCount(pHidState->pFifoEventQueue); i++)
     {
         VBoxKbdEvent_t *pCachedEvent = (VBoxKbdEvent_t *)CFArrayGetValueAtIndex(pHidState->pFifoEventQueue, i);
@@ -1572,9 +1395,9 @@ static void darwinHidInputCbKeyUp(VBoxKbdState_t *pKbd, uint32_t iKeyCode, VBoxH
     /* Event found. */
     if (pEvent)
     {
-        /* NUM LOCK should not have timeout and its press should immidiately trigger Carbon callback.
-         * Therefore, if it is still in queue this is a problem because it was not handled by Carbon callback.
-         * This mean that NUM LOCK is most likely out of sync. */
+        // NUM LOCK should not have timeout and its press should immidiately trigger Carbon callback.
+        // Therefore, if it is still in queue this is a problem because it was not handled by Carbon callback.
+        // This mean that NUM LOCK is most likely out of sync.
         if (iKeyCode == kHIDUsage_KeypadNumLock)
         {
             LogRel2(("IOHID: KBD %d: Modifier Key-Up event. Key-Down event was not habdled by Carbon callback. "
@@ -1582,8 +1405,8 @@ static void darwinHidInputCbKeyUp(VBoxKbdState_t *pKbd, uint32_t iKeyCode, VBoxH
         }
         else if (iKeyCode == kHIDUsage_KeyboardCapsLock)
         {
-            /* If CAPS LOCK key-press event still not match CAPS LOCK timeout criteria, Carbon callback
-             * should not be triggered for this event at all. Threfore, event should be removed from queue. */
+            // If CAPS LOCK key-press event still not match CAPS LOCK timeout criteria, Carbon callback
+            // should not be triggered for this event at all. Threfore, event should be removed from queue.
             if (!darwinKbdCapsEventMatches(pEvent, pHidState->guestState.fCapsLockOn))
             {
                 CFArrayRemoveValueAtIndex(pHidState->pFifoEventQueue, iQueue);
@@ -1595,10 +1418,10 @@ static void darwinHidInputCbKeyUp(VBoxKbdState_t *pKbd, uint32_t iKeyCode, VBoxH
             }
             else
             {
-                /* CAPS LOCK key-press event matches to CAPS LOCK timeout criteria and still present in queue.
-                 * This might mean that Carbon callback was triggered for this event, but cached keyboard state was not updated.
-                 * It also might mean that Carbon callback still was not triggered, but it will be soon.
-                 * Threfore, CAPS LOCK might be out of sync. */
+                // CAPS LOCK key-press event matches to CAPS LOCK timeout criteria and still present in queue.
+                // This might mean that Carbon callback was triggered for this event, but cached keyboard state was not updated.
+                // It also might mean that Carbon callback still was not triggered, but it will be soon.
+                // Threfore, CAPS LOCK might be out of sync.
                 LogRel2(("IOHID: KBD %d: Modifier Key-Up event. Key-Down event was triggered %llu ms "
                     "ago and still was not handled by Carbon callback. CAPS LOCK might out of sync if "
                     "Carbon will not handle this\n", (int)pKbd->idxPosition, RTTimeSystemMilliTS() - pEvent->tsKeyDown));
@@ -1851,7 +1674,7 @@ static void darwinUsbHidGeneralInterestCb(void *pData, io_service_t unused1, nat
 }
 
 /** Get pre-cached KBD device by its Location ID. */
-static VBoxKbdState_t * darwinUsbHidQueryKbdByLocationId(uint32_t idLocation, VBoxHidsState_t *pHidState)
+static VBoxKbdState_t *darwinUsbHidQueryKbdByLocationId(uint32_t idLocation, VBoxHidsState_t *pHidState)
 {
     AssertReturn(pHidState, NULL);
 
@@ -1986,7 +1809,7 @@ static void darwinHidRemovalCallback(void *pData, IOReturn unused, void *unused1
     //RTSemMutexRelease(pHidState->fifoEventQueueLock);
 }
 
-/* Check if we already cached given device */
+/** Check if we already cached given device */
 static bool darwinIsDeviceInCache(VBoxHidsState_t *pState, IOHIDDeviceRef pDevice)
 {
     AssertReturn(pState, false);
@@ -2020,9 +1843,9 @@ static void darwinHidAddDevice(VBoxHidsState_t *pHidState, IOHIDDeviceRef pDevic
                 pKbd->idxPosition = CFArrayGetCount(pHidState->pDeviceCollection);
                 pKbd->idLocation = darwinHidLocationId(pDevice);
 
-                /* Some Apple keyboards have CAPS LOCK key timeout. According to corresponding
-                 * kext plist files, it is equals to 75 ms. For such devices we only add info into our FIFO event
-                 * queue if the time between Key-Down and Key-Up events >= 75 ms. */
+                // Some Apple keyboards have CAPS LOCK key timeout. According to corresponding
+                // kext plist files, it is equals to 75 ms. For such devices we only add info into our FIFO event
+                // queue if the time between Key-Down and Key-Up events >= 75 ms.
                 pKbd->cCapsLockTimeout = (darwinHidVendorId(pKbd->pDevice) == kIOUSBVendorIDAppleComputer) ? 75 : 0;
 
                 CFDictionaryRef elementMatchingDict = darwinQueryLedElementMatchingDictionary();
@@ -2034,8 +1857,8 @@ static void darwinHidAddDevice(VBoxHidsState_t *pHidState, IOHIDDeviceRef pDevic
                                                   &pKbd->LED.fCapsLockOn,
                                                   &pKbd->LED.fScrollLockOn);
 
-                    /* This should never happen, but if happened -- mark all the leds of current
-                     * device as turned OFF. */
+                    // This should never happen, but if happened -- mark all the leds of current
+                    // device as turned OFF.
                     if (rc != 0)
                     {
                         LogRel2(("Unable to get leds state for device %d. Mark leds as turned off\n", (int)(pKbd->idxPosition)));
@@ -2157,10 +1980,11 @@ static void darwinRemoveCarbonHandler(VBoxHidsState_t *pHidState)
 
     RTSemMutexDestroy(pHidState->fifoEventQueueLock);
 }
+
 #endif /* !VBOX_WITH_KBD_LEDS_SYNC */
 
-/** Save the states of leds for all HID devices attached to the system and return it. */
-void * DarwinHidDevicesKeepLedsState(void)
+
+void *DarwinHidDevicesKeepLedsState()
 {
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
     IOReturn         rc;
@@ -2240,13 +2064,7 @@ void * DarwinHidDevicesKeepLedsState(void)
 #endif
 }
 
-/**
- * Apply LEDs state stored in *pState and release resources aquired by *pState.
- *
- * @param pState            Pointer to saved LEDs state
- *
- * @return 0 on success, error code otherwise.
- */
+
 int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
 {
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
@@ -2257,13 +2075,13 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
 
     darwinUsbHidUnsubscribeInterestNotifications(pHidState);
 
-    /* Need to unregister Carbon stuff first */
+    /* Need to unregister Carbon stuff first: */
     darwinRemoveCarbonHandler(pHidState);
 
     CFDictionaryRef elementMatchingDict = darwinQueryLedElementMatchingDictionary();
     if (elementMatchingDict)
     {
-        /* Restore LEDs */
+        /* Restore LEDs: */
         for (CFIndex i = 0; i < CFArrayGetCount(pHidState->pDeviceCollection); i++)
         {
             /* Cycle through supported devices only. */
@@ -2296,7 +2114,7 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
         CFRelease(elementMatchingDict);
     }
 
-    /* Free resources */
+    /* Free resources: */
     CFRelease(pHidState->pDeviceCollection);
 
     rc = IOHIDManagerClose(pHidState->hidManagerRef, 0);
@@ -2316,23 +2134,11 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
 #else /* !VBOX_WITH_KBD_LEDS_SYNC */
     (void)pState;
     return 0;
-#endif
+#endif /* !VBOX_WITH_KBD_LEDS_SYNC */
 }
 
-/**
- * Set states for host keyboard LEDs.
- *
- * NOTE: This function will set led values for all
- * keyboard devices attached to the system.
- *
- * @param pState            Pointer to saved LEDs state
- * @param fNumLockOn        Turn on NumLock led if TRUE, turn off otherwise
- * @param fCapsLockOn       Turn on CapsLock led if TRUE, turn off otherwise
- * @param fScrollLockOn     Turn on ScrollLock led if TRUE, turn off otherwise
- */
 void DarwinHidDevicesBroadcastLeds(void *pState, bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn)
 {
-/* Temporary disabled */
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
     VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pState;
     IOReturn         rc;
@@ -2369,14 +2175,14 @@ void DarwinHidDevicesBroadcastLeds(void *pState, bool fNumLockOn, bool fCapsLock
         CFRelease(elementMatchingDict);
     }
 
-    /* Dynamically attached device will use these states */
+    /* Dynamically attached device will use these states: */
     pHidState->guestState.fNumLockOn    = fNumLockOn;
     pHidState->guestState.fCapsLockOn   = fCapsLockOn;
     pHidState->guestState.fScrollLockOn = fScrollLockOn;
-
 #else /* !VBOX_WITH_KBD_LEDS_SYNC */
     (void)fNumLockOn;
     (void)fCapsLockOn;
     (void)fScrollLockOn;
-#endif
+#endif /* !VBOX_WITH_KBD_LEDS_SYNC */
 }
+
