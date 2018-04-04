@@ -541,22 +541,89 @@ int GuestSessionTask::fileCopyFromEx(const Utf8Str &strSource, const Utf8Str &st
  */
 int GuestSessionTask::fileCopyFrom(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags)
 {
+    LogFlowThisFunc(("strSource=%s, strDest=%s, enmFileCopyFlags=0x%x\n", strSource.c_str(), strDest.c_str(), enmFileCopyFlags));
+
+    char *pszDstFile = NULL;
+
+    RTFSOBJINFO objInfo;
+    int rc = RTPathQueryInfo(strDest.c_str(), &objInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_SUCCESS(rc))
+    {
+        if (RTFS_IS_FILE(objInfo.Attr.fMode))
+        {
+            if (enmFileCopyFlags & FileCopyFlag_NoReplace)
+            {
+                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                    Utf8StrFmt(GuestSession::tr("Destination file \"%s\" on host already exists"),
+                                               strDest.c_str(), rc));
+                return VERR_ALREADY_EXISTS;
+            }
+
+            pszDstFile = RTStrDup(strDest.c_str());
+        }
+        else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+        {
+            if (   strDest.endsWith("\\")
+                || strDest.endsWith("/"))
+            {
+                /* Build the final file name with destination path (on the host). */
+                char szDstPath[RTPATH_MAX];
+                RTStrPrintf2(szDstPath, sizeof(szDstPath), "%s", strDest.c_str());
+
+                RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilename(strSource.c_str()));
+
+                pszDstFile = RTStrDup(szDstPath);
+            }
+            else
+            {
+                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                    Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" on host already exists"),
+                                               strDest.c_str(), rc));
+                return VERR_ALREADY_EXISTS;
+            }
+        }
+        else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
+        {
+            if (!(enmFileCopyFlags & FileCopyFlag_FollowLinks))
+            {
+                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                    Utf8StrFmt(GuestSession::tr("Destination file \"%s\" on the host is a symbolic link"),
+                                               strDest.c_str(), rc));
+                return VERR_IS_A_SYMLINK;
+            }
+
+            pszDstFile = RTStrDup(strDest.c_str());
+        }
+    }
+    else
+        pszDstFile = RTStrDup(strDest.c_str());
+
+    if (!pszDstFile)
+    {
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR, Utf8StrFmt(GuestSession::tr("No memory to allocate destination file path")));
+        return VERR_NO_MEMORY;
+    }
+
     RTFILE hFile;
-    int rc = RTFileOpen(&hFile, strDest.c_str(),
-                        RTFILE_O_WRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE); /** @todo Use the correct open modes! */
+    rc = RTFileOpen(&hFile, pszDstFile,
+                    RTFILE_O_WRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE); /** @todo Use the correct open modes! */
     if (RT_FAILURE(rc))
     {
         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                             Utf8StrFmt(GuestSession::tr("Opening/creating destination file on host \"%s\" failed: %Rrc"),
-                                       strDest.c_str(), rc));
+                                       pszDstFile, rc));
         return rc;
     }
 
-    rc = fileCopyFromEx(strSource, strDest, enmFileCopyFlags, &hFile, 0 /* Offset, unused */, 0 /* Size, unused */);
+    rc = fileCopyFromEx(strSource, pszDstFile, enmFileCopyFlags, &hFile, 0 /* Offset, unused */, 0 /* Size, unused */);
 
     int rc2 = RTFileClose(hFile);
     AssertRC(rc2);
 
+    if (pszDstFile)
+        RTStrFree(pszDstFile);
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
