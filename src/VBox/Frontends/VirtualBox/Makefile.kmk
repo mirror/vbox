@@ -668,6 +668,7 @@ ifdef VBOX_WITH_DRAG_AND_DROP
 endif
 
 VirtualBox_QT_MOCHDRS.darwin += \
+	src/platform/darwin/UICocoaSpecialControls.h \
 	src/platform/darwin/UIWindowMenuManager.h
 
 
@@ -1074,8 +1075,6 @@ VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
-VirtualBox_QT_MOCHDRS.darwin += \
-	src/platform/darwin/UICocoaSpecialControls.h
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_SOURCES.darwin += \
