@@ -132,6 +132,7 @@ class UIPathOperations
 public:
     static QString removeMultipleDelimiters(const QString &path);
     static QString removeTrailingDelimiters(const QString &path);
+    static QString addTrailingDelimiters(const QString &path);
     static QString addStartDelimiter(const QString &path);
 
     static QString sanitize(const QString &path);
@@ -333,3 +334,4 @@ private:
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
+

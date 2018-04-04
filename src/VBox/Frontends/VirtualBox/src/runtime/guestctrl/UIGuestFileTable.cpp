@@ -346,14 +346,14 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
     if (hostFileInfo.isFile() || hostFileInfo.isSymLink())
     {
         QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
-        /* API expects a full file path as destionation: */
-        QString destinationFilePath =  UIPathOperations::mergePaths(guestDestinationPath, UIPathOperations::getObjectName(hostSourcePath));
+        QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
         /** @todo listen to CProgress object to monitor copy operation: */
-        /*CProgress comProgress =*/ m_comGuestSession.FileCopyToGuest(hostSourcePath, destinationFilePath, flags);
+        /*CProgress comProgress =*/ m_comGuestSession.FileCopyToGuest(hostSourcePath, "/home/vbox/temp/", flags);
     }
     else if(hostFileInfo.isDir())
     {
-        QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_None/*CopyIntoExisting*/);
+
+        QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
         /** @todo listen to CProgress object to monitor copy operation: */
         /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, guestDestinationPath, aFlags);
     }

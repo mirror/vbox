@@ -186,9 +186,20 @@ const QChar UIPathOperations::delimiter = QChar('/');
     if (path.isNull() || path.isEmpty())
         return QString();
     QString newPath(path);
-    /* Make sure for we dont have any trailing slashes: */
+    /* Make sure for we dont have any trailing delimiters: */
     while (newPath.length() > 1 && newPath.at(newPath.length() - 1) == UIPathOperations::delimiter)
         newPath.chop(1);
+    return newPath;
+}
+
+/* static */ QString UIPathOperations::addTrailingDelimiters
+(const QString &path)
+{
+    if (path.isNull() || path.isEmpty())
+        return QString();
+    QString newPath(path);
+    while (newPath.length() > 1 && newPath.at(newPath.length() - 1) != UIPathOperations::delimiter)
+        newPath += UIPathOperations::delimiter;
     return newPath;
 }
 
