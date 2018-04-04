@@ -157,3 +157,4 @@ void UIVMLogViewerDialog::sltSetCloseButtonShortCut(QKeySequence shortCut)
     if (button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortCut);
 }
+

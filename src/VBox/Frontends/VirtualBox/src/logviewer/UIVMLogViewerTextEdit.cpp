@@ -552,3 +552,4 @@ void UIVMLogViewerTextEdit::setCurrentVerticalScrollBarValue(int value)
 
 
 #include "UIVMLogViewerTextEdit.moc"
+

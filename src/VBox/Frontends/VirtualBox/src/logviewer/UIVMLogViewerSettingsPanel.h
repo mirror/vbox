@@ -72,3 +72,4 @@ private:
 };
 
 #endif /* !___UIVMLogViewerSettingsPanel_h___ */
+

@@ -915,3 +915,4 @@ void UIVMLogViewerWidget::resetHighlighthing()
     logPage->documentUndo();
     logPage->clearScrollBarMarkingsVector();
 }
+

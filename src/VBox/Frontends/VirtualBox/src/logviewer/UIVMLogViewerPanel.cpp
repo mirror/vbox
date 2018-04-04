@@ -165,3 +165,4 @@ const QString* UIVMLogViewerPanel::logString() const
         return 0;
     return &(page->logString());
 }
+

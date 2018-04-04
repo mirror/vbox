@@ -77,3 +77,4 @@ private:
 };
 
 #endif /* !___UIVMLogViewerPanel!_h___ */
+

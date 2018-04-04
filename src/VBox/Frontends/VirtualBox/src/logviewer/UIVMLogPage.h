@@ -170,3 +170,4 @@ private:
 };
 
 #endif /* !___UIVMLogPage_h___ */
+

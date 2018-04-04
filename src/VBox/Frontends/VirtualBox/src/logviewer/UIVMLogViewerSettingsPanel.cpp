@@ -134,3 +134,4 @@ void UIVMLogViewerSettingsPanel::retranslateUi()
     m_pFontSizeLabel->setText(UIVMLogViewerWidget::tr("Font Size"));
     m_pFontSizeSpinBox->setToolTip(UIVMLogViewerWidget::tr("Log Viewer Font Size"));
 }
+

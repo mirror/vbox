@@ -658,3 +658,4 @@ QTextDocument::FindFlags UIVMLogViewerSearchPanel::constructFindFlags(SearchDire
 }
 
 #include "UIVMLogViewerSearchPanel.moc"
+

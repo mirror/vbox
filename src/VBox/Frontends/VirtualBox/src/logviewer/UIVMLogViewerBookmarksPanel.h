@@ -86,3 +86,4 @@ private:
 };
 
 #endif /* !___UIVMLogViewerBookmarksPanel_h___ */
+

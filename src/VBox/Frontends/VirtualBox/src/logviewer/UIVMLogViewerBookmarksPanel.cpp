@@ -256,3 +256,4 @@ void UIVMLogViewerBookmarksPanel::sltGotoSelectedBookmark()
         return;
     emit sigBookmarkSelected(m_pBookmarksComboBox->currentIndex() - 1);
 }
+

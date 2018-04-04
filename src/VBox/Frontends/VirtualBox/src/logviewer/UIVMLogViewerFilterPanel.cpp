@@ -540,3 +540,4 @@ void UIVMLogViewerFilterPanel::showEvent(QShowEvent *pEvent)
 }
 
 #include "UIVMLogViewerFilterPanel.moc"
+

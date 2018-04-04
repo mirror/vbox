@@ -130,3 +130,4 @@ private:
 
 
 #endif /* !___UIVMLogViewerSearchPanel_h___ */
+

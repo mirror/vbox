@@ -109,3 +109,4 @@ private:
 };
 
 #endif /* !___UIVMLogViewerFilterPanel_h___ */
+

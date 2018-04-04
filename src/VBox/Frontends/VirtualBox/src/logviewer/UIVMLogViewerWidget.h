@@ -228,3 +228,4 @@ private:
 };
 
 #endif /* !___UIVMLogViewerWidget_h___ */
+

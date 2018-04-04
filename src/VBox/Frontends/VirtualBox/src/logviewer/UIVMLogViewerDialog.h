@@ -83,3 +83,4 @@ private:
 };
 
 #endif /* !___UIVMLogViewerDialog_h___ */
+
