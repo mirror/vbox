@@ -2146,6 +2146,8 @@ static int vbvaHandleQueryConf32(PVGASTATE pVGAState, VBVACONF32 RT_UNTRUSTED_VO
                | VBVA_SCREEN_F_BLANK2;
     else if (idxQuery == VBOX_VBVA_CONF32_MAX_RECORD_SIZE)
         uValue = VBVA_MAX_RECORD_SIZE;
+    else if (idxQuery == UINT32_MAX)
+        uValue = UINT32_MAX; /* Older GA uses this for sanity checking. See testQueryConf in HGSMIBase.cpp on branches. */
     else
         ASSERT_GUEST_MSG_FAILED_RETURN(("Invalid index %#x\n", idxQuery), VERR_INVALID_PARAMETER);
 
