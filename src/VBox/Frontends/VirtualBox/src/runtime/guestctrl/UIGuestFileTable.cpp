@@ -494,3 +494,4 @@ void UIGuestFileTable::showProperties()
 }
 
 #include "UIGuestFileTable.moc"
+

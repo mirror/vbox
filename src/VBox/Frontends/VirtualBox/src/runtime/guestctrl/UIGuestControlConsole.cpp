@@ -301,3 +301,4 @@ QList<QString> UIGuestControlConsole::matchedWords(const QString &strSearch) con
     }
     return list;
 }
+

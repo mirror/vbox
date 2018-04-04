@@ -396,3 +396,4 @@ const CGuestProcess& UIGuestProcessTreeItem::guestProcess() const
 {
     return m_comGuestProcess;
 }
+

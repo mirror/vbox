@@ -375,3 +375,4 @@ void  UIHostFileTable::showProperties()
 }
 
 #include "UIHostFileTable.moc"
+

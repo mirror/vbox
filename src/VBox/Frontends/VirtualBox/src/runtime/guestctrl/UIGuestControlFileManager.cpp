@@ -711,3 +711,4 @@ void UIGuestControlFileManager::loadSettings()
 }
 
 #include "UIGuestControlFileManager.moc"
+

@@ -688,3 +688,4 @@ QString UIGuestControlInterface::getFsObjInfoString(const T &fsObjectInfo) const
 
     return strObjectInfo;
 }
+

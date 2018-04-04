@@ -255,3 +255,4 @@ bool UIGuestControlFileModel::insertRows(int position, int rows, const QModelInd
 
     return true;
 }
+

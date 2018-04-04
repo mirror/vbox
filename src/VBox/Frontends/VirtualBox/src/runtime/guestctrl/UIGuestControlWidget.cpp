@@ -449,3 +449,4 @@ void UIGuestControlWidget::loadSettings()
 }
 
 #include "UIGuestControlWidget.moc"
+

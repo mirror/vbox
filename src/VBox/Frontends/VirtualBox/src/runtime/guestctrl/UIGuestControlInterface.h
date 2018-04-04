@@ -98,3 +98,4 @@ private:
 };
 
 #endif /* !___UIGuestControlInterface_h___ */
+
