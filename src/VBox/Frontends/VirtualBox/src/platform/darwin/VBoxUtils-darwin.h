@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,29 +15,37 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxUtils_darwin_h
-#define ___VBoxUtils_darwin_h
+#ifndef ___VBoxUtils_darwin_h___
+#define ___VBoxUtils_darwin_h___
 
-#include <VBox/VBoxCocoa.h>
-#include <ApplicationServices/ApplicationServices.h>
-#undef PVM                              /* Stupid, stupid apple headers (sys/param.h)!!  */
-#include <iprt/cdefs.h> /* for RT_C_DECLS_BEGIN/RT_C_DECLS_END & stuff */
-
+/* Qt includes: */
 #include <QRect>
 
-ADD_COCOA_NATIVE_REF(NSEvent);
-ADD_COCOA_NATIVE_REF(NSImage);
-ADD_COCOA_NATIVE_REF(NSView);
-ADD_COCOA_NATIVE_REF(NSWindow);
-ADD_COCOA_NATIVE_REF(NSButton);
-ADD_COCOA_NATIVE_REF(NSString);
+/* Other VBox includes: */
+#include <VBox/VBoxCocoa.h>
+#include <ApplicationServices/ApplicationServices.h>
+#undef PVM // Stupid, stupid apple headers (sys/param.h)!!
+#include <iprt/cdefs.h>
 
+/* External includes: */
+#include <ApplicationServices/ApplicationServices.h>
+
+/* Forward declarations: */
 class QImage;
 class QMainWindow;
 class QMenu;
 class QPixmap;
 class QToolBar;
 class QWidget;
+
+/* Cocoa declarations: */
+ADD_COCOA_NATIVE_REF(NSButton);
+ADD_COCOA_NATIVE_REF(NSEvent);
+ADD_COCOA_NATIVE_REF(NSImage);
+ADD_COCOA_NATIVE_REF(NSString);
+ADD_COCOA_NATIVE_REF(NSView);
+ADD_COCOA_NATIVE_REF(NSWindow);
+
 
 /** Mac OS X: Standard window button types. */
 enum StandardWindowButtonType
@@ -50,6 +58,7 @@ enum StandardWindowButtonType
     StandardWindowButtonType_DocumentVersions, // Since OS X 10.7
     StandardWindowButtonType_FullScreen        // Since OS X 10.7
 };
+
 
 RT_C_DECLS_BEGIN
 
@@ -203,8 +212,6 @@ NativeNSImageRef darwinToNSImageRef(const QImage *pImage);
 NativeNSImageRef darwinToNSImageRef(const QPixmap *pPixmap);
 NativeNSImageRef darwinToNSImageRef(const char *pczSource);
 
-#ifndef __OBJC__
-
 #include <QEvent>
 class UIGrabMouseEvent: public QEvent
 {
@@ -288,9 +295,7 @@ void darwinUnregisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
 void darwinMouseGrab(QWidget *pWidget);
 void darwinMouseRelease(QWidget *pWidget);
 
-void* darwinCocoaToCarbonEvent(void *pvCocoaEvent);
+void *darwinCocoaToCarbonEvent(void *pvCocoaEvent);
 
-#endif /* !__OBJC__ */
-
-#endif /* !___VBoxUtils_darwin_h */
+#endif /* !___VBoxUtils_darwin_h___ */
 
