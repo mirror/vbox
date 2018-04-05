@@ -3178,31 +3178,30 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'non-exist',
                                sDst = os.path.join(sScratch, 'non-exist.dll')),
-                  tdTestResult(fRc = False) ],
-
-                #
-                # Single file handling.
-                #
-
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = os.path.join(sScratch, 'C:\\non-exist\\')),
-                  tdTestResult(fRc = False) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = os.path.join(sScratch, 'C:\\non\\exist\\')),
-                  tdTestResult(fRc = False) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = os.path.join(sScratch, 'C:\\non\\exist\\renamedfile.dll')),
-                  tdTestResult(fRc = False) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
-                  tdTestResult(fRc = True) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
-                  tdTestResult(fRc = True) ]
+                  tdTestResult(fRc = False) ]
             ]);
 
-            if self.oTstDrv.fpApiVer > 5.2: # Copying files into directories via Main is supported only in versions > 5.2.
+            #
+            # Single file handling.
+            #
+            if self.oTstDrv.fpApiVer > 5.2:
                 aaTests.extend([
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                sDst = os.path.join(sScratch, 'C:\\non-exist\\')),
+                      tdTestResult(fRc = False) ],
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                sDst = os.path.join(sScratch, 'C:\\non\\exist\\')),
+                      tdTestResult(fRc = False) ],
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                sDst = os.path.join(sScratch, 'C:\\non\\exist\\renamedfile.dll')),
+                      tdTestResult(fRc = False) ],
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
+                      tdTestResult(fRc = True) ],
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
+                      tdTestResult(fRc = True) ],
+                    # Note: Copying files into directories via Main is supported only in versions > 5.2.
                     # Destination is a directory.
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
                                 sDst = sScratch),
@@ -3330,31 +3329,30 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'non-exist',
                                  sDst = os.path.join(sScratch, 'non-exist.dll')),
-                  tdTestResult(fRc = False) ],
-
-                #
-                # Single file handling.
-                #
-
-                # Copying single files.
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                 sDst = sScratchNotExist),
-                  tdTestResult(fRc = False) ],
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                 sDst = os.path.join(sScratchNotExist, 'renamedfile.dll')),
-                  tdTestResult(fRc = False) ],
-                # Copy over file using a different destination name.
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                 sDst = os.path.join(sScratch, 'renamedfile.dll')),
-                  tdTestResult(fRc = True) ],
-                # Copy over same file (and overwrite existing one).
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                 sDst = os.path.join(sScratch, 'renamedfile.dll')),
-                  tdTestResult(fRc = True) ]
+                  tdTestResult(fRc = False) ]
             ]);
 
-            if self.oTstDrv.fpApiVer > 5.2: # Copying files into directories via Main is supported only in versions > 5.2.
+            #
+            # Single file handling.
+            #
+            if self.oTstDrv.fpApiVer > 5.2:
                 aaTests.extend([
+                    # Copying single files.
+                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                    sDst = sScratchNotExist),
+                    tdTestResult(fRc = False) ],
+                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                    sDst = os.path.join(sScratchNotExist, 'renamedfile.dll')),
+                    tdTestResult(fRc = False) ],
+                    # Copy over file using a different destination name.
+                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                    sDst = os.path.join(sScratch, 'renamedfile.dll')),
+                    tdTestResult(fRc = True) ],
+                    # Copy over same file (and overwrite existing one).
+                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                    sDst = os.path.join(sScratch, 'renamedfile.dll')),
+                    tdTestResult(fRc = True) ],
+                    # Note: Copying files into directories via Main is supported only in versions > 5.2.
                     # Destination is a directory with a trailing slash (should work).
                     # See "cp" syntax.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
