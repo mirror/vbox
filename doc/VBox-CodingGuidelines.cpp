@@ -373,7 +373,7 @@
  * Second, when getting inputs from memory shared with the guest, be EXTREMELY
  * careful to not re-read input from shared memory after validating it, because
  * that will create TOCTOU problems. So, after reading input from shared memory
- * always use the RT_UNTRUSTED_NONVOLATILE_COPY_FENCE() macor.  For more details
+ * always use the RT_UNTRUSTED_NONVOLATILE_COPY_FENCE() macro.  For more details
  * on TOCTOU: https://en.wikipedia.org/wiki/Time_of_check_to_time_of_use
  *
  * Thirdly, considering the recent speculation side channel issues, spectre v1
