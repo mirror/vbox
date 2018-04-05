@@ -928,6 +928,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           "-----\nGRUB Loading stage2.....\n\n\n\n" ), # the 5 dot hang appears to be more frequent again
         ( True,  ktReason_OSInstall_Udev_hang,
           "\nStarting udev:\n\n\n\n" ),
+        ( True,  ktReason_OSInstall_Udev_hang,
+          "\nStarting udev:\n------" ),
         ( True,  ktReason_Panic_BootManagerC000000F,
           "Windows failed to start. A recent hardware or software change might be the" ),
         ( True,  ktReason_BootManager_Image_corrupt,
