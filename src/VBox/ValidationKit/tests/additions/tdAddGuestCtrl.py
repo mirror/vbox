@@ -3346,18 +3346,22 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Copy over same file (and overwrite existing one).
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
                                  sDst = os.path.join(sScratch, 'renamedfile.dll')),
-                  tdTestResult(fRc = True) ],
-                # Destination is a directory with a trailing slash (should work).
-                # See "cp" syntax.
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                 sDst = sScratch + "/"),
-                  tdTestResult(fRc = True) ],
-                # Destination is a directory (should fail).
-                # See "cp" syntax.
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                 sDst = sScratch),
-                  tdTestResult(fRc = False) ]
+                  tdTestResult(fRc = True) ]
             ]);
+
+            if self.oTstDrv.fpApiVer > 5.2: # Copying files into directories via Main is supported only in versions > 5.2.
+                aaTests.extend([
+                    # Destination is a directory with a trailing slash (should work).
+                    # See "cp" syntax.
+                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                    sDst = sScratch + "/"),
+                      tdTestResult(fRc = True) ],
+                    # Destination is a directory (should fail).
+                    # See "cp" syntax.
+                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                    sDst = sScratch),
+                      tdTestResult(fRc = False) ]
+                ]);
 
             #
             # Directory handling.
