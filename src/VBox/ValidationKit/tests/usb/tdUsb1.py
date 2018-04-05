@@ -416,7 +416,8 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
             self.oVBox.host.removeUSBDeviceSource(sGadgetHost);
         else:
-            reporter.testFailure('Failed to connect to USB gadget');
+            reporter.log('warning: Failed to connect to USB gadget');
+            fRc = None
 
         _ = sUsbCtrl;
         return fRc;
@@ -461,13 +462,14 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                         self.sleep(1);
 
                 else:
-                    reporter.testFailure('Failed to impersonate test device');
+                    reporter.testFailure('Failed to create USB device filter');
 
                 oUsbGadget.disconnectFrom();
             else:
-                reporter.testFailure('Failed to connect to USB gadget');
+                reporter.testFailure('Failed to impersonate test device');
         else:
-            reporter.testFailure('Failed to create USB device filter');
+            reporter.log('warning: Failed to connect to USB gadget');
+            fRc = None
 
         return fRc;
 
