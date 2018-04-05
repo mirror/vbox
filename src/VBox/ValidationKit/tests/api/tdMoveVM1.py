@@ -541,10 +541,10 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         fSupported = self.checkAPIVersion()
 
         if fSupported is False:
-            reporter.log('API version is below "%s". Just skip this test.' % (self.oTstDrv.fpApiVer))
+            reporter.log('API version %s is too old. Just skip this test.' % (self.oTstDrv.fpApiVer))
             return reporter.testDone()[1] == 0
         else:
-            reporter.log('API version is "%s". Continuing the test.' % (self.oTstDrv.fpApiVer))
+            reporter.log('API version is "%s".' % (self.oTstDrv.fpApiVer))
 
         #Scenarios
         #1. All disks attached to VM are located outside the VM's folder.
