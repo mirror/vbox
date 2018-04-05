@@ -38,7 +38,7 @@ class UIVMLogViewerTextEdit;
 typedef QPair<int, QString> LogBookmark;
 
 /** UIVMLogPage defines data and functionalities of the each tab page of a UIVMLogViewerWidget.
-    It stores the original log file content , a list of bookmarks, etc */
+ *  It stores the original log file content , a list of bookmarks, etc */
 class UIVMLogPage  : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -70,8 +70,8 @@ public:
     const QString& logFileName() const;
 
     /** Set plaintextEdit's text. Note that the text we
-        show currently might be different than
-        m_strLog. For example during filtering. */
+     *  show currently might be different than
+     *  m_strLog. For example during filtering. */
     void setTextEditText(const QString &strText);
     void setTextEditTextAsHtml(const QString &strText);
 
@@ -87,6 +87,8 @@ public:
     void deleteBookmark(int index);
 
     const QVector<LogBookmark>& bookmarkVector() const;
+    void setBookmarkVector(const QVector<LogBookmark>& booksmarks);
+
     void deleteAllBookmarks();
     /** Scrolls the plain text edit to the bookmark with index @a bookmarkIndex. */
     void scrollToBookmark(int bookmarkIndex);
@@ -98,14 +100,14 @@ public:
     void setWrapLines(bool bWrapLines);
 
     /** setFilterParameters is called at the end of filtering operation to store the parameter etc.
-        these parameters are used to decide whether we have to reapply the filter, and if not to
-        update filter panel with correct line counts etc.*/
+     *  these parameters are used to decide whether we have to reapply the filter, and if not to
+     *  update filter panel with correct line counts etc.*/
     void setFilterParameters(const QSet<QString> &filterTermSet, int filterOperationType,
                              int iFilteredLineCount, int iUnfilteredLineCount);
     int  filteredLineCount() const;
     int  unfilteredLineCount() const;
     /** Compares filter parameters with previous filter operation's parameters to decide if the
-        filter should be applied again. */
+     *  filter should be applied again. */
     bool shouldFilterBeApplied(const QSet<QString> &filterTermSet, int filterOperationType) const;
 
     void setFontSizeInPoints(int fontSize);

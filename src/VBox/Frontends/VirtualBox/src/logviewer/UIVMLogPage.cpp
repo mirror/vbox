@@ -243,6 +243,12 @@ const QVector<LogBookmark>& UIVMLogPage::bookmarkVector() const
     return m_bookmarkVector;
 }
 
+void UIVMLogPage::setBookmarkVector(const QVector<LogBookmark>& bookmarks)
+{
+    m_bookmarkVector = bookmarks;
+    updateTextEditBookmarkLineSet();
+}
+
 void UIVMLogPage::showEvent(QShowEvent *pEvent)
 {
     if (m_pTextEdit)

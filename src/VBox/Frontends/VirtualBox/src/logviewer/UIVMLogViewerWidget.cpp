@@ -179,31 +179,44 @@ void UIVMLogViewerWidget::sltRefresh()
 
     m_logPageList.clear();
     m_pTabWidget->setEnabled(true);
+    int currentTabIndex = m_pTabWidget->currentIndex();
     /* Hide the container widget during updates to avoid flickering: */
     m_pTabWidget->hide();
+    QVector<QVector<LogBookmark> > logPageBookmarks;
     /* Clear the tab widget. This might be an overkill but most secure way to deal with the case where
-       number of the log files changes. */
+       number of the log files changes. Store the bookmark vectors before deleting the pages*/
     while (m_pTabWidget->count())
     {
         QWidget *pFirstPage = m_pTabWidget->widget(0);
+        UIVMLogPage *pLogPage = qobject_cast<UIVMLogPage*>(pFirstPage);
+        if (pLogPage)
+            logPageBookmarks.push_back(pLogPage->bookmarkVector());
         m_pTabWidget->removeTab(0);
         delete pFirstPage;
     }
 
     bool noLogsToShow = createLogViewerPages();
 
-    /* Show the first tab widget's page after the refresh: */
-    m_pTabWidget->setCurrentIndex(0);
-
     /* Apply the filter settings: */
     if (m_pFilterPanel)
         m_pFilterPanel->applyFilter();
+    /* Restore the bookmarks: */
+    for (int i = 0; i < !noLogsToShow && m_pTabWidget->count(); ++i)
+    {
+        UIVMLogPage *pLogPage = qobject_cast<UIVMLogPage*>(m_pTabWidget->widget(i));
+        if (pLogPage && i < logPageBookmarks.size())
+            pLogPage->setBookmarkVector(logPageBookmarks[i]);
+    }
 
     /* Setup this connection after refresh to avoid initial signals during page creation: */
     if (m_pFilterPanel)
         connect(m_pTabWidget, &QITabWidget::currentChanged, m_pFilterPanel, &UIVMLogViewerFilterPanel::applyFilter);
     connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltTabIndexChange);
 
+    /* Show the first tab widget's page after the refresh: */
+    int tabIndex = (currentTabIndex < m_pTabWidget->count()) ? currentTabIndex : 0;
+    m_pTabWidget->setCurrentIndex(tabIndex);
+    sltTabIndexChange(tabIndex);
     /* Enable/Disable toolbar actions (except Refresh) & tab widget according log presence: */
     if (m_pActionFind)
         m_pActionFind->setEnabled(!noLogsToShow);
@@ -219,6 +232,17 @@ void UIVMLogViewerWidget::sltRefresh()
     m_pTabWidget->show();
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
         m_pSearchPanel->refresh();
+
+    /* If there are no log files to show the hide all the open panels: */
+    if (noLogsToShow)
+    {
+        for(QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.begin();
+            iterator != m_panelActionMap.end(); ++iterator)
+        {
+            if (iterator.key())
+            hidePanel(iterator.key());
+        }
+    }
 }
 
 void UIVMLogViewerWidget::sltSave()
