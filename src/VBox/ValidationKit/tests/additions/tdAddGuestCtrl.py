@@ -3198,16 +3198,20 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResult(fRc = True) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
                                sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
-                  tdTestResult(fRc = True) ],
-                # Destination is a directory.
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = sScratch),
-                  tdTestResult(fRc = True) ],
-                # Copy over file again into same directory (overwrite).
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                               sDst = sScratch),
-                  tdTestResult(fRc = True) ],
+                  tdTestResult(fRc = True) ]
             ]);
+
+            if self.oTstDrv.fpApiVer > 5.2: # Copying files into directories via Main is supported only in versions > 5.2.
+                aaTests.extend([
+                    # Destination is a directory.
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                sDst = sScratch),
+                      tdTestResult(fRc = True) ],
+                    # Copy over file again into same directory (overwrite).
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                sDst = sScratch),
+                      tdTestResult(fRc = True) ]
+                ]);
 
             #
             # Directory handling.
