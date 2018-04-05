@@ -283,7 +283,7 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
     QString newDirectoryPath = UIPathOperations::mergePaths(path, directoryName);
     QVector<KDirectoryCreateFlag> flags(KDirectoryCreateFlag_None);
 
-    m_comGuestSession.DirectoryCreate(newDirectoryPath, 777/*aMode*/, flags);
+    m_comGuestSession.DirectoryCreate(newDirectoryPath, 0/*aMode*/, flags);
     if (!m_comGuestSession.isOk())
     {
         emit sigLogOutput(newDirectoryPath.append(" could not be created"));
@@ -318,7 +318,7 @@ bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QSt
     {
         QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
         /* API expects a full file path as destionation: */
-        QString destinatioFilePath =  UIPathOperations::mergePaths(hostDestinationPath, UIPathOperations::getObjectName(guestSourcePath));
+        QString destinatioFilePath =  UIPathOperations::addTrailingDelimiters(hostDestinationPath);
         /** @todo listen to CProgress object to monitor copy operation: */
         /*CProgress comProgress =*/ m_comGuestSession.FileCopyFromGuest(guestSourcePath, destinatioFilePath, flags);
 
@@ -348,14 +348,15 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
         QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
         QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
         /** @todo listen to CProgress object to monitor copy operation: */
-        /*CProgress comProgress =*/ m_comGuestSession.FileCopyToGuest(hostSourcePath, "/home/vbox/temp/", flags);
+        /*CProgress comProgress =*/ m_comGuestSession.FileCopyToGuest(hostSourcePath, destinationFilePath, flags);
     }
     else if(hostFileInfo.isDir())
     {
 
         QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
+        QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
         /** @todo listen to CProgress object to monitor copy operation: */
-        /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, guestDestinationPath, aFlags);
+        /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, destinationFilePath, aFlags);
     }
     if (!m_comGuestSession.isOk())
         return false;
