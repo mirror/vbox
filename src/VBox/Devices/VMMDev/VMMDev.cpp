@@ -142,19 +142,6 @@
        || (   RT_HIWORD(additionsVersion) == RT_HIWORD(VMMDEV_VERSION) \
            && RT_LOWORD(additionsVersion) >  RT_LOWORD(VMMDEV_VERSION) ) )
 
-/** The saved state version. */
-#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_HEARTBEAT
-/** The saved state version with heartbeat state. */
-#define VMMDEV_SAVED_STATE_VERSION_HEARTBEAT                    16
-/** The saved state version without heartbeat state. */
-#define VMMDEV_SAVED_STATE_VERSION_NO_HEARTBEAT                 15
-/** The saved state version which is missing the guest facility statuses. */
-#define VMMDEV_SAVED_STATE_VERSION_MISSING_FACILITY_STATUSES    14
-/** The saved state version which is missing the guestInfo2 bits. */
-#define VMMDEV_SAVED_STATE_VERSION_MISSING_GUEST_INFO_2         13
-/** The saved state version used by VirtualBox 3.0.
- *  This doesn't have the config part. */
-#define VMMDEV_SAVED_STATE_VERSION_VBOX_30                      11
 /** Default interval in nanoseconds between guest heartbeats.
  *  Used when no HeartbeatInterval is set in CFGM and for setting
  *  HB check timer if the guest's heartbeat frequency is less than 1Hz. */
