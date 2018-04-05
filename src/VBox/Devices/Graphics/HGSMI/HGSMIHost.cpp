@@ -1493,7 +1493,7 @@ static DECLCALLBACK(int) hgsmiChannelHandler(void *pvHandler, uint16_t u16Channe
             ASSERT_GUEST_RETURN(LocSafe.cbLocation == sizeof(HGSMIHOSTFLAGS), VERR_INVALID_PARAMETER);
             RT_UNTRUSTED_VALIDATED_FENCE();
 
-            pIns->pHGFlags = (HGSMIHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *)HGSMIOffsetToPointer(&pIns->area, pLoc->offLocation);
+            pIns->pHGFlags = (HGSMIHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *)HGSMIOffsetToPointer(&pIns->area, LocSafe.offLocation);
             break;
         }
 
