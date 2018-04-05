@@ -3564,7 +3564,7 @@ static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr,
             return crVBoxServerCrCmdClrFillProcess((VBOXCMDVBVA_CLRFILL_HDR const RT_UNTRUSTED_VOLATILE_GUEST *)pCmd, cbCmd);
 
         default:
-            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+            AssertFailedReturn(-1);
     }
     /* not reached */
 }
