@@ -39,8 +39,6 @@ class Binding
 public:
     enum State { FREE, RELEASED, EXPIRED, OFFERED, ACKED };
 
-    typedef std::unary_function<const Binding *, bool> Match;
-
 private:
     const RTNETADDRIPV4 m_addr;
     State m_state;
@@ -134,9 +132,6 @@ public:
     int init(const Config *pConfig);
 
     bool addressBelongs(RTNETADDRIPV4 addr) const { return m_pool.contains(addr); }
-
-    Binding *bindingById(const ClientId &id) const;
-    Binding *bindingByAddr(RTNETADDRIPV4 addr) const;
 
     Binding *allocateBinding(const DhcpClientMessage &req);
     bool releaseBinding(const DhcpClientMessage &req);

@@ -20,6 +20,7 @@
 
 #include <iprt/types.h>
 #include <iprt/net.h>
+#include <iprt/cpp/xml.h>
 
 #include <VBox/intnet.h>
 
@@ -32,7 +33,10 @@
 
 class Config
 {
-    std::string m_strHome;
+    /* XXX: TODO: also store fixed address assignments, etc? */
+    typedef std::map<RTMAC, optmap_t> vmmap_t;
+
+    std::string m_strHome;   /* path of ~/.VirtualBox or equivalent */
 
     std::string m_strNetwork;
     std::string m_strBaseName; /* m_strNetwork sanitized to be usable in a path component */
@@ -48,8 +52,16 @@ class Config
     RTNETADDRIPV4 m_IPv4PoolFirst;
     RTNETADDRIPV4 m_IPv4PoolLast;
 
+    optmap_t m_GlobalOptions;
+    vmmap_t m_VMMap;
+
 private:
-    bool isSane();
+    Config();
+
+    int init();
+    int homeInit();
+    int logInit();
+    int complete();
 
 public: /* factory methods */
     static Config *hardcoded();                   /* for testing */
@@ -57,10 +69,11 @@ public: /* factory methods */
     static Config *compat(int argc, char **argv); /* old VBoxNetDHCP flags */
 
 public: /* accessors */
-    void setHome(const std::string &strHome) { m_strHome = strHome; }
-
     const std::string &getHome() const { return m_strHome; }
+
     const std::string &getNetwork() const { return m_strNetwork; }
+    void setNetwork(const std::string &aStrNetwork);
+
     const std::string &getBaseName() const { return m_strBaseName; }
     const std::string &getTrunk() const { return m_strTrunk; }
     INTNETTRUNKTYPE getTrunkType() const { return m_enmTrunkType; }
@@ -79,17 +92,16 @@ public:
 
 private:
     static Config *read(const char *pszFileName);
+    void parseConfig(const xml::ElementNode *root);
+    void parseServer(const xml::ElementNode *server);
+    void parseGlobalOptions(const xml::ElementNode *options);
+    void parseVMConfig(const xml::ElementNode *config);
+    void parseOption(const xml::ElementNode *option, optmap_t &optmap);
+
+    int parseMACAddress(RTMAC &aMac, const RTCString &aStr);
+    int parseClientId(OptClientId &aId, const RTCString &aStr);
 
     void sanitizeBaseName();
-
-    void fillDefaultOptions(optmap_t &optmap,
-                            const OptParameterRequest &reqOpts) const;
-    void fillVendorOptions(optmap_t &optmap,
-                           const OptParameterRequest &reqOpts,
-                           const OptVendorClassId &vendor) const;
-    void fillHostOptions(optmap_t &optmap,
-                         const OptParameterRequest &reqOpts,
-                         const ClientId &id) const;
 };
 
 #endif  /* _DHCPD_CONFIG_H_ */

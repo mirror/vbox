@@ -32,8 +32,6 @@
 #include <VBox/intnet.h>
 #include <VBox/intnetinline.h>
 
-#include <VBox/com/com.h>
-
 #include "VBoxLwipCore.h"
 #include "Config.h"
 #include "DHCPD.h"
@@ -72,6 +70,8 @@ class VBoxNetDhcpd
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(VBoxNetDhcpd);
 
 private:
+    PRTLOGGER m_pStderrReleaseLogger;
+
     /* intnet plumbing */
     PSUPDRVSESSION m_pSession;
     INTNETIFHANDLE m_hIf;
@@ -79,9 +79,6 @@ private:
 
     /* lwip stack connected to the intnet */
     struct netif m_LwipNetif;
-
-    /* path of ~/.VirtualBox or equivalent */
-    std::string m_strHome;
 
     Config *m_Config;
 
@@ -97,8 +94,7 @@ public:
     int main(int argc, char **argv);
 
 private:
-    void homeInit();
-    int logInit(const std::string &strBaseName);
+    int logInitStderr();
 
     /*
      * Boilerplate code.
@@ -148,7 +144,8 @@ private:
 
 
 VBoxNetDhcpd::VBoxNetDhcpd()
-  : m_pSession(NIL_RTR0PTR),
+  : m_pStderrReleaseLogger(NULL),
+    m_pSession(NIL_RTR0PTR),
     m_hIf(INTNET_HANDLE_INVALID),
     m_pIfBuf(NULL),
     m_LwipNetif(),
@@ -156,6 +153,8 @@ VBoxNetDhcpd::VBoxNetDhcpd()
     m_Dhcp4Pcb(NULL)
 {
     int rc;
+
+    logInitStderr();
 
     rc = r3Init();
     if (RT_FAILURE(rc))
@@ -169,6 +168,43 @@ VBoxNetDhcpd::~VBoxNetDhcpd()
 {
     ifClose();
     r3Fini();
+}
+
+
+/*
+ * We don't know the name of the release log file until we parse our
+ * configuration because we use network name as basename.  To get
+ * early logging to work, start with stderr-only release logger.
+ *
+ * We disable "sup" for this logger to avoid spam from SUPR3Init().
+ */
+int VBoxNetDhcpd::logInitStderr()
+{
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+
+    PRTLOGGER pLogger;
+    int rc;
+
+    uint32_t fFlags = 0;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    fFlags |= RTLOGFLAGS_USECRLF;
+#endif
+
+    rc = RTLogCreate(&pLogger, fFlags,
+                     "all -sup all.restrict -default.restrict",
+                     NULL,      /* environment base */
+                     RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                     RTLOGDEST_STDERR, NULL);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("Failed to init stderr logger: %Rrs\n", rc);
+        return rc;
+    }
+
+    m_pStderrReleaseLogger = pLogger;
+    RTLogRelSetDefaultInstance(m_pStderrReleaseLogger);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -259,7 +295,10 @@ int VBoxNetDhcpd::ifOpen(const std::string &strNetwork,
     strncpy(OpenReq.szTrunk, strTrunk.c_str(), sizeof(OpenReq.szTrunk));
     OpenReq.szTrunk[sizeof(OpenReq.szTrunk) - 1] = '\0';
 
-    OpenReq.enmTrunkType = enmTrunkType;
+    if (enmTrunkType != kIntNetTrunkType_Invalid)
+        OpenReq.enmTrunkType = enmTrunkType;
+    else
+        OpenReq.enmTrunkType = kIntNetTrunkType_WhateverNone;
 
     OpenReq.fFlags = 0;
     OpenReq.cbSend = 128 * _1K;
@@ -587,11 +626,6 @@ int VBoxNetDhcpd::main(int argc, char **argv)
     if (m_Config == NULL)
         return VERR_GENERAL_FAILURE;
 
-    homeInit();
-    m_Config->setHome(m_strHome);
-
-    logInit(m_Config->getBaseName());
-
     rc = m_server.init(m_Config);
 
     /* connect to the intnet */
@@ -608,81 +642,6 @@ int VBoxNetDhcpd::main(int argc, char **argv)
 
     ifPump();
     return VINF_SUCCESS;
-}
-
-
-void VBoxNetDhcpd::homeInit()
-{
-    int rc;
-
-    /* pathname of ~/.VirtualBox or equivalent */
-    char szHome[RTPATH_MAX];
-    rc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
-    if (RT_FAILURE(rc))
-        return;
-
-    m_strHome.assign(szHome);
-}
-
-
-int VBoxNetDhcpd::logInit(const std::string &strBaseName)
-{
-    int rc;
-    size_t cch;
-
-    /* default log file name */
-    char szLogFile[RTPATH_MAX];
-    cch = RTStrPrintf(szLogFile, sizeof(szLogFile),
-                      "%s%c%s-Dhcpd.log",
-                      m_strHome.c_str(), RTPATH_DELIMITER, strBaseName.c_str());
-    if (cch >= sizeof(szLogFile))
-        return VERR_BUFFER_OVERFLOW;
-
-
-    /* get a writable copy of the base name */
-    char szBaseName[RTPATH_MAX];
-    rc = RTStrCopy(szBaseName, sizeof(szBaseName), strBaseName.c_str());
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* sanitize base name some more to be usable in an environment variable name */
-    for (char *p = szBaseName; *p != '\0'; ++p)
-    {
-        if (   *p != '_'
-            && (*p < '0' || '9' < *p)
-            && (*p < 'a' || 'z' < *p)
-            && (*p < 'A' || 'Z' < *p))
-        {
-            *p = '_';
-        }
-    }
-
-
-    /* name of the environment variable to control logging */
-    char szEnvVarBase[128];
-    cch = RTStrPrintf(szEnvVarBase, sizeof(szEnvVarBase),
-                      "VBOXDHCP_%s_RELEASE_LOG", szBaseName);
-    if (cch >= sizeof(szEnvVarBase))
-        return VERR_BUFFER_OVERFLOW;
-
-
-    rc = com::VBoxLogRelCreate("DHCP Server",
-                               szLogFile,
-                               RTLOGFLAGS_PREFIX_TIME_PROG,
-                               "all all.restrict -default.restrict",
-                               szEnvVarBase,
-                               RTLOGDEST_FILE
-#ifdef DEBUG
-                               | RTLOGDEST_STDERR
-#endif
-                               ,
-                               32768 /* cMaxEntriesPerGroup */,
-                               0 /* cHistory */,
-                               0 /* uHistoryFileTime */,
-                               0 /* uHistoryFileSize */,
-                               NULL /* pErrInfo */);
-
-    return rc;
 }
 
 

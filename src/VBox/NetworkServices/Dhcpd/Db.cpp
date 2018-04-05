@@ -18,9 +18,6 @@
 #include <iprt/err.h>
 #include <iprt/stream.h>
 
-#include <algorithm>
-#include <functional>
-
 #include "Db.h"
 
 
@@ -339,55 +336,6 @@ void Db::expire()
         b->expire(now);
     }
 }
-
-
-Binding *Db::bindingById(const ClientId &id) const
-{
-    struct ClientMatch : public Binding::Match {
-        const ClientId &m_id;
-        ClientMatch(const ClientId &id) : m_id(id) {}
-
-        bool operator()(const Binding *b)
-        {
-            return b->m_id == m_id;
-        }
-    };
-
-    bindings_t::const_iterator found =
-        std::find_if(m_bindings.begin(), m_bindings.end(),
-                     ClientMatch(id));
-
-    if (found == m_bindings.end())
-        return NULL;
-
-    Binding *b = *found;
-    return b;
-}
-
-
-Binding *Db::bindingByAddr(RTNETADDRIPV4 addr) const
-{
-    struct AddrMatch : public Binding::Match {
-        const RTNETADDRIPV4 m_addr;
-        AddrMatch(RTNETADDRIPV4 addr) : m_addr(addr) {}
-
-        bool operator()(const Binding *b)
-        {
-            return b->m_addr.u == m_addr.u;
-        }
-    };
-
-    bindings_t::const_iterator found =
-        std::find_if(m_bindings.begin(), m_bindings.end(),
-                     AddrMatch(addr));
-
-    if (found == m_bindings.end())
-        return NULL;
-
-    Binding *b = *found;
-    return b;
-}
-
 
 
 Binding *Db::createBinding(const ClientId &id)

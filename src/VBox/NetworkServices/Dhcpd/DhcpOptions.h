@@ -50,99 +50,66 @@ class DhcpOption
 
     virtual ~DhcpOption() {}
 
-  protected:
-    virtual ssize_t encodeValue(octets_t &data) const = 0;
-    virtual int decodeValue(const octets_t &data, size_t cb) = 0;
+  public:
+    static DhcpOption *parse(uint8_t aOptCode, int aEnc, const char *pcszValue);
 
   public:
     uint8_t optcode() const { return m_OptCode; }
-
     bool present() const { return m_fPresent; }
 
-    int encode(octets_t &data) const
-    {
-        if (!m_fPresent)
-            return VERR_INVALID_STATE;
-
-        size_t cbOrig = data.size();
-
-        append(data, m_OptCode);
-        appendLength(data, 0);  /* placeholder */
-
-        ssize_t cbValue = encodeValue(data);
-        if (cbValue < 0 || UINT8_MAX <= cbValue)
-        {
-            data.resize(cbOrig); /* undo */
-            return VERR_INVALID_PARAMETER;
-        }
-
-        data[cbOrig+1] = cbValue;
-        return VINF_SUCCESS;
-    }
-
-    int testEncodeValue(octets_t &data) const /* XXX */
-    {
-        if (!m_fPresent)
-            return VERR_INVALID_STATE;
-
-        return encodeValue(data) >= 0 ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
-    }
-
   public:
+    int encode(octets_t &dst) const;
+
     int decode(const rawopts_t &map);
     int decode(const DhcpClientMessage &req);
 
+  protected:
+    virtual ssize_t encodeValue(octets_t &dst) const = 0;
+    virtual int decodeValue(const octets_t &src, size_t cb) = 0;
 
   protected:
-    static const octets_t *findOption(const rawopts_t &aOptMap, uint8_t aOptCode)
-    {
-        rawopts_t::const_iterator it(aOptMap.find(aOptCode));
-        if (it == aOptMap.end())
-            return NULL;
-
-        return &it->second;
-    }
+    static const octets_t *findOption(const rawopts_t &aOptMap, uint8_t aOptCode);
 
   protected:
     /*
      * Serialization
      */
-    static void append(octets_t &aData, uint8_t aValue)
+    static void append(octets_t &aDst, uint8_t aValue)
     {
-        aData.push_back(aValue);
+        aDst.push_back(aValue);
     }
 
-    static void append(octets_t &aData, uint16_t aValue)
+    static void append(octets_t &aDst, uint16_t aValue)
     {
         RTUINT16U u16 = { RT_H2N_U16(aValue) };
-        aData.insert(aData.end(), u16.au8, u16.au8 + sizeof(aValue));
+        aDst.insert(aDst.end(), u16.au8, u16.au8 + sizeof(aValue));
     }
 
-    static void append(octets_t &aData, uint32_t aValue)
+    static void append(octets_t &aDst, uint32_t aValue)
     {
         RTUINT32U u32 = { RT_H2N_U32(aValue) };
-        aData.insert(aData.end(), u32.au8, u32.au8 + sizeof(aValue));
+        aDst.insert(aDst.end(), u32.au8, u32.au8 + sizeof(aValue));
     }
 
-    static void append(octets_t &aData, RTNETADDRIPV4 aIPv4)
+    static void append(octets_t &aDst, RTNETADDRIPV4 aIPv4)
     {
-        aData.insert(aData.end(), aIPv4.au8, aIPv4.au8 + sizeof(aIPv4));
+        aDst.insert(aDst.end(), aIPv4.au8, aIPv4.au8 + sizeof(aIPv4));
     }
 
-    static void append(octets_t &aData, const char *pszString, size_t cb)
+    static void append(octets_t &aDst, const char *pszString, size_t cb)
     {
-        aData.insert(aData.end(), pszString, pszString + cb);
+        aDst.insert(aDst.end(), pszString, pszString + cb);
     }
 
-    static void append(octets_t &aData, const std::string &str)
+    static void append(octets_t &aDst, const std::string &str)
     {
-        append(aData, str.c_str(), str.size());
+        append(aDst, str.c_str(), str.size());
     }
 
     /* non-overloaded name to avoid ambiguity */
-    static void appendLength(octets_t &aData, size_t cb)
+    static void appendLength(octets_t &aDst, size_t cb)
     {
-        append(aData, static_cast<uint8_t>(cb));
+        append(aDst, static_cast<uint8_t>(cb));
     }
 
 
@@ -182,13 +149,26 @@ class DhcpOption
         aString.replace(aString.begin(), aString.end(), &pos[0], &pos[cb]);
         pos += cb;
     }
+
+
+    /*
+     * Parse textual representation (e.g. in config file)
+     */
+    static int parse1(uint8_t &aValue, const char *pcszValue);
+    static int parse1(uint16_t &aValue, const char *pcszValue);
+    static int parse1(uint32_t &aValue, const char *pcszValue);
+    static int parse1(RTNETADDRIPV4 &aValue, const char *pcszValue);
+
+    static int parseList(std::vector<RTNETADDRIPV4> &aList, const char *pcszValue);
+
+    static int parseHex(octets_t &aRawValue, const char *pcszValue);
 };
 
 
-inline octets_t &operator<<(octets_t &data, const DhcpOption &option)
+inline octets_t &operator<<(octets_t &dst, const DhcpOption &option)
 {
-    option.encode(data);
-    return data;
+    option.encode(dst);
+    return dst;
 }
 
 
@@ -201,12 +181,12 @@ optmap_t &operator<<(optmap_t &optmap, const std::shared_ptr<DhcpOption> &option
  * Only for << OptEnd() syntactic sugar...
  */
 struct OptEnd {};
-inline octets_t &operator<<(octets_t &data, const OptEnd &end)
+inline octets_t &operator<<(octets_t &dst, const OptEnd &end)
 {
     RT_NOREF(end);
 
-    data.push_back(RTNET_DHCP_OPT_END);
-    return data;
+    dst.push_back(RTNET_DHCP_OPT_END);
+    return dst;
 }
 
 
@@ -224,7 +204,7 @@ class OptNoValueBase
     OptNoValueBase(uint8_t aOptCode, bool fPresent)
       : DhcpOption(aOptCode, fPresent) {}
 
-    explicit OptNoValueBase(uint8_t aOptCode, const DhcpClientMessage &req)
+    OptNoValueBase(uint8_t aOptCode, const DhcpClientMessage &req)
       : DhcpOption(aOptCode, false)
     {
         decode(req);
@@ -236,9 +216,9 @@ class OptNoValueBase
     }
 
   protected:
-    virtual ssize_t encodeValue(octets_t &data) const
+    virtual ssize_t encodeValue(octets_t &dst) const
     {
-        RT_NOREF(data);
+        RT_NOREF(dst);
         return 0;
     }
 
@@ -248,9 +228,9 @@ class OptNoValueBase
         return cb == 0;
     }
 
-    virtual int decodeValue(const octets_t &data, size_t cb)
+    virtual int decodeValue(const octets_t &src, size_t cb)
     {
-        RT_NOREF(data);
+        RT_NOREF(src);
 
         if (!isLengthValid(cb))
             return VERR_INVALID_PARAMETER;
@@ -298,7 +278,7 @@ class OptValueBase
     OptValueBase(uint8_t aOptCode, const T &aOptValue)
       : DhcpOption(aOptCode), m_Value(aOptValue) {}
 
-    explicit OptValueBase(uint8_t aOptCode, const DhcpClientMessage &req)
+    OptValueBase(uint8_t aOptCode, const DhcpClientMessage &req)
       : DhcpOption(aOptCode, false), m_Value()
     {
         decode(req);
@@ -315,9 +295,9 @@ class OptValueBase
     const T &value() const { return m_Value; }
 
   protected:
-    virtual ssize_t encodeValue(octets_t &data) const
+    virtual ssize_t encodeValue(octets_t &dst) const
     {
-        append(data, m_Value);
+        append(dst, m_Value);
         return sizeof(T);
     }
 
@@ -327,12 +307,12 @@ class OptValueBase
         return cb == sizeof(T);
     }
 
-    virtual int decodeValue(const octets_t &data, size_t cb)
+    virtual int decodeValue(const octets_t &src, size_t cb)
     {
         if (!isLengthValid(cb))
             return VERR_INVALID_PARAMETER;
 
-        octets_t::const_iterator pos(data.begin());
+        octets_t::const_iterator pos(src.begin());
         extract(m_Value, pos);
 
         m_fPresent = true;
@@ -345,6 +325,9 @@ class OptValue
   : public OptValueBase<T>
 {
   public:
+    using typename OptValueBase<T>::value_t;
+
+  public:
     static const uint8_t optcode = _OptCode;
 
     OptValue()
@@ -355,6 +338,15 @@ class OptValue
 
     explicit OptValue(const DhcpClientMessage &req)
       : OptValueBase<T>(optcode, req) {}
+
+    static OptValue *parse(const char *pcszValue)
+    {
+	value_t v;
+	int rc = DhcpOption::parse1(v, pcszValue);
+	if (RT_FAILURE(rc))
+	    return NULL;
+	return new OptValue(v);
+    }
 };
 
 
@@ -371,13 +363,13 @@ class OptStringBase
   protected:
     std::string m_String;
 
-    OptStringBase(uint8_t aOptCode)
+    explicit OptStringBase(uint8_t aOptCode)
       : DhcpOption(aOptCode, false), m_String() {}
 
-    explicit OptStringBase(uint8_t aOptCode, const std::string &aOptString)
+    OptStringBase(uint8_t aOptCode, const std::string &aOptString)
       : DhcpOption(aOptCode), m_String(aOptString) {}
 
-    explicit OptStringBase(uint8_t aOptCode, const DhcpClientMessage &req)
+    OptStringBase(uint8_t aOptCode, const DhcpClientMessage &req)
       : DhcpOption(aOptCode, false), m_String()
     {
         decode(req);
@@ -394,12 +386,12 @@ class OptStringBase
     const std::string &value() const { return m_String; }
 
   protected:
-    virtual ssize_t encodeValue(octets_t &data) const
+    virtual ssize_t encodeValue(octets_t &dst) const
     {
         if (!isLengthValid(m_String.size()))
             return -1;
 
-        append(data, m_String);
+        append(dst, m_String);
         return m_String.size();
     }
 
@@ -409,12 +401,12 @@ class OptStringBase
         return cb <= UINT8_MAX;
     }
 
-    virtual int decodeValue(const octets_t &data, size_t cb)
+    virtual int decodeValue(const octets_t &src, size_t cb)
     {
         if (!isLengthValid(cb))
             return VERR_INVALID_PARAMETER;
 
-        octets_t::const_iterator pos(data.begin());
+        octets_t::const_iterator pos(src.begin());
         extract(m_String, pos, cb);
         m_fPresent = true;
         return VINF_SUCCESS;
@@ -436,6 +428,11 @@ class OptString
 
     explicit OptString(const DhcpClientMessage &req)
       : OptStringBase(optcode, req) {}
+
+    static OptString *parse(const char *pcszValue)
+    {
+	return new OptString(pcszValue);
+    }
 };
 
 
@@ -462,7 +459,7 @@ class OptListBase
     OptListBase(uint8_t aOptCode, const std::vector<T> &aOptList)
       : DhcpOption(aOptCode), m_List(aOptList) {}
 
-    explicit OptListBase(uint8_t aOptCode, const DhcpClientMessage &req)
+    OptListBase(uint8_t aOptCode, const DhcpClientMessage &req)
       : DhcpOption(aOptCode, false), m_List()
     {
         decode(req);
@@ -479,7 +476,7 @@ class OptListBase
     const std::vector<T> &value() const { return m_List; }
 
   protected:
-    virtual ssize_t encodeValue(octets_t &data) const
+    virtual ssize_t encodeValue(octets_t &dst) const
     {
         const size_t cbItem = sizeof(T);
         size_t cbValue = 0;
@@ -489,7 +486,7 @@ class OptListBase
             if (cbValue + cbItem > UINT8_MAX)
                 break;
 
-            append(data, m_List[i]);
+            append(dst, m_List[i]);
             cbValue += cbItem;
         }
 
@@ -502,14 +499,14 @@ class OptListBase
         return cb % sizeof(T) == 0;
     }
 
-    virtual int decodeValue(const octets_t &data, size_t cb)
+    virtual int decodeValue(const octets_t &src, size_t cb)
     {
         if (!isLengthValid(cb))
             return VERR_INVALID_PARAMETER;
 
         m_List.erase(m_List.begin(), m_List.end());
 
-        octets_t::const_iterator pos(data.begin());
+        octets_t::const_iterator pos(src.begin());
         for (size_t i = 0; i < cb / sizeof(T); ++i)
         {
             T item;
@@ -527,6 +524,9 @@ class OptList
 
 {
   public:
+    using typename OptListBase<T>::value_t;
+
+  public:
     static const uint8_t optcode = _OptCode;
 
     OptList()
@@ -535,11 +535,73 @@ class OptList
     explicit OptList(const T &aOptSingle)
       : OptListBase<T>(optcode, aOptSingle) {}
 
-    OptList(const std::vector<T> &aOptList)
+    explicit OptList(const std::vector<T> &aOptList)
       : OptListBase<T>(optcode, aOptList) {}
 
     explicit OptList(const DhcpClientMessage &req)
       : OptListBase<T>(optcode, req) {}
+
+    static OptList *parse(const char *pcszValue)
+    {
+	value_t v;
+	int rc = DhcpOption::parseList(v, pcszValue);
+	if (RT_FAILURE(rc) || v.empty())
+	    return NULL;
+	return new OptList(v);
+    }
+};
+
+
+/*
+ * Options specified by raw binary data that we don't know how to
+ * interpret.
+ */
+class RawOption
+  : public DhcpOption
+{
+  protected:
+    octets_t m_Data;
+
+  public:
+    explicit RawOption(uint8_t aOptCode)
+      : DhcpOption(aOptCode, false), m_Data() {}
+
+    RawOption(uint8_t aOptCode, const octets_t &aSrc)
+      : DhcpOption(aOptCode), m_Data(aSrc) {}
+
+  public:
+    virtual RawOption *clone() const
+    {
+        return new RawOption(*this);
+    }
+
+
+  protected:
+    virtual ssize_t encodeValue(octets_t &dst) const
+    {
+        dst.insert(dst.end(), m_Data.begin(), m_Data.end());
+        return m_Data.size();
+    }
+
+    virtual int decodeValue(const octets_t &src, size_t cb)
+    {
+        octets_t::const_iterator beg(src.begin());
+	octets_t data(beg, beg + cb);
+	m_Data.swap(data);
+
+	m_fPresent = true;
+	return VINF_SUCCESS;
+    }
+
+  public:
+    static RawOption *parse(uint8_t aOptCode, const char *pcszValue)
+    {
+	octets_t data;
+	int rc = DhcpOption::parseHex(data, pcszValue);
+	if (RT_FAILURE(rc))
+	    return NULL;
+	return new RawOption(aOptCode, data);
+    }
 };
 
 
