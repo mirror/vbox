@@ -3397,12 +3397,14 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
      */
     cpumR3CpuIdZeroLeaf(pCpum, 14);
 
-    /* Cpuid 0xf + ECX: Platform qualifity of service monitoring (PQM).
+    /* Cpuid 0xf + ECX: Platform quality of service monitoring (PQM),
+     * also known as Intel Resource Director Technology (RDT) Monitoring
      * We zero this as we don't currently virtualize PQM.
      */
     cpumR3CpuIdZeroLeaf(pCpum, 15);
 
-    /* Cpuid 0x10 + ECX: Platform qualifity of service enforcement (PQE).
+    /* Cpuid 0x10 + ECX: Platform quality of service enforcement (PQE),
+     * also known as Intel Resource Director Technology (RDT) Allocation
      * We zero this as we don't currently virtualize PQE.
      */
     cpumR3CpuIdZeroLeaf(pCpum, 16);
