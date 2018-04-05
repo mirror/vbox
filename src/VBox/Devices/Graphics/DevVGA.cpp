@@ -6284,8 +6284,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     else
     {
 #endif /* VBOX_WITH_VMSVGA */
-    PCIDevSetVendorId(  &pThis->Dev, 0x80ee);   /* PCI vendor, just a free bogus value */
-    PCIDevSetDeviceId(  &pThis->Dev, 0xbeef);
+        PCIDevSetVendorId(&pThis->Dev, 0x80ee);   /* PCI vendor, just a free bogus value */
+        PCIDevSetDeviceId(&pThis->Dev, 0xbeef);
 #ifdef VBOX_WITH_VMSVGA
     }
 #endif
