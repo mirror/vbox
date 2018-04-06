@@ -647,6 +647,8 @@ static int hdaRegLookup(uint32_t offReg)
     return -1;
 }
 
+#ifdef IN_RING3
+
 /**
  * Looks up a register covering the offset given by @a offReg.
  *
@@ -694,14 +696,13 @@ static int hdaRegLookupWithin(uint32_t offReg)
             return idxMiddle;
     }
 
-#ifdef RT_STRICT
+# ifdef RT_STRICT
     for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
         Assert(offReg - g_aHdaRegMap[i].offset >= g_aHdaRegMap[i].size);
-#endif
+# endif
     return -1;
 }
 
-#ifdef IN_RING3
 
 /**
  * Synchronizes the CORB / RIRB buffers between internal <-> device state.
