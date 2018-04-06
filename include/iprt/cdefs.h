@@ -1624,8 +1624,8 @@
 /** For use after finished validating guest input.
  * What this translates to is architecture dependent.  On intel it will
  * translate to a CPU load+store fence as well as a compiler memory barrier. */
-#if   defined(RT_ARCH_AMD64)
-# define RT_UNTRUSTED_VALIDATED_FENCE()         do { ASMCompilerBarrier(); ASMMemoryFenceSSE2(); } while (0)
+#if defined(RT_ARCH_AMD64) || (defined(RT_ARCH_X86) && !defined(RT_WITH_OLD_CPU_SUPPORT))
+# define RT_UNTRUSTED_VALIDATED_FENCE()         do { ASMCompilerBarrier(); ASMReadFence(); } while (0)
 #elif defined(RT_ARCH_X86)
 # define RT_UNTRUSTED_VALIDATED_FENCE()         do { ASMCompilerBarrier(); ASMMemoryFence(); } while (0)
 #else
