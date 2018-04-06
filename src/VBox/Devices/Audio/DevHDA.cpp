@@ -1205,22 +1205,12 @@ static int hdaRegWriteCORBSIZE(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
             break;
     }
 
-    uint32_t cbCorbBuf = cEntries * sizeof(uint32_t);
+    uint32_t cbCorbBuf = cEntries * HDA_CORB_ELEMENT_SIZE;
+    Assert(cbCorbBuf <= HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE); /* Paranoia. */
+
     if (cbCorbBuf != pThis->cbCorbBuf)
     {
-        if (pThis->pu32CorbBuf)
-        {
-            RTMemFree(pThis->pu32CorbBuf);
-            pThis->pu32CorbBuf = NULL;
-        }
-
-        if (cbCorbBuf)
-        {
-            Assert(cbCorbBuf % sizeof(uint32_t) == 0);
-            pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(cbCorbBuf);
-            AssertStmt(pThis->pu32CorbBuf, cbCorbBuf = 0);
-        }
-
+        RT_BZERO(pThis->pu32CorbBuf, HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE); /* Clear CORB when setting a new size. */
         pThis->cbCorbBuf = cbCorbBuf;
     }
 
@@ -2991,18 +2981,13 @@ static void hdaGCTLReset(PHDASTATE pThis)
     hdaMixerControl(pThis, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
 # endif
 
-    pThis->cbCorbBuf = HDA_CORB_SIZE * sizeof(uint32_t);
+    /* Reset CORB. */
+    pThis->cbCorbBuf = HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE;
+    RT_BZERO(pThis->pu32CorbBuf, pThis->cbCorbBuf);
 
-    if (pThis->pu32CorbBuf)
-        RT_BZERO(pThis->pu32CorbBuf, pThis->cbCorbBuf);
-    else
-        pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->cbCorbBuf);
-
-    pThis->cbRirbBuf = HDA_RIRB_SIZE * sizeof(uint64_t);
-    if (pThis->pu64RirbBuf)
-        RT_BZERO(pThis->pu64RirbBuf, pThis->cbRirbBuf);
-    else
-        pThis->pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->cbRirbBuf);
+    /* Reset RIRB. */
+    pThis->cbRirbBuf = HDA_RIRB_SIZE * HDA_RIRB_ELEMENT_SIZE;
+    RT_BZERO(pThis->pu64RirbBuf, pThis->cbRirbBuf);
 
     /* Clear our internal response interrupt counter. */
     pThis->u16RespIntCnt = 0;
@@ -4991,30 +4976,49 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     if (RT_SUCCESS(rc))
     {
-        /* Construct codec. */
-        pThis->pCodec = (PHDACODEC)RTMemAllocZ(sizeof(HDACODEC));
-        if (!pThis->pCodec)
-            return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Out of memory allocating HDA codec state"));
+        /* Allocate CORB buffer. */
+        pThis->cbCorbBuf   = HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE;
+        pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->cbCorbBuf);
+        if (pThis->pu32CorbBuf)
+        {
+            /* Allocate RIRB buffer. */
+            pThis->cbRirbBuf   = HDA_RIRB_SIZE * HDA_RIRB_ELEMENT_SIZE;
+            pThis->pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->cbRirbBuf);
+            if (pThis->pu64RirbBuf)
+            {
+                /* Allocate codec. */
+                pThis->pCodec = (PHDACODEC)RTMemAllocZ(sizeof(HDACODEC));
+                if (!pThis->pCodec)
+                    rc = PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Out of memory allocating HDA codec state"));
+            }
+            else
+                rc = PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Out of memory allocating RIRB"));
+        }
+        else
+            rc = PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Out of memory allocating CORB"));
 
-        /* Set codec callbacks to this controller. */
-        pThis->pCodec->pfnCbMixerAddStream    = hdaMixerAddStream;
-        pThis->pCodec->pfnCbMixerRemoveStream = hdaMixerRemoveStream;
-        pThis->pCodec->pfnCbMixerControl      = hdaMixerControl;
-        pThis->pCodec->pfnCbMixerSetVolume    = hdaMixerSetVolume;
+        if (RT_SUCCESS(rc))
+        {
+            /* Set codec callbacks to this controller. */
+            pThis->pCodec->pfnCbMixerAddStream    = hdaMixerAddStream;
+            pThis->pCodec->pfnCbMixerRemoveStream = hdaMixerRemoveStream;
+            pThis->pCodec->pfnCbMixerControl      = hdaMixerControl;
+            pThis->pCodec->pfnCbMixerSetVolume    = hdaMixerSetVolume;
 
-        pThis->pCodec->pHDAState = pThis; /* Assign HDA controller state to codec. */
+            pThis->pCodec->pHDAState = pThis; /* Assign HDA controller state to codec. */
 
-        /* Construct the codec. */
-        rc = hdaCodecConstruct(pDevIns, pThis->pCodec, 0 /* Codec index */, pCfg);
-        if (RT_FAILURE(rc))
-            AssertRCReturn(rc, rc);
+            /* Construct the codec. */
+            rc = hdaCodecConstruct(pDevIns, pThis->pCodec, 0 /* Codec index */, pCfg);
+            if (RT_FAILURE(rc))
+                AssertRCReturn(rc, rc);
 
-        /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
-           verb F20 should provide device/codec recognition. */
-        Assert(pThis->pCodec->u16VendorId);
-        Assert(pThis->pCodec->u16DeviceId);
-        PCIDevSetSubSystemVendorId(&pThis->PciDev, pThis->pCodec->u16VendorId); /* 2c ro - intel.) */
-        PCIDevSetSubSystemId(      &pThis->PciDev, pThis->pCodec->u16DeviceId); /* 2e ro. */
+            /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
+               verb F20 should provide device/codec recognition. */
+            Assert(pThis->pCodec->u16VendorId);
+            Assert(pThis->pCodec->u16DeviceId);
+            PCIDevSetSubSystemVendorId(&pThis->PciDev, pThis->pCodec->u16VendorId); /* 2c ro - intel.) */
+            PCIDevSetSubSystemId(      &pThis->PciDev, pThis->pCodec->u16DeviceId); /* 2e ro. */
+        }
     }
 
     if (RT_SUCCESS(rc))
