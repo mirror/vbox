@@ -110,6 +110,93 @@
 # define VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
 #endif
 
+/**
+ * Acquires the HDA lock.
+ */
+#define DEVHDA_LOCK(a_pThis) \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        AssertRC(rcLock); \
+    } while (0)
+
+/**
+ * Acquires the HDA lock or returns.
+ */
+# define DEVHDA_LOCK_RETURN(a_pThis, a_rcBusy) \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, a_rcBusy); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            return rcLock; \
+        } \
+    } while (0)
+
+/**
+ * Acquires the HDA lock or returns.
+ */
+# define DEVHDA_LOCK_RETURN_VOID(a_pThis) \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            return; \
+        } \
+    } while (0)
+
+/**
+ * Releases the HDA lock.
+ */
+#define DEVHDA_UNLOCK(a_pThis) \
+    do { PDMCritSectLeave(&(a_pThis)->CritSect); } while (0)
+
+/**
+ * Acquires the TM lock and HDA lock, returns on failure.
+ */
+#define DEVHDA_LOCK_BOTH_RETURN_VOID(a_pThis, a_SD) \
+    do { \
+        int rcLock = TMTimerLock((a_pThis)->pTimer[a_SD], VERR_IGNORED); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            return; \
+        } \
+        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
+            return; \
+        } \
+    } while (0)
+
+/**
+ * Acquires the TM lock and HDA lock, returns on failure.
+ */
+#define DEVHDA_LOCK_BOTH_RETURN(a_pThis, a_SD, a_rcBusy) \
+    do { \
+        int rcLock = TMTimerLock((a_pThis)->pTimer[a_SD], (a_rcBusy)); \
+        if (rcLock != VINF_SUCCESS) \
+            return rcLock; \
+        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, (a_rcBusy)); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            AssertRC(rcLock); \
+            TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
+            return rcLock; \
+        } \
+    } while (0)
+
+/**
+ * Releases the HDA lock and TM lock.
+ */
+#define DEVHDA_UNLOCK_BOTH(a_pThis, a_SD) \
+    do { \
+        PDMCritSectLeave(&(a_pThis)->CritSect); \
+        TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
+    } while (0)
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -450,94 +537,10 @@ static uint32_t const g_afMasks[5] =
     UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0x00ffffff), UINT32_C(0xffffffff)
 };
 
-/**
- * Acquires the HDA lock.
- */
-#define DEVHDA_LOCK(a_pThis) \
-    do { \
-        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
-        AssertRC(rcLock); \
-    } while (0)
 
-/**
- * Acquires the HDA lock or returns.
- */
-# define DEVHDA_LOCK_RETURN(a_pThis, a_rcBusy) \
-    do { \
-        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, a_rcBusy); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            AssertRC(rcLock); \
-            return rcLock; \
-        } \
-    } while (0)
-
-/**
- * Acquires the HDA lock or returns.
- */
-# define DEVHDA_LOCK_RETURN_VOID(a_pThis) \
-    do { \
-        int rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            AssertRC(rcLock); \
-            return; \
-        } \
-    } while (0)
-
-/**
- * Releases the HDA lock.
- */
-#define DEVHDA_UNLOCK(a_pThis) \
-    do { PDMCritSectLeave(&(a_pThis)->CritSect); } while (0)
-
-/**
- * Acquires the TM lock and HDA lock, returns on failure.
- */
-#define DEVHDA_LOCK_BOTH_RETURN_VOID(a_pThis, a_SD) \
-    do { \
-        int rcLock = TMTimerLock((a_pThis)->pTimer[a_SD], VERR_IGNORED); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            AssertRC(rcLock); \
-            return; \
-        } \
-        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, VERR_IGNORED); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            AssertRC(rcLock); \
-            TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
-            return; \
-        } \
-    } while (0)
-
-/**
- * Acquires the TM lock and HDA lock, returns on failure.
- */
-#define DEVHDA_LOCK_BOTH_RETURN(a_pThis, a_SD, a_rcBusy) \
-    do { \
-        int rcLock = TMTimerLock((a_pThis)->pTimer[a_SD], (a_rcBusy)); \
-        if (rcLock != VINF_SUCCESS) \
-            return rcLock; \
-        rcLock = PDMCritSectEnter(&(a_pThis)->CritSect, (a_rcBusy)); \
-        if (rcLock != VINF_SUCCESS) \
-        { \
-            AssertRC(rcLock); \
-            TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
-            return rcLock; \
-        } \
-    } while (0)
-
-/**
- * Releases the HDA lock and TM lock.
- */
-#define DEVHDA_UNLOCK_BOTH(a_pThis, a_SD) \
-    do { \
-        PDMCritSectLeave(&(a_pThis)->CritSect); \
-        TMTimerUnlock((a_pThis)->pTimer[a_SD]); \
-    } while (0)
 
 #ifdef IN_RING3
+
 /**
  * Retrieves the number of bytes of a FIFOW register.
  *
@@ -585,13 +588,14 @@ static void hdaReschedulePendingInterrupts(PHDASTATE pThis)
 
     LogFunc(("fInterrupt=%RTbool\n", fInterrupt));
 
-#ifndef DEBUG
+# ifndef DEBUG
     hdaProcessInterrupt(pThis);
-#else
+# else
     hdaProcessInterrupt(pThis, __FUNCTION__);
-#endif
+# endif
 }
-#endif
+
+#endif /* IN_RING3 */
 
 /**
  * Looks up a register at the exact offset given by @a offReg.
@@ -699,6 +703,7 @@ static int hdaRegLookupWithin(uint32_t offReg)
 }
 
 #ifdef IN_RING3
+
 /**
  * Synchronizes the CORB / RIRB buffers between internal <-> device state.
  *
@@ -737,7 +742,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
         }
     }
 
-#ifdef DEBUG_CMD_BUFFER
+# ifdef DEBUG_CMD_BUFFER
         LogFunc(("fLocal=%RTbool\n", fLocal));
 
         uint8_t i = 0;
@@ -761,10 +766,12 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
             i += 8;
         } while(i != 0);
 
-        do {
+        do
+        {
             LogFunc(("RIRB%02x: ", i));
             uint8_t j = 0;
-            do {
+            do
+            {
                 const char *prefix;
                 if ((i + j) == HDA_REG(pThis, RIRBWP))
                     prefix = "[W]";
@@ -775,12 +782,13 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
             Log(("\n"));
             i += 8;
         } while (i != 0);
-#endif
+# endif
     return rc;
 }
 
 /**
  * Processes the next CORB buffer command in the queue.
+ *
  * This will invoke the HDA codec verb dispatcher.
  *
  * @returns IPRT status code.
@@ -864,11 +872,11 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
             {
                 HDA_REG(pThis, RIRBSTS) |= HDA_RIRBSTS_RINTFL;
 
-#ifndef DEBUG
+# ifndef DEBUG
                 rc = hdaProcessInterrupt(pThis);
-#else
+# else
                 rc = hdaProcessInterrupt(pThis, __FUNCTION__);
-#endif
+# endif
             }
         }
     }
@@ -887,6 +895,7 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
 
     return rc;
 }
+
 #endif /* IN_RING3 */
 
 /* Register access handlers. */
@@ -1060,7 +1069,7 @@ static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
  *
  * @remark  Does not actually set the wall clock counter.
  */
-uint64_t hdaWalClkGetMax(PHDASTATE pThis)
+static uint64_t hdaWalClkGetMax(PHDASTATE pThis)
 {
     const uint64_t u64WalClkCur       = ASMAtomicReadU64(&pThis->u64WalClk);
     const uint64_t u64FrontAbsWalClk  = pThis->SinkFront.pStream
@@ -2334,6 +2343,7 @@ static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 }
 
 #ifdef IN_RING3
+
 /**
  * Retrieves a corresponding sink for a given mixer control.
  * Returns NULL if no sink is found.
@@ -2353,22 +2363,22 @@ static PHDAMIXERSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
         case PDMAUDIOMIXERCTL_FRONT:
             pSink = &pThis->SinkFront;
             break;
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
         case PDMAUDIOMIXERCTL_CENTER_LFE:
             pSink = &pThis->SinkCenterLFE;
             break;
         case PDMAUDIOMIXERCTL_REAR:
             pSink = &pThis->SinkRear;
             break;
-#endif
+# endif
         case PDMAUDIOMIXERCTL_LINE_IN:
             pSink = &pThis->SinkLineIn;
             break;
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         case PDMAUDIOMIXERCTL_MIC_IN:
             pSink = &pThis->SinkMicIn;
             break;
-#endif
+# endif
         default:
             pSink = NULL;
             AssertMsgFailed(("Unhandled mixer control\n"));
@@ -2420,11 +2430,11 @@ static int hdaMixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIO
             case PDMAUDIORECSOURCE_LINE:
                 pDrvStream = &pDrv->LineIn;
                 break;
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
             case PDMAUDIORECSOURCE_MIC:
                 pDrvStream = &pDrv->MicIn;
                 break;
-#endif
+# endif
             default:
                 rc = VERR_NOT_SUPPORTED;
                 break;
@@ -2439,14 +2449,14 @@ static int hdaMixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIO
             case PDMAUDIOPLAYBACKDEST_FRONT:
                 pDrvStream = &pDrv->Front;
                 break;
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
             case PDMAUDIOPLAYBACKDEST_CENTER_LFE:
                 pDrvStream = &pDrv->CenterLFE;
                 break;
             case PDMAUDIOPLAYBACKDEST_REAR:
                 pDrvStream = &pDrv->Rear;
                 break;
-#endif
+# endif
             default:
                 rc = VERR_NOT_SUPPORTED;
                 break;
@@ -2520,7 +2530,10 @@ static int hdaMixerAddDrvStreams(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUDI
 }
 
 /**
+ * @interface_method_impl{HDACODEC,pfnCbMixerAddStream}
+ *
  * Adds a new audio stream to a specific mixer control.
+ *
  * Depending on the mixer control the stream then gets assigned to one of the internal
  * mixer sinks, which in turn then handle the mixing of all connected streams to that sink.
  *
@@ -2552,6 +2565,8 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
 }
 
 /**
+ * @interface_method_impl{HDACODEC,pfnCbMixerRemoveStream}
+ *
  * Removes a specified mixer control from the HDA's mixer.
  *
  * @return  IPRT status code.
@@ -2582,12 +2597,12 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
                     pMixStream = pDrv->LineIn.pMixStrm;
                     pDrv->LineIn.pMixStrm = NULL;
                     break;
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
                 case PDMAUDIOMIXERCTL_MIC_IN:
                     pMixStream = pDrv->MicIn.pMixStrm;
                     pDrv->MicIn.pMixStrm = NULL;
                     break;
-#endif
+# endif
                 /*
                  * Output.
                  */
@@ -2595,7 +2610,7 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
                     pMixStream = pDrv->Front.pMixStrm;
                     pDrv->Front.pMixStrm = NULL;
                     break;
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
                 case PDMAUDIOMIXERCTL_CENTER_LFE:
                     pMixStream = pDrv->CenterLFE.pMixStrm;
                     pDrv->CenterLFE.pMixStrm = NULL;
@@ -2604,7 +2619,7 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
                     pMixStream = pDrv->Rear.pMixStrm;
                     pDrv->Rear.pMixStrm = NULL;
                     break;
-#endif
+# endif
                 default:
                     AssertMsgFailed(("Mixer control %d not implemented\n", enmMixerCtl));
                     break;
@@ -2630,6 +2645,8 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
 }
 
 /**
+ * @interface_method_impl{HDACODEC,pfnCbMixerControl}
+ *
  * Controls an input / output converter widget, that is, which converter is connected
  * to which stream (and channel).
  *
@@ -2656,7 +2673,7 @@ static DECLCALLBACK(int) hdaMixerControl(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMi
     Assert(uSD);
     uSD--;
 
-#ifndef VBOX_WITH_AUDIO_HDA_MIC_IN
+# ifndef VBOX_WITH_AUDIO_HDA_MIC_IN
     /* Only SDI0 (Line-In) is supported. */
     if (   hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN
         && uSD >= 1)
@@ -2664,7 +2681,7 @@ static DECLCALLBACK(int) hdaMixerControl(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMi
         LogRel2(("HDA: Dedicated Mic-In support not imlpemented / built-in (stream #%RU8), using Line-In (stream #0) instead\n", uSD));
         uSD = 0;
     }
-#endif
+# endif
 
     int rc = VINF_SUCCESS;
 
@@ -2741,6 +2758,8 @@ static DECLCALLBACK(int) hdaMixerControl(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMi
 }
 
 /**
+ * @interface_method_impl{HDACODEC,pfnCbMixerSetVolume}
+ *
  * Sets the volume of a specified mixer control.
  *
  * @return  IPRT status code.
@@ -2780,7 +2799,7 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
  * @param   pTimer              Timer this callback was called for.
  * @param   pvUser              Pointer to associated HDASTREAM.
  */
-DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns, pTimer);
 
@@ -2812,7 +2831,7 @@ DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
     DEVHDA_UNLOCK_BOTH(pThis, pStream->u8SD);
 }
 
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
+# ifdef HDA_USE_DMA_ACCESS_HANDLER
 /**
  * HC access handler for the FIFO.
  *
@@ -2855,7 +2874,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaDMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTG
     {
         case PGMACCESSTYPE_WRITE:
         {
-# ifdef DEBUG
+#  ifdef DEBUG
             PHDASTREAMDBGINFO pStreamDbg = &pStream->Dbg;
 
             const uint64_t tsNowNs     = RTTimeNanoTS();
@@ -2891,7 +2910,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaDMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTG
             LogFunc(("[SD%RU8] cWrites=%RU64, cbWritten=%RU64 -> %RU32 bytes on average\n",
                      pStream->u8SD, pStreamDbg->cWritesTotal, pStreamDbg->cbWrittenTotal,
                      ASMDivU64ByU32RetU32(pStreamDbg->cbWrittenTotal, pStreamDbg->cWritesTotal)));
-# endif
+#  endif
 
             if (pThis->fDebugEnabled)
             {
@@ -2902,7 +2921,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaDMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTG
                 RTFileClose(fh);
             }
 
-# ifdef HDA_USE_DMA_ACCESS_HANDLER_WRITING
+#  ifdef HDA_USE_DMA_ACCESS_HANDLER_WRITING
             PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
             AssertPtr(pCircBuf);
 
@@ -2932,7 +2951,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaDMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTG
 
                 RTCircBufReleaseWriteBlock(pCircBuf, cbChunk);
             }
-# endif /* HDA_USE_DMA_ACCESS_HANDLER_WRITING */
+#  endif /* HDA_USE_DMA_ACCESS_HANDLER_WRITING */
             break;
         }
 
@@ -2943,7 +2962,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hdaDMAAccessHandler(PVM pVM, PVMCPU pVCpu, RTG
 
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
-#endif /* HDA_USE_DMA_ACCESS_HANDLER */
+# endif /* HDA_USE_DMA_ACCESS_HANDLER */
 
 /**
  * Soft reset of the device triggered via GCTL.
@@ -3010,16 +3029,16 @@ static void hdaGCTLReset(PHDASTATE pThis)
      * We use SD0 for input and SD4 for output by default.
      * These stream numbers can be changed by the guest dynamically lateron.
      */
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     hdaMixerControl(pThis, PDMAUDIOMIXERCTL_MIC_IN    , 1 /* SD0 */, 0 /* Channel */);
-#endif
+# endif
     hdaMixerControl(pThis, PDMAUDIOMIXERCTL_LINE_IN   , 1 /* SD0 */, 0 /* Channel */);
 
     hdaMixerControl(pThis, PDMAUDIOMIXERCTL_FRONT     , 5 /* SD4 */, 0 /* Channel */);
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     hdaMixerControl(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, 5 /* SD4 */, 0 /* Channel */);
     hdaMixerControl(pThis, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
-#endif
+# endif
 
     pThis->cbCorbBuf = HDA_CORB_SIZE * sizeof(uint32_t);
 
@@ -3057,10 +3076,6 @@ static void hdaGCTLReset(PHDASTATE pThis)
     LogFlowFuncLeave();
     LogRel(("HDA: Reset\n"));
 }
-
-#ifdef DEBUG_andy
-# define HDA_DEBUG_DMA
-#endif
 
 #endif /* IN_RING3 */
 
