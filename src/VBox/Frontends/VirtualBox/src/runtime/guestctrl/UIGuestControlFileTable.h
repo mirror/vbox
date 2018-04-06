@@ -268,7 +268,7 @@ protected:
     static QString   fileTypeString(FileObjectType type);
     void             goIntoDirectory(const QModelIndex &itemIndex);
     /** Follows the path trail, opens directories as it descends */
-    void             goIntoDirectory(const QList<QString> &pathTrail);
+    void             goIntoDirectory(const QStringList &pathTrail);
     /** Goes into directory pointed by the @p item */
     void             goIntoDirectory(UIFileTableItem *item);
     UIFileTableItem* indexData(const QModelIndex &index) const;

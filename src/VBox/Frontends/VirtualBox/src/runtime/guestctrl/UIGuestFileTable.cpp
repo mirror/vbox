@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 # include "QILabel.h"
+# include "UIErrorString.h"
 # include "UIGuestFileTable.h"
 # include "UIVMInformationDialog.h"
 
@@ -99,7 +100,6 @@ void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStri
 
     if (!m_comGuestSession.isOk())
         return;
-
     /* if the object is a file or a symlink then read the size and return: */
     if (fileInfo.GetType() == KFsObjType_File)
     {
@@ -121,6 +121,8 @@ void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStri
     /* Open the directory to start reading its content: */
     QVector<KDirectoryOpenFlag> flag(KDirectoryOpenFlag_None);
     CGuestDirectory directory = m_comGuestSession.DirectoryOpen(path, /*aFilter*/ "", flag);
+    if (!m_comGuestSession.isOk())
+        return;
 
     if (directory.isOk())
     {
@@ -154,8 +156,6 @@ void UIGuestFileTable::initGuestFileTable(const CGuestSession &session)
     if (session.GetStatus() != KGuestSessionStatus_Started)
         return;
     m_comGuestSession = session;
-
-
     initializeFileTree();
 }
 
@@ -178,6 +178,12 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
     flag.push_back(KDirectoryOpenFlag_None);
 
     directory = m_comGuestSession.DirectoryOpen(strPath, /*aFilter*/ "", flag);
+    if (!m_comGuestSession.isOk())
+    {
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        return;
+    }
+
     parent->setIsOpened(true);
     if (directory.isOk())
     {
@@ -228,8 +234,6 @@ void UIGuestFileTable::deleteByItem(UIFileTableItem *item)
 {
     if (!item)
         return;
-    if (!m_comGuestSession.isOk())
-        return;
     if (item->isUpDirectory())
         return;
     QVector<KDirectoryRemoveRecFlag> flags(KDirectoryRemoveRecFlag_ContentAndDir);
@@ -241,8 +245,10 @@ void UIGuestFileTable::deleteByItem(UIFileTableItem *item)
     else
         m_comGuestSession.FsObjRemove(item->path());
     if (!m_comGuestSession.isOk())
+    {
         emit sigLogOutput(QString(item->path()).append(" could not be deleted"));
-
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+    }
 }
 
 void UIGuestFileTable::goToHomeDirectory()
@@ -256,37 +262,45 @@ void UIGuestFileTable::goToHomeDirectory()
         return;
 
     QString userHome = UIPathOperations::sanitize(m_comGuestSession.GetUserHome());
-    QList<QString> pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+    if (!m_comGuestSession.isOk())
+    {
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        return;
+    }
+    QStringList pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
     goIntoDirectory(pathList);
 }
 
 bool UIGuestFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
 {
 
-    if (!item || item->isUpDirectory() || newBaseName.isEmpty() || !m_comGuestSession.isOk())
+    if (!item || item->isUpDirectory() || newBaseName.isEmpty())
         return false;
     QString newPath = UIPathOperations::constructNewItemPath(item->path(), newBaseName);
     QVector<KFsObjRenameFlag> aFlags(KFsObjRenameFlag_Replace);
 
     m_comGuestSession.FsObjRename(item->path(), newPath, aFlags);
     if (!m_comGuestSession.isOk())
+    {
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
         return false;
+    }
+
     item->setPath(newPath);
     return true;
 }
 
 bool UIGuestFileTable::createDirectory(const QString &path, const QString &directoryName)
 {
-    if (!m_comGuestSession.isOk())
-        return false;
-
     QString newDirectoryPath = UIPathOperations::mergePaths(path, directoryName);
     QVector<KDirectoryCreateFlag> flags(KDirectoryCreateFlag_None);
 
     m_comGuestSession.DirectoryCreate(newDirectoryPath, 0/*aMode*/, flags);
+
     if (!m_comGuestSession.isOk())
     {
         emit sigLogOutput(newDirectoryPath.append(" could not be created"));
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
         return false;
     }
     emit sigLogOutput(newDirectoryPath.append(" has been created"));
@@ -330,7 +344,11 @@ bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QSt
         /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, hostDestinationPath, aFlags);
     }
     if (!m_comGuestSession.isOk())
+    {
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
         return false;
+    }
+
     return true;
 }
 
@@ -341,14 +359,14 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
     QFileInfo hostFileInfo(hostSourcePath);
     if (!hostFileInfo.exists())
         return false;
-
+    CProgress comProgress;
     /* Currently API expects a path including a file name for file copy*/
     if (hostFileInfo.isFile() || hostFileInfo.isSymLink())
     {
         QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
         QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
         /** @todo listen to CProgress object to monitor copy operation: */
-        /*CProgress comProgress =*/ m_comGuestSession.FileCopyToGuest(hostSourcePath, destinationFilePath, flags);
+        comProgress = m_comGuestSession.FileCopyToGuest(hostSourcePath, destinationFilePath, flags);
     }
     else if(hostFileInfo.isDir())
     {
@@ -356,10 +374,25 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
         QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
         QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
         /** @todo listen to CProgress object to monitor copy operation: */
-        /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, destinationFilePath, aFlags);
+        comProgress = m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, destinationFilePath, aFlags);
+
+
     }
-    if (!m_comGuestSession.isOk())
+    /** @todo currently I cannot get an errorfrom CProgress: */
+    if (m_comGuestSession.isOk())
+    {
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        {
+            emit sigLogOutput(UIErrorString::formatErrorInfo(comProgress));
+            return false;
+        }
+    }
+    else
+    {
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
         return false;
+    }
+
     return true;
 }
 
@@ -404,7 +437,11 @@ QString UIGuestFileTable::fsObjectPropertyString()
 
         CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), true);
         if (!m_comGuestSession.isOk())
+        {
+            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
             return QString();
+        }
+
 
         QString propertyString;
 
@@ -439,7 +476,11 @@ QString UIGuestFileTable::fsObjectPropertyString()
     {
         CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), true);
         if (!m_comGuestSession.isOk())
+        {
+            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
             continue;
+        }
+
         FileObjectType type = fileType(fileInfo);
 
         if (type == FileObjectType_File)

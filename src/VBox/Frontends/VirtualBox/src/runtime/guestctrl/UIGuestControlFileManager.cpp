@@ -24,7 +24,7 @@
 # include <QCheckBox>
 # include <QHBoxLayout>
 # include <QHeaderView>
-# include <QPlainTextEdit>
+# include <QTextEdit>
 # include <QPushButton>
 # include <QSplitter>
 # include <QGridLayout>
@@ -35,6 +35,7 @@
 # include "QITabWidget.h"
 # include "QITreeWidget.h"
 # include "QIWithRetranslateUI.h"
+# include "UIErrorString.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UIGuestControlConsole.h"
@@ -391,7 +392,7 @@ void UIGuestControlFileManager::prepareObjects()
         m_pTabWidget->setTabPosition(QTabWidget::South);
     }
 
-    m_pLogOutput = new QPlainTextEdit;
+    m_pLogOutput = new QTextEdit;
     if (m_pLogOutput)
     {
         m_pTabWidget->addTab(m_pLogOutput, "Log");
@@ -481,7 +482,7 @@ void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString st
     {
         if (m_pLogOutput)
         {
-            m_pLogOutput->appendPlainText("Could not find Guest Additions");
+            m_pLogOutput->append("Could not find Guest Additions");
             postSessionClosed();
             return;
         }
@@ -489,7 +490,7 @@ void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString st
     if (strUserName.isEmpty())
     {
         if (m_pLogOutput)
-            m_pLogOutput->appendPlainText("No user name is given");
+            m_pLogOutput->append("No user name is given");
         return;
     }
     createSession(strUserName, strPassword);
@@ -499,7 +500,7 @@ void UIGuestControlFileManager::sltCloseSession()
 {
     if (!m_comGuestSession.isOk())
     {
-        m_pLogOutput->appendPlainText("Guest session is not valid");
+        m_pLogOutput->append("Guest session is not valid");
         postSessionClosed();
         return;
     }
@@ -510,7 +511,7 @@ void UIGuestControlFileManager::sltCloseSession()
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
 
     m_comGuestSession.Close();
-    m_pLogOutput->appendPlainText("Guest session is closed");
+    m_pLogOutput->append("Guest session is closed");
     postSessionClosed();
 }
 
@@ -521,7 +522,7 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
         CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
         if (cErrorInfo.isOk())
         {
-            m_pLogOutput->appendPlainText(cErrorInfo.GetText());
+            m_pLogOutput->append(cErrorInfo.GetText());
         }
     }
     if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
@@ -531,14 +532,14 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
     }
     else
     {
-        m_pLogOutput->appendPlainText("Session status has changed");
+        m_pLogOutput->append("Session status has changed");
     }
 }
 
 void UIGuestControlFileManager::sltReceieveLogOutput(QString strOutput)
 {
     if (m_pLogOutput)
-        m_pLogOutput->appendPlainText(strOutput);
+        m_pLogOutput->append(strOutput);
 }
 
 void UIGuestControlFileManager::sltCopyGuestToHost()
@@ -600,11 +601,11 @@ bool UIGuestControlFileManager::createSession(const QString& strUserName, const 
 
     if (!m_comGuestSession.isOk())
     {
-        m_pLogOutput->appendPlainText("Guest session could not be created");
+        m_pLogOutput->append(UIErrorString::formatErrorInfo(m_comGuestSession));
         return false;
     }
 
-    m_pLogOutput->appendPlainText("Guest session has been created");
+    m_pLogOutput->append("Guest session has been created");
     if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCloseMode();
 
@@ -623,12 +624,12 @@ bool UIGuestControlFileManager::createSession(const QString& strUserName, const 
             this, &UIGuestControlFileManager::sltGuestSessionStateChanged);
      /* Wait session to start. For some reason we cannot get GuestSessionStatusChanged event
         consistently. So we wait: */
-    m_pLogOutput->appendPlainText("Waiting the session to start");
+    m_pLogOutput->append("Waiting the session to start");
     const ULONG waitTimeout = 2000;
     KGuestSessionWaitResult waitResult = m_comGuestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
     if (waitResult != KGuestSessionWaitResult_Start)
     {
-        m_pLogOutput->appendPlainText("The session did not start");
+        m_pLogOutput->append("The session did not start");
         sltCloseSession();
         return false;
     }

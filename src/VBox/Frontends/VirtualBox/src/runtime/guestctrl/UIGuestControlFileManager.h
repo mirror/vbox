@@ -34,7 +34,7 @@
 
 /* Forward declarations: */
 class QHBoxLayout;
-class QPlainTextEdit;
+class QTextEdit;
 class QVBoxLayout;
 class QSplitter;
 class QITabWidget;
@@ -104,7 +104,7 @@ private:
     CGuestSession       m_comGuestSession;
     QVBoxLayout        *m_pMainLayout;
     QSplitter          *m_pVerticalSplitter;
-    QPlainTextEdit     *m_pLogOutput;
+    QTextEdit          *m_pLogOutput;
     UIToolBar          *m_pToolBar;
     QAction            *m_pCopyGuestToHost;
     QAction            *m_pCopyHostToGuest;

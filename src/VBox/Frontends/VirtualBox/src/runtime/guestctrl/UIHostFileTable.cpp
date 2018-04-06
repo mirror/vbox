@@ -226,7 +226,7 @@ void UIHostFileTable::goToHomeDirectory()
         return;
 
     QString userHome = UIPathOperations::sanitize(QDir::homePath());
-    QList<QString> pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+    QStringList pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
     goIntoDirectory(pathList);
 }
 

@@ -268,7 +268,7 @@ const QChar UIPathOperations::delimiter = QChar('/');
 
 /* static */ QStringList UIPathOperations::pathTrail(const QString &path)
 {
-    QList<QString> pathList = path.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+    QStringList pathList = path.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
     return pathList;
 }
 
@@ -1067,7 +1067,7 @@ void UIGuestControlFileTable::goIntoDirectory(const QModelIndex &itemIndex)
     changeLocation(index);
 }
 
-void UIGuestControlFileTable::goIntoDirectory(const QList<QString> &pathTrail)
+void UIGuestControlFileTable::goIntoDirectory(const QStringList &pathTrail)
 {
     UIFileTableItem *parent = getStartDirectoryItem();
 
@@ -1228,7 +1228,7 @@ void UIGuestControlFileTable::sltLocationComboCurrentChange(const QString &strLo
     if (comboLocation == currentDirectoryPath())
         return;
 
-    QList<QString> pathList = comboLocation.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+    QStringList pathList = comboLocation.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
     goIntoDirectory(pathList);
 }
 
