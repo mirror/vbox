@@ -217,6 +217,10 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
                 for eachItem in difference:
                     reporter.log('Item location "%s" isn\'t correct' % (eachItem))
 
+                reporter.log('####### Reference locations: #######')
+                for eachItem in aReferences:
+                    reporter.log(' "%s"' % (eachItem))
+
                 if len (intersection) != len (aActuals):
                     reporter.log('Not all items in the right location. Check it.')
                     fRc = False
@@ -269,8 +273,8 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         # Construct the resource list the first time it's queried.
         if self.oTstDrv.asRsrcs is None:
             self.oTstDrv.asRsrcs = []
-            self.oTstDrv.asRsrcs.append('5.3/isos/tdMoveVM.iso')
-            self.oTstDrv.asRsrcs.append('5.3/floppy/tdMoveVM.img')
+            self.oTstDrv.asRsrcs.append('5.3' + os.sep + 'isos' + os.sep + 'tdMoveVM1.iso')
+            self.oTstDrv.asRsrcs.append('5.3' + os.sep + 'floppy' + os.sep + 'tdMoveVM1.img')
 
         return self.oTstDrv.asRsrcs
 
@@ -368,9 +372,12 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         #call Session::saveState(), already closes session unless it failed
         fRc = oSession.saveState()
-        self.oTstDrv.terminateVmBySession(oSession)
+        if fRc is True:
+            reporter.log("Machine is in saved state")
 
-        if fRc:
+        fRc = self.oTstDrv.terminateVmBySession(oSession)
+
+        if fRc is True or False:
             #create a new Session object for moving VM
             oSession = self.oTstDrv.openSession(oMachine)
 
@@ -422,9 +429,10 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         #create a new Session object
         oSession = self.oTstDrv.openSession(oMachine)
 
-        sISOLoc = '5.3/isos/tdMoveVM1.iso'
+        sISOLoc = self.asRsrcs[0]#'5.3/isos/tdMoveVM1.iso'
         reporter.log("sHost is '%s', sResourcePath is '%s'" % (self.oTstDrv.sHost, self.oTstDrv.sResourcePath))
         sISOLoc = self.oTstDrv.getFullResourceName(sISOLoc)
+        reporter.log("sISOLoc is '%s'" % (sISOLoc,))
 
         if not os.path.exists(sISOLoc):
             reporter.log('ISO file does not exist at "%s"' % (sISOLoc,))
@@ -437,6 +445,11 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         if fRc is True:
             #set actual ISO location
             sISOLoc = sOldLoc + os.sep + sISOImageName
+            reporter.log("sISOLoc is '%s'" % (sISOLoc,))
+            if not os.path.exists(sISOLoc):
+                reporter.log('ISO file does not exist at "%s"' % (sISOLoc,))
+                fRc = False
+
             sController=self.dsKeys['ISOImage']
             aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
             iPort = len(aoMediumAttachments)
@@ -482,7 +495,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         #create a new Session object
         oSession = self.oTstDrv.openSession(oMachine)
 
-        sFloppyLoc = '5.3/floppy/tdMoveVM1.img'
+        sFloppyLoc = self.asRsrcs[1]#'5.3/floppy/tdMoveVM1.img'
         sFloppyLoc = self.oTstDrv.getFullResourceName(sFloppyLoc)
 
         if not os.path.exists(sFloppyLoc):
@@ -506,11 +519,11 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             if fRc is True:
                 fRc = self.checkLocation(oSession.o.machine, dsReferenceFiles)
                 if fRc is False:
-                    reporter.testFailure('!!!!!!!!!!!!!!!!!! 5th scenario: Check locations failed... !!!!!!!!!!!!!!!!!!')
+                    reporter.testFailure('!!!!!!!!!!!!!!!!!! 6th scenario: Check locations failed... !!!!!!!!!!!!!!!!!!')
             else:
-                reporter.testFailure('!!!!!!!!!!!!!!!!!! 5th scenario: Move VM failed... !!!!!!!!!!!!!!!!!!')
+                reporter.testFailure('!!!!!!!!!!!!!!!!!! 6th scenario: Move VM failed... !!!!!!!!!!!!!!!!!!')
         else:
-            reporter.testFailure('!!!!!!!!!!!!!!!!!! 5th scenario: Attach floppy image failed... !!!!!!!!!!!!!!!!!!')
+            reporter.testFailure('!!!!!!!!!!!!!!!!!! 6th scenario: Attach floppy image failed... !!!!!!!!!!!!!!!!!!')
 
         #detach floppy image
         fRes = oSession.detachHd(sController, 0, 0)
