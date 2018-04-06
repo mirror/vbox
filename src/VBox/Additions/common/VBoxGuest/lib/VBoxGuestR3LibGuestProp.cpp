@@ -862,9 +862,9 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
     VBGL_HGCM_HDR_INIT_TIMED(&Msg.hdr, idClient, GUEST_PROP_FN_GET_NOTIFICATION, 4, cMillies);
 
     VbglHGCMParmPtrSetString(&Msg.patterns, pszPatterns);
-    Msg.buffer.SetPtr(pvBuf, cbBuf);
-    Msg.timestamp.SetUInt64(u64Timestamp);
-    Msg.size.SetUInt32(0);
+    VbglHGCMParmPtrSet(&Msg.buffer, pvBuf, cbBuf);
+    VbglHGCMParmUInt64Set(&Msg.timestamp, u64Timestamp);
+    VbglHGCMParmUInt32Set(&Msg.size, 0);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 
