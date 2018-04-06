@@ -47,7 +47,8 @@ VBOX_DEVICES_TESTS_FEATURES = \
 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO,) \
 	$(if $(VBOX_WITH_VMSVGA),VBOX_WITH_VMSVGA,) \
 	$(if $(VBOX_WITH_WDDM),VBOX_WITH_WDDM,) \
-	$(if $(VBOX_WITH_XHCI_IMPL),VBOX_WITH_XHCI_IMPL,)
+	$(if $(VBOX_WITH_XHCI_IMPL),VBOX_WITH_XHCI_IMPL,) \
+       $(VBOX_AUDIO_DEFS)
 
 #
 # We setup one 'other' target for executing the structure & alignment

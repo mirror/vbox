@@ -713,7 +713,7 @@ static int hdaRegLookupWithin(uint32_t offReg)
  *
  * @todo r=andy Break this up into two functions?
  */
-static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
+static int hdaR3CmdSync(PHDASTATE pThis, bool fLocal)
 {
     int rc = VINF_SUCCESS;
     if (fLocal)
@@ -724,8 +724,8 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
             Assert(pThis->cbCorbBuf);
 
             rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), pThis->u64CORBBase, pThis->pu32CorbBuf, pThis->cbCorbBuf);
-            if (RT_FAILURE(rc))
-                AssertRCReturn(rc, rc);
+            Log(("hdaR3CmdSync/CORB: read %RGp LB %#x (%Rrc)\n", pThis->u64CORBBase, pThis->cbCorbBuf, rc));
+            AssertRCReturn(rc, rc);
         }
     }
     else
@@ -736,8 +736,8 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
             Assert(pThis->cbRirbBuf);
 
             rc = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pThis->u64RIRBBase, pThis->pu64RirbBuf, pThis->cbRirbBuf);
-            if (RT_FAILURE(rc))
-                AssertRCReturn(rc, rc);
+            Log(("hdaR3CmdSync/RIRB: phys read %RGp LB %#x (%Rrc)\n", pThis->u64RIRBBase, pThis->pu64RirbBuf, rc));
+            AssertRCReturn(rc, rc);
         }
     }
 
@@ -793,7 +793,7 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
  * @returns IPRT status code.
  * @param   pThis               HDA state.
  */
-static int hdaCORBCmdProcess(PHDASTATE pThis)
+static int hdaR3CORBCmdProcess(PHDASTATE pThis)
 {
     uint8_t corbRp = HDA_REG(pThis, CORBRP);
     uint8_t corbWp = HDA_REG(pThis, CORBWP);
@@ -809,7 +809,7 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
 
     Assert(pThis->cbCorbBuf);
 
-    int rc = hdaCmdSync(pThis, true /* Sync from guest */);
+    int rc = hdaR3CmdSync(pThis, true /* Sync from guest */);
     AssertRCReturn(rc, rc);
 
     uint16_t cIntCnt = HDA_REG(pThis, RINTCNT) & 0xff;
@@ -886,7 +886,7 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
     HDA_REG(pThis, CORBRP) = corbRp;
     HDA_REG(pThis, RIRBWP) = rirbWp;
 
-    rc = hdaCmdSync(pThis, false /* Sync to guest */);
+    rc = hdaR3CmdSync(pThis, false /* Sync to guest */);
     AssertRCReturn(rc, rc);
 
     if (RT_FAILURE(rc))
@@ -1153,7 +1153,7 @@ static int hdaRegWriteCORBCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     if (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA) /* Start DMA engine. */
     {
-        rc = hdaCORBCmdProcess(pThis);
+        rc = hdaR3CORBCmdProcess(pThis);
     }
     else
         LogFunc(("CORB DMA not running, skipping\n"));
@@ -1246,7 +1246,7 @@ static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     int rc = hdaRegWriteU16(pThis, iReg, u32Value);
     AssertRCSuccess(rc);
 
-    rc = hdaCORBCmdProcess(pThis);
+    rc = hdaR3CORBCmdProcess(pThis);
 
     DEVHDA_UNLOCK(pThis);
     return rc;
@@ -2230,7 +2230,7 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     int rc = hdaRegWriteU32(pThis, iReg, u32Value);
-    Assert(rc == VINF_SUCCESS);
+    AssertRCSuccess(rc);
 
     switch (iReg)
     {
@@ -3029,6 +3029,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     PHDASTATE   pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
     int         rc;
     RT_NOREF_PV(pvUser);
+    Assert(pThis->uAlignmentCheckMagic == HDASTATE_ALIGNMENT_CHECK_MAGIC);
 
     /*
      * Look up and log.
@@ -3071,6 +3072,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
              * Multi register read (unless there are trailing gaps).
              * ASSUMES that only DWORD reads have sideeffects.
              */
+#ifdef IN_RING3
             uint32_t u32Value = 0;
             unsigned cbLeft   = 4;
             do
@@ -3093,6 +3095,10 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
                 *(uint32_t *)pv = u32Value;
             else
                 Assert(!IOM_SUCCESS(rc));
+#else  /* !IN_RING3 */
+            /* Take the easy way out. */
+            rc = VINF_IOM_R3_MMIO_READ;
+#endif /* !IN_RING3 */
         }
     }
     else
@@ -3161,6 +3167,15 @@ DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, c
     }
 
     /* Leave the lock before calling write function. */
+    /** @todo r=bird: Why do we need to do that??  There is no
+     *        explanation why this is necessary here...
+     *
+     * More or less all write functions retake the lock, so why not let
+     * those who need to drop the lock or take additional locks release
+     * it? See, releasing a lock you already got always runs the risk
+     * of someone else grabbing it and forcing you to wait, better to
+     * do the two-three things a write handle needs to do than enter
+     * and exit the lock all the time. */
     DEVHDA_UNLOCK(pThis);
 
 #ifdef LOG_ENABLED
@@ -3183,6 +3198,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     PHDASTATE pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
     int       rc;
     RT_NOREF_PV(pvUser);
+    Assert(pThis->uAlignmentCheckMagic == HDASTATE_ALIGNMENT_CHECK_MAGIC);
 
     /*
      * The behavior of accesses that aren't aligned on natural boundraries is
@@ -3238,6 +3254,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
      */
     else
     {
+#ifdef IN_RING3
         /*
          * If it's an access beyond the start of the register, shift the input
          * value and fill in missing bits. Natural alignment rules means we
@@ -3270,9 +3287,9 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
                     Log3Func(("\tSupplying missing bits (%#x): %#llx -> %#llx ...\n",
                               g_afMasks[cbReg] & ~g_afMasks[cb], u64Value & g_afMasks[cb], u64Value));
                 }
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
                 uint32_t uLogOldVal = pThis->au32Regs[idxRegMem];
-#endif
+# endif
                 rc = hdaWriteReg(pThis, idxRegDsc, u64Value, "*");
                 Log3Func(("\t%#x -> %#x\n", uLogOldVal, pThis->au32Regs[idxRegMem]));
             }
@@ -3302,6 +3319,11 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
                 }
             }
         }
+
+#else  /* !IN_RING3 */
+        /* Take the simple way out. */
+        rc = VINF_IOM_R3_MMIO_WRITE;
+#endif /* !IN_RING3 */
     }
 
     return rc;
@@ -3335,16 +3357,13 @@ static DECLCALLBACK(int)  hdaPciIoRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciD
     if (RT_FAILURE(rc))
         return rc;
 
-    if (pThis->fR0Enabled)
+    if (pThis->fRZEnabled)
     {
         rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
                                      "hdaMMIOWrite", "hdaMMIORead");
         if (RT_FAILURE(rc))
             return rc;
-    }
 
-    if (pThis->fRCEnabled)
-    {
         rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
                                      "hdaMMIOWrite", "hdaMMIORead");
         if (RT_FAILURE(rc))
@@ -4345,6 +4364,16 @@ static DECLCALLBACK(void *) hdaQueryInterface(struct PDMIBASE *pInterface, const
 
 /* PDMDEVREG */
 
+/**
+ * @interface_method_impl{PDMDEVREG,pfnRelocate}
+ */
+static DECLCALLBACK(void) hdaRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+{
+    NOREF(offDelta);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+}
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
@@ -4372,6 +4401,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
 
     DEVHDA_UNLOCK(pThis);
 }
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
@@ -4688,7 +4718,7 @@ static DECLCALLBACK(void) hdaPowerOff(PPDMDEVINS pDevIns)
     /* Ditto goes for the codec, which in turn uses the mixer. */
     hdaCodecPowerOff(pThis->pCodec);
 
-    /**
+    /*
      * Note: Destroy the mixer while powering off and *not* in hdaDestruct,
      *       giving the mixer the chance to release any references held to
      *       PDM audio streams it maintains.
@@ -4713,10 +4743,15 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     Assert(iInstance == 0);
 
     /*
+     * Initialize the state sufficently to make the destructor work.
+     */
+    pThis->uAlignmentCheckMagic = HDASTATE_ALIGNMENT_CHECK_MAGIC;
+    /** @todo r=bird: we'll crash checking if the list is empty!    */
+
+    /*
      * Validations.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "R0Enabled\0"
-                                    "RCEnabled\0"
+    if (!CFGMR3AreValuesValid(pCfg, "RZEnabled\0"
                                     "TimerHz\0"
                                     "PosAdjustEnabled\0"
                                     "PosAdjustFrames\0"
@@ -4727,14 +4762,11 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
                                 N_ ("Invalid configuration for the Intel HDA device"));
     }
 
-    int rc = CFGMR3QueryBoolDef(pCfg, "RCEnabled", &pThis->fRCEnabled, false);
+    int rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pThis->fRZEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read RCEnabled as boolean"));
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("HDA configuration error: failed to read R0Enabled as boolean"));
+
 
     rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &pThis->u16TimerHz, HDA_TIMER_HZ_DEFAULT /* Default value, if not set. */);
     if (RT_FAILURE(rc))
@@ -5283,7 +5315,7 @@ const PDMDEVREG g_DeviceHDA =
     /* pfnDestruct */
     hdaDestruct,
     /* pfnRelocate */
-    NULL,
+    hdaRelocate,
     /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
