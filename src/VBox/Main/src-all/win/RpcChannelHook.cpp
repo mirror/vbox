@@ -75,10 +75,15 @@ STDMETHODIMP_(ULONG) CRpcChannelHook::Release(void)
  * @note Warning! function is not thread safe!
  * @todo Consider using RTONCE to serialize this (though it's likely unncessary
  *       due to COM).
+ *
+ * @todo r=bird: Failure here must be fatal to VBoxProxyStub loading, or we can
+ *               kiss the reliablity of VBoxSVC good bye!
  */
 void SetupClientRpcChannelHook(void)
 {
     // register single hook only
+    /** @todo r=bird: This is called from DllMain/AttachProcess, so it should
+     *        only happen once.  OTOH, do we need to do anything on detach? */
     if (!CRpcChannelHook::IsChannelHookRegistered())
     {
         HRESULT hr = CoRegisterChannelHook(RPC_CHANNEL_EXTENSION_GUID, &CRpcChannelHook::s_RpcChannelHook);
@@ -169,12 +174,19 @@ STDMETHODIMP_(void) CRpcChannelHook::ClientNotify(REFGUID uExtent, REFIID riid, 
         {
             RTPROCESS pid = RTProcSelf();
             hrc = ptrClientList->RegisterClient(pid);
-            LogFunc(("Called VBoxSDS RegisterClient() : hr=%Rhrf\n", hrc));
+            if (SUCCEEDED(hrc))
+                LogFunc(("Called VBoxSDS RegisterClient() : hr=%Rhrf\n", hrc));
+            else
+                LogRel(("ERROR! Call to VBoxSDS::RegisterClient failed: hr=%Rhrf\n", hrc));
         }
         else
         {
-            LogFunc(("Error to connect to VBoxSDS: hr=%Rhrf\n", hrc));
+            LogRel(("ERROR! Failed to connect to VBoxSDS: hr=%Rhrf\n", hrc));
         }
+        /** @todo r=bird: Failure of any of above calls shall result in
+         * failure to get IVirtualBox!  Because the alternative is that VBoxSVC
+         * will quit early on us and potentally mess up the VM.  Much better
+         * to fail before its even started. */
     }
 }
 
