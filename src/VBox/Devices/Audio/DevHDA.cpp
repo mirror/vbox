@@ -4366,86 +4366,6 @@ static DECLCALLBACK(void *) hdaQueryInterface(struct PDMIBASE *pInterface, const
 /* PDMDEVREG */
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnRelocate}
- */
-static DECLCALLBACK(void) hdaRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    NOREF(offDelta);
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-}
-
-
-/**
- * @interface_method_impl{PDMDEVREG,pfnReset}
- */
-static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
-{
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
-
-    LogFlowFuncEnter();
-
-    DEVHDA_LOCK_RETURN_VOID(pThis);
-
-     /*
-     * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
-     * hdaReset shouldn't affects these registers.
-     */
-    HDA_REG(pThis, WAKEEN)  = 0x0;
-
-    hdaGCTLReset(pThis);
-
-    /* Indicate that HDA is not in reset. The firmware is supposed to (un)reset HDA,
-     * but we can take a shortcut.
-     */
-    HDA_REG(pThis, GCTL)    = HDA_GCTL_CRST;
-
-    DEVHDA_UNLOCK(pThis);
-}
-
-
-/**
- * @interface_method_impl{PDMDEVREG,pfnDestruct}
- */
-static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
-{
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
-
-    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
-
-    PHDADRIVER pDrv;
-    while (!RTListIsEmpty(&pThis->lstDrv))
-    {
-        pDrv = RTListGetFirst(&pThis->lstDrv, HDADRIVER, Node);
-
-        RTListNodeRemove(&pDrv->Node);
-        RTMemFree(pDrv);
-    }
-
-    if (pThis->pCodec)
-    {
-        hdaCodecDestruct(pThis->pCodec);
-
-        RTMemFree(pThis->pCodec);
-        pThis->pCodec = NULL;
-    }
-
-    RTMemFree(pThis->pu32CorbBuf);
-    pThis->pu32CorbBuf = NULL;
-
-    RTMemFree(pThis->pu64RirbBuf);
-    pThis->pu64RirbBuf = NULL;
-
-    for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
-        hdaStreamDestroy(&pThis->aStreams[i]);
-
-    DEVHDA_UNLOCK(pThis);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Attach command, internal version.
  *
  * This is called to let the device attach to a driver for a specified LUN
@@ -4639,7 +4559,41 @@ static DECLCALLBACK(void) hdaDetach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t 
 }
 
 /**
+ * Powers off the device.
+ *
+ * @param   pDevIns             Device instance to power off.
+ */
+static DECLCALLBACK(void) hdaPowerOff(PPDMDEVINS pDevIns)
+{
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+
+    DEVHDA_LOCK_RETURN_VOID(pThis);
+
+    LogRel2(("HDA: Powering off ...\n"));
+
+    /* Ditto goes for the codec, which in turn uses the mixer. */
+    hdaCodecPowerOff(pThis->pCodec);
+
+    /*
+     * Note: Destroy the mixer while powering off and *not* in hdaDestruct,
+     *       giving the mixer the chance to release any references held to
+     *       PDM audio streams it maintains.
+     */
+    if (pThis->pMixer)
+    {
+        AudioMixerDestroy(pThis->pMixer);
+        pThis->pMixer = NULL;
+    }
+
+    DEVHDA_UNLOCK(pThis);
+}
+
+
+/**
  * Re-attaches (replaces) a driver with a new driver.
+ *
+ * This is only used by to attach the Null driver when it failed to attach the
+ * one that was configured.
  *
  * @returns VBox status code.
  * @param   pThis       Device instance to re-attach driver to.
@@ -4703,35 +4657,85 @@ static int hdaReattachInternal(PHDASTATE pThis, PHDADRIVER pDrv, uint8_t uLUN, c
     return rc;
 }
 
+
 /**
- * Powers off the device.
- *
- * @param   pDevIns             Device instance to power off.
+ * @interface_method_impl{PDMDEVREG,pfnReset}
  */
-static DECLCALLBACK(void) hdaPowerOff(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
+    LogFlowFuncEnter();
+
     DEVHDA_LOCK_RETURN_VOID(pThis);
 
-    LogRel2(("HDA: Powering off ...\n"));
-
-    /* Ditto goes for the codec, which in turn uses the mixer. */
-    hdaCodecPowerOff(pThis->pCodec);
-
-    /*
-     * Note: Destroy the mixer while powering off and *not* in hdaDestruct,
-     *       giving the mixer the chance to release any references held to
-     *       PDM audio streams it maintains.
+     /*
+     * 18.2.6,7 defines that values of this registers might be cleared on power on/reset
+     * hdaReset shouldn't affects these registers.
      */
-    if (pThis->pMixer)
-    {
-        AudioMixerDestroy(pThis->pMixer);
-        pThis->pMixer = NULL;
-    }
+    HDA_REG(pThis, WAKEEN)  = 0x0;
+
+    hdaGCTLReset(pThis);
+
+    /* Indicate that HDA is not in reset. The firmware is supposed to (un)reset HDA,
+     * but we can take a shortcut.
+     */
+    HDA_REG(pThis, GCTL)    = HDA_GCTL_CRST;
 
     DEVHDA_UNLOCK(pThis);
 }
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnRelocate}
+ */
+static DECLCALLBACK(void) hdaRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+{
+    NOREF(offDelta);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    DEVHDA_LOCK(pThis);
+
+    PHDADRIVER pDrv;
+    while (!RTListIsEmpty(&pThis->lstDrv))
+    {
+        pDrv = RTListGetFirst(&pThis->lstDrv, HDADRIVER, Node);
+
+        RTListNodeRemove(&pDrv->Node);
+        RTMemFree(pDrv);
+    }
+
+    if (pThis->pCodec)
+    {
+        hdaCodecDestruct(pThis->pCodec);
+
+        RTMemFree(pThis->pCodec);
+        pThis->pCodec = NULL;
+    }
+
+    RTMemFree(pThis->pu32CorbBuf);
+    pThis->pu32CorbBuf = NULL;
+
+    RTMemFree(pThis->pu64RirbBuf);
+    pThis->pu64RirbBuf = NULL;
+
+    for (uint8_t i = 0; i < HDA_MAX_STREAMS; i++)
+        hdaStreamDestroy(&pThis->aStreams[i]);
+
+    DEVHDA_UNLOCK(pThis);
+    return VINF_SUCCESS;
+}
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -4747,7 +4751,9 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      * Initialize the state sufficently to make the destructor work.
      */
     pThis->uAlignmentCheckMagic = HDASTATE_ALIGNMENT_CHECK_MAGIC;
-    /** @todo r=bird: we'll crash checking if the list is empty!    */
+    RTListInit(&pThis->lstDrv);
+    /** @todo r=bird: There are probably other things which should be
+     *        initialized here before we start failing. */
 
     /*
      * Validations.
@@ -4935,8 +4941,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = PDMDevHlpSSMRegister(pDevIns, HDA_SSM_VERSION, sizeof(*pThis), hdaSaveExec, hdaLoadExec);
     if (RT_FAILURE(rc))
         return rc;
-
-    RTListInit(&pThis->lstDrv);
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     LogRel(("HDA: Asynchronous I/O enabled\n"));
