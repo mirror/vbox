@@ -618,30 +618,27 @@ uint32_t hdaStreamGetFree(PHDASTREAM pStream)
  */
 bool hdaStreamTransferIsScheduled(PHDASTREAM pStream)
 {
-    if (!pStream)
-        return false;
-
-    AssertPtrReturn(pStream->pHDAState, false);
-
-    const uint64_t tsNow = TMTimerGet(pStream->pTimer);
-
-    const bool fScheduled =    pStream->State.fRunning
-                            && (   pStream->State.cTransferPendingInterrupts
-                                || pStream->State.tsTransferNext > tsNow);
-
-#ifdef LOG_ENABLED
-    if (fScheduled)
+    if (pStream)
     {
-        if (pStream->State.cTransferPendingInterrupts)
-            Log3Func(("[SD%RU8] Scheduled (%RU8 IRQs pending)\n",
-                      pStream->u8SD, pStream->State.cTransferPendingInterrupts));
-        else
-            Log3Func(("[SD%RU8] Scheduled in %RU64\n",
-                      pStream->u8SD, pStream->State.tsTransferNext - tsNow));
-    }
-#endif
+        AssertPtrReturn(pStream->pHDAState, false);
 
-    return fScheduled;
+        if (pStream->State.fRunning)
+        {
+            if (pStream->State.cTransferPendingInterrupts)
+            {
+                Log3Func(("[SD%RU8] Scheduled (%RU8 IRQs pending)\n", pStream->u8SD, pStream->State.cTransferPendingInterrupts));
+                return true;
+            }
+
+            const uint64_t tsNow = TMTimerGet(pStream->pTimer);
+            if (pStream->State.tsTransferNext > tsNow)
+            {
+                Log3Func(("[SD%RU8] Scheduled in %RU64\n", pStream->u8SD, pStream->State.tsTransferNext - tsNow));
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 /**

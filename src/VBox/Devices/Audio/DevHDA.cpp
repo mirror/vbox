@@ -2795,18 +2795,19 @@ DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 
     /* Flag indicating whether to kick the timer again for a
      * new data processing round. */
-    const bool fSinkActive     = AudioMixerSinkIsActive(pStream->pMixSink->pMixSink);
-    const bool fTimerScheduled = hdaStreamTransferIsScheduled(pStream);
-
-    Log3Func(("fSinksActive=%RTbool, fTimerScheduled=%RTbool\n", fSinkActive, fTimerScheduled));
-
-    if (    fSinkActive
-        && !fTimerScheduled)
+    const bool fSinkActive = AudioMixerSinkIsActive(pStream->pMixSink->pMixSink);
+    if (fSinkActive)
     {
-        hdaTimerSet(pThis, pStream,
-                    TMTimerGet(pThis->pTimer[pStream->u8SD]) + TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pStream->pHDAState->u16TimerHz,
-                    true /* fForce */);
+        const bool fTimerScheduled = hdaStreamTransferIsScheduled(pStream);
+        Log3Func(("fSinksActive=%RTbool, fTimerScheduled=%RTbool\n", fSinkActive, fTimerScheduled));
+        if (!fTimerScheduled)
+            hdaTimerSet(pThis, pStream,
+                          TMTimerGet(pThis->pTimer[pStream->u8SD])
+                        + TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pStream->pHDAState->u16TimerHz,
+                        true /* fForce */);
     }
+    else
+        Log3Func(("fSinksActive=%RTbool\n", fSinkActive));
 
     DEVHDA_UNLOCK_BOTH(pThis, pStream->u8SD);
 }
