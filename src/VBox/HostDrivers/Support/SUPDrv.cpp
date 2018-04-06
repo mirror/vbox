@@ -513,6 +513,17 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
      *        them. On linux we should use the module parameter stuff... */
 #endif
 
+#if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) && !defined(VBOX_WITH_OLD_CPU_SUPPORT)
+    /*
+     * Require SSE2 to be present.
+     */
+    if (!(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2))
+    {
+        SUPR0Printf("vboxdrv: Requires SSE2 (cpuid(0).EDX=%#x)\n", ASMCpuId_EDX(1));
+        return VERR_UNSUPPORTED_CPU;
+    }
+#endif
+
     /*
      * Initialize it.
      */
