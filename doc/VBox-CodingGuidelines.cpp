@@ -135,6 +135,8 @@
  *
  *   <li> No 'else' after if block ending with 'return', 'break', or 'continue'.
  *
+ *   <li> Go through all of this: https://www.slideshare.net/olvemaudal/deep-c/
+ *
  * </ul>
  *
  * (1) It is common practice on Unix to have a single symbol namespace for an
