@@ -30,14 +30,14 @@
 
 #ifdef RT_OS_WINDOWS
 
-volatile bool CRpcChannelHook::s_bChannelRegistered = false;
-volatile bool CRpcChannelHook::s_bVBpoxSDSCalledOnce = false;
+volatile bool CRpcChannelHook::s_fChannelRegistered = false;
+volatile bool CRpcChannelHook::s_fVBpoxSDSCalledOnce = false;
 CRpcChannelHook CRpcChannelHook::s_RpcChannelHook;
 
-/*
-*   RpcChannelHook IUnknown interface implementation.
-*/
 
+/*
+ * RpcChannelHook IUnknown interface implementation.
+ */
 
 STDMETHODIMP CRpcChannelHook::QueryInterface(REFIID riid, void **ppv)
 {
@@ -68,42 +68,41 @@ STDMETHODIMP_(ULONG) CRpcChannelHook::Release(void)
     return 1;
 }
 
-/*
-*   C wrapper functions.
-*/
 
-// Warning: functions below are not thread safe
-extern "C"
+/**
+ * This is a function that we can call from non-C++ proxy stub code.
+ *
+ * @note Warning! function is not thread safe!
+ * @todo Consider using RTONCE to serialize this (though it's likely unncessary
+ *       due to COM).
+ */
+void SetupClientRpcChannelHook(void)
 {
-    void SetupClientRpcChannelHook(void)
+    // register single hook only
+    if (!CRpcChannelHook::IsChannelHookRegistered())
     {
-        // register single hook only
-        if (!CRpcChannelHook::IsChannelHookRegistered())
-        {
-            HRESULT hr = CoRegisterChannelHook(RPC_CHANNEL_EXTENSION_GUID,
-                &CRpcChannelHook::s_RpcChannelHook);
-            NOREF(hr);
-            Assert(SUCCEEDED(hr));
-            CRpcChannelHook::RegisterChannelHook();
-            LogFunc(("Registered RPC client channel hook \n"));
-        }
+        HRESULT hr = CoRegisterChannelHook(RPC_CHANNEL_EXTENSION_GUID, &CRpcChannelHook::s_RpcChannelHook);
+        NOREF(hr);
+        Assert(SUCCEEDED(hr));
+        CRpcChannelHook::RegisterChannelHook();
+        LogFunc(("Registered RPC client channel hook \n"));
     }
 }
 
 
 /*
-*   Internal functions.
-*/
+ * Internal methods.
+ */
 
 bool CRpcChannelHook::IsChannelHookRegistered()
 {
-    return ASMAtomicReadBool(&s_bChannelRegistered);
+    return ASMAtomicReadBool(&s_fChannelRegistered);
 }
 
 
 void CRpcChannelHook::RegisterChannelHook()
 {
-    ASMAtomicWriteBool(&s_bChannelRegistered, true);
+    ASMAtomicWriteBool(&s_fChannelRegistered, true);
 }
 
 /* RpcChannelHook IChannelHook interface implementation.*/
@@ -123,42 +122,49 @@ STDMETHODIMP_(void) CRpcChannelHook::ClientGetSize(REFGUID uExtent, REFIID riid,
     }
 }
 
-/*
-* This is callback of RPC channel hook called on COM client when COM method call
-* finished on server and response returned.
-* We use it to catch a moment when a new VirtualBox object sucessfully instantiated.
-* This callback is called in client process - VirtualBox.exe, VBoxManage or custom client
-* If it happend we register new API client in VBoxSDS.
-* Parameters:
-*   uExtent - unique ID of our RPC channel
-*   rIID - IID of called server interface (IVirtualBox in our case)
-*   pDataBuffer - NULL, such as we have nothing to transfer from server side
-*   hrFault - result of called COM server method
-*/
-STDMETHODIMP_(void) CRpcChannelHook::ClientNotify(REFGUID uExtent, REFIID riid,
-    ULONG cbDataSize, void *pDataBuffer, DWORD lDataRep, HRESULT hrFault)
+/**
+ * This is callback of RPC channel hook called on COM client when COM method call
+ * finished on server and response returned.
+ * We use it to catch a moment when a new VirtualBox object sucessfully instantiated.
+ * This callback is called in client process - VirtualBox.exe, VBoxManage or custom client
+ * If it happend we register new API client in VBoxSDS.
+ * Parameters:
+ * @param   uExtent         Unique ID of our RPC channel.
+ * @param   riid            Interface ID of called server interface (IVirtualBox
+ *                          in our case).
+ * @param   cbDataBuffer    ???????????????????
+ * @param   pDataBuffer     NULL, such as we have nothing to transfer from
+ *                          server side.
+ * @param   lDataRep        ???????????
+ * @param   hrFault         result of called COM server method.
+ */
+STDMETHODIMP_(void) CRpcChannelHook::ClientNotify(REFGUID uExtent, REFIID riid, ULONG cbDataSize, void *pDataBuffer,
+                                                  DWORD lDataRep, HRESULT hrFault)
 {
     NOREF(cbDataSize);
     NOREF(pDataBuffer);
     NOREF(lDataRep);
 
-    // Check that it created VirtualBox and this is first method called on server
-    // (CreateInstance)
-    if (uExtent == m_ChannelHookID &&
-        riid == IID_IVirtualBox &&
-        !ASMAtomicReadBool(&s_bVBpoxSDSCalledOnce) &&
-        SUCCEEDED(hrFault) )
+    /*
+     * Check that it created VirtualBox and this is first method called on server
+     * (CreateInstance)
+     */
+    if (   riid == IID_IVirtualBox
+        && uExtent == m_ChannelHookID
+        && SUCCEEDED(hrFault)
+        && !ASMAtomicReadBool(&s_fVBpoxSDSCalledOnce) )
     {
         LogFunc(("Finished call of VirtualBox method\n"));
 
-        ASMAtomicWriteBool(&s_bVBpoxSDSCalledOnce, true);
-        ComPtr<IVirtualBoxClientList> ptrClientList;
+        ASMAtomicWriteBool(&s_fVBpoxSDSCalledOnce, true);
+
         /*
-        * Connect to VBoxSDS.
-        * Note: VBoxSDS can handle duplicate calls
-        */
+         * Connect to VBoxSDS.
+         * Note: VBoxSDS can handle duplicate calls
+         */
+        ComPtr<IVirtualBoxClientList> ptrClientList;
         HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxClientList, NULL, CLSCTX_LOCAL_SERVER, IID_IVirtualBoxClientList,
-            (void **)ptrClientList.asOutParam());
+                                       (void **)ptrClientList.asOutParam());
         if (SUCCEEDED(hrc))
         {
             RTPROCESS pid = RTProcSelf();
@@ -172,45 +178,30 @@ STDMETHODIMP_(void) CRpcChannelHook::ClientNotify(REFGUID uExtent, REFIID riid,
     }
 }
 
-STDMETHODIMP_(void) CRpcChannelHook::ClientFillBuffer(REFGUID uExtent, REFIID riid,
-    ULONG *pDataSize, void *pDataBuffer)
+STDMETHODIMP_(void) CRpcChannelHook::ClientFillBuffer(REFGUID uExtent, REFIID riid, ULONG *pDataSize, void *pDataBuffer)
 {
-    NOREF(uExtent);
-    NOREF(riid);
-    NOREF(pDataSize);
-    NOREF(pDataBuffer);
+    RT_NOREF(uExtent, riid, pDataSize, pDataBuffer);
 }
 
-STDMETHODIMP_(void) CRpcChannelHook::ServerGetSize(REFGUID uExtent, REFIID riid,
-    HRESULT hrFault, ULONG *pDataSize)
+STDMETHODIMP_(void) CRpcChannelHook::ServerGetSize(REFGUID uExtent, REFIID riid, HRESULT hrFault, ULONG *pDataSize)
 {
     // Nothing to send to client side from server side
-    NOREF(uExtent);
-    NOREF(riid);
-    NOREF(hrFault);
+    RT_NOREF(uExtent, riid, hrFault);
     *pDataSize = 0;
 }
 
-STDMETHODIMP_(void) CRpcChannelHook::ServerNotify(REFGUID uExtent, REFIID riid,
-    ULONG cbDataSize, void *pDataBuffer, DWORD lDataRep)
+STDMETHODIMP_(void) CRpcChannelHook::ServerNotify(REFGUID uExtent, REFIID riid, ULONG cbDataSize, void *pDataBuffer,
+                                                  DWORD lDataRep)
 {
     // Nothing to do on server side
-    NOREF(uExtent);
-    NOREF(riid);
-    NOREF(cbDataSize);
-    NOREF(pDataBuffer);
-    NOREF(lDataRep);
+    RT_NOREF(uExtent, riid, cbDataSize, pDataBuffer, lDataRep);
 }
 
-STDMETHODIMP_(void) CRpcChannelHook::ServerFillBuffer(REFGUID uExtent, REFIID riid,
-    ULONG *pDataSize, void *pDataBuffer, HRESULT hrFault)
+STDMETHODIMP_(void) CRpcChannelHook::ServerFillBuffer(REFGUID uExtent, REFIID riid, ULONG *pDataSize, void *pDataBuffer,
+                                                      HRESULT hrFault)
 {
     // Nothing to send to client side from server side
-    NOREF(uExtent);
-    NOREF(riid);
-    NOREF(pDataSize);
-    NOREF(pDataBuffer);
-    NOREF(hrFault);
+    RT_NOREF(uExtent, riid, pDataSize, pDataBuffer, hrFault);
 }
 
 #endif

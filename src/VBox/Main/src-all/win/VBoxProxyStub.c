@@ -147,18 +147,6 @@ static PCRTUTF16 const      g_apwszProxyStubClsIds[] =
     L"{327E3C00-EE61-462F-AED3-0DFF6CBF9904}",
 };
 
-BOOL IsVBoxServiceProcess(void)
-{
-    if (GetEnvironmentVariable(L"VBOX_SERVICE_PROCESS", NULL, 0) == 0)
-    {
-        int res = GetLastError();
-        if (res != ERROR_ENVVAR_NOT_FOUND)
-            LogRel(("Error: cannot get service environment variable: %Rrwa\n", res));
-        return false;
-    }
-    return true;
-}
-
 
 /**
  * DLL main function.
@@ -184,10 +172,12 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
             RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
             Log12(("VBoxProxyStub[%u]/DllMain: DLL_PROCESS_ATTACH\n", GetCurrentProcessId()));
 
-            /* Install RPC channel hook to intercept a moment just after VirtualBox object activation.
-               It's reports to VBoxSDS that a new VirtualBox API client started. */
 #ifdef VBOX_SDS_CLIENTS_WATCHER
-            if(!IsVBoxServiceProcess())
+            /*
+             * Install RPC channel hook to intercept a moment just after VirtualBox object activation.
+             * It's reports to VBoxSDS that a new VirtualBox API client started.
+             */
+            if (GetProcAddress(GetModuleHandle(NULL), "Is_VirtualBox_service_process_like_VBoxSDS_And_VBoxSDS") == NULL)
                 SetupClientRpcChannelHook();
 #endif
 

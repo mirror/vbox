@@ -515,7 +515,7 @@ HRESULT VirtualBoxClassFactory::i_getVirtualBox(IUnknown **ppResult)
 
 void    VirtualBoxClassFactory::i_finishVBoxSvc()
 {
-    LogRelFunc(("Finish work of VBoxSVc and VBoxSDS\n"));
+    LogRelFunc(("Finish work of VBoxSVC and VBoxSDS\n"));
     if (m_ptrVirtualBoxSDS.isNotNull())
     {
         m_ptrVirtualBoxSDS.setNull();
@@ -786,15 +786,12 @@ static void DestroyMainWindow()
 }
 
 
-int SetServiceEnvFlag()
+/** Special export that make VBoxProxyStub not register this process as one that
+ * VBoxSDS should be watching.
+ */
+extern "C" DECLEXPORT(void) VBOXCALL Is_VirtualBox_service_process_like_VBoxSDS_And_VBoxSDS(void)
 {
-    int rc = VINF_SUCCESS;
-    if (!SetEnvironmentVariable(L"VBOX_SERVICE_PROCESS", L""))
-    {
-        rc = RTErrConvertFromWin32(GetLastError());
-        LogRel(("Error: cannot set service environment flag:  %Rrs\n", rc));
-    }
-    return rc;
+    /* never called, just need to be here */
 }
 
 
@@ -833,8 +830,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
      * the support driver.
      */
     RTR3InitExe(argc, &argv, 0);
-
-    SetServiceEnvFlag();
 
     static const RTGETOPTDEF s_aOptions[] =
     {
