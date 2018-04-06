@@ -1523,8 +1523,20 @@ RTDECL(void) ASMSerializeInstruction(void);
  */
 DECLINLINE(void) ASMMemoryFence(void)
 {
-    /** @todo use mfence? check if all cpus we care for support it. */
-#if ARCH_BITS == 16
+#if defined(RT_ARCH_AMD64) || (defined(RT_ARCH_X86) && !defined(RT_WITH_OLD_CPU_SUPPORT))
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__ (".byte 0x0f,0xae,0xf0\n\t");
+# elif RT_INLINE_ASM_USES_INTRIN
+    _mm_mfence();
+# else
+    __asm
+    {
+        _emit   0x0f
+        _emit   0xae
+        _emit   0xf0
+    }
+# endif
+#elif ARCH_BITS == 16
     uint16_t volatile u16;
     ASMAtomicXchgU16(&u16, 0);
 #else
@@ -1539,8 +1551,22 @@ DECLINLINE(void) ASMMemoryFence(void)
  */
 DECLINLINE(void) ASMWriteFence(void)
 {
-    /** @todo use sfence? check if all cpus we care for support it. */
+#if defined(RT_ARCH_AMD64) || (defined(RT_ARCH_X86) && !defined(RT_WITH_OLD_CPU_SUPPORT))
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__ (".byte 0x0f,0xae,0xf8\n\t");
+# elif RT_INLINE_ASM_USES_INTRIN
+    _mm_sfence();
+# else
+    __asm
+    {
+        _emit   0x0f
+        _emit   0xae
+        _emit   0xf8
+    }
+# endif
+#else
     ASMMemoryFence();
+#endif
 }
 
 
@@ -1549,8 +1575,22 @@ DECLINLINE(void) ASMWriteFence(void)
  */
 DECLINLINE(void) ASMReadFence(void)
 {
-    /** @todo use lfence? check if all cpus we care for support it. */
+#if defined(RT_ARCH_AMD64) || (defined(RT_ARCH_X86) && !defined(RT_WITH_OLD_CPU_SUPPORT))
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__ (".byte 0x0f,0xae,0xe8\n\t");
+# elif RT_INLINE_ASM_USES_INTRIN
+    _mm_lfence();
+# else
+    __asm
+    {
+        _emit   0x0f
+        _emit   0xae
+        _emit   0xe8
+    }
+# endif
+#else
     ASMMemoryFence();
+#endif
 }
 
 
