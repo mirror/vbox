@@ -1209,7 +1209,6 @@ static int hdaRegWriteCORBSIZE(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
     }
 
     uint32_t cbCorbBuf = cEntries * sizeof(uint32_t);
-
     if (cbCorbBuf != pThis->cbCorbBuf)
     {
         if (pThis->pu32CorbBuf)
@@ -1221,10 +1220,11 @@ static int hdaRegWriteCORBSIZE(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
         if (cbCorbBuf)
         {
             Assert(cbCorbBuf % sizeof(uint32_t) == 0);
-
             pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(cbCorbBuf);
-            pThis->cbCorbBuf   = cbCorbBuf;
+            AssertStmt(pThis->pu32CorbBuf, cbCorbBuf = 0);
         }
+
+        pThis->cbCorbBuf = cbCorbBuf;
     }
 
     LogFunc(("CORB buffer size is now %RU32 bytes (%u entries)\n", pThis->cbCorbBuf, pThis->cbCorbBuf / HDA_CORB_ELEMENT_SIZE));
