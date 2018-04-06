@@ -100,6 +100,7 @@ uint64_t hdaWalClkGetCurrent(PHDASTATE pThis)
 }
 
 #ifdef IN_RING3
+
 /**
  * Sets the actual WALCLK register to the specified wall clock value.
  * The specified wall clock value only will be set (unless fForce is set to true) if all
@@ -116,31 +117,31 @@ bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
     const bool     fFrontPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaGetStreamFromSink(pThis, &pThis->SinkFront)->State.Period,
                                                                            u64WalClk);
     const uint64_t u64FrontAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkFront)->State.Period);
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-# error "Implement me!"
-#endif
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+#  error "Implement me!"
+# endif
 
     const bool     fLineInPassed      = hdaStreamPeriodHasPassedAbsWalClk (&hdaGetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period, u64WalClk);
     const uint64_t u64LineInAbsWalClk = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period);
-#ifdef VBOX_WITH_HDA_MIC_IN
+# ifdef VBOX_WITH_HDA_MIC_IN
     const bool     fMicInPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaGetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period,  u64WalClk);
     const uint64_t u64MicInAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period);
-#endif
+# endif
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     const uint64_t u64WalClkCur       = ASMAtomicReadU64(&pThis->u64WalClk);
-#endif
+# endif
 
     /* Only drive the WALCLK register forward if all (active) stream periods have passed
      * the specified point in time given by u64WalClk. */
     if (  (   fFrontPassed
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-# error "Implement me!"
-#endif
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+#  error "Implement me!"
+# endif
            && fLineInPassed
-#ifdef VBOX_WITH_HDA_MIC_IN
+# ifdef VBOX_WITH_HDA_MIC_IN
            && fMicInPassed
-#endif
+# endif
           )
        || fForce)
     {
@@ -149,15 +150,15 @@ bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
             /* Get the maximum value of all periods we need to handle.
              * Not the most elegant solution, but works for now ... */
             u64WalClk = RT_MAX(u64WalClk, u64FrontAbsWalClk);
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-# error "Implement me!"
-#endif
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+#  error "Implement me!"
+# endif
             u64WalClk = RT_MAX(u64WalClk, u64LineInAbsWalClk);
-#ifdef VBOX_WITH_HDA_MIC_IN
+# ifdef VBOX_WITH_HDA_MIC_IN
             u64WalClk = RT_MAX(u64WalClk, u64MicInAbsWalClk);
-#endif
+# endif
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
             AssertMsg(u64WalClk >= u64WalClkCur,
                       ("Setting WALCLK to a value going backwards does not make any sense (old %RU64 vs. new %RU64)\n",
                        u64WalClkCur, u64WalClk));
@@ -169,7 +170,7 @@ bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
             }
             else
                 pThis->u8WalClkStaleCnt = 0;
-#endif
+# endif
         }
 
         /* Set the new WALCLK value. */
@@ -202,13 +203,13 @@ PHDAMIXERSINK hdaGetDefaultSink(PHDASTATE pThis, uint8_t uSD)
 
         if (uSD == uFirstSDI) /* First SDI. */
             return &pThis->SinkLineIn;
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         else if (uSD == uFirstSDI + 1)
             return &pThis->SinkMicIn;
-#else
+# else
         else /* If we don't have a dedicated Mic-In sink, use the always present Line-In sink. */
             return &pThis->SinkLineIn;
-#endif
+# endif
     }
     else
     {
@@ -216,16 +217,18 @@ PHDAMIXERSINK hdaGetDefaultSink(PHDASTATE pThis, uint8_t uSD)
 
         if (uSD == uFirstSDO)
             return &pThis->SinkFront;
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
         else if (uSD == uFirstSDO + 1)
             return &pThis->SinkCenterLFE;
         else if (uSD == uFirstSDO + 2)
             return &pThis->SinkRear;
-#endif
+# endif
     }
 
     return NULL;
 }
+
+#endif /* IN_RING */
 
 /**
  * Returns the audio direction of a specified stream descriptor.
@@ -267,6 +270,8 @@ PHDASTREAM hdaGetStreamFromSD(PHDASTATE pThis, uint8_t uSD)
 
     return &pThis->aStreams[uSD];
 }
+
+#ifdef IN_RING3
 
 /**
  * Returns the HDA stream of specified HDA sink.
@@ -433,6 +438,7 @@ int hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t
 
     return rc;
 }
+
 #endif /* IN_RING3 */
 
 /**

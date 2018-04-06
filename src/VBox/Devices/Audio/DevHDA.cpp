@@ -540,8 +540,6 @@ static uint32_t const g_afMasks[5] =
 
 
 
-#ifdef IN_RING3
-
 /**
  * Retrieves the number of bytes of a FIFOW register.
  *
@@ -562,6 +560,7 @@ DECLINLINE(uint8_t) hdaSDFIFOWToBytes(uint32_t u32RegFIFOW)
     return cb;
 }
 
+#ifdef IN_RING3
 /**
  * Reschedules pending interrupts for all audio streams which have complete
  * audio periods but did not have the chance to issue their (pending) interrupts yet.
@@ -595,7 +594,6 @@ static void hdaReschedulePendingInterrupts(PHDASTATE pThis)
     hdaProcessInterrupt(pThis, __FUNCTION__);
 # endif
 }
-
 #endif /* IN_RING3 */
 
 /**
@@ -1270,8 +1268,7 @@ static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-#ifdef IN_RING3
-    DEVHDA_LOCK(pThis);
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, CBL, iReg));
     if (pStream)
@@ -1283,15 +1280,11 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         LogFunc(("[SD%RU8] Warning: Changing SDCBL on non-attached stream (0x%x)\n",
                  HDA_SD_NUM_FROM_REG(pThis, CTL, iReg), u32Value));
 
-    int rc2 = hdaRegWriteU32(pThis, iReg, u32Value);
-    AssertRC(rc2);
+    int rc = hdaRegWriteU32(pThis, iReg, u32Value);
+    AssertRCSuccess(rc);
 
     DEVHDA_UNLOCK(pThis);
-    return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-#else  /* !IN_RING3 */
-    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
-    return VINF_IOM_R3_MMIO_WRITE;
-#endif /* IN_RING3 */
+    return rc;
 }
 
 static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
@@ -1598,8 +1591,7 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
 static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-#ifdef IN_RING3
-    DEVHDA_LOCK(pThis);
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     if (HDA_REG_IND(pThis, iReg) == u32Value) /* Value already set? */
     { /* nothing to do */ }
@@ -1613,7 +1605,7 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             pStream->u16LVI = u32Value;
             LogFunc(("[SD%RU8] Updating LVI to %RU16\n", uSD, pStream->u16LVI));
 
-# ifdef HDA_USE_DMA_ACCESS_HANDLER
+#ifdef HDA_USE_DMA_ACCESS_HANDLER
             if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
             {
                 /* Try registering the DMA handlers.
@@ -1621,7 +1613,7 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
                 if (hdaStreamRegisterDMAHandlers(pThis, pStream))
                     LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
             }
-# endif
+#endif
         }
         else
             AssertMsgFailed(("[SD%RU8] Warning: Changing SDLVI on non-attached stream (0x%x)\n", uSD, u32Value));
@@ -1632,25 +1624,24 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-#else  /* !IN_RING3 */
-    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
-    return VINF_IOM_R3_MMIO_WRITE;
-#endif /* IN_RING3 */
 }
 
 static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-#ifdef IN_RING3
-    DEVHDA_LOCK(pThis);
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg);
 
     if (hdaGetDirFromSD(uSD) != PDMAUDIODIR_IN) /* FIFOW for input streams only. */
     {
+#ifndef IN_RING0
         LogRel(("HDA: Warning: Guest tried to write read-only FIFOW to output stream #%RU8, ignoring\n", uSD));
-
         DEVHDA_UNLOCK(pThis);
         return VINF_SUCCESS;
+#else
+        DEVHDA_UNLOCK(pThis);
+        return VINF_IOM_R3_MMIO_WRITE;
+#endif
     }
 
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg));
@@ -1690,10 +1681,6 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-#else  /* !IN_RING3 */
-    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
-    return VINF_IOM_R3_MMIO_WRITE;
-#endif /* IN_RING3 */
 }
 
 /**
@@ -1701,8 +1688,7 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
  */
 static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-#ifdef IN_RING3
-    DEVHDA_LOCK(pThis);
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, FIFOS, iReg);
 
@@ -1755,10 +1741,6 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
     DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
-#else  /* !IN_RING3 */
-    RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
-    return VINF_IOM_R3_MMIO_WRITE;
-#endif /* IN_RING3 */
 }
 
 #ifdef IN_RING3
