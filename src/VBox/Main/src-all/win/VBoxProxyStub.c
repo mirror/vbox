@@ -172,7 +172,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
             RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
             Log12(("VBoxProxyStub[%u]/DllMain: DLL_PROCESS_ATTACH\n", GetCurrentProcessId()));
 
-#ifdef VBOX_SDS_CLIENTS_WATCHER
+#ifdef VBOX_WITH_SDS_CLIENT_WATCHER
             /*
              * Install RPC channel hook to intercept a moment just after VirtualBox object activation.
              * It's reports to VBoxSDS that a new VirtualBox API client started.
