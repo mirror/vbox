@@ -133,6 +133,13 @@
  *        \#endif indicates what ended.  Only add these when there are more than
  *        a few lines (6-10) of \#ifdef'ed code, otherwise they're just clutter.
  *
+ *   <li> \#ifdefs around a single function shall be tight, i.e. no empty
+ *        lines between it and the function documentation and body.
+ *
+ *   <li> \#ifdefs around more than one function shall be relaxed, i.e. leave at
+ *        least one line before the first function's documentation comment and
+ *        one line after the end of the last function.
+ *
  *   <li> No 'else' after if block ending with 'return', 'break', or 'continue'.
  *
  *   <li> Go through all of this: https://www.slideshare.net/olvemaudal/deep-c/
