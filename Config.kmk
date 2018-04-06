@@ -2850,10 +2850,18 @@ ifdef VBOX_WITH_GCC_SANITIZER
 	-fno-sanitize=alignment \
 	-fno-sanitize=vptr \
 	-fno-common \
-	-include sanitizer/lsan_interface.h \
-	-DVBOX_WITH_GCC_SANITIZER
+	-static-libasan
 else
  VBOX_GCC_SANITIZER_FLAGS =
+endif
+
+# -libasan-static is currently not supported in combination with -no-undefined.
+ifdef VBOX_WITH_GCC_SANITIZER
+ VBOX_GCC_NO_UNDEFINED    :=
+ VBOX_GCC_NO_UNDEFINED_R0 :=
+else
+ VBOX_GCC_NO_UNDEFINED    := -Wl,--no-undefined
+ VBOX_GCC_NO_UNDEFINED_R0 := -no-undefined
 endif
 
 # Disabled Visual C++ warnings, W4:
