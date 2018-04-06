@@ -894,7 +894,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
     bool const fPauseFilter          = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER);
     bool const fPauseFilterThreshold = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD);
-    bool const fUsePauseFilter       = fPauseFilter && pVM->hm.s.svm.cPauseFilter && pVM->hm.s.svm.cPauseFilterThresholdTicks;
+    bool const fUsePauseFilter       = fPauseFilter && pVM->hm.s.svm.cPauseFilter;
 
     bool const fLbrVirt              = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_LBR_VIRT);
     bool const fUseLbrVirt           = fLbrVirt; /** @todo CFGM, IEM implementation etc. */
@@ -1037,6 +1037,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
             pVmcb->ctrl.u16PauseFilterCount = pVM->hm.s.svm.cPauseFilter;
             if (fPauseFilterThreshold)
                 pVmcb->ctrl.u16PauseFilterThreshold = pVM->hm.s.svm.cPauseFilterThresholdTicks;
+            pVmcb->ctrl.u32InterceptXcpt |= SVM_CTRL_INTERCEPT_PAUSE;
         }
 
         /*
@@ -7310,6 +7311,7 @@ HMSVM_EXIT_DECL hmR0SvmExitPause(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPause);
+    hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
     return VINF_EM_RAW_INTERRUPT;
 }
 
