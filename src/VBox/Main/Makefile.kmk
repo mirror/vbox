@@ -1197,7 +1197,8 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win"
  DLLS += VBoxProxyStub
  VBoxProxyStub_TEMPLATE = VBOXMAINCOMP
  VBoxProxyStub_DEFS     = REGISTER_PROXY_DLL PROXY_CLSID_IS="$(VBOX_MIDL_PROXY_CLSID_IS)" \
-	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
+	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)\
+    $(if $(VBOX_SDS_CLIENTS_WATCHER),VBOX_SDS_CLIENTS_WATCHER,)
  VBoxProxyStub_DEFS.win.x86 = WIN32
  VBoxProxyStub_SDKS     = VBOX_NTDLL
  VBoxProxyStub_DEFPATH  = $(VBoxCOM_0_OUTDIR)/# Hack to workaround drive letter in $(VBoxCOM_0_OUTDIR)/ for CFLAGS hack below.

@@ -186,8 +186,10 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 
             /* Install RPC channel hook to intercept a moment just after VirtualBox object activation.
                It's reports to VBoxSDS that a new VirtualBox API client started. */
+#ifdef VBOX_SDS_CLIENTS_WATCHER
             if(!IsVBoxServiceProcess())
                 SetupClientRpcChannelHook();
+#endif
 
 #ifdef VBOX_STRICT
             {
