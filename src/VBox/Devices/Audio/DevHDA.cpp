@@ -471,6 +471,7 @@ const HDAREGALIAS g_aHdaRegAliases[] =
 };
 
 #ifdef IN_RING3
+
 /** HDABDLEDESC field descriptors for the v7 saved state. */
 static SSMFIELD const g_aSSMBDLEDescFields7[] =
 {
@@ -528,7 +529,6 @@ static SSMFIELD const g_aSSMStreamPeriodFields7[] =
     SSMFIELD_ENTRY(HDASTREAMPERIOD, cIntPending),
     SSMFIELD_ENTRY_TERM()
 };
-#endif
 
 /**
  * 32-bit size indexed masks, i.e. g_afMasks[2 bytes] = 0xffff.
@@ -537,6 +537,8 @@ static uint32_t const g_afMasks[5] =
 {
     UINT32_C(0), UINT32_C(0x000000ff), UINT32_C(0x0000ffff), UINT32_C(0x00ffffff), UINT32_C(0xffffffff)
 };
+
+#endif /* IN_RING3 */
 
 
 
