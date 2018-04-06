@@ -341,11 +341,11 @@ class OptValue
 
     static OptValue *parse(const char *pcszValue)
     {
-	value_t v;
-	int rc = DhcpOption::parse1(v, pcszValue);
-	if (RT_FAILURE(rc))
-	    return NULL;
-	return new OptValue(v);
+        value_t v;
+        int rc = DhcpOption::parse1(v, pcszValue);
+        if (RT_FAILURE(rc))
+            return NULL;
+        return new OptValue(v);
     }
 };
 
@@ -431,7 +431,7 @@ class OptString
 
     static OptString *parse(const char *pcszValue)
     {
-	return new OptString(pcszValue);
+        return new OptString(pcszValue);
     }
 };
 
@@ -543,11 +543,11 @@ class OptList
 
     static OptList *parse(const char *pcszValue)
     {
-	value_t v;
-	int rc = DhcpOption::parseList(v, pcszValue);
-	if (RT_FAILURE(rc) || v.empty())
-	    return NULL;
-	return new OptList(v);
+        value_t v;
+        int rc = DhcpOption::parseList(v, pcszValue);
+        if (RT_FAILURE(rc) || v.empty())
+            return NULL;
+        return new OptList(v);
     }
 };
 
@@ -586,21 +586,21 @@ class RawOption
     virtual int decodeValue(const octets_t &src, size_t cb)
     {
         octets_t::const_iterator beg(src.begin());
-	octets_t data(beg, beg + cb);
-	m_Data.swap(data);
+        octets_t data(beg, beg + cb);
+        m_Data.swap(data);
 
-	m_fPresent = true;
-	return VINF_SUCCESS;
+        m_fPresent = true;
+        return VINF_SUCCESS;
     }
 
   public:
     static RawOption *parse(uint8_t aOptCode, const char *pcszValue)
     {
-	octets_t data;
-	int rc = DhcpOption::parseHex(data, pcszValue);
-	if (RT_FAILURE(rc))
-	    return NULL;
-	return new RawOption(aOptCode, data);
+        octets_t data;
+        int rc = DhcpOption::parseHex(data, pcszValue);
+        if (RT_FAILURE(rc))
+            return NULL;
+        return new RawOption(aOptCode, data);
     }
 };
 
