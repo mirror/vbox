@@ -2850,18 +2850,10 @@ ifdef VBOX_WITH_GCC_SANITIZER
 	-fno-sanitize=alignment \
 	-fno-sanitize=vptr \
 	-fno-common \
-	-static-libasan
+	-include sanitizer/lsan_interface.h \
+	-DVBOX_WITH_GCC_SANITIZER
 else
  VBOX_GCC_SANITIZER_FLAGS =
-endif
-
-# -libasan-static is currently not supported in combination with -no-undefined.
-ifdef VBOX_WITH_GCC_SANITIZER
- VBOX_GCC_NO_UNDEFINED    :=
- VBOX_GCC_NO_UNDEFINED_R0 :=
-else
- VBOX_GCC_NO_UNDEFINED    := -Wl,--no-undefined
- VBOX_GCC_NO_UNDEFINED_R0 := -no-undefined
 endif
 
 # Disabled Visual C++ warnings, W4:
@@ -4259,7 +4251,7 @@ $$(PATH_TARGET)/tst$(use_symvers)$(subst /,_,$(KERN_DIR))_mod.run))
 	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) -C $$(PATH_TARGET)/tst$(module)_mod clean
 	$(QUIET)$$(if $$(eq $$(symvers_$(module)_dep),),,\
 $$(CP) $$(symvers_$(module)_dep) "$$(PATH_TARGET)/tst$(module)_mod/Module.symvers")
-	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) $(if-expr $(KMK_OPTS_JOBS) != 1,JOBS=$(KMK_OPTS_JOBS),) -C $$(PATH_TARGET)/tst$(module)_mod \
+	+ $(QUIET)make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) $(if-expr $(KMK_OPTS_JOBS) > 1,JOBS=$(KMK_OPTS_JOBS),) -C $$(PATH_TARGET)/tst$(module)_mod \
 		2>&1 | tee "$$(PATH_TARGET)/tst$(module)_mod/make.err"
 	$(QUIET)! grep "^WARNING: .* undefined!$$$$" "$$(PATH_TARGET)/tst$(module)_mod/make.err"
   if1of ($(USERNAME), bird)
@@ -4696,15 +4688,6 @@ TEMPLATE_VBOXR3EXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBOXR3EXE_CXXFLAGS         += $(VBOX_GCC_WERR)
  endif
- ifdef VBOX_WITH_OLD_GLIBC_SUPPORT
-  # Use older versions of APIs which were improved in versions of glibc later
-  # than what we are targetting, and do not use the stack protector, which
-  # needs glibc 2.4 or later.
-  TEMPLATE_VBOXR3EXE_CXXFLAGS.linux    = \
-	-include $(PATH_ROOT)/include/iprt/linux/symvers.h \
-	$(VBOX_GCC_fno-stack-protector)
-  TEMPLATE_VBOXR3EXE_CFLAGS.linux      = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.linux)
- endif
 TEMPLATE_VBOXR3EXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXR3EXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc32    = -m32
@@ -4736,10 +4719,6 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.amd64       = -m64
 TEMPLATE_VBOXR3EXE_LDFLAGS.sparc32     = -m32
 TEMPLATE_VBOXR3EXE_LDFLAGS.sparc64     = -m64
 TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
- ifdef VBOX_WITH_OLD_GLIBC_SUPPORT
-  # The GNU_HASH ELF tag is not supported by older systems.
-TEMPLATE_VBOXR3EXE_LDFLAGS.linux      += -Wl,--hash-style=sysv
- endif
 TEMPLATE_VBOXR3EXE_LDFLAGS.solaris     = -Wl,-z,ignore # same as VBOX_LD_as_needed
 TEMPLATE_VBOXR3EXE_LDFLAGS.debug       = $(VBOX_GCC_SANITIZER_FLAGS)
 
@@ -6510,6 +6489,16 @@ else ifeq ($(KBUILD_TARGET), solaris)
  TEMPLATE_VBOXGUESTR3EXE_LIBS     = $(TEMPLATE_VBOXR3EXE_LIBS) nsl
 endif
 
+# Use older versions of APIs which were improved in versions of glibc later
+# than what we are targetting, and do not use the stack protector, which
+# needs glibc 2.4 or later.
+TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux    = \
+	-include $(PATH_ROOT)/include/iprt/linux/symvers.h \
+	$(VBOX_GCC_fno-stack-protector)
+TEMPLATE_VBOXGUESTR3EXE_CFLAGS.linux      = $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux)
+# The GNU_HASH ELF tag is not supported by older systems.
+TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux      += -Wl,--hash-style=sysv
+
 #
 # Template for building normal R3 programs for the guest additions.
 #
@@ -6711,10 +6700,8 @@ TEMPLATE_VBOXGUESTR3XF86MOD_EXTENDS = VBOXGUESTR3EXE
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TYPE)      = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TARGET)    = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TARGET) = $(NO_SUCH_VARIABLE)
-ifdef VBOX_WITH_OLD_GLIBC_SUPPORT
 # The GNU_HASH ELF tag is not supported by older systems.
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.linux = --hash-style=sysv
-endif
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TYPE)   = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS          = -r
 if1of ($(KBUILD_TARGET), dragonfly freebsd linux netbsd openbsd) # the gnu ld guys.
