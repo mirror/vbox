@@ -29,6 +29,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/version.h>
+#include <VBox/AssertGuest.h>
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -969,9 +970,9 @@ static int hdaRegReadU32(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 
 static int hdaRegWriteU32(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
-
     uint32_t iRegMem = g_aHdaRegMap[iReg].mem_idx;
+
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     pThis->au32Regs[iRegMem]  = (u32Value & g_aHdaRegMap[iReg].writable)
                               | (pThis->au32Regs[iRegMem] & ~g_aHdaRegMap[iReg].writable);
@@ -982,22 +983,23 @@ static int hdaRegWriteU32(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
+#ifdef IN_RING3
+    DEVHDA_LOCK(pThis);
+#else
+    if (!(u32Value & HDA_GCTL_CRST))
+        return VINF_IOM_R3_MMIO_WRITE;
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+#endif
 
     if (u32Value & HDA_GCTL_CRST)
     {
-        DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
-
         /* Set the CRST bit to indicate that we're leaving reset mode. */
         HDA_REG(pThis, GCTL) |= HDA_GCTL_CRST;
         LogFunc(("Guest leaving HDA reset\n"));
-
-        DEVHDA_UNLOCK(pThis);
     }
     else
     {
 #ifdef IN_RING3
-        DEVHDA_LOCK(pThis);
-
         /* Enter reset state. */
         LogFunc(("Guest entering HDA reset with DMA(RIRB:%s, CORB:%s)\n",
                  HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA ? "on" : "off",
@@ -1007,24 +1009,19 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         HDA_REG(pThis, GCTL) &= ~HDA_GCTL_CRST;
 
         hdaGCTLReset(pThis);
-
-        DEVHDA_UNLOCK(pThis);
 #else
-        return VINF_IOM_R3_MMIO_WRITE;
+        AssertFailedReturnStmt(DEVHDA_UNLOCK(pThis), VINF_IOM_R3_MMIO_WRITE);
 #endif
     }
 
     if (u32Value & HDA_GCTL_FCNTRL)
     {
-        DEVHDA_LOCK(pThis);
-
         /* Flush: GSTS:1 set, see 6.2.6. */
         HDA_REG(pThis, GSTS) |= HDA_GSTS_FSTS;  /* Set the flush status. */
         /* DPLBASE and DPUBASE should be initialized with initial value (see 6.2.6). */
-
-        DEVHDA_UNLOCK(pThis);
     }
 
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS;
 }
 
@@ -1038,7 +1035,6 @@ static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
     HDA_REG(pThis, STATESTS) &= ~(v & nv); /* Write of 1 clears corresponding bit. */
 
     DEVHDA_UNLOCK(pThis);
-
     return VINF_SUCCESS;
 }
 
@@ -1074,24 +1070,24 @@ static uint64_t hdaWalClkGetMax(PHDASTATE pThis)
     const uint64_t u64WalClkCur       = ASMAtomicReadU64(&pThis->u64WalClk);
     const uint64_t u64FrontAbsWalClk  = pThis->SinkFront.pStream
                                       ? hdaStreamPeriodGetAbsElapsedWalClk(&pThis->SinkFront.pStream->State.Period) : 0;
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-# error "Implement me!"
-#endif
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+#  error "Implement me!"
+# endif
     const uint64_t u64LineInAbsWalClk = pThis->SinkLineIn.pStream
                                       ? hdaStreamPeriodGetAbsElapsedWalClk(&pThis->SinkLineIn.pStream->State.Period) : 0;
-#ifdef VBOX_WITH_HDA_MIC_IN
+# ifdef VBOX_WITH_HDA_MIC_IN
     const uint64_t u64MicInAbsWalClk  = pThis->SinkMicIn.pStream
                                       ? hdaStreamPeriodGetAbsElapsedWalClk(&pThis->SinkMicIn.pStream->State.Period) : 0;
-#endif
+# endif
 
     uint64_t u64WalClkNew = RT_MAX(u64WalClkCur, u64FrontAbsWalClk);
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-# error "Implement me!"
-#endif
-             u64WalClkNew = RT_MAX(u64WalClkNew, u64LineInAbsWalClk);
-#ifdef VBOX_WITH_HDA_MIC_IN
-             u64WalClkNew = RT_MAX(u64WalClkNew, u64MicInAbsWalClk);
-#endif
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+#  error "Implement me!"
+# endif
+    u64WalClkNew          = RT_MAX(u64WalClkNew, u64LineInAbsWalClk);
+# ifdef VBOX_WITH_HDA_MIC_IN
+    u64WalClkNew          = RT_MAX(u64WalClkNew, u64MicInAbsWalClk);
+# endif
 
     Log3Func(("%RU64 -> Front=%RU64, LineIn=%RU64 -> %RU64\n",
               u64WalClkCur, u64FrontAbsWalClk, u64LineInAbsWalClk, u64WalClkNew));
@@ -1122,7 +1118,6 @@ static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 static int hdaRegWriteCORBRP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF(iReg);
-
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     if (u32Value & HDA_CORBRP_RST)
@@ -1172,7 +1167,6 @@ static int hdaRegWriteCORBSIZE(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
 {
 #ifdef IN_RING3
     RT_NOREF(iReg);
-
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     if (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA) /* Ignore request if CORB DMA engine is (still) running. */
@@ -1242,7 +1236,6 @@ static int hdaRegWriteCORBSIZE(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value
 static int hdaRegWriteCORBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
-
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     uint32_t v = HDA_REG(pThis, CORBSTS);
@@ -1258,8 +1251,7 @@ static int hdaRegWriteCORBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     int rc = hdaRegWriteU16(pThis, iReg, u32Value);
-    if (RT_FAILURE(rc))
-        AssertRCReturn(rc, rc);
+    AssertRCSuccess(rc);
 
     rc = hdaCORBCmdProcess(pThis);
 
@@ -1277,24 +1269,19 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     DEVHDA_LOCK(pThis);
 
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, CBL, iReg));
-    if (!pStream)
+    if (pStream)
     {
+        pStream->u32CBL = u32Value;
+        LogFlowFunc(("[SD%RU8] CBL=%RU32\n", pStream->u8SD, u32Value));
+    }
+    else
         LogFunc(("[SD%RU8] Warning: Changing SDCBL on non-attached stream (0x%x)\n",
                  HDA_SD_NUM_FROM_REG(pThis, CTL, iReg), u32Value));
-
-        DEVHDA_UNLOCK(pThis);
-        return hdaRegWriteU32(pThis, iReg, u32Value);
-    }
-
-    pStream->u32CBL = u32Value;
-
-    LogFlowFunc(("[SD%RU8] CBL=%RU32\n", pStream->u8SD, u32Value));
-
-    DEVHDA_UNLOCK(pThis);
 
     int rc2 = hdaRegWriteU32(pThis, iReg, u32Value);
     AssertRC(rc2);
 
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -1314,7 +1301,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
      * Some guests write too much (that is, 32-bit with the top 8 bit being junk)
      * instead of 24-bit required for SDCTL. So just mask this here to be safe.
      */
-    u32Value = (u32Value & 0x00ffffff);
+    u32Value &= 0x00ffffff;
 
     bool fRun      = RT_BOOL(u32Value & HDA_SDCTL_RUN);
     bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
@@ -1337,8 +1324,9 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     {
         LogFunc(("[SD%RU8] Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
 
+        int rc = hdaRegWriteU24(pThis, iReg, u32Value);
         DEVHDA_UNLOCK_BOTH(pThis, uSD);
-        return hdaRegWriteU24(pThis, iReg, u32Value);
+        return rc;
     }
 
     PHDATAG pTag = &pThis->aTags[uTag];
@@ -1492,8 +1480,9 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         AssertMsgFailed(("[SD%RU8] Warning: Writing SDSTS on non-attached stream (0x%x)\n",
                          HDA_SD_NUM_FROM_REG(pThis, STS, iReg), u32Value));
 
+        int rc = hdaRegWriteU16(pThis, iReg, u32Value);
         DEVHDA_UNLOCK_BOTH(pThis, uSD);
-        return hdaRegWriteU16(pThis, iReg, u32Value);
+        return rc;
     }
 
     hdaStreamLock(pStream);
@@ -1534,19 +1523,19 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         hdaStreamPeriodUnlock(pPeriod); /* Unlock before processing interrupt. */
     }
 
-#ifndef DEBUG
+# ifndef DEBUG
     hdaProcessInterrupt(pThis);
-#else
+# else
     hdaProcessInterrupt(pThis, __FUNCTION__);
-#endif
+# endif
 
     const uint64_t tsNow = TMTimerGet(pThis->pTimer[uSD]);
     Assert(tsNow >= pStream->State.tsTransferLast);
 
     const uint64_t cTicksElapsed     = tsNow - pStream->State.tsTransferLast;
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     const uint64_t cTicksTransferred = pStream->State.cbTransferProcessed * pStream->State.cTicksPerByte;
-#endif
+# endif
 
     uint64_t cTicksToNext = pStream->State.cTransferTicks;
     if (cTicksToNext) /* Only do any calculations if the stream currently is set up for transfers. */
@@ -1608,41 +1597,35 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     DEVHDA_LOCK(pThis);
 
     if (HDA_REG_IND(pThis, iReg) == u32Value) /* Value already set? */
+    { /* nothing to do */ }
+    else
     {
-        DEVHDA_UNLOCK(pThis);
-        return VINF_SUCCESS;
-    }
-
-    uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
-
-    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-    if (!pStream)
-    {
-        AssertMsgFailed(("[SD%RU8] Warning: Changing SDLVI on non-attached stream (0x%x)\n", uSD, u32Value));
-
-        DEVHDA_UNLOCK(pThis);
-        return hdaRegWriteU16(pThis, iReg, u32Value);
-    }
-
-    /** @todo Validate LVI. */
-    pStream->u16LVI = u32Value;
-    LogFunc(("[SD%RU8] Updating LVI to %RU16\n", uSD, pStream->u16LVI));
+        uint8_t    uSD     = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
+        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
+        if (pStream)
+        {
+            /** @todo Validate LVI. */
+            pStream->u16LVI = u32Value;
+            LogFunc(("[SD%RU8] Updating LVI to %RU16\n", uSD, pStream->u16LVI));
 
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
-    if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
-    {
-        /* Try registering the DMA handlers.
-         * As we can't be sure in which order LVI + BDL base are set, try registering in both routines. */
-        if (hdaStreamRegisterDMAHandlers(pThis, pStream))
-            LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
-    }
+            if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
+            {
+                /* Try registering the DMA handlers.
+                 * As we can't be sure in which order LVI + BDL base are set, try registering in both routines. */
+                if (hdaStreamRegisterDMAHandlers(pThis, pStream))
+                    LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
+            }
 # endif
+        }
+        else
+            AssertMsgFailed(("[SD%RU8] Warning: Changing SDLVI on non-attached stream (0x%x)\n", uSD, u32Value));
+
+        int rc2 = hdaRegWriteU16(pThis, iReg, u32Value);
+        AssertRC(rc2);
+    }
 
     DEVHDA_UNLOCK(pThis);
-
-    int rc2 = hdaRegWriteU16(pThis, iReg, u32Value);
-    AssertRC(rc2);
-
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -1670,8 +1653,9 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     {
         AssertMsgFailed(("[SD%RU8] Warning: Changing FIFOW on non-attached stream (0x%x)\n", uSD, u32Value));
 
+        int rc = hdaRegWriteU16(pThis, iReg, u32Value);
         DEVHDA_UNLOCK(pThis);
-        return hdaRegWriteU16(pThis, iReg, u32Value);
+        return rc;
     }
 
     uint32_t u32FIFOW = 0;
@@ -1684,9 +1668,8 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             u32FIFOW = u32Value;
             break;
         default:
-            LogRel(("HDA: Warning: Guest tried write unsupported FIFOW (0x%x) to stream #%RU8, defaulting to 32 bytes\n",
-                    u32Value, uSD));
-            AssertFailed();
+            ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried write unsupported FIFOW (0x%x) to stream #%RU8, defaulting to 32 bytes\n",
+                                            u32Value, uSD));
             u32FIFOW = HDA_SDFIFOW_32B;
             break;
     }
@@ -1695,8 +1678,6 @@ static int hdaRegWriteSDFIFOW(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     {
         pStream->u16FIFOW = hdaSDFIFOWToBytes(u32FIFOW);
         LogFunc(("[SD%RU8] Updating FIFOW to %RU32 bytes\n", uSD, pStream->u16FIFOW));
-
-        DEVHDA_UNLOCK(pThis);
 
         int rc2 = hdaRegWriteU16(pThis, iReg, u32FIFOW);
         AssertRC(rc2);
@@ -1733,8 +1714,9 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     {
         AssertMsgFailed(("[SD%RU8] Warning: Changing FIFOS on non-attached stream (0x%x)\n", uSD, u32Value));
 
+        int rc = hdaRegWriteU16(pThis, iReg, u32Value);
         DEVHDA_UNLOCK(pThis);
-        return hdaRegWriteU16(pThis, iReg, u32Value);
+        return rc;
     }
 
     uint32_t u32FIFOS = 0;
@@ -1751,9 +1733,8 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             break;
 
         default:
-            LogRel(("HDA: Warning: Guest tried write unsupported FIFOS (0x%x) to stream #%RU8, defaulting to 192 bytes\n",
-                    u32Value, uSD));
-            AssertFailed();
+            ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried write unsupported FIFOS (0x%x) to stream #%RU8, defaulting to 192 bytes\n",
+                                            u32Value, uSD));
             u32FIFOS = HDA_SDOFIFO_192B;
             break;
     }
@@ -1763,14 +1744,11 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         pStream->u16FIFOS = u32FIFOS + 1;
         LogFunc(("[SD%RU8] Updating FIFOS to %RU32 bytes\n", uSD, pStream->u16FIFOS));
 
-        DEVHDA_UNLOCK(pThis);
-
         int rc2 = hdaRegWriteU16(pThis, iReg, u32FIFOS);
         AssertRC(rc2);
     }
-    else
-        DEVHDA_UNLOCK(pThis);
 
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -1779,6 +1757,7 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 }
 
 #ifdef IN_RING3
+
 /**
  * Adds an audio output stream to the device setup using the given configuration.
  *
@@ -1798,7 +1777,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     int rc = VINF_SUCCESS;
 
     bool fUseFront = true; /* Always use front out by default. */
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     bool fUseRear;
     bool fUseCenter;
     bool fUseLFE;
@@ -1845,14 +1824,14 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             break;
         }
     }
-#else /* !VBOX_WITH_AUDIO_HDA_51_SURROUND */
+# else  /* !VBOX_WITH_AUDIO_HDA_51_SURROUND */
     /* Only support mono or stereo channels. */
     if (   pCfg->Props.cChannels != 1 /* Mono */
         && pCfg->Props.cChannels != 2 /* Stereo */)
     {
         rc = VERR_NOT_SUPPORTED;
     }
-#endif
+# endif /* !VBOX_WITH_AUDIO_HDA_51_SURROUND */
 
     if (rc == VERR_NOT_SUPPORTED)
     {
@@ -1880,7 +1859,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
         }
 
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
         if (   RT_SUCCESS(rc)
             && (fUseCenter || fUseLFE))
         {
@@ -1908,7 +1887,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
         }
-#endif /* VBOX_WITH_AUDIO_HDA_51_SURROUND */
+# endif /* VBOX_WITH_AUDIO_HDA_51_SURROUND */
 
     } while (0);
 
@@ -1941,13 +1920,13 @@ static int hdaAddStreamIn(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_LINE_IN, pCfg);
             break;
         }
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         case PDMAUDIORECSOURCE_MIC:
         {
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_MIC_IN, pCfg);
             break;
         }
-#endif
+# endif
         default:
             rc = VERR_NOT_SUPPORTED;
             break;
@@ -2018,9 +1997,9 @@ static int hdaRemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             switch (pCfg->DestSource.Source)
             {
                 case PDMAUDIORECSOURCE_LINE: enmMixerCtl = PDMAUDIOMIXERCTL_LINE_IN; break;
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
                 case PDMAUDIORECSOURCE_MIC:  enmMixerCtl = PDMAUDIOMIXERCTL_MIC_IN;  break;
-#endif
+# endif
                 default:
                     rc = VERR_NOT_SUPPORTED;
                     break;
@@ -2036,10 +2015,10 @@ static int hdaRemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             switch (pCfg->DestSource.Dest)
             {
                 case PDMAUDIOPLAYBACKDEST_FRONT:      enmMixerCtl = PDMAUDIOMIXERCTL_FRONT;      break;
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
                 case PDMAUDIOPLAYBACKDEST_CENTER_LFE: enmMixerCtl = PDMAUDIOMIXERCTL_CENTER_LFE; break;
                 case PDMAUDIOPLAYBACKDEST_REAR:       enmMixerCtl = PDMAUDIOMIXERCTL_REAR;       break;
-#endif
+# endif
                 default:
                     rc = VERR_NOT_SUPPORTED;
                     break;
@@ -2058,20 +2037,20 @@ static int hdaRemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 #endif /* IN_RING3 */
 
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-#ifdef IN_RING3
+#ifdef IN_RING3 /** @todo this can be done from R0 & RC, even the logging. */
     DEVHDA_LOCK(pThis);
 
-    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FMT, iReg));
-    if (!pStream)
-    {
+# ifdef LOG_ENABLED
+    if (!hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FMT, iReg)))
         LogFunc(("[SD%RU8] Warning: Changing SDFMT on non-attached stream (0x%x)\n",
                  HDA_SD_NUM_FROM_REG(pThis, FMT, iReg), u32Value));
-        return hdaRegWriteU16(pThis, iReg, u32Value);
-    }
+# endif
+
 
     /* Write the wanted stream format into the register in any case.
      *
@@ -2095,10 +2074,10 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value, uint8_t uSD)
 {
 #ifdef IN_RING3
+    DEVHDA_LOCK(pThis);
+
     int rc2 = hdaRegWriteU32(pThis, iReg, u32Value);
     AssertRC(rc2);
-
-    DEVHDA_LOCK(pThis);
 
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     if (!pStream)
@@ -2124,7 +2103,6 @@ DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Va
     LogFlowFunc(("[SD%RU8] BDLBase=0x%x\n", pStream->u8SD, pStream->u64BDLBase));
 
     DEVHDA_UNLOCK(pThis);
-
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value); RT_NOREF_PV(uSD);
@@ -2153,15 +2131,15 @@ static int hdaRegReadIRS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
         HDA_REG(pThis, IRS) = HDA_IRS_ICB;  /* busy */
     }
 
+    int rc = hdaRegReadU32(pThis, iReg, pu32Value);
     DEVHDA_UNLOCK(pThis);
 
-    return hdaRegReadU32(pThis, iReg, pu32Value);
+    return rc;
 }
 
 static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
-
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     /*
@@ -2218,7 +2196,6 @@ static int hdaRegWriteIRS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF(iReg);
-
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     if (HDA_REG(pThis, CORBCTL) & HDA_CORBCTL_DMA) /* Ignore request if CORB DMA engine is (still) running. */
@@ -2243,9 +2220,9 @@ static int hdaRegWriteRIRBWP(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         HDA_REG(pThis, RIRBWP) = 0;
     }
 
-    DEVHDA_UNLOCK(pThis);
-
     /* The remaining bits are O, see 6.2.22. */
+
+    DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS;
 }
 
@@ -2261,8 +2238,6 @@ static int hdaRegWriteRINTCNT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return VINF_SUCCESS;
     }
 
-    RT_NOREF(iReg);
-
     int rc = hdaRegWriteU16(pThis, iReg, u32Value);
     AssertRC(rc);
 
@@ -2275,13 +2250,12 @@ static int hdaRegWriteRINTCNT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     uint32_t iRegMem = g_aHdaRegMap[iReg].mem_idx;
-    int rc = hdaRegWriteU32(pThis, iReg, u32Value);
-    if (RT_FAILURE(rc))
-        AssertRCReturn(rc, rc);
-
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
-    switch(iReg)
+    int rc = hdaRegWriteU32(pThis, iReg, u32Value);
+    Assert(rc == VINF_SUCCESS);
+
+    switch (iReg)
     {
         case HDA_REG_CORBLBASE:
             pThis->u64CORBBase &= UINT64_C(0xFFFFFFFF00000000);
@@ -2327,19 +2301,19 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteRIRBSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF_PV(iReg);
-
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     uint8_t v = HDA_REG(pThis, RIRBSTS);
     HDA_REG(pThis, RIRBSTS) &= ~(v & u32Value);
 
-    DEVHDA_UNLOCK(pThis);
-
 #ifndef DEBUG
-    return hdaProcessInterrupt(pThis);
+    int rc = hdaProcessInterrupt(pThis);
 #else
-    return hdaProcessInterrupt(pThis, __FUNCTION__);
+    int rc = hdaProcessInterrupt(pThis, __FUNCTION__);
 #endif
+
+    DEVHDA_UNLOCK(pThis);
+    return rc;
 }
 
 #ifdef IN_RING3
@@ -2391,7 +2365,7 @@ static PHDAMIXERSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
 /**
  * Adds a driver stream to a specific mixer sink.
  *
- * @returns IPRT status code.
+ * @returns IPRT status code (ignored by caller).
  * @param   pThis               HDA state.
  * @param   pMixSink            Audio mixer sink to add audio streams to.
  * @param   pCfg                Audio stream configuration to use for the audio streams to add.
@@ -2408,12 +2382,6 @@ static int hdaMixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIO
     PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
     if (!pStreamCfg)
         return VERR_NO_MEMORY;
-
-    if (!RTStrPrintf(pStreamCfg->szName, sizeof(pStreamCfg->szName), "%s", pCfg->szName))
-    {
-        RTMemFree(pStreamCfg);
-        return VERR_BUFFER_OVERFLOW;
-    }
 
     LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, pStreamCfg->szName));
 
@@ -2482,11 +2450,7 @@ static int hdaMixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIO
             pDrvStream->pMixStrm = pMixStrm;
     }
 
-    if (pStreamCfg)
-    {
-        RTMemFree(pStreamCfg);
-        pStreamCfg = NULL;
-    }
+    RTMemFree(pStreamCfg);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
