@@ -3184,8 +3184,8 @@ DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, c
     uint32_t const u32OldValue = pThis->au32Regs[idxRegMem];
 #endif
     int rc = g_aHdaRegMap[idxRegDsc].pfnWrite(pThis, idxRegDsc, u32Value);
-    Log3Func(("Written value %#x to %s[%d byte]; %x => %x%s\n", u32Value, g_aHdaRegMap[idxRegDsc].abbrev,
-              g_aHdaRegMap[idxRegDsc].size, u32OldValue, pThis->au32Regs[idxRegMem], pszLog));
+    Log3Func(("Written value %#x to %s[%d byte]; %x => %x%s, rc=%d\n", u32Value, g_aHdaRegMap[idxRegDsc].abbrev,
+              g_aHdaRegMap[idxRegDsc].size, u32OldValue, pThis->au32Regs[idxRegMem], pszLog, rc));
     RT_NOREF(pszLog);
     return rc;
 }
@@ -3215,7 +3215,9 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
      */
     uint32_t    offReg = GCPhysAddr - pThis->MMIOBaseAddr;
     int         idxRegDsc = hdaRegLookup(offReg);
+#if defined(IN_RING3) || defined(LOG_ENABLED)
     uint32_t    idxRegMem = idxRegDsc != -1 ? g_aHdaRegMap[idxRegDsc].mem_idx : UINT32_MAX;
+#endif
     uint64_t    u64Value;
     if (cb == 4)        u64Value = *(uint32_t const *)pv;
     else if (cb == 2)   u64Value = *(uint16_t const *)pv;
