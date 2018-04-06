@@ -161,6 +161,29 @@ HRESULT MachineMoveVM::init()
             throw rc;
         }
 
+        RTDIR hDir;
+        Utf8Str strTempFile = strTargetFolder + "test.txt";
+        vrc = RTDirOpen(&hDir, strTargetFolder.c_str());
+        if (FAILED(vrc))
+            throw rc = vrc;
+        else
+        {
+            RTFILE hFile;
+            vrc = RTFileOpen(&hFile, strTempFile.c_str(), RTFILE_O_OPEN_CREATE | RTFILE_O_READWRITE | RTFILE_O_DENY_NONE);
+            if (FAILED(vrc))
+            {
+                LogRelFunc(("Can't create a test file %s (The error is %Rrc)\n", strTempFile.c_str(), vrc));
+                rc = m_pMachine->setError(vrc,
+                                          m_pMachine->tr("Can't create a test file test.txt in the %s. Check the access rights of "
+                                                         "the destination folder."),
+                                                         strTargetFolder.c_str());
+                throw rc;
+            }
+            RTFileClose(hFile);
+            RTFileDelete(strTempFile.c_str());
+            RTDirClose(hDir);
+        }
+
         long long totalFreeSpace = cbFree;
         long long totalSpace = cbTotal;
         info = Utf8StrFmt("blocks: total %lld, free %u ", cbTotal, cbFree);
