@@ -92,6 +92,10 @@ CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientLis
 
 CClientListWatcher::~CClientListWatcher()
 {
+    /** @todo r=bird: This assertion is patently wrong in the unlikely
+     *        case that RTThreadCreate fails...  This is why we either let
+     *        constructor throw stuff or we have separate init() methods
+     *        for doing things that may fail */
     Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::m_WatcherThread));
 
     // mark watcher thread to finish
@@ -150,6 +154,10 @@ void CClientListWatcher::NotifySDSAllClientsFinished()
 DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
     NOREF(ThreadSelf);
+    /** @todo r=bird: This will fail once in a while because you don't know
+     *        for sure how the scheduling is going to be.  So, RTThreadCreate
+     *        may return and set g_hWatcherThread after the thread started
+     *        executing and got here! */
     Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::m_WatcherThread));
     LogRelFunc(("Enter watcher thread\n"));
 
