@@ -33,6 +33,7 @@
 #include "HDAStreamMap.h"
 
 #ifdef IN_RING3
+
 /**
  * Initializes a stream mapping structure according to the given PCM properties.
  *
@@ -139,5 +140,6 @@ void hdaStreamMapReset(PHDASTREAMMAPPING pMapping)
         pMapping->cChannels = 0;
     }
 }
+
 #endif /* IN_RING3 */
 

@@ -4704,7 +4704,7 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
-    DEVHDA_LOCK(pThis);
+    DEVHDA_LOCK(pThis); /** @todo r=bird: this will fail on early constructor failure. */
 
     PHDADRIVER pDrv;
     while (!RTListIsEmpty(&pThis->lstDrv))
