@@ -4351,7 +4351,7 @@ static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
         pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActive(pVCpu);
         pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActive(pVCpu);
     }
-    pSvmTransient->fWasGuestFPUStateActive = CPUMIsGuestFPUStateActive(pVCpu);
+    pSvmTransient->fWasGuestFPUStateActive = true;
 
     /* Merge the guest and nested-guest MSRPM. */
     hmR0SvmMergeMsrpm(pHostCpu, pVCpu, pCtx);
