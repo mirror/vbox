@@ -567,6 +567,7 @@ int hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
 }
 
 #ifdef IN_RING3
+
 # ifdef LOG_ENABLED
 void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
 {
@@ -707,16 +708,22 @@ bool hdaTimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool fF
 
     AssertPtr(pThis->pTimer[pStream->u8SD]);
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
+    /** @todo r=bird: This looks totally wrong inside \#ifdef VBOX_STRICT,
+     * especially with the comment.  If you're trying to avoid assertions in TM
+     * code, you better say so and explain why it's okay to try bypass it this
+     * way.  If that isn't the case, then I don't know what on earth you're doing
+     * here... */
     const uint64_t tsNow = TMTimerGet(pThis->pTimer[pStream->u8SD]);
 
     if (tsExpireMin < tsNow) /* Make sure to not go backwards in time. */
         tsExpireMin = tsNow;
-#endif
+# endif
 
       int rc2 = TMTimerSet(pThis->pTimer[pStream->u8SD], tsExpireMin);
       AssertRC(rc2);
 
     return true;
 }
+
 #endif /* IN_RING3 */
