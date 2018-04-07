@@ -187,14 +187,14 @@ enum
 /* Codec models. */
 typedef enum
 {
-    AC97_CODEC_STAC9700 = 0,     /* SigmaTel STAC9700 */
-    AC97_CODEC_AD1980,           /* Analog Devices AD1980 */
-    AC97_CODEC_AD1981B           /* Analog Devices AD1981B */
+    AC97_CODEC_STAC9700 = 0,     /**< SigmaTel STAC9700 */
+    AC97_CODEC_AD1980,           /**< Analog Devices AD1980 */
+    AC97_CODEC_AD1981B           /**< Analog Devices AD1981B */
 } AC97CODEC;
 
 /* Analog Devices miscellaneous regiter bits used in AD1980. */
-#define AC97_AD_MISC_LOSEL       RT_BIT(5)   /* Surround (rear) goes to line out outputs. */
-#define AC97_AD_MISC_HPSEL       RT_BIT(10)  /* PCM (front) goes to headphone outputs. */
+#define AC97_AD_MISC_LOSEL       RT_BIT(5)   /**< Surround (rear) goes to line out outputs. */
+#define AC97_AD_MISC_HPSEL       RT_BIT(10)  /**< PCM (front) goes to headphone outputs. */
 
 #define ICHAC97STATE_2_DEVINS(a_pAC97)   ((a_pAC97)->pDevInsR3)
 
@@ -219,10 +219,10 @@ enum
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 typedef enum
 {
-    AC97SOUNDSOURCE_PI_INDEX = 0, /** PCM in */
-    AC97SOUNDSOURCE_PO_INDEX,     /** PCM out */
-    AC97SOUNDSOURCE_MC_INDEX,     /** Mic in */
-    AC97SOUNDSOURCE_LAST_INDEX
+    AC97SOUNDSOURCE_PI_INDEX = 0, /**< PCM in */
+    AC97SOUNDSOURCE_PO_INDEX,     /**< PCM out */
+    AC97SOUNDSOURCE_MC_INDEX,     /**< Mic in */
+    AC97SOUNDSOURCE_END_INDEX
 } AC97SOUNDSOURCE;
 
 AC97_NABMBAR_REGS(PI, AC97SOUNDSOURCE_PI_INDEX * 16);
@@ -3219,7 +3219,7 @@ static DECLCALLBACK(int) ichac97SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     SSMR3PutMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
 
-    uint8_t active[AC97SOUNDSOURCE_LAST_INDEX];
+    uint8_t active[AC97SOUNDSOURCE_END_INDEX];
 
     active[AC97SOUNDSOURCE_PI_INDEX] = ichac97StreamIsEnabled(pThis, &pThis->StreamLineIn) ? 1 : 0;
     active[AC97SOUNDSOURCE_PO_INDEX] = ichac97StreamIsEnabled(pThis, &pThis->StreamOut)    ? 1 : 0;
@@ -3286,7 +3286,7 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     SSMR3GetMem(pSSM, pThis->mixer_data, sizeof(pThis->mixer_data));
 
     /** @todo r=andy Stream IDs are hardcoded to certain streams. */
-    uint8_t uaStrmsActive[AC97SOUNDSOURCE_LAST_INDEX];
+    uint8_t uaStrmsActive[AC97SOUNDSOURCE_END_INDEX];
     SSMR3GetMem(pSSM, uaStrmsActive, sizeof(uaStrmsActive));
 
     ichac97MixerRecordSelect(pThis, ichac97MixerGet(pThis, AC97_Record_Select));
