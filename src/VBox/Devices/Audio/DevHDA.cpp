@@ -728,6 +728,9 @@ static int hdaR3CmdSync(PHDASTATE pThis, bool fLocal)
             AssertPtr(pThis->pu32CorbBuf);
             Assert(pThis->cbCorbBuf);
 
+/** @todo r=bird: An explanation is required why PDMDevHlpPhysRead is used with
+ *        the CORB and PDMDevHlpPCIPhysWrite with RIRB below.  There are
+ *        similar unexplained inconsistencies in DevHDACommon.cpp. */
             rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), pThis->u64CORBBase, pThis->pu32CorbBuf, pThis->cbCorbBuf);
             Log(("hdaR3CmdSync/CORB: read %RGp LB %#x (%Rrc)\n", pThis->u64CORBBase, pThis->cbCorbBuf, rc));
             AssertRCReturn(rc, rc);
