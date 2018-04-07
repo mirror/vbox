@@ -2494,6 +2494,18 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
 
     /*
+     * Initialize the data so sb16Destruct runs without a hitch if we return early.
+     */
+    pThis->pDevInsR3               = pDevIns;
+    pThis->IBase.pfnQueryInterface = sb16QueryInterface;
+    pThis->cmd                     = -1;
+
+    pThis->csp_regs[5]             = 1;
+    pThis->csp_regs[9]             = 0xf8;
+
+    RTListInit(&pThis->lstDrv);
+
+    /*
      * Validations.
      */
     Assert(iInstance == 0);
@@ -2541,6 +2553,8 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("SB16 configuration error: Failed to get the \"Version\" value"));
+    pThis->ver     = u16Version;
+    pThis->verCfg  = u16Version;
 
 #ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
     uint16_t uTimerHz;
@@ -2550,24 +2564,12 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                 N_("SB16 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
 #endif
 
-    pThis->ver     = u16Version;
-    pThis->verCfg  = u16Version;
-
     /*
-     * Init instance data.
+     * Setup the mixer now that we've got the irq and dma channel numbers.
      */
-    pThis->pDevInsR3               = pDevIns;
-    pThis->IBase.pfnQueryInterface = sb16QueryInterface;
-    pThis->cmd                     = -1;
-
-    pThis->mixer_regs[0x80]        = magic_of_irq (pThis->irq);
-    pThis->mixer_regs[0x81]        = (1 << pThis->dma) | (1 << pThis->hdma);
-    pThis->mixer_regs[0x82]        = 2 << 5;
-
-    pThis->csp_regs[5]             = 1;
-    pThis->csp_regs[9]             = 0xf8;
-
-    RTListInit(&pThis->lstDrv);
+    pThis->mixer_regs[0x80] = magic_of_irq(pThis->irq);
+    pThis->mixer_regs[0x81] = (1 << pThis->dma) | (1 << pThis->hdma);
+    pThis->mixer_regs[0x82] = 2 << 5;
 
     sb16MixerReset(pThis);
 
