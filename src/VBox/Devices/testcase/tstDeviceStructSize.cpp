@@ -24,9 +24,34 @@
 #include <VBox/types.h>
 #include <iprt/x86.h>
 
-
 #define VBOX_WITH_HGCM                  /* grumble */
 #define VBOX_DEVICE_STRUCT_TESTCASE
+
+/* Check that important preprocessor macros does not get redefined: */
+#include <VBox/cdefs.h>
+#include <VBox/log.h>
+#ifdef DEBUG
+# define VBOX_DEVICE_STRUCT_TESTCASE_CHECK_DEBUG
+#else
+# undef  VBOX_DEVICE_STRUCT_TESTCASE_CHECK_DEBUG
+#endif
+#ifdef LOG_ENABLED
+# define VBOX_DEVICE_STRUCT_TESTCASE_CHECK_LOG_ENABLED
+#else
+# undef  VBOX_DEVICE_STRUCT_TESTCASE_CHECK_LOG_ENABLED
+#endif
+#ifdef VBOX_STRICT
+# define VBOX_DEVICE_STRUCT_TESTCASE_CHECK_VBOX_STRICT
+#else
+# undef  VBOX_DEVICE_STRUCT_TESTCASE_CHECK_VBOX_STRICT
+#endif
+#ifdef RT_STRICT
+# define VBOX_DEVICE_STRUCT_TESTCASE_CHECK_RT_STRICT
+#else
+# undef  VBOX_DEVICE_STRUCT_TESTCASE_CHECK_RT_STRICT
+#endif
+
+/* The structures we're checking: */
 #undef LOG_GROUP
 #include "../Bus/DevPciInternal.h"
 #undef LOG_GROUP
@@ -115,6 +140,22 @@
 #include "../Audio/DevIchAc97.cpp"
 #undef LOG_GROUP
 #include "../Audio/DevHDA.cpp"
+
+
+/* Check that important preprocessor macros didn't get redefined: */
+#if defined(DEBUG)       != defined(VBOX_DEVICE_STRUCT_TESTCASE_CHECK_DEBUG)
+# error "DEBUG was modified!  This may throw off structure tests."
+#endif
+#if defined(LOG_ENABLED) != defined(VBOX_DEVICE_STRUCT_TESTCASE_CHECK_LOG_ENABLED)
+# error "LOG_ENABLED was modified!  This may throw off structure tests."
+#endif
+#if defined(RT_STRICT)   != defined(VBOX_DEVICE_STRUCT_TESTCASE_CHECK_RT_STRICT)
+# error "RT_STRICT was modified!  This may throw off structure tests."
+#endif
+#if defined(VBOX_STRICT) != defined(VBOX_DEVICE_STRUCT_TESTCASE_CHECK_VBOX_STRICT)
+# error "VBOX_STRICT was modified!  This may throw off structure tests."
+#endif
+
 
 #include <stdio.h>
 
