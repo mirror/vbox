@@ -4712,7 +4712,7 @@ static DECLCALLBACK(void) hdaR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
 {
-    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns); /* this shall come first */
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
     DEVHDA_LOCK(pThis); /** @todo r=bird: this will fail on early constructor failure. */
 
@@ -4752,10 +4752,9 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF(iInstance);
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
-    Assert(iInstance == 0);
+    Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*
      * Initialize the state sufficently to make the destructor work.
