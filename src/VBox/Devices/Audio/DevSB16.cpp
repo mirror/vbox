@@ -2470,7 +2470,7 @@ static DECLCALLBACK(void) sb16PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
 {
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns); /* this shall come first */
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
 
     LogFlowFuncEnter();
@@ -2490,7 +2490,7 @@ static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     RT_NOREF(iInstance);
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
 
     /*
