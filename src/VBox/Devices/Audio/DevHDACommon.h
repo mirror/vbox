@@ -75,7 +75,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 /** Number of general registers. */
 #define HDA_NUM_GENERAL_REGS        34
 /** Number of total registers in the HDA's register map. */
-#define HDA_NUM_REGS                                       (HDA_NUM_GENERAL_REGS + (HDA_MAX_STREAMS * 10 /* Each stream descriptor has 10 registers */))
+#define HDA_NUM_REGS                (HDA_NUM_GENERAL_REGS + (HDA_MAX_STREAMS * 10 /* Each stream descriptor has 10 registers */))
 /** Total number of stream tags (channels). Index 0 is reserved / invalid. */
 #define HDA_MAX_TAGS                16
 
@@ -516,9 +516,6 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 #define HDA_BDLE_FLAG_IOC           RT_BIT(0)
 
 
-/*********************************************************************************************************************************
-*   Prototypes                                                                                                                 *
-*********************************************************************************************************************************/
 
 /** The HDA controller. */
 typedef struct HDASTATE *PHDASTATE;
@@ -579,10 +576,14 @@ typedef struct HDABDLE
 /** @name Object lookup functions.
  * @{
  */
-PHDAMIXERSINK hdaGetDefaultSink(PHDASTATE pThis, uint8_t uSD);
+#ifdef IN_RING3
+PHDAMIXERSINK hdaR3GetDefaultSink(PHDASTATE pThis, uint8_t uSD);
+#endif
 PDMAUDIODIR   hdaGetDirFromSD(uint8_t uSD);
 PHDASTREAM    hdaGetStreamFromSD(PHDASTATE pThis, uint8_t uSD);
-PHDASTREAM    hdaGetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink);
+#ifdef IN_RING3
+PHDASTREAM    hdaR3GetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink);
+#endif
 /** @} */
 
 /** @name Interrupt functions.
@@ -600,15 +601,17 @@ int           hdaProcessInterrupt(PHDASTATE pThis);
  */
 uint64_t      hdaWalClkGetCurrent(PHDASTATE pThis);
 #ifdef IN_RING3
-bool          hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce);
+bool          hdaR3WalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce);
 #endif
 /** @} */
 
 /** @name DMA utility functions.
  * @{
  */
-int           hdaDMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
-int           hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
+#ifdef IN_RING3
+int           hdaR3DMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
+int           hdaR3DMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
+#endif
 /** @} */
 
 /** @name Register functions.
@@ -616,7 +619,7 @@ int           hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf
  */
 uint32_t      hdaGetINTSTS(PHDASTATE pThis);
 #ifdef IN_RING3
-int           hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps);
+int           hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps);
 #endif /* IN_RING3 */
 /** @} */
 
@@ -625,11 +628,11 @@ int           hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps);
  */
 #ifdef IN_RING3
 # ifdef LOG_ENABLED
-void          hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
+void          hdaR3BDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
 # endif
-int           hdaBDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry);
-bool          hdaBDLEIsComplete(PHDABDLE pBDLE);
-bool          hdaBDLENeedsInterrupt(PHDABDLE pBDLE);
+int           hdaR3BDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry);
+bool          hdaR3BDLEIsComplete(PHDABDLE pBDLE);
+bool          hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE);
 #endif /* IN_RING3 */
 /** @} */
 
@@ -637,7 +640,7 @@ bool          hdaBDLENeedsInterrupt(PHDABDLE pBDLE);
  * @{
  */
 #ifdef IN_RING3
-bool          hdaTimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t u64Expire, bool fForce);
+bool          hdaR3TimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t u64Expire, bool fForce);
 #endif /* IN_RING3 */
 /** @} */
 

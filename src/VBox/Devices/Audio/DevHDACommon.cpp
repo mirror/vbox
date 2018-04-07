@@ -112,20 +112,20 @@ uint64_t hdaWalClkGetCurrent(PHDASTATE pThis)
  * @param   u64WalClk           Wall clock value to set WALCLK register to.
  * @param   fForce              Whether to force setting the wall clock value or not.
  */
-bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
+bool hdaR3WalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
 {
-    const bool     fFrontPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaGetStreamFromSink(pThis, &pThis->SinkFront)->State.Period,
+    const bool     fFrontPassed       = hdaR3StreamPeriodHasPassedAbsWalClk (&hdaR3GetStreamFromSink(pThis, &pThis->SinkFront)->State.Period,
                                                                            u64WalClk);
-    const uint64_t u64FrontAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkFront)->State.Period);
+    const uint64_t u64FrontAbsWalClk  = hdaR3StreamPeriodGetAbsElapsedWalClk(&hdaR3GetStreamFromSink(pThis, &pThis->SinkFront)->State.Period);
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
 #  error "Implement me!"
 # endif
 
-    const bool     fLineInPassed      = hdaStreamPeriodHasPassedAbsWalClk (&hdaGetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period, u64WalClk);
-    const uint64_t u64LineInAbsWalClk = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period);
+    const bool     fLineInPassed      = hdaR3StreamPeriodHasPassedAbsWalClk (&hdaR3GetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period, u64WalClk);
+    const uint64_t u64LineInAbsWalClk = hdaR3StreamPeriodGetAbsElapsedWalClk(&hdaR3GetStreamFromSink(pThis, &pThis->SinkLineIn)->State.Period);
 # ifdef VBOX_WITH_HDA_MIC_IN
-    const bool     fMicInPassed       = hdaStreamPeriodHasPassedAbsWalClk (&hdaGetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period,  u64WalClk);
-    const uint64_t u64MicInAbsWalClk  = hdaStreamPeriodGetAbsElapsedWalClk(&hdaGetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period);
+    const bool     fMicInPassed       = hdaR3StreamPeriodHasPassedAbsWalClk (&hdaR3GetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period,  u64WalClk);
+    const uint64_t u64MicInAbsWalClk  = hdaR3StreamPeriodGetAbsElapsedWalClk(&hdaR3GetStreamFromSink(pThis, &pThis->SinkMicIn)->State.Period);
 # endif
 
 # ifdef VBOX_STRICT
@@ -195,7 +195,7 @@ bool hdaWalClkSet(PHDASTATE pThis, uint64_t u64WalClk, bool fForce)
  * @param   uSD                 SD# to return mixer sink for.
  *                              NULL if not found / handled.
  */
-PHDAMIXERSINK hdaGetDefaultSink(PHDASTATE pThis, uint8_t uSD)
+PHDAMIXERSINK hdaR3GetDefaultSink(PHDASTATE pThis, uint8_t uSD)
 {
     if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN)
     {
@@ -228,7 +228,7 @@ PHDAMIXERSINK hdaGetDefaultSink(PHDASTATE pThis, uint8_t uSD)
     return NULL;
 }
 
-#endif /* IN_RING */
+#endif /* IN_RING3 */
 
 /**
  * Returns the audio direction of a specified stream descriptor.
@@ -278,7 +278,7 @@ PHDASTREAM hdaGetStreamFromSD(PHDASTATE pThis, uint8_t uSD)
  *
  * @return  Pointer to HDA stream, or NULL if none found.
  */
-PHDASTREAM hdaGetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink)
+PHDASTREAM hdaR3GetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink)
 {
     AssertPtrReturn(pThis, NULL);
     AssertPtrReturn(pSink, NULL);
@@ -297,7 +297,7 @@ PHDASTREAM hdaGetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink)
  * @param   cbBuf               How much to read in bytes.
  * @param   pcbRead             Returns read bytes from DMA. Optional.
  */
-int hdaDMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+int hdaR3DMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -382,7 +382,7 @@ int hdaDMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf,
  * @param   cbBuf               How much (in bytes) to write.
  * @param   pcbWritten          Returns written bytes on success. Optional.
  */
-int hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+int hdaR3DMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -476,6 +476,8 @@ uint32_t hdaGetINTSTS(PHDASTATE pThis)
     return intSts;
 }
 
+#ifdef IN_RING3
+
 /**
  * Converts an HDA stream's SDFMT register into a given PCM properties structure.
  *
@@ -483,11 +485,11 @@ uint32_t hdaGetINTSTS(PHDASTATE pThis)
  * @param   u32SDFMT            The HDA stream's SDFMT value to convert.
  * @param   pProps              PCM properties structure to hold converted result on success.
  */
-int hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
+int hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
 
-#define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
+# define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
 
     int rc = VINF_SUCCESS;
 
@@ -555,14 +557,12 @@ int hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
         pProps->cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBits, pProps->cChannels);
     }
 
-#undef EXTRACT_VALUE
+# undef EXTRACT_VALUE
     return rc;
 }
 
-#ifdef IN_RING3
-
 # ifdef LOG_ENABLED
-void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
+void hdaR3BDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
 {
     LogFlowFunc(("BDLEs @ 0x%x (%RU16):\n", u64BDLBase, cBDLE));
     if (!u64BDLBase)
@@ -606,7 +606,7 @@ void hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
  * @param   u64BaseDMA              Address base of DMA engine to use.
  * @param   u16Entry                BDLE entry to fetch.
  */
-int hdaBDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry)
+int hdaR3BDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t u16Entry)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pBDLE,   VERR_INVALID_POINTER);
@@ -641,7 +641,7 @@ int hdaBDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, uint16_t 
  * @return  true if BDLE is complete, false if not.
  * @param   pBDLE               BDLE to retrieve status for.
  */
-bool hdaBDLEIsComplete(PHDABDLE pBDLE)
+bool hdaR3BDLEIsComplete(PHDABDLE pBDLE)
 {
     bool fIsComplete = false;
 
@@ -663,7 +663,7 @@ bool hdaBDLEIsComplete(PHDABDLE pBDLE)
  * @return  true if BDLE needs an interrupt, false if not.
  * @param   pBDLE               BDLE to retrieve status for.
  */
-bool hdaBDLENeedsInterrupt(PHDABDLE pBDLE)
+bool hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE)
 {
     return (pBDLE->Desc.fFlags & HDA_BDLE_FLAG_IOC);
 }
@@ -686,7 +686,7 @@ bool hdaBDLENeedsInterrupt(PHDABDLE pBDLE)
  *
  *          Forcing a new expiration time will override the above mechanism.
  */
-bool hdaTimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool fForce)
+bool hdaR3TimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool fForce)
 {
     AssertPtr(pThis);
     AssertPtr(pStream);
@@ -695,8 +695,8 @@ bool hdaTimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool fF
 
     if (!fForce)
     {
-        if (hdaStreamTransferIsScheduled(pStream))
-            tsExpireMin = RT_MIN(tsExpireMin, hdaStreamTransferGetNext(pStream));
+        if (hdaR3StreamTransferIsScheduled(pStream))
+            tsExpireMin = RT_MIN(tsExpireMin, hdaR3StreamTransferGetNext(pStream));
     }
 
     AssertPtr(pThis->pTimer[pStream->u8SD]);

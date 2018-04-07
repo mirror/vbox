@@ -37,9 +37,9 @@ typedef struct HDASTREAMMAPPING
  * @{
  */
 #ifdef IN_RING3
-int  hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps);
-void hdaStreamMapDestroy(PHDASTREAMMAPPING pMapping);
-void hdaStreamMapReset(PHDASTREAMMAPPING pMapping);
+int  hdaR3StreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps);
+void hdaR3StreamMapDestroy(PHDASTREAMMAPPING pMapping);
+void hdaR3StreamMapReset(PHDASTREAMMAPPING pMapping);
 #endif /* IN_RING3 */
 /** @} */
 

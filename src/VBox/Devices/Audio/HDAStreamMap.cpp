@@ -41,7 +41,7 @@
  * @param   pMapping            Pointer to mapping to initialize.
  * @param   pProps              Pointer to PCM properties to use for initialization.
  */
-int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps)
+int hdaR3StreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pMapping, VERR_INVALID_POINTER);
     AssertPtrReturn(pProps,   VERR_INVALID_POINTER);
@@ -49,7 +49,7 @@ int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps)
     if (!DrvAudioHlpPCMPropsAreValid(pProps))
         return VERR_INVALID_PARAMETER;
 
-    hdaStreamMapReset(pMapping);
+    hdaR3StreamMapReset(pMapping);
 
     pMapping->paChannels = (PPDMAUDIOSTREAMCHANNEL)RTMemAlloc(sizeof(PDMAUDIOSTREAMCHANNEL) * pProps->cChannels);
     if (!pMapping->paChannels)
@@ -69,7 +69,7 @@ int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps)
         pChan->cbFirst  = i * pChan->cbStep;
         pChan->cbOff    = pChan->cbFirst;
 
-        int rc2 = hdaStreamChannelDataInit(&pChan->Data, PDMAUDIOSTREAMCHANNELDATA_FLAG_NONE);
+        int rc2 = hdaR3StreamChannelDataInit(&pChan->Data, PDMAUDIOSTREAMCHANNELDATA_FLAG_NONE);
         if (RT_SUCCESS(rc))
             rc = rc2;
 
@@ -105,9 +105,9 @@ int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOPCMPROPS pProps)
  *
  * @param   pMapping            Pointer to mapping to destroy.
  */
-void hdaStreamMapDestroy(PHDASTREAMMAPPING pMapping)
+void hdaR3StreamMapDestroy(PHDASTREAMMAPPING pMapping)
 {
-    hdaStreamMapReset(pMapping);
+    hdaR3StreamMapReset(pMapping);
 
     if (pMapping->pCircBuf)
     {
@@ -122,7 +122,7 @@ void hdaStreamMapDestroy(PHDASTREAMMAPPING pMapping)
  *
  * @param   pMapping            Pointer to mapping to reset.
  */
-void hdaStreamMapReset(PHDASTREAMMAPPING pMapping)
+void hdaR3StreamMapReset(PHDASTREAMMAPPING pMapping)
 {
     AssertPtrReturnVoid(pMapping);
 
@@ -131,7 +131,7 @@ void hdaStreamMapReset(PHDASTREAMMAPPING pMapping)
     if (pMapping->cChannels)
     {
         for (uint8_t i = 0; i < pMapping->cChannels; i++)
-            hdaStreamChannelDataDestroy(&pMapping->paChannels[i].Data);
+            hdaR3StreamChannelDataDestroy(&pMapping->paChannels[i].Data);
 
         AssertPtr(pMapping->paChannels);
         RTMemFree(pMapping->paChannels);
