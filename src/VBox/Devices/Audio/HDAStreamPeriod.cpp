@@ -2,13 +2,13 @@
 /** @file
  * HDAStreamPeriod.cpp - Stream period functions for HD Audio.
  *
- * Utility functions for handling HDA audio stream periods.
- * Stream period handling is needed in order to keep track of a stream's timing
+ * Utility functions for handling HDA audio stream periods.  Stream period
+ * handling is needed in order to keep track of a stream's timing
  * and processed audio data.
  *
- * As the HDA device only has one bit clock (WALCLK) but audio streams can be processed
- * at certain points in time, these functions can be used to estimate and schedule the
- * wall clock (WALCLK) for all streams accordingly.
+ * As the HDA device only has one bit clock (WALCLK) but audio streams can be
+ * processed at certain points in time, these functions can be used to estimate
+ * and schedule the wall clock (WALCLK) for all streams accordingly.
  */
 
 /*
@@ -38,7 +38,9 @@
 #include "DrvAudio.h"
 #include "HDAStreamPeriod.h"
 
-#ifdef IN_RING3
+
+#ifdef IN_RING3 /* entire file currently */
+
 /**
  * Creates a stream period.
  *
@@ -50,10 +52,8 @@ int hdaStreamPeriodCreate(PHDASTREAMPERIOD pPeriod)
     Assert(!(pPeriod->fStatus & HDASTREAMPERIOD_FLAG_VALID));
 
     int rc = RTCritSectInit(&pPeriod->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        pPeriod->fStatus = HDASTREAMPERIOD_FLAG_VALID;
-    }
+    AssertRCReturnStmt(rc, pPeriod->fStatus = 0, rc);
+    pPeriod->fStatus = HDASTREAMPERIOD_FLAG_VALID;
 
     return VINF_SUCCESS;
 }
@@ -142,9 +142,9 @@ void hdaStreamPeriodReset(PHDASTREAMPERIOD pPeriod)
     pPeriod->u64ElapsedWalClk  = 0;
     pPeriod->framesTransferred = 0;
     pPeriod->cIntPending       = 0;
-#ifdef DEBUG
+# ifdef LOG_ENABLED
     pPeriod->Dbg.tsStartNs     = 0;
-#endif
+# endif
 }
 
 /**
@@ -163,13 +163,11 @@ int hdaStreamPeriodBegin(PHDASTREAMPERIOD pPeriod, uint64_t u64WalClk)
     pPeriod->u64ElapsedWalClk  = 0;
     pPeriod->framesTransferred = 0;
     pPeriod->cIntPending       = 0;
-#ifdef DEBUG
+# ifdef LOG_ENABLED
     pPeriod->Dbg.tsStartNs     = RTTimeNanoTS();
-#endif
+# endif
 
-    Log3Func(("[SD%RU8] Starting @ %RU64 (%RU64 long)\n",
-              pPeriod->u8SD, pPeriod->u64StartWalClk, pPeriod->u64DurationWalClk));
-
+    Log3Func(("[SD%RU8] Starting @ %RU64 (%RU64 long)\n", pPeriod->u8SD, pPeriod->u64StartWalClk, pPeriod->u64DurationWalClk));
     return VINF_SUCCESS;
 }
 
@@ -256,7 +254,7 @@ void hdaStreamPeriodUnlock(PHDASTREAMPERIOD pPeriod)
 uint64_t hdaStreamPeriodFramesToWalClk(PHDASTREAMPERIOD pPeriod, uint32_t uFrames)
 {
     /* Prevent division by zero. */
-    const uint32_t uHz = (pPeriod->u32Hz ? pPeriod->u32Hz : 1);
+    const uint32_t uHz = pPeriod->u32Hz ? pPeriod->u32Hz : 1;
 
     /* 24 MHz wall clock (WALCLK): 42ns resolution. */
     return ASMMultU64ByU32DivByU32(uFrames, 24000000, uHz);
@@ -271,9 +269,9 @@ uint64_t hdaStreamPeriodFramesToWalClk(PHDASTREAMPERIOD pPeriod, uint32_t uFrame
  */
 uint64_t hdaStreamPeriodGetAbsElapsedWalClk(PHDASTREAMPERIOD pPeriod)
 {
-    return   pPeriod->u64StartWalClk
-           + pPeriod->u64ElapsedWalClk
-           + pPeriod->i64DelayWalClk;
+    return pPeriod->u64StartWalClk
+         + pPeriod->u64ElapsedWalClk
+         + pPeriod->i64DelayWalClk;
 }
 
 /**
