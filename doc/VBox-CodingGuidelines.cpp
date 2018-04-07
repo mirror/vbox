@@ -142,6 +142,8 @@
  *
  *   <li> No 'else' after if block ending with 'return', 'break', or 'continue'.
  *
+ *   <li> The term 'last' is inclusive, whereas the term 'end' is exclusive.
+ *
  *   <li> Go through all of this: https://www.slideshare.net/olvemaudal/deep-c/
  *
  * </ul>
