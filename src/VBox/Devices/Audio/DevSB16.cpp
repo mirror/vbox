@@ -1545,13 +1545,9 @@ static void sb16MixerReset(PSB16STATE pThis)
     sb16UpdateVolume(pThis);
 }
 
-static IO_WRITE_PROTO(mixer_write_indexb)
+static int mixer_write_indexb(PSB16STATE pThis, uint32_t val)
 {
-    RT_NOREF(pDevIns, cb);
-    PSB16STATE pThis = (PSB16STATE)opaque;
-    (void) nport;
     pThis->mixer_nreg = val;
-
     return VINF_SUCCESS;
 }
 
@@ -1593,14 +1589,12 @@ static inline void sb16ConvVolumeOldToNew(PSB16STATE pThis, unsigned reg, uint8_
     pThis->mixer_regs[reg + 1] = (val << 4)   | RT_BIT(3);
 }
 
-static IO_WRITE_PROTO(mixer_write_datab)
+
+static int mixer_write_datab(PSB16STATE pThis, uint8_t val)
 {
-    RT_NOREF(pDevIns, cb);
-    PSB16STATE  pThis = (PSB16STATE)opaque;
     bool        fUpdateMaster = false;
     bool        fUpdateStream = false;
 
-    (void) nport;
     LogFlowFunc(("mixer_write [%#x] <- %#x\n", pThis->mixer_nreg, val));
 
     switch (pThis->mixer_nreg)
@@ -1727,6 +1721,7 @@ static IO_WRITE_PROTO(mixer_write_datab)
 
 static IO_WRITE_PROTO(mixer_write)
 {
+    RT_NOREF(pDevIns);
     PSB16STATE pThis = (PSB16STATE)opaque;
     int iport = nport - pThis->port;
     switch (cb)
@@ -1735,16 +1730,16 @@ static IO_WRITE_PROTO(mixer_write)
             switch (iport)
             {
                 case 4:
-                    mixer_write_indexb (pDevIns, opaque, nport, val, 1);
+                    mixer_write_indexb(pThis, val);
                     break;
                 case 5:
-                    mixer_write_datab (pDevIns, opaque, nport, val, 1);
+                    mixer_write_datab(pThis, val);
                     break;
             }
             break;
         case 2:
-            mixer_write_indexb (pDevIns, opaque, nport, val & 0xff, 1);
-            mixer_write_datab (pDevIns, opaque, nport, (val >> 8) & 0xff, 1);
+            mixer_write_indexb(pThis, val & 0xff);
+            mixer_write_datab(pThis, (val >> 8) & 0xff);
             break;
         default:
             AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", nport, cb, val));
@@ -2581,12 +2576,10 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         AssertMsgFailedReturn(("Error creating IRQ timer, rc=%Rrc\n", rc), rc);
 
-    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->port + 0x04,  2, pThis,
-                                 mixer_write, mixer_read, NULL, NULL, "SB16");
+    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->port + 0x04,  2, pThis, mixer_write, mixer_read, NULL, NULL, "SB16");
     if (RT_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->port + 0x06, 10, pThis,
-                                 dsp_write, dsp_read, NULL, NULL, "SB16");
+    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->port + 0x06, 10, pThis, dsp_write,   dsp_read,   NULL, NULL, "SB16");
     if (RT_FAILURE(rc))
         return rc;
 
