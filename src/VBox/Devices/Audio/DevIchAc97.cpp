@@ -204,7 +204,8 @@ enum
     BUP_LAST = RT_BIT(1)
 };
 
-/** Emits registers for a specific (Native Audio Bus Master BAR) NABMBAR. */
+/** Emits registers for a specific (Native Audio Bus Master BAR) NABMBAR.
+ * @todo This totally messes with grepping for identifiers and tagging.  */
 #define AC97_NABMBAR_REGS(prefix, off)                                    \
     enum {                                                                \
         prefix ## _BDBAR = off,      /* Buffer Descriptor Base Address */ \
@@ -1063,6 +1064,7 @@ static int ichac97StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIXSI
 }
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+
 /**
  * Asynchronous I/O thread for an AC'97 stream.
  * This will do the heavy lifting work for us as soon as it's getting notified by another thread.
@@ -1274,6 +1276,7 @@ static void ichac97StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable)
     PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
     ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
 }
+
 #endif /* VBOX_WITH_AUDIO_AC97_ASYNC_IO */
 
 /**
@@ -1323,8 +1326,8 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
             AssertRC(rc2);
         }
         else
-        {
 #endif
+        {
             const uint32_t cbSinkWritable = AudioMixerSinkGetWritable(pSink);
 
             /* Do not write more than the sink can hold at the moment.
@@ -1348,9 +1351,7 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
             rc2 = AudioMixerSinkUpdate(pSink);
             AssertRC(rc2);
 
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         }
-#endif
     }
     else /* Input (SDI). */
     {
@@ -1361,8 +1362,8 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
             AssertRC(rc2);
         }
         else
-        {
 #endif
+        {
             rc2 = AudioMixerSinkUpdate(pSink);
             AssertRC(rc2);
 
@@ -1385,14 +1386,12 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
                 rc2 = ichac97StreamWrite(pThis, pStream, pSink, cbFree, NULL /* pcbWritten */);
                 AssertRC(rc2);
             }
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         }
-#endif
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         if (fInTimer)
-        {
 #endif
+        {
             const uint32_t cbToTransfer = ichac97StreamGetUsed(pStream);
             if (cbToTransfer)
             {
@@ -1401,9 +1400,7 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
                 rc2 = ichac97StreamTransfer(pThis, pStream, cbToTransfer);
                 AssertRC(rc2);
             }
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         }
-#endif
     }
 }
 
@@ -1417,12 +1414,8 @@ static void ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInT
  */
 static void ichac97MixerSet(PAC97STATE pThis, uint8_t uMixerIdx, uint16_t uVal)
 {
-    if (size_t(uMixerIdx + 2) > sizeof(pThis->mixer_data))
-    {
-        AssertMsgFailed(("Index %RU8 out of bounds(%zu)\n", uMixerIdx, sizeof(pThis->mixer_data)));
-        return;
-    }
-
+    AssertMsgReturnVoid(uMixerIdx + 2U <= sizeof(pThis->mixer_data),
+                         ("Index %RU8 out of bounds (%zu)\n", uMixerIdx, sizeof(pThis->mixer_data)));
     pThis->mixer_data[uMixerIdx + 0] = RT_LO_U8(uVal);
     pThis->mixer_data[uMixerIdx + 1] = RT_HI_U8(uVal);
 }
@@ -1436,17 +1429,10 @@ static void ichac97MixerSet(PAC97STATE pThis, uint8_t uMixerIdx, uint16_t uVal)
  */
 static uint16_t ichac97MixerGet(PAC97STATE pThis, uint32_t uMixerIdx)
 {
-    uint16_t uVal;
-
-    if (size_t(uMixerIdx + 2) > sizeof(pThis->mixer_data))
-    {
-        AssertMsgFailed(("Index %RU8 out of bounds (%zu)\n", uMixerIdx, sizeof(pThis->mixer_data)));
-        uVal = UINT16_MAX;
-    }
-    else
-        uVal = RT_MAKE_U16(pThis->mixer_data[uMixerIdx + 0], pThis->mixer_data[uMixerIdx + 1]);
-
-    return uVal;
+    AssertMsgReturn(uMixerIdx + 2U <= sizeof(pThis->mixer_data),
+                         ("Index %RU8 out of bounds (%zu)\n", uMixerIdx, sizeof(pThis->mixer_data)),
+                    UINT16_MAX);
+    return RT_MAKE_U16(pThis->mixer_data[uMixerIdx + 0], pThis->mixer_data[uMixerIdx + 1]);
 }
 
 /**
@@ -1663,6 +1649,7 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 
     PPDMAUDIOSTREAMCFG pCfg     = &pStream->State.Cfg;
     PAUDMIXSINK        pMixSink = NULL;
+    AssertCompile(sizeof(pCfg->szName) >= 8);
 
     switch (pStream->u8SD)
     {
@@ -1672,8 +1659,7 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
             pCfg->enmDir            = PDMAUDIODIR_IN;
             pCfg->DestSource.Source = PDMAUDIORECSOURCE_LINE;
             pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-            RTStrPrintf2(pCfg->szName, sizeof(pCfg->szName), "Line-In");
+            strcpy(pCfg->szName, "Line-In");
 
             pMixSink                = pThis->pSinkLineIn;
             break;
@@ -1685,8 +1671,7 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
             pCfg->enmDir            = PDMAUDIODIR_IN;
             pCfg->DestSource.Source = PDMAUDIORECSOURCE_MIC;
             pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-            RTStrPrintf2(pCfg->szName, sizeof(pCfg->szName), "Mic-In");
+            strcpy(pCfg->szName, "Mic-In");
 
             pMixSink                = pThis->pSinkMicIn;
             break;
@@ -1698,8 +1683,7 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
             pCfg->enmDir            = PDMAUDIODIR_OUT;
             pCfg->DestSource.Dest   = PDMAUDIOPLAYBACKDEST_FRONT;
             pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-
-            RTStrPrintf2(pCfg->szName, sizeof(pCfg->szName), "Output");
+            strcpy(pCfg->szName, "Output");
 
             pMixSink                = pThis->pSinkOut;
             break;
@@ -1989,10 +1973,9 @@ DECLINLINE(PAC97STREAM) ichac97GetStreamFromIdx(PAC97STATE pThis, uint32_t uIdx)
         case AC97SOUNDSOURCE_PI_INDEX: return &pThis->StreamLineIn;
         case AC97SOUNDSOURCE_MC_INDEX: return &pThis->StreamMicIn;
         case AC97SOUNDSOURCE_PO_INDEX: return &pThis->StreamOut;
-        default:                       break;
+        default:                       return NULL;
     }
 
-    return NULL;
 }
 
 /**
@@ -2126,6 +2109,7 @@ static void ichac97WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
 #endif /* Unused */
 
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
+
 /**
  * Starts the internal audio device timer.
  *
@@ -2296,6 +2280,7 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
     ichac97TimerMain(pThis);
 }
+
 #endif /* !VBOX_WITH_AUDIO_AC97_CALLBACKS */
 
 /**
@@ -2446,6 +2431,8 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
 
                 if (cbSrc)
                 {
+/** @todo r=bird: Just curious, DevHDA uses PDMDevHlpPCIPhysWrite here.  So,
+ *        is AC97 not subject to PCI busmaster enable/disable? */
                     int rc2 = PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), pRegs->bd.addr, (uint8_t *)pvSrc, cbSrc);
                     AssertRC(rc2);
 
@@ -2918,11 +2905,12 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
 
-    DEVAC97_LOCK(pThis);
+    DEVAC97_LOCK(pThis); /** @todo r=bird: some disconnect between the remark of this function docs and this locking statement.  */
 
     int rc = VINF_SUCCESS;
 
     uint32_t index = uPort - pThis->IOPortBase[0];
+    Assert(index < 256);
 
     switch (cbVal)
     {
@@ -2936,15 +2924,8 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 
         case 2:
         {
-            *pu32Val = UINT32_MAX;
             pThis->cas = 0;
-
-            switch (index)
-            {
-                default:
-                    *pu32Val = ichac97MixerGet(pThis, index);
-                    break;
-            }
+            *pu32Val = ichac97MixerGet(pThis, index);
             break;
         }
 
@@ -2980,8 +2961,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
  * @param   cbVal       The value size in bytes.
  * @remarks Caller enters the device critical section.
  */
-static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
-                                               uint32_t u32Val, unsigned cbVal)
+static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32Val, unsigned cbVal)
 {
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
@@ -3409,29 +3389,6 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnDestruct}
- */
-static DECLCALLBACK(int) ichac97Destruct(PPDMDEVINS pDevIns)
-{
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
-
-    LogFlowFuncEnter();
-
-    PAC97DRIVER pDrv, pDrvNext;
-    RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, AC97DRIVER, Node)
-    {
-        RTListNodeRemove(&pDrv->Node);
-        RTMemFree(pDrv);
-    }
-
-    /* Sanity. */
-    Assert(RTListIsEmpty(&pThis->lstDrv));
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Attach command, internal version.
  *
  * This is called to let the device attach to a driver for a specified LUN
@@ -3664,18 +3621,42 @@ static int ichac97ReattachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint8_t u
 }
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) ichac97Destruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns); /* this shall come first */
+    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+
+    LogFlowFuncEnter();
+
+    PAC97DRIVER pDrv, pDrvNext;
+    RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, AC97DRIVER, Node)
+    {
+        RTListNodeRemove(&pDrv->Node);
+        RTMemFree(pDrv);
+    }
+
+    /* Sanity. */
+    Assert(RTListIsEmpty(&pThis->lstDrv));
+
+    return VINF_SUCCESS;
+}
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF(iInstance);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    Assert(iInstance == 0); RT_NOREF(iInstance);
 
-    /* NB: This must be done *before* any possible failure (and running the destructor). */
+    /*
+     * Initialize data so we can run the destructor without scewing up.
+     */
     RTListInit(&pThis->lstDrv);
 
-    Assert(iInstance == 0);
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validations.
