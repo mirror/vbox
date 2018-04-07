@@ -55,58 +55,58 @@
 /** Maximum FIFO size (in bytes). */
 #define AC97_FIFO_MAX       256
 
-#define AC97_SR_FIFOE RT_BIT(4)          /* rwc, FIFO error. */
-#define AC97_SR_BCIS  RT_BIT(3)          /* rwc, Buffer completion interrupt status. */
-#define AC97_SR_LVBCI RT_BIT(2)          /* rwc, Last valid buffer completion interrupt. */
-#define AC97_SR_CELV  RT_BIT(1)          /* ro,  Current equals last valid. */
-#define AC97_SR_DCH   RT_BIT(0)          /* ro,  Controller halted. */
-#define AC97_SR_VALID_MASK (RT_BIT(5) - 1)
+#define AC97_SR_FIFOE RT_BIT(4)          /**< rwc, FIFO error. */
+#define AC97_SR_BCIS  RT_BIT(3)          /**< rwc, Buffer completion interrupt status. */
+#define AC97_SR_LVBCI RT_BIT(2)          /**< rwc, Last valid buffer completion interrupt. */
+#define AC97_SR_CELV  RT_BIT(1)          /**< ro,  Current equals last valid. */
+#define AC97_SR_DCH   RT_BIT(0)          /**< ro,  Controller halted. */
+#define AC97_SR_VALID_MASK  (RT_BIT(5) - 1)
 #define AC97_SR_WCLEAR_MASK (AC97_SR_FIFOE | AC97_SR_BCIS | AC97_SR_LVBCI)
-#define AC97_SR_RO_MASK (AC97_SR_DCH | AC97_SR_CELV)
-#define AC97_SR_INT_MASK (AC97_SR_FIFOE | AC97_SR_BCIS | AC97_SR_LVBCI)
+#define AC97_SR_RO_MASK     (AC97_SR_DCH | AC97_SR_CELV)
+#define AC97_SR_INT_MASK    (AC97_SR_FIFOE | AC97_SR_BCIS | AC97_SR_LVBCI)
 
-#define AC97_CR_IOCE  RT_BIT(4)         /* rw,   Interrupt On Completion Enable. */
-#define AC97_CR_FEIE  RT_BIT(3)         /* rw    FIFO Error Interrupt Enable. */
-#define AC97_CR_LVBIE RT_BIT(2)         /* rw    Last Valid Buffer Interrupt Enable. */
-#define AC97_CR_RR    RT_BIT(1)         /* rw    Reset Registers. */
-#define AC97_CR_RPBM  RT_BIT(0)         /* rw    Run/Pause Bus Master. */
+#define AC97_CR_IOCE  RT_BIT(4)         /**< rw,   Interrupt On Completion Enable. */
+#define AC97_CR_FEIE  RT_BIT(3)         /**< rw    FIFO Error Interrupt Enable. */
+#define AC97_CR_LVBIE RT_BIT(2)         /**< rw    Last Valid Buffer Interrupt Enable. */
+#define AC97_CR_RR    RT_BIT(1)         /**< rw    Reset Registers. */
+#define AC97_CR_RPBM  RT_BIT(0)         /**< rw    Run/Pause Bus Master. */
 #define AC97_CR_VALID_MASK (RT_BIT(5) - 1)
 #define AC97_CR_DONT_CLEAR_MASK (AC97_CR_IOCE | AC97_CR_FEIE | AC97_CR_LVBIE)
 
-#define AC97_GC_WR    4                 /* rw    Warm reset. */
-#define AC97_GC_CR    2                 /* rw    Cold reset. */
+#define AC97_GC_WR    4                 /**< rw    Warm reset. */
+#define AC97_GC_CR    2                 /**< rw    Cold reset. */
 #define AC97_GC_VALID_MASK (RT_BIT(6) - 1)
 
-#define AC97_GS_MD3   RT_BIT(17)        /* rw */
-#define AC97_GS_AD3   RT_BIT(16)        /* rw */
-#define AC97_GS_RCS   RT_BIT(15)        /* rwc */
-#define AC97_GS_B3S12 RT_BIT(14)        /* ro */
-#define AC97_GS_B2S12 RT_BIT(13)        /* ro */
-#define AC97_GS_B1S12 RT_BIT(12)        /* ro */
-#define AC97_GS_S1R1  RT_BIT(11)        /* rwc */
-#define AC97_GS_S0R1  RT_BIT(10)        /* rwc */
-#define AC97_GS_S1CR  RT_BIT(9)         /* ro */
-#define AC97_GS_S0CR  RT_BIT(8)         /* ro */
-#define AC97_GS_MINT  RT_BIT(7)         /* ro */
-#define AC97_GS_POINT RT_BIT(6)         /* ro */
-#define AC97_GS_PIINT RT_BIT(5)         /* ro */
-#define AC97_GS_RSRVD (RT_BIT(4)|RT_BIT(3))
-#define AC97_GS_MOINT RT_BIT(2)         /* ro */
-#define AC97_GS_MIINT RT_BIT(1)         /* ro */
-#define AC97_GS_GSCI  RT_BIT(0)         /* rwc */
-#define AC97_GS_RO_MASK (AC97_GS_B3S12 |                   \
-                         AC97_GS_B2S12 |                   \
-                         AC97_GS_B1S12 |                   \
-                         AC97_GS_S1CR  |                   \
-                         AC97_GS_S0CR  |                   \
-                         AC97_GS_MINT  |                   \
-                         AC97_GS_POINT |                   \
-                         AC97_GS_PIINT |                   \
-                         AC97_GS_RSRVD |                   \
-                         AC97_GS_MOINT |                   \
-                         AC97_GS_MIINT)
+#define AC97_GS_MD3   RT_BIT(17)        /**< rw */
+#define AC97_GS_AD3   RT_BIT(16)        /**< rw */
+#define AC97_GS_RCS   RT_BIT(15)        /**< rwc */
+#define AC97_GS_B3S12 RT_BIT(14)        /**< ro */
+#define AC97_GS_B2S12 RT_BIT(13)        /**< ro */
+#define AC97_GS_B1S12 RT_BIT(12)        /**< ro */
+#define AC97_GS_S1R1  RT_BIT(11)        /**< rwc */
+#define AC97_GS_S0R1  RT_BIT(10)        /**< rwc */
+#define AC97_GS_S1CR  RT_BIT(9)         /**< ro */
+#define AC97_GS_S0CR  RT_BIT(8)         /**< ro */
+#define AC97_GS_MINT  RT_BIT(7)         /**< ro */
+#define AC97_GS_POINT RT_BIT(6)         /**< ro */
+#define AC97_GS_PIINT RT_BIT(5)         /**< ro */
+#define AC97_GS_RSRVD (RT_BIT(4) | RT_BIT(3))
+#define AC97_GS_MOINT RT_BIT(2)         /**< ro */
+#define AC97_GS_MIINT RT_BIT(1)         /**< ro */
+#define AC97_GS_GSCI  RT_BIT(0)         /**< rwc */
+#define AC97_GS_RO_MASK (  AC97_GS_B3S12 \
+                         | AC97_GS_B2S12 \
+                         | AC97_GS_B1S12 \
+                         | AC97_GS_S1CR \
+                         | AC97_GS_S0CR \
+                         | AC97_GS_MINT \
+                         | AC97_GS_POINT \
+                         | AC97_GS_PIINT \
+                         | AC97_GS_RSRVD \
+                         | AC97_GS_MOINT \
+                         | AC97_GS_MIINT)
 #define AC97_GS_VALID_MASK (RT_BIT(18) - 1)
-#define AC97_GS_WCLEAR_MASK (AC97_GS_RCS|AC97_GS_S1R1|AC97_GS_S0R1|AC97_GS_GSCI)
+#define AC97_GS_WCLEAR_MASK (AC97_GS_RCS | AC97_GS_S1R1 | AC97_GS_S0R1 | AC97_GS_GSCI)
 
 /** @name Buffer Descriptor (BD).
  * @{ */
@@ -549,6 +549,10 @@ AssertCompileMemberAlignment(AC97STATE, StatBytesWritten, 8);
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 DECLINLINE(PAC97STREAM)   ichac97GetStreamFromIdx(PAC97STATE pThis, uint32_t uIdx);
 static int                ichac97StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8Strm);
 static void               ichac97StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream);
@@ -589,6 +593,8 @@ static void               ichac97StreamAsyncIOUnlock(PAC97STREAM pStream);
 static void               ichac97StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable);
 #endif
 
+
+
 static void ichac97WarmReset(PAC97STATE pThis)
 {
     NOREF(pThis);
@@ -612,10 +618,10 @@ DECLINLINE(PAUDMIXSINK) ichac97IndexToSink(PAC97STATE pThis, uint8_t uIndex)
 
     switch (uIndex)
     {
-        case AC97SOUNDSOURCE_PI_INDEX: return pThis->pSinkLineIn; break;
-        case AC97SOUNDSOURCE_PO_INDEX: return pThis->pSinkOut;    break;
-        case AC97SOUNDSOURCE_MC_INDEX: return pThis->pSinkMicIn;  break;
-        default:                                                  break;
+        case AC97SOUNDSOURCE_PI_INDEX: return pThis->pSinkLineIn;
+        case AC97SOUNDSOURCE_PO_INDEX: return pThis->pSinkOut;
+        case AC97SOUNDSOURCE_MC_INDEX: return pThis->pSinkMicIn;
+        default: break;
     }
 
     AssertMsgFailed(("Wrong index %RU8\n", uIndex));
@@ -671,8 +677,6 @@ static void ichac97StreamUpdateSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_
     uint32_t new_mask = new_sr & AC97_SR_INT_MASK;
     uint32_t old_mask = pRegs->sr  & AC97_SR_INT_MASK;
 
-    static uint32_t const masks[] = { AC97_GS_PIINT, AC97_GS_POINT, AC97_GS_MINT };
-
     if (new_mask ^ old_mask)
     {
         /** @todo Is IRQ deasserted when only one of status bits is cleared? */
@@ -700,10 +704,11 @@ static void ichac97StreamUpdateSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_
 
     if (fSignal)
     {
+        static uint32_t const s_aMasks[] = { AC97_GS_PIINT, AC97_GS_POINT, AC97_GS_MINT };
         if (iIRQL)
-            pThis->glob_sta |=  masks[pStream->u8SD];
+            pThis->glob_sta |=  s_aMasks[pStream->u8SD];
         else
-            pThis->glob_sta &= ~masks[pStream->u8SD];
+            pThis->glob_sta &= ~s_aMasks[pStream->u8SD];
 
         LogFlowFunc(("Setting IRQ level=%d\n", iIRQL));
         PDMDevHlpPCISetIrq(pDevIns, 0, iIRQL);
@@ -844,6 +849,7 @@ static int ichac97StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8
 
     LogFunc(("[SD%RU8] pStream=%p\n", u8Strm, pStream));
 
+    Assert(u8Strm < 3);
     pStream->u8SD = u8Strm;
 
     int rc = RTCritSectInit(&pStream->State.CritSect);
