@@ -19,6 +19,7 @@
 #define DEV_HDA_COMMON_H
 
 #include "AudioMixer.h"
+#include <VBox/log.h> /* LOG_ENABLED */
 
 /** See 302349 p 6.2. */
 typedef struct HDAREGDESC
@@ -514,6 +515,7 @@ extern const HDAREGDESC g_aHdaRegMap[HDA_NUM_REGS];
 /** Interrupt on completion (IOC) flag. */
 #define HDA_BDLE_FLAG_IOC           RT_BIT(0)
 
+
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                 *
 *********************************************************************************************************************************/
@@ -586,7 +588,7 @@ PHDASTREAM    hdaGetStreamFromSink(PHDASTATE pThis, PHDAMIXERSINK pSink);
 /** @name Interrupt functions.
  * @{
  */
-#ifdef DEBUG
+#ifdef LOG_ENABLED
 int           hdaProcessInterrupt(PHDASTATE pThis, const char *pszSource);
 #else
 int           hdaProcessInterrupt(PHDASTATE pThis);

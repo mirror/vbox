@@ -1190,7 +1190,7 @@ int hdaStreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
         /* Trigger an interrupt first and let hdaRegWriteSDSTS() deal with
          * ending / beginning a period. */
-#ifndef DEBUG
+#ifndef LOG_ENABLED
         hdaProcessInterrupt(pThis);
 #else
         hdaProcessInterrupt(pThis, __FUNCTION__);

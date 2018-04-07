@@ -33,7 +33,7 @@
 #include "HDAStream.h"
 
 
-#ifndef DEBUG
+#ifndef LOG_ENABLED
 /**
  * Processes (de/asserts) the interrupt according to the HDA's current state.
  *
@@ -204,11 +204,11 @@ PHDAMIXERSINK hdaGetDefaultSink(PHDASTATE pThis, uint8_t uSD)
         if (uSD == uFirstSDI) /* First SDI. */
             return &pThis->SinkLineIn;
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-        else if (uSD == uFirstSDI + 1)
+        if (uSD == uFirstSDI + 1)
             return &pThis->SinkMicIn;
 # else
-        else /* If we don't have a dedicated Mic-In sink, use the always present Line-In sink. */
-            return &pThis->SinkLineIn;
+        /* If we don't have a dedicated Mic-In sink, use the always present Line-In sink. */
+        return &pThis->SinkLineIn;
 # endif
     }
     else
@@ -218,9 +218,9 @@ PHDAMIXERSINK hdaGetDefaultSink(PHDASTATE pThis, uint8_t uSD)
         if (uSD == uFirstSDO)
             return &pThis->SinkFront;
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-        else if (uSD == uFirstSDO + 1)
+        if (uSD == uFirstSDO + 1)
             return &pThis->SinkCenterLFE;
-        else if (uSD == uFirstSDO + 2)
+        if (uSD == uFirstSDO + 2)
             return &pThis->SinkRear;
 # endif
     }
@@ -310,12 +310,12 @@ int hdaDMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf,
     uint32_t cbReadTotal = 0;
     uint32_t cbLeft      = RT_MIN(cbBuf, pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
 
-#ifdef HDA_DEBUG_SILENCE
+# ifdef HDA_DEBUG_SILENCE
     uint64_t   csSilence = 0;
 
     pStream->Dbg.cSilenceThreshold = 100;
     pStream->Dbg.cbSilenceReadMin  = _1M;
-#endif
+# endif
 
     RTGCPHYS addrChunk = pBDLE->Desc.u64BufAdr + pBDLE->State.u32BufOff;
 
@@ -327,25 +327,21 @@ int hdaDMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf,
         if (RT_FAILURE(rc))
             break;
 
-#ifdef HDA_DEBUG_SILENCE
+# ifdef HDA_DEBUG_SILENCE
         uint16_t *pu16Buf = (uint16_t *)pvBuf;
         for (size_t i = 0; i < cbChunk / sizeof(uint16_t); i++)
         {
             if (*pu16Buf == 0)
-            {
                 csSilence++;
-            }
             else
                 break;
             pu16Buf++;
         }
-#endif
+# endif
         if (pStream->Dbg.Runtime.fEnabled)
             DrvAudioHlpFileWrite(pStream->Dbg.Runtime.pFileDMA, (uint8_t *)pvBuf + cbReadTotal, cbChunk, 0 /* fFlags */);
 
-#ifdef VBOX_WITH_STATISTICS
         STAM_COUNTER_ADD(&pThis->StatBytesRead, cbChunk);
-#endif
         addrChunk         = (addrChunk + cbChunk) % pBDLE->Desc.u32BufSize;
 
         Assert(cbLeft    >= cbChunk);
@@ -354,8 +350,7 @@ int hdaDMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf,
         cbReadTotal      += cbChunk;
     }
 
-#ifdef HDA_DEBUG_SILENCE
-
+# ifdef HDA_DEBUG_SILENCE
     if (csSilence)
         pStream->Dbg.csSilence += csSilence;
 
@@ -366,7 +361,7 @@ int hdaDMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBuf,
         LogFunc(("Silent block detected: %RU64 audio samples\n", pStream->Dbg.csSilence));
         pStream->Dbg.csSilence = 0;
     }
-#endif
+# endif
 
     if (RT_SUCCESS(rc))
     {
@@ -417,9 +412,7 @@ int hdaDMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32_t
         if (RT_FAILURE(rc))
             break;
 
-#ifdef VBOX_WITH_STATISTICS
         STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbChunk);
-#endif
         addrChunk       = (addrChunk + cbChunk) % pBDLE->Desc.u32BufSize;
 
         Assert(cbLeft  >= cbChunk);
@@ -494,7 +487,7 @@ int hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
 
-# define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
+#define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
 
     int rc = VINF_SUCCESS;
 
@@ -562,7 +555,7 @@ int hdaSDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
         pProps->cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBits, pProps->cChannels);
     }
 
-# undef EXTRACT_VALUE
+#undef EXTRACT_VALUE
     return rc;
 }
 
