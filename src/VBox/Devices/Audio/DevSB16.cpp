@@ -211,7 +211,7 @@ typedef struct SB16STATE
     SB16STREAM                     Out;
 
     /* mixer state */
-    int mixer_nreg;
+    uint8_t mixer_nreg;
     uint8_t mixer_regs[256];
 } SB16STATE, *PSB16STATE;
 
@@ -1547,7 +1547,7 @@ static void sb16MixerReset(PSB16STATE pThis)
     sb16UpdateVolume(pThis);
 }
 
-static int mixer_write_indexb(PSB16STATE pThis, uint32_t val)
+static int mixer_write_indexb(PSB16STATE pThis, uint8_t val)
 {
     pThis->mixer_nreg = val;
     return VINF_SUCCESS;
@@ -2175,8 +2175,8 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
     SSMR3GetS32(pSSM, &pThis->csp_reg83r);
     SSMR3GetS32(pSSM, &pThis->csp_reg83w);
 
-    SSMR3GetMem(pSSM, pThis->in2_data, sizeof (pThis->in2_data));
-    SSMR3GetMem(pSSM, pThis->out_data, sizeof (pThis->out_data));
+    SSMR3GetMem(pSSM, pThis->in2_data, sizeof(pThis->in2_data));
+    SSMR3GetMem(pSSM, pThis->out_data, sizeof(pThis->out_data));
     SSMR3GetU8 (pSSM, &pThis->test_reg);
     SSMR3GetU8 (pSSM, &pThis->last_read_byte);
 
@@ -2186,8 +2186,12 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
     SSMR3GetS32(pSSM, &pThis->bytes_per_second);
     SSMR3GetS32(pSSM, &pThis->align);
 
-    SSMR3GetS32(pSSM, &pThis->mixer_nreg);
-    SSMR3GetMem(pSSM, pThis->mixer_regs, 256);
+    int32_t mixer_nreg = 0;
+    int rc = SSMR3GetS32(pSSM, &mixer_nreg);
+    AssertRCReturn(rc, rc);
+    pThis->mixer_nreg = (uint8_t)mixer_nreg;
+    rc = SSMR3GetMem(pSSM, pThis->mixer_regs, 256);
+    AssertRCReturn(rc, rc);
 
 #if 0
     PSB16DRIVER pDrv;
