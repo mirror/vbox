@@ -2531,7 +2531,6 @@ static int ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
  * @param   pu32Val     Where to store the result.  This is always a 32-bit
  *                      variable regardless of what @a cbVal might say.
  * @param   cbVal       Number of bytes read.
- * @remarks Caller enters the device critical section.
  */
 static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
                                                uint32_t *pu32Val, unsigned cbVal)
@@ -2705,7 +2704,6 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
  * @param   uPort       Port number used for the OUT operation.
  * @param   u32Val      The value to output.
  * @param   cbVal       The value size in bytes.
- * @remarks Caller enters the device critical section.
  */
 static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
                                                 uint32_t u32Val, unsigned cbVal)
@@ -2898,14 +2896,13 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
  * @param   pu32Val     Where to store the result.  This is always a 32-bit
  *                      variable regardless of what @a cbVal might say.
  * @param   cbVal       Number of bytes read.
- * @remarks Caller enters the device critical section.
  */
 static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32Val, unsigned cbVal)
 {
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
 
-    DEVAC97_LOCK(pThis); /** @todo r=bird: some disconnect between the remark of this function docs and this locking statement.  */
+    DEVAC97_LOCK(pThis);
 
     int rc = VINF_SUCCESS;
 
@@ -3696,11 +3693,8 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     else if (!strcmp(szCodec, "AD1981B"))
         pThis->uCodecModel = AC97_CODEC_AD1981B;
     else
-    {
         return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
-                                   N_("AC'97 configuration error: The \"Codec\" value \"%s\" is unsupported"),
-                                   szCodec);
-    }
+                                   N_("AC'97 configuration error: The \"Codec\" value \"%s\" is unsupported"), szCodec);
 
     /*
      * Use an own critical section for the device instead of the default
@@ -3721,21 +3715,21 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->IBase.pfnQueryInterface  = ichac97QueryInterface;
 
     /* PCI Device */
-    PCIDevSetVendorId         (&pThis->PciDev, 0x8086); /* 00 ro - intel. */               Assert(pThis->PciDev.abConfig[0x00] == 0x86); Assert(pThis->PciDev.abConfig[0x01] == 0x80);
-    PCIDevSetDeviceId         (&pThis->PciDev, 0x2415); /* 02 ro - 82801 / 82801aa(?). */  Assert(pThis->PciDev.abConfig[0x02] == 0x15); Assert(pThis->PciDev.abConfig[0x03] == 0x24);
-    PCIDevSetCommand          (&pThis->PciDev, 0x0000); /* 04 rw,ro - pcicmd. */           Assert(pThis->PciDev.abConfig[0x04] == 0x00); Assert(pThis->PciDev.abConfig[0x05] == 0x00);
-    PCIDevSetStatus           (&pThis->PciDev, VBOX_PCI_STATUS_DEVSEL_MEDIUM |  VBOX_PCI_STATUS_FAST_BACK); /* 06 rwc?,ro? - pcists. */      Assert(pThis->PciDev.abConfig[0x06] == 0x80); Assert(pThis->PciDev.abConfig[0x07] == 0x02);
-    PCIDevSetRevisionId       (&pThis->PciDev, 0x01);   /* 08 ro - rid. */                 Assert(pThis->PciDev.abConfig[0x08] == 0x01);
-    PCIDevSetClassProg        (&pThis->PciDev, 0x00);   /* 09 ro - pi. */                  Assert(pThis->PciDev.abConfig[0x09] == 0x00);
-    PCIDevSetClassSub         (&pThis->PciDev, 0x01);   /* 0a ro - scc; 01 == Audio. */    Assert(pThis->PciDev.abConfig[0x0a] == 0x01);
-    PCIDevSetClassBase        (&pThis->PciDev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */ Assert(pThis->PciDev.abConfig[0x0b] == 0x04);
-    PCIDevSetHeaderType       (&pThis->PciDev, 0x00);   /* 0e ro - headtyp. */             Assert(pThis->PciDev.abConfig[0x0e] == 0x00);
-    PCIDevSetBaseAddress      (&pThis->PciDev, 0,       /* 10 rw - nambar - native audio mixer base. */
-                               true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->PciDev.abConfig[0x10] == 0x01); Assert(pThis->PciDev.abConfig[0x11] == 0x00); Assert(pThis->PciDev.abConfig[0x12] == 0x00); Assert(pThis->PciDev.abConfig[0x13] == 0x00);
-    PCIDevSetBaseAddress      (&pThis->PciDev, 1,       /* 14 rw - nabmbar - native audio bus mastering. */
-                               true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->PciDev.abConfig[0x14] == 0x01); Assert(pThis->PciDev.abConfig[0x15] == 0x00); Assert(pThis->PciDev.abConfig[0x16] == 0x00); Assert(pThis->PciDev.abConfig[0x17] == 0x00);
-    PCIDevSetInterruptLine    (&pThis->PciDev, 0x00);   /* 3c rw. */                       Assert(pThis->PciDev.abConfig[0x3c] == 0x00);
-    PCIDevSetInterruptPin     (&pThis->PciDev, 0x01);   /* 3d ro - INTA#. */               Assert(pThis->PciDev.abConfig[0x3d] == 0x01);
+    PCIDevSetVendorId     (&pThis->PciDev, 0x8086); /* 00 ro - intel. */               Assert(pThis->PciDev.abConfig[0x00] == 0x86); Assert(pThis->PciDev.abConfig[0x01] == 0x80);
+    PCIDevSetDeviceId     (&pThis->PciDev, 0x2415); /* 02 ro - 82801 / 82801aa(?). */  Assert(pThis->PciDev.abConfig[0x02] == 0x15); Assert(pThis->PciDev.abConfig[0x03] == 0x24);
+    PCIDevSetCommand      (&pThis->PciDev, 0x0000); /* 04 rw,ro - pcicmd. */           Assert(pThis->PciDev.abConfig[0x04] == 0x00); Assert(pThis->PciDev.abConfig[0x05] == 0x00);
+    PCIDevSetStatus       (&pThis->PciDev, VBOX_PCI_STATUS_DEVSEL_MEDIUM |  VBOX_PCI_STATUS_FAST_BACK); /* 06 rwc?,ro? - pcists. */  Assert(pThis->PciDev.abConfig[0x06] == 0x80); Assert(pThis->PciDev.abConfig[0x07] == 0x02);
+    PCIDevSetRevisionId   (&pThis->PciDev, 0x01);   /* 08 ro - rid. */                 Assert(pThis->PciDev.abConfig[0x08] == 0x01);
+    PCIDevSetClassProg    (&pThis->PciDev, 0x00);   /* 09 ro - pi. */                  Assert(pThis->PciDev.abConfig[0x09] == 0x00);
+    PCIDevSetClassSub     (&pThis->PciDev, 0x01);   /* 0a ro - scc; 01 == Audio. */    Assert(pThis->PciDev.abConfig[0x0a] == 0x01);
+    PCIDevSetClassBase    (&pThis->PciDev, 0x04);   /* 0b ro - bcc; 04 == multimedia.*/Assert(pThis->PciDev.abConfig[0x0b] == 0x04);
+    PCIDevSetHeaderType   (&pThis->PciDev, 0x00);   /* 0e ro - headtyp. */             Assert(pThis->PciDev.abConfig[0x0e] == 0x00);
+    PCIDevSetBaseAddress  (&pThis->PciDev, 0,       /* 10 rw - nambar - native audio mixer base. */
+                           true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->PciDev.abConfig[0x10] == 0x01); Assert(pThis->PciDev.abConfig[0x11] == 0x00); Assert(pThis->PciDev.abConfig[0x12] == 0x00); Assert(pThis->PciDev.abConfig[0x13] == 0x00);
+    PCIDevSetBaseAddress  (&pThis->PciDev, 1,       /* 14 rw - nabmbar - native audio bus mastering. */
+                           true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->PciDev.abConfig[0x14] == 0x01); Assert(pThis->PciDev.abConfig[0x15] == 0x00); Assert(pThis->PciDev.abConfig[0x16] == 0x00); Assert(pThis->PciDev.abConfig[0x17] == 0x00);
+    PCIDevSetInterruptLine(&pThis->PciDev, 0x00);   /* 3c rw. */                       Assert(pThis->PciDev.abConfig[0x3c] == 0x00);
+    PCIDevSetInterruptPin (&pThis->PciDev, 0x01);   /* 3d ro - INTA#. */               Assert(pThis->PciDev.abConfig[0x3d] == 0x01);
 
     if (pThis->uCodecModel == AC97_CODEC_AD1980)
     {
