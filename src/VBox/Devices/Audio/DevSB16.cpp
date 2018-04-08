@@ -71,14 +71,6 @@
 /** The version used in VirtualBox version 3.0 and earlier. This didn't include the config dump. */
 #define SB16_SAVE_STATE_VERSION_VBOX_30 1
 
-#define IO_READ_PROTO(name)                                             \
-    DECLCALLBACK(int) name (PPDMDEVINS pDevIns, void *opaque,       \
-                            RTIOPORT nport, uint32_t *pu32, unsigned cb)
-
-#define IO_WRITE_PROTO(name)                                            \
-    DECLCALLBACK(int) name (PPDMDEVINS pDevIns, void *opaque,       \
-                            RTIOPORT nport, uint32_t val, unsigned cb)
-
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -554,6 +546,9 @@ static void sb16Control(PSB16STATE pThis, int hold)
 #endif
 }
 
+/**
+ * @callback_method_impl{PFNTMTIMERDEV}
+ */
 static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvThis)
 {
     RT_NOREF(pDevIns, pTimer);
@@ -1337,7 +1332,10 @@ static void sb16Reset(PSB16STATE pThis)
     sb16ResetLegacy(pThis);
 }
 
-static IO_WRITE_PROTO(dsp_write)
+/**
+ * @callback_method_impl{PFNIOMIOPORTOUT}
+ */
+static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT nport, uint32_t val, unsigned cb)
 {
     RT_NOREF(pDevIns, cb);
     PSB16STATE pThis = (PSB16STATE)opaque;
@@ -1434,7 +1432,11 @@ static IO_WRITE_PROTO(dsp_write)
     return VINF_SUCCESS;
 }
 
-static IO_READ_PROTO(dsp_read)
+
+/**
+ * @callback_method_impl{PFNIOMIOPORTIN}
+ */
+static DECLCALLBACK(int) dsp_read(PPDMDEVINS pDevIns, void *opaque, RTIOPORT nport, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pDevIns, cb);
     PSB16STATE pThis = (PSB16STATE)opaque;
@@ -1719,7 +1721,10 @@ static int mixer_write_datab(PSB16STATE pThis, uint8_t val)
     return VINF_SUCCESS;
 }
 
-static IO_WRITE_PROTO(mixer_write)
+/**
+ * @callback_method_impl{PFNIOMIOPORTOUT}
+ */
+static DECLCALLBACK(int) mixer_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT nport, uint32_t val, unsigned cb)
 {
     RT_NOREF(pDevIns);
     PSB16STATE pThis = (PSB16STATE)opaque;
@@ -1748,7 +1753,10 @@ static IO_WRITE_PROTO(mixer_write)
     return VINF_SUCCESS;
 }
 
-static IO_READ_PROTO(mixer_read)
+/**
+ * @callback_method_impl{PFNIOMIOPORTIN}
+ */
+static DECLCALLBACK(int) mixer_read(PPDMDEVINS pDevIns, void *opaque, RTIOPORT nport, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pDevIns, cb);
     PSB16STATE pThis = (PSB16STATE)opaque;
@@ -1767,8 +1775,10 @@ static IO_READ_PROTO(mixer_read)
     return VINF_SUCCESS;
 }
 
-static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
-                          uint32_t dma_len, int len)
+/**
+ * Called by sb16DMARead.
+ */
+static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos, uint32_t dma_len, int len)
 {
     uint8_t  tmpbuf[_4K]; /** @todo Have a buffer on the heap. */
     uint32_t cbToWrite = len;
@@ -1837,6 +1847,10 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
     return cbWrittenTotal;
 }
 
+/**
+ * @callback_method_impl{FNDMATRANSFERHANDLER,
+ *      Worker callback for both DMA channels.}
+ */
 static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsigned nchan, uint32_t dma_pos, uint32_t dma_len)
 {
     RT_NOREF(pDevIns);
@@ -1925,6 +1939,7 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
 }
 
 #ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
+
 static void sb16TimerMaybeStart(PSB16STATE pThis)
 {
     LogFlowFunc(("cStreamsActive=%RU8\n", pThis->cStreamsActive));
@@ -1979,7 +1994,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         if (!pStream)
             continue;
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
         /*
          * Sanity. Make sure that all streams have the same configuration
          * to get SB16's DMA transfers right.
@@ -2004,7 +2019,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
                           ("%RTbool vs. %RTbool signed\n", pStream->Cfg.Props.fSigned, pStreamPrev->Cfg.Props.fSigned));
             }
         }
-#endif
+# endif
         PPDMIAUDIOCONNECTOR pConn = pDrv->pConnector;
         if (!pConn)
             continue;
@@ -2065,6 +2080,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         TMTimerSet(pThis->pTimerIO, cTicksNow + cTicks);
     }
 }
+
 #endif /* !VBOX_WITH_AUDIO_SB16_CALLBACKS */
 
 static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
