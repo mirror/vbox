@@ -131,10 +131,10 @@
 #endif
 #undef LOG_GROUP
 #include "../PC/DevHPET.cpp"
-# undef LOG_GROUP
-# include "../Audio/DevIchAc97.cpp"
-# undef LOG_GROUP
-# include "../Audio/DevHDA.cpp"
+#undef LOG_GROUP
+#include "../Audio/DevIchAc97.cpp"
+#undef LOG_GROUP
+#include "../Audio/DevHDA.cpp"
 #ifdef VBOX_WITH_NVME_IMPL
 # undef LOG_GROUP
 # include "../Storage/DevNVMe.cpp"
@@ -1859,6 +1859,49 @@ int main()
     GEN_CHECK_OFF(AC97DRIVER, LineIn);
     GEN_CHECK_OFF(AC97DRIVER, MicIn);
     GEN_CHECK_OFF(AC97DRIVER, Out);
+
+    GEN_CHECK_SIZE(AC97STATE);
+    GEN_CHECK_OFF(AC97STATE, CritSect);
+    GEN_CHECK_OFF(AC97STATE, pDevInsR3);
+    GEN_CHECK_OFF(AC97STATE, pDevInsR0);
+    GEN_CHECK_OFF(AC97STATE, pDevInsRC);
+    GEN_CHECK_OFF(AC97STATE, fRZEnabled);
+    GEN_CHECK_OFF(AC97STATE, glob_cnt);
+    GEN_CHECK_OFF(AC97STATE, glob_sta);
+    GEN_CHECK_OFF(AC97STATE, cas);
+    GEN_CHECK_OFF(AC97STATE, last_samp);
+    GEN_CHECK_OFF(AC97STATE, mixer_data);
+    GEN_CHECK_OFF(AC97STATE, StreamLineIn);
+    GEN_CHECK_OFF(AC97STATE, StreamMicIn);
+    GEN_CHECK_OFF(AC97STATE, StreamOut);
+    GEN_CHECK_OFF(AC97STATE, cStreamsActive);
+#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
+    GEN_CHECK_OFF(AC97STATE, pTimerR3);
+    GEN_CHECK_OFF(AC97STATE, pTimerR0);
+    GEN_CHECK_OFF(AC97STATE, pTimerRC);
+    GEN_CHECK_OFF(AC97STATE, Padding0);
+    GEN_CHECK_OFF(AC97STATE, fTimerActive);
+    GEN_CHECK_OFF(AC97STATE, u8Padding1);
+    GEN_CHECK_OFF(AC97STATE, cTimerTicks);
+    GEN_CHECK_OFF(AC97STATE, uTimerTS);
+#endif
+#ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(AC97STATE, StatTimer);
+    GEN_CHECK_OFF(AC97STATE, StatIn);
+    GEN_CHECK_OFF(AC97STATE, StatOut);
+    GEN_CHECK_OFF(AC97STATE, StatBytesRead);
+    GEN_CHECK_OFF(AC97STATE, StatBytesWritten);
+#endif
+    GEN_CHECK_OFF(AC97STATE, lstDrv);
+    GEN_CHECK_OFF(AC97STATE, pMixer);
+    GEN_CHECK_OFF(AC97STATE, pSinkOut);
+    GEN_CHECK_OFF(AC97STATE, pSinkLineIn);
+    GEN_CHECK_OFF(AC97STATE, pSinkMicIn);
+    GEN_CHECK_OFF(AC97STATE, silence);
+    GEN_CHECK_OFF(AC97STATE, bup_flag);
+    GEN_CHECK_OFF(AC97STATE, IBase);
+    GEN_CHECK_OFF(AC97STATE, IOPortBase);
+    GEN_CHECK_OFF(AC97STATE, uCodecModel);
 
     GEN_CHECK_SIZE(HDADRIVERSTREAM);
     GEN_CHECK_OFF(HDADRIVERSTREAM, DestSource);
