@@ -1758,18 +1758,14 @@ static DECLCALLBACK(int) mixer_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT 
  */
 static DECLCALLBACK(int) mixer_read(PPDMDEVINS pDevIns, void *opaque, RTIOPORT nport, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF(pDevIns, cb);
+    RT_NOREF(pDevIns, cb, nport);
     PSB16STATE pThis = (PSB16STATE)opaque;
 
-    (void) nport;
 #ifndef DEBUG_SB16_MOST
-    if (pThis->mixer_nreg != 0x82) {
-        LogFlowFunc(("mixer_read[%#x] -> %#x\n",
-                pThis->mixer_nreg, pThis->mixer_regs[pThis->mixer_nreg]));
-    }
+    if (pThis->mixer_nreg != 0x82)
+        LogFlowFunc(("mixer_read[%#x] -> %#x\n", pThis->mixer_nreg, pThis->mixer_regs[pThis->mixer_nreg]));
 #else
-    LogFlowFunc(("mixer_read[%#x] -> %#x\n",
-            pThis->mixer_nreg, pThis->mixer_regs[pThis->mixer_nreg]));
+    LogFlowFunc(("mixer_read[%#x] -> %#x\n", pThis->mixer_nreg, pThis->mixer_regs[pThis->mixer_nreg]));
 #endif
     *pu32 = pThis->mixer_regs[pThis->mixer_nreg];
     return VINF_SUCCESS;
@@ -2226,7 +2222,7 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
 
             sb16CloseOut(pThis);
 
-            int rc = sb16OpenOut(pThis, pCfg);
+            rc = sb16OpenOut(pThis, pCfg);
             AssertRC(rc);
         }
 
