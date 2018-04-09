@@ -101,18 +101,19 @@ DECLINLINE(void)      msixClearPending(PPDMPCIDEV pDev, uint32_t iVector)
     *msixPendingByte(pDev, iVector) &= ~(1 << (iVector & 0x7));
 }
 
-DECLINLINE(bool)      msixIsPending(PPDMPCIDEV pDev, uint32_t iVector)
+#ifdef IN_RING3
+
+DECLINLINE(bool)      msixR3IsPending(PPDMPCIDEV pDev, uint32_t iVector)
 {
     return (*msixPendingByte(pDev, iVector) & (1 << (iVector & 0x7))) != 0;
 }
 
-static void msixCheckPendingVector(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t iVector)
+static void msixR3CheckPendingVector(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t iVector)
 {
-    if (msixIsPending(pDev, iVector) && !msixIsVectorMasked(pDev, iVector))
+    if (msixR3IsPending(pDev, iVector) && !msixIsVectorMasked(pDev, iVector))
         MsixNotify(pDevIns, pPciHlp, pDev, iVector, 1 /* iLevel */, 0 /*uTagSrc*/);
 }
 
-#ifdef IN_RING3
 
 PDMBOTHCBDECL(int) msixR3MMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
@@ -151,7 +152,7 @@ PDMBOTHCBDECL(int) msixR3MMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 
     *(uint32_t *)msixGetPageOffset(pPciDev, off) = *(uint32_t *)pv;
 
-    msixCheckPendingVector(pDevIns, (PCPDMPCIHLP)pPciDev->Int.s.pPciBusPtrR3, pPciDev, off / VBOX_MSIX_ENTRY_SIZE);
+    msixR3CheckPendingVector(pDevIns, (PCPDMPCIHLP)pPciDev->Int.s.pPciBusPtrR3, pPciDev, off / VBOX_MSIX_ENTRY_SIZE);
     return VINF_SUCCESS;
 }
 
@@ -278,17 +279,18 @@ void MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, int iV
     pPciHlp->pfnIoApicSendMsi(pDevIns, GCAddr, u32Value, uTagSrc);
 }
 
-DECLINLINE(bool) msixBitJustCleared(uint32_t uOldValue,
-                                    uint32_t uNewValue,
-                                    uint32_t uMask)
+#ifdef IN_RING3
+
+DECLINLINE(bool) msixR3BitJustCleared(uint32_t uOldValue, uint32_t uNewValue, uint32_t uMask)
 {
-    return (!!(uOldValue & uMask) && !(uNewValue & uMask));
+    return !!(uOldValue & uMask) && !(uNewValue & uMask);
 }
 
-static void msixCheckPendingVectors(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev)
+
+static void msixR3CheckPendingVectors(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev)
 {
     for (uint32_t i = 0; i < msixTableSize(pDev); i++)
-        msixCheckPendingVector(pDevIns, pPciHlp, pDev, i);
+        msixR3CheckPendingVector(pDevIns, pPciHlp, pDev, i);
 }
 
 
@@ -320,8 +322,8 @@ void MsixR3PciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pD
                 /* don't change read-only bits 8-13 */
                 u8NewVal = (u8Val & UINT8_C(~0x3f)) | (pDev->abConfig[uAddr] & UINT8_C(0x3f));
                 /* If just enabled globally - check pending vectors */
-                fJustEnabled |= msixBitJustCleared(pDev->abConfig[uAddr], u8NewVal, VBOX_PCI_MSIX_FLAGS_ENABLE >> 8);
-                fJustEnabled |= msixBitJustCleared(pDev->abConfig[uAddr], u8NewVal, VBOX_PCI_MSIX_FLAGS_FUNCMASK >> 8);
+                fJustEnabled |= msixR3BitJustCleared(pDev->abConfig[uAddr], u8NewVal, VBOX_PCI_MSIX_FLAGS_ENABLE >> 8);
+                fJustEnabled |= msixR3BitJustCleared(pDev->abConfig[uAddr], u8NewVal, VBOX_PCI_MSIX_FLAGS_FUNCMASK >> 8);
                 pDev->abConfig[uAddr] = u8NewVal;
                 break;
         }
@@ -334,6 +336,7 @@ void MsixR3PciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pD
     }
 
     if (fJustEnabled)
-        msixCheckPendingVectors(pDevIns, pPciHlp, pDev);
+        msixR3CheckPendingVectors(pDevIns, pPciHlp, pDev);
 }
 
+#endif /* IN_RING3 */
