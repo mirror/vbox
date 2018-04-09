@@ -1258,7 +1258,7 @@ void UIGuestControlFileTable::sltSelectAll()
 
 void UIGuestControlFileTable::sltInvertSelection()
 {
-    setSelectionForAll(QItemSelectionModel::QItemSelectionModel::Toggle | QItemSelectionModel::Rows);
+    setSelectionForAll(QItemSelectionModel::Toggle | QItemSelectionModel::Rows);
     deSelectUpDirectoryItem();
 }
 
@@ -1283,7 +1283,7 @@ void UIGuestControlFileTable::deSelectUpDirectoryItem()
         UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
         if (item && item->isUpDirectory())
         {
-            pSelectionModel->select(index, QItemSelectionModel::QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
+            pSelectionModel->select(index, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
         }
     }
 }
