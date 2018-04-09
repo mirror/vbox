@@ -31,7 +31,9 @@ typedef struct HDASTREAMMAPPING
     R3PTRTYPE(PPDMAUDIOSTREAMCHANNEL) paChannels;
     /** Circular buffer holding for holding audio data for this mapping. */
     R3PTRTYPE(PRTCIRCBUF)             pCircBuf;
-} HDASTREAMMAPPING, *PHDASTREAMMAPPING;
+} HDASTREAMMAPPING;
+AssertCompileSizeAlignment(HDASTREAMMAPPING, 8);
+typedef HDASTREAMMAPPING *PHDASTREAMMAPPING;
 
 /** @name Stream mapping functions.
  * @{

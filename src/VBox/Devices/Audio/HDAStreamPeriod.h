@@ -51,14 +51,15 @@ typedef struct HDASTREAMPERIODDBGINFO
  */
 typedef struct HDASTREAMPERIOD
 {
+    /** Critical section for serializing access. */
+    RTCRITSECT              CritSect;
     /** Associated HDA stream descriptor (SD) number. */
     uint8_t                 u8SD;
     /** The period's status flags. */
     uint8_t                 fStatus;
-    uint8_t                 Padding1[6];
-    /** Critical section for serializing access. */
-    RTCRITSECT              CritSect;
-    uint32_t                Padding2[1];
+    /** Number of pending interrupts required for this period. */
+    uint8_t                 cIntPending;
+    uint8_t                 bPadding0;
     /** Hertz (Hz) rate this period runs with. */
     uint32_t                u32Hz;
     /** Period start time (in wall clock counts). */
@@ -73,14 +74,14 @@ typedef struct HDASTREAMPERIOD
     uint32_t                framesToTransfer;
     /** Number of audio frames already transfered. */
     uint32_t                framesTransferred;
-    /** Number of pending interrupts required for this period. */
-    uint8_t                 cIntPending;
-    uint8_t                 Padding3[7];
 #ifdef LOG_ENABLED
     /** Debugging information. */
     HDASTREAMPERIODDBGINFO  Dbg;
 #endif
-} HDASTREAMPERIOD, *PHDASTREAMPERIOD;
+} HDASTREAMPERIOD;
+AssertCompileSizeAlignment(HDASTREAMPERIOD, 8);
+/** Pointer to a HDA stream's time period keeper. */
+typedef HDASTREAMPERIOD *PHDASTREAMPERIOD;
 
 #ifdef IN_RING3
 int      hdaR3StreamPeriodCreate(PHDASTREAMPERIOD pPeriod);

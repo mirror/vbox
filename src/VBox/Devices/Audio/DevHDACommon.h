@@ -571,7 +571,10 @@ typedef struct HDABDLE
     /** Internal state of this BDLE.
      *  Not part of the actual BDLE registers. */
     HDABDLESTATE State;
-} HDABDLE, *PHDABDLE;
+} HDABDLE;
+AssertCompileSizeAlignment(HDABDLE, 8);
+/** Pointer to a buffer descriptor list entry (BDLE). */
+typedef HDABDLE *PHDABDLE;
 
 /** @name Object lookup functions.
  * @{
