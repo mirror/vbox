@@ -78,8 +78,8 @@ protected:
 
     /** @name File handling primitives.
      * @{ */
-    int fileCopyFromEx(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags,
-                       PRTFILE pFile, uint64_t cbOffset, uint64_t cbSize);
+    int fileCopyFromEx(ComObjPtr<GuestFile> &srcFile, PRTFILE phDstFile, FileCopyFlag_T enmFileCopyFlags,
+                       uint64_t cbOffset, uint64_t cbSize);
     int fileCopyFrom(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
     int fileCopyToEx(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags, PRTFILE pFile,
                      uint64_t cbOffset, uint64_t cbSize); /**< r=bird: 'cbOffset' makes no sense what so ever. It should be 'off', or do you mean sizeof(uint64_t)? */
