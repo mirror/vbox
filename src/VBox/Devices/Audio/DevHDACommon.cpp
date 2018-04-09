@@ -688,8 +688,8 @@ bool hdaR3BDLENeedsInterrupt(PHDABDLE pBDLE)
  */
 bool hdaR3TimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool fForce)
 {
-    AssertPtr(pThis);
-    AssertPtr(pStream);
+    AssertPtrReturn(pThis, false);
+    AssertPtrReturn(pStream, false);
 
     uint64_t tsExpireMin = tsExpire;
 
@@ -701,22 +701,19 @@ bool hdaR3TimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t tsExpire, bool 
 
     AssertPtr(pThis->pTimer[pStream->u8SD]);
 
-# ifdef VBOX_STRICT
-    /** @todo r=bird: This looks totally wrong inside \#ifdef VBOX_STRICT,
-     * especially with the comment.  If you're trying to avoid assertions in TM
-     * code, you better say so and explain why it's okay to try bypass it this
-     * way.  If that isn't the case, then I don't know what on earth you're doing
-     * here... */
     const uint64_t tsNow = TMTimerGet(pThis->pTimer[pStream->u8SD]);
 
-    if (tsExpireMin < tsNow) /* Make sure to not go backwards in time. */
+    /*
+     * Make sure to not go backwards in time, as this will assert in TMTimerSet().
+     * This in theory could happen in hdaR3StreamTransferGetNext() from above.
+     */
+    if (tsExpireMin < tsNow)
         tsExpireMin = tsNow;
-# endif
 
-      int rc2 = TMTimerSet(pThis->pTimer[pStream->u8SD], tsExpireMin);
-      AssertRC(rc2);
+    int rc = TMTimerSet(pThis->pTimer[pStream->u8SD], tsExpireMin);
+    AssertRC(rc);
 
-    return true;
+    return RT_SUCCESS(rc);
 }
 
 #endif /* IN_RING3 */
