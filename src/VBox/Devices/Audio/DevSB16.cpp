@@ -2135,12 +2135,7 @@ static int sb16CreateDrvStream(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg, PSB16D
         LogFlowFunc(("LUN#%RU8: Created output \"%s\", rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc));
     }
 
-    if (pCfgHost)
-    {
-        RTMemFree(pCfgHost);
-        pCfgHost = NULL;
-    }
-
+    RTMemFree(pCfgHost);
     return rc;
 }
 
