@@ -3856,6 +3856,13 @@ static void buslogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
         ASMAtomicWriteBool(&pThis->fSignalIdle, false);
         AssertMsg(!pThis->fNotificationSent, ("The PDM Queue should be empty at this point\n"));
     }
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
+    {
+        PBUSLOGICDEVICE pThisDevice = &pThis->aDeviceStates[i];
+        if (pThisDevice->pDrvMediaEx)
+            pThisDevice->pDrvMediaEx->pfnNotifySuspend(pThisDevice->pDrvMediaEx);
+    }
 }
 
 /**

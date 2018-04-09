@@ -769,6 +769,18 @@ typedef struct PDMIMEDIAEX
     DECLR3CALLBACKMEMBER(int, pfnQueryFeatures, (PPDMIMEDIAEX pInterface, uint32_t *pfFeatures));
 
     /**
+     * Notifies the driver below that the device received a suspend notification.
+     *
+     * @returns nothing.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     *
+     * @note this is required because the PDM drivers in the storage area usually get their suspend notification
+     *       only after the device finished suspending. For some cases it is useful for the driver to know
+     *       as early as possible that a suspend is in progress to stop issuing deferred requests or other things.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifySuspend, (PPDMIMEDIAEX pInterface));
+
+    /**
      * Sets the size of the allocator specific memory for a I/O request.
      *
      * @returns VBox status code.

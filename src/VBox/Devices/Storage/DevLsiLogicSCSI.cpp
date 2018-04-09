@@ -5136,6 +5136,13 @@ static void lsilogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
 
         AssertMsg(!pThis->fNotificationSent, ("The PDM Queue should be empty at this point\n"));
     }
+
+    for (uint32_t i = 0; i < pThis->cDeviceStates; i++)
+    {
+        PLSILOGICDEVICE pThisDevice = &pThis->paDeviceStates[i];
+        if (pThisDevice->pDrvMediaEx)
+            pThisDevice->pDrvMediaEx->pfnNotifySuspend(pThisDevice->pDrvMediaEx);
+    }
 }
 
 /**

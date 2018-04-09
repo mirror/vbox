@@ -5411,6 +5411,13 @@ static void ahciR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
         PDMDevHlpSetAsyncNotification(pDevIns, ahciR3IsAsyncSuspendOrPowerOffDone);
     else
         ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->ahciPort); i++)
+    {
+        PAHCIPort pThisPort = &pThis->ahciPort[i];
+        if (pThisPort->pDrvMediaEx)
+            pThisPort->pDrvMediaEx->pfnNotifySuspend(pThisPort->pDrvMediaEx);
+    }
 }
 
 /**
