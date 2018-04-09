@@ -129,7 +129,7 @@ PDMBOTHCBDECL(int) msixR3MMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
     AssertMsgReturn(cb == 4,
                     ("MSI-X must be accessed with 4-byte reads"),
                     VERR_INTERNAL_ERROR);
-    AssertMsgReturn(off < pPciDev->Int.s.cbMsixRegion,
+    AssertMsgReturn(off + cb <= pPciDev->Int.s.cbMsixRegion,
                     ("Out of bounds access for the MSI-X region\n"),
                     VINF_IOM_MMIO_UNUSED_FF);
 
@@ -148,9 +148,8 @@ PDMBOTHCBDECL(int) msixR3MMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
     AssertMsgReturn(cb == 4,
                     ("MSI-X must be accessed with 4-byte reads"),
                     VERR_INTERNAL_ERROR);
-    AssertMsgReturn(off < pPciDev->Int.s.offMsixPba,
-                    ("Trying to write to PBA\n"),
-                    VINF_IOM_MMIO_UNUSED_FF);
+    AssertMsgReturn(off + cb <= pPciDev->Int.s.offMsixPba,
+                    ("Trying to write to PBA\n"), VINF_SUCCESS);
 
     *(uint32_t *)msixGetPageOffset(pPciDev, off) = *(uint32_t *)pv;
 
