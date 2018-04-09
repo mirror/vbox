@@ -13413,10 +13413,6 @@ and "VAR" for unsetting. -->
     <method name="queryInfo">
       <desc>
         Queries information about this file.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
       <param name="objInfo" type="IFsObjInfo" dir="return">
         <desc>Object information of this file. Also see
@@ -13428,13 +13424,9 @@ and "VAR" for unsetting. -->
       <!-- Can also be gotten via seek(Current, 0), but this is easier to us.
            This is a query method both to match IGuestSession::fileQuerySize to
            highlight that it is a value that is not cacheable as others may be
-           changing the file concurrently (image reading /var/log/messages). -->
+           changing the file concurrently (imagine reading /var/log/messages). -->
       <desc>
         Queries the current file size.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
       <param name="size" type="long long" dir="return">
         <desc>Queried file size.</desc>
