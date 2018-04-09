@@ -433,16 +433,15 @@ typedef struct AC97STATE
     /** Number of active (running) SDn streams. */
     uint8_t                 cStreamsActive;
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
+    /** Flag indicating whether the timer is active or not. */
+    bool                    fTimerActive;
+    uint8_t                 u8Padding1[2];
+    /** The timer for pumping data thru the attached LUN drivers - RCPtr. */
+    PTMTIMERRC              pTimerRC;
     /** The timer for pumping data thru the attached LUN drivers - R3Ptr. */
     PTMTIMERR3              pTimerR3;
     /** The timer for pumping data thru the attached LUN drivers - R0Ptr. */
     PTMTIMERR0              pTimerR0;
-    /** The timer for pumping data thru the attached LUN drivers - RCPtr. */
-    PTMTIMERRC              pTimerRC;
-    uint32_t                Padding0;
-    /** Flag indicating whether the timer is active or not. */
-    bool                    fTimerActive;
-    uint8_t                 u8Padding1[7];
     /** The timer interval for pumping data thru the LUN drivers in timer ticks. */
     uint64_t                cTimerTicks;
     /** Timestamp of the last timer callback (ac97Timer).
@@ -467,13 +466,16 @@ typedef struct AC97STATE
     /** Audio sink for microphone input. */
     R3PTRTYPE(PAUDMIXSINK)  pSinkMicIn;
     uint8_t                 silence[128];
-    int                     bup_flag;
-    /** The base interface for LUN\#0. */
-    PDMIBASE                IBase;
+    int32_t                 bup_flag;
     /** Base port of the I/O space region. */
     RTIOPORT                IOPortBase[2];
     /** Codec model. */
     uint32_t                uCodecModel;
+#if HC_ARCH_BITS == 64
+    uint32_t                uPadding2;
+#endif
+    /** The base interface for LUN\#0. */
+    PDMIBASE                IBase;
 } AC97STATE;
 AssertCompileMemberAlignment(AC97STATE, StreamLineIn, 8);
 /** Pointer to a AC'97 state. */
