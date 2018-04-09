@@ -1464,6 +1464,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             /* The readable, buffered version. */
             if (u32 == '\n' || u32 == '\r')
             {
+                Assert(pThis->iMsg < sizeof(pThis->szMsg));
                 pThis->szMsg[pThis->iMsg] = '\0';
                 if (pThis->iMsg)
                     LogRel2(("efi: %s\n", pThis->szMsg));
@@ -1471,13 +1472,13 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             }
             else
             {
-                if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
+                if (pThis->iMsg >= sizeof(pThis->szMsg) - 1)
                 {
                     pThis->szMsg[pThis->iMsg] = '\0';
                     LogRel2(("efi: %s\n", pThis->szMsg));
                     pThis->iMsg = 0;
                 }
-                pThis->szMsg[pThis->iMsg] = (char )u32;
+                pThis->szMsg[pThis->iMsg] = (char)u32;
                 pThis->szMsg[++pThis->iMsg] = '\0';
             }
             break;
