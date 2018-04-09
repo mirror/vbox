@@ -176,6 +176,9 @@ static DECLCALLBACK(int) msixR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint3
     return VINF_SUCCESS;
 }
 
+/**
+ * Initalizes MSI-X support for the given PCI device.
+ */
 int MsixR3Init(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
 {
     if (pMsiReg->cMsixVectors == 0)
@@ -247,11 +250,19 @@ int MsixR3Init(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
 
 #endif /* IN_RING3 */
 
+/**
+ * Checks if MSI-X is enabled for the tiven PCI device.
+ *
+ * (Must use MSIXNotify() for notifications when true.)
+ */
 bool MsixIsEnabled(PPDMPCIDEV pDev)
 {
     return pciDevIsMsixCapable(pDev) && msixIsEnabled(pDev);
 }
 
+/**
+ * Device notification (aka interrupt).
+ */
 void MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, int iVector, int iLevel, uint32_t uTagSrc)
 {
     AssertMsg(msixIsEnabled(pDev), ("Must be enabled to use that"));
@@ -295,7 +306,9 @@ static void msixR3CheckPendingVectors(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, P
         msixR3CheckPendingVector(pDevIns, pPciHlp, pDev, i);
 }
 
-
+/**
+ * PCI config space accessors for MSI-X.
+ */
 void MsixR3PciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsixCapOffset;
