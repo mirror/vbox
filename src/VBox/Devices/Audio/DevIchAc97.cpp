@@ -269,9 +269,12 @@ typedef struct AC97BMREGS
     uint16_t picb;              /** ro 0, Position in current buffer (in samples). */
     uint8_t  piv;               /** ro 0, Prefetched index value. */
     uint8_t  cr;                /** rw 0, Control register. */
-    int      bd_valid;          /** Whether current BDLE is initialized or not. */
+    int32_t  bd_valid;          /** Whether current BDLE is initialized or not. */
     AC97BDLE bd;                /** Current Buffer Descriptor List Entry (BDLE). */
-} AC97BMREGS, *PAC97BMREGS;
+} AC97BMREGS;
+AssertCompileSizeAlignment(AC97BMREGS, 8);
+/** Pointer to the BM registers of an audio stream. */
+typedef AC97BMREGS *PAC97BMREGS;
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 /**
@@ -300,18 +303,23 @@ typedef struct AC97STREAMSTATEAIO
  */
 typedef struct AC97STREAMSTATE
 {
-    /** Circular buffer (FIFO) for holding DMA'ed data. */
-    R3PTRTYPE(PRTCIRCBUF) pCircBuf;
     /** Criticial section for this stream. */
     RTCRITSECT            CritSect;
-    /** The stream's current configuration. */
-    PDMAUDIOSTREAMCFG     Cfg;
+    /** Circular buffer (FIFO) for holding DMA'ed data. */
+    R3PTRTYPE(PRTCIRCBUF) pCircBuf;
+#if HC_ARCH_BITS == 32
     uint32_t              Padding;
+#endif
+    /** The stream's current configuration. */
+    PDMAUDIOSTREAMCFG     Cfg; //+96
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     /** Asynchronous I/O state members. */
     AC97STREAMSTATEAIO    AIO;
 #endif
-} AC97STREAMSTATE, *PAC97STREAMSTATE;
+} AC97STREAMSTATE;
+AssertCompileSizeAlignment(AC97STREAMSTATE, 8);
+/** Pointer to internal state of an AC'97 stream. */
+typedef AC97STREAMSTATE *PAC97STREAMSTATE;
 
 /**
  * Structure for an AC'97 stream.
@@ -320,11 +328,15 @@ typedef struct AC97STREAM
 {
     /** Stream number (SDn). */
     uint8_t         u8SD;
+    uint8_t         abPadding[7];
     /** Bus master registers of this stream. */
     AC97BMREGS      Regs;
     /** Internal state of this stream. */
     AC97STREAMSTATE State;
 } AC97STREAM, *PAC97STREAM;
+AssertCompileSizeAlignment(AC97STREAM, 8);
+/** Pointer to an AC'97 stream (registers + state). */
+typedef AC97STREAM *PAC97STREAM;
 
 typedef struct AC97STATE *PAC97STATE;
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
@@ -403,6 +415,7 @@ typedef struct AC97STATE
     PPDMDEVINSRC            pDevInsRC;
     /** Set if R0/RC is enabled. */
     bool                    fRZEnabled;
+    bool                    afPadding0[3];
     /** Global Control (Bus Master Control Register). */
     uint32_t                glob_cnt;
     /** Global Status (Bus Master Control Register). */
@@ -461,7 +474,10 @@ typedef struct AC97STATE
     RTIOPORT                IOPortBase[2];
     /** Codec model. */
     uint32_t                uCodecModel;
-} AC97STATE, *PAC97STATE;
+} AC97STATE;
+AssertCompileMemberAlignment(AC97STATE, StreamLineIn, 8);
+/** Pointer to a AC'97 state. */
+typedef AC97STATE *PAC97STATE;
 
 /**
  * Acquires the AC'97 lock.
@@ -562,7 +578,7 @@ AssertCompileMemberAlignment(AC97STATE, StatBytesWritten, 8);
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-DECLINLINE(PAC97STREAM)   ichac97GetStreamFromIdx(PAC97STATE pThis, uint32_t uIdx);
+#ifdef IN_RING3
 static int                ichac97StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8Strm);
 static void               ichac97StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream);
 static int                ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream);
@@ -577,14 +593,14 @@ static int                ichac97StreamTransfer(PAC97STATE pThis, PAC97STREAM pS
 static void               ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer);
 
 static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns);
-#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
 static int                ichac97TimerStart(PAC97STATE pThis);
 static int                ichac97TimerMaybeStart(PAC97STATE pThis);
 static int                ichac97TimerStop(PAC97STATE pThis);
 static int                ichac97TimerMaybeStop(PAC97STATE pThis);
 static void               ichac97TimerMain(PAC97STATE pThis);
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
-#endif
+# endif
 static void               ichac97DoTransfers(PAC97STATE pThis);
 
 static int                ichac97MixerAddDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPDMAUDIOSTREAMCFG pCfg, PAC97DRIVER pDrv);
@@ -592,7 +608,7 @@ static int                ichac97MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSIN
 static void               ichac97MixerRemoveDrvStream(PAC97STATE pThis, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir, PDMAUDIODESTSOURCE dstSrc, PAC97DRIVER pDrv);
 static void               ichac97MixerRemoveDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PDMAUDIODIR enmDir, PDMAUDIODESTSOURCE dstSrc);
 
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 static DECLCALLBACK(int)  ichac97StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser);
 static int                ichac97StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream);
 static int                ichac97StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAM pStream);
@@ -600,8 +616,8 @@ static int                ichac97StreamAsyncIONotify(PAC97STATE pThis, PAC97STRE
 static void               ichac97StreamAsyncIOLock(PAC97STREAM pStream);
 static void               ichac97StreamAsyncIOUnlock(PAC97STREAM pStream);
 static void               ichac97StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable);
-#endif
-
+# endif
+#endif /* IN_RING3 */
 
 
 static void ichac97WarmReset(PAC97STATE pThis)

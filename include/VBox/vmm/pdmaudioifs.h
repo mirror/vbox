@@ -134,6 +134,7 @@
 #ifndef ___VBox_vmm_pdmaudioifs_h
 #define ___VBox_vmm_pdmaudioifs_h
 
+#include <iprt/assertcompile.h>
 #include <iprt/circbuf.h>
 #include <iprt/list.h>
 #include <iprt/path.h>
@@ -465,19 +466,14 @@ typedef union PDMAUDIODESTSOURCE
 } PDMAUDIODESTSOURCE, *PPDMAUDIODESTSOURCE;
 
 /**
- * Properties of audio streams for host/guest
- * for in or out directions.
+ * Properties of audio streams for host/guest for in or out directions.
  */
 typedef struct PDMAUDIOPCMPROPS
 {
     /** Sample width. Bits per sample. */
     uint8_t     cBits;
-    /** Signed or unsigned sample. */
-    bool        fSigned;
     /** Number of audio channels. */
     uint8_t     cChannels;
-    /** Sample frequency in Hertz (Hz). */
-    uint32_t    uHz;
     /** Shift count used for faster calculation of various
      *  values, such as the alignment, bytes to frames and so on.
      *  Depends on number of stream channels and the stream format
@@ -486,10 +482,20 @@ typedef struct PDMAUDIOPCMPROPS
      ** @todo Use some RTAsmXXX functions instead?
      */
     uint8_t     cShift;
+    /** Signed or unsigned sample. */
+    bool        fSigned : 1;
     /** Whether the endianness is swapped or not. */
-    bool        fSwapEndian;
-} PDMAUDIOPCMPROPS, *PPDMAUDIOPCMPROPS;
+    bool        fSwapEndian : 1;
+    /** Sample frequency in Hertz (Hz). */
+    uint32_t    uHz;
+} PDMAUDIOPCMPROPS;
+AssertCompileSizeAlignment(PDMAUDIOPCMPROPS, 8);
+/** Pointer to audio stream properties. */
+typedef PDMAUDIOPCMPROPS *PPDMAUDIOPCMPROPS;
 
+/** Initializor for PDMAUDIOPCMPROPS. */
+#define PDMAUDIOPCMPROPS_INITIALIZOR(a_cBits, a_fSigned, a_cCannels, a_uHz, a_cShift, a_fSwapEndian) \
+    { a_cBits, a_cShift, a_cCannels, a_fSigned, a_fSwapEndian, a_uHz }
 /** Calculates the cShift value of given sample bits and audio channels.
  *  Note: Does only support mono/stereo channels for now. */
 #define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cBits, cChannels)     ((cChannels == 2) + (cBits / 16))
@@ -531,7 +537,11 @@ typedef struct PDMAUDIOSTREAMCFG
     /** Hint about the optimal frame buffer size (in audio frames).
      *  0 if no hint is given. */
     uint32_t                 cFrameBufferHint;
-} PDMAUDIOSTREAMCFG, *PPDMAUDIOSTREAMCFG;
+} PDMAUDIOSTREAMCFG;
+AssertCompileSizeAlignment(PDMAUDIOPCMPROPS, 8);
+/** Pointer to audio stream configuration keeper. */
+typedef PDMAUDIOSTREAMCFG *PPDMAUDIOSTREAMCFG;
+
 
 /** Converts (audio) frames to bytes. */
 #define PDMAUDIOSTREAMCFG_F2B(pCfg, frames) ((frames) << (pCfg->Props).cShift)
