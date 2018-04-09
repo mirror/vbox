@@ -1315,60 +1315,63 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
                  INSTANCE(pThis), elem.nOut, elem.aSegsOut[0].cb, uHdrLen));
             break; /* For now we simply ignore the header, but it must be there anyway! */
         }
-        else
+        RT_UNTRUSTED_VALIDATED_FENCE();
+
+        VNETHDR Hdr;
+        unsigned int uSize = 0;
+        STAM_PROFILE_ADV_START(&pThis->StatTransmit, a);
+
+        /* Compute total frame size. */
+        for (unsigned int i = 1; i < elem.nOut && uSize < VNET_MAX_FRAME_SIZE; i++)
+            uSize += elem.aSegsOut[i].cb;
+        Log5(("%s vnetTransmitPendingPackets: complete frame is %u bytes.\n", INSTANCE(pThis), uSize));
+        Assert(uSize <= VNET_MAX_FRAME_SIZE);
+
+        /* Truncate oversized frames. */
+        if (uSize > VNET_MAX_FRAME_SIZE)
+            uSize = VNET_MAX_FRAME_SIZE;
+        if (pThis->pDrv && vnetReadHeader(pThis, elem.aSegsOut[0].addr, &Hdr, uSize))
         {
-            VNETHDR Hdr;
-            unsigned int uSize = 0;
-            STAM_PROFILE_ADV_START(&pThis->StatTransmit, a);
-            /* Compute total frame size. */
-            for (unsigned int i = 1; i < elem.nOut && uSize < VNET_MAX_FRAME_SIZE; i++)
-                uSize += elem.aSegsOut[i].cb;
-            Log5(("%s vnetTransmitPendingPackets: complete frame is %u bytes.\n", INSTANCE(pThis), uSize));
-            Assert(uSize <= VNET_MAX_FRAME_SIZE);
-            /* Truncate oversized frames. */
-            if (uSize > VNET_MAX_FRAME_SIZE)
-                uSize = VNET_MAX_FRAME_SIZE;
-            if (pThis->pDrv && vnetReadHeader(pThis, elem.aSegsOut[0].addr, &Hdr, uSize))
+            RT_UNTRUSTED_VALIDATED_FENCE();
+            STAM_REL_COUNTER_INC(&pThis->StatTransmitPackets);
+            STAM_PROFILE_START(&pThis->StatTransmitSend, a);
+
+            PDMNETWORKGSO Gso;
+            PDMNETWORKGSO *pGso = vnetSetupGsoCtx(&Gso, &Hdr);
+
+            /** @todo Optimize away the extra copying! (lazy bird) */
+            PPDMSCATTERGATHER pSgBuf;
+            int rc = pThis->pDrv->pfnAllocBuf(pThis->pDrv, uSize, pGso, &pSgBuf);
+            if (RT_SUCCESS(rc))
             {
-                PDMNETWORKGSO Gso, *pGso;
+                Assert(pSgBuf->cSegs == 1);
+                pSgBuf->cbUsed = uSize;
 
-                STAM_REL_COUNTER_INC(&pThis->StatTransmitPackets);
-
-                STAM_PROFILE_START(&pThis->StatTransmitSend, a);
-
-                pGso = vnetSetupGsoCtx(&Gso, &Hdr);
-                /** @todo Optimize away the extra copying! (lazy bird) */
-                PPDMSCATTERGATHER pSgBuf;
-                int rc = pThis->pDrv->pfnAllocBuf(pThis->pDrv, uSize, pGso, &pSgBuf);
-                if (RT_SUCCESS(rc))
+                /* Assemble a complete frame. */
+                for (unsigned int i = 1; i < elem.nOut && uSize > 0; i++)
                 {
-                    Assert(pSgBuf->cSegs == 1);
-                    pSgBuf->cbUsed = uSize;
-                    /* Assemble a complete frame. */
-                    for (unsigned int i = 1; i < elem.nOut && uSize > 0; i++)
-                    {
-                        unsigned int cbSegment = RT_MIN(uSize, elem.aSegsOut[i].cb);
-                        PDMDevHlpPhysRead(pThis->VPCI.CTX_SUFF(pDevIns), elem.aSegsOut[i].addr,
-                                          ((uint8_t*)pSgBuf->aSegs[0].pvSeg) + uOffset,
-                                          cbSegment);
-                        uOffset += cbSegment;
-                        uSize -= cbSegment;
-                    }
-                    rc = vnetTransmitFrame(pThis, pSgBuf, pGso, &Hdr);
+                    unsigned int cbSegment = RT_MIN(uSize, elem.aSegsOut[i].cb);
+                    PDMDevHlpPhysRead(pThis->VPCI.CTX_SUFF(pDevIns), elem.aSegsOut[i].addr,
+                                      ((uint8_t*)pSgBuf->aSegs[0].pvSeg) + uOffset,
+                                      cbSegment);
+                    uOffset += cbSegment;
+                    uSize -= cbSegment;
                 }
-                else
-                {
-                    Log4(("virtio-net: failed to allocate SG buffer: size=%u rc=%Rrc\n", uSize, rc));
-                    STAM_PROFILE_STOP(&pThis->StatTransmitSend, a);
-                    STAM_PROFILE_ADV_STOP(&pThis->StatTransmit, a);
-                    /* Stop trying to fetch TX descriptors until we get more bandwidth. */
-                    break;
-                }
-
-                STAM_PROFILE_STOP(&pThis->StatTransmitSend, a);
-                STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, uOffset);
+                rc = vnetTransmitFrame(pThis, pSgBuf, pGso, &Hdr);
             }
+            else
+            {
+                Log4(("virtio-net: failed to allocate SG buffer: size=%u rc=%Rrc\n", uSize, rc));
+                STAM_PROFILE_STOP(&pThis->StatTransmitSend, a);
+                STAM_PROFILE_ADV_STOP(&pThis->StatTransmit, a);
+                /* Stop trying to fetch TX descriptors until we get more bandwidth. */
+                break;
+            }
+
+            STAM_PROFILE_STOP(&pThis->StatTransmitSend, a);
+            STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, uOffset);
         }
+
         /* Remove this descriptor chain from the available ring */
         vqueueSkip(&pThis->VPCI, pQueue);
         vqueuePut(&pThis->VPCI, pQueue, &elem, sizeof(VNETHDR) + uOffset);
