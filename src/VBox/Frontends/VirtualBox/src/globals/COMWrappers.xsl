@@ -297,8 +297,8 @@
     <xsl:text>_h__&#x0A;&#x0A;</xsl:text>
     <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
     <xsl:text>#include "COMDefs.h"&#x0A;</xsl:text>
-	<xsl:text>#include "UILibraryDefs.h"&#x0A;&#x0A;</xsl:text>
-	<xsl:text>/* VirtualBox interface declarations: */&#x0A;</xsl:text>
+    <xsl:text>#include "UILibraryDefs.h"&#x0A;&#x0A;</xsl:text>
+    <xsl:text>/* VirtualBox interface declarations: */&#x0A;</xsl:text>
     <xsl:text>#ifndef VBOX_WITH_XPCOM&#x0A;</xsl:text>
     <xsl:text># include "VirtualBox.h"&#x0A;</xsl:text>
     <xsl:text>#else /* !VBOX_WITH_XPCOM */&#x0A;</xsl:text>
