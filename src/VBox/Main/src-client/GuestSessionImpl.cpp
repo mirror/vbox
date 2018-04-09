@@ -2605,7 +2605,14 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
     }
 
     if (fFlags)
-        return setError(E_NOTIMPL, tr("Flag(s) not yet implemented"));
+    {
+        if (   !(fFlags & FileCopyFlag_NoReplace)
+            && !(fFlags & FileCopyFlag_FollowLinks)
+            && !(fFlags & FileCopyFlag_Update))
+        {
+            return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented flag(s) specified"));
+        }
+    }
 
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
@@ -2685,7 +2692,14 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
     }
 
     if (fFlags)
-        return setError(E_NOTIMPL, tr("Flag(s) not yet implemented"));
+    {
+        if (   !(fFlags & FileCopyFlag_NoReplace)
+            && !(fFlags & FileCopyFlag_FollowLinks)
+            && !(fFlags & FileCopyFlag_Update))
+        {
+            return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented flag(s) specified"));
+        }
+    }
 
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
