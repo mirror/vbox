@@ -1864,7 +1864,27 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 
 #endif /* !VBOX_WITH_AUDIO_SB16_CALLBACKS */
 
-static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
+
+/**
+ * @callback_method_impl{FNSSMDEVLIVEEXEC}
+ */
+static DECLCALLBACK(int) sb16LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    RT_NOREF(uPass);
+    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+
+    SSMR3PutS32(pSSM, pThis->irqCfg);
+    SSMR3PutS32(pSSM, pThis->dmaCfg);
+    SSMR3PutS32(pSSM, pThis->hdmaCfg);
+    SSMR3PutS32(pSSM, pThis->portCfg);
+    SSMR3PutS32(pSSM, pThis->verCfg);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+/**
+ * Worker for sb16SaveExec.
+ */
+static int sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
 {
     SSMR3PutS32(pSSM, pThis->irq);
     SSMR3PutS32(pSSM, pThis->dma);
@@ -1902,8 +1922,8 @@ static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
     SSMR3PutS32(pSSM, pThis->csp_reg83r);
     SSMR3PutS32(pSSM, pThis->csp_reg83w);
 
-    SSMR3PutMem(pSSM, pThis->in2_data, sizeof (pThis->in2_data));
-    SSMR3PutMem(pSSM, pThis->out_data, sizeof (pThis->out_data));
+    SSMR3PutMem(pSSM, pThis->in2_data, sizeof(pThis->in2_data));
+    SSMR3PutMem(pSSM, pThis->out_data, sizeof(pThis->out_data));
     SSMR3PutU8 (pSSM, pThis->test_reg);
     SSMR3PutU8 (pSSM, pThis->last_read_byte);
 
@@ -1914,10 +1934,23 @@ static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
     SSMR3PutS32(pSSM, pThis->align);
 
     SSMR3PutS32(pSSM, pThis->mixer_nreg);
-    SSMR3PutMem(pSSM, pThis->mixer_regs, 256);
-
+    return SSMR3PutMem(pSSM, pThis->mixer_regs, 256);
 }
 
+/**
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
+ */
+static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+
+    sb16LiveExec(pDevIns, pSSM, 0);
+    return sb16Save(pSSM, pThis);
+}
+
+/**
+ * Worker for sb16LoadExec.
+ */
 static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
 {
     SSMR3GetS32(pSSM, &pThis->irq);
@@ -2021,28 +2054,9 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) sb16LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
-{
-    RT_NOREF(uPass);
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
-
-    SSMR3PutS32(pSSM, pThis->irqCfg);
-    SSMR3PutS32(pSSM, pThis->dmaCfg);
-    SSMR3PutS32(pSSM, pThis->hdmaCfg);
-    SSMR3PutS32(pSSM, pThis->portCfg);
-    SSMR3PutS32(pSSM, pThis->verCfg);
-    return VINF_SSM_DONT_CALL_AGAIN;
-}
-
-static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
-
-    sb16LiveExec(pDevIns, pSSM, 0);
-    sb16Save(pSSM, pThis);
-    return VINF_SUCCESS;
-}
-
+/**
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
+ */
 static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
@@ -2084,8 +2098,7 @@ static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
 
-    sb16Load(pSSM, pThis);
-    return VINF_SUCCESS;
+    return sb16Load(pSSM, pThis);
 }
 
 /**
