@@ -1230,6 +1230,8 @@ void UIGuestControlFileTable::sltShowProperties()
 
 void UIGuestControlFileTable::sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected)
 {
+    Q_UNUSED(selected);
+    Q_UNUSED(deselected);
     if (m_pView->hasSelection())
         enableSelectionDependentActions();
     else
