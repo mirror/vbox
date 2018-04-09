@@ -625,6 +625,8 @@ struct GuestFileOpenInfo
     uint32_t                mCreationMode;
     /** Extended open flags (currently none defined). */
     uint32_t                mfOpenEx;
+    /** Initial file offset. */
+    uint64_t                muOffset; /** @todo Remove this in the next protocol version. */
 };
 
 
