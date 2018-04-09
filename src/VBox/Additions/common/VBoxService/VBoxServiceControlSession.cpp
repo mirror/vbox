@@ -182,12 +182,11 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
 
             if (RT_SUCCESS(rc))
             {
-                /** @todo r=bird: Plase, use RTStrCopy for stuff like this! */
-                RTStrPrintf(pFile->szName, sizeof(pFile->szName), "%s", szFile);
+                RTStrCopy(pFile->szName, sizeof(pFile->szName), szFile);
 
                 uint64_t fFlags;
                 rc = RTFileModeToFlagsEx(szAccess, szDisposition, NULL /* pszSharing, not used yet */, &fFlags);
-                VGSvcVerbose(4, "[File %s]: Opening with fFlags=0x%x, rc=%Rrc\n", pFile->szName, fFlags, rc);
+                VGSvcVerbose(4, "[File %s] Opening with fFlags=0x%x, rc=%Rrc\n", pFile->szName, fFlags, rc);
 
                 if (RT_SUCCESS(rc))
                     rc = RTFileOpen(&pFile->hFile, pFile->szName, fFlags);
@@ -198,10 +197,10 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
                      * will fail if we don't succeed seeking to the wanted position. */
                     rc = RTFileSeek(pFile->hFile, (int64_t)offOpen, RTFILE_SEEK_BEGIN, NULL /* Current offset */);
                     if (RT_FAILURE(rc))
-                        VGSvcError("[File %s]: Seeking to offset %RU64 failed; rc=%Rrc\n", pFile->szName, offOpen, rc);
+                        VGSvcError("[File %s] Seeking to offset %RU64 failed; rc=%Rrc\n", pFile->szName, offOpen, rc);
                 }
                 else if (RT_FAILURE(rc))
-                    VGSvcError("[File %s]: Opening failed with rc=%Rrc\n", pFile->szName, rc);
+                    VGSvcError("[File %s] Opening failed with rc=%Rrc\n", pFile->szName, rc);
             }
 
             if (RT_SUCCESS(rc))
@@ -211,7 +210,7 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
 
                 RTListAppend(&pSession->lstFiles, &pFile->Node);
 
-                VGSvcVerbose(3, "[File %s]: Opened (ID=%RU32)\n", pFile->szName, pFile->uHandle);
+                VGSvcVerbose(2, "[File %s] Opened (ID=%RU32)\n", pFile->szName, pFile->uHandle);
             }
 
             if (RT_FAILURE(rc))
@@ -232,10 +231,8 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
             rc = rc2;
     }
 
-#ifdef DEBUG
-    VGSvcVerbose(4, "Opening file '%s' (open mode='%s', disposition='%s', creation mode=0x%x returned rc=%Rrc\n",
+    VGSvcVerbose(4, "[File %s] Opening (open mode='%s', disposition='%s', creation mode=0x%x) returned rc=%Rrc\n",
                  szFile, szAccess, szDisposition, uCreationMode, rc);
-#endif
     return rc;
 }
 
@@ -245,15 +242,17 @@ static int vgsvcGstCtrlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSes
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    PVBOXSERVICECTRLFILE pFile = NULL;
-
     uint32_t uHandle = 0;
     int rc = VbglR3GuestCtrlFileGetClose(pHostCtx, &uHandle /* File handle to close */);
     if (RT_SUCCESS(rc))
     {
-        pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
+        {
+            VGSvcVerbose(2, "[File %s] Closing (handle=%RU32)\n", pFile ? pFile->szName : "<Not found>", uHandle);
+
             rc = vgsvcGstCtrlSessionFileDestroy(pFile);
+        }
         else
             rc = VERR_NOT_FOUND;
 
@@ -265,9 +264,6 @@ static int vgsvcGstCtrlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSes
             rc = rc2;
     }
 
-#ifdef DEBUG
-    VGSvcVerbose(4, "Closing file '%s' (handle=%RU32) returned rc=%Rrc\n", pFile ? pFile->szName : "<Not found>", uHandle, rc);
-#endif
     return rc;
 }
 
@@ -278,8 +274,6 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    PVBOXSERVICECTRLFILE pFile = NULL;
-
     uint32_t uHandle = 0;
     uint32_t cbToRead;
     int rc = VbglR3GuestCtrlFileGetRead(pHostCtx, &uHandle, &cbToRead);
@@ -288,7 +282,7 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
         void *pvDataRead = pvScratchBuf;
         size_t cbRead = 0;
 
-        pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             if (cbToRead)
@@ -309,6 +303,8 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
         else
             rc = VERR_NOT_FOUND;
 
+        VGSvcVerbose(4, "[File %s] Read %zu/%RU32 bytes, rc=%Rrc\n", pFile ? pFile->szName : "<Not found>", cbRead, cbToRead, rc);
+
         /* Report back in any case. */
         int rc2 = VbglR3GuestCtrlFileCbRead(pHostCtx, rc, pvDataRead, (uint32_t)cbRead);
         if (   cbToRead > cbScratchBuf
@@ -321,9 +317,6 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
             rc = rc2;
     }
 
-#ifdef DEBUG
-    VGSvcVerbose(4, "Reading file '%s' (handle=%RU32) returned rc=%Rrc\n", pFile ? pFile->szName : "<Not found>", uHandle, rc);
-#endif
     return rc;
 }
 
@@ -334,8 +327,6 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    PVBOXSERVICECTRLFILE pFile = NULL;
-
     uint32_t uHandle = 0;
     uint32_t cbToRead;
     uint64_t offReadAt;
@@ -345,7 +336,7 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
         void *pvDataRead = pvScratchBuf;
         size_t cbRead = 0;
 
-        pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             if (cbToRead)
@@ -359,6 +350,9 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
 
                 if (RT_SUCCESS(rc))
                     rc = RTFileReadAt(pFile->hFile, (RTFOFF)offReadAt, pvDataRead, cbToRead, &cbRead);
+
+                VGSvcVerbose(4, "[File %s] Read %zu bytes @ %RU64, rc=%Rrc\n",
+                             pFile ? pFile->szName : "<Not found>", cbRead, offReadAt, rc);
             }
             else
                 rc = VERR_BUFFER_UNDERFLOW;
@@ -378,10 +372,6 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
             rc = rc2;
     }
 
-#ifdef DEBUG
-    VGSvcVerbose(4, "Reading file '%s' at offset (handle=%RU32) returned rc=%Rrc\n",
-                 pFile ? pFile->szName : "<Not found>", uHandle, rc);
-#endif
     return rc;
 }
 
@@ -394,20 +384,18 @@ static int vgsvcGstCtrlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSes
     AssertPtrReturn(pvScratchBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(cbScratchBuf, VERR_INVALID_PARAMETER);
 
-    PVBOXSERVICECTRLFILE pFile = NULL;
-
     uint32_t uHandle = 0;
     uint32_t cbToWrite;
     int rc = VbglR3GuestCtrlFileGetWrite(pHostCtx, &uHandle, pvScratchBuf, (uint32_t)cbScratchBuf, &cbToWrite);
     if (RT_SUCCESS(rc))
     {
         size_t cbWritten = 0;
-        pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             rc = RTFileWrite(pFile->hFile, pvScratchBuf, cbToWrite, &cbWritten);
 #ifdef DEBUG
-            VGSvcVerbose(4, "[File %s]: Writing pvScratchBuf=%p, cbToWrite=%RU32, cbWritten=%zu, rc=%Rrc\n",
+            VGSvcVerbose(4, "[File %s] Writing pvScratchBuf=%p, cbToWrite=%RU32, cbWritten=%zu, rc=%Rrc\n",
                          pFile->szName, pvScratchBuf, cbToWrite, cbWritten, rc);
 #endif
         }
@@ -422,9 +410,6 @@ static int vgsvcGstCtrlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSes
             rc = rc2;
     }
 
-#ifdef DEBUG
-    VGSvcVerbose(4, "Writing file '%s' (handle=%RU32) returned rc=%Rrc\n", pFile ? pFile->szName : "<Not found>", uHandle, rc);
-#endif
     return rc;
 }
 
@@ -437,8 +422,6 @@ static int vgsvcGstCtrlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pS
     AssertPtrReturn(pvScratchBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(cbScratchBuf, VERR_INVALID_PARAMETER);
 
-    PVBOXSERVICECTRLFILE pFile = NULL;
-
     uint32_t uHandle = 0;
     uint32_t cbToWrite;
     uint64_t offWriteAt;
@@ -447,12 +430,12 @@ static int vgsvcGstCtrlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pS
     if (RT_SUCCESS(rc))
     {
         size_t cbWritten = 0;
-        pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             rc = RTFileWriteAt(pFile->hFile, (RTFOFF)offWriteAt, pvScratchBuf, cbToWrite, &cbWritten);
 #ifdef DEBUG
-            VGSvcVerbose(4, "[File %s]: Writing offWriteAt=%RI64, pvScratchBuf=%p, cbToWrite=%RU32, cbWritten=%zu, rc=%Rrc\n",
+            VGSvcVerbose(4, "[File %s] Writing offWriteAt=%RI64, pvScratchBuf=%p, cbToWrite=%RU32, cbWritten=%zu, rc=%Rrc\n",
                          pFile->szName, offWriteAt, pvScratchBuf, cbToWrite, cbWritten, rc);
 #endif
         }
@@ -467,10 +450,6 @@ static int vgsvcGstCtrlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pS
             rc = rc2;
     }
 
-#ifdef DEBUG
-    VGSvcVerbose(4, "Writing file '%s' at offset (handle=%RU32) returned rc=%Rrc\n",
-                 pFile ? pFile->szName : "<Not found>", uHandle, rc);
-#endif
     return rc;
 }
 
@@ -480,8 +459,6 @@ static int vgsvcGstCtrlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSess
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    PVBOXSERVICECTRLFILE pFile = NULL;
-
     uint32_t uHandle = 0;
     uint32_t uSeekMethod;
     uint64_t offSeek; /* Will be converted to int64_t. */
@@ -489,7 +466,7 @@ static int vgsvcGstCtrlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSess
     if (RT_SUCCESS(rc))
     {
         uint64_t offActual = 0;
-        pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             unsigned uSeekMethodIprt;
@@ -533,9 +510,6 @@ static int vgsvcGstCtrlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSess
             rc = rc2;
     }
 
-#ifdef DEBUG
-    VGSvcVerbose(4, "Seeking file '%s' (handle=%RU32) returned rc=%Rrc\n", pFile ? pFile->szName : "<Not found>", uHandle, rc);
-#endif
     return rc;
 }
 
@@ -545,35 +519,30 @@ static int vgsvcGstCtrlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSess
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    PVBOXSERVICECTRLFILE pFile = NULL;
-
     uint32_t uHandle = 0;
     int rc = VbglR3GuestCtrlFileGetTell(pHostCtx, &uHandle);
     if (RT_SUCCESS(rc))
     {
-        uint64_t off = 0;
-        pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        uint64_t uOffCurrent = 0;
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
-            off = RTFileTell(pFile->hFile);
+            uOffCurrent = RTFileTell(pFile->hFile);
 #ifdef DEBUG
-            VGSvcVerbose(4, "[File %s]: Telling off=%RU64\n", pFile->szName, off);
+            VGSvcVerbose(4, "[File %s]: Telling uOffCurrent=%RU64\n", pFile->szName, uOffCurrent);
 #endif
         }
         else
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        int rc2 = VbglR3GuestCtrlFileCbTell(pHostCtx, rc, off);
+        int rc2 = VbglR3GuestCtrlFileCbTell(pHostCtx, rc, uOffCurrent);
         if (RT_FAILURE(rc2))
             VGSvcError("Failed to report file tell status, rc=%Rrc\n", rc2);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
 
-#ifdef DEBUG
-    VGSvcVerbose(4, "Telling file '%s' (handle=%RU32) returned rc=%Rrc\n", pFile ? pFile->szName : "<Not found>", uHandle, rc);
-#endif
     return rc;
 }
 
