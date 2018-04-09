@@ -613,12 +613,8 @@ struct GuestFileOpenInfo
     Utf8Str                 mFileName;
     /** The file access mode. */
     FileAccessMode_T        mAccessMode;
-    /** String translation of mFileAccessMode for the GAs. */
-    const char             *mpszAccessMode;
     /** The file open action.  */
     FileOpenAction_T        mOpenAction;
-    /** String translation of mOpenAction for the GAs. */
-    const char             *mpszOpenAction;
     /** The file sharing mode. */
     FileSharingMode_T       mSharingMode;
     /** Octal creation mode. */
