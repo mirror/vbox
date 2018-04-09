@@ -255,12 +255,6 @@
     <xsl:text> * Source    : src/VBox/Main/idl/VirtualBox.xidl&#x0A;</xsl:text>
     <xsl:text> * Generator : src/VBox/Frontends/VirtualBox/src/globals/COMWrappers.xsl&#x0A;</xsl:text>
     <xsl:text> */&#x0A;&#x0A;</xsl:text>
-    <xsl:text>/* VirtualBox interface declarations: */&#x0A;</xsl:text>
-    <xsl:text>#ifndef VBOX_WITH_XPCOM&#x0A;</xsl:text>
-    <xsl:text># include "VirtualBox.h"&#x0A;</xsl:text>
-    <xsl:text>#else /* !VBOX_WITH_XPCOM */&#x0A;</xsl:text>
-    <xsl:text># include "VirtualBox_XPCOM.h"&#x0A;</xsl:text>
-    <xsl:text>#endif /* VBOX_WITH_XPCOM */&#x0A;&#x0A;</xsl:text>
     <xsl:text>/* COM includes: */&#x0A;</xsl:text>
     <xsl:text>#include "COMEnums.h"&#x0A;</xsl:text>
 
@@ -302,7 +296,14 @@
     <xsl:value-of select="substring(@name,2)"/>
     <xsl:text>_h__&#x0A;&#x0A;</xsl:text>
     <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
-    <xsl:text>#include "COMDefs.h"&#x0A;&#x0A;</xsl:text>
+    <xsl:text>#include "COMDefs.h"&#x0A;</xsl:text>
+	<xsl:text>#include "UILibraryDefs.h"&#x0A;&#x0A;</xsl:text>
+	<xsl:text>/* VirtualBox interface declarations: */&#x0A;</xsl:text>
+    <xsl:text>#ifndef VBOX_WITH_XPCOM&#x0A;</xsl:text>
+    <xsl:text># include "VirtualBox.h"&#x0A;</xsl:text>
+    <xsl:text>#else /* !VBOX_WITH_XPCOM */&#x0A;</xsl:text>
+    <xsl:text># include "VirtualBox_XPCOM.h"&#x0A;</xsl:text>
+    <xsl:text>#endif /* VBOX_WITH_XPCOM */&#x0A;&#x0A;</xsl:text>
 
     <!-- Forward declarations: -->
     <xsl:text>/* Forward declarations: */&#x0A;</xsl:text>
@@ -321,7 +322,7 @@
 
     <!-- Interface wrapper declaration: -->
     <xsl:text>/* Interface wrapper declaration: */&#x0A;</xsl:text>
-    <xsl:text>class C</xsl:text>
+    <xsl:text>class SHARED_LIBRARY_STUFF C</xsl:text>
     <xsl:value-of select="substring(@name,2)"/>
     <xsl:text> : public CInterface&lt;</xsl:text>
     <xsl:value-of select="@name"/>

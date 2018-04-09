@@ -279,6 +279,7 @@ endif
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
 	$(VirtualBox_0_OUTDIR)/include \
+	$(VBoxGlobal_0_OUTDIR)/include \
 	$(VBOX_GRAPHICS_INCS)
 
 #
@@ -287,7 +288,7 @@ VirtualBox_INCS = \
 #
 VBoxGlobal_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
-	$(VirtualBox_0_OUTDIR)/include
+	$(VBoxGlobal_0_OUTDIR)/include
 
 
 #
@@ -1428,33 +1429,27 @@ endif
 
 
 #
-# Generate the COM wrappers.
-#
-includedep $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep
-VirtualBox_BLDDIRS       += $(VirtualBox_0_OUTDIR)/include
-VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMWrappers
-VirtualBox_CLEAN         += $(wildcard $(VirtualBox_0_OUTDIR)/include/*) $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep
-
-#
-# VirtualBox - GUI Application.
 # Build generated COM wrappers as part of app.
 #
-VirtualBox_SOURCES       += $(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
+ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 
-#
-# VirtualBox - GUI Global Shared Library.
-# Build generated COM wrappers as part of app.
-#
-VBoxGlobal_SOURCES += $(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
+ #
+ # VirtualBox - GUI Application.
+ #
+ includedep $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep
+ VirtualBox_BLDDIRS       += $(VirtualBox_0_OUTDIR)/include
+ VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/COMWrappers
+ VirtualBox_SOURCES       += $(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp
+ VirtualBox_CLEAN         += $(wildcard $(VirtualBox_0_OUTDIR)/include/*) $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep
 
-## @todo kmk doesn't remake optional outputs when they are missing...
-$$(VirtualBox_0_OUTDIR)/include/COMWrappers \
-+ $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep \
-+| $(if-expr defined(VirtualBox_VBOX_COMWRAPPERS) \
-, $(VirtualBox_VBOX_COMWRAPPERS) \
-, $$(VirtualBox_0_OUTDIR)/include/COMEnums.h \
-  $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp \
-): \
+ ## @todo kmk doesn't remake optional outputs when they are missing...
+ $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
+ + $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep \
+ +| $(if-expr defined(VirtualBox_VBOX_COMWRAPPERS) \
+ , $(VirtualBox_VBOX_COMWRAPPERS) \
+ , $$(VirtualBox_0_OUTDIR)/include/COMEnums.h \
+   $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp \
+ ): \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_VIRTUALBOX_SRC)/src/globals/COMWrappers.xsl \
 		$(VBOX_FILESPLIT) \
@@ -1467,8 +1462,44 @@ $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
 		$(PATH_TARGET)/VirtualBoxComWrapperFiles.dep VirtualBox_VBOX_COMWRAPPERS
 	$(APPEND) "$@"
 
-# alias for generating the COM Wrappers file.
-testwrappers:: $$(VirtualBox_0_OUTDIR)/include/COMWrappers
+ # alias for generating the COM Wrappers file.
+ testwrappers:: $$(VirtualBox_0_OUTDIR)/include/COMWrappers
+
+else
+
+ #
+ # VirtualBox - GUI Global Shared Library.
+ #
+ includedep $(PATH_TARGET)/VboxGlobalComWrapperFiles.dep
+ VBoxGlobal_BLDDIRS       += $(VBoxGlobal_0_OUTDIR)/include
+ VBoxGlobal_INTERMEDIATES += $(VBoxGlobal_0_OUTDIR)/include/COMWrappers
+ VBoxGlobal_SOURCES       += $(VBoxGlobal_0_OUTDIR)/include/COMWrappers.cpp
+ VBoxGlobal_CLEAN         += $(wildcard $(VBoxGlobal_0_OUTDIR)/include/*) $(PATH_TARGET)/VboxGlobalComWrapperFiles.dep
+
+ ## @todo kmk doesn't remake optional outputs when they are missing...
+ $$(VBoxGlobal_0_OUTDIR)/include/COMWrappers \
+ + $(PATH_TARGET)/VBoxGlobalComWrapperFiles.dep \
+ +| $(if-expr defined(VBoxGlobal_VBOX_COMWRAPPERS) \
+ , $(VBoxGlobal_VBOX_COMWRAPPERS) \
+ , $$(VBoxGlobal_0_OUTDIR)/include/COMEnums.h \
+   $$(VBoxGlobal_0_OUTDIR)/include/COMWrappers.cpp \
+ ): \
+		$(VBOX_XIDL_FILE) \
+		$(VBOX_VIRTUALBOX_SRC)/src/globals/COMWrappers.xsl \
+		$(VBOX_FILESPLIT) \
+		| $$(dir $$@)
+	$(call MSG_GENERATE,VBoxGlobal,$<,$@)
+	$(QUIET)$(RM) -f -- "$@" "$(PATH_TARGET)/VBoxGlobalComWrapperFiles.dep"
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ \
+		$(VBOX_VIRTUALBOX_SRC)/src/globals/COMWrappers.xsl $<
+	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxGlobal_0_OUTDIR)/include \
+		$(PATH_TARGET)/VBoxGlobalComWrapperFiles.dep VBoxGlobal_VBOX_COMWRAPPERS
+	$(APPEND) "$@"
+
+ # alias for generating the COM Wrappers file.
+ testwrappers:: $$(VBoxGlobal_0_OUTDIR)/include/COMWrappers
+
+endif
 
 
 #

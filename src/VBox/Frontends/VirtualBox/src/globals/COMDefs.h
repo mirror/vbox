@@ -809,6 +809,201 @@ private:
     }
 };
 
+/**
+ * Partial specialization for CInterface template class above for a case when B == COMBase.
+ *
+ * We had to add it because on exporting template to a library at least on Windows there is
+ * an implicit instantiation of the createInstance() member (even if it's not used) which
+ * in case of base template uses API present in COMBaseWithEI class only, not in COMBase.
+ *
+ * @param  I  Brings the interface class (i.e. derived from IUnknown/nsISupports).
+ */
+template <class I>
+class CInterface<I, COMBase> : public COMBase
+{
+public:
+
+    typedef COMBase Base;
+    typedef I       Iface;
+
+    // constructors & destructor
+
+    CInterface()
+    {
+        clear();
+    }
+
+    CInterface(const CInterface &that) : COMBase(that)
+    {
+        clear();
+        mIface = that.mIface;
+        this->addref((IUnknown*)ptr());
+    }
+
+    CInterface(I *pIface)
+    {
+        clear();
+        setPtr(pIface);
+        this->addref((IUnknown*)pIface);
+    }
+
+    virtual ~CInterface()
+    {
+        detach();
+#ifdef RT_STRICT
+        mDead = true;
+#endif
+    }
+
+    // utility methods
+
+    void createInstance(const CLSID &clsId)
+    {
+        AssertMsg(ptr() == NULL, ("Instance is already non-NULL\n"));
+        if (ptr() == NULL)
+        {
+            I* pObj = NULL;
+#if !defined(VBOX_WITH_XPCOM)
+            COMBase::mRC = CoCreateInstance(clsId, NULL, CLSCTX_ALL,
+                                            COM_IIDOF(I), (void **)&pObj);
+#else
+            nsCOMPtr<nsIComponentManager> manager;
+            COMBase::mRC = NS_GetComponentManager(getter_AddRefs(manager));
+            if (SUCCEEDED(COMBase::mRC))
+                COMBase::mRC = manager->CreateInstance(clsId, nsnull, NS_GET_IID(I),
+                                                       (void **)&pObj);
+#endif
+
+            if (SUCCEEDED(COMBase::mRC))
+               setPtr(pObj);
+            else
+               setPtr(NULL);
+         }
+    }
+
+    /**
+     * Attaches to the given foreign interface pointer by querying the own
+     * interface on it. The operation may fail.
+     */
+    template <class OI>
+    void attach(OI *pIface)
+    {
+        Assert(!mDead);
+        /* Be aware of self assignment: */
+        I *pmIface = ptr();
+        this->addref((IUnknown*)pIface);
+        this->release((IUnknown*)pmIface);
+        if (pIface)
+        {
+            pmIface = NULL;
+            COMBase::mRC = pIface->QueryInterface(COM_IIDOF(I), (void **)&pmIface);
+            this->release((IUnknown*)pIface);
+            setPtr(pmIface);
+        }
+        else
+        {
+            setPtr(NULL);
+            COMBase::mRC = S_OK;
+        }
+    };
+
+    /** Specialization of attach() for our own interface I. Never fails. */
+    void attach(I *pIface)
+    {
+        Assert(!mDead);
+        /* Be aware of self assignment: */
+        this->addref((IUnknown*)pIface);
+        this->release((IUnknown*)ptr());
+        setPtr(pIface);
+        COMBase::mRC = S_OK;
+    };
+
+    /** Detaches from the underlying interface pointer. */
+    void detach()
+    {
+        Assert(!mDead);
+        this->release((IUnknown*)ptr());
+        setPtr(NULL);
+    }
+
+    /** Returns @c true if not attached to any interface pointer. */
+    bool isNull() const
+    {
+        Assert(!mDead);
+        return mIface == NULL;
+    }
+
+    /** Returns @c true if attached to an interface pointer. */
+    bool isNotNull() const
+    {
+        Assert(!mDead);
+        return mIface != NULL;
+    }
+
+    /** Returns @c true if the result code represents success (with or without warnings). */
+    bool isOk() const { return !isNull() && SUCCEEDED(COMBase::mRC); }
+
+    /** Returns @c true if the result code represents success with one or more warnings. */
+    bool isWarning() const { return !isNull() && SUCCEEDED_WARNING(COMBase::mRC); }
+
+    /** Returns @c true if the result code represents success with no warnings. */
+    bool isReallyOk() const { return !isNull() && COMBase::mRC == S_OK; }
+
+    // utility operators
+
+    CInterface &operator=(const CInterface &that)
+    {
+        attach(that.ptr());
+        COMBase::operator=(that);
+        return *this;
+    }
+
+    CInterface &operator=(I *pIface)
+    {
+        attach(pIface);
+        return *this;
+    }
+
+    /**
+     * Returns the raw interface pointer. Not intended to be used for anything
+     * else but in generated wrappers and for debugging. You've been warned.
+     */
+    I *raw() const
+    {
+       return ptr();
+    }
+
+    bool operator==(const CInterface &that) const { return ptr() == that.ptr(); }
+    bool operator!=(const CInterface &that) const { return ptr() != that.ptr(); }
+
+    I *ptr() const
+    {
+        Assert(!mDead);
+        return mIface;
+    }
+
+    void setPtr(I* aObj) const
+    {
+        Assert(!mDead);
+        mIface = aObj;
+    }
+
+private:
+
+#ifdef RT_STRICT
+    bool       mDead;
+#endif
+    mutable I *mIface;
+
+    void clear()
+    {
+       mIface = NULL;
+#ifdef RT_STRICT
+       mDead = false;
+#endif
+    }
+};
+
 /////////////////////////////////////////////////////////////////////////////
 
 class CUnknown : public CInterface<IUnknown, COMBaseWithEI>
