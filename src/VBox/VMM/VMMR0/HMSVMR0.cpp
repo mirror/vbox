@@ -2100,9 +2100,6 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
          *
          * - VMMCALL: Exclude the outer guest intercept as when it's also not intercepted by
          *   the nested-guest, the physical CPU raises a \#UD exception as expected.
-         *
-         * - SVM_CTRL_INTERCEPT_CR0_SEL_WRITE: Is always required as we want to track PGM mode
-         *   changes and not honor cache disable changes even by the nested-guest.
          */
         pVmcbNstGst->ctrl.u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & ~(  SVM_CTRL_INTERCEPT_VINTR
                                                                                  | SVM_CTRL_INTERCEPT_VMMCALL))
