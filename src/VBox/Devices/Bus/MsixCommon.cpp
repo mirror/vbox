@@ -55,24 +55,26 @@ DECLINLINE(bool)      msixIsMasked(PPDMPCIDEV pDev)
     return (msixGetMessageControl(pDev) & VBOX_PCI_MSIX_FLAGS_FUNCMASK) != 0;
 }
 
+#ifdef IN_RING3
 DECLINLINE(uint16_t)  msixTableSize(PPDMPCIDEV pDev)
 {
     return (msixGetMessageControl(pDev) & 0x3ff) + 1;
 }
+#endif
 
-DECLINLINE(uint8_t*)  msixGetPageOffset(PPDMPCIDEV pDev, uint32_t off)
+DECLINLINE(uint8_t *) msixGetPageOffset(PPDMPCIDEV pDev, uint32_t off)
 {
-    return (uint8_t*)pDev->Int.s.CTX_SUFF(pMsixPage) + off;
+    return (uint8_t *)pDev->Int.s.CTX_SUFF(pMsixPage) + off;
 }
 
-DECLINLINE(MsixTableRecord*) msixGetVectorRecord(PPDMPCIDEV pDev, uint32_t iVector)
+DECLINLINE(MsixTableRecord *) msixGetVectorRecord(PPDMPCIDEV pDev, uint32_t iVector)
 {
-    return (MsixTableRecord*)msixGetPageOffset(pDev, iVector * VBOX_MSIX_ENTRY_SIZE);
+    return (MsixTableRecord *)msixGetPageOffset(pDev, iVector * VBOX_MSIX_ENTRY_SIZE);
 }
 
 DECLINLINE(RTGCPHYS)  msixGetMsiAddress(PPDMPCIDEV pDev, uint32_t iVector)
 {
-    MsixTableRecord* pRec = msixGetVectorRecord(pDev, iVector);
+    MsixTableRecord *pRec = msixGetVectorRecord(pDev, iVector);
     return RT_MAKE_U64(pRec->u32MsgAddressLo & ~UINT32_C(0x3), pRec->u32MsgAddressHi);
 }
 
@@ -86,7 +88,7 @@ DECLINLINE(uint32_t)  msixIsVectorMasked(PPDMPCIDEV pDev, uint32_t iVector)
     return (msixGetVectorRecord(pDev, iVector)->u32VectorControl & 0x1) != 0;
 }
 
-DECLINLINE(uint8_t*)  msixPendingByte(PPDMPCIDEV pDev, uint32_t iVector)
+DECLINLINE(uint8_t *) msixPendingByte(PPDMPCIDEV pDev, uint32_t iVector)
 {
     return msixGetPageOffset(pDev, pDev->Int.s.offMsixPba + iVector / 8);
 }
@@ -135,7 +137,7 @@ PDMBOTHCBDECL(int) msixR3MMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
     return VINF_SUCCESS;
 }
 
-PDMBOTHCBDECL(int) msixR3MMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+PDMBOTHCBDECL(int,) msixR3MMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     LogFlowFunc(("\n"));
 
@@ -243,7 +245,8 @@ int MsixR3Init(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
 
     return VINF_SUCCESS;
 }
-#endif
+
+#endif /* IN_RING3 */
 
 bool MsixIsEnabled(PPDMPCIDEV pDev)
 {
