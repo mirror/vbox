@@ -218,9 +218,7 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return VINF_SUCCESS;
     }
 
-    PDMDevHlpIOPortRegister(pDevIns, 0x5658, 2, NULL, vkdPortWrite, vkdPortRead, NULL, NULL, "VirtualKD");
-
-    return VINF_SUCCESS;
+    return PDMDevHlpIOPortRegister(pDevIns, 0x5658, 2, NULL, vkdPortWrite, vkdPortRead, NULL, NULL, "VirtualKD");
 }
 
 
