@@ -14,6 +14,8 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+
 #define LOG_GROUP LOG_GROUP_DEV_PCI
 #define PDMPCIDEV_INCLUDE_PRIVATE  /* Hack to get pdmpcidevint.h included at the right point. */
 #include <VBox/pci.h>
@@ -27,7 +29,6 @@
 #include "MsiCommon.h"
 #include "PciInline.h"
 
-#pragma pack(1)
 typedef struct
 {
     uint32_t  u32MsgAddressLo;
@@ -36,7 +37,7 @@ typedef struct
     uint32_t  u32VectorControl;
 } MsixTableRecord;
 AssertCompileSize(MsixTableRecord, VBOX_MSIX_ENTRY_SIZE);
-#pragma pack()
+
 
 /** @todo use accessors so that raw PCI devices work correctly with MSI-X. */
 DECLINLINE(uint16_t)  msixGetMessageControl(PPDMPCIDEV pDev)
@@ -113,7 +114,7 @@ static void msixCheckPendingVector(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDM
 
 #ifdef IN_RING3
 
-PDMBOTHCBDECL(int) msixMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) msixR3MMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     LogFlowFunc(("\n"));
 
@@ -129,11 +130,11 @@ PDMBOTHCBDECL(int) msixMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
                     ("Out of bounds access for the MSI-X region\n"),
                     VINF_IOM_MMIO_UNUSED_FF);
 
-    *(uint32_t*)pv = *(uint32_t*)msixGetPageOffset(pPciDev, off);
+    *(uint32_t *)pv = *(uint32_t *)msixGetPageOffset(pPciDev, off);
     return VINF_SUCCESS;
 }
 
-PDMBOTHCBDECL(int) msixMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+PDMBOTHCBDECL(int) msixR3MMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     LogFlowFunc(("\n"));
 
@@ -148,7 +149,7 @@ PDMBOTHCBDECL(int) msixMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
                     ("Trying to write to PBA\n"),
                     VINF_IOM_MMIO_UNUSED_FF);
 
-    *(uint32_t*)msixGetPageOffset(pPciDev, off) = *(uint32_t*)pv;
+    *(uint32_t *)msixGetPageOffset(pPciDev, off) = *(uint32_t *)pv;
 
     msixCheckPendingVector(pDevIns, (PCPDMPCIHLP)pPciDev->Int.s.pPciBusPtrR3, pPciDev, off / VBOX_MSIX_ENTRY_SIZE);
     return VINF_SUCCESS;
@@ -157,15 +158,15 @@ PDMBOTHCBDECL(int) msixMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) msixMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                 RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) msixR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                   RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
     NOREF(iRegion); NOREF(enmType);
 
     int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, pPciDev,
                                    IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   msixMMIOWrite, msixMMIORead, "MSI-X tables");
+                                   msixR3MMIOWrite, msixR3MMIORead, "MSI-X tables");
 
     if (RT_FAILURE(rc))
         return rc;
@@ -173,10 +174,10 @@ static DECLCALLBACK(int) msixMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_
     return VINF_SUCCESS;
 }
 
-int MsixInit(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
+int MsixR3Init(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
 {
     if (pMsiReg->cMsixVectors == 0)
-         return VINF_SUCCESS;
+        return VINF_SUCCESS;
 
      /* We cannot init MSI-X on raw devices yet. */
     Assert(!pciDevIsPassthrough(pDev));
@@ -204,7 +205,7 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
     /* If device is passthrough, BAR is registered using common mechanism. */
     if (!pciDevIsPassthrough(pDev))
     {
-        rc = PDMDevHlpPCIIORegionRegister(pDev->Int.s.CTX_SUFF(pDevIns), iBar, cbMsixRegion, PCI_ADDRESS_SPACE_MEM, msixMap);
+        rc = PDMDevHlpPCIIORegionRegister(pDev->Int.s.CTX_SUFF(pDevIns), iBar, cbMsixRegion, PCI_ADDRESS_SPACE_MEM, msixR3Map);
         if (RT_FAILURE (rc))
             return rc;
     }
@@ -243,7 +244,7 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
 }
 #endif
 
-bool     MsixIsEnabled(PPDMPCIDEV pDev)
+bool MsixIsEnabled(PPDMPCIDEV pDev)
 {
     return pciDevIsMsixCapable(pDev) && msixIsEnabled(pDev);
 }
@@ -291,12 +292,12 @@ static void msixCheckPendingVectors(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPD
 }
 
 
-void MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len)
+void MsixR3PciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsixCapOffset;
     Assert(iOff >= 0 && (pciDevIsMsixCapable(pDev) && iOff < pDev->Int.s.u8MsixCapSize));
 
-    Log2(("MsixPciConfigWrite: %d <- %x (%d)\n", iOff, val, len));
+    Log2(("MsixR3PciConfigWrite: %d <- %x (%d)\n", iOff, val, len));
 
     uint32_t uAddr = u32Address;
     uint8_t u8NewVal;

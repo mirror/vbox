@@ -2,6 +2,7 @@
 /** @file
  * Header for MSI/MSI-X support routines.
  */
+
 /*
  * Copyright (C) 2010-2017 Oracle Corporation
  *
@@ -29,7 +30,7 @@ typedef PCPDMPCIHLPRC PCPDMPCIHLP;
 
 #ifdef IN_RING3
 /* Init MSI support in the device. */
-int      MsiInit(PPDMPCIDEV pDev, PPDMMSIREG pMsiReg);
+int      MsiR3Init(PPDMPCIDEV pDev, PPDMMSIREG pMsiReg);
 #endif
 
 /* If MSI is enabled, so that MSINotify() shall be used for notifications.  */
@@ -40,12 +41,12 @@ void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, int
 
 #ifdef IN_RING3
 /* PCI config space accessors for MSI registers */
-void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len);
+void     MsiR3PciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len);
 #endif
 
 #ifdef IN_RING3
 /* Init MSI-X support in the device. */
-int      MsixInit(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg);
+int      MsixR3Init(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg);
 #endif
 
 /* If MSI-X is enabled, so that MSIXNotify() shall be used for notifications.  */
@@ -56,5 +57,5 @@ void     MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, in
 
 #ifdef IN_RING3
 /* PCI config space accessors for MSI-X */
-void     MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len);
+void     MsixR3PciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len);
 #endif

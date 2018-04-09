@@ -790,11 +790,11 @@ static DECLCALLBACK(int) ich9pciRegisterMsi(PPDMDEVINS pDevIns, PPDMPCIDEV pPciD
     NOREF(pDevIns);
     int rc;
 
-    rc = MsiInit(pPciDev, pMsiReg);
+    rc = MsiR3Init(pPciDev, pMsiReg);
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = MsixInit(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp), pPciDev, pMsiReg);
+    rc = MsixR3Init(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp), pPciDev, pMsiReg);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2543,14 +2543,14 @@ DECLCALLBACK(VBOXSTRICTRC) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, 
          */
         if (   pciDevIsMsiCapable(pPciDev)
             && uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset < (uint32_t)pPciDev->Int.s.u8MsiCapSize)
-            MsiPciConfigWrite(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
-                              pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp),
-                              pPciDev, uAddress, u32Value, cb);
+            MsiR3PciConfigWrite(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
+                                pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp),
+                                pPciDev, uAddress, u32Value, cb);
         else if (   pciDevIsMsixCapable(pPciDev)
                  && uAddress - (uint32_t)pPciDev->Int.s.u8MsixCapOffset < (uint32_t)pPciDev->Int.s.u8MsixCapSize)
-            MsixPciConfigWrite(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
-                               pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp),
-                               pPciDev, uAddress, u32Value, cb);
+            MsixR3PciConfigWrite(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
+                                 pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp),
+                                 pPciDev, uAddress, u32Value, cb);
         else
         {
             /*
