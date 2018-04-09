@@ -362,7 +362,7 @@ static void continue_dma8(PSB16STATE pThis)
         pCfg->Props.fSigned   = RT_BOOL(pThis->fmt_signed);
         pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
-        RTStrPrintf(pCfg->szName, sizeof(pCfg->szName), "Output");
+        strcpy(pCfg->szName, "Output");
 
         sb16CloseOut(pThis);
 
@@ -508,7 +508,7 @@ static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
         pCfg->Props.fSigned   = RT_BOOL(pThis->fmt_signed);
         pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
-        RTStrPrintf(pCfg->szName, sizeof(pCfg->szName), "Output");
+        strcpy(pCfg->szName, "Output");
 
         sb16CloseOut(pThis);
 
@@ -1060,7 +1060,7 @@ static void sb16UpdateVolume(PSB16STATE pThis)
     }
 }
 
-static void sb16ResetLegacy(PSB16STATE pThis)
+static void sb16CmdResetLegacy(PSB16STATE pThis)
 {
     LogFlowFuncEnter();
 
@@ -1084,12 +1084,13 @@ static void sb16ResetLegacy(PSB16STATE pThis)
     pCfg->Props.fSigned   = false;
     pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
-    RTStrPrintf(pCfg->szName, sizeof(pCfg->szName), "Output");
+    AssertCompile(sizeof(pCfg->szName) > sizeof("Output"));
+    strcpy(pCfg->szName, "Output");
 
     sb16CloseOut(pThis);
 }
 
-static void sb16Reset(PSB16STATE pThis)
+static void sb16CmdReset(PSB16STATE pThis)
 {
     PDMDevHlpISASetIrq(pThis->pDevInsR3, pThis->irq, 0);
     if (pThis->dma_auto)
@@ -1114,7 +1115,7 @@ static void sb16Reset(PSB16STATE pThis)
     sb16SpeakerControl(pThis, 0);
 
     sb16Control(pThis, 0);
-    sb16ResetLegacy(pThis);
+    sb16CmdResetLegacy(pThis);
 }
 
 /**
@@ -1143,7 +1144,7 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
                             sb16Control(pThis, 0);
                         }
                         else
-                            sb16Reset(pThis);
+                            sb16CmdReset(pThis);
                     }
                     pThis->v2x6 = 0;
                     break;
@@ -1159,12 +1160,12 @@ static DECLCALLBACK(int) dsp_write(PPDMDEVINS pDevIns, void *opaque, RTIOPORT np
                     break;
 
                 case 0xb8:              /* Panic */
-                    sb16Reset(pThis);
+                    sb16CmdReset(pThis);
                     break;
 
                 case 0x39:
                     dsp_out_data(pThis, 0x38);
-                    sb16Reset(pThis);
+                    sb16CmdReset(pThis);
                     pThis->v2x6 = 0x39;
                     break;
 
@@ -1755,6 +1756,9 @@ static void sb16TimerMaybeStop(PSB16STATE pThis)
     ASMAtomicXchgBool(&pThis->fTimerActive, false);
 }
 
+/**
+ * @callback_method_impl{FNTMTIMERDEV}
+ */
 static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns);
@@ -2036,7 +2040,7 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
             pCfg->Props.fSigned   = RT_BOOL(pThis->fmt_signed);
             pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
-            RTStrPrintf(pCfg->szName, sizeof(pCfg->szName), "Output");
+            strcpy(pCfg->szName, "Output");
 
             sb16CloseOut(pThis);
 
@@ -2119,12 +2123,6 @@ static int sb16CreateDrvStream(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg, PSB16D
     PPDMAUDIOSTREAMCFG pCfgHost = DrvAudioHlpStreamCfgDup(pCfg);
     if (!pCfgHost)
         return VERR_NO_MEMORY;
-
-    if (!RTStrPrintf(pCfgHost->szName, sizeof(pCfgHost->szName), "%s", pCfg->szName))
-    {
-        RTMemFree(pCfgHost);
-        return VERR_BUFFER_OVERFLOW;
-    }
 
     LogFunc(("[LUN#%RU8] %s\n", pDrv->uLUN, pCfgHost->szName));
 
@@ -2470,7 +2468,7 @@ static DECLCALLBACK(void) sb16DevReset(PPDMDEVINS pDevIns)
     sb16MixerReset(pThis);
     sb16SpeakerControl(pThis, 0);
     sb16Control(pThis, 0);
-    sb16ResetLegacy(pThis);
+    sb16CmdResetLegacy(pThis);
 }
 
 /**
@@ -2652,7 +2650,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
 
-    sb16ResetLegacy(pThis);
+    sb16CmdResetLegacy(pThis);
 
 #ifdef VBOX_WITH_AUDIO_SB16_ONETIME_INIT
     PSB16DRIVER pDrv;
@@ -2678,7 +2676,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         {
             LogRel(("SB16: Falling back to NULL backend (no sound audible)\n"));
 
-            sb16ResetLegacy(pThis);
+            sb16CmdResetLegacy(pThis);
             sb16Reattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
 
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
