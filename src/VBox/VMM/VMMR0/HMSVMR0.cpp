@@ -3601,7 +3601,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu, PCPUMCTX pCt
              *        takes care of virtual interrupt injection for nested-guest. */
 #if 0
             if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
-                && (pVmcbNstGstCache->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
+                && CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_VINTR)
                 && CPUMCanSvmNstGstTakeVirtIntr(pVCpu, pCtx))
             {
                 Log4(("Intercepting virtual interrupt -> #VMEXIT\n"));
