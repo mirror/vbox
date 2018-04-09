@@ -2291,12 +2291,6 @@ static void ichac97R3TimerMain(PAC97STATE pThis)
     if (   ASMAtomicReadBool(&pThis->fTimerActive) /** @todo r=bird: totally unnecessary to do atomic read here, isn't it? */
         || fArmTimer)
     {
-/** @todo r=bird: This is simplitic insanity.  Nobody wants a timer running
- *        every 5 ms (see AC97_TIMER_HZ) all the time the VM is up running!
- *
- *        If there isn't a way of detecting that guest is up to something, at
- *        least try lowering the frequency when idle.
- */
         /* Arm the timer again. */
         uint64_t cTicks = pThis->cTimerTicks;
         /** @todo adjust cTicks down by now much cbOutMin represents. */
@@ -2323,7 +2317,6 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 
     PAC97STATE pThis = (PAC97STATE)pvUser;
     Assert(pThis == PDMINS_2_DATA(pDevIns, PAC97STATE));
-    AssertPtr(pThis);
 
     ichac97R3TimerMain(pThis);
 }
