@@ -495,7 +495,7 @@ typedef PDMAUDIOPCMPROPS *PPDMAUDIOPCMPROPS;
 
 /** Initializor for PDMAUDIOPCMPROPS. */
 #define PDMAUDIOPCMPROPS_INITIALIZOR(a_cBits, a_fSigned, a_cCannels, a_uHz, a_cShift, a_fSwapEndian) \
-    { a_cBits, a_cShift, a_cCannels, a_fSigned, a_fSwapEndian, a_uHz }
+    { a_cBits, a_cCannels, a_cShift, a_fSigned, a_fSwapEndian, a_uHz }
 /** Calculates the cShift value of given sample bits and audio channels.
  *  Note: Does only support mono/stereo channels for now. */
 #define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cBits, cChannels)     ((cChannels == 2) + (cBits / 16))
