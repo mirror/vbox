@@ -719,6 +719,9 @@ UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     , m_pRename(0)
     , m_pCreateNewDirectory(0)
     , m_pShowProperties(0)
+    , m_pSelectAll(0)
+    , m_pInvertSelection(0)
+
 {
     prepareObjects();
     prepareActions();
@@ -916,6 +919,20 @@ void UIGuestControlFileTable::prepareActions()
         m_pToolBar->addAction(m_pShowProperties);
         connect(m_pShowProperties, &QAction::triggered, this, &UIGuestControlFileTable::sltShowProperties);
         m_selectionDependentActions.push_back(m_pShowProperties);
+    }
+
+    m_pSelectAll = new QAction(this);
+    {
+        m_pSelectAll->setIcon(UIIconPool::iconSet(QString(":/session_info_32px.png")));
+        m_pToolBar->addAction(m_pSelectAll);
+        connect(m_pSelectAll, &QAction::triggered, this, &UIGuestControlFileTable::sltSelectAll);
+    }
+
+    m_pInvertSelection = new QAction(this);
+    {
+        m_pInvertSelection->setIcon(UIIconPool::iconSet(QString(":/session_info_32px.png")));
+        m_pToolBar->addAction(m_pInvertSelection);
+        connect(m_pInvertSelection, &QAction::triggered, this, &UIGuestControlFileTable::sltInvertSelection);
     }
 
     disableSelectionDependentActions();
@@ -1213,13 +1230,10 @@ void UIGuestControlFileTable::sltShowProperties()
 
 void UIGuestControlFileTable::sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected)
 {
-    /* Disable all the action that operate on some selection: */
-    if (!deselected.isEmpty() && selected.isEmpty())
-        disableSelectionDependentActions();
-
-    /* Enable all the action that operate on some selection: */
-    if (deselected.isEmpty() && !selected.isEmpty())
+    if (m_pView->hasSelection())
         enableSelectionDependentActions();
+    else
+        disableSelectionDependentActions();
 }
 
 void UIGuestControlFileTable::sltLocationComboCurrentChange(const QString &strLocation)
@@ -1230,6 +1244,66 @@ void UIGuestControlFileTable::sltLocationComboCurrentChange(const QString &strLo
 
     QStringList pathList = comboLocation.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
     goIntoDirectory(pathList);
+}
+
+void UIGuestControlFileTable::sltSelectAll()
+{
+    if (!m_pModel || !m_pView)
+        return;
+    m_pView->selectAll();
+    deSelectUpDirectoryItem();
+}
+
+void UIGuestControlFileTable::sltInvertSelection()
+{
+    setSelectionForAll(QItemSelectionModel::QItemSelectionModel::Toggle | QItemSelectionModel::Rows);
+    deSelectUpDirectoryItem();
+}
+
+void UIGuestControlFileTable::deSelectUpDirectoryItem()
+{
+    if (!m_pView)
+        return;
+    QItemSelectionModel *pSelectionModel = m_pView->selectionModel();
+    if (!pSelectionModel)
+        return;
+    QModelIndex currentRoot = m_pView->rootIndex();
+    if (!currentRoot.isValid())
+        return;
+
+    /* Make sure that "up directory item" (if exists) is deselected: */
+    for (int i = 0; i < m_pModel->rowCount(currentRoot); ++i)
+    {
+        QModelIndex index = m_pModel->index(i, 0, currentRoot);
+        if (!index.isValid())
+            continue;
+
+        UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
+        if (item && item->isUpDirectory())
+        {
+            pSelectionModel->select(index, QItemSelectionModel::QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
+        }
+    }
+}
+
+void UIGuestControlFileTable::setSelectionForAll(QItemSelectionModel::SelectionFlags flags)
+{
+    if (!m_pView)
+        return;
+    QItemSelectionModel *pSelectionModel = m_pView->selectionModel();
+    if (!pSelectionModel)
+        return;
+    QModelIndex currentRoot = m_pView->rootIndex();
+    if (!currentRoot.isValid())
+        return;
+
+    for (int i = 0; i < m_pModel->rowCount(currentRoot); ++i)
+    {
+        QModelIndex index = m_pModel->index(i, 0, currentRoot);
+        if (!index.isValid())
+            continue;
+        pSelectionModel->select(index, flags);
+    }
 }
 
 void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
@@ -1311,6 +1385,20 @@ void UIGuestControlFileTable::retranslateUi()
         m_pShowProperties->setText(UIVMInformationDialog::tr("Show the properties of the selected item(s)"));
         m_pShowProperties->setToolTip(UIVMInformationDialog::tr("Show the properties of the selected item(s)"));
         m_pShowProperties->setStatusTip(UIVMInformationDialog::tr("Show the properties of the selected item(s)"));
+    }
+
+    if (m_pSelectAll)
+    {
+        m_pSelectAll->setText(UIVMInformationDialog::tr("Select All"));
+        m_pSelectAll->setToolTip(UIVMInformationDialog::tr("Select All"));
+        m_pSelectAll->setStatusTip(UIVMInformationDialog::tr("Select All"));
+    }
+
+    if (m_pInvertSelection)
+    {
+        m_pInvertSelection->setText(UIVMInformationDialog::tr("Invert Selection"));
+        m_pInvertSelection->setToolTip(UIVMInformationDialog::tr("Invert Selection"));
+        m_pInvertSelection->setStatusTip(UIVMInformationDialog::tr("Invert Selection"));
     }
 }
 
@@ -1481,4 +1569,3 @@ void UIGuestControlFileTable::sltReceiveDirectoryStatistics(UIDirectoryStatistic
 }
 
 #include "UIGuestControlFileTable.moc"
-

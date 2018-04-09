@@ -19,7 +19,8 @@
 #define ___UIGuestControlFileTable_h___
 
 /* Qt includes: */
-# include <QMutex>
+#include <QItemSelectionModel>
+#include <QMutex>
 #include <QThread>
 #include <QWidget>
 
@@ -303,6 +304,8 @@ private slots:
     void sltCreateNewDirectory();
     void sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
     void sltLocationComboCurrentChange(const QString &strLocation);
+    void sltSelectAll();
+    void sltInvertSelection();
 
 private:
 
@@ -315,6 +318,8 @@ private:
     QString         getNewDirectoryName();
     void            enableSelectionDependentActions();
     void            disableSelectionDependentActions();
+    void            deSelectUpDirectoryItem();
+    void            setSelectionForAll(QItemSelectionModel::SelectionFlags flags);
     QGridLayout     *m_pMainLayout;
     QComboBox       *m_pLocationComboBox;
     UIToolBar       *m_pToolBar;
@@ -325,6 +330,8 @@ private:
     QAction         *m_pRename;
     QAction         *m_pCreateNewDirectory;
     QAction         *m_pShowProperties;
+    QAction         *m_pSelectAll;
+    QAction         *m_pInvertSelection;
     /** The vector of action which need some selection to work on like cut, copy etc. */
     QVector<QAction*> m_selectionDependentActions;
     /** The absolue path list of the file objects which user has chosen to cut/copy. this
@@ -334,4 +341,3 @@ private:
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
-
