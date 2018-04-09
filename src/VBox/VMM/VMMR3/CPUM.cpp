@@ -1230,7 +1230,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      * MSRs.
      */
     /* Init PAT MSR */
-    pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
+    pCtx->msrPAT                    = MSR_IA32_CR_PAT_INIT_VAL;
 
     /* EFER MBZ; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State.
      * The Intel docs don't mention it. */
@@ -2358,7 +2358,7 @@ static void cpumR3InfoSvmVmcbStateSave(PCDBGFINFOHLP pHlp, PCSVMVMCBSTATESAVE pV
     pHlp->pfnPrintf(pHlp, "%su64SysEnterEIP             = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterEIP);
     pHlp->pfnPrintf(pHlp, "%su64SysEnterESP             = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterESP);
     pHlp->pfnPrintf(pHlp, "%su64CR2                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR2);
-    pHlp->pfnPrintf(pHlp, "%su64GPAT                    = %#RX64\n", pszPrefix, pVmcbStateSave->u64GPAT);
+    pHlp->pfnPrintf(pHlp, "%su64PAT                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64PAT);
     pHlp->pfnPrintf(pHlp, "%su64DBGCTL                  = %#RX64\n", pszPrefix, pVmcbStateSave->u64DBGCTL);
     pHlp->pfnPrintf(pHlp, "%su64BR_FROM                 = %#RX64\n", pszPrefix, pVmcbStateSave->u64BR_FROM);
     pHlp->pfnPrintf(pHlp, "%su64BR_TO                   = %#RX64\n", pszPrefix, pVmcbStateSave->u64BR_TO);

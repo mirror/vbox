@@ -1000,10 +1000,12 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         /*
          * Setup the PAT MSR (applicable for Nested Paging only).
-         * The default value should be 0x0007040600070406ULL, but we want to treat all guest memory as WB,
-         * so choose type 6 for all PAT slots.
+         *
+         * While guests can modify and see the modified values throug the shadow values,
+         * we shall not honor any guest modifications of this MSR to ensure caching is always
+         * enabled similar to how we always run with CR0.CD and NW bits cleared.
          */
-        pVmcb->guest.u64GPAT = UINT64_C(0x0006060606060606);
+        pVmcb->guest.u64PAT = MSR_IA32_CR_PAT_INIT_VAL;
 
         /* Setup Nested Paging. This doesn't change throughout the execution time of the VM. */
         pVmcb->ctrl.NestedPaging.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
@@ -1753,6 +1755,8 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
     pVmcb->guest.u64CSTAR        = pCtx->msrCSTAR;
     pVmcb->guest.u64SFMASK       = pCtx->msrSFMASK;
     pVmcb->guest.u64KernelGSBase = pCtx->msrKERNELGSBASE;
+
+    /* We don't honor guest modifications to its PAT MSR (similar to ignoring CR0.CD, NW bits). */
 }
 
 
@@ -2416,6 +2420,7 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         pVmcbNstGstCache->u64CR3            = pVmcbNstGstState->u64CR3;
         pVmcbNstGstCache->u64CR4            = pVmcbNstGstState->u64CR4;
         pVmcbNstGstCache->u64EFER           = pVmcbNstGstState->u64EFER;
+        pVmcbNstGstCache->u64PAT            = pVmcbNstGstState->u64PAT;
         pVmcbNstGstCache->u64DBGCTL         = pVmcbNstGstState->u64DBGCTL;
         pVmcbNstGstCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
         pVmcbNstGstCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
@@ -2469,6 +2474,9 @@ static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt = pVmcb->ctrl.LbrVirt.n.u1LbrVirt;
         pVmcbNstGst->guest.u64DBGCTL = pVmcb->guest.u64DBGCTL;
+
+        /* Override nested-guest PAT MSR, see @bugref{7243#c109}. */
+        pVmcbNstGst->guest.u64PAT = MSR_IA32_CR_PAT_INIT_VAL;
     }
     else
     {
@@ -3918,7 +3926,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("guest.u64CSTAR                    %#RX64\n",   pVmcb->guest.u64CSTAR));
         Log4(("guest.u64SFMASK                   %#RX64\n",   pVmcb->guest.u64SFMASK));
         Log4(("guest.u64KernelGSBase             %#RX64\n",   pVmcb->guest.u64KernelGSBase));
-        Log4(("guest.u64GPAT                     %#RX64\n",   pVmcb->guest.u64GPAT));
+        Log4(("guest.u64PAT                      %#RX64\n",   pVmcb->guest.u64PAT));
         Log4(("guest.u64DBGCTL                   %#RX64\n",   pVmcb->guest.u64DBGCTL));
         Log4(("guest.u64BR_FROM                  %#RX64\n",   pVmcb->guest.u64BR_FROM));
         Log4(("guest.u64BR_TO                    %#RX64\n",   pVmcb->guest.u64BR_TO));

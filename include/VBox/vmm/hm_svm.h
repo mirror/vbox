@@ -902,8 +902,8 @@ typedef struct
     uint64_t    u64CR2;
     /** Offset 0x648-0x667 - Reserved. */
     uint8_t     u8Reserved9[0x668 - 0x648];
-    /** Offset 0x668 - G_PAT. */
-    uint64_t    u64GPAT;
+    /** Offset 0x668 - PAT (Page Attribute Table) MSR. */
+    uint64_t    u64PAT;
     /** Offset 0x670 - DBGCTL. */
     uint64_t    u64DBGCTL;
     /** Offset 0x678 - BR_FROM. */
@@ -957,7 +957,7 @@ AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64SysEnterESP,  0x630 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64SysEnterEIP,  0x638 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CR2,          0x640 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved9,     0x648 - 0x400);
-AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64GPAT,         0x668 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64PAT,          0x668 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64DBGCTL,       0x670 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64BR_FROM,      0x678 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64BR_TO,        0x680 - 0x400);
@@ -1050,6 +1050,8 @@ typedef struct SVMNESTEDVMCBCACHE
     uint64_t            u64EFER;
     /** Cache of DBGCTL. */
     uint64_t            u64DBGCTL;
+    /** Cache of the PAT MSR. */
+    uint64_t            u64PAT;
     /** @} */
 
     /** @name Other miscellaneous state.
@@ -1137,6 +1139,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx,
 VMM_INT_DECL(bool) HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr);
 VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector);
 VMM_INT_DECL(bool) HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool) HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(bool) HMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(bool) HMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
 

@@ -1235,6 +1235,9 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 
 /** Page Attribute Table. */
 #define MSR_IA32_CR_PAT                     0x277
+/** Default PAT MSR value on processor powerup / reset (see Intel spec. 11.12.4
+ *  "Programming the PAT", AMD spec. 7.8.2 "PAT Indexing") */
+#define MSR_IA32_CR_PAT_INIT_VAL            UINT64_C(0x0007040600070406)
 
 /** Performance counter MSRs. (Intel only) */
 #define MSR_IA32_PERFEVTSEL0                0x186

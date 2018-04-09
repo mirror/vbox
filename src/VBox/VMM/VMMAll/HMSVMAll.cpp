@@ -131,8 +131,8 @@ static int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpdateRipAndR
  * Notification callback for when a \#VMEXIT happens outside SVM R0 code (e.g.
  * in IEM).
  *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pCtx    Pointer to the guest-CPU context.
  *
  * @sa      hmR0SvmVmRunCacheVmcb.
  */
@@ -168,6 +168,16 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
         pVmcbNstGstCtrl->u64TSCOffset                  = pNstGstVmcbCache->u64TSCOffset;
         pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking      = pNstGstVmcbCache->fVIntrMasking;
         pVmcbNstGstCtrl->TLBCtrl                       = pNstGstVmcbCache->TLBCtrl;
+
+        /*
+         * If the nested-hypervisor isn't using nested-paging (and thus shadow paging
+         * is used by HM), we restore the original PAT MSR from the nested-guest VMCB.
+         * Otherwise, the nested-guest-CPU PAT MSR would've already been saved here by
+         * hardware-assisted SVM or by IEM.
+         */
+        if (!pNstGstVmcbCache->u1NestedPaging)
+            pVmcbNstGstState->u64PAT = pNstGstVmcbCache->u64PAT;
+
         pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pNstGstVmcbCache->u1NestedPaging;
         pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt           = pNstGstVmcbCache->u1LbrVirt;
         pCtx->hwvirt.svm.fHMCachedVmcb = false;
@@ -176,11 +186,12 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Currently, VMRUN, #VMEXIT transitions involves trips to ring-3 that would flag a full
      * CPU state change. However, if we exit to ring-3 in response to receiving a physical
-     * interrupt, we skip signaling any CPU state change as normally no change
-     * is done to the execution state (see VINF_EM_RAW_INTERRUPT handling in hmR0SvmExitToRing3).
-     * However, with nested-guests, the state can change for e.g., we might perform a
-     * SVM_EXIT_INTR #VMEXIT for the nested-guest in ring-3. Hence we signal a full CPU
-     * state change here.
+     * interrupt, we skip signaling any CPU state change as normally no change is done to the
+     * execution state (see VINF_EM_RAW_INTERRUPT handling in hmR0SvmExitToRing3).
+     *
+     * With nested-guests, the state can change on trip to ring-3 for e.g., we might perform a
+     * SVM_EXIT_INTR #VMEXIT for the nested-guest in ring-3. Hence we signal a full CPU state
+     * change here.
      */
     HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 }
@@ -438,7 +449,8 @@ VMM_INT_DECL(bool) HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, 
 
 
 /**
- * Checks if the guest VMCB has the specified ctrl/instruction intercept active.
+ * Checks if the nested-guest VMCB has the specified ctrl/instruction intercept
+ * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
@@ -455,7 +467,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uin
 
 
 /**
- * Checks if the guest VMCB has the specified CR read intercept active.
+ * Checks if the nested-guest VMCB has the specified CR read intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
@@ -472,8 +484,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx,
 
 
 /**
- * Checks if the guest VMCB has the specified CR write intercept
- * active.
+ * Checks if the nested-guest VMCB has the specified CR write intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
@@ -490,8 +501,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx
 
 
 /**
- * Checks if the guest VMCB has the specified DR read intercept
- * active.
+ * Checks if the nested-guest VMCB has the specified DR read intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
@@ -508,7 +518,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx,
 
 
 /**
- * Checks if the guest VMCB has the specified DR write intercept active.
+ * Checks if the nested-guest VMCB has the specified DR write intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
@@ -525,7 +535,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx
 
 
 /**
- * Checks if the guest VMCB has the specified exception intercept active.
+ * Checks if the nested-guest VMCB has the specified exception intercept active.
  *
  * @returns true if in intercept is active, false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
@@ -542,7 +552,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
 
 
 /**
- * Checks if the guest VMCB has virtual-interrupts masking enabled.
+ * Checks if the nested-guest VMCB has virtual-interrupts masking enabled.
  *
  * @returns true if virtual-interrupts are masked, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
@@ -553,6 +563,21 @@ VMM_INT_DECL(bool) HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx)
     Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     return pVmcbNstGstCache->fVIntrMasking;
+}
+
+
+/**
+ * Checks if the nested-guest VMCB has nested-paging enabled.
+ *
+ * @returns true if nested-paging is enabled, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the context.
+ */
+VMM_INT_DECL(bool) HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return RT_BOOL(pVmcbNstGstCache->u1NestedPaging);
 }
 
 

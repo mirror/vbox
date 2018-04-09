@@ -1369,7 +1369,8 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCCPUMCTX pCtx)
 
 #ifndef IN_RC
 /**
- * Checks if the guest VMCB has the specified ctrl/instruction intercept active.
+ * Checks if the nested-guest VMCB has the specified ctrl/instruction intercept
+ * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
@@ -1388,7 +1389,7 @@ DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uin
 }
 
 /**
- * Checks if the guest VMCB has the specified CR read intercept active.
+ * Checks if the nested-guest VMCB has the specified CR read intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
@@ -1407,7 +1408,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx,
 }
 
 /**
- * Checks if the guest VMCB has the specified CR write intercept active.
+ * Checks if the nested-guest VMCB has the specified CR write intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
@@ -1426,7 +1427,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx
 }
 
 /**
- * Checks if the guest VMCB has the specified DR read intercept active.
+ * Checks if the nested-guest VMCB has the specified DR read intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
@@ -1445,7 +1446,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx,
 }
 
 /**
- * Checks if the guest VMCB has the specified DR write intercept active.
+ * Checks if the nested-guest VMCB has the specified DR write intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
@@ -1464,7 +1465,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx
 }
 
 /**
- * Checks if the guest VMCB has the specified exception intercept active.
+ * Checks if the nested-guest VMCB has the specified exception intercept active.
  *
  * @returns @c true if in intercept is active, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
@@ -1483,7 +1484,7 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
 }
 
 /**
- * Checks if the guest VMCB has virtual-interrupt masking enabled.
+ * Checks if the nested-guest VMCB has virtual-interrupt masking enabled.
  *
  * @returns @c true if virtual-interrupts are masked, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
@@ -1498,6 +1499,24 @@ DECLINLINE(bool) CPUMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx)
     if (!pCtx->hwvirt.svm.fHMCachedVmcb)
         return pVmcb->ctrl.IntCtrl.n.u1VIntrMasking;
     return HMIsGuestSvmVirtIntrMasking(pVCpu, pCtx);
+}
+
+/**
+ * Checks if the nested-guest VMCB has nested-paging enabled.
+ *
+ * @returns @c true if nested-paging is enabled, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ *
+ * @remarks Should only be called when SVM feature is exposed to the guest.
+ */
+DECLINLINE(bool) CPUMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    Assert(pVmcb);
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        return pVmcb->ctrl.NestedPaging.n.u1NestedPaging;
+    return HMIsGuestSvmNestedPagingEnabled(pVCpu, pCtx);
 }
 
 /**
@@ -1701,7 +1720,7 @@ VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
 VMMDECL(int)            CPUMQueryValidatedGuestEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer,
                                                     uint64_t *puValidEfer);
 VMMDECL(void)           CPUMSetGuestMsrEferNoCheck(PVMCPU pVCpu, uint64_t uOldEfer, uint64_t uValidEfer);
-
+VMMDECL(bool)           CPUMIsPatMsrValid(uint64_t uValue);
 
 /** @name Typical scalable bus frequency values.
  * @{ */

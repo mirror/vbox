@@ -550,21 +550,12 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32Pat(PVMCPU pVCpu, uint32_t idMsr
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32Pat(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
-
-    for (uint32_t cShift = 0; cShift < 63; cShift += 8)
+    if (CPUMIsPatMsrValid(uValue))
     {
-        /* Check all eight bits because the top 5 bits of each byte are reserved. */
-        uint8_t uType = (uint8_t)(uValue >> cShift);
-        if ((uType >= 8) || (uType == 2) || (uType == 3))
-        {
-            Log(("CPUM: Invalid PAT type at %u:%u in IA32_PAT: %#llx (%#llx)\n",
-                 cShift + 7, cShift, uValue, uType));
-            return VERR_CPUM_RAISE_GP_0;
-        }
+        pVCpu->cpum.s.Guest.msrPAT = uValue;
+        return VINF_SUCCESS;
     }
-
-    pVCpu->cpum.s.Guest.msrPAT = uValue;
-    return VINF_SUCCESS;
+    return VERR_CPUM_RAISE_GP_0;
 }
 
 
@@ -6204,6 +6195,28 @@ VMMDECL(void) CPUMSetGuestMsrEferNoCheck(PVMCPU pVCpu, uint64_t uOldEfer, uint64
             != (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE))
             PGMNotifyNxeChanged(pVCpu, !(uOldEfer & MSR_K6_EFER_NXE));
     }
+}
+
+
+/**
+ * Checks if a guest PAT MSR write is valid.
+ *
+ * @returns @c true if the PAT bit combination is valid, @c false otherwise.
+ * @param   uValue      The PAT MSR value.
+ */
+VMMDECL(bool) CPUMIsPatMsrValid(uint64_t uValue)
+{
+    for (uint32_t cShift = 0; cShift < 63; cShift += 8)
+    {
+        /* Check all eight bits because the top 5 bits of each byte are reserved. */
+        uint8_t uType = (uint8_t)(uValue >> cShift);
+        if ((uType >= 8) || (uType == 2) || (uType == 3))
+        {
+            Log(("CPUM: Invalid PAT type at %u:%u in IA32_PAT: %#llx (%#llx)\n", cShift + 7, cShift, uValue, uType));
+            return false;
+        }
+    }
+    return true;
 }
 
 

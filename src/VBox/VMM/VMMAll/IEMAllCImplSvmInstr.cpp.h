@@ -151,6 +151,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         pVmcbNstGstState->u64DR6        = pCtx->dr[6];
         pVmcbNstGstState->u8CPL         = pCtx->ss.Attr.n.u2Dpl;   /* See comment in CPUMGetGuestCPL(). */
         Assert(CPUMGetGuestCPL(pVCpu) == pCtx->ss.Attr.n.u2Dpl);
+        if (CPUMIsGuestSvmNestedPagingEnabled(pVCpu, pCtx))
+            pVmcbNstGstState->u64PAT = pCtx->msrPAT;
 
         PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
 
@@ -179,8 +181,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         }
         else
             pVmcbCtrl->IntCtrl.n.u1VIrqPending = 0;
-
-        /** @todo NRIP. */
 
         /* Save exit information. */
         pVmcbCtrl->u64ExitCode  = uExitCode;
@@ -458,7 +458,18 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
             return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
 
-        /** @todo gPAT MSR validation? */
+        /*
+         * PAT (Page Attribute Table) MSR.
+         *
+         * The CPU only validates and loads it when nested-paging is enabled.
+         * See AMD spec. "15.25.4 Nested Paging and VMRUN/#VMEXIT".
+         */
+        if (   pVmcbCtrl->NestedPaging.n.u1NestedPaging
+            && !CPUMIsPatMsrValid(pVmcbNstGst->u64PAT))
+        {
+            Log(("iemSvmVmrun: PAT invalid. u64PAT=%#RX64 -> #VMEXIT\n", pVmcbNstGst->u64PAT));
+            return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
 
         /*
          * Copy the IO permission bitmap into the cache.
@@ -613,6 +624,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         pCtx->rsp        = pVmcbNstGst->u64RSP;
         pCtx->rip        = pVmcbNstGst->u64RIP;
         CPUMSetGuestMsrEferNoCheck(pVCpu, pCtx->msrEFER, uValidEfer);
+        if (pVmcbCtrl->NestedPaging.n.u1NestedPaging)
+            pCtx->msrPAT = pVmcbNstGst->u64PAT;
 
         /* Mask DR6, DR7 bits mandatory set/clear bits. */
         pCtx->dr[6] &= ~(X86_DR6_RAZ_MASK | X86_DR6_MBZ_MASK);
