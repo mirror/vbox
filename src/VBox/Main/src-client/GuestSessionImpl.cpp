@@ -1247,12 +1247,35 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *prcGuest)
     return vrc;
 }
 
-int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo,
-                             ComObjPtr<GuestFile> &pFile, int *prcGuest)
+int GuestSession::i_fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
+                               FileSharingMode_T aSharingMode, ULONG aCreationMode, const std::vector<FileOpenExFlag_T> &aFlags,
+                               ComObjPtr<GuestFile> &pFile, int *prcGuest)
 {
-    LogFlowThisFunc(("strFile=%s, enmAccessMode=%d (%s) enmOpenAction=%d (%s) uCreationMode=%RU32 mfOpenEx=%RU32\n",
-                     openInfo.mFileName.c_str(), openInfo.mAccessMode, openInfo.mpszAccessMode,
-                     openInfo.mOpenAction, openInfo.mpszOpenAction, openInfo.mCreationMode, openInfo.mfOpenEx));
+    GuestFileOpenInfo openInfo;
+    RT_ZERO(openInfo);
+
+    openInfo.mFileName     = aPath;
+    openInfo.mCreationMode = aCreationMode;
+    openInfo.mAccessMode   = aAccessMode;
+    openInfo.mOpenAction   = aOpenAction;
+    openInfo.mSharingMode  = aSharingMode;
+
+    /* Combine and validate flags. */
+    uint32_t fOpenEx = 0;
+    for (size_t i = 0; i < aFlags.size(); i++)
+        fOpenEx = aFlags[i];
+    if (fOpenEx)
+        return VERR_INVALID_PARAMETER; /* FileOpenExFlag not implemented yet. */
+    openInfo.mfOpenEx = fOpenEx;
+
+    return i_fileOpen(openInfo, pFile, prcGuest);
+}
+
+int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestFile> &pFile, int *prcGuest)
+{
+    LogFlowThisFunc(("strFile=%s, enmAccessMode=0x%x, enmOpenAction=0x%x, uCreationMode=%RU32, mfOpenEx=%RU32\n",
+                     openInfo.mFileName.c_str(), openInfo.mAccessMode, openInfo.mOpenAction, openInfo.mCreationMode,
+                     openInfo.mfOpenEx));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -3426,13 +3449,16 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     openInfo.mFileName = aPath;
     openInfo.mCreationMode = aCreationMode;
 
-    /* convert + validate aAccessMode to the old format. */
-    openInfo.mAccessMode = aAccessMode;
+    /* Validate aAccessMode. */
     switch (aAccessMode)
     {
-        case (FileAccessMode_T)FileAccessMode_ReadOnly:  openInfo.mpszAccessMode = "r"; break;
-        case (FileAccessMode_T)FileAccessMode_WriteOnly: openInfo.mpszAccessMode = "w"; break;
-        case (FileAccessMode_T)FileAccessMode_ReadWrite: openInfo.mpszAccessMode = "r+"; break;
+        case (FileAccessMode_T)FileAccessMode_ReadOnly:
+            RT_FALL_THRU();
+        case (FileAccessMode_T)FileAccessMode_WriteOnly:
+            RT_FALL_THRU();
+        case (FileAccessMode_T)FileAccessMode_ReadWrite:
+            openInfo.mAccessMode = aAccessMode;
+            break;
         case (FileAccessMode_T)FileAccessMode_AppendOnly:
             RT_FALL_THRU();
         case (FileAccessMode_T)FileAccessMode_AppendRead:
@@ -3441,27 +3467,32 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
             return setError(E_INVALIDARG, tr("Unknown FileAccessMode value %u (%#x)"), aAccessMode, aAccessMode);
     }
 
-    /* convert + validate aOpenAction to the old format. */
-    openInfo.mOpenAction = aOpenAction;
+    /* Validate aOpenAction to the old format. */
     switch (aOpenAction)
     {
-        case (FileOpenAction_T)FileOpenAction_OpenExisting:          openInfo.mpszOpenAction = "oe"; break;
-        case (FileOpenAction_T)FileOpenAction_OpenOrCreate:          openInfo.mpszOpenAction = "oc"; break;
-        case (FileOpenAction_T)FileOpenAction_CreateNew:             openInfo.mpszOpenAction = "ce"; break;
-        case (FileOpenAction_T)FileOpenAction_CreateOrReplace:       openInfo.mpszOpenAction = "ca"; break;
-        case (FileOpenAction_T)FileOpenAction_OpenExistingTruncated: openInfo.mpszOpenAction = "ot"; break;
+        case (FileOpenAction_T)FileOpenAction_OpenExisting:
+            RT_FALL_THRU();
+        case (FileOpenAction_T)FileOpenAction_OpenOrCreate:
+            RT_FALL_THRU();
+        case (FileOpenAction_T)FileOpenAction_CreateNew:
+            RT_FALL_THRU();
+        case (FileOpenAction_T)FileOpenAction_CreateOrReplace:
+            RT_FALL_THRU();
+        case (FileOpenAction_T)FileOpenAction_OpenExistingTruncated:
+            RT_FALL_THRU();
         case (FileOpenAction_T)FileOpenAction_AppendOrCreate:
-            openInfo.mpszOpenAction = "oa"; /** @todo get rid of this one and implement AppendOnly/AppendRead. */
+            openInfo.mOpenAction = aOpenAction;
             break;
         default:
             return setError(E_INVALIDARG, tr("Unknown FileOpenAction value %u (%#x)"), aAccessMode, aAccessMode);
     }
 
-    /* validate aSharingMode */
-    openInfo.mSharingMode = aSharingMode;
+    /* Validate aSharingMode. */
     switch (aSharingMode)
     {
-        case (FileSharingMode_T)FileSharingMode_All: /* OK */ break;
+        case (FileSharingMode_T)FileSharingMode_All:
+            openInfo.mSharingMode = aSharingMode;
+            break;
         case (FileSharingMode_T)FileSharingMode_Read:
         case (FileSharingMode_T)FileSharingMode_Write:
         case (FileSharingMode_T)FileSharingMode_ReadWrite:
@@ -3484,7 +3515,7 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
 
     ComObjPtr <GuestFile> pFile;
     int rcGuest;
-    int vrc = i_fileOpen(openInfo, pFile, &rcGuest);
+    int vrc = i_fileOpenEx(aPath, aAccessMode, aOpenAction, aSharingMode, aCreationMode, aFlags, pFile, &rcGuest);
     if (RT_SUCCESS(vrc))
         /* Return directory object to the caller. */
         hrc = pFile.queryInterfaceTo(aFile.asOutParam());
