@@ -5879,6 +5879,7 @@ static int e1kRegReadUnaligned(PE1KSTATE pThis, uint32_t offReg, void *pv, uint3
     }
     if (index != -1)
     {
+        RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
         if (g_aE1kRegMap[index].readable)
         {
             /* Make the mask correspond to the bits we are about to read. */
@@ -5943,6 +5944,7 @@ static int e1kRegReadAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t *pu32
     int idxReg = e1kRegLookup(offReg);
     if (RT_LIKELY(idxReg != -1))
     {
+        RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
         if (RT_UNLIKELY(g_aE1kRegMap[idxReg].readable))
         {
             /*
@@ -5989,6 +5991,7 @@ static int e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32V
     int         index = e1kRegLookup(offReg);
     if (RT_LIKELY(index != -1))
     {
+        RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
         if (RT_LIKELY(g_aE1kRegMap[index].writable))
         {
             /*

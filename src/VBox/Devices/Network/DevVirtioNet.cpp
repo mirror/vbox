@@ -514,6 +514,13 @@ static void vnetWakeupReceive(PPDMDEVINS pDevIns)
     {
         STAM_COUNTER_INC(&pThis->StatRxOverflowWakeup);
         Log(("%s Waking up Out-of-RX-space semaphore\n",  INSTANCE(pThis)));
+/**
+ * @todo r=bird: We can wake stuff up from ring-0 too, see vmsvga, nvme,
+ *        buslogic, lsilogic, ata, ahci, xhci.  Also, please address similar
+ *        TODO in E1000.
+ *
+ *        The API Is SUPSem*, btw.
+ */
         RTSemEventSignal(pThis->hEventMoreRxDescAvail);
     }
 }
@@ -586,6 +593,13 @@ static DECLCALLBACK(void) vnetIoCb_Ready(void *pvState)
 {
     PVNETSTATE pThis = (PVNETSTATE)pvState;
     Log(("%s Driver became ready, waking up RX thread...\n", INSTANCE(pThis)));
+/**
+ * @todo r=bird: We can wake stuff up from ring-0 too, see vmsvga, nvme,
+ *        buslogic, lsilogic, ata, ahci, xhci.  Also, please address similar
+ *        TODO in E1000.
+ *
+ *        The API Is SUPSem*, btw.
+ */
 #ifdef IN_RING3
     vnetWakeupReceive(pThis->VPCI.CTX_SUFF(pDevIns));
 #else
@@ -1287,11 +1301,11 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
 
     vpciSetWriteLed(&pThis->VPCI, true);
 
-    VQUEUEELEM elem;
     /*
      * Do not remove descriptors from available ring yet, try to allocate the
      * buffer first.
      */
+    VQUEUEELEM elem; /* This bugger is big! ~48KB on 64-bit hosts. */
     while (vqueuePeek(&pThis->VPCI, pQueue, &elem))
     {
         unsigned int uOffset = 0;
@@ -1992,8 +2006,8 @@ static DECLCALLBACK(void) vnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
 {
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
 
     LogRel(("TxTimer stats (avg/min/max): %7d usec %7d usec %7d usec\n",
             pThis->u32AvgDiff, pThis->u32MinDiff, pThis->u32MaxDiff));
@@ -2017,9 +2031,9 @@ static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
     int        rc;
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /* Initialize the instance data suffiencently for the destructor not to blow up. */
     pThis->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
@@ -2043,8 +2057,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Validate configuration.
      */
     if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "LineSpeed\0" "LinkUpDelay\0"))
-                    return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                            N_("Invalid configuration for VirtioNet device"));
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, N_("Invalid configuration for VirtioNet device"));
 
     /* Get config params */
     rc = CFGMR3QueryBytes(pCfg, "MAC", pThis->macConfigured.au8,
