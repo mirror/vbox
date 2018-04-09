@@ -433,8 +433,6 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
     if (pSvcCbData->mParms < 3)
         return VERR_INVALID_PARAMETER;
 
-    int rc = VINF_SUCCESS;
-
     int idx = 1; /* Current parameter index. */
     CALLBACKDATA_FILE_NOTIFY dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
@@ -443,8 +441,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
     int rcGuest = (int)dataCb.rc; /* uint32_t vs. int. */
 
-    LogFlowFunc(("uType=%RU32, rcGuest=%Rrc\n",
-                 dataCb.uType, rcGuest));
+    LogFlowThisFunc(("uType=%RU32, rcGuest=%Rrc\n", dataCb.uType, rcGuest));
 
     if (RT_FAILURE(rcGuest))
     {
@@ -456,13 +453,17 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         return VINF_SUCCESS; /* Report to the guest. */
     }
 
+    AssertMsg(mObjectID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
+              ("File ID %RU32 does not match object ID %RU32\n", mObjectID,
+               VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
+
+    int rc = VERR_NOT_SUPPORTED; /* Play safe by default. */
+
     switch (dataCb.uType)
     {
         case GUEST_FILE_NOTIFYTYPE_ERROR:
         {
-            int rc2 = i_setFileStatus(FileStatus_Error, rcGuest);
-            AssertRC(rc2);
-
+            rc = i_setFileStatus(FileStatus_Error, rcGuest);
             break;
         }
 
@@ -470,27 +471,19 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.open.uHandle);
-
-                AssertMsg(mObjectID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
-                          ("File ID %RU32 does not match object ID %RU32\n", mObjectID,
-                           VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
+                rc = pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.open.uHandle);
+                if (RT_FAILURE(rc))
+                    break;
 
                 /* Set the process status. */
-                int rc2 = i_setFileStatus(FileStatus_Open, rcGuest);
-                AssertRC(rc2);
+                rc = i_setFileStatus(FileStatus_Open, rcGuest);
             }
-            else
-                rc = VERR_NOT_SUPPORTED;
-
             break;
         }
 
         case GUEST_FILE_NOTIFYTYPE_CLOSE:
         {
-            int rc2 = i_setFileStatus(FileStatus_Closed, rcGuest);
-            AssertRC(rc2);
-
+            rc = i_setFileStatus(FileStatus_Closed, rcGuest);
             break;
         }
 
@@ -498,9 +491,13 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                pSvcCbData->mpaParms[idx++].getPointer(&dataCb.u.read.pvData,
-                                                       &dataCb.u.read.cbData);
-                uint32_t cbRead = dataCb.u.read.cbData;
+                rc = pSvcCbData->mpaParms[idx++].getPointer(&dataCb.u.read.pvData, &dataCb.u.read.cbData);
+                if (RT_FAILURE(rc))
+                    break;
+
+                const uint32_t cbRead = dataCb.u.read.cbData;
+
+                Log3ThisFunc(("cbRead=%RU32\n", cbRead));
 
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -514,8 +511,6 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                 fireGuestFileReadEvent(mEventSource, mSession, this, mData.mOffCurrent,
                                        cbRead, ComSafeArrayAsInParam(data));
             }
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
         }
 
@@ -523,20 +518,21 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.write.cbWritten);
+                rc = pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.write.cbWritten);
+                if (RT_FAILURE(rc))
+                    break;
+
+                Log3ThisFunc(("cbWritten=%RU32\n", dataCb.u.write.cbWritten));
 
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
                 mData.mOffCurrent += dataCb.u.write.cbWritten;
-                uint64_t uOffCurrent = mData.mOffCurrent;
 
                 alock.release();
 
-                fireGuestFileWriteEvent(mEventSource, mSession, this, uOffCurrent,
+                fireGuestFileWriteEvent(mEventSource, mSession, this, mData.mOffCurrent,
                                         dataCb.u.write.cbWritten);
             }
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
         }
 
@@ -544,7 +540,11 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.seek.uOffActual);
+                rc = pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.seek.uOffActual);
+                if (RT_FAILURE(rc))
+                    break;
+
+                Log3ThisFunc(("uOffActual=%RU64\n", dataCb.u.seek.uOffActual));
 
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -552,11 +552,8 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
                 alock.release();
 
-                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
-                                                dataCb.u.seek.uOffActual, 0 /* Processed */);
+                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this, mData.mOffCurrent, 0 /* Processed */);
             }
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
         }
 
@@ -564,7 +561,11 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.tell.uOffActual);
+                rc = pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.tell.uOffActual);
+                if (RT_FAILURE(rc))
+                    break;
+
+                Log3ThisFunc(("uOffActual=%RU64\n", dataCb.u.tell.uOffActual));
 
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -572,16 +573,12 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
                 alock.release();
 
-                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
-                                                dataCb.u.tell.uOffActual, 0 /* Processed */);
+                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this, mData.mOffCurrent, 0 /* Processed */);
             }
-            else
-                rc = VERR_NOT_SUPPORTED;
             break;
         }
 
         default:
-            rc = VERR_NOT_SUPPORTED;
             break;
     }
 
@@ -638,14 +635,68 @@ int GuestFile::i_onRemove(void)
 
 int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 {
+    AssertReturn(mData.mOpenInfo.mFileName.isNotEmpty(), VERR_INVALID_PARAMETER);
+
     LogFlowThisFuncEnter();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("strFile=%s, enmAccessMode=%d (%s) enmOpenAction=%d (%s) uCreationMode=%RU32, mfOpenEx=%RU32\n",
-                     mData.mOpenInfo.mFileName.c_str(), mData.mOpenInfo.mAccessMode, mData.mOpenInfo.mpszAccessMode,
-                     mData.mOpenInfo.mOpenAction, mData.mOpenInfo.mpszOpenAction, mData.mOpenInfo.mCreationMode,
-                     mData.mOpenInfo.mfOpenEx));
+    LogFlowThisFunc(("strFile=%s, enmAccessMode=0x%x, enmOpenAction=0x%x, uCreationMode=%RU32, mfOpenEx=%RU32\n",
+                     mData.mOpenInfo.mFileName.c_str(), mData.mOpenInfo.mAccessMode, mData.mOpenInfo.mOpenAction,
+                     mData.mOpenInfo.mCreationMode, mData.mOpenInfo.mfOpenEx));
+
+    /* Validate and translate open action. */
+    const char *pszOpenAction = NULL;
+    switch (mData.mOpenInfo.mOpenAction)
+    {
+        case (FileOpenAction_T)FileOpenAction_OpenExisting:          pszOpenAction = "oe"; break;
+        case (FileOpenAction_T)FileOpenAction_OpenOrCreate:          pszOpenAction = "oc"; break;
+        case (FileOpenAction_T)FileOpenAction_CreateNew:             pszOpenAction = "ce"; break;
+        case (FileOpenAction_T)FileOpenAction_CreateOrReplace:       pszOpenAction = "ca"; break;
+        case (FileOpenAction_T)FileOpenAction_OpenExistingTruncated: pszOpenAction = "ot"; break;
+        case (FileOpenAction_T)FileOpenAction_AppendOrCreate:
+            pszOpenAction = "oa"; /** @todo get rid of this one and implement AppendOnly/AppendRead. */
+            break;
+        default:
+            return VERR_INVALID_PARAMETER;
+    }
+
+    /* Validate and translate access mode. */
+    const char *pszAccessMode = NULL;
+    switch (mData.mOpenInfo.mAccessMode)
+    {
+        case (FileAccessMode_T)FileAccessMode_ReadOnly:  pszAccessMode = "r";  break;
+        case (FileAccessMode_T)FileAccessMode_WriteOnly: pszAccessMode = "w";  break;
+        case (FileAccessMode_T)FileAccessMode_ReadWrite: pszAccessMode = "r+"; break;
+        case (FileAccessMode_T)FileAccessMode_AppendOnly:
+            RT_FALL_THRU();
+        case (FileAccessMode_T)FileAccessMode_AppendRead:
+            return VERR_NOT_IMPLEMENTED;
+        default:
+            return VERR_INVALID_PARAMETER;
+    }
+
+    /* Validate and translate sharing mode. */
+    const char *pszSharingMode = NULL;
+    switch (mData.mOpenInfo.mSharingMode)
+    {
+        case (FileSharingMode_T)FileSharingMode_All:       pszSharingMode = ""; break;
+        case (FileSharingMode_T)FileSharingMode_Read:
+            RT_FALL_THRU();
+        case (FileSharingMode_T)FileSharingMode_Write:
+            RT_FALL_THRU();
+        case (FileSharingMode_T)FileSharingMode_ReadWrite:
+            RT_FALL_THRU();
+        case (FileSharingMode_T)FileSharingMode_Delete:
+            RT_FALL_THRU();
+        case (FileSharingMode_T)FileSharingMode_ReadDelete:
+            RT_FALL_THRU();
+        case (FileSharingMode_T)FileSharingMode_WriteDelete:
+            return VERR_NOT_IMPLEMENTED;
+        default:
+            return VERR_INVALID_PARAMETER;
+    }
+
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -670,11 +721,11 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
     paParms[i++].setUInt32(pEvent->ContextID());
     paParms[i++].setPointer((void*)mData.mOpenInfo.mFileName.c_str(),
                             (ULONG)mData.mOpenInfo.mFileName.length() + 1);
-    paParms[i++].setString(mData.mOpenInfo.mpszAccessMode);
-    paParms[i++].setString(mData.mOpenInfo.mpszOpenAction);
-    paParms[i++].setString(""); /** @todo sharing mode. */
+    paParms[i++].setString(pszAccessMode);
+    paParms[i++].setString(pszOpenAction);
+    paParms[i++].setString(pszSharingMode);
     paParms[i++].setUInt32(mData.mOpenInfo.mCreationMode);
-    paParms[i++].setUInt64(0 /* initial offset */);
+    paParms[i++].setUInt64(mData.mOpenInfo.muOffset);
     /** @todo Next protocol version: add flags, replace strings, remove initial offset. */
 
     alock.release(); /* Drop write lock before sending. */
@@ -687,6 +738,12 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
+}
+
+int GuestFile::i_queryInfo(GuestFsObjData &objData, int *prcGuest)
+{
+    AssertPtr(mSession);
+    return mSession->i_fsQueryInfo(mData.mOpenInfo.mFileName, FALSE /* fFollowSymlinks */, objData, prcGuest);
 }
 
 int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
@@ -955,14 +1012,16 @@ int GuestFile::i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
                 com::SafeArray <BYTE> data;
                 hr = pFileEvent->COMGETTER(Data)(ComSafeArrayAsOutParam(data));
                 ComAssertComRC(hr);
-                size_t cbRead = data.size();
-                if (   cbRead
-                    && cbRead <= cbData)
+                const size_t cbRead = data.size();
+                if (cbRead)
                 {
-                    memcpy(pvData, data.raw(), data.size());
+                    if (cbRead <= cbData)
+                        memcpy(pvData, data.raw(), cbRead);
+                    else
+                        vrc = VERR_BUFFER_OVERFLOW;
                 }
                 else
-                    vrc = VERR_BUFFER_OVERFLOW;
+                    vrc = VERR_NO_DATA;
             }
             if (pcbRead)
             {
@@ -1204,14 +1263,69 @@ HRESULT GuestFile::close()
 
 HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
 {
-    RT_NOREF(aObjInfo);
-    ReturnComNotImplemented();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    LogFlowThisFuncEnter();
+
+    HRESULT hr = S_OK;
+
+    GuestFsObjData fsObjData; int rcGuest;
+    int vrc = i_queryInfo(fsObjData, &rcGuest);
+    if (RT_SUCCESS(vrc))
+    {
+        ComObjPtr<GuestFsObjInfo> ptrFsObjInfo;
+        hr = ptrFsObjInfo.createObject();
+        if (SUCCEEDED(hr))
+        {
+            vrc = ptrFsObjInfo->init(fsObjData);
+            if (RT_SUCCESS(vrc))
+                hr = ptrFsObjInfo.queryInterfaceTo(aObjInfo.asOutParam());
+            else
+                hr = setErrorVrc(vrc);
+        }
+    }
+    else
+    {
+        if (GuestProcess::i_isGuestError(vrc))
+        {
+            hr = GuestProcess::i_setErrorExternal(this, rcGuest);
+        }
+        else
+            hr = setErrorVrc(vrc, tr("Querying file information failed: %Rrc"), vrc);
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return hr;
 }
 
 HRESULT GuestFile::querySize(LONG64 *aSize)
 {
-    RT_NOREF(aSize);
-    ReturnComNotImplemented();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    LogFlowThisFuncEnter();
+
+    HRESULT hr = S_OK;
+
+    GuestFsObjData fsObjData; int rcGuest;
+    int vrc = i_queryInfo(fsObjData, &rcGuest);
+    if (RT_SUCCESS(vrc))
+    {
+        *aSize = fsObjData.mObjectSize;
+    }
+    else
+    {
+        if (GuestProcess::i_isGuestError(vrc))
+        {
+            hr = GuestProcess::i_setErrorExternal(this, rcGuest);
+        }
+        else
+            hr = setErrorVrc(vrc, tr("Querying file size failed: %Rrc"), vrc);
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return hr;
 }
 
 HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
@@ -1254,8 +1368,8 @@ HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aDat
     LogFlowFuncLeaveRC(vrc);
     return hr;
 }
-HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 
+HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1386,7 +1500,6 @@ HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG
 }
 
 HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG *aWritten)
-
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
