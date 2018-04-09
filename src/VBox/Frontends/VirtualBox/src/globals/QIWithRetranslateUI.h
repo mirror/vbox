@@ -25,6 +25,9 @@
 #include <QObject>
 #include <QWidget>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 
 /** Template for automatic language translations of underlying QWidget. */
 template <class Base>
@@ -59,6 +62,17 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() = 0;
 };
+
+#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+/** Explicit QIWithRetranslateUI instantiation for QWidget class.
+  * @note  On Windows it's important that all template cases are instantiated just once across
+  *        the linking space. In case we have particular template case instantiated from both
+  *        library and executable sides, - we have multiple definition case and need to strictly
+  *        ask compiler to do it just once and link such cases against library only.
+  *        I would also note that it would be incorrect to just make whole the template exported
+  *        to library because latter can have lack of required instantiations (current case). */
+template class SHARED_LIBRARY_STUFF QIWithRetranslateUI<QWidget>;
+#endif
 
 
 /** Template for automatic language translations of underlying QWidget with certain flags. */

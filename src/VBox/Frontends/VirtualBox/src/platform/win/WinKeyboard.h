@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - Windows keyboard handling..
+ * VBox Qt GUI - Declarations of utility functions for handling Windows Keyboard specific tasks.
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,14 +18,17 @@
 #ifndef ___WinKeyboard_h___
 #define ___WinKeyboard_h___
 
-/* Platform includes: */
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
+/* Other VBox includes: */
 #include <iprt/win/windows.h>
 
-void * WinHidDevicesKeepLedsState(void);
-void   WinHidDevicesApplyAndReleaseLedsState(void *pData);
-void   WinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn);
+SHARED_LIBRARY_STUFF void * WinHidDevicesKeepLedsState(void);
+SHARED_LIBRARY_STUFF void   WinHidDevicesApplyAndReleaseLedsState(void *pData);
+SHARED_LIBRARY_STUFF void   WinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn);
 
-bool winHidLedsInSync(bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn);
+SHARED_LIBRARY_STUFF bool winHidLedsInSync(bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn);
 
 /** Helper class to deal with Windows AltGr handling.
   *
@@ -38,7 +41,7 @@ bool winHidLedsInSync(bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn);
   * event into the event stream.  While this does not let us filter out the
   * unwanted event at source, it should still make guest system keyboard handling
   * work correctly. */
-class WinAltGrMonitor
+class SHARED_LIBRARY_STUFF WinAltGrMonitor
 {
 public:
 

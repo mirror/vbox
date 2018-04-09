@@ -399,7 +399,11 @@ endif
 
 # This one is global shared GUI library:
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
- VirtualBox_LIBS += $(PATH_STAGE_DLL)/VBoxGlobal$(VBOX_SUFF_DLL)
+ ifeq ($(KBUILD_TARGET),win)
+  VirtualBox_LIBS += $(PATH_STAGE_LIB)/VBoxGlobal$(VBOX_SUFF_LIB)
+ else
+  VirtualBox_LIBS += $(PATH_STAGE_DLL)/VBoxGlobal$(VBOX_SUFF_DLL)
+ endif
 endif
 
 
@@ -412,6 +416,10 @@ endif
 VBoxGlobal_LIBS.linux   += Xinerama
 VBoxGlobal_LIBS.solaris += Xinerama
 VBoxGlobal_LIBS.freebsd += Xinerama
+
+# Various Windows hosts libraries:
+VBoxGlobal_LIBS.win = \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Htmlhelp.Lib
 
 # VBox keyboard shared library for X11 hosts:
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
@@ -1101,8 +1109,7 @@ endif
 
 VirtualBox_SOURCES.win += \
 	src/platform/win/VirtualBox.rc \
-	src/platform/win/UIDesktopServices_win.cpp \
-	src/platform/win/WinKeyboard.cpp
+	src/platform/win/UIDesktopServices_win.cpp
 
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
@@ -1214,7 +1221,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  endif
 
  VirtualBox_SOURCES.win += \
-	src/platform/win/VBoxUtils-win.cpp
+	src/platform/win/VBoxUtils-win.cpp \
+	src/platform/win/WinKeyboard.cpp
 
  VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/CocoaEventHelper.mm \
@@ -1312,7 +1320,8 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 endif
 
 VBoxGlobal_SOURCES.win += \
-	src/platform/win/VBoxUtils-win.cpp
+	src/platform/win/VBoxUtils-win.cpp \
+	src/platform/win/WinKeyboard.cpp
 
 VBoxGlobal_SOURCES.darwin += \
 	src/platform/darwin/CocoaEventHelper.mm \
@@ -1453,7 +1462,7 @@ $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
 	$(QUIET)$(RM) -f -- "$@" "$(PATH_TARGET)/VirtualBoxComWrapperFiles.dep"
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ \
-                $(VBOX_VIRTUALBOX_SRC)/src/globals/COMWrappers.xsl $<
+		$(VBOX_VIRTUALBOX_SRC)/src/globals/COMWrappers.xsl $<
 	$(QUIET)$(VBOX_FILESPLIT) $@ $(VirtualBox_0_OUTDIR)/include \
 		$(PATH_TARGET)/VirtualBoxComWrapperFiles.dep VirtualBox_VBOX_COMWRAPPERS
 	$(APPEND) "$@"

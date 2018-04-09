@@ -641,6 +641,12 @@ private:
     /** Holds the thread-pool instance. */
     UIThreadPool *m_pThreadPool;
 
+#if defined(VBOX_WS_WIN) && defined(VBOX_GUI_WITH_SHARED_LIBRARY)
+    /** Holds the ATL module instance (for use with VBoxGlobal shared library only).
+      * @note  Required internally by ATL (constructor records instance in global variable). */
+    ATL::CComModule _Module;
+#endif
+
     /** Holds the singleton VBoxGlobal instance. */
     static VBoxGlobal *s_pInstance;
     /** Holds whether VBoxGlobal cleanup is in progress. */

@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - Utility classes and functions for handling Win specific tasks.
+ * VBox Qt GUI - Declarations of utility classes and functions for handling Windows specific tasks.
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,20 +15,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Includes: */
+/* GUI includes: */
 #include "VBoxUtils-win.h"
 
-/* Namespace for native window sub-system functions: */
+
+/** Namespace for native window sub-system functions. */
 namespace NativeWindowSubsystem
 {
-    /* Enumerates visible always-on-top (top-most) windows: */
+    /** Enumerates visible always-on-top (top-most) windows. */
     BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM lParam);
-    /* Contain visible top-most-window rectangles: */
+    /** Contains visible top-most-window rectangles. */
     QList<QRect> topMostRects;
 }
 
-/* Enumerates visible always-on-top (top-most) windows: */
-BOOL CALLBACK NativeWindowSubsystem::EnumWindowsProc(HWND hWnd, LPARAM /* lParam */)
+BOOL CALLBACK NativeWindowSubsystem::EnumWindowsProc(HWND hWnd, LPARAM)
 {
     /* Ignore NULL HWNDs: */
     if (!hWnd)
@@ -59,7 +59,6 @@ BOOL CALLBACK NativeWindowSubsystem::EnumWindowsProc(HWND hWnd, LPARAM /* lParam
     return TRUE;
 }
 
-/* Returns area covered by visible always-on-top (top-most) windows: */
 const QRegion NativeWindowSubsystem::areaCoveredByTopMostWindows()
 {
     /* Prepare the top-most region: */
