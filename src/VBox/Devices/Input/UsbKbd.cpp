@@ -991,10 +991,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                             memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
                             return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
                         }
-                        else
-                        {
-                            Log(("usbHid: GET_STATUS (interface) invalid, wIndex=%#x\n", pSetup->wIndex));
-                        }
+                        Log(("usbHid: GET_STATUS (interface) invalid, wIndex=%#x\n", pSetup->wIndex));
                         break;
                     }
 
@@ -1006,10 +1003,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                             memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
                             return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
                         }
-                        else
-                        {
-                            Log(("usbHid: GET_STATUS (endpoint) invalid, wIndex=%#x\n", pSetup->wIndex));
-                        }
+                        Log(("usbHid: GET_STATUS (endpoint) invalid, wIndex=%#x\n", pSetup->wIndex));
                         break;
                     }
 
