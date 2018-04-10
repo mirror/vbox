@@ -3944,15 +3944,13 @@ AuthResult AUTHCALL AuthEntry(
               <para>The following methods have been implemented:
                 <link linkend="IGuestSession__directoryCopyFromGuest">IGuestSession::directoryCopyFromGuest()</link> and
                 <link linkend="IGuestSession__directoryCopyToGuest">IGuestSession::directoryCopyToGuest()</link>,
-                <link linkend="IGuestFile__queryInfo">IGuestFile::queryInfo()</link>,
-                <link linkend="IGuestFile__querySize">IGuestFile::querySize()</link>.
+                <link linkend="IFile__queryInfo">IGuestFile::queryInfo()</link>,
+                <link linkend="IFile__querySize">IGuestFile::querySize()</link>.
               </para>
 
               <para>The following attributes have been implemented:
-                <link linkend="IGuestFsObjInfo__accessTime">IGuestFsObjInfo::accessTime</link>,
-                <link linkend="IGuestFsObjInfo__birthTime">IGuestFsObjInfo::birthTime</link>,
-                <link linkend="IGuestFsObjInfo__changeTime">IGuestFsObjInfo::changeTime</link> and
-                <link linkend="IGuestFsObjInfo__modificationTime">IGuestFsObjInfo::modificationTime</link>.
+                IGuestFsObjInfo::accessTime, IGuestFsObjInfo::birthTime, IGuestFsObjInfo::changeTime and
+                IGuestFsObjInfo::modificationTime</link>.
               </para>
 
             </listitem>
