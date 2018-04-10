@@ -665,11 +665,11 @@ static DECLCALLBACK(void) parallelR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offD
  */
 static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     int            rc;
     PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT*);
 
     Assert(iInstance < 4);
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Init the data.
@@ -861,6 +861,5 @@ const PDMDEVREG g_DeviceParallelPort =
     PDM_DEVREG_VERSION
 };
 #endif /* IN_RING3 */
-
-
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
