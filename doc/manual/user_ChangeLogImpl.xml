@@ -51,8 +51,13 @@ are ordered as follows:
       </listitem>
 
       <listitem>
+        <para>Guest Control: various new APIs and features were implemented
+          (see SDK documentation for more)</para>
+      </listitem>
+
+      <listitem>
         <para>Networking: Added a workaround for older guests which do not enable
-        bus mastering for the virtio PCI device</para>
+          bus mastering for the virtio PCI device</para>
       </listitem>
 
     </itemizedlist>
@@ -67,9 +72,8 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>GUI: fixed occasional screen corruption when host screen resolutio
-n
-          is changed</para>
+        <para>GUI: fixed occasional screen corruption when host screen
+          resolution is changed</para>
       </listitem>
 
       <listitem>
