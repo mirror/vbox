@@ -1036,6 +1036,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         /* Setup Pause Filter for guest pause-loop (spinlock) exiting. */
         if (fUsePauseFilter)
         {
+            Assert(pVM->hm.s.svm.cPauseFilter > 0);
             pVmcb->ctrl.u16PauseFilterCount = pVM->hm.s.svm.cPauseFilter;
             if (fPauseFilterThreshold)
                 pVmcb->ctrl.u16PauseFilterThreshold = pVM->hm.s.svm.cPauseFilterThresholdTicks;
@@ -7320,6 +7321,9 @@ HMSVM_EXIT_DECL hmR0SvmExitPause(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPause);
     hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
+
+    /** @todo The guest has likely hit a contended spinlock. We might want to
+     *        poke a schedule different guest VCPU. */
     return VINF_EM_RAW_INTERRUPT;
 }
 
