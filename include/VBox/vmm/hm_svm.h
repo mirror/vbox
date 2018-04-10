@@ -1012,10 +1012,12 @@ typedef struct SVMNESTEDVMCBCACHE
     uint16_t            u16InterceptRdDRx;
     /** Cache of DRX write intercepts. */
     uint16_t            u16InterceptWrDRx;
+    /** Cache of the pause-filter threshold. */
+    uint16_t            u16PauseFilterThreshold;
+    /** Cache of the pause-filter count. */
+    uint16_t            u16PauseFilterCount;
     /** Cache of exception intercepts. */
     uint32_t            u32InterceptXcpt;
-    /** Alignment. */
-    uint32_t            u32Padding0;
 
     /** Cache of control intercepts. */
     uint64_t            u64InterceptCtrl;

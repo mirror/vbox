@@ -503,7 +503,7 @@ typedef struct CPUMCTX
                 uint16_t            u16Padding0;
                 /** 0x3ba - Pause filter count. */
                 uint16_t            cPauseFilter;
-                /** 0x3bc - Pause filter count. */
+                /** 0x3bc - Pause filter threshold. */
                 uint16_t            cPauseFilterThreshold;
                 /** 0x3be - Whether the injected event is subject to event intercepts. */
                 bool                fInterceptEvents;
