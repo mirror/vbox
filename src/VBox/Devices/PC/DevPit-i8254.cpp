@@ -1304,6 +1304,7 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PPITSTATE   pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
     int         rc;
     uint8_t     u8Irq;

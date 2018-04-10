@@ -1308,12 +1308,11 @@ static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    HPET   *pThis = PDMINS_2_DATA(pDevIns, HPET *);
+    HPET *pThis = PDMINS_2_DATA(pDevIns, HPET *);
 
     /* Only one HPET device now, as we use fixed MMIO region. */
-    Assert(iInstance == 0);
+    Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*
      * Initialize the device state.

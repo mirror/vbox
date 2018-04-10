@@ -1074,11 +1074,10 @@ static DECLCALLBACK(void) rtcReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF1(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PRTCSTATE   pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
     int         rc;
-    Assert(iInstance == 0);
+    Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*
      * Validate configuration.

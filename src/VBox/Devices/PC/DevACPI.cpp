@@ -43,7 +43,6 @@
 #endif
 
 
-
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -3536,6 +3535,7 @@ static DECLCALLBACK(void) acpiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
  */
 static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
     if (pThis->pu8CustBin)
     {
@@ -3550,8 +3550,8 @@ static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
 
     /*
      * Init data and set defaults.
