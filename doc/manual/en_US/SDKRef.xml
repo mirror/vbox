@@ -3950,8 +3950,7 @@ AuthResult AUTHCALL AuthEntry(
 
               <para>The following attributes have been implemented:
                 IGuestFsObjInfo::accessTime, IGuestFsObjInfo::birthTime, IGuestFsObjInfo::changeTime and
-                IGuestFsObjInfo::modificationTime</link>.
-              </para>
+                IGuestFsObjInfo::modificationTime.</para>
 
             </listitem>
           </itemizedlist>
