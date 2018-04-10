@@ -544,6 +544,13 @@
     suggestions about such features are welcome.</para>
   </sect1>
 
+  <sect1 id="hostcpurequirements">
+    <title>Host CPU Requirements</title>
+
+    <para>SSE2 is required starting with VirtualBox version 5.2.10 and version 5.1.24.</para>
+
+  </sect1>
+
   <sect1 id="intro-installing">
     <title>Installing VirtualBox and extension packs</title>
 
