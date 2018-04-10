@@ -36,7 +36,6 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
-#include <iprt/spinlock.h>
 
 
 
