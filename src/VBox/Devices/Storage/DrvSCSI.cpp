@@ -762,6 +762,14 @@ static DECLCALLBACK(int) drvscsiQueryFeatures(PPDMIMEDIAEX pInterface, uint32_t 
     return VINF_SUCCESS;
 }
 
+/** @interface_method_impl{PDMIMEDIAEX,pfnNotifySuspend} */
+static DECLCALLBACK(void) drvscsiNotifySuspend(PPDMIMEDIAEX pInterface)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMediaEx);
+
+    pThis->pDrvMediaEx->pfnNotifySuspend(pThis->pDrvMediaEx);
+}
+
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqAllocSizeSet} */
 static DECLCALLBACK(int) drvscsiIoReqAllocSizeSet(PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc)
 {
@@ -1317,6 +1325,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     /* IMediaEx */
     pThis->IMediaEx.pfnQueryFeatures            = drvscsiQueryFeatures;
+    pThis->IMediaEx.pfnNotifySuspend            = drvscsiNotifySuspend;
     pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvscsiIoReqAllocSizeSet;
     pThis->IMediaEx.pfnIoReqAlloc               = drvscsiIoReqAlloc;
     pThis->IMediaEx.pfnIoReqFree                = drvscsiIoReqFree;

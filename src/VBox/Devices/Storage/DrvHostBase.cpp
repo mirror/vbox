@@ -494,6 +494,12 @@ static DECLCALLBACK(int) drvHostBaseQueryFeatures(PPDMIMEDIAEX pInterface, uint3
     return VINF_SUCCESS;
 }
 
+/** @interface_method_impl{PDMIMEDIAEX,pfnNotifySuspend} */
+static DECLCALLBACK(void) drvHostBaseNotifySuspend(PPDMIMEDIAEX pInterface)
+{
+    RT_NOREF(pInterface); /* Nothing to do here. */
+}
+
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqAllocSizeSet} */
 static DECLCALLBACK(int) drvHostBaseIoReqAllocSizeSet(PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc)
 {
@@ -1294,6 +1300,7 @@ DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *
 
     /* IMediaEx */
     pThis->IMediaEx.pfnQueryFeatures            = drvHostBaseQueryFeatures;
+    pThis->IMediaEx.pfnNotifySuspend            = drvHostBaseNotifySuspend;
     pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvHostBaseIoReqAllocSizeSet;
     pThis->IMediaEx.pfnIoReqAlloc               = drvHostBaseIoReqAlloc;
     pThis->IMediaEx.pfnIoReqFree                = drvHostBaseIoReqFree;
