@@ -581,18 +581,21 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /** @cfgm{/HM/SvmPauseFilterCount, uint16_t, 0}
      * A counter that is decrement each time a PAUSE instruction is executed by the
      * guest. When the counter is 0, a \#VMEXIT is triggered.
+     *
+     * Setting SvmPauseFilterCount to 0 disables pause-filter exiting.
      */
     rc = CFGMR3QueryU16Def(pCfgHm, "SvmPauseFilter", &pVM->hm.s.svm.cPauseFilter, 0);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/SvmPauseFilterThreshold, uint16_t, 0}
-     * The pause filter threshold in ticks. When the elapsed time between two
-     * successive PAUSE instructions exceeds SvmPauseFilterThreshold, the PauseFilter
-     * count is reset to its initial value. However, if PAUSE is executed PauseFilter
-     * times within PauseFilterThreshold ticks, a VM-exit will be triggered.
+     * The pause filter threshold in ticks. When the elapsed time (in ticks) between
+     * two successive PAUSE instructions exceeds SvmPauseFilterThreshold, the
+     * PauseFilter count is reset to its initial value. However, if PAUSE is
+     * executed PauseFilter times within PauseFilterThreshold ticks, a VM-exit will
+     * be triggered.
      *
-     * Setting both SvmPauseFilterCount and SvmPauseFilterCount to 0 disables
-     * pause-filter exiting.
+     * Requires SvmPauseFilterCount to be non-zero for pause-filter threshold to be
+     * activated.
      */
     rc = CFGMR3QueryU16Def(pCfgHm, "SvmPauseFilterThreshold", &pVM->hm.s.svm.cPauseFilterThresholdTicks, 0);
     AssertRCReturn(rc, rc);
@@ -3535,7 +3538,7 @@ static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
         AssertRCReturn(rc, rc);
         /** @todo We need to save SVMNESTEDVMCBCACHE (if pCtx fHMCached is true as we
          *        are in nested-geust execution and the cache contains pristine
-         *        fields that we only restore on #VMEXIT and not on
+         *        fields that we only restore on \#VMEXIT and not on
          *        every exit-to-ring 3. */
     }
 #endif
