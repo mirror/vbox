@@ -6,7 +6,7 @@
       This XML document is also be used for generating the help text
       built into VBoxManage as well as manpages (hacking in progress).
 
-    Copyright (C) 2006-2017 Oracle Corporation
+    Copyright (C) 2006-2018 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -4699,7 +4699,7 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
           (Note - only with Guest Additions 4.0 or later installed).</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; copyfrom [common-options]
-           [--dryrun] [--follow] [--R|recursive]
+           [--follow] [--R|recursive]
             --target-directory &lt;host-dst-dir&gt;
             &lt;guest-src0&gt; [&lt;guest-src1&gt; [...]] </screen>
 
@@ -4708,14 +4708,6 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
                 <glossterm><computeroutput>&lt;uid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
                   <para>Specifies the VM UUID or VM name. Mandatory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--dryrun</computeroutput></glossterm>
-                <glossdef>
-                  <para>Instructs VBoxManage to perform a dry run instead of an actual file copying
-                  operation. Optional. </para>
                 </glossdef>
               </glossentry>
 
@@ -4761,7 +4753,7 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
           (Note - only with Guest Additions 4.0 or later installed).</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; copyto [common-options]
-           [--dryrun] [--follow] [--R|recursive]
+           [--follow] [--R|recursive]
             --target-directory &lt;guest-dst&gt;
             &lt;host-src0&gt; [&lt;host-src1&gt; [...]] </screen>
 
@@ -4770,14 +4762,6 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
                 <glossterm><computeroutput>&lt;uuid|vmname&gt;</computeroutput></glossterm>
                 <glossdef>
                   <para>Specifies the VM UUID or VM name. Mandatory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--dryrun</computeroutput></glossterm>
-                <glossdef>
-                  <para>Instructs VBoxManage to perform a dry run instead of an actual file copying
-                  operation. Optional. </para>
                 </glossdef>
               </glossentry>
 

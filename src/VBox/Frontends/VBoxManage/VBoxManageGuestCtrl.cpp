@@ -186,21 +186,6 @@ typedef struct GCTLCMDCTX
 
 } GCTLCMDCTX, *PGCTLCMDCTX;
 
-
-typedef struct COPYCONTEXT
-{
-    COPYCONTEXT()
-        : fDryRun(false),
-          fHostToGuest(false)
-    {
-    }
-
-    PGCTLCMDCTX pCmdCtx;
-    bool fDryRun;
-    bool fHostToGuest;
-
-} COPYCONTEXT, *PCOPYCONTEXT;
-
 /**
  * An entry for a source element, including an optional DOS-like wildcard (*,?).
  */
@@ -339,22 +324,22 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
     if (uSubCmd & USAGE_GSTCTRL_COPYFROM)
         RTStrmPrintf(pStrm,
                      "                              copyfrom [common-options]\n"
-                     "                              [--dryrun] [--follow] [-R|--recursive]\n"
+                     "                              [--follow] [-R|--recursive]\n"
                      "                              <guest-src0> [guest-src1 [...]] <host-dst>\n"
                      "\n"
                      "                              copyfrom [common-options]\n"
-                     "                              [--dryrun] [--follow] [-R|--recursive]\n"
+                     "                              [--follow] [-R|--recursive]\n"
                      "                              [--target-directory <host-dst-dir>]\n"
                      "                              <guest-src0> [guest-src1 [...]]\n"
                      "\n");
     if (uSubCmd & USAGE_GSTCTRL_COPYTO)
         RTStrmPrintf(pStrm,
                      "                              copyto [common-options]\n"
-                     "                              [--dryrun] [--follow] [-R|--recursive]\n"
+                     "                              [--follow] [-R|--recursive]\n"
                      "                              <host-src0> [host-src1 [...]] <guest-dst>\n"
                      "\n"
                      "                              copyto [common-options]\n"
-                     "                              [--dryrun] [--follow] [-R|--recursive]\n"
+                     "                              [--follow] [-R|--recursive]\n"
                      "                              [--target-directory <guest-dst>]\n"
                      "                              <host-src0> [host-src1 [...]]\n"
                      "\n");
@@ -1748,14 +1733,12 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
      */
     enum GETOPTDEF_COPY
     {
-        GETOPTDEF_COPY_DRYRUN = 1000,
-        GETOPTDEF_COPY_FOLLOW,
+        GETOPTDEF_COPY_FOLLOW = 1000,
         GETOPTDEF_COPY_TARGETDIR
     };
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
-        { "--dryrun",              GETOPTDEF_COPY_DRYRUN,           RTGETOPT_REQ_NOTHING },
         { "--follow",              GETOPTDEF_COPY_FOLLOW,           RTGETOPT_REQ_NOTHING },
         { "--recursive",           'R',                             RTGETOPT_REQ_NOTHING },
         { "--target-directory",    GETOPTDEF_COPY_TARGETDIR,        RTGETOPT_REQ_STRING  }
@@ -1767,7 +1750,6 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     const char *pszDst = NULL;
-    bool fDryRun = false;
     bool fFollow = false;
     bool fRecursive = false;
     uint32_t uUsage = fHostToGuest ? USAGE_GSTCTRL_COPYTO : USAGE_GSTCTRL_COPYFROM;
@@ -1781,10 +1763,6 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         switch (ch)
         {
             GCTLCMD_COMMON_OPTION_CASES(pCtx, ch, &ValueUnion);
-
-            case GETOPTDEF_COPY_DRYRUN:
-                fDryRun = true;
-                break;
 
             case GETOPTDEF_COPY_FOLLOW:
                 fFollow = true;
@@ -1842,8 +1820,6 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
             RTPrintf("Copying from host to guest ...\n");
         else
             RTPrintf("Copying from guest to host ...\n");
-        if (fDryRun)
-            RTPrintf("Dry run - no files copied!\n");
     }
 
     ComPtr<IProgress> pProgress;
