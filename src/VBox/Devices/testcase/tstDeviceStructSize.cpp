@@ -89,8 +89,6 @@
 #undef LOG_GROUP
 #include "../PC/DevDMA.cpp"
 #undef LOG_GROUP
-#include "../PC/DevLPC.cpp"
-#undef LOG_GROUP
 #include "../EFI/DevSmc.cpp"
 #undef LOG_GROUP
 #include "../Storage/DevATA.cpp"

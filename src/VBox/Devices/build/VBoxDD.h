@@ -88,6 +88,9 @@ extern const PDMDEVREG g_DeviceEFI;
 extern const PDMDEVREG g_DevicePciRaw;
 #endif
 extern const PDMDEVREG g_DeviceGIMDev;
+#ifdef VBOX_WITH_NEW_LPC_DEVICE
+extern const PDMDEVREG g_DeviceLPC;
+#endif
 #ifdef VBOX_WITH_VIRTUALKD
 extern const PDMDEVREG g_DeviceVirtualKD;
 #endif

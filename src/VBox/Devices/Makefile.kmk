@@ -127,7 +127,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
  	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
  	VBOX_WITH_DMI_CHASSIS \
- 	VBOX_WITH_DMI_OEMSTRINGS
+ 	VBOX_WITH_DMI_OEMSTRINGS \
+	$(if $(VBOX_WITH_NEW_LPC_DEVICE),VBOX_WITH_NEW_LPC_DEVICE,)
  VBoxDD_DEFS.win         = _WIN32_WINNT=0x0510
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBoxDD_DEFS.darwin     = VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -155,6 +156,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevPcBios.cpp \
  	PC/DevFwCommon.cpp \
  	PC/DevPcArch.cpp \
+	$(if $(VBOX_WITH_NEW_LPC_DEVICE),PC/DevLpc-new.cpp,) \
 	GIMDev/GIMDev.cpp \
 	GIMDev/DrvUDP.cpp \
  	VMMDev/VMMDev.cpp \
@@ -1046,13 +1048,14 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2_TEMPLATE        = VBoxR3DllWarnNoPic
  VBoxDD2_DEFS            = \
 	IN_VBOXDD2 \
-	$(if $(VBOX_WITH_PXE_ROM),VBOX_WITH_PXE_ROM,)
+	$(if $(VBOX_WITH_PXE_ROM),VBOX_WITH_PXE_ROM,) \
+       $(if $(VBOX_WITH_NEW_LPC_DEVICE),VBOX_WITH_NEW_LPC_DEVICE,)
  VBoxDD2_INCS           := \
 	build \
  	$(PATH_SUB_CURRENT)
  VBoxDD2_SOURCES         = \
- 	build/VBoxDD2.cpp  \
- 	PC/DevLPC.cpp
+ 	build/VBoxDD2.cpp \
+ 	$(if $(VBOX_WITH_NEW_LPC_DEVICE),,PC/DevLPC.cpp)
  VBoxDD2_LIBS            = \
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
