@@ -2002,8 +2002,12 @@ void GuestProcessTool::uninit(void)
 {
     /* Make sure the process is terminated and unregistered from the guest session. */
     int rcGuestIgnored;
-    int rc2 = terminate(30 * 1000 /* 30s timeout */, &rcGuestIgnored);
-    AssertRC(rc2);
+    terminate(30 * 1000 /* 30s timeout */, &rcGuestIgnored);
+
+    /* Unregister the process from the process (and the session's object) list. */
+    if (   pSession
+        && pProcess)
+        pSession->i_processUnregister(pProcess);
 
     /* Release references. */
     pProcess.setNull();
