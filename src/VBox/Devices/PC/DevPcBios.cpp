@@ -277,24 +277,27 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
         }
 
         /* The readable, buffered version. */
+        uint32_t iMsg = pThis->iMsg;
         if (u32 == '\n' || u32 == '\r')
         {
-            pThis->szMsg[pThis->iMsg] = '\0';
-            if (pThis->iMsg)
+            AssertStmt(iMsg < sizeof(pThis->szMsg), iMsg = sizeof(pThis->szMsg) - 1);
+            pThis->szMsg[iMsg] = '\0';
+            if (iMsg)
                 Log(("pcbios: %s\n", pThis->szMsg));
-            pThis->iMsg = 0;
+            iMsg = 0;
         }
         else
         {
-            if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
+            if (iMsg >= sizeof(pThis->szMsg) - 1)
             {
-                pThis->szMsg[pThis->iMsg] = '\0';
+                pThis->szMsg[iMsg] = '\0';
                 Log(("pcbios: %s\n", pThis->szMsg));
-                pThis->iMsg = 0;
+                iMsg = 0;
             }
-            pThis->szMsg[pThis->iMsg] = (char )u32;
-            pThis->szMsg[++pThis->iMsg] = '\0';
+            pThis->szMsg[iMsg] = (char)u32;
+            pThis->szMsg[++iMsg] = '\0';
         }
+        pThis->iMsg = iMsg;
         return VINF_SUCCESS;
     }
 
@@ -303,11 +306,12 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
      */
     if (cb == 1 && Port == pThis->ShutdownPort)
     {
-        static const unsigned char szShutdown[] = "Shutdown";
-        if (u32 == szShutdown[pThis->iShutdown])
+        static const unsigned char s_szShutdown[] = "Shutdown";
+        if (   pThis->iShutdown < sizeof(s_szShutdown) /* paranoia */
+            && u32 == s_szShutdown[pThis->iShutdown])
         {
             pThis->iShutdown++;
-            if (pThis->iShutdown == 8)
+            if (pThis->iShutdown >= 8)
             {
                 pThis->iShutdown = 0;
                 LogRel(("PcBios: APM shutdown request\n"));
