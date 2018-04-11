@@ -658,6 +658,7 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPor
         Log(("pitIOPortRead: uPort=%#x cb=%x *pu32=unused!\n", uPort, cb));
         return VERR_IOM_IOPORT_UNUSED;
     }
+    RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia */
 
     PPITSTATE   pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
     PPITCHANNEL pChan = &pThis->channels[uPort];
@@ -759,7 +760,8 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
          *                                   1 1 0 = Mode 2, 1 1 1 = Mode 3
          *  . . . . . . . *  BCD/Binary mode: 0 = 16-bit binary, 1 = four-digit BCD
          */
-        unsigned channel = u32 >> 6;
+        unsigned channel = (u32 >> 6) & 0x3;
+        RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia */
         if (channel == 3)
         {
             /* read-back command */
@@ -767,7 +769,8 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
             for (channel = 0; channel < RT_ELEMENTS(pThis->channels); channel++)
             {
                 PPITCHANNEL pChan = &pThis->channels[channel];
-                if (u32 & (2 << channel)) {
+                if (u32 & (2 << channel))
+                {
                     if (!(u32 & 0x20))
                         pit_latch_count(pChan);
                     if (!(u32 & 0x10) && !pChan->status_latched)
@@ -776,9 +779,9 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
                         /* XXX: add BCD and null count */
                         PTMTIMER pTimer = pChan->CTX_SUFF(pPit)->channels[0].CTX_SUFF(pTimer);
                         pChan->status = (pit_get_out1(pChan, TMTimerGet(pTimer)) << 7)
-                            | (pChan->rw_mode << 4)
-                            | (pChan->mode << 1)
-                            | pChan->bcd;
+                                      | (pChan->rw_mode << 4)
+                                      | (pChan->mode << 1)
+                                      | pChan->bcd;
                         pChan->status_latched = 1;
                     }
                 }
@@ -819,6 +822,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
         /*
          * Port 40-42h - Channel Data Ports.
          */
+        RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia */
         PPITCHANNEL pChan = &pThis->channels[uPort];
         DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
         switch (pChan->write_state)
