@@ -1129,11 +1129,11 @@ int SessionTaskCopyDirFrom::Run(void)
     if (   !strSrcDir.endsWith("/")
         && !strSrcDir.endsWith("\\"))
     {
-        if (   !strDstDir.endsWith("/")
-            && !strDstDir.endsWith("\\"))
-            strDstDir += "/";
-
-        strDstDir += Utf8StrFmt("%s", RTPathFilename(strSrcDir.c_str()));
+        if (   strDstDir.endsWith("/")
+            || strDstDir.endsWith("\\"))
+        {
+            strDstDir += Utf8StrFmt("%s", RTPathFilename(strSrcDir.c_str()));
+        }
     }
 
     /* Create the root target directory on the host.
@@ -1352,11 +1352,11 @@ int SessionTaskCopyDirTo::Run(void)
     if (   !strSrcDir.endsWith("/")
         && !strSrcDir.endsWith("\\"))
     {
-        if (   !strDstDir.endsWith("/")
-            && !strDstDir.endsWith("\\"))
-            strDstDir += "/";
-
-        strDstDir += Utf8StrFmt("%s", RTPathFilename(strSrcDir.c_str()));
+        if (   strDstDir.endsWith("/")
+            || strDstDir.endsWith("\\"))
+        {
+            strDstDir += Utf8StrFmt("%s", RTPathFilename(strSrcDir.c_str()));
+        }
     }
 
     /* Create the root target directory on the guest.
