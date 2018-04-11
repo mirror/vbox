@@ -1115,7 +1115,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, ui
          */
         uint8_t *pbMsrpm = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
         pbMsrpm += offMsrpm;
-        if (ASMBitTest(pbMsrpm, uMsrpmBit))
+        if (*pbMsrpm & RT_BIT(uMsrpmBit))
         {
             IEM_SVM_UPDATE_NRIP(pVCpu);
             return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_MSR, uExitInfo1, 0 /* uExitInfo2 */);

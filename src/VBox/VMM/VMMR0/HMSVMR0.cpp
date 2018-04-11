@@ -838,41 +838,41 @@ static void hmR0SvmSetMsrPermission(PCPUMCTX pCtx, uint8_t *pbMsrBitmap, uint32_
 
     pbMsrBitmap += offMsrpm;
     if (enmRead == SVMMSREXIT_INTERCEPT_READ)
-        ASMBitSet(pbMsrBitmap, uMsrpmBit);
+        *pbMsrBitmap |= RT_BIT(uMsrpmBit);
     else
     {
         if (!fInNestedGuestMode)
-            ASMBitClear(pbMsrBitmap, uMsrpmBit);
+            *pbMsrBitmap &= ~RT_BIT(uMsrpmBit);
 #ifdef VBOX_WITH_NESTED_HWVIRT
         else
         {
             /* Only clear the bit if the nested-guest is also not intercepting the MSR read.*/
             uint8_t const *pbNstGstMsrBitmap = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
             pbNstGstMsrBitmap += offMsrpm;
-            if (!ASMBitTest(pbNstGstMsrBitmap, uMsrpmBit))
-                ASMBitClear(pbMsrBitmap, uMsrpmBit);
+            if (!(*pbNstGstMsrBitmap & RT_BIT(uMsrpmBit)))
+                *pbMsrBitmap &= ~RT_BIT(uMsrpmBit);
             else
-                Assert(ASMBitTest(pbMsrBitmap, uMsrpmBit));
+                Assert(*pbMsrBitmap & RT_BIT(uMsrpmBit));
         }
 #endif
     }
 
     if (enmWrite == SVMMSREXIT_INTERCEPT_WRITE)
-        ASMBitSet(pbMsrBitmap, uMsrpmBit + 1);
+        *pbMsrBitmap |= RT_BIT(uMsrpmBit + 1);
     else
     {
         if (!fInNestedGuestMode)
-            ASMBitClear(pbMsrBitmap, uMsrpmBit + 1);
+            *pbMsrBitmap &= ~RT_BIT(uMsrpmBit + 1);
 #ifdef VBOX_WITH_NESTED_HWVIRT
         else
         {
             /* Only clear the bit if the nested-guest is also not intercepting the MSR write.*/
             uint8_t const *pbNstGstMsrBitmap = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
             pbNstGstMsrBitmap += offMsrpm;
-            if (!ASMBitTest(pbNstGstMsrBitmap, uMsrpmBit + 1))
-                ASMBitClear(pbMsrBitmap, uMsrpmBit + 1);
+            if (!(*pbNstGstMsrBitmap & RT_BIT(uMsrpmBit + 1)))
+                *pbMsrBitmap &= ~RT_BIT(uMsrpmBit + 1);
             else
-                Assert(ASMBitTest(pbMsrBitmap, uMsrpmBit + 1));
+                Assert(*pbMsrBitmap & RT_BIT(uMsrpmBit + 1));
         }
 #endif
     }
@@ -5170,8 +5170,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
                     uint8_t const *pbMsrBitmap = (uint8_t const *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
                     pbMsrBitmap               += offMsrpm;
-                    bool const fInterceptRead  = ASMBitTest(pbMsrBitmap, uMsrpmBit);
-                    bool const fInterceptWrite = ASMBitTest(pbMsrBitmap, uMsrpmBit + 1);
+                    bool const fInterceptRead  = *pbMsrBitmap & RT_BIT(uMsrpmBit);
+                    bool const fInterceptWrite = *pbMsrBitmap & RT_BIT(uMsrpmBit + 1);
 
                     if (   (fInterceptWrite && pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_WRITE)
                         || (fInterceptRead  && pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_READ))
@@ -7321,7 +7321,6 @@ HMSVM_EXIT_DECL hmR0SvmExitPause(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPause);
     hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
-
     /** @todo The guest has likely hit a contended spinlock. We might want to
      *        poke a schedule different guest VCPU. */
     return VINF_EM_RAW_INTERRUPT;
