@@ -569,6 +569,8 @@ VBOX_WITH_NVME_IMPL = 1
 ifn1of ($(KBUILD_TARGET), win)
  VBOX_WITH_DRV_DISK_INTEGRITY = 1
 endif
+# Enables new LPC device implementation.
+VBOX_WITH_NEW_LPC_DEVICE = 1
 ## @}
 
 # legacy
