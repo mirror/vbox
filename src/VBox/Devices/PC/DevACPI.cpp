@@ -2545,7 +2545,7 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     }
     if (RT_SUCCESS(rc))
     {
-        AssertLogRelMsgReturn(pThis->u8SMBusBlkIdx < RT_ELEMENTS(au8SMBusBlkDat),
+        AssertLogRelMsgReturn(pThis->u8SMBusBlkIdx < RT_ELEMENTS(pThis->au8SMBusBlkDat),
                               ("%#x\n", pThis->u8SMBusBlkIdx), VERR_SSM_LOAD_CONFIG_MISMATCH);
         rc = acpiR3RegisterPmHandlers(pThis);
         if (RT_FAILURE(rc))
