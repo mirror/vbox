@@ -78,12 +78,12 @@ protected:
 
     /** @name File handling primitives.
      * @{ */
-    int fileCopyFromEx(ComObjPtr<GuestFile> &srcFile, PRTFILE phDstFile, FileCopyFlag_T enmFileCopyFlags,
-                       uint64_t cbOffset, uint64_t cbSize);
-    int fileCopyFrom(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
-    int fileCopyToEx(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags, PRTFILE pFile,
-                     uint64_t cbOffset, uint64_t cbSize); /**< r=bird: 'cbOffset' makes no sense what so ever. It should be 'off', or do you mean sizeof(uint64_t)? */
-    int fileCopyTo(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
+    int fileCopyFromGuestInner(ComObjPtr<GuestFile> &srcFile, PRTFILE phDstFile, FileCopyFlag_T fFileCopyFlags,
+                               uint64_t offCopy, uint64_t cbSize);
+    int fileCopyFromGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
+    int fileCopyToGuestInner(PRTFILE phSrcFile, ComObjPtr<GuestFile> &dstFile, FileCopyFlag_T fFileCopyFlags,
+                             uint64_t offCopy, uint64_t cbSize);
+    int fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
     /** @}  */
 
     /** @name Guest property handling primitives.
@@ -138,15 +138,46 @@ protected:
     uint32_t mTimeoutMS;
 };
 
+class GuestSessionCopyTask : public GuestSessionTask
+{
+public:
+
+    GuestSessionCopyTask(GuestSession *pSession)
+        : GuestSessionTask(pSession) { RT_ZERO(u); }
+
+    virtual ~GuestSessionCopyTask() { }
+
+protected:
+
+    Utf8Str mSource;
+    Utf8Str mDest;
+    Utf8Str mFilter;
+
+    union
+    {
+        struct
+        {
+            DirectoryCopyFlag_T fCopyFlags;
+        } Dir;
+        struct
+        {
+            FileCopyFlag_T      fCopyFlags;
+            PRTFILE             phFile;
+            size_t              offStart;
+            uint64_t            cbSize;
+        } File;
+    } u;
+};
+
 /**
  * Task for copying directories from guest to the host.
  */
-class SessionTaskCopyDirFrom : public GuestSessionTask
+class SessionTaskCopyDirFrom : public GuestSessionCopyTask
 {
 public:
 
     SessionTaskCopyDirFrom(GuestSession *pSession, const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter,
-                           DirectoryCopyFlag_T enmDirCopyFlags);
+                           DirectoryCopyFlag_T fDirCopyFlags);
     virtual ~SessionTaskCopyDirFrom(void);
     int Run(void);
 
@@ -154,23 +185,17 @@ protected:
 
     int directoryCopyToHost(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive,
                             bool fFollowSymlinks, const Utf8Str &strSubDir /* For recursion. */);
-protected:
-
-    Utf8Str             mSource;
-    Utf8Str             mDest;
-    Utf8Str             mFilter;
-    DirectoryCopyFlag_T mDirCopyFlags;
 };
 
 /**
  * Task for copying directories from host to the guest.
  */
-class SessionTaskCopyDirTo : public GuestSessionTask
+class SessionTaskCopyDirTo : public GuestSessionCopyTask
 {
 public:
 
     SessionTaskCopyDirTo(GuestSession *pSession, const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter,
-                         DirectoryCopyFlag_T enmDirCopyFlags);
+                         DirectoryCopyFlag_T fDirCopyFlags);
     virtual ~SessionTaskCopyDirTo(void);
     int Run(void);
 
@@ -178,56 +203,32 @@ protected:
 
     int directoryCopyToGuest(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive,
                              bool fFollowSymlinks, const Utf8Str &strSubDir /* For recursion. */);
-protected:
-
-    Utf8Str             mSource;
-    Utf8Str             mDest;
-    Utf8Str             mFilter;
-    DirectoryCopyFlag_T mDirCopyFlags;
 };
 
 /**
  * Task for copying files from host to the guest.
  */
-class SessionTaskCopyFileTo : public GuestSessionTask
+class SessionTaskCopyFileTo : public GuestSessionCopyTask
 {
 public:
 
     SessionTaskCopyFileTo(GuestSession *pSession,
-                          const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
-    SessionTaskCopyFileTo(GuestSession *pSession,
-                          PRTFILE pSourceFile, size_t cbSourceOffset, uint64_t cbSourceSize,
-                          const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
+                          const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
     virtual ~SessionTaskCopyFileTo(void);
     int Run(void);
-
-protected:
-
-    Utf8Str        mSource;
-    PRTFILE        mSourceFile;
-    size_t         mSourceOffset;
-    uint64_t       mSourceSize;
-    Utf8Str        mDest;
-    FileCopyFlag_T mFileCopyFlags;
 };
 
 /**
  * Task for copying files from guest to the host.
  */
-class SessionTaskCopyFileFrom : public GuestSessionTask
+class SessionTaskCopyFileFrom : public GuestSessionCopyTask
 {
 public:
 
     SessionTaskCopyFileFrom(GuestSession *pSession,
-                        const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T enmFileCopyFlags);
+                            const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
     virtual ~SessionTaskCopyFileFrom(void);
     int Run(void);
-
-protected:
-
-    Utf8Str        mSource;
-    Utf8Str        mDest;
-    FileCopyFlag_T mFileCopyFlags;
 };
 
 /**
@@ -239,7 +240,7 @@ public:
 
     SessionTaskUpdateAdditions(GuestSession *pSession,
                                const Utf8Str &strSource, const ProcessArguments &aArguments,
-                               uint32_t uFlags);
+                               uint32_t fFlags);
     virtual ~SessionTaskUpdateAdditions(void);
     int Run(void);
 
@@ -295,7 +296,7 @@ protected:
     };
 
     int addProcessArguments(ProcessArguments &aArgumentsDest, const ProcessArguments &aArgumentsSource);
-    int copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO, Utf8Str const &strFileSource, const Utf8Str &strFileDest, bool fOptional, uint32_t *pcbSize);
+    int copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO, Utf8Str const &strFileSource, const Utf8Str &strFileDest, bool fOptional);
     int runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo);
 
     /** Files to handle. */
