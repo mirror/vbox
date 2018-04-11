@@ -149,21 +149,32 @@ public:
 
 protected:
 
+    /** Source to copy from. */
     Utf8Str mSource;
+    /** Destination to copy to. */
     Utf8Str mDest;
+    /** Filter (wildcard-style) when copying directories. */
     Utf8Str mFilter;
 
     union
     {
+        /** Directory-specific data. */
         struct
         {
+            /** Directory copy flags. */
             DirectoryCopyFlag_T fCopyFlags;
         } Dir;
+        /** File-specific data. */
         struct
         {
+            /** File copy flags. */
             FileCopyFlag_T      fCopyFlags;
+            /** Host file handle to use for reading from / writing to.
+             *  Optional and can be NULL if not used. */
             PRTFILE             phFile;
+            /** Source file offset to start copying from. */
             size_t              offStart;
+            /** Source size (in bytes) to copy. */
             uint64_t            cbSize;
         } File;
     } u;
@@ -300,13 +311,13 @@ protected:
     int runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo);
 
     /** Files to handle. */
-    std::vector<ISOFile> mFiles;
+    std::vector<ISOFile>        mFiles;
     /** The (optionally) specified Guest Additions .ISO on the host
      *  which will be used for the updating process. */
-    Utf8Str                    mSource;
+    Utf8Str                     mSource;
     /** (Optional) installer command line arguments. */
-    ProcessArguments           mArguments;
+    ProcessArguments            mArguments;
     /** Update flags. */
-    uint32_t                   mFlags;
+    uint32_t                    mFlags;
 };
 #endif /* !____H_GUESTSESSIONIMPL_TASKS */
