@@ -3119,9 +3119,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         if oTestVm.isWindows():
             sUser = "Administrator";
-            sScratch = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo\\";
+            sScratchGst = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo/";
+            sScratchGstNotExist = "C:\\does-not-exist\\";
+            sScratchGstInvalid = "[]?:";
         else:
             sUser = "vbox";
+            sScratchGst = "/tmp/testGuestCtrlCopyTo/";
+            sScratchGstNotExist = "/tmp/does-not-exist/";
+            sScratchGstInvalid = "/";
         sPassword = "password";
 
         if oTxsSession.syncMkDir('${SCRATCH}/testGuestCtrlCopyTo') is False:
@@ -3155,21 +3160,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = ''),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows',
-                               aFlags = [ 1234 ] ),
+                               aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Source missing.
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = ''),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = 'C:\\Windows',
-                               aFlags = [ 1234 ] ),
+                               aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Testing DirectoryCopyFlag flags.
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                  sDst = 'Whatever', aFlags = [ 1234 ] ),
+                               sDst = sScratchGstInvalid, aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Testing FileCopyFlag flags.
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                  sDst = 'Whatever', aFlags = [ 1234 ] ),
+                               sDst = sScratchGstInvalid, aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Nothing to copy (source and/or destination is empty).
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'z:\\'),
@@ -3177,7 +3182,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = '\\\\uncrulez\\foo'),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'non-exist',
-                               sDst = os.path.join(sScratch, 'non-exist.dll')),
+                               sDst = os.path.join(sScratchGst, 'non-exist.dll')),
                   tdTestResult(fRc = False) ]
             ]);
 
@@ -3187,28 +3192,31 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if self.oTstDrv.fpApiVer > 5.2:
                 aaTests.extend([
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                sDst = os.path.join(sScratch, 'C:\\non-exist\\')),
+                                   sDst = sScratchGstInvalid),
                       tdTestResult(fRc = False) ],
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                sDst = os.path.join(sScratch, 'C:\\non\\exist\\')),
+                                   sDst = sScratchGstNotExist),
                       tdTestResult(fRc = False) ],
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                sDst = os.path.join(sScratch, 'C:\\non\\exist\\renamedfile.dll')),
+                                   sDst = sScratchGstNotExist),
                       tdTestResult(fRc = False) ],
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
+                                   sDst = os.path.join(sScratchGstNotExist, 'renamedfile.dll')),
+                      tdTestResult(fRc = False) ],
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                   sDst = os.path.join(sScratchGst, 'HostGuestAdditions.iso')),
                       tdTestResult(fRc = True) ],
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                sDst = os.path.join(sScratch, 'HostGuestAdditions.iso')),
+                                   sDst = os.path.join(sScratchGst, 'HostGuestAdditions.iso')),
                       tdTestResult(fRc = True) ],
                     # Note: Copying files into directories via Main is supported only in versions > 5.2.
                     # Destination is a directory.
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                sDst = sScratch),
+                                   sDst = sScratchGst),
                       tdTestResult(fRc = True) ],
                     # Copy over file again into same directory (overwrite).
                     [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                sDst = sScratch),
+                                   sDst = sScratchGst),
                       tdTestResult(fRc = True) ]
                 ]);
 
@@ -3220,12 +3228,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     aaTests.extend([
                         # Copying directories with contain files we don't have read access to.
                         [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\security',
-                                       sDst = sScratch),
-                            tdTestResult(fRc = False) ],
+                                       sDst = sScratchGst),
+                          tdTestResult(fRc = False) ],
                         # Copying directories with regular files.
                         [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Help',
-                                       sDst = sScratch),
-                            tdTestResult(fRc = True) ]
+                                       sDst = sScratchGst),
+                          tdTestResult(fRc = True) ]
                         ]);
         else:
             reporter.log('No OS-specific tests for non-Windows yet!');
@@ -3288,16 +3296,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sUser = "vbox";
         sPassword = "password";
 
-        sScratch = os.path.join(self.oTstDrv.sScratchPath, "testGctrlCopyFrom");
+        if self.oTstDrv.sHost == "win":
+            sScratchHstInvalid = "[]?:";
+        else:
+            sScratchHstInvalid = "/";
+
+        sScratchHst = os.path.join(self.oTstDrv.sScratchPath, "testGctrlCopyFrom");
         try:
-            os.makedirs(sScratch);
+            os.makedirs(sScratchHst);
         except OSError as e:
             if e.errno != errno.EEXIST:
-                reporter.error('Failed: Unable to create scratch directory \"%s\"' % (sScratch,));
+                reporter.error('Failed: Unable to create scratch directory \"%s\"' % (sScratchHst,));
                 return (False, oTxsSession);
-        reporter.log('Scratch path is: %s' % (sScratch,));
-
-        sScratchNotExist = "/does-not-exist";
+        reporter.log('Scratch path is: %s' % (sScratchHst,));
 
         aaTests = [];
         if oTestVm.isWindows():
@@ -3306,21 +3317,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = ''),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'Something',
-                                 aFlags = [ 1234 ] ),
+                                 aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Source missing.
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sDst = ''),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sDst = 'Something',
-                                 aFlags = [ 1234 ] ),
+                                 aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Testing DirectoryCopyFlag flags.
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32',
-                  sDst = 'Whatever', aFlags = [ 1234 ] ),
+                                 sDst = sScratchHstInvalid, aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Testing FileCopyFlag flags.
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                  sDst = 'Whatever', aFlags = [ 1234 ] ),
+                                 sDst = sScratchHstInvalid, aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Nothing to copy (sDst is empty / unreachable).
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'z:\\'),
@@ -3328,7 +3339,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = '\\\\uncrulez\\foo'),
                   tdTestResult(fRc = False) ],
                 [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'non-exist',
-                                 sDst = os.path.join(sScratch, 'non-exist.dll')),
+                                 sDst = os.path.join(sScratchHst, 'non-exist.dll')),
                   tdTestResult(fRc = False) ]
             ]);
 
@@ -3339,29 +3350,29 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 aaTests.extend([
                     # Copying single files.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                    sDst = sScratchNotExist),
-                    tdTestResult(fRc = False) ],
+                                     sDst = sScratchHstInvalid),
+                      tdTestResult(fRc = False) ],
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                    sDst = os.path.join(sScratchNotExist, 'renamedfile.dll')),
-                    tdTestResult(fRc = False) ],
+                                     sDst = os.path.join(sScratchHstInvalid, 'renamedfile.dll')),
+                      tdTestResult(fRc = False) ],
                     # Copy over file using a different destination name.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                    sDst = os.path.join(sScratch, 'renamedfile.dll')),
-                    tdTestResult(fRc = True) ],
+                                     sDst = os.path.join(sScratchHst, 'renamedfile.dll')),
+                      tdTestResult(fRc = True) ],
                     # Copy over same file (and overwrite existing one).
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                    sDst = os.path.join(sScratch, 'renamedfile.dll')),
-                    tdTestResult(fRc = True) ],
+                                     sDst = os.path.join(sScratchHst, 'renamedfile.dll')),
+                      tdTestResult(fRc = True) ],
                     # Note: Copying files into directories via Main is supported only in versions > 5.2.
                     # Destination is a directory with a trailing slash (should work).
                     # See "cp" syntax.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                    sDst = sScratch + "/"),
+                                     sDst = sScratchHst + "/"),
                       tdTestResult(fRc = True) ],
                     # Destination is a directory (should fail).
                     # See "cp" syntax.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                    sDst = sScratch),
+                                     sDst = sScratchHst),
                       tdTestResult(fRc = False) ]
                 ]);
 
@@ -3372,21 +3383,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 aaTests.extend([
                     # Copying entire directories (destination is "<sScratch>", which exists, which should fail).
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
-                                    sDst = sScratch),
-                    tdTestResult(fRc = False) ],
+                                    sDst = sScratchHst),
+                      tdTestResult(fRc = False) ],
                     # Copying entire directories (destination is "<sScratch>\Web").
                     # Should fail, as the corresponding flag is missing.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
-                                    sDst = sScratch + "/"),
-                    tdTestResult(fRc = False) ],
+                                    sDst = sScratchHst + "/"),
+                      tdTestResult(fRc = False) ],
                     # Next try with correct flag being set.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
-                                    sDst = sScratch + "/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
-                    tdTestResult(fRc = True) ],
+                                    sDst = sScratchHst + "/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                      tdTestResult(fRc = True) ],
                     # Copying contents of directories (destination is "<sScratch>/").
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web\\',
-                                    sDst = sScratch + "/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
-                    tdTestResult(fRc = True) ]
+                                    sDst = sScratchHst + "/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                      tdTestResult(fRc = True) ]
                 ]);
         else:
             reporter.log('No OS-specific tests for non-Windows yet!');
