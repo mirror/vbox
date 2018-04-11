@@ -2199,7 +2199,7 @@ RTDECL(int) RTVfsQueryPathInfo(RTVFS hVfs, const char *pszPath, PRTFSOBJINFO pOb
                         || !(fFlags & RTPATH_F_FOLLOW_LINK))
                     {
                         if (   (fObjFlags & RTVFSOBJ_F_OPEN_MASK) != RTVFSOBJ_F_OPEN_ANY
-                            && RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
+                            && !RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
                             rc = VERR_NOT_A_DIRECTORY;
                         break;
                     }
@@ -3063,7 +3063,7 @@ RTDECL(int) RTVfsDirQueryPathInfo(RTVFSDIR hVfsDir, const char *pszPath, PRTFSOB
                         || !(fFlags & RTPATH_F_FOLLOW_LINK))
                     {
                         if (   (fObjFlags & RTVFSOBJ_F_OPEN_MASK) != RTVFSOBJ_F_OPEN_ANY
-                            && RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
+                            && !RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
                             rc = VERR_NOT_A_DIRECTORY;
                         break;
                     }
