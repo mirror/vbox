@@ -2618,9 +2618,78 @@ else
  VBOX_NASM_CHECK =
 endif
 
-# Figures the pylin version.
+# Figures the pylint version.
 VBOX_PYLINT_FIGURE_VERSION = $(shell $(1) --version 2> /dev/null \
 	| $(SED_EXT) -n -e 's|^ *pylint *\([0-9][0-9]*\).\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
+
+# Java stuff.
+ifeq ($(KBUILD_TARGET), darwin)
+ VBOX_JAVA_COMMANDS = $(firstword $(wildcard \
+        /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Commands \
+        /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands \
+        $(if-expr $(VBOX_XCODE_VERSION_MAJOR) >= 4,/System/Library/Frameworks/JavaVM.framework/Versions/A/Commands,) \
+        ) /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands)
+ VBOX_JAVA      = $(VBOX_JAVA_COMMANDS)/java
+ VBOX_JAVAC     = $(VBOX_JAVA_COMMANDS)/javac
+ VBOX_JAVAH     = $(VBOX_JAVA_COMMANDS)/javah
+ VBOX_JAR       = $(VBOX_JAVA_COMMANDS)/jar
+ VBOX_JAVADOC   = $(VBOX_JAVA_COMMANDS)/javadoc
+ VBOX_WSIMPORT  = $(VBOX_JAVA_COMMANDS)/wsimport
+ if $(VBOX_XCODE_VERSION_MAJOR) >= 4 # Lion (4.1-preview 5) has a broken CurrentJDK link.  Blindly applying it to 4.0.
+  VBOX_JAVA_INC  = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers
+ else
+  VBOX_JAVA_INC  = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Headers
+ endif
+
+else # !darwin
+
+ ifeq ($(KBUILD_TARGET),linux)
+  ifeq ($(origin VBOX_JAVA_HOME),undefined)
+   # Add correct detection for you distro after the /usr/../java-6-sun line.
+   VBOX_JAVA_HOME := $(firstword $(wildcard \
+	$(KBUILD_DEVTOOLS)/linux.x86/jdk1.6.0_27 \
+	/usr/lib/jvm/java-6-sun  \
+	/usr/lib/jvm/java-6-openjdk \
+	/usr/lib/jvm/java-6-openjdk-i386 \
+	/usr/lib/jvm/java-6-openjdk-amd64 \
+	/usr/lib/jvm/java-7-openjdk-i386 \
+	/usr/lib/jvm/java-7-openjdk-amd64 \
+	/usr/lib/jvm/default-java \
+	/usr/lib/jvm/java \
+	\
+	/usr/lib/jvm/sun-jdk-1.6 \
+	) /usr/lib/jvm/java-6-sun)
+  endif
+ endif
+
+ ifeq ($(KBUILD_TARGET),solaris)
+  # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.6.0
+  VBOX_JAVA_HOME ?= $(firstword $(abspath $(wildcard \
+	/usr/jdk/latest/include/.. \
+	/usr/jdk/instances/jdk1.8*/include/.. \
+	/usr/jdk/instances/jdk1.7*/include/.. \
+	/usr/jdk/instances/jdk1.6*/include/.. \
+	)) /usr/java)
+ endif
+
+ ifeq ($(KBUILD_TARGET),win)
+  VBOX_JAVA_HOME ?= c:/jdk
+ endif
+
+ VBOX_JAVA     ?= "$(VBOX_JAVA_HOME)/bin/java$(HOSTSUFF_EXE)"
+ VBOX_JAVAC     = "$(VBOX_JAVA_HOME)/bin/javac$(HOSTSUFF_EXE)"
+ VBOX_JAVAH     = "$(VBOX_JAVA_HOME)/bin/javah$(HOSTSUFF_EXE)"
+ VBOX_JAR       = "$(VBOX_JAVA_HOME)/bin/jar$(HOSTSUFF_EXE)"
+ VBOX_JAVADOC   = "$(VBOX_JAVA_HOME)/bin/javadoc$(HOSTSUFF_EXE)"
+ VBOX_WSIMPORT  = "$(VBOX_JAVA_HOME)/bin/wsimport$(HOSTSUFF_EXE)"
+ # correct for targets we care about
+ VBOX_MD_OS     = $(KBUILD_TARGET)
+ VBOX_JAVA_INC  = \
+ 	$(VBOX_JAVA_HOME)/include \
+ 	$(VBOX_JAVA_HOME)/include/$(VBOX_MD_OS)
+endif # !darwin
+VBOX_JAVA_FIGURE_VERSION = $(shell $(1) -version 2>&1 > /dev/null \
+	| $(SED_EXT) -n -e 's|^[^ ]* *\([0-9][0-9]*\).\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
 
 # Test C and C++ files.
 $(PATH_OUT)/DynamicConfig.c $(PATH_OUT)/DynamicConfig.cpp:
@@ -2800,6 +2869,9 @@ if "$(KBUILD_HOST)" == "solaris" && $(KBUILD_HOST_VERSION_MAJOR) == 5 && $(KBUIL
 endif
 if defined(VBOX_PYLINT) && !defined(VBOX_WITH_PYLINT_PRE_V1_0) && !defined(VBOX_WITH_PYLINT_V1_1_PLUS) && !defined(VBOX_WITH_PYLINT_V1_2_1_PLUS)
 	$(QUIET)$(APPEND) '$@' "VBOX_PYLINT_VERSION  := $(call VBOX_PYLINT_FIGURE_VERSION, $(VBOX_PYLINT))"
+endif
+if defined(VBOX_JAVAC)
+	$(QUIET)$(APPEND) '$@' 'VBOX_JAVA_VERSION    := $(call VBOX_JAVA_FIGURE_VERSION, $(VBOX_JAVAC))'
 endif
 
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
@@ -7214,73 +7286,6 @@ VBOX_XIDL_FILE_SRC     = $(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl
 # second XIDL file to use as source for COM/XPCOM IDL (with stripped docs):
 VBOX_XIDL_FILE         = $(PATH_OUT)/obj/VirtualBox_stripped.xidl
 
-# Java stuff.
-ifeq ($(KBUILD_TARGET), darwin)
- VBOX_JAVA_COMMANDS = $(firstword $(wildcard \
-        /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Commands \
-        /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands \
-        $(if-expr $(VBOX_XCODE_VERSION_MAJOR) >= 4,/System/Library/Frameworks/JavaVM.framework/Versions/A/Commands,) \
-        ) /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands)
- VBOX_JAVA      = $(VBOX_JAVA_COMMANDS)/java
- VBOX_JAVAC     = $(VBOX_JAVA_COMMANDS)/javac
- VBOX_JAVAH     = $(VBOX_JAVA_COMMANDS)/javah
- VBOX_JAR       = $(VBOX_JAVA_COMMANDS)/jar
- VBOX_JAVADOC   = $(VBOX_JAVA_COMMANDS)/javadoc
- VBOX_WSIMPORT  = $(VBOX_JAVA_COMMANDS)/wsimport
- if $(VBOX_XCODE_VERSION_MAJOR) >= 4 # Lion (4.1-preview 5) has a broken CurrentJDK link.  Blindly applying it to 4.0.
-  VBOX_JAVA_INC  = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers
- else
-  VBOX_JAVA_INC  = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Headers
- endif
-
-else # !darwin
-
- ifeq ($(KBUILD_TARGET),linux)
-  ifeq ($(origin VBOX_JAVA_HOME),undefined)
-   # Add correct detection for you distro after the /usr/../java-6-sun line.
-   VBOX_JAVA_HOME := $(firstword $(wildcard \
-	$(KBUILD_DEVTOOLS)/linux.x86/jdk1.6.0_27 \
-	/usr/lib/jvm/java-6-sun  \
-	/usr/lib/jvm/java-6-openjdk \
-	/usr/lib/jvm/java-6-openjdk-i386 \
-	/usr/lib/jvm/java-6-openjdk-amd64 \
-	/usr/lib/jvm/java-7-openjdk-i386 \
-	/usr/lib/jvm/java-7-openjdk-amd64 \
-	/usr/lib/jvm/default-java \
-	/usr/lib/jvm/java \
-	\
-	/usr/lib/jvm/sun-jdk-1.6 \
-	) /usr/lib/jvm/java-6-sun)
-  endif
- endif
-
- ifeq ($(KBUILD_TARGET),solaris)
-  # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.6.0
-  VBOX_JAVA_HOME ?= $(firstword $(abspath $(wildcard \
-	/usr/jdk/latest/include/.. \
-	/usr/jdk/instances/jdk1.8*/include/.. \
-	/usr/jdk/instances/jdk1.7*/include/.. \
-	/usr/jdk/instances/jdk1.6*/include/.. \
-	)) /usr/java)
- endif
-
- ifeq ($(KBUILD_TARGET),win)
-  VBOX_JAVA_HOME ?= c:/jdk
- endif
-
- VBOX_JAVA     ?= "$(VBOX_JAVA_HOME)/bin/java$(HOSTSUFF_EXE)"
- VBOX_JAVAC     = "$(VBOX_JAVA_HOME)/bin/javac$(HOSTSUFF_EXE)"
- VBOX_JAVAH     = "$(VBOX_JAVA_HOME)/bin/javah$(HOSTSUFF_EXE)"
- VBOX_JAR       = "$(VBOX_JAVA_HOME)/bin/jar$(HOSTSUFF_EXE)"
- VBOX_JAVADOC   = "$(VBOX_JAVA_HOME)/bin/javadoc$(HOSTSUFF_EXE)"
- VBOX_WSIMPORT  = "$(VBOX_JAVA_HOME)/bin/wsimport$(HOSTSUFF_EXE)"
- # correct for targets we care about
- VBOX_MD_OS     = $(KBUILD_TARGET)
- VBOX_JAVA_INC  = \
- 	$(VBOX_JAVA_HOME)/include \
- 	$(VBOX_JAVA_HOME)/include/$(VBOX_MD_OS)
-endif # !darwin
-
 
 #
 # VBOX_SEP needs to be quoted when used on the shell command line.
@@ -7289,6 +7294,11 @@ if1of ($(KBUILD_TARGET), os2 win)
  VBOX_SEP = $(SEMICOLON)
 else
  VBOX_SEP = $(COLON)
+endif
+
+# Java compiler options, needs some version checking.
+ifneq ($(int-ge $(VBOX_JAVA_VERSION),10800),)
+ VBOX_JAVA_WS_OPTS ?= --add-modules java.xml.ws
 endif
 VBOX_JAVAC_OPTS   = -encoding UTF-8 -source 1.5 -target 1.5 -Xlint:unchecked
 VBOX_JAVADOC_OPTS = -encoding UTF-8
