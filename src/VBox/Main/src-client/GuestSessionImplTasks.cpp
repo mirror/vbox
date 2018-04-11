@@ -815,7 +815,7 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
             default:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Destination file \"%s\" could not be opened: %Rrc"),
-                                               strDestFinal, rc));
+                                               strDestFinal.c_str(), rc));
                 break;
         }
     }
@@ -1550,7 +1550,7 @@ int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFS
                 default:
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                         Utf8StrFmt(GuestSession::tr("Destination file \"%s\" could not be opened: %Rrc"),
-                                                   strFileDest, rc));
+                                                   strFileDest.c_str(), rc));
                     break;
             }
         }
