@@ -1157,7 +1157,7 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
         if (RT_SUCCESS(vrc))
         {
             LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
-            if (cbWritten)
+            if (pcbWritten)
                 *pcbWritten = cbWritten;
         }
     }
@@ -1217,7 +1217,7 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
         if (RT_SUCCESS(vrc))
         {
             LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
-            if (cbWritten)
+            if (pcbWritten)
                 *pcbWritten = cbWritten;
         }
     }
