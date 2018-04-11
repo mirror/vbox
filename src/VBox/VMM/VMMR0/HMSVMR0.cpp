@@ -5170,8 +5170,8 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
                     uint8_t const *pbMsrBitmap = (uint8_t const *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
                     pbMsrBitmap               += offMsrpm;
-                    bool const fInterceptRead  = *pbMsrBitmap & RT_BIT(uMsrpmBit);
-                    bool const fInterceptWrite = *pbMsrBitmap & RT_BIT(uMsrpmBit + 1);
+                    bool const fInterceptRead  = RT_BOOL(*pbMsrBitmap & RT_BIT(uMsrpmBit));
+                    bool const fInterceptWrite = RT_BOOL(*pbMsrBitmap & RT_BIT(uMsrpmBit + 1));
 
                     if (   (fInterceptWrite && pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_WRITE)
                         || (fInterceptRead  && pVmcbNstGstCtrl->u64ExitInfo1 == SVM_EXIT1_MSR_READ))
