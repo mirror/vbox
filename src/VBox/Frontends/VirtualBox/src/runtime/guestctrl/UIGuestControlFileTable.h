@@ -146,8 +146,13 @@ public:
     /** Replace the last part of the @p previusPath with newBaseName */
     static QString constructNewItemPath(const QString &previousPath, const QString &newBaseName);
     /** Split the path and return it as a QStringList, top most being the 0th element. No delimiters */
-    QStringList pathTrail(const QString &path);
+    static QStringList pathTrail(const QString &path);
     static const QChar delimiter;
+    static const QChar dosDelimiter;
+
+    /** Try to guess if the path starts with DOS style drive letters */
+    static bool doesPathStartWithDriveLetter(const QString &path);
+
 };
 
 /** A UIFileTableItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
@@ -202,10 +207,13 @@ public:
 
     QString name() const;
 
+    void setIsDriveItem(bool flag);
+    bool isDriveItem() const;
+
 private:
 
     QList<UIFileTableItem*>         m_childItems;
-    /** Used to find children by path */
+    /** Used to find children by name */
     QMap<QString, UIFileTableItem*> m_childMap;
     /** It is required that m_itemData[0] is name (QString) of the file object */
     QList<QVariant>  m_itemData;
@@ -218,7 +226,8 @@ private:
     /** True if this is a symlink and the target is a directory */
     bool             m_isTargetADirectory;
     FileObjectType   m_type;
-
+    /** True if only this item represents a DOS style drive letter item */
+    bool             m_isDriveItem;
 };
 
 
@@ -266,6 +275,9 @@ protected:
     virtual bool     createDirectory(const QString &path, const QString &directoryName) = 0;
     virtual QString  fsObjectPropertyString() = 0;
     virtual void     showProperties() = 0;
+    /** For non-windows system does nothing and for windows systems populates m_driveLetterList with
+     *  drive letters */
+    virtual void     determineDriveLetters() = 0;
     static QString   fileTypeString(FileObjectType type);
     void             goIntoDirectory(const QModelIndex &itemIndex);
     /** Follows the path trail, opens directories as it descends */
@@ -284,6 +296,9 @@ protected:
     QAction                 *m_pCut;
     QAction                 *m_pPaste;
     UIPropertiesDialog      *m_pPropertiesDialog;
+    /** Stores the drive letters the file system has (for windows system). For non-windows
+     *  systems this is empty and for windows system it should at least contain C:/ */
+    QStringList m_driveLetterList;
 
 protected slots:
 
@@ -335,7 +350,7 @@ private:
     /** The vector of action which need some selection to work on like cut, copy etc. */
     QVector<QAction*> m_selectionDependentActions;
     /** The absolue path list of the file objects which user has chosen to cut/copy. this
-      * list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
+     *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
     QStringList       m_copyCutBuffer;
     friend class UIGuestControlFileModel;
 };

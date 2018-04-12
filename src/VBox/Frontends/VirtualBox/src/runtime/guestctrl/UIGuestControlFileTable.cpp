@@ -170,6 +170,7 @@ bool UIDirectoryDiskUsageComputer::isOkToContinue() const
 *********************************************************************************************************************************/
 
 const QChar UIPathOperations::delimiter = QChar('/');
+const QChar UIPathOperations::dosDelimiter = QChar('\\');
 
 /* static */ QString UIPathOperations::removeMultipleDelimiters(const QString &path)
 {
@@ -192,8 +193,7 @@ const QChar UIPathOperations::delimiter = QChar('/');
     return newPath;
 }
 
-/* static */ QString UIPathOperations::addTrailingDelimiters
-(const QString &path)
+/* static */ QString UIPathOperations::addTrailingDelimiters(const QString &path)
 {
     if (path.isNull() || path.isEmpty())
         return QString();
@@ -208,6 +208,13 @@ const QChar UIPathOperations::delimiter = QChar('/');
     if (path.isEmpty())
         return QString(path);
     QString newPath(path);
+
+    if (doesPathStartWithDriveLetter(newPath))
+    {
+        if (newPath.at(newPath.length() - 1) != delimiter)
+            newPath += delimiter;
+        return newPath;
+    }
     if (newPath.at(0) != delimiter)
         newPath.insert(0, delimiter);
     return newPath;
@@ -215,7 +222,9 @@ const QChar UIPathOperations::delimiter = QChar('/');
 
 /* static */ QString UIPathOperations::sanitize(const QString &path)
 {
-    return addStartDelimiter(removeTrailingDelimiters(removeMultipleDelimiters(path)));
+    //return addStartDelimiter(removeTrailingDelimiters(removeMultipleDelimiters(path)));
+    QString newPath = addStartDelimiter(removeTrailingDelimiters(removeMultipleDelimiters(path))).replace(dosDelimiter, delimiter);
+    return newPath;
 }
 
 /* static */ QString UIPathOperations::mergePaths(const QString &path, const QString &baseName)
@@ -269,7 +278,23 @@ const QChar UIPathOperations::delimiter = QChar('/');
 /* static */ QStringList UIPathOperations::pathTrail(const QString &path)
 {
     QStringList pathList = path.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+    if (!pathList.isEmpty() && doesPathStartWithDriveLetter(pathList[0]))
+    {
+        pathList[0] = addTrailingDelimiters(pathList[0]);
+    }
     return pathList;
+}
+
+/* static */ bool UIPathOperations::doesPathStartWithDriveLetter(const QString &path)
+{
+    if (path.length() < 2)
+        return false;
+    /* search for ':' with the path: */
+    if (!path[0].isLetter())
+        return false;
+    if (path[1] != ':')
+        return false;
+    return true;
 }
 
 
@@ -544,6 +569,7 @@ UIFileTableItem::UIFileTableItem(const QList<QVariant> &data,
     , m_bIsOpened(false)
     , m_isTargetADirectory(false)
     , m_type(type)
+    , m_isDriveItem(false)
 {
 }
 
@@ -692,6 +718,16 @@ bool UIFileTableItem::isTargetADirectory() const
 void UIFileTableItem::setIsTargetADirectory(bool flag)
 {
     m_isTargetADirectory = flag;
+}
+
+void UIFileTableItem::setIsDriveItem(bool flag)
+{
+    m_isDriveItem = flag;
+}
+
+bool UIFileTableItem::isDriveItem() const
+{
+    return m_isDriveItem;
 }
 
 
@@ -971,7 +1007,8 @@ void UIGuestControlFileTable::initializeFileTree()
 {
     if (m_pRootItem)
         reset();
-
+    determineDriveLetters();
+    /* Root item: */
     const QString startPath("/");
     QList<QVariant> headData;
     headData << "Name" << "Size" << "Change Time" << "Owner";
@@ -982,10 +1019,27 @@ void UIGuestControlFileTable::initializeFileTree()
 
     startItem->setPath(startPath);
     m_pRootItem->appendChild(startItem);
-
     startItem->setIsOpened(false);
-    /* Read the root directory and get the list: */
-    readDirectory(startPath, startItem, true);
+    if (m_driveLetterList.isEmpty())
+    {
+        /* Read the root directory and get the list: */
+        readDirectory(startPath, startItem, true);
+    }
+    else
+    {
+        for (int i = 0; i < m_driveLetterList.size(); ++i)
+        {
+            QList<QVariant> data;
+
+            data << m_driveLetterList[i] << 4096 << QDateTime() << "";
+            UIFileTableItem* driveItem = new UIFileTableItem(data, startItem, FileObjectType_Directory);
+            driveItem->setPath(m_driveLetterList[i]);
+            startItem->appendChild(driveItem);
+            driveItem->setIsOpened(false);
+            driveItem->setIsDriveItem(true);
+            startItem->setIsOpened(true);
+        }
+    }
     m_pView->setRootIndex(m_pModel->rootIndex());
     m_pModel->signalUpdate();
     updateCurrentLocationEdit(startPath);
@@ -994,6 +1048,8 @@ void UIGuestControlFileTable::initializeFileTree()
 void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
                                                 UIFileTableItem *parent, bool isDirectoryMap, bool isStartDir)
 {
+    if (parent)
+
     /* Make sure we have a ".." item within directories, and make sure it is not there for the start dir: */
     if (isDirectoryMap)
     {
@@ -1243,9 +1299,7 @@ void UIGuestControlFileTable::sltLocationComboCurrentChange(const QString &strLo
     QString comboLocation(UIPathOperations::sanitize(strLocation));
     if (comboLocation == currentDirectoryPath())
         return;
-
-    QStringList pathList = comboLocation.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
-    goIntoDirectory(pathList);
+    goIntoDirectory(UIPathOperations::pathTrail(comboLocation));
 }
 
 void UIGuestControlFileTable::sltSelectAll()

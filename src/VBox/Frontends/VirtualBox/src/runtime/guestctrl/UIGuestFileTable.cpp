@@ -177,7 +177,7 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
     QVector<KDirectoryOpenFlag> flag;
     flag.push_back(KDirectoryOpenFlag_None);
 
-    directory = m_comGuestSession.DirectoryOpen(strPath, /*aFilter*/ "", flag);
+    directory = m_comGuestSession.DirectoryOpen(UIPathOperations::sanitize(strPath), /*aFilter*/ "", flag);
     if (!m_comGuestSession.isOk())
     {
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
@@ -203,7 +203,6 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
             if (!item)
                 continue;
             item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
-
             if (fsObjectType == FileObjectType_Directory)
             {
                 directories.insert(fsInfo.GetName(), item);
@@ -268,7 +267,7 @@ void UIGuestFileTable::goToHomeDirectory()
         return;
     }
     QStringList pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
-    goIntoDirectory(pathList);
+    goIntoDirectory(UIPathOperations::pathTrail(userHome));
 }
 
 bool UIGuestFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
@@ -554,5 +553,24 @@ void UIGuestFileTable::showProperties()
     delete m_pPropertiesDialog;
 }
 
-#include "UIGuestFileTable.moc"
+void UIGuestFileTable::determineDriveLetters()
+{
+    if (m_comGuestSession.isNull())
+        return;
+    KPathStyle pathStyle = m_comGuestSession.GetPathStyle();
+    if (pathStyle != KPathStyle_DOS)
+        return;
 
+    /** @todo Currently API lacks a way to query windows drive letters.
+     *  so we enumarate them by using CGuestSession::DirectoryExists() */
+    for (int i = 'A'; i <= 'Z'; ++i)
+    {
+        QString path((char)i);
+        path += ":/";
+        bool exists = m_comGuestSession.DirectoryExists(path, false /* aFollowSymlinks */);
+        if (exists)
+            m_driveLetterList.push_back(path);
+    }
+}
+
+#include "UIGuestFileTable.moc"

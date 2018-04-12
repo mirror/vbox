@@ -226,8 +226,7 @@ void UIHostFileTable::goToHomeDirectory()
         return;
 
     QString userHome = UIPathOperations::sanitize(QDir::homePath());
-    QStringList pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
-    goIntoDirectory(pathList);
+    goIntoDirectory(UIPathOperations::pathTrail(userHome));
 }
 
 bool UIHostFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
@@ -381,5 +380,8 @@ void  UIHostFileTable::showProperties()
     m_pPropertiesDialog = 0;
 }
 
-#include "UIHostFileTable.moc"
+void UIHostFileTable::determineDriveLetters()
+{
+}
 
+#include "UIHostFileTable.moc"

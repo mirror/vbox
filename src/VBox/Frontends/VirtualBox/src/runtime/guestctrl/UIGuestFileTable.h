@@ -48,6 +48,7 @@ protected:
     virtual bool createDirectory(const QString &path, const QString &directoryName);
     virtual QString fsObjectPropertyString() /* override */;
     virtual void  showProperties() /* override */;
+    virtual void determineDriveLetters() /* override */;
 
 private:
 
@@ -62,4 +63,3 @@ private:
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
-
