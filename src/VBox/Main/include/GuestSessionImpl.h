@@ -278,6 +278,7 @@ public:
     HRESULT                 i_isReadyExternal(void);
     int                     i_onRemove(void);
     int                     i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    PathStyle_T             i_getPathStyle(void);
     int                     i_startSession(int *pGuestRc);
     int                     i_startSessionAsync(void);
     static void             i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask);

@@ -522,22 +522,7 @@ HRESULT GuestSession::getProcesses(std::vector<ComPtr<IGuestProcess> > &aProcess
 
 HRESULT GuestSession::getPathStyle(PathStyle_T *aPathStyle)
 {
-    VBOXOSTYPE enmOsType = mParent->i_getGuestOSType();
-    if (    enmOsType < VBOXOSTYPE_DOS)
-    {
-        *aPathStyle = PathStyle_Unknown;
-        LogFlowFunc(("returns PathStyle_Unknown\n"));
-    }
-    else if (enmOsType < VBOXOSTYPE_Linux)
-    {
-        *aPathStyle = PathStyle_DOS;
-        LogFlowFunc(("returns PathStyle_DOS\n"));
-    }
-    else
-    {
-        *aPathStyle = PathStyle_UNIX;
-        LogFlowFunc(("returns PathStyle_UNIX\n"));
-    }
+    *aPathStyle = i_getPathStyle();
     return S_OK;
 }
 
@@ -1629,6 +1614,28 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
+}
+
+PathStyle_T GuestSession::i_getPathStyle(void)
+{
+    VBOXOSTYPE enmOsType = mParent->i_getGuestOSType();
+    if (    enmOsType < VBOXOSTYPE_DOS)
+    {
+        LogFlowFunc(("returns PathStyle_Unknown\n"));
+        return PathStyle_Unknown;
+    }
+    else if (enmOsType < VBOXOSTYPE_Linux)
+    {
+        LogFlowFunc(("returns PathStyle_DOS\n"));
+        return PathStyle_DOS;
+    }
+    else
+    {
+        LogFlowFunc(("returns PathStyle_UNIX\n"));
+        return PathStyle_UNIX;
+    }
+
+    return PathStyle_Unknown;
 }
 
 int GuestSession::i_startSession(int *prcGuest)
