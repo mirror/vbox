@@ -526,6 +526,7 @@ static int ioapicSetRedirTableEntry(PIOAPIC pThis, uint32_t uIndex, uint32_t uVa
 static uint32_t ioapicGetData(PCIOAPIC pThis)
 {
     uint8_t const uIndex = pThis->u8Index;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     if (   uIndex >= IOAPIC_INDIRECT_INDEX_REDIR_TBL_START
         && uIndex <= pThis->u8LastRteRegIdx)
         return ioapicGetRedirTableEntry(pThis, uIndex);
@@ -567,6 +568,7 @@ static uint32_t ioapicGetData(PCIOAPIC pThis)
 static int ioapicSetData(PIOAPIC pThis, uint32_t uValue)
 {
     uint8_t const uIndex = pThis->u8Index;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     LogFlow(("IOAPIC: ioapicSetData: uIndex=%#x uValue=%#RX32\n", uIndex, uValue));
 
     if (   uIndex >= IOAPIC_INDIRECT_INDEX_REDIR_TBL_START
