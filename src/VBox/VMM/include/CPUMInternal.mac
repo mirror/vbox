@@ -238,11 +238,12 @@ struc CPUMCPU
     .Guest.hwvirt.svm.pVmcbR3                RTR3PTR_RES  1
     alignb 8
     .Guest.hwvirt.svm.HostState              resb         184
-    .Guest.hwvirt.svm.u16Padding0            resw         1
+    .Guest.hwvirt.svm.uPrevPauseTick         resq         1
     .Guest.hwvirt.svm.cPauseFilter           resw         1
     .Guest.hwvirt.svm.cPauseFilterThreshold  resw         1
     .Guest.hwvirt.svm.fInterceptEvents       resb         1
     .Guest.hwvirt.svm.fHMCachedVmcb          resb         1
+    alignb 8
     .Guest.hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES  1
     alignb 8
     .Guest.hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES  1
@@ -525,11 +526,12 @@ struc CPUMCPU
     .Hyper.hwvirt.svm.pVmcbR3                RTR3PTR_RES  1
     alignb 8
     .Hyper.hwvirt.svm.HostState              resb         184
-    .Hyper.hwvirt.svm.u16Padding0            resw         1
+    .Hyper.hwvirt.svm.uPrevPauseTick         resq         1
     .Hyper.hwvirt.svm.cPauseFilter           resw         1
     .Hyper.hwvirt.svm.cPauseFilterThreshold  resw         1
     .Hyper.hwvirt.svm.fInterceptEvents       resb         1
     .Hyper.hwvirt.svm.fHMCachedVmcb          resb         1
+    alignb 8
     .Hyper.hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES  1
     alignb 8
     .Hyper.hwvirt.svm.pvMsrBitmapR3          RTR3PTR_RES  1

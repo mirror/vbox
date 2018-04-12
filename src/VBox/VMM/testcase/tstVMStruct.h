@@ -136,6 +136,7 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pVmcbR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.pVmcbR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.HostState);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.uPrevPauseTick);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.cPauseFilter);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.cPauseFilterThreshold);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.fInterceptEvents);

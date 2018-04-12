@@ -1134,16 +1134,17 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
  * These functions are only here because the inline functions in cpum.h calls them.
  * Don't add any more functions here unless there is no other option.
  */
-VMM_INT_DECL(bool) HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fIntercept);
-VMM_INT_DECL(bool) HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr);
-VMM_INT_DECL(bool) HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr);
-VMM_INT_DECL(bool) HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr);
-VMM_INT_DECL(bool) HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr);
-VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector);
-VMM_INT_DECL(bool) HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool) HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool) HMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool) HMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)     HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fIntercept);
+VMM_INT_DECL(bool)     HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr);
+VMM_INT_DECL(bool)     HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr);
+VMM_INT_DECL(bool)     HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr);
+VMM_INT_DECL(bool)     HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr);
+VMM_INT_DECL(bool)     HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector);
+VMM_INT_DECL(bool)     HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)     HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)     HMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)     HMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
 
 /** @} */
 

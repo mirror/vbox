@@ -499,37 +499,39 @@ typedef struct CPUMCTX
 #endif
                 /** 0x300 - Guest's host-state save area. */
                 SVMHOSTSTATE        HostState;
-                /** 0x3b8 - Padding. */
-                uint16_t            u16Padding0;
-                /** 0x3ba - Pause filter count. */
+                /** 0x3b8 - Guest TSC time-stamp of when the previous PAUSE instr. was executed. */
+                uint64_t            uPrevPauseTick;
+                /** 0x3c0 - Pause filter count. */
                 uint16_t            cPauseFilter;
-                /** 0x3bc - Pause filter threshold. */
+                /** 0x3c2 - Pause filter threshold. */
                 uint16_t            cPauseFilterThreshold;
-                /** 0x3be - Whether the injected event is subject to event intercepts. */
+                /** 0x3c4 - Whether the injected event is subject to event intercepts. */
                 bool                fInterceptEvents;
-                /** 0x3bf - Whether parts of the VMCB are cached (and potentially modified) by HM. */
+                /** 0x3c5 - Whether parts of the VMCB are cached (and potentially modified) by HM. */
                 bool                fHMCachedVmcb;
-                /** 0x3c0 - MSR permission bitmap - R0 ptr. */
+                /** 0x3c6 - Padding. */
+                bool                afPadding[2];
+                /** 0x3c8 - MSR permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)   pvMsrBitmapR0;
 #if HC_ARCH_BITS == 32
                 uint32_t            uvMsrBitmapR0Padding;
 #endif
-                /** 0x3c8 - MSR permission bitmap - R3 ptr. */
+                /** 0x3d0 - MSR permission bitmap - R3 ptr. */
                 R3PTRTYPE(void *)   pvMsrBitmapR3;
 #if HC_ARCH_BITS == 32
                 uint32_t            uvMsrBitmapR3Padding;
 #endif
-                /** 0x3d0 - IO permission bitmap - R0 ptr. */
+                /** 0x3d8 - IO permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)   pvIoBitmapR0;
 #if HC_ARCH_BITS == 32
                 uint32_t            uIoBitmapR0Padding;
 #endif
-                /** 0x3d8 - IO permission bitmap - R3 ptr. */
+                /** 0x3e0 - IO permission bitmap - R3 ptr. */
                 R3PTRTYPE(void *)   pvIoBitmapR3;
 #if HC_ARCH_BITS == 32
                 uint32_t            uIoBitmapR3Padding;
 #endif
-                /** 0x3e0 - Host physical address of the nested-guest VMCB.  */
+                /** 0x3e8 - Host physical address of the nested-guest VMCB.  */
                 RTHCPHYS            HCPhysVmcb;
             } svm;
 #if 0
@@ -539,12 +541,12 @@ typedef struct CPUMCTX
 #endif
         } CPUM_UNION_NM(s);
 
-        /** 0x3e8 - A subset of force flags that are preserved while running the nested-guest. */
+        /** 0x3f0 - A subset of force flags that are preserved while running the nested-guest. */
         uint32_t                fLocalForcedActions;
-        /** 0x3f0 - Global interrupt flag (always true on nested VMX). */
+        /** 0x3f4 - Global interrupt flag (always true on nested VMX). */
         bool                    fGif;
-        /** 0x3f1 - Padding. */
-        uint8_t                 abPadding1[19];
+        /** 0x3f5 - Padding. */
+        uint8_t                 abPadding1[11];
     } hwvirt;
     /** @} */
 } CPUMCTX;
@@ -604,11 +606,11 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.uMsrHSavePa,    
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,                0x2f0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR3,                0x2f8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HostState,              0x300);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilter,           0x3ba);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,          0x3c0);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR3,           0x3d8);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HCPhysVmcb,             0x3e0);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions,        0x3e8);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.cPauseFilter,           0x3c0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0,          0x3c8);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR3,           0x3e0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HCPhysVmcb,             0x3e8);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions, 0x3f0);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,       8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvMsrBitmapR0, 8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pvIoBitmapR0,  8);

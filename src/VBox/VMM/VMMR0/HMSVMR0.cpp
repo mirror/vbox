@@ -1040,7 +1040,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
             pVmcb->ctrl.u16PauseFilterCount = pVM->hm.s.svm.cPauseFilter;
             if (fPauseFilterThreshold)
                 pVmcb->ctrl.u16PauseFilterThreshold = pVM->hm.s.svm.cPauseFilterThresholdTicks;
-            pVmcb->ctrl.u32InterceptXcpt |= SVM_CTRL_INTERCEPT_PAUSE;
+            pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_PAUSE;
         }
 
         /*
@@ -2047,31 +2047,32 @@ static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
  * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
  * @param   pCtx            Pointer to the guest-CPU context.
  */
-static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst, PCPUMCTX pCtx)
+static void hmR0SvmLoadGuestInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst, PCPUMCTX pCtx)
 {
-    RT_NOREF(pCtx);
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
     {
-        PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+        PVM          pVM             = pVCpu->CTX_SUFF(pVM);
+        PCSVMVMCB    pVmcb           = pVCpu->hm.s.svm.pVmcb;
+        PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
 
         /* Merge the guest's CR intercepts into the nested-guest VMCB. */
-        pVmcbNstGst->ctrl.u16InterceptRdCRx |= pVmcb->ctrl.u16InterceptRdCRx;
-        pVmcbNstGst->ctrl.u16InterceptWrCRx |= pVmcb->ctrl.u16InterceptWrCRx;
+        pVmcbNstGstCtrl->u16InterceptRdCRx |= pVmcb->ctrl.u16InterceptRdCRx;
+        pVmcbNstGstCtrl->u16InterceptWrCRx |= pVmcb->ctrl.u16InterceptWrCRx;
 
         /* Always intercept CR4 writes for tracking PGM mode changes. */
-        pVmcbNstGst->ctrl.u16InterceptWrCRx |= RT_BIT(4);
+        pVmcbNstGstCtrl->u16InterceptWrCRx |= RT_BIT(4);
 
         /* Without nested paging, intercept CR3 reads and writes as we load shadow page tables. */
-        if (!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
+        if (!pVM->hm.s.fNestedPaging)
         {
-            pVmcbNstGst->ctrl.u16InterceptRdCRx |= RT_BIT(3);
-            pVmcbNstGst->ctrl.u16InterceptWrCRx |= RT_BIT(3);
+            pVmcbNstGstCtrl->u16InterceptRdCRx |= RT_BIT(3);
+            pVmcbNstGstCtrl->u16InterceptWrCRx |= RT_BIT(3);
         }
 
         /** @todo Figure out debugging with nested-guests, till then just intercept
          *        all DR[0-15] accesses. */
-        pVmcbNstGst->ctrl.u16InterceptRdDRx |= 0xffff;
-        pVmcbNstGst->ctrl.u16InterceptWrDRx |= 0xffff;
+        pVmcbNstGstCtrl->u16InterceptRdDRx |= 0xffff;
+        pVmcbNstGstCtrl->u16InterceptWrDRx |= 0xffff;
 
         /*
          * Merge the guest's exception intercepts into the nested-guest VMCB.
@@ -2086,10 +2087,10 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
          * for VM debugger breakpoints, see hmR0SvmLoadGuestXcptIntercepts.
          */
 #ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-        pVmcbNstGst->ctrl.u32InterceptXcpt  |= (pVmcb->ctrl.u32InterceptXcpt & ~(  RT_BIT(X86_XCPT_UD)
+        pVmcbNstGstCtrl->u32InterceptXcpt  |= (pVmcb->ctrl.u32InterceptXcpt & ~(  RT_BIT(X86_XCPT_UD)
                                                                                  | RT_BIT(X86_XCPT_BP)));
 #else
-        pVmcbNstGst->ctrl.u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
+        pVmcbNstGstCtrl->u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
 #endif
 
         /*
@@ -2102,12 +2103,31 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
          * - VMMCALL: Exclude the outer guest intercept as when it's also not intercepted by
          *   the nested-guest, the physical CPU raises a \#UD exception as expected.
          */
-        pVmcbNstGst->ctrl.u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & ~(  SVM_CTRL_INTERCEPT_VINTR
-                                                                                 | SVM_CTRL_INTERCEPT_VMMCALL))
-                                            |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
+        pVmcbNstGstCtrl->u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & ~(  SVM_CTRL_INTERCEPT_VINTR
+                                                                                | SVM_CTRL_INTERCEPT_VMMCALL))
+                                           |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
 
-        Assert(   (pVmcbNstGst->ctrl.u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS)
+        Assert(   (pVmcbNstGstCtrl->u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS)
                == HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS);
+
+        /*
+         * Ensure the nested-guest pause-filter counters don't exceed the outer guest values esp.
+         * since SVM doesn't have a preemption timer.
+         *
+         * We do this here rather than in hmR0SvmVmRunSetupVmcb() as we may have been executing the
+         * nested-guest in IEM incl. PAUSE instructions which would update the pause-filter counters.
+         */
+        if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_PAUSE))
+        {
+            pVmcbNstGstCtrl->u16PauseFilterCount     = RT_MIN(pCtx->hwvirt.svm.cPauseFilter, pVmcb->ctrl.u16PauseFilterCount);
+            pVmcbNstGstCtrl->u16PauseFilterThreshold = RT_MIN(pCtx->hwvirt.svm.cPauseFilterThreshold,
+                                                              pVmcb->ctrl.u16PauseFilterThreshold);
+        }
+        else
+        {
+            pVmcbNstGstCtrl->u16PauseFilterCount     = pVmcb->ctrl.u16PauseFilterCount;
+            pVmcbNstGstCtrl->u16PauseFilterThreshold = pVmcb->ctrl.u16PauseFilterThreshold;
+        }
 
         /** @todo This doesn't make sense. Re-think and remove. */
 #if 1
@@ -2117,8 +2137,8 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
          */
         if (!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvmVirtVmsaveVmload)
         {
-            pVmcbNstGst->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
-                                               |  SVM_CTRL_INTERCEPT_VMLOAD;
+            pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
+                                              |  SVM_CTRL_INTERCEPT_VMLOAD;
         }
 
         /*
@@ -2127,13 +2147,13 @@ static void hmR0SvmLoadGuestXcptInterceptsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNst
          */
         if (!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvmVGif)
         {
-            pVmcbNstGst->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
-                                               |  SVM_CTRL_INTERCEPT_STGI;
+            pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
+                                              |  SVM_CTRL_INTERCEPT_STGI;
         }
 #endif
 
         /* Finally, update the VMCB clean bits. */
-        pVmcbNstGst->ctrl.u32VmcbCleanBits  &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+        pVmcbNstGstCtrl->u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
     }
 }
@@ -2411,27 +2431,29 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     bool const fWasCached = pCtx->hwvirt.svm.fHMCachedVmcb;
     if (!fWasCached)
     {
-        pVmcbNstGstCache->u16InterceptRdCRx = pVmcbNstGstCtrl->u16InterceptRdCRx;
-        pVmcbNstGstCache->u16InterceptWrCRx = pVmcbNstGstCtrl->u16InterceptWrCRx;
-        pVmcbNstGstCache->u16InterceptRdDRx = pVmcbNstGstCtrl->u16InterceptRdDRx;
-        pVmcbNstGstCache->u16InterceptWrDRx = pVmcbNstGstCtrl->u16InterceptWrDRx;
-        pVmcbNstGstCache->u32InterceptXcpt  = pVmcbNstGstCtrl->u32InterceptXcpt;
-        pVmcbNstGstCache->u64InterceptCtrl  = pVmcbNstGstCtrl->u64InterceptCtrl;
-        pVmcbNstGstCache->u64CR0            = pVmcbNstGstState->u64CR0;
-        pVmcbNstGstCache->u64CR3            = pVmcbNstGstState->u64CR3;
-        pVmcbNstGstCache->u64CR4            = pVmcbNstGstState->u64CR4;
-        pVmcbNstGstCache->u64EFER           = pVmcbNstGstState->u64EFER;
-        pVmcbNstGstCache->u64PAT            = pVmcbNstGstState->u64PAT;
-        pVmcbNstGstCache->u64DBGCTL         = pVmcbNstGstState->u64DBGCTL;
-        pVmcbNstGstCache->u64IOPMPhysAddr   = pVmcbNstGstCtrl->u64IOPMPhysAddr;
-        pVmcbNstGstCache->u64MSRPMPhysAddr  = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
-        pVmcbNstGstCache->u64TSCOffset      = pVmcbNstGstCtrl->u64TSCOffset;
-        pVmcbNstGstCache->u32VmcbCleanBits  = pVmcbNstGstCtrl->u32VmcbCleanBits;
-        pVmcbNstGstCache->fVIntrMasking     = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
-        pVmcbNstGstCache->TLBCtrl           = pVmcbNstGstCtrl->TLBCtrl;
-        pVmcbNstGstCache->u1NestedPaging    = pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging;
-        pVmcbNstGstCache->u1LbrVirt         = pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt;
-        pCtx->hwvirt.svm.fHMCachedVmcb      = true;
+        pVmcbNstGstCache->u16InterceptRdCRx       = pVmcbNstGstCtrl->u16InterceptRdCRx;
+        pVmcbNstGstCache->u16InterceptWrCRx       = pVmcbNstGstCtrl->u16InterceptWrCRx;
+        pVmcbNstGstCache->u16InterceptRdDRx       = pVmcbNstGstCtrl->u16InterceptRdDRx;
+        pVmcbNstGstCache->u16InterceptWrDRx       = pVmcbNstGstCtrl->u16InterceptWrDRx;
+        pVmcbNstGstCache->u16PauseFilterCount     = pVmcbNstGstCtrl->u16PauseFilterCount;
+        pVmcbNstGstCache->u16PauseFilterThreshold = pVmcbNstGstCtrl->u16PauseFilterThreshold;
+        pVmcbNstGstCache->u32InterceptXcpt        = pVmcbNstGstCtrl->u32InterceptXcpt;
+        pVmcbNstGstCache->u64InterceptCtrl        = pVmcbNstGstCtrl->u64InterceptCtrl;
+        pVmcbNstGstCache->u64CR0                  = pVmcbNstGstState->u64CR0;
+        pVmcbNstGstCache->u64CR3                  = pVmcbNstGstState->u64CR3;
+        pVmcbNstGstCache->u64CR4                  = pVmcbNstGstState->u64CR4;
+        pVmcbNstGstCache->u64EFER                 = pVmcbNstGstState->u64EFER;
+        pVmcbNstGstCache->u64PAT                  = pVmcbNstGstState->u64PAT;
+        pVmcbNstGstCache->u64DBGCTL               = pVmcbNstGstState->u64DBGCTL;
+        pVmcbNstGstCache->u64IOPMPhysAddr         = pVmcbNstGstCtrl->u64IOPMPhysAddr;
+        pVmcbNstGstCache->u64MSRPMPhysAddr        = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
+        pVmcbNstGstCache->u64TSCOffset            = pVmcbNstGstCtrl->u64TSCOffset;
+        pVmcbNstGstCache->u32VmcbCleanBits        = pVmcbNstGstCtrl->u32VmcbCleanBits;
+        pVmcbNstGstCache->fVIntrMasking           = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
+        pVmcbNstGstCache->TLBCtrl                 = pVmcbNstGstCtrl->TLBCtrl;
+        pVmcbNstGstCache->u1NestedPaging          = pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging;
+        pVmcbNstGstCache->u1LbrVirt               = pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt;
+        pCtx->hwvirt.svm.fHMCachedVmcb            = true;
         Log4(("hmR0SvmVmRunCacheVmcb: Cached VMCB fields\n"));
     }
 
@@ -2464,20 +2486,21 @@ static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         pVmcbNstGstCtrl->u64IOPMPhysAddr = g_HCPhysIOBitmap;
 
         /*
-         * Use the same nested-paging as the "outer" guest. We can't dynamically
-         * switch off nested-paging suddenly while executing a VM (see assertion at the
-         * end of Trap0eHandler() in PGMAllBth.h).
+         * Use the same nested-paging as the outer guest. We can't dynamically switch off
+         * nested-paging suddenly while executing a VM (see assertion at the end of
+         * Trap0eHandler() in PGMAllBth.h).
          */
         pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
 
-        /* For now copy the LBR info. from outer guest VMCB. */
-        /** @todo fix this later. */
-        PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
-        pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt = pVmcb->ctrl.LbrVirt.n.u1LbrVirt;
-        pVmcbNstGst->guest.u64DBGCTL = pVmcb->guest.u64DBGCTL;
-
         /* Override nested-guest PAT MSR, see @bugref{7243#c109}. */
-        pVmcbNstGst->guest.u64PAT = MSR_IA32_CR_PAT_INIT_VAL;
+        PSVMVMCBSTATESAVE pVmcbNstGstState = &pVmcbNstGst->guest;
+        pVmcbNstGstState->u64PAT = MSR_IA32_CR_PAT_INIT_VAL;
+
+#ifdef DEBUG_ramshankar
+        /* For debugging purposes - copy the LBR info. from outer guest VMCB. */
+        pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt = pVmcb->ctrl.LbrVirt.n.u1LbrVirt;
+        pVmcbNstGstState->u64DBGCTL = pVmcb->guest.u64DBGCTL;
+#endif
     }
     else
     {
@@ -2527,7 +2550,7 @@ static int hmR0SvmLoadGuestStateNested(PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(pVmcbNstGst->ctrl.IntCtrl.n.u1VGifEnable == 0);        /* Nested VGIF not supported yet. */
 #endif
 
-    hmR0SvmLoadGuestXcptInterceptsNested(pVCpu, pVmcbNstGst, pCtx);
+    hmR0SvmLoadGuestInterceptsNested(pVCpu, pVmcbNstGst, pCtx);
 
     rc = hmR0SvmSetupVMRunHandler(pVCpu);
     AssertRCReturn(rc, rc);

@@ -1520,6 +1520,24 @@ DECLINLINE(bool) CPUMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
 }
 
 /**
+ * Gets the nested-guest VMCB pause-filter count.
+ *
+ * @returns The pause-filter count.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ *
+ * @remarks Should only be called when SVM feature is exposed to the guest.
+ */
+DECLINLINE(uint16_t) CPUMGetGuestSvmPauseFilterCount(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+    Assert(pVmcb);
+    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        return pVmcb->ctrl.u16PauseFilterCount;
+    return HMGetGuestSvmPauseFilterCount(pVCpu, pCtx);
+}
+
+/**
  * Updates the NextRIP (NRIP) field in the nested-guest VMCB.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.

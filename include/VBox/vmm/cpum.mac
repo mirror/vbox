@@ -265,7 +265,7 @@ struc CPUMCTX
     .hwvirt.svm.pVmcbR3                RTR3PTR_RES   1
     alignb 8
     .hwvirt.svm.HostState              resb        184
-    .hwvirt.svm.u16Padding0            resw          1
+    .hwvirt.svm.uPrevPauseTick         resq          1
     .hwvirt.svm.cPauseFilter           resw          1
     .hwvirt.svm.cPauseFilterThreshold  resw          1
     .hwvirt.svm.fInterceptEvents       resb          1

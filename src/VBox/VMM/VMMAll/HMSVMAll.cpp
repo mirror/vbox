@@ -155,19 +155,21 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
          * are already updated by hardware-assisted SVM or by IEM. We only restore those
          * fields that are potentially modified by hardware-assisted SVM.
          */
-        pVmcbNstGstCtrl->u16InterceptRdCRx             = pNstGstVmcbCache->u16InterceptRdCRx;
-        pVmcbNstGstCtrl->u16InterceptWrCRx             = pNstGstVmcbCache->u16InterceptWrCRx;
-        pVmcbNstGstCtrl->u16InterceptRdDRx             = pNstGstVmcbCache->u16InterceptRdDRx;
-        pVmcbNstGstCtrl->u16InterceptWrDRx             = pNstGstVmcbCache->u16InterceptWrDRx;
-        pVmcbNstGstCtrl->u32InterceptXcpt              = pNstGstVmcbCache->u32InterceptXcpt;
-        pVmcbNstGstCtrl->u64InterceptCtrl              = pNstGstVmcbCache->u64InterceptCtrl;
-        pVmcbNstGstState->u64DBGCTL                    = pNstGstVmcbCache->u64DBGCTL;
-        pVmcbNstGstCtrl->u32VmcbCleanBits              = pNstGstVmcbCache->u32VmcbCleanBits;
-        pVmcbNstGstCtrl->u64IOPMPhysAddr               = pNstGstVmcbCache->u64IOPMPhysAddr;
-        pVmcbNstGstCtrl->u64MSRPMPhysAddr              = pNstGstVmcbCache->u64MSRPMPhysAddr;
-        pVmcbNstGstCtrl->u64TSCOffset                  = pNstGstVmcbCache->u64TSCOffset;
-        pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking      = pNstGstVmcbCache->fVIntrMasking;
-        pVmcbNstGstCtrl->TLBCtrl                       = pNstGstVmcbCache->TLBCtrl;
+        pVmcbNstGstCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
+        pVmcbNstGstCtrl->u16InterceptWrCRx        = pNstGstVmcbCache->u16InterceptWrCRx;
+        pVmcbNstGstCtrl->u16InterceptRdDRx        = pNstGstVmcbCache->u16InterceptRdDRx;
+        pVmcbNstGstCtrl->u16InterceptWrDRx        = pNstGstVmcbCache->u16InterceptWrDRx;
+        pVmcbNstGstCtrl->u16PauseFilterCount      = pNstGstVmcbCache->u16PauseFilterCount;
+        pVmcbNstGstCtrl->u16PauseFilterThreshold  = pNstGstVmcbCache->u16PauseFilterThreshold;
+        pVmcbNstGstCtrl->u32InterceptXcpt         = pNstGstVmcbCache->u32InterceptXcpt;
+        pVmcbNstGstCtrl->u64InterceptCtrl         = pNstGstVmcbCache->u64InterceptCtrl;
+        pVmcbNstGstState->u64DBGCTL               = pNstGstVmcbCache->u64DBGCTL;
+        pVmcbNstGstCtrl->u32VmcbCleanBits         = pNstGstVmcbCache->u32VmcbCleanBits;
+        pVmcbNstGstCtrl->u64IOPMPhysAddr          = pNstGstVmcbCache->u64IOPMPhysAddr;
+        pVmcbNstGstCtrl->u64MSRPMPhysAddr         = pNstGstVmcbCache->u64MSRPMPhysAddr;
+        pVmcbNstGstCtrl->u64TSCOffset             = pNstGstVmcbCache->u64TSCOffset;
+        pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking = pNstGstVmcbCache->fVIntrMasking;
+        pVmcbNstGstCtrl->TLBCtrl                  = pNstGstVmcbCache->TLBCtrl;
 
         /*
          * If the nested-hypervisor isn't using nested-paging (and thus shadow paging
@@ -578,6 +580,21 @@ VMM_INT_DECL(bool) HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
     Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     return RT_BOOL(pVmcbNstGstCache->u1NestedPaging);
+}
+
+
+/**
+ * Returns the nested-guest VMCB pause-filter count.
+ *
+ * @returns The pause-filter count.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    Pointer to the context.
+ */
+VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return pVmcbNstGstCache->u16PauseFilterCount;
 }
 
 
