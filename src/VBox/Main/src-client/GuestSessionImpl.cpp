@@ -1618,24 +1618,26 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
 
 PathStyle_T GuestSession::i_getPathStyle(void)
 {
+    PathStyle_T enmPathStyle;
+
     VBOXOSTYPE enmOsType = mParent->i_getGuestOSType();
-    if (    enmOsType < VBOXOSTYPE_DOS)
+    if (enmOsType < VBOXOSTYPE_DOS)
     {
         LogFlowFunc(("returns PathStyle_Unknown\n"));
-        return PathStyle_Unknown;
+        enmPathStyle = PathStyle_Unknown;
     }
     else if (enmOsType < VBOXOSTYPE_Linux)
     {
         LogFlowFunc(("returns PathStyle_DOS\n"));
-        return PathStyle_DOS;
+        enmPathStyle = PathStyle_DOS;
     }
     else
     {
         LogFlowFunc(("returns PathStyle_UNIX\n"));
-        return PathStyle_UNIX;
+        enmPathStyle = PathStyle_UNIX;
     }
 
-    return PathStyle_Unknown;
+    return enmPathStyle;
 }
 
 int GuestSession::i_startSession(int *prcGuest)
