@@ -455,6 +455,11 @@ typedef enum IEMXCPTCLASS
 # define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)   (CPUMIsGuestSvmXcptInterceptSet(a_pVCpu, IEM_GET_CTX(a_pVCpu), (a_uVector)))
 
 /**
+ * Get the SVM pause-filter count.
+ */
+# define IEM_GET_SVM_PAUSE_FILTER_COUNT(a_pVCpu)             (CPUMGetGuestSvmPauseFilterCount(a_pVCpu, IEM_GET_CTX(a_pVCpu)))
+
+/**
  * Invokes the SVM \#VMEXIT handler for the nested-guest.
  */
 # define IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
@@ -489,6 +494,7 @@ typedef enum IEMXCPTCLASS
 # define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                 (false)
 # define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)                                (false)
 # define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_uVector)                                (false)
+# define IEM_GET_SVM_PAUSE_FILTER_COUNT(a_pVCpu)                                          (0)
 # define IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)          do { return VERR_SVM_IPE_1; } while (0)
 # define IEM_RETURN_SVM_CRX_VMEXIT(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg)         do { return VERR_SVM_IPE_1; } while (0)
 

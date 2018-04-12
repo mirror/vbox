@@ -4456,11 +4456,30 @@ FNIEMOP_DEF(iemOp_nop)
     {
         IEMOP_MNEMONIC(pause, "pause");
 #ifdef VBOX_WITH_NESTED_HWVIRT
-        /** @todo Pause filter count and threshold with SVM nested hardware virt. */
-        Assert(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilter);
-        Assert(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilterThreshold);
+        bool fCheckIntercept = true;
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilter)
+        {
+            /* TSC based pause-filter thresholding. */
+            PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+            if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilterThreshold
+                && pCtx->hwvirt.svm.cPauseFilterThreshold > 0)
+            {
+                uint64_t const uTick = TMCpuTickGet(pVCpu);
+                if (uTick - pCtx->hwvirt.svm.uPrevPauseTick > pCtx->hwvirt.svm.cPauseFilterThreshold)
+                    pCtx->hwvirt.svm.cPauseFilter = IEM_GET_SVM_PAUSE_FILTER_COUNT(pVCpu);
+                pCtx->hwvirt.svm.uPrevPauseTick = uTick;
+            }
+
+            /* Simple pause-filter counter. */
+            if (pCtx->hwvirt.svm.cPauseFilter > 0)
+            {
+                --pCtx->hwvirt.svm.cPauseFilter;
+                fCheckIntercept = false;
+            }
+        }
+        if (fCheckIntercept)
+            IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
 #endif
-        IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
     }
     else
         IEMOP_MNEMONIC(nop, "nop");
