@@ -584,6 +584,16 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
         /*
+         * Pause filter.
+         */
+        if (pVM->cpum.ro.GuestFeatures.fSvmPauseFilter)
+        {
+            pCtx->hwvirt.svm.cPauseFilter = pVmcbCtrl->u16PauseFilterCount;
+            if (pVM->cpum.ro.GuestFeatures.fSvmPauseFilterThreshold)
+                pCtx->hwvirt.svm.cPauseFilterThreshold = pVmcbCtrl->u16PauseFilterCount;
+        }
+
+        /*
          * Interrupt shadow.
          */
         if (pVmcbCtrl->IntShadow.n.u1IntShadow)
