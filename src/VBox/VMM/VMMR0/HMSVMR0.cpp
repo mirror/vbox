@@ -2382,11 +2382,12 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * If the guest is intercepting an MSR we need to intercept it regardless of
  * whether the nested-guest is intercepting it or not.
  *
- * @param   pHostCpu    Pointer to the physical CPU HM info. struct.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the nested-guest-CPU context.
+ * @param   pHostCpu        Pointer to the physical CPU HM info. struct.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the nested-guest-CPU context.
+ * @param   pVmcbNstGst     Pointer to the nested-guest VMCB.
  */
-static void hmR0SvmMergeMsrpm(PHMGLOBALCPUINFO pHostCpu, PVMCPU pVCpu, PCPUMCTX pCtx)
+static void hmR0SvmMergeMsrpm(PHMGLOBALCPUINFO pHostCpu, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcbNstGst)
 {
     uint64_t const *pu64GstMsrpm    = (uint64_t const *)pVCpu->hm.s.svm.pvMsrBitmap;
     uint64_t const *pu64NstGstMsrpm = (uint64_t const *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
@@ -4305,132 +4306,6 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
-/**
- * Prepares to run nested-guest code in AMD-V and we've committed to doing so. This
- * means there is no backing out to ring-3 or anywhere else at this point.
- *
- * @param   pVM             The cross context VM structure.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pCtx            Pointer to the guest-CPU context.
- * @param   pSvmTransient   Pointer to the SVM transient structure.
- *
- * @remarks Called with preemption disabled.
- * @remarks No-long-jump zone!!!
- */
-static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
-{
-    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
-
-    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);            /* Indicate the start of guest execution. */
-
-    PSVMVMCB pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    hmR0SvmInjectPendingEvent(pVCpu, pCtx, pVmcbNstGst);
-
-    /* Pre-load the guest FPU state. */
-    if (!CPUMIsGuestFPUStateActive(pVCpu))
-    {
-        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestFpuState, x);
-        CPUMR0LoadGuestFPU(pVM, pVCpu); /* (Ignore rc, no need to set HM_CHANGED_HOST_CONTEXT for SVM.) */
-        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestFpuState, x);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadGuestFpu);
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
-    }
-
-    /* Load the state shared between host and nested-guest (FPU, debug). */
-    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_HOST_GUEST_SHARED_STATE))
-        hmR0SvmLoadSharedState(pVCpu, pVmcbNstGst, pCtx);
-
-    HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_HOST_CONTEXT);             /* Preemption might set this, nothing to do on AMD-V. */
-    AssertMsg(!HMCPU_CF_VALUE(pVCpu), ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
-
-    PHMGLOBALCPUINFO pHostCpu         = hmR0GetCurrentCpu();
-    RTCPUID const    idHostCpu        = pHostCpu->idCpu;
-    bool const       fMigratedHostCpu = idHostCpu != pVCpu->hm.s.idLastCpu;
-
-    /* Setup TSC offsetting. */
-    if (   pSvmTransient->fUpdateTscOffsetting
-        || fMigratedHostCpu)
-    {
-        hmR0SvmUpdateTscOffsettingNested(pVM, pVCpu, pCtx, pVmcbNstGst);
-        pSvmTransient->fUpdateTscOffsetting = false;
-    }
-
-    /* If we've migrating CPUs, mark the VMCB Clean bits as dirty. */
-    if (fMigratedHostCpu)
-        pVmcbNstGst->ctrl.u32VmcbCleanBits = 0;
-
-    /* Store status of the shared guest-host state at the time of VMRUN. */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-    if (CPUMIsGuestInLongModeEx(pCtx))
-    {
-        pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActivePending(pVCpu);
-        pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActivePending(pVCpu);
-    }
-    else
-#endif
-    {
-        pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActive(pVCpu);
-        pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActive(pVCpu);
-    }
-
-    /* Merge the guest and nested-guest MSRPM. */
-    hmR0SvmMergeMsrpm(pHostCpu, pVCpu, pCtx);
-
-    /* Update the nested-guest VMCB to use the newly merged MSRPM. */
-    pVmcbNstGst->ctrl.u64MSRPMPhysAddr = pHostCpu->n.svm.HCPhysNstGstMsrpm;
-
-    /* The TLB flushing would've already been setup by the nested-hypervisor. */
-    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
-    hmR0SvmFlushTaggedTlb(pVCpu, pCtx, pVmcbNstGst, pHostCpu);
-    Assert(pVCpu->hm.s.idLastCpu == idHostCpu);
-
-    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
-
-    TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
-                                                                   to start executing. */
-
-    /*
-     * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
-     * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
-     *
-     * This should be done -after- any RDTSCPs for obtaining the host timestamp (TM, STAM etc).
-     */
-    uint8_t *pbMsrBitmap = (uint8_t *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
-    if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
-        && !(pVmcbNstGst->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP))
-    {
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        pVmcbNstGst->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
-
-        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
-        uint64_t u64GuestTscAux = CPUMR0GetGuestTscAux(pVCpu);
-        if (u64GuestTscAux != pVCpu->hm.s.u64HostTscAux)
-            ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTscAux);
-        pSvmTransient->fRestoreTscAuxMsr = true;
-    }
-    else
-    {
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_TSC_AUX, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
-        pVmcbNstGst->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
-        pSvmTransient->fRestoreTscAuxMsr = false;
-    }
-
-    /*
-     * If VMCB Clean bits isn't supported by the CPU or exposed by the guest,
-     * mark all state-bits as dirty indicating to the CPU to re-load from VMCB.
-     */
-    bool const fSupportsVmcbCleanBits = hmR0SvmSupportsVmcbCleanBits(pVCpu, pCtx);
-    if (!fSupportsVmcbCleanBits)
-        pVmcbNstGst->ctrl.u32VmcbCleanBits = 0;
-}
-#endif
-
-
 /**
  * Prepares to run guest code in AMD-V and we've committed to doing so. This
  * means there is no backing out to ring-3 or anywhere else at this
@@ -4449,12 +4324,13 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
 
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);            /* Indicate the start of guest execution. */
 
-    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
+    bool const fInNestedGuestMode = CPUMIsGuestInSvmNestedHwVirtMode(pCtx);
+    PSVMVMCB pVmcb = !fInNestedGuestMode ? pVCpu->hm.s.svm.pVmcb : pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+
     hmR0SvmInjectPendingEvent(pVCpu, pCtx, pVmcb);
 
     if (!CPUMIsGuestFPUStateActive(pVCpu))
@@ -4481,7 +4357,10 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     if (   pSvmTransient->fUpdateTscOffsetting
         || fMigratedHostCpu)
     {
-        hmR0SvmUpdateTscOffsetting(pVM, pVCpu, pVmcb);
+        if (!fInNestedGuestMode)
+            hmR0SvmUpdateTscOffsetting(pVM, pVCpu, pVmcb);
+        else
+            hmR0SvmUpdateTscOffsettingNested(pVM, pVCpu, pCtx, pVmcb);
         pSvmTransient->fUpdateTscOffsetting = false;
     }
 
@@ -4503,8 +4382,20 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
         pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActive(pVCpu);
     }
 
-    /* Flush the appropriate tagged-TLB entries. */
+    uint8_t *pbMsrBitmap;
+    if (!fInNestedGuestMode)
+        pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
+    else
+    {
+        hmR0SvmMergeMsrpm(pHostCpu, pVCpu, pCtx, pVmcb);
+
+        /* Update the nested-guest VMCB with the newly merged MSRPM.*/
+        pVmcb->ctrl.u64MSRPMPhysAddr = pHostCpu->n.svm.HCPhysNstGstMsrpm;
+        pbMsrBitmap = (uint8_t *)pHostCpu->n.svm.pvNstGstMsrpm;
+    }
+
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
+    /* Flush the appropriate tagged-TLB entries. */
     hmR0SvmFlushTaggedTlb(pVCpu, pCtx, pVmcb, pHostCpu);
     Assert(pVCpu->hm.s.idLastCpu == idHostCpu);
 
@@ -4519,27 +4410,28 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
      *
      * This should be done -after- any RDTSCPs for obtaining the host timestamp (TM, STAM etc).
      */
-    uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
     if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
         && !(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP))
     {
+        uint64_t const uGuestTscAux = CPUMR0GetGuestTscAux(pVCpu);
+        pVCpu->hm.s.u64HostTscAux   = ASMRdMsr(MSR_K8_TSC_AUX);
+        if (uGuestTscAux != pVCpu->hm.s.u64HostTscAux)
+            ASMWrMsr(MSR_K8_TSC_AUX, uGuestTscAux);
         hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
-
-        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
-        uint64_t u64GuestTscAux = CPUMR0GetGuestTscAux(pVCpu);
-        if (u64GuestTscAux != pVCpu->hm.s.u64HostTscAux)
-            ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTscAux);
         pSvmTransient->fRestoreTscAuxMsr = true;
     }
     else
     {
         hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_TSC_AUX, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
-        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
         pSvmTransient->fRestoreTscAuxMsr = false;
     }
+    pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
 
-    /* If VMCB Clean bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
+    /*
+     * If VMCB Clean bits isn't supported by the CPU or exposed to the guest in the
+     * nested virtualization case, mark all state-bits as dirty indicating to the
+     * CPU to re-load from VMCB.
+     */
     bool const fSupportsVmcbCleanBits = hmR0SvmSupportsVmcbCleanBits(pVCpu, pCtx);
     if (!fSupportsVmcbCleanBits)
         pVmcb->ctrl.u32VmcbCleanBits = 0;
@@ -4976,7 +4868,7 @@ static int hmR0SvmRunGuestCodeNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint3
          * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
          * This also disables flushing of the R0-logger instance (if any).
          */
-        hmR0SvmPreRunGuestCommittedNested(pVM, pVCpu, pCtx, &SvmTransient);
+        hmR0SvmPreRunGuestCommitted(pVM, pVCpu, pCtx, &SvmTransient);
 
         rc = hmR0SvmRunGuestNested(pVM, pVCpu, pCtx);
 
