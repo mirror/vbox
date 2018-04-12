@@ -7299,7 +7299,7 @@ else
 endif
 
 # Java compiler options, needs some version checking.
-ifneq ($(int-ge $(VBOX_JAVA_VERSION),10900),)
+if defined(VBOX_JAVA_VERSION) && $(VBOX_JAVA_VERSION) >= 10900
  VBOX_JAVA_WS_OPTS ?= --add-modules java.xml.ws
 endif
 VBOX_JAVAC_OPTS   = -encoding UTF-8 -source 1.5 -target 1.5 -Xlint:unchecked
