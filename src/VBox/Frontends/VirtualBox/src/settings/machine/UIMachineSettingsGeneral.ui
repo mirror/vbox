@@ -215,7 +215,7 @@
        <item row="0" column="0" colspan="2">
         <widget class="QCheckBox" name="m_pCheckBoxEncryption">
          <property name="whatsThis">
-          <string>When checked, disks that are attached to this virtual machine are encrypted.</string>
+          <string>When checked, disks attached to this virtual machine will be encrypted.</string>
          </property>
          <property name="text">
           <string>En&amp;able Disk Encryption</string>
@@ -295,7 +295,7 @@
           <item row="1" column="1">
            <widget class="QLineEdit" name="m_pEditorEncryptionPassword">
             <property name="whatsThis" >
-             <string>Holds the encryption password for disk attached to this virtual machine.</string>
+             <string>Holds the encryption password for disks attached to this virtual machine.</string>
             </property>
            </widget>
           </item>
