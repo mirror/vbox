@@ -255,7 +255,30 @@ RTDECL(int) RTDirRelDirOpenFiltered(RTDIR hDir, const char *pszDirAndFilter, RTD
         rc = rtDirRelJoinPathForDirOpen(szAbsDirAndFilter, sizeof(szAbsDirAndFilter), pThis,
                                         &NtName, hRoot != NULL, pszDirAndFilter);
         if (RT_SUCCESS(rc))
+        {
+            /* Drop the filter from the NT name. */
+            switch (enmFilter)
+            {
+                case RTDIRFILTER_NONE:
+                    break;
+                case RTDIRFILTER_WINNT:
+                case RTDIRFILTER_UNIX:
+                case RTDIRFILTER_UNIX_UPCASED:
+                {
+                    size_t cwc = NtName.Length / sizeof(RTUTF16);
+                    while (   cwc > 0
+                           && NtName.Buffer[cwc - 1] != '\\')
+                        cwc--;
+                    NtName.Buffer[cwc] = '\0';
+                    NtName.Length = (uint16_t)(cwc * sizeof(RTUTF16));
+                    break;
+                }
+                default:
+                    AssertFailedBreak();
+            }
+
             rc = rtDirOpenRelativeOrHandle(phDir, szAbsDirAndFilter, enmFilter, fFlags, (uintptr_t)hRoot, &NtName);
+        }
         RTNtPathFree(&NtName, NULL);
     }
     return rc;
