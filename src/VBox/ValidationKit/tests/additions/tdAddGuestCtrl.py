@@ -3369,10 +3369,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
                                      sDst = sScratchHst + "/"),
                       tdTestResult(fRc = True) ],
-                    # Destination is a directory (should fail).
+                    # Destination is a directory (without a trailing slash, should also work).
                     # See "cp" syntax.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
                                      sDst = sScratchHst),
+                      tdTestResult(fRc = True) ],
+                    # Destination is a non-existing directory.
+                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
+                                     sDst = sScratchHst + "/non-existing-directory/"),
                       tdTestResult(fRc = False) ]
                 ]);
 
@@ -3383,20 +3387,27 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 aaTests.extend([
                     # Copying entire directories (destination is "<sScratch>", which exists, which should fail).
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
-                                    sDst = sScratchHst),
+                                     sDst = sScratchHst),
                       tdTestResult(fRc = False) ],
-                    # Copying entire directories (destination is "<sScratch>\Web").
-                    # Should fail, as the corresponding flag is missing.
+                    # Ditto, with trailing slash.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
-                                    sDst = sScratchHst + "/"),
+                                     sDst = sScratchHst + "/"),
                       tdTestResult(fRc = False) ],
-                    # Next try with correct flag being set.
+                    # Next try with the DirectoryCopyFlag_CopyIntoExisting flag being set.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
-                                    sDst = sScratchHst + "/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                                     sDst = sScratchHst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                       tdTestResult(fRc = True) ],
-                    # Copying contents of directories (destination is "<sScratch>/").
+                    # Ditto, with trailing slash.
+                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web',
+                                     sDst = sScratchHst + "/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                      tdTestResult(fRc = True) ],
+                    # Copying contents of directories into a non-existing directory chain on the host which fail.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web\\',
-                                    sDst = sScratchHst + "/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                                     sDst = sScratchHst + "/not/existing/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                      tdTestResult(fRc = False) ],
+                    # Copying contents of directories into a non-existing directory on the host, which should succeed.
+                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web\\',
+                                     sDst = sScratchHst + "/no-existing/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                       tdTestResult(fRc = True) ]
                 ]);
         else:

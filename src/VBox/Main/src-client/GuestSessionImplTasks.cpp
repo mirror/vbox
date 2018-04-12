@@ -70,6 +70,9 @@ GuestSessionTask::GuestSessionTask(GuestSession *pSession)
     : ThreadTask("GenericGuestSessionTask")
 {
     mSession = pSession;
+
+    mfPathStyle = mSession->i_getPathStyle() == PathStyle_DOS
+                ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX;
 }
 
 GuestSessionTask::~GuestSessionTask(void)
@@ -515,24 +518,17 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSource, const Utf8Str 
         }
         else if (RTFS_IS_DIRECTORY(dstObjInfo.Attr.fMode))
         {
-            if (   strDest.endsWith("\\")
-                || strDest.endsWith("/"))
-            {
-                /* Build the final file name with destination path (on the host). */
-                char szDstPath[RTPATH_MAX];
-                RTStrPrintf2(szDstPath, sizeof(szDstPath), "%s", strDest.c_str());
+            /* Build the final file name with destination path (on the host). */
+            char szDstPath[RTPATH_MAX];
+            RTStrPrintf2(szDstPath, sizeof(szDstPath), "%s", strDest.c_str());
 
-                RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilename(strSource.c_str()));
+            if (   !strDest.endsWith("\\")
+                && !strDest.endsWith("/"))
+                RTPathAppend(szDstPath, sizeof(szDstPath), "/"); /* IPRT can handle / on all hosts. */
 
-                pszDstFile = RTStrDup(szDstPath);
-            }
-            else
-            {
-                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" already exists"),
-                                               strDest.c_str(), rc));
-                rc = VERR_ALREADY_EXISTS;
-            }
+            RTPathAppend(szDstPath, sizeof(szDstPath), RTPathFilenameEx(strSource.c_str(), mfPathStyle));
+
+            pszDstFile = RTStrDup(szDstPath);
         }
         else if (RTFS_IS_SYMLINK(dstObjInfo.Attr.fMode))
         {
@@ -991,7 +987,8 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
 
     Utf8Str strSrcCur = strSrcDir + strSrcSubDir;
 
-    LogFlowFunc(("Entering '%s'\n", strSrcCur.c_str()));
+    LogFlowFunc(("strSrcDir=%s, strDstDir=%s, strFilter=%s, strSubDir=%s\n",
+                 strSrcDir.c_str(), strDstDir.c_str(), strFilter.c_str(), strSubDir.c_str()));
 
     int rc;
 
@@ -1123,30 +1120,46 @@ int SessionTaskCopyDirFrom::Run(void)
 
     int rc = VINF_SUCCESS;
 
-    /* Figure out if we need to copy the entire source directory or just its contents. */
     Utf8Str strSrcDir = mSource;
     Utf8Str strDstDir = mDest;
-    if (   !strSrcDir.endsWith("/")
-        && !strSrcDir.endsWith("\\"))
+
+    bool fDstExists = RTDirExists(strDstDir.c_str());
+    if (fDstExists)
     {
-        if (   strDstDir.endsWith("/")
-            || strDstDir.endsWith("\\"))
+        if (!(u.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
         {
-            strDstDir += Utf8StrFmt("%s", RTPathFilename(strSrcDir.c_str()));
+            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" exists when it must not"), strDstDir.c_str()));
+            rc = VERR_ALREADY_EXISTS;
         }
     }
 
-    /* Create the root target directory on the host.
-     * The target directory might already exist on the host (based on u.Dir.fCopyFlags). */
-    const bool fExists = RTDirExists(strDstDir.c_str());
-    if (   fExists
-        && !(u.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (   !strSrcDir.endsWith("/")
+        && !strSrcDir.endsWith("\\"))
     {
-        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                            Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" exists when it must not"), strDstDir.c_str()));
-        rc = VERR_ALREADY_EXISTS;
+        if (   !strDstDir.endsWith("/")
+            && !strDstDir.endsWith("\\"))
+                strDstDir += "/"; /* IPRT can handle / on all hosts. */
+
+        strDstDir += Utf8StrFmt("%s", RTPathFilenameEx(strSrcDir.c_str(), mfPathStyle));
     }
-    else if (!fExists)
+
+    /* Create the final target directory on the host.
+     * The target directory might already exist on the host (based on u.Dir.fCopyFlags). */
+    fDstExists = RTDirExists(strDstDir.c_str());
+    if (fDstExists)
+    {
+        if (!(u.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
+        {
+            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" exists when it must not"), strDstDir.c_str()));
+            rc = VERR_ALREADY_EXISTS;
+        }
+    }
+    else
     {
         rc = RTDirCreate(strDstDir.c_str(), fDirMode, 0);
         if (RT_FAILURE(rc))
@@ -1167,6 +1180,9 @@ int SessionTaskCopyDirFrom::Run(void)
                                        strDstDir.c_str(), rc));
         return rc;
     }
+
+    LogFlowFunc(("Source: %s -> %s\n", mSource.c_str(), strSrcDir.c_str()));
+    LogFlowFunc(("Destination: %s -> %s\n", mDest.c_str(), strDstDir.c_str()));
 
     /* At this point the directory on the host was created and (hopefully) is ready
      * to receive further content. */
