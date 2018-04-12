@@ -4307,9 +4307,10 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
 
 
 /**
- * Prepares to run guest code in AMD-V and we've committed to doing so. This
- * means there is no backing out to ring-3 or anywhere else at this
- * point.
+ * Prepares to run guest or nested-guest code in AMD-V and we've committed to
+ * doing so.
+ *
+ * This means there is no backing out to ring-3 or anywhere else at this point.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context virtual CPU structure.
