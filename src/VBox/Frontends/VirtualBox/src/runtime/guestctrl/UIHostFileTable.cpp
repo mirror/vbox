@@ -382,6 +382,16 @@ void  UIHostFileTable::showProperties()
 
 void UIHostFileTable::determineDriveLetters()
 {
+    //#ifdef VBOX_WS_WIN
+
+    QFileInfoList drive = QDir::drives();
+
+    for (int i = 0; i < drive.size(); ++i)
+    {
+        m_driveLetterList.push_back(drive[i].filePath());
+
+    }
+    //#endif
 }
 
 #include "UIHostFileTable.moc"

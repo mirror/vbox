@@ -335,6 +335,9 @@ private:
     void            disableSelectionDependentActions();
     void            deSelectUpDirectoryItem();
     void            setSelectionForAll(QItemSelectionModel::SelectionFlags flags);
+    /** Start directory requires a special attention since on file systems with drive letters
+     *  drive letter are direct children of the start directory. On other systems start directory is '/' */
+    void            populateStartDirectory(UIFileTableItem *startItem);
     QGridLayout     *m_pMainLayout;
     QComboBox       *m_pLocationComboBox;
     UIToolBar       *m_pToolBar;

@@ -1007,7 +1007,7 @@ void UIGuestControlFileTable::initializeFileTree()
 {
     if (m_pRootItem)
         reset();
-    determineDriveLetters();
+
     /* Root item: */
     const QString startPath("/");
     QList<QVariant> headData;
@@ -1020,10 +1020,19 @@ void UIGuestControlFileTable::initializeFileTree()
     startItem->setPath(startPath);
     m_pRootItem->appendChild(startItem);
     startItem->setIsOpened(false);
+    populateStartDirectory(startItem);
+    m_pView->setRootIndex(m_pModel->rootIndex());
+    m_pModel->signalUpdate();
+    updateCurrentLocationEdit(startPath);
+}
+
+void UIGuestControlFileTable::populateStartDirectory(UIFileTableItem *startItem)
+{
+    determineDriveLetters();
     if (m_driveLetterList.isEmpty())
     {
         /* Read the root directory and get the list: */
-        readDirectory(startPath, startItem, true);
+        readDirectory(startItem->path(), startItem, true);
     }
     else
     {
@@ -1040,9 +1049,7 @@ void UIGuestControlFileTable::initializeFileTree()
             startItem->setIsOpened(true);
         }
     }
-    m_pView->setRootIndex(m_pModel->rootIndex());
-    m_pModel->signalUpdate();
-    updateCurrentLocationEdit(startPath);
+
 }
 
 void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
@@ -1191,7 +1198,10 @@ void UIGuestControlFileTable::refresh()
     m_pModel->beginReset();
     /* For now we clear the whole subtree (that isrecursively) which is an overkill: */
     treeItem->clearChildren();
-    readDirectory(treeItem->path(), treeItem, isRootDir);
+    if (isRootDir)
+        populateStartDirectory(treeItem);
+    else
+        readDirectory(treeItem->path(), treeItem, isRootDir);
     m_pModel->endReset();
     m_pView->setRootIndex(currentIndex);
 }
