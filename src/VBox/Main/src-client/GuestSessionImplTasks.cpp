@@ -164,11 +164,8 @@ int GuestSessionTask::setProgressSuccess(void)
     if (mProgress.isNull()) /* Progress is optional. */
         return VINF_SUCCESS;
 
-    BOOL fCanceled;
     BOOL fCompleted;
-    if (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
-        && !fCanceled
-        && SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
+    if (   SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
         && !fCompleted)
     {
         HRESULT hr = mProgress->i_notifyComplete(S_OK);
@@ -336,6 +333,10 @@ int GuestSessionTask::fileCopyFromGuestInner(ComObjPtr<GuestFile> &srcFile, PRTF
         if (RT_FAILURE(rc))
             break;
     }
+
+    if (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
+        && fCanceled)
+        return VINF_SUCCESS;
 
     if (RT_FAILURE(rc))
         return rc;
@@ -1096,6 +1097,11 @@ int SessionTaskCopyDirFrom::directoryCopyToHost(const Utf8Str &strSource, const 
             default:
                 break;
         }
+
+        BOOL fCanceled = FALSE;
+        if (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
+            && fCanceled)
+            break;
     }
 
     if (rc == VERR_NO_MORE_FILES) /* Reading done? */
