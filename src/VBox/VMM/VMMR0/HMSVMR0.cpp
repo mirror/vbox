@@ -4350,9 +4350,9 @@ static void hmR0SvmPreRunGuestCommittedNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
     HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_HOST_CONTEXT);             /* Preemption might set this, nothing to do on AMD-V. */
     AssertMsg(!HMCPU_CF_VALUE(pVCpu), ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
-    PHMGLOBALCPUINFO pHostCpu      = hmR0GetCurrentCpu();
-    RTCPUID const idHostCpu        = pHostCpu->idCpu;
-    bool const    fMigratedHostCpu = idHostCpu != pVCpu->hm.s.idLastCpu;
+    PHMGLOBALCPUINFO pHostCpu         = hmR0GetCurrentCpu();
+    RTCPUID const    idHostCpu        = pHostCpu->idCpu;
+    bool const       fMigratedHostCpu = idHostCpu != pVCpu->hm.s.idLastCpu;
 
     /* Setup TSC offsetting. */
     if (   pSvmTransient->fUpdateTscOffsetting
@@ -4476,9 +4476,9 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_HOST_CONTEXT);             /* Preemption might set this, nothing to do on AMD-V. */
     AssertMsg(!HMCPU_CF_VALUE(pVCpu), ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
-    PHMGLOBALCPUINFO pHostCpu      = hmR0GetCurrentCpu();
-    RTCPUID const idHostCpu        = pHostCpu->idCpu;
-    bool const    fMigratedHostCpu = idHostCpu != pVCpu->hm.s.idLastCpu;
+    PHMGLOBALCPUINFO pHostCpu         = hmR0GetCurrentCpu();
+    RTCPUID const    idHostCpu        = pHostCpu->idCpu;
+    bool const       fMigratedHostCpu = idHostCpu != pVCpu->hm.s.idLastCpu;
 
     /* Setup TSC offsetting. */
     if (   pSvmTransient->fUpdateTscOffsetting
