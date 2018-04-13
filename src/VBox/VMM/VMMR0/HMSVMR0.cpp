@@ -5043,7 +5043,6 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             return hmR0SvmExitRdtscp(pVCpu, pCtx, pSvmTransient);
         }
 
-
         case SVM_EXIT_MONITOR:
         {
             if (HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_MONITOR))
@@ -5116,7 +5115,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             return hmR0SvmExitIOInstr(pVCpu, pCtx, pSvmTransient);
         }
 
-        case SVM_EXIT_EXCEPTION_14:  /* X86_XCPT_PF */
+        case SVM_EXIT_XCPT_PF:
         {
             PVM pVM = pVCpu->CTX_SUFF(pVM);
             if (pVM->hm.s.fNestedPaging)
@@ -5135,7 +5134,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             return hmR0SvmExitXcptPFNested(pVCpu, pCtx,pSvmTransient);
         }
 
-        case SVM_EXIT_EXCEPTION_6:   /* X86_XCPT_UD */
+        case SVM_EXIT_XCPT_UD:
         {
             if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_UD))
                 return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
@@ -5143,28 +5142,28 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             return VINF_SUCCESS;
         }
 
-        case SVM_EXIT_EXCEPTION_16:  /* X86_XCPT_MF */
+        case SVM_EXIT_XCPT_MF:
         {
             if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_MF))
                 return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitXcptMF(pVCpu, pCtx, pSvmTransient);
         }
 
-        case SVM_EXIT_EXCEPTION_1:   /* X86_XCPT_DB */
+        case SVM_EXIT_XCPT_DB:
         {
             if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_DB))
                 return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmNestedExitXcptDB(pVCpu, pCtx, pSvmTransient);
         }
 
-        case SVM_EXIT_EXCEPTION_17:  /* X86_XCPT_AC */
+        case SVM_EXIT_XCPT_AC:
         {
             if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_AC))
                 return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             return hmR0SvmExitXcptAC(pVCpu, pCtx, pSvmTransient);
         }
 
-        case SVM_EXIT_EXCEPTION_3:   /* X86_XCPT_BP */
+        case SVM_EXIT_XCPT_BP:
         {
             if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_BP))
                 return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
@@ -5217,6 +5216,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
         case SVM_EXIT_INTR:
         case SVM_EXIT_NMI:
+        case SVM_EXIT_XCPT_NMI: /* Shouldn't ever happen, SVM_EXIT_NMI is used instead. */
         case SVM_EXIT_SMI:
         {
             /*
@@ -5290,20 +5290,31 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     return hmR0SvmExitWriteDRx(pVCpu, pCtx, pSvmTransient);
                 }
 
-                /* The exceptions not handled here are already handled individually above (as they occur more frequently). */
-                case SVM_EXIT_EXCEPTION_0:     /*case SVM_EXIT_EXCEPTION_1:*/     case SVM_EXIT_EXCEPTION_2:
-                /*case SVM_EXIT_EXCEPTION_3:*/   case SVM_EXIT_EXCEPTION_4:       case SVM_EXIT_EXCEPTION_5:
-                /*case SVM_EXIT_EXCEPTION_6:*/   case SVM_EXIT_EXCEPTION_7:       case SVM_EXIT_EXCEPTION_8:
-                case SVM_EXIT_EXCEPTION_9:       case SVM_EXIT_EXCEPTION_10:      case SVM_EXIT_EXCEPTION_11:
-                case SVM_EXIT_EXCEPTION_12:      case SVM_EXIT_EXCEPTION_13:    /*case SVM_EXIT_EXCEPTION_14:*/
-                case SVM_EXIT_EXCEPTION_15:    /*case SVM_EXIT_EXCEPTION_16:*/  /*case SVM_EXIT_EXCEPTION_17:*/
-                case SVM_EXIT_EXCEPTION_18:      case SVM_EXIT_EXCEPTION_19:      case SVM_EXIT_EXCEPTION_20:
-                case SVM_EXIT_EXCEPTION_21:      case SVM_EXIT_EXCEPTION_22:      case SVM_EXIT_EXCEPTION_23:
-                case SVM_EXIT_EXCEPTION_24:      case SVM_EXIT_EXCEPTION_25:      case SVM_EXIT_EXCEPTION_26:
-                case SVM_EXIT_EXCEPTION_27:      case SVM_EXIT_EXCEPTION_28:      case SVM_EXIT_EXCEPTION_29:
-                case SVM_EXIT_EXCEPTION_30:      case SVM_EXIT_EXCEPTION_31:
+                case SVM_EXIT_XCPT_0:      /* #DE                   */
+                /*   SVM_EXIT_XCPT_1: */   /* #DB  - Handled above. */
+                /*   SVM_EXIT_XCPT_2: */   /* #NMI - Handled above. */
+                /*   SVM_EXIT_XCPT_3: */   /* #BP  - Handled above. */
+                case SVM_EXIT_XCPT_4:      /* #OF                   */
+                case SVM_EXIT_XCPT_5:      /* #BR                   */
+                /*   SVM_EXIT_XCPT_6: */   /* #UD  - Handled above. */
+                case SVM_EXIT_XCPT_7:      /* #NM                   */
+                case SVM_EXIT_XCPT_8:      /* #DF                   */
+                case SVM_EXIT_XCPT_9:      /* #CO_SEG_OVERRUN       */
+                case SVM_EXIT_XCPT_10:     /* #TS                   */
+                case SVM_EXIT_XCPT_11:     /* #NP                   */
+                case SVM_EXIT_XCPT_12:     /* #SS                   */
+                case SVM_EXIT_XCPT_13:     /* #GP                   */
+                /*   SVM_EXIT_XCPT_14: */  /* #PF  - Handled above. */
+                case SVM_EXIT_XCPT_15:     /* Reserved.             */
+                /*   SVM_EXIT_XCPT_16: */  /* #MF  - Handled above. */
+                /*   SVM_EXIT_XCPT_17: */  /* #AC  - Handled above. */
+                case SVM_EXIT_XCPT_18:     /* #MC                   */
+                case SVM_EXIT_XCPT_19:     /* #XF                   */
+                case SVM_EXIT_XCPT_20: case SVM_EXIT_XCPT_21: case SVM_EXIT_XCPT_22: case SVM_EXIT_XCPT_23:
+                case SVM_EXIT_XCPT_24: case SVM_EXIT_XCPT_25: case SVM_EXIT_XCPT_26: case SVM_EXIT_XCPT_27:
+                case SVM_EXIT_XCPT_28: case SVM_EXIT_XCPT_29: case SVM_EXIT_XCPT_30: case SVM_EXIT_XCPT_31:
                 {
-                    uint8_t const uVector = uExitCode - SVM_EXIT_EXCEPTION_0;
+                    uint8_t const uVector = uExitCode - SVM_EXIT_XCPT_0;
                     if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, uVector))
                         return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
                     return hmR0SvmExitXcptGeneric(pVCpu, pCtx, pSvmTransient);
@@ -5409,7 +5420,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 {
                     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
                     if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_PF))
-                        return HM_SVM_VMEXIT_NESTED(pVCpu, SVM_EXIT_EXCEPTION_14, RT_LO_U32(uExitInfo1), uExitInfo2);
+                        return HM_SVM_VMEXIT_NESTED(pVCpu, SVM_EXIT_XCPT_14, RT_LO_U32(uExitInfo1), uExitInfo2);
                     hmR0SvmSetPendingXcptPF(pVCpu, pCtx, RT_LO_U32(uExitInfo1), uExitInfo2);
                     return VINF_SUCCESS;
                 }
@@ -5472,22 +5483,22 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
         case SVM_EXIT_CPUID:
             return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_14:  /* X86_XCPT_PF */
+        case SVM_EXIT_XCPT_14:  /* X86_XCPT_PF */
             return hmR0SvmExitXcptPF(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_6:   /* X86_XCPT_UD */
+        case SVM_EXIT_XCPT_6:   /* X86_XCPT_UD */
             return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_16:  /* X86_XCPT_MF */
+        case SVM_EXIT_XCPT_16:  /* X86_XCPT_MF */
             return hmR0SvmExitXcptMF(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_1:   /* X86_XCPT_DB */
+        case SVM_EXIT_XCPT_1:   /* X86_XCPT_DB */
             return hmR0SvmExitXcptDB(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_17:  /* X86_XCPT_AC */
+        case SVM_EXIT_XCPT_17:  /* X86_XCPT_AC */
             return hmR0SvmExitXcptAC(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_EXCEPTION_3:   /* X86_XCPT_BP */
+        case SVM_EXIT_XCPT_3:   /* X86_XCPT_BP */
             return hmR0SvmExitXcptBP(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_MONITOR:
@@ -5529,6 +5540,7 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
 
         case SVM_EXIT_INTR:
         case SVM_EXIT_NMI:
+        case SVM_EXIT_XCPT_NMI: /* Shouldn't ever happen, SVM_EXIT_NMI is used instead. */
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_MSR:
@@ -5607,30 +5619,29 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
                 }
 
 #ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-                case SVM_EXIT_EXCEPTION_0:             /* X86_XCPT_DE */
-                /*   SVM_EXIT_EXCEPTION_1: */          /* X86_XCPT_DB - Handled above. */
-                case SVM_EXIT_EXCEPTION_2:             /* X86_XCPT_NMI */
-                /*   SVM_EXIT_EXCEPTION_3: */          /* X86_XCPT_BP - Handled above. */
-                case SVM_EXIT_EXCEPTION_4:             /* X86_XCPT_OF */
-                case SVM_EXIT_EXCEPTION_5:             /* X86_XCPT_BR */
-                /*   SVM_EXIT_EXCEPTION_6: */          /* X86_XCPT_UD - Handled above. */
-                case SVM_EXIT_EXCEPTION_7:             /* X86_XCPT_NM */
-                case SVM_EXIT_EXCEPTION_8:             /* X86_XCPT_DF */
-                case SVM_EXIT_EXCEPTION_9:             /* X86_XCPT_CO_SEG_OVERRUN */
-                case SVM_EXIT_EXCEPTION_10:            /* X86_XCPT_TS */
-                case SVM_EXIT_EXCEPTION_11:            /* X86_XCPT_NP */
-                case SVM_EXIT_EXCEPTION_12:            /* X86_XCPT_SS */
-                case SVM_EXIT_EXCEPTION_13:            /* X86_XCPT_GP */
-                /*   SVM_EXIT_EXCEPTION_14: */         /* X86_XCPT_PF - Handled above. */
-                case SVM_EXIT_EXCEPTION_15:            /* Reserved. */
-                /*   SVM_EXIT_EXCEPTION_16: */         /* X86_XCPT_MF - Handled above. */
-                /*   SVM_EXIT_EXCEPTION_17: */         /* X86_XCPT_AC - Handled above. */
-                case SVM_EXIT_EXCEPTION_18:            /* X86_XCPT_MC */
-                case SVM_EXIT_EXCEPTION_19:            /* X86_XCPT_XF */
-                case SVM_EXIT_EXCEPTION_20: case SVM_EXIT_EXCEPTION_21: case SVM_EXIT_EXCEPTION_22:
-                case SVM_EXIT_EXCEPTION_23: case SVM_EXIT_EXCEPTION_24: case SVM_EXIT_EXCEPTION_25:
-                case SVM_EXIT_EXCEPTION_26: case SVM_EXIT_EXCEPTION_27: case SVM_EXIT_EXCEPTION_28:
-                case SVM_EXIT_EXCEPTION_29: case SVM_EXIT_EXCEPTION_30: case SVM_EXIT_EXCEPTION_31:
+                case SVM_EXIT_XCPT_0:      /* #DE                   */
+                /*   SVM_EXIT_XCPT_1: */   /* #DB  - Handled above. */
+                /*   SVM_EXIT_XCPT_2: */   /* #NMI - Handled above. */
+                /*   SVM_EXIT_XCPT_3: */   /* #BP  - Handled above. */
+                case SVM_EXIT_XCPT_4:      /* #OF                   */
+                case SVM_EXIT_XCPT_5:      /* #BR                   */
+                /*   SVM_EXIT_XCPT_6: */   /* #UD  - Handled above. */
+                case SVM_EXIT_XCPT_7:      /* #NM                   */
+                case SVM_EXIT_XCPT_8:      /* #DF                   */
+                case SVM_EXIT_XCPT_9:      /* #CO_SEG_OVERRUN       */
+                case SVM_EXIT_XCPT_10:     /* #TS                   */
+                case SVM_EXIT_XCPT_11:     /* #NP                   */
+                case SVM_EXIT_XCPT_12:     /* #SS                   */
+                case SVM_EXIT_XCPT_13:     /* #GP                   */
+                /*   SVM_EXIT_XCPT_14: */  /* #PF  - Handled above. */
+                case SVM_EXIT_XCPT_15:     /* Reserved.             */
+                /*   SVM_EXIT_XCPT_16: */  /* #MF  - Handled above. */
+                /*   SVM_EXIT_XCPT_17: */  /* #AC  - Handled above. */
+                case SVM_EXIT_XCPT_18:     /* #MC                   */
+                case SVM_EXIT_XCPT_19:     /* #XF                   */
+                case SVM_EXIT_XCPT_20: case SVM_EXIT_XCPT_21: case SVM_EXIT_XCPT_22: case SVM_EXIT_XCPT_23:
+                case SVM_EXIT_XCPT_24: case SVM_EXIT_XCPT_25: case SVM_EXIT_XCPT_26: case SVM_EXIT_XCPT_27:
+                case SVM_EXIT_XCPT_28: case SVM_EXIT_XCPT_29: case SVM_EXIT_XCPT_30: case SVM_EXIT_XCPT_31:
                     return hmR0SvmExitXcptGeneric(pVCpu, pCtx, pSvmTransient);
 #endif  /* HMSVM_ALWAYS_TRAP_ALL_XCPTS */
 
@@ -5866,11 +5877,11 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
 #ifdef HMSVM_USE_IEM_EVENT_REFLECTION
         IEMXCPTRAISE     enmRaise;
         IEMXCPTRAISEINFO fRaiseInfo;
-        bool const       fExitIsHwXcpt  = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_31;
+        bool const       fExitIsHwXcpt  = pSvmTransient->u64ExitCode - SVM_EXIT_XCPT_0 <= SVM_EXIT_XCPT_31;
         uint8_t const    uIdtVector     = pVmcb->ctrl.ExitIntInfo.n.u8Vector;
         if (fExitIsHwXcpt)
         {
-            uint8_t  const uExitVector      = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0;
+            uint8_t  const uExitVector      = pSvmTransient->u64ExitCode - SVM_EXIT_XCPT_0;
             uint32_t const fIdtVectorFlags  = hmR0SvmGetIemXcptFlags(&pVmcb->ctrl.ExitIntInfo);
             uint32_t const fExitVectorFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
             enmRaise = IEMEvaluateRecursiveXcpt(pVCpu, fIdtVectorFlags, uIdtVector, fExitVectorFlags, uExitVector, &fRaiseInfo);
@@ -5997,9 +6008,9 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
         bool fReflectingNmi = false;
         if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_EXCEPTION)
         {
-            if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_31)
+            if (pSvmTransient->u64ExitCode - SVM_EXIT_XCPT_0 <= SVM_EXIT_XCPT_31)
             {
-                uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0);
+                uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_XCPT_0);
 
 #ifdef VBOX_STRICT
                 if (   hmR0SvmIsContributoryXcpt(uIdtVector)
@@ -6059,9 +6070,9 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
             enmReflect = SVMREFLECTXCPT_XCPT;
             fReflectingNmi = RT_BOOL(pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_NMI);
 
-            if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_31)
+            if (pSvmTransient->u64ExitCode - SVM_EXIT_XCPT_0 <= SVM_EXIT_XCPT_31)
             {
-                uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0);
+                uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_XCPT_0);
                 if (uExitVector == X86_XCPT_PF)
                 {
                     pSvmTransient->fVectoringPF = true;
@@ -7271,7 +7282,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 
 
 /**
- * \#VMEXIT handler for page-fault exceptions (SVM_EXIT_EXCEPTION_14).
+ * \#VMEXIT handler for page-fault exceptions (SVM_EXIT_XCPT_14).
  * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -7392,7 +7403,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * \#VMEXIT handler for undefined opcode (SVM_EXIT_EXCEPTION_6).
+ * \#VMEXIT handler for undefined opcode (SVM_EXIT_XCPT_6).
  * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -7437,7 +7448,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * \#VMEXIT handler for math-fault exceptions (SVM_EXIT_EXCEPTION_16).
+ * \#VMEXIT handler for math-fault exceptions (SVM_EXIT_XCPT_16).
  * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -7474,7 +7485,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * \#VMEXIT handler for debug exceptions (SVM_EXIT_EXCEPTION_1). Conditional
+ * \#VMEXIT handler for debug exceptions (SVM_EXIT_XCPT_1). Conditional
  * \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -7527,7 +7538,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * \#VMEXIT handler for alignment check exceptions (SVM_EXIT_EXCEPTION_17).
+ * \#VMEXIT handler for alignment check exceptions (SVM_EXIT_XCPT_17).
  * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptAC(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -7550,7 +7561,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptAC(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * \#VMEXIT handler for breakpoint exceptions (SVM_EXIT_EXCEPTION_3).
+ * \#VMEXIT handler for breakpoint exceptions (SVM_EXIT_XCPT_3).
  * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -7586,7 +7597,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
     PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
-    uint8_t const  uVector  = pVmcb->ctrl.u64ExitCode - SVM_EXIT_EXCEPTION_0;
+    uint8_t const  uVector  = pVmcb->ctrl.u64ExitCode - SVM_EXIT_XCPT_0;
     uint32_t const uErrCode = pVmcb->ctrl.u64ExitInfo1;
     Assert(pSvmTransient->u64ExitCode == pVmcb->ctrl.u64ExitCode);
     Assert(uVector <= X86_XCPT_LAST);
@@ -7622,7 +7633,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
  * \#VMEXIT handler for #PF occuring while in nested-guest execution
- * (SVM_EXIT_EXCEPTION_14). Conditional \#VMEXIT.
+ * (SVM_EXIT_XCPT_14). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptPFNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -7825,7 +7836,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 
 
 /**
- * Nested-guest \#VMEXIT handler for debug exceptions (SVM_EXIT_EXCEPTION_1).
+ * Nested-guest \#VMEXIT handler for debug exceptions (SVM_EXIT_XCPT_1).
  * Unconditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmNestedExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -7848,7 +7859,7 @@ HMSVM_EXIT_DECL hmR0SvmNestedExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIE
 
 
 /**
- * Nested-guest \#VMEXIT handler for breakpoint exceptions (SVM_EXIT_EXCEPTION_3).
+ * Nested-guest \#VMEXIT handler for breakpoint exceptions (SVM_EXIT_XCPT_3).
  * Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmNestedExitXcptBP(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
