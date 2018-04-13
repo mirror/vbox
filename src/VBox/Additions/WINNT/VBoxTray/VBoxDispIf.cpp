@@ -1522,11 +1522,11 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
         winEr = vboxDispIfUpdateModesWDDM(&Op, iChangedMode, &Size);
     }
 
-    winEr = vboxDispIfResizePerform(pIf, iChangedMode, fChangedEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+    winEr = vboxDispIfResizePerform(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
 
     if (winEr == ERROR_RETRY)
     {
-        VBoxRrRetrySchedule(pIf, iChangedMode, fChangedEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
+        VBoxRrRetrySchedule(pIf, iChangedMode, fEnable, fExtDispSup, paDisplayDevices, paDeviceModes, cDevModes);
 
         winEr = NO_ERROR;
     }
