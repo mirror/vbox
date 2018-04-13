@@ -5478,7 +5478,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
             uErr     = 0;
             /* SVM nested-guest #DF intercepts need to be checked now. See AMD spec. 15.12 "Exception Intercepts". */
             if (IEM_IS_SVM_XCPT_INTERCEPT_SET(pVCpu, X86_XCPT_DF))
-                IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_EXCEPTION_0 + X86_XCPT_DF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+                IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_XCPT_DF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
         }
         else if (enmRaise == IEMXCPTRAISE_TRIPLE_FAULT)
         {
