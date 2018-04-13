@@ -1011,10 +1011,10 @@ void UIGuestControlFileTable::initializeFileTree()
     /* Root item: */
     const QString startPath("/");
     QList<QVariant> headData;
-    headData << "Name" << "Size" << "Change Time" << "Owner";
+    headData << "Name" << "Size" << "Change Time" << "Owner" << "Permissions";
     m_pRootItem = new UIFileTableItem(headData, 0, FileObjectType_Directory);
     QList<QVariant> startDirData;
-    startDirData << startPath << 4096 << QDateTime() << "";
+    startDirData << startPath << 4096 << QDateTime() << "" << "";
     UIFileTableItem* startItem = new UIFileTableItem(startDirData, m_pRootItem, FileObjectType_Directory);
 
     startItem->setPath(startPath);

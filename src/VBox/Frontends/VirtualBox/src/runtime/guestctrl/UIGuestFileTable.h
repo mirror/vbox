@@ -57,7 +57,6 @@ private:
 
     bool copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath);
     bool copyHostToGuest(const QString& hostSourcePath, const QString &guestDestinationPath);
-
     mutable CGuestSession m_comGuestSession;
 
 };

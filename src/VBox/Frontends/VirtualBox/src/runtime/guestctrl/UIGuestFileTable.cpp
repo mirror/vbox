@@ -339,8 +339,15 @@ bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QSt
     else if (objectType == KFsObjType_Directory)
     {
         QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
+        QString destinatioFilePath =  UIPathOperations::addTrailingDelimiters(hostDestinationPath);
+        QString sourceWithDelimiter =  UIPathOperations::addTrailingDelimiters(guestSourcePath);
+
         /** @todo listen to CProgress object to monitor copy operation: */
-        /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, hostDestinationPath, aFlags);
+        /*CProgress comProgress = */ m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, hostDestinationPath/*destinatioFilePath*/ , aFlags);
+        m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, destinatioFilePath , aFlags);
+        m_comGuestSession.DirectoryCopyFromGuest(sourceWithDelimiter, destinatioFilePath , aFlags);
+        m_comGuestSession.DirectoryCopyFromGuest(sourceWithDelimiter, hostDestinationPath , aFlags);
+
     }
     if (!m_comGuestSession.isOk())
     {
@@ -374,8 +381,6 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
         QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
         /** @todo listen to CProgress object to monitor copy operation: */
         comProgress = m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, destinationFilePath, aFlags);
-
-
     }
     /** @todo currently I cannot get an errorfrom CProgress: */
     if (m_comGuestSession.isOk())
@@ -391,7 +396,8 @@ bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QStr
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
         return false;
     }
-
+    /** @todo we have to until CProgress finishes to refresh: */
+    refresh();
     return true;
 }
 

@@ -164,10 +164,10 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     for (int i = 0; i < entries.size(); ++i)
     {
         const QFileInfo &fileInfo = entries.at(i);
-
         QList<QVariant> data;
         data << fileInfo.fileName() << fileInfo.size()
-             << fileInfo.lastModified() << fileInfo.owner();
+             << fileInfo.lastModified() << fileInfo.owner() <<
+            permissionString(fileInfo.permissions());
         UIFileTableItem *item = new UIFileTableItem(data, parent, fileType(fileInfo));
         if (!item)
             continue;
@@ -388,10 +388,66 @@ void UIHostFileTable::determineDriveLetters()
 
     for (int i = 0; i < drive.size(); ++i)
     {
-        m_driveLetterList.push_back(drive[i].filePath());
+        if (UIPathOperations::doesPathStartWithDriveLetter(drive[i].filePath()))
+            m_driveLetterList.push_back(drive[i].filePath());
 
     }
     //#endif
+}
+
+QString UIHostFileTable::permissionString(QFileDevice::Permissions permissions)
+{
+    QString strPermissions;
+    if (permissions & QFileDevice::ReadOwner)
+        strPermissions += 'r';
+    else
+        strPermissions += '-';
+
+    if (permissions & QFileDevice::WriteOwner)
+        strPermissions += 'w';
+    else
+        strPermissions += '-';
+
+    if (permissions & QFileDevice::ExeOwner)
+        strPermissions += 'x';
+    else
+        strPermissions += '-';
+
+    if (permissions & QFileDevice::ReadGroup)
+        strPermissions += 'r';
+    else
+        strPermissions += '-';
+
+    if (permissions & QFileDevice::WriteGroup)
+        strPermissions += 'w';
+    else
+        strPermissions += '-';
+
+    if (permissions & QFileDevice::ExeGroup)
+        strPermissions += 'x';
+    else
+        strPermissions += '-';
+
+    if (permissions & QFileDevice::ReadOther)
+        strPermissions += 'r';
+    else
+        strPermissions += '-';
+
+    if (permissions & QFileDevice::WriteOther)
+        strPermissions += 'w';
+    else
+        strPermissions += '-';
+
+    if (permissions & QFileDevice::ExeOther)
+        strPermissions += 'x';
+    else
+        strPermissions += '-';
+
+
+
+
+
+    return strPermissions;
 }
 
 #include "UIHostFileTable.moc"

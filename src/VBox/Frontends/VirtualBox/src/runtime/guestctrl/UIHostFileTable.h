@@ -47,6 +47,7 @@ protected:
 private:
 
     void prepareActions();
+    QString permissionString(QFileDevice::Permissions permissions);
 };
 
 #endif /* !___UIGuestControlFileTable_h___ */
