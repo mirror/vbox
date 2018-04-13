@@ -1006,7 +1006,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->guest.u64PAT = MSR_IA32_CR_PAT_INIT_VAL;
 
         /* Setup Nested Paging. This doesn't change throughout the execution time of the VM. */
-        pVmcb->ctrl.NestedPaging.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
+        pVmcb->ctrl.NestedPagingCtrl.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
 
         /* Without Nested Paging, we need additionally intercepts. */
         if (!pVM->hm.s.fNestedPaging)
@@ -2445,7 +2445,7 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
         pVmcbNstGstCache->u32VmcbCleanBits        = pVmcbNstGstCtrl->u32VmcbCleanBits;
         pVmcbNstGstCache->fVIntrMasking           = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
         pVmcbNstGstCache->TLBCtrl                 = pVmcbNstGstCtrl->TLBCtrl;
-        pVmcbNstGstCache->u1NestedPaging          = pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging;
+        pVmcbNstGstCache->u1NestedPaging          = pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging;
         pVmcbNstGstCache->u1LbrVirt               = pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt;
         pCtx->hwvirt.svm.fHMCachedVmcb            = true;
         Log4(("hmR0SvmVmRunCacheVmcb: Cached VMCB fields\n"));
@@ -2484,7 +2484,7 @@ static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
          * nested-paging suddenly while executing a VM (see assertion at the end of
          * Trap0eHandler() in PGMAllBth.h).
          */
-        pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
+        pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging = pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging;
 
         /* Override nested-guest PAT MSR, see @bugref{7243#c109}. */
         PSVMVMCBSTATESAVE pVmcbNstGstState = &pVmcbNstGst->guest;
@@ -2499,7 +2499,7 @@ static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     else
     {
         Assert(pVmcbNstGstCtrl->u64IOPMPhysAddr == g_HCPhysIOBitmap);
-        Assert(RT_BOOL(pVmcbNstGstCtrl->NestedPaging.n.u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+        Assert(RT_BOOL(pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
     }
 }
 
@@ -2776,7 +2776,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
      * With Nested Paging, CR3 changes are not intercepted. Therefore, sync. it now.
      * This is done as the very last step of syncing the guest state, as PGMUpdateCR3() may cause longjmp's to ring-3.
      */
-    if (   pVmcb->ctrl.NestedPaging.n.u1NestedPaging
+    if (   pVmcb->ctrl.NestedPagingCtrl.n.u1NestedPaging
         && pMixedCtx->cr3 != pVmcb->guest.u64CR3)
     {
         CPUMSetGuestCR3(pVCpu, pVmcb->guest.u64CR3);
@@ -3830,126 +3830,126 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
     {
         hmR0DumpRegs(pVM, pVCpu, pCtx); NOREF(pVM);
 #ifdef VBOX_STRICT
-        Log4(("ctrl.u32VmcbCleanBits             %#RX32\n",   pVmcb->ctrl.u32VmcbCleanBits));
-        Log4(("ctrl.u16InterceptRdCRx            %#x\n",      pVmcb->ctrl.u16InterceptRdCRx));
-        Log4(("ctrl.u16InterceptWrCRx            %#x\n",      pVmcb->ctrl.u16InterceptWrCRx));
-        Log4(("ctrl.u16InterceptRdDRx            %#x\n",      pVmcb->ctrl.u16InterceptRdDRx));
-        Log4(("ctrl.u16InterceptWrDRx            %#x\n",      pVmcb->ctrl.u16InterceptWrDRx));
-        Log4(("ctrl.u32InterceptXcpt             %#x\n",      pVmcb->ctrl.u32InterceptXcpt));
-        Log4(("ctrl.u64InterceptCtrl             %#RX64\n",   pVmcb->ctrl.u64InterceptCtrl));
-        Log4(("ctrl.u64IOPMPhysAddr              %#RX64\n",   pVmcb->ctrl.u64IOPMPhysAddr));
-        Log4(("ctrl.u64MSRPMPhysAddr             %#RX64\n",   pVmcb->ctrl.u64MSRPMPhysAddr));
-        Log4(("ctrl.u64TSCOffset                 %#RX64\n",   pVmcb->ctrl.u64TSCOffset));
+        Log4(("ctrl.u32VmcbCleanBits                 %#RX32\n",   pVmcb->ctrl.u32VmcbCleanBits));
+        Log4(("ctrl.u16InterceptRdCRx                %#x\n",      pVmcb->ctrl.u16InterceptRdCRx));
+        Log4(("ctrl.u16InterceptWrCRx                %#x\n",      pVmcb->ctrl.u16InterceptWrCRx));
+        Log4(("ctrl.u16InterceptRdDRx                %#x\n",      pVmcb->ctrl.u16InterceptRdDRx));
+        Log4(("ctrl.u16InterceptWrDRx                %#x\n",      pVmcb->ctrl.u16InterceptWrDRx));
+        Log4(("ctrl.u32InterceptXcpt                 %#x\n",      pVmcb->ctrl.u32InterceptXcpt));
+        Log4(("ctrl.u64InterceptCtrl                 %#RX64\n",   pVmcb->ctrl.u64InterceptCtrl));
+        Log4(("ctrl.u64IOPMPhysAddr                  %#RX64\n",   pVmcb->ctrl.u64IOPMPhysAddr));
+        Log4(("ctrl.u64MSRPMPhysAddr                 %#RX64\n",   pVmcb->ctrl.u64MSRPMPhysAddr));
+        Log4(("ctrl.u64TSCOffset                     %#RX64\n",   pVmcb->ctrl.u64TSCOffset));
 
-        Log4(("ctrl.TLBCtrl.u32ASID              %#x\n",      pVmcb->ctrl.TLBCtrl.n.u32ASID));
-        Log4(("ctrl.TLBCtrl.u8TLBFlush           %#x\n",      pVmcb->ctrl.TLBCtrl.n.u8TLBFlush));
-        Log4(("ctrl.TLBCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.TLBCtrl.n.u24Reserved));
+        Log4(("ctrl.TLBCtrl.u32ASID                  %#x\n",      pVmcb->ctrl.TLBCtrl.n.u32ASID));
+        Log4(("ctrl.TLBCtrl.u8TLBFlush               %#x\n",      pVmcb->ctrl.TLBCtrl.n.u8TLBFlush));
+        Log4(("ctrl.TLBCtrl.u24Reserved              %#x\n",      pVmcb->ctrl.TLBCtrl.n.u24Reserved));
 
-        Log4(("ctrl.IntCtrl.u8VTPR               %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VTPR));
-        Log4(("ctrl.IntCtrl.u1VIrqPending        %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIrqPending));
-        Log4(("ctrl.IntCtrl.u1VGif               %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VGif));
-        Log4(("ctrl.IntCtrl.u6Reserved0          %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved0));
-        Log4(("ctrl.IntCtrl.u4VIntrPrio          %#x\n",      pVmcb->ctrl.IntCtrl.n.u4VIntrPrio));
-        Log4(("ctrl.IntCtrl.u1IgnoreTPR          %#x\n",      pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR));
-        Log4(("ctrl.IntCtrl.u3Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u3Reserved));
-        Log4(("ctrl.IntCtrl.u1VIntrMasking       %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIntrMasking));
-        Log4(("ctrl.IntCtrl.u1VGifEnable         %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VGifEnable));
-        Log4(("ctrl.IntCtrl.u5Reserved1          %#x\n",      pVmcb->ctrl.IntCtrl.n.u5Reserved1));
-        Log4(("ctrl.IntCtrl.u8VIntrVector        %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIntrVector));
-        Log4(("ctrl.IntCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
+        Log4(("ctrl.IntCtrl.u8VTPR                   %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VTPR));
+        Log4(("ctrl.IntCtrl.u1VIrqPending            %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIrqPending));
+        Log4(("ctrl.IntCtrl.u1VGif                   %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VGif));
+        Log4(("ctrl.IntCtrl.u6Reserved0              %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved0));
+        Log4(("ctrl.IntCtrl.u4VIntrPrio              %#x\n",      pVmcb->ctrl.IntCtrl.n.u4VIntrPrio));
+        Log4(("ctrl.IntCtrl.u1IgnoreTPR              %#x\n",      pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR));
+        Log4(("ctrl.IntCtrl.u3Reserved               %#x\n",      pVmcb->ctrl.IntCtrl.n.u3Reserved));
+        Log4(("ctrl.IntCtrl.u1VIntrMasking           %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIntrMasking));
+        Log4(("ctrl.IntCtrl.u1VGifEnable             %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VGifEnable));
+        Log4(("ctrl.IntCtrl.u5Reserved1              %#x\n",      pVmcb->ctrl.IntCtrl.n.u5Reserved1));
+        Log4(("ctrl.IntCtrl.u8VIntrVector            %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIntrVector));
+        Log4(("ctrl.IntCtrl.u24Reserved              %#x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
 
-        Log4(("ctrl.IntShadow.u1IntShadow        %#x\n",      pVmcb->ctrl.IntShadow.n.u1IntShadow));
-        Log4(("ctrl.IntShadow.u1GuestIntMask     %#x\n",      pVmcb->ctrl.IntShadow.n.u1GuestIntMask));
-        Log4(("ctrl.u64ExitCode                  %#RX64\n",   pVmcb->ctrl.u64ExitCode));
-        Log4(("ctrl.u64ExitInfo1                 %#RX64\n",   pVmcb->ctrl.u64ExitInfo1));
-        Log4(("ctrl.u64ExitInfo2                 %#RX64\n",   pVmcb->ctrl.u64ExitInfo2));
-        Log4(("ctrl.ExitIntInfo.u8Vector         %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u8Vector));
-        Log4(("ctrl.ExitIntInfo.u3Type           %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u3Type));
-        Log4(("ctrl.ExitIntInfo.u1ErrorCodeValid %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid));
-        Log4(("ctrl.ExitIntInfo.u19Reserved      %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u19Reserved));
-        Log4(("ctrl.ExitIntInfo.u1Valid          %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u1Valid));
-        Log4(("ctrl.ExitIntInfo.u32ErrorCode     %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
-        Log4(("ctrl.NestedPaging.u1NestedPaging  %#x\n",      pVmcb->ctrl.NestedPaging.n.u1NestedPaging));
-        Log4(("ctrl.NestedPaging.u1Sev           %#x\n",      pVmcb->ctrl.NestedPaging.n.u1Sev));
-        Log4(("ctrl.NestedPaging.u1SevEs         %#x\n",      pVmcb->ctrl.NestedPaging.n.u1SevEs));
-        Log4(("ctrl.EventInject.u8Vector         %#x\n",      pVmcb->ctrl.EventInject.n.u8Vector));
-        Log4(("ctrl.EventInject.u3Type           %#x\n",      pVmcb->ctrl.EventInject.n.u3Type));
-        Log4(("ctrl.EventInject.u1ErrorCodeValid %#x\n",      pVmcb->ctrl.EventInject.n.u1ErrorCodeValid));
-        Log4(("ctrl.EventInject.u19Reserved      %#x\n",      pVmcb->ctrl.EventInject.n.u19Reserved));
-        Log4(("ctrl.EventInject.u1Valid          %#x\n",      pVmcb->ctrl.EventInject.n.u1Valid));
-        Log4(("ctrl.EventInject.u32ErrorCode     %#x\n",      pVmcb->ctrl.EventInject.n.u32ErrorCode));
+        Log4(("ctrl.IntShadow.u1IntShadow            %#x\n",      pVmcb->ctrl.IntShadow.n.u1IntShadow));
+        Log4(("ctrl.IntShadow.u1GuestIntMask         %#x\n",      pVmcb->ctrl.IntShadow.n.u1GuestIntMask));
+        Log4(("ctrl.u64ExitCode                      %#RX64\n",   pVmcb->ctrl.u64ExitCode));
+        Log4(("ctrl.u64ExitInfo1                     %#RX64\n",   pVmcb->ctrl.u64ExitInfo1));
+        Log4(("ctrl.u64ExitInfo2                     %#RX64\n",   pVmcb->ctrl.u64ExitInfo2));
+        Log4(("ctrl.ExitIntInfo.u8Vector             %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u8Vector));
+        Log4(("ctrl.ExitIntInfo.u3Type               %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u3Type));
+        Log4(("ctrl.ExitIntInfo.u1ErrorCodeValid     %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid));
+        Log4(("ctrl.ExitIntInfo.u19Reserved          %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u19Reserved));
+        Log4(("ctrl.ExitIntInfo.u1Valid              %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u1Valid));
+        Log4(("ctrl.ExitIntInfo.u32ErrorCode         %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
+        Log4(("ctrl.NestedPagingCtrl.u1NestedPaging  %#x\n",      pVmcb->ctrl.NestedPagingCtrl.n.u1NestedPaging));
+        Log4(("ctrl.NestedPagingCtrl.u1Sev           %#x\n",      pVmcb->ctrl.NestedPagingCtrl.n.u1Sev));
+        Log4(("ctrl.NestedPagingCtrl.u1SevEs         %#x\n",      pVmcb->ctrl.NestedPagingCtrl.n.u1SevEs));
+        Log4(("ctrl.EventInject.u8Vector             %#x\n",      pVmcb->ctrl.EventInject.n.u8Vector));
+        Log4(("ctrl.EventInject.u3Type               %#x\n",      pVmcb->ctrl.EventInject.n.u3Type));
+        Log4(("ctrl.EventInject.u1ErrorCodeValid     %#x\n",      pVmcb->ctrl.EventInject.n.u1ErrorCodeValid));
+        Log4(("ctrl.EventInject.u19Reserved          %#x\n",      pVmcb->ctrl.EventInject.n.u19Reserved));
+        Log4(("ctrl.EventInject.u1Valid              %#x\n",      pVmcb->ctrl.EventInject.n.u1Valid));
+        Log4(("ctrl.EventInject.u32ErrorCode         %#x\n",      pVmcb->ctrl.EventInject.n.u32ErrorCode));
 
-        Log4(("ctrl.u64NestedPagingCR3           %#RX64\n",   pVmcb->ctrl.u64NestedPagingCR3));
+        Log4(("ctrl.u64NestedPagingCR3               %#RX64\n",   pVmcb->ctrl.u64NestedPagingCR3));
 
-        Log4(("ctrl.LbrVirt.u1LbrVirt            %#x\n",      pVmcb->ctrl.LbrVirt.n.u1LbrVirt));
-        Log4(("ctrl.LbrVirt.u1VirtVmsaveVmload   %#x\n",      pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload));
+        Log4(("ctrl.LbrVirt.u1LbrVirt                %#x\n",      pVmcb->ctrl.LbrVirt.n.u1LbrVirt));
+        Log4(("ctrl.LbrVirt.u1VirtVmsaveVmload       %#x\n",      pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload));
 
-        Log4(("guest.CS.u16Sel                   %RTsel\n",   pVmcb->guest.CS.u16Sel));
-        Log4(("guest.CS.u16Attr                  %#x\n",      pVmcb->guest.CS.u16Attr));
-        Log4(("guest.CS.u32Limit                 %#RX32\n",   pVmcb->guest.CS.u32Limit));
-        Log4(("guest.CS.u64Base                  %#RX64\n",   pVmcb->guest.CS.u64Base));
-        Log4(("guest.DS.u16Sel                   %#RTsel\n",  pVmcb->guest.DS.u16Sel));
-        Log4(("guest.DS.u16Attr                  %#x\n",      pVmcb->guest.DS.u16Attr));
-        Log4(("guest.DS.u32Limit                 %#RX32\n",   pVmcb->guest.DS.u32Limit));
-        Log4(("guest.DS.u64Base                  %#RX64\n",   pVmcb->guest.DS.u64Base));
-        Log4(("guest.ES.u16Sel                   %RTsel\n",   pVmcb->guest.ES.u16Sel));
-        Log4(("guest.ES.u16Attr                  %#x\n",      pVmcb->guest.ES.u16Attr));
-        Log4(("guest.ES.u32Limit                 %#RX32\n",   pVmcb->guest.ES.u32Limit));
-        Log4(("guest.ES.u64Base                  %#RX64\n",   pVmcb->guest.ES.u64Base));
-        Log4(("guest.FS.u16Sel                   %RTsel\n",   pVmcb->guest.FS.u16Sel));
-        Log4(("guest.FS.u16Attr                  %#x\n",      pVmcb->guest.FS.u16Attr));
-        Log4(("guest.FS.u32Limit                 %#RX32\n",   pVmcb->guest.FS.u32Limit));
-        Log4(("guest.FS.u64Base                  %#RX64\n",   pVmcb->guest.FS.u64Base));
-        Log4(("guest.GS.u16Sel                   %RTsel\n",   pVmcb->guest.GS.u16Sel));
-        Log4(("guest.GS.u16Attr                  %#x\n",      pVmcb->guest.GS.u16Attr));
-        Log4(("guest.GS.u32Limit                 %#RX32\n",   pVmcb->guest.GS.u32Limit));
-        Log4(("guest.GS.u64Base                  %#RX64\n",   pVmcb->guest.GS.u64Base));
+        Log4(("guest.CS.u16Sel                       %RTsel\n",   pVmcb->guest.CS.u16Sel));
+        Log4(("guest.CS.u16Attr                      %#x\n",      pVmcb->guest.CS.u16Attr));
+        Log4(("guest.CS.u32Limit                     %#RX32\n",   pVmcb->guest.CS.u32Limit));
+        Log4(("guest.CS.u64Base                      %#RX64\n",   pVmcb->guest.CS.u64Base));
+        Log4(("guest.DS.u16Sel                       %#RTsel\n",  pVmcb->guest.DS.u16Sel));
+        Log4(("guest.DS.u16Attr                      %#x\n",      pVmcb->guest.DS.u16Attr));
+        Log4(("guest.DS.u32Limit                     %#RX32\n",   pVmcb->guest.DS.u32Limit));
+        Log4(("guest.DS.u64Base                      %#RX64\n",   pVmcb->guest.DS.u64Base));
+        Log4(("guest.ES.u16Sel                       %RTsel\n",   pVmcb->guest.ES.u16Sel));
+        Log4(("guest.ES.u16Attr                      %#x\n",      pVmcb->guest.ES.u16Attr));
+        Log4(("guest.ES.u32Limit                     %#RX32\n",   pVmcb->guest.ES.u32Limit));
+        Log4(("guest.ES.u64Base                      %#RX64\n",   pVmcb->guest.ES.u64Base));
+        Log4(("guest.FS.u16Sel                       %RTsel\n",   pVmcb->guest.FS.u16Sel));
+        Log4(("guest.FS.u16Attr                      %#x\n",      pVmcb->guest.FS.u16Attr));
+        Log4(("guest.FS.u32Limit                     %#RX32\n",   pVmcb->guest.FS.u32Limit));
+        Log4(("guest.FS.u64Base                      %#RX64\n",   pVmcb->guest.FS.u64Base));
+        Log4(("guest.GS.u16Sel                       %RTsel\n",   pVmcb->guest.GS.u16Sel));
+        Log4(("guest.GS.u16Attr                      %#x\n",      pVmcb->guest.GS.u16Attr));
+        Log4(("guest.GS.u32Limit                     %#RX32\n",   pVmcb->guest.GS.u32Limit));
+        Log4(("guest.GS.u64Base                      %#RX64\n",   pVmcb->guest.GS.u64Base));
 
-        Log4(("guest.GDTR.u32Limit               %#RX32\n",   pVmcb->guest.GDTR.u32Limit));
-        Log4(("guest.GDTR.u64Base                %#RX64\n",   pVmcb->guest.GDTR.u64Base));
+        Log4(("guest.GDTR.u32Limit                   %#RX32\n",   pVmcb->guest.GDTR.u32Limit));
+        Log4(("guest.GDTR.u64Base                    %#RX64\n",   pVmcb->guest.GDTR.u64Base));
 
-        Log4(("guest.LDTR.u16Sel                 %RTsel\n",   pVmcb->guest.LDTR.u16Sel));
-        Log4(("guest.LDTR.u16Attr                %#x\n",      pVmcb->guest.LDTR.u16Attr));
-        Log4(("guest.LDTR.u32Limit               %#RX32\n",   pVmcb->guest.LDTR.u32Limit));
-        Log4(("guest.LDTR.u64Base                %#RX64\n",   pVmcb->guest.LDTR.u64Base));
+        Log4(("guest.LDTR.u16Sel                     %RTsel\n",   pVmcb->guest.LDTR.u16Sel));
+        Log4(("guest.LDTR.u16Attr                    %#x\n",      pVmcb->guest.LDTR.u16Attr));
+        Log4(("guest.LDTR.u32Limit                   %#RX32\n",   pVmcb->guest.LDTR.u32Limit));
+        Log4(("guest.LDTR.u64Base                    %#RX64\n",   pVmcb->guest.LDTR.u64Base));
 
-        Log4(("guest.IDTR.u32Limit               %#RX32\n",   pVmcb->guest.IDTR.u32Limit));
-        Log4(("guest.IDTR.u64Base                %#RX64\n",   pVmcb->guest.IDTR.u64Base));
+        Log4(("guest.IDTR.u32Limit                   %#RX32\n",   pVmcb->guest.IDTR.u32Limit));
+        Log4(("guest.IDTR.u64Base                    %#RX64\n",   pVmcb->guest.IDTR.u64Base));
 
-        Log4(("guest.TR.u16Sel                   %RTsel\n",   pVmcb->guest.TR.u16Sel));
-        Log4(("guest.TR.u16Attr                  %#x\n",      pVmcb->guest.TR.u16Attr));
-        Log4(("guest.TR.u32Limit                 %#RX32\n",   pVmcb->guest.TR.u32Limit));
-        Log4(("guest.TR.u64Base                  %#RX64\n",   pVmcb->guest.TR.u64Base));
+        Log4(("guest.TR.u16Sel                       %RTsel\n",   pVmcb->guest.TR.u16Sel));
+        Log4(("guest.TR.u16Attr                      %#x\n",      pVmcb->guest.TR.u16Attr));
+        Log4(("guest.TR.u32Limit                     %#RX32\n",   pVmcb->guest.TR.u32Limit));
+        Log4(("guest.TR.u64Base                      %#RX64\n",   pVmcb->guest.TR.u64Base));
 
-        Log4(("guest.u8CPL                       %#x\n",      pVmcb->guest.u8CPL));
-        Log4(("guest.u64CR0                      %#RX64\n",   pVmcb->guest.u64CR0));
-        Log4(("guest.u64CR2                      %#RX64\n",   pVmcb->guest.u64CR2));
-        Log4(("guest.u64CR3                      %#RX64\n",   pVmcb->guest.u64CR3));
-        Log4(("guest.u64CR4                      %#RX64\n",   pVmcb->guest.u64CR4));
-        Log4(("guest.u64DR6                      %#RX64\n",   pVmcb->guest.u64DR6));
-        Log4(("guest.u64DR7                      %#RX64\n",   pVmcb->guest.u64DR7));
+        Log4(("guest.u8CPL                           %#x\n",      pVmcb->guest.u8CPL));
+        Log4(("guest.u64CR0                          %#RX64\n",   pVmcb->guest.u64CR0));
+        Log4(("guest.u64CR2                          %#RX64\n",   pVmcb->guest.u64CR2));
+        Log4(("guest.u64CR3                          %#RX64\n",   pVmcb->guest.u64CR3));
+        Log4(("guest.u64CR4                          %#RX64\n",   pVmcb->guest.u64CR4));
+        Log4(("guest.u64DR6                          %#RX64\n",   pVmcb->guest.u64DR6));
+        Log4(("guest.u64DR7                          %#RX64\n",   pVmcb->guest.u64DR7));
 
-        Log4(("guest.u64RIP                      %#RX64\n",   pVmcb->guest.u64RIP));
-        Log4(("guest.u64RSP                      %#RX64\n",   pVmcb->guest.u64RSP));
-        Log4(("guest.u64RAX                      %#RX64\n",   pVmcb->guest.u64RAX));
-        Log4(("guest.u64RFlags                   %#RX64\n",   pVmcb->guest.u64RFlags));
+        Log4(("guest.u64RIP                          %#RX64\n",   pVmcb->guest.u64RIP));
+        Log4(("guest.u64RSP                          %#RX64\n",   pVmcb->guest.u64RSP));
+        Log4(("guest.u64RAX                          %#RX64\n",   pVmcb->guest.u64RAX));
+        Log4(("guest.u64RFlags                       %#RX64\n",   pVmcb->guest.u64RFlags));
 
-        Log4(("guest.u64SysEnterCS               %#RX64\n",   pVmcb->guest.u64SysEnterCS));
-        Log4(("guest.u64SysEnterEIP              %#RX64\n",   pVmcb->guest.u64SysEnterEIP));
-        Log4(("guest.u64SysEnterESP              %#RX64\n",   pVmcb->guest.u64SysEnterESP));
+        Log4(("guest.u64SysEnterCS                   %#RX64\n",   pVmcb->guest.u64SysEnterCS));
+        Log4(("guest.u64SysEnterEIP                  %#RX64\n",   pVmcb->guest.u64SysEnterEIP));
+        Log4(("guest.u64SysEnterESP                  %#RX64\n",   pVmcb->guest.u64SysEnterESP));
 
-        Log4(("guest.u64EFER                     %#RX64\n",   pVmcb->guest.u64EFER));
-        Log4(("guest.u64STAR                     %#RX64\n",   pVmcb->guest.u64STAR));
-        Log4(("guest.u64LSTAR                    %#RX64\n",   pVmcb->guest.u64LSTAR));
-        Log4(("guest.u64CSTAR                    %#RX64\n",   pVmcb->guest.u64CSTAR));
-        Log4(("guest.u64SFMASK                   %#RX64\n",   pVmcb->guest.u64SFMASK));
-        Log4(("guest.u64KernelGSBase             %#RX64\n",   pVmcb->guest.u64KernelGSBase));
-        Log4(("guest.u64PAT                      %#RX64\n",   pVmcb->guest.u64PAT));
-        Log4(("guest.u64DBGCTL                   %#RX64\n",   pVmcb->guest.u64DBGCTL));
-        Log4(("guest.u64BR_FROM                  %#RX64\n",   pVmcb->guest.u64BR_FROM));
-        Log4(("guest.u64BR_TO                    %#RX64\n",   pVmcb->guest.u64BR_TO));
-        Log4(("guest.u64LASTEXCPFROM             %#RX64\n",   pVmcb->guest.u64LASTEXCPFROM));
-        Log4(("guest.u64LASTEXCPTO               %#RX64\n",   pVmcb->guest.u64LASTEXCPTO));
+        Log4(("guest.u64EFER                         %#RX64\n",   pVmcb->guest.u64EFER));
+        Log4(("guest.u64STAR                         %#RX64\n",   pVmcb->guest.u64STAR));
+        Log4(("guest.u64LSTAR                        %#RX64\n",   pVmcb->guest.u64LSTAR));
+        Log4(("guest.u64CSTAR                        %#RX64\n",   pVmcb->guest.u64CSTAR));
+        Log4(("guest.u64SFMASK                       %#RX64\n",   pVmcb->guest.u64SFMASK));
+        Log4(("guest.u64KernelGSBase                 %#RX64\n",   pVmcb->guest.u64KernelGSBase));
+        Log4(("guest.u64PAT                          %#RX64\n",   pVmcb->guest.u64PAT));
+        Log4(("guest.u64DBGCTL                       %#RX64\n",   pVmcb->guest.u64DBGCTL));
+        Log4(("guest.u64BR_FROM                      %#RX64\n",   pVmcb->guest.u64BR_FROM));
+        Log4(("guest.u64BR_TO                        %#RX64\n",   pVmcb->guest.u64BR_TO));
+        Log4(("guest.u64LASTEXCPFROM                 %#RX64\n",   pVmcb->guest.u64LASTEXCPFROM));
+        Log4(("guest.u64LASTEXCPTO                   %#RX64\n",   pVmcb->guest.u64LASTEXCPTO));
 #endif  /* VBOX_STRICT */
     }
     else

@@ -775,8 +775,8 @@ typedef struct
     uint64_t        u64ExitInfo2;
     /** Offset 0x88 - Exit Interrupt info. */
     SVMEVENT        ExitIntInfo;
-    /** Offset 0x90 - Nested Paging. */
-    SVMNP           NestedPaging;
+    /** Offset 0x90 - Nested Paging control. */
+    SVMNP           NestedPagingCtrl;
     /** Offset 0x98 - AVIC APIC BAR.  */
     SVMAVIC         AvicBar;
     /** Offset 0xa0-0xa7 - Reserved. */
@@ -830,7 +830,7 @@ AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitCode,             0x70);
 AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitInfo1,            0x78);
 AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitInfo2,            0x80);
 AssertCompileMemberOffset(SVMVMCBCTRL, ExitIntInfo,             0x88);
-AssertCompileMemberOffset(SVMVMCBCTRL, NestedPaging,            0x90);
+AssertCompileMemberOffset(SVMVMCBCTRL, NestedPagingCtrl,        0x90);
 AssertCompileMemberOffset(SVMVMCBCTRL, AvicBar,                 0x98);
 AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved2,             0xa0);
 AssertCompileMemberOffset(SVMVMCBCTRL, EventInject,             0xa8);

@@ -1515,7 +1515,7 @@ DECLINLINE(bool) CPUMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
     PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     Assert(pVmcb);
     if (!pCtx->hwvirt.svm.fHMCachedVmcb)
-        return pVmcb->ctrl.NestedPaging.n.u1NestedPaging;
+        return pVmcb->ctrl.NestedPagingCtrl.n.u1NestedPaging;
     return HMIsGuestSvmNestedPagingEnabled(pVCpu, pCtx);
 }
 

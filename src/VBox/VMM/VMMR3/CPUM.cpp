@@ -2253,9 +2253,9 @@ static void cpumR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcbCtrl, c
     pHlp->pfnPrintf(pHlp, "%s  u1Valid                    = %RTbool\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u1Valid);
     pHlp->pfnPrintf(pHlp, "%s  u32ErrorCode               = %#RX32\n",  pszPrefix, pVmcbCtrl->ExitIntInfo.n.u32ErrorCode);
     pHlp->pfnPrintf(pHlp, "%sNestedPaging and SEV\n",                   pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u1NestedPaging             = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPaging.n.u1NestedPaging);
-    pHlp->pfnPrintf(pHlp, "%s  u1Sev                      = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPaging.n.u1Sev);
-    pHlp->pfnPrintf(pHlp, "%s  u1SevEs                    = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPaging.n.u1SevEs);
+    pHlp->pfnPrintf(pHlp, "%s  u1NestedPaging             = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging);
+    pHlp->pfnPrintf(pHlp, "%s  u1Sev                      = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPagingCtrl.n.u1Sev);
+    pHlp->pfnPrintf(pHlp, "%s  u1SevEs                    = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPagingCtrl.n.u1SevEs);
     pHlp->pfnPrintf(pHlp, "%sAvicBar\n",                                pszPrefix);
     pHlp->pfnPrintf(pHlp, "%s  u40Addr                    = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicBar.n.u40Addr);
     pHlp->pfnPrintf(pHlp, "%sEventInject\n",                            pszPrefix);

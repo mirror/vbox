@@ -359,7 +359,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         }
 
         /* Nested paging. */
-        if (    pVmcbCtrl->NestedPaging.n.u1NestedPaging
+        if (    pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging
             && !pVM->cpum.ro.GuestFeatures.fSvmNestedPaging)
         {
             Log(("iemSvmVmrun: Nested paging not supported -> #VMEXIT\n"));
@@ -464,7 +464,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
          * The CPU only validates and loads it when nested-paging is enabled.
          * See AMD spec. "15.25.4 Nested Paging and VMRUN/#VMEXIT".
          */
-        if (   pVmcbCtrl->NestedPaging.n.u1NestedPaging
+        if (   pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging
             && !CPUMIsPatMsrValid(pVmcbNstGst->u64PAT))
         {
             Log(("iemSvmVmrun: PAT invalid. u64PAT=%#RX64 -> #VMEXIT\n", pVmcbNstGst->u64PAT));
@@ -634,7 +634,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         pCtx->rsp        = pVmcbNstGst->u64RSP;
         pCtx->rip        = pVmcbNstGst->u64RIP;
         CPUMSetGuestMsrEferNoCheck(pVCpu, pCtx->msrEFER, uValidEfer);
-        if (pVmcbCtrl->NestedPaging.n.u1NestedPaging)
+        if (pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging)
             pCtx->msrPAT = pVmcbNstGst->u64PAT;
 
         /* Mask DR6, DR7 bits mandatory set/clear bits. */
