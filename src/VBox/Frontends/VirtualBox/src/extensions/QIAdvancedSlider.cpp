@@ -87,15 +87,15 @@ private:
 
 UIPrivateSlider::UIPrivateSlider(Qt::Orientation enmOrientation, QWidget *pParent /* = 0 */)
     : QSlider(enmOrientation, pParent)
-    , m_optColor(0x0, 0xff, 0x0, 0x3c)
-    , m_wrnColor(0xff, 0x54, 0x0, 0x3c)
-    , m_errColor(0xff, 0x0, 0x0, 0x3c)
     , m_minOpt(-1)
     , m_maxOpt(-1)
     , m_minWrn(-1)
     , m_maxWrn(-1)
     , m_minErr(-1)
     , m_maxErr(-1)
+    , m_optColor(0x0, 0xff, 0x0, 0x3c)
+    , m_wrnColor(0xff, 0x54, 0x0, 0x3c)
+    , m_errColor(0xff, 0x0, 0x0, 0x3c)
 {
     /* Make sure ticks *always* positioned below: */
     setTickPosition(QSlider::TicksBelow);
