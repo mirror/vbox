@@ -439,7 +439,6 @@ endif
 #
 VirtualBox_QT_MOCHDRS = \
 	src/UITakeSnapshotDialog.h \
-	src/extensions/QIComboBox.h \
 	src/extensions/QIFlowLayout.h \
 	src/extensions/QILabelSeparator.h \
 	src/extensions/QIMainDialog.h \
@@ -653,6 +652,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
 	src/extensions/QIArrowSplitter.h \
+	src/extensions/QIComboBox.h \
 	src/extensions/QIDialog.h \
 	src/extensions/QIDialogButtonBox.h \
 	src/extensions/QIFileDialog.h \
@@ -726,6 +726,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
 	src/extensions/QIArrowSplitter.h \
+	src/extensions/QIComboBox.h \
 	src/extensions/QIDialog.h \
 	src/extensions/QIDialogButtonBox.h \
 	src/extensions/QIFileDialog.h \
@@ -903,7 +904,6 @@ endif
 VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/UITakeSnapshotDialog.cpp \
-	src/extensions/QIComboBox.cpp \
 	src/extensions/QIFlowLayout.cpp \
 	src/extensions/QILabelSeparator.cpp \
 	src/extensions/QILineEdit.cpp \
@@ -1150,6 +1150,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
 	src/extensions/QIArrowSplitter.cpp \
+	src/extensions/QIComboBox.cpp \
 	src/extensions/QIDialog.cpp \
 	src/extensions/QIDialogButtonBox.cpp \
 	src/extensions/QIFileDialog.cpp \
@@ -1250,6 +1251,7 @@ VBoxGlobal_SOURCES = \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
 	src/extensions/QIArrowSplitter.cpp \
+	src/extensions/QIComboBox.cpp \
 	src/extensions/QIDialog.cpp \
 	src/extensions/QIDialogButtonBox.cpp \
 	src/extensions/QIFileDialog.cpp \
