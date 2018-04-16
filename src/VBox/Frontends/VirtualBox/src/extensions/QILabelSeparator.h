@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,38 +15,52 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QILabelSeparator_h__
-#define __QILabelSeparator_h__
+#ifndef ___QILabelSeparator_h___
+#define ___QILabelSeparator_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QWidget>
 
-/* Global forwards */
-class QLabel;
+/* GUI inlcudes: */
+#include "UILibraryDefs.h"
 
-class QILabelSeparator: public QWidget
+/* Forward declarations: */
+class QLabel;
+class QString;
+class QWidget;
+
+/** QWidget extension providing GUI with label-separator. */
+class SHARED_LIBRARY_STUFF QILabelSeparator : public QWidget
 {
     Q_OBJECT;
 
 public:
 
-    QILabelSeparator (QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
-    QILabelSeparator (const QString &aText, QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
+    /** Constructs label-separator passing @a pParent and @a fFlags to the base-class. */
+    QILabelSeparator(QWidget *pParent = 0, Qt::WindowFlags fFlags = 0);
+    /** Constructs label-separator passing @a pParent and @a fFlags to the base-class.
+      * @param  strText  Brings the label text. */
+    QILabelSeparator(const QString &strText, QWidget *pParent = 0, Qt::WindowFlags fFlags = 0);
 
+    /** Returns the label text. */
     QString text() const;
-    void setBuddy (QWidget *aBuddy);
+    /** Defines the label buddy. */
+    void setBuddy(QWidget *pBuddy);
 
 public slots:
 
+    /** Clears the label text. */
     void clear();
-    void setText (const QString &aText);
+    /** Defines the label @a strText. */
+    void setText(const QString &strText);
 
 protected:
 
-    virtual void init();
+    /** Prepares all. */
+    virtual void prepare();
 
-    QLabel *mLabel;
+    /** Holds the label instance. */
+    QLabel *m_pLabel;
 };
 
-#endif // __QILabelSeparator_h__
-
+#endif /* !___QILabelSeparator_h___ */
