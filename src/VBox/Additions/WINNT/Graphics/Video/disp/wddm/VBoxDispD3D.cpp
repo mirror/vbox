@@ -6645,7 +6645,7 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 
     LOGREL(("Built %s %s", __DATE__, __TIME__));
 
-    VBOXWDDM_QI Query;
+    VBOXWDDM_QAI Query;
     D3DDDICB_QUERYADAPTERINFO DdiQuery;
     DdiQuery.PrivateDriverDataSize = sizeof(Query);
     DdiQuery.pPrivateDriverData = &Query;
@@ -6672,7 +6672,8 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
     Assert(Query.cInfos >= 1);
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_ADAPTER, aHeads[Query.cInfos]));
 #else
-    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(sizeof (VBOXWDDMDISP_ADAPTER));
+    Assert(Query.cInfos == 0);
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(sizeof(VBOXWDDMDISP_ADAPTER));
 #endif
     Assert(pAdapter);
     if (pAdapter)
@@ -6682,9 +6683,14 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         pAdapter->uRtVersion= pOpenData->Version;
         pAdapter->RtCallbacks = *pOpenData->pAdapterCallbacks;
 
-        pAdapter->u32VBox3DCaps = Query.u32VBox3DCaps;
+        pAdapter->enmHwType = Query.enmHwType;
 
+        if (Query.enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+            pAdapter->u32VBox3DCaps = Query.u.crogl.u32VBox3DCaps;
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
         pAdapter->cHeads = Query.cInfos;
+#endif
 
         pOpenData->hAdapter = pAdapter;
         pOpenData->pAdapterFuncs->pfnGetCaps = vboxWddmDispGetCaps;

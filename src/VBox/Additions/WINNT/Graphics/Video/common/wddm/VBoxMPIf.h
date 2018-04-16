@@ -32,7 +32,16 @@
 #include <VBox/VBoxGuestCoreTypes.h> /* for VBGLIOCHGCMCALL */
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 20
+#define VBOXVIDEOIF_VERSION 21
+
+/** @todo VBOXVIDEO_HWTYPE probably needs to be in VBoxVideo.h */
+typedef enum VBOXVIDEO_HWTYPE
+{
+    VBOXVIDEO_HWTYPE_CROGL  = 0,
+    VBOXVIDEO_HWTYPE_VMSVGA = 1,
+    VBOXVIDEO_HWTYPE_32BIT  = 0x7fffffff
+} VBOXVIDEO_HWTYPE;
+AssertCompileSize(VBOXVIDEO_HWTYPE, 4);
 
 #define VBOXWDDM_NODE_ID_SYSTEM             0
 #define VBOXWDDM_NODE_ID_3D                 (VBOXWDDM_NODE_ID_SYSTEM)
@@ -490,14 +499,25 @@ typedef struct VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL
     VBGLIOCHGCMCALL CallInfo;
 } VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, *PVBOXDISPIFESCAPE_CRHGSMICTLCON_CALL;
 
-/* query info func */
-typedef struct VBOXWDDM_QI
+
+/* D3DDDICB_QUERYADAPTERINFO::pPrivateDriverData */
+typedef struct VBOXWDDM_QAI
 {
-    uint32_t u32Version;
-    uint32_t u32VBox3DCaps;
-    uint32_t cInfos;
-    VBOXVHWA_INFO aInfos[VBOX_VIDEO_MAX_SCREENS];
-} VBOXWDDM_QI;
+    uint32_t            u32Version;      /* VBOXVIDEOIF_VERSION */
+    uint32_t            u32Reserved;     /* Must be 0. */
+    VBOXVIDEO_HWTYPE    enmHwType;       /* Hardware type. Determines what kind of data is returned. */
+    uint32_t            cInfos;          /* Number of initialized elements in aInfos (equal to number of guest
+                                          * displays). 0 if VBOX_WITH_VIDEOHWACCEL is not defined. */
+    VBOXVHWA_INFO       aInfos[VBOX_VIDEO_MAX_SCREENS]; /* cInfos elements are initialized. */
+    union
+    {
+        struct
+        {
+            /* VBOXVIDEO_HWTYPE_CROGL */
+            uint32_t    u32VBox3DCaps;   /* CR_VBOX_CAP_* */
+        } crogl;
+    } u;
+} VBOXWDDM_QAI;
 
 /** Convert a given FourCC code to a D3DDDIFORMAT enum. */
 #define VBOXWDDM_D3DDDIFORMAT_FROM_FOURCC(_a, _b, _c, _d) \

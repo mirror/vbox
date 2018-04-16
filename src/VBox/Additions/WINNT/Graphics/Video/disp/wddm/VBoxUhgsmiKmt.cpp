@@ -308,7 +308,7 @@ HRESULT vboxUhgsmiKmtEscCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
 
 static HRESULT vboxUhgsmiKmtQueryCaps(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, uint32_t *pu32Caps)
 {
-    VBOXWDDM_QI Query;
+    VBOXWDDM_QAI Query;
     D3DKMT_QUERYADAPTERINFO Info;
     Info.hAdapter = pHgsmi->Adapter.hAdapter;
     Info.Type = KMTQAITYPE_UMDRIVERPRIVATE;
@@ -328,7 +328,10 @@ static HRESULT vboxUhgsmiKmtQueryCaps(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, uint32_t *
         return E_FAIL;
     }
 
-    *pu32Caps = Query.u32VBox3DCaps;
+    if (Query.enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+        *pu32Caps = Query.u.crogl.u32VBox3DCaps;
+    else
+        *pu32Caps = 0;
 
     return S_OK;
 }

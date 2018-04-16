@@ -75,6 +75,9 @@ typedef struct VBOXWDDMDISP_ADAPTER
     UINT uIfVersion;
     UINT uRtVersion;
     D3DDDI_ADAPTERCALLBACKS RtCallbacks;
+
+    VBOXVIDEO_HWTYPE enmHwType;     /* VBOXVIDEO_HWTYPE* */
+
     VBOXWDDMDISP_D3D D3D;
     VBOXWDDMDISP_FORMATS Formats;
     uint32_t u32VBox3DCaps;

@@ -815,9 +815,9 @@ static void vboxWddmDevExtZeroinit(PVBOXMP_DEVEXT pDevExt, CONST PDEVICE_OBJECT 
         VBoxVGACfgQuery(VBE_DISPI_CFG_ID_VMSVGA, &u32, 0);
     }
 
-    pDevExt->enmHwType = u32 ? VBOX_HWTYPE_VMSVGA : VBOX_HWTYPE_CROGL;
+    pDevExt->enmHwType = u32 ? VBOXVIDEO_HWTYPE_VMSVGA : VBOXVIDEO_HWTYPE_CROGL;
 
-    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
     {
         pDevExt->f3DEnabled = VBoxMpCrCtlConIs3DSupported();
     }
@@ -1148,7 +1148,7 @@ NTSTATUS DxgkDdiStartDevice(
             if (Status == STATUS_SUCCESS)
             {
 #ifdef VBOX_WITH_CROGL
-                if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+                if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
                 {
                     if (pDevExt->f3DEnabled)
                     {
@@ -1376,7 +1376,7 @@ NTSTATUS DxgkDdiStopDevice(
     NTSTATUS Status = STATUS_SUCCESS;
 
 #ifdef VBOX_WITH_CROGL
-    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL && pDevExt->u32CrConDefaultClientID)
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL && pDevExt->u32CrConDefaultClientID)
         VBoxMpCrCtlConDisconnect(pDevExt, &pDevExt->CrCtlCon, pDevExt->u32CrConDefaultClientID);
 
     VBoxMpCrShgsmiTransportTerm(&pDevExt->CrHgsmiTransport);
@@ -2329,30 +2329,30 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
         case DXGKQAITYPE_UMDRIVERPRIVATE:
             if (!g_VBoxDisplayOnly)
             {
-                if (pQueryAdapterInfo->OutputDataSize == sizeof (VBOXWDDM_QI))
+                if (pQueryAdapterInfo->OutputDataSize >= sizeof(VBOXWDDM_QAI))
                 {
-                    VBOXWDDM_QI * pQi = (VBOXWDDM_QI*)pQueryAdapterInfo->pOutputData;
-                    memset (pQi, 0, sizeof (VBOXWDDM_QI));
-                    pQi->u32Version = VBOXVIDEOIF_VERSION;
-                    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+                    VBOXWDDM_QAI *pQAI = (VBOXWDDM_QAI *)pQueryAdapterInfo->pOutputData;
+                    memset(pQAI, 0, sizeof(VBOXWDDM_QAI));
+
+                    pQAI->u32Version = VBOXVIDEOIF_VERSION;
+                    pQAI->enmHwType = pDevExt->enmHwType;
+                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
                     {
 #ifdef VBOX_WITH_CROGL
-                        pQi->u32VBox3DCaps = VBoxMpCrGetHostCaps();
+                        pQAI->u.crogl.u32VBox3DCaps = VBoxMpCrGetHostCaps();
 #endif
                     }
-                    else
-                        pQi->u32VBox3DCaps = 0;
-                    pQi->cInfos = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                    for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                    pQAI->cInfos = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
+                    for (uint32_t i = 0; i < pQAI->cInfos; ++i)
                     {
-                        pQi->aInfos[i] = pDevExt->aSources[i].Vhwa.Settings;
+                        pQAI->aInfos[i] = pDevExt->aSources[i].Vhwa.Settings;
                     }
 #endif
                 }
                 else
                 {
-                    WARN(("incorrect buffer size %d, expected %d", pQueryAdapterInfo->OutputDataSize, sizeof (VBOXWDDM_QI)));
+                    WARN(("incorrect buffer size %d, expected %d", pQueryAdapterInfo->OutputDataSize, sizeof(VBOXWDDM_QAI)));
                     Status = STATUS_BUFFER_TOO_SMALL;
                 }
             }
@@ -2853,7 +2853,7 @@ DxgkDdiDestroyAllocation(
         vboxWddmAllocationCleanupAssignment(pDevExt, pAlloc);
         /* wait for all current allocation-related ops are completed */
         vboxWddmAllocationCleanup(pDevExt, pAlloc);
-        if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL && pAlloc->hSharedHandle && pAlloc->AllocData.hostID)
+        if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL && pAlloc->hSharedHandle && pAlloc->AllocData.hostID)
             VBoxVdmaChromiumParameteriCRSubmit(pDevExt, GL_PIN_TEXTURE_CLEAR_CR, pAlloc->AllocData.hostID);
         vboxWddmAllocationDestroy(pAlloc);
     }
@@ -4559,7 +4559,7 @@ DxgkDdiEscape(
             {
                 if (pEscape->PrivateDriverDataSize == sizeof (*pEscapeHdr))
                 {
-                    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
                         pEscapeHdr->u32CmdSpecific = VBoxMpCrGetHostCaps();
                     else
                         pEscapeHdr->u32CmdSpecific = 0;
@@ -6898,7 +6898,7 @@ DxgkDdiCreateContext(
                 vboxWddmDisplaySettingsCheckPos(pDevExt, i);
             }
 
-            if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+            if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
             {
 #ifdef VBOX_WITH_CROGL
                 if (!VBOXWDDM_IS_DISPLAYONLY() && pDevExt->f3DEnabled)
@@ -6949,7 +6949,7 @@ DxgkDdiCreateContext(
                                     {
                                         if (pDevExt->f3DEnabled)
                                         {
-                                            if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+                                            if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
                                             {
                                                 int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
                                                     pInfo->crVersionMajor, pInfo->crVersionMinor,
@@ -7004,7 +7004,7 @@ DxgkDdiCreateContext(
                             {
                                 if (pDevExt->f3DEnabled)
                                 {
-                                    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL)
+                                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
                                     {
                                         int rc = VBoxMpCrCtlConConnect(pDevExt, &pDevExt->CrCtlCon,
                                             pInfo->crVersionMajor, pInfo->crVersionMinor,
@@ -7144,7 +7144,7 @@ DxgkDdiDestroyContext(
     }
 
 #ifdef VBOX_WITH_CROGL
-    if (pDevExt->enmHwType == VBOX_HWTYPE_CROGL && pContext->u32CrConClientID)
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL && pContext->u32CrConClientID)
     {
         VBoxMpCrCtlConDisconnect(pDevExt, &pDevExt->CrCtlCon, pContext->u32CrConClientID);
     }
@@ -7316,7 +7316,8 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
 
     if (bUpdateRectInited && pSource->bVisible)
     {
-        VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, pSource, &UpdateRect);
+        if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+            VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, pSource, &UpdateRect);
     }
 
     LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
@@ -7656,7 +7657,7 @@ DriverEntry(
         LOG(("3D is %srequired!", f3DRequired? "": "NOT "));
 
         /* Check whether 3D is provided by the host. */
-        VBOX_HWTYPE enmHwType = VBOX_HWTYPE_CROGL;
+        VBOXVIDEO_HWTYPE enmHwType = VBOXVIDEO_HWTYPE_CROGL;
         BOOL f3DSupported = FALSE;
 
         if (VBoxVGACfgAvailable())
@@ -7674,12 +7675,12 @@ DriverEntry(
             VBoxVGACfgQuery(VBE_DISPI_CFG_ID_VMSVGA, &u32, 0);
             if (u32)
             {
-                enmHwType = VBOX_HWTYPE_VMSVGA;
+                enmHwType = VBOXVIDEO_HWTYPE_VMSVGA;
             }
         }
 
         BOOL fCmdVbva = FALSE;
-        if (enmHwType == VBOX_HWTYPE_CROGL)
+        if (enmHwType == VBOXVIDEO_HWTYPE_CROGL)
         {
             /* Try to establish connection to the host 3D service. */
 #ifdef VBOX_WITH_CROGL
@@ -7692,7 +7693,7 @@ DriverEntry(
             fCmdVbva = RT_BOOL(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_CMDVBVA);
 #endif
         }
-        else if (enmHwType == VBOX_HWTYPE_VMSVGA)
+        else if (enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
         {
             fCmdVbva = TRUE;
         }

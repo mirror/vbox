@@ -34,12 +34,6 @@ extern DWORD g_VBoxDisplayOnly;
 # include "wddm/VBoxMPTypes.h"
 #endif
 
-typedef enum VBOX_HWTYPE
-{
-    VBOX_HWTYPE_CROGL = 0,
-    VBOX_HWTYPE_VMSVGA = 1
-} VBOX_HWTYPE;
-
 #ifdef VBOX_WDDM_MINIPORT
 typedef struct VBOXWDDM_HWRESOURCES
 {
@@ -217,8 +211,8 @@ typedef struct _VBOXMP_DEVEXT
 
    HGSMIAREA areaDisplay;                      /* Entire VRAM chunk for this display device. */
 
-   VBOX_HWTYPE enmHwType;
 #ifdef VBOX_WDDM_MINIPORT
+   VBOXVIDEO_HWTYPE enmHwType;
    VBOXWDDM_HWRESOURCES HwResources;
 #endif
 
