@@ -439,7 +439,6 @@ endif
 #
 VirtualBox_QT_MOCHDRS = \
 	src/UITakeSnapshotDialog.h \
-	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIComboBox.h \
 	src/extensions/QIFlowLayout.h \
 	src/extensions/QILabelSeparator.h \
@@ -650,6 +649,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCHDRS += \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
+	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
 	src/extensions/QIArrowSplitter.h \
@@ -722,6 +722,7 @@ endif
 VBoxGlobal_QT_MOCHDRS = \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
+	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
 	src/extensions/QIArrowSplitter.h \
@@ -825,8 +826,9 @@ VirtualBox_QT_MOCSRCS.darwin += \
 
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCSRCS += \
-	src/extensions/QISplitter.cpp \
+	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowSplitter.cpp \
+	src/extensions/QISplitter.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIMainEventListener.cpp \
@@ -862,8 +864,9 @@ endif
 # Sources.
 #
 VBoxGlobal_QT_MOCSRCS = \
-	src/extensions/QISplitter.cpp \
+	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowSplitter.cpp \
+	src/extensions/QISplitter.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIMainEventListener.cpp \
@@ -900,7 +903,6 @@ endif
 VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/UITakeSnapshotDialog.cpp \
-	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIComboBox.cpp \
 	src/extensions/QIFlowLayout.cpp \
 	src/extensions/QILabelSeparator.cpp \
@@ -1144,6 +1146,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_SOURCES += \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxLicenseViewer.cpp \
+	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
 	src/extensions/QIArrowSplitter.cpp \
@@ -1243,6 +1246,7 @@ endif
 VBoxGlobal_SOURCES = \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxLicenseViewer.cpp \
+	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
 	src/extensions/QIArrowSplitter.cpp \
