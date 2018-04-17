@@ -17,6 +17,7 @@
 
 #define LOG_GROUP LOG_GROUP_DRV_MOUSE
 #include <iprt/asm.h>
+#include <iprt/initterm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 
@@ -1814,6 +1815,10 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING RegistryPath)
     WCHAR keyboardBuffer[NAME_MAX];
     WCHAR pointerBuffer[NAME_MAX];
 
+    int rc = RTR0Init(0);
+    if (RT_FAILURE(rc))
+        return STATUS_UNSUCCESSFUL;
+
     LogFlow(("VBoxMouseNT::DriverEntry: enter\n"));
 
     PINITEXT pInit = (PINITEXT)ExAllocatePool(NonPagedPool, sizeof(INITEXT));
@@ -2225,7 +2230,7 @@ fail:
         ExFreePool(registryPath.Buffer);
 
     LogFlow(("VBoxMouseNT::DriverEntry: leave, status = %d\n", status));
-
+    RTR0Term();
     return status;
 }
 
