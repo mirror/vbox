@@ -370,32 +370,32 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         if (    pVmcbCtrl->IntCtrl.n.u1AvicEnable
             && !pVM->cpum.ro.GuestFeatures.fSvmAvic)
         {
-            Log(("iemSvmVmrun: AVIC not supported -> #VMEXIT\n"));
-            return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+            Log(("iemSvmVmrun: AVIC not supported -> Disabling\n"));
+            pVmcbCtrl->IntCtrl.n.u1AvicEnable = 0;
         }
 
         /* Last branch record (LBR) virtualization. */
         if (    pVmcbCtrl->LbrVirt.n.u1LbrVirt
             && !pVM->cpum.ro.GuestFeatures.fSvmLbrVirt)
         {
-            Log(("iemSvmVmrun: LBR virtualization not supported -> #VMEXIT\n"));
-            return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+            Log(("iemSvmVmrun: LBR virtualization not supported -> Disabling\n"));
+            pVmcbCtrl->LbrVirt.n.u1LbrVirt = 0;
         }
 
         /* Virtualized VMSAVE/VMLOAD. */
         if (    pVmcbCtrl->LbrVirt.n.u1VirtVmsaveVmload
             && !pVM->cpum.ro.GuestFeatures.fSvmVirtVmsaveVmload)
         {
-            Log(("iemSvmVmrun: Virtualized VMSAVE/VMLOAD not supported -> #VMEXIT\n"));
-            return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+            Log(("iemSvmVmrun: Virtualized VMSAVE/VMLOAD not supported -> Disabling\n"));
+            pVmcbCtrl->LbrVirt.n.u1VirtVmsaveVmload = 0;
         }
 
         /* Virtual GIF. */
-        if (    pVmcbCtrl->IntCtrl.n.u1VGifEnable
-            && !pVM->cpum.ro.GuestFeatures.fSvmVGif)
+        if (   pVmcbCtrl->IntCtrl.n.u1VGifEnable
+            && pVM->cpum.ro.GuestFeatures.fSvmVGif)
         {
-            Log(("iemSvmVmrun: Virtual GIF not supported -> #VMEXIT\n"));
-            return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+            Log(("iemSvmVmrun: Virtual GIF not supported -> Disabling\n"));
+            pVmcbCtrl->IntCtrl.n.u1VGifEnable = 0;
         }
 
         /* Guest ASID. */
@@ -403,6 +403,24 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         {
             Log(("iemSvmVmrun: Guest ASID is invalid -> #VMEXIT\n"));
             return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+
+        /* Guest AVIC. */
+        if (    pVmcbCtrl->IntCtrl.n.u1AvicEnable
+            && !pVM->cpum.ro.GuestFeatures.fSvmAvic)
+        {
+            Log(("iemSvmVmrun: AVIC not supported -> Disabling\n"));
+            pVmcbCtrl->IntCtrl.n.u1AvicEnable = 0;
+        }
+
+        /* Guest Secure Encrypted Virtualization. */
+        if (  (   pVmcbCtrl->NestedPagingCtrl.n.u1Sev
+               || pVmcbCtrl->NestedPagingCtrl.n.u1SevEs)
+            && !pVM->cpum.ro.GuestFeatures.fSvmAvic)
+        {
+            Log(("iemSvmVmrun: SEV not supported -> Disabling\n"));
+            pVmcbCtrl->NestedPagingCtrl.n.u1Sev = 0;
+            pVmcbCtrl->NestedPagingCtrl.n.u1SevEs = 0;
         }
 
         /* Flush by ASID. */
