@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QTableView>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QITableViewCell;
 class QITableViewRow;
@@ -28,7 +31,7 @@ class QITableView;
 
 
 /** OObject subclass used as cell for the QITableView. */
-class QITableViewCell : public QObject
+class SHARED_LIBRARY_STUFF QITableViewCell : public QObject
 {
     Q_OBJECT;
 
@@ -55,7 +58,7 @@ private:
 
 
 /** OObject subclass used as row for the QITableView. */
-class QITableViewRow : public QObject
+class SHARED_LIBRARY_STUFF QITableViewRow : public QObject
 {
     Q_OBJECT;
 
@@ -84,7 +87,7 @@ private:
 
 
 /** QTableView subclass extending standard functionality. */
-class QITableView : public QTableView
+class SHARED_LIBRARY_STUFF QITableView : public QTableView
 {
     Q_OBJECT;
 
@@ -131,5 +134,5 @@ private:
     QMap<QModelIndex, QObject*> m_editors;
 };
 
-#endif /* !___QITableView_h___ */
 
+#endif /* !___QITableView_h___ */

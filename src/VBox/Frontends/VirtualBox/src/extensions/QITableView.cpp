@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: QITableView class implementation.
+ * VBox Qt GUI - Qt extensions: QITableView class implementation.
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,8 +23,8 @@
 # include <QAccessibleWidget>
 
 /* GUI includes: */
-# include "QITableView.h"
 # include "QIStyledItemDelegate.h"
+# include "QITableView.h"
 
 /* Other VBox includes: */
 # include "iprt/assert.h"
@@ -487,4 +487,3 @@ void QITableView::cleanup()
     foreach (QObject *pEditor, m_editors.values())
         disconnect(pEditor, 0, this, 0);
 }
-
