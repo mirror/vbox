@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIStyledItemDelegate class declaration.
+ * VBox Qt GUI - Qt extensions: QIStyledItemDelegate class declaration.
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,11 +19,13 @@
 #define ___QIStyledItemDelegate_h___
 
 /* Qt includes: */
-# include <QStyledItemDelegate>
+#include <QStyledItemDelegate>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
 
 /** QStyledItemDelegate subclass extending standard functionality. */
-class QIStyledItemDelegate : public QStyledItemDelegate
+class SHARED_LIBRARY_STUFF QIStyledItemDelegate : public QStyledItemDelegate
 {
     Q_OBJECT;
 
@@ -38,40 +40,20 @@ signals:
 public:
 
     /** Constructs delegate passing @a pParent to the base-class. */
-    QIStyledItemDelegate(QObject *pParent)
-        : QStyledItemDelegate(pParent)
-        , m_fWatchForEditorDataCommits(false)
-        , m_fWatchForEditorEnterKeyTriggering(false)
-    {}
+    QIStyledItemDelegate(QObject *pParent);
 
     /** Defines whether delegate should watch for the editor's data commits. */
-    void setWatchForEditorDataCommits(bool fWatch) { m_fWatchForEditorDataCommits = fWatch; }
+    void setWatchForEditorDataCommits(bool fWatch);
     /** Defines whether delegate should watch for the editor's Enter key triggering. */
-    void setWatchForEditorEnterKeyTriggering(bool fWatch) { m_fWatchForEditorEnterKeyTriggering = fWatch; }
+    void setWatchForEditorEnterKeyTriggering(bool fWatch);
 
 protected:
 
     /** Returns the widget used to edit the item specified by @a index.
       * The @a pParent widget and style @a option are used to control how the editor widget appears. */
-    virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const /* override */
-    {
-        /* Call to base-class to get actual editor created: */
-        QWidget *pEditor = QStyledItemDelegate::createEditor(pParent, option, index);
-
-        /* Watch for editor data commits, redirect to listeners: */
-        if (m_fWatchForEditorDataCommits)
-            connect(pEditor, SIGNAL(sigCommitData(QWidget *)), this, SIGNAL(commitData(QWidget *)));
-
-        /* Watch for editor Enter key triggering, redirect to listeners: */
-        if (m_fWatchForEditorEnterKeyTriggering)
-            connect(pEditor, SIGNAL(sigEnterKeyTriggered()), this, SIGNAL(sigEditorEnterKeyTriggered()));
-
-        /* Notify listeners about editor created: */
-        emit sigEditorCreated(pEditor, index);
-
-        /* Return actual editor: */
-        return pEditor;
-    }
+    virtual QWidget *createEditor(QWidget *pParent,
+                                  const QStyleOptionViewItem &option,
+                                  const QModelIndex &index) const /* override */;
 
 private:
 
@@ -82,4 +64,3 @@ private:
 };
 
 #endif /* !___QIStyledItemDelegate_h___ */
-
