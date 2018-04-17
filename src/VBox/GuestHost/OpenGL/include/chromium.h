@@ -61,6 +61,13 @@
 #endif
 
 #include <GL/gl.h>
+/* Quick fix so as not to update the version of glext.h we provide. */
+#ifdef GL_GLEXT_PROTOTYPES
+GLAPI void APIENTRY glFramebufferTexture2D (GLenum, GLenum, GLenum, GLuint, GLint);
+GLAPI void APIENTRY glBindFramebuffer (GLenum, GLuint);
+GLAPI void APIENTRY glBlitFramebuffer (GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum);
+GLAPI void APIENTRY glGenFramebuffers (GLsizei, GLuint *);
+#endif
 
 #ifndef WINDOWS
 # ifndef RT_OS_WINDOWS /* If we don't need it in ring-3, we probably not need it in ring-0 either (triggers warnings). */
