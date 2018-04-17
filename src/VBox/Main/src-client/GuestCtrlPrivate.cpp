@@ -35,6 +35,7 @@
 #ifdef DEBUG
 # include <iprt/file.h>
 #endif /* DEBUG */
+#include <iprt/fs.h>
 #include <iprt/time.h>
 
 
