@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,15 +20,15 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QDir>
-# include <QUrl>
-# include <QMenu>
-# include <QProcess>
-# include <QSizeGrip>
-# include <QEventLoop>
-# include <QPushButton>
 # include <QApplication>
 # include <QDialogButtonBox>
+# include <QDir>
+# include <QEventLoop>
+# include <QMenu>
+# include <QProcess>
+# include <QPushButton>
+# include <QSizeGrip>
+# include <QUrl>
 
 /* GUI includes: */
 # include "QIMainDialog.h"
@@ -40,10 +40,11 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
 QIMainDialog::QIMainDialog(QWidget *pParent /* = 0 */,
-                           Qt::WindowFlags enmFlags /* = Qt::Dialog */,
+                           Qt::WindowFlags fFlags /* = Qt::Dialog */,
                            bool fIsAutoCentering /* = true */)
-    : QMainWindow(pParent, enmFlags)
+    : QMainWindow(pParent, fFlags)
     , m_fIsAutoCentering(fIsAutoCentering)
     , m_fPolished(false)
     , m_enmResult(QDialog::Rejected)
@@ -108,7 +109,7 @@ QDialog::DialogCode QIMainDialog::exec(bool fApplicationModal /* = true */)
     return enmResultCode;
 }
 
-QPushButton* QIMainDialog::defaultButton() const
+QPushButton *QIMainDialog::defaultButton() const
 {
     return m_pDefaultButton;
 }
@@ -151,6 +152,56 @@ void QIMainDialog::setVisible(bool fVisible)
         m_pEventLoop->exit();
 }
 
+bool QIMainDialog::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    /* Skip for inactive window: */
+    if (!isActiveWindow())
+        return QMainWindow::eventFilter(pObject, pEvent);
+
+    /* Skip for children of other than this one window: */
+    if (qobject_cast<QWidget*>(pObject) &&
+        qobject_cast<QWidget*>(pObject)->window() != this)
+        return QMainWindow::eventFilter(pObject, pEvent);
+
+    /* Depending on event-type: */
+    switch (pEvent->type())
+    {
+        /* Auto-default-button focus-in processor used to move the "default"
+         * button property into the currently focused button. */
+        case QEvent::FocusIn:
+        {
+            if (qobject_cast<QPushButton*>(pObject) &&
+                (pObject->parent() == centralWidget() ||
+                 qobject_cast<QDialogButtonBox*>(pObject->parent())))
+            {
+                qobject_cast<QPushButton*>(pObject)->setDefault(pObject != m_pDefaultButton);
+                if (m_pDefaultButton)
+                    m_pDefaultButton->setDefault(pObject == m_pDefaultButton);
+            }
+            break;
+        }
+        /* Auto-default-button focus-out processor used to remove the "default"
+         * button property from the previously focused button. */
+        case QEvent::FocusOut:
+        {
+            if (qobject_cast<QPushButton*>(pObject) &&
+                (pObject->parent() == centralWidget() ||
+                 qobject_cast<QDialogButtonBox*>(pObject->parent())))
+            {
+                if (m_pDefaultButton)
+                    m_pDefaultButton->setDefault(pObject != m_pDefaultButton);
+                qobject_cast<QPushButton*>(pObject)->setDefault(pObject == m_pDefaultButton);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QMainWindow::eventFilter(pObject, pEvent);
+}
+
 bool QIMainDialog::event(QEvent *pEvent)
 {
     /* Depending on event-type: */
@@ -172,22 +223,25 @@ bool QIMainDialog::event(QEvent *pEvent)
 
 void QIMainDialog::showEvent(QShowEvent *pEvent)
 {
+    /* Call to polish-event: */
+    polishEvent(pEvent);
+
+    /* Call to base-class: */
+    QMainWindow::showEvent(pEvent);
+}
+
+void QIMainDialog::polishEvent(QShowEvent *)
+{
     /* Make sure we should polish dialog: */
     if (m_fPolished)
         return;
 
-    /* Call to polish-event: */
-    polishEvent(pEvent);
-
-    /* Mark dialog as polished: */
-    m_fPolished = true;
-}
-
-void QIMainDialog::polishEvent(QShowEvent*)
-{
     /* Explicit centering according to our parent: */
     if (m_fIsAutoCentering)
         VBoxGlobal::centerWidget(this, parentWidget(), false);
+
+    /* Mark dialog as polished: */
+    m_fPolished = true;
 }
 
 void QIMainDialog::resizeEvent(QResizeEvent *pEvent)
@@ -261,60 +315,10 @@ void QIMainDialog::keyPressEvent(QKeyEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QMainWindow::keyPressEvent(pEvent);
+    QMainWindow::keyPressEvent(pEvent);
 }
 
-bool QIMainDialog::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    /* Skip for inactive window: */
-    if (!isActiveWindow())
-        return QMainWindow::eventFilter(pObject, pEvent);
-
-    /* Skip for children of other than this one window: */
-    if (qobject_cast<QWidget*>(pObject) &&
-        qobject_cast<QWidget*>(pObject)->window() != this)
-        return QMainWindow::eventFilter(pObject, pEvent);
-
-    /* Depending on event-type: */
-    switch (pEvent->type())
-    {
-        /* Auto-default-button focus-in processor used to move the "default"
-         * button property into the currently focused button. */
-        case QEvent::FocusIn:
-        {
-            if (qobject_cast<QPushButton*>(pObject) &&
-                (pObject->parent() == centralWidget() ||
-                 qobject_cast<QDialogButtonBox*>(pObject->parent())))
-            {
-                qobject_cast<QPushButton*>(pObject)->setDefault(pObject != m_pDefaultButton);
-                if (m_pDefaultButton)
-                    m_pDefaultButton->setDefault(pObject == m_pDefaultButton);
-            }
-            break;
-        }
-        /* Auto-default-button focus-out processor used to remove the "default"
-         * button property from the previously focused button. */
-        case QEvent::FocusOut:
-        {
-            if (qobject_cast<QPushButton*>(pObject) &&
-                (pObject->parent() == centralWidget() ||
-                 qobject_cast<QDialogButtonBox*>(pObject->parent())))
-            {
-                if (m_pDefaultButton)
-                    m_pDefaultButton->setDefault(pObject != m_pDefaultButton);
-                qobject_cast<QPushButton*>(pObject)->setDefault(pObject == m_pDefaultButton);
-            }
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return QMainWindow::eventFilter(pObject, pEvent);
-}
-
-QPushButton* QIMainDialog::searchDefaultButton() const
+QPushButton *QIMainDialog::searchDefaultButton() const
 {
     /* Search for the first default-button in the dialog: */
     QList<QPushButton*> list = findChildren<QPushButton*>();
@@ -333,4 +337,3 @@ void QIMainDialog::done(QDialog::DialogCode enmResult)
     /* Hide: */
     hide();
 }
-
