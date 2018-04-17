@@ -657,6 +657,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QIFileDialog.h \
 	src/extensions/QILabel.h \
 	src/extensions/QILabelSeparator.h \
+	src/extensions/QILineEdit.h \
 	src/extensions/QIMainWindow.h \
 	src/extensions/QIMessageBox.h \
 	src/extensions/QIProcess.h \
@@ -732,6 +733,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/extensions/QIFileDialog.h \
 	src/extensions/QILabel.h \
 	src/extensions/QILabelSeparator.h \
+	src/extensions/QILineEdit.h \
 	src/extensions/QIMainWindow.h \
 	src/extensions/QIMessageBox.h \
 	src/extensions/QIProcess.h \
@@ -906,7 +908,6 @@ VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/UITakeSnapshotDialog.cpp \
 	src/extensions/QIFlowLayout.cpp \
-	src/extensions/QILineEdit.cpp \
 	src/extensions/QIMainDialog.cpp \
 	src/extensions/QIManagerDialog.cpp \
 	src/extensions/QIMenu.cpp \
@@ -1156,6 +1157,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QIFileDialog.cpp \
 	src/extensions/QILabel.cpp \
 	src/extensions/QILabelSeparator.cpp \
+	src/extensions/QILineEdit.cpp \
 	src/extensions/QIMainWindow.cpp \
 	src/extensions/QIMessageBox.cpp \
 	src/extensions/QIProcess.cpp \
@@ -1258,6 +1260,7 @@ VBoxGlobal_SOURCES = \
 	src/extensions/QIFileDialog.cpp \
 	src/extensions/QILabel.cpp \
 	src/extensions/QILabelSeparator.cpp \
+	src/extensions/QILineEdit.cpp \
 	src/extensions/QIMainWindow.cpp \
 	src/extensions/QIMessageBox.cpp \
 	src/extensions/QIProcess.cpp \

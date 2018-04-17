@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QILineEdit class declarations.
+ * VBox Qt GUI - Qt extensions: QILineEdit class declaration.
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,28 +15,39 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QILineEdit_h__
-#define __QILineEdit_h__
+#ifndef ___QILineEdit_h___
+#define ___QILineEdit_h___
 
 /* Qt includes */
 #include <QLineEdit>
 
-class QILineEdit: public QLineEdit
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
+/** QLineEdit extension with advanced functionality. */
+class SHARED_LIBRARY_STUFF QILineEdit : public QLineEdit
 {
+    Q_OBJECT;
+
 public:
 
-    QILineEdit (QWidget *aParent = 0)
-        :QLineEdit (aParent) {}
-    QILineEdit (const QString &aContents, QWidget *aParent = 0)
-        :QLineEdit (aContents, aParent) {}
+    /** Constructs label-separator passing @a pParent to the base-class. */
+    QILineEdit(QWidget *pParent = 0)
+        : QLineEdit(pParent) {}
+    /** Constructs label-separator passing @a pParent to the base-class.
+      * @param  strContents  Brings the line-edit text. */
+    QILineEdit(const QString &strContents, QWidget *pParent = 0)
+        : QLineEdit(strContents, pParent) {}
 
-    void setMinimumWidthByText (const QString &aText);
-    void setFixedWidthByText (const QString &aText);
+    /** Forces line-edit to adjust minimum width acording to passed @a strText. */
+    void setMinimumWidthByText(const QString &strText);
+    /** Forces line-edit to adjust fixed width acording to passed @a strText. */
+    void setFixedWidthByText(const QString &strText);
 
 private:
 
-    QSize featTextWidth (const QString &aText) const;
+    /** Calculates suitable @a strText size. */
+    QSize featTextWidth(const QString &strText) const;
 };
 
-#endif /* __QILineEdit_h__ */
-
+#endif /* !___QILineEdit_h___ */

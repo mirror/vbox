@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VirtualBox Qt GUI - QILineEdit class implementation.
+ * VBox Qt GUI - Qt extensions: QILineEdit class implementation.
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,31 +28,32 @@
 #include <QStyleOptionFrame>
 
 
-void QILineEdit::setMinimumWidthByText (const QString &aText)
+void QILineEdit::setMinimumWidthByText(const QString &strText)
 {
-    setMinimumWidth (featTextWidth (aText).width());
+    setMinimumWidth(featTextWidth(strText).width());
 }
 
-void QILineEdit::setFixedWidthByText (const QString &aText)
+void QILineEdit::setFixedWidthByText(const QString &strText)
 {
-    setFixedWidth (featTextWidth (aText).width());
+    setFixedWidth(featTextWidth(strText).width());
 }
 
-QSize QILineEdit::featTextWidth (const QString &aText) const
+QSize QILineEdit::featTextWidth(const QString &strText) const
 {
     QStyleOptionFrame sof;
-    sof.initFrom (this);
+    sof.initFrom(this);
     sof.rect = contentsRect();
-    sof.lineWidth = hasFrame() ? style()->pixelMetric (QStyle::PM_DefaultFrameWidth) : 0;
+    sof.lineWidth = hasFrame() ? style()->pixelMetric(QStyle::PM_DefaultFrameWidth) : 0;
     sof.midLineWidth = 0;
     sof.state |= QStyle::State_Sunken;
 
-    /* The margins are based on qlineedit.cpp of Qt. Maybe they where changed
-     * at some time in the future. */
-    QSize sc (fontMetrics().width (aText) + 2*2,
-              fontMetrics().xHeight()     + 2*1);
-    QSize sa = style()->sizeFromContents (QStyle::CT_LineEdit, &sof, sc, this);
+    /** @todo make it wise.. */
+    // WORKAROUND:
+    // The margins are based on qlineedit.cpp of Qt.
+    // Maybe they where changed at some time in the future.
+    QSize sc(fontMetrics().width(strText) + 2 * 2,
+             fontMetrics().xHeight()     + 2 * 1);
+    const QSize sa = style()->sizeFromContents(QStyle::CT_LineEdit, &sof, sc, this);
 
     return sa;
 }
-
