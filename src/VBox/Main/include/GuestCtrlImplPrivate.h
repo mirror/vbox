@@ -645,6 +645,11 @@ struct GuestFsObjData
     static int64_t UnixEpochNsFromKey(const GuestProcessStreamBlock &strmBlk, const Utf8Str &strKey);
     /** @}  */
 
+    /** @name helper functions to work with IPRT stuff.
+     * @{ */
+    RTFMODE GetFileMode(void) const;
+    /** @}  */
+
     int64_t              mAccessTime;
     int64_t              mAllocatedSize;
     int64_t              mBirthTime;
