@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - Qt extensions: QITabWidget class declaration.
+ * VBox Qt GUI - Qt extensions: QITabWidget class implementation.
  */
 
 /*
@@ -15,24 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QITabWidget_h___
-#define ___QITabWidget_h___
-
-/* Qt includes: */
-#include <QTabWidget>
-
 /* GUI includes: */
-#include "UILibraryDefs.h"
+#include "QITabWidget.h"
 
-/** QTabWidget extension with advanced functionality. */
-class SHARED_LIBRARY_STUFF QITabWidget : public QTabWidget
+
+QITabWidget::QITabWidget(QWidget *pParent /* = 0 */)
+    : QTabWidget(pParent)
 {
-    Q_OBJECT;
-
-public:
-
-    /** Constructs tab-widget passing @a pParent to the base-class. */
-    QITabWidget(QWidget *pParent = 0);
-};
-
-#endif /* !___QITabWidget_h___ */
+#ifdef VBOX_WS_MAC
+    // WORKAROUND:
+    // I don't know why, but for some languages there is
+    // ElideRight the default on Mac OS X. Fix this.
+    setElideMode(Qt::ElideNone);
+#endif
+}

@@ -442,7 +442,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIFlowLayout.h \
 	src/extensions/QIMenu.h \
 	src/extensions/QIStatusBar.h \
-	src/extensions/QITabWidget.h \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/graphics/QIGraphicsView.h \
@@ -664,6 +663,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QISplitter.h \
 	src/extensions/QIStatusBarIndicator.h \
 	src/extensions/QIStyledItemDelegate.h \
+	src/extensions/QITabWidget.h \
 	src/extensions/QIToolButton.h \
 	src/extensions/QITableView.h \
 	src/extensions/QIWidgetValidator.h \
@@ -744,6 +744,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/extensions/QISplitter.h \
 	src/extensions/QIStatusBarIndicator.h \
 	src/extensions/QIStyledItemDelegate.h \
+	src/extensions/QITabWidget.h \
 	src/extensions/QIToolButton.h \
 	src/extensions/QITableView.h \
 	src/extensions/QIWidgetValidator.h \
@@ -1169,6 +1170,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QISplitter.cpp \
 	src/extensions/QIStatusBarIndicator.cpp \
 	src/extensions/QIStyledItemDelegate.cpp \
+	src/extensions/QITabWidget.cpp \
 	src/extensions/QIToolButton.cpp \
 	src/extensions/QITableView.cpp \
 	src/extensions/QIWidgetValidator.cpp \
@@ -1276,6 +1278,7 @@ VBoxGlobal_SOURCES = \
 	src/extensions/QISplitter.cpp \
 	src/extensions/QIStatusBarIndicator.cpp \
 	src/extensions/QIStyledItemDelegate.cpp \
+	src/extensions/QITabWidget.cpp \
 	src/extensions/QIToolButton.cpp \
 	src/extensions/QITableView.cpp \
 	src/extensions/QIWidgetValidator.cpp \
