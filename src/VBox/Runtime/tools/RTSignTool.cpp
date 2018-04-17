@@ -432,25 +432,17 @@ static RTEXITCODE SignToolPkcs7_AddNestedSignature(PSIGNTOOLPKCS7 pThis, PSIGNTO
                                                  pAttr->Allocation.pAllocator, &iActualPos);
         if (RT_SUCCESS(rc))
         {
-            //PRTCRPKCS7CONTENTINFO pCntInfo = pAttr->uValues.pContentInfos->papItems[iPos];
-            //rc = RTCrPkcs7ContentInfo_Clone(pCntInfo, &pSrc->ContentInfo, pAttr->Allocation.pAllocator);
-            if (RT_SUCCESS(rc))
+            if (cVerbosity > 0)
+                RTMsgInfo("Added nested signature (#%u)", iActualPos);
+            if (cVerbosity >= 3)
             {
-                if (cVerbosity > 0)
-                    RTMsgInfo("Added nested signature");
-                if (cVerbosity >= 3)
-                {
-                    RTMsgInfo("SingerInfo dump after change:");
-                    RTAsn1Dump(RTCrPkcs7SignerInfo_GetAsn1Core(pSignerInfo), 0, 2, RTStrmDumpPrintfV, g_pStdOut);
-                }
-
-                return RTEXITCODE_SUCCESS;
+                RTMsgInfo("SingerInfo dump after change:");
+                RTAsn1Dump(RTCrPkcs7SignerInfo_GetAsn1Core(pSignerInfo), 0, 2, RTStrmDumpPrintfV, g_pStdOut);
             }
-
-            RTMsgError("RTCrPkcs7ContentInfo_Clone failed: %Rrc", iPos);
+            return RTEXITCODE_SUCCESS;
         }
-        else
-            RTMsgError("RTCrPkcs7ContentInfos_Append failed: %Rrc", iPos);
+
+        RTMsgError("RTCrPkcs7ContentInfos_InsertEx failed: %Rrc", rc);
     }
     return RTEXITCODE_FAILURE;
 }
