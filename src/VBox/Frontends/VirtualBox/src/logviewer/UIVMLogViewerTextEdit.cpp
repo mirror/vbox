@@ -194,14 +194,7 @@ void UIVMLogViewerTextEdit::prepareWidgets()
 
     setReadOnly(true);
 
-
-#if defined(RT_OS_SOLARIS)
-    /* Use system fixed-width font on Solaris hosts as the Courier family fonts don't render well. */
     QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-#else
-    QFont font;
-    font.setFamily("Courier New,courier");
-#endif
     setFont(font);
 
     if (m_pLineNumberArea)
@@ -552,4 +545,3 @@ void UIVMLogViewerTextEdit::setCurrentVerticalScrollBarValue(int value)
 
 
 #include "UIVMLogViewerTextEdit.moc"
-
