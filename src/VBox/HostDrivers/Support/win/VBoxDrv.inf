@@ -50,7 +50,7 @@ AddService=VBoxDrv,0x00000002,VBoxDrv_Service
 ; Models section (referenced by [Manufacturer]).
 ;x86 [Oracle] 
 ;amd64 [Oracle.ntamd64] 
-%VBoxDrv.DRVDESC%=DefaultInstall,root\busenum
+%VBoxDrv.DRVDESC%=DefaultInstall,root\VBoxDrv
 
 [SourceDisksFiles]
 VBoxDrv.sys=1
