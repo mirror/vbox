@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIManagerDialog class implementation.
+ * VBox Qt GUI - Qt extensions: QIManagerDialog class implementation.
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,12 +28,12 @@
 /* GUI includes: */
 # include "QIDialogButtonBox.h"
 # include "QIManagerDialog.h"
+# include "VBoxGlobal.h"
 # include "UIDesktopWidgetWatchdog.h"
 # ifdef VBOX_WS_MAC
 #  include "UIToolBar.h"
 #  include "UIWindowMenuManager.h"
-# endif /* VBOX_WS_MAC */
-# include "VBoxGlobal.h"
+# endif
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 

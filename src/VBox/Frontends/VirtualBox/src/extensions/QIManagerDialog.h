@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIManagerDialog class declaration.
+ * VBox Qt GUI - Qt extensions: QIManagerDialog class declaration.
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QMainWindow>
 #include <QMap>
+
+/* GUI includes: */
+#include "UILibraryDefs.h"
 
 /* Other VBox includes: */
 #include <iprt/cdefs.h>
@@ -53,7 +56,7 @@ enum ButtonType
 
 
 /** Manager dialog factory insterface. */
-class QIManagerDialogFactory
+class SHARED_LIBRARY_STUFF QIManagerDialogFactory
 {
 public:
 
@@ -77,7 +80,7 @@ protected:
 
 
 /** QMainWindow sub-class used as various manager dialogs. */
-class QIManagerDialog : public QMainWindow
+class SHARED_LIBRARY_STUFF QIManagerDialog : public QMainWindow
 {
     Q_OBJECT;
 
@@ -126,15 +129,14 @@ protected:
         /** Loads dialog setting such as geometry from extradata. */
         virtual void loadSettings() {}
 
+        /** Saves dialog setting into extradata. */
+        virtual void saveSettings() const {}
         /** Cleanup menu-bar.
           * @note Injected into cleanup(), normally you don't need to reimplement it. */
         void cleanupMenuBar();
         /** Cleanups all.
           * @note Normally you don't need to reimplement it. */
         void cleanup();
-        /** Saves dialog setting such as geometry into extradata. */
-        virtual void saveSettings() const {}
-
     /** @} */
 
     /** @name Widget stuff.
@@ -209,5 +211,5 @@ private:
     friend class QIManagerDialogFactory;
 };
 
-#endif /* !___QIManagerDialog_h___ */
 
+#endif /* !___QIManagerDialog_h___ */
