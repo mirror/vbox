@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - Qt extensions: QITreeWidget class implementation.
+ * VBox Qt GUI - Qt extensions: QITreeWidget class declaration.
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,12 +22,15 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QITreeWidget;
 
 
 /** QTreeWidgetItem subclass extending standard functionality. */
-class QITreeWidgetItem : public QObject, public QTreeWidgetItem
+class SHARED_LIBRARY_STUFF QITreeWidgetItem : public QObject, public QTreeWidgetItem
 {
     Q_OBJECT;
 
@@ -68,7 +71,7 @@ public:
 
 
 /** QTreeWidget subclass extending standard functionality. */
-class QITreeWidget : public QTreeWidget
+class SHARED_LIBRARY_STUFF QITreeWidget : public QTreeWidget
 {
     Q_OBJECT;
 
@@ -100,5 +103,5 @@ protected:
     void resizeEvent(QResizeEvent *pEvent);
 };
 
-#endif /* !___QITreeWidget_h___ */
 
+#endif /* !___QITreeWidget_h___ */
