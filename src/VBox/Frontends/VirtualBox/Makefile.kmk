@@ -442,7 +442,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIFlowLayout.h \
 	src/extensions/QIMenu.h \
 	src/extensions/QIStatusBar.h \
-	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/graphics/QIGraphicsView.h \
 	src/extensions/graphics/QIGraphicsWidget.h \
@@ -663,9 +662,10 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QISplitter.h \
 	src/extensions/QIStatusBarIndicator.h \
 	src/extensions/QIStyledItemDelegate.h \
+	src/extensions/QITableView.h \
 	src/extensions/QITabWidget.h \
 	src/extensions/QIToolButton.h \
-	src/extensions/QITableView.h \
+	src/extensions/QITreeView.h \
 	src/extensions/QIWidgetValidator.h \
 	src/extradata/UIExtraDataDefs.h \
 	src/extradata/UIExtraDataManager.h \
@@ -744,9 +744,10 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/extensions/QISplitter.h \
 	src/extensions/QIStatusBarIndicator.h \
 	src/extensions/QIStyledItemDelegate.h \
+	src/extensions/QITableView.h \
 	src/extensions/QITabWidget.h \
 	src/extensions/QIToolButton.h \
-	src/extensions/QITableView.h \
+	src/extensions/QITreeView.h \
 	src/extensions/QIWidgetValidator.h \
 	src/extradata/UIExtraDataDefs.h \
 	src/extradata/UIExtraDataManager.h \
@@ -915,7 +916,6 @@ VirtualBox_SOURCES = \
 	src/extensions/QIFlowLayout.cpp \
 	src/extensions/QIMenu.cpp \
 	src/extensions/QIStatusBar.cpp \
-	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/graphics/QIGraphicsView.cpp \
 	src/extensions/graphics/QIGraphicsWidget.cpp \
@@ -1170,9 +1170,10 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QISplitter.cpp \
 	src/extensions/QIStatusBarIndicator.cpp \
 	src/extensions/QIStyledItemDelegate.cpp \
+	src/extensions/QITableView.cpp \
 	src/extensions/QITabWidget.cpp \
 	src/extensions/QIToolButton.cpp \
-	src/extensions/QITableView.cpp \
+	src/extensions/QITreeView.cpp \
 	src/extensions/QIWidgetValidator.cpp \
 	src/extradata/UIExtraDataDefs.cpp \
 	src/extradata/UIExtraDataManager.cpp \
@@ -1278,9 +1279,10 @@ VBoxGlobal_SOURCES = \
 	src/extensions/QISplitter.cpp \
 	src/extensions/QIStatusBarIndicator.cpp \
 	src/extensions/QIStyledItemDelegate.cpp \
+	src/extensions/QITableView.cpp \
 	src/extensions/QITabWidget.cpp \
 	src/extensions/QIToolButton.cpp \
-	src/extensions/QITableView.cpp \
+	src/extensions/QITreeView.cpp \
 	src/extensions/QIWidgetValidator.cpp \
 	src/extradata/UIExtraDataDefs.cpp \
 	src/extradata/UIExtraDataManager.cpp \
