@@ -881,7 +881,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            edit <uuid|snapname>|--current\n"
                      "                                 [--name <name>]\n"
                      "                                 [--description <desc>] |\n"
-                     "                            list [--details|--machinereadable]\n"
+                     "                            list [--details|--machinereadable] |\n"
                      "                            showvminfo <uuid|snapname>\n"
                      "\n", SEP);
 
