@@ -2719,7 +2719,7 @@ static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, VBOXVDMACMD_DMA_BPB_T
  *                      requests.  Input stat is false, so it only ever need to
  *                      be set to true.
  */
-static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pbBuffer, uint32_t cbBuffer,
+static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, uint8_t const RT_UNTRUSTED_VOLATILE_GUEST *pbBuffer, uint32_t cbBuffer,
                            VBOXVDMACBUF_DR RT_UNTRUSTED_VOLATILE_GUEST *pCmdDr, bool *pfAsyncCmd)
 {
     AssertReturn(pbBuffer, VERR_INVALID_POINTER);
@@ -2728,9 +2728,20 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pbBuffer, uint32_
     {
         AssertReturn(cbBuffer >= VBOXVDMACMD_HEADER_SIZE(), VERR_INVALID_PARAMETER);
 
-        VBOXVDMACMD const  *pCmd       = (VBOXVDMACMD const *)pbBuffer;
-        VBOXVDMACMD_TYPE    enmCmdType = pCmd->enmType;
-        int                 cbProcessed;
+        VBOXVDMACMD const RT_UNTRUSTED_VOLATILE_GUEST  *pCmd       = (VBOXVDMACMD const RT_UNTRUSTED_VOLATILE_GUEST *)pbBuffer;
+        VBOXVDMACMD_TYPE                                enmCmdType = pCmd->enmType;
+        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+
+        ASSERT_GUEST_MSG_RETURN(   enmCmdType == VBOXVDMACMD_TYPE_CHROMIUM_CMD
+                                || enmCmdType == VBOXVDMACMD_TYPE_DMA_PRESENT_BLT
+                                || enmCmdType == VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER
+                                || enmCmdType == VBOXVDMACMD_TYPE_DMA_NOP
+                                || enmCmdType == VBOXVDMACMD_TYPE_CHILD_STATUS_IRQ,
+                                ("enmCmdType=%d\n", enmCmdType),
+                                VERR_INVALID_FUNCTION);
+        RT_UNTRUSTED_VALIDATED_FENCE();
+
+        int cbProcessed;
         switch (enmCmdType)
         {
             case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
@@ -2916,7 +2927,7 @@ static int vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, VBOXVDMACBUF_DR RT_UNTRUS
     /*
      * Process the command.
      */
-    int rc = vboxVDMACmdExec(pVdma, (uint8_t const *)pbCmdBuf, cbCmdBuf, pCmd, pfAsyncCmd); /** @todo fixme later */
+    int rc = vboxVDMACmdExec(pVdma, pbCmdBuf, cbCmdBuf, pCmd, pfAsyncCmd);
     AssertRC(rc);
 
     /* Clean up comand buffer. */
