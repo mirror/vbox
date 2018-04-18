@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIFlowLayout class implementation.
+ * VBox Qt GUI - Qt extensions: QIFlowLayout class implementation.
  */
 
 /*
- * Copyright (C) 2017 Oracle Corporation
+ * Copyright (C) 2017-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -264,4 +264,3 @@ int QIFlowLayout::verticalSpacing() const
 {
     return m_iSpacingV >= 0 ? m_iSpacingV : smartSpacing(QStyle::PM_LayoutVerticalSpacing);
 }
-
