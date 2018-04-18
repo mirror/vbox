@@ -1642,7 +1642,7 @@ int main()
     GEN_CHECK_OFF(VMMDEV, fKeepCredentials);
     GEN_CHECK_OFF(VMMDEV, fHeapEnabled);
 #ifdef VBOX_WITH_HGCM
-    GEN_CHECK_OFF(VMMDEV, pHGCMCmdList);
+    GEN_CHECK_OFF(VMMDEV, listHGCMCmd);
     GEN_CHECK_OFF(VMMDEV, critsectHGCMCmdList);
     GEN_CHECK_OFF(VMMDEV, u32HGCMEnabled);
 #endif

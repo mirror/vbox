@@ -26,6 +26,8 @@
 # include <VBox/VMMDevTesting.h>
 #endif
 
+#include <iprt/list.h>
+
 #define VMMDEV_WITH_ALT_TIMESYNC
 
 typedef struct DISPLAYCHANGEINFO
@@ -276,14 +278,18 @@ typedef struct VMMDevState
     bool afAlignment7[1];
 
 #ifdef VBOX_WITH_HGCM
-    /** List of pending HGCM requests, used for saving the HGCM state. */
-    R3PTRTYPE(PVBOXHGCMCMD) pHGCMCmdList;
+    /** List of pending HGCM requests (VBOXHGCMCMD). */
+    RTLISTANCHORR3 listHGCMCmd;
     /** Critical section to protect the list. */
     RTCRITSECT critsectHGCMCmdList;
     /** Whether the HGCM events are already automatically enabled. */
     uint32_t u32HGCMEnabled;
+    /** Saved state version of restored commands. */
+    uint32_t u32SSMVersion;
+#if HC_ARCH_BITS == 32
     /** Alignment padding. */
     uint32_t u32Alignment7;
+#endif
 #endif /* VBOX_WITH_HGCM */
 
     /** Status LUN: Shared folders LED */
@@ -397,7 +403,9 @@ void VMMDevNotifyGuest(VMMDEV *pVMMDevState, uint32_t u32EventMask);
 void VMMDevCtlSetGuestFilterMask(VMMDEV *pVMMDevState, uint32_t u32OrMask, uint32_t u32NotMask);
 
 /** The saved state version. */
-#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_HEARTBEAT
+#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_HGCM_PARAMS
+/** Updated HGCM commands. */
+#define VMMDEV_SAVED_STATE_VERSION_HGCM_PARAMS                  17
 /** The saved state version with heartbeat state. */
 #define VMMDEV_SAVED_STATE_VERSION_HEARTBEAT                    16
 /** The saved state version without heartbeat state. */

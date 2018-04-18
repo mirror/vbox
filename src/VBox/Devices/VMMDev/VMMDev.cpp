@@ -1706,13 +1706,7 @@ static int vmmdevReqHandler_HGCMCall(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr
         Log2(("VMMDevReq_HGCMCall: sizeof(VMMDevHGCMRequest) = %04X\n", sizeof(VMMDevHGCMCall)));
         Log2(("%.*Rhxd\n", pReq->header.header.size, pReq));
 
-#ifdef VBOX_WITH_64_BITS_GUESTS
-        bool f64Bits = (pReq->header.header.requestType == VMMDevReq_HGCMCall64);
-#else
-        bool f64Bits = false;
-#endif /* VBOX_WITH_64_BITS_GUESTS */
-
-        return vmmdevHGCMCall(pThis, pReq, pReq->header.header.size, GCPhysReqHdr, f64Bits);
+        return vmmdevHGCMCall(pThis, pReq, pReq->header.header.size, GCPhysReqHdr, pReq->header.header.requestType);
     }
 
     Log(("VMMDevReq_HGCMCall: HGCM Connector is NULL!\n"));
@@ -4259,7 +4253,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_HGCM
-    pThis->pHGCMCmdList = NULL;
+    RTListInit(&pThis->listHGCMCmd);
     rc = RTCritSectInit(&pThis->critsectHGCMCmdList);
     AssertRCReturn(rc, rc);
     pThis->u32HGCMEnabled = 0;
