@@ -48,8 +48,8 @@ AddService=VBoxDrv,0x00000002,VBoxDrv_Service
 ;amd64 %ORACLE%=ORACLE, NTamd64
 
 ; Models section (referenced by [Manufacturer]).
-;x86 [Oracle] 
-;amd64 [Oracle.ntamd64] 
+;x86 [Oracle]
+;amd64 [Oracle.ntamd64]
 %VBoxDrv.DRVDESC%=DefaultInstall,root\VBoxDrv
 
 [SourceDisksFiles]
