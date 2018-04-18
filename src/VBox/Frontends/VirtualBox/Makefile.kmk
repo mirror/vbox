@@ -439,7 +439,6 @@ endif
 #
 VirtualBox_QT_MOCHDRS = \
 	src/UITakeSnapshotDialog.h \
-	src/extensions/QIMenu.h \
 	src/extensions/QIStatusBar.h \
 	src/extensions/graphics/QIGraphicsView.h \
 	src/extensions/graphics/QIGraphicsWidget.h \
@@ -654,6 +653,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QIMainDialog.h \
 	src/extensions/QIMainWindow.h \
 	src/extensions/QIManagerDialog.h \
+	src/extensions/QIMenu.h \
 	src/extensions/QIMessageBox.h \
 	src/extensions/QIProcess.h \
 	src/extensions/QIRichTextLabel.h \
@@ -738,6 +738,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/extensions/QIMainDialog.h \
 	src/extensions/QIMainWindow.h \
 	src/extensions/QIManagerDialog.h \
+	src/extensions/QIMenu.h \
 	src/extensions/QIMessageBox.h \
 	src/extensions/QIProcess.h \
 	src/extensions/QIRichTextLabel.h \
@@ -915,7 +916,6 @@ endif
 VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/UITakeSnapshotDialog.cpp \
-	src/extensions/QIMenu.cpp \
 	src/extensions/QIStatusBar.cpp \
 	src/extensions/graphics/QIGraphicsView.cpp \
 	src/extensions/graphics/QIGraphicsWidget.cpp \
@@ -1164,6 +1164,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QIMainDialog.cpp \
 	src/extensions/QIMainWindow.cpp \
 	src/extensions/QIManagerDialog.cpp \
+	src/extensions/QIMenu.cpp \
 	src/extensions/QIMessageBox.cpp \
 	src/extensions/QIProcess.cpp \
 	src/extensions/QIRichTextLabel.cpp \
@@ -1249,7 +1250,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/platform/darwin/UICocoaSpecialControls.mm \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
-
 endif
 
 
@@ -1275,6 +1275,7 @@ VBoxGlobal_SOURCES = \
 	src/extensions/QIMainDialog.cpp \
 	src/extensions/QIMainWindow.cpp \
 	src/extensions/QIManagerDialog.cpp \
+	src/extensions/QIMenu.cpp \
 	src/extensions/QIMessageBox.cpp \
 	src/extensions/QIProcess.cpp \
 	src/extensions/QIRichTextLabel.cpp \

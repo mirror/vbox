@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIMenu class declaration.
+ * VBox Qt GUI - Qt extensions: QIMenu class declaration.
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,15 +21,18 @@
 /* Qt includes: */
 #include <QMenu>
 
-/** QMenu extension
-  * which allows to highlight first menu item for popped up menu. */
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
+/** QMenu extension with advanced functionality.
+  * Allows to highlight first menu item for popped up menu. */
 class QIMenu : public QMenu
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructor, passes @a pParent to the QMenu constructor. */
+    /** Constructs menu passing @a pParent to the base-class. */
     QIMenu(QWidget *pParent = 0);
 
 private slots:
