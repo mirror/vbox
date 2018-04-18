@@ -1044,7 +1044,7 @@ static void acpiR3PmTimerReset(ACPIState *pThis, uint64_t uNow)
     Log(("acpi: uInterval = %RU64\n", uInterval));
 }
 
-#endif
+#endif /* IN_RING3 */
 
 /**
   * Used by acpiR3PMTimer & acpiPmTmrRead to update TMR_VAL and update TMR_STS
