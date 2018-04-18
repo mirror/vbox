@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,10 +19,10 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global include */
+/* Qt includes: */
 # include <QScrollBar>
 
-/* Local includes */
+/* GUI includes: */
 # include "UIBootTable.h"
 # include "UIConverter.h"
 # include "UIIconPool.h"
@@ -30,11 +30,15 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIBootTableItem::UIBootTableItem(KDeviceType type)
-  : m_type(type)
+/*********************************************************************************************************************************
+*   Class UIBootTableItem implementation.                                                                                        *
+*********************************************************************************************************************************/
+
+UIBootTableItem::UIBootTableItem(KDeviceType enmType)
+    : m_enmType(enmType)
 {
     setCheckState(Qt::Unchecked);
-    switch(type)
+    switch(enmType)
     {
         case KDeviceType_Floppy:   setIcon(UIIconPool::iconSet(":/fd_16px.png")); break;
         case KDeviceType_DVD:      setIcon(UIIconPool::iconSet(":/cd_16px.png")); break;
@@ -47,31 +51,31 @@ UIBootTableItem::UIBootTableItem(KDeviceType type)
 
 KDeviceType UIBootTableItem::type() const
 {
-    return m_type;
+    return m_enmType;
 }
 
 void UIBootTableItem::retranslateUi()
 {
-    setText(gpConverter->toString(m_type));
+    setText(gpConverter->toString(m_enmType));
 }
+
+
+/*********************************************************************************************************************************
+*   Class UIBootTable implementation.                                                                                            *
+*********************************************************************************************************************************/
 
 UIBootTable::UIBootTable(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QListWidget>(pParent)
 {
-    setDragDropMode(QAbstractItemView::InternalMove);
-    setSelectionMode(QAbstractItemView::SingleSelection);
-    setDropIndicatorShown(true);
-    setUniformItemSizes(true);
-    connect(this, SIGNAL(currentRowChanged(int)),
-            this, SIGNAL(sigRowChanged(int)));
+    prepare();
 }
 
 void UIBootTable::adjustSizeToFitContent()
 {
-    int h = 2 * frameWidth();
-    int w = h;
-    setFixedSize(sizeHintForColumn(0) + w,
-                 sizeHintForRow(0) * count() + h);
+    const int iH = 2 * frameWidth();
+    const int iW = iH;
+    setFixedSize(sizeHintForColumn(0) + iW,
+                 sizeHintForRow(0) * count() + iH);
 }
 
 void UIBootTable::sltMoveItemUp()
@@ -96,13 +100,15 @@ void UIBootTable::retranslateUi()
 
 void UIBootTable::dropEvent(QDropEvent *pEvent)
 {
+    /* Call to base-class: */
     QListWidget::dropEvent(pEvent);
+    /* Separately notify listeners: */
     emit sigRowChanged(currentRow());
 }
 
-QModelIndex UIBootTable::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
+QModelIndex UIBootTable::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers fModifiers)
 {
-    if (modifiers.testFlag(Qt::ControlModifier))
+    if (fModifiers.testFlag(Qt::ControlModifier))
     {
         switch (cursorAction)
         {
@@ -134,14 +140,26 @@ QModelIndex UIBootTable::moveCursor(QAbstractItemView::CursorAction cursorAction
                 break;
         }
     }
-    return QListWidget::moveCursor(cursorAction, modifiers);
+    return QListWidget::moveCursor(cursorAction, fModifiers);
+}
+
+void UIBootTable::prepare()
+{
+    setDragDropMode(QAbstractItemView::InternalMove);
+    setSelectionMode(QAbstractItemView::SingleSelection);
+    setDropIndicatorShown(true);
+    setUniformItemSizes(true);
+    connect(this, &UIBootTable::currentRowChanged,
+            this, &UIBootTable::sigRowChanged);
 }
 
 QModelIndex UIBootTable::moveItemTo(const QModelIndex &index, int row)
 {
+    /* Check validity: */
     if (!index.isValid())
         return QModelIndex();
 
+    /* Check sanity: */
     if (row < 0 || row > model()->rowCount())
         return QModelIndex();
 
@@ -153,4 +171,3 @@ QModelIndex UIBootTable::moveItemTo(const QModelIndex &index, int row)
     setCurrentRow(newIndex.row());
     return QModelIndex(newIndex);
 }
-
