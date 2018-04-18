@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: UIFilePathSelector class declaration.
+ * VBox Qt GUI - UIFilePathSelector class declaration.
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,18 +21,23 @@
 /* GUI includes: */
 #include "QIComboBox.h"
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QAction;
+class QFocusEvent;
 class QHBoxLayout;
+class QObject;
+class QResizeEvent;
+class QWidget;
+class QString;
 class QILabel;
 class QILineEdit;
 class QIToolButton;
 
-
-/** QIComboBox extension providing GUI with
+/** QIComboBox subclass providing GUI with the
   * possibility to choose/reflect file/folder path. */
-class UIFilePathSelector: public QIWithRetranslateUI<QIComboBox>
+class SHARED_LIBRARY_STUFF UIFilePathSelector : public QIWithRetranslateUI<QIComboBox>
 {
     Q_OBJECT;
 
@@ -201,4 +206,3 @@ private:
 };
 
 #endif /* !___UIFilePathSelector_h___ */
-

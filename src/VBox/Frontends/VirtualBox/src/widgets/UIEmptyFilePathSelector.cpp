@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: UIEmptyFilePathSelector class implementation.
+ * VBox Qt GUI - UIEmptyFilePathSelector class implementation.
  */
 
 /*

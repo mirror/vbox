@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: UIFilePathSelector class implementation.
+ * VBox Qt GUI - UIFilePathSelector class implementation.
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,16 +29,16 @@
 # include <QLineEdit>
 # ifdef VBOX_WS_WIN
 #  include <QListView>
-# endif /* VBOX_WS_WIN */
+# endif
 
 /* GUI includes: */
 # include "QIFileDialog.h"
 # include "QILabel.h"
 # include "QILineEdit.h"
 # include "QIToolButton.h"
+# include "VBoxGlobal.h"
 # include "UIIconPool.h"
 # include "UIFilePathSelector.h"
-# include "VBoxGlobal.h"
 
 /* Other VBox includes: */
 # include <iprt/assert.h>
@@ -566,4 +566,3 @@ void UIFilePathSelector::refreshText()
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
     }
 }
-

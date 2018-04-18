@@ -555,7 +555,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIApplianceEditorWidget.h \
 	src/widgets/UIApplianceExportEditorWidget.h \
 	src/widgets/UIApplianceImportEditorWidget.h \
-	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIEmptyFilePathSelector.h \
 	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UILineTextEdit.h \
@@ -684,6 +683,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/widgets/UIBootTable.h \
+	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIHostComboEditor.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
@@ -773,6 +773,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/widgets/UIBootTable.h \
+	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIHostComboEditor.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
@@ -1039,7 +1040,6 @@ VirtualBox_SOURCES = \
 	src/widgets/UIApplianceEditorWidget.cpp \
 	src/widgets/UIApplianceExportEditorWidget.cpp \
 	src/widgets/UIApplianceImportEditorWidget.cpp \
-	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIEmptyFilePathSelector.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UILineTextEdit.cpp \
@@ -1208,6 +1208,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/widgets/UIBootTable.cpp \
+	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIHostComboEditor.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
@@ -1323,6 +1324,7 @@ VBoxGlobal_SOURCES = \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/widgets/UIBootTable.cpp \
+	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIHostComboEditor.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
