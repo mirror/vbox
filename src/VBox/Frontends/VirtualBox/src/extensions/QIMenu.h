@@ -26,7 +26,7 @@
 
 /** QMenu extension with advanced functionality.
   * Allows to highlight first menu item for popped up menu. */
-class QIMenu : public QMenu
+class SHARED_LIBRARY_STUFF QIMenu : public QMenu
 {
     Q_OBJECT;
 
