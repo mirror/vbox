@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,13 +20,13 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QCheckBox>
 # include <QHBoxLayout>
-# include <QVBoxLayout>
+# include <QPainter>
 # include <QScrollArea>
 # include <QScrollBar>
 # include <QStyle>
-# include <QCheckBox>
-# include <QPainter>
+# include <QVBoxLayout>
 
 /* GUI includes: */
 # include "UIFilmContainer.h"
@@ -34,101 +34,57 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIFilmContainer::UIFilmContainer(QWidget *pParent /* = 0*/)
-    : QWidget(pParent)
-    , m_pMainLayout(0)
-    , m_pScroller(0)
+/** QWidget subclass providing GUI with UIFilmContainer item prototype.
+  * @todo Rename to something more suitable like UIScreenThumbnail. */
+class UIFilm : public QIWithRetranslateUI<QWidget>
 {
-    /* Prepare: */
-    prepare();
-}
+    Q_OBJECT;
 
-QVector<BOOL> UIFilmContainer::value() const
-{
-    /* Enumerate all the existing widgets: */
-    QVector<BOOL> value;
-    foreach (UIFilm *pWidget, m_widgets)
-        value << static_cast<BOOL>(pWidget->checked());
+public:
 
-    /* Return value: */
-    return value;
-}
+    /** Constructs film widget passing @a pParent to the base-class.
+      * @param  iScreenIndex  Brings the guest-screen index this film referencing.
+      * @param  fEnabled      Brings whether the guest-screen mentioned above is enabled. */
+    UIFilm(int iScreenIndex, BOOL fEnabled, QWidget *pParent = 0);
 
-void UIFilmContainer::setValue(const QVector<BOOL> &value)
-{
-    /* Cleanup viewport/widget list: */
-    delete m_pScroller->takeWidget();
-    m_widgets.clear();
+    /** Returns whether guest-screen is enabled. */
+    bool checked() const;
 
-    /* Create widget: */
-    if (QWidget *pWidget = new QWidget)
-    {
-        /* Create viewport layout: */
-        if (QHBoxLayout *pWidgetLayout = new QHBoxLayout(pWidget))
-        {
-            /* Configure viewport layout: */
-            pWidgetLayout->setMargin(0);
-#ifdef VBOX_WS_MAC
-            pWidgetLayout->setSpacing(5);
-#else
-            pWidgetLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
-#endif
-            /* Create new widgets according passed vector: */
-            for (int iScreenIndex = 0; iScreenIndex < value.size(); ++iScreenIndex)
-            {
-                /* Create new widget: */
-                UIFilm *pWidget = new UIFilm(iScreenIndex, value[iScreenIndex]);
-                /* Add widget into the widget list: */
-                m_widgets << pWidget;
-                /* Add widget into the viewport layout: */
-                pWidgetLayout->addWidget(pWidget);
-            }
-        }
-        /* Assign scroller with widget: */
-        m_pScroller->setWidget(pWidget);
-        /* Reconfigure scroller widget: */
-        m_pScroller->widget()->setAutoFillBackground(false);
-        /* And adjust that widget geometry: */
-        QSize msh = m_pScroller->widget()->minimumSizeHint();
-        int iMinimumHeight = msh.height();
-        m_pScroller->viewport()->setFixedHeight(iMinimumHeight);
-    }
-}
+protected:
 
-void UIFilmContainer::prepare()
-{
-    /* Prepare layout: */
-    prepareLayout();
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
-    /* Prepare scroller: */
-    prepareScroller();
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 
-    /* Append with 'default' value: */
-    setValue(QVector<BOOL>() << true);
-}
+    /** Returns minimum size-hint. */
+    virtual QSize minimumSizeHint() const /* override */;
 
-void UIFilmContainer::prepareLayout()
-{
-    /* Create layout: */
-    m_pMainLayout = new QVBoxLayout(this);
+private:
 
-    /* Configure layout: */
-    m_pMainLayout->setMargin(0);
-    m_pMainLayout->setSpacing(0);
-}
+    /** Prepares all. */
+    void prepare();
+    /** Prepares layout. */
+    void prepareLayout();
+    /** Prepares check-box. */
+    void prepareCheckBox();
 
-void UIFilmContainer::prepareScroller()
-{
-    /* Create scroller: */
-    m_pScroller = new QScrollArea;
+    /** Holds the guest-screen index. */
+    int  m_iScreenIndex;
+    /** Holds whether guest-screen was enabled. */
+    BOOL m_fWasEnabled;
 
-    /* Configure scroller: */
-    m_pScroller->setFrameShape(QFrame::NoFrame);
-    m_pScroller->viewport()->setAutoFillBackground(false);
-    m_pScroller->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_pScroller->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-    m_pMainLayout->addWidget(m_pScroller);
-}
+    /** Holds the main-layout instance. */
+    QVBoxLayout *m_pMainLayout;
+    /** Holds the check-box instance. */
+    QCheckBox   *m_pCheckBox;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIFilm implementation.                                                                                                 *
+*********************************************************************************************************************************/
 
 UIFilm::UIFilm(int iScreenIndex, BOOL fEnabled, QWidget *pParent /* = 0*/)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -153,59 +109,7 @@ void UIFilm::retranslateUi()
     m_pCheckBox->setWhatsThis(QApplication::translate("UIMachineSettingsDisplay", "When checked, enables video recording for screen %1.").arg(m_iScreenIndex + 1));
 }
 
-void UIFilm::prepare()
-{
-    /* Prepare layout: */
-    prepareLayout();
-
-    /* Prepare check-box: */
-    prepareCheckBox();
-
-    /* Translate finally: */
-    retranslateUi();
-}
-
-void UIFilm::prepareLayout()
-{
-    /* Create layout: */
-    m_pMainLayout = new QVBoxLayout(this);
-
-    /* Configure layout: */
-#ifdef VBOX_WS_MAC
-    m_pMainLayout->setContentsMargins(10, 10, 15, 10);
-#endif /* VBOX_WS_MAC */
-
-    /* Add strech: */
-    m_pMainLayout->addStretch();
-}
-
-void UIFilm::prepareCheckBox()
-{
-    /* Create check-box: */
-    m_pCheckBox = new QCheckBox;
-    m_pCheckBox->setChecked(static_cast<bool>(m_fWasEnabled));
-
-    /* Configure font: */
-    QFont currentFont = m_pCheckBox->font();
-#ifdef VBOX_WS_MAC
-    currentFont.setPointSize(currentFont.pointSize() - 2);
-#else /* VBOX_WS_MAC */
-    currentFont.setPointSize(currentFont.pointSize() - 1);
-#endif /* !VBOX_WS_MAC */
-    m_pCheckBox->setFont(currentFont);
-
-    /* Insert check-box into layout: */
-    m_pMainLayout->insertWidget(0, m_pCheckBox);
-}
-
-QSize UIFilm::minimumSizeHint() const
-{
-    /* Return 16:9 aspect-ratio msh: */
-    QSize msh = QWidget::minimumSizeHint();
-    return QSize(msh.width(), (msh.width() * 9) / 16);
-}
-
-void UIFilm::paintEvent(QPaintEvent*)
+void UIFilm::paintEvent(QPaintEvent *)
 {
     /* Compose painting rectangle: */
     const QRect rect(1, 1, width() - 2, height() - 2);
@@ -246,3 +150,175 @@ void UIFilm::paintEvent(QPaintEvent*)
     painter.strokePath(path, strokeColor);
 }
 
+QSize UIFilm::minimumSizeHint() const
+{
+    /* Return 16:9 aspect-ratio msh: */
+    QSize msh = QWidget::minimumSizeHint();
+    return QSize(msh.width(), (msh.width() * 9) / 16);
+}
+
+void UIFilm::prepare()
+{
+    /* Prepare layout: */
+    prepareLayout();
+    /* Prepare check-box: */
+    prepareCheckBox();
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIFilm::prepareLayout()
+{
+    /* Create layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    if (m_pMainLayout)
+    {
+        /* Configure layout: */
+#ifdef VBOX_WS_MAC
+        m_pMainLayout->setContentsMargins(10, 10, 15, 10);
+#endif
+
+        /* Add strech: */
+        m_pMainLayout->addStretch();
+    }
+}
+
+void UIFilm::prepareCheckBox()
+{
+    /* Create check-box: */
+    m_pCheckBox = new QCheckBox;
+    if (m_pCheckBox)
+    {
+        /* Configure check-box: */
+        m_pCheckBox->setChecked(static_cast<bool>(m_fWasEnabled));
+        /* Configure font: */
+        QFont currentFont = m_pCheckBox->font();
+#ifdef VBOX_WS_MAC
+        currentFont.setPointSize(currentFont.pointSize() - 2);
+#else
+        currentFont.setPointSize(currentFont.pointSize() - 1);
+#endif
+        m_pCheckBox->setFont(currentFont);
+
+        /* Insert into layout: */
+        m_pMainLayout->insertWidget(0, m_pCheckBox);
+    }
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIFilmContainer implementation.                                                                                        *
+*********************************************************************************************************************************/
+
+UIFilmContainer::UIFilmContainer(QWidget *pParent /* = 0*/)
+    : QWidget(pParent)
+    , m_pMainLayout(0)
+    , m_pScroller(0)
+{
+    /* Prepare: */
+    prepare();
+}
+
+QVector<BOOL> UIFilmContainer::value() const
+{
+    /* Enumerate all the existing widgets: */
+    QVector<BOOL> value;
+    foreach (UIFilm *pWidget, m_widgets)
+        value << static_cast<BOOL>(pWidget->checked());
+
+    /* Return value: */
+    return value;
+}
+
+void UIFilmContainer::setValue(const QVector<BOOL> &value)
+{
+    /* Cleanup viewport/widget list: */
+    delete m_pScroller->takeWidget();
+    m_widgets.clear();
+
+    /* Create widget: */
+    QWidget *pWidget = new QWidget;
+    if (pWidget)
+    {
+        /* Create widget-layout: */
+        QHBoxLayout *pWidgetLayout = new QHBoxLayout(pWidget);
+        if (pWidgetLayout)
+        {
+            /* Configure widget-layout: */
+            pWidgetLayout->setMargin(0);
+#ifdef VBOX_WS_MAC
+            pWidgetLayout->setSpacing(5);
+#else
+            pWidgetLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+#endif
+
+            /* Create new films according passed vector: */
+            for (int iScreenIndex = 0; iScreenIndex < value.size(); ++iScreenIndex)
+            {
+                /* Create new film: */
+                UIFilm *pFilm = new UIFilm(iScreenIndex, value[iScreenIndex]);
+                if (pFilm)
+                {
+                    /* Add film into the widget list: */
+                    m_widgets << pFilm;
+
+                    /* Add into layout: */
+                    pWidgetLayout->addWidget(pFilm);
+                }
+            }
+        }
+
+        /* Assign scroller with widget: */
+        m_pScroller->setWidget(pWidget);
+        /* Reconfigure scroller widget: */
+        m_pScroller->widget()->setAutoFillBackground(false);
+        /* And adjust that widget geometry: */
+        QSize msh = m_pScroller->widget()->minimumSizeHint();
+        int iMinimumHeight = msh.height();
+        m_pScroller->viewport()->setFixedHeight(iMinimumHeight);
+    }
+}
+
+void UIFilmContainer::prepare()
+{
+    /* Prepare layout: */
+    prepareLayout();
+    /* Prepare scroller: */
+    prepareScroller();
+
+    /* Append with 'default' value: */
+    setValue(QVector<BOOL>() << true);
+}
+
+void UIFilmContainer::prepareLayout()
+{
+    /* Create layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    if (m_pMainLayout)
+    {
+        /* Configure layout: */
+        m_pMainLayout->setMargin(0);
+        m_pMainLayout->setSpacing(0);
+    }
+}
+
+void UIFilmContainer::prepareScroller()
+{
+    /* Create scroller: */
+    m_pScroller = new QScrollArea;
+    if (m_pScroller)
+    {
+        /* Configure scroller: */
+        m_pScroller->setFrameShape(QFrame::NoFrame);
+        m_pScroller->viewport()->setAutoFillBackground(false);
+        m_pScroller->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        m_pScroller->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+
+        /* Add into layout: */
+        m_pMainLayout->addWidget(m_pScroller);
+    }
+}
+
+
+#include "UIFilmContainer.moc"
