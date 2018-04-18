@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIProcess class declaration.
+ * VBox Qt GUI - Qt extensions: QIProcess class declaration.
  */
 
 /*
@@ -42,4 +42,3 @@ public:
 };
 
 #endif /* !___QIProcess_h___ */
-

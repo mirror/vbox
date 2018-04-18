@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VBox Qt extensions: QIDialog class declaration.
+ * VBox Qt GUI - Qt extensions: QIDialog class declaration.
  */
 
 /*
@@ -74,4 +74,3 @@ private:
 typedef QPointer<QIDialog> UISafePointerDialog;
 
 #endif /* !___QIDialog_h___ */
-

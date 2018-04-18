@@ -83,4 +83,3 @@ private:
 };
 
 #endif /* !___QISplitter_h___ */
-

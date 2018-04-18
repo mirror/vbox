@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIProcess class implementation.
+ * VBox Qt GUI - Qt extensions: QIProcess class implementation.
  */
 
 /*
@@ -64,4 +64,3 @@ QByteArray QIProcess::singleShot(const QString &strProcessName, int iTimeout /* 
 #endif /* VBOX_WS_X11 */
     return result;
 }
-

@@ -235,4 +235,3 @@ QString QIFileDialog::getFirstExistingDir(const QString &strStartDir)
         strResult = dir.absolutePath();
     return strResult;
 }
-

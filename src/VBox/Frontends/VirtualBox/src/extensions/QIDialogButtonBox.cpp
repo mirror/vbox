@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: QIDialogButtonBox class implementation.
+ * VBox Qt GUI - Qt extensions: QIDialogButtonBox class implementation.
  */
 
 /*
@@ -136,4 +136,3 @@ int QIDialogButtonBox::findEmptySpace(QBoxLayout *pLayout) const
     }
     return i;
 }
-

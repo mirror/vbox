@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIStatusBarIndicator interface implementation.
+ * VBox Qt GUI - Qt extensions: QIStatusBarIndicator interface implementation.
  */
 
 /*
@@ -158,4 +158,3 @@ void QITextStatusBarIndicator::setText(const QString &strText)
     AssertPtrReturnVoid(m_pLabel);
     m_pLabel->setText(strText);
 }
-

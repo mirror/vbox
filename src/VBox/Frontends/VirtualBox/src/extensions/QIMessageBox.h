@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIMessageBox class declaration.
+ * VBox Qt GUI - Qt extensions: QIMessageBox class declaration.
  */
 
 /*
@@ -194,4 +194,3 @@ private:
 
 
 #endif /* !___QIMessageBox_h___ */
-

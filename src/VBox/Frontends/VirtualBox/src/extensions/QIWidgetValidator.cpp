@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: QIWidgetValidator class implementation.
+ * VBox Qt GUI - Qt extensions: QIWidgetValidator class implementation.
  */
 
 /*
@@ -193,4 +193,3 @@ QValidator::State QIULongValidator::validate(QString &strInput, int &iPosition) 
     /* 'Invalid' if more than top, 'Intermediate' if less than bottom: */
     return uEntered > m_uTop ? Invalid : Intermediate;
 }
-

@@ -42,4 +42,3 @@ public:
 };
 
 #endif /* !___QIToolButton_h___ */
-

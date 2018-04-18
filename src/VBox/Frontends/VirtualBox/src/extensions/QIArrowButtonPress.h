@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIArrowButtonPress class declaration.
+ * VBox Qt GUI - Qt extensions: QIArrowButtonPress class declaration.
  */
 
 /*
@@ -54,4 +54,3 @@ private:
 };
 
 #endif /* !___QIArrowButtonPress_h___ */
-

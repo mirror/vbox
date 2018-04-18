@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIArrowSplitter class implementation.
+ * VBox Qt GUI - Qt extensions: QIArrowSplitter class implementation.
  */
 
 /*
@@ -370,5 +370,5 @@ void QIArrowSplitter::updateDetails()
     sltUpdateSizeHints();
 }
 
-#include "QIArrowSplitter.moc"
 
+#include "QIArrowSplitter.moc"

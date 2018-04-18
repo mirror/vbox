@@ -68,4 +68,3 @@ private:
 };
 
 #endif /* !___QIRichTextLabel_h___ */
-

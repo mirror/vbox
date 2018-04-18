@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIArrowButtonSwitch class implementation.
+ * VBox Qt GUI - Qt extensions: QIArrowButtonSwitch class implementation.
  */
 
 /*
@@ -74,4 +74,3 @@ void QIArrowButtonSwitch::keyPressEvent(QKeyEvent *pEvent)
     /* Call to base-class: */
     QIRichToolButton::keyPressEvent(pEvent);
 }
-

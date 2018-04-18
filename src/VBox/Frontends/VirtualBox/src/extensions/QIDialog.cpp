@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: QIDialog class implementation.
+ * VBox Qt GUI - Qt extensions: QIDialog class implementation.
  */
 
 /*
@@ -131,4 +131,3 @@ void QIDialog::polishEvent(QShowEvent *)
     /* Explicit centering according to our parent: */
     VBoxGlobal::centerWidget(this, parentWidget(), false);
 }
-

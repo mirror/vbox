@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VBox Qt extensions: QIDialogButtonBox class declaration.
+ * VBox Qt GUI - Qt extensions: QIDialogButtonBox class declaration.
  */
 
 /*
@@ -82,4 +82,3 @@ private:
 };
 
 #endif /* !___QIDialogButtonBox_h___ */
-

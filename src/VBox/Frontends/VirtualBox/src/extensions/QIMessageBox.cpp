@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIMessageBox class implementation.
+ * VBox Qt GUI - Qt extensions: QIMessageBox class implementation.
  */
 
 /*
@@ -380,4 +380,3 @@ QPixmap QIMessageBox::standardPixmap(AlertIconType iconType, QWidget *pWidget /*
     int iSize = pStyle->pixelMetric(QStyle::PM_MessageBoxIconSize, 0, pWidget);
     return icon.pixmap(iSize, iSize);
 }
-

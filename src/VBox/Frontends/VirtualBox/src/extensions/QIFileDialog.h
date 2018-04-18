@@ -88,4 +88,3 @@ public:
 };
 
 #endif /* !___QIFileDialog_h___ */
-

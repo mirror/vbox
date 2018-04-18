@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIStatusBarIndicator interface declaration.
+ * VBox Qt GUI - Qt extensions: QIStatusBarIndicator interface declaration.
  */
 
 /*
@@ -136,4 +136,3 @@ private:
 
 
 #endif /* !___QIStatusBarIndicators_h___ */
-

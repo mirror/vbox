@@ -47,4 +47,3 @@ void QIToolButton::removeBorder()
 {
     setStyleSheet("QToolButton { border: 0px }");
 }
-

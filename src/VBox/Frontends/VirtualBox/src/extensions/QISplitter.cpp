@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: QISplitter class implementation.
+ * VBox Qt GUI - Qt extensions: QISplitter class implementation.
  */
 
 /*
@@ -338,5 +338,5 @@ QSplitterHandle *QISplitter::createHandle()
     }
 }
 
-#include "QISplitter.moc"
 
+#include "QISplitter.moc"

@@ -130,4 +130,3 @@ private:
 };
 
 #endif /* !___QILabel_h___ */
-

@@ -224,4 +224,3 @@ private:
 
 
 #endif /* !___QIWidgetValidator_h___ */
-

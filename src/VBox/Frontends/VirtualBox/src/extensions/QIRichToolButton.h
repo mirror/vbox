@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIRichToolButton class declaration.
+ * VBox Qt GUI - Qt extensions: QIRichToolButton class declaration.
  */
 
 /*
@@ -83,4 +83,3 @@ private:
 };
 
 #endif /* !___QIRichToolButton_h___ */
-

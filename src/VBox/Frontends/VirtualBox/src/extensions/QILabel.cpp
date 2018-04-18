@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: QILabel class implementation.
+ * VBox Qt GUI - Qt extensions: QILabel class implementation.
  */
 
 /*
@@ -362,4 +362,3 @@ Qt::TextElideMode QILabel::toTextElideMode(const QString &strType)
         enmMode  = Qt::ElideRight;
     return enmMode;
 }
-

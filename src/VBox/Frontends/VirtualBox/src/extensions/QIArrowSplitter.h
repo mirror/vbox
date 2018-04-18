@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIArrowSplitter class declaration.
+ * VBox Qt GUI - Qt extensions: QIArrowSplitter class declaration.
  */
 
 /*
@@ -109,4 +109,3 @@ private:
 };
 
 #endif /* !___QIArrowSplitter_h___ */
-
