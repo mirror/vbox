@@ -439,7 +439,6 @@ endif
 #
 VirtualBox_QT_MOCHDRS = \
 	src/UITakeSnapshotDialog.h \
-	src/extensions/graphics/QIGraphicsView.h \
 	src/extensions/graphics/QIGraphicsWidget.h \
 	src/globals/UIStarter.h \
 	src/hostnetwork/UIHostNetworkDetailsWidget.h \
@@ -667,6 +666,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
+	src/extensions/graphics/QIGraphicsView.h \
 	src/extradata/UIExtraDataDefs.h \
 	src/extradata/UIExtraDataManager.h \
 	src/globals/UIActionPool.h \
@@ -753,6 +753,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
+	src/extensions/graphics/QIGraphicsView.h \
 	src/extradata/UIExtraDataDefs.h \
 	src/extradata/UIExtraDataManager.h \
 	src/globals/UIActionPool.h \
@@ -917,7 +918,6 @@ endif
 VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/UITakeSnapshotDialog.cpp \
-	src/extensions/graphics/QIGraphicsView.cpp \
 	src/extensions/graphics/QIGraphicsWidget.cpp \
 	src/globals/UIImageTools.cpp \
 	src/globals/UIStarter.cpp \
@@ -1179,6 +1179,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
+	src/extensions/graphics/QIGraphicsView.cpp \
 	src/extradata/UIExtraDataDefs.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/converter/UIConverter.cpp \
@@ -1291,6 +1292,7 @@ VBoxGlobal_SOURCES = \
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
+	src/extensions/graphics/QIGraphicsView.cpp \
 	src/extradata/UIExtraDataDefs.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/converter/UIConverter.cpp \

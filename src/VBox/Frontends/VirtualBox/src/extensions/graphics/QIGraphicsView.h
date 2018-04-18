@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - QIGraphicsView class declaration.
+ * VBox Qt GUI - Qt extensions: QIGraphicsView class declaration.
  */
 
 /*
- * Copyright (C) 2015-2017 Oracle Corporation
+ * Copyright (C) 2015-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,20 +21,27 @@
 /* Qt includes: */
 #include <QGraphicsView>
 
-/** General QGraphicsView extension. */
-class QIGraphicsView : public QGraphicsView
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
+/* Forward declarations: */
+class QEvent;
+class QWidget;
+
+/** QGraphicsView extension with advanced functionality. */
+class SHARED_LIBRARY_STUFF QIGraphicsView : public QGraphicsView
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructor, passes @a pParent to the QGraphicsView constructor. */
+    /** Constructs graphics-view passing @a pParent to the base-class. */
     QIGraphicsView(QWidget *pParent = 0);
 
 protected:
 
-    /** General @a pEvent handler. */
-    bool event(QEvent *pEvent);
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
 
 private:
 
@@ -43,4 +50,3 @@ private:
 };
 
 #endif /* !___QIGraphicsView_h___ */
-
