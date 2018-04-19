@@ -557,7 +557,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIApplianceImportEditorWidget.h \
 	src/widgets/UIEmptyFilePathSelector.h \
 	src/widgets/UILineTextEdit.h \
-	src/widgets/UIMenuBar.h \
 	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UISlidingWidget.h \
 	src/widgets/UITabBar.h \
@@ -685,6 +684,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIHostComboEditor.h \
 	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UIMediumSizeEditor.h \
+	src/widgets/UIMenuBar.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
 	src/widgets/UIPopupPaneButtonPane.h \
@@ -778,6 +778,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/widgets/UIHostComboEditor.h \
 	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UIMediumSizeEditor.h \
+	src/widgets/UIMenuBar.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
 	src/widgets/UIPopupPaneButtonPane.h \
@@ -1048,7 +1049,6 @@ VirtualBox_SOURCES = \
 	src/widgets/UIApplianceImportEditorWidget.cpp \
 	src/widgets/UIEmptyFilePathSelector.cpp \
 	src/widgets/UILineTextEdit.cpp \
-	src/widgets/UIMenuBar.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UISlidingWidget.cpp \
 	src/widgets/UITabBar.cpp \
@@ -1216,6 +1216,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIHostComboEditor.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIMediumSizeEditor.cpp \
+	src/widgets/UIMenuBar.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
 	src/widgets/UIPopupPaneButtonPane.cpp \
@@ -1335,6 +1336,7 @@ VBoxGlobal_SOURCES = \
 	src/widgets/UIHostComboEditor.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIMediumSizeEditor.cpp \
+	src/widgets/UIMenuBar.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
 	src/widgets/UIPopupPaneButtonPane.cpp \

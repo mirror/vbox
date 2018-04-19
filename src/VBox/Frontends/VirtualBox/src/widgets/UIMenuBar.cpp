@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,9 +25,9 @@
 # include <QPixmapCache>
 
 /* GUI includes: */
-# include "UIMenuBar.h"
-# include "UIImageTools.h"
 # include "VBoxGlobal.h"
+# include "UIImageTools.h"
+# include "UIMenuBar.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -43,7 +43,10 @@ UIMenuBar::UIMenuBar(QWidget *pParent /* = 0 */)
 
 void UIMenuBar::paintEvent(QPaintEvent *pEvent)
 {
+    /* Call to base-class: */
     QMenuBar::paintEvent(pEvent);
+
+    /* Draw BETA label if necessary: */
     if (m_fShowBetaLabel)
     {
         QPixmap betaLabel;
@@ -59,4 +62,3 @@ void UIMenuBar::paintEvent(QPaintEvent *pEvent)
         painter.drawPixmap(s.width() - betaLabel.width() - 10, (height() - betaLabel.height()) / 2, betaLabel);
     }
 }
-

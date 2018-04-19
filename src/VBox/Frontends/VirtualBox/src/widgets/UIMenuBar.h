@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,9 +21,16 @@
 /* Qt includes: */
 #include <QMenuBar>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
+/* Forward declarations: */
+class QPaintEvent;
+class QWidget;
+
 /** QMenuBar extension
   * which reflects BETA label when necessary. */
-class UIMenuBar: public QMenuBar
+class SHARED_LIBRARY_STUFF UIMenuBar: public QMenuBar
 {
     Q_OBJECT;
 
@@ -35,7 +42,7 @@ public:
 protected:
 
     /** Paint event handler. */
-    void paintEvent(QPaintEvent *pEvent);
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 
 private:
 
