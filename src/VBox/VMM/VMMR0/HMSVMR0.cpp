@@ -1370,56 +1370,54 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 
 
 /**
- * Adds an exception to the intercept exception bitmap in the VMCB and updates
- * the corresponding VMCB Clean bit.
+ * Sets an exception intercept in the specified VMCB.
  *
  * @param   pVmcb       Pointer to the VM control block.
- * @param   u32Xcpt     The value of the exception (X86_XCPT_*).
+ * @param   uXcpt       The exception (X86_XCPT_*).
  */
-DECLINLINE(void) hmR0SvmAddXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
+DECLINLINE(void) hmR0SvmSetXcptIntercept(PSVMVMCB pVmcb, uint8_t uXcpt)
 {
-    if (!(pVmcb->ctrl.u32InterceptXcpt & RT_BIT(u32Xcpt)))
+    if (!(pVmcb->ctrl.u32InterceptXcpt & RT_BIT(uXcpt)))
     {
-        pVmcb->ctrl.u32InterceptXcpt |= RT_BIT(u32Xcpt);
+        pVmcb->ctrl.u32InterceptXcpt |= RT_BIT(uXcpt);
         pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
     }
 }
 
 
 /**
- * Removes an exception from the intercept-exception bitmap in the VMCB and
- * updates the corresponding VMCB Clean bit.
+ * Clears an exception intercept in the specified VMCB.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pVmcb       Pointer to the VM control block.
- * @param   u32Xcpt     The value of the exception (X86_XCPT_*).
+ * @param   uXcpt       The exception (X86_XCPT_*).
  *
  * @remarks This takes into account if we're executing a nested-guest and only
  *          removes the exception intercept if both the guest -and- nested-guest
  *          are not intercepting it.
  */
-DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb, uint32_t u32Xcpt)
+DECLINLINE(void) hmR0SvmClearXcptIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb, uint8_t uXcpt)
 {
-    Assert(u32Xcpt != X86_XCPT_DB);
-    Assert(u32Xcpt != X86_XCPT_AC);
+    Assert(uXcpt != X86_XCPT_DB);
+    Assert(uXcpt != X86_XCPT_AC);
 #ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-    if (pVmcb->ctrl.u32InterceptXcpt & RT_BIT(u32Xcpt))
+    if (pVmcb->ctrl.u32InterceptXcpt & RT_BIT(uXcpt))
     {
-        bool fRemoveXcpt = true;
+        bool fRemove = true;
 #ifdef VBOX_WITH_NESTED_HWVIRT
         /* Only remove the intercept if the nested-guest is also not intercepting it! */
         if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         {
             PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu, pCtx);
-            fRemoveXcpt = !(pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(u32Xcpt));
+            fRemove = !(pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(uXcpt));
         }
 #else
         RT_NOREF2(pVCpu, pCtx);
 #endif
-        if (fRemoveXcpt)
+        if (fRemove)
         {
-            pVmcb->ctrl.u32InterceptXcpt &= ~RT_BIT(u32Xcpt);
+            pVmcb->ctrl.u32InterceptXcpt &= ~RT_BIT(uXcpt);
             pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
         }
     }
@@ -1428,6 +1426,58 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMC
 #endif
 }
 
+#if 0
+/**
+ * Sets a control intercept in the specified VMCB.
+ *
+ * @param   pVmcb           Pointer to the VM control block.
+ * @param   fCtrlIntercept  The control intercept (SVM_CTRL_INTERCEPT_*).
+ */
+DECLINLINE(void) hmR0SvmSetCtrlIntercept(PSVMVMCB pVmcb, uint64_t fCtrlIntercept)
+{
+    if (!(pVmcb->ctrl.u64InterceptCtrl & fCtrlIntercept))
+    {
+        pVmcb->ctrl.u64InterceptCtrl |= fCtrlIntercept;
+        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+    }
+}
+
+
+/**
+ * Clears a control intercept in the specified VMCB.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pVmcb           Pointer to the VM control block.
+ * @param   fCtrlIntercept  The control intercept (SVM_CTRL_INTERCEPT_*).
+ *
+ * @remarks This takes into account if we're executing a nested-guest and only
+ *          removes the control intercept if both the guest -and- nested-guest
+ *          are not intercepting it.
+ */
+DECLINLINE(void) hmR0SvmClearCtrlIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb, uint64_t fCtrlIntercept)
+{
+    if (pVmcb->ctrl.u64InterceptCtrl & fCtrlIntercept)
+    {
+        bool fRemove = true;
+#ifdef VBOX_WITH_NESTED_HWVIRT
+        /* Only remove the control intercept if the nested-guest is also not intercepting it! */
+        if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+        {
+            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu, pCtx);
+            fRemove = !(pVmcbNstGstCache->u64InterceptCtrl & fCtrlIntercept);
+        }
+#else
+        RT_NOREF2(pVCpu, pCtx);
+#endif
+        if (fRemove)
+        {
+            pVmcb->ctrl.u64InterceptCtrl &= ~fCtrlIntercept;
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+        }
+    }
+}
+#endif
 
 /**
  * Loads the guest (or nested-guest) CR0 control register into the guest-state
@@ -1468,10 +1518,10 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
     if (!(uGuestCr0 & X86_CR0_NE))
     {
         uShadowCr0 |= X86_CR0_NE;
-        hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_MF);
+        hmR0SvmSetXcptIntercept(pVmcb, X86_XCPT_MF);
     }
     else
-        hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_MF);
+        hmR0SvmClearXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_MF);
 
     /*
      * If the shadow and guest CR0 are identical we can avoid intercepting CR0 reads.
@@ -2032,15 +2082,15 @@ static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
     {
         /* Trap #UD for GIM provider (e.g. for hypercalls). */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
-            hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_UD);
+            hmR0SvmSetXcptIntercept(pVmcb, X86_XCPT_UD);
         else
-            hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_UD);
+            hmR0SvmClearXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_UD);
 
         /* Trap #BP for INT3 debug breakpoints set by the VM debugger. */
         if (pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledInt3Breakpoints)
-            hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_BP);
+            hmR0SvmSetXcptIntercept(pVmcb, X86_XCPT_BP);
         else
-            hmR0SvmRemoveXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_BP);
+            hmR0SvmClearXcptIntercept(pVCpu, pCtx, pVmcb, X86_XCPT_BP);
 
         /* The remaining intercepts are handled elsewhere, e.g. in hmR0SvmLoadSharedCR0(). */
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
