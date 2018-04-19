@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,15 +23,17 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QLabel;
 class QSlider;
+class QString;
+class QWidget;
 class QILineEdit;
 
-
 /** Medium size editor widget. */
-class UIMediumSizeEditor : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIMediumSizeEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -98,4 +100,3 @@ private:
 };
 
 #endif /* !___UIMediumSizeEditor_h___ */
-

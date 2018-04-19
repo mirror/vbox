@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,8 +27,8 @@
 
 /* GUI includes: */
 # include "QILineEdit.h"
-# include "UIMediumSizeEditor.h"
 # include "VBoxGlobal.h"
+# include "UIMediumSizeEditor.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -113,7 +113,7 @@ void UIMediumSizeEditor::prepare()
 {
     /* Create layout: */
     QGridLayout *pLayout = new QGridLayout(this);
-    AssertPtrReturnVoid(pLayout);
+    if (pLayout)
     {
         /* Configure layout: */
         pLayout->setContentsMargins(0, 0, 0, 0);
@@ -123,7 +123,7 @@ void UIMediumSizeEditor::prepare()
 
         /* Create size slider: */
         m_pSlider = new QSlider;
-        AssertPtrReturnVoid(m_pSlider);
+        if (m_pSlider)
         {
             /* Configure slider: */
             m_pSlider->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
@@ -144,7 +144,7 @@ void UIMediumSizeEditor::prepare()
 
         /* Create minimum size label: */
         m_pLabelMinSize = new QLabel;
-        AssertPtrReturnVoid(m_pLabelMinSize);
+        if (m_pLabelMinSize)
         {
             /* Configure label: */
             m_pLabelMinSize->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
@@ -155,7 +155,7 @@ void UIMediumSizeEditor::prepare()
 
         /* Create maximum size label: */
         m_pLabelMaxSize = new QLabel;
-        AssertPtrReturnVoid(m_pLabelMaxSize);
+        if (m_pLabelMaxSize)
         {
             /* Configure label: */
             m_pLabelMaxSize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -166,7 +166,7 @@ void UIMediumSizeEditor::prepare()
 
         /* Create size editor: */
         m_pEditor = new QILineEdit;
-        AssertPtrReturnVoid(m_pEditor);
+        if (m_pEditor)
         {
             /* Configure editor: */
             m_pEditor->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
@@ -265,4 +265,3 @@ void UIMediumSizeEditor::updateSizeToolTips(qulonglong uSize)
     m_pSlider->setToolTip(strToolTip);
     m_pEditor->setToolTip(strToolTip);
 }
-
