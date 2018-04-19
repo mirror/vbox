@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: UIHotKeyEditor class declaration.
+ * VBox Qt GUI - UIHotKeyEditor class declaration.
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,74 +20,82 @@
 
 /* Qt includes: */
 #include <QMetaType>
-#include <QWidget>
 #include <QSet>
+#include <QWidget>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QHBoxLayout;
 class QIToolButton;
 class UIHotKeyLineEdit;
 
-/* Host key type enumerator: */
+
+/** Hot key types. */
 enum UIHotKeyType
 {
     UIHotKeyType_Simple,
     UIHotKeyType_WithModifiers
 };
 
-/* A string pair wrapper for hot-key sequence: */
+
+/** A string pair wrapper for hot-key sequence. */
 class UIHotKey
 {
 public:
 
-    /* Constructors: */
+    /** Constructs null hot-key sequence. */
     UIHotKey()
-        : m_type(UIHotKeyType_Simple)
+        : m_enmType(UIHotKeyType_Simple)
     {}
-    UIHotKey(UIHotKeyType type,
-             const QString &strSequence,
-             const QString &strDefaultSequence)
-        : m_type(type)
+    /** Constructs hot-key sequence on the basis of passed @a enmType, @a strSequence and @a strDefaultSequence. */
+    UIHotKey(UIHotKeyType enmType, const QString &strSequence, const QString &strDefaultSequence)
+        : m_enmType(enmType)
         , m_strSequence(strSequence)
         , m_strDefaultSequence(strDefaultSequence)
     {}
+    /** Constructs hot-key sequence on the basis of @a other hot-key sequence. */
     UIHotKey(const UIHotKey &other)
-        : m_type(other.type())
+        : m_enmType(other.type())
         , m_strSequence(other.sequence())
         , m_strDefaultSequence(other.defaultSequence())
     {}
 
-    /* API: Operators stuff: */
-    UIHotKey& operator=(const UIHotKey &other)
+    /** Makes a copy of the given other hot-key sequence and assigns it to this one. */
+    UIHotKey &operator=(const UIHotKey &other)
     {
-        m_type = other.type();
+        m_enmType = other.type();
         m_strSequence = other.sequence();
         m_strDefaultSequence = other.defaultSequence();
         return *this;
     }
 
-    /* API: Type access stuff: */
-    UIHotKeyType type() const { return m_type; }
+    /** Returns the type of this hot-key sequence. */
+    UIHotKeyType type() const { return m_enmType; }
 
-    /* API: Sequence access stuff: */
-    const QString& sequence() const { return m_strSequence; }
-    const QString& defaultSequence() const { return m_strDefaultSequence; }
+    /** Returns hot-key sequence. */
+    const QString &sequence() const { return m_strSequence; }
+    /** Returns default hot-key sequence. */
+    const QString &defaultSequence() const { return m_strDefaultSequence; }
+    /** Defines hot-key @a strSequence. */
     void setSequence(const QString &strSequence) { m_strSequence = strSequence; }
 
 private:
 
-    /* Variables: */
-    UIHotKeyType m_type;
+    /** Holds the type of this hot-key sequence. */
+    UIHotKeyType m_enmType;
+    /** Holds the hot-key sequence. */
     QString m_strSequence;
+    /** Holds the default hot-key sequence. */
     QString m_strDefaultSequence;
 };
 Q_DECLARE_METATYPE(UIHotKey);
 
-/* A widget wrapper for real hot-key editor: */
-class UIHotKeyEditor : public QIWithRetranslateUI<QWidget>
+
+/** QWidget subclass wrapping real hot-key editor. */
+class SHARED_LIBRARY_STUFF UIHotKeyEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(UIHotKey hotKey READ hotKey WRITE setHotKey USER true);
@@ -99,56 +107,82 @@ signals:
 
 public:
 
-    /* Constructor: */
+    /** Constructs hot-key editor passing @a pParent to the base-class. */
     UIHotKeyEditor(QWidget *pParent);
 
 private slots:
 
-    /* Handlers: Tool-button stuff: */
+    /** Resets hot-key sequence to default. */
     void sltReset();
+    /** Clears hot-key sequence. */
     void sltClear();
+
+protected:
+
+    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+    /** Handles key-press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    /** Handles key-release @a pEvent. */
+    virtual void keyReleaseEvent(QKeyEvent *pEvent) /* override */;
 
 private:
 
-    /* Helper: Translate stuff: */
-    void retranslateUi();
-
-    /* Handlers: Line-edit key event pre-processing stuff: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+    /** Returns whether we hould skip key-event to line-edit. */
     bool shouldWeSkipKeyEventToLineEdit(QKeyEvent *pEvent);
 
-    /* Handlers: Key event processing stuff: */
-    void keyPressEvent(QKeyEvent *pEvent);
-    void keyReleaseEvent(QKeyEvent *pEvent);
+    /** Returns whether key @a pEvent is ignored. */
     bool isKeyEventIgnored(QKeyEvent *pEvent);
 
-    /* Helpers: Modifier stuff: */
+    /** Fetches actual modifier states. */
     void fetchModifiersState();
+    /** Returns whether Host+ modifier is required. */
     void checkIfHostModifierNeeded();
 
-    /* Handlers: Sequence stuff: */
-    bool approvedKeyPressed(QKeyEvent *pKeyEvent);
-    void handleKeyPress(QKeyEvent *pKeyEvent);
-    void handleKeyRelease(QKeyEvent *pKeyEvent);
+    /** Handles approved key-press @a pEvent. */
+    bool approvedKeyPressed(QKeyEvent *pEvent);
+    /** Handles key-press @a pEvent. */
+    void handleKeyPress(QKeyEvent *pEvent);
+    /** Handles key-release @a pEvent. */
+    void handleKeyRelease(QKeyEvent *pEvent);
+    /** Reflects recorded sequence in editor. */
     void reflectSequence();
+    /** Draws recorded sequence in editor. */
     void drawSequence();
 
-    /* API: Editor stuff: */
+    /** Returns hot-key. */
     UIHotKey hotKey() const;
+    /** Defines @a hotKey. */
     void setHotKey(const UIHotKey &hotKey);
 
-    /* Variables: */
-    UIHotKey m_hotKey;
-    bool m_fIsModifiersAllowed;
-    QHBoxLayout *m_pMainLayout;
-    QHBoxLayout *m_pButtonLayout;
+    /** Holds the hot-key. */
+    UIHotKey  m_hotKey;
+
+    /** Holds whether the modifiers are allowed. */
+    bool  m_fIsModifiersAllowed;
+
+    /** Holds the main-layout instance. */
+    QHBoxLayout      *m_pMainLayout;
+    /** Holds the button-layout instance. */
+    QHBoxLayout      *m_pButtonLayout;
+    /** Holds the line-edit instance. */
     UIHotKeyLineEdit *m_pLineEdit;
-    QIToolButton *m_pResetButton;
-    QIToolButton *m_pClearButton;
-    QSet<int> m_takenModifiers;
-    int m_iTakenKey;
-    bool m_fSequenceTaken;
+    /** Holds the reset-button instance. */
+    QIToolButton     *m_pResetButton;
+    /** Holds the clear-button instance. */
+    QIToolButton     *m_pClearButton;
+
+    /** Holds the taken modifiers. */
+    QSet<int>  m_takenModifiers;
+    /** Holds the taken key. */
+    int        m_iTakenKey;
+    /** Holds whether sequence is taken. */
+    bool       m_fSequenceTaken;
 };
 
-#endif /* !___UIHotKeyEditor_h___ */
 
+#endif /* !___UIHotKeyEditor_h___ */
