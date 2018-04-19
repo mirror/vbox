@@ -2733,14 +2733,28 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PCSVMVMCB pV
     pMixedCtx->rax        = pVmcb->guest.u64RAX;
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
-    /*
-     * Guest Virtual GIF (Global Interrupt Flag).
-     */
-    if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable == 1)
+    if (!CPUMIsGuestInSvmNestedHwVirtMode(pMixedCtx))
     {
-        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.fVGif);
-        Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pMixedCtx));
-        pMixedCtx->hwvirt.fGif = pVmcb->ctrl.IntCtrl.n.u1VGif;
+        if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable)
+        {
+            /*
+             * Guest Virtual GIF (Global Interrupt Flag).
+             * We don't yet support passing VGIF feature to the guest.
+             */
+            Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.fVGif);
+            pMixedCtx->hwvirt.fGif = pVmcb->ctrl.IntCtrl.n.u1VGif;
+        }
+    }
+    else
+    {
+        /* Sync/verify nested-guest's V_IRQ pending and our force-flag. */
+        if (!pVmcb->ctrl.IntCtrl.n.u1VIrqPending)
+        {
+            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
+        }
+        else
+            Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST));
     }
 #endif
 
@@ -3132,8 +3146,8 @@ static void hmR0SvmUpdateTscOffsetting(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSV
      * and in case of a nested-guest, if the nested-VMCB specifies it is not intercepting
      * RDTSC/RDTSCP as well.
      */
-    bool     fParavirtTsc;
-    uint64_t uTscOffset;
+    bool       fParavirtTsc;
+    uint64_t   uTscOffset;
     bool const fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &uTscOffset, &fParavirtTsc);
 
     bool fIntercept;
