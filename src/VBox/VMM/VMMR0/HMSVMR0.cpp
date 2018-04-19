@@ -1817,7 +1817,7 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
      *
      * While guests can modify and see the modified values throug the shadow values,
      * we shall not honor any guest modifications of this MSR to ensure caching is always
-     * enabled similar to how we always run with CR0.CD and NW bits cleared,
+     * enabled similar to how we always run with CR0.CD and NW bits cleared.
      *
      * For nested-guests this needs to always be set as well, see @bugref{7243#c109}.
      */
