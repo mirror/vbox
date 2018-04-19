@@ -2459,7 +2459,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            Pointer to the nested-guest-CPU context.
  */
-static void hmR0SvmMergeMsrpm(PHMGLOBALCPUINFO pHostCpu, PVMCPU pVCpu, PCPUMCTX pCtx)
+static void hmR0SvmMergeMsrpmNested(PHMGLOBALCPUINFO pHostCpu, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     uint64_t const *pu64GstMsrpm    = (uint64_t const *)pVCpu->hm.s.svm.pvMsrBitmap;
     uint64_t const *pu64NstGstMsrpm = (uint64_t const *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
@@ -4451,7 +4451,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIE
         pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
     else
     {
-        hmR0SvmMergeMsrpm(pHostCpu, pVCpu, pCtx);
+        hmR0SvmMergeMsrpmNested(pHostCpu, pVCpu, pCtx);
 
         /* Update the nested-guest VMCB with the newly merged MSRPM (clean bits updated below). */
         pVmcb->ctrl.u64MSRPMPhysAddr = pHostCpu->n.svm.HCPhysNstGstMsrpm;
