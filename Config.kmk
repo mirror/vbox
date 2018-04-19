@@ -3348,6 +3348,7 @@ ifdef VBOX_SIGNING_MODE
   # @param 3  Additional parameters. Optional.
   # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
   # @param 5  Disables dual signing if non-empty.
+  # @param 6  non-zero for alternative command separator.  This is used for generating repacking scripts.
   ifndef VBOX_SIGN_FILE_FN
    ifeq ($(VBOX_WITH_CORP_CODE_SIGNING),all)
     VBOX_SIGN_FILE_FN     = $(call VBOX_CCS_SIGN_CMD,driver,$1,$(dir $1))
@@ -3363,7 +3364,7 @@ ifdef VBOX_SIGNING_MODE
 	$(3) \
 	$(1) \
     	$(if-expr "$5" == "",\
-	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_SIGNTOOL) \
+	$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6)$(VBOX_SIGNTOOL) \
     	sign /as /fd sha256 \
 	$(VBOX_CROSS_CERTIFICATE_SHA2_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_SHA2_STORE_ARGS) \
