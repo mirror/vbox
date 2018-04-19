@@ -2151,12 +2151,13 @@ static void hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcbNstGst     Pointer to the nested-guest VM control block.
- * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pCtx            Pointer to the nested-guest-CPU context.
  */
-static void hmR0SvmMergeVmcbCtrlsNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst, PCPUMCTX pCtx)
+static void hmR0SvmMergeVmcbCtrlsNested(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     PVM          pVM             = pVCpu->CTX_SUFF(pVM);
     PCSVMVMCB    pVmcb           = pVCpu->hm.s.svm.pVmcb;
+    PSVMVMCB     pVmcbNstGst     = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
     PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
 
     /* Merge the guest's CR intercepts into the nested-guest VMCB. */
@@ -2530,7 +2531,7 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
  * \#VMEXITs which may or may not cause the nested-guest \#VMEXIT).
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pCtx            Pointer to the nested-guest-CPU context.
  */
 static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -2582,7 +2583,7 @@ static void hmR0SvmVmRunSetupVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
                                               |  SVM_CTRL_INTERCEPT_STGI;
 
         /* Merge the guest and nested-guest intercepts. */
-        hmR0SvmMergeVmcbCtrlsNested(pVCpu, pVmcbNstGst, pCtx);
+        hmR0SvmMergeVmcbCtrlsNested(pVCpu, pCtx);
 
         /* Update the VMCB clean bits. */
         pVmcbNstGstCtrl->u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
@@ -4097,7 +4098,7 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pCtx            Pointer to the nested-guest-CPU context.
  * @param   pSvmTransient   Pointer to the SVM transient structure.
  *
  * @remarks Same caveats regarding longjumps as hmR0SvmPreRunGuest applies.
