@@ -2355,7 +2355,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifdef VBOX_WITH_NESTED_HWVIRT
     if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable == 1)
     {
-        Assert(pVM->hm.s.svm.fVGif);
+        Assert(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);
         pVmcb->ctrl.IntCtrl.n.u1VGif = pCtx->hwvirt.fGif;
     }
 #endif
