@@ -7144,7 +7144,7 @@ VMMR0_INT_DECL(int) HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixed
     if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported)
         rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     else
-        rc= VINF_SUCCESS;
+        rc = VINF_SUCCESS;
 
     /*
      * For now, imply that the caller might change everything too. Do this after
