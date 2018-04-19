@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: UIHostComboEditor class implementation.
+ * VBox Qt GUI - UIHostComboEditor class implementation.
  */
 
 /*
@@ -39,7 +39,7 @@
 # ifdef VBOX_WS_MAC
 #  include "UICocoaApplication.h"
 #  include "VBoxUtils-darwin.h"
-# endif /* VBOX_WS_MAC */
+# endif
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -96,7 +96,7 @@ public:
     {}
 
     /** Handles all native events. */
-    bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult)
+    virtual bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult) /* override */
     {
         /* Redirect event to parent: */
         return m_pParent->nativeEvent(eventType, pMessage, pResult);
@@ -915,4 +915,3 @@ void UIHostComboEditorPrivate::updateText()
     QStringList shownKeyNames(m_shownKeys.values());
     setText(shownKeyNames.isEmpty() ? UIHostComboEditor::tr("None") : shownKeyNames.join(" + "));
 }
-

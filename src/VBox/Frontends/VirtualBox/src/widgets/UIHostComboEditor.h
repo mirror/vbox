@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: UIHostComboEditor class declaration.
+ * VBox Qt GUI - UIHostComboEditor class declaration.
  */
 
 /*
@@ -29,6 +29,8 @@
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
+class QString;
+class QWidget;
 class QIToolButton;
 class UIHostComboEditorPrivate;
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
@@ -128,7 +130,7 @@ public:
 
 protected:
 
-    /** Translates widget content. */
+    /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
 private slots:
@@ -188,13 +190,13 @@ protected:
     virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult) /* override */;
 
     /** Handles key-press @a pEvent. */
-    void keyPressEvent(QKeyEvent *pEvent);
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
     /** Handles key-release @a pEvent. */
-    void keyReleaseEvent(QKeyEvent *pEvent);
+    virtual void keyReleaseEvent(QKeyEvent *pEvent) /* override */;
     /** Handles mouse-press @a pEvent. */
-    void mousePressEvent(QMouseEvent *pEvent);
+    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
     /** Handles mouse-release @a pEvent. */
-    void mouseReleaseEvent(QMouseEvent *pEvent);
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
 
 private slots:
 
@@ -210,17 +212,17 @@ private:
     void updateText();
 
     /** Holds the pressed keys. */
-    QSet<int>          m_pressedKeys;
+    QSet<int>           m_pressedKeys;
     /** Holds the released keys. */
-    QSet<int>          m_releasedKeys;
+    QSet<int>           m_releasedKeys;
     /** Holds the shown keys. */
-    QMap<int, QString> m_shownKeys;
+    QMap<int, QString>  m_shownKeys;
 
     /** Holds the release timer instance. */
     QTimer *m_pReleaseTimer;
 
     /** Holds whether new sequence should be started. */
-    bool m_fStartNewSequence;
+    bool  m_fStartNewSequence;
 
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     /** Mac, Win: Holds the native event filter instance. */
@@ -231,7 +233,7 @@ private:
 
 #if defined(VBOX_WS_MAC)
     /** Mac: Holds the current modifier key mask. */
-    uint32_t m_uDarwinKeyModifiers;
+    uint32_t         m_uDarwinKeyModifiers;
 #elif defined(VBOX_WS_WIN)
     /** Win: Holds the object monitoring key event stream for problematic AltGr events. */
     WinAltGrMonitor *m_pAltGrMonitor;
@@ -240,4 +242,3 @@ private:
 
 
 #endif /* !___UIHostComboEditor_h___ */
-
