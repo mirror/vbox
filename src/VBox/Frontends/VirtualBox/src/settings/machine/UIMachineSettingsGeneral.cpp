@@ -25,9 +25,10 @@
 
 /* GUI includes: */
 # include "QIWidgetValidator.h"
+# include "VBoxGlobal.h"
 # include "UIConverter.h"
-# include "UIMachineSettingsGeneral.h"
 # include "UIErrorString.h"
+# include "UIMachineSettingsGeneral.h"
 # include "UIModalWindowManager.h"
 # include "UIProgressDialog.h"
 

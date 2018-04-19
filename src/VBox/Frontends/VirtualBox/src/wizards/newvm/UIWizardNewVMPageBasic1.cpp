@@ -21,18 +21,20 @@
 
 /* Qt includes: */
 # include <QDir>
-# include <QVBoxLayout>
-# include <QHBoxLayout>
 # include <QLineEdit>
+# include <QHBoxLayout>
+# include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIWizardNewVMPageBasic1.h"
-# include "UIWizardNewVM.h"
+# include "QIRichTextLabel.h"
+# include "VBoxGlobal.h"
 # include "UIMessageCenter.h"
 # include "UINameAndSystemEditor.h"
-# include "QIRichTextLabel.h"
+# include "UIWizardNewVMPageBasic1.h"
+# include "UIWizardNewVM.h"
 
 /* COM includes: */
+# include "CHost.h"
 # include "CSystemProperties.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */

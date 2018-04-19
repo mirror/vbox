@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,16 +23,21 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "VBoxGlobal.h"
+#include "UILibraryDefs.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CGuestOSType.h"
 
 /* Forward declarations: */
+class QComboBox;
 class QLabel;
 class QLineEdit;
-class QComboBox;
+class QString;
 class UIFilePathSelector;
 
-/** QWidget extension providing complex editor for basic VM parameters. */
-class UINameAndSystemEditor : public QIWithRetranslateUI<QWidget>
+/** QWidget subclass providing complex editor for basic VM parameters. */
+class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(QString name READ name WRITE setName);
@@ -48,14 +53,14 @@ signals:
 
 public:
 
-    /** Constructs VM parameters editor on the basis of passed @a pParent.
-      * @param fChooseFullPath determine whether we should propose to choose location. */
+    /** Constructs VM parameters editor passing @a pParent to the base-class.
+      * @param  fChooseFullPath  Brings whether we should propose to choose location. */
     UINameAndSystemEditor(QWidget *pParent, bool fChooseLocation = false);
 
     /** Returns the VM name editor. */
-    QLineEdit* nameEditor() const { return m_pEditorName; }
+    QLineEdit *nameEditor() const { return m_pEditorName; }
     /** Returns the VM location editor. */
-    UIFilePathSelector* locationEditor() const { return m_pEditorLocation; }
+    UIFilePathSelector *locationEditor() const { return m_pEditorLocation; }
 
     /** Returns the VM name. */
     QString name() const;
@@ -64,10 +69,23 @@ public:
 
     /** Returns the VM OS type. */
     CGuestOSType type() const;
-    /** Defines the VM OS @a type. */
-    void setType(const CGuestOSType &type);
+    /** Defines the VM OS @a enmType. */
+    void setType(const CGuestOSType &enmType);
 
 protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+private slots:
+
+    /** Handles VM OS family @a iIndex change. */
+    void sltFamilyChanged(int iIndex);
+
+    /** Handles VM OS type @a iIndex change. */
+    void sltTypeChanged(int iIndex);
+
+private:
 
     /** @name Prepare cascade.
       * @{ */
@@ -83,21 +101,8 @@ protected:
         void prepareConnections();
     /** @} */
 
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-
-private slots:
-
-    /** Handles VM OS family @a iIndex change. */
-    void sltFamilyChanged(int iIndex);
-
-    /** Handles VM OS type @a iIndex change. */
-    void sltTypeChanged(int iIndex);
-
-private:
-
     /** Holds the VM OS type. */
-    CGuestOSType            m_type;
+    CGuestOSType            m_enmType;
     /** Holds the currently chosen OS type IDs on per-family basis. */
     QMap<QString, QString>  m_currentIds;
     /** Holds whether we should propose to choose a full path. */
@@ -126,4 +131,3 @@ private:
 };
 
 #endif /* !___UINameAndSystemEditor_h___ */
-
