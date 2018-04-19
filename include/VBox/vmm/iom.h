@@ -159,9 +159,11 @@ RT_C_DECLS_BEGIN
  * Checks whether the write mode allows aligned QWORD accesses to be passed
  * thru to the device handler.
  * @param   a_fFlags        The MMIO handler flags.
- * @remarks The current implementation makes ASSUMPTIONS about the mode values!
  */
-#define IOMMMIO_DOES_WRITE_MODE_ALLOW_QWORD(a_fFlags)   RT_BOOL((a_fFlags) & UINT32_C(0x00000020))
+#define IOMMMIO_DOES_WRITE_MODE_ALLOW_QWORD(a_fFlags) \
+    (   ((a_fFlags) & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_DWORD_QWORD_ZEROED \
+     || ((a_fFlags) & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING \
+     || ((a_fFlags) & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD )
 
 
 /**
