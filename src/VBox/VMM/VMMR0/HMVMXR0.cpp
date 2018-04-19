@@ -3466,7 +3466,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     NOREF(pMixedCtx);
 
     int rc = VINF_SUCCESS;
-    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE))
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_APIC_STATE))
     {
         if (   PDMHasApic(pVCpu->CTX_SUFF(pVM))
             && APICIsEnabled(pVCpu))
@@ -3504,7 +3504,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 AssertRCReturn(rc, rc);
             }
         }
-        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
     }
 
     return rc;
@@ -3599,7 +3599,7 @@ static int hmR0VmxLoadGuestXcptIntercepts(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     NOREF(pMixedCtx);
     int rc = VINF_SUCCESS;
-    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMM_GUEST_XCPT_INTERCEPTS))
     {
         /* The remaining exception intercepts are handled elsewhere, e.g. in hmR0VmxLoadSharedCR0(). */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
@@ -3615,7 +3615,7 @@ static int hmR0VmxLoadGuestXcptIntercepts(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
         AssertRCReturn(rc, rc);
 
-        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_VMM_GUEST_XCPT_INTERCEPTS);
         Log4(("Load[%RU32]: VMX_VMCS32_CTRL_EXCEPTION_BITMAP=%#RX64 fContextUseFlags=%#RX32\n", pVCpu->idCpu,
               pVCpu->hm.s.vmx.u32XcptBitmap, HMCPU_CF_VALUE(pVCpu)));
     }
@@ -3846,7 +3846,7 @@ static int hmR0VmxLoadSharedCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             /* For now, cleared here as mode-switches can happen outside HM/VT-x. See @bugref{7626#c11}. */
             pVCpu->hm.s.vmx.u32XcptBitmap &= ~HMVMX_REAL_MODE_XCPT_MASK;
         }
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_VMM_GUEST_XCPT_INTERCEPTS);
 
         if (fInterceptNM)
             pVCpu->hm.s.vmx.u32XcptBitmap |= RT_BIT(X86_XCPT_NM);
@@ -6594,7 +6594,7 @@ static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Doing the check here ensures we don't overwrite already-saved guest MSRs from a preemption hook. */
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS))
     {
-        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS));
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMM_GUEST_LAZY_MSRS));
         hmR0VmxLazySaveGuestMsrs(pVCpu, pMixedCtx);
         HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS);
     }
@@ -7140,17 +7140,21 @@ VMMR0_INT_DECL(int) HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixed
 {
     /* Note! Since this is only applicable to VT-x, the implementation is placed
              in the VT-x part of the sources instead of the generic stuff. */
+    int rc;
     if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported)
-    {
-        int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-        /*
-         * For now, imply that the caller might change everything too. Do this after
-         * saving the guest state so as to not trigger assertions.
-         */
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
-        return rc;
-    }
-    return VINF_SUCCESS;
+        rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+    else
+        rc= VINF_SUCCESS;
+
+    /*
+     * For now, imply that the caller might change everything too. Do this after
+     * saving the guest state so as to not trigger assertions.
+     *
+     * This is required for AMD-V too as it too only selectively re-loads changed
+     * guest state back in to the VMCB.
+     */
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+    return rc;
 }
 
 
@@ -8738,7 +8742,8 @@ static VBOXSTRICTRC hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestRipRspRflags! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     /* Clear any unused and reserved bits. */
-    HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR2);
+    HMCPU_CF_CLEAR(pVCpu,   HM_CHANGED_GUEST_CR2
+                          | HM_CHANGED_GUEST_HWVIRT);
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
@@ -8780,20 +8785,20 @@ static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
     }
 
-    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS))
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMM_GUEST_LAZY_MSRS))
     {
         hmR0VmxLazyLoadGuestMsrs(pVCpu, pCtx);
-        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS);
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_VMM_GUEST_LAZY_MSRS);
     }
 
     /* Loading CR0, debug state might have changed intercepts, update VMCS. */
-    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMM_GUEST_XCPT_INTERCEPTS))
     {
         Assert(pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT_32(X86_XCPT_AC));
         Assert(pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT_32(X86_XCPT_DB));
         int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
         AssertRC(rc);
-        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_VMM_GUEST_XCPT_INTERCEPTS);
     }
 
     AssertMsg(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_HOST_GUEST_SHARED_STATE),
@@ -9333,7 +9338,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
             {
                 rc = APICSetTpr(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR]);
                 AssertRC(rc);
-                HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
+                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
             }
 
             return;
@@ -12465,7 +12470,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
              * virtualization is implemented we'll have to make sure APIC state is saved from the VMCS before
              * EMInterpretWrmsr() changes it.
              */
-            HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
+            HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
         }
         else if (pMixedCtx->ecx == MSR_IA32_TSC)        /* Windows 7 does this during bootup. See @bugref{6398}. */
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
@@ -12508,7 +12513,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                     if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
                         HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
                     else if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
-                        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS);
+                        HMCPU_CF_SET(pVCpu, HM_CHANGED_VMM_GUEST_LAZY_MSRS);
                     break;
                 }
             }
@@ -12652,7 +12657,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                 case 8: /* CR8 */
                     Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW));
                     /* CR8 contains the APIC TPR. Was updated by IEMExecDecodedMovCRxWrite(). */
-                    HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
+                    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
                     break;
                 default:
                     AssertMsgFailed(("Invalid CRx register %#x\n", VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification)));
@@ -13098,7 +13103,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
                 HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                                     | HM_CHANGED_GUEST_RSP
                                     | HM_CHANGED_GUEST_RFLAGS
-                                    | HM_CHANGED_VMX_GUEST_APIC_STATE);
+                                    | HM_CHANGED_GUEST_APIC_STATE);
                 rcStrict2 = VINF_SUCCESS;
             }
             break;
@@ -13263,7 +13268,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
         HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                             | HM_CHANGED_GUEST_RSP
                             | HM_CHANGED_GUEST_RFLAGS
-                            | HM_CHANGED_VMX_GUEST_APIC_STATE);
+                            | HM_CHANGED_GUEST_APIC_STATE);
         return VINF_SUCCESS;
     }
     return rcStrict2;
@@ -13969,7 +13974,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         HMCPU_CF_SET(pVCpu,   HM_CHANGED_GUEST_RIP
                             | HM_CHANGED_GUEST_RSP
                             | HM_CHANGED_GUEST_RFLAGS
-                            | HM_CHANGED_VMX_GUEST_APIC_STATE);
+                            | HM_CHANGED_GUEST_APIC_STATE);
 #else
         /*
          * This is typically a shadow page table sync or a MMIO instruction. But we may have

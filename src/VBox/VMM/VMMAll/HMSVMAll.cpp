@@ -102,7 +102,7 @@ static int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpdateRipAndR
 
                 int rc2 = APICSetTpr(pVCpu, u8Tpr);
                 AssertRC(rc2);
-                HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
+                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
 
                 pCtx->rip += pPatch->cbOp;
                 pCtx->eflags.Bits.u1RF = 0;

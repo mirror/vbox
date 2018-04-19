@@ -542,7 +542,7 @@ VMM_INT_DECL(void) HMHypercallsDisable(PVMCPU pVCpu)
 VMM_INT_DECL(void) HMTrapXcptUDForGIMEnable(PVMCPU pVCpu)
 {
     pVCpu->hm.s.fGIMTrapXcptUD = true;
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_VMM_GUEST_XCPT_INTERCEPTS);
 }
 
 
@@ -554,7 +554,7 @@ VMM_INT_DECL(void) HMTrapXcptUDForGIMEnable(PVMCPU pVCpu)
 VMM_INT_DECL(void) HMTrapXcptUDForGIMDisable(PVMCPU pVCpu)
 {
     pVCpu->hm.s.fGIMTrapXcptUD = false;
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_VMM_GUEST_XCPT_INTERCEPTS);
 }
 
 
