@@ -1873,8 +1873,10 @@ void tstASMBench(void)
     BENCH(ASMAtomicUoDecU32(&s_u32),             "ASMAtomicUoDecU32");
     BENCH(ASMAtomicUoAndU32(&s_u32, 0xffffffff), "ASMAtomicUoAndU32");
     BENCH(ASMAtomicUoOrU32(&s_u32, 0xffffffff),  "ASMAtomicUoOrU32");
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     BENCH_TSC(ASMSerializeInstructionCpuId(),    "ASMSerializeInstructionCpuId");
     BENCH_TSC(ASMSerializeInstructionIRet(),     "ASMSerializeInstructionIRet");
+#endif
 
     /* The Darwin gcc does not like this ... */
 #if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))

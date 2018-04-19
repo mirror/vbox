@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -138,7 +138,17 @@ RTDECL(uint32_t) ASMAtomicIncU32(uint32_t volatile *pu32)
     return *pu32 += 1;
 }
 
+RTDECL(uint32_t) ASMAtomicUoIncU32(uint32_t volatile *pu32)
+{
+    return *pu32 += 1;
+}
+
 RTDECL(uint32_t) ASMAtomicDecU32(uint32_t volatile *pu32)
+{
+    return *pu32 -= 1;
+}
+
+RTDECL(uint32_t) ASMAtomicUoDecU32(uint32_t volatile *pu32)
 {
     return *pu32 -= 1;
 }
@@ -158,7 +168,17 @@ RTDECL(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32)
     *pu32 |= u32;
 }
 
+RTDECL(void) ASMAtomicUoOrU32(uint32_t volatile *pu32, uint32_t u32)
+{
+    *pu32 |= u32;
+}
+
 RTDECL(void) ASMAtomicAndU32(uint32_t volatile *pu32, uint32_t u32)
+{
+    *pu32 &= u32;
+}
+
+RTDECL(void) ASMAtomicUoAndU32(uint32_t volatile *pu32, uint32_t u32)
 {
     *pu32 &= u32;
 }
@@ -454,6 +474,15 @@ RTDECL(unsigned) ASMBitFirstSetU64(uint64_t u64)
 {
     uint32_t iBit;
     for (iBit = 0; iBit < 64; iBit++)
+        if (u32 & RT_BIT_64(iBit))
+            return iBit + 1;
+    return 0;
+}
+
+RTDECL(unsigned) ASMBitLastSetU64(uint64_t u64)
+{
+    int32_t iBit = 64;
+    while (iBit-- > 0)
         if (u64 & RT_BIT_64(iBit))
             return iBit + 1;
     return 0;
