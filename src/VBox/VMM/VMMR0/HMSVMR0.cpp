@@ -394,7 +394,7 @@ static RTR0MEMOBJ           g_hMemObjIOBitmap = NIL_RTR0MEMOBJ;
 /** Physical address of the IO bitmap. */
 static RTHCPHYS             g_HCPhysIOBitmap;
 /** Pointer to the IO bitmap. */
-static R0PTRTYPE(void *)        g_pvIOBitmap;
+static R0PTRTYPE(void *)    g_pvIOBitmap;
 
 #ifdef VBOX_STRICT
 # define HMSVM_LOG_CS           RT_BIT_32(0)
@@ -905,159 +905,167 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     bool const fUseVGif              = fVGif && pVM->hm.s.svm.fVGif;
 #endif
 
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU   pVCpu = &pVM->aCpus[i];
-        PSVMVMCB pVmcb = pVM->aCpus[i].hm.s.svm.pVmcb;
+    PVMCPU       pVCpu = &pVM->aCpus[0];
+    PSVMVMCB     pVmcb = pVCpu->hm.s.svm.pVmcb;
+    AssertMsgReturn(pVmcb, ("Invalid pVmcb for vcpu[0]\n"), VERR_SVM_INVALID_PVMCB);
+    PSVMVMCBCTRL pVmcbCtrl = &pVmcb->ctrl;
 
-        AssertMsgReturn(pVmcb, ("Invalid pVmcb for vcpu[%u]\n", i), VERR_SVM_INVALID_PVMCB);
+    /* Always trap #AC for reasons of security. */
+    pVmcbCtrl->u32InterceptXcpt |= RT_BIT_32(X86_XCPT_AC);
 
-        /* Initialize the #VMEXIT history array with end-of-array markers (UINT16_MAX). */
-        Assert(!pVCpu->hm.s.idxExitHistoryFree);
-        HMCPU_EXIT_HISTORY_RESET(pVCpu);
+    /* Always trap #DB for reasons of security. */
+    pVmcbCtrl->u32InterceptXcpt |= RT_BIT_32(X86_XCPT_DB);
 
-        /* Always trap #AC for reasons of security. */
-        pVmcb->ctrl.u32InterceptXcpt |= RT_BIT_32(X86_XCPT_AC);
-
-        /* Always trap #DB for reasons of security. */
-        pVmcb->ctrl.u32InterceptXcpt |= RT_BIT_32(X86_XCPT_DB);
-
-        /* Trap exceptions unconditionally (debug purposes). */
+    /* Trap exceptions unconditionally (debug purposes). */
 #ifdef HMSVM_ALWAYS_TRAP_PF
-        pVmcb->ctrl.u32InterceptXcpt |=   RT_BIT(X86_XCPT_PF);
+    pVmcbCtrl->u32InterceptXcpt |=   RT_BIT(X86_XCPT_PF);
 #endif
 #ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-        /* If you add any exceptions here, make sure to update hmR0SvmHandleExit(). */
-        pVmcb->ctrl.u32InterceptXcpt |= 0
-                                     | RT_BIT(X86_XCPT_BP)
-                                     | RT_BIT(X86_XCPT_DE)
-                                     | RT_BIT(X86_XCPT_NM)
-                                     | RT_BIT(X86_XCPT_UD)
-                                     | RT_BIT(X86_XCPT_NP)
-                                     | RT_BIT(X86_XCPT_SS)
-                                     | RT_BIT(X86_XCPT_GP)
-                                     | RT_BIT(X86_XCPT_PF)
-                                     | RT_BIT(X86_XCPT_MF)
-                                     ;
+    /* If you add any exceptions here, make sure to update hmR0SvmHandleExit(). */
+    pVmcbCtrl->u32InterceptXcpt |= 0
+                                 | RT_BIT(X86_XCPT_BP)
+                                 | RT_BIT(X86_XCPT_DE)
+                                 | RT_BIT(X86_XCPT_NM)
+                                 | RT_BIT(X86_XCPT_UD)
+                                 | RT_BIT(X86_XCPT_NP)
+                                 | RT_BIT(X86_XCPT_SS)
+                                 | RT_BIT(X86_XCPT_GP)
+                                 | RT_BIT(X86_XCPT_PF)
+                                 | RT_BIT(X86_XCPT_MF)
+                                 ;
 #endif
 
-        /* Set up unconditional intercepts and conditions. */
-        pVmcb->ctrl.u64InterceptCtrl =   HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS
-                                       | SVM_CTRL_INTERCEPT_VMMCALL;
+    /* Apply the exceptions intercepts needed by the GIM provider. */
+    if (pVCpu->hm.s.fGIMTrapXcptUD)
+        pVmcbCtrl->u32InterceptXcpt |= RT_BIT(X86_XCPT_UD);
 
-        /* CR4 writes must always be intercepted for tracking PGM mode changes. */
-        pVmcb->ctrl.u16InterceptWrCRx = RT_BIT(4);
-
-        /* Intercept all DRx reads and writes by default. Changed later on. */
-        pVmcb->ctrl.u16InterceptRdDRx = 0xffff;
-        pVmcb->ctrl.u16InterceptWrDRx = 0xffff;
-
-        /* Virtualize masking of INTR interrupts. (reads/writes from/to CR8 go to the V_TPR register) */
-        pVmcb->ctrl.IntCtrl.n.u1VIntrMasking = 1;
-
-        /* Ignore the priority in the virtual TPR. This is necessary for delivering PIC style (ExtInt) interrupts
-           and we currently deliver both PIC and APIC interrupts alike. See hmR0SvmInjectPendingEvent() */
-        pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR   = 1;
-
-        /* Set IO and MSR bitmap permission bitmap physical addresses. */
-        pVmcb->ctrl.u64IOPMPhysAddr  = g_HCPhysIOBitmap;
-        pVmcb->ctrl.u64MSRPMPhysAddr = pVCpu->hm.s.svm.HCPhysMsrBitmap;
-
-        /* LBR virtualization. */
-        if (fUseLbrVirt)
-        {
-            pVmcb->ctrl.LbrVirt.n.u1LbrVirt = fUseLbrVirt;
-            pVmcb->guest.u64DBGCTL = MSR_IA32_DEBUGCTL_LBR;
-        }
-        else
-            Assert(pVmcb->ctrl.LbrVirt.n.u1LbrVirt == 0);
-
-#ifdef VBOX_WITH_NESTED_HWVIRT
-        /* Virtualized VMSAVE/VMLOAD. */
-        pVmcb->ctrl.LbrVirt.n.u1VirtVmsaveVmload = fUseVirtVmsaveVmload;
-        if (!fUseVirtVmsaveVmload)
-        {
-            pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
-                                         |  SVM_CTRL_INTERCEPT_VMLOAD;
-        }
-
-        /* Virtual GIF. */
-        pVmcb->ctrl.IntCtrl.n.u1VGifEnable = fUseVGif;
-        if (!fUseVGif)
-        {
-            pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
-                                         |  SVM_CTRL_INTERCEPT_STGI;
-        }
-#endif
-
-        /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
-        Assert(pVmcb->ctrl.u32VmcbCleanBits == 0);
-
-        /* The host ASID MBZ, for the guest start with 1. */
-        pVmcb->ctrl.TLBCtrl.n.u32ASID = 1;
-
-        /*
-         * Setup the PAT MSR (applicable for Nested Paging only).
-         *
-         * While guests can modify and see the modified values throug the shadow values,
-         * we shall not honor any guest modifications of this MSR to ensure caching is always
-         * enabled similar to how we always run with CR0.CD and NW bits cleared.
-         */
-        pVmcb->guest.u64PAT = MSR_IA32_CR_PAT_INIT_VAL;
-
-        /* Setup Nested Paging. This doesn't change throughout the execution time of the VM. */
-        pVmcb->ctrl.NestedPagingCtrl.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
-
-        /* Without Nested Paging, we need additionally intercepts. */
-        if (!pVM->hm.s.fNestedPaging)
-        {
-            /* CR3 reads/writes must be intercepted; our shadow values differ from the guest values. */
-            pVmcb->ctrl.u16InterceptRdCRx |= RT_BIT(3);
-            pVmcb->ctrl.u16InterceptWrCRx |= RT_BIT(3);
-
-            /* Intercept INVLPG and task switches (may change CR3, EFLAGS, LDT). */
-            pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_INVLPG
-                                         |  SVM_CTRL_INTERCEPT_TASK_SWITCH;
-
-            /* Page faults must be intercepted to implement shadow paging. */
-            pVmcb->ctrl.u32InterceptXcpt |= RT_BIT(X86_XCPT_PF);
-        }
+    /* Set up unconditional intercepts and conditions. */
+    pVmcbCtrl->u64InterceptCtrl = HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS
+                                | SVM_CTRL_INTERCEPT_VMMCALL;
 
 #ifdef HMSVM_ALWAYS_TRAP_TASK_SWITCH
-        pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_TASK_SWITCH;
+    pVmcbCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_TASK_SWITCH;
 #endif
 
-        /* Apply the exceptions intercepts needed by the GIM provider. */
-        if (pVCpu->hm.s.fGIMTrapXcptUD)
-            pVmcb->ctrl.u32InterceptXcpt |= RT_BIT(X86_XCPT_UD);
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /* Virtualized VMSAVE/VMLOAD. */
+    pVmcbCtrl->LbrVirt.n.u1VirtVmsaveVmload = fUseVirtVmsaveVmload;
+    if (!fUseVirtVmsaveVmload)
+    {
+        pVmcbCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
+                                    |  SVM_CTRL_INTERCEPT_VMLOAD;
+    }
 
-        /* Setup Pause Filter for guest pause-loop (spinlock) exiting. */
-        if (fUsePauseFilter)
-        {
-            Assert(pVM->hm.s.svm.cPauseFilter > 0);
-            pVmcb->ctrl.u16PauseFilterCount = pVM->hm.s.svm.cPauseFilter;
-            if (fPauseFilterThreshold)
-                pVmcb->ctrl.u16PauseFilterThreshold = pVM->hm.s.svm.cPauseFilterThresholdTicks;
-            pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_PAUSE;
-        }
+    /* Virtual GIF. */
+    pVmcbCtrl->IntCtrl.n.u1VGifEnable = fUseVGif;
+    if (!fUseVGif)
+    {
+        pVmcbCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
+                                    |  SVM_CTRL_INTERCEPT_STGI;
+    }
+#endif
 
-        /*
-         * The following MSRs are saved/restored automatically during the world-switch.
-         * Don't intercept guest read/write accesses to these MSRs.
-         */
-        uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
-        PCPUMCTX pCtx        = CPUMQueryGuestCtxPtr(pVCpu);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_LSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_CSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K6_STAR,           SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_SF_MASK,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_FS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_GS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_KERNEL_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_IA32_SYSENTER_CS,  SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
+    /* CR4 writes must always be intercepted for tracking PGM mode changes. */
+    pVmcbCtrl->u16InterceptWrCRx = RT_BIT(4);
+
+    /* Intercept all DRx reads and writes by default. Changed later on. */
+    pVmcbCtrl->u16InterceptRdDRx = 0xffff;
+    pVmcbCtrl->u16InterceptWrDRx = 0xffff;
+
+    /* Virtualize masking of INTR interrupts. (reads/writes from/to CR8 go to the V_TPR register) */
+    pVmcbCtrl->IntCtrl.n.u1VIntrMasking = 1;
+
+    /* Ignore the priority in the virtual TPR. This is necessary for delivering PIC style (ExtInt) interrupts
+       and we currently deliver both PIC and APIC interrupts alike. See hmR0SvmInjectPendingEvent() */
+    pVmcbCtrl->IntCtrl.n.u1IgnoreTPR = 1;
+
+    /* Set the IO permission bitmap physical addresses. */
+    pVmcbCtrl->u64IOPMPhysAddr = g_HCPhysIOBitmap;
+
+    /* LBR virtualization. */
+    pVmcbCtrl->LbrVirt.n.u1LbrVirt = fUseLbrVirt;
+
+    /* The host ASID MBZ, for the guest start with 1. */
+    pVmcbCtrl->TLBCtrl.n.u32ASID = 1;
+
+    /* Setup Nested Paging. This doesn't change throughout the execution time of the VM. */
+    pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
+
+    /* Without Nested Paging, we need additionally intercepts. */
+    if (!pVM->hm.s.fNestedPaging)
+    {
+        /* CR3 reads/writes must be intercepted; our shadow values differ from the guest values. */
+        pVmcbCtrl->u16InterceptRdCRx |= RT_BIT(3);
+        pVmcbCtrl->u16InterceptWrCRx |= RT_BIT(3);
+
+        /* Intercept INVLPG and task switches (may change CR3, EFLAGS, LDT). */
+        pVmcbCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_INVLPG
+                                    |  SVM_CTRL_INTERCEPT_TASK_SWITCH;
+
+        /* Page faults must be intercepted to implement shadow paging. */
+        pVmcbCtrl->u32InterceptXcpt |= RT_BIT(X86_XCPT_PF);
+    }
+
+    /* Setup Pause Filter for guest pause-loop (spinlock) exiting. */
+    if (fUsePauseFilter)
+    {
+        Assert(pVM->hm.s.svm.cPauseFilter > 0);
+        pVmcbCtrl->u16PauseFilterCount = pVM->hm.s.svm.cPauseFilter;
+        if (fPauseFilterThreshold)
+            pVmcbCtrl->u16PauseFilterThreshold = pVM->hm.s.svm.cPauseFilterThresholdTicks;
+        pVmcbCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_PAUSE;
+    }
+
+    /*
+     * Setup the MSR permission bitmap.
+     * The following MSRs are saved/restored automatically during the world-switch.
+     * Don't intercept guest read/write accesses to these MSRs.
+     */
+    uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
+    PCPUMCTX pCtx        = &pVCpu->cpum.GstCtx;
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_LSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_CSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K6_STAR,           SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_SF_MASK,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_FS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_GS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_K8_KERNEL_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_IA32_SYSENTER_CS,  SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+    pVmcbCtrl->u64MSRPMPhysAddr = pVCpu->hm.s.svm.HCPhysMsrBitmap;
+
+    /* Initialize the #VMEXIT history array with end-of-array markers (UINT16_MAX). */
+    Assert(!pVCpu->hm.s.idxExitHistoryFree);
+    HMCPU_EXIT_HISTORY_RESET(pVCpu);
+
+    /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
+    Assert(pVmcbCtrl->u32VmcbCleanBits == 0);
+
+    for (VMCPUID i = 1; i < pVM->cCpus; i++)
+    {
+        PVMCPU       pVCpuCur = &pVM->aCpus[i];
+        PSVMVMCB     pVmcbCur = pVM->aCpus[i].hm.s.svm.pVmcb;
+        AssertMsgReturn(pVmcbCur, ("Invalid pVmcb for vcpu[%u]\n", i), VERR_SVM_INVALID_PVMCB);
+        PSVMVMCBCTRL pVmcbCtrlCur = &pVmcbCur->ctrl;
+
+        /* Copy the VMCB control area. */
+        memcpy(pVmcbCtrlCur, pVmcbCtrl, sizeof(*pVmcbCtrlCur));
+
+        /* Copy the MSR bitmap and setup the VCPU-specific host physical address. */
+        uint8_t *pbMsrBitmapCur = (uint8_t *)pVCpuCur->hm.s.svm.pvMsrBitmap;
+        memcpy(pbMsrBitmapCur, pbMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
+        pVmcbCtrlCur->u64MSRPMPhysAddr = pVCpuCur->hm.s.svm.HCPhysMsrBitmap;
+
+        /* Initialize the #VMEXIT history array with end-of-array markers (UINT16_MAX). */
+        Assert(!pVCpuCur->hm.s.idxExitHistoryFree);
+        HMCPU_EXIT_HISTORY_RESET(pVCpuCur);
+
+        /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
+        Assert(pVmcbCtrlCur->u32VmcbCleanBits == 0);
+
+        /* Verify our assumption that GIM providers trap #UD uniformly across VCPUs. */
+        Assert(pVCpuCur->hm.s.fGIMTrapXcptUD == pVCpu->hm.s.fGIMTrapXcptUD);
     }
 
     return VINF_SUCCESS;
@@ -1751,7 +1759,18 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
     pVmcb->guest.u64SFMASK       = pCtx->msrSFMASK;
     pVmcb->guest.u64KernelGSBase = pCtx->msrKERNELGSBASE;
 
-    /* We don't honor guest modifications to its PAT MSR (similar to ignoring CR0.CD, NW bits). */
+    /*
+     * Setup the PAT MSR (applicable for Nested Paging only).
+     *
+     * While guests can modify and see the modified values throug the shadow values,
+     * we shall not honor any guest modifications of this MSR to ensure caching is always
+     * enabled similar to how we always run with CR0.CD and NW bits cleared.
+     */
+    pVmcb->guest.u64PAT = MSR_IA32_CR_PAT_INIT_VAL;
+
+    /* Enable the last branch record bit if LBR virtualization is enabled. */
+    if (pVmcb->ctrl.LbrVirt.n.u1LbrVirt)
+        pVmcb->guest.u64DBGCTL = MSR_IA32_DEBUGCTL_LBR;
 }
 
 
