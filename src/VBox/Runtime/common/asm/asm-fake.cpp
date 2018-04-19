@@ -474,7 +474,7 @@ RTDECL(unsigned) ASMBitFirstSetU64(uint64_t u64)
 {
     uint32_t iBit;
     for (iBit = 0; iBit < 64; iBit++)
-        if (u32 & RT_BIT_64(iBit))
+        if (u64 & RT_BIT_64(iBit))
             return iBit + 1;
     return 0;
 }

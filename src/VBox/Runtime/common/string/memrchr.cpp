@@ -47,7 +47,7 @@ void *memrchr(const char *pb, int ch, size_t cb)
 
         while (cb)
         {
-            if (*pbCur == cb)
+            if (*pbCur == ch)
                 return (void *)pbCur;
             pbCur--;
             cb--;
