@@ -1994,7 +1994,7 @@ static void hmR0SvmLoadGuestApicStateNested(PVMCPU pVCpu, PSVMVMCB pVmcbNstGst)
 {
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_APIC_STATE))
     {
-        Assert(pVmcbNstGst->ctrl.IntCtrl.n.u1VIntrMasking == 1);
+        Assert(pVmcbNstGst->ctrl.IntCtrl.n.u1VIntrMasking == 1); RT_NOREF(pVmcbNstGst);
         pVCpu->hm.s.svm.fSyncVTpr = false;
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
     }
