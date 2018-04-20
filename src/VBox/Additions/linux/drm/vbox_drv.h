@@ -49,10 +49,13 @@
 #include <linux/string.h>
 
 #if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
+# if RHEL_MAJOR == 7 && RHEL_MINOR >= 5
+#  define RHEL_75
+# endif
 # if RHEL_MAJOR == 7 && RHEL_MINOR >= 4
-#  define RHEL_73
 #  define RHEL_74
-# elif RHEL_MAJOR == 7 && RHEL_MINOR >= 3
+# endif
+# if RHEL_MAJOR == 7 && RHEL_MINOR >= 3
 #  define RHEL_73
 # endif
 #endif
@@ -62,7 +65,7 @@
 #include <drm/drm_gem.h>
 #endif
 #include <drm/drm_fb_helper.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
 #include <drm/drm_encoder.h>
 #endif
 
@@ -159,7 +162,7 @@ struct vbox_private {
 #undef CURSOR_DATA_SIZE
 
 int vbox_driver_load(struct drm_device *dev, unsigned long flags);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
 void vbox_driver_unload(struct drm_device *dev);
 #else
 int vbox_driver_unload(struct drm_device *dev);

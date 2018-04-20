@@ -69,7 +69,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
 	width = mode->hdisplay ? mode->hdisplay : 640;
 	height = mode->vdisplay ? mode->vdisplay : 480;
 	crtc_id = vbox_crtc->crtc_id;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
 	bpp = crtc->enabled ? CRTC_FB(crtc)->format->cpp[0] * 8 : 32;
 	pitch = crtc->enabled ? CRTC_FB(crtc)->pitches[0] : width * bpp / 8;
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
@@ -93,7 +93,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
 	    vbox_crtc->fb_offset % (bpp / 8) == 0)
 		VBoxVideoSetModeRegisters(
 			width, height, pitch * 8 / bpp,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
 			CRTC_FB(crtc)->format->cpp[0] * 8,
 #else
 			CRTC_FB(crtc)->bits_per_pixel,
