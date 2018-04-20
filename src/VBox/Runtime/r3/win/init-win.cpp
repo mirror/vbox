@@ -102,6 +102,8 @@ DECLHIDDEN(PFNWSASETLASTERROR)              g_pfnWSASetLastError = NULL;
 DECLHIDDEN(PFNWSACREATEEVENT)               g_pfnWSACreateEvent = NULL;
 /** WSACloseEvent  */
 DECLHIDDEN(PFNWSACLOSEEVENT)                g_pfnWSACloseEvent = NULL;
+/** WSASetEvent */
+DECLHIDDEN(PFNWSASETEVENT)                  g_pfnWSASetEvent = NULL;
 /** WSAEventSelect   */
 DECLHIDDEN(PFNWSAEVENTSELECT)               g_pfnWSAEventSelect = NULL;
 /** WSAEnumNetworkEvents */
@@ -362,6 +364,7 @@ static void rtR3InitWinSockApis(void)
     g_pfnWSASetLastError      = (decltype(g_pfnWSASetLastError))    GetProcAddress(g_hModWinSock, "WSASetLastError");
     g_pfnWSACreateEvent       = (decltype(g_pfnWSACreateEvent))     GetProcAddress(g_hModWinSock, "WSACreateEvent");
     g_pfnWSACloseEvent        = (decltype(g_pfnWSACloseEvent))      GetProcAddress(g_hModWinSock, "WSACloseEvent");
+    g_pfnWSASetEvent          = (decltype(g_pfnWSASetEvent))        GetProcAddress(g_hModWinSock, "WSASetEvent");
     g_pfnWSAEventSelect       = (decltype(g_pfnWSAEventSelect))     GetProcAddress(g_hModWinSock, "WSAEventSelect");
     g_pfnWSAEnumNetworkEvents = (decltype(g_pfnWSAEnumNetworkEvents))GetProcAddress(g_hModWinSock,"WSAEnumNetworkEvents");
     g_pfnWSASend              = (decltype(g_pfnWSASend))            GetProcAddress(g_hModWinSock, "WSASend");
@@ -391,6 +394,7 @@ static void rtR3InitWinSockApis(void)
     Assert(g_pfnWSASetLastError);
     Assert(g_pfnWSACreateEvent       || g_fOldWinSock);
     Assert(g_pfnWSACloseEvent        || g_fOldWinSock);
+    Assert(g_pfnWSASetEvent          || g_fOldWinSock);
     Assert(g_pfnWSAEventSelect       || g_fOldWinSock);
     Assert(g_pfnWSAEnumNetworkEvents || g_fOldWinSock);
     Assert(g_pfnWSASend              || g_fOldWinSock);

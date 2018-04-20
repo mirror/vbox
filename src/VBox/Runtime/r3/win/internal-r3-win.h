@@ -124,6 +124,8 @@ typedef int             (WINAPI *PFNWSAGETLASTERROR)(void);
 typedef int             (WINAPI *PFNWSASETLASTERROR)(int);
 /** WSACreateEvent */
 typedef HANDLE          (WINAPI *PFNWSACREATEEVENT)(void);
+/** WSASetEvent */
+typedef BOOL            (WINAPI *PFNWSASETEVENT)(HANDLE);
 /** WSACloseEvent */
 typedef BOOL            (WINAPI *PFNWSACLOSEEVENT)(HANDLE);
 /** WSAEventSelect */
@@ -178,6 +180,7 @@ extern PFNWSAGETLASTERROR                          g_pfnWSAGetLastError;
 extern PFNWSASETLASTERROR                          g_pfnWSASetLastError;
 extern DECLHIDDEN(PFNWSACREATEEVENT)               g_pfnWSACreateEvent;
 extern DECLHIDDEN(PFNWSACLOSEEVENT)                g_pfnWSACloseEvent;
+extern DECLHIDDEN(PFNWSASETEVENT)                  g_pfnWSASetEvent;
 extern DECLHIDDEN(PFNWSAEVENTSELECT)               g_pfnWSAEventSelect;
 extern DECLHIDDEN(PFNWSAENUMNETWORKEVENTS)         g_pfnWSAEnumNetworkEvents;
 extern DECLHIDDEN(PFNWSASend)                      g_pfnWSASend;

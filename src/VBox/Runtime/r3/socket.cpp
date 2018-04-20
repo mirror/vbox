@@ -163,9 +163,16 @@ typedef struct RTSOCKETINT
      * This is ZERO if we're currently not subscribing to anything. */
     uint32_t            fSubscribedEvts;
     /** Saved events which are only posted once and events harvested for
-     * sockets entetered multiple times into to a poll set. */
+     * sockets entered multiple times into to a poll set.   Imagine a scenario where
+     * you have a RTPOLL_EVT_READ entry and RTPOLL_EVT_ERROR entry.  The READ
+     * condition can be triggered between checking the READ entry and the ERROR
+     * entry, and we don't want to drop the READ, so we store it here and make sure
+     * the event is signalled.
+     *
+     * The RTPOLL_EVT_ERROR is inconsistenly sticky at the momemnt... */
     uint32_t            fEventsSaved;
-    /** Set if fEventsSaved contains harvested events. */
+    /** Set if fEventsSaved contains harvested events (used to avoid multiple
+     *  calls to rtSocketPollCheck on the same socket during rtSocketPollDone). */
     bool                fHarvestedEvents;
     /** Set if we're using the polling fallback. */
     bool                fPollFallback;
@@ -2842,6 +2849,7 @@ static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
                         fRetEvents |= RTPOLL_EVT_ERROR;
 
             pThis->fEventsSaved = fRetEvents |= pThis->fEventsSaved;
+            fRetEvents &= fEvents | RTPOLL_EVT_ERROR;
         }
         else
             rc = rtSocketError();
@@ -2956,15 +2964,23 @@ DECLHIDDEN(uint32_t) rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uin
         && !fNoWait)
     {
         pThis->fPollEvts |= fEvents;
-        if (   fFinalEntry
-            && pThis->fSubscribedEvts != pThis->fPollEvts)
+        if (fFinalEntry)
         {
-            int rc = rtSocketPollUpdateEvents(pThis, pThis->fPollEvts);
-            if (RT_FAILURE(rc))
+            if (pThis->fSubscribedEvts != pThis->fPollEvts)
             {
-                pThis->fPollEvts = 0;
-                fRetEvents       = UINT32_MAX;
+                /** @todo seems like there migth be a call to many here and that fPollEvts is
+                 *        totally unnecessary... (bird) */
+                int rc = rtSocketPollUpdateEvents(pThis, pThis->fPollEvts);
+                if (RT_FAILURE(rc))
+                {
+                    pThis->fPollEvts = 0;
+                    fRetEvents       = UINT32_MAX;
+                }
             }
+
+            /* Make sure we don't block when there are events pending relevant to an earlier poll set entry. */
+            if (pThis->fEventsSaved && !pThis->fPollFallback && g_pfnWSASetEvent && fRetEvents == 0)
+                g_pfnWSASetEvent(pThis->hEvent);
         }
     }
 # else
@@ -2976,10 +2992,16 @@ DECLHIDDEN(uint32_t) rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uin
         if (pThis->cUsers == 1)
         {
 # ifdef RT_OS_WINDOWS
+            pThis->fEventsSaved    &= RTPOLL_EVT_ERROR;
+            pThis->fHarvestedEvents = false;
             rtSocketPollClearEventAndRestoreBlocking(pThis);
 # endif
             pThis->hPollSet = NIL_RTPOLLSET;
         }
+# ifdef RT_OS_WINDOWS
+        else
+            pThis->fHarvestedEvents = true;
+# endif
         ASMAtomicDecU32(&pThis->cUsers);
     }
 # ifdef RT_OS_WINDOWS
@@ -3068,7 +3090,7 @@ DECLHIDDEN(uint32_t) rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool f
     if (pThis->cUsers == 1)
     {
 # ifdef RT_OS_WINDOWS
-        pThis->fEventsSaved   &= RTPOLL_EVT_ERROR;
+        pThis->fEventsSaved    &= RTPOLL_EVT_ERROR;
         pThis->fHarvestedEvents = false;
         rtSocketPollClearEventAndRestoreBlocking(pThis);
 # endif
