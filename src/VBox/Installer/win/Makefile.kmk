@@ -994,5 +994,15 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 		'@echo Create multiarch EXE: $(@F)'
 endif
 
+#
+# Repackaging script installation target.
+#
+INSTALLS += RePackScripts
+RePackScripts_TEMPLATE = DUMMY
+RePackScripts_INST = repack/
+RePackScripts_INSTTYPE = stage
+RePackScripts_SOURCES = \
+	Scripts/PackDriversForSubmission.cmd
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
