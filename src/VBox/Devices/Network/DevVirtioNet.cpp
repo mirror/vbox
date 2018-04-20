@@ -527,6 +527,17 @@ static void vnetWakeupReceive(PPDMDEVINS pDevIns)
 
 
 /**
+ * Helper function that raises an interrupt if the guest is ready to receive it.
+ */
+int vnetRaiseInterrupt(PVNETSTATE pThis, int rcBusy, uint8_t u8IntCause)
+{
+    if (pThis->VPCI.uStatus & VPCI_STATUS_DRV_OK)
+        return vpciRaiseInterrupt(&pThis->VPCI, rcBusy, u8IntCause);
+    return rcBusy;
+}
+
+
+/**
  * Takes down the link temporarily if it's current status is up.
  *
  * This is used during restore and when replumbing the network link.
@@ -542,7 +553,7 @@ static void vnetTempLinkDown(PVNETSTATE pThis)
     if (STATUS & VNET_S_LINK_UP)
     {
         STATUS &= ~VNET_S_LINK_UP;
-        vpciRaiseInterrupt(&pThis->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+        vnetRaiseInterrupt(pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
         /* Restore the link back in 5 seconds. */
         int rc = TMTimerSetMillies(pThis->pLinkUpTimer, pThis->cMsLinkUpDelay);
         AssertRC(rc);
@@ -563,7 +574,7 @@ static DECLCALLBACK(void) vnetLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return;
     STATUS |= VNET_S_LINK_UP;
-    vpciRaiseInterrupt(&pThis->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+    vnetRaiseInterrupt(pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
     vnetWakeupReceive(pDevIns);
     vnetCsLeave(pThis);
     Log(("%s vnetLinkUpTimer: Link is up\n", INSTANCE(pThis)));
@@ -1075,16 +1086,18 @@ static DECLCALLBACK(int) vnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
         if (fNewUp)
         {
             Log(("%s Link is up\n", INSTANCE(pThis)));
+            pThis->fCableConnected = true;
             STATUS |= VNET_S_LINK_UP;
-            vpciRaiseInterrupt(&pThis->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+            vnetRaiseInterrupt(pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
         }
         else
         {
             /* The link was brought down explicitly, make sure it won't come up by timer.  */
             TMTimerStop(pThis->pLinkUpTimer);
             Log(("%s Link is down\n", INSTANCE(pThis)));
+            pThis->fCableConnected = false;
             STATUS &= ~VNET_S_LINK_UP;
-            vpciRaiseInterrupt(&pThis->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+            vnetRaiseInterrupt(pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
         }
         if (pThis->pDrv)
             pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, enmState);
@@ -1275,6 +1288,12 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
     if ((pThis->VPCI.uStatus & VPCI_STATUS_DRV_OK) == 0)
     {
         Log(("%s Ignoring transmit requests from non-existent driver (status=0x%x).\n", INSTANCE(pThis), pThis->VPCI.uStatus));
+        return;
+    }
+
+    if (!pThis->fCableConnected)
+    {
+        Log(("%s Ignoring transmit requests while cable is disconnected.\n", INSTANCE(pThis)));
         return;
     }
 
