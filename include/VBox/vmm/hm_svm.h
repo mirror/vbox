@@ -780,7 +780,7 @@ typedef struct
     /** Offset 0x98 - AVIC APIC BAR.  */
     SVMAVIC         AvicBar;
     /** Offset 0xa0-0xa7 - Reserved. */
-    uint8_t         u8Reserved1[0xA8 - 0xA0];
+    uint8_t         u8Reserved1[0xa8 - 0xa0];
     /** Offset 0xa8 - Event injection. */
     SVMEVENT        EventInject;
     /** Offset 0xb0 - Host CR3 for nested paging. */
@@ -799,7 +799,7 @@ typedef struct
     /** Offset 0xe0 - AVIC APIC_BACKING_PAGE pointer. */
     SVMAVIC         AvicBackingPagePtr;
     /** Offset 0xe8-0xef - Reserved. */
-    uint8_t         u8Reserved2[0xF0 - 0xE8];
+    uint8_t         u8Reserved2[0xf0 - 0xe8];
     /** Offset 0xf0 - AVIC LOGICAL_TABLE pointer. */
     SVMAVIC         AvicLogicalTablePtr;
     /** Offset 0xf8 - AVIC PHYSICAL_TABLE pointer. */
@@ -873,15 +873,15 @@ typedef struct
     /** Offset 0x490 - Guest TR register + hidden parts. */
     SVMSELREG   TR;
     /** Offset 0x4A0-0x4CA - Reserved. */
-    uint8_t     u8Reserved0[0x4CB - 0x4A0];
+    uint8_t     u8Reserved0[0x4cb - 0x4a0];
     /** Offset 0x4CB - CPL. */
     uint8_t     u8CPL;
     /** Offset 0x4CC-0x4CF - Reserved. */
-    uint8_t     u8Reserved1[0x4D0 - 0x4CC];
+    uint8_t     u8Reserved1[0x4d0 - 0x4cc];
     /** Offset 0x4D0 - EFER. */
     uint64_t    u64EFER;
     /** Offset 0x4D8-0x547 - Reserved. */
-    uint8_t     u8Reserved2[0x548 - 0x4D8];
+    uint8_t     u8Reserved2[0x548 - 0x4d8];
     /** Offset 0x548 - CR4. */
     uint64_t    u64CR4;
     /** Offset 0x550 - CR3. */
@@ -897,11 +897,11 @@ typedef struct
     /** Offset 0x578 - RIP. */
     uint64_t    u64RIP;
     /** Offset 0x580-0x5D7 - Reserved. */
-    uint8_t     u8Reserved3[0x5D8 - 0x580];
+    uint8_t     u8Reserved3[0x5d8 - 0x580];
     /** Offset 0x5D8 - RSP. */
     uint64_t    u64RSP;
     /** Offset 0x5E0-0x5F7 - Reserved. */
-    uint8_t     u8Reserved4[0x5F8 - 0x5E0];
+    uint8_t     u8Reserved4[0x5f8 - 0x5e0];
     /** Offset 0x5F8 - RAX. */
     uint64_t    u64RAX;
     /** Offset 0x600 - STAR. */
