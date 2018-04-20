@@ -467,9 +467,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                struct sockaddr_in *addr)
 {
     struct sockaddr_in saddr, daddr;
-#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
-    struct socket *pSocketClone = NULL;
-#endif
+
     Assert(so->so_type == IPPROTO_UDP);
     LogFlowFunc(("ENTER: so = %R[natsock], m = %p, saddr = %RTnaipv4\n", so, m, addr->sin_addr.s_addr));
 
@@ -508,17 +506,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                 saddr.sin_addr.s_addr = alias_addr.s_addr;
             else
                 saddr.sin_addr.s_addr = addr->sin_addr.s_addr;
-            /* we shouldn't override initial socket */
-#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
-            if (so->so_cCloneCounter)
-                pSocketClone = soLookUpClonedUDPSocket(pData, so, addr->sin_addr.s_addr);
-            if (!pSocketClone)
-                pSocketClone = soCloneUDPSocketWithForegnAddr(pData, false, so, addr->sin_addr.s_addr);
-            Assert((pSocketClone));
-            so = pSocketClone;
-#else
             so->so_faddr.s_addr = addr->sin_addr.s_addr;
-#endif
         }
     }
 
@@ -605,16 +593,6 @@ udp_detach(PNATState pData, struct socket *so)
         QSOCKET_LOCK(udb);
         SOCKET_LOCK(so);
         QSOCKET_UNLOCK(udb);
-#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
-        if (so->so_cloneOf)
-            so->so_cloneOf->so_cCloneCounter--;
-        else if (so->so_cCloneCounter > 0)
-        {
-            /* we can't close socket yet */
-            SOCKET_UNLOCK(so);
-            return;
-        }
-#endif
         closesocket(so->s);
         sofree(pData, so);
         SOCKET_UNLOCK(so);

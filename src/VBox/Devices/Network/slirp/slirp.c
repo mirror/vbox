@@ -685,10 +685,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         so->so_poll_index = -1;
 #endif
         STAM_COUNTER_INC(&pData->StatTCP);
-#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
-        /* TCP socket can't be cloned */
-        Assert((!so->so_cloneOf));
-#endif
+
         /*
          * See if we need a tcp_fasttimo
          */
@@ -797,10 +794,6 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
                 CONTINUE_NO_UNLOCK(udp);
             }
         }
-#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
-        if (so->so_cloneOf)
-                CONTINUE_NO_UNLOCK(udp);
-#endif
 
         /*
          * When UDP packets are received from over the link, they're
@@ -962,10 +955,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
      */
     QSOCKET_FOREACH(so, so_next, tcp)
     /* { */
-        /* TCP socket can't be cloned */
-#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
-        Assert((!so->so_cloneOf));
-#endif
         Assert(!so->fUnderPolling);
         so->fUnderPolling = 1;
         if (slirpVerifyAndFreeSocket(pData, so))
@@ -1234,10 +1223,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
      */
      QSOCKET_FOREACH(so, so_next, udp)
      /* { */
-#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
-        if (so->so_cloneOf)
-            CONTINUE_NO_UNLOCK(udp);
-#endif
 #if 0
         so->fUnderPolling = 1;
         if(slirpVerifyAndFreeSocket(pData, so));
