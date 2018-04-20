@@ -675,11 +675,13 @@ protected:
         return QString("MoveVM");
     }
 
+#if 0 /* conflict with RenameVMGroup action to be resolved first */
     /** Returns default shortcut. */
     virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
     {
         return QKeySequence("Ctrl+M");
     }
+#endif /* conflict with RenameVMGroup action to be resolved first */
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
