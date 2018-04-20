@@ -557,7 +557,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIApplianceImportEditorWidget.h \
 	src/widgets/UIEmptyFilePathSelector.h \
 	src/widgets/UILineTextEdit.h \
-	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UISlidingWidget.h \
 	src/widgets/UITabBar.h \
 	src/widgets/VBoxMediaComboBox.h \
@@ -692,6 +691,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPopupPaneDetails.h \
 	src/widgets/UIPopupStack.h \
 	src/widgets/UIPopupStackViewport.h \
+	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIToolBar.h
@@ -787,6 +787,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/widgets/UIPopupPaneDetails.h \
 	src/widgets/UIPopupStack.h \
 	src/widgets/UIPopupStackViewport.h \
+	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIToolBar.h
@@ -839,7 +840,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UIMiniToolBar.cpp \
-	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UITabBar.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
@@ -861,6 +861,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
+	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp
 
  VirtualBox_QT_MOCSRCS.linux += \
@@ -901,6 +902,7 @@ VBoxGlobal_QT_MOCSRCS = \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
+	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp
 
 VBoxGlobal_QT_MOCSRCS.linux += \
@@ -1050,7 +1052,6 @@ VirtualBox_SOURCES = \
 	src/widgets/UIApplianceImportEditorWidget.cpp \
 	src/widgets/UIEmptyFilePathSelector.cpp \
 	src/widgets/UILineTextEdit.cpp \
-	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UISlidingWidget.cpp \
 	src/widgets/UITabBar.cpp \
 	src/widgets/VBoxGuestRAMSlider.cpp \
@@ -1225,6 +1226,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPopupPaneDetails.cpp \
 	src/widgets/UIPopupStack.cpp \
 	src/widgets/UIPopupStackViewport.cpp \
+	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIToolBar.cpp
@@ -1346,6 +1348,7 @@ VBoxGlobal_SOURCES = \
 	src/widgets/UIPopupPaneDetails.cpp \
 	src/widgets/UIPopupStack.cpp \
 	src/widgets/UIPopupStackViewport.cpp \
+	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIToolBar.cpp
