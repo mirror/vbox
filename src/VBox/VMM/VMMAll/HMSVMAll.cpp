@@ -434,9 +434,9 @@ VMM_INT_DECL(bool) HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, 
 
             pIoExitInfo->u         = s_auIoOpSize[cbReg & 7];
             pIoExitInfo->u        |= s_auIoAddrSize[(cAddrSizeBits >> 4) & 7];
-            pIoExitInfo->n.u1STR   = fStrIo;
-            pIoExitInfo->n.u1REP   = fRep;
-            pIoExitInfo->n.u3SEG   = iEffSeg & 7;
+            pIoExitInfo->n.u1Str   = fStrIo;
+            pIoExitInfo->n.u1Rep   = fRep;
+            pIoExitInfo->n.u3Seg   = iEffSeg & 7;
             pIoExitInfo->n.u1Type  = enmIoType;
             pIoExitInfo->n.u16Port = u16Port;
         }

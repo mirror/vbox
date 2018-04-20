@@ -513,8 +513,8 @@ typedef const SVMSELREG *PCSVMSELREG;
  */
 typedef struct
 {
+    uint16_t    u16Reserved0;
     uint16_t    u16Reserved1;
-    uint16_t    u16Reserved2;
     uint32_t    u32Limit;       /**< Only lower 16 bits are implemented. */
     uint64_t    u64Base;
 } SVMXDTR;
@@ -560,13 +560,13 @@ typedef union
         uint32_t    u8VTPR              : 8;    /* V_TPR */
         uint32_t    u1VIrqPending       : 1;    /* V_IRQ */
         uint32_t    u1VGif              : 1;    /* VGIF */
-        uint32_t    u6Reserved0         : 6;
+        uint32_t    u6Reserved          : 6;
         uint32_t    u4VIntrPrio         : 4;    /* V_INTR_PRIO */
         uint32_t    u1IgnoreTPR         : 1;    /* V_IGN_TPR */
         uint32_t    u3Reserved          : 3;
         uint32_t    u1VIntrMasking      : 1;    /* V_INTR_MASKING */
         uint32_t    u1VGifEnable        : 1;    /* VGIF enable */
-        uint32_t    u5Reserved1         : 5;
+        uint32_t    u5Reserved          : 5;
         uint32_t    u1AvicEnable        : 1;    /* AVIC enable */
         uint32_t    u8VIntrVector       : 8;    /* V_INTR_VECTOR */
         uint32_t    u24Reserved         : 24;
@@ -597,15 +597,15 @@ typedef union
     {
         uint32_t    u1Type              : 1;   /**< Bit 0: 0 = out, 1 = in */
         uint32_t    u1Reserved          : 1;   /**< Bit 1: Reserved */
-        uint32_t    u1STR               : 1;   /**< Bit 2: String I/O (1) or not (0). */
-        uint32_t    u1REP               : 1;   /**< Bit 3: Repeat prefixed string I/O. */
-        uint32_t    u1OP8               : 1;   /**< Bit 4: 8-bit operand. */
-        uint32_t    u1OP16              : 1;   /**< Bit 5: 16-bit operand. */
-        uint32_t    u1OP32              : 1;   /**< Bit 6: 32-bit operand. */
-        uint32_t    u1ADDR16            : 1;   /**< Bit 7: 16-bit address size. */
-        uint32_t    u1ADDR32            : 1;   /**< Bit 8: 32-bit address size. */
-        uint32_t    u1ADDR64            : 1;   /**< Bit 9: 64-bit address size. */
-        uint32_t    u3SEG               : 3;   /**< Bits 12:10: Effective segment number. Added w/ decode assist in APM v3.17. */
+        uint32_t    u1Str               : 1;   /**< Bit 2: String I/O (1) or not (0). */
+        uint32_t    u1Rep               : 1;   /**< Bit 3: Repeat prefixed string I/O. */
+        uint32_t    u1Op8               : 1;   /**< Bit 4: 8-bit operand. */
+        uint32_t    u1Op16              : 1;   /**< Bit 5: 16-bit operand. */
+        uint32_t    u1Op32              : 1;   /**< Bit 6: 32-bit operand. */
+        uint32_t    u1Addr16            : 1;   /**< Bit 7: 16-bit address size. */
+        uint32_t    u1Addr32            : 1;   /**< Bit 8: 32-bit address size. */
+        uint32_t    u1Addr64            : 1;   /**< Bit 9: 64-bit address size. */
+        uint32_t    u3Seg               : 3;   /**< Bits 12:10: Effective segment number. Added w/ decode assist in APM v3.17. */
         uint32_t    u3Reserved          : 3;
         uint32_t    u16Port             : 16;  /**< Bits 31:16: Port number. */
     } n;
@@ -658,9 +658,9 @@ typedef union
 {
     struct
     {
-        uint64_t    u12Reserved1        : 12;
+        uint64_t    u12Reserved0        : 12;
         uint64_t    u40Addr             : 40;
-        uint64_t    u12Reserved2        : 12;
+        uint64_t    u12Reserved1        : 12;
     } n;
     uint64_t    u;
 } SVMAVIC;
@@ -692,7 +692,7 @@ typedef union
         uint32_t    u1NestedPaging :  1;
         uint32_t    u1Sev          :  1;
         uint32_t    u1SevEs        :  1;
-        uint32_t    u29Reserved0   : 29;
+        uint32_t    u29Reserved    : 29;
     } n;
     uint64_t    u;
 } SVMNP;
@@ -707,7 +707,7 @@ typedef union
     {
         uint32_t    u1IntShadow    :  1;
         uint32_t    u1GuestIntMask :  1;
-        uint32_t    u30Reserved0   : 30;
+        uint32_t    u30Reserved    : 30;
     } n;
     uint64_t    u;
 } SVMINTSHADOW;
@@ -722,7 +722,7 @@ typedef union
     {
         uint32_t    u1LbrVirt          :  1;
         uint32_t    u1VirtVmsaveVmload :  1;
-        uint32_t    u30Reserved1       : 30;
+        uint32_t    u30Reserved        : 30;
     } n;
     uint64_t    u;
 } SVMLBRVIRT;
@@ -750,7 +750,7 @@ typedef struct
     /** Offset 0x0c - Intercept control. */
     uint64_t        u64InterceptCtrl;
     /** Offset 0x14-0x3f - Reserved. */
-    uint8_t         u8Reserved[0x3c - 0x14];
+    uint8_t         u8Reserved0[0x3c - 0x14];
     /** Offset 0x3c - PAUSE filter threshold.  */
     uint16_t        u16PauseFilterThreshold;
     /** Offset 0x3e - PAUSE intercept filter count. */
@@ -780,7 +780,7 @@ typedef struct
     /** Offset 0x98 - AVIC APIC BAR.  */
     SVMAVIC         AvicBar;
     /** Offset 0xa0-0xa7 - Reserved. */
-    uint8_t         u8Reserved2[0xA8 - 0xA0];
+    uint8_t         u8Reserved1[0xA8 - 0xA0];
     /** Offset 0xa8 - Event injection. */
     SVMEVENT        EventInject;
     /** Offset 0xb0 - Host CR3 for nested paging. */
@@ -799,7 +799,7 @@ typedef struct
     /** Offset 0xe0 - AVIC APIC_BACKING_PAGE pointer. */
     SVMAVIC         AvicBackingPagePtr;
     /** Offset 0xe8-0xef - Reserved. */
-    uint8_t         u8Reserved3[0xF0 - 0xE8];
+    uint8_t         u8Reserved2[0xF0 - 0xE8];
     /** Offset 0xf0 - AVIC LOGICAL_TABLE pointer. */
     SVMAVIC         AvicLogicalTablePtr;
     /** Offset 0xf8 - AVIC PHYSICAL_TABLE pointer. */
@@ -817,7 +817,7 @@ AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptRdDRx,       0x04);
 AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptWrDRx,       0x06);
 AssertCompileMemberOffset(SVMVMCBCTRL, u32InterceptXcpt,        0x08);
 AssertCompileMemberOffset(SVMVMCBCTRL, u64InterceptCtrl,        0x0c);
-AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved,              0x14);
+AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved0,             0x14);
 AssertCompileMemberOffset(SVMVMCBCTRL, u16PauseFilterThreshold, 0x3c);
 AssertCompileMemberOffset(SVMVMCBCTRL, u16PauseFilterCount,     0x3e);
 AssertCompileMemberOffset(SVMVMCBCTRL, u64IOPMPhysAddr,         0x40);
@@ -832,7 +832,7 @@ AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitInfo2,            0x80);
 AssertCompileMemberOffset(SVMVMCBCTRL, ExitIntInfo,             0x88);
 AssertCompileMemberOffset(SVMVMCBCTRL, NestedPagingCtrl,        0x90);
 AssertCompileMemberOffset(SVMVMCBCTRL, AvicBar,                 0x98);
-AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved2,             0xa0);
+AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved1,             0xa0);
 AssertCompileMemberOffset(SVMVMCBCTRL, EventInject,             0xa8);
 AssertCompileMemberOffset(SVMVMCBCTRL, u64NestedPagingCR3,      0xb0);
 AssertCompileMemberOffset(SVMVMCBCTRL, LbrVirt,                 0xb8);
@@ -841,7 +841,7 @@ AssertCompileMemberOffset(SVMVMCBCTRL, u64NextRIP,              0xc8);
 AssertCompileMemberOffset(SVMVMCBCTRL, cbInstrFetched,          0xd0);
 AssertCompileMemberOffset(SVMVMCBCTRL, abInstr,                 0xd1);
 AssertCompileMemberOffset(SVMVMCBCTRL, AvicBackingPagePtr,      0xe0);
-AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved3,             0xe8);
+AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved2,             0xe8);
 AssertCompileMemberOffset(SVMVMCBCTRL, AvicLogicalTablePtr,     0xf0);
 AssertCompileMemberOffset(SVMVMCBCTRL, AvicPhysicalTablePtr,    0xf8);
 AssertCompileMemberSize(SVMVMCBCTRL,   abInstr,                 0x0f);
@@ -873,15 +873,15 @@ typedef struct
     /** Offset 0x490 - Guest TR register + hidden parts. */
     SVMSELREG   TR;
     /** Offset 0x4A0-0x4CA - Reserved. */
-    uint8_t     u8Reserved4[0x4CB - 0x4A0];
+    uint8_t     u8Reserved0[0x4CB - 0x4A0];
     /** Offset 0x4CB - CPL. */
     uint8_t     u8CPL;
     /** Offset 0x4CC-0x4CF - Reserved. */
-    uint8_t     u8Reserved5[0x4D0 - 0x4CC];
+    uint8_t     u8Reserved1[0x4D0 - 0x4CC];
     /** Offset 0x4D0 - EFER. */
     uint64_t    u64EFER;
     /** Offset 0x4D8-0x547 - Reserved. */
-    uint8_t     u8Reserved6[0x548 - 0x4D8];
+    uint8_t     u8Reserved2[0x548 - 0x4D8];
     /** Offset 0x548 - CR4. */
     uint64_t    u64CR4;
     /** Offset 0x550 - CR3. */
@@ -897,11 +897,11 @@ typedef struct
     /** Offset 0x578 - RIP. */
     uint64_t    u64RIP;
     /** Offset 0x580-0x5D7 - Reserved. */
-    uint8_t     u8Reserved7[0x5D8 - 0x580];
+    uint8_t     u8Reserved3[0x5D8 - 0x580];
     /** Offset 0x5D8 - RSP. */
     uint64_t    u64RSP;
     /** Offset 0x5E0-0x5F7 - Reserved. */
-    uint8_t     u8Reserved8[0x5F8 - 0x5E0];
+    uint8_t     u8Reserved4[0x5F8 - 0x5E0];
     /** Offset 0x5F8 - RAX. */
     uint64_t    u64RAX;
     /** Offset 0x600 - STAR. */
@@ -923,7 +923,7 @@ typedef struct
     /** Offset 0x640 - CR2. */
     uint64_t    u64CR2;
     /** Offset 0x648-0x667 - Reserved. */
-    uint8_t     u8Reserved9[0x668 - 0x648];
+    uint8_t     u8Reserved5[0x668 - 0x648];
     /** Offset 0x668 - PAT (Page Attribute Table) MSR. */
     uint64_t    u64PAT;
     /** Offset 0x670 - DBGCTL. */
@@ -953,11 +953,11 @@ AssertCompileMemberOffset(SVMVMCBSTATESAVE, GDTR,            0x460 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, LDTR,            0x470 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, IDTR,            0x480 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, TR,              0x490 - 0x400);
-AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved4,     0x4a0 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved0,     0x4a0 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8CPL,           0x4cb - 0x400);
-AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved5,     0x4cc - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved1,     0x4cc - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64EFER,         0x4d0 - 0x400);
-AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved6,     0x4d8 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved2,     0x4d8 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CR4,          0x548 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CR3,          0x550 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CR0,          0x558 - 0x400);
@@ -965,9 +965,9 @@ AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64DR7,          0x560 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64DR6,          0x568 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64RFlags,       0x570 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64RIP,          0x578 - 0x400);
-AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved7,     0x580 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved3,     0x580 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64RSP,          0x5d8 - 0x400);
-AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved8,     0x5e0 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved4,     0x5e0 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64RAX,          0x5f8 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64STAR,         0x600 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64LSTAR,        0x608 - 0x400);
@@ -978,7 +978,7 @@ AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64SysEnterCS,   0x628 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64SysEnterESP,  0x630 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64SysEnterEIP,  0x638 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CR2,          0x640 - 0x400);
-AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved9,     0x648 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved5,     0x648 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64PAT,          0x668 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64DBGCTL,       0x670 - 0x400);
 AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64BR_FROM,      0x678 - 0x400);
@@ -995,11 +995,11 @@ typedef struct SVMVMCB
     /** Offset 0x00 - Control area. */
     SVMVMCBCTRL ctrl;
     /** Offset 0x100-0x3FF - Reserved. */
-    uint8_t     u8Reserved3[0x400 - 0x100];
+    uint8_t     u8Reserved0[0x400 - 0x100];
     /** Offset 0x400 - State save area. */
     SVMVMCBSTATESAVE guest;
     /** Offset 0x698-0xFFF- Reserved. */
-    uint8_t     u8Reserved10[0x1000 - 0x698];
+    uint8_t     u8Reserved1[0x1000 - 0x698];
 } SVMVMCB;
 #pragma pack()
 /** Pointer to the SVMVMCB structure. */
@@ -1007,9 +1007,9 @@ typedef SVMVMCB *PSVMVMCB;
 /** Pointer to a const SVMVMCB structure. */
 typedef const SVMVMCB *PCSVMVMCB;
 AssertCompileMemberOffset(SVMVMCB, ctrl,         0x00);
-AssertCompileMemberOffset(SVMVMCB, u8Reserved3,  0x100);
+AssertCompileMemberOffset(SVMVMCB, u8Reserved0,  0x100);
 AssertCompileMemberOffset(SVMVMCB, guest,        0x400);
-AssertCompileMemberOffset(SVMVMCB, u8Reserved10, 0x698);
+AssertCompileMemberOffset(SVMVMCB, u8Reserved1,  0x698);
 AssertCompileSize(SVMVMCB, 0x1000);
 
 /**
@@ -1058,7 +1058,7 @@ typedef struct SVMNESTEDVMCBCACHE
     uint32_t            u1NestedPaging :  1;
     /** Cache of the LBR virtualization control. */
     uint32_t            u1LbrVirt      :  1;
-    uint32_t            u31Reserved0   : 30;
+    uint32_t            u30Reserved    : 30;
     uint32_t            u32Reserved1;
     /** @} */
 

@@ -3912,13 +3912,13 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.IntCtrl.u8VTPR                   %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VTPR));
         Log4(("ctrl.IntCtrl.u1VIrqPending            %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIrqPending));
         Log4(("ctrl.IntCtrl.u1VGif                   %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VGif));
-        Log4(("ctrl.IntCtrl.u6Reserved0              %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved0));
+        Log4(("ctrl.IntCtrl.u6Reserved0              %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved));
         Log4(("ctrl.IntCtrl.u4VIntrPrio              %#x\n",      pVmcb->ctrl.IntCtrl.n.u4VIntrPrio));
         Log4(("ctrl.IntCtrl.u1IgnoreTPR              %#x\n",      pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR));
         Log4(("ctrl.IntCtrl.u3Reserved               %#x\n",      pVmcb->ctrl.IntCtrl.n.u3Reserved));
         Log4(("ctrl.IntCtrl.u1VIntrMasking           %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIntrMasking));
         Log4(("ctrl.IntCtrl.u1VGifEnable             %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VGifEnable));
-        Log4(("ctrl.IntCtrl.u5Reserved1              %#x\n",      pVmcb->ctrl.IntCtrl.n.u5Reserved1));
+        Log4(("ctrl.IntCtrl.u5Reserved1              %#x\n",      pVmcb->ctrl.IntCtrl.n.u5Reserved));
         Log4(("ctrl.IntCtrl.u8VIntrVector            %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIntrVector));
         Log4(("ctrl.IntCtrl.u24Reserved              %#x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
 
@@ -4991,9 +4991,9 @@ static bool hmR0SvmIsIoInterceptActive(void *pvIoBitmap, PSVMIOIOEXITINFO pIoExi
     const SVMIOIOTYPE enmIoType     = (SVMIOIOTYPE)pIoExitInfo->n.u1Type;
     const uint8_t     cbReg         = (pIoExitInfo->u  >> SVM_IOIO_OP_SIZE_SHIFT)   & 7;
     const uint8_t     cAddrSizeBits = ((pIoExitInfo->u >> SVM_IOIO_ADDR_SIZE_SHIFT) & 7) << 4;
-    const uint8_t     iEffSeg       = pIoExitInfo->n.u3SEG;
-    const bool        fRep          = pIoExitInfo->n.u1REP;
-    const bool        fStrIo        = pIoExitInfo->n.u1STR;
+    const uint8_t     iEffSeg       = pIoExitInfo->n.u3Seg;
+    const bool        fRep          = pIoExitInfo->n.u1Rep;
+    const bool        fStrIo        = pIoExitInfo->n.u1Str;
 
     return HMSvmIsIOInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo,
                                     NULL /* pIoExitInfo */);
@@ -6862,7 +6862,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
     VBOXSTRICTRC rcStrict;
     bool fUpdateRipAlready = false;
-    if (IoExitInfo.n.u1STR)
+    if (IoExitInfo.n.u1Str)
     {
 #ifdef VBOX_WITH_2ND_IEM_STEP
         /* INS/OUTS - I/O String instruction. */
@@ -6881,23 +6881,23 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             uint64_t cbInstr = pVmcb->ctrl.u64ExitInfo2 - pCtx->rip;
             if (cbInstr <= 15 && cbInstr >= 1)
             {
-                Assert(cbInstr >= 1U + IoExitInfo.n.u1REP);
+                Assert(cbInstr >= 1U + IoExitInfo.n.u1Rep);
                 if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
                 {
-                    /* Don't know exactly how to detect whether u3SEG is valid, currently
+                    /* Don't know exactly how to detect whether u3Seg is valid, currently
                        only enabling it for Bulldozer and later with NRIP.  OS/2 broke on
                        2384 Opterons when only checking NRIP. */
                     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
                     if (   fSupportsNextRipSave
                         && pVM->cpum.ro.GuestFeatures.enmMicroarch >= kCpumMicroarch_AMD_15h_First)
                     {
-                        AssertMsg(IoExitInfo.n.u3SEG == X86_SREG_DS || cbInstr > 1U + IoExitInfo.n.u1REP,
-                                  ("u32Seg=%d cbInstr=%d u1REP=%d", IoExitInfo.n.u3SEG, cbInstr, IoExitInfo.n.u1REP));
-                        rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1REP, (uint8_t)cbInstr,
-                                                        IoExitInfo.n.u3SEG, true /*fIoChecked*/);
+                        AssertMsg(IoExitInfo.n.u3Seg == X86_SREG_DS || cbInstr > 1U + IoExitInfo.n.u1Rep,
+                                  ("u32Seg=%d cbInstr=%d u1REP=%d", IoExitInfo.n.u3Seg, cbInstr, IoExitInfo.n.u1Rep));
+                        rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1Rep, (uint8_t)cbInstr,
+                                                        IoExitInfo.n.u3Seg, true /*fIoChecked*/);
                     }
-                    else if (cbInstr == 1U + IoExitInfo.n.u1REP)
-                        rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1REP, (uint8_t)cbInstr,
+                    else if (cbInstr == 1U + IoExitInfo.n.u1Rep)
+                        rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1Rep, (uint8_t)cbInstr,
                                                         X86_SREG_DS, true /*fIoChecked*/);
                     else
                         rcStrict = IEMExecOne(pVCpu);
@@ -6905,8 +6905,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 }
                 else
                 {
-                    AssertMsg(IoExitInfo.n.u3SEG == X86_SREG_ES /*=0*/, ("%#x\n", IoExitInfo.n.u3SEG));
-                    rcStrict = IEMExecStringIoRead(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1REP, (uint8_t)cbInstr,
+                    AssertMsg(IoExitInfo.n.u3Seg == X86_SREG_ES /*=0*/, ("%#x\n", IoExitInfo.n.u3Seg));
+                    rcStrict = IEMExecStringIoRead(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1Rep, (uint8_t)cbInstr,
                                                    true /*fIoChecked*/);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
                 }
@@ -6954,7 +6954,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     else
     {
         /* IN/OUT - I/O instruction. */
-        Assert(!IoExitInfo.n.u1REP);
+        Assert(!IoExitInfo.n.u1Rep);
 
         if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
         {
