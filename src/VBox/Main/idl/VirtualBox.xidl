@@ -10692,7 +10692,7 @@ and "VAR" for unsetting. -->
     uuid="bb7a372a-f635-4e11-a81a-e707f3a52ef5"
     >
     <desc>
-      Guest session waiting flags. Multiple flags can be combined.
+      Guest session waiting flags.
     </desc>
 
     <const name="None"                    value="0">
@@ -10921,7 +10921,7 @@ and "VAR" for unsetting. -->
     uuid="23b550c7-78e1-437e-98f0-65fd9757bcd2"
     >
     <desc>
-      Process waiting flags. Multiple flags can be combined.
+      Process waiting flags.
     </desc>
 
     <const name="None"                  value="0">
