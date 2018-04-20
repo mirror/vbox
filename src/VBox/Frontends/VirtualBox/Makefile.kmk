@@ -563,7 +563,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIMenuToolBar.h \
 	src/widgets/UIMiniToolBar.h \
 	src/widgets/VBoxOSTypeSelectorButton.h \
-	src/widgets/UIWarningPane.h \
 	src/widgets/graphics/UIGraphicsButton.h \
 	src/widgets/graphics/UIGraphicsRotatorButton.h \
 	src/widgets/graphics/UIGraphicsZoomButton.h \
@@ -694,7 +693,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISpecialControls.h \
-	src/widgets/UIToolBar.h
+	src/widgets/UIToolBar.h \
+	src/widgets/UIWarningPane.h
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VirtualBox_QT_MOCHDRS += \
@@ -790,7 +790,8 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISpecialControls.h \
-	src/widgets/UIToolBar.h
+	src/widgets/UIToolBar.h \
+	src/widgets/UIWarningPane.h
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VBoxGlobal_QT_MOCHDRS += \
@@ -1059,7 +1060,6 @@ VirtualBox_SOURCES = \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
-	src/widgets/UIWarningPane.cpp \
 	src/widgets/graphics/UIGraphicsButton.cpp \
 	src/widgets/graphics/UIGraphicsRotatorButton.cpp \
 	src/widgets/graphics/UIGraphicsZoomButton.cpp \
@@ -1229,7 +1229,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UISpecialControls.cpp \
-	src/widgets/UIToolBar.cpp
+	src/widgets/UIToolBar.cpp \
+	src/widgets/UIWarningPane.cpp
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VirtualBox_SOURCES += \
@@ -1351,7 +1352,8 @@ VBoxGlobal_SOURCES = \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UISpecialControls.cpp \
-	src/widgets/UIToolBar.cpp
+	src/widgets/UIToolBar.cpp \
+	src/widgets/UIWarningPane.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VBoxGlobal_SOURCES += \

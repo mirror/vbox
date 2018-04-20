@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,62 +15,81 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWarningPane_h__
-#define __UIWarningPane_h__
+#ifndef ___UIWarningPane_h___
+#define ___UIWarningPane_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QWidget>
 
-/* Forward declarations: */
-class UIPageValidator;
-class QHBoxLayout;
-class QLabel;
-class QTimer;
+/* GUI includes: */
+#include "UILibraryDefs.h"
 
-/* Warning-pane prototype: */
-class UIWarningPane: public QWidget
+/* Forward declarations: */
+class QHBoxLayout;
+class QEvent;
+class QLabel;
+class QObject;
+class QString;
+class QTimer;
+class QWidget;
+class UIPageValidator;
+
+/** QWidget subclass used a settings dialog warning-pane. */
+class SHARED_LIBRARY_STUFF UIWarningPane : public QWidget
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifiers: Hover stuff: */
+    /** Notifies about hover enter event.
+      * @param  pValidator  Brings the validator reference. */
     void sigHoverEnter(UIPageValidator *pValidator);
+    /** Notifies about hover leave event.
+      * @param  pValidator  Brings the validator reference. */
     void sigHoverLeave(UIPageValidator *pValidator);
 
 public:
 
-    /* Constructor: */
+    /** Constructs warning-pane passing @a pParent to the base-class. */
     UIWarningPane(QWidget *pParent = 0);
 
-    /* API: Warning stuff: */
+    /** Defines current @a strWarningLabel text. */
     void setWarningLabel(const QString &strWarningLabel);
 
-    /* API: Registry stuff: */
+    /** Registers corresponding @a pValidator. */
     void registerValidator(UIPageValidator *pValidator);
+
+protected:
+
+    /** Preprocesses Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
 
 private slots:
 
-    /* Handler: Hover stuff: */
+    /** Handles hover timer timeout. */
     void sltHandleHoverTimer();
 
 private:
 
-    /* Helpers: Prepare stuff: */
+    /** Prepares all. */
     void prepare();
-    void prepareContent();
 
-    /* Handler: Event processing stuff: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
-
-    /* Variables: */
+    /** Holds the icon layout instance. */
     QHBoxLayout *m_pIconLayout;
-    QLabel *m_pTextLabel;
-    QList<UIPageValidator*> m_validators;
-    QList<QLabel*> m_icons;
-    QList<bool> m_hovered;
+    /** Holds the text label instance. */
+    QLabel      *m_pTextLabel;
+
+    /** Holds the page validators list. */
+    QList<UIPageValidator*>  m_validators;
+    /** Holds the page icons list. */
+    QList<QLabel*>           m_icons;
+    /** Holds the icons hovered-states list. */
+    QList<bool>              m_hovered;
+
+    /** Holds the hover timer instance. */
     QTimer *m_pHoverTimer;
-    int m_iHoveredIconLabelPosition;
+    /** Holds the hovered icon-label position. */
+    int     m_iHoveredIconLabelPosition;
 };
 
-#endif /* __UIWarningPane_h__ */
+#endif /* !___UIWarningPane_h___ */

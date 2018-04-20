@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,13 +21,13 @@
 
 /* Qt includes: */
 # include <QHBoxLayout>
-# include <QLabel>
 # include <QEvent>
+# include <QLabel>
 # include <QTimer>
 
 /* GUI includes: */
-# include "UIWarningPane.h"
 # include "QIWidgetValidator.h"
+# include "UIWarningPane.h"
 
 /* Other VBox includes: */
 # include <VBox/sup.h>
@@ -70,72 +70,24 @@ void UIWarningPane::registerValidator(UIPageValidator *pValidator)
     /* Create icon-label for newly registered validator: */
     QLabel *pIconLabel = new QLabel;
     {
-        /* Add icon-label into list: */
-        m_icons << pIconLabel;
-        /* Add icon-label into layout: */
-        m_pIconLayout->addWidget(pIconLabel);
         /* Configure icon-label: */
         pIconLabel->setMouseTracking(true);
         pIconLabel->installEventFilter(this);
         pIconLabel->setPixmap(pValidator->warningPixmap());
-        connect(pValidator, SIGNAL(sigShowWarningIcon()), pIconLabel, SLOT(show()));
-        connect(pValidator, SIGNAL(sigHideWarningIcon()), pIconLabel, SLOT(hide()));
+        connect(pValidator, &UIPageValidator::sigShowWarningIcon, pIconLabel, &QLabel::show);
+        connect(pValidator, &UIPageValidator::sigHideWarningIcon, pIconLabel, &QLabel::hide);
+
+        /* Add icon-label into list: */
+        m_icons << pIconLabel;
+        /* Add icon-label into layout: */
+        m_pIconLayout->addWidget(pIconLabel);
     }
 
     /* Mark icon as 'unhovered': */
     m_hovered << false;
 }
 
-void UIWarningPane::sltHandleHoverTimer()
-{
-    /* Notify listeners about hovering: */
-    if (m_iHoveredIconLabelPosition >= 0 && m_iHoveredIconLabelPosition < m_validators.size())
-        emit sigHoverEnter(m_validators[m_iHoveredIconLabelPosition]);
-}
-
-void UIWarningPane::prepare()
-{
-    /* Prepare content: */
-    prepareContent();
-}
-
-void UIWarningPane::prepareContent()
-{
-    /* Create main-layout: */
-    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-    {
-        /* Configure layout: */
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-        /* Add left stretch: */
-        pMainLayout->addStretch();
-        /* Create text-label: */
-        m_pTextLabel = new QLabel;
-        {
-            /* Add into main-layout: */
-            pMainLayout->addWidget(m_pTextLabel);
-        }
-        /* Create layout: */
-        m_pIconLayout = new QHBoxLayout;
-        {
-            /* Configure layout: */
-            m_pIconLayout->setContentsMargins(0, 0, 0, 0);
-            /* Add into main-layout: */
-            pMainLayout->addLayout(m_pIconLayout);
-        }
-        /* Create hover-timer: */
-        m_pHoverTimer = new QTimer(this);
-        {
-            /* Configure timer: */
-            m_pHoverTimer->setInterval(200);
-            m_pHoverTimer->setSingleShot(true);
-            connect(m_pHoverTimer, SIGNAL(timeout()), this, SLOT(sltHandleHoverTimer()));
-        }
-        /* Add right stretch: */
-        pMainLayout->addStretch();
-    }
-}
-
-bool UIWarningPane::eventFilter(QObject *pWatched, QEvent *pEvent)
+bool UIWarningPane::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Depending on event-type: */
     switch (pEvent->type())
@@ -144,7 +96,7 @@ bool UIWarningPane::eventFilter(QObject *pWatched, QEvent *pEvent)
         case QEvent::MouseMove:
         {
             /* Cast object to label: */
-            if (QLabel *pIconLabel = qobject_cast<QLabel*>(pWatched))
+            if (QLabel *pIconLabel = qobject_cast<QLabel*>(pObject))
             {
                 /* Search for the corresponding icon: */
                 if (m_icons.contains(pIconLabel))
@@ -161,11 +113,12 @@ bool UIWarningPane::eventFilter(QObject *pWatched, QEvent *pEvent)
             }
             break;
         }
+
         /* One of icons unhovered: */
         case QEvent::Leave:
         {
             /* Cast object to label: */
-            if (QLabel *pIconLabel = qobject_cast<QLabel*>(pWatched))
+            if (QLabel *pIconLabel = qobject_cast<QLabel*>(pObject))
             {
                 /* Search for the corresponding icon: */
                 if (m_icons.contains(pIconLabel))
@@ -187,10 +140,61 @@ bool UIWarningPane::eventFilter(QObject *pWatched, QEvent *pEvent)
             }
             break;
         }
+
         /* Default case: */
-        default: break;
+        default:
+            break;
     }
+
     /* Call to base-class: */
-    return QWidget::eventFilter(pWatched, pEvent);
+    return QWidget::eventFilter(pObject, pEvent);
 }
 
+void UIWarningPane::sltHandleHoverTimer()
+{
+    /* Notify listeners about hovering: */
+    if (m_iHoveredIconLabelPosition >= 0 && m_iHoveredIconLabelPosition < m_validators.size())
+        emit sigHoverEnter(m_validators[m_iHoveredIconLabelPosition]);
+}
+
+void UIWarningPane::prepare()
+{
+    /* Create main-layout: */
+    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
+    {
+        /* Configure layout: */
+        pMainLayout->setContentsMargins(0, 0, 0, 0);
+
+        /* Add left stretch: */
+        pMainLayout->addStretch();
+
+        /* Create text-label: */
+        m_pTextLabel = new QLabel;
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pTextLabel);
+        }
+
+        /* Create layout: */
+        m_pIconLayout = new QHBoxLayout;
+        {
+            /* Configure layout: */
+            m_pIconLayout->setContentsMargins(0, 0, 0, 0);
+
+            /* Add into layout: */
+            pMainLayout->addLayout(m_pIconLayout);
+        }
+
+        /* Create hover-timer: */
+        m_pHoverTimer = new QTimer(this);
+        {
+            /* Configure timer: */
+            m_pHoverTimer->setInterval(200);
+            m_pHoverTimer->setSingleShot(true);
+            connect(m_pHoverTimer, &QTimer::timeout, this, &UIWarningPane::sltHandleHoverTimer);
+        }
+
+        /* Add right stretch: */
+        pMainLayout->addStretch();
+    }
+}
