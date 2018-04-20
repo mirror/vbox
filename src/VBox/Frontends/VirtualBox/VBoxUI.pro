@@ -60,6 +60,7 @@ TRANSLATIONS = \
 	nls/VirtualBox_fr.ts \
 	nls/VirtualBox_gl.ts \
 	nls/VirtualBox_he.ts \
+	nls/VirtualBox_hr_HR.ts \
 	nls/VirtualBox_hu.ts \
 	nls/VirtualBox_id.ts \
 	nls/VirtualBox_it.ts \
