@@ -678,6 +678,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
+	src/widgets/UIGuestRAMSlider.h \
 	src/widgets/UIHostComboEditor.h \
 	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UIMediumSizeEditor.h \
@@ -775,6 +776,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
+	src/widgets/UIGuestRAMSlider.h \
 	src/widgets/UIHostComboEditor.h \
 	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UIMediumSizeEditor.h \
@@ -1055,7 +1057,6 @@ VirtualBox_SOURCES = \
 	src/widgets/UILineTextEdit.cpp \
 	src/widgets/UISlidingWidget.cpp \
 	src/widgets/UITabBar.cpp \
-	src/widgets/VBoxGuestRAMSlider.cpp \
 	src/widgets/VBoxMediaComboBox.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UIMiniToolBar.cpp \
@@ -1214,6 +1215,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
+	src/widgets/UIGuestRAMSlider.cpp \
 	src/widgets/UIHostComboEditor.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIMediumSizeEditor.cpp \
@@ -1337,6 +1339,7 @@ VBoxGlobal_SOURCES = \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
+	src/widgets/UIGuestRAMSlider.cpp \
 	src/widgets/UIHostComboEditor.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIMediumSizeEditor.cpp \

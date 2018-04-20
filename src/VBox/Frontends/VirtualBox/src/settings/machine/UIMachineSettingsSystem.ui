@@ -48,7 +48,7 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="VBoxGuestRAMSlider" name="m_pSliderMemorySize">
+           <widget class="UIGuestRAMSlider" name="m_pSliderMemorySize">
             <property name="whatsThis">
              <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
             </property>
@@ -657,9 +657,9 @@
    <header>QIAdvancedSlider.h</header>
   </customwidget>
   <customwidget>
-   <class>VBoxGuestRAMSlider</class>
+   <class>UIGuestRAMSlider</class>
    <extends>QIAdvancedSlider</extends>
-   <header>VBoxGuestRAMSlider.h</header>
+   <header>UIGuestRAMSlider.h</header>
   </customwidget>
   <customwidget>
    <class>QIToolButton</class>

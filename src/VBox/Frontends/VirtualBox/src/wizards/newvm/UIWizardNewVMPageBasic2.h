@@ -22,7 +22,7 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class VBoxGuestRAMSlider;
+class UIGuestRAMSlider;
 class QSpinBox;
 class QLabel;
 class QIRichTextLabel;
@@ -40,7 +40,7 @@ protected:
     void onRamEditorValueChanged();
 
     /* Widgets: */
-    VBoxGuestRAMSlider *m_pRamSlider;
+    UIGuestRAMSlider *m_pRamSlider;
     QSpinBox *m_pRamEditor;
     QLabel *m_pRamMin;
     QLabel *m_pRamMax;

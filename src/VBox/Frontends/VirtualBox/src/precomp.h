@@ -638,7 +638,7 @@
 #include "VBoxFBOverlayCommon.h"
 #include "UIFilePathSelector.h"
 #include "VBoxGlobal.h"
-#include "VBoxGuestRAMSlider.h"
+#include "UIGuestRAMSlider.h"
 //#include "VBoxIChatTheaterWrapper.h"
 #include "VBoxLicenseViewer.h"
 #include "VBoxMediaComboBox.h"
