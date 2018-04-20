@@ -3773,28 +3773,19 @@ static DECLCALLBACK(void) hmR3InfoSvmNstGstVmcbCache(PVM pVM, PCDBGFINFOHLP pHlp
         PCCPUMCTX            pCtx = CPUMQueryGuestCtxPtr(pVCpu);
         PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
         pHlp->pfnPrintf(pHlp, "CPU[%u]: HM SVM nested-guest VMCB cache\n", pVCpu->idCpu);
-        pHlp->pfnPrintf(pHlp, "  fHMCachedVmcb     = %#RTbool\n", pCtx->hwvirt.svm.fHMCachedVmcb);
-        pHlp->pfnPrintf(pHlp, "  u16InterceptRdCRx = %#RX16\n",   pVmcbNstGstCache->u16InterceptRdCRx);
-        pHlp->pfnPrintf(pHlp, "  u16InterceptWrCRx = %#RX16\n",   pVmcbNstGstCache->u16InterceptWrCRx);
-        pHlp->pfnPrintf(pHlp, "  u16InterceptRdDRx = %#RX16\n",   pVmcbNstGstCache->u16InterceptRdDRx);
-        pHlp->pfnPrintf(pHlp, "  u16InterceptWrDRx = %#RX16\n",   pVmcbNstGstCache->u16InterceptWrDRx);
-        pHlp->pfnPrintf(pHlp, "  u32InterceptXcpt  = %#RX32\n",   pVmcbNstGstCache->u32InterceptXcpt);
-        pHlp->pfnPrintf(pHlp, "  u64InterceptCtrl  = %#RX64\n",   pVmcbNstGstCache->u64InterceptCtrl);
-        pHlp->pfnPrintf(pHlp, "  u64IOPMPhysAddr   = %#RX64\n",   pVmcbNstGstCache->u64IOPMPhysAddr);
-        pHlp->pfnPrintf(pHlp, "  u64MSRPMPhysAddr  = %#RX64\n",   pVmcbNstGstCache->u64MSRPMPhysAddr);
-        pHlp->pfnPrintf(pHlp, "  u64TSCOffset      = %#RX64\n",   pVmcbNstGstCache->u64TSCOffset);
-        pHlp->pfnPrintf(pHlp, "  u32VmcbCleanBits  = %#RX32\n",   pVmcbNstGstCache->u32VmcbCleanBits);
-        pHlp->pfnPrintf(pHlp, "  TLBCtrl           = %#RX64\n",   pVmcbNstGstCache->TLBCtrl);
-        pHlp->pfnPrintf(pHlp, "    u32ASID           = %#RX64\n", pVmcbNstGstCache->TLBCtrl.n.u32ASID);
-        pHlp->pfnPrintf(pHlp, "    u8TLBFlush        = %#RX64\n", pVmcbNstGstCache->TLBCtrl.n.u8TLBFlush);
-        pHlp->pfnPrintf(pHlp, "  u1NestedPaging    = %RTbool\n",  pVmcbNstGstCache->u1NestedPaging);
-        pHlp->pfnPrintf(pHlp, "  u1LbrVirt         = %RTbool\n",  pVmcbNstGstCache->u1LbrVirt);
-        pHlp->pfnPrintf(pHlp, "  u64CR0            = %#RX64\n",   pVmcbNstGstCache->u64CR0);
-        pHlp->pfnPrintf(pHlp, "  u64CR3            = %#RX64\n",   pVmcbNstGstCache->u64CR3);
-        pHlp->pfnPrintf(pHlp, "  u64CR4            = %#RX64\n",   pVmcbNstGstCache->u64CR4);
-        pHlp->pfnPrintf(pHlp, "  u64EFER           = %#RX64\n",   pVmcbNstGstCache->u64EFER);
-        pHlp->pfnPrintf(pHlp, "  u64DBGCTL         = %#RX64\n",   pVmcbNstGstCache->u64DBGCTL);
-        pHlp->pfnPrintf(pHlp, "  fVIntrMasking     = %RTbool\n",  pVmcbNstGstCache->fVIntrMasking);
+        pHlp->pfnPrintf(pHlp, "  fHMCachedVmcb           = %#RTbool\n", pCtx->hwvirt.svm.fHMCachedVmcb);
+        pHlp->pfnPrintf(pHlp, "  u16InterceptRdCRx       = %#RX16\n",   pVmcbNstGstCache->u16InterceptRdCRx);
+        pHlp->pfnPrintf(pHlp, "  u16InterceptWrCRx       = %#RX16\n",   pVmcbNstGstCache->u16InterceptWrCRx);
+        pHlp->pfnPrintf(pHlp, "  u16InterceptRdDRx       = %#RX16\n",   pVmcbNstGstCache->u16InterceptRdDRx);
+        pHlp->pfnPrintf(pHlp, "  u16InterceptWrDRx       = %#RX16\n",   pVmcbNstGstCache->u16InterceptWrDRx);
+        pHlp->pfnPrintf(pHlp, "  u16PauseFilterThreshold = %#RX16\n",   pVmcbNstGstCache->u16PauseFilterThreshold);
+        pHlp->pfnPrintf(pHlp, "  u16PauseFilterCount     = %#RX16\n",   pVmcbNstGstCache->u16PauseFilterCount);
+        pHlp->pfnPrintf(pHlp, "  u32InterceptXcpt        = %#RX32\n",   pVmcbNstGstCache->u32InterceptXcpt);
+        pHlp->pfnPrintf(pHlp, "  u64InterceptCtrl        = %#RX64\n",   pVmcbNstGstCache->u64InterceptCtrl);
+        pHlp->pfnPrintf(pHlp, "  u64TSCOffset            = %#RX64\n",   pVmcbNstGstCache->u64TSCOffset);
+        pHlp->pfnPrintf(pHlp, "  fVIntrMasking           = %RTbool\n",  pVmcbNstGstCache->fVIntrMasking);
+        pHlp->pfnPrintf(pHlp, "  fNestedPaging           = %RTbool\n",  pVmcbNstGstCache->fNestedPaging);
+        pHlp->pfnPrintf(pHlp, "  fLbrVirt                = %RTbool\n",  pVmcbNstGstCache->fLbrVirt);
     }
     else
     {

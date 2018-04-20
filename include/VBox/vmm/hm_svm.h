@@ -1015,17 +1015,15 @@ AssertCompileSize(SVMVMCB, 0x1000);
 /**
  * SVM nested-guest VMCB cache.
  *
- * A state structure for holding information across AMD-V VMRUN/\#VMEXIT
- * operation during execution of the nested-guest, restored on \#VMEXIT.
+ * Contains VMCB fields from the nested-guest VMCB before they're modified by
+ * SVM R0 code for hardware-assisted SVM execution of a nested-guest.
  *
- * @remarks Please update hmR3InfoNstGuestVmcbCache() when changes are made to
- *           this structure.
+ * @remarks Please update hmR3InfoSvmNstGstVmcbCache() when changes are made to
+ *          this structure.
  */
 #pragma pack(1)
 typedef struct SVMNESTEDVMCBCACHE
 {
-    /** @name Nested-guest VMCB controls.
-     * @{ */
     /** Cache of CRX read intercepts. */
     uint16_t            u16InterceptRdCRx;
     /** Cache of CRX write intercepts. */
@@ -1034,57 +1032,28 @@ typedef struct SVMNESTEDVMCBCACHE
     uint16_t            u16InterceptRdDRx;
     /** Cache of DRX write intercepts. */
     uint16_t            u16InterceptWrDRx;
+
     /** Cache of the pause-filter threshold. */
     uint16_t            u16PauseFilterThreshold;
     /** Cache of the pause-filter count. */
     uint16_t            u16PauseFilterCount;
+
     /** Cache of exception intercepts. */
     uint32_t            u32InterceptXcpt;
-
     /** Cache of control intercepts. */
     uint64_t            u64InterceptCtrl;
-    /** Cache of IOPM nested-guest physical address. */
-    uint64_t            u64IOPMPhysAddr;
-    /** Cache of MSRPM nested-guest physical address. */
-    uint64_t            u64MSRPMPhysAddr;
+
     /** Cache of the TSC offset. */
     uint64_t            u64TSCOffset;
-    /** Cache of the VMCB clean bits. */
-    uint32_t            u32VmcbCleanBits;
-    uint32_t            u32Reserved0;
-    /** Cache of the TLB control. */
-    SVMTLBCTRL          TLBCtrl;
-    /** Cache of the nested-paging control. */
-    uint32_t            u1NestedPaging :  1;
-    /** Cache of the LBR virtualization control. */
-    uint32_t            u1LbrVirt      :  1;
-    uint32_t            u30Reserved    : 30;
-    uint32_t            u32Reserved1;
-    /** @} */
 
-    /** @name Nested-guest VMCB guest state.
-     * @{ */
-    /** Cache of CR0. */
-    uint64_t            u64CR0;
-    /** Cache of CR3. */
-    uint64_t            u64CR3;
-    /** Cache of CR4. */
-    uint64_t            u64CR4;
-    /** Cache of EFER. */
-    uint64_t            u64EFER;
-    /** Cache of DBGCTL. */
-    uint64_t            u64DBGCTL;
-    /** Cache of the PAT MSR. */
-    uint64_t            u64PAT;
-    /** @} */
-
-    /** @name Other miscellaneous state.
-     * @{ */
     /** Cache of V_INTR_MASKING bit. */
     bool                fVIntrMasking;
+    /** Cache of the nested-paging bit. */
+    bool                fNestedPaging;
+    /** Cache of the LBR virtualization bit. */
+    bool                fLbrVirt;
     /** Alignment. */
-    bool                afPadding0[7];
-    /** @} */
+    bool                afPadding0[5];
 } SVMNESTEDVMCBCACHE;
 #pragma pack()
 /** Pointer to the SVMNESTEDVMCBCACHE structure. */

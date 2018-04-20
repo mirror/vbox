@@ -131,57 +131,35 @@ static int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpdateRipAndR
  * Notification callback for when a \#VMEXIT happens outside SVM R0 code (e.g.
  * in IEM).
  *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   pCtx    Pointer to the guest-CPU context.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pCtx            Pointer to the guest-CPU context.
  *
  * @sa      hmR0SvmVmRunCacheVmcb.
  */
 VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    /*
-     * Restore the nested-guest VMCB fields which have been modified for executing
-     * the nested-guest under SVM R0.
-     */
     if (pCtx->hwvirt.svm.fHMCachedVmcb)
     {
-        PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-        PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
-        PSVMVMCBSTATESAVE   pVmcbNstGstState = &pVmcbNstGst->guest;
-        PSVMNESTEDVMCBCACHE pNstGstVmcbCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+        PSVMVMCBCTRL        pVmcbNstGstCtrl  = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+        PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
 
         /*
-         * The fields that are guaranteed to be read-only during SVM guest execution
-         * can safely be restored from our VMCB cache. Other fields like control registers
-         * are already updated by hardware-assisted SVM or by IEM. We only restore those
-         * fields that are potentially modified by hardware-assisted SVM.
+         * Restore fields as our own code might look at the VMCB controls as part
+         * of the #VMEXIT handling. Otherwise, we don't need to restore the current
+         * fields because none of them are written by a physical CPU on #VMEXIT.
          */
-        pVmcbNstGstCtrl->u16InterceptRdCRx        = pNstGstVmcbCache->u16InterceptRdCRx;
-        pVmcbNstGstCtrl->u16InterceptWrCRx        = pNstGstVmcbCache->u16InterceptWrCRx;
-        pVmcbNstGstCtrl->u16InterceptRdDRx        = pNstGstVmcbCache->u16InterceptRdDRx;
-        pVmcbNstGstCtrl->u16InterceptWrDRx        = pNstGstVmcbCache->u16InterceptWrDRx;
-        pVmcbNstGstCtrl->u16PauseFilterCount      = pNstGstVmcbCache->u16PauseFilterCount;
-        pVmcbNstGstCtrl->u16PauseFilterThreshold  = pNstGstVmcbCache->u16PauseFilterThreshold;
-        pVmcbNstGstCtrl->u32InterceptXcpt         = pNstGstVmcbCache->u32InterceptXcpt;
-        pVmcbNstGstCtrl->u64InterceptCtrl         = pNstGstVmcbCache->u64InterceptCtrl;
-        pVmcbNstGstState->u64DBGCTL               = pNstGstVmcbCache->u64DBGCTL;
-        pVmcbNstGstCtrl->u32VmcbCleanBits         = pNstGstVmcbCache->u32VmcbCleanBits;
-        pVmcbNstGstCtrl->u64IOPMPhysAddr          = pNstGstVmcbCache->u64IOPMPhysAddr;
-        pVmcbNstGstCtrl->u64MSRPMPhysAddr         = pNstGstVmcbCache->u64MSRPMPhysAddr;
-        pVmcbNstGstCtrl->u64TSCOffset             = pNstGstVmcbCache->u64TSCOffset;
-        pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking = pNstGstVmcbCache->fVIntrMasking;
-        pVmcbNstGstCtrl->TLBCtrl                  = pNstGstVmcbCache->TLBCtrl;
-
-        /*
-         * If the nested-hypervisor isn't using nested-paging (and thus shadow paging
-         * is used by HM), we restore the original PAT MSR from the nested-guest VMCB.
-         * Otherwise, the nested-guest-CPU PAT MSR would've already been saved here by
-         * hardware-assisted SVM or by IEM.
-         */
-        if (!pNstGstVmcbCache->u1NestedPaging)
-            pVmcbNstGstState->u64PAT = pNstGstVmcbCache->u64PAT;
-
-        pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging = pNstGstVmcbCache->u1NestedPaging;
-        pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt               = pNstGstVmcbCache->u1LbrVirt;
+        pVmcbNstGstCtrl->u16InterceptRdCRx                 = pVmcbNstGstCache->u16InterceptRdCRx;
+        pVmcbNstGstCtrl->u16InterceptWrCRx                 = pVmcbNstGstCache->u16InterceptWrCRx;
+        pVmcbNstGstCtrl->u16InterceptRdDRx                 = pVmcbNstGstCache->u16InterceptRdDRx;
+        pVmcbNstGstCtrl->u16InterceptWrDRx                 = pVmcbNstGstCache->u16InterceptWrDRx;
+        pVmcbNstGstCtrl->u16PauseFilterThreshold           = pVmcbNstGstCache->u16PauseFilterThreshold;
+        pVmcbNstGstCtrl->u16PauseFilterCount               = pVmcbNstGstCache->u16PauseFilterCount;
+        pVmcbNstGstCtrl->u32InterceptXcpt                  = pVmcbNstGstCache->u32InterceptXcpt;
+        pVmcbNstGstCtrl->u64InterceptCtrl                  = pVmcbNstGstCache->u64InterceptCtrl;
+        pVmcbNstGstCtrl->u64TSCOffset                      = pVmcbNstGstCache->u64TSCOffset;
+        pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking          = pVmcbNstGstCache->fVIntrMasking;
+        pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging = pVmcbNstGstCache->fNestedPaging;
+        pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt               = pVmcbNstGstCache->fLbrVirt;
         pCtx->hwvirt.svm.fHMCachedVmcb = false;
     }
 
@@ -579,7 +557,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     Assert(pCtx->hwvirt.svm.fHMCachedVmcb); NOREF(pCtx);
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-    return RT_BOOL(pVmcbNstGstCache->u1NestedPaging);
+    return pVmcbNstGstCache->fNestedPaging;
 }
 
 

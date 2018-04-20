@@ -123,113 +123,138 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ds));
 
         /*
-         * Save the nested-guest state into the VMCB state-save area.
-         */
-        PSVMVMCB           pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-        PSVMVMCBCTRL       pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
-        PSVMVMCBSTATESAVE  pVmcbNstGstState = &pVmcbNstGst->guest;
-
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbNstGstState, ES, es);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbNstGstState, CS, cs);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbNstGstState, SS, ss);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbNstGstState, DS, ds);
-        pVmcbNstGstState->GDTR.u32Limit = pCtx->gdtr.cbGdt;
-        pVmcbNstGstState->GDTR.u64Base  = pCtx->gdtr.pGdt;
-        pVmcbNstGstState->IDTR.u32Limit = pCtx->idtr.cbIdt;
-        pVmcbNstGstState->IDTR.u64Base  = pCtx->idtr.pIdt;
-        pVmcbNstGstState->u64EFER       = pCtx->msrEFER;
-        pVmcbNstGstState->u64CR4        = pCtx->cr4;
-        pVmcbNstGstState->u64CR3        = pCtx->cr3;
-        pVmcbNstGstState->u64CR2        = pCtx->cr2;
-        pVmcbNstGstState->u64CR0        = pCtx->cr0;
-        /** @todo Nested paging. */
-        pVmcbNstGstState->u64RFlags     = pCtx->rflags.u64;
-        pVmcbNstGstState->u64RIP        = pCtx->rip;
-        pVmcbNstGstState->u64RSP        = pCtx->rsp;
-        pVmcbNstGstState->u64RAX        = pCtx->rax;
-        pVmcbNstGstState->u64DR7        = pCtx->dr[7];
-        pVmcbNstGstState->u64DR6        = pCtx->dr[6];
-        pVmcbNstGstState->u8CPL         = pCtx->ss.Attr.n.u2Dpl;   /* See comment in CPUMGetGuestCPL(). */
-        Assert(CPUMGetGuestCPL(pVCpu) == pCtx->ss.Attr.n.u2Dpl);
-        if (CPUMIsGuestSvmNestedPagingEnabled(pVCpu, pCtx))
-            pVmcbNstGstState->u64PAT = pCtx->msrPAT;
-
-        PSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-
-        /*
-         * Save additional state and intercept information.
+         * Map the nested-guest VMCB from its location in guest memory.
+         * Write exactly what the CPU does on #VMEXIT thereby preserving most other bits in the
+         * guest's VMCB in memory, see @bugref{7243#c113} and related comment on iemSvmVmrun().
          *
-         *   - Interrupt shadow: Tracked using VMCPU_FF_INHIBIT_INTERRUPTS and RIP.
-         *   - V_TPR: Already updated by iemCImpl_load_CrX or by the physical CPU for
-         *     hardware-assisted SVM execution.
-         *   - V_IRQ: Tracked using VMCPU_FF_INTERRUPT_NESTED_GUEST force-flag and updated below.
          */
-        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-            && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
+        PSVMVMCB       pVmcbMem;
+        PGMPAGEMAPLOCK PgLockMem;
+        PSVMVMCBCTRL   pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+        rcStrict = iemMemPageMap(pVCpu, pCtx->hwvirt.svm.GCPhysVmcb, IEM_ACCESS_DATA_RW, (void **)&pVmcbMem, &PgLockMem);
+        if (rcStrict == VINF_SUCCESS)
         {
-            pVmcbCtrl->IntShadow.n.u1IntShadow = 1;
+            /*
+             * Notify HM in case the nested-guest was executed using hardware-assisted SVM (which
+             * would have modified some VMCB state) that might need to be restored on #VMEXIT before
+             * writing the VMCB back to guest memory.
+             */
+            HMSvmNstGstVmExitNotify(pVCpu, pCtx);
 
-            /* Clear the inhibit-interrupt force-flag so as to not affect the outer guest. */
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-            LogFlow(("iemSvmVmexit: Interrupt shadow till %#RX64\n", pCtx->rip));
-        }
+            /*
+             * Save the nested-guest state into the VMCB state-save area.
+             */
+            PSVMVMCBSTATESAVE pVmcbMemState = &pVmcbMem->guest;
+            HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbMemState, ES, es);
+            HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbMemState, CS, cs);
+            HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbMemState, SS, ss);
+            HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcbMemState, DS, ds);
+            pVmcbMemState->GDTR.u32Limit   = pCtx->gdtr.cbGdt;
+            pVmcbMemState->GDTR.u64Base    = pCtx->gdtr.pGdt;
+            pVmcbMemState->IDTR.u32Limit   = pCtx->idtr.cbIdt;
+            pVmcbMemState->IDTR.u64Base    = pCtx->idtr.pIdt;
+            pVmcbMemState->u64EFER         = pCtx->msrEFER;
+            pVmcbMemState->u64CR4          = pCtx->cr4;
+            pVmcbMemState->u64CR3          = pCtx->cr3;
+            pVmcbMemState->u64CR2          = pCtx->cr2;
+            pVmcbMemState->u64CR0          = pCtx->cr0;
+            /** @todo Nested paging. */
+            pVmcbMemState->u64RFlags       = pCtx->rflags.u64;
+            pVmcbMemState->u64RIP          = pCtx->rip;
+            pVmcbMemState->u64RSP          = pCtx->rsp;
+            pVmcbMemState->u64RAX          = pCtx->rax;
+            pVmcbMemState->u64DR7          = pCtx->dr[7];
+            pVmcbMemState->u64DR6          = pCtx->dr[6];
+            pVmcbMemState->u8CPL           = pCtx->ss.Attr.n.u2Dpl;   /* See comment in CPUMGetGuestCPL(). */
+            Assert(CPUMGetGuestCPL(pVCpu) == pCtx->ss.Attr.n.u2Dpl);
+            if (CPUMIsGuestSvmNestedPagingEnabled(pVCpu, pCtx))
+                pVmcbMemState->u64PAT = pCtx->msrPAT;
 
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
-        {
-            Assert(pVmcbCtrl->IntCtrl.n.u1VIrqPending);
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
-        }
-        else
-            pVmcbCtrl->IntCtrl.n.u1VIrqPending = 0;
-
-        /* Save exit information. */
-        pVmcbCtrl->u64ExitCode  = uExitCode;
-        pVmcbCtrl->u64ExitInfo1 = uExitInfo1;
-        pVmcbCtrl->u64ExitInfo2 = uExitInfo2;
-
-        /*
-         * Update the exit interrupt-information field if this #VMEXIT happened as a result
-         * of delivering an event through IEM.
-         *
-         * Don't update the exit interrupt-information field if the event wasn't being injected
-         * through IEM, as it may have been updated by real hardware if the nested-guest was
-         * executed using hardware-assisted SVM.
-         */
-        {
-            uint8_t  uExitIntVector;
-            uint32_t uExitIntErr;
-            uint32_t fExitIntFlags;
-            bool const fRaisingEvent = IEMGetCurrentXcpt(pVCpu, &uExitIntVector, &fExitIntFlags, &uExitIntErr,
-                                                         NULL /* uExitIntCr2 */);
-            if (fRaisingEvent)
+            /*
+             * Save additional state and intercept information.
+             *
+             *   - V_IRQ: Tracked using VMCPU_FF_INTERRUPT_NESTED_GUEST force-flag and updated below.
+             *   - V_TPR: Already updated by iemCImpl_load_CrX or by the physical CPU for
+             *     hardware-assisted SVM execution.
+             *   - Interrupt shadow: Tracked using VMCPU_FF_INHIBIT_INTERRUPTS and RIP.
+             */
+            PSVMVMCBCTRL pVmcbMemCtrl = &pVmcbMem->ctrl;
+            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))        /* V_IRQ. */
             {
-                pVmcbCtrl->ExitIntInfo.n.u1Valid  = 1;
-                pVmcbCtrl->ExitIntInfo.n.u8Vector = uExitIntVector;
-                pVmcbCtrl->ExitIntInfo.n.u3Type   = iemGetSvmEventType(uExitIntVector, fExitIntFlags);
-                if (fExitIntFlags & IEM_XCPT_FLAGS_ERR)
+                Assert(pVmcbCtrl->IntCtrl.n.u1VIrqPending);
+                pVmcbMemCtrl->IntCtrl.n.u1VIrqPending = 1;
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
+            }
+            else
+                pVmcbMemCtrl->IntCtrl.n.u1VIrqPending = 0;
+
+            pVmcbMemCtrl->IntCtrl.n.u8VTPR = pVmcbCtrl->IntCtrl.n.u8VTPR;           /* V_TPR. */
+
+            if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)          /* Interrupt shadow. */
+                && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
+            {
+                pVmcbMemCtrl->IntShadow.n.u1IntShadow = 1;
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+                LogFlow(("iemSvmVmexit: Interrupt shadow till %#RX64\n", pCtx->rip));
+            }
+            else
+                pVmcbMemCtrl->IntShadow.n.u1IntShadow = 0;
+
+            /*
+             * Save nRIP, instruction length and byte fields.
+             */
+            pVmcbMemCtrl->u64NextRIP     = pVmcbCtrl->u64NextRIP;
+            pVmcbMemCtrl->cbInstrFetched = pVmcbCtrl->cbInstrFetched;
+            memcpy(&pVmcbMemCtrl->abInstr[0], &pVmcbCtrl->abInstr[0], sizeof(pVmcbMemCtrl->abInstr));
+
+            /*
+             * Save exit information.
+             */
+            pVmcbMemCtrl->u64ExitCode  = uExitCode;
+            pVmcbMemCtrl->u64ExitInfo1 = uExitInfo1;
+            pVmcbMemCtrl->u64ExitInfo2 = uExitInfo2;
+
+            /*
+             * Update the exit interrupt-information field if this #VMEXIT happened as a result
+             * of delivering an event through IEM.
+             *
+             * Don't update the exit interrupt-information field if the event wasn't being injected
+             * through IEM, as it would have been updated by real hardware if the nested-guest was
+             * executed using hardware-assisted SVM.
+             */
+            {
+                uint8_t  uExitIntVector;
+                uint32_t uExitIntErr;
+                uint32_t fExitIntFlags;
+                bool const fRaisingEvent = IEMGetCurrentXcpt(pVCpu, &uExitIntVector, &fExitIntFlags, &uExitIntErr,
+                                                             NULL /* uExitIntCr2 */);
+                if (fRaisingEvent)
                 {
-                    pVmcbCtrl->ExitIntInfo.n.u1ErrorCodeValid = true;
-                    pVmcbCtrl->ExitIntInfo.n.u32ErrorCode     = uExitIntErr;
+                    pVmcbCtrl->ExitIntInfo.n.u1Valid  = 1;
+                    pVmcbCtrl->ExitIntInfo.n.u8Vector = uExitIntVector;
+                    pVmcbCtrl->ExitIntInfo.n.u3Type   = iemGetSvmEventType(uExitIntVector, fExitIntFlags);
+                    if (fExitIntFlags & IEM_XCPT_FLAGS_ERR)
+                    {
+                        pVmcbCtrl->ExitIntInfo.n.u1ErrorCodeValid = true;
+                        pVmcbCtrl->ExitIntInfo.n.u32ErrorCode     = uExitIntErr;
+                    }
                 }
             }
+
+            /*
+             * Save the exit interrupt-information field.
+             * We choose to write the whole field including reserved bits as it was observed on an
+             * AMD Ryzen 5 Pro 1500 that the CPU does not preserve reserved bits in EXITINTINFO.
+             */
+            pVmcbMemCtrl->ExitIntInfo = pVmcbCtrl->ExitIntInfo;
+
+            /*
+             * Clear event injection.
+             */
+            pVmcbMemCtrl->EventInject.n.u1Valid = 0;
+
+            iemMemPageUnmap(pVCpu, pCtx->hwvirt.svm.GCPhysVmcb, IEM_ACCESS_DATA_RW, pVmcbMem, &PgLockMem);
         }
-
-        /*
-         * Clear event injection in the VMCB.
-         */
-        pVmcbCtrl->EventInject.n.u1Valid = 0;
-
-        /*
-         * Notify HM in case the nested-guest was executed using hardware-assisted SVM (which
-         * would have modified some VMCB state) that need to be restored on #VMEXIT before
-         * writing the VMCB back to guest memory.
-         */
-        HMSvmNstGstVmExitNotify(pVCpu, pCtx);
-
-        /*
-         * Write back the nested-guest's VMCB to its guest physical memory location.
-         */
-        rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pCtx->hwvirt.svm.GCPhysVmcb, pVmcbNstGst, sizeof(*pVmcbNstGst));
 
         /*
          * Prepare for guest's "host mode" by clearing internal processor state bits.
@@ -238,7 +263,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
          * sufficient because it has the critical bit of indicating whether we're inside
          * the nested-guest or not.
          */
-        memset(pVmcbNstGstCtrl, 0, sizeof(*pVmcbNstGstCtrl));
+        memset(pVmcbCtrl, 0, sizeof(*pVmcbCtrl));
         Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
         /*
@@ -250,7 +275,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
             pCtx->hwvirt.fLocalForcedActions = 0;
         }
 
-        if (RT_SUCCESS(rcStrict))
+        if (rcStrict == VINF_SUCCESS)
         {
             /** @todo Nested paging. */
             /** @todo ASID. */
@@ -277,8 +302,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
         }
         else
         {
-            LogFlow(("iemSvmVmexit: Writing VMCB at %#RGp failed. rc=%Rrc\n", pCtx->hwvirt.svm.GCPhysVmcb,
-                     VBOXSTRICTRC_VAL(rcStrict)));
+            LogFlow(("iemSvmVmexit: Mapping VMCB at %#RGp failed. rc=%Rrc\n", pCtx->hwvirt.svm.GCPhysVmcb, VBOXSTRICTRC_VAL(rcStrict)));
             rcStrict = VERR_SVM_VMEXIT_FAILED;
         }
     }
@@ -339,14 +363,47 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
     CPUMSvmVmRunSaveHostState(pCtx, cbInstr);
 
     /*
-     * Read the guest VMCB state.
+     * Read the guest VMCB.
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc = PGMPhysSimpleReadGCPhys(pVM, pCtx->hwvirt.svm.CTX_SUFF(pVmcb), GCPhysVmcb, sizeof(SVMVMCB));
     if (RT_SUCCESS(rc))
     {
+        /*
+         * AMD-V seems to preserve reserved fields and only writes back selected, recognized
+         * fields on #VMEXIT. However, not all reserved  bits are preserved (e.g, EXITINTINFO)
+         * but in our implementation we try to preserve as much as we possibly can.
+         *
+         * We could read the entire page here and only write back the relevant fields on
+         * #VMEXIT but since our internal VMCB is also being used by HM during hardware-assisted
+         * SVM execution, it creates a potential for a nested-hypervisor to set bits that are
+         * currently reserved but may be recognized as features bits in future CPUs causing
+         * unexpected & undesired results. Hence, we zero out unrecognized fields here as we
+         * typically enter hardware-assisted SVM soon anyway, see @bugref{7243#c113}.
+         */
         PSVMVMCBCTRL      pVmcbCtrl   = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
         PSVMVMCBSTATESAVE pVmcbNstGst = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->guest;
+
+        RT_ZERO(pVmcbCtrl->u8Reserved0);
+        RT_ZERO(pVmcbCtrl->u8Reserved1);
+        RT_ZERO(pVmcbCtrl->u8Reserved2);
+        RT_ZERO(pVmcbNstGst->u8Reserved0);
+        RT_ZERO(pVmcbNstGst->u8Reserved1);
+        RT_ZERO(pVmcbNstGst->u8Reserved2);
+        RT_ZERO(pVmcbNstGst->u8Reserved3);
+        RT_ZERO(pVmcbNstGst->u8Reserved4);
+        RT_ZERO(pVmcbNstGst->u8Reserved5);
+        pVmcbCtrl->u32Reserved0                   = 0;
+        pVmcbCtrl->TLBCtrl.n.u24Reserved          = 0;
+        pVmcbCtrl->IntCtrl.n.u6Reserved           = 0;
+        pVmcbCtrl->IntCtrl.n.u3Reserved           = 0;
+        pVmcbCtrl->IntCtrl.n.u5Reserved           = 0;
+        pVmcbCtrl->IntCtrl.n.u24Reserved          = 0;
+        pVmcbCtrl->IntShadow.n.u30Reserved        = 0;
+        pVmcbCtrl->ExitIntInfo.n.u19Reserved      = 0;
+        pVmcbCtrl->NestedPagingCtrl.n.u29Reserved = 0;
+        pVmcbCtrl->EventInject.n.u19Reserved      = 0;
+        pVmcbCtrl->LbrVirt.n.u30Reserved          = 0;
 
         /*
          * Validate guest-state and controls.
@@ -362,8 +419,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         if (    pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging
             && !pVM->cpum.ro.GuestFeatures.fSvmNestedPaging)
         {
-            Log(("iemSvmVmrun: Nested paging not supported -> #VMEXIT\n"));
-            return iemSvmVmexit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+            Log(("iemSvmVmrun: Nested paging not supported -> Disabling\n"));
+            pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging = 0;
         }
 
         /* AVIC. */

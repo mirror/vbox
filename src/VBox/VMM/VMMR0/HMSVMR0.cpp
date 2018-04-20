@@ -2483,11 +2483,6 @@ static void hmR0SvmMergeMsrpmNested(PHMGLOBALCPUINFO pHostCpu, PVMCPU pVCpu, PCP
  */
 static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    PCSVMVMCBCTRL       pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
-    PCSVMVMCBSTATESAVE  pVmcbNstGstState = &pVmcbNstGst->guest;
-    PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-
     /*
      * Cache the nested-guest programmed VMCB fields if we have not cached it yet.
      * Otherwise we risk re-caching the values we may have modified, see @bugref{7243#c44}.
@@ -2498,28 +2493,22 @@ static bool hmR0SvmVmRunCacheVmcb(PVMCPU pVCpu, PCPUMCTX pCtx)
     bool const fWasCached = pCtx->hwvirt.svm.fHMCachedVmcb;
     if (!fWasCached)
     {
+        PSVMVMCB            pVmcbNstGst      = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+        PCSVMVMCBCTRL       pVmcbNstGstCtrl  = &pVmcbNstGst->ctrl;
+        PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+
         pVmcbNstGstCache->u16InterceptRdCRx       = pVmcbNstGstCtrl->u16InterceptRdCRx;
         pVmcbNstGstCache->u16InterceptWrCRx       = pVmcbNstGstCtrl->u16InterceptWrCRx;
         pVmcbNstGstCache->u16InterceptRdDRx       = pVmcbNstGstCtrl->u16InterceptRdDRx;
         pVmcbNstGstCache->u16InterceptWrDRx       = pVmcbNstGstCtrl->u16InterceptWrDRx;
-        pVmcbNstGstCache->u16PauseFilterCount     = pVmcbNstGstCtrl->u16PauseFilterCount;
         pVmcbNstGstCache->u16PauseFilterThreshold = pVmcbNstGstCtrl->u16PauseFilterThreshold;
+        pVmcbNstGstCache->u16PauseFilterCount     = pVmcbNstGstCtrl->u16PauseFilterCount;
         pVmcbNstGstCache->u32InterceptXcpt        = pVmcbNstGstCtrl->u32InterceptXcpt;
         pVmcbNstGstCache->u64InterceptCtrl        = pVmcbNstGstCtrl->u64InterceptCtrl;
-        pVmcbNstGstCache->u64CR0                  = pVmcbNstGstState->u64CR0;
-        pVmcbNstGstCache->u64CR3                  = pVmcbNstGstState->u64CR3;
-        pVmcbNstGstCache->u64CR4                  = pVmcbNstGstState->u64CR4;
-        pVmcbNstGstCache->u64EFER                 = pVmcbNstGstState->u64EFER;
-        pVmcbNstGstCache->u64PAT                  = pVmcbNstGstState->u64PAT;
-        pVmcbNstGstCache->u64DBGCTL               = pVmcbNstGstState->u64DBGCTL;
-        pVmcbNstGstCache->u64IOPMPhysAddr         = pVmcbNstGstCtrl->u64IOPMPhysAddr;
-        pVmcbNstGstCache->u64MSRPMPhysAddr        = pVmcbNstGstCtrl->u64MSRPMPhysAddr;
         pVmcbNstGstCache->u64TSCOffset            = pVmcbNstGstCtrl->u64TSCOffset;
-        pVmcbNstGstCache->u32VmcbCleanBits        = pVmcbNstGstCtrl->u32VmcbCleanBits;
         pVmcbNstGstCache->fVIntrMasking           = pVmcbNstGstCtrl->IntCtrl.n.u1VIntrMasking;
-        pVmcbNstGstCache->TLBCtrl                 = pVmcbNstGstCtrl->TLBCtrl;
-        pVmcbNstGstCache->u1NestedPaging          = pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging;
-        pVmcbNstGstCache->u1LbrVirt               = pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt;
+        pVmcbNstGstCache->fNestedPaging           = pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging;
+        pVmcbNstGstCache->fLbrVirt                = pVmcbNstGstCtrl->LbrVirt.n.u1LbrVirt;
         pCtx->hwvirt.svm.fHMCachedVmcb            = true;
         Log4(("hmR0SvmVmRunCacheVmcb: Cached VMCB fields\n"));
     }
