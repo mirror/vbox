@@ -391,9 +391,14 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
     if (i32AliasMode & ~(PKT_ALIAS_LOG|PKT_ALIAS_SAME_PORTS|PKT_ALIAS_PROXY_ONLY))
     {
-        Log(("NAT: alias mode %x is ignored\n", i32AliasMode));
+        LogRel(("NAT: bad alias mode 0x%x ignored\n", i32AliasMode));
         i32AliasMode = 0;
     }
+    else if (i32AliasMode != 0)
+    {
+        LogRel(("NAT: alias mode 0x%x\n", i32AliasMode));
+    }
+
     pData->i32AliasMode = i32AliasMode;
     getouraddr(pData);
     {
