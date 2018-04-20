@@ -166,7 +166,7 @@ typedef struct RTSOCKETINT
      * sockets entetered multiple times into to a poll set. */
     uint32_t            fEventsSaved;
     /** Set if fEventsSaved contains harvested events. */
-    bool                fHavestedEvents;
+    bool                fHarvestedEvents;
     /** Set if we're using the polling fallback. */
     bool                fPollFallback;
     /** Set if the fallback polling is active (event not set). */
@@ -507,7 +507,7 @@ DECLHIDDEN(int) rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE h
     pThis->fPollEvts                = 0;
     pThis->fSubscribedEvts          = 0;
     pThis->fEventsSaved             = 0;
-    pThis->fHavestedEvents          = false;
+    pThis->fHarvestedEvents         = false;
     pThis->fPollFallback            = g_uWinSockInitedVersion < MAKEWORD(2, 0)
                                    || g_pfnWSACreateEvent == NULL
                                    || g_pfnWSACloseEvent == NULL
@@ -3040,10 +3040,10 @@ DECLHIDDEN(uint32_t) rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool f
 # ifdef RT_OS_WINDOWS
     if (!pThis->fPollFallback)
     {
-        if (!pThis->fHavestedEvents)
+        if (!pThis->fHarvestedEvents)
         {
             fRetEvents = rtSocketPollCheck(pThis, fEvents);
-            pThis->fHavestedEvents = true;
+            pThis->fHarvestedEvents = true;
         }
         else
             fRetEvents = pThis->fEventsSaved;
@@ -3069,7 +3069,7 @@ DECLHIDDEN(uint32_t) rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool f
     {
 # ifdef RT_OS_WINDOWS
         pThis->fEventsSaved   &= RTPOLL_EVT_ERROR;
-        pThis->fHavestedEvents = false;
+        pThis->fHarvestedEvents = false;
         rtSocketPollClearEventAndRestoreBlocking(pThis);
 # endif
         pThis->hPollSet = NIL_RTPOLLSET;
