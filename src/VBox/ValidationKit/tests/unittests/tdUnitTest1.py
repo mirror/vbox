@@ -356,6 +356,12 @@ class tdUnitTest1(vbox.TestDriver):
         sBinOrDist = 'dist' if utils.getHostOs() in [ 'darwin', ] else 'bin';
         asCandidates = [
             self.oBuild.sInstallPath,
+            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), self.oBuild.sType, sBinOrDist),
+            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'release', sBinOrDist),
+            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'debug',   sBinOrDist),
+            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'strict',  sBinOrDist),
+            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'dbgopt',  sBinOrDist),
+            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'profile', sBinOrDist),
             os.path.join(self.sScratchPath, sBinOrDist + '.' + utils.getHostArch()),
             os.path.join(self.sScratchPath, sBinOrDist, utils.getHostArch()),
             os.path.join(self.sScratchPath, sBinOrDist),
