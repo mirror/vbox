@@ -19,22 +19,22 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes: */
-# include <QMetaType>
-# include <QVBoxLayout>
+/* Qt includes: */
 # include <QGridLayout>
+# include <QMetaType>
 # include <QRadioButton>
+# include <QVBoxLayout>
 
-/* Local includes: */
-# include "UIWizardNewVMPageBasic3.h"
-# include "UIWizardNewVM.h"
-# include "UIMessageCenter.h"
-# include "UIIconPool.h"
-# include "VBoxMediaComboBox.h"
-# include "QIToolButton.h"
-# include "UIWizardNewVD.h"
+/* GUI includes: */
 # include "QIRichTextLabel.h"
+# include "QIToolButton.h"
+# include "UIIconPool.h"
+# include "UIMediaComboBox.h"
 # include "UIMedium.h"
+# include "UIMessageCenter.h"
+# include "UIWizardNewVD.h"
+# include "UIWizardNewVM.h"
+# include "UIWizardNewVMPageBasic3.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -144,7 +144,7 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
             options.initFrom(m_pDiskPresent);
             int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
             pDiskLayout->setColumnMinimumWidth(0, iWidth);
-            m_pDiskSelector = new VBoxMediaComboBox(this);
+            m_pDiskSelector = new UIMediaComboBox(this);
             {
                 m_pDiskSelector->setType(UIMediumType_HardDisk);
                 m_pDiskSelector->repopulate();
@@ -173,7 +173,7 @@ UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
             this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
     connect(m_pDiskPresent, &QRadioButton::toggled,
             this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
-    connect(m_pDiskSelector, static_cast<void(VBoxMediaComboBox::*)(int)>(&VBoxMediaComboBox::currentIndexChanged),
+    connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
             this, &UIWizardNewVMPageBasic3::sltVirtualDiskSourceChanged);
     connect(m_pVMMButton, &QIToolButton::clicked,
             this, &UIWizardNewVMPageBasic3::sltGetWithFileOpenDialog);

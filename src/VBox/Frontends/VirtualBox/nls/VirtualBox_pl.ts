@@ -18235,7 +18235,7 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;brak dysku twardego&gt;</translation>

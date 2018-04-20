@@ -17024,7 +17024,7 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;lipsă disc hard&gt;</translation>

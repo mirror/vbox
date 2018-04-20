@@ -18683,7 +18683,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">사용할 수 있는 미디어가 없습니다. 해당하는 미디어를 추가하려면 가상 미디어 관리자를 사용하십시오.</translation>

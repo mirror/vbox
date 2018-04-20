@@ -620,9 +620,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>VBoxMediaComboBox</class>
+   <class>UIMediaComboBox</class>
    <extends>QComboBox</extends>
-   <header>VBoxMediaComboBox.h</header>
+   <header>UIMediaComboBox.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

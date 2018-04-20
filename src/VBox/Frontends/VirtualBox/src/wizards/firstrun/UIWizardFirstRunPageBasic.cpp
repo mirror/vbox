@@ -20,19 +20,19 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QVBoxLayout>
 # include <QHBoxLayout>
+# include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIWizardFirstRunPageBasic.h"
-# include "UIWizardFirstRun.h"
-# include "UIIconPool.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
-# include "VBoxMediaComboBox.h"
-# include "QIToolButton.h"
 # include "QIRichTextLabel.h"
+# include "QIToolButton.h"
+# include "VBoxGlobal.h"
+# include "UIIconPool.h"
+# include "UIMediaComboBox.h"
 # include "UIMedium.h"
+# include "UIMessageCenter.h"
+# include "UIWizardFirstRun.h"
+# include "UIWizardFirstRunPageBasic.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -70,7 +70,7 @@ UIWizardFirstRunPageBasic::UIWizardFirstRunPageBasic(const QString &strMachineId
         m_pLabel = new QIRichTextLabel(this);
         QHBoxLayout *pSourceDiskLayout = new QHBoxLayout;
         {
-            m_pMediaSelector = new VBoxMediaComboBox(this);
+            m_pMediaSelector = new UIMediaComboBox(this);
             {
                 m_pMediaSelector->setMachineId(strMachineId);
                 m_pMediaSelector->setType(UIMediumType_DVD);
@@ -90,7 +90,7 @@ UIWizardFirstRunPageBasic::UIWizardFirstRunPageBasic(const QString &strMachineId
     }
 
     /* Setup connections: */
-    connect(m_pMediaSelector, static_cast<void(VBoxMediaComboBox::*)(int)>(&VBoxMediaComboBox::currentIndexChanged),
+    connect(m_pMediaSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
             this, &UIWizardFirstRunPageBasic::completeChanged);
     connect(m_pSelectMediaButton, &QIToolButton::clicked,
             this, &UIWizardFirstRunPageBasic::sltOpenMediumWithFileOpenDialog);

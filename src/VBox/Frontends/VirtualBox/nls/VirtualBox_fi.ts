@@ -15954,7 +15954,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;ei kiintolevyä&gt;</translation>

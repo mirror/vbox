@@ -641,7 +641,7 @@
 #include "UIGuestRAMSlider.h"
 //#include "VBoxIChatTheaterWrapper.h"
 #include "VBoxLicenseViewer.h"
-#include "VBoxMediaComboBox.h"
+#include "UIMediaComboBox.h"
 #include "VBoxOSTypeSelectorButton.h"
 #include "UISettingsSelector.h"
 #include "UISnapshotDetailsWidget.h"

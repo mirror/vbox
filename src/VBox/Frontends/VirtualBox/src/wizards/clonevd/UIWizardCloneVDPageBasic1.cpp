@@ -20,17 +20,17 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QVBoxLayout>
 # include <QHBoxLayout>
+# include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIWizardCloneVDPageBasic1.h"
-# include "UIWizardCloneVD.h"
-# include "UIIconPool.h"
 # include "QIRichTextLabel.h"
-# include "VBoxMediaComboBox.h"
 # include "QIToolButton.h"
+# include "UIIconPool.h"
+# include "UIMediaComboBox.h"
 # include "UIMedium.h"
+# include "UIWizardCloneVD.h"
+# include "UIWizardCloneVDPageBasic1.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -72,7 +72,7 @@ UIWizardCloneVDPageBasic1::UIWizardCloneVDPageBasic1(const CMedium &comSourceVir
         m_pLabel = new QIRichTextLabel(this);
         QHBoxLayout *pSourceDiskLayout = new QHBoxLayout;
         {
-            m_pSourceDiskSelector = new VBoxMediaComboBox(this);
+            m_pSourceDiskSelector = new UIMediaComboBox(this);
             {
                 m_pSourceDiskSelector->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
                 m_pSourceDiskSelector->setType(UIMediumDefs::mediumTypeToLocal(enmDeviceType));
@@ -93,7 +93,7 @@ UIWizardCloneVDPageBasic1::UIWizardCloneVDPageBasic1(const CMedium &comSourceVir
     }
 
     /* Setup connections: */
-    connect(m_pSourceDiskSelector, static_cast<void(VBoxMediaComboBox::*)(int)>(&VBoxMediaComboBox::currentIndexChanged),
+    connect(m_pSourceDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
             this, &UIWizardCloneVDPageBasic1::completeChanged);
     connect(m_pSourceDiskOpenButton, &QIToolButton::clicked,
             this, &UIWizardCloneVDPageBasic1::sltHandleOpenSourceDiskClick);

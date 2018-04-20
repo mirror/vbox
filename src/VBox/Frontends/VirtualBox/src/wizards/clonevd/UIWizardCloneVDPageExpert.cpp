@@ -20,22 +20,22 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QGridLayout>
-# include <QVBoxLayout>
-# include <QHBoxLayout>
 # include <QButtonGroup>
-# include <QGroupBox>
-# include <QRadioButton>
 # include <QCheckBox>
+# include <QGridLayout>
+# include <QGroupBox>
+# include <QHBoxLayout>
 # include <QLineEdit>
+# include <QRadioButton>
+# include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIWizardCloneVDPageExpert.h"
-# include "UIWizardCloneVD.h"
-# include "UIMessageCenter.h"
-# include "UIIconPool.h"
-# include "VBoxMediaComboBox.h"
 # include "QIToolButton.h"
+# include "UIIconPool.h"
+# include "UIMediaComboBox.h"
+# include "UIMessageCenter.h"
+# include "UIWizardCloneVD.h"
+# include "UIWizardCloneVDPageExpert.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -53,7 +53,7 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVir
             m_pSourceDiskCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             QHBoxLayout *pSourceDiskCntLayout = new QHBoxLayout(m_pSourceDiskCnt);
             {
-                m_pSourceDiskSelector = new VBoxMediaComboBox(m_pSourceDiskCnt);
+                m_pSourceDiskSelector = new UIMediaComboBox(m_pSourceDiskCnt);
                 {
                     m_pSourceDiskSelector->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
                     m_pSourceDiskSelector->setType(UIMediumDefs::mediumTypeToLocal(enmDeviceType));
@@ -164,7 +164,7 @@ UIWizardCloneVDPageExpert::UIWizardCloneVDPageExpert(const CMedium &comSourceVir
     }
 
     /* Setup connections: */
-    connect(m_pSourceDiskSelector, static_cast<void(VBoxMediaComboBox::*)(int)>(&VBoxMediaComboBox::currentIndexChanged),
+    connect(m_pSourceDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
             this, &UIWizardCloneVDPageExpert::sltHandleSourceDiskChange);
     connect(m_pSourceDiskOpenButton, &QIToolButton::clicked,
             this, &UIWizardCloneVDPageExpert::sltHandleOpenSourceDiskClick);

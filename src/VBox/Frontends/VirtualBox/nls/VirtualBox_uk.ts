@@ -17773,7 +17773,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Жодного доступного носія. Використайте керування віртуальними носіями, щоб додати носія відповідного типу.</translation>

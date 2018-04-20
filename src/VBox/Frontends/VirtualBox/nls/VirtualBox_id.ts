@@ -18408,7 +18408,7 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;tidak ada hard disk&gt;</translation>

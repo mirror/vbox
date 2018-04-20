@@ -18846,7 +18846,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;ingen hårddisk&gt;</translation>

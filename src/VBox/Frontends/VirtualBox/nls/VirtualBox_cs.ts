@@ -19548,7 +19548,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;žádný pevný disk&gt;</translation>

@@ -19534,7 +19534,7 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;nincs merevlemez&gt;</translation>

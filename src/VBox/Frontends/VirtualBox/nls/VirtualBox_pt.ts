@@ -17077,7 +17077,7 @@ para ligar ao encaixe actualmente destacado.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;sem disco rígido&gt;</translation>

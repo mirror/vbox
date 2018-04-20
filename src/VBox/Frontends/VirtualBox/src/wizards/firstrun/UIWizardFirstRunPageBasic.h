@@ -18,14 +18,14 @@
 #ifndef __UIWizardFirstRunPageBasic_h__
 #define __UIWizardFirstRunPageBasic_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
 class CMachine;
-class VBoxMediaComboBox;
-class QIToolButton;
 class QIRichTextLabel;
+class QIToolButton;
+class UIMediaComboBox;
 
 /* Single page of the First Run wizard (base part): */
 class UIWizardFirstRunPage : public UIWizardPageBase
@@ -46,7 +46,7 @@ protected:
     bool m_fBootHardDiskWasSet;
 
     /* Widgets: */
-    VBoxMediaComboBox *m_pMediaSelector;
+    UIMediaComboBox *m_pMediaSelector;
     QIToolButton *m_pSelectMediaButton;
 };
 

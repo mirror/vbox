@@ -20928,7 +20928,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;nessun hard disk&gt;</translation>

@@ -19836,7 +19836,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;ハードディスクなし&gt;</translation>

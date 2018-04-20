@@ -20565,7 +20565,7 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;no hay disco duro&gt;</translation>

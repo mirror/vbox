@@ -19,26 +19,26 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes: */
-# include <QVBoxLayout>
-# include <QHBoxLayout>
-# include <QGroupBox>
+/* Qt includes: */
 # include <QGridLayout>
-# include <QSpacerItem>
-# include <QLineEdit>
+# include <QGroupBox>
+# include <QHBoxLayout>
 # include <QLabel>
-# include <QSpinBox>
+# include <QLineEdit>
 # include <QRadioButton>
+# include <QSpacerItem>
+# include <QSpinBox>
+# include <QVBoxLayout>
 
-/* Local includes: */
-# include "UIWizardNewVMPageExpert.h"
-# include "UIWizardNewVM.h"
-# include "UIIconPool.h"
-# include "UINameAndSystemEditor.h"
-# include "UIGuestRAMSlider.h"
-# include "VBoxMediaComboBox.h"
+/* GUI includes: */
 # include "QIToolButton.h"
+# include "UIGuestRAMSlider.h"
+# include "UIIconPool.h"
+# include "UIMediaComboBox.h"
 # include "UIMedium.h"
+# include "UINameAndSystemEditor.h"
+# include "UIWizardNewVM.h"
+# include "UIWizardNewVMPageExpert.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -110,7 +110,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
                 options.initFrom(m_pDiskPresent);
                 int iWidth = m_pDiskPresent->style()->pixelMetric(QStyle::PM_ExclusiveIndicatorWidth, &options, m_pDiskPresent);
                 pDiskCntLayout->setColumnMinimumWidth(0, iWidth);
-                m_pDiskSelector = new VBoxMediaComboBox(m_pDiskCnt);
+                m_pDiskSelector = new UIMediaComboBox(m_pDiskCnt);
                 {
                     m_pDiskSelector->setType(UIMediumType_HardDisk);
                     m_pDiskSelector->repopulate();
@@ -149,7 +149,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
             this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
     connect(m_pDiskPresent, &QRadioButton::toggled,
             this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
-    connect(m_pDiskSelector, static_cast<void(VBoxMediaComboBox::*)(int)>(&VBoxMediaComboBox::currentIndexChanged),
+    connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
             this, &UIWizardNewVMPageExpert::sltVirtualDiskSourceChanged);
     connect(m_pVMMButton, &QIToolButton::clicked,
             this, &UIWizardNewVMPageExpert::sltGetWithFileOpenDialog);

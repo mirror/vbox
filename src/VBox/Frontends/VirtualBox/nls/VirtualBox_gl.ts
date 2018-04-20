@@ -14910,7 +14910,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxMediaComboBox</name>
+    <name>UIMediaComboBox</name>
     <message>
         <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Ningún medio dispoñíbel. Empregue o xestor de medios virtuais para engadir os medios do tipo correspondente.</translation>
