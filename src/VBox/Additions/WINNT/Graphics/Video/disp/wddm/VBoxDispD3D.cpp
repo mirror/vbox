@@ -227,23 +227,6 @@ static D3DDDIQUERYTYPE gVBoxQueryTypes[] = {
 
 #define VBOX_QUERYTYPE_COUNT() RT_ELEMENTS(gVBoxQueryTypes)
 
-static CRITICAL_SECTION g_VBoxCritSect;
-
-void vboxDispLock()
-{
-    EnterCriticalSection(&g_VBoxCritSect);
-}
-
-void vboxDispUnlock()
-{
-    LeaveCriticalSection(&g_VBoxCritSect);
-}
-
-void vboxDispLockInit()
-{
-    InitializeCriticalSection(&g_VBoxCritSect);
-}
-
 
 #define VBOXDISPCRHGSMI_SCOPE_SET_DEV(_pDev) do {} while(0)
 #define VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL() do {} while(0)
@@ -1974,75 +1957,6 @@ static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, P
     }
 
     return hr;
-}
-
-/**
- * DLL entry point.
- */
-BOOL WINAPI DllMain(HINSTANCE hInstance,
-                    DWORD     dwReason,
-                    LPVOID    lpReserved)
-{
-    RT_NOREF(hInstance, lpReserved);
-
-    switch (dwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-        {
-            vboxDispLockInit();
-
-            vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
-#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
-            vboxVDbgVEHandlerRegister();
-#endif
-            int rc = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
-            AssertRC(rc);
-            if (RT_SUCCESS(rc))
-            {
-//                rc = VbglR3Init();
-//                AssertRC(rc);
-//                if (RT_SUCCESS(rc))
-                {
-                    HRESULT hr = vboxDispCmInit();
-                    Assert(hr == S_OK);
-                    if (hr == S_OK)
-                    {
-                        VBoxDispD3DGlobalInit();
-                        vboxVDbgPrint(("VBoxDispD3D: DLL loaded OK\n"));
-                        return TRUE;
-                    }
-//                    VbglR3Term();
-                }
-            }
-
-#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
-            vboxVDbgVEHandlerUnregister();
-#endif
-            break;
-        }
-
-        case DLL_PROCESS_DETACH:
-        {
-#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
-            vboxVDbgVEHandlerUnregister();
-#endif
-            HRESULT hr = vboxDispCmTerm();
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-//                    VbglR3Term();
-                /// @todo RTR3Term();
-                VBoxDispD3DGlobalTerm();
-                return TRUE;
-            }
-
-            break;
-        }
-
-        default:
-            return TRUE;
-    }
-    return FALSE;
 }
 
 static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GETCAPS* pData)
@@ -6569,9 +6483,6 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
 
     vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
-#ifdef DEBUG
-    VbglR3Term();
-#endif
     return S_OK;
 }
 
@@ -6611,153 +6522,198 @@ static BOOL vboxDispIsDDraw(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
     return FALSE;
 }
 
-HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
+static HRESULT vboxDispQueryAdapterInfo(D3DDDIARG_OPENADAPTER const *pOpenData, VBOXWDDM_QAI **ppAdapterInfo)
 {
-#ifdef DEBUG
-    VbglR3Init();
+    VBOXWDDM_QAI *pAdapterInfo = (VBOXWDDM_QAI *)RTMemAllocZ(sizeof(VBOXWDDM_QAI));
+    AssertReturn(pAdapterInfo, E_OUTOFMEMORY);
+
+    D3DDDICB_QUERYADAPTERINFO DdiQuery;
+    DdiQuery.PrivateDriverDataSize = sizeof(VBOXWDDM_QAI);
+    DdiQuery.pPrivateDriverData = pAdapterInfo;
+    HRESULT hr = pOpenData->pAdapterCallbacks->pfnQueryAdapterInfoCb(pOpenData->hAdapter, &DdiQuery);
+    AssertReturnStmt(SUCCEEDED(hr), RTMemFree(pAdapterInfo), hr);
+
+    /* Check that the miniport version match display version. */
+    if (pAdapterInfo->u32Version == VBOXVIDEOIF_VERSION)
+    {
+        *ppAdapterInfo = pAdapterInfo;
+    }
+    else
+    {
+        LOGREL_EXACT((__FUNCTION__": miniport version mismatch, expected (%d), but was (%d)\n",
+                      VBOXVIDEOIF_VERSION, pAdapterInfo->u32Version));
+        hr = E_FAIL;
+    }
+
+    return hr;
+}
+
+static HRESULT vboxDispAdapterInit(D3DDDIARG_OPENADAPTER const *pOpenData, VBOXWDDM_QAI *pAdapterInfo,
+                                   PVBOXWDDMDISP_ADAPTER *ppAdapter)
+{
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    Assert(pAdapterInfo->cInfos >= 1);
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_ADAPTER,
+                                                                                    aHeads[pAdapterInfo->cInfos]));
+#else
+    Assert(pAdapterInfo->cInfos == 0);
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(sizeof(VBOXWDDMDISP_ADAPTER));
+#endif
+    AssertReturn(pAdapter, E_OUTOFMEMORY);
+
+    pAdapter->hAdapter    = pOpenData->hAdapter;
+    pAdapter->uIfVersion  = pOpenData->Interface;
+    pAdapter->uRtVersion  = pOpenData->Version;
+    pAdapter->RtCallbacks = *pOpenData->pAdapterCallbacks;
+    pAdapter->enmHwType   = pAdapterInfo->enmHwType;
+    if (pAdapter->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+        pAdapter->u32VBox3DCaps = pAdapterInfo->u.crogl.u32VBox3DCaps;
+    pAdapter->AdapterInfo = *pAdapterInfo;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    pAdapter->cHeads      = pAdapterInfo->cInfos;
+    for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+        pAdapter->aHeads[i].Vhwa.Settings = pAdapterInfo->aInfos[i];
 #endif
 
+    *ppAdapter = pAdapter;
+    return S_OK;
+}
+
+HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER *pOpenData)
+{
     VBOXDISP_DDI_PROLOGUE_GLBL();
 
-    vboxVDbgPrint(("==> "__FUNCTION__"\n"));
-
-#if 0 //def DEBUG_misha
-    DWORD dwVersion = 0;
-    DWORD dwMajorVersion = 0;
-    DWORD dwMinorVersion = 0;
-    dwVersion = GetVersion();
-    dwMajorVersion = (DWORD)(LOBYTE(LOWORD(dwVersion)));
-    dwMinorVersion = (DWORD)(HIBYTE(LOWORD(dwVersion)));
-
-    if (dwMajorVersion == 6 && dwMinorVersion <= 1 && VBOXVDBG_IS_DWM())
-    {
-        exit(0);
-        return E_FAIL;
-    }
-#endif
-
-//    vboxDispLock();
-
-    HRESULT hr = E_FAIL;
-
-    do
-    {
+    LOG_EXACT(("==> "__FUNCTION__"\n"));
 
     LOGREL(("Built %s %s", __DATE__, __TIME__));
 
-    VBOXWDDM_QAI Query;
-    D3DDDICB_QUERYADAPTERINFO DdiQuery;
-    DdiQuery.PrivateDriverDataSize = sizeof(Query);
-    DdiQuery.pPrivateDriverData = &Query;
-    hr = pOpenData->pAdapterCallbacks->pfnQueryAdapterInfoCb(pOpenData->hAdapter, &DdiQuery);
-    Assert(hr == S_OK);
-    if (hr != S_OK)
+    VBOXWDDM_QAI *pAdapterInfo = NULL;
+    PVBOXWDDMDISP_ADAPTER pAdapter = NULL;
+
+    /* Query the miniport about virtual hardware capabilities. */
+    HRESULT hr = vboxDispQueryAdapterInfo(pOpenData, &pAdapterInfo);
+    if (SUCCEEDED(hr))
     {
-        vboxVDbgPrintR((__FUNCTION__": pfnQueryAdapterInfoCb failed, hr (%d)\n", hr));
-        hr = E_FAIL;
-        break;
+
+        hr = vboxDispAdapterInit(pOpenData, pAdapterInfo, &pAdapter);
+        if (SUCCEEDED(hr))
+        {
+            if (!vboxDispIsDDraw(pOpenData))
+            {
+                /* 3D adapter. */
+                VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL();
+
+                /* Try enable the 3D. */
+                hr = VBoxDispD3DGlobalOpen(&pAdapter->D3D, &pAdapter->Formats);
+                if (hr == S_OK)
+                {
+                    LOG(("SUCCESS 3D Enabled, pAdapter (0x%p)", pAdapter));
+
+                    /* Flag indicating that the adapter instance is running in 3D mode. */
+                    pAdapter->f3D = (pAdapter->D3D.pD3D9If != NULL);
+                }
+                else
+                    WARN(("VBoxDispD3DOpen failed, hr (%d)", hr));
+            }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            else
+            {
+                /* 2D adapter. */
+                hr = VBoxDispD3DGlobal2DFormatsInit(pAdapter);
+                if (FAILED(hr))
+                    WARN(("VBoxDispD3DGlobal2DFormatsInit failed hr 0x%x", hr));
+            }
+#endif
+        }
     }
 
-    /* check the miniport version match display version */
-    if (Query.u32Version != VBOXVIDEOIF_VERSION)
+    if (SUCCEEDED(hr))
     {
-        vboxVDbgPrintR((__FUNCTION__": miniport version mismatch, expected (%d), but was (%d)\n",
-                VBOXVIDEOIF_VERSION,
-                Query.u32Version));
-        hr = E_FAIL;
-        break;
-    }
+        VBOXDISPPROFILE_DDI_INIT_ADP(pAdapter);
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    Assert(Query.cInfos >= 1);
-    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_ADAPTER, aHeads[Query.cInfos]));
-#else
-    Assert(Query.cInfos == 0);
-    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(sizeof(VBOXWDDMDISP_ADAPTER));
-#endif
-    Assert(pAdapter);
-    if (pAdapter)
-    {
-        pAdapter->hAdapter = pOpenData->hAdapter;
-        pAdapter->uIfVersion = pOpenData->Interface;
-        pAdapter->uRtVersion= pOpenData->Version;
-        pAdapter->RtCallbacks = *pOpenData->pAdapterCallbacks;
-
-        pAdapter->enmHwType = Query.enmHwType;
-
-        if (Query.enmHwType == VBOXVIDEO_HWTYPE_CROGL)
-            pAdapter->u32VBox3DCaps = Query.u.crogl.u32VBox3DCaps;
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        pAdapter->cHeads = Query.cInfos;
-#endif
-
+        /* Return data to the OS. */
         pOpenData->hAdapter = pAdapter;
         pOpenData->pAdapterFuncs->pfnGetCaps = vboxWddmDispGetCaps;
         pOpenData->pAdapterFuncs->pfnCreateDevice = vboxWddmDispCreateDevice;
         pOpenData->pAdapterFuncs->pfnCloseAdapter = vboxWddmDispCloseAdapter;
-        pOpenData->DriverVersion = D3D_UMD_INTERFACE_VERSION;
-        if (!vboxDispIsDDraw(pOpenData))
-        {
-            do
-            {
-                {
-                    VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL();
-                    /* try enable the 3D */
-                    hr = VBoxDispD3DGlobalOpen(&pAdapter->D3D, &pAdapter->Formats);
-                    if (hr == S_OK)
-                    {
-                        LOG(("SUCCESS 3D Enabled, pAdapter (0x%p)", pAdapter));
-                        break;
-                    }
-                    else
-                        WARN(("VBoxDispD3DOpen failed, hr (%d)", hr));
-
-                }
-            } while (0);
-
-            /* Flag indicating that the adapter instance is running in 3D mode. */
-            pAdapter->f3D = (pAdapter->D3D.pD3D9If != NULL);
-        }
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        if (!VBOXDISPMODE_IS_3D(pAdapter))
-        {
-            for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
-            {
-                pAdapter->aHeads[i].Vhwa.Settings = Query.aInfos[i];
-            }
-            hr = VBoxDispD3DGlobal2DFormatsInit(pAdapter);
-            if (!SUCCEEDED(hr))
-            {
-                WARN(("VBoxDispD3DGlobal2DFormatsInit failed hr 0x%x", hr));
-            }
-        }
-#endif
-
-        if (SUCCEEDED(hr))
-        {
-            VBOXDISPPROFILE_DDI_INIT_ADP(pAdapter);
-            hr = S_OK;
-            break;
-        }
-        else
-        {
-            WARN(("OpenAdapter failed hr 0x%x", hr));
-        }
-
-        RTMemFree(pAdapter);
+        pOpenData->DriverVersion = D3D_UMD_INTERFACE_VERSION_VISTA;
     }
     else
     {
-        vboxVDbgPrintR((__FUNCTION__": RTMemAllocZ returned NULL\n"));
-        hr = E_OUTOFMEMORY;
+        WARN(("OpenAdapter failed hr 0x%x", hr));
+        RTMemFree(pAdapter);
     }
 
-    } while (0);
+    RTMemFree(pAdapterInfo);
 
-//    vboxDispUnlock();
-
-    vboxVDbgPrint(("<== "__FUNCTION__", hr (%d)\n", hr));
-
+    LOG_EXACT(("<== "__FUNCTION__", hr (%x)\n", hr));
     return hr;
+}
+
+
+/**
+ * DLL entry point.
+ */
+BOOL WINAPI DllMain(HINSTANCE hInstance,
+                    DWORD     dwReason,
+                    LPVOID    lpReserved)
+{
+    RT_NOREF(hInstance, lpReserved);
+
+    switch (dwReason)
+    {
+        case DLL_PROCESS_ATTACH:
+        {
+            vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
+#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
+            vboxVDbgVEHandlerRegister();
+#endif
+            int rc = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+//                rc = VbglR3Init();
+//                AssertRC(rc);
+//                if (RT_SUCCESS(rc))
+                {
+                    HRESULT hr = vboxDispCmInit();
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        VBoxDispD3DGlobalInit();
+                        vboxVDbgPrint(("VBoxDispD3D: DLL loaded OK\n"));
+                        return TRUE;
+                    }
+//                    VbglR3Term();
+                }
+            }
+
+#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
+            vboxVDbgVEHandlerUnregister();
+#endif
+            break;
+        }
+
+        case DLL_PROCESS_DETACH:
+        {
+#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
+            vboxVDbgVEHandlerUnregister();
+#endif
+            HRESULT hr = vboxDispCmTerm();
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+//                    VbglR3Term();
+                /// @todo RTR3Term();
+                VBoxDispD3DGlobalTerm();
+                return TRUE;
+            }
+
+            break;
+        }
+
+        default:
+            return TRUE;
+    }
+    return FALSE;
 }

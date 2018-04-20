@@ -76,12 +76,16 @@ typedef struct VBOXWDDMDISP_ADAPTER
     UINT uRtVersion;
     D3DDDI_ADAPTERCALLBACKS RtCallbacks;
 
-    VBOXVIDEO_HWTYPE enmHwType;     /* VBOXVIDEO_HWTYPE* */
+    VBOXVIDEO_HWTYPE enmHwType;     /* VBOXVIDEO_HWTYPE_* */
 
     VBOXWDDMDISP_D3D D3D;
     VBOXWDDMDISP_FORMATS Formats;
     uint32_t u32VBox3DCaps;
     bool f3D;
+    bool fReserved[3];
+
+    VBOXWDDM_QAI AdapterInfo;
+
 #ifdef VBOX_WDDMDISP_WITH_PROFILE
     VBoxDispProfileFpsCounter ProfileDdiFps;
     VBoxDispProfileSet ProfileDdiFunc;
