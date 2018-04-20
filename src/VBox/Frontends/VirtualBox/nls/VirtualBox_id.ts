@@ -1234,7 +1234,7 @@
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>Enable</source>
@@ -1561,6 +1561,37 @@
     <message>
         <source>Enable audio input</source>
         <translation>Memfungsikan masukan audio</translation>
+    </message>
+    <message>
+        <source>Scale to %1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished">Pi&amp;ndah...</translation>
+    </message>
+    <message>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine logs pane</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2550,27 +2581,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Kode&amp;nbsp;Hasil: </translation>
+        <translation>Kode&amp;nbsp;Hasil: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Komponen: </translation>
+        <translation>Komponen: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Antar Muka: </translation>
+        <translation>Antar Muka: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>Yang Dipanggil: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished"></translation>
+        <translation>RC&amp;nbsp;Yang Dipanggil: </translation>
     </message>
 </context>
 <context>
@@ -3364,12 +3395,12 @@
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation>Keluaran Video HiDPI Tanpa Skala</translation>
+        <translation type="vanished">Keluaran Video HiDPI Tanpa Skala</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Difungsikan</translation>
+        <translation type="vanished">Difungsikan</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
@@ -3464,7 +3495,7 @@
     <message>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Dinonaktifkan</translation>
+        <translation type="vanished">Dinonaktifkan</translation>
     </message>
     <message>
         <source>Audio Output</source>
@@ -4833,6 +4864,21 @@
     </message>
 </context>
 <context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <source>Log</source>
+        <translation type="unfinished">Log</translation>
+    </message>
+    <message>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
@@ -5277,11 +5323,11 @@
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Menambah jaringan...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Menghapus jaringan...</translation>
     </message>
 </context>
 <context>
@@ -6684,15 +6730,15 @@
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation>Dukungan HiDPI:</translation>
+        <translation type="vanished">Dukungan HiDPI:</translation>
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>Bila dicentang, isi layar guest tidak akan diskalakan untuk mengkompensasi resolusi layar host yang tinggi.</translation>
+        <translation type="vanished">Bila dicentang, isi layar guest tidak akan diskalakan untuk mengkompensasi resolusi layar host yang tinggi.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>Pakai Kel&amp;uaran HiDPI Tanpa Skala</translation>
+        <translation type="vanished">Pakai Kel&amp;uaran HiDPI Tanpa Skala</translation>
     </message>
     <message>
         <source>Acceleration:</source>
@@ -6772,11 +6818,11 @@
     </message>
     <message>
         <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
-        <translation type="unfinished"></translation>
+        <translation>Saat dicentang, VirtualBox juga akan merekam stream audio ke berkas video.</translation>
     </message>
     <message>
         <source>&amp;Record Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Rekam Audio</translation>
     </message>
 </context>
 <context>
@@ -6963,19 +7009,19 @@
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation>Enk&amp;ripsi</translation>
+        <translation type="vanished">Enk&amp;ripsi</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation>Ketika dicentang, memfungsikan enkripsi bagi mesin virtual ini.</translation>
+        <translation type="vanished">Ketika dicentang, memfungsikan enkripsi bagi mesin virtual ini.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation>Fungsik&amp;an Enkripsi</translation>
+        <translation type="vanished">Fungsik&amp;an Enkripsi</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation>C&amp;ipher Enkripsi:</translation>
+        <translation type="vanished">C&amp;ipher Enkripsi:</translation>
     </message>
     <message>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
@@ -6987,7 +7033,7 @@
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation>Menyimpan password yang akan dipakai ke mesin virtual.</translation>
+        <translation type="vanished">Menyimpan password yang akan dipakai ke mesin virtual.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
@@ -6995,23 +7041,23 @@
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation>Konfirmasikan password yang akan dipakai pada mesin virtual.</translation>
+        <translation type="vanished">Konfirmasikan password yang akan dipakai pada mesin virtual.</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>Anda mencoba mengenkripsi mesin virtual ini. Namun ini memerlukan terpasangnya &lt;i&gt;%1&lt;/i&gt;. Harap pasang Extension Pack dari situs unduh VirtualBox.</translation>
+        <translation type="vanished">Anda mencoba mengenkripsi mesin virtual ini. Namun ini memerlukan terpasangnya &lt;i&gt;%1&lt;/i&gt;. Harap pasang Extension Pack dari situs unduh VirtualBox.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation>Tipe cipher enkripsi tidak dinyatakan.</translation>
+        <translation type="vanished">Tipe cipher enkripsi tidak dinyatakan.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation>Password enkripsi kosong.</translation>
+        <translation type="vanished">Password enkripsi kosong.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation>Password enkripsi tidak cocok.</translation>
+        <translation type="vanished">Password enkripsi tidak cocok.</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
@@ -7021,6 +7067,46 @@
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
         <translation>Biarkan Tak Berubah</translation>
+    </message>
+    <message>
+        <source>Disk Enc&amp;ryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, disks attached to this virtual machine will be encrypted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>En&amp;able Disk Encryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk Encryption C&amp;ipher:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the encryption password for disks attached to this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirms the disk encryption password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption password empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption passwords do not match.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8243,6 +8329,11 @@
         <source>&amp;Storage Devices</source>
         <translation>Peranti &amp;Penyimpanan</translation>
     </message>
+    <message>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>
@@ -8981,35 +9072,35 @@
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih Lokasi Medium</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokasi tidak boleh kosong.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished">Tipe medium ini dicantol secara langsung atau tak langsung, dilestarikan ketika mengambil snapshot.</translation>
+        <translation>Tipe medium ini dicantol secara langsung atau tak langsung, dilestarikan ketika mengambil snapshot.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished">Tipe medium ini dicantol secara tak langsung, perubahan disapu habis saat mesin virtual dijalankan berikutnya.</translation>
+        <translation>Tipe medium ini dicantol secara tak langsung, perubahan disapu habis saat mesin virtual dijalankan berikutnya.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished">Tipe medium ini dicantol secara langsung, diabaikan ketika mengambil snapshot.</translation>
+        <translation>Tipe medium ini dicantol secara langsung, diabaikan ketika mengambil snapshot.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished">Tipe medium ini dicantol secara langsung, diijinkan untuk dipakai bersamaan oleh beberapa mesin.</translation>
+        <translation>Tipe medium ini dicantol secara langsung, diizinkan untuk dipakai bersamaan oleh beberapa mesin.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished">Tipe medium ini dicantol secara langsung, dan dapat dipakai oleh beberapa mesin.</translation>
+        <translation>Tipe medium ini dicantol secara langsung, dan dapat dipakai oleh beberapa mesin.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished">Tipe medium ini dicantol secara tak langsung, sehingga satu medium basis dapat dipakai bagi beberapa VM yang memiliki medium pembeda masing-masing untuk menyimpan perubahan mereka.</translation>
+        <translation>Tipe medium ini dicantol secara tak langsung, sehingga satu medium basis dapat dipakai bagi beberapa VM yang memiliki medium pembeda masing-masing untuk menyimpan perubahan mereka.</translation>
     </message>
 </context>
 <context>
@@ -9190,43 +9281,43 @@
     </message>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished">Salin Berkas Image Disk (%1)</translation>
+        <translation>Salin Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished">Hapus Berkas Image Disk (%1)</translation>
+        <translation>Hapus Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished">Lepas Berkas Image Disk (%1)</translation>
+        <translation>Lepas Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation type="unfinished">Buka Properti Berkas Image Disk (%1)</translation>
+        <translation>Buka Properti Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Segarkan Berkas Image Disk (%1)</translation>
+        <translation>Segarkan Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Current extension (*.%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekstensi saat ini (*.%1)</translation>
     </message>
     <message>
         <source>Choose the location of this medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih lokasi medium ini</translation>
     </message>
     <message>
         <source>&amp;Move...</source>
-        <translation type="unfinished"></translation>
+        <translation>Pi&amp;ndah...</translation>
     </message>
     <message>
         <source>Move Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pindahkan Berkas Image Disk (%1)</translation>
     </message>
     <message>
         <source>Move selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Pindahkan berkas image disk yang dipilih</translation>
     </message>
 </context>
 <context>
@@ -9700,6 +9791,10 @@
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Jendela mesin virtual dioptimalkan untuk bekerja pada mode warna &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; tapi kualitas warna tampilan virtual saat ini di-set pada &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Silahkan buka dialog properti tampilan pada Sistem Operasi guest dan pilih sebuah mode warna &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, bila tersedia, untuk performa terbaik yang memungkinkan pada subsistem video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan&lt;/b&gt;. Beberapa sistem operasi, seperti OS/2, dapat bekerja secara aktual pada mode 32&amp;nbsp;bit namun melaporkannya sebagai 24&amp;nbsp;bit (16 juta warna). Anda dapat mencoba memilih kualitas warna yang berbeda untuk melihat apakah pesan ini menghilang atau Anda dapat dengan mudah mematikan pesan sekarang bila Anda yakin kualitas warna yang dibutuhkan (%4&amp;nbsp;bit) tidak tersedia pada Sistem Operasi guest.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Kesalahan kritikal telah terjadi saat menjalankan mesin virtual dan eksekusi mesin telah dihentikan.&lt;/p&gt;&lt;p&gt;Untuk bantuan, silahkan kunjungi bagian Community (Komunitas) &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; atau kontrak pendukung anda. Mohon sediakan isi dari file log file &lt;tt&gt;VBox.log&lt;/tt&gt; dan file image &lt;tt&gt;VBox.png&lt;/tt&gt;, yang dapat Anda temukan pada direktori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, demikian juga dengan deskripsi tentang apa yang Anda lakukan saat kesalahan ini terjadi. Perhatikan bahwa Anda juga dapat mengakses file diatas dengan memilih &lt;b&gt;Tampilkan Log&lt;/b&gt; dari menu &lt;b&gt;Mesin&lt;/b&gt; dalam jendela utama VirtualBox.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Baik&lt;/b&gt; bila Anda ingin mematikan mesin atau tekan &lt;b&gt;Abaikan&lt;/b&gt; bila Anda ingin membiarkannya untuk debugging. Mohon perhatikan bahwa debugging membutuhkan pengetahuan dan alat khusus, sehingga dianjurkan untuk menekan &lt;b&gt;Baik&lt;/b&gt; sekarang.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
@@ -11247,18 +11342,22 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Tak bisa menyisipkan berkas image disk &lt;b&gt;%1&lt;/b&gt; ke dalam mesin virtual &lt;b&gt;%2&lt;/b&gt;, karena mesin tak memiliki drive optik. Silakan tambahkan sebuah drive memakai halaman penyimpanan dari jendela pengaturan mesin virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal mengubah snapshot &lt;b&gt;%1&lt;/b&gt; dari mesin virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal menciptakan penyimpanan image hard disk virtual  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Perubahan yang Anda minta memerlukan disk ini dilepas dari mesin-mesin tempat itu dicantolkan.&lt;/p&gt;&lt;p&gt;Anda yakin hendak melepas berkas image disk &lt;nobr&gt;&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Ini akan melepasnya dari mesin-mesin virtual berikut: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -12211,11 +12310,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     <name>UIPopupPane</name>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Rincian:&lt;/b&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Rincian:&lt;/b&gt; (%1 dari %2)</translation>
     </message>
 </context>
 <context>
@@ -12374,6 +12473,10 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     <message>
         <source>Show Toolbar Text</source>
         <translation>Tampilkan Teks Bilah Alat</translation>
+    </message>
+    <message>
+        <source>Select a destination folder to move the selected virtual machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12615,23 +12718,23 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Enter a name for the new snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Masukkan suatu nama bagi snapshot baru...</translation>
     </message>
     <message>
         <source>Enter a name for this snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Masukkan suatu nama untuk snapshot ini...</translation>
     </message>
     <message>
         <source>Take</source>
-        <translation type="unfinished"></translation>
+        <translation>Ambil</translation>
     </message>
     <message>
         <source>Take snapshot on the basis of current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Ambil snapshot pada basis dari keadaan mesin saat ini</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished">Ambil Snapshot (%1)</translation>
+        <translation>Ambil Snapshot (%1)</translation>
     </message>
 </context>
 <context>
@@ -12863,6 +12966,10 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     <message>
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
         <translation>Alat untuk mengendalikan snapshot mesin virtual. Mencerminkan &lt;u&gt;snapshot&lt;/u&gt; yang dibuat untuk VM yang sedang dipilih dan memungkinkan operasi-operasi snapshot seperti &lt;u&gt;cipta&lt;/u&gt;, &lt;u&gt;hapus&lt;/u&gt;, &lt;u&gt;pulihkan&lt;/u&gt; (jadikan yang kini) dan mengamati properti mereka. Memungkinkan &lt;u&gt;menyunting&lt;/u&gt; atribut snapshot seperti &lt;u&gt;nama&lt;/u&gt; dan &lt;u&gt;deskripsi&lt;/u&gt;.</translation>
+    </message>
+    <message>
+        <source>Tool to display  virtual machine (VM) logs. </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13126,6 +13233,158 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
         <source>&amp;Runtime Information</source>
         <translation>Informasi &amp;Runtime</translation>
     </message>
+    <message>
+        <source>&amp;Guest Session Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guest File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">Password</translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished">Refresh</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Hapus</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Ubah nama</translation>
+    </message>
+    <message>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Salin</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move one level up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste the copied item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the properties of the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -13177,82 +13436,288 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
 </context>
 <context>
-    <name>UIVMLogViewerWidget</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Close the search panel</source>
-        <translation>Tutup panel pencarian</translation>
+        <translation type="vanished">Tutup panel pencarian</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>&amp;Cari</translation>
+        <translation type="vanished">&amp;Cari</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>Masukkan string pencarian di sini</translation>
+        <translation type="vanished">Masukkan string pencarian di sini</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>&amp;Sebelumnya</translation>
+        <translation type="vanished">&amp;Sebelumnya</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>Cari kemunculan string sebelumnya</translation>
+        <translation type="vanished">Cari kemunculan string sebelumnya</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>Sela&amp;njutnya</translation>
+        <translation type="vanished">Sela&amp;njutnya</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>Cari kemunculan string selanjutnya</translation>
+        <translation type="vanished">Cari kemunculan string selanjutnya</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>Bed&amp;akan Huruf Besar Kecil</translation>
+        <translation type="vanished">Bed&amp;akan Huruf Besar Kecil</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Lakukan pencarian yang membedakan huruf besar kecil (bila dipilih)</translation>
+        <translation type="vanished">Lakukan pencarian yang membedakan huruf besar kecil (bila dipilih)</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>String tidak ditemukan</translation>
+        <translation type="vanished">String tidak ditemukan</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak ada file log yang ditemukan. Tekan tombol &lt;b&gt;Segarkan&lt;/b&gt; untuk memindai ulang folder log &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Tidak ada file log yang ditemukan. Tekan tombol &lt;b&gt;Segarkan&lt;/b&gt; untuk memindai ulang folder log &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>Simpan Log VirtualBox Sebagai</translation>
+        <translation type="vanished">Simpan Log VirtualBox Sebagai</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 -Penilik Log VirtualBox</translation>
+        <translation type="vanished">%1 -Penilik Log VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>Sega&amp;rkan</translation>
+        <translation type="vanished">Sega&amp;rkan</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Simpan</translation>
+        <translation type="vanished">&amp;Simpan</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Tutup</translation>
+        <translation type="vanished">Tutup</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation>Penyaring</translation>
+        <translation type="vanished">Penyaring</translation>
     </message>
     <message>
         <source>Enter filtering string here</source>
-        <translation>Masukkan string penyaring di sini</translation>
+        <translation type="vanished">Masukkan string penyaring di sini</translation>
     </message>
     <message>
         <source>Fil&amp;ter</source>
-        <translation>Penya&amp;ring</translation>
+        <translation type="vanished">Penya&amp;ring</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerDialog</name>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerWidget</name>
+    <message>
+        <source>Delete the current bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all bookmarks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto selected bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Tutup</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished">Viewer Log</translation>
+    </message>
+    <message>
+        <source>Enter filtering string here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add filter term. (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The type of boolean operator for filter operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ma&amp;tch Whole Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search matches only complete words when checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished">String tidak ditemukan</translation>
+    </message>
+    <message>
+        <source>%1 Matches Found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Viewer Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">Simpan Log VirtualBox Sebagai</translation>
+    </message>
+    <message>
+        <source>&amp;Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload the log (F5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">&amp;Simpan...</translation>
+    </message>
+    <message>
+        <source>Save the log (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13482,76 +13947,76 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Copy Virtual Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin Image Disk Virtual</translation>
     </message>
     <message>
         <source>Disk image to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Image disk yang akan disalin</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual disk image file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Silakan pilih berkas image disk virtual yang ingin Anda salin bila belum dipilih. Anda dapat memilih dari daftar atau memakai ikon folder di samping daftar untuk memilih salah satu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual disk image file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih berkas image disk virtual yang akan disalin...</translation>
     </message>
     <message>
         <source>Disk image file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipe berkas image disk</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Silakan pilih tipe berkas yang ingin Anda pakai untuk image disk virtual baru. Bila Anda tak perlu memakainya dengan perangkat lunak virtualisasi lain Anda dapat membiarkan pengaturan ini tak diubah.</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk image file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Silakan pilih apakah berkas image disk virtual baru mesti tumbuh ketika dipakai (dialokasikan secara dinamik) atau mesti diciptakan pada ukuran maksimumnya (ukuran tetap).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; disk image file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Berkas image disk &lt;b&gt;yang dialokasikan secara dinamik&lt;/b&gt; hanya akan memakai ruang pada hard disk fisik Anda ketika terisi (sampai dengan suatu &lt;b&gt;ukuran tetap&lt;/b&gt; maksimum), walaupun mereka tak akan mengecil lagi secara otomatis ketika ruang di dalamnya dibebaskan.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; disk image file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Berkas image disk virtual &lt;b&gt;ukuran tetap&lt;/b&gt; mungkin makan waktu lebih lama untuk diciptakan pada beberapa sistem tapi seringkali lebih cepat dipakainya.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the disk image file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Anda juga dapat memilih untuk &lt;b&gt;memecah&lt;/b&gt; berkas image disk ke dalam beberapa berkas yang masing-masing berukuran sampai dengan dua giga byte. Ini terutama berguna bila Anda hendak menyimpan mesin virtual pada peranti USB lepas pasang atau sistem lama, yang mungkin tak bisa menangani berkas sangat besar.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Harap pilih lokasi untuk berkas image disk virtual baru</translation>
     </message>
     <message>
         <source>New disk image to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Image disk baru yang akan dibuat</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual disk image file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Silakan ketik nama berkas image disk virtual baru ke kotak di bawah atau klik pada ikon folder untuk memilih folder lain tempat mencipta berkas.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual disk image file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih lokasi untuk berkas image disk virtual baru...</translation>
     </message>
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk image name</comment>
-        <translation type="unfinished">salinan_%1</translation>
+        <translation>salinan_%1</translation>
     </message>
     <message>
         <source>Disk image to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Image disk yang akan di&amp;salin</translation>
     </message>
     <message>
         <source>&amp;New disk image to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Image disk baru ya&amp;ng akan dibuat</translation>
     </message>
     <message>
         <source>Disk image file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tipe berkas image disk</translation>
     </message>
 </context>
 <context>
@@ -17295,6 +17760,10 @@ Versi %1</translation>
         <source>Audio</source>
         <comment>IndicatorType</comment>
         <translation>Audio</translation>
+    </message>
+    <message>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -1107,7 +1107,7 @@
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>Enable</source>
@@ -1433,6 +1433,37 @@
     </message>
     <message>
         <source>Enable audio input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine logs pane</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3286,12 +3317,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation>Nieskalowane wyjście Video HiDPI</translation>
+        <translation type="vanished">Nieskalowane wyjście Video HiDPI</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Włączone</translation>
+        <translation type="vanished">Włączone</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
@@ -3381,11 +3412,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (display/Unscaled HiDPI Video Output)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4598,6 +4624,21 @@ p, li { white-space: pre-wrap; }
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
         <translation type="unfinished">%1: %2</translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <source>Log</source>
+        <translation type="unfinished">Log</translation>
+    </message>
+    <message>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6408,15 +6449,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation>Obsługuje HiDPI:</translation>
+        <translation type="vanished">Obsługuje HiDPI:</translation>
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>Po zaznaczeniu tej opcji, zawartość ekranu gościa nie zostanie przeskalowana w górę, by utrzymać wysoką rozdzielczość ekranu gospodarza.</translation>
+        <translation type="vanished">Po zaznaczeniu tej opcji, zawartość ekranu gościa nie zostanie przeskalowana w górę, by utrzymać wysoką rozdzielczość ekranu gospodarza.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>Używaj &amp;nieprzeskalowanego wyjścia HiDPI</translation>
+        <translation type="vanished">Używaj &amp;nieprzeskalowanego wyjścia HiDPI</translation>
     </message>
     <message>
         <source>Acceleration:</source>
@@ -6767,19 +6808,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation>Szy&amp;frowanie</translation>
+        <translation type="vanished">Szy&amp;frowanie</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation>Po zaznaczeniu tej opcji, włącza szyfrowanie dla tej wirtualnej maszyny.</translation>
+        <translation type="vanished">Po zaznaczeniu tej opcji, włącza szyfrowanie dla tej wirtualnej maszyny.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation>Wł&amp;ącz szyfrowanie</translation>
+        <translation type="vanished">Wł&amp;ącz szyfrowanie</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation>Szyfr szyfrow&amp;ania:</translation>
+        <translation type="vanished">Szyfr szyfrow&amp;ania:</translation>
     </message>
     <message>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
@@ -6791,7 +6832,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation>Przechowuje hasło, które zostanie przydzielony do wirtualnej maszyny.</translation>
+        <translation type="vanished">Przechowuje hasło, które zostanie przydzielony do wirtualnej maszyny.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
@@ -6799,23 +6840,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation>Umożliwia potwierdzienie nowego hasła, które zostanie przydzielono do wirtualnej maszyny.</translation>
+        <translation type="vanished">Umożliwia potwierdzienie nowego hasła, które zostanie przydzielono do wirtualnej maszyny.</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>Próbujesz zaszyfrować tę wirtualną maszynę. Jednakże, to wymaga zainstalowania &lt;i&gt;%1&lt;/i&gt; . Zainstaluj pakiet rozszerzeń ze strony pobierania VirtualBox.</translation>
+        <translation type="vanished">Próbujesz zaszyfrować tę wirtualną maszynę. Jednakże, to wymaga zainstalowania &lt;i&gt;%1&lt;/i&gt; . Zainstaluj pakiet rozszerzeń ze strony pobierania VirtualBox.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation>Brak określonego typu szyfru.</translation>
+        <translation type="vanished">Brak określonego typu szyfru.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation>Hasło szyfrowania jest puste.</translation>
+        <translation type="vanished">Hasło szyfrowania jest puste.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation>Hasła szyfrowania nie zgadzają się.</translation>
+        <translation type="vanished">Hasła szyfrowania nie zgadzają się.</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
@@ -6825,6 +6866,46 @@ p, li { white-space: pre-wrap; }
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
         <translation>Pozostaw niezmieniony</translation>
+    </message>
+    <message>
+        <source>Disk Enc&amp;ryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, disks attached to this virtual machine will be encrypted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>En&amp;able Disk Encryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk Encryption C&amp;ipher:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the encryption password for disks attached to this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirms the disk encryption password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption password empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption passwords do not match.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8099,6 +8180,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Storage Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9501,6 +9587,10 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Okno maszyny wirtualnej jest zoptymalizowane do pracy w &lt;b&gt;%1&amp;nbsp;bitowym&lt;/b&gt; trybie kolorów, natomiast w goszczonym systemie operacyjnym ustawiony jest aktualnie tryb &lt;b&gt;%2&amp;nbsp;bitowy&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Proszę otworzyć okno ustawień ekranu w goszczonym sytemie i jeśli to możliwe, wybrać tryb &lt;b&gt;%3&amp;nbsp;bitowego&lt;/b&gt; koloru, aby uzyskać najlepszą wydajność wirtualnego podsystemu wideo.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Uwaga&lt;/b&gt;: niektóre systemy operacyjne, jak np. OS/2, mogą błędnie informować o pracy w trybie 24&amp;nbsp;bitowym (16 milionów kolorów) pomimo faktycznego używania trybu 32&amp;nbsp;bitowego. Proszę spróbować wybrać inny tryb z listy i sprawdzić, czy komunikat ten nie będzie się już pojawiał lub po prostu wyłączyć go teraz, jeśli wiadomo, że wymagany tryb kolorów (%4&amp;nbsp;bitów) nie jest dostępny w systemie operacyjnym gościa.&lt;/p&gt;</translation>
     </message>
     <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Wystąpił błąd krytyczny podczas pracy maszyny wirtualnej i została ona zaPrzechowujena.&lt;/p&gt;&lt;p&gt;Pomoc można uzyskać korzystając z forum na stronie &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; (sekcja Community) lub kontaktując się bezpośrednio z nami. Proszę pamiętać, aby do opisu problemu dołączyć zawartość pliku z logiem &lt;tt&gt;VBox.log&lt;/tt&gt; oraz plik obrazu &lt;tt&gt;VBox.png&lt;/tt&gt;, które można znaleźć w folderu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, jak również informację o tym co było robione bezpośrednio przed wystąpieniem błędu. Dostęp do powyższych plików można także uzyskać wybierając opcję &lt;b&gt;Pokaż log&lt;/b&gt; z menu &lt;b&gt;Maszyna&lt;/b&gt; w oknie głównym programu VirualBox.&lt;/p&gt;&lt;p&gt;Proszę wcisnąć &lt;b&gt;OK&lt;/b&gt;, aby wyłączyć maszynę lub &lt;b&gt;Ignoruj&lt;/b&gt;, jeśli należy pozostawić ją nienaruszoną w celu debugowania. &lt;b&gt;Uwaga&lt;/b&gt;: debugowanie wymaga odpowiedniej wiedzy i narzędzi, zalecane więc jest wciśnięcie &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nie podłączono dysku twardego do maszyny wirtualnej. Maszyna nie będzie mogła wystartować, dopóki nie zostanie podłączony dysk twardy z zainstalowanym systemem operacyjnym lub inny uruchamialny nośnik, poprzez okno ustawień maszyny lub przy pomocy Asystenta pierwszego uruchomienia.&lt;/p&gt;&lt;p&gt;Kontynuować?&lt;/p&gt;</translation>
     </message>
@@ -9907,7 +9997,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wystąpił błąd krytyczny podczas pracy maszyny wirtualnej i została ona zaPrzechowujena.&lt;/p&gt;&lt;p&gt;Pomoc można uzyskać korzystając z forum na stronie &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; (sekcja Community) lub kontaktując się bezpośrednio z nami. Proszę pamiętać, aby do opisu problemu dołączyć zawartość pliku z logiem &lt;tt&gt;VBox.log&lt;/tt&gt; oraz plik obrazu &lt;tt&gt;VBox.png&lt;/tt&gt;, które można znaleźć w folderu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, jak również informację o tym co było robione bezpośrednio przed wystąpieniem błędu. Dostęp do powyższych plików można także uzyskać wybierając opcję &lt;b&gt;Pokaż log&lt;/b&gt; z menu &lt;b&gt;Maszyna&lt;/b&gt; w oknie głównym programu VirtualBox.&lt;/p&gt;&lt;p&gt;Proszę wcisnąć &lt;b&gt;OK&lt;/b&gt;, aby wyłączyć maszynę lub &lt;b&gt;Ignoruj&lt;/b&gt;, jeśli należy pozostawić ją nienaruszoną w celu debugowania. &lt;b&gt;Uwaga&lt;/b&gt;: debugowanie wymaga odpowiedniej wiedzy i narzędzi, zalecane więc jest wciśnięcie &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Wystąpił błąd krytyczny podczas pracy maszyny wirtualnej i została ona zaPrzechowujena.&lt;/p&gt;&lt;p&gt;Pomoc można uzyskać korzystając z forum na stronie &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; (sekcja Community) lub kontaktując się bezpośrednio z nami. Proszę pamiętać, aby do opisu problemu dołączyć zawartość pliku z logiem &lt;tt&gt;VBox.log&lt;/tt&gt; oraz plik obrazu &lt;tt&gt;VBox.png&lt;/tt&gt;, które można znaleźć w folderu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, jak również informację o tym co było robione bezpośrednio przed wystąpieniem błędu. Dostęp do powyższych plików można także uzyskać wybierając opcję &lt;b&gt;Pokaż log&lt;/b&gt; z menu &lt;b&gt;Maszyna&lt;/b&gt; w oknie głównym programu VirualBox.&lt;/p&gt;&lt;p&gt;Proszę wcisnąć &lt;b&gt;OK&lt;/b&gt;, aby wyłączyć maszynę lub &lt;b&gt;Ignoruj&lt;/b&gt;, jeśli należy pozostawić ją nienaruszoną w celu debugowania. &lt;b&gt;Uwaga&lt;/b&gt;: debugowanie wymaga odpowiedniej wiedzy i narzędzi, zalecane więc jest wciśnięcie &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -11021,6 +11111,10 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -12126,6 +12220,10 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
         <source>Show Toolbar Text</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select a destination folder to move the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UISession</name>
@@ -12621,6 +12719,10 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Tool to display  virtual machine (VM) logs. </source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIUSBFilterItem</name>
@@ -12911,6 +13013,158 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
         <source>&amp;Runtime Information</source>
         <translation>&amp;Informacje o czasie pracy</translation>
     </message>
+    <message>
+        <source>&amp;Guest Session Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guest File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">Hasło</translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished">Odśwież</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Zmień nazwę</translation>
+    </message>
+    <message>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Kopiuj</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move one level up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste the copied item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the properties of the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -12962,82 +13216,288 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
 </context>
 <context>
-    <name>UIVMLogViewerWidget</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Close the search panel</source>
-        <translation>Zamyka panel wyszukiwania</translation>
+        <translation type="vanished">Zamyka panel wyszukiwania</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>&amp;Szukaj</translation>
+        <translation type="vanished">&amp;Szukaj</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>Wprowadź tutaj szukany ciąg</translation>
+        <translation type="vanished">Wprowadź tutaj szukany ciąg</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>&amp;Poprzedni</translation>
+        <translation type="vanished">&amp;Poprzedni</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>Szuka poprzedniego wystąpienia danego tekstu</translation>
+        <translation type="vanished">Szuka poprzedniego wystąpienia danego tekstu</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>&amp;Następny</translation>
+        <translation type="vanished">&amp;Następny</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>Szuka następnego wystąpienia danego tekstu</translation>
+        <translation type="vanished">Szuka następnego wystąpienia danego tekstu</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Uwzględniaj wielkość liter</translation>
+        <translation type="vanished">&amp;Uwzględniaj wielkość liter</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Szuka z uwzględnieniem wielkości liter (jeśli zaznaczone)</translation>
+        <translation type="vanished">Szuka z uwzględnieniem wielkości liter (jeśli zaznaczone)</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>Nie znaleziono</translation>
+        <translation type="vanished">Nie znaleziono</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nie znaleziono plików z logami. Proszę wcisnąć przycisk &lt;b&gt;Odśwież&lt;/b&gt; aby ponownie przeszukać folder z logami &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Nie znaleziono plików z logami. Proszę wcisnąć przycisk &lt;b&gt;Odśwież&lt;/b&gt; aby ponownie przeszukać folder z logami &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>Zapisz log VirtualBox jako</translation>
+        <translation type="vanished">Zapisz log VirtualBox jako</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - Przeglądarka logów VirtualBox</translation>
+        <translation type="vanished">%1 - Przeglądarka logów VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>&amp;Odśwież</translation>
+        <translation type="vanished">&amp;Odśwież</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Zapisz</translation>
+        <translation type="vanished">&amp;Zapisz</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Zamknij</translation>
+        <translation type="vanished">Zamknij</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation>Filtr</translation>
+        <translation type="vanished">Filtr</translation>
     </message>
     <message>
         <source>Enter filtering string here</source>
-        <translation>Wprowadź ciąg filtrowania tutaj</translation>
+        <translation type="vanished">Wprowadź ciąg filtrowania tutaj</translation>
     </message>
     <message>
         <source>Fil&amp;ter</source>
-        <translation>Fil&amp;tr</translation>
+        <translation type="vanished">Fil&amp;tr</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerDialog</name>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerWidget</name>
+    <message>
+        <source>Delete the current bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all bookmarks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto selected bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Zamknij</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished">Przeglądarka logów</translation>
+    </message>
+    <message>
+        <source>Enter filtering string here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add filter term. (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The type of boolean operator for filter operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished">&amp;Szukaj</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished">Szuka z uwzględnieniem wielkości liter (jeśli zaznaczone)</translation>
+    </message>
+    <message>
+        <source>Ma&amp;tch Whole Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search matches only complete words when checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished">Nie znaleziono</translation>
+    </message>
+    <message>
+        <source>%1 Matches Found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Viewer Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">Zapisz log VirtualBox jako</translation>
+    </message>
+    <message>
+        <source>&amp;Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">&amp;Odśwież</translation>
+    </message>
+    <message>
+        <source>Reload the log (F5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">Zapi&amp;sz...</translation>
+    </message>
+    <message>
+        <source>Save the log (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Nie znaleziono plików z logami. Proszę wcisnąć przycisk &lt;b&gt;Odśwież&lt;/b&gt; aby ponownie przeszukać folder z logami &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -14349,6 +14809,10 @@ Wersja %1</translation>
     <message>
         <source>Snapshot %1</source>
         <translation type="obsolete">Migawka %1</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nie można znaleźć obrazu VirtualBox Guest Additions CD &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; lub &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Host Drive </source>
@@ -17177,6 +17641,10 @@ Wersja %1</translation>
         <source>Audio</source>
         <comment>IndicatorType</comment>
         <translation type="unfinished">Dźwięk</translation>
+    </message>
+    <message>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

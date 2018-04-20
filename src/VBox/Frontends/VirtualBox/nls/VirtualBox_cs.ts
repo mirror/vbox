@@ -1325,7 +1325,7 @@
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>Enable</source>
@@ -1647,6 +1647,37 @@
     </message>
     <message>
         <source>Enable audio input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine logs pane</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3754,12 +3785,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation>Nezměněný HiDPI video výstup</translation>
+        <translation type="vanished">Nezměněný HiDPI video výstup</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Povolen</translation>
+        <translation type="vanished">Povolen</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
@@ -3849,11 +3880,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (display/Unscaled HiDPI Video Output)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4308,7 +4334,7 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">Zobrazuje cestu k výchozí složce pro VDI. Pokud se neurčí jinak, je tato složka použita v případě přidání existujícího nebo vytvoření nového virtuálního pevného disku.</translation>
+        <translation type="obsolete">Zobrazuje cestu k výchozí složce pro VDI. Pokud se neurčí jinak, je tato složka použita v případě přidání existujícího nebo vytvoření nového virtuálního pevného disku.</translation>
     </message>
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
@@ -4340,7 +4366,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">Zobrazuje cestu k výchozí složce pro obrazy pevných disků. Pokud se neurčí jinak, je tato složka použita v případě přidání existujícího nebo vytvoření nového virtuálního pevného disku.</translation>
+        <translation type="obsolete">Zobrazuje cestu k výchozí složce pro obrazy pevných disků. Pokud se neurčí jinak, je tato složka použita v případě přidání existujícího nebo vytvoření nového virtuálního pevného disku.</translation>
     </message>
     <message>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
@@ -5298,6 +5324,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <source>Log</source>
+        <translation type="unfinished">Log</translation>
+    </message>
+    <message>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminal</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6492,7 +6533,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="unfinished">PIO přenosy</translation>
+        <translation type="unfinished">PIO přenosy</translation>
     </message>
     <message>
         <source>Data Read</source>
@@ -7048,15 +7089,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation>Podpora HiDPI:</translation>
-    </message>
-    <message>
-        <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Podpora HiDPI:</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>Použít &amp;nezměněný HiDPI výstup</translation>
+        <translation type="vanished">Použít &amp;nezměněný HiDPI výstup</translation>
     </message>
     <message>
         <source>Acceleration:</source>
@@ -7423,19 +7460,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation>Ši&amp;frování</translation>
+        <translation type="vanished">Ši&amp;frování</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation>Je-li zatrženo, povolí zašifrování tohoto virtuálního počítače.</translation>
+        <translation type="vanished">Je-li zatrženo, povolí zašifrování tohoto virtuálního počítače.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation>Povoli&amp;t šifrování</translation>
+        <translation type="vanished">Povoli&amp;t šifrování</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation>Ši&amp;fra:</translation>
+        <translation type="vanished">Ši&amp;fra:</translation>
     </message>
     <message>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
@@ -7447,7 +7484,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation>Obsahuje heslo pro tento virtuální počítač.</translation>
+        <translation type="vanished">Obsahuje heslo pro tento virtuální počítač.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
@@ -7455,23 +7492,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation>Potvrzení nového hesla pro tento virtuální počítač.</translation>
+        <translation type="vanished">Potvrzení nového hesla pro tento virtuální počítač.</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>Chystáte se šifrovat virtuální počítač. Pro tento krok je vyžadována instalace &lt;i&gt;%1&lt;/i&gt;. Nainstalujte prosím rozšíření stažením ze stránek VirtualBox.</translation>
+        <translation type="vanished">Chystáte se šifrovat virtuální počítač. Pro tento krok je vyžadována instalace &lt;i&gt;%1&lt;/i&gt;. Nainstalujte prosím rozšíření stažením ze stránek VirtualBox.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation>Nebyla zadána šifra pro šifrování.</translation>
+        <translation type="vanished">Nebyla zadána šifra pro šifrování.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation>Heslo pro šifrování je prázdné.</translation>
+        <translation type="vanished">Heslo pro šifrování je prázdné.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation>Hesla pro šifrování se neshodují.</translation>
+        <translation type="vanished">Hesla pro šifrování se neshodují.</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
@@ -7481,6 +7518,46 @@ p, li { white-space: pre-wrap; }
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
         <translation>Nechat beze změny</translation>
+    </message>
+    <message>
+        <source>Disk Enc&amp;ryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, disks attached to this virtual machine will be encrypted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>En&amp;able Disk Encryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk Encryption C&amp;ipher:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the encryption password for disks attached to this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirms the disk encryption password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption password empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption passwords do not match.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8952,6 +9029,11 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Storage Devices</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>
@@ -10419,6 +10501,10 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače je optimalizováno pro použití v &lt;b&gt;%1&amp;nbsp;bitové&lt;/b&gt; barevné hloubce, ale barevná kvalita virtuální obrazovky je právě nastavena na &lt;b&gt;%2&amp;nbsp;bitů&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Prosím otevřete dialog vlastností obrazovky hostovaného OS a vyberte &lt;b&gt;%3&amp;nbsp;bitový&lt;/b&gt; barevný režim, pokud je dostupný, pro nejlepší možný výkon virtuálního video subsytému.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka&lt;/b&gt;. Některé operační systémy, jako OS/2, mohou skutečně pracovat v 32&amp;nbsp;bitovém režimu, ale hlasí ho jako 24&amp;nbsp;bitový (16 milionů barev). Můžete vybírat různé kvality barev a vidět, jestli se tato zpráva zobrazí, nebo můžete prostě zprávu zakázat, pokud jste si jistí, že požadovaná kvalita barev (%4&amp;nbsp;bitů) není v daném hostovaném OS dostupná.&lt;/p&gt;</translation>
     </message>
     <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Při běhu virtuálního počítače se vyskytla kritická chyba a provádění počítače bylo zastaveno.&lt;/p&gt;&lt;p&gt;Pro pomoc se prosím podívejte do sekce Community na &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; nebo na smlouvu o podpoře. Prosím poskytněte obsah log souboru &lt;tt&gt;VBox.log&lt;/tt&gt; a obrázek &lt;tt&gt;VBox.png&lt;/tt&gt;, který najdete v adresáři &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, společně s popisem, co jste dělali, když chyba nastala. Předchozí soubory také zobrazíte vybráním &lt;b&gt;Zobrazit logy&lt;/b&gt; z menu &lt;b&gt;Počitač&lt;/b&gt; hlavního okna VirtualBoxu.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt;, pokud chcete vypnout počítač, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt;, pokud jej chcete ponechat v současném stavu pro debugování. Upozorňujeme, že debugování vyžaduje zvláštní znalosti a nástroje, takže doporučujeme stisknout &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nepřipojili jste pevný disk k novému virtuálnímu počítači. Počítač nebude schopen bootovat, dokud nepřipojíte pevný disk s hostovaným operačním systémem nebo nějaké jiné bootovatelné médium pomocí dialogu nastavení počítače nebo Průvodce prvním spuštěním.&lt;/p&gt;&lt;p&gt;Chcete pokračovat?&lt;/p&gt;</translation>
     </message>
@@ -10545,6 +10631,10 @@ p, li { white-space: pre-wrap; }
         <source>Check</source>
         <comment>inaccessible media message box</comment>
         <translation>Zkontrolovat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Následující soubory s nastavením pro VirttualBox byly automaticky převedeny na nový formát souborů. &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Výsledky konverze nebyly ale zatím uloženy na disk. Prosím stiskněte:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Uložit&lt;/b&gt; pro uložení všech automaticky převedených souborů (v budoucnu nebude možné použít tyto soubory s nastaveními pro starší verze aplikace VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Zálohovat&lt;/b&gt; pro vytvoření založní kopie souborů s nastavením ve starším formátu před uložením do formátu nového;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Zrušit&lt;/b&gt; pro neuložení automaticky převedených souborů.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Poznámka: pokud zvolíte &lt;b&gt;Zrušit&lt;/b&gt; budou při změně konfigurace nebo při spuštění virtuálního počítače automaticky převedené soubory s nastavením implicitně uloženy v novém formátu, ale &lt;b&gt;nebude&lt;/b&gt; vytvořena záložní kopie.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save</source>
@@ -12097,6 +12187,10 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -13469,6 +13563,10 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <source>Show Toolbar Text</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select a destination folder to move the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UISession</name>
@@ -13980,6 +14078,10 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Tool to display  virtual machine (VM) logs. </source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIUSBFilterItem</name>
@@ -14190,7 +14292,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="vanished">PIO přenosy</translation>
+        <translation type="vanished">PIO přenosy</translation>
     </message>
     <message>
         <source>Data Read</source>
@@ -14282,6 +14384,158 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <source>&amp;Runtime Information</source>
         <translation type="unfinished">&amp;Informace o běhu</translation>
     </message>
+    <message>
+        <source>&amp;Guest Session Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guest File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">Heslo</translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished">Aktualizovat</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Smazat</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Přejmenovat</translation>
+    </message>
+    <message>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Kopírovat</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move one level up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste the copied item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the properties of the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -14333,18 +14587,18 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
 </context>
 <context>
-    <name>UIVMLogViewerWidget</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation type="obsolete">Prohlížeč záznamu</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Uložit</translation>
+        <translation type="vanished">&amp;Uložit</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>&amp;Aktualizovat</translation>
+        <translation type="vanished">&amp;Aktualizovat</translation>
     </message>
     <message>
         <source>&amp;Close</source>
@@ -14352,15 +14606,15 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - Prohlížeč záznamu VirtualBoxu</translation>
+        <translation type="vanished">%1 - Prohlížeč záznamu VirtualBoxu</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Žádný soubor se záznamem nenalezen. Stiskněte tlačítko &lt;b&gt;Aktualizovat&lt;/b&gt; pro opětovné prozkoumání složky se záznamy &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Žádný soubor se záznamem nenalezen. Stiskněte tlačítko &lt;b&gt;Aktualizovat&lt;/b&gt; pro opětovné prozkoumání složky se záznamy &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>Uložit záznam VirtualBoxu jako</translation>
+        <translation type="vanished">Uložit záznam VirtualBoxu jako</translation>
     </message>
     <message>
         <source>Help</source>
@@ -14368,59 +14622,253 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>&amp;Hledat</translation>
+        <translation type="vanished">&amp;Hledat</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Zavřít</translation>
+        <translation type="vanished">Zavřít</translation>
     </message>
     <message>
         <source>Close the search panel</source>
-        <translation>Zavřít panel hledání</translation>
+        <translation type="vanished">Zavřít panel hledání</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>Sem napište hledaný řetězec</translation>
+        <translation type="vanished">Sem napište hledaný řetězec</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>&amp;Předchozí</translation>
+        <translation type="vanished">&amp;Předchozí</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>Hledat předchozí výskyt řetězce</translation>
+        <translation type="vanished">Hledat předchozí výskyt řetězce</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>&amp;Další</translation>
+        <translation type="vanished">&amp;Další</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>Hledat další výskyt řetězce</translation>
+        <translation type="vanished">Hledat další výskyt řetězce</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>Rozlišov&amp;at velikost písmen</translation>
+        <translation type="vanished">Rozlišov&amp;at velikost písmen</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Provede vyhledávání s ohledem na velikost písmen (je-li zatrženo)</translation>
+        <translation type="vanished">Provede vyhledávání s ohledem na velikost písmen (je-li zatrženo)</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>Řetězec nenalezen</translation>
+        <translation type="vanished">Řetězec nenalezen</translation>
     </message>
+</context>
+<context>
+    <name>UIVMLogViewerDialog</name>
     <message>
-        <source>Filter</source>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerWidget</name>
+    <message>
+        <source>Delete the current bookmark.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter filtering string here</source>
+        <source>Delete all bookmarks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Fil&amp;ter</source>
+        <source>Delete all</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto selected bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Zavřít</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished">Prohlížeč záznamu</translation>
+    </message>
+    <message>
+        <source>Enter filtering string here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add filter term. (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The type of boolean operator for filter operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished">&amp;Hledat</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished">Sem napište hledaný řetězec</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished">Rozlišov&amp;at velikost písmen</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished">Provede vyhledávání s ohledem na velikost písmen (je-li zatrženo)</translation>
+    </message>
+    <message>
+        <source>Ma&amp;tch Whole Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search matches only complete words when checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished">Řetězec nenalezen</translation>
+    </message>
+    <message>
+        <source>%1 Matches Found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Viewer Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">Uložit záznam VirtualBoxu jako</translation>
+    </message>
+    <message>
+        <source>&amp;Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">&amp;Aktualizovat</translation>
+    </message>
+    <message>
+        <source>Reload the log (F5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">&amp;Uložit...</translation>
+    </message>
+    <message>
+        <source>Save the log (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Žádný soubor se záznamem nenalezen. Stiskněte tlačítko &lt;b&gt;Aktualizovat&lt;/b&gt; pro opětovné prozkoumání složky se záznamy &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -18755,6 +19203,10 @@ Verze %1</translation>
         <comment>IndicatorType</comment>
         <translation type="unfinished">Zvuk</translation>
     </message>
+    <message>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -20559,7 +21011,7 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="obsolete">PIO přenosy</translation>
+        <translation type="obsolete">PIO přenosy</translation>
     </message>
     <message>
         <source>Data Read</source>

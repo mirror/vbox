@@ -4,7 +4,7 @@
 <context>
     <name>@@@</name>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+1563"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+1648"/>
         <source>English</source>
         <comment>Native language name</comment>
         <translation>Euskara</translation>
@@ -37,7 +37,7 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="+450"/>
+        <location filename="../src/main.cpp" line="+449"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Exekutagarria &lt;b&gt;%1&lt;/b&gt; behar du Qt %2.x, aurkituta Qt %3.</translation>
     </message>
@@ -47,7 +47,7 @@
         <translation>Bateraezintasun Qt Liburutegi Akatsa</translation>
     </message>
     <message>
-        <location line="+264"/>
+        <location line="+274"/>
         <source>VirtualBox - Error In %1</source>
         <translation>VirtualBox - Akatsa Hemen %1</translation>
     </message>
@@ -57,7 +57,7 @@
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <location line="-540"/>
+        <location line="-549"/>
         <source>Please try reinstalling VirtualBox.</source>
         <translation>Mesedez ezarri berriro VirtualBox.</translation>
     </message>
@@ -77,7 +77,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+445"/>
+        <location line="+454"/>
         <source>VirtualBox - Runtime Error</source>
         <translation>VirtualBox - Jarduera Akatsa</translation>
     </message>
@@ -97,7 +97,7 @@
         <translation>Kernel gidagailua ez dago eskuragarri</translation>
     </message>
     <message>
-        <location line="-471"/>
+        <location line="-480"/>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Please try completely uninstalling and reinstalling VirtualBox.</source>
         <translation>VirtualBox kernel moduloak ez datoz bat VirtualBox-en bertsio honekin. VirtualBox-en ezarpenak dirudienez ez da ongi egin. Mesedez saiatu osorik kentzen eta VirtualBox berriro ezartzen.</translation>
     </message>
@@ -139,7 +139,7 @@
         <translation type="vanished">&amp;Hurrengoa</translation>
     </message>
     <message>
-        <location filename="../src/extensions/QIArrowSplitter.cpp" line="+337"/>
+        <location filename="../src/extensions/QIArrowSplitter.cpp" line="+349"/>
         <source>&amp;Details</source>
         <translation type="unfinished">&amp;Xehetasunak</translation>
     </message>
@@ -163,7 +163,7 @@
 <context>
     <name>QILabel</name>
     <message>
-        <location filename="../src/extensions/QILabel.cpp" line="+203"/>
+        <location filename="../src/extensions/QILabel.cpp" line="+209"/>
         <source>&amp;Copy</source>
         <translation>&amp;Kopiatu</translation>
     </message>
@@ -171,9 +171,9 @@
 <context>
     <name>QIMessageBox</name>
     <message>
-        <location filename="../src/extensions/QIMessageBox.cpp" line="+302"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+1887"/>
-        <location filename="../src/widgets/UIPopupPaneButtonPane.cpp" line="+180"/>
+        <location filename="../src/extensions/QIMessageBox.cpp" line="+324"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+1904"/>
+        <location filename="../src/widgets/UIPopupPaneButtonPane.cpp" line="+199"/>
         <source>OK</source>
         <translation>Ongi</translation>
     </message>
@@ -270,7 +270,7 @@
 <context>
     <name>SFTreeViewItem</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="+182"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="+183"/>
         <source>%1, %2: %3, %4: %5, %6: %7</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text</comment>
         <translation type="unfinished"></translation>
@@ -279,8 +279,8 @@
 <context>
     <name>UIActionPool</name>
     <message>
-        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+64"/>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+402"/>
+        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+78"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+478"/>
         <source>&amp;Machine</source>
         <translation>&amp;Makina</translation>
     </message>
@@ -289,7 +289,7 @@
         <translation type="obsolete">Berezgaitasunez birneurriratzen du gonbidatu erakuspena leihoa birneurriratzerakoan (Gonbidatu Gehigarriak behar ditu)</translation>
     </message>
     <message>
-        <location line="+533"/>
+        <location line="+767"/>
         <source>&amp;Adjust Window Size</source>
         <translation>&amp;Zehaztu Leiho Neurria</translation>
     </message>
@@ -323,7 +323,7 @@
         <translation type="obsolete">Bidali Ktrl-Alt-Atzera sekuentzia makina birtualari</translation>
     </message>
     <message>
-        <location line="-464"/>
+        <location line="-668"/>
         <source>Take a snapshot of the virtual machine</source>
         <translation>Hartu makina birtualaren berehalako bat</translation>
     </message>
@@ -332,19 +332,19 @@
         <translation type="obsolete">Erakutsi Saio Argibide Elkarrizketa</translation>
     </message>
     <message>
-        <location line="-35"/>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+116"/>
+        <location line="-50"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+140"/>
         <source>Display the virtual machine settings window</source>
         <translation>Makina birtualaren ezarpenen leihoa erakusten du</translation>
     </message>
     <message>
-        <location line="+70"/>
+        <location line="+100"/>
         <source>Display the virtual machine session information window</source>
         <translation>Makina birtualaren saio argibideak erakusten ditu</translation>
     </message>
     <message>
-        <location line="+36"/>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+205"/>
+        <location line="+51"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+305"/>
         <source>&amp;Pause</source>
         <translation>&amp;Pausatu</translation>
     </message>
@@ -354,8 +354,8 @@
         <translation>Utzi makina birtualaren exekuzioa</translation>
     </message>
     <message>
-        <location line="+34"/>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+28"/>
+        <location line="+49"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+34"/>
         <source>&amp;Reset</source>
         <translation>Be&amp;rrezarri</translation>
     </message>
@@ -369,8 +369,8 @@
         <translation type="obsolete">Gorde makina birtualaren makina egoera</translation>
     </message>
     <message>
-        <location line="+98"/>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+464"/>
+        <location line="+141"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+558"/>
         <source>ACPI Sh&amp;utdown</source>
         <translation>ACPI &amp;Itzali</translation>
     </message>
@@ -379,7 +379,7 @@
         <translation type="obsolete">Bidali ACPI Indar Botoi sakatze gertaera makina birtualera</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="+483"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="+538"/>
         <source>&amp;Close...</source>
         <translation>It&amp;xi...</translation>
     </message>
@@ -389,7 +389,7 @@
         <translation>Itxi makina birtuala</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+55"/>
+        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+83"/>
         <source>&amp;View</source>
         <translation>&amp;Ikusi</translation>
     </message>
@@ -398,37 +398,37 @@
         <translation type="obsolete">Aldatu &amp;Modu Eskalatura</translation>
     </message>
     <message>
-        <location line="+132"/>
+        <location line="+190"/>
         <source>Switch between normal and scaled mode</source>
         <translation>Aldatu modu arrunt eta eskalatuaren artean</translation>
     </message>
     <message>
-        <location line="+139"/>
+        <location line="+198"/>
         <source>Take guest display screenshot</source>
         <translation>Hartu gonbidatu erakuspenaren ikusleiho-argazki bat</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+81"/>
         <source>Display virtual machine settings window to configure video capture</source>
         <translation>Makina birtualaren ezarpenen leihoa bideo harpena itxuratzeko</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+46"/>
         <source>Enable guest display video capture</source>
         <translation>Gaitu gonbidatu erakupenaren bideo harpena</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+46"/>
         <source>Allow remote desktop (RDP) connections to this machine</source>
         <translation>Gaitu hurruneko mahaigain (RDP) elkarketak makina honetara</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+37"/>
         <source>&amp;Menu Bar</source>
         <translation>&amp;Menu Barra</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+43"/>
         <source>&amp;Menu Bar Settings...</source>
         <translation>&amp;Menu Barra Ezarpenak...</translation>
     </message>
@@ -438,7 +438,7 @@
         <translation>Erakutsi leihoa menu-barra itxuratzeko</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+45"/>
         <source>Show Menu &amp;Bar</source>
         <translation>Erakutsi Menu &amp;Barra</translation>
     </message>
@@ -448,12 +448,12 @@
         <translation>Gaitu menu-barra</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+38"/>
         <source>&amp;Status Bar</source>
         <translation>&amp;Egoera Barra</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+43"/>
         <source>&amp;Status Bar Settings...</source>
         <translation>&amp;Egoera Barra Ezarpenak...</translation>
     </message>
@@ -463,7 +463,7 @@
         <translation>Erakutsi leihoa egoera-barra itxuratzeko</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+44"/>
         <source>Show Status &amp;Bar</source>
         <translation>Erakutsi Egoera &amp;Barra</translation>
     </message>
@@ -473,22 +473,22 @@
         <translation>Gaitu egoera-barra</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+37"/>
         <source>S&amp;cale Factor</source>
         <translation>&amp;Eskala Ezaugarria</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+38"/>
         <source>&amp;Input</source>
         <translation>&amp;Sarrera</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+37"/>
         <source>&amp;Keyboard</source>
         <translation>&amp;Teklatua</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+43"/>
         <source>&amp;Keyboard Settings...</source>
         <translation>&amp;Teklatu Ezarpenak...</translation>
     </message>
@@ -498,33 +498,33 @@
         <translation>Erakutsi hobespen orokorren leihoa teklatuaren lasterbideak itxuratzeko</translation>
     </message>
     <message>
-        <location line="+34"/>
-        <location line="+36"/>
-        <location line="+31"/>
-        <location line="+30"/>
-        <location line="+30"/>
-        <location line="+30"/>
+        <location line="+49"/>
+        <location line="+51"/>
+        <location line="+45"/>
+        <location line="+44"/>
+        <location line="+44"/>
+        <location line="+44"/>
         <source>&amp;Insert %1</source>
         <comment>that means send the %1 key sequence to the virtual machine</comment>
         <translation>&amp;Txertatu %1</translation>
     </message>
     <message>
-        <location line="-156"/>
-        <location line="+36"/>
-        <location line="+31"/>
-        <location line="+30"/>
-        <location line="+30"/>
-        <location line="+30"/>
+        <location line="-227"/>
+        <location line="+51"/>
+        <location line="+45"/>
+        <location line="+44"/>
+        <location line="+44"/>
+        <location line="+44"/>
         <source>Send the %1 sequence to the virtual machine</source>
         <translation>Bidali %1 sekuentzia makina birtualari</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+37"/>
         <source>&amp;Mouse</source>
         <translation>&amp;Sagua</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+45"/>
         <source>&amp;Mouse Integration</source>
         <translation>&amp;Sagu Baterapena</translation>
     </message>
@@ -534,17 +534,17 @@
         <translation>Gaitu hostalariaren sagu punta baterapena</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+38"/>
         <source>&amp;Devices</source>
         <translation>&amp;Gailuak</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+39"/>
         <source>&amp;Hard Disks</source>
         <translation>&amp;Diska Gogorrak</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+43"/>
         <source>&amp;Hard Disk Settings...</source>
         <translation>&amp;Diska Gogor Ezarpenak...</translation>
     </message>
@@ -554,22 +554,22 @@
         <translation>Eraskutsi makina birtualaren ezarpenen leihoa diska gogorrak itxuratzeko</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+39"/>
         <source>&amp;Optical Drives</source>
         <translation>Diska &amp;Optikoak</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+39"/>
         <source>&amp;Floppy Drives</source>
         <translation>&amp;Diskete Gidagailuak</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+37"/>
         <source>&amp;Audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+45"/>
         <source>Audio Output</source>
         <translation type="unfinished"></translation>
     </message>
@@ -579,7 +579,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+45"/>
         <source>Audio Input</source>
         <translation type="unfinished"></translation>
     </message>
@@ -589,45 +589,63 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+37"/>
         <source>&amp;Network</source>
         <translation>&amp;Sarea</translation>
     </message>
     <message>
-        <location line="+216"/>
+        <location line="+321"/>
         <source>Display virtual machine settings window to configure shared folders</source>
         <translation>Eraskutsi makina birtualaren ezarpenen leihoa agiritegi elkarbanatuak itxuratzeko</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+44"/>
         <source>Insert the Guest Additions disk file into the virtual optical drive</source>
         <translation>Txertatu Gonbidatu Gehigarri diska agiria gidagailu optiko birtualean</translation>
     </message>
     <message>
-        <location line="+112"/>
+        <location line="+167"/>
         <source>&amp;Logging</source>
         <comment>debug action</comment>
         <translation>&amp;Oharreratzea</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+43"/>
         <source>Show &amp;Log...</source>
         <comment>debug action</comment>
         <translation>Erakutsi O&amp;harra...</translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+122"/>
         <source>Disable Dock Icon Overlay</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+786"/>
-        <source>%1%</source>
+        <location line="+790"/>
+        <location line="+20"/>
+        <source>Scale to %1%</source>
         <comment>scale-factor</comment>
-        <translation>%1%</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="-17"/>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <comment>scale-factor</comment>
+        <translation type="vanished">%1%</translation>
+    </message>
+    <message>
+        <location line="+60"/>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
         <translation>Gaitu</translation>
@@ -651,7 +669,7 @@
         <translation type="obsolete">&amp;USB Gailuak</translation>
     </message>
     <message>
-        <location line="-1234"/>
+        <location line="-1417"/>
         <source>&amp;Webcams</source>
         <translation>&amp;Webkamerak</translation>
     </message>
@@ -660,7 +678,7 @@
         <translation type="obsolete">Sarea</translation>
     </message>
     <message>
-        <location line="-85"/>
+        <location line="-123"/>
         <source>&amp;Network Settings...</source>
         <translation>&amp;Sare Ezarpenak...</translation>
     </message>
@@ -670,12 +688,12 @@
         <translation>Eraskutsi makina birtualaren ezarpenen leihoa sare egokitzaileak itxuratzeko</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+39"/>
         <source>&amp;USB</source>
         <translation>&amp;USB</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+43"/>
         <source>&amp;USB Settings...</source>
         <translation>&amp;USB Ezarpenak...</translation>
     </message>
@@ -685,22 +703,22 @@
         <translation>Eraskutsi makina birtualaren ezarpenen leihoa USB gailuak itxuratzeko</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+113"/>
         <source>&amp;Drag and Drop</source>
         <translation>&amp;Arrastatu eta Askatu</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+37"/>
         <source>&amp;Shared Folders</source>
         <translation>&amp;Elkarbanatutako Agiritegiak</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+43"/>
         <source>&amp;Shared Folders Settings...</source>
         <translation>&amp;Elkarbanatutako Agiritegi Ezarpenak...</translation>
     </message>
     <message>
-        <location line="-985"/>
+        <location line="-1457"/>
         <source>R&amp;emote Display</source>
         <translation>&amp;Hurruneko Erakuspena</translation>
     </message>
@@ -709,8 +727,8 @@
         <translation type="obsolete">Aldatu hurruneko mahaigain (HMG) elkarketak makina honetara</translation>
     </message>
     <message>
-        <location line="-93"/>
-        <location line="+61"/>
+        <location line="-135"/>
+        <location line="+89"/>
         <source>&amp;Video Capture</source>
         <translation>&amp;Bideo Harpena</translation>
     </message>
@@ -719,7 +737,7 @@
         <translation type="obsolete">Aldatu bideo harpena</translation>
     </message>
     <message>
-        <location line="-32"/>
+        <location line="-46"/>
         <source>&amp;Video Capture Settings...</source>
         <translation>*&amp;Bideo Harpen Ezarpenak...</translation>
     </message>
@@ -728,7 +746,7 @@
         <translation type="obsolete">Itxuratu bideo harpen ezarpenak</translation>
     </message>
     <message>
-        <location line="+1079"/>
+        <location line="+1593"/>
         <source>&amp;Insert Guest Additions CD image...</source>
         <translation>&amp;Txertatu Gonbidatu Gehigarrien CD irudia...</translation>
     </message>
@@ -766,39 +784,39 @@
         <translation type="obsolete">Osatu Gonbidatu Gehigarri ezarpen irudia</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+39"/>
         <source>De&amp;bug</source>
         <translation>&amp;Garbitu</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+43"/>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
         <translation>&amp;Estatistikak...</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+43"/>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
         <translation>&amp;Komando Lerroa...</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="+83"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="+124"/>
         <source>&amp;Help</source>
         <translation>&amp;Laguntza</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+91"/>
+        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+127"/>
         <source>Dock Icon</source>
         <translation>Uztartu Ikurra</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+27"/>
         <source>Show Monitor Preview</source>
         <translation>Erakutsi Monitore Aurreikuspena</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+27"/>
         <source>Show Application Icon</source>
         <translation>Erakutsi Aplikazio Ikurra</translation>
     </message>
@@ -824,7 +842,7 @@
         <translation type="obsolete">&amp;Aldatu &amp;Irudizko Modura</translation>
     </message>
     <message>
-        <location line="-1527"/>
+        <location line="-2229"/>
         <source>Switch between normal and seamless desktop integration mode</source>
         <translation>Aldatu modu arruntaren eta irudizko mahaigain baterapen moduaren artean</translation>
     </message>
@@ -837,7 +855,7 @@
         <translation type="obsolete">Aldatu modu arrunta eta neurriratu modu artean</translation>
     </message>
     <message>
-        <location line="+140"/>
+        <location line="+199"/>
         <source>Auto-resize &amp;Guest Display</source>
         <translation>&amp;Berez-neurriratu Gonbidatu Erakuspena</translation>
     </message>
@@ -846,8 +864,8 @@
         <translation type="obsolete">Gaitu &amp;Hurruneko Erakuspena</translation>
     </message>
     <message>
-        <location line="-531"/>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="-698"/>
+        <location line="-764"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="-898"/>
         <source>&amp;Settings...</source>
         <translation>E&amp;zarpenak...</translation>
     </message>
@@ -856,12 +874,12 @@
         <translation type="obsolete">Kudeatu makina birtualaren ezarpenak</translation>
     </message>
     <message>
-        <location line="+70"/>
+        <location line="+100"/>
         <source>Session I&amp;nformation...</source>
         <translation>Saio &amp;Argibideak...</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="-129"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="-185"/>
         <source>&amp;VirtualBox</source>
         <translation>&amp;VirtualBox</translation>
     </message>
@@ -871,23 +889,23 @@
         <translation>&amp;Agiria</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+97"/>
         <source>&amp;Window</source>
         <translation>&amp;Leihoa</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+44"/>
         <source>&amp;Minimize</source>
         <translation>&amp;Txikiendu</translation>
     </message>
     <message>
         <location line="+1"/>
-        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+394"/>
+        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+568"/>
         <source>Minimize active window</source>
         <translation>Txikiengotu leihoa gaitua</translation>
     </message>
     <message>
-        <location line="+70"/>
+        <location line="+98"/>
         <source>&amp;Contents...</source>
         <translation>&amp;Edukiak...</translation>
     </message>
@@ -897,12 +915,12 @@
         <translation>Erakutsi laguntza edukiak</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+47"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Ireki nabigatzailea eta joan VirtualBox produktuaren web gunera</translation>
+        <translation>Ireki nabigatzailea eta joan VirtuaBox produktuaren web gunera</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+46"/>
         <source>&amp;VirtualBox Bug Tracker...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -912,7 +930,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+46"/>
         <source>&amp;VirtualBox Forums...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -922,7 +940,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+46"/>
         <source>&amp;Oracle Web Site...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -932,22 +950,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+48"/>
         <source>Go back to showing all suppressed warnings and messages</source>
         <translation>Joan atzera ezabatutako ohar eta mezu guztiak erakusteko</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+48"/>
         <source>&amp;Network Operations Manager...</source>
         <translation>&amp;Sare Eragiketa Kudeatzailea...</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+110"/>
         <source>Display a window with product information</source>
         <translation>Erakutsi leiho bat produktuaren argibideekin</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+58"/>
         <source>&amp;Preferences...</source>
         <comment>global preferences window</comment>
         <translation>&amp;Hobespenak...</translation>
@@ -962,12 +980,12 @@
         <translation type="obsolete">Erakutsi Sare Eragiketa Kudeatzailea</translation>
     </message>
     <message>
-        <location line="-100"/>
+        <location line="-120"/>
         <source>Check for a new VirtualBox version</source>
         <translation>Egiaztatu VirtualBox bertsio berririk dagoen</translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="+60"/>
         <source>&amp;About VirtualBox...</source>
         <translation>&amp;VirtualBox-eri buruz...</translation>
     </message>
@@ -980,13 +998,13 @@
         <translation type="obsolete">Erakutsi elkarrizketa bat produktuaren argibideekin</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="-429"/>
+        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="-618"/>
         <source>Take Sn&amp;apshot...</source>
         <translation>Hartu &amp;Berehalako bat...</translation>
     </message>
     <message>
-        <location line="+137"/>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+642"/>
+        <location line="+196"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+830"/>
         <source>&amp;Detach GUI</source>
         <translation type="unfinished"></translation>
     </message>
@@ -997,8 +1015,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+27"/>
+        <location line="+43"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+33"/>
         <source>&amp;Save State</source>
         <translation>&amp;Gorde Egoera</translation>
     </message>
@@ -1008,12 +1026,12 @@
         <translation>Gorde makina birtualaren makina egoera</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+54"/>
         <source>Send the ACPI Shutdown signal to the virtual machine</source>
         <translation>Bidali ACPI Itzaltze seinalea makina birtualera</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+167"/>
         <source>&amp;Full-screen Mode</source>
         <translation>&amp;Ikusleiho-osoko Modua</translation>
     </message>
@@ -1023,27 +1041,27 @@
         <translation>Aldatu modu arruntaren eta ikusleiho-osokoaren artean</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+51"/>
         <source>Seam&amp;less Mode</source>
         <translation>&amp;Irudizko Modua</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+52"/>
         <source>S&amp;caled Mode</source>
         <translation>&amp;Modu Eskalatua</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+51"/>
         <source>&amp;Minimize Window</source>
         <translation>&amp;Txikiengotu Leihoa</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+98"/>
         <source>Automatically resize the guest display when the window is resized</source>
         <translation>Berezgaitasunez birneurriratzen du gonbidatu erakuspena leihoa birneurriratzerakoan</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+49"/>
         <source>Take Screensh&amp;ot...</source>
         <translation>Hartu &amp;Ikusleiho-argazki bat...</translation>
     </message>
@@ -1056,7 +1074,7 @@
         <translation type="obsolete">T&amp;xertatu Ctrl-Alt-Atzera</translation>
     </message>
     <message>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="-1134"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="-1424"/>
         <source>&amp;File</source>
         <comment>Mac OS X version</comment>
         <translation>&amp;Agiria</translation>
@@ -1068,7 +1086,7 @@
         <translation>&amp;Agiria</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+34"/>
         <source>&amp;Virtual Media Manager...</source>
         <translation>&amp;Multimedia Birtual Kudeatzailea...</translation>
     </message>
@@ -1077,7 +1095,7 @@
         <translation type="obsolete">Erakutsi Multimedia Birtual Kudeatzaile elkarrizketa</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+34"/>
         <source>&amp;Host Network Manager...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1087,7 +1105,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+33"/>
         <source>&amp;Import Appliance...</source>
         <translation>&amp;Inportatu Makina Birtuala...</translation>
     </message>
@@ -1097,7 +1115,7 @@
         <translation>Inportatu makina birtual bat VirtualBox-era</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+33"/>
         <source>&amp;Export Appliance...</source>
         <translation>Esp&amp;ortatu Makina Birtuala...</translation>
     </message>
@@ -1107,7 +1125,7 @@
         <translation>Esportatu VirtualBox makina birtual bat edo gehiago appliance bezala</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+34"/>
         <source>E&amp;xtra Data Manager...</source>
         <translation>&amp;Gain Datu Kudeatzailea...</translation>
     </message>
@@ -1117,18 +1135,18 @@
         <translation>Erakutsi Gain Datu Kudeatzailea leihoa</translation>
     </message>
     <message>
-        <location line="+108"/>
-        <location line="+155"/>
+        <location line="+129"/>
+        <location line="+188"/>
         <source>Add existing virtual machine</source>
         <translation>Gehitu badagoen makina birtual bat</translation>
     </message>
     <message>
-        <location line="-127"/>
+        <location line="-154"/>
         <source>Rename selected virtual machine group</source>
         <translation>Berrizendatu hautaturiko makina birtual taldea</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+33"/>
         <source>&amp;Ungroup</source>
         <translation>&amp;Destaldekatu</translation>
     </message>
@@ -1138,28 +1156,38 @@
         <translation>Destaldekatu hautaturiko makina birtual taldeko gaiak</translation>
     </message>
     <message>
-        <location line="+22"/>
-        <location line="+541"/>
+        <location line="+27"/>
+        <location line="+296"/>
         <source>&amp;Sort</source>
         <translation>A&amp;ntolatu</translation>
     </message>
     <message>
-        <location line="-540"/>
+        <location line="-295"/>
         <source>Sort items of selected virtual machine group alphabetically</source>
         <translation>Antolatu hautaturiko makina birtual taldeko gaiak alfabetikoki</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+126"/>
         <source>Add new group based on selected virtual machines</source>
         <translation>Gehitu talde berri bat hautaturiko makina birtualetan ohinarrituta</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+72"/>
         <source>Clone selected virtual machine</source>
         <translation>Klonatu hautaturiko makina birtuala</translation>
     </message>
     <message>
-        <location line="+234"/>
+        <location line="+33"/>
+        <source>&amp;Move...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+306"/>
         <source>D&amp;iscard Saved State...</source>
         <translation>Baztert&amp;u Gordetako Egoera...</translation>
     </message>
@@ -1169,12 +1197,12 @@
         <translation>Baztertu hautaturiko makina birtualen gordetako egoera</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+40"/>
         <source>Show log files of selected virtual machines</source>
         <translation>Erakutsi hautaturiko makina birtualen ohar agiriak</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+29"/>
         <source>Re&amp;fresh</source>
         <translation>&amp;Berritu</translation>
     </message>
@@ -1184,7 +1212,7 @@
         <translation>Berritu hautaturiko makina birtualaren sarbidetasun egoera</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+28"/>
         <source>S&amp;how in Finder</source>
         <translation>&amp;Erakutsi Finder-en</translation>
     </message>
@@ -1214,7 +1242,7 @@
         <translation>Erakutsi VirtualBox Makina Adiera agiria Agiri Kudeatzailean</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+29"/>
         <source>Cr&amp;eate Alias on Desktop</source>
         <translation>&amp;Sortu Ezinzena Mahaigainean</translation>
     </message>
@@ -1234,12 +1262,12 @@
         <translation>VirtualBox Makina Adiera agiriaren lasterbide agiri bat sortzen du zure mahaigainean</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="-381"/>
         <source>Sort group of first selected virtual machine alphabetically</source>
         <translation>Antolatu hautaturiko lehen makinaren taldea alfabetikoki</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+410"/>
         <source>&amp;Machine Tools</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1249,7 +1277,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+27"/>
         <source>&amp;Machine Tools Menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1259,7 +1287,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+29"/>
         <source>&amp;Details</source>
         <translation type="unfinished">&amp;Xehetasunak</translation>
     </message>
@@ -1269,7 +1297,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+29"/>
         <source>&amp;Snapshots</source>
         <translation type="unfinished">&amp;Berehalakoak</translation>
     </message>
@@ -1279,7 +1307,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+29"/>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Open the machine logs pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+28"/>
         <source>&amp;Global Tools</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1289,7 +1327,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+27"/>
         <source>&amp;Global Tools Menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1299,7 +1337,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+29"/>
         <source>&amp;Virtual Media Manager</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1309,7 +1347,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+29"/>
         <source>&amp;Host Network Manager</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1319,17 +1357,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+84"/>
         <source>Save state of selected virtual machines</source>
         <translation>Gorde makina birtualaren makina egoera</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+34"/>
         <source>Send ACPI Shutdown signal to selected virtual machines</source>
         <translation>Bidali ACPI Itzaltze seinalea hautaturiko makina birtualetara</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+34"/>
         <source>Power off selected virtual machines</source>
         <translation>Itzali hautaturiko makina birtualak</translation>
     </message>
@@ -1343,7 +1381,7 @@
         <translation type="obsolete">Erakutsi ezarpen orokor elkarrizketa</translation>
     </message>
     <message>
-        <location line="-1016"/>
+        <location line="-1283"/>
         <source>E&amp;xit</source>
         <translation>I&amp;rten</translation>
     </message>
@@ -1353,7 +1391,7 @@
         <translation>Itxi aplikazioa</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+22"/>
         <source>&amp;Group</source>
         <translation>&amp;Taldea</translation>
     </message>
@@ -1370,7 +1408,7 @@
         <translation type="obsolete">Berrizendatu hautaturiko makina birtual taldea</translation>
     </message>
     <message>
-        <location line="+361"/>
+        <location line="+497"/>
         <source>S&amp;tart</source>
         <translation>&amp;Hasi</translation>
     </message>
@@ -1404,12 +1442,12 @@
         <translation type="obsolete">Erakutsi VirtualBox Makina Adiera agiria Agiri Kudeatzailean</translation>
     </message>
     <message>
-        <location line="-188"/>
+        <location line="-285"/>
         <source>&amp;New...</source>
         <translation>&amp;Berria...</translation>
     </message>
     <message>
-        <location line="-345"/>
+        <location line="-417"/>
         <source>Display the Virtual Media Manager window</source>
         <translation>Erakutsi Multimedia Birtual Kudeatzaile leihoa</translation>
     </message>
@@ -1418,7 +1456,7 @@
         <translation type="obsolete">Erakutsi ezarpen orokorren leihoa</translation>
     </message>
     <message>
-        <location line="+375"/>
+        <location line="+453"/>
         <source>&amp;Add...</source>
         <translation>&amp;Gehitu...</translation>
     </message>
@@ -1427,7 +1465,7 @@
         <translation type="obsolete">Gehitu talde berri bat hautaturiko gaietan ohinarrituta</translation>
     </message>
     <message>
-        <location line="+88"/>
+        <location line="+106"/>
         <source>Cl&amp;one...</source>
         <translation>Kl&amp;onatu...</translation>
     </message>
@@ -1436,7 +1474,7 @@
         <translation type="obsolete">Klonatu hautaturiko makina birtuala</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+70"/>
         <source>&amp;Remove...</source>
         <translation>&amp;Kendu...</translation>
     </message>
@@ -1446,23 +1484,23 @@
         <translation>Kendu hautaturiko makina birtualak</translation>
     </message>
     <message>
-        <location line="+31"/>
-        <location line="+39"/>
+        <location line="+64"/>
+        <location line="+44"/>
         <source>Start selected virtual machines</source>
         <translation>Abiarazi hautaturiko makina birtualak</translation>
     </message>
     <message>
-        <location line="-30"/>
+        <location line="-35"/>
         <source>Switch to the windows of selected virtual machines</source>
         <translation>Aldatu hautaturiko makina birtualen leihoetara</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+34"/>
         <source>&amp;Normal Start</source>
         <translation>Abiarazte &amp;Arrunta</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+28"/>
         <source>&amp;Headless Start</source>
         <translation>Abiarazte &amp;Burugabea</translation>
     </message>
@@ -1472,7 +1510,7 @@
         <translation>Abiarazi hautaturiko makina birtualak barrenean</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+27"/>
         <source>&amp;Detachable Start</source>
         <translation>Abiarazte &amp;Deseransgarria</translation>
     </message>
@@ -1482,17 +1520,17 @@
         <translation>Abiarazi hautaturiko makina birtuala barreneko itxurapen aukerarekin</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+36"/>
         <source>Suspend execution of selected virtual machines</source>
         <translation>Utzi hautaturiko makina birtualaren exekuzioa</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+34"/>
         <source>Reset selected virtual machines</source>
         <translation>Berrezarri hautaturiko makina birtualak</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+35"/>
         <source>Discard</source>
         <translation>Baztertu</translation>
     </message>
@@ -1501,37 +1539,37 @@
         <translation type="obsolete">Baztert&amp;u gordetako egoera...</translation>
     </message>
     <message>
-        <location line="+356"/>
+        <location line="+427"/>
         <source>&amp;Close</source>
         <translation>It&amp;xi</translation>
     </message>
     <message>
-        <location line="-320"/>
+        <location line="-386"/>
         <source>Show &amp;Log...</source>
         <translation>Erakut&amp;si Oharra...</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="-258"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="-347"/>
         <source>&amp;VirtualBox Web Site...</source>
         <translation>VirtualBox &amp;Web Gunea...</translation>
     </message>
     <message>
-        <location line="+133"/>
+        <location line="+189"/>
         <source>&amp;Reset All Warnings</source>
         <translation>&amp;Berrezarri Ohartarazpen Guztiak</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+50"/>
         <source>Display the Network Operations Manager window</source>
         <translation>Erakutsi Sare Eragiketa Kudeatzaile leihoa</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+47"/>
         <source>C&amp;heck for Updates...</source>
         <translation>&amp;Egiaztatu Eguneraketarik dagoen...</translation>
     </message>
     <message>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="-485"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="-641"/>
         <source>Rena&amp;me Group...</source>
         <translation>Berrizendatu &amp;Taldea...</translation>
     </message>
@@ -1600,8 +1638,8 @@
         <translation type="obsolete">Bidali ACPI Indar Botoi sakatze gertaera hautaturiko makina birtualetara</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="-295"/>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+911"/>
+        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="-426"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="+1156"/>
         <source>Po&amp;wer Off</source>
         <translation>&amp;Itzali</translation>
     </message>
@@ -1614,18 +1652,18 @@
         <translation type="obsolete">Erakutsi hautaturiko makina birtualen ohar agiriak</translation>
     </message>
     <message>
-        <location filename="../src/selector/UIActionPoolSelector.cpp" line="-969"/>
+        <location filename="../src/selector/UIActionPoolSelector.cpp" line="-1226"/>
         <source>&amp;New Machine...</source>
         <translation>&amp;Makina Berria...</translation>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+155"/>
+        <location line="+188"/>
         <source>Create new virtual machine</source>
         <translation>Sortu makina birtual berri bat</translation>
     </message>
     <message>
-        <location line="-126"/>
+        <location line="-153"/>
         <source>&amp;Add Machine...</source>
         <translation>&amp;Gehitu Makina...</translation>
     </message>
@@ -1642,7 +1680,7 @@
         <translation type="obsolete">Antolatu</translation>
     </message>
     <message>
-        <location line="+183"/>
+        <location line="+222"/>
         <source>Gro&amp;up</source>
         <translation>&amp;Taldea</translation>
     </message>
@@ -1651,7 +1689,7 @@
         <translation type="obsolete">Antolatu hautaturiko lehen makinaren taldea alfabetikoki</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+1321"/>
+        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+1939"/>
         <source>Shared &amp;Clipboard</source>
         <translation>&amp;Elkarbanatutako Gakoa</translation>
     </message>
@@ -1664,23 +1702,24 @@
         <translation type="obsolete">Gorde makina birtualaren egoera</translation>
     </message>
     <message>
-        <location line="-1320"/>
+        <location line="-1938"/>
         <source>Power off the virtual machine</source>
         <translation>Itzali makina birtuala</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIShortcutPool.cpp" line="+253"/>
-        <location line="+23"/>
+        <location filename="../src/globals/UIShortcutPool.cpp" line="+191"/>
+        <location line="+90"/>
         <source>Popup Menu</source>
         <translation>Oharleiho Menua</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="+903"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="+912"/>
+        <location line="+498"/>
         <source>Preview Monitor %1</source>
         <translation>Aurreikuspen Monitorea %1</translation>
     </message>
     <message>
-        <location line="+1605"/>
+        <location line="+1262"/>
         <source>&amp;Connect Network Adapter</source>
         <translation>&amp;Elkarketatu Sare Egokitzailea</translation>
     </message>
@@ -1751,7 +1790,7 @@
 <context>
     <name>UIApplianceEditorWidget</name>
     <message>
-        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+304"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+305"/>
         <source>Virtual System %1</source>
         <translation>Sistema Birtuala %1</translation>
     </message>
@@ -1944,7 +1983,7 @@
 <context>
     <name>UIApplianceUnverifiedCertificateViewer</name>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="+262"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="+270"/>
         <source>Unverifiable Certificate! Continue?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2337,7 +2376,7 @@
 <context>
     <name>UIDnDHandler</name>
     <message>
-        <location filename="../src/runtime/UIDnDHandler.cpp" line="+240"/>
+        <location filename="../src/runtime/UIDnDHandler.cpp" line="+241"/>
         <source>Dropping data ...</source>
         <translation>Datuak erortzen...</translation>
     </message>
@@ -2357,7 +2396,7 @@
 <context>
     <name>UIDownloader</name>
     <message>
-        <location filename="../src/net/UIDownloader.cpp" line="+87"/>
+        <location filename="../src/net/UIDownloader.cpp" line="+78"/>
         <source>Looking for %1...</source>
         <translation>Bilatzen %1...</translation>
     </message>
@@ -2375,12 +2414,12 @@
 <context>
     <name>UIDownloaderAdditions</name>
     <message>
-        <location filename="../src/net/UIDownloaderAdditions.cpp" line="+200"/>
+        <location filename="../src/net/UIDownloaderAdditions.cpp" line="+175"/>
         <source>Select folder to save Guest Additions image to</source>
         <translation>Hautatu Gonbidatu Gehigarri irudia gordetzeko agiritegia</translation>
     </message>
     <message>
-        <location line="-92"/>
+        <location line="-91"/>
         <source>VirtualBox Guest Additions</source>
         <translation>VirtualBox Gonbidatu Gehigarriak</translation>
     </message>
@@ -2388,12 +2427,12 @@
 <context>
     <name>UIDownloaderExtensionPack</name>
     <message>
-        <location filename="../src/net/UIDownloaderExtensionPack.cpp" line="+184"/>
+        <location filename="../src/net/UIDownloaderExtensionPack.cpp" line="+176"/>
         <source>Select folder to save %1 to</source>
         <translation>Hautatu %1 gordetzeko agiritegia</translation>
     </message>
     <message>
-        <location line="-92"/>
+        <location line="-91"/>
         <source>VirtualBox Extension Pack</source>
         <translation>VirtualBox Hedapen Paketea</translation>
     </message>
@@ -2422,7 +2461,7 @@
 <context>
     <name>UIErrorString</name>
     <message>
-        <location filename="../src/globals/UIErrorString.cpp" line="+126"/>
+        <location filename="../src/globals/UIErrorString.cpp" line="+127"/>
         <location line="+71"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
@@ -2456,7 +2495,7 @@
 <context>
     <name>UIExtensionPackageItem</name>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsExtension.cpp" line="+157"/>
+        <location filename="../src/settings/global/UIGlobalSettingsExtension.cpp" line="+156"/>
         <source>%1, %2: %3, %4</source>
         <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
         <translation type="unfinished"></translation>
@@ -2626,7 +2665,7 @@
 <context>
     <name>UIGChooserModel</name>
     <message>
-        <location filename="../src/selector/graphics/chooser/UIGChooserModel.cpp" line="+533"/>
+        <location filename="../src/selector/graphics/chooser/UIGChooserModel.cpp" line="+566"/>
         <source>New group</source>
         <translation>Talde berria</translation>
     </message>
@@ -2682,7 +2721,7 @@
         <translation>%1%</translation>
     </message>
     <message>
-        <location line="+420"/>
+        <location line="+408"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+48"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
@@ -2717,7 +2756,7 @@
         <translation>KVM Parabirtualizazioa</translation>
     </message>
     <message>
-        <location line="-395"/>
+        <location line="-383"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+4"/>
         <source>Acceleration</source>
         <comment>details (system)</comment>
@@ -2738,28 +2777,24 @@
         <translation>Eskala-ezaugarria</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+15"/>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation>Eskalatu gabeko HiDPI Bideo Irteera</translation>
+        <translation type="vanished">Eskalatu gabeko HiDPI Bideo Irteera</translation>
     </message>
     <message>
-        <location line="+388"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+1"/>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Gaituta</translation>
+        <translation type="vanished">Gaituta</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+381"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+12"/>
         <source>3D</source>
         <comment>details (display)</comment>
         <translation>3D</translation>
     </message>
     <message>
-        <location line="-398"/>
+        <location line="-370"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+2"/>
         <source>Acceleration</source>
         <comment>details (display)</comment>
@@ -2787,13 +2822,13 @@
         <translation>Bideo Harpen Ezaugarriak</translation>
     </message>
     <message>
-        <location line="+401"/>
+        <location line="+373"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+1"/>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation>Frame Neurria: %1x%2, Frame Maila: %3fps-ko, Bit Maila: %4kbs-ko</translation>
     </message>
     <message>
-        <location line="-395"/>
+        <location line="-367"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+6"/>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
@@ -2826,7 +2861,7 @@
         <translation>Ezgaituta</translation>
     </message>
     <message>
-        <location line="+431"/>
+        <location line="+403"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+61"/>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
@@ -2840,7 +2875,7 @@
         <translation>NAT Sarea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="-418"/>
+        <location line="-390"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+10"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
@@ -2885,14 +2920,14 @@
         <translation>USB Kontrolatzailea</translation>
     </message>
     <message>
-        <location line="+442"/>
+        <location line="+414"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+9"/>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation>%1 (%2 gaituta)</translation>
     </message>
     <message>
-        <location line="-428"/>
+        <location line="-400"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+3"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
@@ -2979,8 +3014,8 @@
         <translation>Ezer ez</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-365"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-691"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-353"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-675"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
         <translation>Sistema Eragilea</translation>
@@ -2988,7 +3023,7 @@
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+23"/>
         <location line="+102"/>
-        <location line="+104"/>
+        <location line="+88"/>
         <location line="+80"/>
         <location line="+50"/>
         <location line="+81"/>
@@ -3003,7 +3038,7 @@
     </message>
     <message>
         <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+22"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-650"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-634"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
         <translation>Ohinarri Oroimena</translation>
@@ -3030,21 +3065,21 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+378"/>
+        <location line="+366"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+12"/>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
         <translation type="unfinished">Gaituta</translation>
     </message>
     <message>
-        <location line="-367"/>
+        <location line="-355"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-1"/>
         <source>EFI</source>
         <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+372"/>
+        <location line="+360"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+7"/>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
@@ -3058,27 +3093,26 @@
         <translation>Nested Orrialdeztapena</translation>
     </message>
     <message>
-        <location line="-364"/>
+        <location line="-352"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+39"/>
         <source>Video Memory</source>
         <comment>details (display)</comment>
         <translation>Bideo Oroimena</translation>
     </message>
     <message>
-        <location line="+421"/>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished">Ezgaituta</translation>
+        <translation type="obsolete">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+15"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+44"/>
+        <location line="+396"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+28"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
         <translation>2D Bideoa</translation>
     </message>
     <message>
-        <location line="-384"/>
+        <location line="-356"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+14"/>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
@@ -3092,14 +3126,14 @@
         <translation>Hurruneko Mahaigain Zerbitzaria</translation>
     </message>
     <message>
-        <location line="+447"/>
+        <location line="+419"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+71"/>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
         <translation>[Diska Optikoa]</translation>
     </message>
     <message>
-        <location line="-385"/>
+        <location line="-357"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+27"/>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
@@ -3113,7 +3147,7 @@
         <translation>Hostalari Gidagailua</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+429"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+430"/>
         <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+11"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+9"/>
         <source>Audio Output</source>
@@ -3122,7 +3156,7 @@
     </message>
     <message>
         <location line="+2"/>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+395"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+367"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
@@ -3138,7 +3172,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-391"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-363"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+3"/>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
@@ -3146,7 +3180,7 @@
     </message>
     <message>
         <location line="+2"/>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+395"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+367"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
@@ -3194,7 +3228,7 @@
         <translation type="obsolete">Gidagailu generikoa, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
-        <location line="-354"/>
+        <location line="-326"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+124"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
@@ -3226,7 +3260,7 @@
 <context>
     <name>UIGDetailsSet</name>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsSet.cpp" line="+225"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsSet.cpp" line="+228"/>
         <source>Contains the details of virtual machine &apos;%1&apos;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3242,7 +3276,7 @@
 <context>
     <name>UIGMachinePreview</name>
     <message>
-        <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="+356"/>
+        <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="+366"/>
         <source>Every 0.5 s</source>
         <translation>0.5 seg-tik behin</translation>
     </message>
@@ -3401,7 +3435,7 @@
         <translation type="obsolete">Kendu paketea</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsExtension.cpp" line="+175"/>
+        <location filename="../src/settings/global/UIGlobalSettingsExtension.cpp" line="+90"/>
         <source>Add Package</source>
         <translation>Gehitu Paketea</translation>
     </message>
@@ -3431,8 +3465,8 @@
         <translation>Hedapen pakete agiriak (%1)</translation>
     </message>
     <message>
-        <location line="-128"/>
-        <location line="+212"/>
+        <location line="+84"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+1818"/>
         <source>Extensions</source>
         <translation>Hedapenak</translation>
     </message>
@@ -3552,7 +3586,7 @@
         <translation type="obsolete">Makina Birtualeko leihoan hostalari konbinazio bezala erabiltako tekla konbinazioa berrezartzen du.</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsInput.cpp" line="+890"/>
+        <location filename="../src/settings/global/UIGlobalSettingsInput.cpp" line="+891"/>
         <source>Host Key Combination</source>
         <translation>Hostalari Tekla Konbinazioa</translation>
     </message>
@@ -3596,7 +3630,7 @@
 <context>
     <name>UIGlobalSettingsLanguage</name>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsLanguage.cpp" line="+121"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.cpp" line="+114"/>
         <location line="+1"/>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -3696,7 +3730,7 @@
         <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt;-ren DHCP goi helbide muga okerra da</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="+166"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="+167"/>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Ez da izen berririk adierazi NAT sarerako, lehengo izena: &lt;b&gt;%1&lt;/b&gt; da.</translation>
     </message>
@@ -4482,9 +4516,27 @@
     </message>
 </context>
 <context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <location filename="../src/runtime/guestctrl/UIGuestControlFileManager.cpp" line="+314"/>
+        <source>Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Terminal</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIHelpButton</name>
     <message>
-        <location filename="../src/widgets/UISpecialControls.cpp" line="+180"/>
+        <location filename="../src/widgets/UISpecialControls.cpp" line="+136"/>
         <source>&amp;Help</source>
         <translation>&amp;Laguntza</translation>
     </message>
@@ -4492,7 +4544,7 @@
 <context>
     <name>UIHostComboEditor</name>
     <message>
-        <location filename="../src/widgets/UIHostComboEditor.cpp" line="+196"/>
+        <location filename="../src/widgets/UIHostComboEditor.cpp" line="+198"/>
         <location line="+14"/>
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;key_%1&gt;</translation>
@@ -4506,7 +4558,7 @@
         <translation type="vanished">Eskuin </translation>
     </message>
     <message>
-        <location line="-74"/>
+        <location line="-75"/>
         <source>Left %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4516,7 +4568,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+232"/>
+        <location line="+234"/>
         <source>Left Shift</source>
         <translation>Ezkerreko Aldatu</translation>
     </message>
@@ -4582,7 +4634,7 @@
     </message>
     <message>
         <location line="+15"/>
-        <location line="+486"/>
+        <location line="+491"/>
         <source>None</source>
         <translation>Ezer ez</translation>
     </message>
@@ -4792,7 +4844,7 @@
 <context>
     <name>UIHostNetworkManager</name>
     <message>
-        <location filename="../src/hostnetwork/UIHostNetworkManager.cpp" line="+94"/>
+        <location filename="../src/hostnetwork/UIHostNetworkManager.cpp" line="+95"/>
         <source>Enable</source>
         <comment>DHCP Server</comment>
         <translation type="unfinished">Gaitu</translation>
@@ -5115,13 +5167,13 @@
         <translation type="obsolete">Ezker Alt</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIHostComboEditor.cpp" line="-397"/>
-        <location filename="../src/widgets/UIHotKeyEditor.cpp" line="+178"/>
+        <location filename="../src/widgets/UIHotKeyEditor.cpp" line="+183"/>
+        <location filename="../src/widgets/UIHostComboEditor.cpp" line="-441"/>
         <source>Unset shortcut</source>
         <translation>Desezarri lastertekla</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIHotKeyEditor.cpp" line="-1"/>
+        <location line="-1"/>
         <source>Reset shortcut to default</source>
         <translation>Berrezarri lastertekla berezkoan</translation>
     </message>
@@ -5142,7 +5194,7 @@
 <context>
     <name>UIImportLicenseViewer</name>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportApp.cpp" line="+125"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportApp.cpp" line="+126"/>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;&quot;%1&quot; sistema birtualak azpian erakusten den software baimen itunaren neurriak eta baldintzak onartzea behar du.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Klikatu &lt;b&gt;Onartu&lt;/b&gt; jarraitzeko edo klikatu &lt;b&gt;Baztertu&lt;/b&gt; inportazioa ezeztatzeko.</translation>
     </message>
@@ -5950,7 +6002,7 @@
 <context>
     <name>UILineTextEdit</name>
     <message>
-        <location filename="../src/widgets/UILineTextEdit.cpp" line="+118"/>
+        <location filename="../src/widgets/UILineTextEdit.cpp" line="+119"/>
         <source>&amp;Edit</source>
         <translation>&amp;Editatu</translation>
     </message>
@@ -6006,7 +6058,7 @@
         <translation type="obsolete">Sostengu gabeko gailuak elkartuta hostalari PG-ra</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="-766"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="-797"/>
         <source>Select a filename for the screenshot ...</source>
         <translation>Hautatu ikusleiho-argazkiarentzako agirizen bat...</translation>
     </message>
@@ -6072,7 +6124,7 @@
 <context>
     <name>UIMachineSettingsDisplay</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+520"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+502"/>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation>Makina birtual hau hardware bizkorpena erabiltzeko ezarrita dago Horrela ere hostalari sistemak ezin du oraingoz hau hornitu, hortaz ez zara makina abiarazeko gai izango.</translation>
     </message>
@@ -6101,7 +6153,7 @@
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+72"/>
         <source>User Defined</source>
         <translation>Erabiltzaileak Zehaztuta</translation>
     </message>
@@ -6117,7 +6169,7 @@
         <translation>fs-ko</translation>
     </message>
     <message>
-        <location line="-147"/>
+        <location line="-146"/>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</source>
         <translation>Makina birtualak une honetan ikusleiho-osoko edo irudizko modura aldatzeko behar den kopuru gutxiena baino &lt;b&gt;%1&lt;/b&gt; bideo oroimen gutxiago du esleituta.</translation>
     </message>
@@ -6132,14 +6184,14 @@
         <translation>Hurruneko Erakuspena une honetan gaituta dago makina birtual honentzat. Horrela ere, honek &lt;i&gt;%1&lt;/i&gt; ezarrita behar du. Mesedez ezarri Hedapen Paketea VirtualBox jeisketa gunetik bestela zure MB Hurruneko Erakuspen ezgaituta duela abiatuko da.</translation>
     </message>
     <message>
-        <location line="+76"/>
+        <location line="+75"/>
         <location line="+1"/>
-        <location line="+586"/>
+        <location line="+579"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
     <message>
-        <location line="-583"/>
+        <location line="-576"/>
         <location line="+1"/>
         <source>%1%</source>
         <translation>%1%</translation>
@@ -6163,12 +6215,12 @@
         <translation>handia</translation>
     </message>
     <message>
-        <location line="+616"/>
+        <location line="+609"/>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
         <translation>&lt;i&gt;%1MB 5 minutuko bideo inguru&lt;/i&gt;</translation>
     </message>
     <message>
-        <location line="-622"/>
+        <location line="-615"/>
         <source>kbps</source>
         <translation>kbs-ko</translation>
     </message>
@@ -6193,7 +6245,7 @@
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="+305"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="+279"/>
         <location line="+285"/>
         <source>Extended Features:</source>
         <translation>Ezaugarri Hedatuak:</translation>
@@ -6204,7 +6256,7 @@
         <translation>Hautatutakoan, makina birtualak sarbidea emango du hostalarian eskuragarri dauden 3D grafika gaitasunetara.</translation>
     </message>
     <message>
-        <location line="-219"/>
+        <location line="-193"/>
         <source>&amp;Screen</source>
         <translation>&amp;Ikusleihoa</translation>
     </message>
@@ -6225,19 +6277,16 @@
         <translation>%</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>HiDPI Support:</source>
-        <translation>HiDPI Sostengua:</translation>
+        <translation type="vanished">HiDPI Sostengua:</translation>
     </message>
     <message>
-        <location line="+16"/>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>Hautatutakoan, gonbidatuaren ikusleihoko edukiak ez dira eskalatuak izango hostalariaren ikusleiho bereizmen handiak orekatzeko.</translation>
+        <translation type="vanished">Hautatutakoan, gonbidatuaren ikusleihoko edukiak ez dira eskalatuak izango hostalariaren ikusleiho bereizmen handiak orekatzeko.</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>Erabili &amp;Eskalatu gabeko HiDPI Irteera</translation>
+        <translation type="vanished">Erabili &amp;Eskalatu gabeko HiDPI Irteera</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -6436,7 +6485,7 @@
         <translation type="obsolete">VRDP Zerbitzari ataka zenbakia. Adierazi dezakezu &lt;tt&gt;0&lt;/tt&gt; (huts), 3389 ataka hautatzeko, RDP-rako ataka estandarra.</translation>
     </message>
     <message>
-        <location line="-173"/>
+        <location line="-147"/>
         <source>Mo&amp;nitor Count:</source>
         <translation>&amp;Monitore Zenbatekoa:</translation>
     </message>
@@ -6455,12 +6504,12 @@
         <translation type="obsolete">Makina Birtualera zenbat elkarketa aldiberean baimentzen diren adierazten du.</translation>
     </message>
     <message>
-        <location line="+268"/>
+        <location line="+242"/>
         <source>&amp;Allow Multiple Connections</source>
         <translation>&amp;Ahalbidetu Elkarketa Anitz</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIFilmContainer.cpp" line="+147"/>
+        <location filename="../src/widgets/UIFilmContainer.cpp" line="+108"/>
         <source>Screen %1</source>
         <translation>%1 Ikusleihoa</translation>
     </message>
@@ -6520,26 +6569,52 @@
     </message>
     <message>
         <location line="+20"/>
-        <source>Enc&amp;ryption</source>
-        <translation>En&amp;kriptaketa</translation>
+        <source>Disk Enc&amp;ryption</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+6"/>
-        <source>When checked, enables encryption for this virtual machine.</source>
-        <translation>Hautatzen bada, makina birtual honen enkriptaketa gaitzen du.</translation>
+        <source>When checked, disks attached to this virtual machine will be encrypted.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>En&amp;able Encryption</source>
-        <translation>&amp;Gaitu Enkriptaketa</translation>
+        <source>En&amp;able Disk Encryption</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+44"/>
-        <source>Encryption C&amp;ipher:</source>
-        <translation>&amp;Enkriptaketa Zifratua:</translation>
+        <source>Disk Encryption C&amp;ipher:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+33"/>
+        <source>Holds the encryption password for disks attached to this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Confirms the disk encryption password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enc&amp;ryption</source>
+        <translation type="vanished">En&amp;kriptaketa</translation>
+    </message>
+    <message>
+        <source>When checked, enables encryption for this virtual machine.</source>
+        <translation type="vanished">Hautatzen bada, makina birtual honen enkriptaketa gaitzen du.</translation>
+    </message>
+    <message>
+        <source>En&amp;able Encryption</source>
+        <translation type="vanished">&amp;Gaitu Enkriptaketa</translation>
+    </message>
+    <message>
+        <source>Encryption C&amp;ipher:</source>
+        <translation type="vanished">&amp;Enkriptaketa Zifratua:</translation>
+    </message>
+    <message>
+        <location line="-40"/>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
         <translation>Makina birtualeko diskak enkriptatzeko erabiltzeko zifraketa hautatzen du.</translation>
     </message>
@@ -6549,22 +6624,20 @@
         <translation>&amp;Sartu Sarhitz Berria:</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation>Makina birtualari esleitutako sarhitza zehazten du.</translation>
+        <translation type="vanished">Makina birtualari esleitutako sarhitza zehazten du.</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+20"/>
         <source>C&amp;onfirm New Password:</source>
         <translation>&amp;Baieztatu Sarhitz Berria:</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation>Makina birtualari esleitutako sarhitza baieztatzen du.</translation>
+        <translation type="vanished">Makina birtualari esleitutako sarhitza baieztatzen du.</translation>
     </message>
     <message>
-        <location line="-244"/>
+        <location line="-231"/>
         <source>S&amp;napshot Folder:</source>
         <translation>&amp;Argaki Agiritegia:</translation>
     </message>
@@ -6634,23 +6707,39 @@
     </message>
     <message>
         <location line="+22"/>
-        <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>Makina birtual hau enkriptatzen saiatzen ari zara. Horrela ere, honek &lt;i&gt;%1&lt;/i&gt; ezarrita behar du. Mesedez ezarri Hedapen Paketea VirtualBox jeisketa gunetik.</translation>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+14"/>
-        <source>Encryption cipher type not specified.</source>
-        <translation>Enkriptaketa zifratu mota ez da adierazi.</translation>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+11"/>
-        <source>Encryption password empty.</source>
-        <translation>Enkriptaketa sarhitza hutsik dago.</translation>
+        <source>Disk encryption password empty.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
+        <source>Disk encryption passwords do not match.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="vanished">Makina birtual hau enkriptatzen saiatzen ari zara. Horrela ere, honek &lt;i&gt;%1&lt;/i&gt; ezarrita behar du. Mesedez ezarri Hedapen Paketea VirtualBox jeisketa gunetik.</translation>
+    </message>
+    <message>
+        <source>Encryption cipher type not specified.</source>
+        <translation type="vanished">Enkriptaketa zifratu mota ez da adierazi.</translation>
+    </message>
+    <message>
+        <source>Encryption password empty.</source>
+        <translation type="vanished">Enkriptaketa sarhitza hutsik dago.</translation>
+    </message>
+    <message>
         <source>Encryption passwords do not match.</source>
-        <translation>Enkriptaketa sarhitzak ez datoz bat.</translation>
+        <translation type="vanished">Enkriptaketa sarhitzak ez datoz bat.</translation>
     </message>
     <message>
         <location line="+43"/>
@@ -7074,7 +7163,7 @@
         <translation type="obsolete">Hautaturiko agiritegi elkarbanatu adiera kentzen du.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="+623"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSF.cpp" line="+625"/>
         <source> Machine Folders</source>
         <translation> Makina Agiritegiak</translation>
     </message>
@@ -7084,12 +7173,12 @@
         <translation> Aldaketa agiritegiak</translation>
     </message>
     <message>
-        <location line="-643"/>
+        <location line="-645"/>
         <source>Full</source>
         <translation>Osoa</translation>
     </message>
     <message>
-        <location line="+247"/>
+        <location line="+249"/>
         <source>Add Shared Folder</source>
         <translation>Gehitu Elkarbanatutako Agiritegia</translation>
     </message>
@@ -7119,7 +7208,7 @@
         <translation>Elkarbanatutako agiritegi berria kentzen du.</translation>
     </message>
     <message>
-        <location line="-253"/>
+        <location line="-255"/>
         <source>Read-only</source>
         <translation>Irakurri-bakarrik</translation>
     </message>
@@ -7415,7 +7504,7 @@
 <context>
     <name>UIMachineSettingsStorage</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="+870"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="+872"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Busa:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Mota:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
@@ -7859,10 +7948,16 @@
         <translation type="obsolete">Hautatu CD/DVD birtual diska agiri bat...</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-342"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-2175"/>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
         <translation>Hautatu diska irudia...</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+104"/>
@@ -7930,11 +8025,11 @@
         <translation>Biltegi Zuhaitzean hautatutako SATA biltegiratze kontrolatzailearen ataka kopurua hautatzen du. Hau gutxienez izan behar da erabiltzea behar duzun ataka zenbateko gehiena baino bat gehiago.</translation>
     </message>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+233"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-318"/>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="-1600"/>
         <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="-243"/>
         <location line="+723"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="+205"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="-318"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="-1600"/>
         <source>Controller: %1</source>
         <translation>Kontrolatzailea: %1</translation>
     </message>
@@ -8321,7 +8416,7 @@
         <translation type="obsolete">Hautaturiko USB iragazkia behera mugitzen du.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="+562"/>
+        <location filename="../src/settings/machine/UIMachineSettingsUSB.cpp" line="+563"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation>Iragazki Berria %1</translation>
@@ -8654,7 +8749,7 @@
 <context>
     <name>UIMachineWindow</name>
     <message>
-        <location filename="../src/runtime/UIMachineWindow.cpp" line="+245"/>
+        <location filename="../src/runtime/UIMachineWindow.cpp" line="+253"/>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
         <translation> ESPERIMENTALA eraiketa %1r%2 - %3</translation>
     </message>
@@ -8755,7 +8850,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+637"/>
+        <location line="+636"/>
         <source>Location can not be empty.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8802,7 +8897,7 @@
         <translation type="obsolete">Diska &amp;gogorrak</translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMediumManager.cpp" line="+379"/>
+        <location filename="../src/medium/UIMediumManager.cpp" line="+381"/>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
         <translation type="unfinished"></translation>
@@ -9060,7 +9155,7 @@
         <translation type="obsolete">It&amp;xi</translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="-666"/>
+        <location filename="../src/medium/UIMediumDetailsWidget.cpp" line="-665"/>
         <location filename="../src/medium/UIMediumManager.cpp" line="-2128"/>
         <source>Current extension (*.%1)</source>
         <translation type="unfinished"></translation>
@@ -9142,42 +9237,42 @@
 <context>
     <name>UIMessageCenter</name>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="-1603"/>
-        <location line="+2452"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="-1620"/>
+        <location line="+2469"/>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Argibideak</translation>
     </message>
     <message>
-        <location line="-2448"/>
-        <location line="+2452"/>
+        <location line="-2465"/>
+        <location line="+2469"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Galdera</translation>
     </message>
     <message>
-        <location line="-2448"/>
-        <location line="+2452"/>
+        <location line="-2465"/>
+        <location line="+2469"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Ohartarazpena</translation>
     </message>
     <message>
-        <location line="-2448"/>
-        <location line="+2452"/>
+        <location line="-2465"/>
+        <location line="+2469"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Akatsa</translation>
     </message>
     <message>
-        <location line="-2448"/>
-        <location line="+2452"/>
+        <location line="-2465"/>
+        <location line="+2469"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Akats Larria</translation>
     </message>
     <message>
-        <location line="-2311"/>
+        <location line="-2328"/>
         <source>&lt;p&gt;Failed to create the VirtualBoxClient COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Hutsegitea VirtualBox COM objetua sortzerakoan.&lt;/p&gt;&lt;p&gt;Orain aplikazioak amaitu egingo du.&lt;/p&gt;</translation>
     </message>
@@ -9212,7 +9307,7 @@
         <translation>&lt;p&gt;Diska irudi agiri bat edo gehiago ez daude eskuragarri. Ondorioz, ezingo duzu agiri hauek erabiltzen dituzten makina birtualekin jardun geroago eskuragarri egon arte.&lt;/p&gt;&lt;p&gt;Sakatu &lt;b&gt;Egiaztatu&lt;/b&gt; Media Birtual Kudeatzailea leihoa irekitzeko eta agiri eskuragarriak ikusteko edo sakatu &lt;b&gt;Ezikusi&lt;/b&gt; mezu hau ezikusteko.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+155"/>
+        <location line="+172"/>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Berehalakoa ezabatzeak bertan gordetako egoera argibideak galtzea eragingo du, eta VirtualBox-ek berehalakoarekin batera sortu dituen irudi agiri ugarietan dauden biltegiratze datu barreiatuak agiri batean batuko dira. Hau prozesu luzea izan daiteke, eta berehalakoan dauden argibideak ezingo dira berreskuratu. &lt;/p&gt;&lt;/p&gt;Zihur zaude hautaturiko &lt;b&gt;%1&lt;/b&gt; berehalakoa ezabatzea nahi duzula?&lt;/p&gt;</translation>
     </message>
@@ -9442,7 +9537,7 @@
         <translation>&lt;p&gt;Makina birtualaren leihoa orain &lt;b&gt;Eskalatua&lt;/b&gt; modura aldatuko da. Leihotu modura itzuli zaitezke &lt;b&gt;%1&lt;/b&gt; sakatuz.&lt;/p&gt;&lt;p&gt;Ohartu &lt;i&gt;Host&lt;/i&gt; tekla &lt;b&gt;%2&lt;/b&gt; bezala zehaztua dagoela.&lt;/p&gt;&lt;p&gt;Ohartu ere menu barra nagusia ezkutatu egiten dela eskalatua moduan. Bertara &lt;b&gt;Host+Home&lt;/b&gt; sakatuz sartu zaitezke.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIPopupCenter.cpp" line="+557"/>
+        <location filename="../src/globals/UIPopupCenter.cpp" line="+556"/>
         <source>Failed to attach the webcam &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; webkamera &lt;b&gt;%2&lt;/b&gt;makina birtualera eransterakoan.</translation>
     </message>
@@ -9549,7 +9644,7 @@
         <translation>Ez erakutsi mezu hau berriro</translation>
     </message>
     <message>
-        <location line="-2242"/>
+        <location line="-2259"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Hutsegitea &lt;tt&gt;%1&lt;/tt&gt; irekitzerakoan. Zihurtatu zure mahaigin inguruak mota honetako URL-ak egoki kudeatu ditzakeela.</translation>
     </message>
@@ -9563,7 +9658,7 @@
         <translation type="obsolete">&lt;p&gt;Hutsegitea VirtualBox COM objetua sortzerakoan.&lt;/p&gt;&lt;p&gt;Orain aplikazioak amaitu egingo du.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+580"/>
+        <location line="+597"/>
         <source>Failed to set global VirtualBox properties.</source>
         <translation>Hutsegitea VirtualBox ezaugarri orokorrak ezartzerakoan.</translation>
     </message>
@@ -9592,7 +9687,7 @@
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtuala abiarazterakoan.</translation>
     </message>
     <message>
-        <location line="-1193"/>
+        <location line="-1210"/>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren exekuzioa pausatzerakoan.</translation>
     </message>
@@ -9608,13 +9703,13 @@
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren egoera gordetzerakoan.</translation>
     </message>
     <message>
-        <location line="+97"/>
+        <location line="+114"/>
         <location line="+8"/>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren berehalako bat sortzerakoan.</translation>
     </message>
     <message>
-        <location line="-89"/>
+        <location line="-106"/>
         <location line="+8"/>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtuala gelditzerakoan.</translation>
@@ -9647,7 +9742,7 @@
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualerako saio bat irekitzerakoan.</translation>
     </message>
     <message>
-        <location line="+991"/>
+        <location line="+1008"/>
         <location line="+8"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; hostalari sare interfazea kentzerakoan.</translation>
@@ -9658,8 +9753,14 @@
         <translation>&lt;p&gt;Zihur zaude gailu optikoa ezabatzea nahi duzula?&lt;/p&gt;&lt;p&gt;Ezingo duzu diska optikorik edo ISO irudirik txertatu edo Gonbidatu Gehigarririk ezarri bera gabe!&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-252"/>
+        <location line="-269"/>
         <source>&lt;p&gt;You are about to start all of the following virtual machines:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This could take some time and consume a lot of host system resources. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+8"/>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9998,7 +10099,7 @@
         <translation>Hutsegitea &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; baimen agiria irekitzerakoan. Egiaztatu agiri baimenak.</translation>
     </message>
     <message>
-        <location line="-1654"/>
+        <location line="-1671"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea ACPI Indar Botoi sakatze gertaera &lt;b&gt;%1&lt;/b&gt; makina birtualera bildatzerakoan.</translation>
     </message>
@@ -10015,7 +10116,7 @@
         <translation type="vanished">&lt;p&gt;Hutsegitea EIG itxurapen orokorra &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;-an gordetzerakoan.&lt;/p&gt;&lt;p&gt;Orain aplikazioak amaitu egingo du.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+371"/>
+        <location line="+388"/>
         <location filename="../src/globals/UIPopupCenter.cpp" line="+55"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren ezarpenak&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;-an gordetzerakoan.</translation>
@@ -10025,7 +10126,7 @@
         <translation type="obsolete">Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren ezarpenak&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;-tik gertatzerakoan.</translation>
     </message>
     <message>
-        <location line="-449"/>
+        <location line="-466"/>
         <source>Discard</source>
         <comment>saved state</comment>
         <translation>Baztertu</translation>
@@ -10041,7 +10142,7 @@
         <translation type="obsolete">Osatu</translation>
     </message>
     <message>
-        <location line="+1248"/>
+        <location line="+1265"/>
         <location filename="../src/globals/UIPopupCenter.cpp" line="-199"/>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
@@ -10054,7 +10155,7 @@
         <translation>Harpena</translation>
     </message>
     <message>
-        <location line="-1266"/>
+        <location line="-1283"/>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
         <translation>Egiaztatu</translation>
@@ -10076,7 +10177,7 @@
         <translation>Berrezarri</translation>
     </message>
     <message>
-        <location line="+822"/>
+        <location line="+839"/>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
         <translation>Jarraitu</translation>
@@ -10187,7 +10288,7 @@
         <translation>Jadanik badaude hurrengo agiriak:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Zihur zaude ordeztea nahi dituzula? Hauek ordezteak beren edukiak gainidaztea eragingo du.</translation>
     </message>
     <message>
-        <location line="-2085"/>
+        <location line="-2102"/>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
         <translation>VirtualBox aurreargitalpen bertsio bat ari zara erabiltzen. Bertsio hau ez da ekoizpen erabilpenerako.</translation>
     </message>
@@ -10197,7 +10298,7 @@
         <translation>Gonbidatua ACPI indar botoiarekin itzaltzen saiatzen ari zara. Hau oraingoz ezinezkoa da gonbidatuak ez duelako software itzalketa sostengatzen.</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="+1508"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="+1525"/>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VT-x/AMD-V hardware bizkorpena gaitu egin da, baina ez dago eraginkor. Zure 64-biteko gonbidatuak huts egingo du 64-bit CPU bat atzematerakoan eta ez da abiatzeko gai izango.&lt;/p&gt;&lt;p&gt;Mesedez zihurtatu VT-x/AMD-V egoki gaituta duzula zure hostalari ordenagailuaren BIOS-ean.&lt;/p&gt;</translation>
     </message>
@@ -10297,7 +10398,7 @@
         <translation>Hutsegitea agiria kentzerakoan.</translation>
     </message>
     <message>
-        <location line="-1333"/>
+        <location line="-1350"/>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
         <translation>Dirudienez USBFS agiri-sistema duzu muntatuta honela: /sys/bus/usb/drivers. Hau aldatzea gomendatzen dizugu, zure sistemaren itxurapen-oker larria denez eta USB gailuek ustekabeko moduan huts egitea eragin dezakeelako.</translation>
     </message>
@@ -10333,7 +10434,7 @@
     </message>
     <message>
         <location line="+203"/>
-        <location line="+1164"/>
+        <location line="+1181"/>
         <location line="+156"/>
         <location line="+21"/>
         <source>Ignore</source>
@@ -10449,7 +10550,7 @@
         <translation type="obsolete">&lt;p&gt;VirtualBox Erabiltzaile Eskuliburua ongi jeitsi da hemendik, &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;baina ezin da tokian gorde honela &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Mesedez hautatu beste kokaleku bat agiriarentzat.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-1500"/>
+        <location line="-1517"/>
         <source>Failed to open virtual machine located in %1.</source>
         <translation>Hutsegitea %1 kokalekuan dagoen makina birtuala irekitzerakoan.</translation>
     </message>
@@ -10471,7 +10572,7 @@
     <message>
         <location line="-83"/>
         <location line="+75"/>
-        <location line="+317"/>
+        <location line="+334"/>
         <location line="+463"/>
         <source>Remove</source>
         <translation>Kendu</translation>
@@ -10737,7 +10838,7 @@
         <translation type="obsolete">Ongi</translation>
     </message>
     <message>
-        <location line="-1690"/>
+        <location line="-1707"/>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Hutsegitea COM abiarazterakoan &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; VirtualBox-en itxurapen orokorraren zuzenbidea ez dagoelako eskuragarri. Mesedez egiaztatu zuzenbide honen eta bere gaineko zuzenbidearen baimenak.&lt;/p&gt;&lt;p&gt;Aplikazioak orain amaitu egingo du.&lt;/p&gt;</translation>
     </message>
@@ -10762,12 +10863,12 @@
         <translation>&lt;p&gt;Hurrengo makina birtualak kentzear zaude makina zerrendatik:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Makina birtuala duten agiriak zure diska gogorretik ere ezabatzea nahi dituzu?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+1415"/>
+        <location line="+1432"/>
         <source>Do you wish to cancel all current network operations?</source>
         <translation>Une honetako sare eragiketa guztiak ezeztatzea nahi duzu?</translation>
     </message>
     <message>
-        <location line="-1332"/>
+        <location line="-1349"/>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
         <translation>ACPI Itzalketa</translation>
@@ -10779,7 +10880,7 @@
         <translation>Itzali</translation>
     </message>
     <message>
-        <location line="+897"/>
+        <location line="+914"/>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ezin da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; makina agiritegia kendu.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Mesedez egiaztatu agiritegi hau egitan dagoela eta kentzeko baimena duzula.&lt;/p&gt;</translation>
     </message>
@@ -10789,7 +10890,7 @@
         <translation>&lt;p&gt;Ezin da&lt;b&gt;%1&lt;/b&gt; makina agiritegia sortu &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; gaineko agiritegian.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Agiritegi hau jadanik badago eta zihurrenik beste makina batena da.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-944"/>
+        <location line="-961"/>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Zihur zaude hurrengo makina birtualen gordetako egoera baztertzea nahi duzula?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Eragiketa hau gonbidatu SE-ren itzaltze egoki bat egin gabe makina itzaltzea edo berrezartzearen baliokidea da.&lt;/p&gt;</translation>
     </message>
@@ -10824,7 +10925,7 @@
         <translation>Berrizendatu</translation>
     </message>
     <message>
-        <location line="+259"/>
+        <location line="+276"/>
         <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
         <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; berehalakoa leheneratzear zaude.&lt;/p&gt;&lt;p&gt;Makina birtualaren oraingo egoeraren berehalako bat sortu dezakezu lehenik azpiko kutxatila hautatuz; ez baduzu hau egiten oraingo egoera betirako galduko da. Jarraitzea nahi duzu?&lt;/p&gt;</translation>
     </message>
@@ -10834,12 +10935,12 @@
         <translation>&lt;p&gt;Zihur zaude &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; berehalakoa leheneratzea nahi duzula?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="-259"/>
+        <location line="-276"/>
         <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Hutsegitea &lt;b&gt;%1&lt;/b&gt; makina birtualaren taldeak ezartzerakoan.</translation>
     </message>
     <message>
-        <location line="+1348"/>
+        <location line="+1365"/>
         <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ezin da &lt;b&gt;%1&lt;/b&gt; makina abiarazi hurrengo sare interfaze fisikoak ez direlako aurkitu:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Makinaren sare ezarpenak aldatu edo makina gelditu dezakezu.&lt;/p&gt;</translation>
     </message>
@@ -10861,7 +10962,7 @@
 <context>
     <name>UIMiniToolBar</name>
     <message>
-        <location filename="../src/widgets/UIMiniToolBar.cpp" line="+297"/>
+        <location filename="../src/widgets/UIMiniToolBar.cpp" line="+299"/>
         <source>Always show the toolbar</source>
         <translation>Betik erakutsi tresnabarra</translation>
     </message>
@@ -10884,14 +10985,14 @@
 <context>
     <name>UIMultiScreenLayout</name>
     <message>
-        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+2288"/>
+        <location filename="../src/runtime/UIActionPoolRuntime.cpp" line="+3045"/>
         <location line="+15"/>
         <location line="+47"/>
         <source>Virtual Screen %1</source>
         <translation>Ikusleiho Birtuala %1</translation>
     </message>
     <message>
-        <location line="+221"/>
+        <location line="+249"/>
         <source>Use Host Screen %1</source>
         <translation>Erabili Hostalari Ikusleihoa %1</translation>
     </message>
@@ -10953,7 +11054,7 @@
 <context>
     <name>UINetworkManagerDialog</name>
     <message>
-        <location filename="../src/net/UINetworkManagerDialog.cpp" line="+160"/>
+        <location filename="../src/net/UINetworkManagerDialog.cpp" line="+159"/>
         <source>Network Operations Manager</source>
         <translation>Sare Eragiketa Kudeatzailea</translation>
     </message>
@@ -10977,12 +11078,12 @@
         <translation type="obsolete">Akatsa: %1.</translation>
     </message>
     <message>
-        <location filename="../src/net/UINetworkRequestWidget.cpp" line="+230"/>
+        <location filename="../src/net/UINetworkRequestWidget.cpp" line="+235"/>
         <source>The network operation failed with the following error: %1.</source>
         <translation>Sare eragiketak huts egin du hurrengo akatsarekin: %1.</translation>
     </message>
     <message>
-        <location line="-39"/>
+        <location line="-102"/>
         <source>Network Operation</source>
         <translation>Sare Eragiketa</translation>
     </message>
@@ -11000,7 +11101,7 @@
 <context>
     <name>UINetworkManagerIndicator</name>
     <message>
-        <location filename="../src/net/UINetworkManagerIndicator.cpp" line="+216"/>
+        <location filename="../src/net/UINetworkManagerIndicator.cpp" line="+61"/>
         <source>Current network operations:</source>
         <translation>Oraingo sare eragiketak:</translation>
     </message>
@@ -11024,7 +11125,7 @@
 <context>
     <name>UINetworkReplyPrivate</name>
     <message>
-        <location filename="../src/net/UINetworkReply.cpp" line="+957"/>
+        <location filename="../src/net/UINetworkReply.cpp" line="+965"/>
         <source>Host not found</source>
         <translation>Hostalaria ez da aurkitu</translation>
     </message>
@@ -11088,7 +11189,7 @@
 <context>
     <name>UINetworkReplyPrivateThread</name>
     <message>
-        <location line="-579"/>
+        <location line="-590"/>
         <source>During proxy configuration</source>
         <translation>Proxy itxurapenean zehar</translation>
     </message>
@@ -11107,7 +11208,7 @@
 <context>
     <name>UIPopupCenter</name>
     <message>
-        <location filename="../src/widgets/UIPopupPane.cpp" line="+324"/>
+        <location filename="../src/widgets/UIPopupPane.cpp" line="+325"/>
         <location line="+1"/>
         <source>Click for full details</source>
         <translation>Klikatu xehetasun guztietarako</translation>
@@ -11186,7 +11287,7 @@
         <translation>Gonbidatu Ataka</translation>
     </message>
     <message>
-        <location line="+421"/>
+        <location line="+423"/>
         <source>Contains a list of port forwarding rules.</source>
         <translation>Berbidalketa ataka arauen zerrenda bat du.</translation>
     </message>
@@ -11259,7 +11360,7 @@
 <context>
     <name>UIScreenshotViewer</name>
     <message>
-        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1402"/>
+        <location filename="../src/selector/UISnapshotDetailsWidget.cpp" line="-1362"/>
         <source>Screenshot of %1 (%2)</source>
         <translation type="unfinished">Ikusleiho-argazkiak %1 (%2)</translation>
     </message>
@@ -11277,7 +11378,7 @@
 <context>
     <name>UISelectorWindow</name>
     <message>
-        <location filename="../src/selector/UISelectorWindow.cpp" line="+188"/>
+        <location filename="../src/selector/UISelectorWindow.cpp" line="+195"/>
         <source>Show Toolbar</source>
         <translation>Erakutsi Tresnabarra</translation>
     </message>
@@ -11292,7 +11393,7 @@
         <translation>Erakutsi Egoerabarra</translation>
     </message>
     <message>
-        <location line="+379"/>
+        <location line="+375"/>
         <source>Select a virtual machine file</source>
         <translation>Hautatu makina birtual agiria</translation>
     </message>
@@ -11302,11 +11403,16 @@
         <translation>Makina birtual agiriak (%1)</translation>
     </message>
     <message>
+        <location line="+114"/>
+        <source>Select a destination folder to move the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="vanished">&lt;h3&gt;Ongi etorri VirtualBox-era!&lt;/h3&gt;&lt;p&gt;Leiho honetako ezker aldea zure ordenagailuko makina birtualen zerrenda bat da. Zerrenda orain hutsik dago oraindik ez duzulako makina birtualik sortu.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Makina birtual berri bat sortzeko, sakatu &lt;b&gt;Berria&lt;/b&gt; botoia leihoaren goialdeko tresna barra nagusian.&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; tekla sakatu dezakezu berehalako laguntza lortzeko, edo ikusi &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; azken argibideak eta berriak jasotzeko.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location line="+583"/>
+        <location line="+558"/>
         <source>Manager</source>
         <comment>Note: main window title which is pretended by the product name.</comment>
         <translation>Kudeatzailea</translation>
@@ -11315,7 +11421,7 @@
 <context>
     <name>UISession</name>
     <message>
-        <location filename="../src/runtime/UISession.cpp" line="+551"/>
+        <location filename="../src/runtime/UISession.cpp" line="+556"/>
         <source>Updating Guest Additions</source>
         <translation>Gonbidatu Gehigarriak Eguneratzen</translation>
     </message>
@@ -11341,7 +11447,7 @@
         <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; orrialdean, %2</translation>
     </message>
     <message>
-        <location filename="../src/settings/UISettingsDialog.cpp" line="+340"/>
+        <location filename="../src/settings/UISettingsDialog.cpp" line="+339"/>
         <source>Invalid settings detected</source>
         <translation>Ezarpen baliogabea atzeman da</translation>
     </message>
@@ -11617,7 +11723,7 @@
 <context>
     <name>UISnapshotPane</name>
     <message>
-        <location filename="../src/selector/UISnapshotPane.cpp" line="+278"/>
+        <location filename="../src/selector/UISnapshotPane.cpp" line="+280"/>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
         <translation type="unfinished">Oraingo Egoera (aldatuta)</translation>
@@ -11789,7 +11895,7 @@
         <translation>&lt;nobr&gt;&lt;b&gt;Klikatu&lt;/b&gt; adierazle egona aldatzeko.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Arrastatu-eta-&amp;Askatu&lt;/b&gt; adierazlearen kokapena aldatzeko.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location line="+370"/>
+        <location line="+374"/>
         <source>Close</source>
         <translation>Itxi</translation>
     </message>
@@ -11802,7 +11908,7 @@
 <context>
     <name>UITakeSnapshotDialog</name>
     <message>
-        <location filename="../src/UITakeSnapshotDialog.cpp" line="+82"/>
+        <location filename="../src/UITakeSnapshotDialog.cpp" line="+83"/>
         <source>Take Snapshot of Virtual Machine</source>
         <translation type="unfinished">Hartu Makina Birtualaren Berehalako bat</translation>
     </message>
@@ -11879,7 +11985,7 @@
 <context>
     <name>UIToolsPaneMachine</name>
     <message>
-        <location filename="../src/selector/UIToolsPaneMachine.cpp" line="+217"/>
+        <location filename="../src/selector/UIToolsPaneMachine.cpp" line="+244"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window lists all virtual machines and virtual machine groups on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11896,6 +12002,11 @@
     <message>
         <location line="+5"/>
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Tool to display  virtual machine (VM) logs. </source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11917,7 +12028,7 @@
 <context>
     <name>UIUpdateManager</name>
     <message>
-        <location filename="../src/net/UIUpdateDefs.cpp" line="+46"/>
+        <location filename="../src/net/UIUpdateDefs.cpp" line="+47"/>
         <source>1 day</source>
         <translation>1 egun</translation>
     </message>
@@ -11975,7 +12086,7 @@
 <context>
     <name>UIUpdateStepVirtualBox</name>
     <message>
-        <location filename="../src/net/UIUpdateManager.cpp" line="+174"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="+286"/>
         <source>Checking for a new VirtualBox version...</source>
         <translation>VirtualBox bertsio berririk dagoen egiaztatzen...</translation>
     </message>
@@ -11983,7 +12094,7 @@
 <context>
     <name>UIVMCloseDialog</name>
     <message>
-        <location filename="../src/runtime/UIVMCloseDialog.cpp" line="+401"/>
+        <location filename="../src/runtime/UIVMCloseDialog.cpp" line="+426"/>
         <source>Close Virtual Machine</source>
         <translation>Itxi Makina Birtuala</translation>
     </message>
@@ -12160,7 +12271,7 @@
 <context>
     <name>UIVMInformationDialog</name>
     <message>
-        <location filename="../src/runtime/information/UIVMInformationDialog.cpp" line="+115"/>
+        <location filename="../src/runtime/information/UIVMInformationDialog.cpp" line="+117"/>
         <source>%1 - Session Information</source>
         <translation type="unfinished">%1 - Saio Argibideak</translation>
     </message>
@@ -12174,11 +12285,229 @@
         <source>&amp;Runtime Information</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Guest Session Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&amp;Guest File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/guestctrl/UIGuestControlFileManager.cpp" line="-110"/>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Password</source>
+        <translation type="unfinished">Sarhitza</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location filename="../src/runtime/guestctrl/UIGuestControlWidget.cpp" line="+88"/>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+82"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/guestctrl/UIGuestControlFileTable.cpp" line="+332"/>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Go home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+1063"/>
+        <source>Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-1055"/>
+        <location line="+1061"/>
+        <source>Delete</source>
+        <translation type="unfinished">Ezabatu</translation>
+    </message>
+    <message>
+        <location line="-1053"/>
+        <source>Rename</source>
+        <translation type="unfinished">Berrizendatu</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Copy</source>
+        <translation type="unfinished">Kopiatu</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+979"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Move one level up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Go to home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Rename the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+1"/>
+        <source>Refresh the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+1"/>
+        <source>Delete the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Create new directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Copy the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Copy the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Cut the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Paste the copied item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Show the properties of the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/guestctrl/UIGuestControlWidget.cpp" line="+11"/>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/guestctrl/UIGuestFileTable.cpp" line="+165"/>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/guestctrl/UIHostFileTable.cpp" line="+134"/>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
     <message>
-        <location filename="../src/selector/UIVMItem.cpp" line="+165"/>
+        <location filename="../src/selector/UIVMItem.cpp" line="+166"/>
         <location line="+12"/>
         <location filename="../src/selector/graphics/details/UIGMachinePreview.cpp" line="+3"/>
         <source>Inaccessible</source>
@@ -12198,103 +12527,337 @@
     </message>
 </context>
 <context>
+    <name>UIVMLogViewer</name>
+    <message>
+        <source>Close the search panel</source>
+        <translation type="vanished">Itxi bilaketa panela</translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="vanished">&amp;Bilatu</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="vanished">Sartu bilaketa kate bat hemen</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation type="vanished">&amp;Aurrekoa</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation type="vanished">Bilatu katearen aurreko gertaera</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation type="vanished">&amp;Hurrengoa</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation type="vanished">Bilatu katearen hurrengo gertaera</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="vanished">Be&amp;reizi Hizki Larri-xeheak</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="vanished">Hizki larri-xeheak bereiziz bilatzen du (hautatutakoan)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="vanished">Katea ez da aurkitu</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="vanished">&lt;p&gt;Ez da ohar agiririk aurkitu. Sakatu &lt;b&gt;Berritu&lt;/b&gt; botoia &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ohar agiritegia berriro mihatzeko.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="vanished">Gorde VirtualBox Oharra Honela</translation>
+    </message>
+    <message>
+        <source>%1 - VirtualBox Log Viewer</source>
+        <translation type="vanished">%1 - VirtualBox Ohar Ikusgailua</translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="vanished">B&amp;erritu</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation type="vanished">&amp;Gorde</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="vanished">Itxi</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerDialog</name>
+    <message>
+        <location filename="../src/logviewer/UIVMLogViewerDialog.cpp" line="+68"/>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIVMLogViewerWidget</name>
     <message>
-        <location filename="../src/UIVMLogViewerWidget.cpp" line="+274"/>
-        <location line="+393"/>
-        <source>Close the search panel</source>
-        <translation>Itxi bilaketa panela</translation>
+        <location filename="../src/logviewer/UIVMLogViewerBookmarksPanel.cpp" line="+195"/>
+        <source>Delete the current bookmark.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-391"/>
-        <location line="+808"/>
+        <location line="+4"/>
+        <source>Delete all bookmarks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Goto selected bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/logviewer/UIVMLogViewerDialog.cpp" line="-3"/>
+        <source>Close</source>
+        <translation type="unfinished">Itxi</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/logviewer/UIVMLogViewerFilterPanel.cpp" line="+495"/>
+        <source>Enter filtering string here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Add filter term. (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The type of boolean operator for filter operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/logviewer/UIVMLogViewerPanel.cpp" line="+111"/>
+        <source>Close the search panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/logviewer/UIVMLogViewerSearchPanel.cpp" line="+356"/>
+        <location filename="../src/logviewer/UIVMLogViewerWidget.cpp" line="+649"/>
         <source>&amp;Find</source>
-        <translation>&amp;Bilatu</translation>
+        <translation type="unfinished">&amp;Bilatu</translation>
     </message>
     <message>
-        <location line="-807"/>
+        <location line="+3"/>
         <source>Enter a search string here</source>
-        <translation>Sartu bilaketa kate bat hemen</translation>
+        <translation type="unfinished">Sartu bilaketa kate bat hemen</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>&amp;Previous</source>
-        <translation>&amp;Aurrekoa</translation>
+        <location line="+3"/>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Bilatu katearen aurreko gertaera</translation>
+        <location line="+3"/>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>&amp;Next</source>
-        <translation>&amp;Hurrengoa</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Bilatu katearen hurrengo gertaera</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+5"/>
         <source>C&amp;ase Sensitive</source>
-        <translation>Be&amp;reizi Hizki Larri-xeheak</translation>
+        <translation type="unfinished">Be&amp;reizi Hizki Larri-xeheak</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Hizki larri-xeheak bereiziz bilatzen du (hautatutakoan)</translation>
+        <translation type="unfinished">Hizki larri-xeheak bereiziz bilatzen du (hautatutakoan)</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>String not found</source>
-        <translation>Katea ez da aurkitu</translation>
-    </message>
-    <message>
-        <location line="+381"/>
-        <source>Filter</source>
+        <location line="+5"/>
+        <source>Ma&amp;tch Whole Word</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Enter filtering string here</source>
+        <source>Search matches only complete words when checked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+190"/>
-        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ez da ohar agiririk aurkitu. Sakatu &lt;b&gt;Berritu&lt;/b&gt; botoia &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ohar agiritegia berriro mihatzeko.&lt;/p&gt;</translation>
+        <location line="+5"/>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+49"/>
-        <source>Save VirtualBox Log As</source>
-        <translation>Gorde VirtualBox Oharra Honela</translation>
-    </message>
-    <message>
-        <location line="+173"/>
-        <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - VirtualBox Ohar Ikusgailua</translation>
+        <location line="+1"/>
+        <source>All occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+4"/>
-        <source>&amp;Refresh</source>
-        <translation>B&amp;erritu</translation>
+        <source>String not found</source>
+        <translation type="unfinished">Katea ez da aurkitu</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>&amp;Save</source>
-        <translation>&amp;Gorde</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Close</source>
-        <translation>Itxi</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Fil&amp;ter</source>
+        <location line="+2"/>
+        <source>%1 Matches Found</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/logviewer/UIVMLogViewerSettingsPanel.cpp" line="+128"/>
+        <location line="+1"/>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+1"/>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Log Viewer Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/logviewer/UIVMLogViewerTextEdit.cpp" line="+263"/>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+57"/>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/logviewer/UIVMLogViewerWidget.cpp" line="-374"/>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">Gorde VirtualBox Oharra Honela</translation>
+    </message>
+    <message>
+        <location line="+369"/>
+        <source>&amp;Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+1"/>
+        <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">B&amp;erritu</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Reload the log (F5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">&amp;Gorde...</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+1"/>
+        <source>Save the log (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+1"/>
+        <source>Save the log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>&amp;Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+1"/>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+1"/>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+1"/>
+        <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+145"/>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Ez da ohar agiririk aurkitu. Sakatu &lt;b&gt;Berritu&lt;/b&gt; botoia &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ohar agiritegia berriro mihatzeko.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -12339,7 +12902,7 @@
         <translation type="obsolete">Erakutsi Azalpena</translation>
     </message>
     <message>
-        <location filename="../src/wizards/UIWizard.cpp" line="+109"/>
+        <location filename="../src/wizards/UIWizard.cpp" line="+111"/>
         <source>&amp;Expert Mode</source>
         <translation>&amp;Aditu Modua</translation>
     </message>
@@ -12420,8 +12983,8 @@
         <translation type="obsolete">&lt;p&gt;Hautatu dezakezu ere diska gogorra agiri anitzetan &lt;b&gt;banantzea&lt;/b&gt; bakoitza bi gigabyte arte. Hau erabilgarria da nagusiki makina birtuala USB gailu kengarri batean edo sistema zaharretan biltegiratzea nahi baduzu, hauetako batzuek ezin dute agiri oso handika kudeatu.</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="+133"/>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="+264"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp" line="+135"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp" line="+269"/>
         <source>Storage on physical hard disk</source>
         <translation>Biltegiratu diska gogor fisikoan</translation>
     </message>
@@ -12561,7 +13124,7 @@
         <translation type="vanished">Diska gogor agiri &amp;mota</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic1.cpp" line="+117"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic1.cpp" line="+119"/>
         <source>Disk image to copy</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12577,7 +13140,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic2.cpp" line="+160"/>
+        <location filename="../src/wizards/clonevd/UIWizardCloneVDPageBasic2.cpp" line="+161"/>
         <source>Disk image file type</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12649,7 +13212,7 @@
     </message>
     <message>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp" line="+64"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+53"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+51"/>
         <source>%1 Clone</source>
         <translation>%1 Klona</translation>
     </message>
@@ -12665,7 +13228,7 @@
     </message>
     <message>
         <location line="+3"/>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+81"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="+83"/>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
         <translation>Hautatutakoan MAC helbide bakarra esleituko zaie itxuratutako sare txartel guztieri.</translation>
     </message>
@@ -12676,7 +13239,7 @@
         <translation>&amp;Berrabiarazi sare txartel guztien MAC helbidea</translation>
     </message>
     <message>
-        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="+87"/>
+        <location filename="../src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp" line="+88"/>
         <location filename="../src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp" line="-8"/>
         <source>Clone type</source>
         <translation>Klonatu mota</translation>
@@ -12826,7 +13389,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+237"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+235"/>
         <source>Sun &amp;Cloud</source>
         <translation>Sun &amp;Cloud</translation>
     </message>
@@ -13096,7 +13659,7 @@
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp" line="+66"/>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="+101"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="+99"/>
         <source>Appliance to import</source>
         <translation>Inportatzeko gailua</translation>
     </message>
@@ -13132,7 +13695,7 @@
         <translation>Ireki Birtualizazio Heuskarria (%1)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="-201"/>
+        <location filename="../src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp" line="-209"/>
         <location filename="../src/wizards/importappliance/UIWizardImportAppPageExpert.cpp" line="+1"/>
         <source>Appliance settings</source>
         <translation>Gailu ezarpenak</translation>
@@ -13228,8 +13791,8 @@
         <translation type="obsolete">&lt;p&gt;Hautatu dezakezu ere diska gogorra agiri anitzetan &lt;b&gt;banantzea&lt;/b&gt; bakoitza bi gigabyte arte. Hau erabilgarria da nagusiki makina birtuala USB gailu kengarri batean edo sistema zaharretan biltegiratzea nahi baduzu, hauetako batzuek ezin dute agiri oso handika kudeatu.</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="+126"/>
-        <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="+229"/>
+        <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic2.cpp" line="+128"/>
+        <location filename="../src/wizards/newvd/UIWizardNewVDPageExpert.cpp" line="+233"/>
         <source>Storage on physical hard disk</source>
         <translation>Biltegiratu diska gogor fisikoan</translation>
     </message>
@@ -13328,7 +13891,7 @@
         <translation type="obsolete">Diska gogor agiri &amp;mota</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic1.cpp" line="+154"/>
+        <location filename="../src/wizards/newvd/UIWizardNewVDPageBasic1.cpp" line="+155"/>
         <source>Hard disk file type</source>
         <translation>Diska gogor agiri mota</translation>
     </message>
@@ -13351,8 +13914,8 @@
         <translation>Sortu</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic1.cpp" line="+311"/>
-        <location filename="../src/wizards/newvm/UIWizardNewVMPageExpert.cpp" line="+227"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic1.cpp" line="+312"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMPageExpert.cpp" line="+234"/>
         <source>Name and operating system</source>
         <translation>Izena eta sistema eragilea</translation>
     </message>
@@ -13362,7 +13925,7 @@
         <translation>Mesedez hautatu makina birtual berriarentzako azalpen izen bat eta ezartzen saiatzen ari zaren sistema eragile mota. Hautatzen duzun izena VirtualBox-en zehar erabiliko da makina hau ezagutzeko.</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic2.cpp" line="+132"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic2.cpp" line="+134"/>
         <source>Memory size</source>
         <translation>Oraimen neurria</translation>
     </message>
@@ -13401,7 +13964,7 @@
         <translation type="obsolete">E&amp;rabili badagoen diska gogor birtual agiri bat</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic3.cpp" line="+203"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic3.cpp" line="+208"/>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageExpert.cpp" line="+4"/>
         <source>Hard disk</source>
         <translation>Diska gogorra</translation>
@@ -13439,7 +14002,7 @@
 <context>
     <name>VBoxAboutDlg</name>
     <message>
-        <location filename="../src/VBoxAboutDlg.cpp" line="+83"/>
+        <location filename="../src/VBoxAboutDlg.cpp" line="+87"/>
         <source>VirtualBox - About</source>
         <translation>VirtualBox - Honi buruz</translation>
     </message>
@@ -13551,7 +14114,7 @@
 <context>
     <name>VBoxGlobal</name>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-536"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-626"/>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
         <translation>Gailu ezezaguna %1:%2</translation>
@@ -13740,7 +14303,7 @@
         <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+141"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+142"/>
         <source>Powered Off</source>
         <comment>MachineState</comment>
         <translation>Itzalita</translation>
@@ -13877,7 +14440,7 @@
         <translation>Sarea</translation>
     </message>
     <message>
-        <location line="+221"/>
+        <location line="+214"/>
         <location line="+165"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
@@ -13978,7 +14541,7 @@
         <translation>Hartuta</translation>
     </message>
     <message>
-        <location line="-185"/>
+        <location line="-178"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
         <translation>Ezgaituta</translation>
@@ -14037,7 +14600,7 @@
         <translation type="vanished">Elkarbanatutako Agiritegiak</translation>
     </message>
     <message>
-        <location line="+149"/>
+        <location line="+142"/>
         <location line="+192"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
@@ -14058,7 +14621,7 @@
         <translation>Hostalari Gailua</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+743"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+838"/>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>Erabiltzaileak-zehaztuta</translation>
@@ -14149,7 +14712,7 @@
         <translation type="vanished">Ataka Kidetuak</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-358"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-351"/>
         <source>USB</source>
         <comment>DeviceType</comment>
         <translation>USB</translation>
@@ -14161,7 +14724,7 @@
         <translation>Elkarbanatutako Agiritegiak</translation>
     </message>
     <message>
-        <location line="+264"/>
+        <location line="+257"/>
         <source>IDE</source>
         <comment>StorageBus</comment>
         <translation>IDE</translation>
@@ -14225,7 +14788,7 @@
         <translation>Intel PRO/1000 T Zerbitzaria (82543GC)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-727"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-822"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Saltzaile ID-a: %1&lt;/nobr&gt;</translation>
@@ -14273,14 +14836,14 @@
         <translation>&lt;nobr&gt;Egoera: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/medium/UIMedium.cpp" line="+542"/>
+        <location filename="../src/medium/UIMedium.cpp" line="+547"/>
         <source>Checking...</source>
         <comment>medium</comment>
         <translation>Egiaztatzen...</translation>
     </message>
     <message>
-        <location line="+4"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="+18"/>
+        <location filename="../src/medium/UIMedium.cpp" line="+4"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
         <translation>Eskuraezina</translation>
@@ -14303,7 +14866,7 @@
         <translation>Ezgaituta</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-182"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-175"/>
         <source>Setting Up</source>
         <comment>MachineState</comment>
         <translation>Ezarrita</translation>
@@ -14334,7 +14897,7 @@
         <translation type="vanished">Barneko Sarea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+317"/>
+        <location line="+310"/>
         <source>SCSI</source>
         <comment>StorageBus</comment>
         <translation>SCSI</translation>
@@ -14469,7 +15032,7 @@
         <translation type="vanished">Biltegia</translation>
     </message>
     <message>
-        <location line="-428"/>
+        <location line="-421"/>
         <source>Teleported</source>
         <comment>MachineState</comment>
         <translation>Teleramana</translation>
@@ -14514,7 +15077,7 @@
         <translation>Berehalakoa Ezabatzen</translation>
     </message>
     <message>
-        <location line="+319"/>
+        <location line="+312"/>
         <source>Floppy</source>
         <comment>StorageBus</comment>
         <translation>Disketea</translation>
@@ -14647,7 +15210,7 @@
         <translation>Ohinarriko diska gogor hau zeharka erantsita dago hurrengo ezberdinketa diska gogorra erabiliz:</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="+246"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="+231"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n urte</numerusform>
@@ -14719,7 +15282,7 @@
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+83"/>
         <location line="+19"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+1266"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+1384"/>
         <location line="+32"/>
         <source>B</source>
         <comment>size suffix Bytes</comment>
@@ -14735,10 +15298,6 @@
         <translation>KB</translation>
     </message>
     <message>
-        <location line="-18"/>
-        <location line="+19"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-32"/>
-        <location line="+34"/>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="+199"/>
         <location line="+154"/>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic2.cpp" line="+4"/>
@@ -14747,12 +15306,16 @@
         <location filename="../src/wizards/newvm/UIWizardNewVMPageExpert.cpp" line="-7"/>
         <location line="+1"/>
         <location line="+1"/>
+        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="-18"/>
+        <location line="+19"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-32"/>
+        <location line="+34"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
         <translation>MB</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="-18"/>
         <location line="+19"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="-33"/>
         <location line="+35"/>
@@ -14799,7 +15362,7 @@
         <translation>Mugagabeko Exekuzioa</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-1417"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-1535"/>
         <source>Unknown device</source>
         <comment>USB device details</comment>
         <translation>Gailu ezezaguna</translation>
@@ -14820,7 +15383,7 @@
         <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+232"/>
+        <location line="+312"/>
         <source>Please choose a virtual hard disk file</source>
         <translation>Mesedez hautatu diska gogor agiri birtual bat</translation>
     </message>
@@ -14830,12 +15393,13 @@
         <translation>Diska gogor birtual agiri guztiak (%1)</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="-79"/>
+        <location line="+129"/>
         <source>All files (*)</source>
         <translation>Agiri guztiak (*)</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-495"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-488"/>
         <source>Fault Tolerant Syncing</source>
         <comment>MachineState</comment>
         <translation>Jasangarritasun Aldiberetze Hutsegitea</translation>
@@ -14865,7 +15429,7 @@
         <translation>Optikoa</translation>
     </message>
     <message>
-        <location line="+255"/>
+        <location line="+248"/>
         <location line="+167"/>
         <source>Null</source>
         <comment>AuthType</comment>
@@ -14932,7 +15496,7 @@
         <translation>Egokitzailea %1</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-91"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-84"/>
         <source>Disabled</source>
         <comment>DragAndDropType</comment>
         <translation>Ezgaituta</translation>
@@ -15022,7 +15586,7 @@
         <translation>Eranskin-anitz</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+13"/>
         <source>Dynamically allocated storage</source>
         <comment>MediumVariant</comment>
         <translation>Esleitu biltegia dinamikoki</translation>
@@ -15088,7 +15652,7 @@
         <translation>Biltegiratze neurri zuzendua raw diskan</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+18"/>
         <source>NAT Network</source>
         <comment>NetworkAttachmentType</comment>
         <translation>NAT Sarea</translation>
@@ -15258,7 +15822,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+738"/>
+        <location line="+740"/>
         <location line="+27"/>
         <source>General</source>
         <comment>DetailsElementType</comment>
@@ -15419,7 +15983,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+240"/>
+        <location line="+208"/>
         <location line="+30"/>
         <source>General</source>
         <comment>InformationElementType</comment>
@@ -15537,7 +16101,12 @@
         <translation type="obsolete">Diska gogor birtual agiri guztiak (%1)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-39"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-127"/>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+88"/>
         <source>Please choose a virtual optical disk file</source>
         <translation>Mesedez hautatu diska optiko birtual agiri bat</translation>
     </message>
@@ -15557,7 +16126,7 @@
         <translation>Disketa birtual agiri guztiak (%1)</translation>
     </message>
     <message>
-        <location line="+2090"/>
+        <location line="+2111"/>
         <source>VDI (VirtualBox Disk Image)</source>
         <translation>VDI (VirtualBox Diska Irudia)</translation>
     </message>
@@ -15614,12 +16183,12 @@
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="../src/VBoxLicenseViewer.cpp" line="+96"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="+156"/>
         <source>VirtualBox License</source>
         <translation>VirtualBox Baimena</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>I &amp;Agree</source>
         <translation>&amp;Onartzen dut</translation>
     </message>

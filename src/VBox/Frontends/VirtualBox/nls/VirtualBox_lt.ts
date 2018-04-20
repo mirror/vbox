@@ -988,7 +988,7 @@
     </message>
     <message>
         <source>Display virtual machine settings window to configure video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Atveria virtualios mašinos vaizdo įrašymo konfigūracijos langą</translation>
     </message>
     <message>
         <source>Enable guest display video capture</source>
@@ -1008,7 +1008,7 @@
     </message>
     <message>
         <source>Display window to configure menu-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Atveria langą meniu juostos konfigūravimui</translation>
     </message>
     <message>
         <source>Show Menu &amp;Bar</source>
@@ -1028,7 +1028,7 @@
     </message>
     <message>
         <source>Display window to configure status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Atveria langą būsenos juostos konfigūravimui</translation>
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
@@ -1148,7 +1148,7 @@
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>Enable</source>
@@ -1472,6 +1472,37 @@
         <source>Enable audio input</source>
         <translation>Įgalinti garso įėjimą</translation>
     </message>
+    <message>
+        <source>Scale to %1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished">&amp;Perkelti...</translation>
+    </message>
+    <message>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine logs pane</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -1501,10 +1532,10 @@
     <message numerus="yes">
         <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Ši mašina apsaugota slaptažodžiu. Prašome įvesti %n šifravimo slaptažodį.</numerusform>
+            <numerusform>Ši mašina apsaugota slaptažodžiais. Prašome įvesti %n šifravimo slaptažodžius.</numerusform>
+            <numerusform>Ši mašina apsaugota slaptažodžiais. Prašome įvesti %n šifravimo slaptažodžių.</numerusform>
         </translation>
     </message>
 </context>
@@ -1646,7 +1677,7 @@
     </message>
     <message>
         <source>Detailed list of all components of all virtual machines of the current appliance</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsamus visų virtualių mašinų visų komponentų sąrašas</translation>
     </message>
 </context>
 <context>
@@ -1702,7 +1733,7 @@
     </message>
     <message>
         <source>Issuer</source>
-        <translation type="unfinished"></translation>
+        <translation>Išdavė</translation>
     </message>
     <message>
         <source>Subject</source>
@@ -1710,11 +1741,11 @@
     </message>
     <message>
         <source>Not Valid Before</source>
-        <translation type="unfinished"></translation>
+        <translation>Galioja nuo</translation>
     </message>
     <message>
         <source>Not Valid After</source>
-        <translation type="unfinished"></translation>
+        <translation>Galioja iki</translation>
     </message>
     <message>
         <source>Serial Number</source>
@@ -1730,7 +1761,7 @@
     </message>
     <message>
         <source>Public Algorithm</source>
-        <translation type="unfinished"></translation>
+        <translation>Viešasis algoritmas</translation>
     </message>
     <message>
         <source>%1 (%2)</source>
@@ -2413,7 +2444,7 @@
     <name>UIDnDHandler</name>
     <message>
         <source>Dropping data ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Atmetami duomenys...</translation>
     </message>
     <message>
         <source>Retrieving data ...</source>
@@ -2488,22 +2519,22 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Rezultato&amp;nbsp;kodas: </translation>
+        <translation>Rezultato&amp;nbsp;kodas: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Elementas:</translation>
+        <translation>Elementas:</translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Sąsaja: </translation>
+        <translation>Sąsaja: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Iššaukė: </translation>
+        <translation>Iššaukė: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
@@ -2775,11 +2806,11 @@
     </message>
     <message>
         <source>Holds the folder path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atitinka katalogo kelią.</translation>
     </message>
     <message>
         <source>Holds the file path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atitinka rinkmenos kelią.</translation>
     </message>
 </context>
 <context>
@@ -2964,7 +2995,7 @@
     <name>UIGChooserView</name>
     <message>
         <source>Contains a tree of Virtual Machines and their groups</source>
-        <translation type="unfinished"></translation>
+        <translation>Talpina virtualių mašinų medį ir jų grupes</translation>
     </message>
 </context>
 <context>
@@ -3264,14 +3295,9 @@
         <translation>Ekrano mastelis</translation>
     </message>
     <message>
-        <source>Unscaled HiDPI Video Output</source>
-        <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Įgalinta</translation>
+        <translation type="vanished">Įgalinta</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
@@ -3366,7 +3392,7 @@
     <message>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Uždraustas</translation>
+        <translation type="vanished">Uždraustas</translation>
     </message>
     <message>
         <source>Audio Output</source>
@@ -3631,7 +3657,7 @@
     <name>UIGDetailsView</name>
     <message>
         <source>Contains a list of Virtual Machine details</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsami informacija apue virtualias mašinas</translation>
     </message>
 </context>
 <context>
@@ -4658,6 +4684,21 @@
     </message>
 </context>
 <context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <source>Log</source>
+        <translation type="unfinished">Žurnalas</translation>
+    </message>
+    <message>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
@@ -5102,11 +5143,11 @@
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridedamas tinklas...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Šalinamas tinklas...</translation>
     </message>
 </context>
 <context>
@@ -6485,15 +6526,7 @@
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation>HiDPI palaikymas:</translation>
-    </message>
-    <message>
-        <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">HiDPI palaikymas:</translation>
     </message>
     <message>
         <source>Acceleration:</source>
@@ -6577,7 +6610,7 @@
     </message>
     <message>
         <source>&amp;Record Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Į&amp;rašinėti garsą</translation>
     </message>
 </context>
 <context>
@@ -6688,19 +6721,11 @@
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation>Šif&amp;ravimas</translation>
-    </message>
-    <message>
-        <source>When checked, enables encryption for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Šif&amp;ravimas</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation>Įga&amp;linti šifravimą</translation>
-    </message>
-    <message>
-        <source>Encryption C&amp;ipher:</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Įga&amp;linti šifravimą</translation>
     </message>
     <message>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
@@ -6711,32 +6736,12 @@
         <translation>Įveskite &amp;naują slaptažodį:</translation>
     </message>
     <message>
-        <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>C&amp;onfirm New Password:</source>
         <translation>Pakart&amp;otinai įveskite slaptažodį:</translation>
     </message>
     <message>
-        <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encryption cipher type not specified.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Encryption password empty.</source>
-        <translation>Šifravimo slaptažodis tuščias.</translation>
-    </message>
-    <message>
-        <source>Encryption passwords do not match.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Šifravimo slaptažodis tuščias.</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
@@ -6746,6 +6751,46 @@
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
         <translation>Nekeisti</translation>
+    </message>
+    <message>
+        <source>Disk Enc&amp;ryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, disks attached to this virtual machine will be encrypted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>En&amp;able Disk Encryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk Encryption C&amp;ipher:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the encryption password for disks attached to this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirms the disk encryption password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption password empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption passwords do not match.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7774,6 +7819,11 @@
     </message>
     <message>
         <source>&amp;Storage Devices</source>
+        <translation>&amp;Atminties įtaisai</translation>
+    </message>
+    <message>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8414,7 +8464,7 @@
     <name>UIMediumDetailsWidget</name>
     <message>
         <source>&amp;Attributes</source>
-        <translation type="unfinished">&amp;Atributai</translation>
+        <translation>&amp;Atributai</translation>
     </message>
     <message>
         <source>&amp;Information</source>
@@ -8426,7 +8476,7 @@
     </message>
     <message>
         <source>&amp;Location:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Vieta:</translation>
     </message>
     <message>
         <source>&amp;Description:</source>
@@ -8687,15 +8737,15 @@
     </message>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished">Kopijuoti disko atvaizdžio rinkmeną (%1)</translation>
+        <translation>Kopijuoti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished">Pašalinti disko atvaizdžio rinkmeną (%1)</translation>
+        <translation>Pašalinti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished">Atlaisvinti disko atvaizdžio rinkmeną (%1)</translation>
+        <translation>Atlaisvinti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
@@ -8703,7 +8753,7 @@
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Atnaujinti disko atvaizdžio rinkmeną (%1)</translation>
+        <translation>Atnaujinti disko atvaizdžio rinkmeną (%1)</translation>
     </message>
     <message>
         <source>Current extension (*.%1)</source>
@@ -8715,7 +8765,7 @@
     </message>
     <message>
         <source>&amp;Move...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Perkelti...</translation>
     </message>
     <message>
         <source>Move Disk Image File (%1)</source>
@@ -10725,6 +10775,10 @@
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -11632,6 +11686,10 @@
         <source>Show Toolbar Text</source>
         <translation>Rodyti tekstą įrankių juostoje</translation>
     </message>
+    <message>
+        <source>Select a destination folder to move the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UISession</name>
@@ -11900,7 +11958,7 @@
     </message>
     <message>
         <source>Take</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti</translation>
     </message>
     <message>
         <source>Take snapshot on the basis of current machine state</source>
@@ -11908,7 +11966,7 @@
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished">Sukurti dabartinio būvio kopiją (%1)</translation>
+        <translation>Sukurti dabartinio būvio kopiją (%1)</translation>
     </message>
 </context>
 <context>
@@ -12143,6 +12201,10 @@
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Tool to display  virtual machine (VM) logs. </source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIUSBFilterItem</name>
@@ -12299,7 +12361,7 @@
     </message>
     <message>
         <source>&amp;Continue running in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Tęsti veikimą &amp;fone</translation>
     </message>
     <message>
         <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
@@ -12421,6 +12483,158 @@
         <source>&amp;Runtime Information</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Guest Session Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guest File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">Slaptažodis</translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Pervadinti</translation>
+    </message>
+    <message>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Kopijuoti</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move one level up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste the copied item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the properties of the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -12484,86 +12698,292 @@
     </message>
 </context>
 <context>
-    <name>UIVMLogViewerWidget</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation type="obsolete">Žurnalų peržiūra</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>Į&amp;rašyti</translation>
+        <translation type="vanished">Į&amp;rašyti</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>&amp;Atnaujinti</translation>
+        <translation type="vanished">&amp;Atnaujinti</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - VirtualBox žurnalų peržiūra</translation>
+        <translation type="vanished">%1 - VirtualBox žurnalų peržiūra</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Žurnalų nėra. Norėdami iš naujo nuskaityti žurnalų aplanką &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, spauskite &lt;b&gt;Atnaujinti&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Žurnalų nėra. Norėdami iš naujo nuskaityti žurnalų aplanką &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, spauskite &lt;b&gt;Atnaujinti&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>VirtualBox žurnalą įrašyti kaip</translation>
+        <translation type="vanished">VirtualBox žurnalą įrašyti kaip</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>&amp;Ieškoti</translation>
+        <translation type="vanished">&amp;Ieškoti</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Užverti</translation>
+        <translation type="vanished">Užverti</translation>
     </message>
     <message>
         <source>Close the search panel</source>
-        <translation>Užverti paieškos skydelį</translation>
+        <translation type="vanished">Užverti paieškos skydelį</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>Čia įveskite paieškos reiškinį</translation>
+        <translation type="vanished">Čia įveskite paieškos reiškinį</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>&amp;Ankstesnis</translation>
+        <translation type="vanished">&amp;Ankstesnis</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>Ieškoti ankstesnių paieškos reiškinių</translation>
+        <translation type="vanished">Ieškoti ankstesnių paieškos reiškinių</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>&amp;Tolesnis</translation>
+        <translation type="vanished">&amp;Tolesnis</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>Ieškoti tolesnių paieškos reiškinių</translation>
+        <translation type="vanished">Ieškoti tolesnių paieškos reiškinių</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Skirti raidžių dydį</translation>
+        <translation type="vanished">&amp;Skirti raidžių dydį</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Ieškoti skiriant raidžių dydį (jei pasirinkta)</translation>
+        <translation type="vanished">Ieškoti skiriant raidžių dydį (jei pasirinkta)</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>Nerasta</translation>
+        <translation type="vanished">Nerasta</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation>Atranka</translation>
+        <translation type="vanished">Atranka</translation>
     </message>
     <message>
         <source>Enter filtering string here</source>
-        <translation>Čia įveskite atrankos reiškinį</translation>
+        <translation type="vanished">Čia įveskite atrankos reiškinį</translation>
     </message>
     <message>
         <source>Fil&amp;ter</source>
-        <translation>At&amp;ranka</translation>
+        <translation type="vanished">At&amp;ranka</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerDialog</name>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerWidget</name>
+    <message>
+        <source>Delete the current bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all bookmarks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto selected bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Užverti</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished">Žurnalų peržiūra</translation>
+    </message>
+    <message>
+        <source>Enter filtering string here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add filter term. (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The type of boolean operator for filter operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished">&amp;Ieškoti</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished">&amp;Skirti raidžių dydį</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ma&amp;tch Whole Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search matches only complete words when checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 Matches Found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Viewer Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">VirtualBox žurnalą įrašyti kaip</translation>
+    </message>
+    <message>
+        <source>&amp;Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">&amp;Atnaujinti</translation>
+    </message>
+    <message>
+        <source>Reload the log (F5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">Į&amp;rašyti...</translation>
+    </message>
+    <message>
+        <source>Save the log (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Žurnalų nėra. Norėdami iš naujo nuskaityti žurnalų aplanką &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, spauskite &lt;b&gt;Atnaujinti&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -12681,7 +13101,7 @@
     </message>
     <message>
         <source>Copy Virtual Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti virtualaus disko atvaizdį</translation>
     </message>
     <message>
         <source>Disk image to copy</source>
@@ -12697,7 +13117,7 @@
     </message>
     <message>
         <source>Disk image file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Disko atvaizdžio rinkmenos tipas</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
@@ -12738,7 +13158,7 @@
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk image name</comment>
-        <translation type="unfinished">%1_kopija</translation>
+        <translation>%1_kopija</translation>
     </message>
     <message>
         <source>Disk image to &amp;copy</source>
@@ -15031,49 +15451,49 @@ IPv6.</translation>
     <message numerus="yes">
         <source>%n year(s)</source>
         <translation>
-            <numerusform>%n metai</numerusform>
-            <numerusform>%n metai</numerusform>
-            <numerusform>%n metų</numerusform>
+            <numerusform>%n m.</numerusform>
+            <numerusform>%n m.</numerusform>
+            <numerusform>%n m.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
         <translation>
-            <numerusform>%n mėnuo</numerusform>
-            <numerusform>%n menesiai</numerusform>
-            <numerusform>%n mėnesių</numerusform>
+            <numerusform>%n mėn.</numerusform>
+            <numerusform>%n mėn.</numerusform>
+            <numerusform>%n mėn.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
         <translation>
-            <numerusform>%n diena</numerusform>
-            <numerusform>%n dienos</numerusform>
-            <numerusform>%n dienų</numerusform>
+            <numerusform>%n d.</numerusform>
+            <numerusform>%n d.</numerusform>
+            <numerusform>%n d.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
         <translation>
-            <numerusform>%n valanda</numerusform>
-            <numerusform>%n valandos</numerusform>
-            <numerusform>%n valandų</numerusform>
+            <numerusform>%n val.</numerusform>
+            <numerusform>%n val.</numerusform>
+            <numerusform>%n val.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
         <translation>
-            <numerusform>%n minutė</numerusform>
-            <numerusform>%n minutės</numerusform>
-            <numerusform>%n minučių</numerusform>
+            <numerusform>%n min.</numerusform>
+            <numerusform>%n min.</numerusform>
+            <numerusform>%n min.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
         <translation>
-            <numerusform>%n secondė</numerusform>
-            <numerusform>%n secondės</numerusform>
-            <numerusform>%n sekundžių</numerusform>
+            <numerusform>%n sek.</numerusform>
+            <numerusform>%n sek.</numerusform>
+            <numerusform>%n sek.</numerusform>
         </translation>
     </message>
     <message>
@@ -16801,6 +17221,10 @@ IPv6.</translation>
         <source>Parallel ports</source>
         <comment>InformationElementType</comment>
         <translation type="vanished">Lygiagretieji prievadai</translation>
+    </message>
+    <message>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -752,7 +752,7 @@
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation>%1</translation>
+        <translation type="vanished">%1</translation>
     </message>
     <message>
         <source>Enable</source>
@@ -1059,6 +1059,37 @@
     <message>
         <source>Enable audio input</source>
         <translation>Audioeingabe aktivieren</translation>
+    </message>
+    <message>
+        <source>Scale to %1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished">&amp;Verschieben...</translation>
+    </message>
+    <message>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine logs pane</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1887,12 +1918,12 @@
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation>Nicht skalierte HiDPI-Auflösung</translation>
+        <translation type="vanished">Nicht skalierte HiDPI-Auflösung</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>aktiviert</translation>
+        <translation type="vanished">aktiviert</translation>
     </message>
     <message>
         <source>Menu-bar</source>
@@ -1947,7 +1978,7 @@
     <message>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>deaktiviert</translation>
+        <translation type="vanished">deaktiviert</translation>
     </message>
     <message>
         <source>Audio Output</source>
@@ -2808,6 +2839,21 @@
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
         <translation></translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <source>Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4274,11 +4320,11 @@
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>Verhindert die Skalierung des Gast-Bildschirminhaltes auf hochauflösenden Host-Bildschirmen.</translation>
+        <translation type="vanished">Verhindert die Skalierung des Gast-Bildschirminhaltes auf hochauflösenden Host-Bildschirmen.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>&amp;Nicht-skalierte HiDPI-Ausgabe</translation>
+        <translation type="vanished">&amp;Nicht-skalierte HiDPI-Ausgabe</translation>
     </message>
     <message>
         <source>Acceleration:</source>
@@ -4286,7 +4332,7 @@
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation>HiDPI-Unterstützung:</translation>
+        <translation type="vanished">HiDPI-Unterstützung:</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
@@ -4405,19 +4451,19 @@
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation>&amp;Verschlüsselung</translation>
+        <translation type="vanished">&amp;Verschlüsselung</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation>Aktiviert Verschlüsselung für diese virtuelle Maschine.</translation>
+        <translation type="vanished">Aktiviert Verschlüsselung für diese virtuelle Maschine.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation>&amp;Verschlüsselung aktivieren</translation>
+        <translation type="vanished">&amp;Verschlüsselung aktivieren</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation>Verschlüsselungs-C&amp;hiffre:</translation>
+        <translation type="vanished">Verschlüsselungs-C&amp;hiffre:</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
@@ -4425,7 +4471,7 @@
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation>Passwort für diese virtuelle Maschine.</translation>
+        <translation type="vanished">Passwort für diese virtuelle Maschine.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
@@ -4433,23 +4479,23 @@
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation>Bestätigt das Passwort für diese virtuelle Maschine.</translation>
+        <translation type="vanished">Bestätigt das Passwort für diese virtuelle Maschine.</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>Sie möchten diese virtuelle Maschine verschlüsseln. Diese Funktion benötigt die Installation des &lt;i&gt;%1&lt;/i&gt;. Bitte installieren Sie dieses Zusatzpaket von der VirtualBox-Webseite.</translation>
+        <translation type="vanished">Sie möchten diese virtuelle Maschine verschlüsseln. Diese Funktion benötigt die Installation des &lt;i&gt;%1&lt;/i&gt;. Bitte installieren Sie dieses Zusatzpaket von der VirtualBox-Webseite.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation>Verschlüsselungs-Chiffre nicht ausgewählt.</translation>
+        <translation type="vanished">Verschlüsselungs-Chiffre nicht ausgewählt.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation>Verschlüsselungspasswort nicht gesetzt.</translation>
+        <translation type="vanished">Verschlüsselungspasswort nicht gesetzt.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation>Verschlüsselungspasswörter stimmen nicht überein.</translation>
+        <translation type="vanished">Verschlüsselungspasswörter stimmen nicht überein.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
@@ -4463,6 +4509,46 @@
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
         <translation>Zeigt den Pfad an, wo Sicherungspunkte für diese virtuelle Maschine gespeichert werden. Beachten Sie, dass Sicherungspunkte viel Platz beanspruchen können.</translation>
+    </message>
+    <message>
+        <source>Disk Enc&amp;ryption</source>
+        <translation>Festplatten&amp;verschlüsselung</translation>
+    </message>
+    <message>
+        <source>When checked, disks attached to this virtual machine will be encrypted.</source>
+        <translation>Aktiviert die Verschlüsselung der Festplatten für die virtuelle Maschine.</translation>
+    </message>
+    <message>
+        <source>En&amp;able Disk Encryption</source>
+        <translation>Festplattenverschlüsselung &amp;aktivieren</translation>
+    </message>
+    <message>
+        <source>Disk Encryption C&amp;ipher:</source>
+        <translation>Festplatten-Verschlüsselungsch&amp;iffre:</translation>
+    </message>
+    <message>
+        <source>Holds the encryption password for disks attached to this virtual machine.</source>
+        <translation>Passwort für die Verschlüsselung der Festplatten dieser virtuelle Maschine.</translation>
+    </message>
+    <message>
+        <source>Confirms the disk encryption password.</source>
+        <translation>Bestätigt das Passwort für die Verschlüsselung der Festplatten.</translation>
+    </message>
+    <message>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation>Sie möchten die Festplatten dieser virtuelle Maschine verschlüsseln. Diese Funktion benötigt die Installation des &lt;i&gt;%1&lt;/i&gt;. Bitte installieren Sie dieses Zusatzpaket von der VirtualBox-Webseite.</translation>
+    </message>
+    <message>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation>Festplatten-Verschlüsselungschiffre nicht ausgewählt.</translation>
+    </message>
+    <message>
+        <source>Disk encryption password empty.</source>
+        <translation>Festplatten-Verschlüsselungspasswort nicht gesetzt.</translation>
+    </message>
+    <message>
+        <source>Disk encryption passwords do not match.</source>
+        <translation>Festplatten-Verschlüsselungspasswörter stimmen nicht überein.</translation>
     </message>
 </context>
 <context>
@@ -5230,6 +5316,11 @@
     <message>
         <source>&amp;Storage Devices</source>
         <translation>&amp;Massenspeicher</translation>
+    </message>
+    <message>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7324,6 +7415,10 @@
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die Änderungen die Sie vornehmen möchten erfordern, dass diese Festplatte von der Maschine abgelöst wird.&lt;/p&gt;&lt;p&gt;Sind Sie sicher, dass Sie die Festplatte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ablösen wollen?&lt;/p&gt;&lt;p&gt;Diese wird dann von den folgenden Maschinen abgelöst: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniToolBar</name>
@@ -7655,6 +7750,10 @@
     <message>
         <source>Show Toolbar Text</source>
         <translation>Toolbar-Text zeigen</translation>
+    </message>
+    <message>
+        <source>Select a destination folder to move the selected virtual machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8181,6 +8280,10 @@
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
         <translation>Manipulieren von VM-Sicherungspunkten. Zeigt die &lt;u&gt;Sicherungspunkte&lt;/u&gt; der aktuellen virtuellen Maschine und ermöglicht Operationen wie das &lt;u&gt;Erzeugen&lt;/u&gt; und &lt;u&gt;Löschen&lt;/u&gt; von Sicherungspunkten, das &lt;u&gt;Wiederherstellen&lt;/u&gt; eines bestimmten Sicherungspunktes sowie das Anzeigen der &lt;u&gt;Eigenschaften&lt;/u&gt;. Bestimmte Attribute der Sicherungspunkte können verändert werden, z. B. der &lt;u&gt;Name&lt;/u&gt; und die &lt;u&gt;Beschreibung&lt;/u&gt;.</translation>
     </message>
+    <message>
+        <source>Tool to display  virtual machine (VM) logs. </source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIUSBFilterItem</name>
@@ -8416,6 +8519,158 @@
         <source>&amp;Runtime Information</source>
         <translation>&amp;Laufzeit</translation>
     </message>
+    <message>
+        <source>&amp;Guest Session Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guest File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">Passwort</translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Löschen</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Umbenennen</translation>
+    </message>
+    <message>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Kopieren</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move one level up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste the copied item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the properties of the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -8435,82 +8690,288 @@
     </message>
 </context>
 <context>
-    <name>UIVMLogViewerWidget</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Close the search panel</source>
-        <translation>Schließt das Suchfeld</translation>
+        <translation type="vanished">Schließt das Suchfeld</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>&amp;Suche</translation>
+        <translation type="vanished">&amp;Suche</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>Geben Sie den Suchtext hier ein</translation>
+        <translation type="vanished">Geben Sie den Suchtext hier ein</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>&amp;Rückwärts</translation>
+        <translation type="vanished">&amp;Rückwärts</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>Durchsucht den Text rückwärts</translation>
+        <translation type="vanished">Durchsucht den Text rückwärts</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>&amp;Vorwärts</translation>
+        <translation type="vanished">&amp;Vorwärts</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>Durchsucht den Text vorwärts</translation>
+        <translation type="vanished">Durchsucht den Text vorwärts</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>Berücksichtige &amp;Groß- und Kleinschreibung</translation>
+        <translation type="vanished">Berücksichtige &amp;Groß- und Kleinschreibung</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Groß- und Kleinschreibung berücksichtigen (wenn ausgewählt) oder ignorieren</translation>
+        <translation type="vanished">Groß- und Kleinschreibung berücksichtigen (wenn ausgewählt) oder ignorieren</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>Suchtext nicht gefunden</translation>
+        <translation type="vanished">Suchtext nicht gefunden</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Keine Log-Dateien gefunden. Klicken Sie auf &lt;b&gt;Aktualisieren&lt;/b&gt;, um erneut im Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zu suchen.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Keine Log-Dateien gefunden. Klicken Sie auf &lt;b&gt;Aktualisieren&lt;/b&gt;, um erneut im Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zu suchen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>VirtualBox Log-Datei sichern als</translation>
+        <translation type="vanished">VirtualBox Log-Datei sichern als</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - VirtualBox Log-Anzeige</translation>
+        <translation type="vanished">%1 - VirtualBox Log-Anzeige</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>&amp;Aktualisieren</translation>
+        <translation type="vanished">&amp;Aktualisieren</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Sichern</translation>
+        <translation type="vanished">&amp;Sichern</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Schließen</translation>
+        <translation type="vanished">Schließen</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation>Filter</translation>
+        <translation type="vanished">Filter</translation>
     </message>
     <message>
         <source>Enter filtering string here</source>
-        <translation>Eingabe eines Filters</translation>
+        <translation type="vanished">Eingabe eines Filters</translation>
     </message>
     <message>
         <source>Fil&amp;ter</source>
-        <translation>Fil&amp;ter</translation>
+        <translation type="vanished">Fil&amp;ter</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerDialog</name>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerWidget</name>
+    <message>
+        <source>Delete the current bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all bookmarks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto selected bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Schließen</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter filtering string here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add filter term. (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The type of boolean operator for filter operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished">&amp;Suche</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished">Geben Sie den Suchtext hier ein</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished">Berücksichtige &amp;Groß- und Kleinschreibung</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished">Groß- und Kleinschreibung berücksichtigen (wenn ausgewählt) oder ignorieren</translation>
+    </message>
+    <message>
+        <source>Ma&amp;tch Whole Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search matches only complete words when checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished">Suchtext nicht gefunden</translation>
+    </message>
+    <message>
+        <source>%1 Matches Found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Viewer Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">VirtualBox Log-Datei sichern als</translation>
+    </message>
+    <message>
+        <source>&amp;Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">&amp;Aktualisieren</translation>
+    </message>
+    <message>
+        <source>Reload the log (F5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">&amp;Abspeichern...</translation>
+    </message>
+    <message>
+        <source>Save the log (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Keine Log-Dateien gefunden. Klicken Sie auf &lt;b&gt;Aktualisieren&lt;/b&gt;, um erneut im Ordner &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; zu suchen.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10861,6 +11322,10 @@
         <source>Audio</source>
         <comment>IndicatorType</comment>
         <translation>Audio</translation>
+    </message>
+    <message>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

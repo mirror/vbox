@@ -777,7 +777,7 @@
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>Enable</source>
@@ -1084,6 +1084,37 @@
     <message>
         <source>Enable audio input</source>
         <translation>Ενεργοποίηση εισόδου ήχου</translation>
+    </message>
+    <message>
+        <source>Scale to %1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished">Μετακίνηση...</translation>
+    </message>
+    <message>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine logs pane</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1896,12 +1927,12 @@
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation>Μη-κλιμακούμενη έξοδος γραφικών HiDPI</translation>
+        <translation type="vanished">Μη-κλιμακούμενη έξοδος γραφικών HiDPI</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Ενεργοποιημένη</translation>
+        <translation type="vanished">Ενεργοποιημένη</translation>
     </message>
     <message>
         <source>Menu-bar</source>
@@ -1961,7 +1992,7 @@
     <message>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Απενεργοποιημένη</translation>
+        <translation type="vanished">Απενεργοποιημένη</translation>
     </message>
     <message>
         <source>Audio Output</source>
@@ -2826,6 +2857,21 @@
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
         <translation>%1: %2</translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <source>Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4292,11 +4338,11 @@
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>Όταν επιλεγεί, τα περιεχόμενα της οθόνης του επισκέπτη δεν θα κλιμακωθούν για να αντισταθμίσουν την υψηλή ανάλυση οθόνης του οικοδεσπότη.</translation>
+        <translation type="vanished">Όταν επιλεγεί, τα περιεχόμενα της οθόνης του επισκέπτη δεν θα κλιμακωθούν για να αντισταθμίσουν την υψηλή ανάλυση οθόνης του οικοδεσπότη.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>Μη-κλιμακούμενη έξοδος γραφικών HiDPI</translation>
+        <translation type="vanished">Μη-κλιμακούμενη έξοδος γραφικών HiDPI</translation>
     </message>
     <message>
         <source>Acceleration:</source>
@@ -4304,7 +4350,7 @@
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation>Υποστηρίζει HiDPI:</translation>
+        <translation type="vanished">Υποστηρίζει HiDPI:</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
@@ -4423,19 +4469,19 @@
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation>Κρυπτογράφηση</translation>
+        <translation type="vanished">Κρυπτογράφηση</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation>Όταν επιλεγεί, ενεργοποιεί την κρυπτογράφηση για αυτή την εικονική μηχανή.</translation>
+        <translation type="vanished">Όταν επιλεγεί, ενεργοποιεί την κρυπτογράφηση για αυτή την εικονική μηχανή.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation>Ενεργοποίηση Κρυπτογράφησης</translation>
+        <translation type="vanished">Ενεργοποίηση Κρυπτογράφησης</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation>Κωδικοποίηση κρυπτογράφησης:</translation>
+        <translation type="vanished">Κωδικοποίηση κρυπτογράφησης:</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
@@ -4443,7 +4489,7 @@
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation>Δείχνει τον κωδικό που θα χρησιμοποιηθεί στην εικονική μηχανή.</translation>
+        <translation type="vanished">Δείχνει τον κωδικό που θα χρησιμοποιηθεί στην εικονική μηχανή.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
@@ -4451,23 +4497,23 @@
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation>Επιβεβαιώνει τον κωδικό που θα χρησιμοποιηθεί στην εικονική μηχανή.</translation>
+        <translation type="vanished">Επιβεβαιώνει τον κωδικό που θα χρησιμοποιηθεί στην εικονική μηχανή.</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>Προσπαθείτε να κρυπτογραφήσετε την εικονική μηχανή. Ωστόσο, αυτό απαιτεί να έχει εγκατασταθεί το &lt;i&gt;%1&lt;/i&gt;. Παρακαλούμε εγκαταστήστε το Πακέτο Επέκτασης από τον ιστότοπο του VirtualBox.</translation>
+        <translation type="vanished">Προσπαθείτε να κρυπτογραφήσετε την εικονική μηχανή. Ωστόσο, αυτό απαιτεί να έχει εγκατασταθεί το &lt;i&gt;%1&lt;/i&gt;. Παρακαλούμε εγκαταστήστε το Πακέτο Επέκτασης από τον ιστότοπο του VirtualBox.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation>Ο τύπος της κρυπτογράφησης δεν έχει καθοριστεί.</translation>
+        <translation type="vanished">Ο τύπος της κρυπτογράφησης δεν έχει καθοριστεί.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation>Κενός κωδικός κρυπτογράφησης.</translation>
+        <translation type="vanished">Κενός κωδικός κρυπτογράφησης.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation>Οι κωδικοί κρυπτογράφησης δεν ταιριάζουν.</translation>
+        <translation type="vanished">Οι κωδικοί κρυπτογράφησης δεν ταιριάζουν.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
@@ -4481,6 +4527,46 @@
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
         <translation>Δείχνει τη διαδρομή που θα αποθηκεύονται τα στιγμιότυπα αυτής της εικονικής μηχανής. Υπ&apos; όψιν οτι τα στιγμιότυπα μπορεί να καταλάβουν αρκετά μεγάλο χώρο αποθήκευσης.</translation>
+    </message>
+    <message>
+        <source>Disk Enc&amp;ryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, disks attached to this virtual machine will be encrypted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>En&amp;able Disk Encryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk Encryption C&amp;ipher:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the encryption password for disks attached to this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirms the disk encryption password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption password empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption passwords do not match.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5248,6 +5334,11 @@
     <message>
         <source>&amp;Storage Devices</source>
         <translation>Συσκευές Αποθήκευσης</translation>
+    </message>
+    <message>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7308,6 +7399,10 @@
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniToolBar</name>
@@ -7639,6 +7734,10 @@
     <message>
         <source>Show Toolbar Text</source>
         <translation>Εμφάνιση Κειμένου Γραμμής Εργαλείων</translation>
+    </message>
+    <message>
+        <source>Select a destination folder to move the selected virtual machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8110,6 +8209,10 @@
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
         <translation>Εργαλείο που ελέγχει τα στιγμιότυπα της εικονικής μηχανής (ΕΜ). Αντικατοπτρίζει &lt;u&gt;στιγμιότυπα&lt;/u&gt; που έχουν δημιουργηθεί για την επιλεγμένη ΕΜ και επιτρέπει λειτουργίες στιγμιοτύπων όπως &lt;u&gt;δημιουργία&lt;/u&gt;, &lt;u&gt;αφαίρεση&lt;/u&gt;, &lt;u&gt;επαναφορά&lt;/u&gt; (τρέχουσα κατάσταση) και εμφάνιση των ιδιοτήτων τους. Επιτρέπει την &lt;u&gt;επεξεργασία&lt;/u&gt; ιδιοτήτων των στιγμιοτύπων όπως &lt;u&gt;όνομα&lt;/u&gt; και &lt;u&gt;περιγραφή&lt;/u&gt;.</translation>
     </message>
+    <message>
+        <source>Tool to display  virtual machine (VM) logs. </source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIUSBFilterItem</name>
@@ -8356,6 +8459,158 @@
         <source>&amp;Runtime Information</source>
         <translation>Πληροφορίες Εκτέλεσης</translation>
     </message>
+    <message>
+        <source>&amp;Guest Session Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guest File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">Κωδικός</translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Διαγραφή</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Μετονομασία</translation>
+    </message>
+    <message>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Αντιγραφή</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move one level up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste the copied item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the properties of the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -8375,82 +8630,288 @@
     </message>
 </context>
 <context>
-    <name>UIVMLogViewerWidget</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Close the search panel</source>
-        <translation>Κλείσιμο του πίνακα αναζήτησης</translation>
+        <translation type="vanished">Κλείσιμο του πίνακα αναζήτησης</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>Εύρεση</translation>
+        <translation type="vanished">Εύρεση</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>Εισάγετε μία ακολουθία αναζήτησης</translation>
+        <translation type="vanished">Εισάγετε μία ακολουθία αναζήτησης</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>Προηγούμενο</translation>
+        <translation type="vanished">Προηγούμενο</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>Αναζήτηση προηγούμενου αποτελέσματος ακολουθίας</translation>
+        <translation type="vanished">Αναζήτηση προηγούμενου αποτελέσματος ακολουθίας</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>Επόμενο</translation>
+        <translation type="vanished">Επόμενο</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>Αναζήτηση επόμενου αποτελέσματος ακολουθίας</translation>
+        <translation type="vanished">Αναζήτηση επόμενου αποτελέσματος ακολουθίας</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>Ταίριασμα πεζών/κεφαλαίων</translation>
+        <translation type="vanished">Ταίριασμα πεζών/κεφαλαίων</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Πραγματοποιήτε αναζήτηση με ταίριασμα πεζών/κεφαλαίων (όταν είναι επιλεγμένο)</translation>
+        <translation type="vanished">Πραγματοποιήτε αναζήτηση με ταίριασμα πεζών/κεφαλαίων (όταν είναι επιλεγμένο)</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>Η ακολουθία δεν βρέθηκε</translation>
+        <translation type="vanished">Η ακολουθία δεν βρέθηκε</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Δεν βρέθηκαν αρχεία καταγραφής. Πατήστε το κουμπί &lt;b&gt;Ανανέωση&lt;/b&gt; για να επανασάρωση του καταλόγου με τα αρχεία καταγραφής &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Δεν βρέθηκαν αρχεία καταγραφής. Πατήστε το κουμπί &lt;b&gt;Ανανέωση&lt;/b&gt; για να επανασάρωση του καταλόγου με τα αρχεία καταγραφής &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>Αποθηκεύστε την καταγραφή VirtualBox ως</translation>
+        <translation type="vanished">Αποθηκεύστε την καταγραφή VirtualBox ως</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - Αναγνώστης Καταγραφών VirtualBox</translation>
+        <translation type="vanished">%1 - Αναγνώστης Καταγραφών VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>Ανανέωση</translation>
+        <translation type="vanished">Ανανέωση</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>Αποθήκευση</translation>
+        <translation type="vanished">Αποθήκευση</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Κλείσιμο</translation>
+        <translation type="vanished">Κλείσιμο</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation>Φίλτρο</translation>
+        <translation type="vanished">Φίλτρο</translation>
     </message>
     <message>
         <source>Enter filtering string here</source>
-        <translation>Εισάγετε μία ακολουθία φίλτρου</translation>
+        <translation type="vanished">Εισάγετε μία ακολουθία φίλτρου</translation>
     </message>
     <message>
         <source>Fil&amp;ter</source>
-        <translation>Φίλτρο</translation>
+        <translation type="vanished">Φίλτρο</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerDialog</name>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerWidget</name>
+    <message>
+        <source>Delete the current bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all bookmarks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto selected bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Κλείσιμο</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter filtering string here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add filter term. (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The type of boolean operator for filter operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished">Εύρεση</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished">Εισάγετε μία ακολουθία αναζήτησης</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished">Ταίριασμα πεζών/κεφαλαίων</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished">Πραγματοποιήτε αναζήτηση με ταίριασμα πεζών/κεφαλαίων (όταν είναι επιλεγμένο)</translation>
+    </message>
+    <message>
+        <source>Ma&amp;tch Whole Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search matches only complete words when checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished">Η ακολουθία δεν βρέθηκε</translation>
+    </message>
+    <message>
+        <source>%1 Matches Found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Viewer Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">Αποθηκεύστε την καταγραφή VirtualBox ως</translation>
+    </message>
+    <message>
+        <source>&amp;Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">Ανανέωση</translation>
+    </message>
+    <message>
+        <source>Reload the log (F5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">Αποθήκευση...</translation>
+    </message>
+    <message>
+        <source>Save the log (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Δεν βρέθηκαν αρχεία καταγραφής. Πατήστε το κουμπί &lt;b&gt;Ανανέωση&lt;/b&gt; για να επανασάρωση του καταλόγου με τα αρχεία καταγραφής &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10895,6 +11356,10 @@
         <source>Audio</source>
         <comment>IndicatorType</comment>
         <translation>Ήχος</translation>
+    </message>
+    <message>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

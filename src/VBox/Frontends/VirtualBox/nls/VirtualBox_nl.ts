@@ -781,7 +781,7 @@
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>Enable</source>
@@ -1096,6 +1096,37 @@
         <source>Po&amp;wer Off</source>
         <translation>Uit&amp;zetten</translation>
     </message>
+    <message>
+        <source>Scale to %1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished">&amp;Verplaatsen...</translation>
+    </message>
+    <message>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine logs pane</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -1287,7 +1318,7 @@
     </message>
     <message>
         <source>&lt;b&gt;The appliance is signed by an unverified certificate issued to &apos;%1&apos;. We recommend to only proceed with the importing if you are sure you should trust this entity.&lt;/b&gt;</source>
-        <translation>&lt;b&gt;De appliance is getekend door een ongeverifieerd certificaat uitgegeven door &apos;%1&apos;. We raden aan alleen met importeren door te gaan als je echt weet met wie je te maken hebt.&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;De appliance is getekend door een ongeverifieerd certificaat uitgegeven door &apos;%1&apos;. We raden aan alleen met importeren door te gaan als u echt weet met wie u te maken hebt.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>True</source>
@@ -1429,27 +1460,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Resultaatcode:</translation>
+        <translation>Resultaatcode:</translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Component:</translation>
+        <translation>Component:</translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Interface:</translation>
+        <translation>Interface:</translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Callee:</translation>
+        <translation>Callee:</translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Callee&amp;nbsp;RC: </translation>
+        <translation>Callee&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -1917,12 +1948,12 @@
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation>Ongeschaalde HiDPI Video Output</translation>
+        <translation type="vanished">Ongeschaalde HiDPI Video Output</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Ingeschakeld</translation>
+        <translation type="vanished">Ingeschakeld</translation>
     </message>
     <message>
         <source>Menu-bar</source>
@@ -1977,7 +2008,7 @@
     <message>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Audio Output</source>
@@ -2686,7 +2717,7 @@
     </message>
     <message>
         <source>Supports &amp;DHCP</source>
-        <translation>Ondersteunt &amp;DCPH</translation>
+        <translation>Ondersteunt &amp;DHCP</translation>
     </message>
     <message>
         <source>Supports &amp;IPv6</source>
@@ -2845,6 +2876,21 @@
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
         <translation>%1: %2</translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <source>Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3292,11 +3338,11 @@
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Toevoegen netwerk...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijderen netwerk...</translation>
     </message>
 </context>
 <context>
@@ -4251,11 +4297,11 @@
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>Als dit is ingesteld zal gastscherminhoud niet worden opgeschaald om hoge hostschermresoluties te compenseren.</translation>
+        <translation type="vanished">Als dit is ingesteld zal gastscherminhoud niet worden opgeschaald om hoge hostschermresoluties te compenseren.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>Gebruik ongeschaalde HiDPI Video Outp&amp;ut</translation>
+        <translation type="vanished">Gebruik ongeschaalde HiDPI Video Outp&amp;ut</translation>
     </message>
     <message>
         <source>Acceleration:</source>
@@ -4263,7 +4309,7 @@
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation>HiDPI-ondersteuning:</translation>
+        <translation type="vanished">HiDPI-ondersteuning:</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
@@ -4283,7 +4329,7 @@
     </message>
     <message>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
-        <translation>Geef hier de bestandsnaam op waaronder VirtualBox de opname moet opslaan.</translation>
+        <translation>Geef hier de bestandsnaam op waaronder VirtalBox de opname moet opslaan.</translation>
     </message>
     <message>
         <source>Selects the resolution (frame size) of the recorded video.</source>
@@ -4327,11 +4373,11 @@
     </message>
     <message>
         <source>When checked, VirtualBox will record the audio stream to video file as well.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal VirtualBox ook het geluid van de video opnemen.</translation>
     </message>
     <message>
         <source>&amp;Record Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Geluid opnemen</translation>
     </message>
 </context>
 <context>
@@ -4382,19 +4428,19 @@
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation>Ve&amp;rsleuteling</translation>
+        <translation type="vanished">Ve&amp;rsleuteling</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation>Als dit is ingesteld wordt versleuteling van deze machine ingeschakeld.</translation>
+        <translation type="vanished">Als dit is ingesteld wordt versleuteling van deze machine ingeschakeld.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation>Insch&amp;akelen versleuteling</translation>
+        <translation type="vanished">Insch&amp;akelen versleuteling</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation>Versleutelingscoder&amp;ing:</translation>
+        <translation type="vanished">Versleutelingscoder&amp;ing:</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
@@ -4402,7 +4448,7 @@
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation>Bevat het wachtwoord dat aan de virtuele machine moet worden toegewezen.</translation>
+        <translation type="vanished">Bevat het wachtwoord dat aan de virtuele machine moet worden toegewezen.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
@@ -4410,23 +4456,23 @@
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation>Bevestigd het wachtwoord dat aan de virtuele machine moet worden toegewezen.</translation>
+        <translation type="vanished">Bevestigd het wachtwoord dat aan de virtuele machine moet worden toegewezen.</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>U probeert deze virtuele machine te versleutelen. Hiervoor moet &lt;i&gt;%1&lt;/i&gt; zijn ge:installeerd. Installeer het Extention Pack van de downloadsite van VirtualBox.</translation>
+        <translation type="vanished">U probeert deze virtuele machine te versleutelen. Hiervoor moet &lt;i&gt;%1&lt;/i&gt; zijn ge:installeerd. Installeer het Extention Pack van de downloadsite van VirtalBox.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation>Versleutelingscoderingstype is niet gespecificeerd.</translation>
+        <translation type="vanished">Versleutelingscoderingstype is niet gespecificeerd.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation>Versleutelingswachtwoord is leeg.</translation>
+        <translation type="vanished">Versleutelingswachtwoord is leeg.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation>Versleutelingswachtwoorden komen niet overeen.</translation>
+        <translation type="vanished">Versleutelingswachtwoorden komen niet overeen.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
@@ -4440,6 +4486,46 @@
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
         <translation>Bevat het pad waar snapshots van deze virtuele machine worden opgeslagen. Wees er wel van bewust dat snapshots erg veel ruimte op de harde schijf kunnen innemen.</translation>
+    </message>
+    <message>
+        <source>Disk Enc&amp;ryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, disks attached to this virtual machine will be encrypted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>En&amp;able Disk Encryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk Encryption C&amp;ipher:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the encryption password for disks attached to this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirms the disk encryption password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption password empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption passwords do not match.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5214,6 +5300,11 @@
         <source>&amp;Storage Devices</source>
         <translation>Op&amp;slagapparaten</translation>
     </message>
+    <message>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>
@@ -5755,35 +5846,35 @@
     </message>
     <message>
         <source>Choose Medium Location</source>
-        <translation type="unfinished"></translation>
+        <translation>Mediumlocatie kiezen</translation>
     </message>
     <message>
         <source>Location can not be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Locatie mag niet leeg zijn.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly or indirectly, preserved when taking snapshots.</source>
-        <translation type="unfinished">Dit type medium is direct of indirect gekoppeld en wordt bewaard bij het nemen van snapshots.</translation>
+        <translation>Dit type medium is direct of indirect gekoppeld en wordt bewaard bij het nemen van snapshots.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, changes are wiped out the next time the virtual machine is started.</source>
-        <translation type="unfinished">Dit type medium is direct gekoppeld; bij de volgende start van de virtuele machine zijn alle veranderingen verdwenen.</translation>
+        <translation>Dit type medium is indirect gekoppeld; bij de volgende start van de virtuele machine zijn alle veranderingen verdwenen.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, ignored when taking snapshots.</source>
-        <translation type="unfinished">Dit type medium is direct gekoppeld en wordt genegeerd bij het nemen van snapshots.</translation>
+        <translation>Dit type medium is direct gekoppeld en wordt genegeerd bij het nemen van snapshots.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, allowed to be used concurrently by several machines.</source>
-        <translation type="unfinished">Dit type medium is direct gekoppeld; diverse machines mogen tegelijkertijd dit medium gebruiken.</translation>
+        <translation>Dit type medium is direct gekoppeld; diverse machines mogen tegelijkertijd dit medium gebruiken.</translation>
     </message>
     <message>
         <source>This type of medium is attached directly, and can be used by several machines.</source>
-        <translation type="unfinished">Dit type medium is direct gekoppeld en kan door diverse machines worden gebruikt.</translation>
+        <translation>Dit type medium is direct gekoppeld en kan door diverse machines worden gebruikt.</translation>
     </message>
     <message>
         <source>This type of medium is attached indirectly, so that one base medium can be used for several VMs which have their own differencing medium to store their modifications.</source>
-        <translation type="unfinished">Dit type medium is indirect gekoppeld. Hierdoor kan één basismedium worden gebruikt voor diverse VMs met ieder hun eigen differencingmachine om modificaties op te slaan.</translation>
+        <translation>Dit type medium is indirect gekoppeld. Hierdoor kan één basismedium worden gebruikt voor diverse VMs met ieder hun eigen differencingmachine om modificaties op te slaan.</translation>
     </message>
 </context>
 <context>
@@ -5852,7 +5943,7 @@
     </message>
     <message>
         <source>Copy selected disk image file</source>
-        <translation>Kopiëer geselecteerd disk-imagebestand</translation>
+        <translation>Kopiëren geselecteerd disk-imagebestand</translation>
     </message>
     <message>
         <source>&amp;Remove...</source>
@@ -5952,50 +6043,50 @@
     </message>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished">Kopiëer disk-imagebestand (%1)</translation>
+        <translation>Kopiëren disk-imagebestand (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished">Verwijderen disk-imagebestand (%1)</translation>
+        <translation>Verwijderen disk-imagebestand (%1)</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished">Vrijgeven disk-imagebestand (%1)</translation>
+        <translation>Vrijgeven disk-imagebestand (%1)</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation type="unfinished">Openen disk-imagebestand-eigenschappen(%1)</translation>
+        <translation>Openen disk-imagebestand-eigenschappen(%1)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Verversen disk-imagebestanden (%1)</translation>
+        <translation>Verversen disk-imagebestanden (%1)</translation>
     </message>
     <message>
         <source>Current extension (*.%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Huidige extensie (*.%1)</translation>
     </message>
     <message>
         <source>Choose the location of this medium</source>
-        <translation type="unfinished"></translation>
+        <translation>De locatie van dit medium kiezen</translation>
     </message>
     <message>
         <source>&amp;Move...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verplaatsen...</translation>
     </message>
     <message>
         <source>Move Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Verplaatsen disk-imagebestand (%1)</translation>
     </message>
     <message>
         <source>Move selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Verplaatsen geselecteerd disk-imagebestand</translation>
     </message>
 </context>
 <context>
     <name>UIMediumManagerWidget</name>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="vanished">Kopiëer disk-imagebestand (%1)</translation>
+        <translation type="vanished">Kopiëren disk-imagebestand (%1)</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
@@ -6259,7 +6350,7 @@
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Een fatale fout is opgetreden tijdens de werking van de virtuele machine! De virtuele machine zal worden uitgezet. Het is zinvol om de volgende foutboodschap naar het klembord te kopieren, wat helpt bij diagnose van het probleem:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Een fatale fout is opgetreden tijdens de werking van de virtuele machine! De virtuele machine zal worden uitgezet. Het is zinvol om de volgende foutboodschap naar het klembord te kopiëren, wat helpt bij diagnose van het probleem:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
@@ -6363,7 +6454,7 @@
     <message>
         <source>You are already running the most recent version of VirtualBox.</source>
         <translatorcomment>Tekst zo ivm uitvullen in mededelingschermpje, is terugmelding als je handmatig controleert op updates</translatorcomment>
-        <translation>U hebt de meest recente versie van VirtualBox.</translation>
+        <translation>U heeft de meest recente versie van VirtualBox.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -7273,14 +7364,18 @@
     </message>
     <message>
         <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan snapshot &lt;b&gt;%1&lt;/b&gt; van virtuele machine &lt;b&gt;%2&lt;/b&gt;.niet veranderen.</translation>
     </message>
     <message>
         <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Het is niet gelukt de virtuele schijf-image-opslag &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; aan te maken</translation>
     </message>
     <message>
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Voor de veranderingen die u wilt aanbrengen moet deze schijf worden losgekoppeld van de machines waar het aan gekoppeld zit.&lt;/p&gt;&lt;p&gt;Weet u zeker dat u schijf-imagebestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wilt loskoppelen?&lt;/p&gt;&lt;p&gt;Het betreft de volgende virtuele machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7615,6 +7710,10 @@
         <source>Show Toolbar Text</source>
         <translation>Toon werkbalktekst</translation>
     </message>
+    <message>
+        <source>Select a destination folder to move the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UISession</name>
@@ -7775,7 +7874,7 @@
     <name>UISnapshotDetailsWidget</name>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Current State&lt;/b&gt; item selected.&lt;br&gt;Press the &lt;b&gt;Take&lt;/b&gt; button if you wish to take a new snapshot.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;U heeft &lt;b&gt;Huidige Status&lt;/b&gt; geselecteerd.&lt;br&gt;Klik op de &lt;b&gt;Neem&lt;/b&gt;-knop als u een nieuw snapshot wilt nemen.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;U heeft &lt;b&gt;Huidige Status&lt;/b&gt; geselecteerd.&lt;br&gt;Klik op de &lt;b&gt;Nemen&lt;/b&gt;-knop als u een nieuw snapshot wilt nemen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Attributes</source>
@@ -7835,23 +7934,23 @@
     </message>
     <message>
         <source>Enter a name for the new snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestandsnaam voor nieuw snapshot...</translation>
     </message>
     <message>
         <source>Enter a name for this snapshot...</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestandsnaam voor dit snapshot...</translation>
     </message>
     <message>
         <source>Take</source>
-        <translation type="unfinished"></translation>
+        <translation>Nemen</translation>
     </message>
     <message>
         <source>Take snapshot on the basis of current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Snapshot maken van huidige staat van virtuele machine</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished">Neem snapshot (%1)</translation>
+        <translation>Snapshot nemen (%1)</translation>
     </message>
 </context>
 <context>
@@ -7915,7 +8014,7 @@
     </message>
     <message>
         <source>&amp;Take...</source>
-        <translation>&amp;Neem...</translation>
+        <translation>&amp;Nemen...</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
@@ -7935,7 +8034,7 @@
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation>Neem snapshot (%1)</translation>
+        <translation>Snapshot nemen (%1)</translation>
     </message>
     <message>
         <source>Delete Snapshot (%1)</source>
@@ -8060,7 +8159,7 @@
     </message>
     <message>
         <source>Tool to observe virtual storage media. Reflects all the chains of &lt;u&gt;virtual disks&lt;/u&gt; you have registered (per each storage type) within your virtual machines and allows for media operations like &lt;u&gt;copy&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;release&lt;/u&gt; (detach it from VMs where it is currently attached to) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; medium attributes like &lt;u&gt;type&lt;/u&gt;, &lt;u&gt;location/name&lt;/u&gt;, &lt;u&gt;description&lt;/u&gt; and &lt;u&gt;size&lt;/u&gt; (for dynamical storages only).</source>
-        <translation>Om virtuele opslagmedia mee te bekijken. Toont alle ketens van &lt;u&gt;virtuele schijven&lt;/u&gt; die je hebt geregistreerd (per opslagtype) binnen de virtuele machines en maakt mediabewerkingen als &lt;u&gt;kopiëren&lt;/u&gt;, &lt;u&gt;verwijderen&lt;/u&gt;, &lt;u&gt;vrijgeven&lt;/u&gt; (afkoppelen van VMs waar het op dat moment aan verbonden was) en het bekijken van hun eigenschappen mogenlijk. Steld in staat media-attributen te &lt;u&gt;bewerken&lt;/u&gt; als &lt;u&gt;type&lt;/u&gt;, &lt;u&gt;locatie/naam&lt;/u&gt;, &lt;u&gt;beschrijving&lt;/u&gt; en &lt;u&gt;grootte&lt;/u&gt; (alleen bij dynamische opslag).</translation>
+        <translation>Om virtuele opslagmedia mee te bekijken. Toont alle ketens van &lt;u&gt;virtuele schijven&lt;/u&gt; die u heeft geregistreerd (per opslagtype) binnen de virtuele machines en maakt mediabewerkingen als &lt;u&gt;kopiëren&lt;/u&gt;, &lt;u&gt;verwijderen&lt;/u&gt;, &lt;u&gt;vrijgeven&lt;/u&gt; (afkoppelen van VMs waar het op dat moment aan verbonden was) en het bekijken van hun eigenschappen mogenlijk. Steld in staat media-attributen te &lt;u&gt;bewerken&lt;/u&gt; als &lt;u&gt;type&lt;/u&gt;, &lt;u&gt;locatie/naam&lt;/u&gt;, &lt;u&gt;beschrijving&lt;/u&gt; en &lt;u&gt;grootte&lt;/u&gt; (alleen bij dynamische opslag).</translation>
     </message>
     <message>
         <source>Tool to control host-only network interfaces. Reflects &lt;u&gt;host-only networks&lt;/u&gt;, their DHCP servers and allows for operations on the networks like possibility to &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt; and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; various &lt;u&gt;attributes&lt;/u&gt; for host-only interface and corresponding DHCP server.</source>
@@ -8084,6 +8183,10 @@
     <message>
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
         <translation>Om virtuele machine (VM)-snapshots te bekijken. Toont &lt;u&gt;snapshots&lt;/u&gt; gemaakt voor de geselecteerde VM en staat snapshot-operaties toe als &lt;u&gt;aanmaken&lt;/u&gt;, &lt;u&gt;verwijderen&lt;/u&gt;, &lt;u&gt;terugzetten&lt;/u&gt; (maak huidig) alsmede het bekijken van hun eigenschappen. Maakt mogelijk snapshot attributen te &lt;u&gt;bewerken&lt;/u&gt; als &lt;u&gt;naam&lt;/u&gt; en &lt;u&gt;beschrijving&lt;/u&gt;.</translation>
+    </message>
+    <message>
+        <source>Tool to display  virtual machine (VM) logs. </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8335,6 +8438,158 @@
         <source>&amp;Runtime Information</source>
         <translation>&amp;Runtime-informatie</translation>
     </message>
+    <message>
+        <source>&amp;Guest Session Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guest File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">Wachtwoord</translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Verwijderen</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Hernoemen</translation>
+    </message>
+    <message>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move one level up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste the copied item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the properties of the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -8354,82 +8609,288 @@
     </message>
 </context>
 <context>
-    <name>UIVMLogViewerWidget</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Close the search panel</source>
-        <translation>Sluit het zoekpaneel</translation>
+        <translation type="vanished">Sluit het zoekpaneel</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>&amp;Zoek</translation>
+        <translation type="vanished">&amp;Zoek</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>Geef een zoektekst op</translation>
+        <translation type="vanished">Geef een zoektekst op</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>&amp;Vorige</translation>
+        <translation type="vanished">&amp;Vorige</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>Zoek achteruit naar zoektekst</translation>
+        <translation type="vanished">Zoek achteruit naar zoektekst</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>&amp;Volgende</translation>
+        <translation type="vanished">&amp;Volgende</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>Zoek vooruit naar zoektekst</translation>
+        <translation type="vanished">Zoek vooruit naar zoektekst</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>Onderscheid &amp;Hoofd- en kleine letters</translation>
+        <translation type="vanished">Onderscheid &amp;Hoofd- en kleine letters</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>Houd rekening met hoofd- en kleine letters (mits aangevinkt)</translation>
+        <translation type="vanished">Houd rekening met hoofd- en kleine letters (mits aangevinkt)</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>Gezochte tekst niet gevonden</translation>
+        <translation type="vanished">Gezochte tekst niet gevonden</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Geen logbestanden gevonden. Klik op de knop &lt;b&gt;Verversen&lt;/b&gt; om de map &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; met logs opnieuw te scannen.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Geen logbestanden gevonden. Klik op de knop &lt;b&gt;Verversen&lt;/b&gt; om de map &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; met logs opnieuw te scannen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>Sla VirtualBox-Log op als</translation>
+        <translation type="vanished">Sla VirtualBox-Log op als</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - VirtualBox-Log Viewer</translation>
+        <translation type="vanished">%1 - VirtualBox-Log Viewer</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>&amp;Verversen</translation>
+        <translation type="vanished">&amp;Verversen</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>&amp;Opslaan</translation>
+        <translation type="vanished">&amp;Opslaan</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>Sluiten</translation>
+        <translation type="vanished">Sluiten</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation>Filter</translation>
+        <translation type="vanished">Filter</translation>
     </message>
     <message>
         <source>Enter filtering string here</source>
-        <translation>Geef een filtertekst op</translation>
+        <translation type="vanished">Geef een filtertekst op</translation>
     </message>
     <message>
         <source>Fil&amp;ter</source>
-        <translation>Fil&amp;ter</translation>
+        <translation type="vanished">Fil&amp;ter</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerDialog</name>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerWidget</name>
+    <message>
+        <source>Delete the current bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all bookmarks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto selected bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Sluiten</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter filtering string here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add filter term. (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The type of boolean operator for filter operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished">&amp;Zoek</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished">Geef een zoektekst op</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished">Onderscheid &amp;Hoofd- en kleine letters</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished">Houd rekening met hoofd- en kleine letters (mits aangevinkt)</translation>
+    </message>
+    <message>
+        <source>Ma&amp;tch Whole Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search matches only complete words when checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished">Gezochte tekst niet gevonden</translation>
+    </message>
+    <message>
+        <source>%1 Matches Found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Viewer Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">Sla VirtualBox-Log op als</translation>
+    </message>
+    <message>
+        <source>&amp;Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">&amp;Verversen</translation>
+    </message>
+    <message>
+        <source>Reload the log (F5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">&amp;Opslaan...</translation>
+    </message>
+    <message>
+        <source>Save the log (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Geen logbestanden gevonden. Klik op de knop &lt;b&gt;Verversen&lt;/b&gt; om de map &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; met logs opnieuw te scannen.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -8472,11 +8933,11 @@
     <message>
         <source>%1_copy</source>
         <comment>copied virtual hard drive name</comment>
-        <translation type="vanished">%1_copy</translation>
+        <translation type="vanished">%1_kopie</translation>
     </message>
     <message>
         <source>Copy Virtual Hard Disk</source>
-        <translation type="vanished">Kopieer Virtuele Schijf</translation>
+        <translation type="vanished">Kopiëren Virtuele Schijf</translation>
     </message>
     <message>
         <source>Hard disk to copy</source>
@@ -8536,7 +8997,7 @@
     </message>
     <message>
         <source>Hard disk to &amp;copy</source>
-        <translation type="vanished">Te kopieren harde s&amp;chijf</translation>
+        <translation type="vanished">Te kopiëren harde s&amp;chijf</translation>
     </message>
     <message>
         <source>&amp;New hard disk to create</source>
@@ -8548,76 +9009,76 @@
     </message>
     <message>
         <source>Copy Virtual Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiëren Virtueel Schijfbestand</translation>
     </message>
     <message>
         <source>Disk image to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Te kopiëren schijf-image</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual disk image file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kies een virtueel schijfbestand om te kopiëren als u deze nog niet geselecteerd heeft. U kunt een schijfbestand kiezen uit de lijst of door op de mappenicoon naast de lijst te klikken en daar een schijfbestand te kiezen.&lt;p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual disk image file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een te kopiëren virtueel harde schijf-imagebestand...</translation>
     </message>
     <message>
         <source>Disk image file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestandstype schijf-image</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies het bestandstype dat u voor deze nieuwe virtuele schijf-image wilt gebruiken. Indien u niet van plan bent deze virtuele schijf-image met andersoortige virtualisatiesoftware te gebruiken kunt u deze instelling onveranderd laten.</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk image file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies of het nieuwe virtuele schijf-imagebestand naar de maximale grootte moet groeien door gebruik (dynamisch gealloceerd) of dat het op de maximale grootte moet worden aangemaakt (gefixeerde grootte).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; disk image file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Een &lt;b&gt;dynamisch gealloceerd&lt;/b&gt; virtuele schijf-imagebestand zal tijdens gebruik tot de aangegeven maximale grootte groeien (tot een maximum &lt;b&gt;gefixeerde grootte&lt;/b&gt;).Het schijf-imagebestand zal echter niet automatisch krimpen wanneer ruimte wordt vrijgemaakt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; disk image file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aanmaken van een virtuele schijf-imagebestand van &lt;b&gt;gefixeerde grootte&lt;/b&gt; kan op sommige systemen langer duren, maar is vaak sneller in het gebruik.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the disk image file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;U kunt er ook voor kiezen het virtueel schijf-imagebestand &lt;b&gt;te splitsen&lt;/b&gt; in meerdere bestanden van maximaal twee gigabytes elk. Dit is hoofdzakelijk handig indien u de virtuele machine wilt opslaan op verwijderbare USB-apparaten of op oudere systemen, waarvan sommige niet kunnen omgaan met erg grote bestanden.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een lokatie voor het nieuwe virtuele harde schijf-imagebestand</translation>
     </message>
     <message>
         <source>New disk image to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieuw aan te maken schijf-image</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual disk image file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ de naam van het nieuwe virtuele schijf-imagebestand in de ruimte beneden of klik op het mapicoontje, kies een andere map en maak daar het bestand in aan.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual disk image file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een lokatie voor het nieuwe virtuele harde schijf-imagebestand...</translation>
     </message>
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk image name</comment>
-        <translation type="unfinished">%1_copy</translation>
+        <translation>%1_kopie</translation>
     </message>
     <message>
         <source>Disk image to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Te &amp;kopiëren schijf-image</translation>
     </message>
     <message>
         <source>&amp;New disk image to create</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nieuw aan te maken schijf-image</translation>
     </message>
     <message>
         <source>Disk image file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestands&amp;type schijf-image</translation>
     </message>
 </context>
 <context>
@@ -8989,7 +9450,7 @@
     </message>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation>Dit zijn de virtuele machines binnen de appliance en voorgestelde instellingen voor de geïmporteerde VirtualBox machines. U kunt veel van de weergegeven eigenschappen aanpassen door op de items te dubbelklikken, of andere uitschakelen door middel van onderstaande keuzevakjes.</translation>
+        <translation>Dit zijn de virtuele machines binnen de appliance en voorgestelde instellingen voor de geïmporteerde VirtuelBox machines. U kunt veel van de weergegeven eigenschappen aanpassen door op de items te dubbelklikken, of andere uitschakelen door middel van onderstaande keuzevakjes.</translation>
     </message>
     <message>
         <source>Import Virtual Appliance</source>
@@ -9070,7 +9531,7 @@
     </message>
     <message>
         <source>Create Virtual Hard Disk</source>
-        <translation>Maak een nieuwe virtuele schijf</translation>
+        <translation>Nieuwe virtuele schijf aanmaken</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
@@ -10874,6 +11335,10 @@
         <source>Audio</source>
         <comment>IndicatorType</comment>
         <translation>Audio</translation>
+    </message>
+    <message>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

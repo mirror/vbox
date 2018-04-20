@@ -1078,7 +1078,7 @@
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>Enable</source>
@@ -1405,6 +1405,37 @@
     <message>
         <source>Enable audio input</source>
         <translation>فعالسازی صدای ورودی</translation>
+    </message>
+    <message>
+        <source>Scale to %1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine logs pane</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2517,12 +2548,12 @@
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation>خروجی ویدیو HiDPI مقیاس بندی نشده</translation>
+        <translation type="vanished">خروجی ویدیو HiDPI مقیاس بندی نشده</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>فعال شده</translation>
+        <translation type="vanished">فعال شده</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
@@ -2617,7 +2648,7 @@
     <message>
         <source>Disabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation>غیرفعال شده</translation>
+        <translation type="vanished">غیرفعال شده</translation>
     </message>
     <message>
         <source>Audio Output</source>
@@ -3789,6 +3820,21 @@
         <source>%1: %2</source>
         <comment>&apos;key: value&apos;, like &apos;Name: MyVM&apos;</comment>
         <translation>%1: %2</translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <source>Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5488,15 +5534,15 @@
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation>پشتیبانی HiDPI :</translation>
+        <translation type="vanished">پشتیبانی HiDPI :</translation>
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>وقتیکه انتخاب شده،محتویات نمایشگر مهمان به مقیاس بزرگتری برای جبران نسبت دید نمایشگر بزرگتر میزبان در نخواهد آمد.</translation>
+        <translation type="vanished">وقتیکه انتخاب شده،محتویات نمایشگر مهمان به مقیاس بزرگتری برای جبران نسبت دید نمایشگر بزرگتر میزبان در نخواهد آمد.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>استفاده از خروجی HiDPI مقیاس بندی نشده&amp;</translation>
+        <translation type="vanished">استفاده از خروجی HiDPI مقیاس بندی نشده&amp;</translation>
     </message>
     <message>
         <source>Acceleration:</source>
@@ -5687,19 +5733,19 @@
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation>رمزگذاری&amp;</translation>
+        <translation type="vanished">رمزگذاری&amp;</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation>وقتیکه انتخاب شده،رمزگذاری برای این ماشین مجازی </translation>
+        <translation type="vanished">وقتیکه انتخاب شده،رمزگذاری برای این ماشین مجازی </translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation>فعالسازی رمز گذاری&amp;</translation>
+        <translation type="vanished">فعالسازی رمز گذاری&amp;</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation>کُد گذاریِ رمزگذاری&amp;:</translation>
+        <translation type="vanished">کُد گذاریِ رمزگذاری&amp;:</translation>
     </message>
     <message>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
@@ -5711,7 +5757,7 @@
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation>رمزعبور اختصاص داده شده به ماشین مجازی را نگه می دارد</translation>
+        <translation type="vanished">رمزعبور اختصاص داده شده به ماشین مجازی را نگه می دارد</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
@@ -5719,23 +5765,23 @@
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation>تأیید رمز عبوری که به ماشین مجازی اختصاص داده شده است</translation>
+        <translation type="vanished">تأیید رمز عبوری که به ماشین مجازی اختصاص داده شده است</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>شما درصدد رمزگذاری این ماشین مجازی هستید. هرچند، این نیاز دارد که &lt;i&gt;%1&lt;/i&gt; نصب شود. لطفا بسته افزونه را از سایت ویرچوال باکس دانلود کنید.</translation>
+        <translation type="vanished">شما درصدد رمزگذاری این ماشین مجازی هستید. هرچند، این نیاز دارد که &lt;i&gt;%1&lt;/i&gt; نصب شود. لطفا بسته افزونه را از سایت ویرچوال باکس دانلود کنید.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation>نوع کُد گذاریِ رمزگذاری تعیین نشده است.</translation>
+        <translation type="vanished">نوع کُد گذاریِ رمزگذاری تعیین نشده است.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation>رمزعبور رمزگذاری خالی است</translation>
+        <translation type="vanished">رمزعبور رمزگذاری خالی است</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation>رمزعبور رمز گذاری مثل هم نیست</translation>
+        <translation type="vanished">رمزعبور رمز گذاری مثل هم نیست</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
@@ -5745,6 +5791,46 @@
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
         <translation>تغییری نده</translation>
+    </message>
+    <message>
+        <source>Disk Enc&amp;ryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, disks attached to this virtual machine will be encrypted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>En&amp;able Disk Encryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk Encryption C&amp;ipher:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the encryption password for disks attached to this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Confirms the disk encryption password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption password empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption passwords do not match.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6846,6 +6932,11 @@
     <message>
         <source>&amp;Storage Devices</source>
         <translation>&amp;دستگاه ذخیره ساز</translation>
+    </message>
+    <message>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9488,6 +9579,10 @@
         <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniToolBar</name>
@@ -9854,6 +9949,10 @@
     <message>
         <source>Show Toolbar Text</source>
         <translation>نمایش متن نوار ابزار</translation>
+    </message>
+    <message>
+        <source>Select a destination folder to move the selected virtual machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10340,6 +10439,10 @@
         <source>Tool to control virtual machine (VM) snapshots. Reflects &lt;u&gt;snapshots&lt;/u&gt; created for the currently selected VM and allows snapshot operations like &lt;u&gt;create&lt;/u&gt;, &lt;u&gt;remove&lt;/u&gt;, &lt;u&gt;restore&lt;/u&gt; (make current) and observe their properties. Allows to &lt;u&gt;edit&lt;/u&gt; snapshot attributes like &lt;u&gt;name&lt;/u&gt; and &lt;u&gt;description&lt;/u&gt;.</source>
         <translation>ابزاری برای کنترل ضبط وضعیت های ماشین مجازی. نشانگر &lt;u&gt;ضبط وضعیت&lt;/u&gt; ایجاد شده برای ماشین مجازی منتخب فعلی است و اجازه عملیات های ضبط وضعیت مثل &lt;u&gt;ایجاد&lt;/u&gt;, &lt;u&gt;حذف&lt;/u&gt;, &lt;u&gt;بازگردانی&lt;/u&gt; (ایجاد فعلی) و مشاهده مشخصات آنها را میدهد. اجازه &lt;u&gt;ویرایش&lt;/u&gt; صفات ضبط وضعیت مثل &lt;u&gt;نام&lt;/u&gt; و &lt;u&gt;توضیحات&lt;/u&gt; را می دهد.</translation>
     </message>
+    <message>
+        <source>Tool to display  virtual machine (VM) logs. </source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIUSBFilterItem</name>
@@ -10586,6 +10689,158 @@
         <source>&amp;Runtime Information</source>
         <translation>&amp;اطلاعات زمان اِجرا</translation>
     </message>
+    <message>
+        <source>&amp;Guest Session Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Guest File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">رمزعبور</translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">حذف</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">تغییرنام</translation>
+    </message>
+    <message>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">کپی</translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move one level up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste the copied item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the properties of the selected item(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -10605,82 +10860,288 @@
     </message>
 </context>
 <context>
-    <name>UIVMLogViewerWidget</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Close the search panel</source>
-        <translation>بستن پنل جستجو</translation>
+        <translation type="vanished">بستن پنل جستجو</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation>یاف&amp;تن</translation>
+        <translation type="vanished">یاف&amp;تن</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation>عبارت جستجو را اینجا وارد کنید</translation>
+        <translation type="vanished">عبارت جستجو را اینجا وارد کنید</translation>
     </message>
     <message>
         <source>&amp;Previous</source>
-        <translation>&amp;قبلی</translation>
+        <translation type="vanished">&amp;قبلی</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string</source>
-        <translation>جستجوی رخداد قبلی استرینگ</translation>
+        <translation type="vanished">جستجوی رخداد قبلی استرینگ</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>بعد&amp;ی</translation>
+        <translation type="vanished">بعد&amp;ی</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string</source>
-        <translation>جستجوی رخداد بعدی استرینگ</translation>
+        <translation type="vanished">جستجوی رخداد بعدی استرینگ</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation>حساس به &amp;حروف</translation>
+        <translation type="vanished">حساس به &amp;حروف</translation>
     </message>
     <message>
         <source>Perform case sensitive search (when checked)</source>
-        <translation>اِجرای جستجوی حساس به حروف (وقتیکه انتخاب شده)</translation>
+        <translation type="vanished">اِجرای جستجوی حساس به حروف (وقتیکه انتخاب شده)</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation>استرینگ یافت نشد</translation>
+        <translation type="vanished">استرینگ یافت نشد</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;فایل وقایع یافت نشد. دکمه &lt;b&gt;تازه کردن&lt;/b&gt; را برای اسکن مجدد پوشه وقایع &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; فشار دهید.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;فایل وقایع یافت نشد. دکمه &lt;b&gt;تازه کردن&lt;/b&gt; را برای اسکن مجدد پوشه وقایع &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; فشار دهید.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation>ذخیره وقایه ویرچوال باکس بعنوان</translation>
+        <translation type="vanished">ذخیره وقایه ویرچوال باکس بعنوان</translation>
     </message>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - نمایش دهنده وقایع ویرچوال باکس</translation>
+        <translation type="vanished">%1 - نمایش دهنده وقایع ویرچوال باکس</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation>تازه کرد&amp;ن</translation>
+        <translation type="vanished">تازه کرد&amp;ن</translation>
     </message>
     <message>
         <source>&amp;Save</source>
-        <translation>ذخیر&amp;ه</translation>
+        <translation type="vanished">ذخیر&amp;ه</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>بستن</translation>
+        <translation type="vanished">بستن</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation>فیلتر</translation>
+        <translation type="vanished">فیلتر</translation>
     </message>
     <message>
         <source>Enter filtering string here</source>
-        <translation>رشته فیلترینگ را اینجا وارد کنید</translation>
+        <translation type="vanished">رشته فیلترینگ را اینجا وارد کنید</translation>
     </message>
     <message>
         <source>Fil&amp;ter</source>
-        <translation>&amp;فیلتر</translation>
+        <translation type="vanished">&amp;فیلتر</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerDialog</name>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerWidget</name>
+    <message>
+        <source>Delete the current bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all bookmarks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto selected bookmark.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">بستن</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter filtering string here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add filter term. (Enter)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The filter terms list. Select one to remove or click the button on the right side to remove them all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The type of boolean operator for filter operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished">یاف&amp;تن</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished">عبارت جستجو را اینجا وارد کنید</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished">حساس به &amp;حروف</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished">اِجرای جستجوی حساس به حروف (وقتیکه انتخاب شده)</translation>
+    </message>
+    <message>
+        <source>Ma&amp;tch Whole Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search matches only complete words when checked</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished">استرینگ یافت نشد</translation>
+    </message>
+    <message>
+        <source>%1 Matches Found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Viewer Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">ذخیره وقایه ویرچوال باکس بعنوان</translation>
+    </message>
+    <message>
+        <source>&amp;Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Find&apos; Panel (Ctrl+F)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Filter&apos; Panel (Ctrl+T)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">تازه کرد&amp;ن</translation>
+    </message>
+    <message>
+        <source>Reload the log (F5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">ذخ&amp;یره...</translation>
+    </message>
+    <message>
+        <source>Save the log (Ctrl+S)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel (Ctrl+D)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Bookmarks&apos; Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show/Hide &apos;Settings&apos; Panel (Ctrl+P)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;فایل وقایع یافت نشد. دکمه &lt;b&gt;تازه کردن&lt;/b&gt; را برای اسکن مجدد پوشه وقایع &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; فشار دهید.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -13410,6 +13871,10 @@
         <source>Audio</source>
         <comment>IndicatorType</comment>
         <translation>صدا</translation>
+    </message>
+    <message>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
