@@ -64,9 +64,11 @@
 /* Quick fix so as not to update the version of glext.h we provide. */
 #ifdef GL_GLEXT_PROTOTYPES
 # if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-GLAPI void APIENTRY glFramebufferTexture2D (GLenum, GLenum, GLenum, GLuint, GLint);
 GLAPI void APIENTRY glBindFramebuffer (GLenum, GLuint);
 GLAPI void APIENTRY glBlitFramebuffer (GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum);
+GLAPI GLenum APIENTRY glCheckFramebufferStatus (GLenum);
+GLAPI void APIENTRY glDeleteFramebuffers (GLsizei, const GLuint *);
+GLAPI void APIENTRY glFramebufferTexture2D (GLenum, GLenum, GLenum, GLuint, GLint);
 GLAPI void APIENTRY glGenFramebuffers (GLsizei, GLuint *);
 # endif
 #endif

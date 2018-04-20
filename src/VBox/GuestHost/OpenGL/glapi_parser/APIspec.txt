@@ -10265,6 +10265,14 @@ param       framebuffers    const GLuint *
 category    GL_EXT_framebuffer_object
 chromium    extpack
 
+name        DeleteFramebuffers
+alias       DeleteFramebuffersEXT
+return      void
+param       n               GLsizei
+param       framebuffers    const GLuint *
+category    GL_EXT_framebuffer_object
+chromium    extpack
+
 name        GenFramebuffersEXT
 return      void
 param       n               GLsizei
@@ -10283,6 +10291,15 @@ props       get
 chromium    extpack
 
 name        CheckFramebufferStatusEXT
+return      GLenum
+param       target          GLenum
+paramprop   target          GL_FRAMEBUFFER_EXT GL_READ_FRAMEBUFFER_EXT GL_DRAW_FRAMEBUFFER_EXT
+category    GL_EXT_framebuffer_object
+props       get
+chromium    extpack
+
+name        CheckFramebufferStatus
+alias       CheckFramebufferStatusEXT
 return      GLenum
 param       target          GLenum
 paramprop   target          GL_FRAMEBUFFER_EXT GL_READ_FRAMEBUFFER_EXT GL_DRAW_FRAMEBUFFER_EXT
