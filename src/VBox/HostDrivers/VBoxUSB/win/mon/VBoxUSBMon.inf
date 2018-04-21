@@ -30,23 +30,27 @@ Provider          = %ORACLE%
 ;edit-DriverVer = 08/26/2008,2.00.0000
 DriverPackageType = KernelService
 Class             = System
-ClassGuid         = {ce4a90b5-1d8c-435d-b349-232ce55cb17f}
+ClassGuid         = {4d36e97d-e325-11ce-bfc1-08002be10318}
 ;cat CatalogFile = VBoxUSBMon.cat
 
 [Manufacturer]
 ;x86 %ORACLE%=ORACLE
 ;amd64 %ORACLE%=ORACLE, NTamd64
 
-[DefaultInstall.NT]
-CopyFiles = VBoxUSBMonitor.CopyFiles
+;x86   [ORACLE]
+;amd64 [ORACLE.NTamd64]
+%VBoxUSBMon.DrvDesc%=VBoxUSBMon, USB\VBoxUSBMon
 
-[VBoxUSBMonitor.CopyFiles]
+[VBoxUSBMon]
+CopyFiles = VBoxUSBMon.CopyFiles
+
+[VBoxUSBMon.CopyFiles]
 VBoxUSBMon.sys
 
-[DefaultInstall.NT.Services]
-AddService = VBoxUSBMon, 0x00000002, VBoxUSBMon_Service_Inst, VBoxUSBMon_EventLog_Inst
+[VBoxUSBMon.Services]
+AddService = VBoxUSBMon, 0x00000002, VBoxUSBMon.AddService, VBoxUSBMon.AddEventLog
 
-[VBoxUSBMon_Service_Inst]
+[VBoxUSBMon.AddService]
 DisplayName    = %VBoxUSBMon.SvcDesc%
 ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
 ;StartType      = 3                  ; SERVICE_DEMAND_START
@@ -54,10 +58,10 @@ StartType      = 1                  ; autostart to fix Vista problem
 ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
 ServiceBinary  = %12%\VBoxUSBMon.sys
 
-[VBoxUSBMon_EventLog_Inst]
-AddReg         = VBoxUSBMon_EventLog_AddReg
+[VBoxUSBMon.AddEventLog]
+AddReg         = VBoxUSBMon.AddEventLogRegistry
 
-[VBoxUSBMon_EventLog_AddReg]
+[VBoxUSBMon.AddEventLogRegistry]
 HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll"
 HKR,,TypesSupported,0x00010001,7
 
@@ -73,6 +77,7 @@ DefaultDestDir = 12   ; DIRID_DRIVERS
 [Strings]
 ORACLE               = "Oracle Corporation"
 VBoxUSBMon.SvcDesc   = "VirtualBox USB Monitor Driver"
+VBoxUSBMon.DrvDesc   = "VirtualBox USB Monitor Driver"
 VBoxUSBMon.MediaDesc = "VirtualBox USB Monitor Driver Disc"
 
 ; Useful constants
@@ -81,3 +86,4 @@ SERVICE_DEMAND_START  = 3
 SERVICE_ERROR_IGNORE  = 0
 REG_EXPAND_SZ         = 0x00020000
 REG_DWORD             = 0x00010001
+
