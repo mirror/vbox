@@ -963,7 +963,7 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 	$(call MSG_L1,Building Windows combined package)
 	$(QUIET)$(RM) -f -- $(wildcard $(subst r$(VBOX_SVN_REV),r*, \
 		$@ \
-		$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(PACKAGE_NAME_MULTIARCH_FINAL).cmd ))
+		$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(PACKAGE_NAME_MULTIARCH_FINAL).cmd ) )
 	$(if-expr defined(VBOX_WITH_MSM_INSTALL),,$(call VBOX_SIGN_FILE_FN,$(PACKAGE_NAME_MULTIARCH_COMMONCAB)))
 	$(REDIRECT) -C $(@D) -- \
 		$(VBoxStubBld_1_TARGET) -out $@ \
@@ -979,7 +979,7 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b1)' \
 		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
 		$(if-expr defined(VBOX_WITH_MSM_INSTALL), \
-		,'call sign-dual.cmd ../../../win.amd64/$(KBUILD_TYPE)/repack/$(notdir $(PACKAGE_NAME_MULTIARCH_COMMONCAB) || exit /b1') \
+		,'call sign-dual.cmd ../../../win.amd64/$(KBUILD_TYPE)/repack/$(notdir $(PACKAGE_NAME_MULTIARCH_COMMONCAB)) || exit /b1') \
 		'..\bin\VBoxStubBld.exe ^' \
 		'  -out $(@F) ^' \
 		'  -target-x86 $(PACKAGE_NAME_MULTIARCH.x86) ^' \
@@ -988,7 +988,7 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 		,'  -target-all ../../../win.amd64/$(KBUILD_TYPE)/repack/$(notdir $(PACKAGE_NAME_MULTIARCH_COMMONCAB)) ^' ) \
 		'  -stub ../bin/VBoxStub.exe || exit /b1' \
 		'$(VBOX_VCC_EDITBIN) /IntegrityCheck:NO $(@F) || exit /b1' \
-               'call sign-dual.cmd $(@F) || exit /b1
+		'call sign-dual.cmd $(@F) || exit /b1' \
 		) ) \
 		'@echo Create multiarch EXE: $(@F)'
 endif
@@ -1014,13 +1014,17 @@ $$(RePackScripts_0_OUTDIR)/sign-dual.cmd: | $$(dir $$@)
 		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b 1)' \
 		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b 1)' \
 		'if ".%1" == "." (echo No .cat file specified & exit /b 1)' \
+		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
 		'( $(call VBOX_SIGN_FILE_FN,%1,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,,&&) ) || exit /b1' \
+		) )
 
 $$(RePackScripts_0_OUTDIR)/sign-sha1.cmd: | $$(dir $$@)
 	$(APPEND) -nt "$@" \
 		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b 1)' \
 		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b 1)' \
 		'if ".%1" == "." (echo No .cat file specified & exit /b 1)' \
+		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
 		'( $(call VBOX_SIGN_FILE_FN,%1,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing,&&) ) || exit /b1' \
+		) )
 
 include $(FILE_KBUILD_SUB_FOOTER)
