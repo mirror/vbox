@@ -174,7 +174,7 @@ echo %_MY_OPT_BINDIR%\VBoxUSBMon.sys VBoxUSBMon.sys>>                           
 if "%_MY_OPT_WITH_PDB" == "1" echo %_MY_OPT_PDBDIR%\VBoxUSBMon.pdb VBoxUSBMon.pdb>>     "%_MY_OPT_DDF_FILE%"
 
 echo .Set DestinationDir=VMMR0>>                                                        "%_MY_OPT_DDF_FILE%"
-echo %_MY_OPT_BINDIR%\VMMR0.inf VMMR0.inf>>                                             "%_MY_OPT_DDF_FILE%"
+echo .\VMMR0.inf VMMR0.inf>>                                                            "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_BINDIR%\VMMR0.r0 VMMR0.r0>>                                               "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB" == "1" echo %_MY_OPT_PDBDIR%\VMMR0.pdb VMMR0.pdb>>               "%_MY_OPT_DDF_FILE%"
 echo %_MY_OPT_BINDIR%\VBoxDDR0.r0 VBoxDDR0.r0>>                                         "%_MY_OPT_DDF_FILE%"

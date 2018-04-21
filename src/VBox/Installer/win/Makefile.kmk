@@ -994,7 +994,7 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 endif
 
 #
-# Repackaging script installation target.
+# Repackaging scripts and files.
 #
 INSTALLS += RePackScripts
 RePackScripts_TEMPLATE = DUMMY
@@ -1004,10 +1004,14 @@ RePackScripts_SOURCES = \
 	Scripts/PackDriversForSubmission.cmd \
 	Scripts/UnpackBlessedDrivers.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-dual.cmd \
-	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd
+	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd \
+	$(RePackScripts_0_OUTDIR)/VMMR0.inf \
+	$(RePackScripts_0_OUTDIR)/VBoxExtPackPuel.inf
 RePackScripts_CLEAN = \
 	$(RePackScripts_0_OUTDIR)/sign-dual.cmd \
-	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd
+	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd \
+	$(RePackScripts_0_OUTDIR)/VMMR0.inf \
+	$(RePackScripts_0_OUTDIR)/VBoxExtPackPuel.inf
 
 $$(RePackScripts_0_OUTDIR)/sign-dual.cmd: | $$(dir $$@)
 	$(APPEND) -nt "$@" \
@@ -1026,5 +1030,14 @@ $$(RePackScripts_0_OUTDIR)/sign-sha1.cmd: | $$(dir $$@)
 		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
 		'( $(call VBOX_SIGN_FILE_FN,%1,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing,&&) ) || exit /b1' \
 		) )
+
+$$(RePackScripts_0_OUTDIR)/VMMR0.inf: $(PATH_SUB_CURRENT)/Scripts/VMMR0.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,RePackScripts,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+$$(RePackScripts_0_OUTDIR)/VBoxExtPackPuel.inf: $(PATH_SUB_CURRENT)/Scripts/VBoxExtPackPuel.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,RePackScripts,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
