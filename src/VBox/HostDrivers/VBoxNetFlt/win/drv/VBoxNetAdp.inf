@@ -87,8 +87,6 @@ HKR, Ndi,                         Service,             0, "VBoxNetAdp"
 HKR, Ndi\Interfaces,              UpperRange,          0, "ndis5"
 HKR, Ndi\Interfaces,              LowerRange,          0, "ethernet"
 
-[VBoxNetAdp.AddService]
-
 [Strings]
 Provider = "Oracle Corporation"
 VBoxNetAdp_Desc = "VirtualBox Host-Only Ethernet Adapter"
