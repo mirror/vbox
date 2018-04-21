@@ -423,7 +423,7 @@ ifeq ($(lang),en_US)
 	$(CP) -f -- "$(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl" "$(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl" \
        	"$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/"
 	$(APPEND) -tn "$$(VBOX_WIN_INST_REPACK_DIR)/2-link-$$(PACKAGE_NAME_LANG).cmd" \
-       	'if ".%KBUILD_DEVTOOLS%" == "." echo KBUILD_DEVTOOLS is not set' \
+       	'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
 		$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%,\
 		'$(VBOX_PATH_WIX)/light.exe -v -nologo ^' \
 		'  -loc files-VirtualBox_$(lang)/Language_$(lang).wxl ^' \
@@ -636,7 +636,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		do $(CP_EXT) -f -- "$$(DOLLAR){file}" "$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/"; done
 # Create repack script for this step.
 	$(APPEND) -tn "$(VBOX_WIN_INST_REPACK_DIR)/1-compile-VirtualBox_$(lang).cmd" \
-       	'if ".%KBUILD_DEVTOOLS%" == "." echo KBUILD_DEVTOOLS is not set' \
+       	'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
 		$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%,\
 		'$(VBOX_PATH_WIX)/candle.exe VirtualBox_$(lang).wix ^' \
 		'  -ext $(VBOX_PATH_WIX)/WixUIExtension.dll ^' \
@@ -927,8 +927,8 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi \
 
 # Create repack script for this step.
 	$(APPEND) -nt "$(VBOX_WIN_INST_REPACK_DIR)/3-multilingual-$(PACKAGE_NAME_LANG).cmd" \
-		'if ".%KBUILD_DEVTOOLS%" == "." echo KBUILD_DEVTOOLS is not set' \
-		'if ".%KBUILD_BIN_PATH%" == "." echo KBUILD_BIN_PATH is not set' \
+		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
+		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b1)' \
 		'copy /y  "$(<F)" "$(@F)" || exit /b1' \
 		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%,\
 		$(foreach lang,$(filter-out en_US,$(VBOX_INSTALLER_LANGUAGES)), \
@@ -936,11 +936,10 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi \
 			'cscript.exe /nologo $(VBOX_PATH_WISUBSTG) $(@F) $(lang).mst $(VBOX_BRAND_$(lang)_LANG_ID) || exit /b1') \
 		'cscript.exe /nologo $(VBOX_PATH_WISUBSTG) $(@F) || exit /b1' \
 		'cscript.exe /nologo $(VBOX_PATH_WISUMINFO) $(@F) $(VBOX_INS_PROD_LANG) || exit /b1' \
-		'( $(call VBOX_SIGN_FILE_FN,$(@F),$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing,&&) ) || exit /b1' \
+		'call sign-sha1.cmd $(@F) || exit /b1' \
 		) ) \
                'copy /y "$(@F)" "$(notdir $(PACKAGE_NAME_FINAL))" || exit /b1' \
 		'@echo Create multilanguage MSI: $(@F)'
-
 
 # Copy multilingual installer to bin.
 $(PACKAGE_NAME_FINAL): $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi | $$(dir $$@)
@@ -976,11 +975,11 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 	$(call VBOX_SIGN_FILE_FN,$@)
 # Create repack script for this step.
 	$(APPEND) -nt "$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(@F).cmd" \
-		'if ".%KBUILD_DEVTOOLS%" == "." echo KBUILD_DEVTOOLS is not set' \
-		'if ".%KBUILD_BIN_PATH%" == "." echo KBUILD_BIN_PATH is not set' \
+		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
+		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b1)' \
 		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
 		$(if-expr defined(VBOX_WITH_MSM_INSTALL), \
-		,'( $(call VBOX_SIGN_FILE_FN,../../../win.amd64/$(KBUILD_TYPE)/repack/$(notdir $(PACKAGE_NAME_MULTIARCH_COMMONCAB)),,,,,&&) ) || exit /b1') \
+		,'call sign-dual.cmd ../../../win.amd64/$(KBUILD_TYPE)/repack/$(notdir $(PACKAGE_NAME_MULTIARCH_COMMONCAB) || exit /b1') \
 		'..\bin\VBoxStubBld.exe ^' \
 		'  -out $(@F) ^' \
 		'  -target-x86 $(PACKAGE_NAME_MULTIARCH.x86) ^' \
@@ -989,7 +988,7 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 		,'  -target-all ../../../win.amd64/$(KBUILD_TYPE)/repack/$(notdir $(PACKAGE_NAME_MULTIARCH_COMMONCAB)) ^' ) \
 		'  -stub ../bin/VBoxStub.exe || exit /b1' \
 		'$(VBOX_VCC_EDITBIN) /IntegrityCheck:NO $(@F) || exit /b1' \
-		'( $(call VBOX_SIGN_FILE_FN,$(@F),,,,,&&) ) || exit /b1' \
+               'call sign-dual.cmd $(@F) || exit /b1
 		) ) \
 		'@echo Create multiarch EXE: $(@F)'
 endif
@@ -1002,7 +1001,26 @@ RePackScripts_TEMPLATE = DUMMY
 RePackScripts_INST = repack/
 RePackScripts_INSTTYPE = stage
 RePackScripts_SOURCES = \
-	Scripts/PackDriversForSubmission.cmd
+	Scripts/PackDriversForSubmission.cmd \
+	Scripts/UnpackBlessedDrivers.cmd \
+	$(RePackScripts_0_OUTDIR)/sign-dual.cmd \
+	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd
+RePackScripts_CLEAN = \
+	$(RePackScripts_0_OUTDIR)/sign-dual.cmd \
+	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd
 
+$$(RePackScripts_0_OUTDIR)/sign-dual.cmd: | $$(dir $$@)
+	$(APPEND) -nt "$@" \
+		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b 1)' \
+		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b 1)' \
+		'if ".%1" == "." (echo No .cat file specified & exit /b 1)' \
+		'( $(call VBOX_SIGN_FILE_FN,%1,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,,&&) ) || exit /b1' \
+
+$$(RePackScripts_0_OUTDIR)/sign-sha1.cmd: | $$(dir $$@)
+	$(APPEND) -nt "$@" \
+		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b 1)' \
+		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b 1)' \
+		'if ".%1" == "." (echo No .cat file specified & exit /b 1)' \
+		'( $(call VBOX_SIGN_FILE_FN,%1,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing,&&) ) || exit /b1' \
 
 include $(FILE_KBUILD_SUB_FOOTER)
