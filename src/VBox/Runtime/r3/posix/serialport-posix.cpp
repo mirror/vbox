@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2017 Oracle Corporation
+ * Copyright (C) 2017-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -107,6 +107,10 @@ typedef struct RTSERIALPORTINTERNAL
     bool                fBlocking;
     /** The current active config (we assume no one changes this behind our back). */
     struct termios      PortCfg;
+    /** Flag whether a custom baud rate was chosen (for hosts supporting this.). */
+    bool                fBaudrateCust;
+    /** The custom baud rate. */
+    uint32_t            uBaudRateCust;
 } RTSERIALPORTINTERNAL;
 /** Pointer to the internal serial port state. */
 typedef RTSERIALPORTINTERNAL *PRTSERIALPORTINTERNAL;
@@ -195,16 +199,24 @@ DECLINLINE(uint32_t) rtSerialPortGetBaudrateFromTermiosSpeed(speed_t enmSpeed)
  * @returns Speed identifier if available or B0 if no matching speed for the baud rate
  *          could be found.
  * @param   uBaudRate               The baud rate to convert.
+ * @param   pfBaudrateCust          Where to store the flag whether a custom baudrate was selected.
  */
-DECLINLINE(speed_t) rtSerialPortGetTermiosSpeedFromBaudrate(uint32_t uBaudRate)
+DECLINLINE(speed_t) rtSerialPortGetTermiosSpeedFromBaudrate(uint32_t uBaudRate, bool *pfBaudrateCust)
 {
+    *pfBaudrateCust = false;
+
     for (unsigned i = 0; i < RT_ELEMENTS(s_rtSerialPortBaudrateConv); i++)
     {
         if (s_rtSerialPortBaudrateConv[i].uBaudRateCfg == uBaudRate)
             return s_rtSerialPortBaudrateConv[i].iSpeedTermios;
     }
 
+#ifdef RT_OS_LINUX
+    *pfBaudrateCust = true;
+    return B38400;
+#else
     return B0;
+#endif
 }
 
 
@@ -216,6 +228,8 @@ DECLINLINE(speed_t) rtSerialPortGetTermiosSpeedFromBaudrate(uint32_t uBaudRate)
  */
 static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
 {
+    pThis->fBaudrateCust = false;
+    pThis->uBaudRateCust = 0;
     pThis->PortCfg.c_iflag = INPCK; /* Input parity checking. */
     cfsetispeed(&pThis->PortCfg, B9600);
     cfsetospeed(&pThis->PortCfg, B9600);
@@ -274,12 +288,14 @@ static int rtSerialPortSetDefaultCfg(PRTSERIALPORTINTERNAL pThis)
  * @param   pThis                   The internal serial port instance data.
  * @param   pCfg                    Pointer to the serial port config descriptor.
  * @param   pTermios                Pointer to the termios structure to fill.
+ * @param   pfBaudrateCust          Where to store the flag whether a custom baudrate was selected.
  * @param   pErrInfo                Additional error to be set when the conversion fails.
  */
-static int rtSerialPortCfg2Termios(PRTSERIALPORTINTERNAL pThis, PCRTSERIALPORTCFG pCfg, struct termios *pTermios, PRTERRINFO pErrInfo)
+static int rtSerialPortCfg2Termios(PRTSERIALPORTINTERNAL pThis, PCRTSERIALPORTCFG pCfg, struct termios *pTermios,
+                                   bool *pfBaudrateCust, PRTERRINFO pErrInfo)
 {
     RT_NOREF(pErrInfo); /** @todo Make use of the error info. */
-    speed_t enmSpeed = rtSerialPortGetTermiosSpeedFromBaudrate(pCfg->uBaudRate);
+    speed_t enmSpeed = rtSerialPortGetTermiosSpeedFromBaudrate(pCfg->uBaudRate, pfBaudrateCust);
     if (enmSpeed != B0)
     {
         tcflag_t const fCFlagMask = (CS5 | CS6 | CS7 | CS8 | CSTOPB | PARENB | PARODD | CMSPAR);
@@ -366,10 +382,6 @@ static int rtSerialPortCfg2Termios(PRTSERIALPORTINTERNAL pThis, PCRTSERIALPORTCF
     else
         return VERR_SERIALPORT_INVALID_BAUDRATE;
 
-#ifdef RT_OS_LINUX
-    /** @todo Handle custom baudrates supported by Linux. */
-#endif
-
     return VINF_SUCCESS;
 }
 
@@ -378,19 +390,25 @@ static int rtSerialPortCfg2Termios(PRTSERIALPORTINTERNAL pThis, PCRTSERIALPORTCF
  * Converts the given termios structure to an appropriate serial port config.
  *
  * @returns IPRT status code.
+ * @param   pThis                   The internal serial port instance data.
  * @param   pTermios                The termios structure to convert.
  * @param   pCfg                    The serial port config to fill in.
  */
-static int rtSerialPortTermios2Cfg(struct termios *pTermios, PRTSERIALPORTCFG pCfg)
+static int rtSerialPortTermios2Cfg(PRTSERIALPORTINTERNAL pThis, struct termios *pTermios, PRTSERIALPORTCFG pCfg)
 {
     int rc = VINF_SUCCESS;
     bool f5DataBits = false;
     speed_t enmSpeedIn = cfgetispeed(pTermios);
     Assert(enmSpeedIn == cfgetospeed(pTermios)); /* Should always be the same. */
 
-    pCfg->uBaudRate = rtSerialPortGetBaudrateFromTermiosSpeed(enmSpeedIn);
-    if (!pCfg->uBaudRate)
-        rc = VERR_SERIALPORT_INVALID_BAUDRATE;
+    if (!pThis->fBaudrateCust)
+    {
+        pCfg->uBaudRate = rtSerialPortGetBaudrateFromTermiosSpeed(enmSpeedIn);
+        if (!pCfg->uBaudRate)
+            rc = VERR_SERIALPORT_INVALID_BAUDRATE;
+    }
+    else
+        pCfg->uBaudRate = pThis->uBaudRateCust;
 
     switch (pTermios->c_cflag & CSIZE)
     {
@@ -936,7 +954,7 @@ RTDECL(int) RTSerialPortCfgQueryCurrent(RTSERIALPORT hSerialPort, PRTSERIALPORTC
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
 
-    return rtSerialPortTermios2Cfg(&pThis->PortCfg, pCfg);
+    return rtSerialPortTermios2Cfg(pThis, &pThis->PortCfg, pCfg);
 }
 
 
@@ -947,13 +965,37 @@ RTDECL(int) RTSerialPortCfgSet(RTSERIALPORT hSerialPort, PCRTSERIALPORTCFG pCfg,
     AssertReturn(pThis->u32Magic == RTSERIALPORT_MAGIC, VERR_INVALID_HANDLE);
 
     struct termios PortCfgNew; RT_ZERO(PortCfgNew);
-    int rc = rtSerialPortCfg2Termios(pThis, pCfg, &PortCfgNew, pErrInfo);
+    bool fBaudrateCust = false;
+    int rc = rtSerialPortCfg2Termios(pThis, pCfg, &PortCfgNew, &fBaudrateCust, pErrInfo);
     if (RT_SUCCESS(rc))
     {
         int rcPsx = tcflush(pThis->iFd, TCIOFLUSH);
         if (!rcPsx)
         {
-            rcPsx = tcsetattr(pThis->iFd, TCSANOW, &PortCfgNew);
+#ifdef RT_OS_LINUX
+            if (fBaudrateCust)
+            {
+                struct serial_struct SerLnx;
+                rcPsx = ioctl(pThis->iFd, TIOCGSERIAL, &SerLnx);
+                if (!rcPsx)
+                {
+                    SerLnx.custom_divisor = SerLnx.baud_base / pCfg->uBaudRate;
+                    if (!SerLnx.custom_divisor)
+                        SerLnx.custom_divisor = 1;
+                    SerLnx.flags &= ~ASYNC_SPD_MASK;
+                    SerLnx.flags |= ASYNC_SPD_CUST;
+                    rcPsx = ioctl(pThis->iFd, TIOCSSERIAL, &SerLnx);
+                }
+            }
+#else /* !RT_OS_LINUX */
+            /* Hosts not supporting custom baud rates should already fail in rtSerialPortCfg2Termios(). */
+            AssertMsgFailed(("Should not get here!\n"));
+#endif /* !RT_OS_LINUX */
+            pThis->fBaudrateCust = fBaudrateCust;
+            pThis->uBaudRateCust = pCfg->uBaudRate;
+
+            if (!rcPsx)
+                rcPsx = tcsetattr(pThis->iFd, TCSANOW, &PortCfgNew);
             if (rcPsx == -1)
                 rc = RTErrConvertFromErrno(errno);
             else
