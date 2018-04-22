@@ -1298,6 +1298,9 @@ static void usbMsdSuspendOrPowerOff(PPDMUSBINS pUsbIns)
             pThis->pReq = NULL;
         }
     }
+
+    if (pThis->Lun0.pIMediaEx)
+        pThis->Lun0.pIMediaEx->pfnNotifySuspend(pThis->Lun0.pIMediaEx);
 }
 
 
