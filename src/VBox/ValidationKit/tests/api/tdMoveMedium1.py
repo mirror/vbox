@@ -118,7 +118,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
                     or vboxcon.MediumFormatCapabilities_CreateDynamic not in aoDskFmtCaps:
                     continue
                 (asExts, aTypes) = oDskFmt.describeFileExtensions()
-                for i in range(0, len(asExts)):
+                for i in range(0, len(asExts)): #pylint: disable=consider-using-enumerate
                     if aTypes[i] is vboxcon.DeviceType_HardDisk:
                         sExt = '.' + asExts[i]
                         break

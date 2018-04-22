@@ -327,7 +327,7 @@ def openNoInherit(sFile, sMode = 'r'):
                     offComma = sMode.find(',');
                     if offComma < 0:
                         return open(sFile, sMode + 'N');
-                    return open(sFile, sMode[:offComma] + 'N' + sMode[offComma:]);
+                    return open(sFile, sMode[:offComma] + 'N' + sMode[offComma:]); # pylint: disable=bad-open-mode
 
             # Just in case.
             return open(sFile, sMode);
