@@ -26,8 +26,11 @@ rem
 set _MY_OPT_BINDIR=..\bin
 set _MY_OPT_PDBDIR=
 set _MY_OPT_WITH_PDB=1
+set _MY_OPT_EXTPACK=
+set _MY_OPT_WITH_EXTPACK=1
 set _MY_OPT_OUTPUT=
 set _MY_OPT_DDF_FILE=
+set _MY_OPT_ARCH=
 
 :argument_loop
 if ".%1" == "."             goto no_more_arguments
@@ -40,16 +43,22 @@ if ".%1" == "./?"           goto opt_h
 if ".%1" == ".-help"        goto opt_h
 if ".%1" == ".--help"       goto opt_h
 
+if ".%1" == ".-a"           goto opt_a
+if ".%1" == ".--arch"       goto opt_a
 if ".%1" == ".-b"           goto opt_b
 if ".%1" == ".--bindir"     goto opt_b
-if ".%1" == ".-o"           goto opt_o
-if ".%1" == ".--output"     goto opt_o
 if ".%1" == ".-d"           goto opt_d
 if ".%1" == ".--ddf"        goto opt_d
-if ".%1" == ".-p"           goto opt_p
-if ".%1" == ".--pdb"        goto opt_p
+if ".%1" == ".-e"           goto opt_e
+if ".%1" == ".--extpack"    goto opt_e
 if ".%1" == ".-n"           goto opt_n
 if ".%1" == ".--no-pdb"     goto opt_n
+if ".%1" == ".-o"           goto opt_o
+if ".%1" == ".--output"     goto opt_o
+if ".%1" == ".-p"           goto opt_p
+if ".%1" == ".--pdb"        goto opt_p
+if ".%1" == ".-x"           goto opt_x
+if ".%1" == ".--no-extpack" goto opt_x
 echo syntax error: Unknown option: %1
 echo               Try --help to list valid options.
 goto end_failed
@@ -58,6 +67,12 @@ goto end_failed
 shift
 shift
 goto argument_loop
+
+:opt_a
+if ".%2" == "."             goto syntax_error_missing_value
+if not "%2" == "x86" if not "%2" == "amd64" goto syntax_error_unknown_arch
+set _MY_OPT_ARCH=%2
+goto argument_loop_next_with_value
 
 :opt_b
 if ".%2" == "."             goto syntax_error_missing_value
@@ -69,11 +84,17 @@ if ".%2" == "."             goto syntax_error_missing_value
 set _MY_OPT_DDF_FILE=%2
 goto argument_loop_next_with_value
 
+:opt_e
+if ".%2" == "."             goto syntax_error_missing_value
+set _MY_OPT_EXTPACK=%2
+goto argument_loop_next_with_value
+
 :opt_h
 echo This script creates a .cab file containing all drivers needing blessing from
 echo Microsoft to run on recent Windows 10 installations.
 echo .
-echo Usage: PackDriversForSubmission.cmd [-b bindir] [-p pdbdir] [-n/--no-pdb] [-o output.cab] [-p output.ddf]
+echo Usage: PackDriversForSubmission.cmd [-b bindir] [-p pdbdir] [-n/--no-pdb]
+echo           [-e expack] [-x/--no-extpack] [-o output.cab] [-p output.ddf] [-a x86/amd64]
 echo .
 echo Warning! This script should normally be invoked from the repack directory w/o any parameters.
 goto end_failed
@@ -93,8 +114,17 @@ if ".%2" == "."             goto syntax_error_missing_value
 set _MY_OPT_OUTPUT=%2
 goto argument_loop_next_with_value
 
+:opt_x
+set _MY_OPT_WITH_EXTPACK=0
+shift
+goto argument_loop
+
 :syntax_error_missing_value
 echo syntax error: missing or empty option value after %1
+goto end_failed
+
+:syntax_error_unknown_arch
+echo syntax error: Unknown architecture: %2
 goto end_failed
 
 :error_bindir_does_not_exist
@@ -103,6 +133,10 @@ goto end_failed
 
 :error_pdbdir_does_not_exist
 echo syntax error: Specified PDB directory does not exist: "%_MY_OPT_PDBDIR%"
+goto end_failed
+
+:error_extpack_does_not_exist
+echo syntax error: Specified extension pack does not exist: "%_MY_OPT_EXTPACK%"
 goto end_failed
 
 :error_output_exists
@@ -122,13 +156,31 @@ if ".%_MY_OPT_PDBDIR%" == "."       set _MY_OPT_PDBDIR=%_MY_OPT_BINDIR%\..\stage
 if not exist "%_MY_OPT_PDBDIR%"     goto error_pdbdir_does_not_exist
 :no_pdbdir_validation
 
-if ".%_MY_OPT_OUTPUT%" == "." if exist "%_MY_OPT_BINDIR%\x86" set _MY_OPT_OUTPUT=VBoxDrivers-amd64.cab
-if ".%_MY_OPT_OUTPUT%" == "."       set _MY_OPT_OUTPUT=VBoxDrivers-x86.cab
+if "%_MY_OPT_WITH_EXTPACK" == "0"   goto no_extpack_validation
+if ".%_MY_OPT_EXTPACK%" == "."      set _MY_OPT_EXTPACK=%_MY_OPT_BINDIR%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
+if not exist "%_MY_OPT_EXTPACK%"    goto error_extpack_does_not_exist
+:no_extack_validation
+
+if ".%_MY_OPT_ARCH%" == "."         if exist "%_MY_OPT_BINDIR%\x86" set _MY_OPT_ARCH=amd64
+if ".%_MY_OPT_ARCH%" == "."         set _MY_OPT_ARCH=x86
+
+if ".%_MY_OPT_OUTPUT%" == "."       set _MY_OPT_OUTPUT=VBoxDrivers-%_MY_OPT_ARCH%.cab
 if exist "%_MY_OPT_OUTPUT%"         goto error_output_exists
 
 if ".%_MY_OPT_DDF_FILE%" == "."     set _MY_OPT_DDF_FILE=%_MY_OPT_OUTPUT%.ddf
 if exist "%_MY_OPT_DDF_FILE%"       goto error_ddf_exists
 
+
+rem
+rem Unpack the extension pack.
+rem We unpack it into the bin directory in the usual location.
+rem
+if "%_MY_OPT_WITH_EXTPACK" == "0"   goto no_extpack_unpack
+set _MY_EXTPACK_DIR=%_MY_OPT_BINDIR%\ExtensionPacks\Oracle_VM_VirtualBox_Extension_Pack
+if not exist "%_MY_OPT_BINDIR%\ExtensionPacks"  ( mkdir "%_MY_OPT_BINDIR%\ExtensionPacks" || goto end_failed )
+if not exist "%_MY_EXTPACK_DIR%"                ( mkdir "%_MY_EXTPACK_DIR%" || goto end_failed )
+"%_MY_OPT_BINDIR%\tools\RTTar.exe" -xzf "%_MY_OPT_EXTPACK%"  -C "%_MY_EXTPACK_DIR%" || goto _end_failed
+:no_extpack_unpack
 
 rem
 rem Create the DDF file for makecab.
@@ -183,6 +235,14 @@ if not exist %_MY_OPT_BINDIR%\VBoxDD2R0.r0 goto no_vboxdd2r0
 echo %_MY_OPT_BINDIR%\VBoxDD2R0.r0 VBoxDD2R0.r0>>                                       "%_MY_OPT_DDF_FILE%"
 if "%_MY_OPT_WITH_PDB" == "1" echo %_MY_OPT_PDBDIR%\VBoxDD2R0.pdb VBoxDD2R0.pdb>>       "%_MY_OPT_DDF_FILE%"
 :no_vboxdd2r0
+
+if "%_MY_OPT_WITH_EXTPACK" == "0"   goto no_extpack_ddf
+echo .Set DestinationDir=VBoxExtPackPuel>>                                              "%_MY_OPT_DDF_FILE%"
+echo .\VBoxExtPackPuel.inf VBoxExtPackPuel.inf>>                                        "%_MY_OPT_DDF_FILE%"
+echo %_MY_EXTPACK_DIR%\win.%_MY_OPT_ARCH%\VBoxEhciR0.r0 VBoxEhciR0.r0>>                 "%_MY_OPT_DDF_FILE%"
+echo %_MY_EXTPACK_DIR%\win.%_MY_OPT_ARCH%\VBoxNvmeR0.r0 VBoxNvmeR0.r0>>                 "%_MY_OPT_DDF_FILE%"
+echo %_MY_EXTPACK_DIR%\win.%_MY_OPT_ARCH%\VBoxPciRawR0.r0 VBoxPciRawR0.r0>>             "%_MY_OPT_DDF_FILE%"
+:no_extpack_ddf
 
 rem
 rem Create the cabient file.
