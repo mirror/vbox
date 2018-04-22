@@ -783,17 +783,17 @@ int main(int argc, char *argv[])
                 }
                 break;
             case 'c':
-                if (!RTStrICmp(ValueUnion.psz, "5"))
+                if (ValueUnion.u32 == 5)
                     g_SerialPortCfg.enmDataBitCount = RTSERIALPORTDATABITS_5BITS;
-                else if (!RTStrICmp(ValueUnion.psz, "6"))
+                else if (ValueUnion.u32 == 6)
                     g_SerialPortCfg.enmDataBitCount = RTSERIALPORTDATABITS_6BITS;
-                else if (!RTStrICmp(ValueUnion.psz, "7"))
+                else if (ValueUnion.u32 == 7)
                     g_SerialPortCfg.enmDataBitCount = RTSERIALPORTDATABITS_7BITS;
-                else if (!RTStrICmp(ValueUnion.psz, "8"))
+                else if (ValueUnion.u32 == 8)
                     g_SerialPortCfg.enmDataBitCount = RTSERIALPORTDATABITS_8BITS;
                 else
                 {
-                    RTPrintf("Unknown data bitcount \"%s\" given\n", ValueUnion.psz);
+                    RTPrintf("Unknown data bitcount \"%u\" given\n", ValueUnion.u32);
                     return RTEXITCODE_FAILURE;
                 }
                 break;
