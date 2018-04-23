@@ -36,11 +36,9 @@ DefaultDestDir = 12
 VBoxVMMInstall.Files = 12
 
 [Manufacturer]
-;x86 %ORACLE%=VBoxVMM
-;amd64 %ORACLE%=VBoxVMM, NTamd64
+%ORACLE%=VBoxVMM@COMMA-NT-ARCH@
 
-;x86 [VBoxVMM]
-;amd64 [VBoxVMM.NTamd64]
+[VBoxVMM@DOT-NT-ARCH@]
 %VBoxVMM.DrvDesc% = VBoxVMMInstall, root\VBoxVMM
 
 [VBoxVMMInstall]

@@ -27,7 +27,6 @@
 [Version]
 Signature="$Windows NT$"
 Class=System
-; ClassGuid={ce4a90b5-1d8c-435d-b349-232ce55cb17f} - not okay with system according to InfVerify
 ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
 Provider=%ORACLE%
 ;edit-DriverVer=08/26/2008,2.00.0000
@@ -37,28 +36,32 @@ DriverPackageType=KernelService
 [DestinationDirs]
 DefaultDestDir = 12
 
-[DefaultInstall]
-CopyFiles=VBoxDrv.CopyFiles
-
-[DefaultInstall.Services]
-AddService=VBoxDrv,0x00000002,VBoxDrv_Service
+;[DefaultInstall@DOT-NT-ARCH@]
+;CopyFiles=VBoxDrv_CopyFiles
+;
+;[DefaultInstall@DOT-NT-ARCH@.Services]
+;AddService=VBoxDrv,0x00000002,VBoxDrv_Service
 
 [Manufacturer]
-;x86 %ORACLE%=ORACLE
-;amd64 %ORACLE%=ORACLE, NTamd64
+%ORACLE%=Oracle@COMMA-NT-ARCH@
 
 ; Models section (referenced by [Manufacturer]).
-;x86 [Oracle]
-;amd64 [Oracle.ntamd64]
-%VBoxDrv.DRVDESC%=DefaultInstall,root\VBoxDrv
+[Oracle@DOT-NT-ARCH@]
+%VBoxDrv.DRVDESC%=VBoxDrvInstall,root\VBoxDrv
+
+[VBoxDrvInstall@DOT-NT-ARCH@]
+CopyFiles=VBoxDrv_CopyFiles
+
+[VBoxDrvInstall@DOT-NT-ARCH@.Services]
+AddService=VBoxDrv,0x00000002,VBoxDrv_Service
 
 [SourceDisksFiles]
 VBoxDrv.sys=1
 
 [SourceDisksNames]
-1=%DISK_NAME%,
+1=%VBoxDrv.DSKDESC%,
 
-[VBoxDrv.CopyFiles]
+[VBoxDrv_CopyFiles]
 VBoxDrv.sys
 
 [VBoxDrv_Service]
@@ -73,4 +76,4 @@ ServiceBinary  = %12%\VBoxDrv.sys
 ORACLE = "Oracle Corporation"
 VBoxDrv.SVCDESC = "VirtualBox Service"
 VBoxDrv.DRVDESC = "VirtualBox Driver"
-DISK_NAME = "VirtualBox Driver Installation Disk"
+VBoxDrv.DSKDESC = "VirtualBox Driver Installation Disk"

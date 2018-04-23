@@ -3630,6 +3630,8 @@ endif
 VBOX_EDIT_INF32_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') \
 	-e 's/^;x86  *//' \
 	-e '/^;amd64 /d' \
+	-e 's/@DOT-NT-ARCH@//' \
+	-e 's/@COMMA-NT-ARCH@//' \
 	-e 's/^;edit-DriverVer.*/DriverVer = $(date-utc %m\/%d\/%Y),$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)/' \
 	--output $(2) \
 	$(1)
@@ -3640,6 +3642,8 @@ VBOX_EDIT_INF64_FN = $(SED) \
 	$(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d')\
 	-e 's/^;amd64  *//' \
 	-e '/^;x86 /d' \
+	-e 's/@DOT-NT-ARCH@/.ntamd64/' \
+	-e 's/@COMMA-NT-ARCH@/,ntamd64/' \
 	-e 's/^;edit-DriverVer.*/DriverVer = $(date-utc %m\/%d\/%Y),$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)/' \
 	--output $(2) \
 	$(1)
