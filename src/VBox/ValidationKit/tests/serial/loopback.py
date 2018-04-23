@@ -48,6 +48,7 @@ class SerialLoopbackTcpServ(object):
         self.oConn = None;
         self.oSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         self.oSock.settimeout(iTimeout);
+        self.oSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1);
         self.oSock.bind((sHost, int(sPort)));
         self.oSock.listen(1);
         self.iTimeout = iTimeout;
@@ -55,7 +56,16 @@ class SerialLoopbackTcpServ(object):
     def __del__(self):
         if self.oConn is not None:
             self.oConn.close();
+        if self.oSock is not None:
+            self.oSock.close();
+            self.oSock = None;
+
+    def shutdown(self):
+        if self.oConn is not None:
+            self.oConn.close();
+            self.oConn = None;
         self.oSock.close();
+        self.oSock = None;
 
     def pumpIo(self):
         """
@@ -84,7 +94,13 @@ class SerialLoopbackTcpClient(object):
         self.iTimeout = iTimeout;
 
     def __del__(self):
-        self.oConn.close();
+        if self.oConn is not None:
+            self.oConn.close();
+
+    def shutdown(self):
+        if self.oConn is not None:
+            self.oConn.close();
+            self.oConn = None;
 
     def pumpIo(self):
         """
@@ -112,7 +128,16 @@ class SerialLoopbackNamedPipeServ(object):
     def __del__(self):
         if self.oConn is not None:
             self.oConn.close();
+        if self.oSock is not None:
+            self.oSock.close();
+            self.oSock = None;
+
+    def shutdown(self):
+        if self.oConn is not None:
+            self.oConn.close();
+            self.oConn = None;
         self.oSock.close();
+        self.oSock = None;
 
     def pumpIo(self):
         """
@@ -140,7 +165,13 @@ class SerialLoopbackNamedPipeClient(object):
         self.iTimeout = iTimeout;
 
     def __del__(self):
-        self.oConn.close();
+        if self.oConn is not None:
+            self.oConn.close();
+
+    def shutdown(self):
+        if self.oConn is not None:
+            self.oConn.close();
+            self.oConn = None;
 
     def pumpIo(self):
         """
@@ -195,6 +226,7 @@ class SerialLoopback(object):
         self.oLock.acquire();
         self.fShutdown = True;
         self.oLock.release();
+        self.oIoPumper.shutdown();
 
     def isShutdown(self):
         """
