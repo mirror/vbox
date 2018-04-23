@@ -1414,7 +1414,7 @@ class UsbGadget(object):
         """
         return (self.iBusId, self.iDevId);
 
-    def connectTo(self, cMsTimeout, sHostname, uPort = None, fUsbIpSupport = True, cMsIdleFudge = 0):
+    def connectTo(self, cMsTimeout, sHostname, uPort = None, fUsbIpSupport = True, cMsIdleFudge = 0, fTryConnect = False):
         """
         Connects to the specified target device.
         Returns True on Success.
@@ -1430,7 +1430,7 @@ class UsbGadget(object):
                       (cMsTimeout, sHostname, uPort, cMsIdleFudge));
         try:
             oTransport = TransportTcp(sHostname, uPort);
-            self.oUtsSession = Session(oTransport, cMsTimeout, cMsIdleFudge);
+            self.oUtsSession = Session(oTransport, cMsTimeout, cMsIdleFudge, fTryConnect);
 
             if self.oUtsSession is not None:
                 fDone = self.oUtsSession.waitForTask(30*1000);

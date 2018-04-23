@@ -383,7 +383,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
         oUsbGadget = usbgadget.UsbGadget();
         reporter.log('Connecting to UTS: ' + sGadgetHost);
-        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost, uPort = uGadgetPort);
+        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost, uPort = uGadgetPort, fTryConnect = True);
         if fRc is True:
             reporter.log('Connect succeeded');
             self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);
@@ -431,7 +431,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
         oUsbGadget = usbgadget.UsbGadget();
         reporter.log('Connecting to UTS: ' + sGadgetHost);
-        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost,  uPort = uGadgetPort);
+        fRc = oUsbGadget.connectTo(30 * 1000, sGadgetHost,  uPort = uGadgetPort, fTryConnect = True);
         if fRc is True:
             self.oVBox.host.addUSBDeviceSource('USBIP', sGadgetHost, sGadgetHost + (':%s' % oUsbGadget.getUsbIpPort()), [], []);
 
