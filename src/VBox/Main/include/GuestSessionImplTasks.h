@@ -26,6 +26,7 @@
 #include "ThreadTask.h"
 
 #include <iprt/isofs.h> /* For UpdateAdditions. */
+#include <iprt/fs.h> /* For PCRTFSOBJINFO. */
 
 #include <vector>
 
