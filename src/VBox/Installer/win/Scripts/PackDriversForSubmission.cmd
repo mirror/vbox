@@ -176,6 +176,7 @@ rem Unpack the extension pack.
 rem We unpack it into the bin directory in the usual location.
 rem
 if "%_MY_OPT_WITH_EXTPACK" == "0"   goto no_extpack_unpack
+set PATH=%PATH%;%_MY_OPT_BINDIR%
 set _MY_EXTPACK_DIR=%_MY_OPT_BINDIR%\ExtensionPacks\Oracle_VM_VirtualBox_Extension_Pack
 if not exist "%_MY_OPT_BINDIR%\ExtensionPacks"  ( mkdir "%_MY_OPT_BINDIR%\ExtensionPacks" || goto end_failed )
 if not exist "%_MY_EXTPACK_DIR%"                ( mkdir "%_MY_EXTPACK_DIR%" || goto end_failed )
