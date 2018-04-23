@@ -180,7 +180,7 @@ sobind(PNATState pData, struct socket *so)
     int opt;
     int binderr;
     int ret;
-    
+
     /* do we need to bind the socket to specific host address/port? */
     if (pData->bindIP.s_addr == INADDR_ANY && !fSamePorts)
         return 0;
@@ -195,7 +195,7 @@ sobind(PNATState pData, struct socket *so)
     self.sin_family = AF_INET;
     self.sin_addr = pData->bindIP;
     self.sin_port = fSamePorts ? so->so_lport : 0;
-    
+
     Log2(("NAT: binding guest %RTnaipv4:%d to host %RTnaipv4:%d\n",
           so->so_laddr.s_addr, ntohs(so->so_lport),
           self.sin_addr.s_addr, ntohs(self.sin_port)));
