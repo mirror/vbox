@@ -198,22 +198,6 @@ static void vbox_ttm_io_mem_free(struct ttm_bo_device *bdev,
 {
 }
 
-static int vbox_bo_move(struct ttm_buffer_object *bo,
-			bool evict, bool interruptible,
-			bool no_wait_gpu, struct ttm_mem_reg *new_mem)
-{
-	int r;
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0) && !defined(RHEL_74)
-	r = ttm_bo_move_memcpy(bo, evict, no_wait_gpu, new_mem);
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) && !defined(RHEL_74)
-	r = ttm_bo_move_memcpy(bo, evict, interruptible, no_wait_gpu, new_mem);
-#else
-	r = ttm_bo_move_memcpy(bo, interruptible, no_wait_gpu, new_mem);
-#endif
-	return r;
-}
-
 static void vbox_ttm_backend_destroy(struct ttm_tt *tt)
 {
 	ttm_tt_fini(tt);
@@ -244,31 +228,44 @@ static struct ttm_tt *vbox_ttm_tt_create(struct ttm_bo_device *bdev,
 	return tt;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
 static int vbox_ttm_tt_populate(struct ttm_tt *ttm)
 {
 	return ttm_pool_populate(ttm);
 }
+# else
+static int vbox_ttm_tt_populate(struct ttm_tt *ttm,
+				struct ttm_operation_ctx *ctx)
+{
+	return ttm_pool_populate(ttm, ctx);
+}
+# endif
 
 static void vbox_ttm_tt_unpopulate(struct ttm_tt *ttm)
 {
 	ttm_pool_unpopulate(ttm);
 }
+#endif
 
 struct ttm_bo_driver vbox_bo_driver = {
 	.ttm_tt_create = vbox_ttm_tt_create,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
 	.ttm_tt_populate = vbox_ttm_tt_populate,
 	.ttm_tt_unpopulate = vbox_ttm_tt_unpopulate,
+#endif
 	.init_mem_type = vbox_bo_init_mem_type,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0) || defined(RHEL_74)
 	.eviction_valuable = ttm_bo_eviction_valuable,
 #endif
 	.evict_flags = vbox_bo_evict_flags,
-	.move = vbox_bo_move,
 	.verify_access = vbox_bo_verify_access,
 	.io_mem_reserve = &vbox_ttm_io_mem_reserve,
 	.io_mem_free = &vbox_ttm_io_mem_free,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0) || defined(RHEL_75)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
 	.io_mem_pfn = ttm_bo_default_io_mem_pfn,
+# endif
 #endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)) \
     || defined(RHEL_74)
@@ -424,6 +421,9 @@ static inline u64 vbox_bo_gpu_offset(struct vbox_bo *bo)
 
 int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
+	struct ttm_operation_ctx ctx = { false, false };
+#endif
 	int i, ret;
 
 	if (bo->pin_count) {
@@ -439,7 +439,11 @@ int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr)
 	for (i = 0; i < bo->placement.num_placement; i++)
 		PLACEMENT_FLAGS(bo->placements[i]) |= TTM_PL_FLAG_NO_EVICT;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
 	ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
+#else
+	ret = ttm_bo_validate(&bo->bo, &bo->placement, &ctx);
+#endif
 	if (ret)
 		return ret;
 
@@ -453,6 +457,9 @@ int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr)
 
 int vbox_bo_unpin(struct vbox_bo *bo)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
+	struct ttm_operation_ctx ctx = { false, false };
+#endif
 	int i, ret;
 
 	if (!bo->pin_count) {
@@ -466,7 +473,11 @@ int vbox_bo_unpin(struct vbox_bo *bo)
 	for (i = 0; i < bo->placement.num_placement; i++)
 		PLACEMENT_FLAGS(bo->placements[i]) &= ~TTM_PL_FLAG_NO_EVICT;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
 	ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
+#else
+	ret = ttm_bo_validate(&bo->bo, &bo->placement, &ctx);
+#endif
 	if (ret)
 		return ret;
 
@@ -480,6 +491,9 @@ int vbox_bo_unpin(struct vbox_bo *bo)
  */
 int vbox_bo_push_sysram(struct vbox_bo *bo)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
+	struct ttm_operation_ctx ctx = { false, false };
+#endif
 	int i, ret;
 
 	if (!bo->pin_count) {
@@ -498,7 +512,11 @@ int vbox_bo_push_sysram(struct vbox_bo *bo)
 	for (i = 0; i < bo->placement.num_placement; i++)
 		PLACEMENT_FLAGS(bo->placements[i]) |= TTM_PL_FLAG_NO_EVICT;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
 	ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
+#else
+	ret = ttm_bo_validate(&bo->bo, &bo->placement, &ctx);
+#endif
 	if (ret) {
 		DRM_ERROR("pushing to VRAM failed\n");
 		return ret;
