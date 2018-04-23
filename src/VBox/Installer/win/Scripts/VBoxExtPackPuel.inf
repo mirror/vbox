@@ -29,7 +29,7 @@ Provider    = %ORACLE%
 [SourceDisksFiles]
 VBoxEhciR0.r0=1
 VBoxNvmeR0.r0=1
-VBoxPciRawR0.r0=1
+;VBoxPciRawR0.r0=1
 
 [DestinationDirs]
 DefaultDestDir = 12
@@ -49,7 +49,7 @@ CopyFiles = VBoxExtPackPuelInstall.Files
 [VBoxExtPackPuelInstall.Files]
 VBoxEhciR0.r0,,,2
 VBoxNvmeR0.r0,,,2
-VBoxPciRawR0.r0,,,2
+;VBoxPciRawR0.r0,,,2
 
 [Strings]
 ORACLE = "Oracle Corporation"
