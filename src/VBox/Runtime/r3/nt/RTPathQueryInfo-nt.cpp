@@ -178,10 +178,11 @@ static int rtPathNtQueryInfoFillInDummyData(int rc, PRTFSOBJINFO pObjInfo, RTFSO
  * @param   fFlags          The flags.
  * @param   pvBuf           Query buffer space.
  * @param   cbBuf           Size of the buffer.  ASSUMES lots of space.
+ * @param   rcNtCaller      The status code that got us here.
  */
 static int rtPathNtQueryInfoInDirectoryObject(OBJECT_ATTRIBUTES *pObjAttr, PRTFSOBJINFO pObjInfo,
                                               RTFSOBJATTRADD enmAddAttr, uint32_t fFlags,
-                                              void *pvBuf, size_t cbBuf)
+                                              void *pvBuf, size_t cbBuf, NTSTATUS rcNtCaller)
 {
     RT_NOREF(fFlags);
 
@@ -270,6 +271,8 @@ static int rtPathNtQueryInfoInDirectoryObject(OBJECT_ATTRIBUTES *pObjAttr, PRTFS
         if (rcNt == STATUS_NO_MORE_FILES || rcNt == STATUS_NO_MORE_ENTRIES || rcNt == STATUS_NO_SUCH_FILE)
             return VERR_FILE_NOT_FOUND;
     }
+    else
+        return RTErrConvertFromNtStatus(rcNtCaller);
     return RTErrConvertFromNtStatus(rcNt);
 }
 
@@ -409,7 +412,7 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
                  || rcNt == STATUS_OBJECT_NAME_INVALID
                  || rcNt == STATUS_INVALID_PARAMETER)
         {
-            rc = rtPathNtQueryInfoInDirectoryObject(&ObjAttr, pObjInfo, enmAddAttr, fFlags, &uBuf, sizeof(uBuf));
+            rc = rtPathNtQueryInfoInDirectoryObject(&ObjAttr, pObjInfo, enmAddAttr, fFlags, &uBuf, sizeof(uBuf), rcNt);
             if (RT_SUCCESS(rc))
                 return rc;
         }
@@ -516,7 +519,7 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
                  || rcNt == STATUS_OBJECT_NAME_INVALID
                  /*|| rcNt == STATUS_INVALID_PARAMETER*/)
         {
-            rc = rtPathNtQueryInfoInDirectoryObject(&ObjAttr, pObjInfo, enmAddAttr, fFlags, &uBuf, sizeof(uBuf));
+            rc = rtPathNtQueryInfoInDirectoryObject(&ObjAttr, pObjInfo, enmAddAttr, fFlags, &uBuf, sizeof(uBuf), rcNt);
             if (RT_SUCCESS(rc))
                 return rc;
         }
@@ -617,7 +620,7 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
                  || rcNt == STATUS_OBJECT_TYPE_MISMATCH /* without trailing slash */ )
         {
             InitializeObjectAttributes(&ObjAttr, pNtName, OBJ_CASE_INSENSITIVE, hRootDir, NULL);
-            rc = rtPathNtQueryInfoInDirectoryObject(&ObjAttr, pObjInfo, enmAddAttr, fFlags, &uBuf, sizeof(uBuf));
+            rc = rtPathNtQueryInfoInDirectoryObject(&ObjAttr, pObjInfo, enmAddAttr, fFlags, &uBuf, sizeof(uBuf), rcNt);
             if (RT_FAILURE(rc))
                 rc = RTErrConvertFromNtStatus(rcNt);
         }
