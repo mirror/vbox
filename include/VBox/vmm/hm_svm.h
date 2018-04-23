@@ -1018,6 +1018,15 @@ AssertCompileSize(SVMVMCB, 0x1000);
  * Contains VMCB fields from the nested-guest VMCB before they're modified by
  * SVM R0 code for hardware-assisted SVM execution of a nested-guest.
  *
+ * A VMCB field needs to be cached when it needs to be modified for execution using
+ * hardware-assisted SVM and any of the following are true:
+ *   - If the original field needs to be inspected during execution of the
+ *     nested-guest or #VMEXIT processing.
+ *   - If the field is written back to memory on #VMEXIT by the physical CPU.
+ *
+ * A VMCB field needs to be restored only when the field is written back to
+ * memory on #VMEXIT by the physical CPU and thus would be visible to the guest.
+ *
  * @remarks Please update hmR3InfoSvmNstGstVmcbCache() when changes are made to
  *          this structure.
  */

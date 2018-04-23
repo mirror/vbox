@@ -145,8 +145,9 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /*
          * Restore fields as our own code might look at the VMCB controls as part
-         * of the #VMEXIT handling. Otherwise, we don't need to restore the current
-         * fields because none of them are written by a physical CPU on #VMEXIT.
+         * of the #VMEXIT handling in IEM. Otherwise, strictly speaking we don't need to
+         * restore these fields because currently none of them are written back to memory
+         * by a physical CPU on #VMEXIT.
          */
         pVmcbNstGstCtrl->u16InterceptRdCRx                 = pVmcbNstGstCache->u16InterceptRdCRx;
         pVmcbNstGstCtrl->u16InterceptWrCRx                 = pVmcbNstGstCache->u16InterceptWrCRx;
