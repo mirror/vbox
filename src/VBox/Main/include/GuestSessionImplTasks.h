@@ -27,8 +27,123 @@
 
 #include <iprt/isofs.h> /* For UpdateAdditions. */
 
+#include <vector>
+
 class Guest;
+class GuestSessionTask;
 class GuestSessionTaskInternalOpen;
+
+/**
+ * Enumeration which specifies the file system source type.
+ */
+enum GuestSessionFsSourceType
+{
+    /** Invalid / uknown source type, don't use. */
+    GuestSessionFsSourceType_Unknown = 0,
+    /** The source is a directory. */
+    GuestSessionFsSourceType_Dir,
+    /** The source is a file. */
+    GuestSessionFsSourceType_File
+};
+
+/**
+ * Structure for keeping a file system source specification,
+ * along with options.
+ */
+struct GuestSessionFsSourceSpec
+{
+    Utf8Str                  strSource;
+    Utf8Str                  strFilter;
+    GuestSessionFsSourceType enmType;
+    PathStyle_T              enmPathStyle;
+    bool                     fDryRun;
+    bool                     fFollowSymlinks;
+    union
+    {
+        /** Directory-specific data. */
+        struct
+        {
+            /** Directory copy flags. */
+            DirectoryCopyFlag_T fCopyFlags;
+            bool                fRecursive;
+        } Dir;
+        /** File-specific data. */
+        struct
+        {
+            /** File copy flags. */
+            FileCopyFlag_T      fCopyFlags;
+            /** Host file handle to use for reading from / writing to.
+             *  Optional and can be NULL if not used. */
+            PRTFILE             phFile;
+            /** Source file offset to start copying from. */
+            size_t              offStart;
+            /** Source size (in bytes) to copy. */
+            uint64_t            cbSize;
+        } File;
+    } Type;
+};
+
+/** A set of GuestSessionFsSourceSpec sources. */
+typedef std::vector<GuestSessionFsSourceSpec> GuestSessionFsSourceSet;
+
+/**
+ * Structure for keeping a file system entry.
+ */
+struct FsEntry
+{
+    /** The entrie's file mode. */
+    RTFMODE fMode;
+    /** The entrie's path, relative to the list's root path. */
+    Utf8Str strPath;
+};
+
+/** A vector of FsEntry entries. */
+typedef std::vector<FsEntry *> FsEntries;
+
+/**
+ * Class for storing and handling file system entries, neeed for doing
+ * internal file / directory operations to / from the guest.
+ */
+class FsList
+{
+public:
+
+    FsList(const GuestSessionTask &Task);
+    virtual ~FsList();
+
+public:
+
+    int Init(const Utf8Str &strSrcRootAbs, const Utf8Str &strDstRootAbs, const GuestSessionFsSourceSpec &SourceSpec);
+    void Destroy(void);
+
+    int AddEntryFromGuest(const Utf8Str &strFile, const GuestFsObjData &fsObjData);
+    int AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir = "");
+
+    int AddEntryFromHost(const Utf8Str &strFile, PCRTFSOBJINFO pcObjInfo);
+    int AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir = "");
+
+public:
+
+    /** The guest session task object this list is working on. */
+    const GuestSessionTask  &mTask;
+    /** File system filter / options to use for this task. */
+    GuestSessionFsSourceSpec mSourceSpec;
+    /** The source' root path.
+     *  For a single file list this is the full (absolute) path to a file,
+     *  for a directory list this is the source root directory. */
+    Utf8Str                 mSrcRootAbs;
+    /** The destinations's root path.
+     *  For a single file list this is the full (absolute) path to a file,
+     *  for a directory list this is the destination root directory. */
+    Utf8Str                 mDstRootAbs;
+    /** Total size (in bytes) of all list entries together. */
+    uint64_t                mcbTotalSize;
+    /** List of file system entries this list contains. */
+    FsEntries               mVecEntries;
+};
+
+/** A set of FsList lists. */
+typedef std::vector<FsList *> FsLists;
 
 /**
  * Abstract base class for a lenghtly per-session operation which
@@ -58,15 +173,19 @@ public:
 
     int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
 
-    HRESULT Init(const Utf8Str &strTaskDesc)
+    virtual HRESULT Init(const Utf8Str &strTaskDesc)
     {
-        HRESULT hr = S_OK;
         setTaskDesc(strTaskDesc);
-        hr = createAndSetProgressObject();
-        return hr;
+        int rc = createAndSetProgressObject(); /* Single operation by default. */
+        if (RT_FAILURE(rc))
+            return E_FAIL;
+
+        return S_OK;
     }
 
     const ComObjPtr<Progress>& GetProgressObject() const { return mProgress; }
+
+    const ComObjPtr<GuestSession>& GetSession() const { return mSession; }
 
 protected:
 
@@ -83,17 +202,13 @@ protected:
     int fileCopyFromGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
     int fileCopyToGuestInner(PRTFILE phSrcFile, ComObjPtr<GuestFile> &dstFile, FileCopyFlag_T fFileCopyFlags,
                              uint64_t offCopy, uint64_t cbSize);
+
     int fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
     /** @}  */
 
     /** @name Guest property handling primitives.
      * @{ */
     int getGuestProperty(const ComObjPtr<Guest> &pGuest, const Utf8Str &strPath, Utf8Str &strValue);
-    /** @}  */
-
-    /** @name Path handling primitives.
-     * @{ */
-    int pathConstructOnGuest(const Utf8Str &strSourceRoot, const Utf8Str &strSource, const Utf8Str &strDest, Utf8Str &strOut);
     /** @}  */
 
     int setProgress(ULONG uPercent);
@@ -105,7 +220,7 @@ protected:
         mDesc = strTaskDesc;
     }
 
-    HRESULT createAndSetProgressObject();
+    int createAndSetProgressObject(ULONG cOperations  = 1);
 
 protected:
 
@@ -117,19 +232,21 @@ protected:
     ComObjPtr<Progress>     mProgress;
     /** The guest's path style (depending on the guest OS type set). */
     uint32_t                mfPathStyle;
+    /** The guest's path style as string representation (depending on the guest OS type set). */
+    Utf8Str                 mPathStyle;
 };
 
 /**
  * Task for opening a guest session.
  */
-class SessionTaskOpen : public GuestSessionTask
+class GuestSessionTaskOpen : public GuestSessionTask
 {
 public:
 
-    SessionTaskOpen(GuestSession *pSession,
+    GuestSessionTaskOpen(GuestSession *pSession,
                     uint32_t uFlags,
                     uint32_t uTimeoutMS);
-    virtual ~SessionTaskOpen(void);
+    virtual ~GuestSessionTaskOpen(void);
     int Run(void);
 
 protected:
@@ -144,120 +261,59 @@ class GuestSessionCopyTask : public GuestSessionTask
 {
 public:
 
-    GuestSessionCopyTask(GuestSession *pSession)
-        : GuestSessionTask(pSession)
-    {
-        RT_ZERO(u);
-    }
-
-    virtual ~GuestSessionCopyTask() { }
+    GuestSessionCopyTask(GuestSession *pSession);
+    virtual ~GuestSessionCopyTask();
 
 protected:
 
-    /** Source to copy from. */
-    Utf8Str  mSource;
+    /** Source set. */
+    GuestSessionFsSourceSet mSources;
     /** Destination to copy to. */
-    Utf8Str  mDest;
-    /** Filter (wildcard-style) when copying directories. */
-    Utf8Str  mFilter;
-
-    union
-    {
-        /** Directory-specific data. */
-        struct
-        {
-            /** Directory copy flags. */
-            DirectoryCopyFlag_T fCopyFlags;
-        } Dir;
-        /** File-specific data. */
-        struct
-        {
-            /** File copy flags. */
-            FileCopyFlag_T      fCopyFlags;
-            /** Host file handle to use for reading from / writing to.
-             *  Optional and can be NULL if not used. */
-            PRTFILE             phFile;
-            /** Source file offset to start copying from. */
-            size_t              offStart;
-            /** Source size (in bytes) to copy. */
-            uint64_t            cbSize;
-        } File;
-    } u;
+    Utf8Str                 mDest;
+    /** Vector of file system lists to handle.
+     *  This either can be from the guest or the host side. */
+    FsLists                 mVecLists;
 };
 
 /**
- * Task for copying directories from guest to the host.
+ * Guest session task for copying files / directories from guest to the host.
  */
-class SessionTaskCopyDirFrom : public GuestSessionCopyTask
+class GuestSessionTaskCopyFrom : public GuestSessionCopyTask
 {
 public:
 
-    SessionTaskCopyDirFrom(GuestSession *pSession, const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter,
-                           DirectoryCopyFlag_T fDirCopyFlags);
-    virtual ~SessionTaskCopyDirFrom(void);
+    GuestSessionTaskCopyFrom(GuestSession *pSession, GuestSessionFsSourceSet vecSrc, const Utf8Str &strDest);
+    virtual ~GuestSessionTaskCopyFrom(void);
+
+    HRESULT Init(const Utf8Str &strTaskDesc);
     int Run(void);
-
-protected:
-
-    int directoryCopyToHost(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive,
-                            bool fFollowSymlinks, const Utf8Str &strSubDir /* For recursion. */);
 };
 
 /**
  * Task for copying directories from host to the guest.
  */
-class SessionTaskCopyDirTo : public GuestSessionCopyTask
+class GuestSessionTaskCopyTo : public GuestSessionCopyTask
 {
 public:
 
-    SessionTaskCopyDirTo(GuestSession *pSession, const Utf8Str &strSource, const Utf8Str &strDest, const Utf8Str &strFilter,
-                         DirectoryCopyFlag_T fDirCopyFlags);
-    virtual ~SessionTaskCopyDirTo(void);
-    int Run(void);
+    GuestSessionTaskCopyTo(GuestSession *pSession, GuestSessionFsSourceSet vecSrc, const Utf8Str &strDest);
+    virtual ~GuestSessionTaskCopyTo(void);
 
-protected:
-
-    int directoryCopyToGuest(const Utf8Str &strSource, const Utf8Str &strFilter, const Utf8Str &strDest, bool fRecursive,
-                             bool fFollowSymlinks, const Utf8Str &strSubDir /* For recursion. */);
-};
-
-/**
- * Task for copying files from host to the guest.
- */
-class SessionTaskCopyFileTo : public GuestSessionCopyTask
-{
-public:
-
-    SessionTaskCopyFileTo(GuestSession *pSession,
-                          const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
-    virtual ~SessionTaskCopyFileTo(void);
+    HRESULT Init(const Utf8Str &strTaskDesc);
     int Run(void);
 };
 
 /**
- * Task for copying files from guest to the host.
+ * Guest session task for automatically updating the Guest Additions on the guest.
  */
-class SessionTaskCopyFileFrom : public GuestSessionCopyTask
+class GuestSessionTaskUpdateAdditions : public GuestSessionTask
 {
 public:
 
-    SessionTaskCopyFileFrom(GuestSession *pSession,
-                            const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
-    virtual ~SessionTaskCopyFileFrom(void);
-    int Run(void);
-};
-
-/**
- * Task for automatically updating the Guest Additions on the guest.
- */
-class SessionTaskUpdateAdditions : public GuestSessionTask
-{
-public:
-
-    SessionTaskUpdateAdditions(GuestSession *pSession,
+    GuestSessionTaskUpdateAdditions(GuestSession *pSession,
                                const Utf8Str &strSource, const ProcessArguments &aArguments,
                                uint32_t fFlags);
-    virtual ~SessionTaskUpdateAdditions(void);
+    virtual ~GuestSessionTaskUpdateAdditions(void);
     int Run(void);
 
 protected:

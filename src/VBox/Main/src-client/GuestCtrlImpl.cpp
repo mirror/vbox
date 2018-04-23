@@ -534,12 +534,12 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
         {
 
             ComObjPtr<Progress> pProgress;
-            SessionTaskUpdateAdditions *pTask = NULL;
+            GuestSessionTaskUpdateAdditions *pTask = NULL;
             try
             {
                 try
                 {
-                    pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */, aSource, aArgs, fFlags);
+                    pTask = new GuestSessionTaskUpdateAdditions(pSession /* GuestSession */, aSource, aArgs, fFlags);
                 }
                 catch(...)
                 {

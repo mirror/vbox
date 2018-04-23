@@ -11144,6 +11144,34 @@ and "VAR" for unsetting. -->
   </enum>
 
   <enum
+    name="GuestCopyFlag"
+    uuid="84d6430f-dfe6-4415-a26d-3cdde1c3205a"
+    >
+    <desc>
+      Flags for use when copying elements from or to the guest, see
+      <link to="IGuestSession::copyFromGuest"/> and
+      <link to="IGuestSession::copyToGuest"/>.
+    </desc>
+
+    <const name="NoReplace"             value="0">
+      <desc>Do not replace any destination object.</desc>
+    </const>
+    <const name="Replace"               value="1">
+      <desc>This will attempt to replace any destination object other except
+        directories. (The default is to fail if the destination exists.)</desc>
+    </const>
+    <const name="CopyIntoExisting"      value="2">
+      <desc>Allow copying into an existing destination directory.</desc>
+    </const>
+    <const name="Recursive"             value="4">
+      <desc>Copies directories recursively.</desc>
+    </const>
+    <const name="FollowSymlinks"        value="8">
+      <desc>Follows (and handles) symbolic links.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="ProcessCreateFlag"
     uuid="C544CD2B-F02D-4886-9901-71C523DB8DC5"
     >
@@ -11869,7 +11897,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="8d3485b3-64a9-4995-998e-6c602b91abd2"
+    uuid="a71fcf9a-a45e-440a-886a-5b4c664195ef"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="8"
     >
@@ -12031,6 +12059,70 @@ and "VAR" for unsetting. -->
         closed. Guest processes which fall into this category and still
         are running in the guest will be terminated automatically.
       </desc>
+    </method>
+
+    <method name="copyFromGuest">
+      <desc>
+        Copies directories and/or files from guest to the host.
+
+        <result name="E_NOTIMPL">
+          Not yet implemented.
+        </result>
+      </desc>
+      <param name="sources" type="wstring" dir="in" safearray="yes">
+        <desc>Paths to directories and/or files on the guest side that should be
+          copied to the host. Guest path style.</desc>
+      </param>
+      <param name="filters" type="wstring" dir="in" safearray="yes">
+        <desc>Array of filters corresponding to the sources. This uses the
+          DOS/NT style wildcard characters '?' and '*'.</desc>
+      </param>
+      <param name="types" type="FsObjType" dir="in" safearray="yes">
+        <desc>Array of <link to="FsObjType"/> types which define the type of
+          source entries.</desc>
+      </param>
+      <param name="flags" type="GuestCopyFlag" dir="in" safearray="yes">
+        <desc>Array of <link to="GuestCopyFlag"/> flags corresponding to the
+          sources.</desc>
+      </param>
+      <param name="destination" type="wstring" dir="in">
+        <desc>Where to put the sources on the host. Host path style.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation to completion.</desc>
+      </param>
+    </method>
+
+    <method name="copyToGuest">
+      <desc>
+        Copies directories and/or files from host to the guest.
+
+        <result name="E_NOTIMPL">
+          Not yet implemented.
+        </result>
+      </desc>
+      <param name="sources" type="wstring" dir="in" safearray="yes">
+        <desc>Paths to directories and/or files on the host side that should be
+          copied to the guest. Host path style.</desc>
+      </param>
+      <param name="filters" type="wstring" dir="in" safearray="yes">
+        <desc>Array of filters corresponding to the sources. This uses the
+          DOS/NT style wildcard characters '?' and '*'.</desc>
+      </param>
+      <param name="types" type="FsObjType" dir="in" safearray="yes">
+        <desc>Array of <link to="FsObjType"/> types which define the type of
+          source entries.</desc>
+      </param>
+      <param name="flags" type="GuestCopyFlag" dir="in" safearray="yes">
+        <desc>Array of <link to="GuestCopyFlag"/> flags corresponding to the
+          sources.</desc>
+      </param>
+      <param name="destination" type="wstring" dir="in">
+        <desc>Where to put the sources on the guest. Guest path style.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation to completion.</desc>
+      </param>
     </method>
 
     <!-- Directory related methods.  -->

@@ -2629,19 +2629,26 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
 
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     try
     {
-        SessionTaskCopyFileFrom *pTask = NULL;
+        GuestSessionTaskCopyFrom *pTask = NULL;
         ComObjPtr<Progress> pProgress;
         try
         {
-            pTask = new SessionTaskCopyFileFrom(this /* GuestSession */, aSource, aDest, (FileCopyFlag_T)fFlags);
+            GuestSessionFsSourceSpec source;
+            source.strSource            = aSource;
+            source.enmType              = GuestSessionFsSourceType_File;
+            source.enmPathStyle         = i_getPathStyle();
+            source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
+
+            GuestSessionFsSourceSet vecSources;
+            vecSources.push_back(source);
+
+            pTask = new GuestSessionTaskCopyFrom(this /* GuestSession */, vecSources, aDest);
         }
         catch(...)
         {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFileFrom object"));
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFrom object"));
             throw;
         }
 
@@ -2651,7 +2658,7 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
         {
             delete pTask;
             hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Creating progress object for SessionTaskCopyFileFrom object failed"));
+                           tr("Creating progress object for SessionTaskCopyFrom object failed"));
             throw hrc;
         }
 
@@ -2716,19 +2723,30 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
 
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     try
     {
-        SessionTaskCopyFileTo *pTask = NULL;
+        GuestSessionTaskCopyTo *pTask = NULL;
         ComObjPtr<Progress> pProgress;
         try
         {
-            pTask = new SessionTaskCopyFileTo(this /* GuestSession */, aSource, aDest, (FileCopyFlag_T)fFlags);
+            GuestSessionFsSourceSpec source;
+            source.strSource            = aSource;
+            source.enmType              = GuestSessionFsSourceType_File;
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+            source.enmPathStyle         = PathStyle_DOS;
+#else
+            source.enmPathStyle         = PathStyle_UNIX;
+#endif
+            source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
+
+            GuestSessionFsSourceSet vecSources;
+            vecSources.push_back(source);
+
+            pTask = new GuestSessionTaskCopyTo(this /* GuestSession */, vecSources, aDest);
         }
         catch(...)
         {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFileTo object"));
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyTo object"));
             throw;
         }
 
@@ -2737,7 +2755,7 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
         {
             delete pTask;
             hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Creating progress object for SessionTaskCopyFileTo object failed"));
+                           tr("Creating progress object for SessionTaskCopyTo object failed"));
             throw hrc;
         }
 
@@ -2765,6 +2783,22 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
     }
 
     return hrc;
+}
+
+HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, const std::vector<com::Utf8Str> &aFilters,
+                                    const std::vector<FsObjType_T> &aTypes, const std::vector<GuestCopyFlag_T> &aFlags,
+                                    const com::Utf8Str &aDestination, ComPtr<IProgress> &aProgress)
+{
+    RT_NOREF(aSources, aFilters, aTypes, aFlags, aDestination, aProgress);
+    ReturnComNotImplemented();
+}
+
+HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, const std::vector<com::Utf8Str> &aFilters,
+                                  const std::vector<FsObjType_T> &aTypes, const std::vector<GuestCopyFlag_T> &aFlags,
+                                  const com::Utf8Str &aDestination, ComPtr<IProgress> &aProgress)
+{
+    RT_NOREF(aSources, aFilters, aTypes, aFlags, aDestination, aProgress);
+    ReturnComNotImplemented();
 }
 
 HRESULT GuestSession::directoryCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
@@ -2805,20 +2839,26 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
 
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     try
     {
-        SessionTaskCopyDirFrom *pTask = NULL;
+        GuestSessionTaskCopyFrom *pTask = NULL;
         ComObjPtr<Progress> pProgress;
         try
         {
-            pTask = new SessionTaskCopyDirFrom(this /* GuestSession */, aSource, aDestination, "" /* strFilter */,
-                                               (DirectoryCopyFlag_T)fFlags);
+            GuestSessionFsSourceSpec source;
+            source.strSource           = aSource;
+            source.enmType             = GuestSessionFsSourceType_Dir;
+            source.enmPathStyle        = i_getPathStyle();
+            source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)fFlags;
+
+            GuestSessionFsSourceSet vecSources;
+            vecSources.push_back(source);
+
+            pTask = new GuestSessionTaskCopyFrom(this /* GuestSession */, vecSources, aDestination);
         }
         catch(...)
         {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyDirFrom object"));
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFrom object"));
             throw;
         }
 
@@ -2892,20 +2932,32 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
 
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     try
     {
-        SessionTaskCopyDirTo *pTask = NULL;
+        GuestSessionTaskCopyTo *pTask = NULL;
         ComObjPtr<Progress> pProgress;
         try
         {
-            pTask = new SessionTaskCopyDirTo(this /* GuestSession */, aSource, aDestination, "" /* strFilter */,
-                                             (DirectoryCopyFlag_T)fFlags);
+            GuestSessionFsSourceSpec source;
+            source.strSource           = aSource;
+            source.enmType             = GuestSessionFsSourceType_Dir;
+#if RTPATH_STYLERTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+            source.enmPathStyle         = PathStyle_DOS;
+#else
+            source.enmPathStyle         = PathStyle_UNIX;
+#endif
+            source.fFollowSymlinks     = true;
+            source.Type.Dir.fRecursive = true;
+            source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)fFlags;
+
+            GuestSessionFsSourceSet vecSources;
+            vecSources.push_back(source);
+
+            pTask = new GuestSessionTaskCopyTo(this /* GuestSession */, vecSources, aDestination);
         }
         catch(...)
         {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyDirTo object"));
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyTo object"));
             throw;
         }
 
