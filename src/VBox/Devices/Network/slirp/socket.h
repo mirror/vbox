@@ -166,6 +166,7 @@ void so_init (void);
 struct socket * solookup (struct socket *, struct in_addr, u_int, struct in_addr, u_int);
 struct socket * socreate (void);
 void sofree (PNATState, struct socket *);
+int sobind(PNATState, struct socket *);
 int soread (PNATState, struct socket *);
 void sorecvoob (PNATState, struct socket *);
 int sosendoob (struct socket *);

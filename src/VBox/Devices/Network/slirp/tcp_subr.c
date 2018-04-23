@@ -412,25 +412,13 @@ int tcp_fconnect(PNATState pData, struct socket *so)
         struct sockaddr_in addr;
 
         fd_nonblock(s);
-        opt = 1;
-        setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
+
         opt = 1;
         setsockopt(s, SOL_SOCKET, SO_OOBINLINE, (char *)&opt, sizeof(opt));
 
-        if (pData->bindIP.s_addr != INADDR_ANY)
-        {
-            struct sockaddr_in self;
-            self.sin_family = AF_INET;
-            self.sin_addr = pData->bindIP;
-            self.sin_port = 0;
-
-            ret = bind(s, (struct sockaddr *)&self, sizeof(self));
-            if (ret != 0)
-            {
-                Log2(("NAT: bind(%RTnaipv4): %s\n", pData->bindIP.s_addr, strerror(errno)));
-                return ret;
-            }
-        }
+        ret = sobind(pData, so);
+        if (ret != 0)
+            return ret;
 
         addr.sin_family = AF_INET;
         if ((so->so_faddr.s_addr & RT_H2N_U32(pData->netmask)) == pData->special_addr.s_addr)

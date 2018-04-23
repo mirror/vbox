@@ -35,6 +35,7 @@
 #include <iprt/win/iphlpapi.h>
 #include <icmpapi.h>
 #endif
+#include <alias.h>
 
 #if defined(DECLARE_IOVEC) && defined(RT_OS_WINDOWS)
 AssertCompileMembersSameSizeAndOffset(struct iovec, iov_base, WSABUF, buf);
@@ -169,6 +170,90 @@ sofree(PNATState pData, struct socket *so)
     RTMemFree(so);
     LogFlowFuncLeave();
 }
+
+
+int
+sobind(PNATState pData, struct socket *so)
+{
+    bool fSamePorts = !!(pData->i32AliasMode & PKT_ALIAS_SAME_PORTS);
+    struct sockaddr_in self;
+    int opt;
+    int binderr;
+    int ret;
+    
+    /* do we need to bind the socket to specific host address/port? */
+    if (pData->bindIP.s_addr == INADDR_ANY && !fSamePorts)
+        return 0;
+
+    opt = 1;
+    setsockopt(so->s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
+
+    RT_ZERO(self);
+#ifdef RT_OS_DARWIN
+    self.sin_len = sizeof(self);
+#endif
+    self.sin_family = AF_INET;
+    self.sin_addr = pData->bindIP;
+    self.sin_port = fSamePorts ? so->so_lport : 0;
+    
+    Log2(("NAT: binding guest %RTnaipv4:%d to host %RTnaipv4:%d\n",
+          so->so_laddr.s_addr, ntohs(so->so_lport),
+          self.sin_addr.s_addr, ntohs(self.sin_port)));
+
+    ret = bind(so->s, (struct sockaddr *)&self, sizeof(self));
+    if (ret == 0)
+    {
+        Log2(("NAT: ... bind ok\n"));
+        return 0;
+    }
+
+    if (self.sin_port != 0)
+    {
+        if (pData->bindIP.s_addr != INADDR_ANY)
+        {
+            Log2(("NAT: failed to bind to %RTnaipv4:%d (bindip,sameports),"
+                  " retrying with random port\n",
+                  self.sin_addr.s_addr, self.sin_port));
+
+            /*
+             * don't try to guess why bind() failed, retry without
+             * requesting the same port port
+             */
+            self.sin_port = 0;
+
+            ret = bind(so->s, (struct sockaddr *)&self, sizeof(self));
+            if (ret == 0)   /* bindIP ok (but port is not the same) */
+            {
+                Log2(("NAT: ... bind ok (without sameports)\n"));
+                return 0;
+            }
+        }
+        else
+        {
+            Log2(("NAT: failed to bind to 0.0.0.0:%d (sameports),"
+                  " ignoring sameports\n",
+                  self.sin_port));
+
+            /* it's ok if we failed to get the same port */
+            return 0;
+        }
+    }
+
+    binderr = errno;
+
+    Log2(("NAT: failed to bind to %RTnaipv4 (bindip)\n",
+          self.sin_addr.s_addr));
+
+    closesocket(so->s);
+    so->s = -1;
+#ifdef RT_OS_WINDOWS
+    WSASetLastError(binderr);
+#else
+    errno = binderr;
+#endif
+    return -1;
+}
+
 
 /*
  * Read from so's socket into sb_snd, updating all relevant sbuf fields

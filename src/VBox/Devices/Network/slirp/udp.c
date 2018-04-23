@@ -270,6 +270,14 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
             Log2(("NAT: IP(id: %hd) failed to create socket\n", ip->ip_id));
             goto bad_free_mbuf;
         }
+
+        /*
+         * Setup fields
+         */
+        so->so_laddr = ip->ip_src;
+        so->so_lport = uh->uh_sport;
+        so->so_iptos = ip->ip_tos;
+
         if (udp_attach(pData, so) <= 0)
         {
             Log2(("NAT: IP(id: %hd) udp_attach errno = %d (%s)\n",
@@ -278,15 +286,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
             goto bad_free_mbuf;
         }
 
-        /*
-         * Setup fields
-         */
         /* udp_last_so = so; */
-        so->so_laddr = ip->ip_src;
-        so->so_lport = uh->uh_sport;
-
-        so->so_iptos = ip->ip_tos;
-
         /*
          * XXXXX Here, check if it's in udpexec_list,
          * and if it is, do the fork_exec() etc.
@@ -525,7 +525,6 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
 int
 udp_attach(PNATState pData, struct socket *so)
 {
-    struct sockaddr_in *addr;
     struct sockaddr sa_addr;
     socklen_t socklen = sizeof(struct sockaddr);
     int status;
@@ -538,31 +537,13 @@ udp_attach(PNATState pData, struct socket *so)
     so->so_sottl = 0;
     so->so_sotos = 0;
     so->so_sodf = -1;
-    /*
-     * Here, we bind() the socket.  Although not really needed
-     * (sendto() on an unbound socket will bind it), it's done
-     * here so that emulation of ytalk etc. don't have to do it
-     */
-    memset(&sa_addr, 0, sizeof(struct sockaddr));
-    addr = (struct sockaddr_in *)&sa_addr;
-#ifdef RT_OS_DARWIN
-    addr->sin_len = sizeof(struct sockaddr_in);
-#endif
-    addr->sin_family = AF_INET;
-    addr->sin_addr.s_addr = pData->bindIP.s_addr;
+
     fd_nonblock(so->s);
-    if (bind(so->s, &sa_addr, sizeof(struct sockaddr_in)) < 0)
-    {
-        int lasterrno = errno;
-        closesocket(so->s);
-        so->s = -1;
-#ifdef RT_OS_WINDOWS
-        WSASetLastError(lasterrno);
-#else
-        errno = lasterrno;
-#endif
-        goto error;
-    }
+
+    status = sobind(pData, so);
+    if (status != 0)
+        return status;
+
     /* success, insert in queue */
     so->so_expire = curtime + SO_EXPIRE;
     /* enable broadcast for later use */
