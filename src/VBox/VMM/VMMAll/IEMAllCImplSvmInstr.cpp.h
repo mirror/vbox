@@ -342,16 +342,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
 {
     LogFlow(("iemSvmVmrun\n"));
 
-#ifdef IN_RING0
-    /*
-     * Until PGM can handle switching the guest paging mode in ring-0,
-     * there's no point in trying to emulate VMRUN in ring-0 as we have
-     * to go back to ring-3 anyway, see @bugref{7243#c48}.
-     */
-    RT_NOREF(pVCpu, pCtx, cbInstr, GCPhysVmcb);
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
-#else
-
     /*
      * Cache the physical address of the VMCB for #VMEXIT exceptions.
      */
@@ -834,7 +824,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
     /* Shouldn't really happen as the caller should've validated the physical address already. */
     Log(("iemSvmVmrun: Failed to read nested-guest VMCB at %#RGp (rc=%Rrc) -> #VMEXIT\n", GCPhysVmcb, rc));
     return rc;
-#endif
 }
 
 

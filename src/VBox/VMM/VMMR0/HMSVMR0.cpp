@@ -7818,9 +7818,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpga(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    /** @todo Stat. */
-    /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmrun); */
-#if 0
+
     VBOXSTRICTRC rcStrict;
     uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
     rcStrict = IEMExecDecodedVmrun(pVCpu, cbInstr);
@@ -7831,8 +7829,6 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
         HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
     }
     return VBOXSTRICTRC_VAL(rcStrict);
-#endif
-    return VERR_EM_INTERPRETER;
 }
 
 
