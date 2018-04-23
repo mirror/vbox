@@ -2941,7 +2941,7 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
             GuestSessionFsSourceSpec source;
             source.strSource           = aSource;
             source.enmType             = GuestSessionFsSourceType_Dir;
-#if RTPATH_STYLERTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
             source.enmPathStyle         = PathStyle_DOS;
 #else
             source.enmPathStyle         = PathStyle_UNIX;
