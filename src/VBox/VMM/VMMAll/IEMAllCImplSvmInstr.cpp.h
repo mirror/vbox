@@ -126,7 +126,6 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
          * Map the nested-guest VMCB from its location in guest memory.
          * Write exactly what the CPU does on #VMEXIT thereby preserving most other bits in the
          * guest's VMCB in memory, see @bugref{7243#c113} and related comment on iemSvmVmrun().
-         *
          */
         PSVMVMCB       pVmcbMem;
         PGMPAGEMAPLOCK PgLockMem;
@@ -243,7 +242,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
 
             /*
              * Save the exit interrupt-information field.
-             * We choose to write the whole field including reserved bits as it was observed on an
+             *
+             * We write the whole field including overwriting reserved bits as it was observed on an
              * AMD Ryzen 5 Pro 1500 that the CPU does not preserve reserved bits in EXITINTINFO.
              */
             pVmcbMemCtrl->ExitIntInfo = pVmcbCtrl->ExitIntInfo;
