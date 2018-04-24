@@ -1088,8 +1088,14 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& lis
 
             ComPtr<IProgress> moveDiskProgress;
             rc = pMedium->SetLocation(bstrLocation.raw(), moveDiskProgress.asOutParam());
-            /* Wait until the async process has finished. */
-            rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+            if (SUCCEEDED(rc))
+            {
+                /* In case of failure moveDiskProgress would be in the invalid state or not initialized at all
+                 * Call WaitForAsyncProgressCompletion only in success
+                 */
+                /* Wait until the async process has finished. */
+                rc = m_pProgress->WaitForAsyncProgressCompletion(moveDiskProgress);
+            }
 
             /*acquire the lock back*/
             machineLock.acquire();
