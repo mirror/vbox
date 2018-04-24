@@ -123,8 +123,7 @@ ifeq ($(KBUILD_TARGET),win)
 
 
  INSTALLS.win += VBoxNetAdp6-inf
- VBoxNetAdp6-inf_INST = $(INST_BIN)
- VBoxNetAdp6-inf_MODE = a+r,u+w
+ VBoxNetAdp6-inf_TEMPLATE = VBoxR0DrvInfCat
  VBoxNetAdp6-inf_SOURCES = \
  	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.inf
  VBoxNetAdp6-inf_CLEAN = $(VBoxNetAdp6-inf_SOURCES)

@@ -113,7 +113,7 @@ ifeq ($(KBUILD_TARGET),win)
  # Windows extras.
  #
  INSTALLS.win += VBoxNetFlt-inf
- VBoxNetFlt-inf_INST = $(INST_BIN)
+ VBoxNetFlt-inf_TEMPLATE = VBoxR0DrvInfCat
  VBoxNetFlt-inf_SOURCES = \
  	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf \
  	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltM.inf
@@ -193,7 +193,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  # VBoxNetLwf installation.
  #
  INSTALLS.win += VBoxNetLwf-inf
- VBoxNetLwf-inf_INST = $(INST_BIN)
+ VBoxNetLwf-inf_TEMPLATE = VBoxR0DrvInfCat
  VBoxNetLwf-inf_SOURCES = \
  	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.inf
  VBoxNetLwf-inf_CLEAN = $(VBoxNetLwf-inf_SOURCES)
@@ -431,8 +431,7 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
 
 
  INSTALLS.win += VBoxNetAdp-inf
- VBoxNetAdp-inf_INST = $(INST_BIN)
- VBoxNetAdp-inf_MODE = a+r,u+w
+ VBoxNetAdp-inf_TEMPLATE = VBoxR0DrvInfCat
  VBoxNetAdp-inf_SOURCES = \
  	$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf
  VBoxNetAdp-inf_CLEAN = $(VBoxNetAdp-inf_SOURCES)

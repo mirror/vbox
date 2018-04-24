@@ -152,8 +152,7 @@ USBTest_LIBS = \
 #
 # Install the INF files.
 #
-install-infs_INST = bin/
-install-infs_MODE = a+r,u+w
+install-infs_TEMPLATE = VBoxR0DrvInfCat
 install-infs_SOURCES = \
 	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.inf \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf

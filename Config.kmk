@@ -4682,6 +4682,14 @@ TEMPLATE_VBoxR0DrvLib_EXTENDS = VBOXR0DRV
 TEMPLATE_VBoxR0DrvLib_INSTTYPE = stage
 TEMPLATE_VBoxR0DrvLib_INSTTYPE.linux = stage
 
+#
+# Template for installing INF and CAT files.
+#
+TEMPLATE_VBoxR0DrvInfCat      = VBox SUPDRV Ring 0 - Install .sys, .cat, .inf
+TEMPLATE_VBoxR0DrvInfCat_INST = $(INST_BIN)
+TEMPLATE_VBoxR0DrvInfCat_MODE = a+r,u+w
+TEMPLATE_VBoxR0DrvInfCat_IFFLAGS = --no-hard-link-files-when-possible
+
 
 #
 # Template for building R3 executables and static libraries which are linked into executables.

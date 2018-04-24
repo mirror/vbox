@@ -754,8 +754,7 @@ endif # linux freebsd
 
 ifeq ($(KBUILD_TARGET), win)
  INSTALLS.win += VBoxDrv-inf
- VBoxDrv-inf_INST = $(INST_BIN)
- VBoxDrv-inf_MODE = a+r,u+w
+ VBoxDrv-inf_TEMPLATE = VBoxR0DrvInfCat
  VBoxDrv-inf_SOURCES = \
  	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf
  VBoxDrv-inf_CLEAN = $(VBoxDrv-inf_SOURCES)
