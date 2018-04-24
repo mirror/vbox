@@ -800,7 +800,6 @@ HRESULT GuestSession::i_copyFromGuest(const GuestSessionFsSourceSet &SourceSet,
         }
 
         hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
-
         if (SUCCEEDED(hrc))
         {
             /* Return progress to the caller. */
@@ -902,11 +901,10 @@ HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
         }
 
         hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
-
         if (SUCCEEDED(hrc))
         {
             /* Return progress to the caller. */
-            pProgress = pTask->GetProgressObject();
+            pProgressObj = pTask->GetProgressObject();
             hrc = pProgressObj.queryInterfaceTo(pProgress.asOutParam());
         }
         else
