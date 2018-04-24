@@ -801,8 +801,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                         if (RT_FAILURE(vrc))
                         {
                             Utf8StrFmt errorDesc("Could not copy the log file '%s' to '%s' (%Rrc)",
-                                                 strFullSourceFilePath.c_str(), 
-                                                 strFullTargetFilePath.stripFilename().c_str(), 
+                                                 strFullSourceFilePath.c_str(),
+                                                 strFullTargetFilePath.stripFilename().c_str(),
                                                  vrc);
                             taskMoveVM->errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
@@ -894,7 +894,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
              * earlier in the init() exactly for one reason - rollback operation. Because in this case we must do
              * the same operations but in backward direction.
              * Thus now we want to correct the progress counter from 5 to 15. Why?
-             * Because we should have evaluated the counter as "20/2 + (20/2 - 5)" = 15 or just "20 - 5" = 15 
+             * Because we should have evaluated the counter as "20/2 + (20/2 - 5)" = 15 or just "20 - 5" = 15
              * And because the 5th step failed it shouldn't be counted.
              * As result, we need to rollback 4 operations.
              * Thus we start from "operation + 1" and finish when "i < operationCount - operation".
