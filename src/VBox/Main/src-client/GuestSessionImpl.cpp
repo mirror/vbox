@@ -723,6 +723,210 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
     return vrc;
 }
 
+/**
+ * Internal worker function for public APIs that handle copying elements from
+ * guest to the host.
+ *
+ * @return HRESULT
+ * @param  SourceSet            Source set specifying what to copy.
+ * @param  strDestination       Destination path on the host. Host path style.
+ * @param  pProgress            Progress object returned to the caller.
+ */
+HRESULT GuestSession::i_copyFromGuest(const GuestSessionFsSourceSet &SourceSet,
+                                      const com::Utf8Str &strDestination, ComPtr<IProgress> &pProgress)
+{
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
+
+    LogFlowThisFuncEnter();
+
+    /* Validate stuff. */
+    if (RT_UNLIKELY(SourceSet.size() == 0 || *(SourceSet[0].strSource.c_str()) == '\0')) /* At least one source must be present. */
+        return setError(E_INVALIDARG, tr("No source(s) specified"));
+    if (RT_UNLIKELY((strDestination.c_str()) == NULL || *(strDestination.c_str()) == '\0'))
+        return setError(E_INVALIDARG, tr("No destination specified"));
+
+    GuestSessionFsSourceSet::const_iterator itSource = SourceSet.begin();
+    while (itSource != SourceSet.end())
+    {
+        if (itSource->enmType == FsObjType_Directory)
+        {
+            if (itSource->Type.Dir.fCopyFlags)
+            {
+                if (!(itSource->Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
+                    return setError(E_INVALIDARG, tr("Invalid / not (yet) implemented directory copy flags specified"));
+            }
+        }
+        else if (itSource->enmType == FsObjType_File)
+        {
+            if (itSource->Type.File.fCopyFlags)
+            {
+                if (   !(itSource->Type.File.fCopyFlags & FileCopyFlag_NoReplace)
+                    && !(itSource->Type.File.fCopyFlags & FileCopyFlag_FollowLinks)
+                    && !(itSource->Type.File.fCopyFlags & FileCopyFlag_Update))
+                {
+                    return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented file copy flag(s) specified"));
+                }
+            }
+        }
+        else
+            return setError(E_NOTIMPL, tr("Source type %RU32 not implemented"), itSource->enmType);
+
+        itSource++;
+    }
+
+    try
+    {
+        GuestSessionTaskCopyFrom *pTask = NULL;
+        ComObjPtr<Progress> pProgressObj;
+        try
+        {
+            pTask = new GuestSessionTaskCopyFrom(this /* GuestSession */, SourceSet, strDestination);
+        }
+        catch(...)
+        {
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFrom object"));
+            throw;
+        }
+
+        hrc = pTask->Init(Utf8StrFmt(tr("Copying to \"%s\" on the host"), strDestination.c_str()));
+        if (FAILED(hrc))
+        {
+            delete pTask;
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Creating progress object for SessionTaskCopyFrom object failed"));
+            throw hrc;
+        }
+
+        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+
+        if (SUCCEEDED(hrc))
+        {
+            /* Return progress to the caller. */
+            pProgressObj = pTask->GetProgressObject();
+            hrc = pProgressObj.queryInterfaceTo(pProgress.asOutParam());
+        }
+        else
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Starting thread for copying from guest to \"%s\" on the host failed"), strDestination.c_str());
+
+    }
+    catch(std::bad_alloc &)
+    {
+        hrc = E_OUTOFMEMORY;
+    }
+    catch(HRESULT eHR)
+    {
+        hrc = eHR;
+        LogFlowThisFunc(("Exception was caught in the function\n"));
+    }
+
+    return hrc;
+}
+
+/**
+ * Internal worker function for public APIs that handle copying elements from
+ * host to the guest.
+ *
+ * @return HRESULT
+ * @param  SourceSet            Source set specifying what to copy.
+ * @param  strDestination       Destination path on the guest. Guest path style.
+ * @param  pProgress            Progress object returned to the caller.
+ */
+HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
+                                    const com::Utf8Str &strDestination, ComPtr<IProgress> &pProgress)
+{
+    HRESULT hrc = i_isReadyExternal();
+    if (FAILED(hrc))
+        return hrc;
+
+    LogFlowThisFuncEnter();
+
+    /* Validate stuff. */
+    if (RT_UNLIKELY(SourceSet.size() == 0 || *(SourceSet[0].strSource.c_str()) == '\0')) /* At least one source must be present. */
+        return setError(E_INVALIDARG, tr("No source(s) specified"));
+    if (RT_UNLIKELY((strDestination.c_str()) == NULL || *(strDestination.c_str()) == '\0'))
+        return setError(E_INVALIDARG, tr("No destination specified"));
+
+    GuestSessionFsSourceSet::const_iterator itSource = SourceSet.begin();
+    while (itSource != SourceSet.end())
+    {
+        if (itSource->enmType == FsObjType_Directory)
+        {
+            if (itSource->Type.Dir.fCopyFlags)
+            {
+                if (!(itSource->Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
+                    return setError(E_INVALIDARG, tr("Invalid / not (yet) implemented directory copy flags specified"));
+            }
+        }
+        else if (itSource->enmType == FsObjType_File)
+        {
+            if (itSource->Type.File.fCopyFlags)
+            {
+                if (   !(itSource->Type.File.fCopyFlags & FileCopyFlag_NoReplace)
+                    && !(itSource->Type.File.fCopyFlags & FileCopyFlag_FollowLinks)
+                    && !(itSource->Type.File.fCopyFlags & FileCopyFlag_Update))
+                {
+                    return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented file copy flag(s) specified"));
+                }
+            }
+        }
+        else
+            return setError(E_NOTIMPL, tr("Source type %RU32 not implemented"), itSource->enmType);
+
+        itSource++;
+    }
+
+    try
+    {
+        GuestSessionTaskCopyTo *pTask = NULL;
+        ComObjPtr<Progress> pProgressObj;
+        try
+        {
+            pTask = new GuestSessionTaskCopyTo(this /* GuestSession */, SourceSet, strDestination);
+        }
+        catch(...)
+        {
+            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyTo object"));
+            throw;
+        }
+
+        hrc = pTask->Init(Utf8StrFmt(tr("Copying to \"%s\" on the guest"), strDestination.c_str()));
+        if (FAILED(hrc))
+        {
+            delete pTask;
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Creating progress object for SessionTaskCopyTo object failed"));
+            throw hrc;
+        }
+
+        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+
+        if (SUCCEEDED(hrc))
+        {
+            /* Return progress to the caller. */
+            pProgress = pTask->GetProgressObject();
+            hrc = pProgressObj.queryInterfaceTo(pProgress.asOutParam());
+        }
+        else
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Starting thread for copying from host to \"%s\" on the guest failed"), strDestination.c_str());
+
+    }
+    catch(std::bad_alloc &)
+    {
+        hrc = E_OUTOFMEMORY;
+    }
+    catch(HRESULT eHR)
+    {
+        hrc = eHR;
+        LogFlowThisFunc(("Exception was caught in the function\n"));
+    }
+
+    return hrc;
+}
+
 int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode,
                                     uint32_t uFlags, int *prcGuest)
 {
@@ -2594,18 +2798,13 @@ HRESULT GuestSession::fileCopy(const com::Utf8Str &aSource, const com::Utf8Str &
     ReturnComNotImplemented();
 }
 
-HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
+HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                         const std::vector<FileCopyFlag_T> &aFlags,
                                         ComPtr<IProgress> &aProgress)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No source specified"));
-    if (RT_UNLIKELY((aDest.c_str()) == NULL || *(aDest.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No destination specified"));
-
     uint32_t fFlags = FileCopyFlag_None;
     if (aFlags.size())
     {
@@ -2613,93 +2812,25 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
             fFlags |= aFlags[i];
     }
 
-    if (fFlags)
-    {
-        if (   !(fFlags & FileCopyFlag_NoReplace)
-            && !(fFlags & FileCopyFlag_FollowLinks)
-            && !(fFlags & FileCopyFlag_Update))
-        {
-            return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented flag(s) specified"));
-        }
-    }
+    GuestSessionFsSourceSet SourceSet;
 
-    HRESULT hrc = i_isReadyExternal();
-    if (FAILED(hrc))
-        return hrc;
+    GuestSessionFsSourceSpec source;
+    source.strSource            = aSource;
+    source.enmType              = FsObjType_File;
+    source.enmPathStyle         = i_getPathStyle();
+    source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
 
-    LogFlowThisFuncEnter();
+    SourceSet.push_back(source);
 
-    try
-    {
-        GuestSessionTaskCopyFrom *pTask = NULL;
-        ComObjPtr<Progress> pProgress;
-        try
-        {
-            GuestSessionFsSourceSpec source;
-            source.strSource            = aSource;
-            source.enmType              = GuestSessionFsSourceType_File;
-            source.enmPathStyle         = i_getPathStyle();
-            source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
-
-            GuestSessionFsSourceSet vecSources;
-            vecSources.push_back(source);
-
-            pTask = new GuestSessionTaskCopyFrom(this /* GuestSession */, vecSources, aDest);
-        }
-        catch(...)
-        {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFrom object"));
-            throw;
-        }
-
-
-        hrc = pTask->Init(Utf8StrFmt(tr("Copying \"%s\" from guest to \"%s\" on the host"), aSource.c_str(), aDest.c_str()));
-        if (FAILED(hrc))
-        {
-            delete pTask;
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Creating progress object for SessionTaskCopyFrom object failed"));
-            throw hrc;
-        }
-
-        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
-
-        if (SUCCEEDED(hrc))
-        {
-            /* Return progress to the caller. */
-            pProgress = pTask->GetProgressObject();
-            hrc = pProgress.queryInterfaceTo(aProgress.asOutParam());
-        }
-        else
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Starting thread for copying file \"%s\" from guest to \"%s\" on the host failed "),
-                           aSource.c_str(), aDest.c_str());
-
-    }
-    catch(std::bad_alloc &)
-    {
-        hrc = E_OUTOFMEMORY;
-    }
-    catch(HRESULT eHR)
-    {
-        hrc = eHR;
-        LogFlowThisFunc(("Exception was caught in the function \n"));
-    }
-
-    return hrc;
+    return i_copyFromGuest(SourceSet, aDestination, aProgress);
 }
 
-HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
+HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
                                       const std::vector<FileCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No source specified"));
-    if (RT_UNLIKELY((aDest.c_str()) == NULL || *(aDest.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No destination specified"));
-
     uint32_t fFlags = FileCopyFlag_None;
     if (aFlags.size())
     {
@@ -2707,98 +2838,118 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
             fFlags |= aFlags[i];
     }
 
-    if (fFlags)
-    {
-        if (   !(fFlags & FileCopyFlag_NoReplace)
-            && !(fFlags & FileCopyFlag_FollowLinks)
-            && !(fFlags & FileCopyFlag_Update))
-        {
-            return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented flag(s) specified"));
-        }
-    }
+    GuestSessionFsSourceSet SourceSet;
 
-    HRESULT hrc = i_isReadyExternal();
-    if (FAILED(hrc))
-        return hrc;
+    GuestSessionFsSourceSpec source;
+    source.strSource            = aSource;
+    source.enmType              = FsObjType_File;
+    source.enmPathStyle         = i_getPathStyle();
+    source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
 
-    LogFlowThisFuncEnter();
+    SourceSet.push_back(source);
 
-    try
-    {
-        GuestSessionTaskCopyTo *pTask = NULL;
-        ComObjPtr<Progress> pProgress;
-        try
-        {
-            GuestSessionFsSourceSpec source;
-            source.strSource            = aSource;
-            source.enmType              = GuestSessionFsSourceType_File;
-#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
-            source.enmPathStyle         = PathStyle_DOS;
-#else
-            source.enmPathStyle         = PathStyle_UNIX;
-#endif
-            source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
-
-            GuestSessionFsSourceSet vecSources;
-            vecSources.push_back(source);
-
-            pTask = new GuestSessionTaskCopyTo(this /* GuestSession */, vecSources, aDest);
-        }
-        catch(...)
-        {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyTo object"));
-            throw;
-        }
-
-        hrc = pTask->Init(Utf8StrFmt(tr("Copying \"%s\" from host to \"%s\" on the guest"), aSource.c_str(), aDest.c_str()));
-        if (FAILED(hrc))
-        {
-            delete pTask;
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Creating progress object for SessionTaskCopyTo object failed"));
-            throw hrc;
-        }
-
-        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
-
-        if (SUCCEEDED(hrc))
-        {
-            /* Return progress to the caller. */
-            pProgress = pTask->GetProgressObject();
-            hrc = pProgress.queryInterfaceTo(aProgress.asOutParam());
-        }
-        else
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Starting thread for copying file \"%s\" from host to \"%s\" on the guest failed "),
-                           aSource.c_str(), aDest.c_str());
-    }
-    catch(std::bad_alloc &)
-    {
-        hrc = E_OUTOFMEMORY;
-    }
-    catch(HRESULT eHR)
-    {
-        hrc = eHR;
-        LogFlowThisFunc(("Exception was caught in the function \n"));
-    }
-
-    return hrc;
+    return i_copyToGuest(SourceSet, aDestination, aProgress);
 }
 
 HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, const std::vector<com::Utf8Str> &aFilters,
                                     const std::vector<FsObjType_T> &aTypes, const std::vector<GuestCopyFlag_T> &aFlags,
                                     const com::Utf8Str &aDestination, ComPtr<IProgress> &aProgress)
 {
-    RT_NOREF(aSources, aFilters, aTypes, aFlags, aDestination, aProgress);
-    ReturnComNotImplemented();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    const size_t cSources = aSources.size();
+    if (   aFilters.size() != cSources
+        || aTypes.size()   != cSources
+        || aFlags.size()   != cSources)
+    {
+        return setError(E_INVALIDARG, tr("Parameter array sizes don't match to the number of sources specified"));
+    }
+
+    GuestSessionFsSourceSet SourceSet;
+
+    std::vector<com::Utf8Str>::const_iterator itSource  = aSources.begin();
+    std::vector<com::Utf8Str>::const_iterator itFilter  = aFilters.begin();
+    std::vector<FsObjType_T>::const_iterator itType     = aTypes.begin();
+    std::vector<GuestCopyFlag_T>::const_iterator itFlag = aFlags.begin();
+
+    while (itSource != aSources.end())
+    {
+        GuestSessionFsSourceSpec source;
+        source.strSource    = *itSource;
+        source.strFilter    = *itFilter;
+        source.enmType      = *itType;
+        source.enmPathStyle = i_getPathStyle();
+
+        if (*itType == FsObjType_Directory)
+        {
+            source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)*itFlag;
+            source.Type.Dir.fRecursive = true; /* Implicit. */
+        }
+        else
+        {
+            source.Type.File.fCopyFlags = (FileCopyFlag_T)*itFlag;
+        }
+
+        SourceSet.push_back(source);
+
+        ++itSource;
+        ++itFilter;
+        ++itType;
+        ++itFlag;
+    }
+
+    return i_copyFromGuest(SourceSet, aDestination, aProgress);
 }
 
 HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, const std::vector<com::Utf8Str> &aFilters,
                                   const std::vector<FsObjType_T> &aTypes, const std::vector<GuestCopyFlag_T> &aFlags,
                                   const com::Utf8Str &aDestination, ComPtr<IProgress> &aProgress)
 {
-    RT_NOREF(aSources, aFilters, aTypes, aFlags, aDestination, aProgress);
-    ReturnComNotImplemented();
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    const size_t cSources = aSources.size();
+    if (   aFilters.size() != cSources
+        || aTypes.size()   != cSources
+        || aFlags.size()   != cSources)
+    {
+        return setError(E_INVALIDARG, tr("Parameter array sizes don't match to the number of sources specified"));
+    }
+
+    GuestSessionFsSourceSet SourceSet;
+
+    std::vector<com::Utf8Str>::const_iterator itSource  = aSources.begin();
+    std::vector<com::Utf8Str>::const_iterator itFilter  = aFilters.begin();
+    std::vector<FsObjType_T>::const_iterator itType     = aTypes.begin();
+    std::vector<GuestCopyFlag_T>::const_iterator itFlag = aFlags.begin();
+
+    while (itSource != aSources.end())
+    {
+
+        GuestSessionFsSourceSpec source;
+        source.strSource    = *itSource;
+        source.strFilter    = *itFilter;
+        source.enmType      = *itType;
+        source.enmPathStyle = i_getPathStyle();
+
+        if (*itType == FsObjType_Directory)
+        {
+            source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)*itFlag;
+            source.Type.Dir.fRecursive = true; /* Implicit. */
+        }
+        else
+            source.Type.File.fCopyFlags = (FileCopyFlag_T)*itFlag;
+
+        SourceSet.push_back(source);
+
+        ++itSource;
+        ++itFilter;
+        ++itType;
+        ++itFlag;
+    }
+
+    return i_copyToGuest(SourceSet, aDestination, aProgress);
 }
 
 HRESULT GuestSession::directoryCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
@@ -2814,12 +2965,6 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No source directory specified"));
-
-    if (RT_UNLIKELY((aDestination.c_str()) == NULL || *(aDestination.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No destination directory specified"));
-
     uint32_t fFlags = DirectoryCopyFlag_None;
     if (aFlags.size())
     {
@@ -2827,75 +2972,18 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
             fFlags |= aFlags[i];
     }
 
-    if (fFlags)
-    {
-        if (!(fFlags & DirectoryCopyFlag_CopyIntoExisting))
-            return setError(E_INVALIDARG, tr("Invalid flags specified"));
-    }
+    GuestSessionFsSourceSet SourceSet;
 
-    HRESULT hrc = i_isReadyExternal();
-    if (FAILED(hrc))
-        return hrc;
+    GuestSessionFsSourceSpec source;
+    source.strSource            = aSource;
+    source.enmType              = FsObjType_Directory;
+    source.enmPathStyle         = i_getPathStyle();
+    source.Type.Dir.fCopyFlags  = (DirectoryCopyFlag_T)fFlags;
+    source.Type.Dir.fRecursive  = true; /* Implicit. */
 
-    LogFlowThisFuncEnter();
+    SourceSet.push_back(source);
 
-    try
-    {
-        GuestSessionTaskCopyFrom *pTask = NULL;
-        ComObjPtr<Progress> pProgress;
-        try
-        {
-            GuestSessionFsSourceSpec source;
-            source.strSource           = aSource;
-            source.enmType             = GuestSessionFsSourceType_Dir;
-            source.enmPathStyle        = i_getPathStyle();
-            source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)fFlags;
-
-            GuestSessionFsSourceSet vecSources;
-            vecSources.push_back(source);
-
-            pTask = new GuestSessionTaskCopyFrom(this /* GuestSession */, vecSources, aDestination);
-        }
-        catch(...)
-        {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFrom object"));
-            throw;
-        }
-
-        hrc = pTask->Init(Utf8StrFmt(tr("Copying directory \"%s\" from guest to \"%s\" on the host"),
-                                     aSource.c_str(), aDestination.c_str()));
-        if (FAILED(hrc))
-        {
-            delete pTask;
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Creating progress object for SessionTaskCopyDirFrom object failed"));
-            throw hrc;
-        }
-
-        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
-
-        if (SUCCEEDED(hrc))
-        {
-            /* Return progress to the caller. */
-            pProgress = pTask->GetProgressObject();
-            hrc = pProgress.queryInterfaceTo(aProgress.asOutParam());
-        }
-        else
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Starting thread for copying directory \"%s\" from guest to \"%s\" on the host failed"),
-                           aSource.c_str(), aDestination.c_str());
-    }
-    catch(std::bad_alloc &)
-    {
-        hrc = E_OUTOFMEMORY;
-    }
-    catch(HRESULT eHR)
-    {
-        hrc = eHR;
-        LogFlowThisFunc(("Exception was caught in the function\n"));
-    }
-
-    return hrc;
+    return i_copyFromGuest(SourceSet, aDestination, aProgress);
 }
 
 HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
@@ -2904,15 +2992,6 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No source directory specified"));
-
-    if (RT_UNLIKELY((aDestination.c_str()) == NULL || *(aDestination.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No destination directory specified"));
-
-    if (!RTPathExists(aSource.c_str()))
-        return setError(E_INVALIDARG, tr("Source directory \"%s\" does not exist"), aSource.c_str());
-
     uint32_t fFlags = DirectoryCopyFlag_None;
     if (aFlags.size())
     {
@@ -2920,81 +2999,18 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
             fFlags |= aFlags[i];
     }
 
-    if (fFlags)
-    {
-        if (!(fFlags & DirectoryCopyFlag_CopyIntoExisting))
-            return setError(E_INVALIDARG, tr("Invalid flags specified"));
-    }
+    GuestSessionFsSourceSet SourceSet;
 
-    HRESULT hrc = i_isReadyExternal();
-    if (FAILED(hrc))
-        return hrc;
+    GuestSessionFsSourceSpec source;
+    source.strSource           = aSource;
+    source.enmType             = FsObjType_Directory;
+    source.enmPathStyle        = i_getPathStyle();
+    source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)fFlags;
+    source.Type.Dir.fRecursive = true; /* Implicit. */
 
-    LogFlowThisFuncEnter();
+    SourceSet.push_back(source);
 
-    try
-    {
-        GuestSessionTaskCopyTo *pTask = NULL;
-        ComObjPtr<Progress> pProgress;
-        try
-        {
-            GuestSessionFsSourceSpec source;
-            source.strSource           = aSource;
-            source.enmType             = GuestSessionFsSourceType_Dir;
-#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
-            source.enmPathStyle         = PathStyle_DOS;
-#else
-            source.enmPathStyle         = PathStyle_UNIX;
-#endif
-            source.fFollowSymlinks     = true;
-            source.Type.Dir.fRecursive = true;
-            source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)fFlags;
-
-            GuestSessionFsSourceSet vecSources;
-            vecSources.push_back(source);
-
-            pTask = new GuestSessionTaskCopyTo(this /* GuestSession */, vecSources, aDestination);
-        }
-        catch(...)
-        {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyTo object"));
-            throw;
-        }
-
-        hrc = pTask->Init(Utf8StrFmt(tr("Copying directory \"%s\" from host to \"%s\" on the guest"),
-                                     aSource.c_str(), aDestination.c_str()));
-        if (FAILED(hrc))
-        {
-            delete pTask;
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Creating progress object for SessionTaskCopyDirTo object failed"));
-            throw hrc;
-        }
-
-        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
-
-        if (SUCCEEDED(hrc))
-        {
-            /* Return progress to the caller. */
-            pProgress = pTask->GetProgressObject();
-            hrc = pProgress.queryInterfaceTo(aProgress.asOutParam());
-        }
-        else
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Starting thread for copying directory \"%s\" from host to \"%s\" on the guest failed"),
-                           aSource.c_str(), aDestination.c_str());
-    }
-    catch(std::bad_alloc &)
-    {
-        hrc = E_OUTOFMEMORY;
-    }
-    catch(HRESULT eHR)
-    {
-        hrc = eHR;
-        LogFlowThisFunc(("Exception was caught in the function\n"));
-    }
-
-    return hrc;
+    return i_copyToGuest(SourceSet, aDestination, aProgress);
 }
 
 HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,

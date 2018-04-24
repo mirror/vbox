@@ -34,18 +34,6 @@ class Guest;
 class GuestSessionTask;
 class GuestSessionTaskInternalOpen;
 
-/**
- * Enumeration which specifies the file system source type.
- */
-enum GuestSessionFsSourceType
-{
-    /** Invalid / uknown source type, don't use. */
-    GuestSessionFsSourceType_Unknown = 0,
-    /** The source is a directory. */
-    GuestSessionFsSourceType_Dir,
-    /** The source is a file. */
-    GuestSessionFsSourceType_File
-};
 
 /**
  * Structure for keeping a file system source specification,
@@ -53,12 +41,12 @@ enum GuestSessionFsSourceType
  */
 struct GuestSessionFsSourceSpec
 {
-    Utf8Str                  strSource;
-    Utf8Str                  strFilter;
-    GuestSessionFsSourceType enmType;
-    PathStyle_T              enmPathStyle;
-    bool                     fDryRun;
-    bool                     fFollowSymlinks;
+    Utf8Str     strSource;
+    Utf8Str     strFilter;
+    FsObjType_T enmType;
+    PathStyle_T enmPathStyle;
+    bool        fDryRun;
+    bool        fFollowSymlinks;
     union
     {
         /** Directory-specific data. */

@@ -980,7 +980,7 @@ int FsList::Init(const Utf8Str &strSrcRootAbs, const Utf8Str &strDstRootAbs,
     mSourceSpec = SourceSpec;
 
     /* If the source is a directory, make sure the path is properly terminated already. */
-    if (mSourceSpec.enmType == GuestSessionFsSourceType_Dir)
+    if (mSourceSpec.enmType == FsObjType_Directory)
     {
         if (   !mSrcRootAbs.endsWith("/")
             && !mSrcRootAbs.endsWith("\\"))
@@ -1528,7 +1528,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         Utf8Str strSrc = itSrc->strSource;
         Utf8Str strDst = mDest;
 
-        if (itSrc->enmType == GuestSessionFsSourceType_Dir)
+        if (itSrc->enmType == FsObjType_Directory)
         {
             /* If the source does not end with a slash, copy over the entire directory
              * (and not just its contents). */
@@ -1553,7 +1553,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
         if (srcObjData.mType == FsObjType_Directory)
         {
-            if (itSrc->enmType != GuestSessionFsSourceType_Dir)
+            if (itSrc->enmType != FsObjType_Directory)
             {
                 rc = VERR_NOT_A_FILE;
                 break;
@@ -1561,7 +1561,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         }
         else
         {
-            if (itSrc->enmType != GuestSessionFsSourceType_File)
+            if (itSrc->enmType != FsObjType_File)
             {
                 rc = VERR_NOT_A_DIRECTORY;
                 break;
@@ -1571,7 +1571,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         LogFlowFunc(("strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
 
 #if 0
-        if (itSrc->enmType == GuestSessionFsSourceType_Dir)
+        if (itSrc->enmType == FsObjType_Directory)
         {
             bool fDstExists = RTDirExists(strDstDir.c_str());
             if (fDstExists)
@@ -1620,7 +1620,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
                 }
             }
         }
-        else if (itSrc->enmType == GuestSessionFsSourceType_File)
+        else if (itSrc->enmType == FsObjType_File)
         {
 
         }
@@ -1635,7 +1635,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             rc = pFsList->Init(strSrc, strDst, *itSrc);
             if (RT_SUCCESS(rc))
             {
-                if (itSrc->enmType == GuestSessionFsSourceType_Dir)
+                if (itSrc->enmType == FsObjType_Directory)
                 {
                     rc = pFsList->AddDirFromGuest(strSrc);
                 }
@@ -1703,7 +1703,7 @@ int GuestSessionTaskCopyFrom::Run(void)
         LogFlowFunc(("List: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
 
         /* Create the root directory. */
-        if (pList->mSourceSpec.enmType == GuestSessionFsSourceType_Dir)
+        if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
             rc = RTDirCreate(pList->mDstRootAbs.c_str(), fDirMode, 0 /* fCreate */);
             if (   rc == VWRN_ALREADY_EXISTS
@@ -1721,7 +1721,7 @@ int GuestSessionTaskCopyFrom::Run(void)
 
             Utf8Str strSrcAbs = pList->mSrcRootAbs;
             Utf8Str strDstAbs = pList->mDstRootAbs;
-            if (pList->mSourceSpec.enmType == GuestSessionFsSourceType_Dir)
+            if (pList->mSourceSpec.enmType == FsObjType_Directory)
             {
                 strSrcAbs += pEntry->strPath;
                 strDstAbs += pEntry->strPath;
@@ -1819,7 +1819,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
         Utf8Str strSrc = itSrc->strSource;
         Utf8Str strDst = mDest;
 
-        if (itSrc->enmType == GuestSessionFsSourceType_Dir)
+        if (itSrc->enmType == FsObjType_Directory)
         {
             /* If the source does not end with a slash, copy over the entire directory
              * (and not just its contents). */
@@ -1841,7 +1841,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
 
         if (RTFS_IS_DIRECTORY(srcFsObjInfo.Attr.fMode))
         {
-            if (itSrc->enmType != GuestSessionFsSourceType_Dir)
+            if (itSrc->enmType != FsObjType_Directory)
             {
                 rc = VERR_NOT_A_FILE;
                 break;
@@ -1849,7 +1849,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
         }
         else
         {
-            if (itSrc->enmType == GuestSessionFsSourceType_Dir)
+            if (itSrc->enmType == FsObjType_Directory)
             {
                 rc = VERR_NOT_A_DIRECTORY;
                 break;
@@ -1865,7 +1865,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             rc = pFsList->Init(strSrc, strDst, *itSrc);
             if (RT_SUCCESS(rc))
             {
-                if (itSrc->enmType == GuestSessionFsSourceType_Dir)
+                if (itSrc->enmType == FsObjType_Directory)
                 {
                     rc = pFsList->AddDirFromHost(strSrc);
                 }
@@ -1932,7 +1932,7 @@ int GuestSessionTaskCopyTo::Run(void)
         LogFlowFunc(("List: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
 
         /* Create the root directory. */
-        if (pList->mSourceSpec.enmType == GuestSessionFsSourceType_Dir)
+        if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
             rc = directoryCreate(pList->mDstRootAbs.c_str(), DirectoryCreateFlag_None, fDirMode, fFollowSymlinks);
             if (   rc == VWRN_ALREADY_EXISTS
@@ -1950,7 +1950,7 @@ int GuestSessionTaskCopyTo::Run(void)
 
             Utf8Str strSrcAbs = pList->mSrcRootAbs;
             Utf8Str strDstAbs = pList->mDstRootAbs;
-            if (pList->mSourceSpec.enmType == GuestSessionFsSourceType_Dir)
+            if (pList->mSourceSpec.enmType == FsObjType_Directory)
             {
                 strSrcAbs += pEntry->strPath;
                 strDstAbs += pEntry->strPath;

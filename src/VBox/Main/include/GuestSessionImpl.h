@@ -26,6 +26,7 @@
 #include "GuestDirectoryImpl.h"
 #include "GuestFileImpl.h"
 #include "GuestFsObjInfoImpl.h"
+#include "GuestSessionImplTasks.h"
 
 #include <deque>
 
@@ -260,6 +261,10 @@ public:
     /** @name Public internal methods.
      * @todo r=bird: Most of these are public for no real reason...
      * @{ */
+    HRESULT                 i_copyFromGuest(const GuestSessionFsSourceSet &SourceSet, const com::Utf8Str &strDestination,
+                                            ComPtr<IProgress> &pProgress);
+    HRESULT                 i_copyToGuest(const GuestSessionFsSourceSet &SourceSet, const com::Utf8Str &strDestination,
+                                          ComPtr<IProgress> &pProgress);
     int                     i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestRc);
     inline bool             i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDirectory> *pDir);
     int                     i_directoryUnregister(GuestDirectory *pDirectory);
