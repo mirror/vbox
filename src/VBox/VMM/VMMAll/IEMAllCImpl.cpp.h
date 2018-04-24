@@ -3870,6 +3870,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
 {
     /*
      * First, clear NMI blocking, if any, before causing any exceptions.
+     * See Intel spec. 6.7.1 "Handling Multiple NMIs".
      */
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
