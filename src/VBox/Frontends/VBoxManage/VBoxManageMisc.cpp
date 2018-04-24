@@ -345,6 +345,11 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
     }
 
 
+    if (!pszType)
+    {
+        pszType = "basic";
+    }
+
     /* Check for required options */
     if (!pszSrcName)
         return errorSyntax(USAGE_MOVEVM, "VM name required");

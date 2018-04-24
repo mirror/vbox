@@ -101,7 +101,7 @@ public:
         m_pMachine(aMachine),
         m_pProgress(aProgress),
         m_targetPath(aTargetPath),
-        m_type (aType),
+        m_type (aType.isEmpty() == true ? "basic" : aType),
         result(S_OK)
     {
     }
