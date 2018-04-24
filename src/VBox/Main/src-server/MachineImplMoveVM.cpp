@@ -888,15 +888,18 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         try
         {
             /*
-             * Fix the progress count
-             * In instance, the whole "move vm" operation is failed on 9th step. But total count is 20.
+             * Fix the progress counter
+             * In instance, the whole "move vm" operation is failed on 5th step. But total count is 20.
              * Where 20 = 2 * 10 operations, where 10 is the real number of operations. And this value was doubled
              * earlier in the init() exactly for one reason - rollback operation. Because in this case we must do
              * the same operations but in backward direction.
-             * Thus now we want to correct progress operation count from 9 to 11. Why?
-             * Because we should have evaluated count as "20/2 + (20/2 - 9)" = 11 or just "20 - 9" = 11
+             * Thus now we want to correct the progress counter from 5 to 15. Why?
+             * Because we should have evaluated the counter as "20/2 + (20/2 - 5)" = 15 or just "20 - 5" = 15 
+             * And because the 5th step failed it shouldn't be counted.
+             * As result, we need to rollback 4 operations.
+             * Thus we start from "operation + 1" and finish when "i < operationCount - operation".
              */
-            for (ULONG i = operation; i < operationCount - operation; ++i)
+            for (ULONG i = operation + 1; i < operationCount - operation; ++i)
             {
                 rc = taskMoveVM->m_pProgress->SetNextOperation(BstrFmt("Skip the empty operation %d...", i + 1).raw(), 1);
                 if (FAILED(rc)) throw rc;
@@ -946,7 +949,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
 
         /* Restore an original path to XML setting file */
         {
-            LogRelFunc(("Rollback scenario: Restore an original path to XML setting file\n"));
+            LogRelFunc(("Rollback scenario: restoration of the original path to XML setting file\n"));
             Utf8Str strOriginalSettingsFilePath = taskMoveVM->vmFolders[VBox_SettingFolder];
             strOriginalSettingsFilePath.append(RTPATH_DELIMITER).append(Utf8Str(bstrMachineName)).append(".vbox");
             machineData->m_strConfigFileFull = strOriginalSettingsFilePath;
