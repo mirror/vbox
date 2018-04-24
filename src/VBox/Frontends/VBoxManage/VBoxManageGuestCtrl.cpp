@@ -1899,7 +1899,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     {
         vrc = gctlPrintError(pCtx->pGuestSession, COM_IIDOF(IGuestSession));
     }
-    else
+    else if (pProgress.isNotNull())
     {
         if (pCtx->cVerbose)
             rc = showProgress(pProgress);
