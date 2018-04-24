@@ -1710,7 +1710,7 @@ static DWORD vboxDispIfWddmResizeDisplay2(PCVBOXDISPIF const pIf, DISPLAY_DEVICE
     winEr = vboxDispIfWddmDcCreate(&DispCfg, QDC_ALL_PATHS);
 
     if (winEr != ERROR_SUCCESS)
-    {	
+    {
         WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmDcCreate\n"));
         return winEr;
     }
