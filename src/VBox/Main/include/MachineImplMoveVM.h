@@ -64,7 +64,7 @@ class MachineMoveVM : public ThreadTask
 {
     struct ErrorInfoItem
     {
-        ErrorInfoItem(unsigned int aCode, const char* aDescription):
+        ErrorInfoItem(HRESULT aCode, const char* aDescription):
             m_code(aCode),
             m_description(aDescription == NULL ? "There is no description" : aDescription)
         {
