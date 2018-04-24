@@ -1171,9 +1171,16 @@ HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATE
         else
         {
             const Utf8Str &path = m_pMachine->mSSData->strStateFilePath;
-            m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%s",
-                                                               targetPath.c_str(),
-                                                               path.c_str() + sourcePath.length());
+            /*
+             * This check for the case when a new value is equal to the old one.
+             * Maybe the more clever check is needed in the some corner cases.
+             */
+            if (!path.contains(targetPath))
+            {
+                m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%s",
+                                                                   targetPath.c_str(),
+                                                                   path.c_str() + sourcePath.length());
+            }
         }
 
         ++itState;
