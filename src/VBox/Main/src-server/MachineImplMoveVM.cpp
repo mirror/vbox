@@ -963,8 +963,10 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
             Guid uuid = machine->mData->mUuid;
             machine->mParent->i_markRegistryModified(uuid);
             srcLock.acquire();
+        }
 
-            // save the global settings; for that we should hold only the VirtualBox lock
+        /* save the global settings; for that we should hold only the VirtualBox lock */
+        {
             AutoWriteLock vboxLock(machine->mParent COMMA_LOCKVAL_SRC_POS);
             rc = machine->mParent->i_saveSettings();
         }
