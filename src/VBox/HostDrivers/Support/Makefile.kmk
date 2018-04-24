@@ -768,7 +768,8 @@ ifeq ($(KBUILD_TARGET), win)
  ifdef VBOX_SIGNING_MODE
   VBoxDrv-inf_SOURCES += \
   	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys \
-  	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
+  	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat \
+  	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat=>VBoxDrv-PreW10.cat
 
   $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(VBoxDrv_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)

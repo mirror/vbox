@@ -137,7 +137,8 @@ $(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.inf: $(PATH_SUB_CURRENT)/win/VBoxN
  ifdef VBOX_SIGNING_MODE
 VBoxNetAdp6-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys \
-	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat
+	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat \
+	$(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.cat=>VBoxNetAdp6-PreW10.cat
 
 $(PATH_TARGET)/VBoxNetAdp6Cat.dir/VBoxNetAdp6.sys: $$(VBoxNetAdp6_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)

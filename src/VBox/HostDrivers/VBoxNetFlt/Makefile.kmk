@@ -206,7 +206,8 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.inf: $(PATH_SUB_CURRENT)/win/drv/VBo
  ifdef VBOX_SIGNING_MODE
 VBoxNetLwf-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.sys \
-	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat
+	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat \
+	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat=>VBoxNetLwf-PreW10.cat
 
 #	$(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwfNobj.dll \
 

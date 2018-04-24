@@ -173,8 +173,10 @@ $(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.inf: $(PATH_SUB_CURRENT)/mon/VBoxUSB
 ifdef VBOX_SIGNING_MODE
 install-infs_SOURCES += \
 	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat \
+	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat=>VBoxUSB-PreW10.cat \
 	$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat \
+	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat=>VBoxUSBMon-PreW10.cat \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys
 
 $(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys: $$(VBoxUSB_1_TARGET) | $$(dir $$@)

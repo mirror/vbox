@@ -455,6 +455,10 @@
         <!-- unattended template component -->
         <ComponentRef Id="cp_UnattendedTemplates" />
     <?endif ?>
+    <?if $(env.VBOX_SIGNING_MODE) != none ?>
+        <ComponentRef Id="cp_VBoxDrvCat_PreW10" />
+        <ComponentRef Id="cp_VBoxDrvCat_W10" />
+    <?endif ?>
     <ComponentRef Id="cp_VBoxDrv" />
 <?endif ?>
 
@@ -465,7 +469,15 @@
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
             <MergeRef Id="msm_VBoxUSB" />
 <?else ?>
+    <?if $(env.VBOX_SIGNING_MODE) != none ?>
+            <ComponentRef Id="cp_USBFilterDriverCat_PreW10" />
+            <ComponentRef Id="cp_USBFilterDriverCat_W10" />
+    <?endif ?>
             <ComponentRef Id="cp_USBFilterDriver" />
+    <?if $(env.VBOX_SIGNING_MODE) != none ?>
+            <ComponentRef Id="cp_USBDeviceDriverCat_PreW10" />
+            <ComponentRef Id="cp_USBDeviceDriverCat_W10" />
+    <?endif ?>
             <ComponentRef Id="cp_USBDeviceDriver" />
 <?endif ?>
         </Feature>
@@ -484,6 +496,10 @@
                 <MergeRef Id="msm_VBoxNetworkLwf" />
     <?else ?>
                 <ComponentRef Id="cp_NetFltDriver" />
+        <?if $(env.VBOX_SIGNING_MODE) != none ?>
+                <ComponentRef Id="cp_NetLwfDriverCat_PreW10" />
+                <ComponentRef Id="cp_NetLwfDriverCat_W10" />
+        <?endif ?>
                 <ComponentRef Id="cp_NetLwfDriver" />
     <?endif ?>
             </Feature>
@@ -496,6 +512,10 @@
                 <MergeRef Id="msm_VBoxNetworkAdp6" />
     <?else ?>
                 <ComponentRef Id="cp_NetAdpDriver" />
+        <?if $(env.VBOX_SIGNING_MODE) != none ?>
+                <ComponentRef Id="cp_NetAdp6DriverCat_PreW10" />
+                <ComponentRef Id="cp_NetAdp6DriverCat_W10" />
+        <?endif ?>
                 <ComponentRef Id="cp_NetAdp6Driver" />
     <?endif ?>
             </Feature>
