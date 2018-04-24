@@ -59,11 +59,11 @@ set _MY_OPT_BINDIR=%2
 goto argument_loop_next_with_value
 
 :opt_h
-echo This script unpacks the cabinent contining the blessed driver files from
+echo This script unpacks the zip-file containing the blessed driver files from
 echo Microsoft, replacing original files in the bin directory.  The catalog files
 echo will be signed again and the Microsoft signature merged with ours.
 echo .
-echo Usage: UnpackBlessedDrivers.cmd [-b bindir] [-n/--no-sign-cat] -i input.cab
+echo Usage: UnpackBlessedDrivers.cmd [-b bindir] [-n/--no-sign-cat] -i input.zip
 echo .
 echo Warning! This script should normally be invoked from the repack directory
 goto end_failed
@@ -103,7 +103,12 @@ rem Unpack the stuff.
 rem ASSUME .cab capable expand on system.  The -i option means skipping
 rem subdirectories and just put all the files in the specified bin dir.
 rem
-expand "%_MY_OPT_INPUT%" "%_MY_OPT_BINDIR%" -i -f:* || goto end_failed
+
+rem We're getting ZIP files back now.
+rem expand "%_MY_OPT_INPUT%" "%_MY_OPT_BINDIR%" -i -f:* || goto end_failed
+echo fixme
+goto end_failed
+
 
 rem
 rem Modify the catalog signatures.
