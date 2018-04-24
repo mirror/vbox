@@ -62,8 +62,37 @@ struct fileList_t;
 
 class MachineMoveVM : public ThreadTask
 {
-public:
+    struct ErrorInfoItem
+    {
+        ErrorInfoItem(unsigned int aCode, const char* aDescription):
+            m_code(aCode),
+            m_description(aDescription == NULL ? "There is no description" : aDescription)
+        {
+        }
 
+        void printItem(bool fLog) const;
+
+        HRESULT m_code;
+        Utf8Str m_description;
+    };
+
+    RTCList<MEDIUMTASKCHAINMOVE>    llMedias;
+    RTCList<SAVESTATETASKMOVE>      llSaveStateFiles;
+    std::map<Utf8Str, MEDIUMTASKMOVE>     finalMediumsMap;
+    std::map<Utf8Str, SAVESTATETASKMOVE>  finalSaveStateFilesMap;
+    std::map<VBoxFolder_t, Utf8Str> vmFolders;
+    std::list<ErrorInfoItem> errorsList;
+
+    ComObjPtr<Machine>  m_pMachine;
+    ComObjPtr<Progress> m_pProgress;
+    ComObjPtr<Progress> m_pRollBackProgress;
+    ComPtr<ISession>    m_pSession;
+    ComPtr<IMachine>    m_pSessionMachine;
+    Utf8Str             m_targetPath;
+    Utf8Str             m_type;
+    HRESULT             result;
+
+public:
     MachineMoveVM(ComObjPtr<Machine> aMachine,
                   const com::Utf8Str &aTargetPath,
                   const com::Utf8Str &aType,
@@ -72,7 +101,7 @@ public:
         m_pMachine(aMachine),
         m_pProgress(aProgress),
         m_targetPath(aTargetPath),
-        m_type(aType),
+        m_type (aType),
         result(S_OK)
     {
     }
@@ -85,21 +114,6 @@ public:
     static DECLCALLBACK(int) updateProgress(unsigned uPercent, void *pvUser);
     static DECLCALLBACK(int) copyFileProgress(unsigned uPercentage, void *pvUser);
     static void i_MoveVMThreadTask(MachineMoveVM* task);
-
-    RTCList<MEDIUMTASKCHAINMOVE>    llMedias;
-    RTCList<SAVESTATETASKMOVE>      llSaveStateFiles;
-    std::map<Utf8Str, MEDIUMTASKMOVE>     finalMediumsMap;
-    std::map<Utf8Str, SAVESTATETASKMOVE>  finalSaveStateFilesMap;
-    std::map<VBoxFolder_t, Utf8Str> vmFolders;
-
-    ComObjPtr<Machine>  m_pMachine;
-    ComObjPtr<Progress> m_pProgress;
-    ComObjPtr<Progress> m_pRollBackProgress;
-    ComPtr<ISession>    m_pSession;
-    ComPtr<IMachine>    m_pSessionMachine;
-    Utf8Str             m_targetPath;
-    Utf8Str             m_type;
-    HRESULT             result;
 
     void handler()
     {
