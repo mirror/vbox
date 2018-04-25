@@ -58,7 +58,7 @@ typedef enum _MONITOR_DPI_TYPE // gently stolen from MSDN
     MDT_DEFAULT        = MDT_EFFECTIVE_DPI
 } MONITOR_DPI_TYPE;
 
-bool MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lpClipRect, LPARAM dwData)
+static BOOL CALLBACK MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lpClipRect, LPARAM dwData)
 {
     /* These required for clipped screens only: */
     RT_NOREF(hdcMonitor, lpClipRect);
@@ -431,18 +431,25 @@ double UIDesktopWidgetWatchdog::devicePixelRatioActual(int iHostScreenIndex /* =
     AssertPtrReturn(pScreen, 1.0);
 
 #ifdef VBOX_WS_WIN
+    /* Dynamically resolve EnumDisplayMonitors (available since Windows 2k) first time through: */
+    static bool volatile                  s_fResolved = false;
+    static decltype(EnumDisplayMonitors) *s_pfnEnumDisplayMonitors = NULL;
+    decltype(EnumDisplayMonitors)        *pfnEnumDisplayMonitors;
+    if (s_fResolved)
+        pfnEnumDisplayMonitors = s_pfnEnumDisplayMonitors;
+    else
+    {
+        pfnEnumDisplayMonitors = (decltype(EnumDisplayMonitors) *)GetProcAddress(GetModuleHandleW(L"USER32.DLL"),
+                                                                                 "EnumDisplayMonitors");
+        s_pfnEnumDisplayMonitors = pfnEnumDisplayMonitors;
+        s_fResolved = true;
+    }
 
-    /* Dynamically access User32.dll: */
-    QLibrary user32("User32.dll", NULL);
-
-    /* Enumerate available monitors through EnumDisplayMonitors (available since Windows 2k): */
-    typedef bool (*MonitorEnumProcFP)(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lpClipRect, LPARAM dwData);
-    typedef bool (*EnumDisplayMonitorsFP)(HDC hdc, LPCRECT lprcRect, MonitorEnumProcFP lpfnEnum, LPARAM dwData);
-    EnumDisplayMonitorsFP EnumDisplayMonitorsF = (EnumDisplayMonitorsFP)user32.resolve("EnumDisplayMonitors");
-    if (EnumDisplayMonitorsF)
+    /* Enumerate available monitors through EnumDisplayMonitors if available: */
+    if (pfnEnumDisplayMonitors)
     {
         QList<QPair<int, int> > listOfScreenDPI;
-        EnumDisplayMonitorsF(0, 0, MonitorEnumProcF, (LPARAM)&listOfScreenDPI);
+        pfnEnumDisplayMonitors(0, 0, MonitorEnumProcF, (LPARAM)&listOfScreenDPI);
         if (iHostScreenIndex >= 0 && iHostScreenIndex < listOfScreenDPI.size())
         {
             const QPair<int, int> dpiPair = listOfScreenDPI.at(iHostScreenIndex);
