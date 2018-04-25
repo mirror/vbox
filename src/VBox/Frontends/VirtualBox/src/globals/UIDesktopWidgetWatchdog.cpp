@@ -37,7 +37,9 @@
 # endif /* VBOX_WS_X11 */
 
 /* Other VBox includes: */
+# include <iprt/asm.h>
 # include <iprt/assert.h>
+# include <iprt/ldr.h>
 # include <VBox/log.h>
 
 /* Platform includes: */
@@ -50,6 +52,7 @@
 
 #ifdef VBOX_WS_WIN
 
+# ifndef DPI_ENUMS_DECLARED
 typedef enum _MONITOR_DPI_TYPE // gently stolen from MSDN
 {
     MDT_EFFECTIVE_DPI  = 0,
@@ -57,29 +60,41 @@ typedef enum _MONITOR_DPI_TYPE // gently stolen from MSDN
     MDT_RAW_DPI        = 2,
     MDT_DEFAULT        = MDT_EFFECTIVE_DPI
 } MONITOR_DPI_TYPE;
+# endif
+typedef void (WINAPI *PFN_GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, uint *, uint *);
+
+/** Set when dynamic API import is reoslved. */
+static bool volatile        g_fResolved;
+/** Pointer to Shcore.dll!GetDpiForMonitor, introduced in windows 8.1. */
+static PFN_GetDpiForMonitor g_pfnGetDpiForMonitor = NULL;
+
+/** @returns true if all APIs found, false if missing APIs  */
+static bool ResolveDynamicImports(void)
+{
+    if (!g_fResolved)
+    {
+        PFN_GetDpiForMonitor pfn = (decltype(pfn))RTLdrGetSystemSymbol("Shcore.dll", "GetDpiForMonitor");
+        g_pfnGetDpiForMonitor = pfn;
+        ASMCompilerBarrier();
+
+        g_fResolved = true;
+    }
+    return g_pfnGetDpiForMonitor != NULL;
+}
 
 static BOOL CALLBACK MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lpClipRect, LPARAM dwData)
 {
     /* These required for clipped screens only: */
     RT_NOREF(hdcMonitor, lpClipRect);
 
-    /* Dynamically access Shcore.dll: */
-    QLibrary shcore("Shcore.dll", NULL);
-
     /* Acquire effective DPI (available since Windows 8.1): */
-    typedef void (WINAPI *GetDpiForMonitorFP)(HMONITOR hMonitor, MONITOR_DPI_TYPE enmDpiType, uint *puOutX, uint *puOutY);
-    GetDpiForMonitorFP GetDpiForMonitorF = (GetDpiForMonitorFP)shcore.resolve("GetDpiForMonitor");
-    if (GetDpiForMonitorF)
-    {
-        uint uOutX = 0;
-        uint uOutY = 0;
-        GetDpiForMonitorF(hMonitor, MDT_EFFECTIVE_DPI, &uOutX, &uOutY);
-        reinterpret_cast<QList<QPair<int, int> >*>(dwData)->append(qMakePair(uOutX, uOutY));
-        return true;
-    }
+    AssertReturn(g_pfnGetDpiForMonitor, false);
+    uint uOutX = 0;
+    uint uOutY = 0;
+    g_pfnGetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, &uOutX, &uOutY);
+    reinterpret_cast<QList<QPair<int, int> >*>(dwData)->append(qMakePair(uOutX, uOutY));
 
-    /* False by default: */
-    return false;
+    return TRUE;
 }
 
 #endif /* VBOX_WS_WIN */
@@ -431,25 +446,11 @@ double UIDesktopWidgetWatchdog::devicePixelRatioActual(int iHostScreenIndex /* =
     AssertPtrReturn(pScreen, 1.0);
 
 #ifdef VBOX_WS_WIN
-    /* Dynamically resolve EnumDisplayMonitors (available since Windows 2k) first time through: */
-    static bool volatile                  s_fResolved = false;
-    static decltype(EnumDisplayMonitors) *s_pfnEnumDisplayMonitors = NULL;
-    decltype(EnumDisplayMonitors)        *pfnEnumDisplayMonitors;
-    if (s_fResolved)
-        pfnEnumDisplayMonitors = s_pfnEnumDisplayMonitors;
-    else
-    {
-        pfnEnumDisplayMonitors = (decltype(EnumDisplayMonitors) *)GetProcAddress(GetModuleHandleW(L"USER32.DLL"),
-                                                                                 "EnumDisplayMonitors");
-        s_pfnEnumDisplayMonitors = pfnEnumDisplayMonitors;
-        s_fResolved = true;
-    }
-
-    /* Enumerate available monitors through EnumDisplayMonitors if available: */
-    if (pfnEnumDisplayMonitors)
+    /* Enumerate available monitors through EnumDisplayMonitors if GetDpiForMonitor is available: */
+    if (ResolveDynamicImports())
     {
         QList<QPair<int, int> > listOfScreenDPI;
-        pfnEnumDisplayMonitors(0, 0, MonitorEnumProcF, (LPARAM)&listOfScreenDPI);
+        EnumDisplayMonitors(0, 0, MonitorEnumProcF, (LPARAM)&listOfScreenDPI);
         if (iHostScreenIndex >= 0 && iHostScreenIndex < listOfScreenDPI.size())
         {
             const QPair<int, int> dpiPair = listOfScreenDPI.at(iHostScreenIndex);
