@@ -464,7 +464,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/UIMouseHandler.h \
 	src/runtime/UIMultiScreenLayout.h \
 	src/runtime/UISession.h \
-	src/runtime/UISlidingToolBar.h \
 	src/runtime/UIVMCloseDialog.h \
 	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.h \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.h \
@@ -685,6 +684,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPopupStackViewport.h \
 	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
+	src/widgets/UISlidingToolBar.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UIToolBar.h \
@@ -794,6 +794,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/widgets/UIPopupStackViewport.h \
 	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
+	src/widgets/UISlidingToolBar.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UIToolBar.h \
@@ -974,7 +975,6 @@ VirtualBox_SOURCES = \
 	src/runtime/UIMouseHandler.cpp \
 	src/runtime/UIMultiScreenLayout.cpp \
 	src/runtime/UISession.cpp \
-	src/runtime/UISlidingToolBar.cpp \
 	src/runtime/UIVMCloseDialog.cpp \
 	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.cpp \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.cpp \
@@ -1234,6 +1234,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIPopupStackViewport.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
+	src/widgets/UISlidingToolBar.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBar.cpp \
@@ -1369,6 +1370,7 @@ VBoxGlobal_SOURCES = \
 	src/widgets/UIPopupStackViewport.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
+	src/widgets/UISlidingToolBar.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBar.cpp \

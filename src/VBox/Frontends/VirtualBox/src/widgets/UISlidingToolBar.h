@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,13 +21,21 @@
 /* Qt includes: */
 #include <QWidget>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
+class QCloseEvent;
+class QEvent;
 class QHBoxLayout;
+class QRect;
+class QShowEvent;
+class QWidget;
 class UIAnimation;
 
-/** QWidget reimplementation
+/** QWidget subclass
   * providing GUI with slideable tool-bar. */
-class UISlidingToolBar : public QWidget
+class SHARED_LIBRARY_STUFF UISlidingToolBar : public QWidget
 {
     Q_OBJECT;
     Q_PROPERTY(QRect widgetGeometry READ widgetGeometry WRITE setWidgetGeometry);
@@ -52,11 +60,23 @@ public:
         Position_Bottom
     };
 
-    /** Constructor, passes @a pParentWidget to the QWidget constructor.
-      * @param pParentWidget is used to get parent-widget geoemtry,
-      * @param pIndentWidget is used to get indent-widget geometry,
-      * @param pChildWidget  brings child-widget to be injected into tool-bar. */
-    UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidget, QWidget *pChildWidget, Position position);
+    /** Constructs sliding tool-bar passing @a pParentWidget to the base-class.
+      * @param  pParentWidget  Brings the parent-widget geometry.
+      * @param  pIndentWidget  Brings the indent-widget geometry.
+      * @param  pChildWidget   Brings the child-widget to be injected into tool-bar.
+      * @param  enmPosition    Brings the tool-bar position. */
+    UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidget, QWidget *pChildWidget, Position enmPosition);
+
+protected:
+
+#ifdef VBOX_WS_MAC
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+#endif
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    /** Handles close @a pEvent. */
+    virtual void closeEvent(QCloseEvent *pEvent) /* override */;
 
 private slots:
 
@@ -73,28 +93,19 @@ private slots:
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
-    /** Prepare contents routine. */
+    /** Prepares contents. */
     void prepareContents();
-    /** Prepare geometry routine. */
+    /** Prepares geometry. */
     void prepareGeometry();
-    /** Prepare animation routine. */
+    /** Prepares animation. */
     void prepareAnimation();
 
-    /** Update geometry. */
+    /** Updates geometry. */
     void adjustGeometry();
     /** Updates animation. */
     void updateAnimation();
-
-    /** Show event handler. */
-    virtual void showEvent(QShowEvent *pEvent);
-    /** Close event handler. */
-    virtual void closeEvent(QCloseEvent *pEvent);
-#ifdef VBOX_WS_MAC
-    /** Common event handler. */
-    virtual bool event(QEvent *pEvent);
-#endif /* VBOX_WS_MAC */
 
     /** Defines sub-window geometry. */
     void setWidgetGeometry(const QRect &rect);
@@ -108,11 +119,11 @@ private:
     /** @name Geometry
       * @{ */
         /** Holds the tool-bar position. */
-        const Position m_position;
+        const Position  m_enmPosition;
         /** Holds the cached parent-widget geometry. */
-        QRect m_parentRect;
+        QRect           m_parentRect;
         /** Holds the cached indent-widget geometry. */
-        QRect m_indentRect;
+        QRect           m_indentRect;
     /** @} */
 
     /** @name Geometry: Animation
@@ -120,11 +131,11 @@ private:
         /** Holds the expand/collapse animation instance. */
         UIAnimation *m_pAnimation;
         /** Holds whether window is expanded. */
-        bool m_fExpanded;
+        bool         m_fExpanded;
         /** Holds sub-window start-geometry. */
-        QRect m_startWidgetGeometry;
+        QRect        m_startWidgetGeometry;
         /** Holds sub-window final-geometry. */
-        QRect m_finalWidgetGeometry;
+        QRect        m_finalWidgetGeometry;
     /** @} */
 
     /** @name Contents
@@ -132,9 +143,9 @@ private:
         /** Holds the main-layout instance. */
         QHBoxLayout *m_pMainLayout;
         /** Holds the area instance. */
-        QWidget *m_pArea;
+        QWidget     *m_pArea;
         /** Holds the child-widget reference. */
-        QWidget *m_pWidget;
+        QWidget     *m_pWidget;
     /** @} */
 };
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,9 +34,9 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UISlidingToolBar::UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidget, QWidget *pChildWidget, Position position)
+UISlidingToolBar::UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidget, QWidget *pChildWidget, Position enmPosition)
     : QWidget(pParentWidget, Qt::Tool | Qt::FramelessWindowHint)
-    , m_position(position)
+    , m_enmPosition(enmPosition)
     , m_parentRect(pParentWidget ? pParentWidget->geometry() : QRect())
     , m_indentRect(pIndentWidget ? pIndentWidget->geometry() : QRect())
     , m_pAnimation(0)
@@ -49,194 +49,32 @@ UISlidingToolBar::UISlidingToolBar(QWidget *pParentWidget, QWidget *pIndentWidge
     prepare();
 }
 
-void UISlidingToolBar::sltParentGeometryChanged(const QRect &parentRect)
+#ifdef VBOX_WS_MAC
+bool UISlidingToolBar::event(QEvent *pEvent)
 {
-    /* Update rectangle: */
-    m_parentRect = parentRect;
-    /* Adjust geometry: */
-    adjustGeometry();
-    /* Update animation: */
-    updateAnimation();
-}
-
-void UISlidingToolBar::prepare()
-{
-    /* Do not count that window as important for application,
-     * it will NOT be taken into account when other top-level windows will be closed: */
-    setAttribute(Qt::WA_QuitOnClose, false);
-    /* Delete window when closed: */
-    setAttribute(Qt::WA_DeleteOnClose);
-
-#if   defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-    /* Make sure we have no background
-     * until the first one paint-event: */
-    setAttribute(Qt::WA_NoSystemBackground);
-    /* Use Qt API to enable translucency: */
-    setAttribute(Qt::WA_TranslucentBackground);
-#elif defined(VBOX_WS_X11)
-    if (vboxGlobal().isCompositingManagerRunning())
+    /* Depending on event-type: */
+    switch (pEvent->type())
     {
-        /* Use Qt API to enable translucency: */
-        setAttribute(Qt::WA_TranslucentBackground);
-    }
-#endif /* VBOX_WS_X11 */
-
-    /* Prepare contents: */
-    prepareContents();
-    /* Prepare geometry: */
-    prepareGeometry();
-    /* Prepare animation: */
-    prepareAnimation();
-}
-
-void UISlidingToolBar::prepareContents()
-{
-    /* Create main-layout: */
-    m_pMainLayout = new QHBoxLayout(this);
-    AssertPtrReturnVoid(m_pMainLayout);
-    {
-        /* Configure main-layout: */
-        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-        m_pMainLayout->setSpacing(0);
-        /* Create area: */
-        m_pArea = new QWidget;
-        AssertPtrReturnVoid(m_pArea);
+        case QEvent::Resize:
+        case QEvent::WindowActivate:
         {
-            /* Configure area: */
-            m_pArea->setAcceptDrops(true);
-            m_pArea->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-            QPalette pal1 = m_pArea->palette();
-            pal1.setColor(QPalette::Window, QColor(Qt::transparent));
-            m_pArea->setPalette(pal1);
-            /* Make sure valid child-widget passed: */
-            AssertPtrReturnVoid(m_pWidget);
-            {
-                /* Configure child-widget: */
-                QPalette pal2 = m_pWidget->palette();
-                pal2.setColor(QPalette::Window, palette().color(QPalette::Window));
-                m_pWidget->setPalette(pal2);
-                connect(m_pWidget, SIGNAL(sigCancelClicked()), this, SLOT(close()));
-                /* Add child-widget into area: */
-                m_pWidget->setParent(m_pArea);
-            }
-            /* Add area into main-layout: */
-            m_pMainLayout->addWidget(m_pArea);
-        }
-    }
-}
-
-void UISlidingToolBar::prepareGeometry()
-{
-    /* Prepare geometry based on parent and sub-window size-hints,
-     * But move sub-window to initial position: */
-    const QSize sh = m_pWidget->sizeHint();
-    switch (m_position)
-    {
-        case Position_Top:
-        {
-            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
-                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
-            m_pWidget->setGeometry(0, -sh.height(), qMax(width(), sh.width()), sh.height());
+            // WORKAROUND:
+            // By some strange reason
+            // cocoa resets NSWindow::setHasShadow option
+            // for frameless windows on every window resize/activation.
+            // So we have to make sure window still has no shadows.
+            darwinSetWindowHasShadow(this, false);
             break;
         }
-        case Position_Bottom:
-        {
-            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
-                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
-            m_pWidget->setGeometry(0,  sh.height(), qMax(width(), sh.width()), sh.height());
+        default:
             break;
-        }
     }
-
-#ifdef VBOX_WS_X11
-    if (!vboxGlobal().isCompositingManagerRunning())
-    {
-        /* Use Xshape otherwise: */
-        setMask(m_pWidget->geometry());
-    }
-#endif /* VBOX_WS_X11 */
-
-#ifdef VBOX_WS_WIN
-    /* Raise tool-window for proper z-order. */
-    raise();
-#endif /* VBOX_WS_WIN */
-
-    /* Activate window after it was shown: */
-    connect(this, SIGNAL(sigShown()), this,
-            SLOT(sltActivateWindow()), Qt::QueuedConnection);
-    /* Update window geometry after parent geometry changed: */
-    connect(parent(), SIGNAL(sigGeometryChange(const QRect&)),
-            this, SLOT(sltParentGeometryChanged(const QRect&)));
+    /* Call to base-class: */
+    return QWidget::event(pEvent);
 }
+#endif /* VBOX_WS_MAC */
 
-void UISlidingToolBar::prepareAnimation()
-{
-    /* Prepare sub-window geometry animation itself: */
-    connect(this, SIGNAL(sigShown()), this, SIGNAL(sigExpand()), Qt::QueuedConnection);
-    m_pAnimation = UIAnimation::installPropertyAnimation(this,
-                                                         "widgetGeometry",
-                                                         "startWidgetGeometry", "finalWidgetGeometry",
-                                                         SIGNAL(sigExpand()), SIGNAL(sigCollapse()));
-    connect(m_pAnimation, SIGNAL(sigStateEnteredStart()), this, SLOT(sltMarkAsCollapsed()));
-    connect(m_pAnimation, SIGNAL(sigStateEnteredFinal()), this, SLOT(sltMarkAsExpanded()));
-    /* Update geometry animation: */
-    updateAnimation();
-}
-
-void UISlidingToolBar::adjustGeometry()
-{
-    /* Adjust geometry based on parent and sub-window size-hints: */
-    const QSize sh = m_pWidget->sizeHint();
-    switch (m_position)
-    {
-        case Position_Top:
-        {
-            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
-                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
-            break;
-        }
-        case Position_Bottom:
-        {
-            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
-                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
-            break;
-        }
-    }
-    /* And move sub-window to corresponding position: */
-    m_pWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
-
-#ifdef VBOX_WS_X11
-    if (!vboxGlobal().isCompositingManagerRunning())
-    {
-        /* Use Xshape otherwise: */
-        setMask(m_pWidget->geometry());
-    }
-#endif /* VBOX_WS_X11 */
-
-#ifdef VBOX_WS_WIN
-    /* Raise tool-window for proper z-order. */
-    raise();
-#endif /* VBOX_WS_WIN */
-}
-
-void UISlidingToolBar::updateAnimation()
-{
-    /* Skip if no animation created: */
-    if (!m_pAnimation)
-        return;
-
-    /* Recalculate sub-window geometry animation boundaries based on size-hint: */
-    const QSize sh = m_pWidget->sizeHint();
-    switch (m_position)
-    {
-        case Position_Top:    m_startWidgetGeometry = QRect(0, -sh.height(), qMax(width(), sh.width()), sh.height()); break;
-        case Position_Bottom: m_startWidgetGeometry = QRect(0,  sh.height(), qMax(width(), sh.width()), sh.height()); break;
-    }
-    m_finalWidgetGeometry = QRect(0, 0, qMax(width(), sh.width()), sh.height());
-    m_pAnimation->update();
-}
-
-void UISlidingToolBar::showEvent(QShowEvent*)
+void UISlidingToolBar::showEvent(QShowEvent *)
 {
     /* If window isn't expanded: */
     if (!m_fExpanded)
@@ -268,29 +106,191 @@ void UISlidingToolBar::closeEvent(QCloseEvent *pEvent)
     }
 }
 
-#ifdef VBOX_WS_MAC
-bool UISlidingToolBar::event(QEvent *pEvent)
+void UISlidingToolBar::sltParentGeometryChanged(const QRect &parentRect)
 {
-    /* Depending on event-type: */
-    switch (pEvent->type())
+    /* Update rectangle: */
+    m_parentRect = parentRect;
+    /* Adjust geometry: */
+    adjustGeometry();
+    /* Update animation: */
+    updateAnimation();
+}
+
+void UISlidingToolBar::prepare()
+{
+    /* Tell the application we are not that important: */
+    setAttribute(Qt::WA_QuitOnClose, false);
+    /* Delete window when closed: */
+    setAttribute(Qt::WA_DeleteOnClose);
+
+#if   defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
+    /* Make sure we have no background
+     * until the first one paint-event: */
+    setAttribute(Qt::WA_NoSystemBackground);
+    /* Use Qt API to enable translucency: */
+    setAttribute(Qt::WA_TranslucentBackground);
+#elif defined(VBOX_WS_X11)
+    if (vboxGlobal().isCompositingManagerRunning())
     {
-        case QEvent::Resize:
-        case QEvent::WindowActivate:
+        /* Use Qt API to enable translucency: */
+        setAttribute(Qt::WA_TranslucentBackground);
+    }
+#endif /* VBOX_WS_X11 */
+
+    /* Prepare contents: */
+    prepareContents();
+    /* Prepare geometry: */
+    prepareGeometry();
+    /* Prepare animation: */
+    prepareAnimation();
+}
+
+void UISlidingToolBar::prepareContents()
+{
+    /* Create main-layout: */
+    m_pMainLayout = new QHBoxLayout(this);
+    if (m_pMainLayout)
+    {
+        /* Configure main-layout: */
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        m_pMainLayout->setSpacing(0);
+        /* Create area: */
+        m_pArea = new QWidget;
+        if (m_pArea)
         {
-            /* By some strange reason
-             * cocoa resets NSWindow::setHasShadow option
-             * for frameless windows on every window resize/activation.
-             * So we have to make sure window still has no shadows. */
-            darwinSetWindowHasShadow(this, false);
+            /* Configure area: */
+            m_pArea->setAcceptDrops(true);
+            m_pArea->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+            QPalette pal1 = m_pArea->palette();
+            pal1.setColor(QPalette::Window, QColor(Qt::transparent));
+            m_pArea->setPalette(pal1);
+            /* Make sure valid child-widget passed: */
+            if (m_pWidget)
+            {
+                /* Configure child-widget: */
+                QPalette pal2 = m_pWidget->palette();
+                pal2.setColor(QPalette::Window, palette().color(QPalette::Window));
+                m_pWidget->setPalette(pal2);
+                connect(m_pWidget, SIGNAL(sigCancelClicked()), this, SLOT(close()));
+                /* Add child-widget into area: */
+                m_pWidget->setParent(m_pArea);
+            }
+            /* Add area into main-layout: */
+            m_pMainLayout->addWidget(m_pArea);
+        }
+    }
+}
+
+void UISlidingToolBar::prepareGeometry()
+{
+    /* Prepare geometry based on parent and sub-window size-hints,
+     * But move sub-window to initial position: */
+    const QSize sh = m_pWidget->sizeHint();
+    switch (m_enmPosition)
+    {
+        case Position_Top:
+        {
+            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
+                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
+            m_pWidget->setGeometry(0, -sh.height(), qMax(width(), sh.width()), sh.height());
             break;
         }
-        default:
+        case Position_Bottom:
+        {
+            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
+                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
+            m_pWidget->setGeometry(0,  sh.height(), qMax(width(), sh.width()), sh.height());
             break;
+        }
     }
-    /* Call to base-class: */
-    return QWidget::event(pEvent);
+
+#ifdef VBOX_WS_X11
+    if (!vboxGlobal().isCompositingManagerRunning())
+    {
+        /* Use Xshape otherwise: */
+        setMask(m_pWidget->geometry());
+    }
+#endif
+
+#ifdef VBOX_WS_WIN
+    /* Raise tool-window for proper z-order. */
+    raise();
+#endif
+
+    /* Activate window after it was shown: */
+    connect(this, SIGNAL(sigShown()), this,
+            SLOT(sltActivateWindow()), Qt::QueuedConnection);
+    /* Update window geometry after parent geometry changed: */
+    connect(parent(), SIGNAL(sigGeometryChange(const QRect&)),
+            this, SLOT(sltParentGeometryChanged(const QRect&)));
 }
-#endif /* VBOX_WS_MAC */
+
+void UISlidingToolBar::prepareAnimation()
+{
+    /* Prepare sub-window geometry animation itself: */
+    connect(this, SIGNAL(sigShown()), this, SIGNAL(sigExpand()), Qt::QueuedConnection);
+    m_pAnimation = UIAnimation::installPropertyAnimation(this,
+                                                         "widgetGeometry",
+                                                         "startWidgetGeometry", "finalWidgetGeometry",
+                                                         SIGNAL(sigExpand()), SIGNAL(sigCollapse()));
+    connect(m_pAnimation, SIGNAL(sigStateEnteredStart()), this, SLOT(sltMarkAsCollapsed()));
+    connect(m_pAnimation, SIGNAL(sigStateEnteredFinal()), this, SLOT(sltMarkAsExpanded()));
+    /* Update geometry animation: */
+    updateAnimation();
+}
+
+void UISlidingToolBar::adjustGeometry()
+{
+    /* Adjust geometry based on parent and sub-window size-hints: */
+    const QSize sh = m_pWidget->sizeHint();
+    switch (m_enmPosition)
+    {
+        case Position_Top:
+        {
+            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
+                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
+            break;
+        }
+        case Position_Bottom:
+        {
+            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
+                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
+            break;
+        }
+    }
+    /* And move sub-window to corresponding position: */
+    m_pWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
+
+#ifdef VBOX_WS_X11
+    if (!vboxGlobal().isCompositingManagerRunning())
+    {
+        /* Use Xshape otherwise: */
+        setMask(m_pWidget->geometry());
+    }
+#endif
+
+#ifdef VBOX_WS_WIN
+    /* Raise tool-window for proper z-order. */
+    raise();
+#endif
+}
+
+void UISlidingToolBar::updateAnimation()
+{
+    /* Skip if no animation created: */
+    if (!m_pAnimation)
+        return;
+
+    /* Recalculate sub-window geometry animation boundaries based on size-hint: */
+    const QSize sh = m_pWidget->sizeHint();
+    switch (m_enmPosition)
+    {
+        case Position_Top:    m_startWidgetGeometry = QRect(0, -sh.height(), qMax(width(), sh.width()), sh.height()); break;
+        case Position_Bottom: m_startWidgetGeometry = QRect(0,  sh.height(), qMax(width(), sh.width()), sh.height()); break;
+    }
+    m_finalWidgetGeometry = QRect(0, 0, qMax(width(), sh.width()), sh.height());
+    m_pAnimation->update();
+}
 
 void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
 {
@@ -303,7 +303,7 @@ void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
         /* Use Xshape otherwise: */
         setMask(m_pWidget->geometry());
     }
-#endif /* VBOX_WS_X11 */
+#endif
 }
 
 QRect UISlidingToolBar::widgetGeometry() const
@@ -311,4 +311,3 @@ QRect UISlidingToolBar::widgetGeometry() const
     /* Return sub-window geometry: */
     return m_pWidget->geometry();
 }
-
