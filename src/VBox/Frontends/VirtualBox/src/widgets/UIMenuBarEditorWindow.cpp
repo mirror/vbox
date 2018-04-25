@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,22 +30,24 @@
 # include <QStyleOptionToolButton>
 # ifndef VBOX_WS_MAC
 #  include <QCheckBox>
-# endif /* !VBOX_WS_MAC */
+# endif
 
 /* GUI includes: */
-# include "UIMenuBarEditorWindow.h"
-# include "UIActionPoolRuntime.h"
-# include "UIExtraDataManager.h"
-# include "UIMachineWindow.h"
-# include "UIConverter.h"
-# include "UIIconPool.h"
-# include "UIToolBar.h"
 # include "QIToolButton.h"
 # include "VBoxGlobal.h"
+# include "UIActionPoolRuntime.h"
+# include "UIConverter.h"
+# include "UIExtraDataManager.h"
+# include "UIIconPool.h"
+# include "UIMachineWindow.h"
+# include "UIMenuBarEditorWindow.h"
+# include "UIToolBar.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Forward declarations: */
+class QAccessibleInterface;
+class QRect;
 class UIAccessibilityInterfaceForUIMenuBarEditorButton;
 
 
@@ -103,8 +105,9 @@ private:
 
     /** Holds the parent interface we are linked to. */
     UIAccessibilityInterfaceForUIMenuBarEditorButton *m_pParent;
+
     /** Holds the index of segment we are referring to. */
-    const UIMenuBarEditorSegment m_enmIndex;
+    const UIMenuBarEditorSegment  m_enmIndex;
 };
 
 
@@ -140,7 +143,7 @@ private:
     QToolButton *button() const { return qobject_cast<QToolButton*>(widget()); }
 
     /** Holds the map of instances of sub-element interfaces. */
-    QMap<UIMenuBarEditorSegment, UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment*> m_elements;
+    QMap<UIMenuBarEditorSegment, UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment*>  m_elements;
 };
 
 
@@ -166,7 +169,7 @@ QRect UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment::rect() const
     return m_pParent->subRect(m_enmIndex);
 }
 
-QString UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment::text(QAccessible::Text /* enmTextRole */) const
+QString UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment::text(QAccessible::Text) const
 {
     return m_pParent->subText(m_enmIndex);
 }
@@ -304,6 +307,20 @@ QString UIAccessibilityInterfaceForUIMenuBarEditorButton::subText(UIMenuBarEdito
 
 
 /*********************************************************************************************************************************
+*   Class UIMenuBarEditorWindow implementation.                                                                                  *
+*********************************************************************************************************************************/
+
+UIMenuBarEditorWindow::UIMenuBarEditorWindow(UIMachineWindow *pParent, UIActionPool *pActionPool)
+#ifndef VBOX_WS_MAC
+    : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
+#else
+    : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
+#endif
+{
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIMenuBarEditorWidget implementation.                                                                                  *
 *********************************************************************************************************************************/
 
@@ -321,7 +338,7 @@ UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
     , m_pButtonClose(0)
 #ifndef VBOX_WS_MAC
     , m_pCheckBoxEnable(0)
-#endif /* !VBOX_WS_MAC */
+#endif
     , m_restrictionsOfMenuBar(UIExtraDataMetaDefs::MenuType_Invalid)
     , m_restrictionsOfMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Invalid)
     , m_restrictionsOfMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid)
@@ -644,6 +661,91 @@ void UIMenuBarEditorWidget::setRestrictionsOfMenuHelp(UIExtraDataMetaDefs::MenuH
     }
 }
 
+void UIMenuBarEditorWidget::retranslateUi()
+{
+    /* Translate close-button if necessary: */
+    if (!m_fStartedFromVMSettings && m_pButtonClose)
+        m_pButtonClose->setToolTip(tr("Close"));
+#ifndef VBOX_WS_MAC
+    /* Translate enable-checkbox if necessary: */
+    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
+        m_pCheckBoxEnable->setToolTip(tr("Enable Menu Bar"));
+#endif
+}
+
+void UIMenuBarEditorWidget::paintEvent(QPaintEvent *)
+{
+    /* Prepare painter: */
+    QPainter painter(this);
+
+    /* Prepare palette colors: */
+    const QPalette pal = palette();
+    QColor color0 = pal.color(QPalette::Window);
+    QColor color1 = pal.color(QPalette::Window).lighter(110);
+    color1.setAlpha(0);
+    QColor color2 = pal.color(QPalette::Window).darker(200);
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+    QColor color3 = pal.color(QPalette::Window).darker(120);
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+
+    /* Acquire metric: */
+    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+
+    /* Left corner: */
+    QRadialGradient grad1(QPointF(iMetric, height() - iMetric), iMetric);
+    {
+        grad1.setColorAt(0, color2);
+        grad1.setColorAt(1, color1);
+    }
+    /* Right corner: */
+    QRadialGradient grad2(QPointF(width() - iMetric, height() - iMetric), iMetric);
+    {
+        grad2.setColorAt(0, color2);
+        grad2.setColorAt(1, color1);
+    }
+    /* Bottom line: */
+    QLinearGradient grad3(QPointF(iMetric, height()), QPointF(iMetric, height() - iMetric));
+    {
+        grad3.setColorAt(0, color1);
+        grad3.setColorAt(1, color2);
+    }
+    /* Left line: */
+    QLinearGradient grad4(QPointF(0, height() - iMetric), QPointF(iMetric, height() - iMetric));
+    {
+        grad4.setColorAt(0, color1);
+        grad4.setColorAt(1, color2);
+    }
+    /* Right line: */
+    QLinearGradient grad5(QPointF(width(), height() - iMetric), QPointF(width() - iMetric, height() - iMetric));
+    {
+        grad5.setColorAt(0, color1);
+        grad5.setColorAt(1, color2);
+    }
+
+    /* Paint shape/shadow: */
+    painter.fillRect(QRect(iMetric, 0, width() - iMetric * 2, height() - iMetric), color0); // background
+    painter.fillRect(QRect(0,                 height() - iMetric, iMetric, iMetric), grad1); // left corner
+    painter.fillRect(QRect(width() - iMetric, height() - iMetric, iMetric, iMetric), grad2); // right corner
+    painter.fillRect(QRect(iMetric,           height() - iMetric, width() - iMetric * 2, iMetric), grad3); // bottom line
+    painter.fillRect(QRect(0,                 0, iMetric, height() - iMetric), grad4); // left line
+    painter.fillRect(QRect(width() - iMetric, 0, iMetric, height() - iMetric), grad5); // right line
+
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+    /* Paint frames: */
+    painter.save();
+    painter.setPen(color3);
+    painter.drawLine(QLine(QPoint(iMetric + 1,               0),
+                           QPoint(iMetric + 1,               height() - 1 - iMetric - 1)));
+    painter.drawLine(QLine(QPoint(iMetric + 1,               height() - 1 - iMetric - 1),
+                           QPoint(width() - 1 - iMetric - 1, height() - 1 - iMetric - 1)));
+    painter.drawLine(QLine(QPoint(width() - 1 - iMetric - 1, height() - 1 - iMetric - 1),
+                           QPoint(width() - 1 - iMetric - 1, 0)));
+    if (m_fStartedFromVMSettings)
+        painter.drawLine(QLine(QPoint(width() - 1 - iMetric - 1, 0), QPoint(iMetric + 1, 0)));
+    painter.restore();
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+}
+
 void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QString &strMachineID)
 {
     /* Skip unrelated machine IDs: */
@@ -659,10 +761,10 @@ void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QString &strMachi
     setRestrictionsOfMenuDevices(gEDataManager->restrictedRuntimeMenuDevicesActionTypes(machineID()));
 #ifdef VBOX_WITH_DEBUGGER_GUI
     setRestrictionsOfMenuDebug(gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID()));
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
 #ifdef VBOX_WS_MAC
     setRestrictionsOfMenuWindow(gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID()));
-#endif /* VBOX_WS_MAC */
+#endif
     setRestrictionsOfMenuHelp(gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID()));
 }
 
@@ -678,10 +780,10 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
         case UIExtraDataMetaDefs::MenuType_All:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::MenuType type =
+            const UIExtraDataMetaDefs::MenuType enmType =
                 static_cast<UIExtraDataMetaDefs::MenuType>(pAction->property("type").toInt());
             /* Invert restriction for sender type: */
-            m_restrictionsOfMenuBar = (UIExtraDataMetaDefs::MenuType)(m_restrictionsOfMenuBar ^ type);
+            m_restrictionsOfMenuBar = (UIExtraDataMetaDefs::MenuType)(m_restrictionsOfMenuBar ^ enmType);
             if (m_fStartedFromVMSettings)
             {
                 /* Reapply menu-bar restrictions from cache: */
@@ -697,10 +799,10 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
         case UIExtraDataMetaDefs::MenuType_Application:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::MenuApplicationActionType type =
+            const UIExtraDataMetaDefs::MenuApplicationActionType enmType =
                 static_cast<UIExtraDataMetaDefs::MenuApplicationActionType>(pAction->property("type").toInt());
             /* Invert restriction for sender type: */
-            m_restrictionsOfMenuApplication = (UIExtraDataMetaDefs::MenuApplicationActionType)(m_restrictionsOfMenuApplication ^ type);
+            m_restrictionsOfMenuApplication = (UIExtraDataMetaDefs::MenuApplicationActionType)(m_restrictionsOfMenuApplication ^ enmType);
             if (m_fStartedFromVMSettings)
             {
                 /* Reapply menu-bar restrictions from cache: */
@@ -716,10 +818,10 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
         case UIExtraDataMetaDefs::MenuType_Machine:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::RuntimeMenuMachineActionType type =
+            const UIExtraDataMetaDefs::RuntimeMenuMachineActionType enmType =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(pAction->property("type").toInt());
             /* Invert restriction for sender type: */
-            m_restrictionsOfMenuMachine = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)(m_restrictionsOfMenuMachine ^ type);
+            m_restrictionsOfMenuMachine = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)(m_restrictionsOfMenuMachine ^ enmType);
             if (m_fStartedFromVMSettings)
             {
                 /* Reapply menu-bar restrictions from cache: */
@@ -735,10 +837,10 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
         case UIExtraDataMetaDefs::MenuType_View:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::RuntimeMenuViewActionType type =
+            const UIExtraDataMetaDefs::RuntimeMenuViewActionType enmType =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(pAction->property("type").toInt());
             /* Invert restriction for sender type: */
-            m_restrictionsOfMenuView = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)(m_restrictionsOfMenuView ^ type);
+            m_restrictionsOfMenuView = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)(m_restrictionsOfMenuView ^ enmType);
             if (m_fStartedFromVMSettings)
             {
                 /* Reapply menu-bar restrictions from cache: */
@@ -754,10 +856,10 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
         case UIExtraDataMetaDefs::MenuType_Input:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::RuntimeMenuInputActionType type =
+            const UIExtraDataMetaDefs::RuntimeMenuInputActionType enmType =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(pAction->property("type").toInt());
             /* Invert restriction for sender type: */
-            m_restrictionsOfMenuInput = (UIExtraDataMetaDefs::RuntimeMenuInputActionType)(m_restrictionsOfMenuInput ^ type);
+            m_restrictionsOfMenuInput = (UIExtraDataMetaDefs::RuntimeMenuInputActionType)(m_restrictionsOfMenuInput ^ enmType);
             if (m_fStartedFromVMSettings)
             {
                 /* Reapply menu-bar restrictions from cache: */
@@ -773,10 +875,10 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
         case UIExtraDataMetaDefs::MenuType_Devices:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType type =
+            const UIExtraDataMetaDefs::RuntimeMenuDevicesActionType enmType =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(pAction->property("type").toInt());
             /* Invert restriction for sender type: */
-            m_restrictionsOfMenuDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(m_restrictionsOfMenuDevices ^ type);
+            m_restrictionsOfMenuDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(m_restrictionsOfMenuDevices ^ enmType);
             if (m_fStartedFromVMSettings)
             {
                 /* Reapply menu-bar restrictions from cache: */
@@ -793,10 +895,10 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
         case UIExtraDataMetaDefs::MenuType_Debug:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType type =
+            const UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType enmType =
                 static_cast<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(pAction->property("type").toInt());
             /* Invert restriction for sender type: */
-            m_restrictionsOfMenuDebug = (UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType)(m_restrictionsOfMenuDebug ^ type);
+            m_restrictionsOfMenuDebug = (UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType)(m_restrictionsOfMenuDebug ^ enmType);
             if (m_fStartedFromVMSettings)
             {
                 /* Reapply menu-bar restrictions from cache: */
@@ -814,10 +916,10 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
         case UIExtraDataMetaDefs::MenuType_Window:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::MenuWindowActionType type =
+            const UIExtraDataMetaDefs::MenuWindowActionType enmType =
                 static_cast<UIExtraDataMetaDefs::MenuWindowActionType>(pAction->property("type").toInt());
             /* Invert restriction for sender type: */
-            m_restrictionsOfMenuWindow = (UIExtraDataMetaDefs::MenuWindowActionType)(m_restrictionsOfMenuWindow ^ type);
+            m_restrictionsOfMenuWindow = (UIExtraDataMetaDefs::MenuWindowActionType)(m_restrictionsOfMenuWindow ^ enmType);
             if (m_fStartedFromVMSettings)
             {
                 /* Reapply menu-bar restrictions from cache: */
@@ -834,10 +936,10 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
         case UIExtraDataMetaDefs::MenuType_Help:
         {
             /* Get sender type: */
-            const UIExtraDataMetaDefs::MenuHelpActionType type =
+            const UIExtraDataMetaDefs::MenuHelpActionType enmType =
                 static_cast<UIExtraDataMetaDefs::MenuHelpActionType>(pAction->property("type").toInt());
             /* Invert restriction for sender type: */
-            m_restrictionsOfMenuHelp = (UIExtraDataMetaDefs::MenuHelpActionType)(m_restrictionsOfMenuHelp ^ type);
+            m_restrictionsOfMenuHelp = (UIExtraDataMetaDefs::MenuHelpActionType)(m_restrictionsOfMenuHelp ^ enmType);
             if (m_fStartedFromVMSettings)
             {
                 /* Reapply menu-bar restrictions from cache: */
@@ -951,10 +1053,10 @@ void UIMenuBarEditorWidget::prepareMenus()
     prepareMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     prepareMenuDebug();
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
 #ifdef VBOX_WS_MAC
     prepareMenuWindow();
-#endif /* VBOX_WS_MAC */
+#endif
     prepareMenuHelp();
 
     if (!m_fStartedFromVMSettings)
@@ -968,10 +1070,10 @@ void UIMenuBarEditorWidget::prepareMenus()
         setRestrictionsOfMenuDevices(gEDataManager->restrictedRuntimeMenuDevicesActionTypes(machineID()));
 #ifdef VBOX_WITH_DEBUGGER_GUI
         setRestrictionsOfMenuDebug(gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(machineID()));
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
 #ifdef VBOX_WS_MAC
         setRestrictionsOfMenuWindow(gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID()));
-#endif /* VBOX_WS_MAC */
+#endif
         setRestrictionsOfMenuHelp(gEDataManager->restrictedRuntimeMenuHelpActionTypes(machineID()));
         /* And listen for the menu-bar configuration changes after that: */
         connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
@@ -980,7 +1082,7 @@ void UIMenuBarEditorWidget::prepareMenus()
 }
 
 #ifdef VBOX_WS_MAC
-QMenu* UIMenuBarEditorWidget::prepareNamedMenu(const QString &strName)
+QMenu *UIMenuBarEditorWidget::prepareNamedMenu(const QString &strName)
 {
     /* Create named menu: */
     QMenu *pNamedMenu = new QMenu(strName, m_pToolBar);
@@ -1026,7 +1128,7 @@ QMenu* UIMenuBarEditorWidget::prepareNamedMenu(const QString &strName)
 }
 #endif /* VBOX_WS_MAC */
 
-QMenu* UIMenuBarEditorWidget::prepareCopiedMenu(const UIAction *pAction)
+QMenu *UIMenuBarEditorWidget::prepareCopiedMenu(const UIAction *pAction)
 {
     /* Create copied menu: */
     QMenu *pCopiedMenu = new QMenu(pAction->name(), m_pToolBar);
@@ -1078,7 +1180,7 @@ QMenu* UIMenuBarEditorWidget::prepareCopiedMenu(const UIAction *pAction)
 }
 
 #if 0
-QMenu* UIMenuBarEditorWidget::prepareCopiedSubMenu(QMenu *pMenu, const UIAction *pAction)
+QMenu *UIMenuBarEditorWidget::prepareCopiedSubMenu(QMenu *pMenu, const UIAction *pAction)
 {
     /* Create copied sub-menu: */
     QMenu *pCopiedMenu = pMenu->addMenu(pAction->name());
@@ -1103,7 +1205,7 @@ QMenu* UIMenuBarEditorWidget::prepareCopiedSubMenu(QMenu *pMenu, const UIAction 
 }
 #endif
 
-QAction* UIMenuBarEditorWidget::prepareNamedAction(QMenu *pMenu, const QString &strName,
+QAction *UIMenuBarEditorWidget::prepareNamedAction(QMenu *pMenu, const QString &strName,
                                                    int iExtraDataID, const QString &strExtraDataID)
 {
     /* Create copied action: */
@@ -1121,7 +1223,7 @@ QAction* UIMenuBarEditorWidget::prepareNamedAction(QMenu *pMenu, const QString &
     return pCopiedAction;
 }
 
-QAction* UIMenuBarEditorWidget::prepareCopiedAction(QMenu *pMenu, const UIAction *pAction)
+QAction *UIMenuBarEditorWidget::prepareCopiedAction(QMenu *pMenu, const UIAction *pAction)
 {
     /* Create copied action: */
     QAction *pCopiedAction = pMenu->addAction(pAction->name());
@@ -1296,102 +1398,6 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
         pMenu->addSeparator();
 #ifndef VBOX_WS_MAC
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_About));
-#endif /* !VBOX_WS_MAC */
+#endif
     }
 }
-
-void UIMenuBarEditorWidget::retranslateUi()
-{
-    /* Translate close-button if necessary: */
-    if (!m_fStartedFromVMSettings && m_pButtonClose)
-        m_pButtonClose->setToolTip(tr("Close"));
-#ifndef VBOX_WS_MAC
-    /* Translate enable-checkbox if necessary: */
-    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
-        m_pCheckBoxEnable->setToolTip(tr("Enable Menu Bar"));
-#endif /* !VBOX_WS_MAC */
-}
-
-void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
-{
-    /* Prepare painter: */
-    QPainter painter(this);
-
-    /* Prepare palette colors: */
-    const QPalette pal = palette();
-    QColor color0 = pal.color(QPalette::Window);
-    QColor color1 = pal.color(QPalette::Window).lighter(110);
-    color1.setAlpha(0);
-    QColor color2 = pal.color(QPalette::Window).darker(200);
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    QColor color3 = pal.color(QPalette::Window).darker(120);
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-
-    /* Acquire metric: */
-    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-
-    /* Left corner: */
-    QRadialGradient grad1(QPointF(iMetric, height() - iMetric), iMetric);
-    {
-        grad1.setColorAt(0, color2);
-        grad1.setColorAt(1, color1);
-    }
-    /* Right corner: */
-    QRadialGradient grad2(QPointF(width() - iMetric, height() - iMetric), iMetric);
-    {
-        grad2.setColorAt(0, color2);
-        grad2.setColorAt(1, color1);
-    }
-    /* Bottom line: */
-    QLinearGradient grad3(QPointF(iMetric, height()), QPointF(iMetric, height() - iMetric));
-    {
-        grad3.setColorAt(0, color1);
-        grad3.setColorAt(1, color2);
-    }
-    /* Left line: */
-    QLinearGradient grad4(QPointF(0, height() - iMetric), QPointF(iMetric, height() - iMetric));
-    {
-        grad4.setColorAt(0, color1);
-        grad4.setColorAt(1, color2);
-    }
-    /* Right line: */
-    QLinearGradient grad5(QPointF(width(), height() - iMetric), QPointF(width() - iMetric, height() - iMetric));
-    {
-        grad5.setColorAt(0, color1);
-        grad5.setColorAt(1, color2);
-    }
-
-    /* Paint shape/shadow: */
-    painter.fillRect(QRect(iMetric, 0, width() - iMetric * 2, height() - iMetric), color0); // background
-    painter.fillRect(QRect(0,                 height() - iMetric, iMetric, iMetric), grad1); // left corner
-    painter.fillRect(QRect(width() - iMetric, height() - iMetric, iMetric, iMetric), grad2); // right corner
-    painter.fillRect(QRect(iMetric,           height() - iMetric, width() - iMetric * 2, iMetric), grad3); // bottom line
-    painter.fillRect(QRect(0,                 0, iMetric, height() - iMetric), grad4); // left line
-    painter.fillRect(QRect(width() - iMetric, 0, iMetric, height() - iMetric), grad5); // right line
-
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    /* Paint frames: */
-    painter.save();
-    painter.setPen(color3);
-    painter.drawLine(QLine(QPoint(iMetric + 1,               0),
-                           QPoint(iMetric + 1,               height() - 1 - iMetric - 1)));
-    painter.drawLine(QLine(QPoint(iMetric + 1,               height() - 1 - iMetric - 1),
-                           QPoint(width() - 1 - iMetric - 1, height() - 1 - iMetric - 1)));
-    painter.drawLine(QLine(QPoint(width() - 1 - iMetric - 1, height() - 1 - iMetric - 1),
-                           QPoint(width() - 1 - iMetric - 1, 0)));
-    if (m_fStartedFromVMSettings)
-        painter.drawLine(QLine(QPoint(width() - 1 - iMetric - 1, 0), QPoint(iMetric + 1, 0)));
-    painter.restore();
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-}
-
-
-UIMenuBarEditorWindow::UIMenuBarEditorWindow(UIMachineWindow *pParent, UIActionPool *pActionPool)
-#ifndef VBOX_WS_MAC
-    : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
-#else /* VBOX_WS_MAC */
-    : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
-#endif /* VBOX_WS_MAC */
-{
-}
-
