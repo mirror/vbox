@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,106 +34,9 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <qmath.h>
+/* Qt includes: */
+#include <QtMath>
 
-
-void UIWizard::sltCurrentIdChanged(int iId)
-{
-    /* Hide/show description button disabled by default: */
-    bool fIsHideShowDescriptionButtonAvailable = false;
-    /* Enable hide/show description button for 1st page: */
-    if (iId == 0)
-        fIsHideShowDescriptionButtonAvailable = true;
-    /* But first-run wizard has no such button anyway: */
-    if (m_type == WizardType_FirstRun)
-        fIsHideShowDescriptionButtonAvailable = false;
-    /* Set a flag for hide/show description button finally: */
-    setOption(QWizard::HaveCustomButton1, fIsHideShowDescriptionButtonAvailable);
-}
-
-void UIWizard::sltCustomButtonClicked(int iId)
-{
-    /* Handle 1st button: */
-    if (iId == CustomButton1)
-    {
-        /* Cleanup: */
-        cleanup();
-
-        /* Toggle mode: */
-        switch (m_mode)
-        {
-            case WizardMode_Basic:  m_mode = WizardMode_Expert; break;
-            case WizardMode_Expert: m_mode = WizardMode_Basic;  break;
-            default: AssertMsgFailed(("Invalid mode: %d", m_mode)); break;
-        }
-        /* Save mode: */
-        gEDataManager->setModeForWizardType(m_type, m_mode);
-
-        /* Prepare: */
-        prepare();
-    }
-}
-
-UIWizard::UIWizard(QWidget *pParent, WizardType type, WizardMode mode /* = WizardMode_Auto */)
-    : QIWithRetranslateUI<QWizard>(pParent)
-    , m_type(type)
-    , m_mode(mode == WizardMode_Auto ? gEDataManager->modeForWizardType(m_type) : mode)
-{
-#ifdef VBOX_WS_WIN
-    /* Hide window icon: */
-    setWindowIcon(QIcon());
-#endif /* VBOX_WS_WIN */
-
-#ifdef VBOX_WS_MAC
-    /* Since wizards are now represented as Mac OS X Sheets
-     * we would like to have possibility to cancel them. */
-    setOption(QWizard::NoCancelButton, false);
-    /* I'm really not sure why there shouldn't be any default button on Mac OS X.
-     * This prevents the using of Enter to jump to the next page. */
-    setOptions(options() ^ QWizard::NoDefaultButton);
-#endif /* VBOX_WS_MAC */
-
-    /* All our wizards would like to have window-modality,
-     * Under Mac OS it will be represented as Mac OS Sheet. */
-    setWindowModality(Qt::WindowModal);
-
-    /* Setup connections: */
-    connect(this, &UIWizard::currentIdChanged,    this, &UIWizard::sltCurrentIdChanged);
-    connect(this, &UIWizard::customButtonClicked, this, &UIWizard::sltCustomButtonClicked);
-}
-
-void UIWizard::retranslateUi()
-{
-    /* Translate basic/expert button: */
-    switch (m_mode)
-    {
-        case WizardMode_Basic:
-            setButtonText(QWizard::CustomButton1, tr("&Expert Mode"));
-            button(QWizard::CustomButton1)->setToolTip(tr("Switch to <nobr><b>Expert Mode</b></nobr>, a one-page dialog for experienced users."));
-            break;
-        case WizardMode_Expert:
-            setButtonText(QWizard::CustomButton1, tr("&Guided Mode"));
-            button(QWizard::CustomButton1)->setToolTip(tr("Switch to <nobr><b>Guided Mode</b></nobr>, a step-by-step dialog with detailed explanations."));
-            break;
-        default: AssertMsgFailed(("Invalid mode: %d", m_mode)); break;
-    }
-}
-
-void UIWizard::retranslatePages()
-{
-    /* Translate all the pages: */
-    QList<int> ids = pageIds();
-    for (int i = 0; i < ids.size(); ++i)
-        qobject_cast<UIWizardPage*>(page(ids[i]))->retranslate();
-}
-
-void UIWizard::setPage(int iId, UIWizardPage *pPage)
-{
-    /* Configure page first: */
-    configurePage(pPage);
-    /* Add page finally: */
-    QWizard::setPage(iId, pPage);
-}
 
 void UIWizard::prepare()
 {
@@ -154,14 +57,80 @@ void UIWizard::prepare()
     sltCurrentIdChanged(startId());
 }
 
+UIWizard::UIWizard(QWidget *pParent, WizardType enmType, WizardMode enmMode /* = WizardMode_Auto */)
+    : QIWithRetranslateUI<QWizard>(pParent)
+    , m_enmType(enmType)
+    , m_enmMode(enmMode == WizardMode_Auto ? gEDataManager->modeForWizardType(m_enmType) : enmMode)
+{
+#ifdef VBOX_WS_WIN
+    /* Hide window icon: */
+    setWindowIcon(QIcon());
+#endif
+
+#ifdef VBOX_WS_MAC
+    // WORKAROUND:
+    // Since wizards are now represented as Mac OS X Sheets
+    // we would like to have possibility to cancel them.
+    setOption(QWizard::NoCancelButton, false);
+
+    // WORKAROUND:
+    // I'm really not sure why there shouldn't be any default button on Mac OS X.
+    // This prevents the using of Enter to jump to the next page.
+    setOptions(options() ^ QWizard::NoDefaultButton);
+#endif /* VBOX_WS_MAC */
+
+    /* Using window-modality: */
+    setWindowModality(Qt::WindowModal);
+
+    /* Setup connections: */
+    connect(this, &UIWizard::currentIdChanged,    this, &UIWizard::sltCurrentIdChanged);
+    connect(this, &UIWizard::customButtonClicked, this, &UIWizard::sltCustomButtonClicked);
+}
+
+void UIWizard::retranslateUi()
+{
+    /* Translate basic/expert button: */
+    switch (m_enmMode)
+    {
+        case WizardMode_Basic:
+            setButtonText(QWizard::CustomButton1, tr("&Expert Mode"));
+            button(QWizard::CustomButton1)->setToolTip(tr("Switch to <nobr><b>Expert Mode</b></nobr>, a one-page dialog for experienced users."));
+            break;
+        case WizardMode_Expert:
+            setButtonText(QWizard::CustomButton1, tr("&Guided Mode"));
+            button(QWizard::CustomButton1)->setToolTip(tr("Switch to <nobr><b>Guided Mode</b></nobr>, a step-by-step dialog with detailed explanations."));
+            break;
+        default:
+            AssertMsgFailed(("Invalid mode: %d", m_enmMode));
+            break;
+    }
+}
+
+void UIWizard::showEvent(QShowEvent *pEvent)
+{
+    /* Resize to minimum possible size: */
+    resize(0, 0);
+
+    /* Call to base-class: */
+    QWizard::showEvent(pEvent);
+}
+
+void UIWizard::setPage(int iId, UIWizardPage *pPage)
+{
+    /* Configure page first: */
+    configurePage(pPage);
+    /* Add page finally: */
+    QWizard::setPage(iId, pPage);
+}
+
 void UIWizard::cleanup()
 {
     /* Remove all the pages: */
-    QList<int> ids = pageIds();
+    const QList<int> ids = pageIds();
     for (int i = ids.size() - 1; i >= 0 ; --i)
     {
         /* Get enumerated page ID: */
-        int iId = ids[i];
+        const int iId = ids.at(i);
         /* Get corresponding page: */
         QWizardPage *pWizardPage = page(iId);
 
@@ -175,23 +144,25 @@ void UIWizard::cleanup()
     /* Cleanup watermark: */
     if (!m_strWatermarkName.isEmpty())
         setPixmap(QWizard::WatermarkPixmap, QPixmap());
-#endif /* !VBOX_WS_MAC */
+#endif
 }
 
 void UIWizard::resizeToGoldenRatio()
 {
     /* Check if wizard is in basic or expert mode: */
-    if (m_mode == WizardMode_Expert)
+    if (m_enmMode == WizardMode_Expert)
     {
-        /* Unfortunately QWizard hides some of useful API in private part,
-         * and also have few layouting bugs which could be easy fixed
-         * by that API, so we will use QWizard::restart() method
-         * to call the same functionality indirectly...
-         * Early call restart() which is usually goes on show()! */
+        // WORKAROUND:
+        // Unfortunately QWizard hides some of useful API in private part,
+        // and also have few layouting bugs which could be easy fixed
+        // by that API, so we will use QWizard::restart() method
+        // to call the same functionality indirectly...
+        // Early call restart() which is usually goes on show()!
         restart();
 
-        /* Now we have correct label size-hint(s) for all the pages.
-         * We have to make sure all the pages uses maximum available size-hint. */
+        // WORKAROUND:
+        // Now we have correct label size-hint(s) for all the pages.
+        // We have to make sure all the pages uses maximum available size-hint.
         QSize maxOfSizeHints;
         QList<UIWizardPage*> pages = findChildren<UIWizardPage*>();
         /* Search for the maximum available size-hint: */
@@ -213,11 +184,12 @@ void UIWizard::resizeToGoldenRatio()
         foreach(QLayout *pLayout, layouts)
             pLayout->activate();
 
-        /* Unfortunately QWizard hides some of useful API in private part,
-         * BUT it also have few layouting bugs which could be easy fixed
-         * by that API, so we will use QWizard::restart() method
-         * to call the same functionality indirectly...
-         * And now we call restart() after layout activation procedure! */
+        // WORKAROUND:
+        // Unfortunately QWizard hides some of useful API in private part,
+        // and also have few layouting bugs which could be easy fixed
+        // by that API, so we will use QWizard::restart() method
+        // to call the same functionality indirectly...
+        // And now we call restart() after layout activation procedure!
         restart();
 
         /* Resize it to minimum size: */
@@ -281,36 +253,77 @@ void UIWizard::resizeToGoldenRatio()
     /* Really assign watermark: */
     if (!m_strWatermarkName.isEmpty())
         assignWatermarkHelper();
-#endif /* !VBOX_WS_MAC */
+#endif
 }
 
 #ifndef VBOX_WS_MAC
+
 void UIWizard::assignWatermark(const QString &strWatermark)
 {
     if (wizardStyle() != QWizard::AeroStyle
 # ifdef VBOX_WS_WIN
-        /* There is a Qt bug about Windows7 do NOT match conditions for 'aero' wizard-style,
-         * so its silently fallbacks to 'modern' one without any notification,
-         * so QWizard::wizardStyle() returns QWizard::ModernStyle, while using aero, at least partially. */
+        // WORKAROUND:
+        // There is a Qt bug about Windows7 do NOT match conditions for 'aero' wizard-style,
+        // so its silently fallbacks to 'modern' one without any notification,
+        // so QWizard::wizardStyle() returns QWizard::ModernStyle, while using aero, at least partially.
         && QSysInfo::windowsVersion() != QSysInfo::WV_WINDOWS7
 # endif /* VBOX_WS_WIN */
         )
         m_strWatermarkName = strWatermark;
 }
+
 #else
+
 void UIWizard::assignBackground(const QString &strBackground)
 {
     setPixmap(QWizard::BackgroundPixmap, strBackground);
 }
+
 #endif
 
-void UIWizard::showEvent(QShowEvent *pShowEvent)
+void UIWizard::sltCurrentIdChanged(int iId)
 {
-    /* Resize to minimum possible size: */
-    resize(0, 0);
+    /* Hide/show description button disabled by default: */
+    bool fIsHideShowDescriptionButtonAvailable = false;
+    /* Enable hide/show description button for 1st page: */
+    if (iId == 0)
+        fIsHideShowDescriptionButtonAvailable = true;
+    /* But first-run wizard has no such button anyway: */
+    if (m_enmType == WizardType_FirstRun)
+        fIsHideShowDescriptionButtonAvailable = false;
+    /* Set a flag for hide/show description button finally: */
+    setOption(QWizard::HaveCustomButton1, fIsHideShowDescriptionButtonAvailable);
+}
 
-    /* Call to base-class: */
-    QWizard::showEvent(pShowEvent);
+void UIWizard::sltCustomButtonClicked(int iId)
+{
+    /* Handle 1st button: */
+    if (iId == CustomButton1)
+    {
+        /* Cleanup: */
+        cleanup();
+
+        /* Toggle mode: */
+        switch (m_enmMode)
+        {
+            case WizardMode_Basic:  m_enmMode = WizardMode_Expert; break;
+            case WizardMode_Expert: m_enmMode = WizardMode_Basic;  break;
+            default: AssertMsgFailed(("Invalid mode: %d", m_enmMode)); break;
+        }
+        /* Save mode: */
+        gEDataManager->setModeForWizardType(m_enmType, m_enmMode);
+
+        /* Prepare: */
+        prepare();
+    }
+}
+
+void UIWizard::retranslatePages()
+{
+    /* Translate all the pages: */
+    QList<int> ids = pageIds();
+    for (int i = 0; i < ids.size(); ++i)
+        qobject_cast<UIWizardPage*>(page(ids[i]))->retranslate();
 }
 
 void UIWizard::configurePage(UIWizardPage *pPage)
@@ -332,11 +345,12 @@ void UIWizard::configurePage(UIWizardPage *pPage)
 
 void UIWizard::resizeAccordingLabelWidth(int iLabelsWidth)
 {
-    /* Unfortunately QWizard hides some of useful API in private part,
-     * and also have few layouting bugs which could be easy fixed
-     * by that API, so we will use QWizard::restart() method
-     * to call the same functionality indirectly...
-     * Early call restart() which is usually goes on show()! */
+    // WORKAROUND:
+    // Unfortunately QWizard hides some of useful API in private part,
+    // and also have few layouting bugs which could be easy fixed
+    // by that API, so we will use QWizard::restart() method
+    // to call the same functionality indirectly...
+    // Early call restart() which is usually goes on show()!
     restart();
 
     /* Update QIRichTextLabel(s) text-width(s): */
@@ -365,18 +379,19 @@ void UIWizard::resizeAccordingLabelWidth(int iLabelsWidth)
     foreach(QLayout *pLayout, layouts)
         pLayout->activate();
 
-    /* Unfortunately QWizard hides some of useful API in private part,
-     * BUT it also have few layouting bugs which could be easy fixed
-     * by that API, so we will use QWizard::restart() method
-     * to call the same functionality indirectly...
-     * And now we call restart() after layout activation procedure! */
+    // WORKAROUND:
+    // Unfortunately QWizard hides some of useful API in private part,
+    // and also have few layouting bugs which could be easy fixed
+    // by that API, so we will use QWizard::restart() method
+    // to call the same functionality indirectly...
+    // And now we call restart() after layout activation procedure!
     restart();
 
     /* Resize it to minimum size: */
     resize(QSize(0, 0));
 }
 
-double UIWizard::ratio()
+double UIWizard::ratio() const
 {
     /* Default value: */
     double dRatio = 1.6;
@@ -386,9 +401,10 @@ double UIWizard::ratio()
     {
         case QWizard::ClassicStyle:
         case QWizard::ModernStyle:
-            /* There is a Qt bug about Windows7 do NOT match conditions for 'aero' wizard-style,
-             * so its silently fallbacks to 'modern' one without any notification,
-             * so QWizard::wizardStyle() returns QWizard::ModernStyle, while using aero, at least partially. */
+            // WORKAROUND:
+            // There is a Qt bug about Windows7 do NOT match conditions for 'aero' wizard-style,
+            // so its silently fallbacks to 'modern' one without any notification,
+            // so QWizard::wizardStyle() returns QWizard::ModernStyle, while using aero, at least partially.
             if (QSysInfo::windowsVersion() != QSysInfo::WV_WINDOWS7)
             {
                 dRatio = 2;
@@ -402,7 +418,7 @@ double UIWizard::ratio()
     }
 #endif /* VBOX_WS_WIN */
 
-    switch (m_type)
+    switch (m_enmType)
     {
         case WizardType_CloneVM:
             dRatio -= 0.4;
@@ -441,7 +457,7 @@ int UIWizard::proposedWatermarkHeight()
 
     /* Acquire wizard-layout top-margin: */
     int iTopMargin = 0;
-    if (m_mode == WizardMode_Basic)
+    if (m_enmMode == WizardMode_Basic)
     {
         if (wizardStyle() == QWizard::ModernStyle)
             iTopMargin = pStyle->pixelMetric(QStyle::PM_LayoutTopMargin);
@@ -449,7 +465,7 @@ int UIWizard::proposedWatermarkHeight()
 
     /* Acquire wizard-header height: */
     int iTitleHeight = 0;
-    if (m_mode == WizardMode_Basic)
+    if (m_enmMode == WizardMode_Basic)
     {
         /* We have no direct access to QWizardHeader inside QWizard private data...
          * From Qt sources it seems title font is hardcoded as current font point-size + 4: */
@@ -461,7 +477,7 @@ int UIWizard::proposedWatermarkHeight()
 
     /* Acquire spacing between wizard-header and wizard-page: */
     int iMarginBetweenTitleAndPage = 0;
-    if (m_mode == WizardMode_Basic)
+    if (m_enmMode == WizardMode_Basic)
     {
         /* We have no direct access to margin between QWizardHeader and wizard-pages...
          * From Qt sources it seems its hardcoded as just 7 pixels: */

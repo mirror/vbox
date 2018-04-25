@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,86 +15,105 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizard_h__
-#define __UIWizard_h__
+#ifndef ___UIWizard_h___
+#define ___UIWizard_h___
 
 /* Qt includes: */
-#include <QWizard>
 #include <QPointer>
+#include <QWizard>
 
-/* Local includes: */
+/* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
+class QShowEvent;
+class QString;
+class QWidget;
 class UIWizardPage;
 
-/* QWizard class reimplementation with extended funtionality. */
-class UIWizard : public QIWithRetranslateUI<QWizard>
+/** QWizard extension with advanced functionality. */
+class SHARED_LIBRARY_STUFF UIWizard : public QIWithRetranslateUI<QWizard>
 {
     Q_OBJECT;
 
 public:
 
-    /* Mode related stuff: */
-    WizardMode mode() { return m_mode; }
+    /** Returns wizard mode. */
+    WizardMode mode() const { return m_enmMode; }
 
-    /* Page related methods: */
+    /** Prepare all. */
     virtual void prepare();
-
-protected slots:
-
-    /* Page change handler: */
-    virtual void sltCurrentIdChanged(int iId);
-    /* Custom button 1 click handler: */
-    virtual void sltCustomButtonClicked(int iId);
 
 protected:
 
-    /* Constructor: */
-    UIWizard(QWidget *pParent, WizardType type, WizardMode mode = WizardMode_Auto);
+    /** Constructs wizard passing @a pParent to the base-class.
+      * @param  enmType  Brings the wizard type.
+      * @param  enmMode  Brings the wizard mode. */
+    UIWizard(QWidget *pParent, WizardType enmType, WizardMode enmMode = WizardMode_Auto);
 
-    /* Translation stuff: */
-    void retranslateUi();
-    void retranslatePages();
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
-    /* Page related methods: */
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+
+    /** Assigns @a pPage as a wizard page with certain @a iId. */
     void setPage(int iId, UIWizardPage *pPage);
+    /** Removes all the pages. */
     void cleanup();
 
-    /* Adjusting stuff: */
+    /** Resizes wizard to golden ratio. */
     void resizeToGoldenRatio();
 
-    /* Design stuff: */
 #ifndef VBOX_WS_MAC
+    /** Assigns @a strWaterMark. */
     void assignWatermark(const QString &strWaterMark);
 #else
+    /** Assigns @a strBackground. */
     void assignBackground(const QString &strBackground);
 #endif
 
-    /* Show event: */
-    void showEvent(QShowEvent *pShowEvent);
+protected slots:
+
+    /** Handles current-page change to page with @a iId. */
+    virtual void sltCurrentIdChanged(int iId);
+    /** Handles custome-button click for button with @a iId. */
+    virtual void sltCustomButtonClicked(int iId);
 
 private:
 
-    /* Helpers: */
-    void configurePage(UIWizardPage *pPage);
-    void resizeAccordingLabelWidth(int iLabelWidth);
-    double ratio();
-#ifndef VBOX_WS_MAC
-    int proposedWatermarkHeight();
-    void assignWatermarkHelper();
-#endif /* !VBOX_WS_MAC */
+    /** Performs pages translation. */
+    void retranslatePages();
 
-    /* Variables: */
-    WizardType m_type;
-    WizardMode m_mode;
+    /** Configures certain @a pPage. */
+    void configurePage(UIWizardPage *pPage);
+
+    /** Resizes wizard according certain @a iLabelWidth. */
+    void resizeAccordingLabelWidth(int iLabelWidth);
+
+    /** Returns ratio corresponding to current wizard type. */
+    double ratio() const;
+
 #ifndef VBOX_WS_MAC
-    QString m_strWatermarkName;
-#endif /* !VBOX_WS_MAC */
+    /** Returns proposed watermark height. */
+    int proposedWatermarkHeight();
+    /** Assigns cached watermark. */
+    void assignWatermarkHelper();
+#endif
+
+    /** Holds the wizard type. */
+    WizardType  m_enmType;
+    /** Holds the wizard mode. */
+    WizardMode  m_enmMode;
+#ifndef VBOX_WS_MAC
+    /** Holds the watermark name. */
+    QString     m_strWatermarkName;
+#endif
 };
 
+/** Wizard interface safe-pointer. */
 typedef QPointer<UIWizard> UISafePointerWizard;
 
-#endif // __UIWizard_h__
-
+#endif /* !___UIWizard_h___ */
