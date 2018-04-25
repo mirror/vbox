@@ -16,9 +16,9 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wix"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
-  <Property Id="VBOX_IS_WINDOW_10">
-    <DirectorySearch Id="DirSearchForWindows10NtDll" Path="[SystemFolder]" Depth="0">
-      <FileSearch Name="ntdll.dll" MinVersion="6.4.10000.0"/>
+  <Property Id="VBOX_IS_WINDOW_10" >
+    <DirectorySearch Id="DirSearchForWindows10NtDll" Path="[SystemFolder]" >
+      <FileSearch Name="ntdll.dll" MinVersion="6.4.00000.0"/>
     </DirectorySearch>
   </Property>
 
