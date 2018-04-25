@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,32 +21,39 @@
 
 /* Qt includes: */
 # include <QAccessibleWidget>
-# include <QStylePainter>
-# include <QStyleOption>
-# include <QHBoxLayout>
-# include <QPaintEvent>
-# include <QMouseEvent>
-# include <QStatusBar>
 # include <QCheckBox>
-# include <QMimeData>
-# include <QPainter>
-# include <QPixmap>
 # include <QDrag>
+# include <QHBoxLayout>
+# include <QMimeData>
+# include <QMouseEvent>
+# include <QPainter>
+# include <QPaintEvent>
+# include <QPixmap>
+# include <QStatusBar>
+# include <QStyleOption>
+# include <QStylePainter>
 
 /* GUI includes: */
-# include "UIStatusBarEditorWindow.h"
-# include "UIExtraDataManager.h"
-# include "UIMachineWindow.h"
-# include "UIConverter.h"
-# include "UIIconPool.h"
 # include "QIToolButton.h"
 # include "VBoxGlobal.h"
+# include "UIConverter.h"
+# include "UIExtraDataManager.h"
+# include "UIIconPool.h"
+# include "UIMachineWindow.h"
+# include "UIStatusBarEditorWindow.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Forward declarations: */
+class QAccessibleInterface;
+class QMouseEvent;
+class QObject;
+class QPixmap;
+class QPoint;
+class QSize;
 
-/** QWidget extension
-  * used as status-bar editor button. */
+
+/** QWidget subclass used as status-bar editor button. */
 class UIStatusBarEditorButton : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -64,11 +71,11 @@ public:
     /** Holds the mime-type for the D&D system. */
     static const QString MimeType;
 
-    /** Constructor for the button of passed @a type. */
-    UIStatusBarEditorButton(IndicatorType type);
+    /** Constructs the button of passed @a enmType. */
+    UIStatusBarEditorButton(IndicatorType enmType);
 
     /** Returns button type. */
-    IndicatorType type() const { return m_type; }
+    IndicatorType type() const { return m_enmType; }
 
     /** Returns button size-hint. */
     QSize sizeHint() const { return m_size; }
@@ -78,39 +85,41 @@ public:
     /** Defines whether button is @a fChecked. */
     void setChecked(bool fChecked);
 
-private:
+protected:
 
-    /** Retranslation routine. */
-    virtual void retranslateUi();
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
-    /** Paint-event handler. */
-    virtual void paintEvent(QPaintEvent *pEvent);
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 
-    /** Mouse-press event handler. */
+    /** Handles mouse-press @a pEvent. */
     virtual void mousePressEvent(QMouseEvent *pEvent);
-    /** Mouse-release event handler. */
+    /** Handles mouse-release @a pEvent. */
     virtual void mouseReleaseEvent(QMouseEvent *pEvent);
-    /** Mouse-enter event handler. */
+    /** Handles mouse-enter @a pEvent. */
     virtual void enterEvent(QEvent *pEvent);
-    /** Mouse-leave event handler. */
+    /** Handles mouse-leave @a pEvent. */
     virtual void leaveEvent(QEvent *pEvent);
-    /** Mouse-move event handler. */
+    /** Handles mouse-move @a pEvent. */
     virtual void mouseMoveEvent(QMouseEvent *pEvent);
 
+private:
+
     /** Holds the button type. */
-    IndicatorType m_type;
+    IndicatorType  m_enmType;
     /** Holds the button size. */
-    QSize m_size;
+    QSize          m_size;
     /** Holds the button pixmap. */
-    QPixmap m_pixmap;
+    QPixmap        m_pixmap;
     /** Holds the button pixmap size. */
-    QSize m_pixmapSize;
+    QSize          m_pixmapSize;
     /** Holds whether button is checked. */
-    bool m_fChecked;
+    bool           m_fChecked;
     /** Holds whether button is hovered. */
-    bool m_fHovered;
+    bool           m_fHovered;
     /** Holds the last mouse-press position. */
-    QPoint m_mousePressPosition;
+    QPoint         m_mousePressPosition;
 };
 
 
@@ -185,7 +194,6 @@ QAccessible::State UIAccessibilityInterfaceForUIStatusBarEditorButton::state() c
 }
 
 
-
 /*********************************************************************************************************************************
 *   Class UIStatusBarEditorButton implementation.                                                                                *
 *********************************************************************************************************************************/
@@ -193,8 +201,8 @@ QAccessible::State UIAccessibilityInterfaceForUIStatusBarEditorButton::state() c
 /* static */
 const QString UIStatusBarEditorButton::MimeType = QString("application/virtualbox;value=IndicatorType");
 
-UIStatusBarEditorButton::UIStatusBarEditorButton(IndicatorType type)
-    : m_type(type)
+UIStatusBarEditorButton::UIStatusBarEditorButton(IndicatorType enmType)
+    : m_enmType(enmType)
     , m_fChecked(false)
     , m_fHovered(false)
 {
@@ -202,7 +210,7 @@ UIStatusBarEditorButton::UIStatusBarEditorButton(IndicatorType type)
     setMouseTracking(true);
 
     /* Prepare icon for assigned type: */
-    const QIcon icon = gpConverter->toIcon(m_type);
+    const QIcon icon = gpConverter->toIcon(m_enmType);
     const QStyle *pStyle = QApplication::style();
     const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
     m_pixmapSize = QSize(iIconMetric, iIconMetric);
@@ -238,7 +246,7 @@ void UIStatusBarEditorButton::retranslateUi()
                                            "<nobr><b>Drag&Drop</b> to change indicator position.</nobr>"));
 }
 
-void UIStatusBarEditorButton::paintEvent(QPaintEvent*)
+void UIStatusBarEditorButton::paintEvent(QPaintEvent *)
 {
     /* Create style-painter: */
     QStylePainter painter(this);
@@ -289,7 +297,7 @@ void UIStatusBarEditorButton::mouseReleaseEvent(QMouseEvent *pEvent)
     emit sigClick();
 }
 
-void UIStatusBarEditorButton::enterEvent(QEvent*)
+void UIStatusBarEditorButton::enterEvent(QEvent *)
 {
     /* Make sure button isn't hovered: */
     if (m_fHovered)
@@ -301,7 +309,7 @@ void UIStatusBarEditorButton::enterEvent(QEvent*)
     update();
 }
 
-void UIStatusBarEditorButton::leaveEvent(QEvent*)
+void UIStatusBarEditorButton::leaveEvent(QEvent *)
 {
     /* Make sure button is hovered: */
     if (!m_fHovered)
@@ -334,12 +342,26 @@ void UIStatusBarEditorButton::mouseMoveEvent(QMouseEvent *pEvent)
     QDrag *pDrag = new QDrag(this);
     connect(pDrag, SIGNAL(destroyed(QObject*)), this, SIGNAL(sigDragObjectDestroy()));
     QMimeData *pMimeData = new QMimeData;
-    pMimeData->setData(MimeType, gpConverter->toInternalString(m_type).toLatin1());
+    pMimeData->setData(MimeType, gpConverter->toInternalString(m_enmType).toLatin1());
     pDrag->setMimeData(pMimeData);
     pDrag->setPixmap(m_pixmap);
     pDrag->exec();
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIStatusBarEditorWindow implementation.                                                                                *
+*********************************************************************************************************************************/
+
+UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
+    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget(0, false, vboxGlobal().managedVMUuid()), UISlidingToolBar::Position_Bottom)
+{
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIStatusBarEditorWidget implementation.                                                                                *
+*********************************************************************************************************************************/
 
 UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent,
                                                  bool fStartedFromVMSettings /* = true */,
@@ -401,17 +423,17 @@ void UIStatusBarEditorWidget::setStatusBarConfiguration(const QList<IndicatorTyp
             m_order << (IndicatorType)iType;
 
     /* Update configuration for all existing buttons: */
-    foreach (const IndicatorType &type, m_order)
+    foreach (const IndicatorType &enmType, m_order)
     {
         /* Get button: */
-        UIStatusBarEditorButton *pButton = m_buttons.value(type);
+        UIStatusBarEditorButton *pButton = m_buttons.value(enmType);
         /* Make sure button exists: */
         if (!pButton)
             continue;
         /* Update button 'checked' state: */
-        pButton->setChecked(!m_restrictions.contains(type));
+        pButton->setChecked(!m_restrictions.contains(enmType));
         /* Make sure it have valid position: */
-        const int iWantedIndex = position(type);
+        const int iWantedIndex = position(enmType);
         const int iActualIndex = m_pButtonLayout->indexOf(pButton);
         if (iActualIndex != iWantedIndex)
         {
@@ -419,6 +441,207 @@ void UIStatusBarEditorWidget::setStatusBarConfiguration(const QList<IndicatorTyp
             m_pButtonLayout->removeWidget(pButton);
             m_pButtonLayout->insertWidget(iWantedIndex, pButton);
         }
+    }
+}
+
+void UIStatusBarEditorWidget::retranslateUi()
+{
+    /* Translate close-button if necessary: */
+    if (!m_fStartedFromVMSettings && m_pButtonClose)
+        m_pButtonClose->setToolTip(tr("Close"));
+    /* Translate enable-checkbox if necessary: */
+    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
+        m_pCheckBoxEnable->setToolTip(tr("Enable Status Bar"));
+}
+
+void UIStatusBarEditorWidget::paintEvent(QPaintEvent *)
+{
+    /* Prepare painter: */
+    QPainter painter(this);
+
+    /* Prepare palette colors: */
+    const QPalette pal = palette();
+    QColor color0 = pal.color(QPalette::Window);
+    QColor color1 = pal.color(QPalette::Window).lighter(110);
+    color1.setAlpha(0);
+    QColor color2 = pal.color(QPalette::Window).darker(200);
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+    QColor color3 = pal.color(QPalette::Window).darker(120);
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+
+    /* Acquire metric: */
+    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
+
+    /* Left corner: */
+    QRadialGradient grad1(QPointF(iMetric, iMetric), iMetric);
+    {
+        grad1.setColorAt(0, color2);
+        grad1.setColorAt(1, color1);
+    }
+    /* Right corner: */
+    QRadialGradient grad2(QPointF(width() - iMetric, iMetric), iMetric);
+    {
+        grad2.setColorAt(0, color2);
+        grad2.setColorAt(1, color1);
+    }
+    /* Top line: */
+    QLinearGradient grad3(QPointF(iMetric, 0), QPointF(iMetric, iMetric));
+    {
+        grad3.setColorAt(0, color1);
+        grad3.setColorAt(1, color2);
+    }
+    /* Left line: */
+    QLinearGradient grad4(QPointF(0, iMetric), QPointF(iMetric, iMetric));
+    {
+        grad4.setColorAt(0, color1);
+        grad4.setColorAt(1, color2);
+    }
+    /* Right line: */
+    QLinearGradient grad5(QPointF(width(), iMetric), QPointF(width() - iMetric, iMetric));
+    {
+        grad5.setColorAt(0, color1);
+        grad5.setColorAt(1, color2);
+    }
+
+    /* Paint shape/shadow: */
+    painter.fillRect(QRect(iMetric, iMetric, width() - iMetric * 2, height() - iMetric), color0); // background
+    painter.fillRect(QRect(0,                 0, iMetric, iMetric), grad1); // left corner
+    painter.fillRect(QRect(width() - iMetric, 0, iMetric, iMetric), grad2); // right corner
+    painter.fillRect(QRect(iMetric,           0, width() - iMetric * 2, iMetric), grad3); // bottom line
+    painter.fillRect(QRect(0,                 iMetric, iMetric, height() - iMetric), grad4); // left line
+    painter.fillRect(QRect(width() - iMetric, iMetric, iMetric, height() - iMetric), grad5); // right line
+
+#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+    /* Paint frames: */
+    painter.save();
+    painter.setPen(color3);
+    painter.drawLine(QLine(QPoint(iMetric + 1,               iMetric + 1),
+                           QPoint(width() - 1 - iMetric - 1, iMetric + 1)));
+    painter.drawLine(QLine(QPoint(width() - 1 - iMetric - 1, iMetric + 1),
+                           QPoint(width() - 1 - iMetric - 1, height() - 1)));
+    painter.drawLine(QLine(QPoint(width() - 1 - iMetric - 1, height() - 1),
+                           QPoint(iMetric + 1,               height() - 1)));
+    painter.drawLine(QLine(QPoint(iMetric + 1,               height() - 1),
+                           QPoint(iMetric + 1,               iMetric + 1)));
+    painter.restore();
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+
+    /* Paint drop token: */
+    if (m_pButtonDropToken)
+    {
+        QStyleOption option;
+        option.state |= QStyle::State_Horizontal;
+        const QRect geo = m_pButtonDropToken->geometry();
+        option.rect = !m_fDropAfterTokenButton ?
+                      QRect(geo.topLeft() - QPoint(iMetric, iMetric),
+                            geo.bottomLeft() + QPoint(0, iMetric)) :
+                      QRect(geo.topRight() - QPoint(0, iMetric),
+                            geo.bottomRight() + QPoint(iMetric, iMetric));
+        QApplication::style()->drawPrimitive(QStyle::PE_IndicatorToolBarSeparator,
+                                             &option, &painter);
+    }
+}
+
+void UIStatusBarEditorWidget::dragEnterEvent(QDragEnterEvent *pEvent)
+{
+    /* Make sure event is valid: */
+    AssertPtrReturnVoid(pEvent);
+    /* And mime-data is set: */
+    const QMimeData *pMimeData = pEvent->mimeData();
+    AssertPtrReturnVoid(pMimeData);
+    /* Make sure mime-data format is valid: */
+    if (!pMimeData->hasFormat(UIStatusBarEditorButton::MimeType))
+        return;
+
+    /* Accept drag-enter event: */
+    pEvent->acceptProposedAction();
+}
+
+void UIStatusBarEditorWidget::dragMoveEvent(QDragMoveEvent *pEvent)
+{
+    /* Make sure event is valid: */
+    AssertPtrReturnVoid(pEvent);
+    /* And mime-data is set: */
+    const QMimeData *pMimeData = pEvent->mimeData();
+    AssertPtrReturnVoid(pMimeData);
+    /* Make sure mime-data format is valid: */
+    if (!pMimeData->hasFormat(UIStatusBarEditorButton::MimeType))
+        return;
+
+    /* Reset token: */
+    m_pButtonDropToken = 0;
+    m_fDropAfterTokenButton = true;
+
+    /* Get event position: */
+    const QPoint pos = pEvent->pos();
+    /* Search for most suitable button: */
+    foreach (const IndicatorType &enmType, m_order)
+    {
+        m_pButtonDropToken = m_buttons.value(enmType);
+        const QRect geo = m_pButtonDropToken->geometry();
+        if (pos.x() < geo.center().x())
+        {
+            m_fDropAfterTokenButton = false;
+            break;
+        }
+    }
+    /* Update: */
+    update();
+}
+
+void UIStatusBarEditorWidget::dragLeaveEvent(QDragLeaveEvent *)
+{
+    /* Reset token: */
+    m_pButtonDropToken = 0;
+    m_fDropAfterTokenButton = true;
+    /* Update: */
+    update();
+}
+
+void UIStatusBarEditorWidget::dropEvent(QDropEvent *pEvent)
+{
+    /* Make sure event is valid: */
+    AssertPtrReturnVoid(pEvent);
+    /* And mime-data is set: */
+    const QMimeData *pMimeData = pEvent->mimeData();
+    AssertPtrReturnVoid(pMimeData);
+    /* Make sure mime-data format is valid: */
+    if (!pMimeData->hasFormat(UIStatusBarEditorButton::MimeType))
+        return;
+
+    /* Make sure token-button set: */
+    if (!m_pButtonDropToken)
+        return;
+
+    /* Determine type of token-button: */
+    const IndicatorType tokenType = m_pButtonDropToken->type();
+    /* Determine type of dropped-button: */
+    const QString strDroppedType =
+        QString::fromLatin1(pMimeData->data(UIStatusBarEditorButton::MimeType));
+    const IndicatorType droppedType =
+        gpConverter->fromInternalString<IndicatorType>(strDroppedType);
+
+    /* Make sure these types are different: */
+    if (droppedType == tokenType)
+        return;
+
+    /* Remove type of dropped-button: */
+    m_order.removeAll(droppedType);
+    /* Insert type of dropped-button into position of token-button: */
+    int iPosition = m_order.indexOf(tokenType);
+    if (m_fDropAfterTokenButton)
+        ++iPosition;
+    m_order.insert(iPosition, droppedType);
+
+    if (m_fStartedFromVMSettings)
+    {
+        /* Reapply status-bar configuration from cache: */
+        setStatusBarConfiguration(m_restrictions, m_order);
+    }
+    else
+    {
+        /* Save updated status-bar indicator order: */
+        gEDataManager->setStatusBarIndicatorOrder(m_order, machineID());
     }
 }
 
@@ -440,13 +663,13 @@ void UIStatusBarEditorWidget::sltHandleButtonClick()
     AssertPtrReturnVoid(pButton);
 
     /* Get sender type: */
-    const IndicatorType type = pButton->type();
+    const IndicatorType enmType = pButton->type();
 
     /* Invert restriction for sender type: */
-    if (m_restrictions.contains(type))
-        m_restrictions.removeAll(type);
+    if (m_restrictions.contains(enmType))
+        m_restrictions.removeAll(enmType);
     else
-        m_restrictions.append(type);
+        m_restrictions.append(enmType);
 
     if (m_fStartedFromVMSettings)
     {
@@ -569,12 +792,12 @@ void UIStatusBarEditorWidget::prepareStatusButtons()
     for (int i = IndicatorType_Invalid; i < IndicatorType_Max; ++i)
     {
         /* Get current type: */
-        const IndicatorType type = (IndicatorType)i;
+        const IndicatorType enmType = (IndicatorType)i;
         /* Skip inappropriate types: */
-        if (type == IndicatorType_Invalid || type == IndicatorType_KeyboardExtension)
+        if (enmType == IndicatorType_Invalid || enmType == IndicatorType_KeyboardExtension)
             continue;
         /* Create status button: */
-        prepareStatusButton(type);
+        prepareStatusButton(enmType);
     }
 
     if (!m_fStartedFromVMSettings)
@@ -588,10 +811,10 @@ void UIStatusBarEditorWidget::prepareStatusButtons()
     }
 }
 
-void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType type)
+void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType enmType)
 {
     /* Create status button: */
-    UIStatusBarEditorButton *pButton = new UIStatusBarEditorButton(type);
+    UIStatusBarEditorButton *pButton = new UIStatusBarEditorButton(enmType);
     AssertPtrReturnVoid(pButton);
     {
         /* Configure status button: */
@@ -600,216 +823,15 @@ void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType type)
         /* Add status button into button-layout: */
         m_pButtonLayout->addWidget(pButton);
         /* Insert status button into map: */
-        m_buttons.insert(type, pButton);
+        m_buttons.insert(enmType, pButton);
     }
 }
 
-void UIStatusBarEditorWidget::retranslateUi()
-{
-    /* Translate close-button if necessary: */
-    if (!m_fStartedFromVMSettings && m_pButtonClose)
-        m_pButtonClose->setToolTip(tr("Close"));
-    /* Translate enable-checkbox if necessary: */
-    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
-        m_pCheckBoxEnable->setToolTip(tr("Enable Status Bar"));
-}
-
-void UIStatusBarEditorWidget::paintEvent(QPaintEvent*)
-{
-    /* Prepare painter: */
-    QPainter painter(this);
-
-    /* Prepare palette colors: */
-    const QPalette pal = palette();
-    QColor color0 = pal.color(QPalette::Window);
-    QColor color1 = pal.color(QPalette::Window).lighter(110);
-    color1.setAlpha(0);
-    QColor color2 = pal.color(QPalette::Window).darker(200);
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    QColor color3 = pal.color(QPalette::Window).darker(120);
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-
-    /* Acquire metric: */
-    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-
-    /* Left corner: */
-    QRadialGradient grad1(QPointF(iMetric, iMetric), iMetric);
-    {
-        grad1.setColorAt(0, color2);
-        grad1.setColorAt(1, color1);
-    }
-    /* Right corner: */
-    QRadialGradient grad2(QPointF(width() - iMetric, iMetric), iMetric);
-    {
-        grad2.setColorAt(0, color2);
-        grad2.setColorAt(1, color1);
-    }
-    /* Top line: */
-    QLinearGradient grad3(QPointF(iMetric, 0), QPointF(iMetric, iMetric));
-    {
-        grad3.setColorAt(0, color1);
-        grad3.setColorAt(1, color2);
-    }
-    /* Left line: */
-    QLinearGradient grad4(QPointF(0, iMetric), QPointF(iMetric, iMetric));
-    {
-        grad4.setColorAt(0, color1);
-        grad4.setColorAt(1, color2);
-    }
-    /* Right line: */
-    QLinearGradient grad5(QPointF(width(), iMetric), QPointF(width() - iMetric, iMetric));
-    {
-        grad5.setColorAt(0, color1);
-        grad5.setColorAt(1, color2);
-    }
-
-    /* Paint shape/shadow: */
-    painter.fillRect(QRect(iMetric, iMetric, width() - iMetric * 2, height() - iMetric), color0); // background
-    painter.fillRect(QRect(0,                 0, iMetric, iMetric), grad1); // left corner
-    painter.fillRect(QRect(width() - iMetric, 0, iMetric, iMetric), grad2); // right corner
-    painter.fillRect(QRect(iMetric,           0, width() - iMetric * 2, iMetric), grad3); // bottom line
-    painter.fillRect(QRect(0,                 iMetric, iMetric, height() - iMetric), grad4); // left line
-    painter.fillRect(QRect(width() - iMetric, iMetric, iMetric, height() - iMetric), grad5); // right line
-
-#if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-    /* Paint frames: */
-    painter.save();
-    painter.setPen(color3);
-    painter.drawLine(QLine(QPoint(iMetric + 1,               iMetric + 1),
-                           QPoint(width() - 1 - iMetric - 1, iMetric + 1)));
-    painter.drawLine(QLine(QPoint(width() - 1 - iMetric - 1, iMetric + 1),
-                           QPoint(width() - 1 - iMetric - 1, height() - 1)));
-    painter.drawLine(QLine(QPoint(width() - 1 - iMetric - 1, height() - 1),
-                           QPoint(iMetric + 1,               height() - 1)));
-    painter.drawLine(QLine(QPoint(iMetric + 1,               height() - 1),
-                           QPoint(iMetric + 1,               iMetric + 1)));
-    painter.restore();
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-
-    /* Paint drop token: */
-    if (m_pButtonDropToken)
-    {
-        QStyleOption option;
-        option.state |= QStyle::State_Horizontal;
-        const QRect geo = m_pButtonDropToken->geometry();
-        option.rect = !m_fDropAfterTokenButton ?
-                      QRect(geo.topLeft() - QPoint(iMetric, iMetric),
-                            geo.bottomLeft() + QPoint(0, iMetric)) :
-                      QRect(geo.topRight() - QPoint(0, iMetric),
-                            geo.bottomRight() + QPoint(iMetric, iMetric));
-        QApplication::style()->drawPrimitive(QStyle::PE_IndicatorToolBarSeparator,
-                                             &option, &painter);
-    }
-}
-
-void UIStatusBarEditorWidget::dragEnterEvent(QDragEnterEvent *pEvent)
-{
-    /* Make sure event is valid: */
-    AssertPtrReturnVoid(pEvent);
-    /* And mime-data is set: */
-    const QMimeData *pMimeData = pEvent->mimeData();
-    AssertPtrReturnVoid(pMimeData);
-    /* Make sure mime-data format is valid: */
-    if (!pMimeData->hasFormat(UIStatusBarEditorButton::MimeType))
-        return;
-
-    /* Accept drag-enter event: */
-    pEvent->acceptProposedAction();
-}
-
-void UIStatusBarEditorWidget::dragMoveEvent(QDragMoveEvent *pEvent)
-{
-    /* Make sure event is valid: */
-    AssertPtrReturnVoid(pEvent);
-    /* And mime-data is set: */
-    const QMimeData *pMimeData = pEvent->mimeData();
-    AssertPtrReturnVoid(pMimeData);
-    /* Make sure mime-data format is valid: */
-    if (!pMimeData->hasFormat(UIStatusBarEditorButton::MimeType))
-        return;
-
-    /* Reset token: */
-    m_pButtonDropToken = 0;
-    m_fDropAfterTokenButton = true;
-
-    /* Get event position: */
-    const QPoint pos = pEvent->pos();
-    /* Search for most suitable button: */
-    foreach (const IndicatorType &type, m_order)
-    {
-        m_pButtonDropToken = m_buttons.value(type);
-        const QRect geo = m_pButtonDropToken->geometry();
-        if (pos.x() < geo.center().x())
-        {
-            m_fDropAfterTokenButton = false;
-            break;
-        }
-    }
-    /* Update: */
-    update();
-}
-
-void UIStatusBarEditorWidget::dragLeaveEvent(QDragLeaveEvent*)
-{
-    /* Reset token: */
-    m_pButtonDropToken = 0;
-    m_fDropAfterTokenButton = true;
-    /* Update: */
-    update();
-}
-
-void UIStatusBarEditorWidget::dropEvent(QDropEvent *pEvent)
-{
-    /* Make sure event is valid: */
-    AssertPtrReturnVoid(pEvent);
-    /* And mime-data is set: */
-    const QMimeData *pMimeData = pEvent->mimeData();
-    AssertPtrReturnVoid(pMimeData);
-    /* Make sure mime-data format is valid: */
-    if (!pMimeData->hasFormat(UIStatusBarEditorButton::MimeType))
-        return;
-
-    /* Make sure token-button set: */
-    if (!m_pButtonDropToken)
-        return;
-
-    /* Determine type of token-button: */
-    const IndicatorType tokenType = m_pButtonDropToken->type();
-    /* Determine type of dropped-button: */
-    const QString strDroppedType =
-        QString::fromLatin1(pMimeData->data(UIStatusBarEditorButton::MimeType));
-    const IndicatorType droppedType =
-        gpConverter->fromInternalString<IndicatorType>(strDroppedType);
-
-    /* Make sure these types are different: */
-    if (droppedType == tokenType)
-        return;
-
-    /* Remove type of dropped-button: */
-    m_order.removeAll(droppedType);
-    /* Insert type of dropped-button into position of token-button: */
-    int iPosition = m_order.indexOf(tokenType);
-    if (m_fDropAfterTokenButton)
-        ++iPosition;
-    m_order.insert(iPosition, droppedType);
-
-    if (m_fStartedFromVMSettings)
-    {
-        /* Reapply status-bar configuration from cache: */
-        setStatusBarConfiguration(m_restrictions, m_order);
-    }
-    else
-    {
-        /* Save updated status-bar indicator order: */
-        gEDataManager->setStatusBarIndicatorOrder(m_order, machineID());
-    }
-}
-
-int UIStatusBarEditorWidget::position(IndicatorType type) const
+int UIStatusBarEditorWidget::position(IndicatorType enmType) const
 {
     int iPosition = 0;
     foreach (const IndicatorType &iteratedType, m_order)
-        if (iteratedType == type)
+        if (iteratedType == enmType)
             return iPosition;
         else
             ++iPosition;
@@ -817,10 +839,4 @@ int UIStatusBarEditorWidget::position(IndicatorType type) const
 }
 
 
-UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
-    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget(0, false, vboxGlobal().managedVMUuid()), UISlidingToolBar::Position_Bottom)
-{
-}
-
 #include "UIStatusBarEditorWindow.moc"
-
