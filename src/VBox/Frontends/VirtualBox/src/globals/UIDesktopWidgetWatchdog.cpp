@@ -61,7 +61,7 @@ typedef enum _MONITOR_DPI_TYPE // gently stolen from MSDN
     MDT_DEFAULT        = MDT_EFFECTIVE_DPI
 } MONITOR_DPI_TYPE;
 # endif
-typedef void (WINAPI *PFN_GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, uint *, uint *);
+typedef void (WINAPI *PFN_GetDpiForMonitor)(HMONITOR, MONITOR_DPI_TYPE, UINT *, UINT *);
 
 /** Set when dynamic API import is reoslved. */
 static bool volatile        g_fResolved;
@@ -89,8 +89,8 @@ static BOOL CALLBACK MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT 
 
     /* Acquire effective DPI (available since Windows 8.1): */
     AssertReturn(g_pfnGetDpiForMonitor, false);
-    uint uOutX = 0;
-    uint uOutY = 0;
+    UINT uOutX = 0;
+    UINT uOutY = 0;
     g_pfnGetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, &uOutX, &uOutY);
     reinterpret_cast<QList<QPair<int, int> >*>(dwData)->append(qMakePair(uOutX, uOutY));
 
