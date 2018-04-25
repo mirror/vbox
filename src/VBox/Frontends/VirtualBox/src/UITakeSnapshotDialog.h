@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,7 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QLabel;
@@ -30,9 +31,8 @@ class QIDialogButtonBox;
 class QILabel;
 class CMachine;
 
-
 /** QIDialog subclass for taking snapshot name/description. */
-class UITakeSnapshotDialog : public QIWithRetranslateUI<QIDialog>
+class SHARED_LIBRARY_STUFF UITakeSnapshotDialog : public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 
@@ -42,7 +42,7 @@ public:
       * @param  comMachine  Brings the machine to take snapshot for. */
     UITakeSnapshotDialog(QWidget *pParent, const CMachine &comMachine);
 
-    /** Defines dialog @a pixmap. */
+    /** Defines snapshot @a pixmap. */
     void setPixmap(const QPixmap &pixmap);
 
     /** Defines snapshot @a strName. */
@@ -60,19 +60,21 @@ protected:
 
 private slots:
 
-    /** Handles name change signal. */
+    /** Handles @a strName change signal. */
     void sltHandleNameChanged(const QString &strName);
 
 private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares contents. */
+    void prepareContents();
 
     /** Holds the wrapper of machine to take snapshot for. */
     const CMachine &m_comMachine;
 
     /** Holds the amount of immutable attachments. */
-    int m_cImmutableMediums;
+    int  m_cImmutableMediums;
 
     /** Holds the icon label instance. */
     QLabel *m_pLabelIcon;
@@ -95,4 +97,3 @@ private:
 };
 
 #endif /* !___UITakeSnapshotDialog_h___ */
-

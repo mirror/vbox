@@ -438,7 +438,6 @@ endif
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 #
 VirtualBox_QT_MOCHDRS = \
-	src/UITakeSnapshotDialog.h \
 	src/globals/UIStarter.h \
 	src/hostnetwork/UIHostNetworkDetailsWidget.h \
 	src/hostnetwork/UIHostNetworkManager.h \
@@ -618,6 +617,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCHDRS += \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
+	src/UITakeSnapshotDialog.h \
 	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
@@ -724,6 +724,7 @@ endif
 VBoxGlobal_QT_MOCHDRS = \
 	src/VBoxAboutDlg.h \
 	src/VBoxLicenseViewer.h \
+	src/UITakeSnapshotDialog.h \
 	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
@@ -941,7 +942,6 @@ endif
 #
 VirtualBox_SOURCES = \
 	src/main.cpp \
-	src/UITakeSnapshotDialog.cpp \
 	src/globals/UIImageTools.cpp \
 	src/globals/UIStarter.cpp \
 	src/hostnetwork/UIHostNetworkDetailsWidget.cpp \
@@ -1154,6 +1154,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_SOURCES += \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxLicenseViewer.cpp \
+	src/UITakeSnapshotDialog.cpp \
 	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
@@ -1286,6 +1287,7 @@ endif
 VBoxGlobal_SOURCES = \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxLicenseViewer.cpp \
+	src/UITakeSnapshotDialog.cpp \
 	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \

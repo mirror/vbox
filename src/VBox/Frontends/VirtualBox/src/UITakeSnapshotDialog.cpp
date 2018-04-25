@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,10 +29,10 @@
 /* GUI includes: */
 # include "QIDialogButtonBox.h"
 # include "QILabel.h"
+# include "VBoxUtils.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIMessageCenter.h"
 # include "UITakeSnapshotDialog.h"
-# include "VBoxUtils.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -79,7 +79,6 @@ QString UITakeSnapshotDialog::description() const
 
 void UITakeSnapshotDialog::retranslateUi()
 {
-    /* Translate: */
     setWindowTitle(tr("Take Snapshot of Virtual Machine"));
     m_pLabelName->setText(tr("Snapshot &Name"));
     m_pLabelDescription->setText(tr("Snapshot &Description"));
@@ -96,9 +95,34 @@ void UITakeSnapshotDialog::sltHandleNameChanged(const QString &strName)
 
 void UITakeSnapshotDialog::prepare()
 {
+    /* Prepare contents: */
+    prepareContents();
+
+    /* Apply language settings: */
+    retranslateUi();
+
+    /* Invent minimum size: */
+    QSize minimumSize;
+    const int iHostScreen = gpDesktop->screenNumber(parentWidget());
+    if (iHostScreen >= 0 && iHostScreen < gpDesktop->screenCount())
+    {
+        /* On the basis of current host-screen geometry if possible: */
+        const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
+        if (screenGeometry.isValid())
+            minimumSize = screenGeometry.size() / 4;
+    }
+    /* Fallback to default size if we failed: */
+    if (minimumSize.isNull())
+        minimumSize = QSize(800, 600);
+    /* Resize to initial size: */
+    setMinimumSize(minimumSize);
+}
+
+void UITakeSnapshotDialog::prepareContents()
+{
     /* Create layout: */
     QGridLayout *pLayout = new QGridLayout(this);
-    AssertPtrReturnVoid(pLayout);
+    if (pLayout)
     {
         /* Configure layout: */
 #ifdef VBOX_WS_MAC
@@ -110,11 +134,11 @@ void UITakeSnapshotDialog::prepare()
 
         /* Create sub-layout: */
         QVBoxLayout *pSubLayout1 = new QVBoxLayout;
-        AssertPtrReturnVoid(pSubLayout1);
+        if (pSubLayout1)
         {
             /* Create icon label: */
             m_pLabelIcon = new QLabel;
-            AssertPtrReturnVoid(m_pLabelIcon);
+            if (m_pLabelIcon)
             {
                 /* Configure label: */
                 m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -132,7 +156,7 @@ void UITakeSnapshotDialog::prepare()
 
         /* Create sub-layout 2: */
         QVBoxLayout *pSubLayout2 = new QVBoxLayout;
-        AssertPtrReturnVoid(pSubLayout2);
+        if (pSubLayout2)
         {
             /* Configure layout: */
 #ifdef VBOX_WS_MAC
@@ -143,7 +167,7 @@ void UITakeSnapshotDialog::prepare()
 
             /* Create name label: */
             m_pLabelName = new QLabel;
-            AssertPtrReturnVoid(m_pLabelName);
+            if (m_pLabelName)
             {
                 /* Add into layout: */
                 pSubLayout2->addWidget(m_pLabelName);
@@ -151,7 +175,7 @@ void UITakeSnapshotDialog::prepare()
 
             /* Create name editor: */
             m_pEditorName = new QLineEdit;
-            AssertPtrReturnVoid(m_pEditorName);
+            if (m_pEditorName)
             {
                 /* Configure editor: */
                 m_pLabelName->setBuddy(m_pEditorName);
@@ -168,7 +192,7 @@ void UITakeSnapshotDialog::prepare()
 
         /* Create sub-layout 3: */
         QVBoxLayout *pSubLayout3 = new QVBoxLayout;
-        AssertPtrReturnVoid(pSubLayout3);
+        if (pSubLayout3)
         {
             /* Configure layout: */
 #ifdef VBOX_WS_MAC
@@ -179,7 +203,7 @@ void UITakeSnapshotDialog::prepare()
 
             /* Create description label: */
             m_pLabelDescription = new QLabel;
-            AssertPtrReturnVoid(m_pLabelDescription);
+            if (m_pLabelDescription)
             {
                 /* Add into layout: */
                 pSubLayout3->addWidget(m_pLabelDescription);
@@ -187,7 +211,7 @@ void UITakeSnapshotDialog::prepare()
 
             /* Create description editor: */
             m_pEditorDescription = new QTextEdit;
-            AssertPtrReturnVoid(m_pEditorDescription);
+            if (m_pEditorDescription)
             {
                 /* Configure editor: */
                 m_pLabelDescription->setBuddy(m_pEditorDescription);
@@ -202,7 +226,7 @@ void UITakeSnapshotDialog::prepare()
 
         /* Create information label: */
         m_pLabelInfo = new QILabel;
-        AssertPtrReturnVoid(m_pLabelInfo);
+        if (m_pLabelInfo)
         {
             /* Configure label: */
             m_pLabelInfo->setWordWrap(true);
@@ -230,7 +254,7 @@ void UITakeSnapshotDialog::prepare()
 
         /* Create button-box: */
         m_pButtonBox = new QIDialogButtonBox;
-        AssertPtrReturnVoid(m_pButtonBox);
+        if (m_pButtonBox)
         {
             /* Configure button-box: */
             m_pButtonBox->setStandardButtons(  QDialogButtonBox::Ok
@@ -247,24 +271,4 @@ void UITakeSnapshotDialog::prepare()
             pLayout->addWidget(m_pButtonBox, 3, 0, 1, 2);
         }
     }
-
-    /* Apply language settings: */
-    retranslateUi();
-
-    /* Invent minimum size: */
-    QSize minimumSize;
-    const int iHostScreen = gpDesktop->screenNumber(parentWidget());
-    if (iHostScreen >= 0 && iHostScreen < gpDesktop->screenCount())
-    {
-        /* On the basis of current host-screen geometry if possible: */
-        const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
-        if (screenGeometry.isValid())
-            minimumSize = screenGeometry.size() / 4;
-    }
-    /* Fallback to default size if we failed: */
-    if (minimumSize.isNull())
-        minimumSize = QSize(800, 600);
-    /* Resize to initial size: */
-    setMinimumSize(minimumSize);
 }
-
