@@ -16,9 +16,16 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wix"
          xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
-  <Property Id="VBOX_IS_WINDOW_10" >
+  <!-- MSI is soo messed up wrt NT versioning on Windows 10.  msiexec runs in
+       Windows 8.1 compatibility mode, so everything returns 6.3 as the
+       version.  This unfortunately include all system DLLs.  Fortunately,
+       the build number is left as-is, so we ASSUME build numbers above 10000
+       means its Windows 10.
+       Note! "HKLM\Software\Microsoft\Windows NT\CurrentVersion\CurrentBuild" could
+             probably be read here as well (CurrentVersion is "6.3" of course). -->
+  <Property Id="VBOX_IS_WINDOWS_10" >
     <DirectorySearch Id="DirSearchForWindows10NtDll" Path="[SystemFolder]" >
-      <FileSearch Name="ntdll.dll" MinVersion="6.4.00000.0"/>
+      <FileSearch Name="kernelbase.dll" MinVersion="6.3.10000.000" />
     </DirectorySearch>
   </Property>
 

@@ -19,17 +19,17 @@
     <Component Id="cp_NetAdp6DriverCat_PreW10" Guid="40aab6d8-a9ca-41bd-3c5e-bd768d44faa7" Win64="$(var.Property_Win64)">
         <File Id="file_VBoxNetAdp6_PreW10.cat" Name="VBoxNetAdp6.cat" Source="$(env.PATH_OUT)\bin\VBoxNetAdp6-PreW10.cat" />
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Condition><![CDATA[(localMSMNetworkType="NDIS6") AND (NOT VBOX_IS_WINDOW_10)]]></Condition>
+        <Condition><![CDATA[(localMSMNetworkType="NDIS6") AND (NOT VBOX_IS_WINDOWS_10)]]></Condition>
     <?else ?>
-        <Condition><![CDATA[(NETWORKTYPE="NDIS6") AND (NOT VBOX_IS_WINDOW_10)]]></Condition>
+        <Condition><![CDATA[(NETWORKTYPE="NDIS6") AND (NOT VBOX_IS_WINDOWS_10)]]></Condition>
     <?endif ?>
     </Component>
     <Component Id="cp_NetAdp6DriverCat_W10" Guid="37431619-c0ac-4f6a-029e-6a8ac4cd58ad" Win64="$(var.Property_Win64)">
         <File Id="file_VBoxNetAdp6_W10.cat" Name="VBoxNetAdp6.cat" Source="$(env.PATH_OUT)\bin\VBoxNetAdp6.cat" />
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
-        <Condition><![CDATA[(localMSMNetworkType="NDIS6") AND (VBOX_IS_WINDOW_10)]]></Condition>
+        <Condition><![CDATA[(localMSMNetworkType="NDIS6") AND (VBOX_IS_WINDOWS_10)]]></Condition>
     <?else ?>
-        <Condition><![CDATA[(NETWORKTYPE="NDIS6") AND (VBOX_IS_WINDOW_10)]]></Condition>
+        <Condition><![CDATA[(NETWORKTYPE="NDIS6") AND (VBOX_IS_WINDOWS_10)]]></Condition>
     <?endif ?>
     </Component>
 <?endif ?>

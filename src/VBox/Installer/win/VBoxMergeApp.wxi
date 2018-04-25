@@ -37,11 +37,11 @@
         <Directory Id="dir_VBoxAppVBoxDrv" Name="vboxdrv">
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
             <Component Id="cp_VBoxDrvCat_PreW10" Guid="673195c2-f315-42e7-ff00-5acbd91ea0bd" Win64="$(var.Property_Win64)">
-                <Condition><![CDATA[(NOT VBOX_IS_WINDOW_10)]]></Condition>
+                <Condition><![CDATA[(NOT VBOX_IS_WINDOWS_10)]]></Condition>
                 <File Id="file_VBoxDrv_PreW10.cat" Name="VBoxDrv.cat" Source="$(env.PATH_OUT)\bin\VBoxDrv-PreW10.cat" />
             </Component>
             <Component Id="cp_VBoxDrvCat_W10" Guid="589be90d-0286-4684-503d-a1681f9587bc" Win64="$(var.Property_Win64)">
-                <Condition><![CDATA[(VBOX_IS_WINDOW_10)]]></Condition>
+                <Condition><![CDATA[(VBOX_IS_WINDOWS_10)]]></Condition>
                 <File Id="file_VBoxDrv.cat" Name="VBoxDrv.cat" Source="$(env.PATH_OUT)\bin\VBoxDrv.cat" />
             </Component>
 <?endif ?>

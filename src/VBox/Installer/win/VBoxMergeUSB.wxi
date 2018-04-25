@@ -19,11 +19,11 @@
     <Directory Id="dir_VBoxUSBFilter" Name="filter">
 <?if $(env.VBOX_SIGNING_MODE)!= none ?>
         <Component Id="cp_USBFilterDriverCat_PreW10" Guid="ef18fb4d-4530-40db-2957-de2dc90243ab" Win64="$(var.Property_Win64)">
-            <Condition><![CDATA[(NOT VBOX_IS_WINDOW_10)]]></Condition>
+            <Condition><![CDATA[(NOT VBOX_IS_WINDOWS_10)]]></Condition>
             <File Id="file_VBoxUSBMon_PreW10.cat" Name="VBoxUSBMon.cat" Source="$(env.PATH_OUT)\bin\VBoxUSBMon-PreW10.cat" />
         </Component>
         <Component Id="cp_USBFilterDriverCat_W10" Guid="341ce4ca-d00e-4a43-f4e3-453eacc6b493" Win64="$(var.Property_Win64)">
-            <Condition><![CDATA[(VBOX_IS_WINDOW_10)]]></Condition>
+            <Condition><![CDATA[(VBOX_IS_WINDOWS_10)]]></Condition>
             <File Id="file_VBoxUSBMon_W10.cat" Name="VBoxUSBMon.cat" Source="$(env.PATH_OUT)\bin\VBoxUSBMon.cat" />
         </Component>
 <?endif ?>
@@ -40,11 +40,11 @@
     <Directory Id="dir_VBoxUSBDevice" Name="device">
 <?if $(env.VBOX_SIGNING_MODE)!= none ?>
         <Component Id="cp_USBDeviceDriverCat_PreW10" Guid="43cc14cb-06e9-46c2-d507-20423150ccbd" Win64="$(var.Property_Win64)">
-            <Condition><![CDATA[(NOT VBOX_IS_WINDOW_10)]]></Condition>
+            <Condition><![CDATA[(NOT VBOX_IS_WINDOWS_10)]]></Condition>
             <File Id="file_VBoxUSB_PreW10.cat" Name="VBoxUSB.cat" Source="$(env.PATH_OUT)\bin\VBoxUSB-PreW10.cat" />
         </Component>
         <Component Id="cp_USBDeviceDriverCat_W10" Guid="2127015e-7a96-4b8d-6015-b1e51a75b5ba" Win64="$(var.Property_Win64)">
-            <Condition><![CDATA[(VBOX_IS_WINDOW_10)]]></Condition>
+            <Condition><![CDATA[(VBOX_IS_WINDOWS_10)]]></Condition>
             <File Id="file_VBoxUSB_W10.cat" Name="VBoxUSB.cat" Source="$(env.PATH_OUT)\bin\VBoxUSB.cat" />
         </Component>
 <?endif ?>
