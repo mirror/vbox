@@ -18,7 +18,7 @@
 #ifndef __UIWizardNewVDPageExpert_h__
 #define __UIWizardNewVDPageExpert_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardNewVDPageBasic1.h"
 #include "UIWizardNewVDPageBasic2.h"
 #include "UIWizardNewVDPageBasic3.h"
@@ -27,10 +27,10 @@
 class QGroupBox;
 
 /* Expert page of the New Virtual Hard Drive wizard: */
-class UIWizardNewVDPageExpert : public UIWizardPage,
-                                public UIWizardNewVDPage1,
-                                public UIWizardNewVDPage2,
-                                public UIWizardNewVDPage3
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageExpert : public UIWizardPage,
+                                                     public UIWizardNewVDPage1,
+                                                     public UIWizardNewVDPage2,
+                                                     public UIWizardNewVDPage3
 {
     Q_OBJECT;
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
@@ -78,4 +78,3 @@ private:
 };
 
 #endif // __UIWizardNewVDPageExpert_h__
-

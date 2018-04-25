@@ -26,7 +26,7 @@
 #include "CMedium.h"
 
 /* New Virtual Hard Drive wizard: */
-class UIWizardNewVD : public UIWizard
+class SHARED_LIBRARY_STUFF UIWizardNewVD : public UIWizard
 {
     Q_OBJECT;
 
@@ -82,4 +82,3 @@ private:
 typedef QPointer<UIWizardNewVD> UISafePointerWizardNewVD;
 
 #endif // __UIWizardNewVD_h__
-

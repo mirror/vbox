@@ -31,8 +31,9 @@ class QButtonGroup;
 class QRadioButton;
 class QIRichTextLabel;
 
+
 /* 1st page of the New Virtual Hard Drive wizard (base part): */
-class UIWizardNewVDPage1 : public UIWizardPageBase
+class SHARED_LIBRARY_STUFF UIWizardNewVDPage1 : public UIWizardPageBase
 {
 protected:
 
@@ -52,8 +53,9 @@ protected:
     QStringList m_formatNames;
 };
 
+
 /* 1st page of the New Virtual Hard Drive wizard (basic extension): */
-class UIWizardNewVDPageBasic1 : public UIWizardPage, public UIWizardNewVDPage1
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageBasic1 : public UIWizardPage, public UIWizardNewVDPage1
 {
     Q_OBJECT;
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
@@ -81,5 +83,5 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif // __UIWizardNewVDPageBasic1_h__
 
+#endif // __UIWizardNewVDPageBasic1_h__

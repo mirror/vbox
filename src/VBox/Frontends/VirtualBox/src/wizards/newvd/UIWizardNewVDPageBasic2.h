@@ -18,7 +18,7 @@
 #ifndef __UIWizardNewVDPageBasic2_h__
 #define __UIWizardNewVDPageBasic2_h__
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
@@ -27,8 +27,9 @@ class QRadioButton;
 class QCheckBox;
 class QIRichTextLabel;
 
+
 /* 2nd page of the New Virtual Hard Drive wizard (base part): */
-class UIWizardNewVDPage2 : public UIWizardPageBase
+class SHARED_LIBRARY_STUFF UIWizardNewVDPage2 : public UIWizardPageBase
 {
 protected:
 
@@ -46,8 +47,9 @@ protected:
     QCheckBox *m_pSplitBox;
 };
 
+
 /* 2nd page of the New Virtual Hard Drive wizard (basic extension): */
-class UIWizardNewVDPageBasic2 : public UIWizardPage, public UIWizardNewVDPage2
+class SHARED_LIBRARY_STUFF UIWizardNewVDPageBasic2 : public UIWizardPage, public UIWizardNewVDPage2
 {
     Q_OBJECT;
     Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
@@ -75,5 +77,5 @@ private:
     QIRichTextLabel *m_pSplitLabel;
 };
 
-#endif // __UIWizardNewVDPageBasic2_h__
 
+#endif // __UIWizardNewVDPageBasic2_h__

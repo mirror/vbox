@@ -572,11 +572,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic3.h \
 	src/wizards/newvm/UIWizardNewVMPageExpert.h \
-	src/wizards/newvd/UIWizardNewVD.h \
-	src/wizards/newvd/UIWizardNewVDPageBasic1.h \
-	src/wizards/newvd/UIWizardNewVDPageBasic2.h \
-	src/wizards/newvd/UIWizardNewVDPageBasic3.h \
-	src/wizards/newvd/UIWizardNewVDPageExpert.h \
 	src/wizards/clonevm/UIWizardCloneVM.h \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic1.h \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic2.h \
@@ -672,8 +667,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIActionPoolRuntime.h \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
-	src/wizards/UIWizard.h \
-	src/wizards/UIWizardPage.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
@@ -695,7 +688,14 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIToolBar.h \
-	src/widgets/UIWarningPane.h
+	src/widgets/UIWarningPane.h \
+	src/wizards/UIWizard.h \
+	src/wizards/UIWizardPage.h \
+	src/wizards/newvd/UIWizardNewVD.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic1.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic2.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic3.h \
+	src/wizards/newvd/UIWizardNewVDPageExpert.h
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VirtualBox_QT_MOCHDRS += \
@@ -773,8 +773,6 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/runtime/UIActionPoolRuntime.h \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
-	src/wizards/UIWizard.h \
-	src/wizards/UIWizardPage.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
@@ -796,7 +794,14 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIToolBar.h \
-	src/widgets/UIWarningPane.h
+	src/widgets/UIWarningPane.h \
+	src/wizards/UIWizard.h \
+	src/wizards/UIWizardPage.h \
+	src/wizards/newvd/UIWizardNewVD.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic1.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic2.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic3.h \
+	src/wizards/newvd/UIWizardNewVDPageExpert.h
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VBoxGlobal_QT_MOCHDRS += \
@@ -1073,11 +1078,6 @@ VirtualBox_SOURCES = \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic3.cpp \
 	src/wizards/newvm/UIWizardNewVMPageExpert.cpp \
-	src/wizards/newvd/UIWizardNewVD.cpp \
-	src/wizards/newvd/UIWizardNewVDPageBasic1.cpp \
-	src/wizards/newvd/UIWizardNewVDPageBasic2.cpp \
-	src/wizards/newvd/UIWizardNewVDPageBasic3.cpp \
-	src/wizards/newvd/UIWizardNewVDPageExpert.cpp \
 	src/wizards/clonevm/UIWizardCloneVM.cpp \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp \
@@ -1212,8 +1212,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
-	src/wizards/UIWizard.cpp \
-	src/wizards/UIWizardPage.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
@@ -1235,7 +1233,14 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIToolBar.cpp \
-	src/widgets/UIWarningPane.cpp
+	src/widgets/UIWarningPane.cpp \
+	src/wizards/UIWizard.cpp \
+	src/wizards/UIWizardPage.cpp \
+	src/wizards/newvd/UIWizardNewVD.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic1.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic2.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic3.cpp \
+	src/wizards/newvd/UIWizardNewVDPageExpert.cpp
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VirtualBox_SOURCES += \
@@ -1339,8 +1344,6 @@ VBoxGlobal_SOURCES = \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
-	src/wizards/UIWizard.cpp \
-	src/wizards/UIWizardPage.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
@@ -1362,7 +1365,14 @@ VBoxGlobal_SOURCES = \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIToolBar.cpp \
-	src/widgets/UIWarningPane.cpp
+	src/widgets/UIWarningPane.cpp \
+	src/wizards/UIWizard.cpp \
+	src/wizards/UIWizardPage.cpp \
+	src/wizards/newvd/UIWizardNewVD.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic1.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic2.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic3.cpp \
+	src/wizards/newvd/UIWizardNewVDPageExpert.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VBoxGlobal_SOURCES += \
