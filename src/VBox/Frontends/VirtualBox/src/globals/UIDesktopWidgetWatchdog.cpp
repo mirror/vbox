@@ -67,7 +67,7 @@ static BOOL CALLBACK MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT 
     QLibrary shcore("Shcore.dll", NULL);
 
     /* Acquire effective DPI (available since Windows 8.1): */
-    typedef void (*GetDpiForMonitorFP)(HMONITOR hMonitor, MONITOR_DPI_TYPE enmDpiType, uint *puOutX, uint *puOutY);
+    typedef void (WINAPI *GetDpiForMonitorFP)(HMONITOR hMonitor, MONITOR_DPI_TYPE enmDpiType, uint *puOutX, uint *puOutY);
     GetDpiForMonitorFP GetDpiForMonitorF = (GetDpiForMonitorFP)shcore.resolve("GetDpiForMonitor");
     if (GetDpiForMonitorF)
     {
