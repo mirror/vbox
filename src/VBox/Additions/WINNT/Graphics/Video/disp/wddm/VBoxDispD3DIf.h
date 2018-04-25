@@ -23,6 +23,8 @@
 #include <iprt/semaphore.h>
 #include <iprt/win/d3d9.h>
 #include "../../../Wine_new/vbox/VBoxWineEx.h"
+#include <d3dumddi.h>
+#include "../../common/wddm/VBoxMPIf.h"
 
 /* D3D functionality the VBOXDISPD3D provides */
 typedef HRESULT WINAPI FNVBOXDISPD3DCREATE9EX(UINT SDKVersion, IDirect3D9Ex **ppD3D);
@@ -73,17 +75,26 @@ typedef struct VBOXWDDMDISP_FORMATS
     struct _DDSURFACEDESC *paSurfDescs;
 } VBOXWDDMDISP_FORMATS, *PVBOXWDDMDISP_FORMATS;
 
+typedef struct VBOXWDDMDISP_D3D *PVBOXWDDMDISP_D3D;
+typedef void FNVBOXDISPD3DBACKENDCLOSE(PVBOXWDDMDISP_D3D pD3D);
+typedef FNVBOXDISPD3DBACKENDCLOSE *PFNVBOXDISPD3DBACKENDCLOSE;
+
 typedef struct VBOXWDDMDISP_D3D
 {
-    VBOXDISPD3D D3D;
-    IDirect3D9Ex * pD3D9If;
+    PFNVBOXDISPD3DBACKENDCLOSE pfnD3DBackendClose;
+
     D3DCAPS9 Caps;
     UINT cMaxSimRTs;
-} VBOXWDDMDISP_D3D, *PVBOXWDDMDISP_D3D;
+
+    /* Wine backend. */
+    IDirect3D9Ex *pD3D9If;
+    VBOXDISPD3D D3D;
+
+} VBOXWDDMDISP_D3D;
 
 void VBoxDispD3DGlobalInit(void);
 void VBoxDispD3DGlobalTerm(void);
-HRESULT VBoxDispD3DGlobalOpen(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats);
+HRESULT VBoxDispD3DGlobalOpen(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats, VBOXWDDM_QAI const *pAdapterInfo);
 void VBoxDispD3DGlobalClose(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats);
 
 HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D);

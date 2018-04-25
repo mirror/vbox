@@ -459,7 +459,7 @@ static HRESULT vboxWddmDalCheckLock(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_
 }
 #endif
 
-static BOOLEAN vboxWddmDalCheckNotifyRemove(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pAlloc)
+BOOLEAN vboxWddmDalCheckNotifyRemove(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pAlloc)
 {
     if (pAlloc->DirtyAllocListEntry.pNext)
     {
@@ -550,7 +550,7 @@ static VOID vboxWddmDalCheckAddSamplers(PVBOXWDDMDISP_DEVICE pDevice)
     }
 }
 
-static VOID vboxWddmDalCheckAddOnDraw(PVBOXWDDMDISP_DEVICE pDevice)
+VOID vboxWddmDalCheckAddOnDraw(PVBOXWDDMDISP_DEVICE pDevice)
 {
     vboxWddmDalCheckAddRTs(pDevice);
 
@@ -5796,7 +5796,7 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
          * Release may not work in case of some leaking, which will leave the crOgl context refering the destroyed VBOXUHGSMI */
         if (pDevice->pDevice9If)
         {
-            if (pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9Term)
+            if (pDevice->pAdapter->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
                 pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9Term((IDirect3DDevice9Ex *)pDevice->pDevice9If);
         }
     }
@@ -6594,7 +6594,6 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER *pOpenData)
     HRESULT hr = vboxDispQueryAdapterInfo(pOpenData, &pAdapterInfo);
     if (SUCCEEDED(hr))
     {
-
         hr = vboxDispAdapterInit(pOpenData, pAdapterInfo, &pAdapter);
         if (SUCCEEDED(hr))
         {
@@ -6604,13 +6603,13 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER *pOpenData)
                 VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL();
 
                 /* Try enable the 3D. */
-                hr = VBoxDispD3DGlobalOpen(&pAdapter->D3D, &pAdapter->Formats);
+                hr = VBoxDispD3DGlobalOpen(&pAdapter->D3D, &pAdapter->Formats, &pAdapter->AdapterInfo);
                 if (hr == S_OK)
                 {
                     LOG(("SUCCESS 3D Enabled, pAdapter (0x%p)", pAdapter));
 
                     /* Flag indicating that the adapter instance is running in 3D mode. */
-                    pAdapter->f3D = (pAdapter->D3D.pD3D9If != NULL);
+                    pAdapter->f3D = true;
                 }
                 else
                     WARN(("VBoxDispD3DOpen failed, hr (%d)", hr));

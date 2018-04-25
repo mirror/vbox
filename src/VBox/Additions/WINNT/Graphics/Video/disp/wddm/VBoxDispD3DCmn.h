@@ -20,6 +20,7 @@
 
 #include "VBoxDispD3DBase.h"
 
+#include <iprt/asm.h>
 #include <iprt/initterm.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>

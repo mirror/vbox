@@ -1141,9 +1141,9 @@ void vboxDispCheckCapsLevel(const D3DCAPS9 *pCaps)
 
 #endif /* DEBUG */
 
-static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_D3D pD3D, D3DCAPS9 *pCaps)
+static HRESULT vboxWddmGetD3D9Caps(IDirect3D9Ex *pD3D9If, D3DCAPS9 *pCaps)
 {
-    HRESULT hr = pD3D->pD3D9If->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pCaps);
+    HRESULT hr = pD3D9If->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pCaps);
     if (FAILED(hr))
     {
         WARN(("GetDeviceCaps failed hr(0x%x)",hr));
@@ -1215,39 +1215,37 @@ static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_D3D pD3D, D3DCAPS9 *pCaps)
     return S_OK;
 }
 
-static void vboxDispD3DGlobalDoClose(PVBOXWDDMDISP_D3D pD3D)
+static void vboxDispD3DGlobalDoCloseWine(PVBOXWDDMDISP_D3D pD3D)
 {
     pD3D->pD3D9If->Release();
+    pD3D->pD3D9If = NULL;
     VBoxDispD3DClose(&pD3D->D3D);
 }
 
-static HRESULT vboxDispD3DGlobalDoOpen(PVBOXWDDMDISP_D3D pD3D)
+static HRESULT vboxDispD3DGlobalDoOpenWine(PVBOXWDDMDISP_D3D pD3D)
 {
-    memset(pD3D, 0, sizeof (*pD3D));
     HRESULT hr = VBoxDispD3DOpen(&pD3D->D3D);
     if (SUCCEEDED(hr))
     {
-        hr = pD3D->D3D.pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &pD3D->pD3D9If);
+        IDirect3D9Ex *pD3D9 = NULL;
+        hr = pD3D->D3D.pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &pD3D9);
         if (SUCCEEDED(hr))
         {
-            hr = vboxWddmGetD3D9Caps(pD3D, &pD3D->Caps);
+            hr = vboxWddmGetD3D9Caps(pD3D9, &pD3D->Caps);
             if (SUCCEEDED(hr))
             {
-                pD3D->cMaxSimRTs = pD3D->Caps.NumSimultaneousRTs;
-                Assert(pD3D->cMaxSimRTs);
-                Assert(pD3D->cMaxSimRTs < UINT32_MAX/2);
-                LOG(("SUCCESS 3D Enabled, pD3D (0x%p)", pD3D));
+                pD3D->pfnD3DBackendClose = vboxDispD3DGlobalDoCloseWine;
+                pD3D->pD3D9If = pD3D9;
+
                 return S_OK;
             }
-            else
-            {
-                WARN(("vboxWddmGetD3D9Caps failed hr = 0x%x", hr));
-            }
-            pD3D->pD3D9If->Release();
+
+            WARN(("vboxWddmGetD3D9Caps failed hr = 0x%x", hr));
+            pD3D9->Release();
         }
         else
         {
-            WARN(("pfnDirect3DCreate9Ex failed hr = 0x%x", hr));
+            WARN(("Direct3DCreate9Ex failed hr = 0x%x", hr));
         }
         VBoxDispD3DClose(&pD3D->D3D);
     }
@@ -1258,12 +1256,35 @@ static HRESULT vboxDispD3DGlobalDoOpen(PVBOXWDDMDISP_D3D pD3D)
     return hr;
 }
 
-HRESULT VBoxDispD3DGlobalOpen(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats)
+static HRESULT vboxDispD3DGlobalDoOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI const *pAdapterInfo)
+{
+    memset(pD3D, 0, sizeof (*pD3D));
+
+    HRESULT hr;
+    if (pAdapterInfo->enmHwType == VBOXVIDEO_HWTYPE_CROGL)
+        hr = vboxDispD3DGlobalDoOpenWine(pD3D);
+    else
+        hr = E_FAIL;
+
+    if (SUCCEEDED(hr))
+    {
+        pD3D->cMaxSimRTs = pD3D->Caps.NumSimultaneousRTs;
+
+        Assert(pD3D->cMaxSimRTs);
+        Assert(pD3D->cMaxSimRTs < UINT32_MAX/2);
+
+        LOG(("SUCCESS 3D Enabled, pD3D (0x%p)", pD3D));
+    }
+
+    return hr;
+}
+
+HRESULT VBoxDispD3DGlobalOpen(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats, VBOXWDDM_QAI const *pAdapterInfo)
 {
     vboxDispD3DGlobalLock();
     if (!g_cVBoxDispD3DGlobalOpens)
     {
-        HRESULT hr = vboxDispD3DGlobalDoOpen(&g_VBoxDispD3DGlobalD3D);
+        HRESULT hr = vboxDispD3DGlobalDoOpen(&g_VBoxDispD3DGlobalD3D, pAdapterInfo);
         if (!SUCCEEDED(hr))
         {
             vboxDispD3DGlobalUnlock();
@@ -1287,6 +1308,6 @@ void VBoxDispD3DGlobalClose(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pForma
     vboxDispD3DGlobalLock();
     --g_cVBoxDispD3DGlobalOpens;
     if (!g_cVBoxDispD3DGlobalOpens)
-        vboxDispD3DGlobalDoClose(&g_VBoxDispD3DGlobalD3D);
+        g_VBoxDispD3DGlobalD3D.pfnD3DBackendClose(&g_VBoxDispD3DGlobalD3D);
     vboxDispD3DGlobalUnlock();
 }
