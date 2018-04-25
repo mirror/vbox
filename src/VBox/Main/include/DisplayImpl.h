@@ -208,7 +208,7 @@ public:
 
 #ifdef VBOX_WITH_VIDEOREC
     PVIDEORECCFG             i_videoRecGetConfig(void) { return &mVideoRecCfg; }
-    VIDEORECFEATURES         i_videoRecGetEnabled(void);
+    VIDEORECFEATURES         i_videoRecGetFeatures(void);
     bool                     i_videoRecStarted(void);
     void                     i_videoRecInvalidate();
     int                      i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);

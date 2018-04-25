@@ -2401,9 +2401,9 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
  *
  * @returns Enables video capturing features.
  */
-VIDEORECFEATURES Display::i_videoRecGetEnabled(void)
+VIDEORECFEATURES Display::i_videoRecGetFeatures(void)
 {
-    return VideoRecGetEnabled(&mVideoRecCfg);
+    return VideoRecGetFeatures(&mVideoRecCfg);
 }
 
 /**
@@ -2413,7 +2413,7 @@ VIDEORECFEATURES Display::i_videoRecGetEnabled(void)
  */
 bool Display::i_videoRecStarted(void)
 {
-    return VideoRecIsActive(mpVideoRecCtx);
+    return VideoRecIsStarted(mpVideoRecCtx);
 }
 
 /**
@@ -2430,13 +2430,8 @@ void Display::i_videoRecInvalidate(void)
     /*
      * Cache parameters from API.
      */
-    BOOL fEnabled;
-    HRESULT hrc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
-    AssertComRCReturnVoid(hrc);
-    mVideoRecCfg.fEnabled = RT_BOOL(fEnabled);
-
     com::SafeArray<BOOL> aScreens;
-    hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(aScreens));
+    HRESULT hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(aScreens));
     AssertComRCReturnVoid(hrc);
 
     mVideoRecCfg.aScreens.resize(aScreens.size());
@@ -2464,7 +2459,7 @@ void Display::i_videoRecInvalidate(void)
     /*
      * Set sensible defaults.
      */
-    mVideoRecCfg.Video.fEnabled = mVideoRecCfg.fEnabled;
+    mVideoRecCfg.Video.fEnabled = true; /* Enabled by default. */
 
     if (!mVideoRecCfg.Video.uFPS) /* Prevent division by zero. */
         mVideoRecCfg.Video.uFPS = 15;
@@ -2473,10 +2468,8 @@ void Display::i_videoRecInvalidate(void)
     mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = 1000000 / mVideoRecCfg.Video.uFPS;
 #endif
 
-    /* Note: Audio support is considered as being experimental, thus it's disabled by default.
-     * There be dragons! */
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    mVideoRecCfg.Audio.fEnabled  = false;
+    mVideoRecCfg.Audio.fEnabled  = false; /* Disabled by default, unless set otherwise below. */
     /* By default we use 48kHz, 16-bit, stereo for the audio track. */
     mVideoRecCfg.Audio.uHz       = 48000;
     mVideoRecCfg.Audio.cBits     = 16;
@@ -2581,8 +2574,8 @@ void Display::i_videoRecInvalidate(void)
  */
 int Display::i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
-    if (   VideoRecIsActive(mpVideoRecCtx)
-        && VideoRecGetEnabled(&mVideoRecCfg) & VIDEORECFEATURE_AUDIO)
+    if (   VideoRecIsStarted(mpVideoRecCtx)
+        && VideoRecGetFeatures(&mVideoRecCfg) & VIDEORECFEATURE_AUDIO)
     {
         return VideoRecSendAudioFrame(mpVideoRecCtx, pvData, cbData, uTimestampMs);
     }
@@ -2598,8 +2591,10 @@ int Display::i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uTi
  */
 int Display::i_videoRecStart(void)
 {
-    if (VideoRecIsActive(mpVideoRecCtx))
+    if (VideoRecIsStarted(mpVideoRecCtx))
         return VINF_SUCCESS;
+
+    LogRel(("VideoRec: Starting ...\n"));
 
     int rc = VideoRecContextCreate(mcMonitors, &mVideoRecCfg, &mpVideoRecCtx);
     if (RT_SUCCESS(rc))
@@ -2630,8 +2625,10 @@ int Display::i_videoRecStart(void)
  */
 void Display::i_videoRecStop(void)
 {
-    if (!VideoRecIsActive(mpVideoRecCtx))
+    if (!VideoRecIsStarted(mpVideoRecCtx))
         return;
+
+    LogRel(("VideoRec: Stopping ...\n"));
 
     VideoRecContextDestroy(mpVideoRecCtx);
     mpVideoRecCtx = NULL;
@@ -2643,7 +2640,7 @@ void Display::i_videoRecStop(void)
 
 void Display::i_videoRecScreenChanged(unsigned uScreenId)
 {
-    if (   !VideoRecIsActive(mpVideoRecCtx)
+    if (   !VideoRecIsStarted(mpVideoRecCtx)
         || !maVideoRecEnabled[uScreenId])
     {
         /* Skip recording this screen. */
@@ -3365,8 +3362,8 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
     }
 
 #ifdef VBOX_WITH_VIDEOREC
-    if (   VideoRecIsActive(pDisplay->mpVideoRecCtx)
-        && VideoRecGetEnabled(&pDisplay->mVideoRecCfg) & VIDEORECFEATURE_VIDEO)
+    if (   VideoRecIsStarted(pDisplay->mpVideoRecCtx)
+        && VideoRecGetFeatures(&pDisplay->mVideoRecCfg) & VIDEORECFEATURE_VIDEO)
     {
         do {
 # if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
@@ -3831,8 +3828,8 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
 {
     Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
 # ifdef VBOX_WITH_VIDEOREC
-    if (   VideoRecIsActive(mpVideoRecCtx)
-        && VideoRecGetEnabled(&mVideoRecCfg) & VIDEORECFEATURE_VIDEO)
+    if (   VideoRecIsStarted(mpVideoRecCtx)
+        && VideoRecGetFeatures(&mVideoRecCfg) & VIDEORECFEATURE_VIDEO)
     {
         int rc2 = VideoRecSendVideoFrame(mpVideoRecCtx, uScreen, x, y,
                                          uPixelFormat,

@@ -5659,13 +5659,17 @@ HRESULT Console::i_onVideoCaptureChange()
 
             pDisplay->i_videoRecInvalidate();
 
+            BOOL fEnabled;
+            rc = mMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
+            AssertComRCReturnRC(rc);
+
             int vrc;
 
-            if (!mDisplay->i_videoRecStarted())
+            if (fEnabled)
             {
 # ifdef VBOX_WITH_AUDIO_VIDEOREC
                 /* Attach the video recording audio driver if required. */
-                if (mDisplay->i_videoRecGetEnabled() & VIDEORECFEATURE_AUDIO)
+                if (mDisplay->i_videoRecGetFeatures() & VIDEORECFEATURE_AUDIO)
                     mAudioVideoRec->doAttachDriverViaEmt(mpUVM, &alock);
 # endif
                 vrc = mDisplay->i_videoRecStart();
@@ -9993,25 +9997,32 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         AssertPtr(pDisplay);
         if (pDisplay)
         {
-            pDisplay->i_videoRecInvalidate();
+            BOOL fVideoRecEnabled = FALSE;
+            rc = pConsole->mMachine->COMGETTER(VideoCaptureEnabled)(&fVideoRecEnabled);
+            AssertComRCReturnVoid(rc);
 
-            /* If video recording fails for whatever reason here, this is
-             * non-critical and should not be returned at this point -- otherwise
-             * the display driver construction fails completely. */
-            int vrc2 = VINF_SUCCESS;
+            if (fVideoRecEnabled)
+            {
+                pDisplay->i_videoRecInvalidate();
+
+                /* If video recording fails for whatever reason here, this is
+                 * non-critical and should not be returned at this point -- otherwise
+                 * the display driver construction fails completely. */
+                int vrc2 = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-            /* Attach the video recording audio driver if required. */
-            if (   pDisplay->i_videoRecGetEnabled() & VIDEORECFEATURE_AUDIO
-                && pConsole->mAudioVideoRec)
-                vrc2 = pConsole->mAudioVideoRec->doAttachDriverViaEmt(pConsole->mpUVM, &alock);
+                /* Attach the video recording audio driver if required. */
+                if (   pDisplay->i_videoRecGetFeatures() & VIDEORECFEATURE_AUDIO
+                    && pConsole->mAudioVideoRec)
+                    vrc2 = pConsole->mAudioVideoRec->doAttachDriverViaEmt(pConsole->mpUVM, &alock);
 #endif
-            if (   RT_SUCCESS(vrc2)
-                && pDisplay->i_videoRecGetEnabled()) /* Any video recording (audio and/or video) feature enabled? */
-            {
-                vrc2 = pDisplay->i_videoRecStart();
-                if (RT_SUCCESS(vrc2))
-                    fireVideoCaptureChangedEvent(pConsole->i_getEventSource());
+                if (   RT_SUCCESS(vrc2)
+                    && pDisplay->i_videoRecGetFeatures()) /* Any video recording (audio and/or video) feature enabled? */
+                {
+                    vrc2 = pDisplay->i_videoRecStart();
+                    if (RT_SUCCESS(vrc2))
+                        fireVideoCaptureChangedEvent(pConsole->i_getEventSource());
+                }
             }
         }
 #endif
