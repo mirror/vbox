@@ -501,7 +501,8 @@ endif
 # A few manual dependencies to make sure everything is rebuilt when they should.
 #
 $(PATH_SUB_CURRENT)/VirtualBox.wxs: \
-	$(PATH_SUB_CURRENT)/Properties.wxi \
+	$(PATH_SUB_CURRENT)/CommonProperties.wxi \
+	$(PATH_SUB_CURRENT)/Defines.wxi \
 	$(PATH_SUB_CURRENT)/VBoxMergeApp.wxi
 
 $(PATH_SUB_CURRENT)/VBoxMergeApp.wxi $(PATH_SUB_CURRENT)/VirtualBox.wxs: \
@@ -657,7 +658,7 @@ $(if-expr "$(lang)" != "en_US",, \
  endif
 
 $(eval BLDDIRS += $(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/)
-$(eval OTHER_CLEAN += $(VBOX_REPACK_FILES_VirtualBox_$(lang)) $(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).files)
+$(eval OTHER_CLEAN += $(VBOX_REPACK_FILES_VirtualBox_$(lang)) $(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).files $(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wixobj.dep)
 endef
 
 $(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
@@ -782,6 +783,8 @@ $(if-expr "$(lang)" != "en_US",, \
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOX_PATH_WIN_INST_SRC)/dep.xsl "$$@" >> "$$@.dep"
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOX_PATH_WIN_INST_SRC)/dep2.xsl "$$@" | sort  | $(SED) '$!N; /^\(.*\)\n\1$$$$/!P; D' >> "$$@.dep"
 	$(QUIET)$(APPEND) -n '$$@.dep' '' ''
+
+$(eval OTHER_CLEAN += $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj)
 endef
 
 $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
@@ -939,7 +942,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi \
 		'call sign-sha1.cmd $(@F) || exit /b1' \
 		) ) \
                'copy /y "$(@F)" "$(notdir $(PACKAGE_NAME_FINAL))" || exit /b1' \
-		'@echo Create multilanguage MSI: $(@F)'
+		'@echo Create multilanguage MSI: $(notdir $(PACKAGE_NAME_FINAL))'
 
 # Copy multilingual installer to bin.
 $(PACKAGE_NAME_FINAL): $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi | $$(dir $$@)

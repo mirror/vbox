@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    VirtualBox Windows Installation Script (WiX)
+    VirtualBox Windows Installation Script (WiX), preprocessor defines.
 
     Copyright (C) 2014-2016 Oracle Corporation
 

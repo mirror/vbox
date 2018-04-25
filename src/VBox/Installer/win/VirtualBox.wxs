@@ -16,7 +16,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
-    <?include Properties.wxi ?>
+    <?include Defines.wxi ?>
 
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
     <!-- The merge module file names -->
@@ -55,6 +55,8 @@
              InstallerVersion="200"
              InstallPrivileges="elevated"
              Platform="$(var.Property_Platform)"/>
+
+    <?include CommonProperties.wxi ?>
 
     <!-- Global properties -->
     <Property Id="ARPPRODUCTICON">IconVirtualBox</Property>

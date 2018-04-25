@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    VirtualBox Windows Installation Script (WiX), common properties (private).
+
+    Copyright (C) 2014-2018 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+-->
+
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wix"
+         xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+
+  <Property Id="VBOX_IS_WINDOW_10">
+    <DirectorySearch Id="DirSearchForWindows10NtDll" Path="[SystemFolder]" Depth="0">
+      <FileSearch Name="ntdll.dll" MinVersion="6.4.10000.0"/>
+    </DirectorySearch>
+  </Property>
+
+</Include>
+
