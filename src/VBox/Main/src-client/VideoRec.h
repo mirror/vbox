@@ -66,8 +66,6 @@ typedef struct VIDEORECCFG
         RT_ZERO(Video);
     }
 
-    /** Whether recording is enabled or not (as a whole). */
-    //bool                    fEnabled;
     /** Array of all screens containing whether they're enabled
      *  for recording or not.  */
     com::SafeArray<BOOL>    aScreens;
