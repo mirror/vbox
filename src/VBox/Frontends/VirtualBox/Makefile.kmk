@@ -567,7 +567,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/graphics/UIGraphicsZoomButton.h \
 	src/widgets/graphics/UIGraphicsToolBar.h \
 	src/widgets/graphics/UIGraphicsTextPane.h \
-	src/wizards/UIWizardPage.h \
 	src/wizards/newvm/UIWizardNewVM.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic1.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.h \
@@ -674,6 +673,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/wizards/UIWizard.h \
+	src/wizards/UIWizardPage.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
@@ -774,6 +774,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/wizards/UIWizard.h \
+	src/wizards/UIWizardPage.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
@@ -1067,7 +1068,6 @@ VirtualBox_SOURCES = \
 	src/widgets/graphics/UIGraphicsZoomButton.cpp \
 	src/widgets/graphics/UIGraphicsToolBar.cpp \
 	src/widgets/graphics/UIGraphicsTextPane.cpp \
-	src/wizards/UIWizardPage.cpp \
 	src/wizards/newvm/UIWizardNewVM.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic1.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.cpp \
@@ -1213,6 +1213,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/wizards/UIWizard.cpp \
+	src/wizards/UIWizardPage.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
@@ -1339,6 +1340,7 @@ VBoxGlobal_SOURCES = \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/wizards/UIWizard.cpp \
+	src/wizards/UIWizardPage.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \

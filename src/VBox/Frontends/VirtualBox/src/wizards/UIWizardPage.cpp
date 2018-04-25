@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,25 +19,29 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes: */
+/* Qt includes: */
 # include <QAbstractButton>
 
-/* Local includes: */
-# include "UIWizardPage.h"
-# include "UIWizard.h"
+/* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIWizard.h"
+# include "UIWizardPage.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIWizard* UIWizardPageBase::wizardImp()
+/*********************************************************************************************************************************
+*   Class UIWizardPageBase implementation.                                                                                       *
+*********************************************************************************************************************************/
+
+UIWizard *UIWizardPageBase::wizardImp()
 {
     /* Should be reimplemented in sub-class to enable access to wizard! */
     AssertMsgFailed(("UIWizardPageBase::wizardImp() should be reimplemented!"));
     return 0;
 }
 
-UIWizardPage* UIWizardPageBase::thisImp()
+UIWizardPage *UIWizardPageBase::thisImp()
 {
     /* Should be reimplemented in sub-class to enable access to wizard page! */
     AssertMsgFailed(("UIWizardPageBase::thisImp() should be reimplemented!"));
@@ -50,6 +54,11 @@ QVariant UIWizardPageBase::fieldImp(const QString &) const
     AssertMsgFailed(("UIWizardPageBase::fieldImp(const QString &) should be reimplemented!"));
     return QVariant();
 }
+
+
+/*********************************************************************************************************************************
+*   Class UIWizardPage implementation.                                                                                           *
+*********************************************************************************************************************************/
 
 UIWizardPage::UIWizardPage()
     : m_fReady(false)
@@ -69,7 +78,7 @@ void UIWizardPage::setTitle(const QString &strTitle)
         QWizardPage::setTitle(m_strTitle);
 }
 
-UIWizard* UIWizardPage::wizard() const
+UIWizard *UIWizardPage::wizard() const
 {
     return qobject_cast<UIWizard*>(QWizardPage::wizard());
 }
@@ -85,4 +94,3 @@ void UIWizardPage::endProcessing()
     if (isFinalPage())
         wizard()->button(QWizard::FinishButton)->setEnabled(true);
 }
-
