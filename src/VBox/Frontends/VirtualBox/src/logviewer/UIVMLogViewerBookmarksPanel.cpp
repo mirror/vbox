@@ -111,7 +111,7 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     if (!mainLayout())
         return;
 
-    m_pBookmarksComboBox = new QComboBox(this);
+    m_pBookmarksComboBox = new QComboBox;
     QFontMetrics fontMetrics = m_pBookmarksComboBox->fontMetrics();
     if (m_pBookmarksComboBox)
     {
@@ -122,7 +122,7 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
         mainLayout()->addWidget(m_pBookmarksComboBox, 2);
     }
 
-    m_pGotoSelectedBookmark = new QIToolButton(this);
+    m_pGotoSelectedBookmark = new QIToolButton;
     if (m_pGotoSelectedBookmark)
     {
         mainLayout()->addWidget(m_pGotoSelectedBookmark, 0);
@@ -158,14 +158,14 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
     }
     }
 
-    m_pDeleteCurrentButton = new QIToolButton(this);
+    m_pDeleteCurrentButton = new QIToolButton;
     if (m_pDeleteCurrentButton)
     {
         mainLayout()->addWidget(m_pDeleteCurrentButton, 0);
         m_pDeleteCurrentButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_current_bookmark_16px.png"));
     }
 
-    m_pDeleteAllButton = new QIToolButton(this);
+    m_pDeleteAllButton = new QIToolButton;
     if (m_pDeleteAllButton)
     {
         mainLayout()->addWidget(m_pDeleteAllButton, 2);
@@ -256,4 +256,3 @@ void UIVMLogViewerBookmarksPanel::sltGotoSelectedBookmark()
         return;
     emit sigBookmarkSelected(m_pBookmarksComboBox->currentIndex() - 1);
 }
-

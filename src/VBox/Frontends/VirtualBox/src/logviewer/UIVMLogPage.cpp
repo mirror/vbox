@@ -46,9 +46,6 @@ UIVMLogPage::UIVMLogPage(QWidget *pParent /* = 0 */, int tabIndex /*= -1 */)
     , m_bFiltered(false)
     , m_iFilteredLineCount(-1)
     , m_iUnfilteredLineCount(-1)
-    , m_bShowLineNumbers(true)
-    , m_bWrapLines(false)
-    , m_iFontSizeInPoints(9)
 {
     prepare();
 }
@@ -253,7 +250,6 @@ void UIVMLogPage::showEvent(QShowEvent *pEvent)
 {
     if (m_pTextEdit)
         m_pTextEdit->setFocus();
-    applySettings();
     QWidget::showEvent(pEvent);
 }
 
@@ -303,18 +299,16 @@ void UIVMLogPage::setFiltered(bool filtered)
 
 void UIVMLogPage::setShowLineNumbers(bool bShowLineNumbers)
 {
-    if (m_bShowLineNumbers == bShowLineNumbers)
+    if (!m_pTextEdit)
         return;
-    m_bShowLineNumbers = bShowLineNumbers;
-    applySettings();
+    m_pTextEdit->setShowLineNumbers(bShowLineNumbers);
 }
 
 void UIVMLogPage::setWrapLines(bool bWrapLines)
 {
-    if (m_bWrapLines == bWrapLines)
+    if (!m_pTextEdit)
         return;
-    m_bWrapLines = bWrapLines;
-    applySettings();
+    m_pTextEdit->setWrapLines(bWrapLines);
 }
 
 void UIVMLogPage::setFilterParameters(const QSet<QString> &filterTermSet, int filterOperationType,
@@ -324,19 +318,6 @@ void UIVMLogPage::setFilterParameters(const QSet<QString> &filterTermSet, int fi
     m_filterOperationType = filterOperationType;
     m_iFilteredLineCount = iFilteredLineCount;
     m_iUnfilteredLineCount = iUnfilteredLineCount;
-}
-
-void UIVMLogPage::setFontSizeInPoints(int fontSize)
-{
-    if (m_iFontSizeInPoints == fontSize)
-        return;
-    m_iFontSizeInPoints = fontSize;
-    applySettings();
-}
-
-int UIVMLogPage::fontSizeInPoints() const
-{
-    return m_iFontSizeInPoints;
 }
 
 int  UIVMLogPage::filteredLineCount() const
@@ -361,22 +342,16 @@ bool UIVMLogPage::shouldFilterBeApplied(const QSet<QString> &filterTermSet, int 
     return false;
 }
 
-void UIVMLogPage::applySettings()
+QFont UIVMLogPage::currentFont() const
 {
-    if (!isVisible())
-        return;
     if (!m_pTextEdit)
-        return;
-    if (m_bWrapLines != m_pTextEdit->wrapLines())
-        m_pTextEdit->setWrapLines(m_bWrapLines);
-
-    if (m_bShowLineNumbers != m_pTextEdit->showLineNumbers())
-        m_pTextEdit->setShowLineNumbers(m_bShowLineNumbers);
-
-    if (m_iFontSizeInPoints != m_pTextEdit->fontSizeInPoints())
-        m_pTextEdit->setFontSizeInPoints(m_iFontSizeInPoints);
-
-    update();
-
+        return QFont();
+    return m_pTextEdit->font();
 }
 
+void UIVMLogPage::setCurrentFont(QFont font)
+{
+    if (!m_pTextEdit)
+        return;
+    m_pTextEdit->setCurrentFont(font);
+}

@@ -659,7 +659,7 @@ public:
     /** @} */
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
-    /** @name Virtual Machine: Log dialog
+    /** @name Virtual Machine: Log Viewer dialog
       * @{ */
         /** Returns log-window geometry using @a pWidget and @a defaultGeometry as hints. */
         QRect logWindowGeometry(QWidget *pWidget, const QRect &defaultGeometry);
@@ -667,6 +667,17 @@ public:
         bool logWindowShouldBeMaximized();
         /** Defines log-window @a geometry and @a fMaximized state. */
         void setLogWindowGeometry(const QRect &geometry, bool fMaximized);
+    /** @} */
+
+    /** @name Virtual Machine: Log Viewer widget settings
+      * @{ */
+        void setLogViweverSettings(const QFont &font, bool wrapLines, bool showLineNumbers);
+        /** Returns log-viewer line wrapping flag. */
+        bool logViewerWrapLines();
+        /** Returns log-viewer show line numbers flag. */
+        bool logViewerShowLineNumbers();
+        /** Tries to find system font by searching by family and style strings within the font database. */
+        QFont logViewerFont();
     /** @} */
 
 private slots:

@@ -25,6 +25,7 @@
 # include <QRegularExpression>
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 #  include <QComboBox>
+#  include <QFontDatabase>
 #  include <QHeaderView>
 #  include <QLabel>
 #  include <QLineEdit>
@@ -4375,6 +4376,67 @@ void UIExtraDataManager::setLogWindowGeometry(const QRect &geometry, bool fMaxim
 
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(GUI_LogWindowGeometry, data);
+}
+
+void UIExtraDataManager::setLogViweverSettings(const QFont &font, bool wrapLines, bool showLineNumbers)
+{
+    /* Serialize passed values: */
+    QStringList data;
+    data << font.family();
+    /* Make sure that we have some non-empty string as font style name: */
+    QString strStyleName = font.styleName();
+    if (strStyleName.isEmpty())
+        data << GUI_LogViewerNoFontStyleName;
+    else
+        data << font.styleName();
+    data << QString::number(font.pointSize());
+
+    if (wrapLines)
+        data << GUI_LogViewerWrapLinesEnabled;
+    if (!showLineNumbers)
+        data << GUI_LogViewerShowLineNumbersDisabled;
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_LogViewerSettings, data);
+}
+
+bool UIExtraDataManager::logViewerWrapLines()
+{
+    const QStringList data = extraDataStringList(GUI_LogViewerSettings);
+    for (int i = 0; i < data.size(); ++i)
+    {
+        if (data[i] == GUI_LogViewerWrapLinesEnabled)
+            return true;
+    }
+    return false;
+}
+
+bool UIExtraDataManager::logViewerShowLineNumbers()
+{
+    const QStringList data = extraDataStringList(GUI_LogViewerSettings);
+    for (int i = 0; i < data.size(); ++i)
+    {
+        if (data[i] == GUI_LogViewerShowLineNumbersDisabled)
+            return false;
+    }
+    return true;
+}
+
+QFont UIExtraDataManager::logViewerFont()
+{
+    const QStringList data = extraDataStringList(GUI_LogViewerSettings);
+    if (data.size() < 3)
+        return QFont();
+    QString strFamily = data[0];
+    QString strStyleName = data[1];
+    if (strStyleName == GUI_LogViewerNoFontStyleName)
+        strStyleName.clear();
+    bool fOk = false;
+    int iFontSize = data[2].toInt(&fOk);
+    if (!fOk)
+        iFontSize = 9;
+    QFontDatabase dataBase;
+    return dataBase.font(strFamily, strStyleName, iFontSize);
 }
 
 void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey, QString strValue)

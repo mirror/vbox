@@ -207,3 +207,7 @@ const char *UIExtraDataDefs::GUI_Dbg_AutoShow = "GUI/Dbg/AutoShow";
 
 /* Virtual Machine: Log-viewer: */
 const char *UIExtraDataDefs::GUI_LogWindowGeometry = "GUI/LogWindowGeometry";
+const char *UIExtraDataDefs::GUI_LogViewerSettings = "GUI/LogViewerSettings";
+const char *UIExtraDataDefs::GUI_LogViewerWrapLinesEnabled = "WrapLines";
+const char *UIExtraDataDefs::GUI_LogViewerShowLineNumbersDisabled = "showLineNumbersDisabled";
+const char *UIExtraDataDefs::GUI_LogViewerNoFontStyleName = "noFontStyleName";

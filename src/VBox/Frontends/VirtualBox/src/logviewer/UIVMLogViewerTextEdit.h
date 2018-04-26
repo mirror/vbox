@@ -64,8 +64,7 @@ public:
     int  currentVerticalScrollBarValue() const;
     void setCurrentVerticalScrollBarValue(int value);
 
-    void setFontSizeInPoints(int fontSize);
-    int  fontSizeInPoints() const;
+    void setCurrentFont(QFont font);
 
 protected:
 
@@ -92,6 +91,7 @@ private:
     /** If bookmark exists this function removes it, if not it adds the bookmark. */
     void toggleBookmark(const QPair<int, QString>& bookmark);
     void setBackground();
+
     /** Line number and text at the context menu position */
     QPair<int, QString>  m_iContextMenuBookmark;
     QWidget             *m_pLineNumberArea;
@@ -115,4 +115,3 @@ private:
 
 
 #endif /* !___UIVMLogPage_h___ */
-

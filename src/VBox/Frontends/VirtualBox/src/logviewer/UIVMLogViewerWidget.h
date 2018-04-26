@@ -76,6 +76,8 @@ public:
     /** Sets the machine whose logs to show. */
     void setMachine(const CMachine &machine);
 
+    QFont currentFont() const;
+
 protected:
 
     /** Returns whether the window should be maximized when geometry being restored. */
@@ -117,6 +119,7 @@ private slots:
         void sltShowLineNumbers(bool bShowLineNumbers);
         void sltWrapLines(bool bWrapLine);
         void sltFontSizeChanged(int fontSize);
+        void sltFontFace(QFont font);
     /** @} */
 
 private:
@@ -173,6 +176,12 @@ private:
         - assigned it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
 
+    /** @name Load/save some settings from/to extra data
+      * @{ */
+        void loadSettings();
+        void saveSettings();
+    /** @} */
+
     /** Holds whether the dialog is polished. */
     bool m_fIsPolished;
 
@@ -211,13 +220,13 @@ private:
         QMenu     *m_pMenu;
     /** @} */
 
-    /** @name Toolbar and menu variables.
+    /** @name Toolbar and menu variables. Cache these to restore them after refresh.
      * @{ */
         /** Showing/hiding line numbers and line wraping settings are set per
             UIVMLogViewerWidget and applies to all log pages (all tabs) */
-        bool m_bShowLineNumbers;
-        bool m_bWrapLines;
-        int  m_iFontSizeInPoints;
+        bool  m_bShowLineNumbers;
+        bool  m_bWrapLines;
+        QFont m_font;
     /** @} */
 
     friend class UIVMLogViewerBookmarksPanel;
@@ -228,4 +237,3 @@ private:
 };
 
 #endif /* !___UIVMLogViewerWidget_h___ */
-

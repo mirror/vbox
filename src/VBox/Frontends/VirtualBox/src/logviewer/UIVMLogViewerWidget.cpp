@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QDateTime>
 # include <QDir>
+# include <QFont>
 # include <QMenu>
 # include <QPainter>
 # include <QPlainTextEdit>
@@ -76,7 +77,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     , m_pMenu(0)
     , m_bShowLineNumbers(true)
     , m_bWrapLines(false)
-    , m_iFontSizeInPoints(9)
+    , m_font(QFontDatabase::systemFont(QFontDatabase::FixedFont))
 {
     /* Prepare VM Log-Viewer: */
     prepare();
@@ -84,8 +85,23 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
 
 UIVMLogViewerWidget::~UIVMLogViewerWidget()
 {
+    saveSettings();
     /* Cleanup VM Log-Viewer: */
     cleanup();
+}
+
+void UIVMLogViewerWidget::loadSettings()
+{
+    m_bWrapLines = gEDataManager->logViewerWrapLines();
+    m_bShowLineNumbers = gEDataManager->logViewerShowLineNumbers();
+    QFont loadedFont = gEDataManager->logViewerFont();
+    if (loadedFont != QFont())
+        m_font = loadedFont;
+}
+
+void UIVMLogViewerWidget::saveSettings()
+{
+    gEDataManager->setLogViweverSettings(m_font, m_bWrapLines, m_bShowLineNumbers);
 }
 
 int UIVMLogViewerWidget::defaultLogPageWidth() const
@@ -240,7 +256,7 @@ void UIVMLogViewerWidget::sltRefresh()
     /* If there are no log files to show the hide all the open panels: */
     if (noLogsToShow)
     {
-        for(QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.begin();
+        for (QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.begin();
             iterator != m_panelActionMap.end(); ++iterator)
         {
             if (iterator.key())
@@ -359,14 +375,27 @@ void UIVMLogViewerWidget::sltWrapLines(bool bWrapLines)
 
 void UIVMLogViewerWidget::sltFontSizeChanged(int fontSize)
 {
-    if (m_iFontSizeInPoints == fontSize)
+    if (m_font.pointSize() == fontSize)
         return;
-    m_iFontSizeInPoints = fontSize;
+    m_font.setPointSize(fontSize);
     for (int i = 0; i < m_logPageList.size(); ++i)
     {
         UIVMLogPage* pLogPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]);
         if (pLogPage)
-            pLogPage->setFontSizeInPoints(m_iFontSizeInPoints);
+            pLogPage->setCurrentFont(m_font);
+    }
+}
+
+void UIVMLogViewerWidget::sltFontFace(QFont font)
+{
+    if (m_font == font)
+        return;
+    m_font = font;
+    for (int i = 0; i < m_logPageList.size(); ++i)
+    {
+        UIVMLogPage* pLogPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]);
+        if (pLogPage)
+            pLogPage->setCurrentFont(m_font);
     }
 }
 
@@ -380,6 +409,7 @@ void UIVMLogViewerWidget::setMachine(const CMachine &machine)
 
 void UIVMLogViewerWidget::prepare()
 {
+    loadSettings();
     m_pMainLayout = new QVBoxLayout(this);
 
     prepareActions();
@@ -466,12 +496,13 @@ void UIVMLogViewerWidget::prepareWidgets()
         /* Initialize settings' panel checkboxes and input fields: */
         m_pSettingsPanel->setShowLineNumbers(m_bShowLineNumbers);
         m_pSettingsPanel->setWrapLines(m_bWrapLines);
-        m_pSettingsPanel->setFontSizeInPoints(m_iFontSizeInPoints);
+        m_pSettingsPanel->setFontSizeInPoints(m_font.pointSize());
 
         m_pMainLayout->addWidget(m_pSettingsPanel);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
+        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigFontFace, this, &UIVMLogViewerWidget::sltFontFace);
     }
 }
 
@@ -907,7 +938,7 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
         /* Initialize setting for this log page */
         pLogPage->setShowLineNumbers(m_bShowLineNumbers);
         pLogPage->setWrapLines(m_bWrapLines);
-        pLogPage->setFontSizeInPoints(m_iFontSizeInPoints);
+        pLogPage->setCurrentFont(m_font);
 
         /* Set the file name only if we really have log file to read. */
         if (!noLogsToShow)
@@ -946,3 +977,10 @@ void UIVMLogViewerWidget::resetHighlighthing()
     logPage->clearScrollBarMarkingsVector();
 }
 
+QFont UIVMLogViewerWidget::currentFont() const
+{
+    const UIVMLogPage* logPage = currentLogPage();
+    if (!logPage)
+        return QFont();
+    return logPage->currentFont();
+}

@@ -365,6 +365,15 @@ namespace UIExtraDataDefs
         /** Holds log-viewer geometry. */
         SHARED_LIBRARY_STUFF extern const char *GUI_LogWindowGeometry;
     /** @} */
+    /** @name Virtual Machine: Log-viewer widget settings
+      * @{ */
+        SHARED_LIBRARY_STUFF extern const char *GUI_LogViewerSettings;
+        /** Holds log-viewer wrap line flag. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_LogViewerWrapLinesEnabled;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LogViewerShowLineNumbersDisabled;
+        SHARED_LIBRARY_STUFF extern const char *GUI_LogViewerNoFontStyleName;
+    /** @} */
+
 }
 
 
