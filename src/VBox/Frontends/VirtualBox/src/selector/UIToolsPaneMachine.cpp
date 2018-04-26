@@ -201,7 +201,9 @@ void UIToolsPaneMachine::setCurrentItem(UIVMItem *pItem)
 {
     /* Do we need translation after that? */
     const bool fTranslationRequired =  (!pItem &&  m_pItem)
-                                    || ( pItem && !m_pItem);
+                                    || ( pItem && !m_pItem)
+                                    || (!pItem->accessible() &&  m_pItem->accessible())
+                                    || ( pItem->accessible() && !m_pItem->accessible());
 
     /* Remember new item: */
     m_pItem = pItem;
