@@ -136,7 +136,7 @@ if not exist "%_MY_OPT_INPUT%"      goto error_input_not_found
 if ".%_MY_OPT_OUTPUT%" == "."       set _MY_OPT_OUTPUT=Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
 
 rem Make _MY_OPT_STAGE_DIR absolute.
-for %i in (%_MY_OPT_STAGE_DIR%) do set _MY_OPT_STAGE_DIR=%%~fi
+for %%i in (%_MY_OPT_STAGE_DIR%) do set _MY_OPT_STAGE_DIR=%%~fi
 if exist "%_MY_OPT_STAGE_DIR%"      goto error_stage_dir_exists
 
 rem
