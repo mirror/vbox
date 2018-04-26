@@ -1006,6 +1006,7 @@ RePackScripts_INSTTYPE = stage
 RePackScripts_SOURCES = \
 	Scripts/PackDriversForSubmission.cmd \
 	Scripts/UnpackBlessedDrivers.cmd \
+	Scripts/RepackExtPack.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-dual.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd \
 	$(RePackScripts_0_OUTDIR)/VMMR0.inf \
