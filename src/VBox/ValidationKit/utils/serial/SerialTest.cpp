@@ -324,12 +324,12 @@ static int serialTestRxBufRecv(RTSERIALPORT hSerialPort, PSERIALTESTTXRXBUFCNT p
 /**
  * Verifies the data in the given RX buffer for correct transmission.
  *
- * @returns nothing.
+ * @returns Flag whether verification failed.
  * @param   hTest               The test handle to report errors to.
  * @param   pSerBuf             The RX buffer pointer.
  * @param   iCntTx              The current TX counter value the RX buffer should never get ahead of.
  */
-static void serialTestRxBufVerify(RTTEST hTest, PSERIALTESTTXRXBUFCNT pSerBuf, uint32_t iCntTx)
+static bool serialTestRxBufVerify(RTTEST hTest, PSERIALTESTTXRXBUFCNT pSerBuf, uint32_t iCntTx)
 {
     uint32_t offRx = 0;
     bool fFailed = false;
@@ -348,12 +348,12 @@ static void serialTestRxBufVerify(RTTEST hTest, PSERIALTESTTXRXBUFCNT pSerBuf, u
         }
     }
 
-    if (fFailed)
-        RTTestFailed(hTest, "Data corruption/loss detected\n");
-
     if (RT_UNLIKELY(pSerBuf->iCnt > iCntTx))
+    {
+        fFailed = true;
         RTTestFailed(hTest, "Overtook the send buffer, expected maximum counter value %u got %u\n",
                      iCntTx, pSerBuf->iCnt);
+    }
 
     /* Remove processed data from the buffer and move the rest to the front. */
     if (offRx)
@@ -362,6 +362,8 @@ static void serialTestRxBufVerify(RTTEST hTest, PSERIALTESTTXRXBUFCNT pSerBuf, u
         pSerBuf->offBuf    -= offRx;
         pSerBuf->cbTxRxMax += offRx;
     }
+
+    return fFailed;
 }
 
 
@@ -379,6 +381,7 @@ DECLINLINE(bool) serialTestRndTrue(void)
 static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest)
 {
     uint64_t tsStart = RTTimeMilliTS();
+    bool fFailed = false;
     SERIALTESTTXRXBUFCNT SerBufTx;
     SERIALTESTTXRXBUFCNT SerBufRx;
 
@@ -407,7 +410,12 @@ static DECLCALLBACK(int) serialTestRunReadWrite(PSERIALTEST pSerialTest)
             if (RT_FAILURE(rc))
                 break;
 
-            serialTestRxBufVerify(pSerialTest->hTest, &SerBufRx, SerBufTx.iCnt);
+            bool fRes = serialTestRxBufVerify(pSerialTest->hTest, &SerBufRx, SerBufTx.iCnt);
+            if (fRes && !fFailed)
+            {
+                fFailed = true;
+                RTTestFailed(pSerialTest->hTest, "Data corruption/loss detected\n");
+            }
         }
         if (   RT_SUCCESS(rc)
             && (fEvts & RTSERIALPORT_EVT_F_DATA_TX))
