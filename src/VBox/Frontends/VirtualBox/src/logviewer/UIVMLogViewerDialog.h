@@ -25,19 +25,21 @@
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "UILibraryDefs.h"
 
 /* COM includes: */
-# include "COMEnums.h"
+#include "COMEnums.h"
 #include "CMachine.h"
 
 /* Forward declarations: */
-class CMachine;
 class QDialogButtonBox;
 class QVBoxLayout;
 class UIVMLogViewerDialog;
+class CMachine;
+
 
 /** QIManagerDialogFactory  used as a factory for Virtual Media Manager dialog. */
-class UIVMLogViewerDialogFactory : public QIManagerDialogFactory
+class SHARED_LIBRARY_STUFF UIVMLogViewerDialogFactory : public QIManagerDialogFactory
 {
 public:
     UIVMLogViewerDialogFactory(const CMachine &machine);
@@ -50,8 +52,9 @@ protected:
     CMachine m_comMachine;
 };
 
+
 /** A QIDialog to display machine logs. */
-class UIVMLogViewerDialog : public QIWithRetranslateUI<QIManagerDialog>
+class SHARED_LIBRARY_STUFF UIVMLogViewerDialog : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
@@ -82,5 +85,5 @@ private:
     CMachine m_comMachine;
 };
 
-#endif /* !___UIVMLogViewerDialog_h___ */
 
+#endif /* !___UIVMLogViewerDialog_h___ */

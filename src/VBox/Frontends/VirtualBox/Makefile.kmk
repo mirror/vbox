@@ -443,13 +443,11 @@ VirtualBox_QT_MOCHDRS = \
 	src/hostnetwork/UIHostNetworkManager.h \
 	src/logviewer/UIVMLogPage.h \
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
-	src/logviewer/UIVMLogViewerDialog.h \
 	src/logviewer/UIVMLogViewerFilterPanel.h \
 	src/logviewer/UIVMLogViewerPanel.h \
 	src/logviewer/UIVMLogViewerSearchPanel.h \
 	src/logviewer/UIVMLogViewerSettingsPanel.h \
 	src/logviewer/UIVMLogViewerTextEdit.h \
-	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumManager.h \
 	src/runtime/UIConsoleEventHandler.h \
@@ -659,6 +657,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIThreadPool.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxUtils.h \
+	src/logviewer/UIVMLogViewerDialog.h \
+	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumEnumerator.h \
 	src/runtime/UIActionPoolRuntime.h \
 	src/selector/UIActionPoolSelector.h \
@@ -770,6 +770,8 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/globals/UIThreadPool.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxUtils.h \
+	src/logviewer/UIVMLogViewerDialog.h \
+	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumEnumerator.h \
 	src/runtime/UIActionPoolRuntime.h \
 	src/selector/UIActionPoolSelector.h \
@@ -955,13 +957,11 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
 	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
-	src/logviewer/UIVMLogViewerDialog.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerSettingsPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
-	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
 	src/objects/UIRichTextString.cpp \
@@ -1208,6 +1208,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIShortcutPool.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/globals/VBoxGlobal.cpp \
+	src/logviewer/UIVMLogViewerDialog.cpp \
+	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMediumEnumerator.cpp \
@@ -1345,6 +1347,8 @@ VBoxGlobal_SOURCES = \
 	src/globals/UIShortcutPool.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/globals/VBoxGlobal.cpp \
+	src/logviewer/UIVMLogViewerDialog.cpp \
+	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMediumEnumerator.cpp \
