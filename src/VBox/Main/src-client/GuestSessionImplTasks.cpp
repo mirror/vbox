@@ -123,7 +123,6 @@ int GuestSessionTask::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pPro
     return Global::vboxStatusCodeToCOM(hrc);
 }
 
-
 int GuestSessionTask::getGuestProperty(const ComObjPtr<Guest> &pGuest,
                                        const Utf8Str &strPath, Utf8Str &strValue)
 {
@@ -212,7 +211,7 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
 /**
  * Creates a directory on the guest.
  *
- * @return VBox status code. VWRN_ALREADY_EXISTS if directory on the guest already exists.
+ * @return VBox status code. VERR_ALREADY_EXISTS if directory on the guest already exists.
  * @param  strPath                  Absolute path to directory on the guest (guest style path) to create.
  * @param  enmDirectoryCreateFlags  Directory creation flags.
  * @param  uMode                    Directory mode to use for creation.
@@ -228,7 +227,7 @@ int GuestSessionTask::directoryCreate(const com::Utf8Str &strPath,
     int rc = mSession->i_directoryQueryInfo(strPath, fFollowSymlinks, objData, &rcGuest);
     if (RT_SUCCESS(rc))
     {
-        return VWRN_ALREADY_EXISTS;
+        return VERR_ALREADY_EXISTS;
     }
     else
     {
@@ -746,7 +745,7 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
 
                 if (   !strDest.endsWith("\\")
                     && !strDest.endsWith("/"))
-                    RTStrCat(szDstPath, sizeof(szDstPath), mPathStyle.c_str());
+                    RTStrCat(szDstPath, sizeof(szDstPath), "/");
 
                 RTStrCat(szDstPath, sizeof(szDstPath), RTPathFilename(strSource.c_str()));
 
@@ -984,7 +983,7 @@ int FsList::Init(const Utf8Str &strSrcRootAbs, const Utf8Str &strDstRootAbs,
     {
         if (   !mSrcRootAbs.endsWith("/")
             && !mSrcRootAbs.endsWith("\\"))
-            mSrcRootAbs += mSourceSpec.enmPathStyle == PathStyle_DOS ? "\\" : "/";
+            mSrcRootAbs += "/";
 
         if (   !mDstRootAbs.endsWith("/")
             && !mDstRootAbs.endsWith("\\"))
@@ -1028,13 +1027,13 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
     Utf8Str strPathAbs = strPath;
     if (   !strPathAbs.endsWith("/")
         && !strPathAbs.endsWith("\\"))
-        strPathAbs += mSourceSpec.enmPathStyle == PathStyle_DOS ? "\\" : "/";
+        strPathAbs += "/";
 
     Utf8Str strPathSub = strSubDir;
     if (   strPathSub.isNotEmpty()
         && !strPathSub.endsWith("/")
         && !strPathSub.endsWith("\\"))
-        strPathSub += mSourceSpec.enmPathStyle == PathStyle_DOS ? "\\" : "/";
+        strPathSub += "/";
 
     strPathAbs += strPathSub;
 
@@ -1128,6 +1127,9 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
                     break;
             }
         }
+
+        if (rc == VERR_NO_MORE_FILES) /* End of listing reached? */
+            rc = VINF_SUCCESS;
     }
 
     int rc2 = pDir->i_closeInternal(&rcGuest);
@@ -1358,6 +1360,14 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
     int rc = VINF_SUCCESS;
 
     ULONG cOperations = 0;
+    Utf8Str strErrorInfo;
+
+    /**
+     * Note: We need to build up the file/directory here instead of GuestSessionTaskCopyFrom::Run
+     *       because the caller expects a ready-for-operation progress object on return.
+     *       The progress object will have a variable operation count, based on the elements to
+     *       be processed.
+     */
 
     GuestSessionFsSourceSet::iterator itSrc = mSources.begin();
     while (itSrc != mSources.end())
@@ -1374,17 +1384,20 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             {
                 if (   !strDst.endsWith("/")
                     && !strDst.endsWith("\\"))
-                    strDst += mPathStyle;
+                    strDst += "/";
 
                 strDst += Utf8StrFmt("%s", RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
             }
         }
+
+        LogFlowFunc(("strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
 
         GuestFsObjData srcObjData; int rcGuest;
         rc = mSession->i_fsQueryInfo(strSrc, itSrc->fFollowSymlinks ? TRUE : FALSE,
                                      srcObjData, &rcGuest);
         if (RT_FAILURE(rc))
         {
+            strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
             break;
         }
 
@@ -1392,6 +1405,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         {
             if (itSrc->enmType != FsObjType_Directory)
             {
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a file: %s"), strSrc.c_str());
                 rc = VERR_NOT_A_FILE;
                 break;
             }
@@ -1400,70 +1414,11 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         {
             if (itSrc->enmType != FsObjType_File)
             {
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a directory: %s"), strSrc.c_str());
                 rc = VERR_NOT_A_DIRECTORY;
                 break;
             }
         }
-
-        LogFlowFunc(("strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
-
-#if 0
-        if (itSrc->enmType == FsObjType_Directory)
-        {
-            bool fDstExists = RTDirExists(strDstDir.c_str());
-            if (fDstExists)
-            {
-                if (!(itSrc->Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
-                {
-                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" exists when it must not"), mDest.c_str()));
-                    rc = VERR_ALREADY_EXISTS;
-                    break;
-                }
-            }
-
-            if (   !strSrcDir.endsWith("/")
-                && !strSrcDir.endsWith("\\"))
-            {
-                if (   !strDstDir.endsWith("/")
-                    && !strDstDir.endsWith("\\"))
-                        strDstDir += "/"; /* IPRT can handle / on all hosts. */
-
-                strDstDir += Utf8StrFmt("%s", RTPathFilenameEx(strSrcDir.c_str(), mfPathStyle));
-            }
-
-            /* Create the final target directory on the host.
-             * The target directory might already exist on the host (which can be controlled by the copy flags). */
-            fDstExists = RTDirExists(strDstDir.c_str());
-            if (fDstExists)
-            {
-                if (!(itSrc->Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
-                {
-                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" exists when it must not"), strDstDir.c_str()));
-                    rc = VERR_ALREADY_EXISTS;
-                    break;
-                }
-            }
-            else
-            {
-                rc = RTDirCreate(strDstDir.c_str(), fDirMode, 0);
-                if (RT_FAILURE(rc))
-                {
-                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(GuestSession::tr("Error creating destination directory \"%s\", rc=%Rrc"),
-                                                   strDstDir.c_str(), rc));
-                    break;
-                }
-            }
-        }
-        else if (itSrc->enmType == FsObjType_File)
-        {
-
-        }
-        else
-            AssertFailed();
-#endif
 
         FsList *pFsList = NULL;
         try
@@ -1483,6 +1438,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             if (RT_FAILURE(rc))
             {
                 delete pFsList;
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), rc);
                 break;
             }
 
@@ -1500,22 +1456,27 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         itSrc++;
     }
 
-    if (RT_SUCCESS(rc))
+    if (cOperations) /* Use the first element as description (if available). */
     {
-        Utf8Str strFirstOp;
-        if (cOperations) /* Use the first element as description (if available). */
-        {
-            Assert(mVecLists.size());
-            Assert(mVecLists[0]->mVecEntries.size());
+        Assert(mVecLists.size());
+        Assert(mVecLists[0]->mVecEntries.size());
 
-            strFirstOp = mDest + mVecLists[0]->mVecEntries[0]->strPath;
-        }
-
+        Utf8Str strFirstOp = mDest + mVecLists[0]->mVecEntries[0]->strPath;
         hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
                              TRUE /* aCancelable */, cOperations + 1 /* Number of operations */,
                              Bstr(strFirstOp).raw());
     }
+    else /* If no operations have been defined, go with an "empty" progress object when will be used for error handling. */
+        hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
+                             TRUE /* aCancelable */, 1 /* cOperations */, Bstr(mDesc).raw());
 
+    if (RT_FAILURE(rc))
+    {
+        Assert(strErrorInfo.isNotEmpty());
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
+    }
+
+    LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hr, rc));
     return rc;
 }
 
@@ -1562,13 +1523,15 @@ int GuestSessionTaskCopyFrom::Run(void)
             {
                 strSrcAbs += pEntry->strPath;
                 strDstAbs += pEntry->strPath;
-            }
 
-            LogFlowFunc(("Entry '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
+                if (pList->mSourceSpec.enmPathStyle == PathStyle_DOS)
+                    strDstAbs.findReplace('\\', '/');
+            }
 
             switch (pEntry->fMode & RTFS_TYPE_MASK)
             {
                 case RTFS_TYPE_DIRECTORY:
+                    LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                     {
                         rc = RTDirCreate(strDstAbs.c_str(), fDirMode, 0 /* fCreate */);
@@ -1576,6 +1539,9 @@ int GuestSessionTaskCopyFrom::Run(void)
                         {
                             if (!fCopyIntoExisting)
                             {
+                                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                    Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" already exists"),
+                                                               strDstAbs.c_str()));
                                 break;
                             }
 
@@ -1588,6 +1554,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                     break;
 
                 case RTFS_TYPE_FILE:
+                    LogFlowFunc(("File '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                         rc = fileCopyFromGuest(strSrcAbs, strDstAbs, FileCopyFlag_None);
                     break;
@@ -1649,6 +1616,14 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
     int rc = VINF_SUCCESS;
 
     ULONG cOperations = 0;
+    Utf8Str strErrorInfo;
+
+    /**
+     * Note: We need to build up the file/directory here instead of GuestSessionTaskCopyTo::Run
+     *       because the caller expects a ready-for-operation progress object on return.
+     *       The progress object will have a variable operation count, based on the elements to
+     *       be processed.
+     */
 
     GuestSessionFsSourceSet::iterator itSrc = mSources.begin();
     while (itSrc != mSources.end())
@@ -1665,21 +1640,27 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             {
                 if (   !strDst.endsWith("/")
                     && !strDst.endsWith("\\"))
-                    strDst += mPathStyle;
+                    strDst += "/";
 
                 strDst += Utf8StrFmt("%s", RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
             }
         }
 
+        LogFlowFunc(("strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
+
         RTFSOBJINFO srcFsObjInfo;
         rc = RTPathQueryInfo(strSrc.c_str(), &srcFsObjInfo, RTFSOBJATTRADD_NOTHING);
         if (RT_FAILURE(rc))
+        {
+            strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
             break;
+        }
 
         if (RTFS_IS_DIRECTORY(srcFsObjInfo.Attr.fMode))
         {
             if (itSrc->enmType != FsObjType_Directory)
             {
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a file: %s"), strSrc.c_str());
                 rc = VERR_NOT_A_FILE;
                 break;
             }
@@ -1688,12 +1669,11 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
         {
             if (itSrc->enmType == FsObjType_Directory)
             {
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a directory: %s"), strSrc.c_str());
                 rc = VERR_NOT_A_DIRECTORY;
                 break;
             }
         }
-
-        LogFlowFunc(("strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
 
         FsList *pFsList = NULL;
         try
@@ -1711,7 +1691,11 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
             }
 
             if (RT_FAILURE(rc))
+            {
+                delete pFsList;
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), rc);
                 break;
+            }
 
             mVecLists.push_back(pFsList);
         }
@@ -1727,23 +1711,28 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
         itSrc++;
     }
 
-    if (RT_SUCCESS(rc))
+    if (cOperations) /* Use the first element as description (if available). */
     {
-        Utf8Str strFirstOp;
-        if (cOperations) /* Use the first element as description (if available). */
-        {
-            Assert(mVecLists.size());
-            Assert(mVecLists[0]->mVecEntries.size());
+        Assert(mVecLists.size());
+        Assert(mVecLists[0]->mVecEntries.size());
 
-            strFirstOp = mDest + mVecLists[0]->mVecEntries[0]->strPath;
-        }
+        Utf8Str strFirstOp = mDest + mVecLists[0]->mVecEntries[0]->strPath;
 
         hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
                              TRUE /* aCancelable */, cOperations + 1 /* Number of operations */,
                              Bstr(strFirstOp).raw());
     }
+    else /* If no operations have been defined, go with an "empty" progress object when will be used for error handling. */
+        hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
+                             TRUE /* aCancelable */, 1 /* cOperations */, Bstr(mDesc).raw());
 
-    LogFlowFunc(("rc=%Rrc\n", rc));
+    if (RT_FAILURE(rc))
+    {
+        Assert(strErrorInfo.isNotEmpty());
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
+    }
+
+    LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hr, rc));
     return hr;
 }
 
@@ -1793,23 +1782,26 @@ int GuestSessionTaskCopyTo::Run(void)
                 strDstAbs += pEntry->strPath;
             }
 
-            LogFlowFunc(("Entry '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
-
             switch (pEntry->fMode & RTFS_TYPE_MASK)
             {
                 case RTFS_TYPE_DIRECTORY:
+                    LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                     {
                         rc = directoryCreate(strDstAbs.c_str(), DirectoryCreateFlag_None, fDirMode, fFollowSymlinks);
-                        if (   rc == VWRN_ALREADY_EXISTS
+                        if (   rc == VERR_ALREADY_EXISTS
                             && !fCopyIntoExisting)
                         {
+                            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" already exists"),
+                                                           strDstAbs.c_str()));
                             break;
                         }
                     }
                     break;
 
                 case RTFS_TYPE_FILE:
+                    LogFlowFunc(("File '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                         rc = fileCopyToGuest(strSrcAbs, strDstAbs, FileCopyFlag_None);
                     break;

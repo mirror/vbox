@@ -172,9 +172,9 @@ public:
         return S_OK;
     }
 
-    const ComObjPtr<Progress>& GetProgressObject() const { return mProgress; }
+    const ComObjPtr<Progress>& GetProgressObject(void) const { return mProgress; }
 
-    const ComObjPtr<GuestSession>& GetSession() const { return mSession; }
+    const ComObjPtr<GuestSession>& GetSession(void) const { return mSession; }
 
 protected:
 
