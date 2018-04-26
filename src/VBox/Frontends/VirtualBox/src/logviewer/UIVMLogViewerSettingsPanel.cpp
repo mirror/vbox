@@ -43,7 +43,8 @@ UIVMLogViewerSettingsPanel::UIVMLogViewerSettingsPanel(QWidget *pParent, UIVMLog
     , m_pWrapLinesCheckBox(0)
     , m_pFontSizeSpinBox(0)
     , m_pFontSizeLabel(0)
-    , m_pOpenFontDialog(0)
+    , m_pOpenFontDialogButton(0)
+    , m_pResetToDefaultsButton(0)
     , m_iDefaultFontSize(9)
 {
     prepare();
@@ -110,15 +111,19 @@ void UIVMLogViewerSettingsPanel::prepareWidgets()
         mainLayout()->addWidget(m_pFontSizeLabel, 0, Qt::AlignLeft);
     }
 
-    m_pOpenFontDialog = new QIToolButton;
-    if (m_pOpenFontDialog)
+    m_pOpenFontDialogButton = new QIToolButton;
+    if (m_pOpenFontDialogButton)
     {
-        mainLayout()->addWidget(m_pOpenFontDialog, 0);
-        m_pOpenFontDialog->setIcon(UIIconPool::iconSet(":/log_viewer_goto_selected_bookmark_16px.png"));
-        m_pOpenFontDialog->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        mainLayout()->addWidget(m_pOpenFontDialogButton, 0);
+        m_pOpenFontDialogButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_selected_bookmark_16px.png"));
     }
 
-
+    m_pResetToDefaultsButton = new QIToolButton;
+    if (m_pResetToDefaultsButton)
+    {
+        mainLayout()->addWidget(m_pResetToDefaultsButton, 0);
+        m_pResetToDefaultsButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_selected_bookmark_16px.png"));
+    }
     mainLayout()->addStretch(2);
 }
 
@@ -130,10 +135,11 @@ void UIVMLogViewerSettingsPanel::prepareConnections()
         connect(m_pWrapLinesCheckBox, &QCheckBox::toggled, this, &UIVMLogViewerSettingsPanel::sigWrapLines);
     if (m_pFontSizeSpinBox)
         connect(m_pFontSizeSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-                this, &UIVMLogViewerSettingsPanel::sigFontSizeInPoints);
-    if (m_pOpenFontDialog)
-        connect(m_pOpenFontDialog, &QIToolButton::clicked, this, &UIVMLogViewerSettingsPanel::sltOpenFontDialog);
-
+                this, &UIVMLogViewerSettingsPanel::sigChangeFontSizeInPoints);
+    if (m_pOpenFontDialogButton)
+        connect(m_pOpenFontDialogButton, &QIToolButton::clicked, this, &UIVMLogViewerSettingsPanel::sltOpenFontDialog);
+    if (m_pResetToDefaultsButton)
+        connect(m_pResetToDefaultsButton, &QIToolButton::clicked, this, &UIVMLogViewerSettingsPanel::sigResetToDefaults);
 }
 
 void UIVMLogViewerSettingsPanel::retranslateUi()
@@ -157,12 +163,11 @@ void UIVMLogViewerSettingsPanel::retranslateUi()
         m_pFontSizeSpinBox->setToolTip(UIVMLogViewerWidget::tr("Log Viewer Font Size"));
     }
 
-    if (m_pOpenFontDialog)
-    {
-        m_pOpenFontDialog->setToolTip(UIVMLogViewerWidget::tr("Open a font dialog to select font face for the logviewer"));
-        m_pOpenFontDialog->setText(UIVMLogViewerWidget::tr("Select Font"));
-    }
+    if (m_pOpenFontDialogButton)
+        m_pOpenFontDialogButton->setToolTip(UIVMLogViewerWidget::tr("Open a font dialog to select font face for the logviewer"));
 
+    if (m_pResetToDefaultsButton)
+        m_pResetToDefaultsButton->setToolTip(UIVMLogViewerWidget::tr("Reset settings to application defaults"));
 }
 
 void UIVMLogViewerSettingsPanel::sltOpenFontDialog()
@@ -178,5 +183,5 @@ void UIVMLogViewerSettingsPanel::sltOpenFontDialog()
         QFontDialog::getFont(&ok, currentFont, this, "Logviewer font");
 
     if (ok)
-        emit sigFontFace(font);
+        emit sigChangeFont(font);
 }

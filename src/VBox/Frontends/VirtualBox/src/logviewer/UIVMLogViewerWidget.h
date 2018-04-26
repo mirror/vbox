@@ -119,7 +119,8 @@ private slots:
         void sltShowLineNumbers(bool bShowLineNumbers);
         void sltWrapLines(bool bWrapLine);
         void sltFontSizeChanged(int fontSize);
-        void sltFontFace(QFont font);
+        void sltChangeFont(QFont font);
+        void sltResetSettingsToDefault();
     /** @} */
 
 private:

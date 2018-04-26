@@ -386,7 +386,7 @@ void UIVMLogViewerWidget::sltFontSizeChanged(int fontSize)
     }
 }
 
-void UIVMLogViewerWidget::sltFontFace(QFont font)
+void UIVMLogViewerWidget::sltChangeFont(QFont font)
 {
     if (m_font == font)
         return;
@@ -396,6 +396,19 @@ void UIVMLogViewerWidget::sltFontFace(QFont font)
         UIVMLogPage* pLogPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]);
         if (pLogPage)
             pLogPage->setCurrentFont(m_font);
+    }
+}
+void UIVMLogViewerWidget::sltResetSettingsToDefault()
+{
+    sltShowLineNumbers(true);
+    sltWrapLines(false);
+    sltChangeFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+
+    if (m_pSettingsPanel)
+    {
+        m_pSettingsPanel->setShowLineNumbers(true);
+        m_pSettingsPanel->setWrapLines(false);
+        m_pSettingsPanel->setFontSizeInPoints(m_font.pointSize());
     }
 }
 
@@ -501,8 +514,9 @@ void UIVMLogViewerWidget::prepareWidgets()
         m_pMainLayout->addWidget(m_pSettingsPanel);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
         connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
-        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
-        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigFontFace, this, &UIVMLogViewerWidget::sltFontFace);
+        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
+        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
+        connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetSettingsToDefault);
     }
 }
 

@@ -37,8 +37,9 @@ signals:
 
     void sigShowLineNumbers(bool show);
     void sigWrapLines(bool show);
-    void sigFontSizeInPoints(int size);
-    void sigFontFace(QFont font);
+    void sigChangeFontSizeInPoints(int size);
+    void sigChangeFont(QFont font);
+    void sigResetToDefaults();
 
 public:
 
@@ -69,7 +70,8 @@ private:
     QCheckBox    *m_pWrapLinesCheckBox;
     QSpinBox     *m_pFontSizeSpinBox;
     QLabel       *m_pFontSizeLabel;
-    QIToolButton *m_pOpenFontDialog;
+    QIToolButton *m_pOpenFontDialogButton;
+    QIToolButton *m_pResetToDefaultsButton;
 
     /** Default font size in points. */
     const int    m_iDefaultFontSize;
