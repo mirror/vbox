@@ -115,6 +115,7 @@ void UIVMLogViewerSettingsPanel::prepareWidgets()
     {
         mainLayout()->addWidget(m_pOpenFontDialog, 0);
         m_pOpenFontDialog->setIcon(UIIconPool::iconSet(":/log_viewer_goto_selected_bookmark_16px.png"));
+        m_pOpenFontDialog->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     }
 
 
@@ -159,13 +160,13 @@ void UIVMLogViewerSettingsPanel::retranslateUi()
     if (m_pOpenFontDialog)
     {
         m_pOpenFontDialog->setToolTip(UIVMLogViewerWidget::tr("Open a font dialog to select font face for the logviewer"));
+        m_pOpenFontDialog->setText(UIVMLogViewerWidget::tr("Select Font"));
     }
 
 }
 
 void UIVMLogViewerSettingsPanel::sltOpenFontDialog()
 {
-    //	QFont	getFont(bool * ok, const QFont & initial, QWidget * parent = 0, const QString & title = QString(), FontDialogOptions options = 0)
     QFont currentFont;
     UIVMLogViewerWidget* parentWidget = qobject_cast<UIVMLogViewerWidget*>(parent());
     if (!parentWidget)
