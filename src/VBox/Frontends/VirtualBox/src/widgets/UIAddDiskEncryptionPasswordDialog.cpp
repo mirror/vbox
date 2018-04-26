@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,30 +20,31 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QVBoxLayout>
+# include <QAbstractTableModel>
+# include <QHeaderView>
+# include <QItemEditorFactory>
 # include <QLabel>
 # include <QLineEdit>
-# include <QTableView>
-# include <QHeaderView>
 # include <QPushButton>
-# include <QItemEditorFactory>
-# include <QAbstractTableModel>
 # include <QStandardItemEditorCreator>
+# include <QTableView>
+# include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIMedium.h"
-# include "UIIconPool.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
 # include "QIDialogButtonBox.h"
-# include "QIWithRetranslateUI.h"
 # include "QIStyledItemDelegate.h"
+# include "QIWithRetranslateUI.h"
+# include "VBoxGlobal.h"
 # include "UIAddDiskEncryptionPasswordDialog.h"
+# include "UIIconPool.h"
+# include "UIMedium.h"
+# include "UIMessageCenter.h"
 
 /* Other VBox includes: */
 # include <iprt/assert.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /** UIEncryptionDataTable field indexes. */
 enum UIEncryptionDataTableSection
@@ -53,7 +54,8 @@ enum UIEncryptionDataTableSection
     UIEncryptionDataTableSection_Max
 };
 
-/** QLineEdit reimplementation used as
+
+/** QLineEdit extension used as
   * the embedded password editor for the UIEncryptionDataTable. */
 class UIPasswordEditor : public QLineEdit
 {
@@ -72,9 +74,13 @@ signals:
 
 public:
 
-    /** Constructor.
-      * @param pParent being passed to the base-class. */
+    /** Constructs password editor passing @a pParent to the base-class. */
     UIPasswordEditor(QWidget *pParent);
+
+protected:
+
+    /** Handles key-press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
 
 private slots:
 
@@ -83,11 +89,8 @@ private slots:
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
-
-    /** Key press @a pEvent handler. */
-    void keyPressEvent(QKeyEvent *pEvent);
 
     /** Property: Returns the current password of the editor. */
     QString password() const { return QLineEdit::text(); }
@@ -95,7 +98,8 @@ private:
     void setPassword(const QString &strPassword) { QLineEdit::setText(strPassword); }
 };
 
-/** QAbstractTableModel reimplementation used as
+
+/** QAbstractTableModel extension used as
   * the data representation model for the UIEncryptionDataTable. */
 class UIEncryptionDataModel : public QAbstractTableModel
 {
@@ -103,9 +107,8 @@ class UIEncryptionDataModel : public QAbstractTableModel
 
 public:
 
-    /** Constructor.
-      * @param pParent          being passed to the base-class,
-      * @param encryptedMediums contains the lists of medium ids (values) encrypted with passwords with ids (keys). */
+    /** Constructs model passing @a pParent to the base-class.
+      * @param  encryptedMediums  Brings the lists of medium ids (values) encrypted with passwords with ids (keys). */
     UIEncryptionDataModel(QObject *pParent, const EncryptedMediumMap &encryptedMediums);
 
     /** Returns the shallow copy of the encryption password map instance. */
@@ -129,17 +132,18 @@ public:
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
 
     /** Holds the encrypted medium map reference. */
     const EncryptedMediumMap &m_encryptedMediums;
 
     /** Holds the encryption password map instance. */
-    EncryptionPasswordMap m_encryptionPasswords;
+    EncryptionPasswordMap  m_encryptionPasswords;
 };
 
-/** QTableView reimplementation used to
+
+/** QTableView extension used to
   * allow the UIAddDiskEncryptionPasswordDialog to enter
   * disk encryption passwords for particular password ids. */
 class UIEncryptionDataTable : public QTableView
@@ -153,8 +157,8 @@ signals:
 
 public:
 
-    /** Constructor.
-      * @param pParent being passed to the base-class. */
+    /** Constructs table.
+      * @param  encryptedMediums  Brings the lists of medium ids (values) encrypted with passwords with ids (keys). */
     UIEncryptionDataTable(const EncryptedMediumMap &encryptedMediums);
 
     /** Returns the shallow copy of the encryption password map
@@ -166,7 +170,7 @@ public:
 
 private:
 
-    /** Prepare routine. */
+    /** Prepares all. */
     void prepare();
 
     /** Holds the encrypted medium map reference. */
@@ -176,20 +180,16 @@ private:
     UIEncryptionDataModel *m_pModelEncryptionData;
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIPasswordEditor implementation.                                                                                       *
+*********************************************************************************************************************************/
+
 UIPasswordEditor::UIPasswordEditor(QWidget *pParent)
     : QLineEdit(pParent)
 {
     /* Prepare: */
     prepare();
-}
-
-void UIPasswordEditor::prepare()
-{
-    /* Set echo mode: */
-    setEchoMode(QLineEdit::Password);
-    /* Listen for the text changes: */
-    connect(this, SIGNAL(textChanged(const QString&)),
-            this, SLOT(sltCommitData()));
 }
 
 void UIPasswordEditor::keyPressEvent(QKeyEvent *pEvent)
@@ -209,6 +209,20 @@ void UIPasswordEditor::keyPressEvent(QKeyEvent *pEvent)
             break;
     }
 }
+
+void UIPasswordEditor::prepare()
+{
+    /* Set echo mode: */
+    setEchoMode(QLineEdit::Password);
+    /* Listen for the text changes: */
+    connect(this, &UIPasswordEditor::textChanged,
+            this, &UIPasswordEditor::sltCommitData);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIEncryptionDataModel implementation.                                                                                  *
+*********************************************************************************************************************************/
 
 UIEncryptionDataModel::UIEncryptionDataModel(QObject *pParent, const EncryptedMediumMap &encryptedMediums)
     : QAbstractTableModel(pParent)
@@ -348,6 +362,11 @@ void UIEncryptionDataModel::prepare()
         m_encryptionPasswords.insert(strPasswordId, QString());
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIEncryptionDataTable implementation.                                                                                  *
+*********************************************************************************************************************************/
+
 UIEncryptionDataTable::UIEncryptionDataTable(const EncryptedMediumMap &encryptedMediums)
     : m_encryptedMediums(encryptedMediums)
     , m_pModelEncryptionData(0)
@@ -379,7 +398,7 @@ void UIEncryptionDataTable::prepare()
 {
     /* Create encryption-data model: */
     m_pModelEncryptionData = new UIEncryptionDataModel(this, m_encryptedMediums);
-    AssertPtrReturnVoid(m_pModelEncryptionData);
+    if (m_pModelEncryptionData)
     {
         /* Assign configured model to table: */
         setModel(m_pModelEncryptionData);
@@ -387,30 +406,33 @@ void UIEncryptionDataTable::prepare()
 
     /* Create item delegate: */
     QIStyledItemDelegate *pStyledItemDelegate = new QIStyledItemDelegate(this);
-    AssertPtrReturnVoid(pStyledItemDelegate);
+    if (pStyledItemDelegate)
     {
         /* Create item editor factory: */
         QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
-        AssertPtrReturnVoid(pNewItemEditorFactory);
+        if (pNewItemEditorFactory)
         {
             /* Create item editor creator: */
             QStandardItemEditorCreator<UIPasswordEditor> *pQStringItemEditorCreator = new QStandardItemEditorCreator<UIPasswordEditor>();
-            AssertPtrReturnVoid(pQStringItemEditorCreator);
+            if (pQStringItemEditorCreator)
             {
                 /* Register UIPasswordEditor as the QString editor: */
                 pNewItemEditorFactory->registerEditor(QVariant::String, pQStringItemEditorCreator);
             }
+
             /* Assign configured item editor factory to table delegate: */
             pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
         }
+
         /* Assign configured item delegate to table: */
         delete itemDelegate();
         setItemDelegate(pStyledItemDelegate);
+
         /* Configure item delegate: */
         pStyledItemDelegate->setWatchForEditorDataCommits(true);
         pStyledItemDelegate->setWatchForEditorEnterKeyTriggering(true);
-        connect(pStyledItemDelegate, SIGNAL(sigEditorEnterKeyTriggered()),
-                this, SIGNAL(sigEditorEnterKeyTriggered()));
+        connect(pStyledItemDelegate, &QIStyledItemDelegate::sigEditorEnterKeyTriggered,
+                this, &UIEncryptionDataTable::sigEditorEnterKeyTriggered);
     }
 
     /* Configure table: */
@@ -428,6 +450,11 @@ void UIEncryptionDataTable::prepare()
     horizontalHeader()->setSectionResizeMode(UIEncryptionDataTableSection_Password, QHeaderView::Stretch);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIAddDiskEncryptionPasswordDialog implementation.                                                                      *
+*********************************************************************************************************************************/
+
 UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pParent,
                                                                      const QString &strMachineName,
                                                                      const EncryptedMediumMap &encryptedMediums)
@@ -440,7 +467,7 @@ UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pP
 {
     /* Prepare: */
     prepare();
-    /* Translate: */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -448,6 +475,23 @@ EncryptionPasswordMap UIAddDiskEncryptionPasswordDialog::encryptionPasswords() c
 {
     AssertPtrReturn(m_pTableEncryptionData, EncryptionPasswordMap());
     return m_pTableEncryptionData->encryptionPasswords();
+}
+
+void UIAddDiskEncryptionPasswordDialog::retranslateUi()
+{
+    /* Translate the dialog title: */
+    setWindowTitle(tr("%1 - Disk Encryption").arg(m_strMachineName));
+
+    /* Translate the description label: */
+    AssertPtrReturnVoid(m_pLabelDescription);
+    m_pLabelDescription->setText(tr("This virtual machine is password protected. "
+                                    "Please enter the %n encryption password(s) below.",
+                                    "This text is never used with n == 0. "
+                                    "Feel free to drop the %n where possible, "
+                                    "we only included it because of problems with Qt Linguist "
+                                    "(but the user can see how many passwords are in the list "
+                                    "and doesn't need to be told).",
+                                    m_encryptedMediums.uniqueKeys().size()));
 }
 
 void UIAddDiskEncryptionPasswordDialog::accept()
@@ -477,63 +521,50 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
 
     /* Create main-layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    AssertPtrReturnVoid(pMainLayout);
+    if (pMainLayout)
     {
         /* Create input-layout: */
         QVBoxLayout *pInputLayout = new QVBoxLayout;
-        AssertPtrReturnVoid(pInputLayout);
+        if (pInputLayout)
         {
             /* Create description label: */
             m_pLabelDescription = new QLabel;
-            AssertPtrReturnVoid(m_pLabelDescription);
+            if (m_pLabelDescription)
             {
                 /* Add label into layout: */
                 pInputLayout->addWidget(m_pLabelDescription);
             }
+
             /* Create encryption-data table: */
             m_pTableEncryptionData = new UIEncryptionDataTable(m_encryptedMediums);
-            AssertPtrReturnVoid(m_pTableEncryptionData);
+            if (m_pTableEncryptionData)
             {
                 /* Configure encryption-data table: */
-                connect(m_pTableEncryptionData, SIGNAL(sigEditorEnterKeyTriggered()),
-                        this, SLOT(sltEditorEnterKeyTriggered()));
+                connect(m_pTableEncryptionData, &UIEncryptionDataTable::sigEditorEnterKeyTriggered,
+                        this, &UIAddDiskEncryptionPasswordDialog::sltEditorEnterKeyTriggered);
                 m_pTableEncryptionData->setFocus();
                 m_pTableEncryptionData->editFirstIndex();
                 /* Add label into layout: */
                 pInputLayout->addWidget(m_pTableEncryptionData);
             }
+
             /* Add layout into parent: */
             pMainLayout->addLayout(pInputLayout);
         }
+
         /* Create button-box: */
         m_pButtonBox = new QIDialogButtonBox;
-        AssertPtrReturnVoid(m_pButtonBox);
+        if (m_pButtonBox)
         {
             /* Configure button-box: */
             m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-            connect(m_pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-            connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
+            connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIAddDiskEncryptionPasswordDialog::accept);
+            connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIAddDiskEncryptionPasswordDialog::reject);
+
             /* Add button-box into layout: */
             pMainLayout->addWidget(m_pButtonBox);
         }
     }
-}
-
-void UIAddDiskEncryptionPasswordDialog::retranslateUi()
-{
-    /* Translate the dialog title: */
-    setWindowTitle(tr("%1 - Disk Encryption").arg(m_strMachineName));
-
-    /* Translate the description label: */
-    AssertPtrReturnVoid(m_pLabelDescription);
-    m_pLabelDescription->setText(tr("This virtual machine is password protected. "
-                                    "Please enter the %n encryption password(s) below.",
-                                    "This text is never used with n == 0. "
-                                    "Feel free to drop the %n where possible, "
-                                    "we only included it because of problems with Qt Linguist "
-                                    "(but the user can see how many passwords are in the list "
-                                    "and doesn't need to be told).",
-                                    m_encryptedMediums.uniqueKeys().size()));
 }
 
 /* static */
@@ -556,5 +587,5 @@ bool UIAddDiskEncryptionPasswordDialog::isPasswordValid(const QString strMediumI
     return false;
 }
 
-#include "UIAddDiskEncryptionPasswordDialog.moc"
 
+#include "UIAddDiskEncryptionPasswordDialog.moc"

@@ -452,7 +452,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumManager.h \
-	src/runtime/UIAddDiskEncryptionPasswordDialog.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -664,6 +663,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIActionPoolRuntime.h \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
+	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
@@ -774,6 +774,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/runtime/UIActionPoolRuntime.h \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
+	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
@@ -835,7 +836,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
-	src/runtime/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -873,6 +873,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
+	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
@@ -915,6 +916,7 @@ VBoxGlobal_QT_MOCSRCS = \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
+	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
@@ -963,7 +965,6 @@ VirtualBox_SOURCES = \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
 	src/objects/UIRichTextString.cpp \
-	src/runtime/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -1214,6 +1215,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
+	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
@@ -1350,6 +1352,7 @@ VBoxGlobal_SOURCES = \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
+	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
