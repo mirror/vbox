@@ -156,6 +156,7 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     {"--secondarydevice",  'l', RTGETOPT_REQ_STRING },
     {"--tests",            't', RTGETOPT_REQ_STRING },
     {"--txbytes",          'x', RTGETOPT_REQ_UINT32 },
+    {"--verbose",          'v', RTGETOPT_REQ_NOTHING},
     {"--help",             'h', RTGETOPT_REQ_NOTHING}
 };
 
@@ -172,6 +173,8 @@ static const SERIALTESTDESC g_aSerialTests[] =
     {"stslines",  "Testing the status line setting and receiving",        serialTestRunStsLines  }
 };
 
+/** Verbosity value. */
+static unsigned        g_cVerbosity           = 0;
 /** The test handle. */
 static RTTEST          g_hTest                = NIL_RTTEST;
 /** The serial test mode. */
@@ -329,6 +332,7 @@ static int serialTestRxBufRecv(RTSERIALPORT hSerialPort, PSERIALTESTTXRXBUFCNT p
 static void serialTestRxBufVerify(RTTEST hTest, PSERIALTESTTXRXBUFCNT pSerBuf, uint32_t iCntTx)
 {
     uint32_t offRx = 0;
+    bool fFailed = false;
 
     while (offRx + sizeof(uint32_t) < pSerBuf->offBuf)
     {
@@ -336,9 +340,16 @@ static void serialTestRxBufVerify(RTTEST hTest, PSERIALTESTTXRXBUFCNT pSerBuf, u
         offRx += sizeof(uint32_t);
 
         if (RT_UNLIKELY(u32Val != ++pSerBuf->iCnt))
-            RTTestFailed(hTest, "Data corruption/loss detected, expected counter value %u got %u\n",
-                         pSerBuf->iCnt, u32Val);
+        {
+            fFailed = true;
+            if (g_cVerbosity > 0)
+                RTTestFailed(hTest, "Data corruption/loss detected, expected counter value %u got %u\n",
+                             pSerBuf->iCnt, u32Val);
+        }
     }
+
+    if (fFailed)
+        RTTestFailed(hTest, "Data corruption/loss detected\n");
 
     if (RT_UNLIKELY(pSerBuf->iCnt > iCntTx))
         RTTestFailed(hTest, "Overtook the send buffer, expected maximum counter value %u got %u\n",
@@ -756,6 +767,9 @@ int main(int argc, char *argv[])
             case 'h':
                 serialTestUsage(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
+            case 'v':
+                g_cVerbosity++;
+                break;
             case 'd':
                 pszDevice = ValueUnion.psz;
                 break;

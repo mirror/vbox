@@ -66,6 +66,7 @@ class tdSerial1(vbox.TestDriver):
         self.asSerialTests    = self.asSerialTestsDef;
         self.oLoopback        = None;
         self.sLocation        = None;
+        self.fVerboseTest     = False;
 
     #
     # Overridden methods.
@@ -78,6 +79,9 @@ class tdSerial1(vbox.TestDriver):
         reporter.log('      Default: %s' % (':'.join(self.asSerialModesDef)));
         reporter.log('  --serial-tests    <t1[:t2[:]]');
         reporter.log('      Default: %s' % (':'.join(self.asSerialTestsDef)));
+        reporter.log('  --verbose-test');
+        reporter.log('      Whether to enable verbose output when running the');
+        reporter.log('      test utility inside the VM');
         return rc;
 
     def parseOption(self, asArgs, iArg):
@@ -97,6 +101,9 @@ class tdSerial1(vbox.TestDriver):
             for s in self.asSerialTests:
                 if s not in self.asSerialTestsDef:
                     reporter.log('warning: The "--serial-tests" value "%s" is not a valid serial port test.' % (s));
+        elif asArgs[iArg] == '--verbose-test':
+            iArg += 1;
+            self.fVerboseTest = True;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
 
@@ -189,11 +196,13 @@ class tdSerial1(vbox.TestDriver):
         _ = oSession;
 
         reporter.testStart('Write');
-        tupCmdLine = ('SerialTest', '--tests', 'write', '--txbytes', '1048576', '--device');
+        tupCmdLine = ('SerialTest', '--tests', 'write', '--txbytes', '1048576',);
+        if self.fVerboseTest:
+            tupCmdLine += ('--verbose');
         if oTestVm.isWindows():
-            tupCmdLine += (r'\\.\COM1',);
+            tupCmdLine += ('--device', r'\\.\COM1',);
         elif oTestVm.isLinux():
-            tupCmdLine += (r'/dev/ttyS0',);
+            tupCmdLine += ('--device', r'/dev/ttyS0',);
 
         fRc = self.txsRunTest(oTxsSession, 'SerialTest', 3600 * 1000, \
             '${CDROM}/${OS/ARCH}/SerialTest${EXESUFF}', tupCmdLine);
@@ -217,6 +226,7 @@ class tdSerial1(vbox.TestDriver):
                         break;
                 oFile.close();
             except:
+                reporter.logXcpt();
                 reporter.testFailure('Verifying the written data failed');
         reporter.testDone();
         return fRc;
@@ -228,11 +238,13 @@ class tdSerial1(vbox.TestDriver):
         _ = oSession;
 
         reporter.testStart('ReadWrite');
-        tupCmdLine = ('SerialTest', '--tests', 'readwrite', '--txbytes', '1048576', '--device');
+        tupCmdLine = ('SerialTest', '--tests', 'readwrite', '--txbytes', '1048576');
+        if self.fVerboseTest:
+            tupCmdLine += ('--verbose');
         if oTestVm.isWindows():
-            tupCmdLine += (r'\\.\COM1',);
+            tupCmdLine += ('--device', r'\\.\COM1',);
         elif oTestVm.isLinux():
-            tupCmdLine += (r'/dev/ttyS0',);
+            tupCmdLine += ('--device', r'/dev/ttyS0',);
 
         fRc = self.txsRunTest(oTxsSession, 'SerialTest', 600 * 1000, \
             '${CDROM}/${OS/ARCH}/SerialTest${EXESUFF}', tupCmdLine);
