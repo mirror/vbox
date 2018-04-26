@@ -923,7 +923,7 @@ static RTEXITCODE rtZipTarCmdExtractHardlink(PRTZIPTARCMDOPS pOpts, RTEXITCODE r
                                      pszDst, pszTarget, rc);
 
     if (!RTFileExists(szFullTarget))
-        return RTMsgErrorExitFailure("%s: Hardlink target not found (or not a file): %s", pszDst, szFullTarget, rc);
+        return RTMsgErrorExitFailure("%s: Hardlink target not found (or not a file): %s", pszDst, szFullTarget);
 
     /*
      * Try hardlink the file, falling back on copying.
@@ -950,13 +950,13 @@ static RTEXITCODE rtZipTarCmdExtractHardlink(PRTZIPTARCMDOPS pOpts, RTEXITCODE r
                     rc = RTFileClose(hDstFile);
                     if (RT_FAILURE(rc))
                     {
-                        rcExit = RTMsgErrorExitFailure("%s: Error closing hardlinked file copy: %Rrc", pszDst, szFullTarget, rc);
+                        rcExit = RTMsgErrorExitFailure("%s: Error closing hardlinked file copy: %Rrc", pszDst, rc);
                         RTFileDelete(pszDst);
                     }
                 }
                 else
                 {
-                    rcExit = RTMsgErrorExitFailure("%s: Failed copying hardlinked file %s: %Rrc", pszDst, szFullTarget, rc);
+                    rcExit = RTMsgErrorExitFailure("%s: Failed copying hardlinked file '%s': %Rrc", pszDst, szFullTarget, rc);
                     rc = RTFileClose(hDstFile);
                     RTFileDelete(pszDst);
                 }
