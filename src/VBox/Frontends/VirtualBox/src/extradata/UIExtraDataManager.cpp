@@ -20,12 +20,12 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QFontDatabase>
 # include <QMetaEnum>
 # include <QMutex>
 # include <QRegularExpression>
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 #  include <QComboBox>
-#  include <QFontDatabase>
 #  include <QHeaderView>
 #  include <QLabel>
 #  include <QLineEdit>
