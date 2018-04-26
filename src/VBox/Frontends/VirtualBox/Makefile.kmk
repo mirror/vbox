@@ -950,7 +950,6 @@ endif
 #
 VirtualBox_SOURCES = \
 	src/main.cpp \
-	src/globals/UIImageTools.cpp \
 	src/globals/UIStarter.cpp \
 	src/hostnetwork/UIHostNetworkDetailsWidget.cpp \
 	src/hostnetwork/UIHostNetworkManager.cpp \
@@ -1201,6 +1200,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIDesktopWidgetWatchdog.cpp \
 	src/globals/UIErrorString.cpp \
 	src/globals/UIIconPool.cpp \
+	src/globals/UIImageTools.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \
@@ -1340,6 +1340,7 @@ VBoxGlobal_SOURCES = \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
 	src/globals/UIErrorString.cpp \
 	src/globals/UIIconPool.cpp \
+	src/globals/UIImageTools.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \
