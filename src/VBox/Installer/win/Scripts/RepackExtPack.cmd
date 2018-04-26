@@ -127,7 +127,7 @@ goto end_failed
 rem validate specified options
 if not exist "%_MY_OPT_BINDIR_X86%" goto error_bindir_x86_does_not_exist
 
-if ".%_MY_OPT_BINDIR_AMD64%" == "." set _MY_OPT_BINDIR_AMD64=_MY_OPT_BINDIR_X86\..\..\..\win.amd64\release\bin
+if ".%_MY_OPT_BINDIR_AMD64%" == "." set _MY_OPT_BINDIR_AMD64=%_MY_OPT_BINDIR_X86%\..\..\..\win.amd64\release\bin
 if not exist "%_MY_OPT_BINDIR_AMD64%" goto error_bindir_amd64_does_not_exist
 
 if ".%_MY_OPT_INPUT%" == "."        set _MY_OPT_INPUT=%_MY_OPT_BINDIR_X86%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
