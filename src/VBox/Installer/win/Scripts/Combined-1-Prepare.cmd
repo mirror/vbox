@@ -153,7 +153,7 @@ rem
 if not exist "%_MY_OPT_UNTAR_DIR%"      goto error_vboxall_untar_dir_not_found
 
 set _MY_BINDIR_AMD64=%_MY_OPT_UNTAR_DIR%\win.amd64\%_MY_OPT_BUILD_TYPE%\bin
-set _MY_BINDIR_X86=%_MY_OPT_UNTAR_DIR%\win.amd64\%_MY_OPT_BUILD_TYPE%\bin
+set _MY_BINDIR_X86=%_MY_OPT_UNTAR_DIR%\win.x86\%_MY_OPT_BUILD_TYPE%\bin
 if not exist "%_MY_BINDIR_AMD64%"       goto error_amd64_bindir_not_found
 if not exist "%_MY_BINDIR_X86%"         goto error_x86_bindir_not_found
 
