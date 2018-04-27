@@ -29,11 +29,12 @@ rem if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & goto end_f
 rem
 rem Parse arguments.
 rem
-set _MY_OPT_BINDIR_X86=..\bin
-set _MY_OPT_BINDIR_AMD64=
+set _MY_OPT_BINDIR_X86=..\..\..\win.x86\@KBUILD_TYPE@\bin
+set _MY_OPT_BINDIR_AMD64=..\..\..\win.amd64\@KBUILD_TYPE@\bin
 set _MY_OPT_INPUT=
 set _MY_OPT_OUTPUT=
 set _MY_OPT_STAGE_DIR=.\repack-extpack-%RANDOM%
+for %%i in (%_MY_OPT_STAGE_DIR%) do set _MY_OPT_STAGE_DIR=%%~fi
 set _MY_OPT_SIGN_CAT=1
 
 :argument_loop
@@ -67,13 +68,13 @@ shift
 goto argument_loop
 
 :opt_a
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_BINDIR_AMD64=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_BINDIR_AMD64=%~f2
 goto argument_loop_next_with_value
 
 :opt_b
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_BINDIR_X86=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_BINDIR_X86=%~f2
 goto argument_loop_next_with_value
 
 :opt_h
@@ -89,18 +90,18 @@ echo Warning! This script should normally be invoked from the win.x86 repack dir
 goto end_failed
 
 :opt_i
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_INPUT=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_INPUT=%~f2
 goto argument_loop_next_with_value
 
 :opt_o
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_OUTPUT=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_OUTPUT=%~f2
 goto argument_loop_next_with_value
 
 :opt_s
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_STAGE_DIR=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_STAGE_DIR=%~f2
 goto argument_loop_next_with_value
 
 :syntax_error_missing_value
@@ -124,19 +125,18 @@ echo error: Temporary staging directory exists: "%_MY_OPT_STAGE_DIR%"
 goto end_failed
 
 :no_more_arguments
-rem validate specified options
-if not exist "%_MY_OPT_BINDIR_X86%" goto error_bindir_x86_does_not_exist
-
-if ".%_MY_OPT_BINDIR_AMD64%" == "." set _MY_OPT_BINDIR_AMD64=%_MY_OPT_BINDIR_X86%\..\..\..\win.amd64\release\bin
+rem
+rem Validate and adjust specified options.
+rem
+if not exist "%_MY_OPT_BINDIR_X86%"   goto error_bindir_x86_does_not_exist
 if not exist "%_MY_OPT_BINDIR_AMD64%" goto error_bindir_amd64_does_not_exist
 
 if ".%_MY_OPT_INPUT%" == "."        set _MY_OPT_INPUT=%_MY_OPT_BINDIR_X86%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
 if not exist "%_MY_OPT_INPUT%"      goto error_input_not_found
 
-if ".%_MY_OPT_OUTPUT%" == "."       set _MY_OPT_OUTPUT=Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack
+if ".%_MY_OPT_OUTPUT%" == "."       for %%i in ("%_MY_OPT_INPUT%") do set _MY_OPT_OUTPUT=.\%%~nxi
 
 rem Make _MY_OPT_STAGE_DIR absolute.
-for %%i in (%_MY_OPT_STAGE_DIR%) do set _MY_OPT_STAGE_DIR=%%~fi
 if exist "%_MY_OPT_STAGE_DIR%"      goto error_stage_dir_exists
 
 rem

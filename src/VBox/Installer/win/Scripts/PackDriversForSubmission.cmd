@@ -30,7 +30,7 @@ set _MY_OPT_EXTPACK=
 set _MY_OPT_WITH_EXTPACK=1
 set _MY_OPT_OUTPUT=
 set _MY_OPT_DDF_FILE=
-set _MY_OPT_ARCH=
+set _MY_OPT_ARCH=@KBUILD_TARGET_ARCH@
 
 :argument_loop
 if ".%1" == "."             goto no_more_arguments
@@ -69,24 +69,24 @@ shift
 goto argument_loop
 
 :opt_a
-if ".%2" == "."             goto syntax_error_missing_value
+if ".%~2" == "."            goto syntax_error_missing_value
 if not "%2" == "x86" if not "%2" == "amd64" goto syntax_error_unknown_arch
-set _MY_OPT_ARCH=%2
+set _MY_OPT_ARCH=%~2
 goto argument_loop_next_with_value
 
 :opt_b
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_BINDIR=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_BINDIR=%~2
 goto argument_loop_next_with_value
 
 :opt_d
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_DDF_FILE=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_DDF_FILE=%~2
 goto argument_loop_next_with_value
 
 :opt_e
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_EXTPACK=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_EXTPACK=%~2
 goto argument_loop_next_with_value
 
 :opt_h
@@ -105,13 +105,13 @@ shift
 goto argument_loop
 
 :opt_p
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_PDBDIR=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_PDBDIR=%~2
 goto argument_loop_next_with_value
 
 :opt_o
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_OUTPUT=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_OUTPUT=%~2
 goto argument_loop_next_with_value
 
 :opt_x
@@ -161,10 +161,7 @@ if ".%_MY_OPT_EXTPACK%" == "."      set _MY_OPT_EXTPACK=%_MY_OPT_BINDIR%\Oracle_
 if not exist "%_MY_OPT_EXTPACK%"    goto error_extpack_does_not_exist
 :no_extack_validation
 
-if ".%_MY_OPT_ARCH%" == "."         if exist "%_MY_OPT_BINDIR%\x86" set _MY_OPT_ARCH=amd64
-if ".%_MY_OPT_ARCH%" == "."         set _MY_OPT_ARCH=x86
-
-if ".%_MY_OPT_OUTPUT%" == "."       set _MY_OPT_OUTPUT=VBoxDrivers-%_MY_OPT_ARCH%.cab
+if ".%_MY_OPT_OUTPUT%" == "."       set _MY_OPT_OUTPUT=VBoxDrivers-@VBOX_VERSION_STRING@r@VBOX_SVN_REV@-%_MY_OPT_ARCH%.cab
 if exist "%_MY_OPT_OUTPUT%"         goto error_output_exists
 
 if ".%_MY_OPT_DDF_FILE%" == "."     set _MY_OPT_DDF_FILE=%_MY_OPT_OUTPUT%.ddf

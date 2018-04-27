@@ -21,9 +21,13 @@ setlocal ENABLEEXTENSIONS
 setlocal
 
 rem
-rem Check for environment variables we need.
+rem Globals and Check for environment variables we need.
 rem
 if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & goto end_failed)
+set _MY_DRIVER_BASE_NAMES=VBoxDrv VBoxNetAdp6 VBoxNetLwf VBoxUSB VBoxUSBMon
+set _MY_DRIVER_BASE_NAMES=VBoxDrv VBoxNetAdp6 VBoxNetLwf VBoxUSB VBoxUSBMon
+set _MY_UNZIP=%KBUILD_DEVTOOLS%\win.x86\bin\unzip.exe
+if not exist "%_MY_UNZIP%" (echo "%_MY_UNZIP%" does not exist & goto end_failed)
 
 rem
 rem Parse arguments.
@@ -59,8 +63,8 @@ shift
 goto argument_loop
 
 :opt_b
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_BINDIR=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_BINDIR=%~2
 goto argument_loop_next_with_value
 
 :opt_h
@@ -74,8 +78,8 @@ echo Warning! This script should normally be invoked from the repack directory
 goto end_failed
 
 :opt_i
-if ".%2" == "."             goto syntax_error_missing_value
-set _MY_OPT_INPUT=%2
+if ".%~2" == "."            goto syntax_error_missing_value
+set _MY_OPT_INPUT=%~2
 goto argument_loop_next_with_value
 
 :opt_n
@@ -105,21 +109,41 @@ if not exist "%_MY_OPT_INPUT%"      goto error_input_not_found
 
 rem
 rem Unpack the stuff.
+rem We ignore error level 1 here as that is what unzip returns on warning (slashes).
 rem
-%KBUILD_DEVTOOLS%\win.x86\bin\unzip.exe -o -j "%_MY_OPT_INPUT%" -d "%_MY_OPT_BINDIR%" || goto end_failed
+"%_MY_UNZIP%" -o -j "%_MY_OPT_INPUT%" -d "%_MY_OPT_BINDIR%" && goto unzip_okay
+if NOT ERRORLEVEL 1 goto end_failed
+:unzip_okay
+
+rem
+rem Verify it against the PreW10 catalog files we saved.
+rem
+set _MY_SIGNTOOL=%KBUILD_DEVTOOLS%\win.x86\sdk\v8.1\bin\x86\signtool.exe
+if not exist "%_MY_SIGNTOOL%" set _MY_SIGNTOOL=%KBUILD_DEVTOOLS%\win.x86\selfsign\r3\signtool.exe
+
+for %%d in (%_MY_DRIVER_BASE_NAMES%) do (
+    @echo * Verifying %%d against %%d.cat...
+    "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d.cat"        "%_MY_OPT_BINDIR%\%%d.inf" || goto end_failed
+    "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d.cat"        "%_MY_OPT_BINDIR%\%%d.sys" || goto end_failed
+    @echo * Verifying %%d against %%d-PreW10.cat...
+    "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d-PreW10.cat" "%_MY_OPT_BINDIR%\%%d.inf" || goto end_failed
+    "%_MY_SIGNTOOL%" verify /kp /c "%_MY_OPT_BINDIR%\%%d-PreW10.cat" "%_MY_OPT_BINDIR%\%%d.sys" || goto end_failed
+)
+
 
 rem
 rem Modify the catalog signatures.
 rem
-for %%cat in (VBoxDrv.cat VBoxNetAdp6.cat VBoxNetLwf.cat VBoxUSB.cat VBoxUSBMon.cat) do (
-    copy /y "%_MY_OPT_BINDIR%\%cat%" "%_MY_OPT_BINDIR%\%cat%.ms" || goto end_failed
-    call sign-dual.cmd "%_MY_OPT_BINDIR%\%cat%" || goto end_failed
-    "%_MY_OPT_BINDIR%\tools\RTSignTool.exe"  add-nested-exe-signature -v "%_MY_OPT_BINDIR%\%cat%" "%_MY_OPT_BINDIR%\%cat%.ms" || goto end_failed
+for %%d in (%_MY_DRIVER_BASE_NAMES%) do (
+    copy /y "%_MY_OPT_BINDIR%\%%d.cat" "%_MY_OPT_BINDIR%\%%d.cat.ms" || goto end_failed
+    call sign-dual.cmd "%_MY_OPT_BINDIR%\%%d.cat" || goto end_failed
+    "%_MY_OPT_BINDIR%\tools\RTSignTool.exe"  add-nested-exe-signature -v "%_MY_OPT_BINDIR%\%%d.cat" "%_MY_OPT_BINDIR%\%%d.cat.ms" || goto end_failed
 )
 
 goto end
 
 :end_failed
+@echo failed (%ERRORLEVEL%)
 @endlocal
 @endlocal
 @exit /b 1

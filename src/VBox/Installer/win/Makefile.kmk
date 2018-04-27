@@ -1004,21 +1004,32 @@ RePackScripts_TEMPLATE = DUMMY
 RePackScripts_INST = repack/
 RePackScripts_INSTTYPE = stage
 RePackScripts_SOURCES = \
-	Scripts/PackDriversForSubmission.cmd \
 	Scripts/UnpackBlessedDrivers.cmd \
+	$(RePackScripts_0_OUTDIR)/PackDriversForSubmission.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-dual.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd \
 	$(RePackScripts_0_OUTDIR)/VMMR0.inf \
 	$(RePackScripts_0_OUTDIR)/VBoxExtPackPuel.inf
 if !defined(VBOX_WITH_COMBINED_PACKAGE) || "$(KBUILD_TARGET_ARCH)" == "x86"
  RePackScripts_SOURCES += \
- 	Scripts/RepackExtPack.cmd
+ 	$(RePackScripts_0_OUTDIR)/RepackExtPack.cmd
+endif
+if defined(VBOX_WITH_COMBINED_PACKAGE) && "$(KBUILD_TARGET_ARCH)" == "x86"
+ RePackScripts_SOURCES += \
+ 	$(RePackScripts_0_OUTDIR)/Combined-1-Prepare.cmd \
+ 	$(RePackScripts_0_OUTDIR)/Combined-3-Repack.cmd
 endif
 RePackScripts_CLEAN = \
+	$(RePackScripts_0_OUTDIR)/PackDriversForSubmission.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-dual.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd \
 	$(RePackScripts_0_OUTDIR)/VMMR0.inf \
 	$(RePackScripts_0_OUTDIR)/VBoxExtPackPuel.inf
+
+$(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/PackDriversForSubmission.cmd,PackDriversForSubmission.cmd)
+$(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/RepackExtPack.cmd,RepackExtPack.cmd)
+$(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Combined-1-Prepare.cmd,Combined-1-Prepare.cmd)
+$(call VBOX_EDIT_VERSION_AND_BUILD_RULE_FN,RePackScripts,Scripts/Combined-3-Repack.cmd,Combined-3-Repack.cmd)
 
 $$(RePackScripts_0_OUTDIR)/sign-dual.cmd: | $$(dir $$@)
 	$(APPEND) -nt "$@" \
