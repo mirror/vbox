@@ -501,6 +501,8 @@ DECLINLINE(void) RTListMove(PRTLISTNODE pListDst, PRTLISTNODE pListSrc)
         /* Finally remove the elements from the source list */
         RTListInit(pListSrc);
     }
+    else
+        RTListInit(pListDst);
 }
 
 /**
