@@ -46,7 +46,7 @@
 # include "UIFrameBuffer.h"
 # include "UISettingsDialogSpecific.h"
 # ifdef VBOX_WITH_VIDEOHWACCEL
-#  include "VBoxFBOverlay.h"
+#  include "VBox2DHelpers.h"
 # endif /* VBOX_WITH_VIDEOHWACCEL */
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
@@ -247,7 +247,7 @@ bool UISession::initialize()
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Log whether 2D video acceleration is enabled: */
     LogRel(("GUI: 2D video acceleration is %s\n",
-           machine().GetAccelerate2DVideoEnabled() && VBoxQGLOverlay::isAcceleration2DVideoAvailable()
+           machine().GetAccelerate2DVideoEnabled() && VBox2DHelpers::isAcceleration2DVideoAvailable()
            ? "enabled" : "disabled"));
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 

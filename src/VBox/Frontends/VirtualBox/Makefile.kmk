@@ -1134,6 +1134,7 @@ endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
+	src/VBox2DHelpers.cpp \
 	src/VBoxFBOverlay.cpp \
 	src/VBoxGLSupportInfo.cpp
 endif

@@ -170,8 +170,6 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static VBoxVHWAInfo g_VBoxVHWASupportInfo;
-static bool g_bVBoxVHWAChecked = false;
-static bool g_bVBoxVHWASupported = false;
 
 
 #ifdef DEBUG
@@ -4959,31 +4957,6 @@ int VBoxQGLOverlay::vhwaConstruct(struct VBOXVHWACMD_HH_CONSTRUCT *pCmd)
         AssertRC(rc);
     }
     return rc;
-}
-
-/* static */
-bool VBoxQGLOverlay::isAcceleration2DVideoAvailable()
-{
-#ifndef DEBUG_misha
-    if (!g_bVBoxVHWAChecked)
-#endif
-    {
-        g_bVBoxVHWAChecked = true;
-        g_bVBoxVHWASupported = VBoxVHWAInfo::checkVHWASupport();
-    }
-    return g_bVBoxVHWASupported;
-}
-
-/** additional video memory required for the best 2D support performance
- *  total amount of VRAM required is thus calculated as requiredVideoMemory + required2DOffscreenVideoMemory  */
-/* static */
-quint64 VBoxQGLOverlay::required2DOffscreenVideoMemory()
-{
-    /* HDTV == 1920x1080 ~ 2M
-     * for the 4:2:2 formats each pixel is 2Bytes
-     * so each frame may be 4MiB
-     * so for triple-buffering we would need 12 MiB */
-    return _1M * 12;
 }
 
 void VBoxQGLOverlay::processCmd(VBoxVHWACommandElement * pCmd)
