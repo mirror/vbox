@@ -12064,6 +12064,9 @@ and "VAR" for unsetting. -->
     <method name="copyFromGuest">
       <desc>
         Copies directories and/or files from guest to the host.
+
+        This function requires several parallel arrays to be supplied, one
+        set for each source.
       </desc>
       <param name="sources" type="wstring" dir="in" safearray="yes">
         <desc>Paths to directories and/or files on the guest side that should be
@@ -12092,6 +12095,9 @@ and "VAR" for unsetting. -->
     <method name="copyToGuest">
       <desc>
         Copies directories and/or files from host to the guest.
+
+        This function requires several parallel arrays to be supplied, one
+        set for each source.
       </desc>
       <param name="sources" type="wstring" dir="in" safearray="yes">
         <desc>Paths to directories and/or files on the host side that should be
