@@ -3121,7 +3121,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sUser = "Administrator";
             sScratchGst = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo/";
             sScratchGstNotExist = "C:\\does-not-exist\\";
-            sScratchGstInvalid = ":?";
+            sScratchGstInvalid = "?invalid-name";
         else:
             sUser = "vbox";
             sScratchGst = "/tmp/testGuestCtrlCopyTo/";
@@ -3220,6 +3220,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                       tdTestResult(fRc = True) ]
                 ]);
 
+                if oTestVm.isWindows():
+                    aaTests.extend([
+                        # Copy the same file over to the guest, but this time store the file into the former
+                        # file's ADS (Alternate Data Stream). Only works on Windows, of course.
+                        [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                       sDst = os.path.join(sScratchGst, 'HostGuestAdditions.iso:ADS-Test')),
+                          tdTestResult(fRc = True) ]
+                    ]);
+
             #
             # Directory handling.
             #
@@ -3297,7 +3306,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sPassword = "password";
 
         if self.oTstDrv.sHost == "win":
-            sScratchHstInvalid = ":?";
+            sScratchHstInvalid = "?invalid-name";
         else:
             sScratchHstInvalid = "/";
 
