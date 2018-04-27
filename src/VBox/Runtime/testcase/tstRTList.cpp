@@ -130,8 +130,6 @@ static void tstRTListCreate(RTTEST hTest, unsigned cElements)
 
     /* Move the list to a new one. */
     RTLISTANCHOR ListHeadNew;
-
-    RTListInit(&ListHeadNew);
     RTListMove(&ListHeadNew, &ListHead);
 
     RTTEST_CHECK(hTest, RTListIsEmpty(&ListHead) == true);

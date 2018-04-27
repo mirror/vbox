@@ -696,7 +696,6 @@ static void pdmBlkCacheCommit(PPDMBLKCACHE pBlkCache)
     /* The list is moved to a new header to reduce locking overhead. */
     RTLISTANCHOR ListDirtyNotCommitted;
 
-    RTListInit(&ListDirtyNotCommitted);
     RTSpinlockAcquire(pBlkCache->LockList);
     RTListMove(&ListDirtyNotCommitted, &pBlkCache->ListDirtyNotCommitted);
     RTSpinlockRelease(pBlkCache->LockList);

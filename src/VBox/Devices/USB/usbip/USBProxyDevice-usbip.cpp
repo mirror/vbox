@@ -1262,7 +1262,6 @@ static int usbProxyUsbIpUrbsQueuePending(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
 {
     RTLISTANCHOR ListUrbsPending;
 
-    RTListInit(&ListUrbsPending);
     int rc = RTSemFastMutexRequest(pProxyDevUsbIp->hMtxLists);
     AssertRC(rc);
     RTListMove(&ListUrbsPending, &pProxyDevUsbIp->ListUrbsToQueue);

@@ -3508,7 +3508,6 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
 {
     PVDISK pDisk = pIoStorage->pVDIo->pDisk;
     RTLISTANCHOR ListIoCtxWaiting;
-    RTListInit(&ListIoCtxWaiting);
     bool fFlush;
 
     LogFlowFunc(("pIoStorage=%#p pfnComplete=%#p pvUser=%#p pMetaXfer=%#p rcReq=%Rrc\n",

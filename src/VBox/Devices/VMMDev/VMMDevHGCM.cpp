@@ -1821,7 +1821,6 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
 
     /* Get local copy of the list of loaded commands. */
     RTLISTANCHOR listLoadedCommands;
-    RTListInit(&listLoadedCommands); /* RTListMove does not touch the destination is the source list is empty. */
     RTListMove(&listLoadedCommands, &pThis->listHGCMCmd);
 
     /* Resubmit commands. */
