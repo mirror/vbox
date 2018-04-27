@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,63 +15,82 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UISettingsDialog_h__
-#define __UISettingsDialog_h__
+#ifndef ___UISettingsDialog_h___
+#define ___UISettingsDialog_h___
 
-/* VBox includes: */
+/* Qt includes: */
+#include <QPointer>
+#include <QVariant>
+
+/* GUI includes: */
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "UISettingsDialog.gen.h"
 #include "UISettingsDefs.h"
+#include "UISettingsDialog.gen.h"
 
 /* Forward declarations: */
-class UIPageValidator;
+class QEvent;
+class QObject;
 class QProgressBar;
+class QShowEvent;
 class QStackedWidget;
 class QTimer;
-class UIWarningPane;
-class UISettingsSelector;
+class UIPageValidator;
 class UISettingsPage;
+class UISettingsSelector;
 class UISettingsSerializer;
+class UIWarningPane;
 
 /* Using declarations: */
 using namespace UISettingsDefs;
 
-/* Base dialog class for both Global & VM settings which encapsulates most of their similar functionalities */
-class UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>, public Ui::UISettingsDialog
+/** QIMainDialog aubclass used as
+  * base dialog class for both Global & VM settings which encapsulates most of their common functionality. */
+class SHARED_LIBRARY_STUFF UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>, public Ui::UISettingsDialog
 {
     Q_OBJECT;
 
 public:
 
-    /* Settings Dialog Constructor/Destructor: */
+    /** Constructs settings dialog passing @a pParent to the base-class. */
     UISettingsDialog(QWidget *pParent);
-   ~UISettingsDialog();
+    /** Destructs settings dialog. */
+    virtual ~UISettingsDialog() /* override */;
 
-    /* Execute API: */
+    /** Performs modal dialog call. */
     void execute();
 
 protected slots:
 
     /** Hides the modal dialog and sets the result code to Accepted. */
-    virtual void accept();
+    virtual void accept() /* override */;
+    /** Hides the modal dialog and sets the result code to Rejected. */
+    virtual void reject() /* override */;
 
-    /* Category-change slot: */
+    /** Handles category change to @a cId. */
     virtual void sltCategoryChanged(int cId);
 
-    /* Mark dialog as loaded: */
+    /** Marks dialog loaded. */
     virtual void sltMarkLoaded();
-    /* Mark dialog as saved: */
+    /** Marks dialog saved. */
     virtual void sltMarkSaved();
 
-    /* Handlers for process bar: */
+    /** Handles process start. */
     void sltHandleProcessStarted();
+    /** Handles process progress change to @a iValue. */
     void sltHandleProcessProgressChange(int iValue);
 
 protected:
 
+    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+
     /** Returns the serialize process instance. */
-    UISettingsSerializer* serializeProcess() const { return m_pSerializeProcess; }
+    UISettingsSerializer *serializeProcess() const { return m_pSerializeProcess; }
     /** Returns whether the serialization is in progress. */
     bool isSerializationInProgress() const { return m_fSerializationIsInProgress; }
 
@@ -87,89 +106,105 @@ protected:
       * Saves the data to the corresponding source. */
     virtual void saveOwnData() = 0;
 
-    /* UI translator: */
-    virtual void retranslateUi();
-
     /** Returns configuration access level. */
-    ConfigurationAccessLevel configurationAccessLevel() { return m_configurationAccessLevel; }
+    ConfigurationAccessLevel configurationAccessLevel() const { return m_enmConfigurationAccessLevel; }
     /** Defines configuration access level. */
-    void setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel);
+    void setConfigurationAccessLevel(ConfigurationAccessLevel enmConfigurationAccessLevel);
 
     /** Returns the dialog title extension. */
     virtual QString titleExtension() const = 0;
     /** Returns the dialog title. */
     virtual QString title() const = 0;
 
-    /* Add settings page: */
+    /** Adds an item (page).
+      * @param  strBigIcon     Brings the big icon.
+      * @param  strMediumIcon  Brings the medium icon.
+      * @param  strSmallIcon   Brings the small icon.
+      * @param  cId            Brings the page ID.
+      * @param  strLink        Brings the page link.
+      * @param  pSettingsPage  Brings the page reference.
+      * @param  iParentId      Brings the page parent ID. */
     void addItem(const QString &strBigIcon, const QString &strMediumIcon, const QString &strSmallIcon,
                  int cId, const QString &strLink,
                  UISettingsPage* pSettingsPage = 0, int iParentId = -1);
 
-    /* Helpers: Validation stuff: */
+    /** Verifies data integrity between certain @a pSettingsPage and other pages. */
     virtual void recorrelate(UISettingsPage *pSettingsPage) { Q_UNUSED(pSettingsPage); }
+
+    /** Validates data correctness using certain @a pValidator. */
     void revalidate(UIPageValidator *pValidator);
+    /** Validates data correctness. */
     void revalidate();
 
-    /* Protected variables: */
+    /** Holds the page selector instance. */
     UISettingsSelector *m_pSelector;
-    QStackedWidget *m_pStack;
+    /** Holds the page stack instance. */
+    QStackedWidget     *m_pStack;
 
 private slots:
 
-    /* Handlers: Validation stuff: */
+    /** Handles validity change for certain @a pValidator. */
     void sltHandleValidityChange(UIPageValidator *pValidator);
+
+    /** Handles hover enter for warning pane specified by @a pValidator. */
     void sltHandleWarningPaneHovered(UIPageValidator *pValidator);
+    /** Handles hover leave for warning pane specified by @a pValidator. */
     void sltHandleWarningPaneUnhovered(UIPageValidator *pValidator);
 
-    /* Slot to update whats-this: */
-    void sltUpdateWhatsThis(bool fGotFocus = false);
-
-    /* Slot to handle reject: */
-    void reject();
+    /** Updates watch this information depending on whether we have @a fGotFocus. */
+    void sltUpdateWhatsThis(bool fGotFocus);
+    /** Updates watch this information. */
+    void sltUpdateWhatsThisNoFocus() { sltUpdateWhatsThis(false); }
 
 private:
 
-    /* Event-handlers: */
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
-    void showEvent(QShowEvent *pEvent);
+    /** Prepares all. */
+    void prepare();
 
-    /* Helper: Validation stuff: */
+    /** Assigns validater for passed @a pPage. */
     void assignValidator(UISettingsPage *pPage);
 
-    /** Holds configuration access level. */
-    ConfigurationAccessLevel m_configurationAccessLevel;
+    /** Holds whether the dialog is polished. */
+    bool  m_fPolished;
 
-    /* Global Flags: */
-    bool m_fPolished;
+    /** Holds configuration access level. */
+    ConfigurationAccessLevel  m_enmConfigurationAccessLevel;
 
     /** Holds the serialize process instance. */
     UISettingsSerializer *m_pSerializeProcess;
+
     /** Holds whether the serialization is in progress. */
-    bool m_fSerializationIsInProgress;
+    bool  m_fSerializationIsInProgress;
     /** Holds whether there were no serialization errors. */
-    bool m_fSerializationClean;
+    bool  m_fSerializationClean;
 
-    /* Status bar widget: */
+    /** Holds the status-bar widget instance. */
     QStackedWidget *m_pStatusBar;
+    /** Holds the process-bar widget instance. */
+    QProgressBar   *m_pProcessBar;
+    /** Holds the warning-pane instance. */
+    UIWarningPane  *m_pWarningPane;
 
-    /* Process bar widget: */
-    QProgressBar *m_pProcessBar;
+    /** Holds whether settings dialog is valid (no errors, can be warnings). */
+    bool  m_fValid;
+    /** Holds whether settings dialog is silent (no errors and no warnings). */
+    bool  m_fSilent;
 
-    /* Error & Warning stuff: */
-    UIWarningPane *m_pWarningPane;
-    bool m_fValid;
-    bool m_fSilent;
-    QString m_strWarningHint;
+    /** Holds the warning hint. */
+    QString  m_strWarningHint;
 
-    /* Whats-This stuff: */
-    QTimer *m_pWhatsThisTimer;
-    QPointer<QWidget> m_pWhatsThisCandidate;
+    /** Holds the what's this hover timer instance. */
+    QTimer            *m_pWhatsThisTimer;
+    /** Holds the what's this hover timer instance. */
+    QPointer<QWidget>  m_pWhatsThisCandidate;
 
-    QMap<int, int> m_pages;
+    /** Holds the map of settings pages. */
+    QMap<int, int>  m_pages;
+
 #ifdef VBOX_WS_MAC
-    QList<QSize> m_sizeList;
-#endif /* VBOX_WS_MAC */
+    /** Holds the list of settings page sizes for animation purposes. */
+    QList<QSize>  m_sizeList;
+#endif
 };
 
-#endif // __UISettingsDialog_h__
-
+#endif /* !___UISettingsDialog_h___ */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,131 +19,56 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes */
+/* Qt includes: */
+# include <QCloseEvent>
 # include <QProgressBar>
 # include <QPushButton>
 # include <QStackedWidget>
 # include <QTimer>
-# include <QCloseEvent>
 
-/* Local includes */
-# include "UISettingsDialog.h"
-# include "UIWarningPane.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
-# include "UIPopupCenter.h"
+/* GUI includes: */
 # include "QIWidgetValidator.h"
-# include "UISettingsSelector.h"
-# include "UIModalWindowManager.h"
-# include "UISettingsSerializer.h"
-# include "UISettingsPage.h"
-# include "UIToolBar.h"
-# include "UIIconPool.h"
+# include "VBoxGlobal.h"
 # include "UIConverter.h"
+# include "UIIconPool.h"
+# include "UIMessageCenter.h"
+# include "UIModalWindowManager.h"
+# include "UIPopupCenter.h"
+# include "UISettingsDialog.h"
+# include "UISettingsPage.h"
+# include "UISettingsSelector.h"
+# include "UISettingsSerializer.h"
+# include "UIToolBar.h"
+# include "UIWarningPane.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils.h"
-# endif /* VBOX_WS_MAC */
+# endif
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #ifdef VBOX_WS_MAC
 # define VBOX_GUI_WITH_TOOLBAR_SETTINGS
-#endif /* VBOX_WS_MAC */
+#endif
 
-/* Settings Dialog Constructor: */
+
 UISettingsDialog::UISettingsDialog(QWidget *pParent)
-    /* Parent class: */
     : QIWithRetranslateUI<QIMainDialog>(pParent)
-    /* Protected variables: */
     , m_pSelector(0)
     , m_pStack(0)
-    /* Common variables: */
-    , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_fPolished(false)
-    /* Serialization stuff: */
+    , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pSerializeProcess(0)
     , m_fSerializationIsInProgress(false)
     , m_fSerializationClean(true)
-    /* Status-bar stuff: */
     , m_pStatusBar(0)
-    /* Process-bar stuff: */
     , m_pProcessBar(0)
-    /* Warning-pane stuff: */
     , m_pWarningPane(0)
     , m_fValid(true)
     , m_fSilent(true)
-    /* Whats-this stuff: */
     , m_pWhatsThisTimer(new QTimer(this))
-    , m_pWhatsThisCandidate(0)
 {
-    /* Apply UI decorations: */
-    Ui::UISettingsDialog::setupUi(this);
-
-    /* Page-title font is derived from the system font: */
-    QFont pageTitleFont = font();
-    pageTitleFont.setBold(true);
-    pageTitleFont.setPointSize(pageTitleFont.pointSize() + 2);
-    m_pLbTitle->setFont(pageTitleFont);
-
-    /* Prepare selector: */
-    QGridLayout *pMainLayout = static_cast<QGridLayout*>(centralWidget()->layout());
-#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    /* No page-title with tool-bar: */
-    m_pLbTitle->hide();
-    /* Create modern tool-bar selector: */
-    m_pSelector = new UISettingsSelectorToolBar(this);
-    static_cast<UIToolBar*>(m_pSelector->widget())->enableMacToolbar();
-    addToolBar(qobject_cast<QToolBar*>(m_pSelector->widget()));
-    /* No title in this mode, we change the title of the window: */
-    pMainLayout->setColumnMinimumWidth(0, 0);
-    pMainLayout->setHorizontalSpacing(0);
-#else
-    /* Create classical tree-view selector: */
-    m_pSelector = new UISettingsSelectorTreeView(this);
-    pMainLayout->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
-    m_pSelector->widget()->setFocus();
-#endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
-    connect(m_pSelector, SIGNAL(sigCategoryChanged(int)), this, SLOT(sltCategoryChanged(int)));
-
-    /* Prepare page-stack: */
-    m_pStack = new QStackedWidget(m_pWtStackHandler);
-    popupCenter().setPopupStackOrientation(m_pStack, UIPopupStackOrientation_Bottom);
-    QVBoxLayout *pStackLayout = new QVBoxLayout(m_pWtStackHandler);
-    pStackLayout->setContentsMargins(0, 0, 0, 0);
-    pStackLayout->addWidget(m_pStack);
-
-    /* Prepare button-box: */
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
-    connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
-
-    /* Prepare process-bar: */
-    m_pProcessBar = new QProgressBar;
-    m_pProcessBar->setMaximum(100);
-    m_pProcessBar->setMinimum(0);
-
-    /* Prepare warning-pane: */
-    m_pWarningPane = new UIWarningPane;
-    connect(m_pWarningPane, SIGNAL(sigHoverEnter(UIPageValidator*)), this, SLOT(sltHandleWarningPaneHovered(UIPageValidator*)));
-    connect(m_pWarningPane, SIGNAL(sigHoverLeave(UIPageValidator*)), this, SLOT(sltHandleWarningPaneUnhovered(UIPageValidator*)));
-
-    /* Prepare status-bar: */
-    m_pStatusBar = new QStackedWidget;
-    /* Add empty widget: */
-    m_pStatusBar->addWidget(new QWidget);
-    /* Add process-bar widget: */
-    m_pStatusBar->addWidget(m_pProcessBar);
-    /* Add warning-pane: */
-    m_pStatusBar->addWidget(m_pWarningPane);
-    /* Add status-bar to button-box: */
-    m_pButtonBox->addExtraWidget(m_pStatusBar);
-
-    /* Setup whatsthis stuff: */
-    qApp->installEventFilter(this);
-    m_pWhatsThisTimer->setSingleShot(true);
-    connect(m_pWhatsThisTimer, SIGNAL(timeout()), this, SLOT(sltUpdateWhatsThis()));
-
-    /* Translate UI: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 UISettingsDialog::~UISettingsDialog()
@@ -184,31 +109,39 @@ void UISettingsDialog::accept()
     }
 }
 
+void UISettingsDialog::reject()
+{
+    if (!isSerializationInProgress())
+        QIWithRetranslateUI<QIMainDialog>::reject();
+}
+
 void UISettingsDialog::sltCategoryChanged(int cId)
 {
-    int index = m_pages[cId];
+    const int iIndex = m_pages.value(cId);
+
 #ifdef VBOX_WS_MAC
     /* If index is within the stored size list bounds: */
-    if (index < m_sizeList.count())
+    if (iIndex < m_sizeList.count())
     {
         /* Get current/stored size: */
         const QSize cs = size();
-        const QSize ss = m_sizeList.at(index);
+        const QSize ss = m_sizeList.at(iIndex);
 
         /* Switch to the new page first if we are shrinking: */
         if (cs.height() > ss.height())
-            m_pStack->setCurrentIndex(index);
+            m_pStack->setCurrentIndex(iIndex);
 
         /* Do the animation: */
         ::darwinWindowAnimateResize(this, QRect (x(), y(), ss.width(), ss.height()));
 
         /* Switch to the new page last if we are zooming: */
         if (cs.height() <= ss.height())
-            m_pStack->setCurrentIndex(index);
+            m_pStack->setCurrentIndex(iIndex);
 
         /* Unlock all page policies but lock the current one: */
         for (int i = 0; i < m_pStack->count(); ++i)
-            m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, i == index ? QSizePolicy::Minimum : QSizePolicy::Ignored);
+            m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, i == iIndex ? QSizePolicy::Minimum : QSizePolicy::Ignored);
+
         /* And make sure layouts are freshly calculated: */
         foreach (QLayout *pLayout, findChildren<QLayout*>())
         {
@@ -216,9 +149,10 @@ void UISettingsDialog::sltCategoryChanged(int cId)
             pLayout->activate();
         }
     }
-#else
-    m_pStack->setCurrentIndex(index);
-#endif
+#else /* !VBOX_WS_MAC */
+    m_pStack->setCurrentIndex(iIndex);
+#endif /* !VBOX_WS_MAC */
+
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle(title());
 #else
@@ -268,6 +202,139 @@ void UISettingsDialog::sltHandleProcessProgressChange(int iValue)
         else
             m_pStatusBar->setCurrentIndex(0);
     }
+}
+
+bool UISettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    /* Ignore objects which are NOT widgets: */
+    if (!pObject->isWidgetType())
+        return QIMainDialog::eventFilter(pObject, pEvent);
+
+    /* Ignore widgets which window is NOT settings window: */
+    QWidget *pWidget = static_cast<QWidget*>(pObject);
+    if (pWidget->window() != this)
+        return QIMainDialog::eventFilter(pObject, pEvent);
+
+    /* Process different event-types: */
+    switch (pEvent->type())
+    {
+        /* Process enter/leave events to remember whats-this candidates: */
+        case QEvent::Enter:
+        case QEvent::Leave:
+        {
+            if (pEvent->type() == QEvent::Enter)
+                m_pWhatsThisCandidate = pWidget;
+            else
+                m_pWhatsThisCandidate = 0;
+
+            m_pWhatsThisTimer->start(100);
+            break;
+        }
+        /* Process focus-in event to update whats-this pane: */
+        case QEvent::FocusIn:
+        {
+            sltUpdateWhatsThis(true /* got focus? */);
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Base-class processing: */
+    return QIMainDialog::eventFilter(pObject, pEvent);
+}
+
+void UISettingsDialog::retranslateUi()
+{
+    /* Translate generated stuff: */
+    Ui::UISettingsDialog::retranslateUi(this);
+
+    /* Translate warning stuff: */
+    m_strWarningHint = tr("Invalid settings detected");
+    if (!m_fValid || !m_fSilent)
+        m_pWarningPane->setWarningLabel(m_strWarningHint);
+
+#ifndef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    /* Retranslate current page headline: */
+    m_pLbTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
+#endif
+
+    /* Retranslate all validators: */
+    foreach (UIPageValidator *pValidator, findChildren<UIPageValidator*>())
+        if (!pValidator->lastMessage().isEmpty())
+            revalidate(pValidator);
+    revalidate();
+}
+
+void UISettingsDialog::showEvent(QShowEvent *pEvent)
+{
+    /* Base-class processing: */
+    QIMainDialog::showEvent(pEvent);
+
+    /* One may think that QWidget::polish() is the right place to do things
+     * below, but apparently, by the time when QWidget::polish() is called,
+     * the widget style & layout are not fully done, at least the minimum
+     * size hint is not properly calculated. Since this is sometimes necessary,
+     * we provide our own "polish" implementation. */
+    if (m_fPolished)
+        return;
+
+    m_fPolished = true;
+
+    int iMinWidth = m_pSelector->minWidth();
+
+#ifdef VBOX_WS_MAC
+
+    /* Remove all title bar buttons (Buggy Qt): */
+    ::darwinSetHidesAllTitleButtons(this);
+
+    /* Unlock all page policies initially: */
+    for (int i = 0; i < m_pStack->count(); ++i)
+        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
+
+    /* Activate every single page to get the optimal size: */
+    for (int i = m_pStack->count() - 1; i >= 0; --i)
+    {
+        /* Activate current page: */
+        m_pStack->setCurrentIndex(i);
+
+        /* Lock current page policy temporary: */
+        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        /* And make sure layouts are freshly calculated: */
+        foreach (QLayout *pLayout, findChildren<QLayout*>())
+        {
+            pLayout->update();
+            pLayout->activate();
+        }
+
+        /* Acquire minimum size-hint: */
+        QSize s = minimumSizeHint();
+        // WORKAROUND:
+        // Take into account the height of native tool-bar title.
+        // It will be applied only after widget is really shown.
+        // The height is 11pix * 2 (possible HiDPI support).
+        s.setHeight(s.height() + 11 * 2);
+        /* Also make sure that width is no less than tool-bar: */
+        if (iMinWidth > s.width())
+            s.setWidth(iMinWidth);
+        /* And remember the size finally: */
+        m_sizeList.insert(0, s);
+
+        /* Unlock the policy for current page again: */
+        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
+    }
+
+    sltCategoryChanged(m_pSelector->currentId());
+
+#else /* VBOX_WS_MAC */
+
+    /* Resize to the minimum possible size: */
+    QSize s = minimumSize();
+    if (iMinWidth > s.width())
+        s.setWidth(iMinWidth);
+    resize(s);
+
+#endif /* VBOX_WS_MAC */
 }
 
 void UISettingsDialog::loadData(QVariant &data)
@@ -330,36 +397,14 @@ void UISettingsDialog::saveData(QVariant &data)
     }
 }
 
-void UISettingsDialog::retranslateUi()
-{
-    /* Translate generated stuff: */
-    Ui::UISettingsDialog::retranslateUi(this);
-
-    /* Translate warning stuff: */
-    m_strWarningHint = tr("Invalid settings detected");
-    if (!m_fValid || !m_fSilent)
-        m_pWarningPane->setWarningLabel(m_strWarningHint);
-
-#ifndef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    /* Retranslate current page headline: */
-    m_pLbTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
-#endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
-
-    /* Retranslate all validators: */
-    foreach (UIPageValidator *pValidator, findChildren<UIPageValidator*>())
-        if (!pValidator->lastMessage().isEmpty())
-            revalidate(pValidator);
-    revalidate();
-}
-
-void UISettingsDialog::setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel)
+void UISettingsDialog::setConfigurationAccessLevel(ConfigurationAccessLevel enmConfigurationAccessLevel)
 {
     /* Make sure something changed: */
-    if (m_configurationAccessLevel == newConfigurationAccessLevel)
+    if (m_enmConfigurationAccessLevel == enmConfigurationAccessLevel)
         return;
 
     /* Apply new configuration access level: */
-    m_configurationAccessLevel = newConfigurationAccessLevel;
+    m_enmConfigurationAccessLevel = enmConfigurationAccessLevel;
 
     /* And propagate it to settings-page(s): */
     foreach (UISettingsPage *pPage, m_pSelector->settingPages())
@@ -515,7 +560,7 @@ void UISettingsDialog::sltHandleWarningPaneUnhovered(UIPageValidator *pValidator
     popupCenter().recall(m_pStack, "SettingsDialogWarning");
 }
 
-void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus /* = false */)
+void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus)
 {
     QString strWhatsThisText;
     QWidget *pWhatsThisWidget = 0;
@@ -547,116 +592,139 @@ void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus /* = false */)
         pWhatsThisWidget->setToolTip(QString("<qt>%1</qt>").arg(strWhatsThisText));
 }
 
-void UISettingsDialog::reject()
+void UISettingsDialog::prepare()
 {
-    if (!isSerializationInProgress())
-        QIMainDialog::reject();
-}
+    /* Apply UI decorations: */
+    Ui::UISettingsDialog::setupUi(this);
 
-bool UISettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    /* Ignore objects which are NOT widgets: */
-    if (!pObject->isWidgetType())
-        return QIMainDialog::eventFilter(pObject, pEvent);
-
-    /* Ignore widgets which window is NOT settings window: */
-    QWidget *pWidget = static_cast<QWidget*>(pObject);
-    if (pWidget->window() != this)
-        return QIMainDialog::eventFilter(pObject, pEvent);
-
-    /* Process different event-types: */
-    switch (pEvent->type())
+    /* Configure title: */
+    if (m_pLbTitle)
     {
-        /* Process enter/leave events to remember whats-this candidates: */
-        case QEvent::Enter:
-        case QEvent::Leave:
-        {
-            if (pEvent->type() == QEvent::Enter)
-                m_pWhatsThisCandidate = pWidget;
-            else
-                m_pWhatsThisCandidate = 0;
-
-            m_pWhatsThisTimer->start(100);
-            break;
-        }
-        /* Process focus-in event to update whats-this pane: */
-        case QEvent::FocusIn:
-        {
-            sltUpdateWhatsThis(true /* got focus? */);
-            break;
-        }
-        default:
-            break;
+        /* Page-title font is bold and larger but derived from the system font: */
+        QFont pageTitleFont = font();
+        pageTitleFont.setBold(true);
+        pageTitleFont.setPointSize(pageTitleFont.pointSize() + 2);
+        m_pLbTitle->setFont(pageTitleFont);
     }
 
-    /* Base-class processing: */
-    return QIMainDialog::eventFilter(pObject, pEvent);
-}
-
-void UISettingsDialog::showEvent(QShowEvent *pEvent)
-{
-    /* Base-class processing: */
-    QIMainDialog::showEvent(pEvent);
-
-    /* One may think that QWidget::polish() is the right place to do things
-     * below, but apparently, by the time when QWidget::polish() is called,
-     * the widget style & layout are not fully done, at least the minimum
-     * size hint is not properly calculated. Since this is sometimes necessary,
-     * we provide our own "polish" implementation. */
-    if (m_fPolished)
-        return;
-
-    m_fPolished = true;
-
-    int iMinWidth = m_pSelector->minWidth();
-#ifdef VBOX_WS_MAC
-    /* Remove all title bar buttons (Buggy Qt): */
-    ::darwinSetHidesAllTitleButtons(this);
-
-    /* Unlock all page policies initially: */
-    for (int i = 0; i < m_pStack->count(); ++i)
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
-
-    /* Activate every single page to get the optimal size: */
-    for (int i = m_pStack->count() - 1; i >= 0; --i)
+    /* Prepare selector: */
+    QGridLayout *pMainLayout = static_cast<QGridLayout*>(centralWidget()->layout());
+    if (pMainLayout)
     {
-        /* Activate current page: */
-        m_pStack->setCurrentIndex(i);
+#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
 
-        /* Lock current page policy temporary: */
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        /* And make sure layouts are freshly calculated: */
-        foreach (QLayout *pLayout, findChildren<QLayout*>())
+        /* No page-title with tool-bar: */
+        m_pLbTitle->hide();
+
+        /* Create modern tool-bar selector: */
+        m_pSelector = new UISettingsSelectorToolBar(this);
+        if (m_pSelector)
         {
-            pLayout->update();
-            pLayout->activate();
+            /* Configure tool-bar: */
+            static_cast<UIToolBar*>(m_pSelector->widget())->enableMacToolbar();
+
+            /* Add tool-bar into page: */
+            addToolBar(qobject_cast<QToolBar*>(m_pSelector->widget()));
         }
 
-        /* Acquire minimum size-hint: */
-        QSize s = minimumSizeHint();
-        /* HACK ALERT!
-         * Take into account the height of native tool-bar title.
-         * It will be applied only after widget is really shown.
-         * The height is 11pix * 2 (possible HiDPI support). */
-        s.setHeight(s.height() + 11 * 2);
-        /* Also make sure that width is no less than tool-bar: */
-        if (iMinWidth > s.width())
-            s.setWidth(iMinWidth);
-        /* And remember the size finally: */
-        m_sizeList.insert(0, s);
+        /* No title in this mode, we change the title of the window: */
+        pMainLayout->setColumnMinimumWidth(0, 0);
+        pMainLayout->setHorizontalSpacing(0);
 
-        /* Unlock the policy for current page again: */
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
+#else /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+
+        /* Create classical tree-view selector: */
+        m_pSelector = new UISettingsSelectorTreeView(this);
+        if (m_pSelector)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
+
+            /* Set focus: */
+            m_pSelector->widget()->setFocus();
+        }
+
+#endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+
+        connect(m_pSelector, SIGNAL(sigCategoryChanged(int)), this, SLOT(sltCategoryChanged(int)));
     }
 
-    sltCategoryChanged(m_pSelector->currentId());
-#else /* VBOX_WS_MAC */
-    /* Resize to the minimum possible size: */
-    QSize s = minimumSize();
-    if (iMinWidth > s.width())
-        s.setWidth(iMinWidth);
-    resize(s);
-#endif /* VBOX_WS_MAC */
+    /* Prepare stack-handler: */
+    if (m_pWtStackHandler)
+    {
+        /* Create page-stack layout: */
+        QVBoxLayout *pStackLayout = new QVBoxLayout(m_pWtStackHandler);
+        if (pStackLayout)
+        {
+            /* Confugre page-stack layout: */
+            pStackLayout->setContentsMargins(0, 0, 0, 0);
+
+            /* Create page-stack: */
+            m_pStack = new QStackedWidget;
+            if (m_pStack)
+            {
+                /* Configure page-stack: */
+                popupCenter().setPopupStackOrientation(m_pStack, UIPopupStackOrientation_Bottom);
+
+                /* Add into layout: */
+                pStackLayout->addWidget(m_pStack);
+            }
+        }
+    }
+
+    /* Prepare button-box: */
+    if (m_pButtonBox)
+    {
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
+        connect(m_pButtonBox, &QIDialogButtonBox::helpRequested,
+                &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
+
+        /* Create status-bar: */
+        m_pStatusBar = new QStackedWidget;
+        if (m_pStatusBar)
+        {
+            /* Add empty widget: */
+            m_pStatusBar->addWidget(new QWidget);
+
+            /* Create process-bar: */
+            m_pProcessBar = new QProgressBar;
+            if (m_pProcessBar)
+            {
+                /* Configure process-bar: */
+                m_pProcessBar->setMinimum(0);
+                m_pProcessBar->setMaximum(100);
+
+                /* Add into status-bar: */
+                m_pStatusBar->addWidget(m_pProcessBar);
+            }
+
+            /* Create warning-pane: */
+            m_pWarningPane = new UIWarningPane;
+            if (m_pWarningPane)
+            {
+                /* Configure warning-pane: */
+                connect(m_pWarningPane, &UIWarningPane::sigHoverEnter,
+                        this, &UISettingsDialog::sltHandleWarningPaneHovered);
+                connect(m_pWarningPane, &UIWarningPane::sigHoverLeave,
+                        this, &UISettingsDialog::sltHandleWarningPaneUnhovered);
+
+                /* Add into status-bar: */
+                m_pStatusBar->addWidget(m_pWarningPane);
+            }
+
+            /* Add status-bar to button-box: */
+            m_pButtonBox->addExtraWidget(m_pStatusBar);
+        }
+    }
+
+    /* Setup what's this stuff: */
+    qApp->installEventFilter(this);
+    m_pWhatsThisTimer->setSingleShot(true);
+    connect(m_pWhatsThisTimer, &QTimer::timeout,
+            this, &UISettingsDialog::sltUpdateWhatsThisNoFocus);
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)
@@ -671,4 +739,3 @@ void UISettingsDialog::assignValidator(UISettingsPage *pPage)
     /* Configure navigation (tab-order): */
     pPage->setOrderAfter(m_pSelector->widget());
 }
-
