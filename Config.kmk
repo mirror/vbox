@@ -7094,8 +7094,11 @@ endif
 #
 VBOX_VERSION_COMP_VALID_CHAR_SET = ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz()[]{}+-.,
 ifneq ($(VBOX_BUILD_PUBLISHER),)
- if $(length $(VBOX_BUILD_PUBLISHER)) > 10
+ if !defined(VBOX_BUILD_TAG) && $(length $(VBOX_BUILD_PUBLISHER)) > 10
   $(error VBox: VBOX_BUILD_PUBLISHER must not be longer than 10 characters!)
+ else if defined(VBOX_BUILD_TAG) && $(length $(VBOX_BUILD_PUBLISHER)) > 48
+  $(error VBox: VBOX_BUILD_PUBLISHER must not be longer than 48 characters!)
+ endif
  endif
  if "$(substr $(VBOX_BUILD_PUBLISHER), 1, 1)" != "_"
   $(error VBox: VBOX_BUILD_PUBLISHER must start with an underscore!)
