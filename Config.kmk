@@ -7099,7 +7099,6 @@ ifneq ($(VBOX_BUILD_PUBLISHER),)
  else if defined(VBOX_BUILD_TAG) && $(length $(VBOX_BUILD_PUBLISHER)) > 48
   $(error VBox: VBOX_BUILD_PUBLISHER must not be longer than 48 characters!)
  endif
- endif
  if "$(substr $(VBOX_BUILD_PUBLISHER), 1, 1)" != "_"
   $(error VBox: VBOX_BUILD_PUBLISHER must start with an underscore!)
  endif
