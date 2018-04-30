@@ -3506,7 +3506,7 @@ DECLINLINE(void) hmR0SvmSetIntWindowExiting(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMC
     bool const fEnableIntWindow = !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
     if (!fEnableIntWindow)
     {
-        Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+        Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx)); RT_NOREF(pCtx);
         Log4(("Nested-guest V_IRQ already pending\n"));
     }
 #else
