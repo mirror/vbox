@@ -11144,34 +11144,6 @@ and "VAR" for unsetting. -->
   </enum>
 
   <enum
-    name="GuestCopyFlag"
-    uuid="84d6430f-dfe6-4415-a26d-3cdde1c3205a"
-    >
-    <desc>
-      Flags for use when copying elements from or to the guest, see
-      <link to="IGuestSession::copyFromGuest"/> and
-      <link to="IGuestSession::copyToGuest"/>.
-    </desc>
-
-    <const name="NoReplace"             value="0">
-      <desc>Do not replace any destination object.</desc>
-    </const>
-    <const name="Replace"               value="1">
-      <desc>This will attempt to replace any destination object other except
-        directories. (The default is to fail if the destination exists.)</desc>
-    </const>
-    <const name="CopyIntoExisting"      value="2">
-      <desc>Allow copying into an existing destination directory.</desc>
-    </const>
-    <const name="Recursive"             value="4">
-      <desc>Copies directories recursively.</desc>
-    </const>
-    <const name="FollowSymlinks"        value="8">
-      <desc>Follows (and handles) symbolic links.</desc>
-    </const>
-  </enum>
-
-  <enum
     name="ProcessCreateFlag"
     uuid="C544CD2B-F02D-4886-9901-71C523DB8DC5"
     >
@@ -11897,7 +11869,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="a71fcf9a-a45e-440a-886a-5b4c664195ef"
+    uuid="9880f6e3-c4c1-4031-8ec2-28ee088370e4"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="8"
     >
@@ -12073,16 +12045,43 @@ and "VAR" for unsetting. -->
           copied to the host. Guest path style.</desc>
       </param>
       <param name="filters" type="wstring" dir="in" safearray="yes">
-        <desc>Array of filters corresponding to the sources. This uses the
+        <desc>Array of source filters. This uses the
           DOS/NT style wildcard characters '?' and '*'.</desc>
       </param>
       <param name="types" type="FsObjType" dir="in" safearray="yes">
-        <desc>Array of <link to="FsObjType"/> types which define the type of
-          source entries.</desc>
+        <desc>Array of source <link to="FsObjType"/> types.</desc>
       </param>
-      <param name="flags" type="GuestCopyFlag" dir="in" safearray="yes">
-        <desc>Array of <link to="GuestCopyFlag"/> flags corresponding to the
-          sources.</desc>
+      <param name="flags" type="wstring" dir="in" safearray="yes">
+        <desc>Array of comma-separated list of source flags.
+
+          The following flags are available for directory sources:
+
+          <table>
+            <tr>
+              <td>CopyIntoExisting</td>
+              <td>Allow copying into an existing destination directory.</td>
+            </tr>
+          </table>
+
+          The following flags are available for file sources:
+
+          <table>
+            <tr>
+              <td>NoReplace</td>
+              <td>Do not replace any destination object.</td>
+            </tr>
+            <tr>
+              <td>FollowLinks</td>
+              <td>Follows (and handles) (symbolic) links.</td>
+            </tr>
+            <tr>
+              <td>Update</td>
+              <td>Only copy when the source file is newer than the destination
+               file or when the destination file is missing.</td>
+            </tr>
+          </table>
+
+        </desc>
       </param>
       <param name="destination" type="wstring" dir="in">
         <desc>Where to put the sources on the host. Host path style.</desc>
@@ -12104,16 +12103,43 @@ and "VAR" for unsetting. -->
           copied to the guest. Host path style.</desc>
       </param>
       <param name="filters" type="wstring" dir="in" safearray="yes">
-        <desc>Array of filters corresponding to the sources. This uses the
+        <desc>Array of source filters. This uses the
           DOS/NT style wildcard characters '?' and '*'.</desc>
       </param>
       <param name="types" type="FsObjType" dir="in" safearray="yes">
-        <desc>Array of <link to="FsObjType"/> types which define the type of
-          source entries.</desc>
+        <desc>Array of source <link to="FsObjType"/> types.</desc>
       </param>
-      <param name="flags" type="GuestCopyFlag" dir="in" safearray="yes">
-        <desc>Array of <link to="GuestCopyFlag"/> flags corresponding to the
-          sources.</desc>
+      <param name="flags" type="wstring" dir="in" safearray="yes">
+        <desc>Array of comma-separated list of source flags.
+
+          The following flags are available for directory sources:
+
+          <table>
+            <tr>
+              <td>CopyIntoExisting</td>
+              <td>Allow copying into an existing destination directory.</td>
+            </tr>
+          </table>
+
+          The following flags are available for file sources:
+
+          <table>
+            <tr>
+              <td>NoReplace</td>
+              <td>Do not replace any destination object.</td>
+            </tr>
+            <tr>
+              <td>FollowLinks</td>
+              <td>Follows (and handles) (symbolic) links.</td>
+            </tr>
+            <tr>
+              <td>Update</td>
+              <td>Only copy when the source file is newer than the destination
+               file or when the destination file is missing.</td>
+            </tr>
+          </table>
+
+        </desc>
       </param>
       <param name="destination" type="wstring" dir="in">
         <desc>Where to put the sources on the guest. Guest path style.</desc>

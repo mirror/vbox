@@ -41,6 +41,12 @@ class GuestSessionTaskInternalOpen;
  */
 struct GuestSessionFsSourceSpec
 {
+    GuestSessionFsSourceSpec()
+        : enmType(FsObjType_Unknown)
+        , enmPathStyle(PathStyle_Unknown)
+        , fDryRun(false)
+        , fFollowSymlinks(false) { }
+
     Utf8Str     strSource;
     Utf8Str     strFilter;
     FsObjType_T enmType;

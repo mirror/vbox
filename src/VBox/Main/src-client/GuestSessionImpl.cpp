@@ -747,35 +747,6 @@ HRESULT GuestSession::i_copyFromGuest(const GuestSessionFsSourceSet &SourceSet,
     if (RT_UNLIKELY((strDestination.c_str()) == NULL || *(strDestination.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
-    GuestSessionFsSourceSet::const_iterator itSource = SourceSet.begin();
-    while (itSource != SourceSet.end())
-    {
-        if (itSource->enmType == FsObjType_Directory)
-        {
-            if (itSource->Type.Dir.fCopyFlags)
-            {
-                if (!(itSource->Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
-                    return setError(E_INVALIDARG, tr("Invalid / not (yet) implemented directory copy flags specified"));
-            }
-        }
-        else if (itSource->enmType == FsObjType_File)
-        {
-            if (itSource->Type.File.fCopyFlags)
-            {
-                if (   !(itSource->Type.File.fCopyFlags & FileCopyFlag_NoReplace)
-                    && !(itSource->Type.File.fCopyFlags & FileCopyFlag_FollowLinks)
-                    && !(itSource->Type.File.fCopyFlags & FileCopyFlag_Update))
-                {
-                    return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented file copy flag(s) specified"));
-                }
-            }
-        }
-        else
-            return setError(E_NOTIMPL, tr("Source type %RU32 not implemented"), itSource->enmType);
-
-        itSource++;
-    }
-
     try
     {
         GuestSessionTaskCopyFrom *pTask = NULL;
@@ -848,35 +819,6 @@ HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
     if (RT_UNLIKELY((strDestination.c_str()) == NULL || *(strDestination.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
-    GuestSessionFsSourceSet::const_iterator itSource = SourceSet.begin();
-    while (itSource != SourceSet.end())
-    {
-        if (itSource->enmType == FsObjType_Directory)
-        {
-            if (itSource->Type.Dir.fCopyFlags)
-            {
-                if (!(itSource->Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting))
-                    return setError(E_INVALIDARG, tr("Invalid / not (yet) implemented directory copy flags specified"));
-            }
-        }
-        else if (itSource->enmType == FsObjType_File)
-        {
-            if (itSource->Type.File.fCopyFlags)
-            {
-                if (   !(itSource->Type.File.fCopyFlags & FileCopyFlag_NoReplace)
-                    && !(itSource->Type.File.fCopyFlags & FileCopyFlag_FollowLinks)
-                    && !(itSource->Type.File.fCopyFlags & FileCopyFlag_Update))
-                {
-                    return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented file copy flag(s) specified"));
-                }
-            }
-        }
-        else
-            return setError(E_NOTIMPL, tr("Source type %RU32 not implemented"), itSource->enmType);
-
-        itSource++;
-    }
-
     try
     {
         GuestSessionTaskCopyTo *pTask = NULL;
@@ -923,6 +865,63 @@ HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
 
     LogFlowFunc(("Returning %Rhrc\n", hrc));
     return hrc;
+}
+
+/**
+ * Validates and extracts directory copy flags from a comma-separated string.
+ *
+ * @return VBox status code.
+ * @param  strFlags             String to extract flags from.
+ * @param  pfFlags              Where to store the extracted (and validated) flags.
+ */
+/* static */
+int GuestSession::i_directoryCopyFlagFromStr(const com::Utf8Str &strFlags, DirectoryCopyFlag_T *pfFlags)
+{
+    DirectoryCopyFlag_T fFlags = DirectoryCopyFlag_None;
+
+    /* Validate and set flags. */
+    if (strFlags.isEmpty())
+    {
+        *pfFlags = fFlags;
+        return VINF_SUCCESS;
+    }
+
+    const char *pcszNext = strFlags.c_str();
+    while (*pcszNext != '\0')
+    {
+        Utf8Str strFlag;
+        const char *pcszComma = RTStrStr(pcszNext, ",");
+        if (!pcszComma)
+            strFlag = pcszNext;
+        else
+            strFlag = Utf8Str(pcszNext, pcszComma - pcszNext);
+
+        const char *pcszEqual = RTStrStr(strFlag.c_str(), "=");
+        if (   pcszEqual
+            && pcszEqual != strFlag.c_str())
+        {
+            Utf8Str strKey(strFlag.c_str(), pcszEqual - strFlag.c_str());
+            Utf8Str strValue(strFlag.c_str() + (pcszEqual - strFlag.c_str() + 1));
+            RT_NOREF(strKey, strValue); /* We don't have any key=value pairs yet. */
+        }
+        else
+        {
+           if (strFlag == "CopyIntoExisting")
+               fFlags |= DirectoryCopyFlag_CopyIntoExisting;
+           else
+               return VERR_INVALID_PARAMETER;
+        }
+
+        if (!pcszComma)
+            pcszNext += strFlag.length();
+        else
+            pcszNext += strFlag.length() + 1;
+    }
+
+    if (pfFlags)
+        *pfFlags = fFlags;
+
+    return VINF_SUCCESS;
 }
 
 int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode,
@@ -1343,6 +1342,67 @@ int GuestSession::i_dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTR
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Validates and extracts file copy flags from a comma-separated string.
+ *
+ * @return VBox status code.
+ * @param  strFlags             String to extract flags from.
+ * @param  pfFlags              Where to store the extracted (and validated) flags.
+ */
+/* static */
+int GuestSession::i_fileCopyFlagFromStr(const com::Utf8Str &strFlags, FileCopyFlag_T *pfFlags)
+{
+    FileCopyFlag_T fFlags = FileCopyFlag_None;
+
+    /* Validate and set flags. */
+    if (strFlags.isEmpty())
+    {
+        *pfFlags = fFlags;
+        return VINF_SUCCESS;
+    }
+
+    const char *pcszNext = strFlags.c_str();
+    while (*pcszNext != '\0')
+    {
+        Utf8Str strFlag;
+        const char *pcszComma = RTStrStr(pcszNext, ",");
+        if (!pcszComma)
+            strFlag = pcszNext;
+        else
+            strFlag = Utf8Str(pcszNext, pcszComma - pcszNext);
+
+        const char *pcszEqual = RTStrStr(strFlag.c_str(), "=");
+        if (   pcszEqual
+            && pcszEqual != strFlag.c_str())
+        {
+            Utf8Str strKey(strFlag.c_str(), pcszEqual - strFlag.c_str());
+            Utf8Str strValue(strFlag.c_str() + (pcszEqual - strFlag.c_str() + 1));
+            RT_NOREF(strKey, strValue); /* We don't have any key=value pairs yet. */
+        }
+        else
+        {
+            if (strFlag == "NoReplace")
+                fFlags |= FileCopyFlag_NoReplace;
+            else if (strFlag == "FollowLinks")
+                fFlags |= FileCopyFlag_FollowLinks;
+            else if (strFlag == "Update")
+                fFlags |= FileCopyFlag_Update;
+            else
+                return VERR_INVALID_PARAMETER;
+        }
+
+        if (!pcszComma)
+            pcszNext += strFlag.length();
+        else
+            pcszNext += strFlag.length() + 1;
+    }
+
+    if (pfFlags)
+        *pfFlags = fFlags;
+
+    return VINF_SUCCESS;
 }
 
 inline bool GuestSession::i_fileExists(uint32_t uFileID, ComObjPtr<GuestFile> *pFile)
@@ -2850,7 +2910,7 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
 }
 
 HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, const std::vector<com::Utf8Str> &aFilters,
-                                    const std::vector<FsObjType_T> &aTypes, const std::vector<GuestCopyFlag_T> &aFlags,
+                                    const std::vector<FsObjType_T> &aTypes, const std::vector<com::Utf8Str> &aFlags,
                                     const com::Utf8Str &aDestination, ComPtr<IProgress> &aProgress)
 {
     AutoCaller autoCaller(this);
@@ -2866,10 +2926,10 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
 
     GuestSessionFsSourceSet SourceSet;
 
-    std::vector<com::Utf8Str>::const_iterator itSource  = aSources.begin();
-    std::vector<com::Utf8Str>::const_iterator itFilter  = aFilters.begin();
-    std::vector<FsObjType_T>::const_iterator itType     = aTypes.begin();
-    std::vector<GuestCopyFlag_T>::const_iterator itFlag = aFlags.begin();
+    std::vector<com::Utf8Str>::const_iterator itSource = aSources.begin();
+    std::vector<com::Utf8Str>::const_iterator itFilter = aFilters.begin();
+    std::vector<FsObjType_T>::const_iterator  itType   = aTypes.begin();
+    std::vector<com::Utf8Str>::const_iterator itFlags  = aFlags.begin();
 
     while (itSource != aSources.end())
     {
@@ -2879,29 +2939,36 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
         source.enmType      = *itType;
         source.enmPathStyle = i_getPathStyle();
 
-        if (*itType == FsObjType_Directory)
+        if (source.enmType == FsObjType_Directory)
         {
-            source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)*itFlag;
+            int rc2 = GuestSession::i_directoryCopyFlagFromStr(*itFlags, &source.Type.Dir.fCopyFlags);
+            if (RT_FAILURE(rc2))
+                return setError(E_INVALIDARG, tr("Invalid / not (yet) implemented directory copy flags specified"));
+
             source.Type.Dir.fRecursive = true; /* Implicit. */
         }
-        else
+        else if (source.enmType == FsObjType_File)
         {
-            source.Type.File.fCopyFlags = (FileCopyFlag_T)*itFlag;
+            int rc2 = GuestSession::i_fileCopyFlagFromStr(*itFlags, &source.Type.File.fCopyFlags);
+            if (RT_FAILURE(rc2))
+                return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented file copy flag(s) specified"));
         }
+        else
+            return setError(E_INVALIDARG, tr("Source type %d invalid / not supported"), source.enmType);
 
         SourceSet.push_back(source);
 
         ++itSource;
         ++itFilter;
         ++itType;
-        ++itFlag;
+        ++itFlags;
     }
 
     return i_copyFromGuest(SourceSet, aDestination, aProgress);
 }
 
 HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, const std::vector<com::Utf8Str> &aFilters,
-                                  const std::vector<FsObjType_T> &aTypes, const std::vector<GuestCopyFlag_T> &aFlags,
+                                  const std::vector<FsObjType_T> &aTypes, const std::vector<com::Utf8Str> &aFlags,
                                   const com::Utf8Str &aDestination, ComPtr<IProgress> &aProgress)
 {
     AutoCaller autoCaller(this);
@@ -2917,34 +2984,42 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
 
     GuestSessionFsSourceSet SourceSet;
 
-    std::vector<com::Utf8Str>::const_iterator itSource  = aSources.begin();
-    std::vector<com::Utf8Str>::const_iterator itFilter  = aFilters.begin();
-    std::vector<FsObjType_T>::const_iterator itType     = aTypes.begin();
-    std::vector<GuestCopyFlag_T>::const_iterator itFlag = aFlags.begin();
+    std::vector<com::Utf8Str>::const_iterator itSource = aSources.begin();
+    std::vector<com::Utf8Str>::const_iterator itFilter = aFilters.begin();
+    std::vector<FsObjType_T>::const_iterator  itType   = aTypes.begin();
+    std::vector<com::Utf8Str>::const_iterator itFlags  = aFlags.begin();
 
     while (itSource != aSources.end())
     {
-
         GuestSessionFsSourceSpec source;
         source.strSource    = *itSource;
         source.strFilter    = *itFilter;
         source.enmType      = *itType;
         source.enmPathStyle = i_getPathStyle();
 
-        if (*itType == FsObjType_Directory)
+        if (source.enmType == FsObjType_Directory)
         {
-            source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)*itFlag;
+            int rc2 = GuestSession::i_directoryCopyFlagFromStr(*itFlags, &source.Type.Dir.fCopyFlags);
+            if (RT_FAILURE(rc2))
+                return setError(E_INVALIDARG, tr("Invalid / not (yet) implemented directory copy flags specified"));
+
             source.Type.Dir.fRecursive = true; /* Implicit. */
         }
+        else if (source.enmType == FsObjType_File)
+        {
+            int rc2 = GuestSession::i_fileCopyFlagFromStr(*itFlags, &source.Type.File.fCopyFlags);
+            if (RT_FAILURE(rc2))
+                return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented file copy flag(s) specified"));
+        }
         else
-            source.Type.File.fCopyFlags = (FileCopyFlag_T)*itFlag;
+            return setError(E_INVALIDARG, tr("Source type %d invalid / not supported"), source.enmType);
 
         SourceSet.push_back(source);
 
         ++itSource;
         ++itFilter;
         ++itType;
-        ++itFlag;
+        ++itFlags;
     }
 
     return i_copyToGuest(SourceSet, aDestination, aProgress);
