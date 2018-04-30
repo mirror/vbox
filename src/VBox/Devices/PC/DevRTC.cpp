@@ -245,7 +245,7 @@ static void rtc_timer_update(PRTCSTATE pThis, int64_t current_time)
     {
 #ifdef IN_RING3
         if (TMTimerIsActive(pThis->CTX_SUFF(pPeriodicTimer)) && pThis->cRelLogEntries++ < 64)
-            LogRel(("RTC: stopped the periodic timer\n"));
+            LogRel(("RTC: Stopped the periodic timer\n"));
 #endif
         TMTimerStop(pThis->CTX_SUFF(pPeriodicTimer));
     }
@@ -876,7 +876,7 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     }
     else
     {
-        LogRel(("RTC: stopped the periodic timer (restore)\n"));
+        LogRel(("RTC: Stopped the periodic timer (restore)\n"));
         pThis->CurLogPeriod  = 0;
         pThis->CurHintPeriod = 0;
     }
