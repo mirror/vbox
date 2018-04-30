@@ -212,11 +212,15 @@ include $(PATH_ROOT)/Version.kmk
 # major, minor and build revision (as it is now) -- also will be used for host/guest version
 # comparison.
 VBOX_VERSION_STRING_RAW = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+
+# VBOX_VERSION_STRING without the publisher.
+VBOX_VERSION_STRING_NO_PUB = $(VBOX_VERSION_STRING_RAW)$(addprefix _,$(VBOX_VERSION_PRERELEASE))
+
 # Full version string (may include more than just x.y.z, but no spaces or other problematic chars).
 # Note! The BETA[n],ALPHA[n],RC[n] indicators should be inserted before the
 #       publisher so that RTStrVersionCompare have a chance of comparing
 #       prerelease from different publishers correctly.
-VBOX_VERSION_STRING = $(VBOX_VERSION_STRING_RAW)$(addprefix _,$(VBOX_VERSION_PRERELEASE))$(VBOX_BUILD_PUBLISHER)
+VBOX_VERSION_STRING = $(VBOX_VERSION_STRING_NO_PUB)$(VBOX_BUILD_PUBLISHER)
 
 
 ## Make a numeric value from the major, minor and build numbers (params)
