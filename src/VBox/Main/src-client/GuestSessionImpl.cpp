@@ -41,6 +41,7 @@
 #include <memory> /* For auto_ptr. */
 
 #include <iprt/cpp/utils.h> /* For unconst(). */
+#include <iprt/ctype.h>
 #include <iprt/env.h>
 #include <iprt/file.h> /* For CopyTo/From. */
 #include <iprt/path.h>
@@ -870,58 +871,48 @@ HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
 /**
  * Validates and extracts directory copy flags from a comma-separated string.
  *
- * @return VBox status code.
+ * @return COM status, error set on failure
  * @param  strFlags             String to extract flags from.
  * @param  pfFlags              Where to store the extracted (and validated) flags.
  */
-/* static */
-int GuestSession::i_directoryCopyFlagFromStr(const com::Utf8Str &strFlags, DirectoryCopyFlag_T *pfFlags)
+HRESULT GuestSession::i_directoryCopyFlagFromStr(const com::Utf8Str &strFlags, DirectoryCopyFlag_T *pfFlags)
 {
-    DirectoryCopyFlag_T fFlags = DirectoryCopyFlag_None;
+    unsigned fFlags = DirectoryCopyFlag_None;
 
     /* Validate and set flags. */
-    if (strFlags.isEmpty())
+    if (strFlags.isNotEmpty())
     {
-        *pfFlags = fFlags;
-        return VINF_SUCCESS;
-    }
-
-    const char *pcszNext = strFlags.c_str();
-    while (*pcszNext != '\0')
-    {
-        Utf8Str strFlag;
-        const char *pcszComma = RTStrStr(pcszNext, ",");
-        if (!pcszComma)
-            strFlag = pcszNext;
-        else
-            strFlag = Utf8Str(pcszNext, pcszComma - pcszNext);
-
-        const char *pcszEqual = RTStrStr(strFlag.c_str(), "=");
-        if (   pcszEqual
-            && pcszEqual != strFlag.c_str())
+        const char *pszNext = strFlags.c_str();
+        for (;;)
         {
-            Utf8Str strKey(strFlag.c_str(), pcszEqual - strFlag.c_str());
-            Utf8Str strValue(strFlag.c_str() + (pcszEqual - strFlag.c_str() + 1));
-            RT_NOREF(strKey, strValue); /* We don't have any key=value pairs yet. */
-        }
-        else
-        {
-           if (strFlag == "CopyIntoExisting")
-               fFlags |= DirectoryCopyFlag_CopyIntoExisting;
-           else
-               return VERR_INVALID_PARAMETER;
-        }
+            /* Find the next keyword, ignoring all whitespace. */
+            pszNext = RTStrStripL(pszNext);
 
-        if (!pcszComma)
-            pcszNext += strFlag.length();
-        else
-            pcszNext += strFlag.length() + 1;
+            const char * const pszComma = strchr(pszNext, ',');
+            size_t cchKeyword = pszComma ? pszComma - pszNext : strlen(pszComma);
+            while (cchKeyword > 0 && RT_C_IS_SPACE(pszNext[cchKeyword - 1]))
+                cchKeyword--;
+
+            if (cchKeyword > 0)
+            {
+                /* Convert keyword to flag. */
+#define MATCH_KEYWORD(a_szKeyword) (   cchKeyword == sizeof(a_szKeyword) - 1U \
+                                    && memcmp(pszNext, a_szKeyword, sizeof(a_szKeyword) - 1U) == 0)
+                if (MATCH_KEYWORD("CopyIntoExisting"))
+                    fFlags |= (unsigned)DirectoryCopyFlag_CopyIntoExisting;
+                else
+                    return setError(E_INVALIDARG, tr("Invalid directory copy flag: %.*s"), (int)cchKeyword, pszNext);
+#undef MATCH_KEYWORD
+            }
+            if (!pszComma)
+                break;
+            pszNext = pszComma + 1;
+        }
     }
 
     if (pfFlags)
-        *pfFlags = fFlags;
-
-    return VINF_SUCCESS;
+        *pfFlags = (DirectoryCopyFlag_T)fFlags;
+    return S_OK;
 }
 
 int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode,
@@ -1347,62 +1338,52 @@ int GuestSession::i_dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTR
 /**
  * Validates and extracts file copy flags from a comma-separated string.
  *
- * @return VBox status code.
+ * @return COM status, error set on failure
  * @param  strFlags             String to extract flags from.
  * @param  pfFlags              Where to store the extracted (and validated) flags.
  */
-/* static */
-int GuestSession::i_fileCopyFlagFromStr(const com::Utf8Str &strFlags, FileCopyFlag_T *pfFlags)
+HRESULT GuestSession::i_fileCopyFlagFromStr(const com::Utf8Str &strFlags, FileCopyFlag_T *pfFlags)
 {
-    FileCopyFlag_T fFlags = FileCopyFlag_None;
+    unsigned fFlags = (unsigned)FileCopyFlag_None;
 
     /* Validate and set flags. */
-    if (strFlags.isEmpty())
+    if (strFlags.isNotEmpty())
     {
-        *pfFlags = fFlags;
-        return VINF_SUCCESS;
-    }
-
-    const char *pcszNext = strFlags.c_str();
-    while (*pcszNext != '\0')
-    {
-        Utf8Str strFlag;
-        const char *pcszComma = RTStrStr(pcszNext, ",");
-        if (!pcszComma)
-            strFlag = pcszNext;
-        else
-            strFlag = Utf8Str(pcszNext, pcszComma - pcszNext);
-
-        const char *pcszEqual = RTStrStr(strFlag.c_str(), "=");
-        if (   pcszEqual
-            && pcszEqual != strFlag.c_str())
+        const char *pszNext = strFlags.c_str();
+        for (;;)
         {
-            Utf8Str strKey(strFlag.c_str(), pcszEqual - strFlag.c_str());
-            Utf8Str strValue(strFlag.c_str() + (pcszEqual - strFlag.c_str() + 1));
-            RT_NOREF(strKey, strValue); /* We don't have any key=value pairs yet. */
-        }
-        else
-        {
-            if (strFlag == "NoReplace")
-                fFlags |= FileCopyFlag_NoReplace;
-            else if (strFlag == "FollowLinks")
-                fFlags |= FileCopyFlag_FollowLinks;
-            else if (strFlag == "Update")
-                fFlags |= FileCopyFlag_Update;
-            else
-                return VERR_INVALID_PARAMETER;
-        }
+            /* Find the next keyword, ignoring all whitespace. */
+            pszNext = RTStrStripL(pszNext);
 
-        if (!pcszComma)
-            pcszNext += strFlag.length();
-        else
-            pcszNext += strFlag.length() + 1;
+            const char * const pszComma = strchr(pszNext, ',');
+            size_t cchKeyword = pszComma ? pszComma - pszNext : strlen(pszComma);
+            while (cchKeyword > 0 && RT_C_IS_SPACE(pszNext[cchKeyword - 1]))
+                cchKeyword--;
+
+            if (cchKeyword > 0)
+            {
+                /* Convert keyword to flag. */
+#define MATCH_KEYWORD(a_szKeyword) (   cchKeyword == sizeof(a_szKeyword) - 1U \
+                                    && memcmp(pszNext, a_szKeyword, sizeof(a_szKeyword) - 1U) == 0)
+                if (MATCH_KEYWORD("NoReplace"))
+                    fFlags |= (unsigned)FileCopyFlag_NoReplace;
+                else if (MATCH_KEYWORD("FollowLinks"))
+                    fFlags |= (unsigned)FileCopyFlag_FollowLinks;
+                else if (MATCH_KEYWORD("Update"))
+                    fFlags |= (unsigned)FileCopyFlag_Update;
+                else
+                    return setError(E_INVALIDARG, tr("Invalid file copy flag: %.*s"), (int)cchKeyword, pszNext);
+#undef MATCH_KEYWORD
+            }
+            if (!pszComma)
+                break;
+            pszNext = pszComma + 1;
+        }
     }
 
     if (pfFlags)
-        *pfFlags = fFlags;
-
-    return VINF_SUCCESS;
+        *pfFlags = (FileCopyFlag_T)fFlags;
+    return S_OK;
 }
 
 inline bool GuestSession::i_fileExists(uint32_t uFileID, ComObjPtr<GuestFile> *pFile)
@@ -2939,22 +2920,18 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
         source.enmType      = *itType;
         source.enmPathStyle = i_getPathStyle();
 
+        HRESULT hrc;
         if (source.enmType == FsObjType_Directory)
         {
-            int rc2 = GuestSession::i_directoryCopyFlagFromStr(*itFlags, &source.Type.Dir.fCopyFlags);
-            if (RT_FAILURE(rc2))
-                return setError(E_INVALIDARG, tr("Invalid / not (yet) implemented directory copy flags specified"));
-
+            hrc = GuestSession::i_directoryCopyFlagFromStr(*itFlags, &source.Type.Dir.fCopyFlags);
             source.Type.Dir.fRecursive = true; /* Implicit. */
         }
         else if (source.enmType == FsObjType_File)
-        {
-            int rc2 = GuestSession::i_fileCopyFlagFromStr(*itFlags, &source.Type.File.fCopyFlags);
-            if (RT_FAILURE(rc2))
-                return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented file copy flag(s) specified"));
-        }
+            hrc = GuestSession::i_fileCopyFlagFromStr(*itFlags, &source.Type.File.fCopyFlags);
         else
             return setError(E_INVALIDARG, tr("Source type %d invalid / not supported"), source.enmType);
+        if (FAILED(hrc))
+            return hrc;
 
         SourceSet.push_back(source);
 
@@ -2997,22 +2974,18 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
         source.enmType      = *itType;
         source.enmPathStyle = i_getPathStyle();
 
+        HRESULT hrc;
         if (source.enmType == FsObjType_Directory)
         {
-            int rc2 = GuestSession::i_directoryCopyFlagFromStr(*itFlags, &source.Type.Dir.fCopyFlags);
-            if (RT_FAILURE(rc2))
-                return setError(E_INVALIDARG, tr("Invalid / not (yet) implemented directory copy flags specified"));
-
+            hrc = GuestSession::i_directoryCopyFlagFromStr(*itFlags, &source.Type.Dir.fCopyFlags);
             source.Type.Dir.fRecursive = true; /* Implicit. */
         }
         else if (source.enmType == FsObjType_File)
-        {
-            int rc2 = GuestSession::i_fileCopyFlagFromStr(*itFlags, &source.Type.File.fCopyFlags);
-            if (RT_FAILURE(rc2))
-                return setError(E_NOTIMPL, tr("Invalid / not (yet) implemented file copy flag(s) specified"));
-        }
+            hrc = GuestSession::i_fileCopyFlagFromStr(*itFlags, &source.Type.File.fCopyFlags);
         else
             return setError(E_INVALIDARG, tr("Source type %d invalid / not supported"), source.enmType);
+        if (FAILED(hrc))
+            return hrc;
 
         SourceSet.push_back(source);
 
