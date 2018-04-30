@@ -2567,19 +2567,13 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
     Assert(pCtx->hwvirt.fGif);
 
-    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
-    {
-        PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-        X86EFLAGS fEFlags;
-        if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
-            fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
-        else
-            fEFlags.u = pCtx->eflags.u;
+    X86EFLAGS fEFlags;
+    if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, pCtx))
+        fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
+    else
+        fEFlags.u = pCtx->eflags.u;
 
-        return fEFlags.Bits.u1IF;
-    }
-
-    return HMCanSvmNstGstTakePhysIntr(pVCpu, pCtx);
+    return fEFlags.Bits.u1IF;
 #endif
 }
 
@@ -2603,28 +2597,19 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
     Assert(pCtx->hwvirt.fGif);
 
-    /*
-     * Although at present, the V_TPR and V_INTR_PRIO fields are not modified
-     * by SVM R0 code and we could inspect them directly here, we play it
-     * safe and ask HM if it has cached the VMCB.
-     */
-    if (!pCtx->hwvirt.svm.fHMCachedVmcb)
-    {
-        PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-        if (   !pVmcbCtrl->IntCtrl.n.u1IgnoreTPR
-            &&  pVmcbCtrl->IntCtrl.n.u4VIntrPrio <= pVmcbCtrl->IntCtrl.n.u8VTPR)
-            return false;
+    PCSVMVMCBCTRL pVmcbCtrl    = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    PCSVMINTCTRL  pVmcbIntCtrl = &pVmcbCtrl->IntCtrl;
+    if (   !pVmcbIntCtrl->n.u1IgnoreTPR
+        &&  pVmcbIntCtrl->n.u4VIntrPrio <= pVmcbIntCtrl->n.u8VTPR)
+        return false;
 
-        X86EFLAGS fEFlags;
-        if (pVmcbCtrl->IntCtrl.n.u1VIntrMasking)
-            fEFlags.u = pCtx->eflags.u;
-        else
-            fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
+    X86EFLAGS fEFlags;
+    if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, pCtx))
+        fEFlags.u = pCtx->eflags.u;
+    else
+        fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
 
-        return fEFlags.Bits.u1IF;
-    }
-
-    return HMCanSvmNstGstTakeVirtIntr(pVCpu, pCtx);
+    return fEFlags.Bits.u1IF;
 #endif
 }
 
@@ -2643,6 +2628,27 @@ VMM_INT_DECL(uint8_t) CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx)
 #else
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
     return pVmcbCtrl->IntCtrl.n.u8VIntrVector;
+#endif
+}
+
+
+/**
+ * Gets the SVM nested-guest virtual GIF.
+ *
+ * @returns The nested-guest virtual GIF.
+ * @param   pCtx            The guest-CPU context.
+ */
+VMM_INT_DECL(bool) CPUMGetSvmNstGstVGif(PCCPUMCTX pCtx)
+{
+#ifdef IN_RC
+    RT_NOREF(pCtx);
+    AssertReleaseFailedReturn(false);
+#else
+    PCSVMVMCBCTRL pVmcbCtrl    = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
+    PCSVMINTCTRL  pVmcbIntCtrl = &pVmcbCtrl->IntCtrl;
+    if (pVmcbIntCtrl->n.u1VGifEnable)
+        return pVmcbIntCtrl->n.u1VGif;
+    return true;
 #endif
 }
 

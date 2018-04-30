@@ -573,6 +573,10 @@ typedef union
     } n;
     uint64_t    u;
 } SVMINTCTRL;
+/** Pointer to an SVMINTCTRL structure. */
+typedef SVMINTCTRL *PSVMINTCTRL;
+/** Pointer to a const SVMINTCTRL structure. */
+typedef const SVMINTCTRL *PCSVMINTCTRL;
 
 /**
  * SVM TLB control structure.
@@ -1144,9 +1148,6 @@ VMM_INT_DECL(bool)     HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx
 VMM_INT_DECL(bool)     HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(bool)     HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool)     HMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool)     HMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
-
 /** @} */
 
 #endif

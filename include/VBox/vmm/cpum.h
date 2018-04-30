@@ -1250,6 +1250,7 @@ VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PVMCPU pVCpu);
 VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(uint8_t)   CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)      CPUMGetSvmNstGstVGif(PCCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr);
 VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);

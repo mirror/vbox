@@ -173,19 +173,18 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExit
              * Save additional state and intercept information.
              *
              *   - V_IRQ: Tracked using VMCPU_FF_INTERRUPT_NESTED_GUEST force-flag and updated below.
-             *   - V_TPR: Already updated by iemCImpl_load_CrX or by the physical CPU for
-             *     hardware-assisted SVM execution.
+             *   - V_TPR: Updated by iemCImpl_load_CrX or by the physical CPU for hardware-assisted
+             *     SVM execution.
              *   - Interrupt shadow: Tracked using VMCPU_FF_INHIBIT_INTERRUPTS and RIP.
              */
             PSVMVMCBCTRL pVmcbMemCtrl = &pVmcbMem->ctrl;
-            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))        /* V_IRQ. */
+            if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))       /* V_IRQ. */
+                pVmcbMemCtrl->IntCtrl.n.u1VIrqPending = 0;
+            else
             {
                 Assert(pVmcbCtrl->IntCtrl.n.u1VIrqPending);
-                pVmcbMemCtrl->IntCtrl.n.u1VIrqPending = 1;
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
             }
-            else
-                pVmcbMemCtrl->IntCtrl.n.u1VIrqPending = 0;
 
             pVmcbMemCtrl->IntCtrl.n.u8VTPR = pVmcbCtrl->IntCtrl.n.u8VTPR;           /* V_TPR. */
 
@@ -438,8 +437,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
         }
 
         /* Virtual GIF. */
-        if (   pVmcbCtrl->IntCtrl.n.u1VGifEnable
-            && pVM->cpum.ro.GuestFeatures.fSvmVGif)
+        if (    pVmcbCtrl->IntCtrl.n.u1VGifEnable
+            && !pVM->cpum.ro.GuestFeatures.fSvmVGif)
         {
             Log(("iemSvmVmrun: Virtual GIF not supported -> Disabling\n"));
             pVmcbCtrl->IntCtrl.n.u1VGifEnable = 0;
