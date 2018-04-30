@@ -1260,7 +1260,7 @@ void HGCMService::ReleaseService(void)
         rc = SSMR3GetStrZ(pSSM, pszServiceName, u32);
         AssertRCReturn(rc, rc);
 
-        LogRel(("HGCM: restoring [%s]\n", pszServiceName));
+        LogRel(("HGCM: Restoring [%s]\n", pszServiceName));
 
         /* Resolve the service instance. */
         HGCMService *pSvc;
