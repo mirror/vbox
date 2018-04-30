@@ -3121,7 +3121,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sUser = "Administrator";
             sScratchGst = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo/";
             sScratchGstNotExist = "C:\\does-not-exist\\";
-            sScratchGstInvalid = "?invalid-name";
+            sScratchGstInvalid = "?*|invalid-name?*|";
         else:
             sUser = "vbox";
             sScratchGst = "/tmp/testGuestCtrlCopyTo/";
@@ -3306,7 +3306,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sPassword = "password";
 
         if self.oTstDrv.sHost == "win":
-            sScratchHstInvalid = "?invalid-name";
+            sScratchHstInvalid = "?*|invalid-name?*|";
         else:
             sScratchHstInvalid = "/";
 
