@@ -42,8 +42,15 @@ CopyFiles=VBoxDrv_CopyFiles
 [DefaultInstall@DOT-NT-ARCH@.Services]
 AddService=VBoxDrv,0x00000002,VBoxDrv_Service
 
+[DefaultUninstall@DOT-NT-ARCH@]
+DefFiles=VBoxDrv_CopyFiles
+
+[DefaultUninstall@DOT-NT-ARCH@.Services]
+DelService=VBoxDrv,0x00000200
+
 ;; This doesn't actually work either (see VBoxUSBMon), though it triggers in the
 ;; installer rather at manual installation on my test system (could be polluted & confused).
+;; This may apparently also causes unloading trouble due to 'root\VBoxDrv' or something related to that.
 ;; [Manufacturer]
 ;; %ORACLE%=Oracle@COMMA-NT-ARCH@
 ;;
