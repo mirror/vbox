@@ -366,9 +366,9 @@ static DECLCALLBACK(int) drvCharSetBreak(PPDMICHARCONNECTOR pInterface, bool fBr
  */
 static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVCHAR pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     if (RTCritSectIsInitialized(&pThis->CritSectSend))
         RTCritSectDelete(&pThis->CritSectSend);
