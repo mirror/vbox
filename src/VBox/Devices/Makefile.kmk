@@ -167,7 +167,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevHPET.cpp \
  	PC/DevIoApic.cpp \
  	Storage/DevFdc.cpp \
- 	Serial/DevSerial.cpp \
  	Parallel/DevParallel.cpp \
 	\
  	Input/DrvKeyboardQueue.cpp \
@@ -176,7 +175,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/DrvDedicatedNic.cpp \
  	PC/DrvACPI.cpp \
  	PC/DrvAcpiCpu.cpp \
- 	Serial/DrvChar.cpp \
  	Serial/DrvNamedPipe.cpp \
  	Serial/DrvTCP.cpp \
  	Serial/DrvRawFile.cpp \
@@ -194,6 +192,21 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
  ifn1of ($(KBUILD_TARGET), darwin freebsd os2 solaris)
   VBoxDD_SOURCES += Storage/DrvHostFloppy.cpp
+ endif
+
+ if defined(VBOX_WITH_NEW_SERIAL)
+  VBoxDD_SOURCES += \
+ 	Serial/DevSerialNew.cpp \
+ 	Serial/DrvCharNew.cpp \
+ 	Serial/DrvHostSerialNew.cpp
+ else
+  VBoxDD_SOURCES += \
+  	Serial/DevSerial.cpp \
+  	Serial/DrvChar.cpp
+   ifn1of ($(KBUILD_TARGET), os2)
+   VBoxDD_SOURCES += \
+   	Serial/DrvHostSerial.cpp
+   endif
  endif
 
  ifn1of ($(KBUILD_TARGET), darwin)
@@ -725,22 +738,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  # --- OS specific driver hacks. ---
 
- ifeq ($(KBUILD_TARGET),darwin)
-  VBoxDD_SOURCES.darwin += Serial/DrvHostSerial.cpp
- endif # darwin
-
  ifeq ($(KBUILD_TARGET),freebsd)
-  VBoxDD_SOURCES += Serial/DrvHostSerial.cpp
   VBoxDD_SOURCES.freebsd += Network/DrvTAP.cpp
  endif # freebsd
 
  VBoxDD_SOURCES.linux += \
  	Network/DrvTAP.cpp \
- 	Parallel/DrvHostParallel.cpp \
- 	Serial/DrvHostSerial.cpp
+ 	Parallel/DrvHostParallel.cpp
 
  ifeq ($(KBUILD_TARGET),solaris)
-  VBoxDD_SOURCES.solaris += Serial/DrvHostSerial.cpp
   ifdef VBOX_WITH_SUID_WRAPPER
    VBoxDD_DEFS += VBOX_WITH_SUID_WRAPPER
   endif
@@ -748,7 +754,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  VBoxDD_DEFS.win += VBOX_WITH_WIN_PARPORT_SUP
  VBoxDD_SOURCES.win += \
-	Serial/DrvHostSerial.cpp \
 	Parallel/DrvHostParallel.cpp
 
  ifdef VBOX_WITH_VIRTUALKD
@@ -762,28 +767,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   if defined(VBOX_NETFLT_ONDEMAND_BIND)
    VBoxDD_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
   endif
- endif
-
- if defined(VBOX_WITH_NEW_DRVHOSTSERIAL)
-  VBoxDD_SOURCES.linux := \
- 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.linux)) \
- 	Serial/DrvHostSerialNew.cpp
-
-  VBoxDD_SOURCES.darwin := \
- 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.darwin)) \
- 	Serial/DrvHostSerialNew.cpp
-
-  VBoxDD_SOURCES.win := \
- 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.win)) \
- 	Serial/DrvHostSerialNew.cpp
-
-  VBoxDD_SOURCES.freebsd := \
- 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.freebsd)) \
- 	Serial/DrvHostSerialNew.cpp
-
-  VBoxDD_SOURCES.solaris := \
- 	$(filter-out Serial/DrvHostSerial.cpp, $(VBoxDD_SOURCES.solaris)) \
- 	Serial/DrvHostSerialNew.cpp
  endif
 
  # --- Final bits, mostly libraries for order dependant linkers. ---
@@ -1031,6 +1014,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Storage/DevNVMe.cpp
   endif
 
+  if defined(VBOX_WITH_NEW_SERIAL)
+   VBoxDDRC_SOURCES := \
+  	$(filter-out Serial/DevSerial.cpp, $(VBoxDDRC_SOURCES)) \
+  	Serial/DevSerialNew.cpp
+  endif
+
   if1of ($(VBOX_LDR_FMT32), pe lx)
   VBoxDDRC_LIBS           = \
   	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
@@ -1198,6 +1187,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDDR0_DEFS       += VBOX_WITH_NVME_IMPL
   VBoxDDR0_SOURCES    += \
  	Storage/DevNVMe.cpp
+ endif
+
+ if defined(VBOX_WITH_NEW_SERIAL)
+  VBoxDDR0_SOURCES := \
+ 	$(filter-out Serial/DevSerial.cpp, $(VBoxDDR0_SOURCES)) \
+ 	Serial/DevSerialNew.cpp
  endif
 
  ifdef VBOX_WITH_HGSMI
