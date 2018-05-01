@@ -17,6 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -31,9 +32,142 @@
 
 #include "VBoxDD.h"
 
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+
+/** The RBR/DLL register index (from the base of the port range). */
+#define UART_REG_RBR_DLL_INDEX               0
+
+/** The THR/DLL register index (from the base of the port range). */
+#define UART_REG_THR_DLL_INDEX               0
+
+/** The IER/DLM register index (from the base of the port range). */
+#define UART_REG_IER_DLM_INDEX               1
+/** Enable received data available interrupt */
+# define UART_REG_IER_ERBFI                  RT_BIT(0)
+/** Enable transmitter holding register empty interrupt */
+# define UART_REG_IER_ETBEI                  RT_BIT(1)
+/** Enable receiver line status interrupt */
+# define UART_REG_IER_ELSI                   RT_BIT(2)
+/** Enable modem status interrupt. */
+# define UART_REG_IER_EDSSI                  RT_BIT(3)
+/** Mask of writeable bits. */
+# define UART_REG_IER_MASK_WR                0x0f
+
+/** The IIR register index (from the base of the port range). */
+#define UART_REG_IIR_INDEX                   2
+/** Interrupt Pending - high means no interrupt pending. */
+# define UART_REG_IIR_IP_NO_INT              RT_BIT(0)
+/** Interrupt identification mask. */
+# define UART_REG_IIR_ID_MASK                0x0e
+/** Sets the interrupt identification to the given value. */
+# define UART_REG_IIR_ID_SET(a_Val)          (((a_Val) & UART_REG_IIR_ID_MASK) << 1)
+/** Receiver Line Status interrupt. */
+#  define UART_REG_IIR_ID_RCL                0x3
+/** Received Data Avalable interrupt. */
+#  define UART_REG_IIR_ID_RDA                0x2
+/** Character Timeou Indicator interrupt. */
+#  define UART_REG_IIR_ID_CTI                0x6
+/** Transmitter Holding Register Empty interrupt. */
+#  define UART_REG_IIR_ID_THRE               0x1
+/** Modem Status interrupt. */
+#  define UART_REG_IIR_ID_MS                 0x0
+/** FIFOs enabled. */
+# define UART_REG_IIR_FIFOS_EN               0xc0
+
+/** The FCR register index (from the base of the port range). */
+#define UART_REG_FCR_INDEX                   2
+/** Enable the TX/RX FIFOs. */
+# define UART_REG_FCR_FIFO_EN                RT_BIT(0)
+/** Reset the receive FIFO. */
+# define UART_REG_FCR_RCV_FIFO_RST           RT_BIT(1)
+/** Reset the transmit FIFO. */
+# define UART_REG_FCR_XMIT_FIFO_RST          RT_BIT(2)
+/** DMA Mode Select. */
+# define UART_REG_FCR_DMA_MODE_SEL           RT_BIT(3)
+/** Receiver level interrupt trigger. */
+# define UART_REG_FCR_RCV_LVL_IRQ_MASK       0xc0
+/** Returns the receive level trigger value from the given FCR register. */
+# define UART_REG_FCR_RCV_LVL_IRQ_GET(a_Fcr) (((a_Fcr) & UART_REG_FCR_RCV_LVL_IRQ_MASK) >> 6)
+/** Mask of writeable bits. */
+# define UART_REG_FCR_MASK_WR                0xcf
+
+/** The LCR register index (from the base of the port range). */
+#define UART_REG_LCR_INDEX                   3
+/** Word Length Select Mask. */
+# define UART_REG_LCR_WLS_MASK               0x3
+/** Returns the WLS value form the given LCR register value. */
+# define UART_REG_LCR_WLS_GET(a_Lcr)         ((a_Lcr) & UART_REG_LCR_WLS_MASK)
+/** Number of stop bits. */
+# define UART_REG_LCR_STB                    RT_BIT(2)
+/** Parity Enable. */
+# define UART_REG_LCR_PEN                    RT_BIT(3)
+/** Even Parity. */
+# define UART_REG_LCR_EPS                    RT_BIT(4)
+/** Stick parity. */
+# define UART_REG_LCR_PAR_STICK              RT_BIT(5)
+/** Set Break. */
+# define UART_REG_LCR_BRK_SET                RT_BIT(6)
+/** Divisor Latch Access Bit. */
+# define UART_REG_LCR_DLAB                   RT_BIT(7)
+
+/** The MCR register index (from the base of the port range). */
+#define UART_REG_MCR_INDEX                   4
+/** Data Terminal Ready. */
+# define UART_REG_MCR_DTR                    RT_BIT(0)
+/** Request To Send. */
+# define UART_REG_MCR_RTS                    RT_BIT(1)
+/** Out1. */
+# define UART_REG_MCR_OUT1                   RT_BIT(2)
+/** Out2. */
+# define UART_REG_MCR_OUT2                   RT_BIT(3)
+/** Loopback connection. */
+# define UART_REG_MCR_LOOP                   RT_BIT(4)
+/** Mask of writeable bits. */
+# define UART_REG_MCR_MASK_WR                0x1f
+
+/** The LSR register index (from the base of the port range). */
+#define UART_REG_LSR_INDEX                   5
+/** Data Ready. */
+# define UART_REG_LSR_DR                     RT_BIT(0)
+/** Overrun Error. */
+# define UART_REG_LSR_OE                     RT_BIT(1)
+/** Parity Error. */
+# define UART_REG_LSR_PE                     RT_BIT(2)
+/** Framing Error. */
+# define UART_REG_LSR_FE                     RT_BIT(3)
+/** Break Interrupt. */
+# define UART_REG_LSR_BI                     RT_BIT(4)
+/** Transmitter Holding Register. */
+# define UART_REG_LSR_THRE                   RT_BIT(5)
+/** Transmitter Empty. */
+# define UART_REG_LSR_TEMT                   RT_BIT(6)
+/** Error in receiver FIFO. */
+# define UART_REG_LSR_RCV_FIFO_ERR           RT_BIT(7)
+
+/** The MSR register index (from the base of the port range). */
+#define UART_REG_MSR_INDEX                   6
+/** Delta Clear to Send. */
+# define UART_REG_MSR_DCTS                   RT_BIT(0)
+/** Delta Data Set Ready. */
+# define UART_REG_MSR_DDSR                   RT_BIT(1)
+/** Trailing Edge Ring Indicator. */
+# define UART_REG_MSR_TERI                   RT_BIT(2)
+/** Delta Data Carrier Detect. */
+# define UART_REG_MSR_DDCD                   RT_BIT(3)
+/** Clear to Send. */
+# define UART_REG_MSR_CTS                    RT_BIT(4)
+/** Data Set Ready. */
+# define UART_REG_MSR_DSR                    RT_BIT(5)
+/** Ring Indicator. */
+# define UART_REG_MSR_RI                     RT_BIT(6)
+/** Data Carrier Detect. */
+# define UART_REG_MSSR_DCD                   RT_BIT(7)
+
+/** The SCR register index (from the base of the port range). */
+#define UART_REG_SCR_INDEX                   7
 
 
 /*********************************************************************************************************************************
@@ -79,6 +213,29 @@ typedef struct DEVSERIAL
     /** The base I/O port the device is registered at. */
     RTIOPORT                        PortBase;
 
+    /** The divisor register (DLAB = 1). */
+    uint16_t                        uRegDivisor;
+    /** The Receiver Buffer Register (RBR, DLAB = 0). */
+    uint8_t                         uRegRbr;
+    /** The Transmitter Holding Register (THR, DLAB = 0). */
+    uint8_t                         uRegThr;
+    /** The Interrupt Enable Register (IER). */
+    uint8_t                         uRegIer;
+    /** The Interrupt Identification Register (IIR). */
+    uint8_t                         uRegIir;
+    /** The FIFO Control Register (FCR). */
+    uint8_t                         uRegFcr;
+    /** The Line Control Register (LCR). */
+    uint8_t                         uRegLcr;
+    /** The Modem Control Register (MCR). */
+    uint8_t                         uRegMcr;
+    /** The Line Status Register (LSR). */
+    uint8_t                         uRegLsr;
+    /** The Modem Status Register (MSR). */
+    uint8_t                         uRegMsr;
+    /** The Scratch Register (SCR). */
+    uint8_t                         uRegScr;
+
 } DEVSERIAL;
 /** Pointer to the serial device state. */
 typedef DEVSERIAL *PDEVSERIAL;
@@ -95,13 +252,25 @@ PDMBOTHCBDECL(int) serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
-    RT_NOREF(u32);
 
     AssertMsgReturn(cb == 1, ("uPort=%#x cb=%d u32=%#x\n", uPort, cb, u32), VINF_SUCCESS);
 
     int rc = VINF_SUCCESS;
     switch (uPort & 0x7)
     {
+        case UART_REG_THR_DLL_INDEX:
+            break;
+        case UART_REG_IER_DLM_INDEX:
+            break;
+        case UART_REG_FCR_INDEX:
+            break;
+        case UART_REG_LCR_INDEX:
+            break;
+        case UART_REG_MCR_INDEX:
+            break;
+        case UART_REG_SCR_INDEX:
+            pThis->uRegScr = u32;
+            break;
         default:
             break;
     }
@@ -118,7 +287,6 @@ PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT u
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
-    RT_NOREF(pu32);
 
     if (cb != 1)
         return VERR_IOM_IOPORT_UNUSED;
@@ -126,6 +294,23 @@ PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT u
     int rc = VINF_SUCCESS;
     switch (uPort & 0x7)
     {
+        case UART_REG_RBR_DLL_INDEX:
+            break;
+        case UART_REG_IER_DLM_INDEX:
+            break;
+        case UART_REG_IIR_INDEX:
+            break;
+        case UART_REG_LCR_INDEX:
+            break;
+        case UART_REG_MCR_INDEX:
+            break;
+        case UART_REG_LSR_INDEX:
+            break;
+        case UART_REG_MSR_INDEX:
+            break;
+        case UART_REG_SCR_INDEX:
+            *pu32 = pThis->uRegScr;
+            break;
         default:
             rc = VERR_IOM_IOPORT_UNUSED;
     }
@@ -418,7 +603,7 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
             return rc;
     }
 
-#if 0 /** @todo: Later */
+#if 0 /** @todo Later */
     /*
      * Saved state.
      */
