@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox stream I/O devices: Host serial driver
+ * VBox serial devices: Host serial driver
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_SERIAL
 #include <VBox/vmm/pdm.h>
+#include <VBox/vmm/pdmserialifs.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
@@ -441,6 +442,16 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
                           | RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING
                           | RTSERIALPORT_OPEN_F_DETECT_BREAK_CONDITION;
     rc = RTSerialPortOpen(&pThis->hSerialPort, pThis->pszDevicePath, fOpenFlags);
+    if (rc == VERR_NOT_SUPPORTED)
+    {
+        /*
+         * For certain devices (or pseudo terminals) status line monitoring does not work
+         * so try again without it.
+         */
+        fOpenFlags &= ~RTSERIALPORT_OPEN_F_SUPPORT_STATUS_LINE_MONITORING;
+        rc = RTSerialPortOpen(&pThis->hSerialPort, pThis->pszDevicePath, fOpenFlags);
+    }
+
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Could not open host device %s, rc=%Rrc\n", pThis->pszDevicePath, rc));
@@ -482,8 +493,10 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Register release statistics.
      */
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/HostSerial%d/Written", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/HostSerial%d/Read", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                           "Nr of bytes written",         "/Devices/HostSerial%d/Written", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                           "Nr of bytes read",            "/Devices/HostSerial%d/Read", pDrvIns->iInstance);
 
     return VINF_SUCCESS;
 }
@@ -497,7 +510,7 @@ const PDMDRVREG g_DrvHostSerial =
     PDM_DRVREG_VERSION,
     /* szName */
     "Host Serial",
-        /* szRCMod */
+    /* szRCMod */
     "",
     /* szR0Mod */
     "",
