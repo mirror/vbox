@@ -3119,7 +3119,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         if oTestVm.isWindows():
             sUser = "Administrator";
-            sScratchGst = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo/";
+            sScratchGst = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo\\";
             sScratchGstNotExist = "C:\\does-not-exist\\";
             sScratchGstInvalid = "?*|invalid-name?*|";
         else:
@@ -3305,12 +3305,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sUser = "vbox";
         sPassword = "password";
 
-        if self.oTstDrv.sHost == "win":
-            sScratchHstInvalid = "?*|invalid-name?*|";
-        else:
-            sScratchHstInvalid = "/";
-
         sScratchHst = os.path.join(self.oTstDrv.sScratchPath, "testGctrlCopyFrom");
+
+        if self.oTstDrv.sHost == "win":
+            sScratchHstNotExist = sScratchHst + "\\does-not-exist\\";
+            sScratchHstInvalid  = "?*|invalid-name?*|";
+        else:
+            sScratchHstNotExist = sScratchHst + "/does-not-exist/";
+            sScratchHstInvalid  = "/";
+
         try:
             os.makedirs(sScratchHst);
         except OSError as e:
@@ -3385,7 +3388,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                       tdTestResult(fRc = True) ],
                     # Destination is a non-existing directory.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\system32\\ole32.dll',
-                                     sDst = sScratchHst + "/non-existing-directory/"),
+                                     sDst = sScratchHstNotExist),
                       tdTestResult(fRc = False) ]
                 ]);
 
@@ -3413,12 +3416,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                       tdTestResult(fRc = True) ],
                     # Copying contents of directories into a non-existing directory chain on the host which fail.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web\\',
-                                     sDst = sScratchHst + "/not/existing/",
+                                     sDst = sScratchHstNotExist,
                                      aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                       tdTestResult(fRc = False) ],
                     # Copying contents of directories into a non-existing directory on the host, which should succeed.
                     [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Web\\',
-                                     sDst = sScratchHst + "/no-existing/",
+                                     sDst = sScratchHstNotExist,
                                      aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                       tdTestResult(fRc = True) ]
                 ]);
