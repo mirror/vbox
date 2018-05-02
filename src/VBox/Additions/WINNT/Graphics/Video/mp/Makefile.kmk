@@ -158,6 +158,9 @@ ifdef VBOX_WITH_WDDM
  	$(VBOX_LIB_IPRT_GUEST_R0) \
  	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
 
+ VBoxWddm_LIBS.x86         = \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/memcmp.lib
+
 endif # VBOX_WITH_WDDM
 
 #
