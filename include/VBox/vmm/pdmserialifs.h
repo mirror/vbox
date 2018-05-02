@@ -108,9 +108,31 @@ typedef enum PDMSERIALPARITY
     PDMSERIALPARITY_EVEN,
     /** Odd parity. */
     PDMSERIALPARITY_ODD,
+    /** Mark parity. */
+    PDMSERIALPARITY_MARK,
+    /** Space parity. */
+    PDMSERIALPARITY_SPACE,
     /** 32bit hack. */
     PDMSERIALPARITY_32BIT_HACK = 0x7fffffff
 } PDMSERIALPARITY;
+
+
+/**
+ * Supported number of stop bits.
+ */
+typedef enum PDMSERIALSTOPBITS
+{
+    /** Invalid stop bits setting. */
+    PDMSERIALSTOPBITS_INVALID = 0,
+    /** One stop bit is used. */
+    PDMSERIALSTOPBITS_ONE,
+    /** 1.5 stop bits are used. */
+    PDMSERIALSTOPBITS_ONEPOINTFIVE,
+    /** 2 stop bits are used. */
+    PDMSERIALSTOPBITS_TWO,
+    /** 32bit hack. */
+    PDMSERIALSTOPBITS_32BIT_HACK = 0x7fffffff
+} PDMSERIALSTOPBITS;
 
 
 /** Pointer to a serial interface. */
@@ -149,11 +171,12 @@ typedef struct PDMISERIALCONNECTOR
      * @param   uBps            Speed of the serial connection. (bits per second)
      * @param   enmParity       Parity method.
      * @param   cDataBits       Number of data bits.
-     * @param   cStopBits       Number of stop bits.
+     * @param   enmStopBits     Number of stop bits.
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnChgParams,(PPDMISERIALCONNECTOR pInterface, uint32_t uBps,
-                                            PDMSERIALPARITY enmParity, unsigned cDataBits, unsigned cStopBits));
+                                            PDMSERIALPARITY enmParity, unsigned cDataBits,
+                                            PDMSERIALSTOPBITS enmStopBits));
 
     /**
      * Set the state of the modem lines.
@@ -175,6 +198,15 @@ typedef struct PDMISERIALCONNECTOR
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnChgBrk,(PPDMISERIALCONNECTOR pInterface, bool fBrk));
+
+    /**
+     * Queries the current state of the status lines.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   pfStsLines          Where to store the status line states on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryStsLines, (PPDMISERIALCONNECTOR pInterface, uint32_t *pfStsLines));
 
 } PDMISERIALCONNECTOR;
 /** PDMIMEDIA interface ID. */
