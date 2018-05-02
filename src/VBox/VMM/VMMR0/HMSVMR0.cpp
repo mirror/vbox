@@ -4469,7 +4469,29 @@ DECLINLINE(int) hmR0SvmRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 }
 
+
 #ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Undoes the TSC offset applied for an SVM nested-guest and returns the TSC
+ * value for the guest.
+ *
+ * @returns The TSC offset after undoing any nested-guest TSC offset.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   uTicks      The nested-guest TSC.
+ *
+ * @note    If you make any changes to this function, please check if
+ *          hmR0SvmNstGstUndoTscOffset() needs adjusting.
+ *
+ * @sa      HMSvmNstGstApplyTscOffset().
+ */
+DECLINLINE(uint64_t) hmR0SvmNstGstUndoTscOffset(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uTicks)
+{
+    Assert(pCtx->hwvirt.svm.fHMCachedVmcb); RT_NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    return uTicks - pVmcbNstGstCache->u64TSCOffset;
+}
+
+
 /**
  * Wrapper for running the nested-guest code in AMD-V.
  *
@@ -4529,13 +4551,9 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT 
             TMCpuTickSetLastSeen(pVCpu, uHostTsc + pVmcbCtrl->u64TSCOffset);
         else
         {
-            /*
-             * Undo what we did in hmR0SvmUpdateTscOffsetting() and HMSvmNstGstApplyTscOffset()
-             * but don't restore the nested-guest VMCB TSC offset here. It shall eventually be
-             * restored on #VMEXIT in HMSvmNstGstVmExitNotify().
-             */
-            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu, pMixedCtx);
-            TMCpuTickSetLastSeen(pVCpu, uHostTsc + pVmcbCtrl->u64TSCOffset - pVmcbNstGstCache->u64TSCOffset);
+            /* The nested-guest VMCB TSC offset shall eventually be restored on #VMEXIT via HMSvmNstGstVmExitNotify(). */
+            uint64_t const uGstTsc = hmR0SvmNstGstUndoTscOffset(pVCpu, pMixedCtx, uHostTsc + pVmcbCtrl->u64TSCOffset);
+            TMCpuTickSetLastSeen(pVCpu, uGstTsc);
         }
     }
 

@@ -209,7 +209,10 @@ VMM_INT_DECL(bool) HMSvmIsVGifActive(PVM pVM)
  *          nested-guest VMCB. The latter may have been modified for executing
  *          using hardware-assisted SVM.
  *
- * @sa      CPUMApplyNestedGuestTscOffset.
+ * @note    If you make any changes to this function, please check if
+ *          hmR0SvmNstGstUndoTscOffset() needs adjusting.
+ *
+ * @sa      CPUMApplyNestedGuestTscOffset(), hmR0SvmNstGstUndoTscOffset().
  */
 VMM_INT_DECL(uint64_t) HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks)
 {
