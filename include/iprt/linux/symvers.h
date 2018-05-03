@@ -51,6 +51,10 @@ __asm__(".symver posix_spawn,posix_spawn@GLIBC_2.2");
 #undef __USE_GNU
 #define __USE_GNU 1
 
+/* And EL5 wants this too with __USE_GNU */
+#undef _GNU_SOURCE
+#define _GNU_SOURCE 1
+
 /* Tell IPRT not to use newer functions */
 #include <features.h>
 #undef __GLIBC_MINOR__
