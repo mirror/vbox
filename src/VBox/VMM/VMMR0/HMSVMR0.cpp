@@ -4117,20 +4117,12 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 static int hmR0SvmPreRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_ASSERT_PREEMPT_SAFE();
+    HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
 
-    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-    {
 #ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
-        Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
-        return VINF_EM_RESCHEDULE_REM;
+    Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
+    return VINF_EM_RESCHEDULE_REM;
 #endif
-    }
-    else
-    {
-        /** @todo Remove this assertion after its sufficiently established that this
-         *        never happens. */
-        AssertFailedReturn(VERR_INVALID_STATE);
-    }
 
     /* Check force flag actions that might require us to go back to ring-3. */
     int rc = hmR0SvmCheckForceFlags(pVM, pVCpu, pCtx);
@@ -4142,11 +4134,12 @@ static int hmR0SvmPreRunGuestNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTR
     else if (!pVCpu->hm.s.Event.fPending)
     {
         VBOXSTRICTRC rcStrict = hmR0SvmEvaluatePendingEventNested(pVCpu, pCtx);
-        if (rcStrict != VINF_SUCCESS)
+        if (    rcStrict != VINF_SUCCESS
+            || !CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             return VBOXSTRICTRC_VAL(rcStrict);
-        if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            return VINF_SVM_VMEXIT;
     }
+
+    HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
 
     /*
      * On the oldest AMD-V systems, we may not get enough information to reinject an NMI.
@@ -4830,7 +4823,7 @@ static int hmR0SvmRunGuestCodeNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint3
            to ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
         rc = hmR0SvmPreRunGuestNested(pVM, pVCpu, pCtx, &SvmTransient);
-        if (   rc != VINF_SUCCESS
+        if (    rc != VINF_SUCCESS
             || !CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         {
             break;
@@ -4870,7 +4863,8 @@ static int hmR0SvmRunGuestCodeNested(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint3
         VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pCtx->hwvirt.svm.CTX_SUFF(pVmcb));
         rc = hmR0SvmHandleExitNested(pVCpu, pCtx, &SvmTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
-        if (rc != VINF_SUCCESS)
+        if (    rc != VINF_SUCCESS
+            || !CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             break;
         if (++(*pcLoops) >= pVM->hm.s.cMaxResumeLoops)
         {
