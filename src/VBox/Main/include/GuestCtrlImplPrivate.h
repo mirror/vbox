@@ -1074,6 +1074,8 @@ public:
 
     int                              Cancel(void);
     const ComPtr<IEvent>             Event(void) { return mEvent; }
+    bool                             HasGuestError(void) const { return mRc == VERR_GSTCTL_GUEST_ERROR; }
+    int                              GetGuestError(void) const { return mGuestRc; }
     int                              SignalExternal(IEvent *pEvent);
     const GuestEventTypes            Types(void) { return mEventTypes; }
     size_t                           TypeCount(void) { return mEventTypes.size(); }
