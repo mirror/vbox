@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 # include "QILabel.h"
+# include "UIGuestControlFileModel.h"
 # include "UIHostFileTable.h"
 # include "UIVMInformationDialog.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -99,7 +100,8 @@ void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStrin
     for (int i = 0; i < entryList.size(); ++i)
     {
         const QFileInfo &entryInfo = entryList.at(i);
-        if (entryInfo.baseName().isEmpty() || entryInfo.baseName() == "." || entryInfo.baseName() == "..")
+        if (entryInfo.baseName().isEmpty() || entryInfo.baseName() == "." ||
+            entryInfo.baseName() == UIGuestControlFileModel::strUpDirectoryString)
             continue;
         statistics.m_totalSize += entryInfo.size();
         if (entryInfo.isSymLink())
@@ -163,6 +165,7 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
 
     for (int i = 0; i < entries.size(); ++i)
     {
+
         const QFileInfo &fileInfo = entries.at(i);
         QList<QVariant> data;
         data << fileInfo.fileName() << fileInfo.size()
@@ -255,7 +258,7 @@ bool UIHostFileTable::createDirectory(const QString &path, const QString &direct
     return true;
 }
 
-/* static */ FileObjectType UIHostFileTable::fileType(const QFileInfo &fsInfo)
+FileObjectType UIHostFileTable::fileType(const QFileInfo &fsInfo)
 {
     if (!fsInfo.exists())
         return FileObjectType_Unknown;

@@ -31,6 +31,29 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+const char* UIGuestControlFileModel::strUpDirectoryString = "..";
+
+UIGuestControlFileProxyModel::UIGuestControlFileProxyModel(QObject *parent /* = 0 */)
+    :QSortFilterProxyModel(parent)
+{
+}
+
+bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
+{
+    QVariant leftData = sourceModel()->data(left);
+    QVariant rightData = sourceModel()->data(right);
+
+    if (leftData.canConvert(QMetaType::QString) && rightData.canConvert(QMetaType::QString))
+    {
+
+        if (leftData == UIGuestControlFileModel::strUpDirectoryString)
+            return true && (sortOrder() == Qt::AscendingOrder);
+        else if (rightData == UIGuestControlFileModel::strUpDirectoryString)
+            return false && (sortOrder() == Qt::AscendingOrder);
+    }
+
+    return QSortFilterProxyModel::lessThan(left, right);
+}
 
 UIGuestControlFileModel::UIGuestControlFileModel(QObject *parent)
     : QAbstractItemModel(parent)

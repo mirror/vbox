@@ -28,6 +28,7 @@
 # include <QItemDelegate>
 # include <QGridLayout>
 # include <QMenu>
+# include <QSortFilterProxyModel>
 # include <QTextEdit>
 # include <QPushButton>
 
@@ -690,7 +691,7 @@ bool UIFileTableItem::isUpDirectory() const
 {
     if (!isDirectory())
         return false;
-    if (data(0) == QString(".."))
+    if (data(0) == UIGuestControlFileModel::strUpDirectoryString)
         return true;
     return false;
 }
@@ -738,13 +739,14 @@ const unsigned UIGuestControlFileTable::m_iKiloByte = 1000;
 UIGuestControlFileTable::UIGuestControlFileTable(QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_pRootItem(0)
-    , m_pView(0)
-    , m_pModel(0)
     , m_pLocationLabel(0)
     , m_pCopy(0)
     , m_pCut(0)
     , m_pPaste(0)
     , m_pPropertiesDialog(0)
+    , m_pModel(0)
+    , m_pView(0)
+    , m_pProxyModel(0)
     , m_pMainLayout(0)
     , m_pLocationComboBox(0)
     , m_pToolBar(0)
@@ -826,17 +828,23 @@ void UIGuestControlFileTable::prepareObjects()
     if (!m_pModel)
         return;
 
+    m_pProxyModel = new UIGuestControlFileProxyModel(this);
+    if (!m_pProxyModel)
+        return;
+    m_pProxyModel->setSourceModel(m_pModel);
 
     m_pView = new UIGuestControlFileView;
     if (m_pView)
     {
         m_pMainLayout->addWidget(m_pView, 2, 0, 5, 5);
-        m_pView->setModel(m_pModel);
+        m_pView->setModel(m_pProxyModel);
+        //m_pView->setModel(m_pModel);
         m_pView->setItemDelegate(new UIFileDelegate);
+        m_pView->setSortingEnabled(true);
+        m_pView->sortByColumn(0, Qt::AscendingOrder);
 
         connect(m_pView, &UIGuestControlFileView::doubleClicked,
                 this, &UIGuestControlFileTable::sltItemDoubleClicked);
-
         connect(m_pView, &UIGuestControlFileView::sigGoUp,
                 this, &UIGuestControlFileTable::sltGoUp);
         connect(m_pView, &UIGuestControlFileView::sigGoHome,
@@ -992,7 +1000,7 @@ void UIGuestControlFileTable::changeLocation(const QModelIndex &index)
 {
     if (!index.isValid() || !m_pView)
         return;
-    m_pView->setRootIndex(index);
+    m_pView->setRootIndex(m_pProxyModel->mapFromSource(index));
     m_pView->clearSelection();
 
     UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
@@ -1000,7 +1008,8 @@ void UIGuestControlFileTable::changeLocation(const QModelIndex &index)
     {
         updateCurrentLocationEdit(item->path());
     }
-    m_pModel->signalUpdate();
+    /** @todo check if we really need this and if not remove it */
+    //m_pModel->signalUpdate();
 }
 
 void UIGuestControlFileTable::initializeFileTree()
@@ -1021,9 +1030,10 @@ void UIGuestControlFileTable::initializeFileTree()
     m_pRootItem->appendChild(startItem);
     startItem->setIsOpened(false);
     populateStartDirectory(startItem);
-    m_pView->setRootIndex(m_pModel->rootIndex());
+
     m_pModel->signalUpdate();
     updateCurrentLocationEdit(startPath);
+    m_pView->setRootIndex(m_pProxyModel->mapFromSource(m_pModel->rootIndex()));
 }
 
 void UIGuestControlFileTable::populateStartDirectory(UIFileTableItem *startItem)
@@ -1049,7 +1059,6 @@ void UIGuestControlFileTable::populateStartDirectory(UIFileTableItem *startItem)
             startItem->setIsOpened(true);
         }
     }
-
 }
 
 void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
@@ -1057,20 +1066,20 @@ void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &
 {
     if (parent)
 
-    /* Make sure we have a ".." item within directories, and make sure it is not there for the start dir: */
+    /* Make sure we have an item representing up directory, and make sure it is not there for the start dir: */
     if (isDirectoryMap)
     {
-        if (!map.contains("..")  && !isStartDir)
+        if (!map.contains(UIGuestControlFileModel::strUpDirectoryString)  && !isStartDir)
         {
             QList<QVariant> data;
-            data << ".." << 4096 << "";
+            data << UIGuestControlFileModel::strUpDirectoryString << 4096 << "";
             UIFileTableItem *item = new UIFileTableItem(data, parent, FileObjectType_Directory);
             item->setIsOpened(false);
-            map.insert("..", item);
+            map.insert(UIGuestControlFileModel::strUpDirectoryString, item);
         }
-        else if (map.contains("..")  && isStartDir)
+        else if (map.contains(UIGuestControlFileModel::strUpDirectoryString)  && isStartDir)
         {
-            map.remove("..");
+            map.remove(UIGuestControlFileModel::strUpDirectoryString);
         }
     }
     for (QMap<QString,UIFileTableItem*>::const_iterator iterator = map.begin();
@@ -1086,14 +1095,16 @@ void UIGuestControlFileTable::sltItemDoubleClicked(const QModelIndex &index)
 {
     if (!index.isValid() ||  !m_pModel || !m_pView)
         return;
-    goIntoDirectory(index);
+    QModelIndex nIndex = m_pProxyModel ? m_pProxyModel->mapToSource(index) : index;
+    goIntoDirectory(nIndex);
 }
 
 void UIGuestControlFileTable::sltGoUp()
 {
     if (!m_pView || !m_pModel)
         return;
-    QModelIndex currentRoot = m_pView->rootIndex();
+    QModelIndex currentRoot = currentRootIndex();
+
     if (!currentRoot.isValid())
         return;
     if (currentRoot != m_pModel->rootIndex())
@@ -1189,7 +1200,7 @@ void UIGuestControlFileTable::refresh()
 {
     if (!m_pView || !m_pModel)
         return;
-    QModelIndex currentIndex = m_pView->rootIndex();
+    QModelIndex currentIndex = currentRootIndex();
 
     UIFileTableItem *treeItem = indexData(currentIndex);
     if (!treeItem)
@@ -1203,7 +1214,7 @@ void UIGuestControlFileTable::refresh()
     else
         readDirectory(treeItem->path(), treeItem, isRootDir);
     m_pModel->endReset();
-    m_pView->setRootIndex(currentIndex);
+    m_pView->setRootIndex(m_pProxyModel->mapFromSource(currentIndex));
 }
 
 void UIGuestControlFileTable::sltDelete()
@@ -1217,7 +1228,9 @@ void UIGuestControlFileTable::sltDelete()
     QModelIndexList selectedItemIndices = selectionModel->selectedRows();
     for(int i = 0; i < selectedItemIndices.size(); ++i)
     {
-        deleteByIndex(selectedItemIndices.at(i));
+        QModelIndex index =
+            m_pProxyModel ? m_pProxyModel->mapToSource(selectedItemIndices.at(i)) : selectedItemIndices.at(i);
+        deleteByIndex(index);
     }
     /** @todo dont refresh here, just delete the rows and update the table view: */
     refresh();
@@ -1234,7 +1247,9 @@ void UIGuestControlFileTable::sltRename()
     QModelIndexList selectedItemIndices = selectionModel->selectedRows();
     if (selectedItemIndices.size() == 0)
         return;
-    UIFileTableItem *item = indexData(selectedItemIndices.at(0));
+    QModelIndex modelIndex =
+        m_pProxyModel ? m_pProxyModel->mapToSource(selectedItemIndices.at(0)) : selectedItemIndices.at(0);
+    UIFileTableItem *item = indexData(modelIndex);
     if (!item || item->isUpDirectory())
         return;
     m_pView->edit(selectedItemIndices.at(0));
@@ -1244,7 +1259,7 @@ void UIGuestControlFileTable::sltCreateNewDirectory()
 {
     if (!m_pModel || !m_pView)
         return;
-    QModelIndex currentIndex = m_pView->rootIndex();
+    QModelIndex currentIndex = currentRootIndex();
     if (!currentIndex.isValid())
         return;
     UIFileTableItem *item = static_cast<UIFileTableItem*>(currentIndex.internalPointer());
@@ -1333,7 +1348,7 @@ void UIGuestControlFileTable::deSelectUpDirectoryItem()
     QItemSelectionModel *pSelectionModel = m_pView->selectionModel();
     if (!pSelectionModel)
         return;
-    QModelIndex currentRoot = m_pView->rootIndex();
+    QModelIndex currentRoot = currentRootIndex();
     if (!currentRoot.isValid())
         return;
 
@@ -1347,7 +1362,8 @@ void UIGuestControlFileTable::deSelectUpDirectoryItem()
         UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
         if (item && item->isUpDirectory())
         {
-            pSelectionModel->select(index, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
+            QModelIndex indexToDeselect = m_pProxyModel ? m_pProxyModel->mapFromSource(index) : index;
+            pSelectionModel->select(indexToDeselect, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
         }
     }
 }
@@ -1359,7 +1375,7 @@ void UIGuestControlFileTable::setSelectionForAll(QItemSelectionModel::SelectionF
     QItemSelectionModel *pSelectionModel = m_pView->selectionModel();
     if (!pSelectionModel)
         return;
-    QModelIndex currentRoot = m_pView->rootIndex();
+    QModelIndex currentRoot = currentRootIndex();
     if (!currentRoot.isValid())
         return;
 
@@ -1368,7 +1384,8 @@ void UIGuestControlFileTable::setSelectionForAll(QItemSelectionModel::SelectionF
         QModelIndex index = m_pModel->index(i, 0, currentRoot);
         if (!index.isValid())
             continue;
-        pSelectionModel->select(index, flags);
+        QModelIndex indexToSelect = m_pProxyModel ? m_pProxyModel->mapFromSource(index) : index;
+        pSelectionModel->select(indexToSelect, flags);
     }
 }
 
@@ -1547,7 +1564,9 @@ QStringList UIGuestControlFileTable::selectedItemPathList()
     QModelIndexList selectedItemIndices = selectionModel->selectedRows();
     for(int i = 0; i < selectedItemIndices.size(); ++i)
     {
-        UIFileTableItem *item = static_cast<UIFileTableItem*>(selectedItemIndices.at(i).internalPointer());
+        QModelIndex index =
+            m_pProxyModel ? m_pProxyModel->mapToSource(selectedItemIndices.at(i)) : selectedItemIndices.at(i);
+        UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
         if (!item)
             continue;
         pathList.push_back(item->path());
@@ -1584,7 +1603,7 @@ void UIGuestControlFileTable::disableSelectionDependentActions()
     }
 }
 
-/* static */ QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
+QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
 {
     QString strType("Unknown");
     switch(type)
@@ -1632,6 +1651,15 @@ void UIGuestControlFileTable::sltReceiveDirectoryStatistics(UIDirectoryStatistic
     if (!m_pPropertiesDialog)
         return;
     m_pPropertiesDialog->addDirectoryStatistics(statistics);
+}
+
+QModelIndex UIGuestControlFileTable::currentRootIndex() const
+{
+    if (!m_pView)
+        return QModelIndex();
+    if (!m_pProxyModel)
+        return m_pView->rootIndex();
+    return m_pProxyModel->mapToSource(m_pView->rootIndex());
 }
 
 #include "UIGuestControlFileTable.moc"

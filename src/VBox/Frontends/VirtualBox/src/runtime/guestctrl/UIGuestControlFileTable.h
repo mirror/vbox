@@ -41,10 +41,12 @@ class QComboBox;
 class QILabel;
 class QILineEdit;
 class QGridLayout;
+class QSortFilterProxyModel;
 class QTextEdit;
 class QVBoxLayout;
 class UIFileTableItem;
 class UIGuestControlFileModel;
+class UIGuestControlFileProxyModel;
 class UIGuestControlFileView;
 class UIToolBar;
 
@@ -264,6 +266,7 @@ protected:
 
     void retranslateUi();
     void updateCurrentLocationEdit(const QString& strLocation);
+    /* @p index is for model not for 'proxy' model */
     void changeLocation(const QModelIndex &index);
     void initializeFileTree();
     void insertItemsToTree(QMap<QString,UIFileTableItem*> &map, UIFileTableItem *parent,
@@ -278,7 +281,8 @@ protected:
     /** For non-windows system does nothing and for windows systems populates m_driveLetterList with
      *  drive letters */
     virtual void     determineDriveLetters() = 0;
-    static QString   fileTypeString(FileObjectType type);
+    QString          fileTypeString(FileObjectType type);
+    /* @p item index is item location in model not in 'proxy' model */
     void             goIntoDirectory(const QModelIndex &itemIndex);
     /** Follows the path trail, opens directories as it descends */
     void             goIntoDirectory(const QStringList &pathTrail);
@@ -289,8 +293,6 @@ protected:
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
 
     UIFileTableItem         *m_pRootItem;
-    UIGuestControlFileView  *m_pView;
-    UIGuestControlFileModel *m_pModel;
     QILabel                 *m_pLocationLabel;
     QAction                 *m_pCopy;
     QAction                 *m_pCut;
@@ -305,7 +307,7 @@ protected slots:
     void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics);
 
 private slots:
-
+    /* index is passed by the item view and represents the double clicked object's 'proxy' model index */
     void sltItemDoubleClicked(const QModelIndex &index);
     void sltGoUp();
     void sltGoHome();
@@ -326,6 +328,7 @@ private:
 
     void             prepareObjects();
     void             prepareActions();
+    /* @itemIndex is assumed to be 'model' index not 'proxy model' index */
     void             deleteByIndex(const QModelIndex &itemIndex);
     /** Returns the UIFileTableItem for path / which is a direct (and single) child of m_pRootItem */
     UIFileTableItem *getStartDirectoryItem();
@@ -338,6 +341,11 @@ private:
     /** Start directory requires a special attention since on file systems with drive letters
      *  drive letter are direct children of the start directory. On other systems start directory is '/' */
     void            populateStartDirectory(UIFileTableItem *startItem);
+    QModelIndex     currentRootIndex() const;
+    UIGuestControlFileModel      *m_pModel;
+    UIGuestControlFileView       *m_pView;
+    UIGuestControlFileProxyModel *m_pProxyModel;
+
     QGridLayout     *m_pMainLayout;
     QComboBox       *m_pLocationComboBox;
     UIToolBar       *m_pToolBar;

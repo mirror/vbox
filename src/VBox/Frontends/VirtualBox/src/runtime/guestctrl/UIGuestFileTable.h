@@ -40,20 +40,20 @@ public:
 
 protected:
 
-    void retranslateUi() /* override */;
-    virtual void readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
-    virtual void deleteByItem(UIFileTableItem *item) /* override */;
-    virtual void goToHomeDirectory() /* override */;
-    virtual bool renameItem(UIFileTableItem *item, QString newBaseName);
-    virtual bool createDirectory(const QString &path, const QString &directoryName);
+    void            retranslateUi() /* override */;
+    virtual void    readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
+    virtual void    deleteByItem(UIFileTableItem *item) /* override */;
+    virtual void    goToHomeDirectory() /* override */;
+    virtual bool    renameItem(UIFileTableItem *item, QString newBaseName);
+    virtual bool    createDirectory(const QString &path, const QString &directoryName);
     virtual QString fsObjectPropertyString() /* override */;
-    virtual void  showProperties() /* override */;
-    virtual void determineDriveLetters() /* override */;
+    virtual void    showProperties() /* override */;
+    virtual void    determineDriveLetters() /* override */;
 
 private:
 
-    static FileObjectType fileType(const CFsObjInfo &fsInfo);
-    static FileObjectType fileType(const CGuestFsObjInfo &fsInfo);
+    FileObjectType  fileType(const CFsObjInfo &fsInfo);
+    FileObjectType  fileType(const CGuestFsObjInfo &fsInfo);
 
     bool copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath);
     bool copyHostToGuest(const QString& hostSourcePath, const QString &guestDestinationPath);

@@ -20,6 +20,7 @@
 
 /* Qt includes: */
 #include <QAbstractItemModel>
+#include <QSortFilterProxyModel>
 
 /* GUI includes: */
 #include "QITableView.h"
@@ -28,11 +29,27 @@
 class UIFileTableItem;
 class UIGuestControlFileTable;
 
+/** A QSortFilterProxyModel extension used in file tables. Modifies some
+  * of the base class behavior like lessThan(..) */
+class UIGuestControlFileProxyModel : public QSortFilterProxyModel
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIGuestControlFileProxyModel(QObject *parent = 0);
+
+protected:
+
+    bool lessThan(const QModelIndex &left, const QModelIndex &right) const /* override */;
+};
+
 /** UIGuestControlFileModel serves as the model for a file structure.
-    it supports a tree level hierarchy which can be displayed with
-    QTableView and/or QTreeView. Note the file structure data is not
-    kept by the model but rather by the containing widget which also servers
-    as the interface to functionality this model provides.*/
+  * it supports a tree level hierarchy which can be displayed with
+  * QTableView and/or QTreeView. Note the file structure data is not
+  * kept by the model but rather by the containing widget which also servers
+  * as the interface to functionality this model provides.*/
 class UIGuestControlFileModel : public QAbstractItemModel
 {
 
@@ -60,6 +77,7 @@ public:
     void beginReset();
     void endReset();
     bool insertRows(int position, int rows, const QModelIndex &parent);
+    static const char* strUpDirectoryString;
 
 private:
 
@@ -71,4 +89,3 @@ private:
 
 
 #endif /* !___UIGuestControlFileModel_h___ */
-
