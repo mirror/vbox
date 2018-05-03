@@ -796,6 +796,10 @@ int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
             if (pcbRead)
                 *pcbRead = cbRead;
         }
+        else if (pEvent->HasGuestError()) /* Return guest rc if available. */
+        {
+            vrc = pEvent->GetGuestError();
+        }
     }
 
     unregisterWaitEvent(pEvent);
@@ -853,6 +857,10 @@ int GuestFile::i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutM
             if (pcbRead)
                 *pcbRead = cbRead;
         }
+        else if (pEvent->HasGuestError()) /* Return guest rc if available. */
+        {
+            vrc = pEvent->GetGuestError();
+        }
     }
 
     unregisterWaitEvent(pEvent);
@@ -901,7 +909,21 @@ int GuestFile::i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
 
     vrc = sendCommand(HOST_FILE_SEEK, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = i_waitForOffsetChange(pEvent, uTimeoutMS, puOffset);
+    {
+        uint64_t uOffset;
+        vrc = i_waitForOffsetChange(pEvent, uTimeoutMS, &uOffset);
+        if (RT_SUCCESS(vrc))
+        {
+            LogFlowThisFunc(("uOffset=%RU64\n", uOffset));
+
+            if (puOffset)
+                *puOffset = uOffset;
+        }
+        else if (pEvent->HasGuestError()) /* Return guest rc if available. */
+        {
+            vrc = pEvent->GetGuestError();
+        }
+    }
 
     unregisterWaitEvent(pEvent);
 
@@ -1223,6 +1245,10 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
             LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
             if (pcbWritten)
                 *pcbWritten = cbWritten;
+        }
+        else if (pEvent->HasGuestError()) /* Return guest rc if available. */
+        {
+            vrc = pEvent->GetGuestError();
         }
     }
 
