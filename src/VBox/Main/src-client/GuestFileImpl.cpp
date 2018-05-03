@@ -1160,6 +1160,10 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
             if (pcbWritten)
                 *pcbWritten = cbWritten;
         }
+        else if (pEvent->HasGuestError()) /* Return guest rc if available. */
+        {
+            vrc = pEvent->GetGuestError();
+        }
     }
 
     unregisterWaitEvent(pEvent);
