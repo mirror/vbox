@@ -311,7 +311,7 @@ int GuestSessionTask::fileCopyFromGuestInner(ComObjPtr<GuestFile> &srcFile, PRTF
         if (RT_FAILURE(rc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                Utf8StrFmt(GuestSession::tr("Reading %RU32 bytes @ %RU64, failed: %Rrc"), cbChunk, cbWrittenTotal, rc));
+                                Utf8StrFmt(GuestSession::tr("Reading %RU32 bytes @ %RU64 from guest failed: %Rrc"), cbChunk, cbWrittenTotal, rc));
             break;
         }
 
@@ -319,7 +319,7 @@ int GuestSessionTask::fileCopyFromGuestInner(ComObjPtr<GuestFile> &srcFile, PRTF
         if (RT_FAILURE(rc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                Utf8StrFmt(GuestSession::tr("Writing to %RU32 bytes to file failed: %Rrc"), cbRead, rc));
+                                Utf8StrFmt(GuestSession::tr("Writing %RU32 bytes to file on host failed: %Rrc"), cbRead, rc));
             break;
         }
 
@@ -638,7 +638,7 @@ int GuestSessionTask::fileCopyToGuestInner(PRTFILE phSrcFile, ComObjPtr<GuestFil
         if (RT_FAILURE(rc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                Utf8StrFmt(GuestSession::tr("Reading %RU32 bytes @ %RU64, failed: %Rrc"), cbChunk, cbWrittenTotal, rc));
+                                Utf8StrFmt(GuestSession::tr("Reading %RU32 bytes @ %RU64 from host failed: %Rrc"), cbChunk, cbWrittenTotal, rc));
             break;
         }
 
@@ -646,7 +646,7 @@ int GuestSessionTask::fileCopyToGuestInner(PRTFILE phSrcFile, ComObjPtr<GuestFil
         if (RT_FAILURE(rc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                Utf8StrFmt(GuestSession::tr("Writing to %zu bytes to file failed: %Rrc"), cbRead, rc));
+                                Utf8StrFmt(GuestSession::tr("Writing %zu bytes to file on guest failed: %Rrc"), cbRead, rc));
             break;
         }
 
