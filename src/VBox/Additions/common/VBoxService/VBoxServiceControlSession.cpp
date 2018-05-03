@@ -389,6 +389,10 @@ static int vgsvcGstCtrlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSes
     int rc = VbglR3GuestCtrlFileGetWrite(pHostCtx, &uHandle, pvScratchBuf, (uint32_t)cbScratchBuf, &cbToWrite);
     if (RT_SUCCESS(rc))
     {
+        /* Make sure that we only write up to cbScratchBuf bytes. */
+        if (cbToWrite > (uint32_t)cbScratchBuf)
+            cbToWrite = (uint32_t)cbScratchBuf;
+
         size_t cbWritten = 0;
         PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
