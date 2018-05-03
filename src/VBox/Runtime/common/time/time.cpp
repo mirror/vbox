@@ -711,25 +711,25 @@ RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
     if (    (pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) == RTTIME_FLAGS_TYPE_LOCAL
         &&  pTime->offUTC)
     {
-        int32_t offUTCHour   = pTime->offUTC / 60;
-        int32_t offUTCMinute = pTime->offUTC % 60;
-        char    chSign;
-        Assert(pTime->offUTC <= 840 && pTime->offUTC >= -840);
-        if (pTime->offUTC >= 0)
+        int32_t  offUTC = pTime->offUTC;
+        Assert(offUTC <= 840 && offUTC >= -840);
+        char     chSign;
+        if (offUTC >= 0)
             chSign = '+';
         else
         {
             chSign = '-';
-            offUTCMinute = -offUTCMinute;
-            offUTCHour = -offUTCHour;
+            offUTC = -offUTC;
         }
+        uint32_t offUTCHour   = (uint32_t)offUTC / 60;
+        uint32_t offUTCMinute = (uint32_t)offUTC % 60;
         cch = RTStrPrintf(psz, cb,
-                          "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32%c%02d%02d",
+                          "%RI32-%02u-%02uT%02u:%02u:%02u.%09RU32%c%02d%:02d",
                           pTime->i32Year, pTime->u8Month, pTime->u8MonthDay,
                           pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond,
                           chSign, offUTCHour, offUTCMinute);
         if (    cch <= 15
-            ||  psz[cch - 5] != chSign)
+            ||  psz[cch - 6] != chSign)
             return NULL;
     }
     else
@@ -884,8 +884,24 @@ RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
     else if (   *pszString == '+'
              || *pszString == '-')
     {
-        rc = RTStrToInt32Ex(pszString, (char **)&pszString, 10, &pTime->offUTC);
+        int8_t cUtcHours = 0;
+        rc = RTStrToInt8Ex(pszString, (char **)&pszString, 10, &cUtcHours);
         if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS && rc != VWRN_TRAILING_SPACES)
+            return NULL;
+        uint8_t cUtcMin = 0;
+        if (*pszString == ':')
+        {
+            rc = RTStrToUInt8Ex(pszString + 1, (char **)&pszString, 10, &cUtcMin);
+            if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_SPACES)
+                return NULL;
+        }
+        else if (*pszString && !RT_C_IS_BLANK(*pszString))
+            return NULL;
+        if (cUtcHours >= 0)
+            pTime->offUTC = cUtcHours * 60 + cUtcMin;
+        else
+            pTime->offUTC = cUtcHours * 60 - cUtcMin;
+        if (RT_ABS(pTime->offUTC) > 840)
             return NULL;
     }
     /* else: No time zone given, local with offUTC = 0. */
