@@ -2919,7 +2919,8 @@ ifdef VBOX_WITH_NEW_XCODE
 endif
 
 # The address sanitiser library intercepts dlopen() and breaks RPATH $ORIGIN,
-# so we need to link it statically.
+# so we need to link it statically or set LD_LIBRARY_PATH.  To link statically,
+# set VBOX_WITH_GCC_SANITIZER_STATIC in addition.
 ifdef VBOX_WITH_GCC_SANITIZER
  VBOX_GCC_SANITIZER_FLAGS := \
 	-fsanitize=undefined \
@@ -2929,19 +2930,22 @@ ifdef VBOX_WITH_GCC_SANITIZER
 	-fsanitize=object-size \
 	-fno-sanitize=alignment \
 	-fno-sanitize=vptr \
-	-fno-common \
-	-static-libasan
+	-fno-common
 else
  VBOX_GCC_SANITIZER_FLAGS =
 endif
 
 # -libasan-static is currently not supported in combination with -no-undefined.
+VBOX_GCC_NO_UNDEFINED    :=
+VBOX_GCC_NO_UNDEFINED_R0 :=
 ifdef VBOX_WITH_GCC_SANITIZER
- VBOX_GCC_NO_UNDEFINED    :=
- VBOX_GCC_NO_UNDEFINED_R0 :=
-else
- VBOX_GCC_NO_UNDEFINED    := -Wl,--no-undefined
- VBOX_GCC_NO_UNDEFINED_R0 := -no-undefined
+ ifdef VBOX_WITH_GCC_SANITIZER_STATIC
+  VBOX_GCC_NO_UNDEFINED    := -Wl,--no-undefined
+  VBOX_GCC_NO_UNDEFINED_R0 := -no-undefined
+  VBOX_GCC_SANITIZER_FLAGS += -static-libasan
+ else
+  VBOX_GCC_SANITIZER_FLAGS += -lasan
+ endif
 endif
 
 # Disabled Visual C++ warnings, W4:
