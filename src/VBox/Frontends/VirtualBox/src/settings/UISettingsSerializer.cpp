@@ -18,18 +18,21 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 /* Qt includes: */
-# include <QTimer>
-# include <QLabel>
 # include <QHBoxLayout>
-# include <QVBoxLayout>
+# include <QLabel>
 # include <QProgressBar>
+# include <QTimer>
+# include <QVBoxLayout>
+
 /* GUI includes: */
-# include "UISettingsSerializer.h"
+# include "QILabel.h"
+# include "UIIconPool.h"
 # include "UIMessageCenter.h"
 # include "UISettingsPage.h"
-# include "UIIconPool.h"
-# include "QILabel.h"
+# include "UISettingsSerializer.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -202,8 +205,10 @@ void UISettingsSerializer::run()
 
 QString UISettingsSerializerProgress::s_strProgressDescriptionTemplate = QString("<compact elipsis=\"middle\">%1 (%2/%3)</compact>");
 
-UISettingsSerializerProgress::UISettingsSerializerProgress(QWidget *pParent, UISettingsSerializer::SerializationDirection enmDirection,
-                                                           const QVariant &data, const UISettingsPageList &pages)
+UISettingsSerializerProgress::UISettingsSerializerProgress(QWidget *pParent,
+                                                           UISettingsSerializer::SerializationDirection enmDirection,
+                                                           const QVariant &data,
+                                                           const UISettingsPageList &pages)
     : QIWithRetranslateUI<QIDialog>(pParent)
     , m_enmDirection(enmDirection)
     , m_data(data)
