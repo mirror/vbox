@@ -1003,6 +1003,8 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
 
     } while (0);
 
+    Log3Func(("[%s] fEnabled=%RTbool, cbWrittenTotal=%RU32, rc=%Rrc\n", pStream->szName, pThis->Out.fEnabled, cbWrittenTotal, rc));
+
 #ifdef LOG_ENABLED
     RTStrFree(pszHstSts);
     RTStrFree(pszGstSts);
@@ -2308,11 +2310,9 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
             if (RT_FAILURE(rc))
                 break;
 
-#if defined (VBOX_WITH_STATISTICS) || defined (VBOX_AUDIO_DEBUG_DUMP_PCM_DATA)
-            const uint32_t cbRead = AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cRead);
-#endif
-
 #ifdef VBOX_WITH_STATISTICS
+            const uint32_t cbRead = AUDIOMIXBUF_F2B(&pGstStream->MixBuf, cRead);
+
             STAM_COUNTER_ADD(&pThis->Stats.TotalBytesRead,       cbRead);
             STAM_COUNTER_ADD(&pGstStream->In.StatBytesTotalRead, cbRead);
 #endif
@@ -2339,7 +2339,7 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
 
     } while (0);
 
-    Log3Func(("[%s] cbReadTotal=%RU32, rc=%Rrc\n", pStream->szName, cbReadTotal, rc));
+    Log3Func(("[%s] fEnabled=%RTbool, cbReadTotal=%RU32, rc=%Rrc\n", pStream->szName, pThis->In.fEnabled, cbReadTotal, rc));
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -2664,6 +2664,9 @@ static DECLCALLBACK(int) drvAudioEnable(PPDMIAUDIOCONNECTOR pInterface, PDMAUDIO
 
     if (fEnable != *pfEnabled)
     {
+        LogRel(("Audio: %s %s\n",
+                fEnable ? "Enabling " : "Disabling ", enmDir == PDMAUDIODIR_IN ? "input" : "output"));
+
         PPDMAUDIOSTREAM pStream;
         RTListForEach(&pThis->lstHstStreams, pStream, PDMAUDIOSTREAM, Node)
         {
