@@ -84,7 +84,7 @@ typedef struct PDMISERIALPORT
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   fNewStatusLine  New state of the status line pins.
+     * @param   fNewStatusLines New state of the status line pins.
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnNotifyStsLinesChanged, (PPDMISERIALPORT pInterface, uint32_t fNewStatusLines));
