@@ -3237,11 +3237,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     aaTests.extend([
                         # Copying directories with contain files we don't have read access to.
                         [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\security',
-                                       sDst = sScratchGst),
+                                       sDst = sScratchGst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                           tdTestResult(fRc = False) ],
                         # Copying directories with regular files.
                         [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Help',
-                                       sDst = sScratchGst),
+                                       sDst = sScratchGst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                           tdTestResult(fRc = True) ]
                         ]);
         else:
