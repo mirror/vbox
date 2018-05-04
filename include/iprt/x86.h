@@ -1029,13 +1029,13 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** @name Read/Write values.
  * @{ */
 /** Break on instruction fetch only. */
-#define X86_DR7_RW_EO                       0U
+#define X86_DR7_RW_EO                       UINT32_C(0)
 /** Break on write only. */
-#define X86_DR7_RW_WO                       1U
+#define X86_DR7_RW_WO                       UINT32_C(1)
 /** Break on I/O read/write. This is only defined if CR4.DE is set. */
-#define X86_DR7_RW_IO                       2U
+#define X86_DR7_RW_IO                       UINT32_C(2)
 /** Break on read or write (but not instruction fetches). */
-#define X86_DR7_RW_RW                       3U
+#define X86_DR7_RW_RW                       UINT32_C(3)
 /** @} */
 
 /** Shifts a X86_DR7_RW_* value to its right place.
@@ -1075,10 +1075,10 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 
 /** @name Length values.
  * @{ */
-#define X86_DR7_LEN_BYTE                    0U
-#define X86_DR7_LEN_WORD                    1U
-#define X86_DR7_LEN_QWORD                   2U /**< AMD64 long mode only. */
-#define X86_DR7_LEN_DWORD                   3U
+#define X86_DR7_LEN_BYTE                    UINT32_C(0)
+#define X86_DR7_LEN_WORD                    UINT32_C(1)
+#define X86_DR7_LEN_QWORD                   UINT32_C(2) /**< AMD64 long mode only. */
+#define X86_DR7_LEN_DWORD                   UINT32_C(3)
 /** @} */
 
 /** Shifts a X86_DR7_LEN_* value to its right place.
