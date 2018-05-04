@@ -36,6 +36,7 @@
 # include "VBoxOSTypeSelectorButton.h"
 # include "UIApplianceEditorWidget.h"
 # include "UIConverter.h"
+# include "UIFilePathSelector.h"
 # include "UIIconPool.h"
 # include "UILineTextEdit.h"
 # include "UIMessageCenter.h"
@@ -664,13 +665,10 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
             }
             case KVirtualSystemDescriptionType_HardDiskImage:
             {
-                /* disabled for now
                    UIFilePathSelector *pFileChooser = new UIFilePathSelector(pParent);
-                   pFileChooser->setMode(UIFilePathSelector::Mode_File);
+                   pFileChooser->setMode(UIFilePathSelector::Mode_File_Save);
                    pFileChooser->setResetEnabled(false);
-                   */
-                QLineEdit *pLineEdit = new QLineEdit(pParent);
-                pEditor = pLineEdit;
+                   pEditor = pFileChooser;
                 break;
             }
             default: break;
@@ -752,15 +750,9 @@ bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & 
         }
         case KVirtualSystemDescriptionType_HardDiskImage:
         {
-            /* disabled for now
-               if (UIFilePathSelector *pFileChooser = qobject_cast<UIFilePathSelector*>(pEditor))
-               {
-               pFileChooser->setPath(m_strConfigValue);
-               }
-               */
-            if (QLineEdit *pLineEdit = qobject_cast<QLineEdit*>(pEditor))
+            if (UIFilePathSelector *pFileChooser = qobject_cast<UIFilePathSelector*>(pEditor))
             {
-                pLineEdit->setText(m_strConfigValue);
+                pFileChooser->setPath(m_strConfigValue);
                 fDone = true;
             }
             break;
@@ -885,15 +877,9 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
         }
         case KVirtualSystemDescriptionType_HardDiskImage:
         {
-            /* disabled for now
-               if (UIFilePathSelector *pFileChooser = qobject_cast<UIFilePathSelector*>(pEditor))
-               {
-               m_strConfigValue = pFileChooser->path();
-               }
-               */
-            if (QLineEdit *pLineEdit = qobject_cast<QLineEdit*>(pEditor))
+            if (UIFilePathSelector *pFileChooser = qobject_cast<UIFilePathSelector*>(pEditor))
             {
-                m_strConfigValue = pLineEdit->text();
+                m_strConfigValue = pFileChooser->path();
                 fDone = true;
             }
             break;
@@ -1139,14 +1125,14 @@ QWidget *UIApplianceDelegate::createEditor(QWidget *pParent, const QStyleOptionV
     UIApplianceModelItem *pItem = static_cast<UIApplianceModelItem*>(index.internalPointer());
     QWidget *pEditor = pItem->createEditor(pParent, styleOption, index);
 
+    if (!pEditor)
+        return QItemDelegate::createEditor(pParent, styleOption, index);
+
     /* Allow UILineTextEdit to commit data early: */
-    if (pEditor && qobject_cast<UILineTextEdit*>(pEditor))
+    if (qobject_cast<UILineTextEdit*>(pEditor))
         connect(pEditor, SIGNAL(sigFinished(QWidget*)), this, SIGNAL(commitData(QWidget*)));
 
-    if (pEditor == 0)
-        return QItemDelegate::createEditor(pParent, styleOption, index);
-    else
-        return pEditor;
+    return pEditor;
 }
 
 void UIApplianceDelegate::setEditorData(QWidget *pEditor, const QModelIndex &idx) const
@@ -1442,4 +1428,3 @@ void UIApplianceEditorWidget::initSystemSettings()
         m_maxGuestCPUCount   = sp.GetMaxGuestCPUCount();
     }
 }
-
