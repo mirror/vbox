@@ -512,6 +512,41 @@ static void ps2kInsertQueue(GeneriQ *pQ, uint8_t val)
 #ifdef IN_RING3
 
 /**
+ * Add a null-terminated byte sequence to a queue if there is enough room.
+ *
+ * @param   pQ                  Pointer to the queue.
+ * @param   pStr                Pointer to the bytes to store.
+ * @param   uReserve            Number of bytes that must still remain
+ *                              available in queue.
+ * @return  int                 VBox status/error code.
+ */
+static int ps2kInsertStrQueue(GeneriQ *pQ, const uint8_t *pStr, uint32_t uReserve)
+{
+    uint32_t    cbStr;
+    unsigned    i;
+
+    cbStr = (uint32_t)strlen((const char *)pStr);
+
+    /* Check if queue has enough room. */
+    if (pQ->cUsed + uReserve + cbStr >= pQ->cSize)
+    {
+        LogRelFlowFunc(("queue %p full (%u entries, want room for %u), cannot insert %u entries\n",
+                        pQ, pQ->cUsed, uReserve, cbStr));
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    /* Insert byte sequence and update circular buffer write position. */
+    for (i = 0; i < cbStr; ++i) {
+        pQ->abQueue[pQ->wpos] = pStr[i];
+        if (++pQ->wpos == pQ->cSize)
+            pQ->wpos = 0;   /* Roll over. */
+    }
+    pQ->cUsed += cbStr;
+    LogRelFlowFunc(("inserted %u bytes into queue %p\n", cbStr, pQ));
+    return VINF_SUCCESS;
+}
+
+/**
  * Save a queue state.
  *
  * @param   pSSM                SSM handle to write the state to.
@@ -819,10 +854,11 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pb)
 
 static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
 {
-    unsigned int    i = 0;
     key_def const   *pKeyDef;
     uint8_t         abCodes[16];
-    uint8_t         u8MakeCode;
+    char            *pCodes;
+    size_t          cbLeft;
+    uint8_t         abScan[2];
 
     LogFlowFunc(("key %s: 0x%02x (set %d)\n", fKeyDown ? "down" : "up", u8HidCode, pThis->u8ScanSet));
 
@@ -854,12 +890,15 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
     if ((pKeyDef->keyFlags & KF_NL) && fKeyDown)
         pThis->fNumLockOn ^= true;
 
+    abCodes[0] = 0;
+    pCodes = (char *)abCodes;
+    cbLeft = sizeof(abCodes);
+
     if (pThis->u8ScanSet == 1 || pThis->u8ScanSet == 2)
     {
         /* The basic scan set 1 and 2 logic is the same, only the scan codes differ.
          * Since scan set 2 is used almost all the time, that case is handled first.
          */
-        abCodes[0] = 0;
         if (fKeyDown)
         {
             /* Process key down event. */
@@ -867,24 +906,24 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             {
                 /* Pause/Break sends different data if either Ctrl is held. */
                 if (pThis->u8Modifiers & (MOD_LCTRL | MOD_RCTRL))
-                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                           "\xE0\x7E\xE0\xF0\x7E" : "\xE0\x46\xE0\xC6");
+                    RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                              "\xE0\x7E\xE0\xF0\x7E" : "\xE0\x46\xE0\xC6");
                 else
-                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                           "\xE1\x14\x77\xE1\xF0\x14\xF0\x77" : "\xE1\x1D\x45\xE1\x9D\xC5");
+                    RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                              "\xE1\x14\x77\xE1\xF0\x14\xF0\x77" : "\xE1\x1D\x45\xE1\x9D\xC5");
             }
             else if (pKeyDef->keyFlags & KF_PS)
             {
                 /* Print Screen depends on all of Ctrl, Shift, *and* Alt! */
                 if (pThis->u8Modifiers & (MOD_LALT | MOD_RALT))
-                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                           "\x84" : "\x54");
+                    RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                              "\x84" : "\x54");
                 else if (pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT))
-                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                           "\xE0\x7C" : "\xE0\x37");
+                    RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                              "\xE0\x7C" : "\xE0\x37");
                 else
-                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                           "\xE0\x12\xE0\x7C" : "\xE0\x2A\xE0\x37");
+                    RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                              "\xE0\x12\xE0\x7C" : "\xE0\x2A\xE0\x37");
             }
             else if (pKeyDef->keyFlags & (KF_GK | KF_NS))
             {
@@ -896,35 +935,35 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
                 if (!pThis->fNumLockOn || (pKeyDef->keyFlags & KF_NS))
                 {
                     if (pThis->u8Modifiers & MOD_LSHIFT)
-                        strcat((char *)abCodes, pThis->u8ScanSet == 2 ?
-                               "\xE0\xF0\x12" : "\xE0\xAA");
+                        RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                                  "\xE0\xF0\x12" : "\xE0\xAA");
                     if (pThis->u8Modifiers & MOD_RSHIFT)
-                        strcat((char *)abCodes, pThis->u8ScanSet == 2 ?
-                               "\xE0\xF0\x59" : "\xE0\xB6");
+                        RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                                  "\xE0\xF0\x59" : "\xE0\xB6");
                 }
                 else
                 {
                     Assert(pThis->fNumLockOn);  /* Not for KF_NS! */
                     if ((pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT)) == 0)
-                        strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                               "\xE0\x12" : "\xE0\x2A");
+                        RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                                  "\xE0\x12" : "\xE0\x2A");
                     /* Else Shift cancels NumLock, so no prefix! */
                 }
             }
-            /* Feed the bytes to the queue if there is room. */
-            /// @todo check empty space!
-            while (abCodes[i])
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, abCodes[i++]);
-            Assert(i < sizeof(abCodes));
 
             /* Standard processing for regular keys only. */
-            u8MakeCode = pThis->u8ScanSet == 2 ? pKeyDef->makeS2 : pKeyDef->makeS1;
+            abScan[0] = pThis->u8ScanSet == 2 ? pKeyDef->makeS2 : pKeyDef->makeS1;
+            abScan[1] = '\0';
             if (!(pKeyDef->keyFlags & (KF_PB | KF_PS)))
             {
                 if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS))
-                    ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, u8MakeCode);
+                    RTStrCatP(&pCodes, &cbLeft, "\xE0");
+                RTStrCatP(&pCodes, &cbLeft, (const char *)abScan);
             }
+
+            /* Feed the bytes to the queue if there is room. */
+            //@todo: Send overrun code if sequence won't fit?
+            ps2kInsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
         }
         else if (!(pKeyDef->keyFlags & (KF_NB | KF_PB)))
         {
@@ -935,27 +974,25 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             {
                 /* Undo faked Print Screen state as needed. */
                 if (pThis->u8Modifiers & (MOD_LALT | MOD_RALT))
-                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                           "\xF0\x84" : "\xD4");
+                    RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                              "\xF0\x84" : "\xD4");
                 else if (pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT))
-                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                           "\xE0\xF0\x7C" : "\xE0\xB7");
+                    RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                              "\xE0\xF0\x7C" : "\xE0\xB7");
                 else
-                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                           "\xE0\xF0\x7C\xE0\xF0\x12" : "\xE0\xB7\xE0\xAA");
+                    RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                              "\xE0\xF0\x7C\xE0\xF0\x12" : "\xE0\xB7\xE0\xAA");
             }
             else
             {
                 /* Process base scan code for less unusual keys. */
+                abScan[0] = pThis->u8ScanSet == 2 ? pKeyDef->makeS2 : pKeyDef->makeS1 | 0x80;
+                abScan[1] = '\0';
                 if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS))
-                    ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
-                if (pThis->u8ScanSet == 2) {
-                    ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xF0);
-                    ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS2);
-                } else {
-                    Assert(pThis->u8ScanSet == 1);
-                    ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS1 | 0x80);
-                }
+                    RTStrCatP(&pCodes, &cbLeft, "\xE0");
+                if (pThis->u8ScanSet == 2)
+                    RTStrCatP(&pCodes, &cbLeft, "\xF0");
+                RTStrCatP(&pCodes, &cbLeft, (const char *)abScan);
 
                 /* Restore shift state for gray keys. */
                 if (pKeyDef->keyFlags & (KF_GK | KF_NS))
@@ -963,36 +1000,36 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
                     if (!pThis->fNumLockOn || (pKeyDef->keyFlags & KF_NS))
                     {
                         if (pThis->u8Modifiers & MOD_LSHIFT)
-                            strcat((char *)abCodes, pThis->u8ScanSet == 2 ?
-                                   "\xE0\x12" : "\xE0\x2A");
+                            RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                                      "\xE0\x12" : "\xE0\x2A");
                         if (pThis->u8Modifiers & MOD_RSHIFT)
-                            strcat((char *)abCodes, pThis->u8ScanSet == 2 ?
-                                   "\xE0\x59" : "\xE0\x36");
+                            RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                                      "\xE0\x59" : "\xE0\x36");
                     }
                     else
                     {
                         Assert(pThis->fNumLockOn);  /* Not for KF_NS! */
                         if ((pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT)) == 0)
-                            strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
-                                   "\xE0\xF0\x12" : "\xE0\xAA");
+                            RTStrCatP(&pCodes, &cbLeft, pThis->u8ScanSet == 2 ?
+                                      "\xE0\xF0\x12" : "\xE0\xAA");
                     }
                 }
             }
 
-            /* Feed any additional bytes to the queue if there is room. */
-            /// @todo check empty space!
-            while (abCodes[i])
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, abCodes[i++]);
-            Assert(i < sizeof(abCodes));
+            /* Feed the bytes to the queue if there is room. */
+            //@todo: Send overrun code if sequence won't fit?
+            ps2kInsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
         }
     }
     else
     {
         /* Handle Scan Set 3 - very straightforward. */
         Assert(pThis->u8ScanSet == 3);
+        abScan[0] = pKeyDef->makeS3;
+        abScan[1] = '\0';
         if (fKeyDown)
         {
-            ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS3);
+            RTStrCatP(&pCodes, &cbLeft, (const char *)abScan);
         }
         else
         {
@@ -1000,10 +1037,13 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             /// @todo Look up the current typematic setting, not the default!
             if (pKeyDef->keyMatic != T_M)
             {
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xF0);
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS3);
+                RTStrCatP(&pCodes, &cbLeft, "\xF0");
+                RTStrCatP(&pCodes, &cbLeft, (const char *)abScan);
             }
         }
+        /* Feed the bytes to the queue if there is room. */
+        //@todo: Send overrun code if sequence won't fit?
+        ps2kInsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
     }
 
     /* Set up or cancel typematic key repeat. */
