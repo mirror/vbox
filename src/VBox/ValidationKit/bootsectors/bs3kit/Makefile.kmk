@@ -174,6 +174,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-Trap32SetGate.c \
 	bs3-cmn-Trap64Init.c \
 	bs3-cmn-Trap64SetGate.c \
+	bs3-cmn-TrapSetDpl.c \
 	bs3-cmn-TrapDefaultHandler.c \
 	bs3-cmn-TrapHandlersData.asm \
 	bs3-cmn-TrapPrintFrame.c \

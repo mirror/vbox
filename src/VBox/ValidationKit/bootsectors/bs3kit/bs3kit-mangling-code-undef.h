@@ -155,6 +155,7 @@
 #undef Bs3TrapRmV86Init
 #undef Bs3TrapRmV86InitEx
 #undef Bs3TrapRmV86SetGate
+#undef Bs3TrapSetDpl
 #undef Bs3TrapSetHandler
 #undef Bs3TrapSetHandlerEx
 #undef Bs3TrapSetJmp

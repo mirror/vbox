@@ -2963,6 +2963,17 @@ BS3_CMN_PROTO_STUB(void, Bs3Trap64SetGate,(uint8_t iIdt, uint8_t bType, uint8_t 
 extern uint32_t g_Bs3Trap64GenericEntriesFlatAddr;
 
 /**
+ * Adjusts the DPL the IDT entry specified by @a iIdt.
+ *
+ * The change is applied to the 16-bit, 32-bit and 64-bit IDTs.
+ *
+ * @returns Old DPL (from 64-bit IDT).
+ * @param   iIdt        The index of the IDT and IVT entry to set.
+ * @param   bDpl        The DPL.
+ */
+BS3_CMN_PROTO_STUB(uint8_t, Bs3TrapSetDpl,(uint8_t iIdt, uint8_t bDpl));
+
+/**
  * C-style trap handler.
  *
  * The caller will resume the context in @a pTrapFrame upon return.

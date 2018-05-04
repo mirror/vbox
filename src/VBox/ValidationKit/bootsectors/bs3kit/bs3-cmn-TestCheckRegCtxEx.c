@@ -48,7 +48,7 @@ BS3_CMN_DEF(bool, Bs3TestCheckRegCtxEx,(PCBS3REGCTX pActualCtx, PCBS3REGCTX pExp
     CHECK_MEMBER("rcx",     "%08RX64",  pActualCtx->rcx.u,    pExpectedCtx->rcx.u);
     CHECK_MEMBER("rdx",     "%08RX64",  pActualCtx->rdx.u,    pExpectedCtx->rdx.u);
     CHECK_MEMBER("rbx",     "%08RX64",  pActualCtx->rbx.u,    pExpectedCtx->rbx.u);
-    CHECK_MEMBER("rsp",     "%08RX64",  pActualCtx->rsp.u,    pExpectedCtx->rsp.u);
+    CHECK_MEMBER("rsp",     "%08RX64",  pActualCtx->rsp.u,    pExpectedCtx->rsp.u + cbSpAcjust);
     CHECK_MEMBER("rbp",     "%08RX64",  pActualCtx->rbp.u,    pExpectedCtx->rbp.u);
     CHECK_MEMBER("rsi",     "%08RX64",  pActualCtx->rsi.u,    pExpectedCtx->rsi.u);
     CHECK_MEMBER("rdi",     "%08RX64",  pActualCtx->rdi.u,    pExpectedCtx->rdi.u);

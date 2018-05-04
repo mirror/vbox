@@ -155,6 +155,7 @@
 #define Bs3TrapRmV86Init BS3_CMN_MANGLER(Bs3TrapRmV86Init)
 #define Bs3TrapRmV86InitEx BS3_CMN_MANGLER(Bs3TrapRmV86InitEx)
 #define Bs3TrapRmV86SetGate BS3_CMN_MANGLER(Bs3TrapRmV86SetGate)
+#define Bs3TrapSetDpl BS3_CMN_MANGLER(Bs3TrapSetDpl)
 #define Bs3TrapSetHandler BS3_CMN_MANGLER(Bs3TrapSetHandler)
 #define Bs3TrapSetHandlerEx BS3_CMN_MANGLER(Bs3TrapSetHandlerEx)
 #define Bs3TrapSetJmp BS3_CMN_MANGLER(Bs3TrapSetJmp)
