@@ -1116,7 +1116,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         fRc = True; # Be optimistic.
         try:
-            reporter.log2('Copying host file "%s" to guest "%s"' % (sSrc, sDst));
+            reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (sSrc, sDst, aFlags));
             if self.oTstDrv.fpApiVer >= 5.0:
                 curProgress = oGuestSession.fileCopyToGuest(sSrc, sDst, aFlags);
             else:
@@ -1280,10 +1280,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ## @todo Compare execution timeouts!
         #tsStart = base.timestampMilli();
 
-        reporter.log2('Using session user=%s, sDomain=%s, session name=%s, session timeout=%d' \
+        reporter.log2('Using session user=%s, sDomain=%s, name=%s, timeout=%d' \
                       % (oGuestSession.user, oGuestSession.domain, \
                          oGuestSession.name, oGuestSession.timeout));
-        reporter.log2('Executing cmd=%s, aFlags=%s, timeout=%d, args=%s, env=%s' \
+        reporter.log2('Executing sCmd=%s, aFlags=%s, timeoutMS=%d, aArgs=%s, aEnv=%s' \
                       % (oTest.sCmd, oTest.aFlags, oTest.timeoutMS, \
                          oTest.aArgs, oTest.aEnv));
         try:
@@ -3251,7 +3251,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for (i, aTest) in enumerate(aaTests):
             curTest = aTest[0]; # tdTestExec, use an index, later.
             curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sSrc="%s", sDst="%s", aFlags="%s" ...' % \
+            reporter.log('Testing #%d, sSrc=%s, sDst=%s, aFlags=%s ...' % \
                          (i, curTest.sSrc, curTest.sDst, curTest.aFlags));
             curTest.setEnvironment(oSession, oTxsSession, oTestVm);
             fRc, curGuestSession = curTest.createSession('testGuestCtrlCopyTo: Test #%d' % (i,));
