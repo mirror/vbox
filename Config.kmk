@@ -6634,17 +6634,15 @@ else ifeq ($(KBUILD_TARGET), solaris)
  TEMPLATE_VBOXGUESTR3EXE_LIBS     = $(TEMPLATE_VBOXR3EXE_LIBS) nsl
 endif
 
-ifdef VBOX_WITH_OLD_GLIBC_SUPPORT
 # Use older versions of APIs which were improved in versions of glibc later
 # than what we are targetting, and do not use the stack protector, which
 # needs glibc 2.4 or later.
- TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux    = \
+TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux    = \
 	-include $(PATH_ROOT)/include/iprt/linux/symvers.h \
 	$(VBOX_GCC_fno-stack-protector)
- TEMPLATE_VBOXGUESTR3EXE_CFLAGS.linux      = $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux)
+TEMPLATE_VBOXGUESTR3EXE_CFLAGS.linux      = $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux)
 # The GNU_HASH ELF tag is not supported by older systems.
- TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux      += -Wl,--hash-style=sysv
-endif
+TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux      += -Wl,--hash-style=sysv
 
 #
 # Template for building normal R3 programs for the guest additions.
@@ -6847,10 +6845,8 @@ TEMPLATE_VBOXGUESTR3XF86MOD_EXTENDS = VBOXGUESTR3EXE
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TYPE)      = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TARGET)    = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TARGET) = $(NO_SUCH_VARIABLE)
-ifdef VBOX_WITH_OLD_GLIBC_SUPPORT
-# The GNU_HASH ELF tag is not supported by older systems.
+# The GNU_HASH ELF tag is not supported by older glibc dynamic linkers.
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.linux = --hash-style=sysv
-endif
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TYPE)   = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS          = -r
 if1of ($(KBUILD_TARGET), dragonfly freebsd linux netbsd openbsd) # the gnu ld guys.
