@@ -66,7 +66,7 @@
 # define UART_REG_IIR_ID_SET(a_Val)          (((a_Val) & UART_REG_IIR_ID_MASK) << 1)
 /** Receiver Line Status interrupt. */
 #  define UART_REG_IIR_ID_RCL                0x3
-/** Received Data Avalable interrupt. */
+/** Received Data Available interrupt. */
 #  define UART_REG_IIR_ID_RDA                0x2
 /** Character Timeou Indicator interrupt. */
 #  define UART_REG_IIR_ID_CTI                0x6
@@ -76,6 +76,8 @@
 #  define UART_REG_IIR_ID_MS                 0x0
 /** FIFOs enabled. */
 # define UART_REG_IIR_FIFOS_EN               0xc0
+/** Bits relevant for checking whether the interrupt status has changed. */
+# define UART_REG_IIR_CHANGED_MASK           0x0f
 
 /** The FCR register index (from the base of the port range). */
 #define UART_REG_FCR_INDEX                   2
@@ -146,6 +148,8 @@
 # define UART_REG_LSR_TEMT                   RT_BIT(6)
 /** Error in receiver FIFO. */
 # define UART_REG_LSR_RCV_FIFO_ERR           RT_BIT(7)
+/** The bits to check in this register when checking for the RCL interrupt. */
+# define UART_REG_LSR_BITS_IIR_RCL           0x1e
 
 /** The MSR register index (from the base of the port range). */
 #define UART_REG_MSR_INDEX                   6
@@ -165,9 +169,16 @@
 # define UART_REG_MSR_RI                     RT_BIT(6)
 /** Data Carrier Detect. */
 # define UART_REG_MSR_DCD                    RT_BIT(7)
+/** The bits to check in this register when checking for the MS interrupt. */
+# define UART_REG_MSR_BITS_IIR_MS            0x0f
 
 /** The SCR register index (from the base of the port range). */
 #define UART_REG_SCR_INDEX                   7
+
+/** Set the specified bits in the given register. */
+#define UART_REG_SET(a_Reg, a_Set)           ((a_Reg) |= (a_Set))
+/** Clear the specified bits in the given register. */
+#define UART_REG_CLR(a_Reg, a_Clr)           ((a_Reg) &= ~(a_Clr))
 
 
 /*********************************************************************************************************************************
@@ -236,6 +247,9 @@ typedef struct DEVSERIAL
     /** The Scratch Register (SCR). */
     uint8_t                         uRegScr;
 
+    /** Number of bytes available for reading from the layer below. */
+    volatile uint32_t               cbAvailRdr;
+
 } DEVSERIAL;
 /** Pointer to the serial device state. */
 typedef DEVSERIAL *PDEVSERIAL;
@@ -289,7 +303,48 @@ static const char *s_aszStopBits[] =
  */
 static void serialIrqUpdate(PDEVSERIAL pThis)
 {
-    RT_NOREF(pThis);
+    /*
+     * The interrupt uses a priority scheme, only the interrupt with the
+     * highest priority is indicated in the interrupt identification register.
+     *
+     * The priorities are as follows (high to low):
+     *      * Receiver line status
+     *      * Received data available
+     *      * Character timeout indication (only in FIFO mode).
+     *      * Transmitter holding register empty
+     *      * Modem status change.
+     */
+    uint8_t uRegIirNew = UART_REG_IIR_IP_NO_INT;
+    if (   (pThis->uRegLsr & UART_REG_LSR_BITS_IIR_RCL)
+        && (pThis->uRegIer & UART_REG_IER_ELSI))
+        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_RCL);
+    else if (   (pThis->uRegLsr & UART_REG_LSR_DR)
+             && (pThis->uRegIer & UART_REG_IER_ERBFI))
+        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_RDA);
+    else if (   (pThis->uRegLsr & UART_REG_LSR_THRE)
+             && (pThis->uRegIer & UART_REG_IER_ETBEI))
+        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_THRE);
+    else if (   (pThis->uRegMsr & UART_REG_MSR_BITS_IIR_MS)
+             && (pThis->uRegIer & UART_REG_IER_EDSSI))
+        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_MSR_BITS_IIR_MS);
+
+    /** @todo Character timeout indication for FIFO mode. */
+
+    LogFlowFunc(("uRegIirNew=%#x uRegIir=%#x\n", uRegIirNew, pThis->uRegIir));
+
+    /* Change interrupt only if the interrupt status really changed from the previous value. */
+    if (uRegIirNew != (pThis->uRegIir & UART_REG_IIR_CHANGED_MASK))
+    {
+        if (uRegIirNew == UART_REG_IIR_IP_NO_INT)
+            PDMDevHlpISASetIrqNoWait(pThis->CTX_SUFF(pDevIns), pThis->uIrq, 0);
+        else
+            PDMDevHlpISASetIrqNoWait(pThis->CTX_SUFF(pDevIns), pThis->uIrq, 1);
+    }
+
+    if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
+        uRegIirNew |= UART_REG_IIR_FIFOS_EN;
+
+    pThis->uRegIir = uRegIirNew;
 }
 
 
@@ -300,7 +355,7 @@ static void serialIrqUpdate(PDEVSERIAL pThis)
  * @returns nothing.
  * @param   pThis               The serial port instance.
  */
-static void serialParamsUpdate(PDEVSERIAL pThis)
+static void serialR3ParamsUpdate(PDEVSERIAL pThis)
 {
     if (   pThis->uRegDivisor != 0
         && pThis->pDrvSerial)
@@ -357,7 +412,7 @@ static void serialParamsUpdate(PDEVSERIAL pThis)
  * @param   pThis               The serial port instance.
  * @param   fStsLines           The PDM status line states.
  */
-static void serialStsLinesUpdate(PDEVSERIAL pThis, uint32_t fStsLines)
+static void serialR3StsLinesUpdate(PDEVSERIAL pThis, uint32_t fStsLines)
 {
     uint8_t uRegMsrNew = 0; /* The new MSR value. */
 
@@ -407,13 +462,37 @@ DECLINLINE(int) serialRegThrDllWrite(PDEVSERIAL pThis, uint8_t uVal)
             rc = VINF_IOM_R3_IOPORT_WRITE;
 #else
             pThis->uRegDivisor = (pThis->uRegDivisor & 0xff00) | uVal;
-            serialParamsUpdate(pThis);
+            serialR3ParamsUpdate(pThis);
 #endif
         }
     }
     else
     {
-        /** @todo Data transfer (depending on FIFO). */
+        if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
+        {
+            /** @todo FIFO handling. */
+        }
+        else
+        {
+            /* Notify the lower driver about available data only if the register was empty before. */
+            if (pThis->uRegLsr & UART_REG_LSR_THRE)
+            {
+#ifndef IN_RING3
+                rc = VINF_IOM_R3_IOPORT_WRITE;
+#else
+                pThis->uRegThr = uVal;
+                UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE);
+                if (pThis->pDrvSerial)
+                {
+                    int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial, 1);
+                    if (RT_FAILURE(rc2))
+                        LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", rc2));
+                }
+#endif
+            }
+            else
+                pThis->uRegThr = uVal;
+        }
     }
 
     return rc;
@@ -440,7 +519,7 @@ DECLINLINE(int) serialRegIerDlmWrite(PDEVSERIAL pThis, uint8_t uVal)
             rc = VINF_IOM_R3_IOPORT_WRITE;
 #else
             pThis->uRegDivisor = (pThis->uRegDivisor & 0xff) | (uVal << 8);
-            serialParamsUpdate(pThis);
+            serialR3ParamsUpdate(pThis);
 #endif
         }
     }
@@ -496,7 +575,7 @@ DECLINLINE(int) serialRegLcrWrite(PDEVSERIAL pThis, uint8_t uVal)
         bool fBrkEn = RT_BOOL(uVal & UART_REG_LCR_BRK_SET);
         bool fBrkChg = fBrkEn != RT_BOOL(pThis->uRegLcr & UART_REG_LCR_BRK_SET);
         pThis->uRegLcr = uVal;
-        serialParamsUpdate(pThis);
+        serialR3ParamsUpdate(pThis);
 
         if (   fBrkChg
             && pThis->pDrvSerial)
@@ -556,7 +635,32 @@ DECLINLINE(int) serialRegRbrDllRead(PDEVSERIAL pThis, uint32_t *puVal)
         *puVal = pThis->uRegDivisor & 0xff;
     else
     {
-        /** @todo Data transfer (depending on FIFO). */
+        *puVal = pThis->uRegRbr;
+
+        if (pThis->uRegLsr & UART_REG_LSR_DR)
+        {
+            uint32_t cbAvail = ASMAtomicDecU32(&pThis->cbAvailRdr);
+            if (!cbAvail)
+            {
+                UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_DR);
+                serialIrqUpdate(pThis);
+            }
+            else
+            {
+#ifndef IN_RING3
+                /* Restore state and go back to R3. */
+                ASMAtomicIncU32(&pThis->cbAvailRdr);
+                rc = VINF_IOM_R3_IOPORT_READ;
+#else
+                /* Fetch new data and keep the DR bit set. */
+                AssertPtr(pThis->pDrvSerial);
+                size_t cbRead = 0;
+                int rc2 = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
+                AssertMsg(RT_SUCCESS(rc2) && cbRead == 1, ("This shouldn't fail and always return one byte!\n"));
+                serialIrqUpdate(pThis);
+#endif
+            }
+        }
     }
 
     return rc;
@@ -593,11 +697,8 @@ DECLINLINE(int) serialRegIerDlmRead(PDEVSERIAL pThis, uint32_t *puVal)
  */
 DECLINLINE(int) serialRegIirRead(PDEVSERIAL pThis, uint32_t *puVal)
 {
-    int rc = VINF_SUCCESS;
-
-    RT_NOREF(pThis, puVal);
-
-    return rc;
+    *puVal = pThis->uRegIir;
+    return VINF_SUCCESS;
 }
 
 
@@ -612,7 +713,24 @@ DECLINLINE(int) serialRegLsrRead(PDEVSERIAL pThis, uint32_t *puVal)
 {
     int rc = VINF_SUCCESS;
 
-    RT_NOREF(pThis, puVal);
+    /* Yield if configured and there is no data available. */
+    if (   !(pThis->uRegLsr & UART_REG_LSR_DR)
+        && pThis->fYieldOnLSRRead)
+    {
+#ifndef IN_RING3
+        return VINF_IOM_R3_IOPORT_READ;
+#else
+        RTThreadYield();
+#endif
+    }
+
+    *puVal = pThis->uRegLsr;
+    /*
+     * Reading this register clears the Overrun (OE), Parity (PE) and Framing (FE) error
+     * as well as the Break Interrupt (BI).
+     */
+    UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_BITS_IIR_RCL);
+    serialIrqUpdate(pThis);
 
     return rc;
 }
@@ -627,11 +745,13 @@ DECLINLINE(int) serialRegLsrRead(PDEVSERIAL pThis, uint32_t *puVal)
  */
 DECLINLINE(int) serialRegMsrRead(PDEVSERIAL pThis, uint32_t *puVal)
 {
-    int rc = VINF_SUCCESS;
+    *puVal = pThis->uRegMsr;
 
-    RT_NOREF(pThis, puVal);
-
-    return rc;
+    /** @todo Loopback handling. */
+    /* Clear any of the delta bits. */
+    UART_REG_CLR(pThis->uRegMsr, UART_REG_MSR_BITS_IIR_MS);
+    serialIrqUpdate(pThis);
+    return VINF_SUCCESS;
 }
 
 
@@ -645,6 +765,9 @@ PDMBOTHCBDECL(int) serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
+
+    LogFlowFunc(("pDevIns=%#p pvUser=%#p uPort=%RTiop u32=%#x cb=%u\n",
+                 pDevIns, pvUser, uPort, u32, cb));
 
     AssertMsgReturn(cb == 1, ("uPort=%#x cb=%d u32=%#x\n", uPort, cb, u32), VINF_SUCCESS);
 
@@ -674,6 +797,7 @@ PDMBOTHCBDECL(int) serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
             break;
     }
 
+    LogFlowFunc(("-> %Rrc\n", rc));
     return rc;
 }
 
@@ -721,6 +845,8 @@ PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT u
             rc = VERR_IOM_IOPORT_UNUSED;
     }
 
+    LogFlowFunc(("pDevIns=%#p pvUser=%#p uPort=%RTiop u32=%#x cb=%u -> %Rrc\n",
+                 pDevIns, pvUser, uPort, *pu32, cb, rc));
     return rc;
 }
 
@@ -729,45 +855,103 @@ PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT u
 
 /* -=-=-=-=-=-=-=-=- PDMISERIALPORT on LUN#0 -=-=-=-=-=-=-=-=- */
 
-static DECLCALLBACK(int) serialDataAvailRdrNotify(PPDMISERIALPORT pInterface, size_t cbAvail)
+
+/**
+ * @interface_method_impl{PDMISERIALPORT,pfnDataAvailRdrNotify}
+ */
+static DECLCALLBACK(int) serialR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, size_t cbAvail)
 {
     PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
 
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    RT_NOREF(cbAvail);
-    PDMCritSectLeave(&pThis->CritSect);
-    return VERR_NOT_IMPLEMENTED;
+    AssertMsg((uint32_t)cbAvail == cbAvail, ("Too much data available\n"));
+
+    uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, (uint32_t)cbAvail);
+    if (!cbAvailOld)
+    {
+        PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+        size_t cbRead = 0;
+        int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
+        AssertMsg(RT_SUCCESS(rc) && cbRead == 1, ("This shouldn't fail and always return one byte!\n"));
+        UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
+        serialIrqUpdate(pThis);
+        PDMCritSectLeave(&pThis->CritSect);
+    }
+    return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) serialReadWr(PPDMISERIALPORT pInterface, void *pvBuf, size_t cbRead, size_t *pcbRead)
+
+/**
+ * @interface_method_impl{PDMISERIALPORT,pfnDataSentNotify}
+ */
+static DECLCALLBACK(int) serialR3DataSentNotify(PPDMISERIALPORT pInterface)
 {
     PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
 
+    /* Set the transmitter empty bit because everything was sent. */
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    /** @todo */
-    RT_NOREF(pvBuf, cbRead, pcbRead);
-    PDMCritSectLeave(&pThis->CritSect);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-static DECLCALLBACK(int) serialNotifyStsLinesChanged(PPDMISERIALPORT pInterface, uint32_t fNewStatusLines)
-{
-    PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
-
-    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    serialStsLinesUpdate(pThis, fNewStatusLines);
+    UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_TEMT);
+    serialIrqUpdate(pThis);
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) serialNotifyBrk(PPDMISERIALPORT pInterface)
+
+/**
+ * @interface_method_impl{PDMISERIALPORT,pfnReadWr}
+ */
+static DECLCALLBACK(int) serialR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, size_t cbRead, size_t *pcbRead)
+{
+    PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
+
+    AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
+
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    if (!(pThis->uRegLsr & UART_REG_LSR_THRE))
+    {
+        /** @todo FIFO mode. */
+        *(uint8_t *)pvBuf = pThis->uRegThr;
+        *pcbRead = 1;
+        UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_THRE);
+        UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_TEMT);
+        serialIrqUpdate(pThis);
+    }
+    else
+    {
+        AssertMsgFailed(("There is no data to read!\n"));
+        *pcbRead = 0;
+    }
+
+    PDMCritSectLeave(&pThis->CritSect);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMISERIALPORT,pfnNotifyStsLinesChanged}
+ */
+static DECLCALLBACK(int) serialR3NotifyStsLinesChanged(PPDMISERIALPORT pInterface, uint32_t fNewStatusLines)
 {
     PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
 
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    /** @todo */
+    serialR3StsLinesUpdate(pThis, fNewStatusLines);
     PDMCritSectLeave(&pThis->CritSect);
-    return VERR_NOT_IMPLEMENTED;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMISERIALPORT,pfnNotifyBrk}
+ */
+static DECLCALLBACK(int) serialR3NotifyBrk(PPDMISERIALPORT pInterface)
+{
+    PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
+
+    PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+    UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_BI);
+    serialIrqUpdate(pThis);
+    PDMCritSectLeave(&pThis->CritSect);
+    return VINF_SUCCESS;
 }
 
 
@@ -819,15 +1003,21 @@ static DECLCALLBACK(void) serialR3Reset(PPDMDEVINS pDevIns)
     pThis->uRegScr     = 0;
 
     /** @todo Clear FIFOs. */
-    serialParamsUpdate(pThis);
+    serialR3ParamsUpdate(pThis);
     serialIrqUpdate(pThis);
 
     if (pThis->pDrvSerial)
     {
+        /* Set the modem lines to reflect the current state. */
+        int rc = pThis->pDrvSerial->pfnChgModemLines(pThis->pDrvSerial, false /*fRts*/, false /*fDtr*/);
+        if (RT_FAILURE(rc))
+            LogRel(("Serial#%d: Failed to set modem lines with %Rrc during reset\n",
+                    pThis->pDevInsR3->iInstance, rc));
+
         uint32_t fStsLines = 0;
-        int rc = pThis->pDrvSerial->pfnQueryStsLines(pThis->pDrvSerial, &fStsLines);
+        rc = pThis->pDrvSerial->pfnQueryStsLines(pThis->pDrvSerial, &fStsLines);
         if (RT_SUCCESS(rc))
-            serialStsLinesUpdate(pThis, fStsLines);
+            serialR3StsLinesUpdate(pThis, fStsLines);
         else
             LogRel(("Serial#%d: Failed to query status line status with %Rrc during reset\n",
                     pThis->pDevInsR3->iInstance, rc));
@@ -917,10 +1107,11 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     pThis->IBase.pfnQueryInterface = serialR3QueryInterface;
 
     /* ISerialPort */
-    pThis->ISerialPort.pfnDataAvailRdrNotify    = serialDataAvailRdrNotify;
-    pThis->ISerialPort.pfnReadWr                = serialReadWr;
-    pThis->ISerialPort.pfnNotifyStsLinesChanged = serialNotifyStsLinesChanged;
-    pThis->ISerialPort.pfnNotifyBrk             = serialNotifyBrk;
+    pThis->ISerialPort.pfnDataAvailRdrNotify    = serialR3DataAvailRdrNotify;
+    pThis->ISerialPort.pfnDataSentNotify        = serialR3DataSentNotify;
+    pThis->ISerialPort.pfnReadWr                = serialR3ReadWr;
+    pThis->ISerialPort.pfnNotifyStsLinesChanged = serialR3NotifyStsLinesChanged;
+    pThis->ISerialPort.pfnNotifyBrk             = serialR3NotifyBrk;
 
     /*
      * Validate and read the configuration.
@@ -983,7 +1174,7 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IOBase\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "Enable16550A", &pThis->f16550AEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "Enable16550A", &pThis->f16550AEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Enable16550A\" value"));
@@ -1070,6 +1261,7 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         return rc;
     }
 
+    serialR3Reset(pDevIns);
     return VINF_SUCCESS;
 }
 
