@@ -519,7 +519,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/graphics/details/UIGDetailsElement.h \
 	src/selector/graphics/details/UIGDetailsElements.h \
 	src/selector/graphics/details/UIGMachinePreview.h \
-	src/settings/UISettingsSerializer.h \
 	src/settings/global/UIGlobalSettingsExtension.h \
 	src/settings/global/UIGlobalSettingsGeneral.h \
 	src/settings/global/UIGlobalSettingsInput.h \
@@ -663,6 +662,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/settings/UISettingsDialogSpecific.h \
 	src/settings/UISettingsPage.h \
 	src/settings/UISettingsSelector.h \
+	src/settings/UISettingsSerializer.h \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
@@ -780,6 +780,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/settings/UISettingsDialogSpecific.h \
 	src/settings/UISettingsPage.h \
 	src/settings/UISettingsSelector.h \
+	src/settings/UISettingsSerializer.h \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
@@ -1037,7 +1038,6 @@ VirtualBox_SOURCES = \
 	src/selector/graphics/details/UIGDetailsElement.cpp \
 	src/selector/graphics/details/UIGDetailsElements.cpp \
 	src/selector/graphics/details/UIGMachinePreview.cpp \
-	src/settings/UISettingsSerializer.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsGeneral.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
@@ -1222,6 +1222,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/UISettingsPage.cpp \
 	src/settings/UISettingsSelector.cpp \
+	src/settings/UISettingsSerializer.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
@@ -1366,6 +1367,7 @@ VBoxGlobal_SOURCES = \
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/UISettingsPage.cpp \
 	src/settings/UISettingsSelector.cpp \
+	src/settings/UISettingsSerializer.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
