@@ -31,9 +31,8 @@ typedef UISettingsCache<UIDataPortForwardingRule> UISettingsCachePortForwardingR
 typedef UISettingsCachePool<UIDataSettingsMachineNetworkAdapter, UISettingsCachePortForwardingRule> UISettingsCacheMachineNetworkAdapter;
 typedef UISettingsCachePool<UIDataSettingsMachineNetwork, UISettingsCacheMachineNetworkAdapter> UISettingsCacheMachineNetwork;
 
-
 /** Machine settings: Network page. */
-class UIMachineSettingsNetworkPage : public UISettingsPageMachine
+class SHARED_LIBRARY_STUFF UIMachineSettingsNetworkPage : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -142,4 +141,3 @@ private:
 };
 
 #endif /* !___UIMachineSettingsNetwork_h___ */
-

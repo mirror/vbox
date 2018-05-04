@@ -27,7 +27,7 @@
 class QIDialogButtonBox;
 
 /* Machine settings / Network page / NAT attachment / Port forwarding dialog: */
-class UIMachineSettingsPortForwardingDlg : public QIWithRetranslateUI<QIDialog>
+class SHARED_LIBRARY_STUFF UIMachineSettingsPortForwardingDlg : public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 

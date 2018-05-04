@@ -30,10 +30,9 @@ struct UIDataSettingsMachineUSBFilter;
 typedef UISettingsCache<UIDataSettingsMachineUSBFilter> UISettingsCacheMachineUSBFilter;
 typedef UISettingsCachePool<UIDataSettingsMachineUSB, UISettingsCacheMachineUSBFilter> UISettingsCacheMachineUSB;
 
-
 /** Machine settings: USB page. */
-class UIMachineSettingsUSB : public UISettingsPageMachine,
-                             public Ui::UIMachineSettingsUSB
+class SHARED_LIBRARY_STUFF UIMachineSettingsUSB : public UISettingsPageMachine,
+                                                  public Ui::UIMachineSettingsUSB
 {
     Q_OBJECT;
 
@@ -160,4 +159,3 @@ private:
 };
 
 #endif /* !___UIMachineSettingsUSB_h___ */
-

@@ -23,8 +23,8 @@
 #include "QIDialog.h"
 #include "UIMachineSettingsUSB.h"
 
-class UIMachineSettingsUSBFilterDetails : public QIWithRetranslateUI2<QIDialog>,
-                                          public Ui::UIMachineSettingsUSBFilterDetails
+class SHARED_LIBRARY_STUFF UIMachineSettingsUSBFilterDetails : public QIWithRetranslateUI2<QIDialog>,
+                                                               public Ui::UIMachineSettingsUSBFilterDetails
 {
     Q_OBJECT;
 
@@ -38,4 +38,3 @@ private:
 };
 
 #endif /* __UIMachineSettingsUSBFilterDetails_h__ */
-

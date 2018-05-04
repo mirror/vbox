@@ -30,9 +30,8 @@ struct UIDataSettingsMachineSerialPort;
 typedef UISettingsCache<UIDataSettingsMachineSerialPort> UISettingsCacheMachineSerialPort;
 typedef UISettingsCachePool<UIDataSettingsMachineSerial, UISettingsCacheMachineSerialPort> UISettingsCacheMachineSerial;
 
-
 /** Machine settings: Serial page. */
-class UIMachineSettingsSerialPage : public UISettingsPageMachine
+class SHARED_LIBRARY_STUFF UIMachineSettingsSerialPage : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -91,4 +90,3 @@ private:
 };
 
 #endif /* !___UIMachineSettingsSerial_h___ */
-

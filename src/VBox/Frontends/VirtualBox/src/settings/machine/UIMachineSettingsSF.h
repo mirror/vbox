@@ -33,10 +33,9 @@ enum UISharedFolderType { MachineType, ConsoleType };
 typedef UISettingsCache<UIDataSettingsSharedFolder> UISettingsCacheSharedFolder;
 typedef UISettingsCachePool<UIDataSettingsSharedFolders, UISettingsCacheSharedFolder> UISettingsCacheSharedFolders;
 
-
 /** Machine settings: Shared Folders page. */
-class UIMachineSettingsSF : public UISettingsPageMachine,
-                            public Ui::UIMachineSettingsSF
+class SHARED_LIBRARY_STUFF UIMachineSettingsSF : public UISettingsPageMachine,
+                                                 public Ui::UIMachineSettingsSF
 {
     Q_OBJECT;
 
@@ -153,4 +152,3 @@ private:
 };
 
 #endif /* !___UIMachineSettingsSF_h___ */
-

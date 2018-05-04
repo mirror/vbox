@@ -25,8 +25,8 @@
 #include "UIMachineSettingsSF.h"
 
 /* Shared folders details dialog: */
-class UIMachineSettingsSFDetails : public QIWithRetranslateUI2<QIDialog>,
-                                   public Ui::UIMachineSettingsSFDetails
+class SHARED_LIBRARY_STUFF UIMachineSettingsSFDetails : public QIWithRetranslateUI2<QIDialog>,
+                                                        public Ui::UIMachineSettingsSFDetails
 {
     Q_OBJECT;
 
@@ -75,4 +75,3 @@ private:
 };
 
 #endif // __UIMachineSettingsSFDetails_h__
-

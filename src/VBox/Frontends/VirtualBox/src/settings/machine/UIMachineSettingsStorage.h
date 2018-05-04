@@ -133,7 +133,7 @@ enum PixmapType
 };
 
 /* Abstract Controller Type */
-class AbstractControllerType
+class SHARED_LIBRARY_STUFF AbstractControllerType
 {
 public:
 
@@ -160,7 +160,7 @@ protected:
 };
 
 /* IDE Controller Type */
-class IDEControllerType : public AbstractControllerType
+class SHARED_LIBRARY_STUFF IDEControllerType : public AbstractControllerType
 {
 public:
 
@@ -173,7 +173,7 @@ private:
 };
 
 /* SATA Controller Type */
-class SATAControllerType : public AbstractControllerType
+class SHARED_LIBRARY_STUFF SATAControllerType : public AbstractControllerType
 {
 public:
 
@@ -186,7 +186,7 @@ private:
 };
 
 /* SCSI Controller Type */
-class SCSIControllerType : public AbstractControllerType
+class SHARED_LIBRARY_STUFF SCSIControllerType : public AbstractControllerType
 {
 public:
 
@@ -199,7 +199,7 @@ private:
 };
 
 /* Floppy Controller Type */
-class FloppyControllerType : public AbstractControllerType
+class SHARED_LIBRARY_STUFF FloppyControllerType : public AbstractControllerType
 {
 public:
 
@@ -212,7 +212,7 @@ private:
 };
 
 /* SAS Controller Type */
-class SASControllerType : public AbstractControllerType
+class SHARED_LIBRARY_STUFF SASControllerType : public AbstractControllerType
 {
 public:
 
@@ -225,7 +225,7 @@ private:
 };
 
 /* USB Controller Type */
-class USBStorageControllerType : public AbstractControllerType
+class SHARED_LIBRARY_STUFF USBStorageControllerType : public AbstractControllerType
 {
 public:
 
@@ -238,7 +238,7 @@ private:
 };
 
 /* NVMe Controller Type */
-class NVMeStorageControllerType : public AbstractControllerType
+class SHARED_LIBRARY_STUFF NVMeStorageControllerType : public AbstractControllerType
 {
 public:
 
@@ -251,7 +251,7 @@ private:
 };
 
 /* Abstract Item */
-class AbstractItem : public QITreeViewItem
+class SHARED_LIBRARY_STUFF AbstractItem : public QITreeViewItem
 {
     Q_OBJECT;
 
@@ -294,7 +294,7 @@ protected:
 Q_DECLARE_METATYPE (AbstractItem::ItemType);
 
 /* Root Item */
-class RootItem : public AbstractItem
+class SHARED_LIBRARY_STUFF RootItem : public AbstractItem
 {
 public:
 
@@ -320,7 +320,7 @@ private:
 };
 
 /* Controller Item */
-class ControllerItem : public AbstractItem
+class SHARED_LIBRARY_STUFF ControllerItem : public AbstractItem
 {
 public:
 
@@ -370,7 +370,7 @@ private:
 };
 
 /* Attachment Item */
-class AttachmentItem : public AbstractItem
+class SHARED_LIBRARY_STUFF AttachmentItem : public AbstractItem
 {
 public:
 
@@ -442,7 +442,7 @@ private:
 };
 
 /* Storage Model */
-class StorageModel : public QAbstractItemModel
+class SHARED_LIBRARY_STUFF StorageModel : public QAbstractItemModel
 {
     Q_OBJECT;
 
@@ -582,7 +582,7 @@ private:
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
 /* Storage Delegate */
-class StorageDelegate : public QItemDelegate
+class SHARED_LIBRARY_STUFF StorageDelegate : public QItemDelegate
 {
     Q_OBJECT;
 
@@ -597,8 +597,8 @@ private:
 
 
 /** Machine settings: Storage page. */
-class UIMachineSettingsStorage : public UISettingsPageMachine,
-                                 public Ui::UIMachineSettingsStorage
+class SHARED_LIBRARY_STUFF UIMachineSettingsStorage : public UISettingsPageMachine,
+                                                      public Ui::UIMachineSettingsStorage
 {
     Q_OBJECT;
 
@@ -843,5 +843,5 @@ private:
     UISettingsCacheMachineStorage *m_pCache;
 };
 
-#endif /* !___UIMachineSettingsStorage_h___ */
 
+#endif /* !___UIMachineSettingsStorage_h___ */

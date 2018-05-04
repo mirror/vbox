@@ -26,10 +26,9 @@
 struct UIDataSettingsMachineAudio;
 typedef UISettingsCache<UIDataSettingsMachineAudio> UISettingsCacheMachineAudio;
 
-
 /** Machine settings: Audio page. */
-class UIMachineSettingsAudio : public UISettingsPageMachine,
-                               public Ui::UIMachineSettingsAudio
+class SHARED_LIBRARY_STUFF UIMachineSettingsAudio : public UISettingsPageMachine,
+                                                    public Ui::UIMachineSettingsAudio
 {
     Q_OBJECT;
 
@@ -80,4 +79,3 @@ private:
 };
 
 #endif /* !___UIMachineSettingsAudio_h___ */
-

@@ -27,10 +27,9 @@ class UIActionPool;
 struct UIDataSettingsMachineInterface;
 typedef UISettingsCache<UIDataSettingsMachineInterface> UISettingsCacheMachineInterface;
 
-
 /** Machine settings: User Interface page. */
-class UIMachineSettingsInterface : public UISettingsPageMachine,
-                                   public Ui::UIMachineSettingsInterface
+class SHARED_LIBRARY_STUFF UIMachineSettingsInterface : public UISettingsPageMachine,
+                                                        public Ui::UIMachineSettingsInterface
 {
     Q_OBJECT;
 
@@ -92,4 +91,3 @@ private:
 };
 
 #endif /* !___UIMachineSettingsInterface_h___ */
-

@@ -519,19 +519,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/graphics/details/UIGDetailsElement.h \
 	src/selector/graphics/details/UIGDetailsElements.h \
 	src/selector/graphics/details/UIGMachinePreview.h \
-	src/settings/machine/UIMachineSettingsAudio.h \
-	src/settings/machine/UIMachineSettingsDisplay.h \
-	src/settings/machine/UIMachineSettingsGeneral.h \
-	src/settings/machine/UIMachineSettingsInterface.h \
-	src/settings/machine/UIMachineSettingsNetwork.h \
-	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
-	src/settings/machine/UIMachineSettingsSF.h \
-	src/settings/machine/UIMachineSettingsSFDetails.h \
-	src/settings/machine/UIMachineSettingsSerial.h \
-	src/settings/machine/UIMachineSettingsStorage.h \
-	src/settings/machine/UIMachineSettingsSystem.h \
-	src/settings/machine/UIMachineSettingsUSB.h \
-	src/settings/machine/UIMachineSettingsUSBFilterDetails.h \
 	src/widgets/UIApplianceEditorWidget.h \
 	src/widgets/UIApplianceExportEditorWidget.h \
 	src/widgets/UIApplianceImportEditorWidget.h \
@@ -657,6 +644,19 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/settings/global/UIGlobalSettingsNetwork.h \
 	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.h \
 	src/settings/global/UIGlobalSettingsPortForwardingDlg.h \
+	src/settings/machine/UIMachineSettingsAudio.h \
+	src/settings/machine/UIMachineSettingsDisplay.h \
+	src/settings/machine/UIMachineSettingsGeneral.h \
+	src/settings/machine/UIMachineSettingsInterface.h \
+	src/settings/machine/UIMachineSettingsNetwork.h \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
+	src/settings/machine/UIMachineSettingsSF.h \
+	src/settings/machine/UIMachineSettingsSFDetails.h \
+	src/settings/machine/UIMachineSettingsSerial.h \
+	src/settings/machine/UIMachineSettingsStorage.h \
+	src/settings/machine/UIMachineSettingsSystem.h \
+	src/settings/machine/UIMachineSettingsUSB.h \
+	src/settings/machine/UIMachineSettingsUSBFilterDetails.h \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
@@ -785,6 +785,19 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/settings/global/UIGlobalSettingsNetwork.h \
 	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.h \
 	src/settings/global/UIGlobalSettingsPortForwardingDlg.h \
+	src/settings/machine/UIMachineSettingsAudio.h \
+	src/settings/machine/UIMachineSettingsDisplay.h \
+	src/settings/machine/UIMachineSettingsGeneral.h \
+	src/settings/machine/UIMachineSettingsInterface.h \
+	src/settings/machine/UIMachineSettingsNetwork.h \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
+	src/settings/machine/UIMachineSettingsSF.h \
+	src/settings/machine/UIMachineSettingsSFDetails.h \
+	src/settings/machine/UIMachineSettingsSerial.h \
+	src/settings/machine/UIMachineSettingsStorage.h \
+	src/settings/machine/UIMachineSettingsSystem.h \
+	src/settings/machine/UIMachineSettingsUSB.h \
+	src/settings/machine/UIMachineSettingsUSBFilterDetails.h \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
@@ -860,10 +873,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UISnapshotDetailsWidget.cpp \
 	src/selector/UISnapshotPane.cpp \
-	src/settings/machine/UIMachineSettingsNetwork.cpp \
-	src/settings/machine/UIMachineSettingsSerial.cpp \
-	src/settings/machine/UIMachineSettingsStorage.cpp \
-	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UITabBar.cpp \
@@ -886,6 +895,10 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
+	src/settings/machine/UIMachineSettingsNetwork.cpp \
+	src/settings/machine/UIMachineSettingsSerial.cpp \
+	src/settings/machine/UIMachineSettingsStorage.cpp \
+	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
@@ -930,6 +943,10 @@ VBoxGlobal_QT_MOCSRCS = \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
+	src/settings/machine/UIMachineSettingsNetwork.cpp \
+	src/settings/machine/UIMachineSettingsSerial.cpp \
+	src/settings/machine/UIMachineSettingsStorage.cpp \
+	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
@@ -1045,19 +1062,6 @@ VirtualBox_SOURCES = \
 	src/selector/graphics/details/UIGDetailsElement.cpp \
 	src/selector/graphics/details/UIGDetailsElements.cpp \
 	src/selector/graphics/details/UIGMachinePreview.cpp \
-	src/settings/machine/UIMachineSettingsAudio.cpp \
-	src/settings/machine/UIMachineSettingsDisplay.cpp \
-	src/settings/machine/UIMachineSettingsGeneral.cpp \
-	src/settings/machine/UIMachineSettingsInterface.cpp \
-	src/settings/machine/UIMachineSettingsNetwork.cpp \
-	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
-	src/settings/machine/UIMachineSettingsSF.cpp \
-	src/settings/machine/UIMachineSettingsSFDetails.cpp \
-	src/settings/machine/UIMachineSettingsSerial.cpp \
-	src/settings/machine/UIMachineSettingsStorage.cpp \
-	src/settings/machine/UIMachineSettingsSystem.cpp \
-	src/settings/machine/UIMachineSettingsUSB.cpp \
-	src/settings/machine/UIMachineSettingsUSBFilterDetails.cpp \
 	src/widgets/UIApplianceEditorWidget.cpp \
 	src/widgets/UIApplianceExportEditorWidget.cpp \
 	src/widgets/UIApplianceImportEditorWidget.cpp \
@@ -1224,6 +1228,19 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/settings/global/UIGlobalSettingsNetwork.cpp \
 	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.cpp \
 	src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp \
+	src/settings/machine/UIMachineSettingsAudio.cpp \
+	src/settings/machine/UIMachineSettingsDisplay.cpp \
+	src/settings/machine/UIMachineSettingsGeneral.cpp \
+	src/settings/machine/UIMachineSettingsInterface.cpp \
+	src/settings/machine/UIMachineSettingsNetwork.cpp \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
+	src/settings/machine/UIMachineSettingsSF.cpp \
+	src/settings/machine/UIMachineSettingsSFDetails.cpp \
+	src/settings/machine/UIMachineSettingsSerial.cpp \
+	src/settings/machine/UIMachineSettingsStorage.cpp \
+	src/settings/machine/UIMachineSettingsSystem.cpp \
+	src/settings/machine/UIMachineSettingsUSB.cpp \
+	src/settings/machine/UIMachineSettingsUSBFilterDetails.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
@@ -1379,6 +1396,19 @@ VBoxGlobal_SOURCES = \
 	src/settings/global/UIGlobalSettingsNetwork.cpp \
 	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.cpp \
 	src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp \
+	src/settings/machine/UIMachineSettingsAudio.cpp \
+	src/settings/machine/UIMachineSettingsDisplay.cpp \
+	src/settings/machine/UIMachineSettingsGeneral.cpp \
+	src/settings/machine/UIMachineSettingsInterface.cpp \
+	src/settings/machine/UIMachineSettingsNetwork.cpp \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
+	src/settings/machine/UIMachineSettingsSF.cpp \
+	src/settings/machine/UIMachineSettingsSFDetails.cpp \
+	src/settings/machine/UIMachineSettingsSerial.cpp \
+	src/settings/machine/UIMachineSettingsStorage.cpp \
+	src/settings/machine/UIMachineSettingsSystem.cpp \
+	src/settings/machine/UIMachineSettingsUSB.cpp \
+	src/settings/machine/UIMachineSettingsUSBFilterDetails.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \

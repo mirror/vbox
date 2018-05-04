@@ -26,10 +26,9 @@
 struct UIDataSettingsMachineSystem;
 typedef UISettingsCache<UIDataSettingsMachineSystem> UISettingsCacheMachineSystem;
 
-
 /** Machine settings: System page. */
-class UIMachineSettingsSystem : public UISettingsPageMachine,
-                                public Ui::UIMachineSettingsSystem
+class SHARED_LIBRARY_STUFF UIMachineSettingsSystem : public UISettingsPageMachine,
+                                                     public Ui::UIMachineSettingsSystem
 {
     Q_OBJECT;
 
@@ -164,4 +163,3 @@ private:
 };
 
 #endif /* !___UIMachineSettingsSystem_h___ */
-
