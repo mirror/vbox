@@ -1413,6 +1413,12 @@ int main()
     GEN_CHECK_OFF(AHCIPort, szFirmwareRevision[AHCI_FIRMWARE_REVISION_LENGTH]); /* One additional byte for the termination.*/
     GEN_CHECK_OFF(AHCIPort, szModelNumber);
     GEN_CHECK_OFF(AHCIPort, szModelNumber[AHCI_MODEL_NUMBER_LENGTH]); /* One additional byte for the termination.*/
+    GEN_CHECK_OFF(AHCIPort, szInquiryVendorId);
+    GEN_CHECK_OFF(AHCIPort, szInquiryVendorId[AHCI_ATAPI_INQUIRY_VENDOR_ID_LENGTH]); /* One additional byte for the termination.*/
+    GEN_CHECK_OFF(AHCIPort, szInquiryProductId);
+    GEN_CHECK_OFF(AHCIPort, szInquiryProductId[AHCI_ATAPI_INQUIRY_PRODUCT_ID_LENGTH]); /* One additional byte for the termination.*/
+    GEN_CHECK_OFF(AHCIPort, szInquiryRevision);
+    GEN_CHECK_OFF(AHCIPort, szInquiryRevision[AHCI_ATAPI_INQUIRY_REVISION_LENGTH]); /* One additional byte for the termination.*/
     GEN_CHECK_OFF(AHCIPort, cErrors);
     GEN_CHECK_OFF(AHCIPort, fRedo);
 
