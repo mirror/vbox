@@ -51,10 +51,10 @@ typedef struct DRVHOSTSERIAL
 {
     /** Pointer to the driver instance structure. */
     PPDMDRVINS                  pDrvIns;
-    /** Pointer to the char port interface of the driver/device above us. */
-    PPDMICHARPORT               pDrvCharPort;
-    /** Our char interface. */
-    PDMICHARCONNECTOR           ICharConnector;
+    /** Pointer to the serial port interface of the driver/device above us. */
+    PPDMISERIALPORT             pDrvSerialPort;
+    /** Our serial interface. */
+    PDMISERIALCONNECTOR         ISerialConnector;
     /** I/O thread. */
     PPDMTHREAD                  pIoThrd;
     /** The serial port handle. */
@@ -62,24 +62,109 @@ typedef struct DRVHOSTSERIAL
     /** the device path */
     char                        *pszDevicePath;
 
-
-    /** Internal send FIFO queue */
-    uint8_t volatile            u8SendByte;
-    bool volatile               fSending;
-    uint8_t                     Alignment[2];
+    /** Amount of data available for sending from the device/driver above. */
+    volatile size_t             cbAvailWr;
+    /** Small send buffer. */
+    uint8_t                     abTxBuf[16];
+    /** Amount of data in the buffer. */
+    size_t                      cbTxUsed;
 
     /** The read queue. */
     uint8_t                     abReadBuf[256];
-    /** Read buffer currently used. */
-    size_t                      cbReadBufUsed;
+    /** Current offset to write to next. */
+    volatile uint32_t           offWrite;
     /** Current offset into the read buffer. */
-    uint32_t                    offReadBuf;
+    volatile uint32_t           offRead;
 
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
     STAMCOUNTER                 StatBytesWritten;
 } DRVHOSTSERIAL, *PDRVHOSTSERIAL;
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+
+
+/**
+ * Returns number of bytes free in the read buffer and pointer to the start of the free space
+ * in the read buffer.
+ *
+ * @returns Number of bytes free in the buffer.
+ * @param   pThis               The host serial driver instance.
+ * @param   ppv                 Where to return the pointer if there is still free space.
+ */
+DECLINLINE(size_t) drvHostSerialReadBufGetWrite(PDRVHOSTSERIAL pThis, void **ppv)
+{
+    uint32_t offRead  = ASMAtomicReadU32(&pThis->offRead);
+    uint32_t offWrite = ASMAtomicReadU32(&pThis->offWrite);
+
+    if (ppv)
+        *ppv = &pThis->abReadBuf[offWrite];
+
+    if (offWrite >= offRead)
+        return sizeof(pThis->abReadBuf) - offWrite;
+    else
+        return offRead - offWrite - 1; /* Leave one byte free. */
+}
+
+
+/**
+ * Returns number of bytes used in the read buffer and pointer to the next byte to read.
+ *
+ * @returns Number of bytes free in the buffer.
+ * @param   pThis               The host serial driver instance.
+ * @param   ppv                 Where to return the pointer to the next data to read.
+ */
+DECLINLINE(size_t) drvHostSerialReadBufGetRead(PDRVHOSTSERIAL pThis, void **ppv)
+{
+    uint32_t offRead  = ASMAtomicReadU32(&pThis->offRead);
+    uint32_t offWrite = ASMAtomicReadU32(&pThis->offWrite);
+
+    if (ppv)
+        *ppv = &pThis->abReadBuf[offRead];
+
+    if (offWrite < offRead)
+        return sizeof(pThis->abReadBuf) - offRead;
+    else
+        return offWrite - offRead;
+}
+
+
+/**
+ * Advances the write position of the read buffer by the given amount of bytes.
+ *
+ * @returns nothing.
+ * @param   pThis               The host serial driver instance.
+ * @param   cbAdv               Number of bytes to advance.
+ */
+DECLINLINE(void) drvHostSerialReadBufWriteAdv(PDRVHOSTSERIAL pThis, size_t cbAdv)
+{
+    uint32_t offWrite = ASMAtomicReadU32(&pThis->offWrite);
+    offWrite = (offWrite + cbAdv) % sizeof(pThis->abReadBuf);
+    ASMAtomicWriteU32(&pThis->offWrite, offWrite);
+}
+
+
+/**
+ * Advances the read position of the read buffer by the given amount of bytes.
+ *
+ * @returns nothing.
+ * @param   pThis               The host serial driver instance.
+ * @param   cbAdv               Number of bytes to advance.
+ */
+DECLINLINE(void) drvHostSerialReadBufReadAdv(PDRVHOSTSERIAL pThis, size_t cbAdv)
+{
+    uint32_t offRead = ASMAtomicReadU32(&pThis->offRead);
+    offRead = (offRead + cbAdv) % sizeof(pThis->abReadBuf);
+    ASMAtomicWriteU32(&pThis->offRead, offRead);
+}
 
 
 /* -=-=-=-=- IBase -=-=-=-=- */
@@ -93,54 +178,92 @@ static DECLCALLBACK(void *) drvHostSerialQueryInterface(PPDMIBASE pInterface, co
     PDRVHOSTSERIAL  pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMICHARCONNECTOR, &pThis->ICharConnector);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMISERIALCONNECTOR, &pThis->ISerialConnector);
     return NULL;
 }
 
 
-/* -=-=-=-=- ICharConnector -=-=-=-=- */
+/* -=-=-=-=- ISerialConnector -=-=-=-=- */
 
-/** @interface_method_impl{PDMICHARCONNECTOR,pfnWrite} */
-static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHARCONNECTOR pInterface, const void *pvBuf, size_t cbWrite)
+/** @interface_method_impl{PDMISERIALCONNECTOR,pfnDataAvailWrNotify} */
+static DECLCALLBACK(int) drvHostSerialDataAvailWrNotify(PPDMISERIALCONNECTOR pInterface, size_t cbAvail)
 {
-    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ICharConnector);
-    const uint8_t *pbBuffer = (const uint8_t *)pvBuf;
+    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
 
-    LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
+    int rc = VINF_SUCCESS;
+    size_t cbAvailOld = ASMAtomicAddZ(&pThis->cbAvailWr, cbAvail);
+    if (!cbAvailOld)
+        rc = RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
 
-    for (uint32_t i = 0; i < cbWrite; i++)
-    {
-        if (ASMAtomicXchgBool(&pThis->fSending, true))
-            return VERR_BUFFER_OVERFLOW;
-
-        pThis->u8SendByte = pbBuffer[i];
-        RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
-        STAM_COUNTER_INC(&pThis->StatBytesWritten);
-    }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
-static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
+/**
+ * @interface_method_impl{PDMISERIALCONNECTOR,pfnReadRdr}
+ */
+static DECLCALLBACK(int) drvHostSerialReadRdr(PPDMISERIALCONNECTOR pInterface, void *pvBuf,
+                                              size_t cbRead, size_t *pcbRead)
 {
-    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ICharConnector);
+    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
+    int rc = VINF_SUCCESS;
+    uint8_t *pbDst = (uint8_t *)pvBuf;
+    size_t cbReadAll = 0;
+
+    do
+    {
+        void *pvSrc = NULL;
+        size_t cbThisRead = RT_MIN(drvHostSerialReadBufGetRead(pThis, &pvSrc), cbRead);
+        if (cbThisRead)
+        {
+            memcpy(pbDst, pvSrc, cbThisRead);
+            cbRead    -= cbThisRead;
+            pbDst     += cbThisRead;
+            cbReadAll += cbThisRead;
+            drvHostSerialReadBufReadAdv(pThis, cbThisRead);
+        }
+        else
+            break;
+    } while (cbRead > 0);
+
+    *pcbRead = cbReadAll;
+
+    STAM_COUNTER_ADD(&pThis->StatBytesRead, cbReadAll);
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMISERIALCONNECTOR,pfnChgParams}
+ */
+static DECLCALLBACK(int) drvHostSerialChgParams(PPDMISERIALCONNECTOR pInterface, uint32_t uBps,
+                                                PDMSERIALPARITY enmParity, unsigned cDataBits,
+                                                PDMSERIALSTOPBITS enmStopBits)
+{
+    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
     RTSERIALPORTCFG Cfg;
 
-    Cfg.uBaudRate = Bps;
+    Cfg.uBaudRate = uBps;
 
-    switch (chParity)
+    switch (enmParity)
     {
-        case 'E':
+        case PDMSERIALPARITY_EVEN:
             Cfg.enmParity = RTSERIALPORTPARITY_EVEN;
             break;
-        case 'O':
+        case PDMSERIALPARITY_ODD:
             Cfg.enmParity = RTSERIALPORTPARITY_ODD;
             break;
-        case 'N':
+        case PDMSERIALPARITY_NONE:
             Cfg.enmParity = RTSERIALPORTPARITY_NONE;
             break;
+        case PDMSERIALPARITY_MARK:
+            Cfg.enmParity = RTSERIALPORTPARITY_MARK;
+            break;
+        case PDMSERIALPARITY_SPACE:
+            Cfg.enmParity = RTSERIALPORTPARITY_SPACE;
+            break;
         default:
-            AssertMsgFailed(("Unsupported parity setting %c\n", chParity)); /* Should not happen. */
+            AssertMsgFailed(("Unsupported parity setting %d\n", enmParity)); /* Should not happen. */
             Cfg.enmParity = RTSERIALPORTPARITY_NONE;
     }
 
@@ -163,19 +286,73 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
             Cfg.enmDataBitCount = RTSERIALPORTDATABITS_8BITS;
     }
 
-    if (cStopBits == 2)
-        Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_TWO;
-    else
-        Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONE;
+    switch (enmStopBits)
+    {
+        case PDMSERIALSTOPBITS_ONE:
+            Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONE;
+            break;
+        case PDMSERIALSTOPBITS_ONEPOINTFIVE:
+            Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONEPOINTFIVE;
+            break;
+        case PDMSERIALSTOPBITS_TWO:
+            Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_TWO;
+            break;
+        default:
+            AssertMsgFailed(("Unsupported stop bit count %d\n", enmStopBits)); /* Should not happen. */
+            Cfg.enmStopBitCount = RTSERIALPORTSTOPBITS_ONE;
+    }
 
-    int rc = RTSerialPortCfgSet(pThis->hSerialPort, &Cfg, NULL);
-    if (RT_FAILURE(rc))
-        LogRelMax(10, ("HostSerial#%u: Failed to change settings to %u:%u%c%u (rc=%Rrc)\n",
-                       pThis->pDrvIns->iInstance, Bps, cDataBits, chParity, cStopBits, rc));
-    return rc;
+    return RTSerialPortCfgSet(pThis->hSerialPort, &Cfg, NULL);
 }
 
-/* -=-=-=-=- receive thread -=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMISERIALCONNECTOR,pfnChgModemLines}
+ */
+static DECLCALLBACK(int) drvHostSerialChgModemLines(PPDMISERIALCONNECTOR pInterface, bool fRts, bool fDtr)
+{
+    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
+
+    uint32_t fClear = 0;
+    uint32_t fSet = 0;
+
+    if (fRts)
+        fSet |= RTSERIALPORT_CHG_STS_LINES_F_RTS;
+    else
+        fClear |= RTSERIALPORT_CHG_STS_LINES_F_RTS;
+
+    if (fDtr)
+        fSet |= RTSERIALPORT_CHG_STS_LINES_F_DTR;
+    else
+        fClear |= RTSERIALPORT_CHG_STS_LINES_F_DTR;
+
+    return RTSerialPortChgStatusLines(pThis->hSerialPort, fClear, fSet);
+}
+
+
+/**
+ * @interface_method_impl{PDMISERIALCONNECTOR,pfnChgBrk}
+ */
+static DECLCALLBACK(int) drvHostSerialChgBrk(PPDMISERIALCONNECTOR pInterface, bool fBrk)
+{
+    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
+
+    return RTSerialPortChgBreakCondition(pThis->hSerialPort, fBrk);
+}
+
+
+/**
+ * @interface_method_impl{PDMISERIALCONNECTOR,pfnQueryStsLines}
+ */
+static DECLCALLBACK(int) drvHostSerialQueryStsLines(PPDMISERIALCONNECTOR pInterface, uint32_t *pfStsLines)
+{
+    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ISerialConnector);
+
+    return RTSerialPortQueryStatusLines(pThis->hSerialPort, pfStsLines);
+}
+
+
+/* -=-=-=-=- I/O thread -=-=-=-=- */
 
 /**
  * I/O thread loop.
@@ -193,74 +370,78 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        if (pThis->offReadBuf < pThis->cbReadBufUsed)
-        {
-            /* Try to send data to the guest. */
-            size_t cbProcessed = pThis->cbReadBufUsed - pThis->offReadBuf;
-            int rc = pThis->pDrvCharPort->pfnNotifyRead(pThis->pDrvCharPort, &pThis->abReadBuf[pThis->offReadBuf], &cbProcessed);
-            if (RT_SUCCESS(rc))
-            {
-                Assert(cbProcessed); Assert(cbProcessed <= pThis->cbReadBufUsed);
-                pThis->offReadBuf += cbProcessed;
-                STAM_COUNTER_ADD(&pThis->StatBytesRead, cbProcessed);
-            }
-            else if (rc != VERR_TIMEOUT)
-                LogRelMax(10, ("HostSerial#%d: NotifyRead failed with %Rrc, expect errorneous device behavior.\n",
-                               pDrvIns->iInstance, rc));
-        }
-
         uint32_t fEvtFlags = RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED | RTSERIALPORT_EVT_F_BREAK_DETECTED;
 
         /* Wait until there is room again if there is anyting to send. */
-        if (pThis->fSending)
+        if (   pThis->cbAvailWr
+            || pThis->cbTxUsed)
             fEvtFlags |= RTSERIALPORT_EVT_F_DATA_TX;
 
         /* Try to receive more if there is still room. */
-        if (pThis->cbReadBufUsed < sizeof(pThis->abReadBuf))
+        if (drvHostSerialReadBufGetWrite(pThis, NULL) > 0)
             fEvtFlags |= RTSERIALPORT_EVT_F_DATA_RX;
 
         uint32_t fEvtsRecv = 0;
-        int rc = RTSerialPortEvtPoll(pThis->hSerialPort, fEvtFlags, &fEvtsRecv,
-                                     pThis->offReadBuf < pThis->cbReadBufUsed ? 100 : RT_INDEFINITE_WAIT);
+        int rc = RTSerialPortEvtPoll(pThis->hSerialPort, fEvtFlags, &fEvtsRecv, RT_INDEFINITE_WAIT);
         if (RT_SUCCESS(rc))
         {
             if (fEvtsRecv & RTSERIALPORT_EVT_F_DATA_TX)
             {
-                Assert(pThis->fSending);
-                size_t cbWritten = 0;
-                uint8_t bSend = pThis->u8SendByte;
-                rc = RTSerialPortWriteNB(pThis->hSerialPort, &bSend, 1, &cbWritten);
+                if (pThis->cbAvailWr)
+                {
+                    /* Stuff as much data into the TX buffer as we can. */
+                    size_t cbToFetch = RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed;
+                    size_t cbFetched = 0;
+                    rc = pThis->pDrvSerialPort->pfnReadWr(pThis->pDrvSerialPort, &pThis->abTxBuf[pThis->cbTxUsed], cbToFetch,
+                                                          &cbFetched);
+                    AssertRC(rc);
+
+                    ASMAtomicSubZ(&pThis->cbAvailWr, cbFetched);
+                    pThis->cbTxUsed += cbFetched;
+                }
+
+                size_t cbProcessed = 0;
+                rc = RTSerialPortWriteNB(pThis->hSerialPort, &pThis->abTxBuf[0], pThis->cbTxUsed, &cbProcessed);
                 if (RT_SUCCESS(rc))
                 {
-                    Assert(cbWritten == 1);
-                    ASMAtomicXchgBool(&pThis->fSending, false);
+                    pThis->cbTxUsed -= cbProcessed;
+                    if (pThis->cbTxUsed)
+                    {
+                        /* Move the data in the TX buffer to the front to fill the end again. */
+                        memmove(&pThis->abTxBuf[0], &pThis->abTxBuf[cbProcessed], pThis->cbTxUsed);
+                    }
+                    else
+                        pThis->pDrvSerialPort->pfnDataSentNotify(pThis->pDrvSerialPort);
+                    STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbProcessed);
                 }
                 else
+                {
                     LogRelMax(10, ("HostSerial#%d: Sending data failed even though the serial port is marked as writeable (rc=%Rrc)\n",
                                    pThis->pDrvIns->iInstance, rc));
+                    break;
+                }
             }
 
             if (fEvtsRecv & RTSERIALPORT_EVT_F_DATA_RX)
             {
-                /* Move all remaining data in the buffer to the front to make up as much room as possible. */
-                if (pThis->offReadBuf)
-                {
-                    memmove(&pThis->abReadBuf[0], &pThis->abReadBuf[pThis->offReadBuf], pThis->cbReadBufUsed - pThis->offReadBuf);
-                    pThis->cbReadBufUsed -= pThis->offReadBuf;
-                    pThis->offReadBuf = 0;
-                }
-                size_t cbToRead = sizeof(pThis->abReadBuf) - pThis->cbReadBufUsed;
+                void *pvDst = NULL;
+                size_t cbToRead = drvHostSerialReadBufGetWrite(pThis, &pvDst);
                 size_t cbRead = 0;
-                rc = RTSerialPortReadNB(pThis->hSerialPort, &pThis->abReadBuf[pThis->cbReadBufUsed], cbToRead, &cbRead);
+                rc = RTSerialPortReadNB(pThis->hSerialPort, pvDst, cbToRead, &cbRead);
                 if (RT_SUCCESS(rc))
-                    pThis->cbReadBufUsed += cbRead;
+                {
+                    drvHostSerialReadBufWriteAdv(pThis, cbRead);
+                    /* Notify the device/driver above. */
+                    rc = pThis->pDrvSerialPort->pfnDataAvailRdrNotify(pThis->pDrvSerialPort, cbRead);
+                    AssertRC(rc);
+                }
                 else
                     LogRelMax(10, ("HostSerial#%d: Reading data failed even though the serial port is marked as readable (rc=%Rrc)\n",
                                    pThis->pDrvIns->iInstance, rc));
             }
 
             if (fEvtsRecv & RTSERIALPORT_EVT_F_BREAK_DETECTED)
-                pThis->pDrvCharPort->pfnNotifyBreak(pThis->pDrvCharPort);
+                pThis->pDrvSerialPort->pfnNotifyBrk(pThis->pDrvSerialPort);
 
             if (fEvtsRecv & RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED)
             {
@@ -272,15 +453,15 @@ static DECLCALLBACK(int) drvHostSerialIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
                     uint32_t fPdmStsLines = 0;
 
                     if (fStsLines & RTSERIALPORT_STS_LINE_DCD)
-                        fPdmStsLines |= PDMICHARPORT_STATUS_LINES_DCD;
+                        fPdmStsLines |= PDMISERIALPORT_STS_LINE_DCD;
                     if (fStsLines & RTSERIALPORT_STS_LINE_RI)
-                        fPdmStsLines |= PDMICHARPORT_STATUS_LINES_RI;
+                        fPdmStsLines |= PDMISERIALPORT_STS_LINE_RI;
                     if (fStsLines & RTSERIALPORT_STS_LINE_DSR)
-                        fPdmStsLines |= PDMICHARPORT_STATUS_LINES_DSR;
+                        fPdmStsLines |= PDMISERIALPORT_STS_LINE_DSR;
                     if (fStsLines & RTSERIALPORT_STS_LINE_CTS)
-                        fPdmStsLines |= PDMICHARPORT_STATUS_LINES_CTS;
+                        fPdmStsLines |= PDMISERIALPORT_STS_LINE_CTS;
 
-                    rc = pThis->pDrvCharPort->pfnNotifyStatusLinesChanged(pThis->pDrvCharPort, fPdmStsLines);
+                    rc = pThis->pDrvSerialPort->pfnNotifyStsLinesChanged(pThis->pDrvSerialPort, fPdmStsLines);
                     if (RT_FAILURE(rc))
                     {
                         /* Notifying device failed, continue but log it */
@@ -318,52 +499,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupIoThread(PPDMDRVINS pDrvIns, PPDMTHR
     RT_NOREF(pThread);
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 
-    return RTSerialPortEvtPollInterrupt(pThis->hSerialPort);;
-}
-
-
-/**
- * Set the modem lines.
- *
- * @returns VBox status code
- * @param pInterface        Pointer to the interface structure.
- * @param fRts              Set to true if this control line should be made active.
- * @param fDtr              Set to true if this control line should be made active.
- */
-static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHARCONNECTOR pInterface, bool fRts, bool fDtr)
-{
-    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ICharConnector);
-
-    uint32_t fClear = 0;
-    uint32_t fSet = 0;
-
-    if (fRts)
-        fSet |= RTSERIALPORT_CHG_STS_LINES_F_RTS;
-    else
-        fClear |= RTSERIALPORT_CHG_STS_LINES_F_RTS;
-
-    if (fDtr)
-        fSet |= RTSERIALPORT_CHG_STS_LINES_F_DTR;
-    else
-        fClear |= RTSERIALPORT_CHG_STS_LINES_F_DTR;
-
-    return RTSerialPortChgStatusLines(pThis->hSerialPort, fClear, fSet);
-}
-
-
-/**
- * Sets the TD line into break condition.
- *
- * @returns VBox status code.
- * @param   pInterface  Pointer to the interface structure containing the called function pointer.
- * @param   fBreak      Set to true to let the device send a break false to put into normal operation.
- * @thread  Any thread.
- */
-static DECLCALLBACK(int) drvHostSerialSetBreak(PPDMICHARCONNECTOR pInterface, bool fBreak)
-{
-    PDRVHOSTSERIAL pThis = RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ICharConnector);
-
-    return RTSerialPortChgBreakCondition(pThis->hSerialPort, fBreak);
+    return RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
 }
 
 
@@ -379,9 +515,9 @@ static DECLCALLBACK(int) drvHostSerialSetBreak(PPDMICHARCONNECTOR pInterface, bo
  */
 static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     if (pThis->hSerialPort != NIL_RTSERIALPORT)
     {
@@ -412,16 +548,20 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init basic data members and interfaces.
      */
-    pThis->hSerialPort   = NIL_RTSERIALPORT;
-    pThis->offReadBuf    = 0;
-    pThis->cbReadBufUsed = 0;
+    pThis->hSerialPort                           = NIL_RTSERIALPORT;
+    pThis->cbAvailWr                             = 0;
+    pThis->cbTxUsed                              = 0;
+    pThis->offWrite                              = 0;
+    pThis->offRead                               = 0;
     /* IBase. */
-    pDrvIns->IBase.pfnQueryInterface        = drvHostSerialQueryInterface;
-    /* ICharConnector. */
-    pThis->ICharConnector.pfnWrite          = drvHostSerialWrite;
-    pThis->ICharConnector.pfnSetParameters  = drvHostSerialSetParameters;
-    pThis->ICharConnector.pfnSetModemLines  = drvHostSerialSetModemLines;
-    pThis->ICharConnector.pfnSetBreak       = drvHostSerialSetBreak;
+    pDrvIns->IBase.pfnQueryInterface             = drvHostSerialQueryInterface;
+    /* ISerialConnector. */
+    pThis->ISerialConnector.pfnDataAvailWrNotify = drvHostSerialDataAvailWrNotify;
+    pThis->ISerialConnector.pfnReadRdr           = drvHostSerialReadRdr;
+    pThis->ISerialConnector.pfnChgParams         = drvHostSerialChgParams;
+    pThis->ISerialConnector.pfnChgModemLines     = drvHostSerialChgModemLines;
+    pThis->ISerialConnector.pfnChgBrk            = drvHostSerialChgBrk;
+    pThis->ISerialConnector.pfnQueryStsLines     = drvHostSerialQueryStsLines;
 
     /*
      * Query configuration.
@@ -477,11 +617,11 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     }
 
     /*
-     * Get the ICharPort interface of the above driver/device.
+     * Get the ISerialPort interface of the above driver/device.
      */
-    pThis->pDrvCharPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMICHARPORT);
-    if (!pThis->pDrvCharPort)
-        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("HostSerial#%d has no char port interface above"), pDrvIns->iInstance);
+    pThis->pDrvSerialPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISERIALPORT);
+    if (!pThis->pDrvSerialPort)
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("HostSerial#%d has no serial port interface above"), pDrvIns->iInstance);
 
     /*
      * Create the I/O thread.

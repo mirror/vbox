@@ -1,12 +1,6 @@
 /* $Id$ */
 /** @file
- * Driver that adapts PDMISTREAM into PDMICHARCONNECTOR / PDMICHARPORT.
- *
- * Converts synchronous calls (PDMICHARCONNECTOR::pfnWrite, PDMISTREAM::pfnRead)
- * into asynchronous ones.
- *
- * Note that we don't use a send buffer here to be able to handle
- * dropping of bytes for xmit at device level.
+ * Driver that adapts PDMISTREAM into PDMISERIALCONNECTOR / PDMISERIALPORT.
  */
 
 /*
@@ -50,37 +44,29 @@
 /**
  * Char driver instance data.
  *
- * @implements PDMICHARCONNECTOR
+ * @implements PDMISERIALCONNECTOR
  */
 typedef struct DRVCHAR
 {
     /** Pointer to the driver instance structure. */
     PPDMDRVINS                  pDrvIns;
     /** Pointer to the char port interface of the driver/device above us. */
-    PPDMICHARPORT               pDrvCharPort;
+    PPDMISERIALPORT             pDrvSerialPort;
     /** Pointer to the stream interface of the driver below us. */
     PPDMISTREAM                 pDrvStream;
-    /** Our char interface. */
-    PDMICHARCONNECTOR           ICharConnector;
+    /** Our serial interface. */
+    PDMISERIALCONNECTOR         ISerialConnector;
     /** Flag to notify the receive thread it should terminate. */
     volatile bool               fShutdown;
     /** I/O thread. */
     PPDMTHREAD                  pThrdIo;
-    /** Thread to relay read data to the device above without
-     * blocking send operations.
-     * @todo: This has to go but needs changes in the interface
-     *        between device and driver.
-     */
-    PPDMTHREAD                  pThrdRead;
-    /** Event semaphore for the read relay thread. */
-    RTSEMEVENT                  hEvtSemRead;
-    /** Critical section protection the send part. */
-    RTCRITSECT                  CritSectSend;
 
-    /** Internal send FIFO queue */
-    uint8_t volatile            u8SendByte;
-    bool volatile               fSending;
-    uint8_t                     Alignment[2];
+    /** Amount of data available for sending from the device/driver above. */
+    volatile size_t             cbAvailWr;
+    /** Small send buffer. */
+    uint8_t                     abTxBuf[16];
+    /** Amount of data in the buffer. */
+    size_t                      cbTxUsed;
 
     /** Receive buffer. */
     uint8_t                     abBuffer[256];
@@ -109,52 +95,94 @@ static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, const ch
     PDRVCHAR    pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMICHARCONNECTOR, &pThis->ICharConnector);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMISERIALCONNECTOR, &pThis->ISerialConnector);
     return NULL;
 }
 
 
-/* -=-=-=-=- ICharConnector -=-=-=-=- */
+/* -=-=-=-=- ISerialConnector -=-=-=-=- */
+
 
 /**
- * @interface_method_impl{PDMICHARCONNECTOR,pfnWrite}
+ * @interface_method_impl{PDMISERIALCONNECTOR,pfnDataAvailWrNotify}
  */
-static DECLCALLBACK(int) drvCharWrite(PPDMICHARCONNECTOR pInterface, const void *pvBuf, size_t cbWrite)
+static DECLCALLBACK(int) drvCharDataAvailWrNotify(PPDMISERIALCONNECTOR pInterface, size_t cbAvail)
 {
-    PDRVCHAR pThis = RT_FROM_MEMBER(pInterface, DRVCHAR, ICharConnector);
-    const char *pbBuffer = (const char *)pvBuf;
+    PDRVCHAR pThis = RT_FROM_MEMBER(pInterface, DRVCHAR, ISerialConnector);
+
     int rc = VINF_SUCCESS;
+    size_t cbAvailOld = ASMAtomicAddZ(&pThis->cbAvailWr, cbAvail);
+    if (!cbAvailOld)
+        rc = pThis->pDrvStream->pfnPollInterrupt(pThis->pDrvStream);
 
-    LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
-
-    RTCritSectEnter(&pThis->CritSectSend);
-
-    for (uint32_t i = 0; i < cbWrite && RT_SUCCESS(rc); i++)
-    {
-        if (!ASMAtomicXchgBool(&pThis->fSending, true))
-        {
-            pThis->u8SendByte = pbBuffer[i];
-            pThis->pDrvStream->pfnPollInterrupt(pThis->pDrvStream);
-            STAM_COUNTER_INC(&pThis->StatBytesWritten);
-        }
-        else
-            rc = VERR_BUFFER_OVERFLOW;
-    }
-
-    RTCritSectLeave(&pThis->CritSectSend);
     return rc;
 }
 
 
 /**
- * @interface_method_impl{PDMICHARCONNECTOR,pfnSetParameters}
+ * @interface_method_impl{PDMISERIALCONNECTOR,pfnReadRdr}
  */
-static DECLCALLBACK(int) drvCharSetParameters(PPDMICHARCONNECTOR pInterface, unsigned Bps, char chParity,
-                                              unsigned cDataBits,  unsigned cStopBits)
+static DECLCALLBACK(int) drvCharReadRdr(PPDMISERIALCONNECTOR pInterface, void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
-    RT_NOREF(pInterface, Bps, chParity, cDataBits, cStopBits);
+    PDRVCHAR pThis = RT_FROM_MEMBER(pInterface, DRVCHAR, ISerialConnector);
+    int rc = VINF_SUCCESS;
 
-    LogFlow(("%s: Bps=%u chParity=%c cDataBits=%u cStopBits=%u\n", __FUNCTION__, Bps, chParity, cDataBits, cStopBits));
+    AssertReturn(pThis->cbRemaining, VERR_INVALID_STATE);
+    size_t cbToRead = RT_MIN(cbRead, pThis->cbRemaining);
+    memcpy(pvBuf, pThis->pbBuf, cbToRead);
+    *pcbRead = cbToRead;
+    size_t cbOld = ASMAtomicSubZ(&pThis->cbRemaining, cbToRead);
+    if (!(cbOld - cbToRead)) /* Kick the I/O thread to fetch new data. */
+        rc = pThis->pDrvStream->pfnPollInterrupt(pThis->pDrvStream);
+    STAM_COUNTER_ADD(&pThis->StatBytesRead, cbToRead);
+
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMISERIALCONNECTOR,pfnChgParams}
+ */
+static DECLCALLBACK(int) drvCharChgParams(PPDMISERIALCONNECTOR pInterface, uint32_t uBps,
+                                          PDMSERIALPARITY enmParity, unsigned cDataBits,
+                                          PDMSERIALSTOPBITS enmStopBits)
+{
+    /* Nothing to do here. */
+    RT_NOREF(pInterface, uBps, enmParity, cDataBits, enmStopBits);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{PDMISERIALCONNECTOR,pfnChgModemLines}
+ */
+static DECLCALLBACK(int) drvCharChgModemLines(PPDMISERIALCONNECTOR pInterface, bool fRts, bool fDtr)
+{
+    /* Nothing to do here. */
+    RT_NOREF(pInterface, fRts, fDtr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{PDMISERIALCONNECTOR,pfnChgBrk}
+ */
+static DECLCALLBACK(int) drvCharChgBrk(PPDMISERIALCONNECTOR pInterface, bool fBrk)
+{
+    /* Nothing to do here. */
+    RT_NOREF(pInterface, fBrk);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{PDMISERIALCONNECTOR,pfnQueryStsLines}
+ */
+static DECLCALLBACK(int) drvCharQueryStsLines(PPDMISERIALCONNECTOR pInterface, uint32_t *pfStsLines)
+{
+    /* Nothing to do here. */
+    *pfStsLines = 0;
+    RT_NOREF(pInterface);
     return VINF_SUCCESS;
 }
 
@@ -183,7 +211,8 @@ static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
         if (   !pThis->cbRemaining
             && pThis->pDrvStream->pfnRead)
             fEvts |= RTPOLL_EVT_READ;
-        if (pThis->fSending)
+        if (   pThis->cbAvailWr
+            || pThis->cbTxUsed)
             fEvts |= RTPOLL_EVT_WRITE;
 
         uint32_t fEvtsRecv = 0;
@@ -192,32 +221,38 @@ static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
         {
             if (fEvtsRecv & RTPOLL_EVT_WRITE)
             {
-                RTCritSectEnter(&pThis->CritSectSend);
-                Assert(pThis->fSending);
+                if (pThis->cbAvailWr)
+                {
+                    /* Stuff as much data into the TX buffer as we can. */
+                    size_t cbToFetch = RT_ELEMENTS(pThis->abTxBuf) - pThis->cbTxUsed;
+                    size_t cbFetched = 0;
+                    rc = pThis->pDrvSerialPort->pfnReadWr(pThis->pDrvSerialPort, &pThis->abTxBuf[pThis->cbTxUsed], cbToFetch,
+                                                          &cbFetched);
+                    AssertRC(rc);
 
-                size_t cbProcessed = 1;
-                uint8_t ch = pThis->u8SendByte;
-                rc = pThis->pDrvStream->pfnWrite(pThis->pDrvStream, &ch, &cbProcessed);
+                    ASMAtomicSubZ(&pThis->cbAvailWr, cbFetched);
+                    pThis->cbTxUsed += cbFetched;
+                }
+
+                size_t cbProcessed = pThis->cbTxUsed;
+                rc = pThis->pDrvStream->pfnWrite(pThis->pDrvStream, &pThis->abTxBuf[0], &cbProcessed);
                 if (RT_SUCCESS(rc))
                 {
-                    ASMAtomicXchgBool(&pThis->fSending, false);
-                    Assert(cbProcessed == 1);
+                    pThis->cbTxUsed -= cbProcessed;
+                    if (pThis->cbTxUsed)
+                    {
+                        /* Move the data in the TX buffer to the front to fill the end again. */
+                        memmove(&pThis->abTxBuf[0], &pThis->abTxBuf[cbProcessed], pThis->cbTxUsed);
+                    }
+                    else
+                        pThis->pDrvSerialPort->pfnDataSentNotify(pThis->pDrvSerialPort);
+                    STAM_COUNTER_ADD(&pThis->StatBytesWritten, cbProcessed);
                 }
-                else if (rc == VERR_TIMEOUT)
+                else if (rc != VERR_TIMEOUT)
                 {
-                    /* Normal case, just means that the stream didn't accept a new
-                     * character before the timeout elapsed. Just retry. */
-
-                    /* do not change the rc status here, otherwise the (rc == VERR_TIMEOUT) branch
-                     * in the wait above will never get executed */
-                    /* rc = VINF_SUCCESS; */
-                }
-                else
-                {
-                    LogRel(("Write failed with %Rrc; skipping\n", rc));
+                    LogRel(("Char#%d: Write failed with %Rrc; skipping\n", pDrvIns->iInstance, rc));
                     break;
                 }
-                RTCritSectLeave(&pThis->CritSectSend);
             }
 
             if (fEvtsRecv & RTPOLL_EVT_READ)
@@ -234,7 +269,8 @@ static DECLCALLBACK(int) drvCharIoLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                 }
                 pThis->pbBuf = &pThis->abBuffer[0];
                 ASMAtomicWriteZ(&pThis->cbRemaining, cbRead);
-                RTSemEventSignal(pThis->hEvtSemRead); /* Wakeup relay thread to continue. */
+                /* Notify the upper device/driver. */
+                rc = pThis->pDrvSerialPort->pfnDataAvailRdrNotify(pThis->pDrvSerialPort, cbRead);
             }
         }
         else if (rc != VERR_INTERRUPTED)
@@ -261,123 +297,20 @@ static DECLCALLBACK(int) drvCharIoLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 }
 
 
-static DECLCALLBACK(int) drvCharReadRelayLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    RT_NOREF(pDrvIns);
-    PDRVCHAR pThis = (PDRVCHAR)pThread->pvUser;
-
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-
-    int rc = VINF_SUCCESS;
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-    {
-        size_t cbRem = ASMAtomicReadZ(&pThis->cbRemaining);
-
-        /* Block as long as there is nothing to relay. */
-        if (!pThis->cbRemaining)
-            rc = RTSemEventWait(pThis->hEvtSemRead, RT_INDEFINITE_WAIT);
-
-        if (pThread->enmState != PDMTHREADSTATE_RUNNING)
-            break;
-
-        cbRem = ASMAtomicReadZ(&pThis->cbRemaining);
-        if (cbRem)
-        {
-            /* Send data to guest. */
-            size_t cbProcessed = cbRem;
-            rc = pThis->pDrvCharPort->pfnNotifyRead(pThis->pDrvCharPort, pThis->pbBuf, &cbProcessed);
-            if (RT_SUCCESS(rc))
-            {
-                Assert(cbProcessed);
-                pThis->pbBuf += cbProcessed;
-
-                /* Wake up the I/o thread so it can read new data to process. */
-                cbRem = ASMAtomicSubZ(&pThis->cbRemaining, cbProcessed);
-                if (cbRem == cbProcessed)
-                    pThis->pDrvStream->pfnPollInterrupt(pThis->pDrvStream);
-                STAM_COUNTER_ADD(&pThis->StatBytesRead, cbProcessed);
-            }
-            else if (rc == VERR_TIMEOUT)
-            {
-                /* Normal case, just means that the guest didn't accept a new
-                 * character before the timeout elapsed. Just retry. */
-                rc = VINF_SUCCESS;
-            }
-            else
-            {
-                LogFlow(("NotifyRead failed with %Rrc\n", rc));
-                break;
-            }
-        }
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Unblock the read relay worker thread so it can respond to a state change.
- *
- * @returns VBox status code.
- * @param   pDrvIns     The char driver instance.
- * @param   pThread     The worker thread.
- */
-static DECLCALLBACK(int) drvCharReadRelayLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    PDRVCHAR pThis = (PDRVCHAR)pThread->pvUser;
-
-    RT_NOREF(pDrvIns);
-    return RTSemEventSignal(pThis->hEvtSemRead);
-}
-
-
-/**
- * @callback_method_impl{PDMICHARCONNECTOR,pfnSetModemLines}
- */
-static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHARCONNECTOR pInterface, bool fRequestToSend, bool fDataTerminalReady)
-{
-    /* Nothing to do here. */
-    RT_NOREF(pInterface, fRequestToSend, fDataTerminalReady);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @callback_method_impl{PDMICHARCONNECTOR,pfnSetBreak}
- */
-static DECLCALLBACK(int) drvCharSetBreak(PPDMICHARCONNECTOR pInterface, bool fBreak)
-{
-    /* Nothing to do here. */
-    RT_NOREF(pInterface, fBreak);
-    return VINF_SUCCESS;
-}
-
-
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
 /**
- * Destruct a char driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that
- * any non-VM resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
+ * @interface_method_impl{PDMDEVREG,pfnReset}
  */
-static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvCharReset(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVCHAR pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
-    LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
 
-    if (RTCritSectIsInitialized(&pThis->CritSectSend))
-        RTCritSectDelete(&pThis->CritSectSend);
-
-    if (pThis->hEvtSemRead != NIL_RTSEMEVENT)
-    {
-        RTSemEventDestroy(pThis->hEvtSemRead);
-        pThis->hEvtSemRead = NIL_RTSEMEVENT;
-    }
+    /* Reset TX and RX buffers. */
+    pThis->cbAvailWr   = 0;
+    pThis->cbTxUsed    = 0;
+    pThis->cbRemaining = 0;
 }
 
 
@@ -396,61 +329,48 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /*
      * Init basic data members and interfaces.
      */
-    pThis->pDrvIns                          = pDrvIns;
-    pThis->pThrdIo                          = NIL_RTTHREAD;
-    pThis->pThrdRead                        = NIL_RTTHREAD;
-    pThis->hEvtSemRead                      = NIL_RTSEMEVENT;
+    pThis->pDrvIns                               = pDrvIns;
+    pThis->pThrdIo                               = NIL_RTTHREAD;
     /* IBase. */
-    pDrvIns->IBase.pfnQueryInterface        = drvCharQueryInterface;
-    /* ICharConnector. */
-    pThis->ICharConnector.pfnWrite          = drvCharWrite;
-    pThis->ICharConnector.pfnSetParameters  = drvCharSetParameters;
-    pThis->ICharConnector.pfnSetModemLines  = drvCharSetModemLines;
-    pThis->ICharConnector.pfnSetBreak       = drvCharSetBreak;
-
-    int rc = RTCritSectInit(&pThis->CritSectSend);
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("Char#%d: Failed to create critical section"), pDrvIns->iInstance);
+    pDrvIns->IBase.pfnQueryInterface             = drvCharQueryInterface;
+    /* ISerialConnector. */
+    pThis->ISerialConnector.pfnDataAvailWrNotify = drvCharDataAvailWrNotify;
+    pThis->ISerialConnector.pfnReadRdr           = drvCharReadRdr;
+    pThis->ISerialConnector.pfnChgParams         = drvCharChgParams;
+    pThis->ISerialConnector.pfnChgModemLines     = drvCharChgModemLines;
+    pThis->ISerialConnector.pfnChgBrk            = drvCharChgBrk;
+    pThis->ISerialConnector.pfnQueryStsLines     = drvCharQueryStsLines;
 
     /*
-     * Get the ICharPort interface of the above driver/device.
+     * Get the ISerialPort interface of the above driver/device.
      */
-    pThis->pDrvCharPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMICHARPORT);
-    if (!pThis->pDrvCharPort)
-        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Char#%d has no char port interface above"), pDrvIns->iInstance);
+    pThis->pDrvSerialPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISERIALPORT);
+    if (!pThis->pDrvSerialPort)
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS,
+                                   N_("Char#%d has no serial port interface above"), pDrvIns->iInstance);
 
     /*
      * Attach driver below and query its stream interface.
      */
     PPDMIBASE pBase;
-    rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBase);
+    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBase);
     if (RT_FAILURE(rc))
         return rc; /* Don't call PDMDrvHlpVMSetError here as we assume that the driver already set an appropriate error */
     pThis->pDrvStream = PDMIBASE_QUERY_INTERFACE(pBase, PDMISTREAM);
     if (!pThis->pDrvStream)
-        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("Char#%d has no stream interface below"), pDrvIns->iInstance);
-
-    /* Don't start the receive relay thread if reading is not supported. */
-    if (pThis->pDrvStream->pfnRead)
-    {
-        rc = PDMDrvHlpThreadCreate(pThis->pDrvIns, &pThis->pThrdRead, pThis, drvCharReadRelayLoop,
-                                   drvCharReadRelayLoopWakeup, 0, RTTHREADTYPE_IO, "CharReadRel");
-        if (RT_FAILURE(rc))
-            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create read relay thread"), pDrvIns->iInstance);
-
-         rc = RTSemEventCreate(&pThis->hEvtSemRead);
-         AssertRCReturn(rc, rc);
-    }
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS,
+                                   N_("Char#%d has no stream interface below"), pDrvIns->iInstance);
 
     rc = PDMDrvHlpThreadCreate(pThis->pDrvIns, &pThis->pThrdIo, pThis, drvCharIoLoop,
                                drvCharIoLoopWakeup, 0, RTTHREADTYPE_IO, "CharIo");
     if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create send thread"), pDrvIns->iInstance);
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Char#%d cannot create I/O thread"), pDrvIns->iInstance);
 
 
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/Char%d/Written", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/Char%d/Read", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                           "Nr of bytes written",         "/Devices/Char%d/Written", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                           "Nr of bytes read",            "/Devices/Char%d/Read", pDrvIns->iInstance);
 
     return VINF_SUCCESS;
 }
@@ -482,7 +402,7 @@ const PDMDRVREG g_DrvChar =
     /* pfnConstruct */
     drvCharConstruct,
     /* pfnDestruct */
-    drvCharDestruct,
+    NULL,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
@@ -490,7 +410,7 @@ const PDMDRVREG g_DrvChar =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    drvCharReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
