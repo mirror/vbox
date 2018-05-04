@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,9 @@
 /* Qt includes: */
 #include <QObject>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
+
 /* Forward declarations: */
 class QAction;
 class QActionGroup;
@@ -28,15 +31,15 @@ class QTabWidget;
 class QTreeWidget;
 class QTreeWidgetItem;
 class QITreeWidget;
-class UISelectorItem;
 class UISelectorActionItem;
+class UISelectorItem;
 class UISettingsPage;
 class UIToolBar;
 
 
 /** QObject subclass providing settings dialog
   * with the means to switch between settings pages. */
-class UISettingsSelector : public QObject
+class SHARED_LIBRARY_STUFF UISettingsSelector : public QObject
 {
     Q_OBJECT;
 
@@ -50,7 +53,7 @@ public:
     /** Constructs settings selector passing @a pParent to the base-class. */
     UISettingsSelector(QWidget *pParent = 0);
     /** Destructs settings selector. */
-    ~UISettingsSelector();
+    virtual ~UISettingsSelector() /* override */;
 
     /** Returns the widget selector operates on. */
     virtual QWidget *widget() const = 0;
@@ -123,7 +126,7 @@ protected:
 /** UISettingsSelector subclass providing settings dialog
   * with the means to switch between settings pages.
   * This one represented as tree-widget. */
-class UISettingsSelectorTreeView : public UISettingsSelector
+class SHARED_LIBRARY_STUFF UISettingsSelectorTreeView : public UISettingsSelector
 {
     Q_OBJECT;
 
@@ -132,7 +135,7 @@ public:
     /** Constructs settings selector passing @a pParent to the base-class. */
     UISettingsSelectorTreeView(QWidget *pParent = 0);
     /** Destructs settings selector. */
-    ~UISettingsSelectorTreeView();
+    virtual ~UISettingsSelectorTreeView() /* override */;
 
     /** Returns the widget selector operates on. */
     virtual QWidget *widget() const /* override */;
@@ -196,7 +199,7 @@ private:
 /** UISettingsSelector subclass providing settings dialog
   * with the means to switch between settings pages.
   * This one represented as tab-widget. */
-class UISettingsSelectorToolBar : public UISettingsSelector
+class SHARED_LIBRARY_STUFF UISettingsSelectorToolBar : public UISettingsSelector
 {
     Q_OBJECT;
 
@@ -205,7 +208,7 @@ public:
     /** Constructs settings selector passing @a pParent to the base-class. */
     UISettingsSelectorToolBar(QWidget *pParent = 0);
     /** Destructs settings selector. */
-    ~UISettingsSelectorToolBar();
+    virtual ~UISettingsSelectorToolBar() /* override */;
 
     /** Returns the widget selector operates on. */
     virtual QWidget *widget() const /* override */;
@@ -274,5 +277,5 @@ private:
     QActionGroup *m_pActionGroup;
 };
 
-#endif /* !___UISettingsSelector_h___ */
 
+#endif /* !___UISettingsSelector_h___ */
