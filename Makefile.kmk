@@ -975,15 +975,10 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 	--exclude=tinderclient.log \
 	--exclude=tools/FetchDir/ \
 	--exclude=webtools/ \
-	$(foreach os,darwin freebsd linux solaris os2 win,$(if-expr "$(1)" != "$(os)", \
+	--exclude=out/ \
+	$(foreach os,$(filter-out $(1), darwin freebsd linux solaris os2 win), \
 		--exclude=tools/$(os).x86/ \
-		--exclude=tools/$(os).amd64/ \
-		--exclude=out/$(os).amd64/ \
-		--exclude=out/$(os).x86/ \
-	,$(select \
-		"$(2)" == "x86"  , --exclude=out/$(os).amd64/$(KBUILD_TYPE)/, \
-		"$(2)" == "amd64", --exclude=out/$(os).x86/$(KBUILD_TYPE)/) \
-	))
+		--exclude=tools/$(os).amd64/ )
 
 #
 # VM IP addresses.
