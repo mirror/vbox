@@ -109,7 +109,11 @@
 #undef LOG_GROUP
 #include "../Parallel/DevParallel.cpp"
 #undef LOG_GROUP
-#include "../Serial/DevSerial.cpp"
+#ifndef VBOX_WITH_NEW_SERIAL
+# include "../Serial/DevSerial.cpp"
+#else
+# include "../Serial/DevSerialNew.cpp"
+#endif
 #ifdef VBOX_WITH_AHCI
 # undef LOG_GROUP
 # include "../Storage/DevAHCI.cpp"
@@ -392,7 +396,11 @@ int main()
     CHECK_MEMBER_ALIGNMENT(PCNETSTATE, StatMMIOReadRZ, 8);
 #endif
     CHECK_MEMBER_ALIGNMENT(PITSTATE, StatPITIrq, 8);
+#ifndef VBOX_WITH_NEW_SERIAL
     CHECK_MEMBER_ALIGNMENT(SerialState, CritSect, 8);
+#else
+    CHECK_MEMBER_ALIGNMENT(DEVSERIAL, CritSect, 8);
+#endif
 #ifdef VBOX_WITH_VMSVGA
     CHECK_SIZE(VMSVGAState, RT_ALIGN_Z(sizeof(VMSVGAState), 8));
     CHECK_MEMBER_ALIGNMENT(VGASTATE, svga, 8);

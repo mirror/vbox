@@ -108,7 +108,11 @@
 #undef LOG_GROUP
 #include "../Parallel/DevParallel.cpp"
 #undef LOG_GROUP
-#include "../Serial/DevSerial.cpp"
+#ifndef VBOX_WITH_NEW_SERIAL
+# include "../Serial/DevSerial.cpp"
+#else
+# include "../Serial/DevSerialNew.cpp"
+#endif
 #ifdef VBOX_WITH_AHCI
 # undef LOG_GROUP
 # include "../Storage/DevAHCI.cpp"
@@ -1273,6 +1277,7 @@ int main()
     GEN_CHECK_OFF(PARALLELPORT, act_fifo_pos_read);
 #endif
 
+#ifndef VBOX_WITH_NEW_SERIAL
     /* Serial/DevSerial.cpp */
     GEN_CHECK_SIZE(SerialState);
     GEN_CHECK_OFF(SerialState, CritSect);
@@ -1310,6 +1315,36 @@ int main()
     GEN_CHECK_OFF(SerialState, fR0Enabled);
     GEN_CHECK_OFF(SerialState, fYieldOnLSRRead);
     GEN_CHECK_OFF(SerialState, char_transmit_time);
+#else
+    /* Serial/DevSerialNew.cpp */
+    GEN_CHECK_SIZE(DEVSERIAL);
+    GEN_CHECK_OFF(DEVSERIAL, CritSect);
+    GEN_CHECK_OFF(DEVSERIAL, pDevInsR3);
+    GEN_CHECK_OFF(DEVSERIAL, pDevInsR0);
+    GEN_CHECK_OFF(DEVSERIAL, pDevInsRC);
+    GEN_CHECK_OFF(DEVSERIAL, IBase);
+    GEN_CHECK_OFF(DEVSERIAL, ISerialPort);
+    GEN_CHECK_OFF(DEVSERIAL, pDrvBase);
+    GEN_CHECK_OFF(DEVSERIAL, pDrvSerial);
+    GEN_CHECK_OFF(DEVSERIAL, fR0Enabled);
+    GEN_CHECK_OFF(DEVSERIAL, fRCEnabled);
+    GEN_CHECK_OFF(DEVSERIAL, f16550AEnabled);
+    GEN_CHECK_OFF(DEVSERIAL, fYieldOnLSRRead);
+    GEN_CHECK_OFF(DEVSERIAL, uIrq);
+    GEN_CHECK_OFF(DEVSERIAL, PortBase);
+    GEN_CHECK_OFF(DEVSERIAL, uRegDivisor);
+    GEN_CHECK_OFF(DEVSERIAL, uRegRbr);
+    GEN_CHECK_OFF(DEVSERIAL, uRegThr);
+    GEN_CHECK_OFF(DEVSERIAL, uRegIer);
+    GEN_CHECK_OFF(DEVSERIAL, uRegIir);
+    GEN_CHECK_OFF(DEVSERIAL, uRegFcr);
+    GEN_CHECK_OFF(DEVSERIAL, uRegLcr);
+    GEN_CHECK_OFF(DEVSERIAL, uRegMcr);
+    GEN_CHECK_OFF(DEVSERIAL, uRegLsr);
+    GEN_CHECK_OFF(DEVSERIAL, uRegMsr);
+    GEN_CHECK_OFF(DEVSERIAL, uRegScr);
+    GEN_CHECK_OFF(DEVSERIAL, cbAvailRdr);
+#endif
 
 #ifdef VBOX_WITH_AHCI
     /* Storage/DevAHCI.cpp */
