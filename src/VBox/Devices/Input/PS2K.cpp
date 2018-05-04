@@ -962,7 +962,7 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             }
 
             /* Feed the bytes to the queue if there is room. */
-            //@todo: Send overrun code if sequence won't fit?
+            /// @todo Send overrun code if sequence won't fit?
             ps2kInsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
         }
         else if (!(pKeyDef->keyFlags & (KF_NB | KF_PB)))
@@ -1017,7 +1017,7 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             }
 
             /* Feed the bytes to the queue if there is room. */
-            //@todo: Send overrun code if sequence won't fit?
+            /// @todo Send overrun code if sequence won't fit?
             ps2kInsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
         }
     }
@@ -1042,7 +1042,7 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             }
         }
         /* Feed the bytes to the queue if there is room. */
-        //@todo: Send overrun code if sequence won't fit?
+        /// @todo Send overrun code if sequence won't fit?
         ps2kInsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
     }
 
