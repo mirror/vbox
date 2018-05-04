@@ -27,10 +27,9 @@ struct UIDataSettingsGlobalExtension;
 struct UIDataSettingsGlobalExtensionItem;
 typedef UISettingsCache<UIDataSettingsGlobalExtension> UISettingsCacheGlobalExtension;
 
-
 /** Global settings: Extension page. */
-class UIGlobalSettingsExtension : public UISettingsPageGlobal,
-                                  public Ui::UIGlobalSettingsExtension
+class SHARED_LIBRARY_STUFF UIGlobalSettingsExtension : public UISettingsPageGlobal,
+                                                       public Ui::UIGlobalSettingsExtension
 {
     Q_OBJECT;
 
@@ -92,4 +91,3 @@ private:
 };
 
 #endif /* !___UIGlobalSettingsExtension_h___ */
-

@@ -30,10 +30,9 @@ class UIHotKeyTable;
 class UIHotKeyTableModel;
 typedef UISettingsCache<UIDataSettingsGlobalInput> UISettingsCacheGlobalInput;
 
-
 /** Global settings: Input page. */
-class UIGlobalSettingsInput : public UISettingsPageGlobal,
-                              public Ui::UIGlobalSettingsInput
+class SHARED_LIBRARY_STUFF UIGlobalSettingsInput : public UISettingsPageGlobal,
+                                                   public Ui::UIGlobalSettingsInput
 {
     Q_OBJECT;
 
@@ -108,4 +107,3 @@ private:
 };
 
 #endif /* !___UIGlobalSettingsInput_h___ */
-

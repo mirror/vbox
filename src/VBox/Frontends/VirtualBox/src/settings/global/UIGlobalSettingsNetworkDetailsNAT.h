@@ -76,7 +76,7 @@ struct UIDataSettingsGlobalNetworkNAT
 
 
 /* Global settings / Network page / Details sub-dialog: */
-class UIGlobalSettingsNetworkDetailsNAT : public QIWithRetranslateUI2<QIDialog>, public Ui::UIGlobalSettingsNetworkDetailsNAT
+class SHARED_LIBRARY_STUFF UIGlobalSettingsNetworkDetailsNAT : public QIWithRetranslateUI2<QIDialog>, public Ui::UIGlobalSettingsNetworkDetailsNAT
 {
     Q_OBJECT;
 
@@ -115,5 +115,6 @@ private:
     /** Holds IPv6 port forwarding rules. */
     UIPortForwardingDataList &m_ipv6rules;
 };
+
 
 #endif /* __UIGlobalSettingsNetworkDetailsNAT_h__ */

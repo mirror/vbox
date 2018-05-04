@@ -519,14 +519,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/graphics/details/UIGDetailsElement.h \
 	src/selector/graphics/details/UIGDetailsElements.h \
 	src/selector/graphics/details/UIGMachinePreview.h \
-	src/settings/global/UIGlobalSettingsExtension.h \
-	src/settings/global/UIGlobalSettingsGeneral.h \
-	src/settings/global/UIGlobalSettingsInput.h \
-	src/settings/global/UIGlobalSettingsLanguage.h \
-	src/settings/global/UIGlobalSettingsDisplay.h \
-	src/settings/global/UIGlobalSettingsNetwork.h \
-	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.h \
-	src/settings/global/UIGlobalSettingsPortForwardingDlg.h \
 	src/settings/machine/UIMachineSettingsAudio.h \
 	src/settings/machine/UIMachineSettingsDisplay.h \
 	src/settings/machine/UIMachineSettingsGeneral.h \
@@ -583,12 +575,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
 	src/wizards/firstrun/UIWizardFirstRun.h \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
-
-ifdef VBOX_GUI_WITH_NETWORK_MANAGER
- VirtualBox_QT_MOCHDRS += \
-	src/settings/global/UIGlobalSettingsProxy.h \
-	src/settings/global/UIGlobalSettingsUpdate.h
-endif
 
 ifdef VBOX_WITH_DRAG_AND_DROP
  VirtualBox_QT_MOCHDRS += \
@@ -663,6 +649,14 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/settings/UISettingsPage.h \
 	src/settings/UISettingsSelector.h \
 	src/settings/UISettingsSerializer.h \
+	src/settings/global/UIGlobalSettingsExtension.h \
+	src/settings/global/UIGlobalSettingsGeneral.h \
+	src/settings/global/UIGlobalSettingsInput.h \
+	src/settings/global/UIGlobalSettingsLanguage.h \
+	src/settings/global/UIGlobalSettingsDisplay.h \
+	src/settings/global/UIGlobalSettingsNetwork.h \
+	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.h \
+	src/settings/global/UIGlobalSettingsPortForwardingDlg.h \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
@@ -710,7 +704,9 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/net/UINetworkRequest.h \
 	src/net/UINetworkRequestWidget.h \
 	src/net/UINetworkReply.h \
-	src/net/UIUpdateManager.h
+	src/net/UIUpdateManager.h \
+	src/settings/global/UIGlobalSettingsProxy.h \
+	src/settings/global/UIGlobalSettingsUpdate.h
  endif
 
  VirtualBox_QT_MOCHDRS.darwin += \
@@ -781,6 +777,14 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/settings/UISettingsPage.h \
 	src/settings/UISettingsSelector.h \
 	src/settings/UISettingsSerializer.h \
+	src/settings/global/UIGlobalSettingsExtension.h \
+	src/settings/global/UIGlobalSettingsGeneral.h \
+	src/settings/global/UIGlobalSettingsInput.h \
+	src/settings/global/UIGlobalSettingsLanguage.h \
+	src/settings/global/UIGlobalSettingsDisplay.h \
+	src/settings/global/UIGlobalSettingsNetwork.h \
+	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.h \
+	src/settings/global/UIGlobalSettingsPortForwardingDlg.h \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
@@ -828,7 +832,9 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 	src/net/UINetworkRequest.h \
 	src/net/UINetworkRequestWidget.h \
 	src/net/UINetworkReply.h \
-	src/net/UIUpdateManager.h
+	src/net/UIUpdateManager.h \
+	src/settings/global/UIGlobalSettingsProxy.h \
+	src/settings/global/UIGlobalSettingsUpdate.h
 endif
 
 VBoxGlobal_QT_MOCHDRS.darwin += \
@@ -854,7 +860,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UISnapshotDetailsWidget.cpp \
 	src/selector/UISnapshotPane.cpp \
-	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
@@ -880,6 +885,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
+	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
@@ -923,6 +929,7 @@ VBoxGlobal_QT_MOCSRCS = \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
+	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
@@ -1038,14 +1045,6 @@ VirtualBox_SOURCES = \
 	src/selector/graphics/details/UIGDetailsElement.cpp \
 	src/selector/graphics/details/UIGDetailsElements.cpp \
 	src/selector/graphics/details/UIGMachinePreview.cpp \
-	src/settings/global/UIGlobalSettingsExtension.cpp \
-	src/settings/global/UIGlobalSettingsGeneral.cpp \
-	src/settings/global/UIGlobalSettingsInput.cpp \
-	src/settings/global/UIGlobalSettingsLanguage.cpp \
-	src/settings/global/UIGlobalSettingsDisplay.cpp \
-	src/settings/global/UIGlobalSettingsNetwork.cpp \
-	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.cpp \
-	src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp \
 	src/settings/machine/UIMachineSettingsAudio.cpp \
 	src/settings/machine/UIMachineSettingsDisplay.cpp \
 	src/settings/machine/UIMachineSettingsGeneral.cpp \
@@ -1102,12 +1101,6 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
-
-ifdef VBOX_GUI_WITH_NETWORK_MANAGER
- VirtualBox_SOURCES += \
-	src/settings/global/UIGlobalSettingsProxy.cpp \
-	src/settings/global/UIGlobalSettingsUpdate.cpp
-endif
 
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIAbstractDockIconPreview.cpp \
@@ -1223,6 +1216,14 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/settings/UISettingsPage.cpp \
 	src/settings/UISettingsSelector.cpp \
 	src/settings/UISettingsSerializer.cpp \
+	src/settings/global/UIGlobalSettingsExtension.cpp \
+	src/settings/global/UIGlobalSettingsGeneral.cpp \
+	src/settings/global/UIGlobalSettingsInput.cpp \
+	src/settings/global/UIGlobalSettingsLanguage.cpp \
+	src/settings/global/UIGlobalSettingsDisplay.cpp \
+	src/settings/global/UIGlobalSettingsNetwork.cpp \
+	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.cpp \
+	src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
@@ -1271,7 +1272,9 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/net/UINetworkRequestWidget.cpp \
 	src/net/UINetworkReply.cpp \
 	src/net/UIUpdateDefs.cpp \
-	src/net/UIUpdateManager.cpp
+	src/net/UIUpdateManager.cpp \
+	src/settings/global/UIGlobalSettingsProxy.cpp \
+	src/settings/global/UIGlobalSettingsUpdate.cpp
  endif
 
  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
@@ -1368,6 +1371,14 @@ VBoxGlobal_SOURCES = \
 	src/settings/UISettingsPage.cpp \
 	src/settings/UISettingsSelector.cpp \
 	src/settings/UISettingsSerializer.cpp \
+	src/settings/global/UIGlobalSettingsExtension.cpp \
+	src/settings/global/UIGlobalSettingsGeneral.cpp \
+	src/settings/global/UIGlobalSettingsInput.cpp \
+	src/settings/global/UIGlobalSettingsLanguage.cpp \
+	src/settings/global/UIGlobalSettingsDisplay.cpp \
+	src/settings/global/UIGlobalSettingsNetwork.cpp \
+	src/settings/global/UIGlobalSettingsNetworkDetailsNAT.cpp \
+	src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \
@@ -1416,7 +1427,9 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 	src/net/UINetworkRequestWidget.cpp \
 	src/net/UINetworkReply.cpp \
 	src/net/UIUpdateDefs.cpp \
-	src/net/UIUpdateManager.cpp
+	src/net/UIUpdateManager.cpp \
+	src/settings/global/UIGlobalSettingsProxy.cpp \
+	src/settings/global/UIGlobalSettingsUpdate.cpp
 endif
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11

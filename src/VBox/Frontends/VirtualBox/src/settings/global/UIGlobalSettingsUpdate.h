@@ -27,10 +27,9 @@
 struct UIDataSettingsGlobalUpdate;
 typedef UISettingsCache<UIDataSettingsGlobalUpdate> UISettingsCacheGlobalUpdate;
 
-
 /** Global settings: Update page. */
-class UIGlobalSettingsUpdate : public UISettingsPageGlobal,
-                               public Ui::UIGlobalSettingsUpdate
+class SHARED_LIBRARY_STUFF UIGlobalSettingsUpdate : public UISettingsPageGlobal,
+                                                    public Ui::UIGlobalSettingsUpdate
 {
     Q_OBJECT;
 
@@ -93,4 +92,3 @@ private:
 };
 
 #endif /* !___UIGlobalSettingsUpdate_h___ */
-

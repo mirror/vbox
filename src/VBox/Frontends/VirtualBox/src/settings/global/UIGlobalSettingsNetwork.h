@@ -31,10 +31,9 @@ typedef UISettingsCache<UIDataPortForwardingRule> UISettingsCachePortForwardingR
 typedef UISettingsCachePoolOfTwo<UIDataSettingsGlobalNetworkNAT, UISettingsCachePortForwardingRule, UISettingsCachePortForwardingRule> UISettingsCacheGlobalNetworkNAT;
 typedef UISettingsCachePool<UIDataSettingsGlobalNetwork, UISettingsCacheGlobalNetworkNAT> UISettingsCacheGlobalNetwork;
 
-
 /** Global settings: Network page. */
-class UIGlobalSettingsNetwork : public UISettingsPageGlobal,
-                                public Ui::UIGlobalSettingsNetwork
+class SHARED_LIBRARY_STUFF UIGlobalSettingsNetwork : public UISettingsPageGlobal,
+                                                     public Ui::UIGlobalSettingsNetwork
 {
     Q_OBJECT;
 
@@ -132,4 +131,3 @@ private:
 };
 
 #endif /* !___UIGlobalSettingsNetwork_h___ */
-

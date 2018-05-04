@@ -26,10 +26,9 @@
 struct UIDataSettingsGlobalGeneral;
 typedef UISettingsCache<UIDataSettingsGlobalGeneral> UISettingsCacheGlobalGeneral;
 
-
 /** Global settings: General page. */
-class UIGlobalSettingsGeneral : public UISettingsPageGlobal,
-                                public Ui::UIGlobalSettingsGeneral
+class SHARED_LIBRARY_STUFF UIGlobalSettingsGeneral : public UISettingsPageGlobal,
+                                                     public Ui::UIGlobalSettingsGeneral
 {
     Q_OBJECT;
 
@@ -74,4 +73,3 @@ private:
 };
 
 #endif /* !___UIGlobalSettingsGeneral_h___ */
-

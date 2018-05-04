@@ -28,7 +28,7 @@ class QTabWidget;
 class QIDialogButtonBox;
 
 /* Global settings / Network page / NAT network tab / Port forwarding dialog: */
-class UIGlobalSettingsPortForwardingDlg : public QIWithRetranslateUI<QIDialog>
+class SHARED_LIBRARY_STUFF UIGlobalSettingsPortForwardingDlg : public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 

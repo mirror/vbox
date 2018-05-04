@@ -27,10 +27,9 @@
 struct UIDataSettingsGlobalProxy;
 typedef UISettingsCache<UIDataSettingsGlobalProxy> UISettingsCacheGlobalProxy;
 
-
 /** Global settings: Proxy page. */
-class UIGlobalSettingsProxy : public UISettingsPageGlobal,
-                              public Ui::UIGlobalSettingsProxy
+class SHARED_LIBRARY_STUFF UIGlobalSettingsProxy : public UISettingsPageGlobal,
+                                                   public Ui::UIGlobalSettingsProxy
 {
     Q_OBJECT;
 
@@ -83,4 +82,3 @@ private:
 };
 
 #endif /* !___UIGlobalSettingsProxy_h___ */
-

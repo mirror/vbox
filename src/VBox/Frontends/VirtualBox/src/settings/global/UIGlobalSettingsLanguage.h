@@ -26,10 +26,9 @@
 struct UIDataSettingsGlobalLanguage;
 typedef UISettingsCache<UIDataSettingsGlobalLanguage> UISettingsCacheGlobalLanguage;
 
-
 /** Global settings: Language page. */
-class UIGlobalSettingsLanguage : public UISettingsPageGlobal,
-                                 public Ui::UIGlobalSettingsLanguage
+class SHARED_LIBRARY_STUFF UIGlobalSettingsLanguage : public UISettingsPageGlobal,
+                                                      public Ui::UIGlobalSettingsLanguage
 {
     Q_OBJECT;
 
@@ -93,4 +92,3 @@ private:
 };
 
 #endif /* !___UIGlobalSettingsLanguage_h___ */
-
