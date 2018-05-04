@@ -61,6 +61,14 @@ typedef struct PDMISERIALPORT
     DECLR3CALLBACKMEMBER(int, pfnDataAvailRdrNotify, (PPDMISERIALPORT pInterface, size_t cbAvail));
 
     /**
+     * Notifies the upper device/driver that all data was sent.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDataSentNotify, (PPDMISERIALPORT pInterface));
+
+    /**
      * Try to read data from the device/driver above for writing.
      *
      * @returns VBox status code.
@@ -174,9 +182,9 @@ typedef struct PDMISERIALCONNECTOR
      * @param   enmStopBits     Number of stop bits.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnChgParams,(PPDMISERIALCONNECTOR pInterface, uint32_t uBps,
-                                            PDMSERIALPARITY enmParity, unsigned cDataBits,
-                                            PDMSERIALSTOPBITS enmStopBits));
+    DECLR3CALLBACKMEMBER(int, pfnChgParams, (PPDMISERIALCONNECTOR pInterface, uint32_t uBps,
+                                             PDMSERIALPARITY enmParity, unsigned cDataBits,
+                                             PDMSERIALSTOPBITS enmStopBits));
 
     /**
      * Set the state of the modem lines.
@@ -187,7 +195,7 @@ typedef struct PDMISERIALCONNECTOR
      * @param   fDtr                Set to true to make the Data Terminal Ready line active otherwise 0.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnChgModemLines,(PPDMISERIALCONNECTOR pInterface, bool fRts, bool fDtr));
+    DECLR3CALLBACKMEMBER(int, pfnChgModemLines, (PPDMISERIALCONNECTOR pInterface, bool fRts, bool fDtr));
 
     /**
      * Changes the TD line into the requested break condition.
@@ -197,7 +205,7 @@ typedef struct PDMISERIALCONNECTOR
      * @param   fBrk                Set to true to let the device send a break false to put into normal operation.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnChgBrk,(PPDMISERIALCONNECTOR pInterface, bool fBrk));
+    DECLR3CALLBACKMEMBER(int, pfnChgBrk, (PPDMISERIALCONNECTOR pInterface, bool fBrk));
 
     /**
      * Queries the current state of the status lines.
