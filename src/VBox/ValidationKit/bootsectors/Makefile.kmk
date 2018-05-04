@@ -255,6 +255,18 @@ bs3-cpu-basic-2-template.o:: \
 	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
 	$$(bs3-cpu-basic-2_0_OUTDIR)/bs3-cpu-basic-2-asm.o16
 
+ifndef VBOX_OSE # Will be exported at some later point.
+# CPU weird stuff #1.
+MISCBINS += bs3-cpu-weird-1
+bs3-cpu-weird-1_TEMPLATE = VBoxBS3KitImg
+bs3-cpu-weird-1_INCS  = .
+bs3-cpu-weird-1_SOURCES = \
+	bs3kit/bs3-first-rm.asm \
+	bs3-cpu-weird-1.c \
+	bs3-cpu-weird-1-x0.c \
+	bs3-cpu-weird-1-asm.asm
+endif
+
 # FPU state corruption checker.
 MISCBINS += bs3-fpustate-1
 bs3-fpustate-1_TEMPLATE = VBoxBS3KitImg
