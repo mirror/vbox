@@ -931,10 +931,14 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_DR6_BS                          RT_BIT_32(14)
 /** Bit 15 - BT - Task switch. (TSS T bit.) */
 #define X86_DR6_BT                          RT_BIT_32(15)
+/** Bit 16 - RTM - Cleared if debug exception inside RTM (@sa X86_DR7_RTM). */
+#define X86_DR6_RTM                         RT_BIT_32(16)
 /** Value of DR6 after powerup/reset. */
 #define X86_DR6_INIT_VAL                    UINT64_C(0xFFFF0FF0)
 /** Bits which must be 1s in DR6. */
 #define X86_DR6_RA1_MASK                    UINT64_C(0xffff0ff0)
+/** Bits which must be 1s in DR6, when RTM is supported. */
+#define X86_DR6_RA1_MASK_RTM                UINT64_C(0xfffe0ff0)
 /** Bits which must be 0s in DR6. */
 #define X86_DR6_RAZ_MASK                    RT_BIT_64(12)
 /** Bits which must be 0s on writes to DR6. */
@@ -973,6 +977,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** L0, L1, L2, and L3.  */
 #define X86_DR7_GE_ALL                      UINT64_C(0x00000000000000aa)
 
+/** Bit 11 - RTM - Enable advanced debugging of RTM transactions.
+ * Requires IA32_DEBUGCTL.RTM=1 too, and RTM HW support of course.  */
+#define X86_DR7_RTM                         RT_BIT_32(11)
 /** Bit 12 - IR (ICE) - Interrupt redirection on Pentium.  When set, the in
  * Circuit Emulator (ICE) will break emulation on breakpoints and stuff.
  * May cause CPU hang if enabled without ICE attached when the ICEBP/INT1
