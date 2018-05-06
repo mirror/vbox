@@ -63,7 +63,7 @@
 /** Interrupt identification mask. */
 # define UART_REG_IIR_ID_MASK                0x0e
 /** Sets the interrupt identification to the given value. */
-# define UART_REG_IIR_ID_SET(a_Val)          (((a_Val) & UART_REG_IIR_ID_MASK) << 1)
+# define UART_REG_IIR_ID_SET(a_Val)          (((a_Val) << 1) & UART_REG_IIR_ID_MASK)
 /** Receiver Line Status interrupt. */
 #  define UART_REG_IIR_ID_RCL                0x3
 /** Received Data Available interrupt. */
@@ -303,6 +303,8 @@ static const char *s_aszStopBits[] =
  */
 static void serialIrqUpdate(PDEVSERIAL pThis)
 {
+    LogFlowFunc(("pThis=%#p\n", pThis));
+
     /*
      * The interrupt uses a priority scheme, only the interrupt with the
      * highest priority is indicated in the interrupt identification register.
@@ -326,20 +328,26 @@ static void serialIrqUpdate(PDEVSERIAL pThis)
         uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_THRE);
     else if (   (pThis->uRegMsr & UART_REG_MSR_BITS_IIR_MS)
              && (pThis->uRegIer & UART_REG_IER_EDSSI))
-        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_MSR_BITS_IIR_MS);
+        uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_MS);
 
     /** @todo Character timeout indication for FIFO mode. */
 
-    LogFlowFunc(("uRegIirNew=%#x uRegIir=%#x\n", uRegIirNew, pThis->uRegIir));
+    LogFlowFunc(("    uRegIirNew=%#x uRegIir=%#x\n", uRegIirNew, pThis->uRegIir));
 
     /* Change interrupt only if the interrupt status really changed from the previous value. */
     if (uRegIirNew != (pThis->uRegIir & UART_REG_IIR_CHANGED_MASK))
     {
+        LogFlow(("    Interrupt source changed from %#x -> %#x (IRQ %d -> %d)\n",
+                 pThis->uRegIir, uRegIirNew,
+                 pThis->uRegIir == UART_REG_IIR_IP_NO_INT ? 0 : 1,
+                 uRegIirNew == UART_REG_IIR_IP_NO_INT ? 0 : 1));
         if (uRegIirNew == UART_REG_IIR_IP_NO_INT)
             PDMDevHlpISASetIrqNoWait(pThis->CTX_SUFF(pDevIns), pThis->uIrq, 0);
         else
             PDMDevHlpISASetIrqNoWait(pThis->CTX_SUFF(pDevIns), pThis->uIrq, 1);
     }
+    else
+        LogFlow(("    No change in interrupt source\n"));
 
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
         uRegIirNew |= UART_REG_IIR_FIFOS_EN;
@@ -481,7 +489,7 @@ DECLINLINE(int) serialRegThrDllWrite(PDEVSERIAL pThis, uint8_t uVal)
                 rc = VINF_IOM_R3_IOPORT_WRITE;
 #else
                 pThis->uRegThr = uVal;
-                UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE);
+                UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
                 if (pThis->pDrvSerial)
                 {
                     int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial, 1);
@@ -755,6 +763,64 @@ DECLINLINE(int) serialRegMsrRead(PDEVSERIAL pThis, uint32_t *puVal)
 }
 
 
+#ifdef LOG_ENABLED
+/**
+ * Converts the register index into a sensible memnonic.
+ *
+ * @returns Register memnonic.
+ * @param   pThis               The serial port instance.
+ * @param   idxReg              Register index.
+ * @param   fWrite              Flag whether the register gets written.
+ */
+DECLINLINE(const char *) serialRegIdx2Str(PDEVSERIAL pThis, uint8_t idxReg, bool fWrite)
+{
+    const char *psz = "INV";
+
+    switch (idxReg)
+    {
+        /*case UART_REG_THR_DLL_INDEX:*/
+        case UART_REG_RBR_DLL_INDEX:
+            if (pThis->uRegLcr & UART_REG_LCR_DLAB)
+                psz = "DLL";
+            else if (fWrite)
+                psz = "THR";
+            else
+                psz = "RBR";
+            break;
+        case UART_REG_IER_DLM_INDEX:
+            if (pThis->uRegLcr & UART_REG_LCR_DLAB)
+                psz = "DLM";
+            else
+                psz = "IER";
+            break;
+        /*case UART_REG_IIR_INDEX:*/
+        case UART_REG_FCR_INDEX:
+            if (fWrite)
+                psz = "FCR";
+            else
+                psz = "IIR";
+            break;
+        case UART_REG_LCR_INDEX:
+            psz = "LCR";
+            break;
+        case UART_REG_MCR_INDEX:
+            psz = "MCR";
+            break;
+        case UART_REG_LSR_INDEX:
+            psz = "LSR";
+            break;
+        case UART_REG_MSR_INDEX:
+            psz = "MSR";
+            break;
+        case UART_REG_SCR_INDEX:
+            psz = "SCR";
+            break;
+    }
+
+    return psz;
+}
+#endif
+
 /* -=-=-=-=-=-=-=-=- I/O Port Access Handlers -=-=-=-=-=-=-=-=- */
 
 /**
@@ -766,14 +832,15 @@ PDMBOTHCBDECL(int) serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     RT_NOREF_PV(pvUser);
 
-    LogFlowFunc(("pDevIns=%#p pvUser=%#p uPort=%RTiop u32=%#x cb=%u\n",
-                 pDevIns, pvUser, uPort, u32, cb));
+    uint8_t idxReg = uPort & 0x7;
+    LogFlowFunc(("pDevIns=%#p pvUser=%#p uPort=%RTiop{%s} u32=%#x cb=%u\n",
+                 pDevIns, pvUser, uPort, serialRegIdx2Str(pThis, idxReg, true /*fWrite*/), u32, cb));
 
     AssertMsgReturn(cb == 1, ("uPort=%#x cb=%d u32=%#x\n", uPort, cb, u32), VINF_SUCCESS);
 
     int rc = VINF_SUCCESS;
     uint8_t uVal = (uint8_t)u32;
-    switch (uPort & 0x7)
+    switch (idxReg)
     {
         case UART_REG_THR_DLL_INDEX:
             rc = serialRegThrDllWrite(pThis, uVal);
@@ -814,8 +881,9 @@ PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT u
     if (cb != 1)
         return VERR_IOM_IOPORT_UNUSED;
 
+    uint8_t idxReg = uPort & 0x7;
     int rc = VINF_SUCCESS;
-    switch (uPort & 0x7)
+    switch (idxReg)
     {
         case UART_REG_RBR_DLL_INDEX:
             rc = serialRegRbrDllRead(pThis, pu32);
@@ -845,8 +913,8 @@ PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT u
             rc = VERR_IOM_IOPORT_UNUSED;
     }
 
-    LogFlowFunc(("pDevIns=%#p pvUser=%#p uPort=%RTiop u32=%#x cb=%u -> %Rrc\n",
-                 pDevIns, pvUser, uPort, *pu32, cb, rc));
+    LogFlowFunc(("pDevIns=%#p pvUser=%#p uPort=%RTiop{%s} u32=%#x cb=%u -> %Rrc\n",
+                 pDevIns, pvUser, uPort, serialRegIdx2Str(pThis, idxReg, false /*fWrite*/), *pu32, cb, rc));
     return rc;
 }
 
@@ -861,6 +929,7 @@ PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT u
  */
 static DECLCALLBACK(int) serialR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, size_t cbAvail)
 {
+    LogFlowFunc(("pInterface=%#p cbAvail=%zu\n", pInterface, cbAvail));
     PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
 
     AssertMsg((uint32_t)cbAvail == cbAvail, ("Too much data available\n"));
@@ -868,6 +937,7 @@ static DECLCALLBACK(int) serialR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, 
     uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, (uint32_t)cbAvail);
     if (!cbAvailOld)
     {
+        LogFlow(("    cbAvailRdr=0 -> cbAvailRdr=%zu\n", cbAvail));
         PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
         size_t cbRead = 0;
         int rc = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
@@ -876,6 +946,8 @@ static DECLCALLBACK(int) serialR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, 
         serialIrqUpdate(pThis);
         PDMCritSectLeave(&pThis->CritSect);
     }
+    else
+        LogFlow(("    cbAvailOld=%zu\n", cbAvailOld));
     return VINF_SUCCESS;
 }
 
@@ -885,6 +957,7 @@ static DECLCALLBACK(int) serialR3DataAvailRdrNotify(PPDMISERIALPORT pInterface, 
  */
 static DECLCALLBACK(int) serialR3DataSentNotify(PPDMISERIALPORT pInterface)
 {
+    LogFlowFunc(("pInterface=%#p\n", pInterface));
     PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
 
     /* Set the transmitter empty bit because everything was sent. */
@@ -901,6 +974,7 @@ static DECLCALLBACK(int) serialR3DataSentNotify(PPDMISERIALPORT pInterface)
  */
 static DECLCALLBACK(int) serialR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
+    LogFlowFunc(("pInterface=%#p pvBuf=%#p cbRead=%zu pcbRead=%#p\n", pInterface, pvBuf, cbRead, pcbRead));
     PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
 
     AssertReturn(cbRead > 0, VERR_INVALID_PARAMETER);
@@ -921,6 +995,7 @@ static DECLCALLBACK(int) serialR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf,
         *pcbRead = 0;
     }
 
+    LogFlowFunc(("-> VINF_SUCCESS{*pcbRead=%zu}\n", *pcbRead));
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -931,6 +1006,7 @@ static DECLCALLBACK(int) serialR3ReadWr(PPDMISERIALPORT pInterface, void *pvBuf,
  */
 static DECLCALLBACK(int) serialR3NotifyStsLinesChanged(PPDMISERIALPORT pInterface, uint32_t fNewStatusLines)
 {
+    LogFlowFunc(("pInterface=%#p fNewStatusLines=%#x\n", pInterface, fNewStatusLines));
     PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
 
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
@@ -945,6 +1021,7 @@ static DECLCALLBACK(int) serialR3NotifyStsLinesChanged(PPDMISERIALPORT pInterfac
  */
 static DECLCALLBACK(int) serialR3NotifyBrk(PPDMISERIALPORT pInterface)
 {
+    LogFlowFunc(("pInterface=%#p\n", pInterface));
     PDEVSERIAL pThis = RT_FROM_MEMBER(pInterface, DEVSERIAL, ISerialPort);
 
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);

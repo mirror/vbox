@@ -45,7 +45,7 @@
 /**
  * Char driver instance data.
  *
- * @implements  PDMICHARCONNECTOR
+ * @implements  PDMISERIALCONNECTOR
  */
 typedef struct DRVHOSTSERIAL
 {
@@ -75,6 +75,8 @@ typedef struct DRVHOSTSERIAL
     volatile uint32_t           offWrite;
     /** Current offset into the read buffer. */
     volatile uint32_t           offRead;
+    /** Current amount of data in the buffer. */
+    volatile size_t             cbReadBuf;
 
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
@@ -102,16 +104,14 @@ typedef struct DRVHOSTSERIAL
  */
 DECLINLINE(size_t) drvHostSerialReadBufGetWrite(PDRVHOSTSERIAL pThis, void **ppv)
 {
-    uint32_t offRead  = ASMAtomicReadU32(&pThis->offRead);
-    uint32_t offWrite = ASMAtomicReadU32(&pThis->offWrite);
-
     if (ppv)
-        *ppv = &pThis->abReadBuf[offWrite];
+        *ppv = &pThis->abReadBuf[pThis->offWrite];
 
-    if (offWrite >= offRead)
-        return sizeof(pThis->abReadBuf) - offWrite;
-    else
-        return offRead - offWrite - 1; /* Leave one byte free. */
+    size_t cbFree = sizeof(pThis->abReadBuf) - ASMAtomicReadZ(&pThis->cbReadBuf);
+    if (cbFree)
+        cbFree = RT_MIN(cbFree, sizeof(pThis->abReadBuf) - pThis->offWrite);
+
+    return cbFree;
 }
 
 
@@ -124,16 +124,14 @@ DECLINLINE(size_t) drvHostSerialReadBufGetWrite(PDRVHOSTSERIAL pThis, void **ppv
  */
 DECLINLINE(size_t) drvHostSerialReadBufGetRead(PDRVHOSTSERIAL pThis, void **ppv)
 {
-    uint32_t offRead  = ASMAtomicReadU32(&pThis->offRead);
-    uint32_t offWrite = ASMAtomicReadU32(&pThis->offWrite);
-
     if (ppv)
-        *ppv = &pThis->abReadBuf[offRead];
+        *ppv = &pThis->abReadBuf[pThis->offRead];
 
-    if (offWrite < offRead)
-        return sizeof(pThis->abReadBuf) - offRead;
-    else
-        return offWrite - offRead;
+    size_t cbUsed = ASMAtomicReadZ(&pThis->cbReadBuf);
+    if (cbUsed)
+        cbUsed = RT_MIN(cbUsed, sizeof(pThis->abReadBuf) - pThis->offRead);
+
+    return cbUsed;
 }
 
 
@@ -149,6 +147,7 @@ DECLINLINE(void) drvHostSerialReadBufWriteAdv(PDRVHOSTSERIAL pThis, size_t cbAdv
     uint32_t offWrite = ASMAtomicReadU32(&pThis->offWrite);
     offWrite = (offWrite + cbAdv) % sizeof(pThis->abReadBuf);
     ASMAtomicWriteU32(&pThis->offWrite, offWrite);
+    ASMAtomicAddZ(&pThis->cbReadBuf, cbAdv);
 }
 
 
@@ -164,6 +163,7 @@ DECLINLINE(void) drvHostSerialReadBufReadAdv(PDRVHOSTSERIAL pThis, size_t cbAdv)
     uint32_t offRead = ASMAtomicReadU32(&pThis->offRead);
     offRead = (offRead + cbAdv) % sizeof(pThis->abReadBuf);
     ASMAtomicWriteU32(&pThis->offRead, offRead);
+    ASMAtomicSubZ(&pThis->cbReadBuf, cbAdv);
 }
 
 
@@ -227,6 +227,9 @@ static DECLCALLBACK(int) drvHostSerialReadRdr(PPDMISERIALCONNECTOR pInterface, v
     } while (cbRead > 0);
 
     *pcbRead = cbReadAll;
+    /* Kick the I/O thread if there is nothing to read to recalculate the poll flags. */
+    if (!drvHostSerialReadBufGetRead(pThis, NULL))
+        rc = RTSerialPortEvtPollInterrupt(pThis->hSerialPort);
 
     STAM_COUNTER_ADD(&pThis->StatBytesRead, cbReadAll);
     return rc;
@@ -548,11 +551,13 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init basic data members and interfaces.
      */
+    pThis->pDrvIns                               = pDrvIns;
     pThis->hSerialPort                           = NIL_RTSERIALPORT;
     pThis->cbAvailWr                             = 0;
     pThis->cbTxUsed                              = 0;
     pThis->offWrite                              = 0;
     pThis->offRead                               = 0;
+    pThis->cbReadBuf                             = 0;
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface             = drvHostSerialQueryInterface;
     /* ISerialConnector. */
