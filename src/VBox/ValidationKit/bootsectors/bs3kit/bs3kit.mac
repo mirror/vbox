@@ -1417,6 +1417,15 @@ AssertCompileSize(BS3REGCTX, 0xd0)
 ;; @}
 
 
+;; @name Flags for Bs3RegCtxRestore
+; @{
+;; Skip restoring the CRx registers.
+%define BS3REGCTXRESTORE_F_SKIP_CRX         1
+;; Sets g_fBs3TrapNoV86Assist.
+%define BS3REGCTXRESTORE_F_NO_V86_ASSIST    2
+;; @}
+
+
 ;;
 ; BS3 extended register context (FPU, SSE, AVX, ++)
 ;
@@ -1449,10 +1458,6 @@ struc BS3TRAPFRAME
         .Ctx            resb BS3REGCTX_size
 endstruc
 AssertCompileSize(BS3TRAPFRAME, 0x20 + 0xd0)
-
-;; Flag for Bs3TrapXxResumeFrame methods.
-%define BS3TRAPRESUME_F_SKIP_CRX 1
-
 
 ;;
 ; Trap record.
@@ -1493,8 +1498,16 @@ endstruc
 %define BS3_SYSCALL_TO_RING3        0006h
 ;; Restore context (pointer in cx:xDI, flags in dx).
 %define BS3_SYSCALL_RESTORE_CTX     0007h
+;; Set DRx register (value in ESI, register number in dl).
+%define BS3_SYSCALL_SET_DRX         0008h
+;; GET DRx register (register number in dl, value returned in ax:dx).
+%define BS3_SYSCALL_GET_DRX         0009h
+;; Set CRx register (value in ESI, register number in dl).
+%define BS3_SYSCALL_SET_CRX         000ah
+;; Get CRx register (register number in dl, value returned in ax:dx).
+%define BS3_SYSCALL_GET_CRX         000bh
 ;; The last system call value.
-%define BS3_SYSCALL_LAST            BS3_SYSCALL_RESTORE_CTX
+%define BS3_SYSCALL_LAST            BS3_SYSCALL_GET_CRX
 ;; @}
 
 

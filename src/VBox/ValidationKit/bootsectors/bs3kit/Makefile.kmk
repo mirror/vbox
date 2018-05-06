@@ -109,6 +109,28 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-RegCtxSetRipCsFromCurPtr.c \
        bs3-cmn-RegCtxSetRipCsFromFlat.c \
        bs3-cmn-RegCtxSetRipCsFromLnkPtr.c \
+       bs3-cmn-RegGetCr0.asm \
+       bs3-cmn-RegGetCr2.asm \
+       bs3-cmn-RegGetCr3.asm \
+       bs3-cmn-RegGetCr4.asm \
+       bs3-cmn-RegSetCr0.asm \
+       bs3-cmn-RegSetCr2.asm \
+       bs3-cmn-RegSetCr3.asm \
+       bs3-cmn-RegSetCr4.asm \
+       bs3-cmn-RegGetDr0.asm \
+       bs3-cmn-RegGetDr1.asm \
+       bs3-cmn-RegGetDr2.asm \
+       bs3-cmn-RegGetDr3.asm \
+       bs3-cmn-RegGetDr6.asm \
+       bs3-cmn-RegGetDr7.asm \
+       bs3-cmn-RegGetDrX.asm \
+       bs3-cmn-RegSetDr0.asm \
+       bs3-cmn-RegSetDr1.asm \
+       bs3-cmn-RegSetDr2.asm \
+       bs3-cmn-RegSetDr3.asm \
+       bs3-cmn-RegSetDr6.asm \
+       bs3-cmn-RegSetDr7.asm \
+       bs3-cmn-RegSetDrX.asm \
        bs3-cmn-ExtCtxInit.c \
        bs3-cmn-ExtCtxSave.asm \
        bs3-cmn-ExtCtxRestore.asm \
@@ -164,6 +186,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TestSendCmdWithU32.asm \
 	bs3-cmn-TestIsVmmDevTestingPresent.asm \
 	bs3-cmn-TestCheckRegCtxEx.c \
+	bs3-cmn-TestHostPrintf.c \
 	bs3-cmn-TestPrintf.c \
 	bs3-cmn-TrapReInit.c \
 	bs3-cmn-TrapRmV86Init.c \

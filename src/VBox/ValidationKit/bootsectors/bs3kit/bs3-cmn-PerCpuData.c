@@ -52,6 +52,10 @@ uint8_t  g_bBs3CurrentMode = BS3_MODE_RM;
 
 uint8_t  g_bStupidUnalignedCompiler1 = 0xfe;
 
+/** Set to disable special V8086 \#GP and \#UD handling in Bs3TrapDefaultHandler.
+ * This is useful for getting   */
+bool volatile g_fBs3TrapNoV86Assist = false;
+
 /** The context of the last Bs3TrapSetJmp call.
  * This will have eax set to 1 and need only be restored when it triggers. */
 BS3REGCTX g_Bs3TrapSetJmpCtx;

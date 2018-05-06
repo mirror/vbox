@@ -29,6 +29,7 @@
 
 BS3_EXTERN_SYSTEM16 Bs3Gdt
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
+BS3_EXTERN_DATA16 g_fBs3TrapNoV86Assist
 %if TMPL_BITS != 64
 BS3_EXTERN_DATA16 g_uBs3CpuDetected
 %endif
@@ -147,6 +148,14 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         or      al, ah
         mov     [BS3_ONLY_16BIT(es:) BS3_DATA16_WRT(g_bBs3CurrentMode)], al
 
+        ;
+        ; Set g_fBs3TrapNoV86Assist if BS3REGCTXRESTORE_F_NO_V86_ASSIST specified.
+        ;
+        test    cl, BS3REGCTXRESTORE_F_NO_V86_ASSIST
+        jz      .no_f_no_v86_assist
+        mov     byte [BS3_ONLY_16BIT(es:) BS3_DATA16_WRT(g_fBs3TrapNoV86Assist)], 1
+.no_f_no_v86_assist:
+
 %if TMPL_BITS == 16
         ;
         ; Check what the CPU can do.
@@ -261,7 +270,7 @@ BS3_PROC_BEGIN_CMN Bs3RegCtxRestore, BS3_PBC_HYBRID
         ;
 
         ; Restore control registers if they've changed.
-        test    cl, BS3TRAPRESUME_F_SKIP_CRX
+        test    cl, BS3REGCTXRESTORE_F_SKIP_CRX
         jnz     .skip_control_regs
         test    byte [xBX + BS3REGCTX.fbFlags], BS3REG_CTX_F_NO_CR0_IS_MSW | BS3REG_CTX_F_NO_CR2_CR3
         jnz     .skip_control_regs
