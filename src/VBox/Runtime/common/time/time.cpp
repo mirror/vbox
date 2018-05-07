@@ -1100,7 +1100,7 @@ static PRTTIME rtTimeConvertToZulu(PRTTIME pTime)
  * @returns NULL if the data is invalid.
  * @param   pTime       The time structure to convert.
  */
-PRTTIME RTTimeConvertToZulu(PRTTIME pTime)
+RTDECL(PRTTIME) RTTimeConvertToZulu(PRTTIME pTime)
 {
     /*
      * Validate that we've got the minimum of stuff handy.
@@ -1110,6 +1110,7 @@ PRTTIME RTTimeConvertToZulu(PRTTIME pTime)
 
     return rtTimeConvertToZulu(rtTimeNormalizeInternal(pTime));
 }
+RT_EXPORT_SYMBOL(RTTimeConvertToZulu);
 
 
 /**
