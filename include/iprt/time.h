@@ -609,8 +609,7 @@ typedef struct RTTIME
     uint32_t    u32Nanosecond;
     /** Flags, of the RTTIME_FLAGS_* \#defines. */
     uint32_t    fFlags;
-    /** UCT time offset in minutes (-840-840).
-     * @remarks The implementation of RTTimeLocal* isn't quite there yet, so this might not be 100% correct. */
+    /** UCT time offset in minutes (-840-840). */
     int32_t     offUTC;
 } RTTIME;
 #pragma pack()
@@ -751,6 +750,16 @@ RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec);
  * @param   pTime       The time structure to normalize.
  */
 RTDECL(PRTTIME) RTTimeLocalNormalize(PRTTIME pTime);
+
+/**
+ * Converts a time structure to UTC, relying on UTC offset information
+ * if it contains local time.
+ *
+ * @returns pTime on success.
+ * @returns NULL if the data is invalid.
+ * @param   pTime       The time structure to convert.
+ */
+RTDECL(PRTTIME) RTTimeConvertToZulu(PRTTIME pTime);
 
 /**
  * Converts a time spec to a ISO date string.

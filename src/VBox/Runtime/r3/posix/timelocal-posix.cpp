@@ -63,7 +63,7 @@ static int64_t rtTimeLocalUTCOffset(PCRTTIMESPEC pTime, bool fCurrentTime)
         return fCurrentTime ? 0 : rtTimeLocalUTCOffset(RTTimeNow(&Fallback), true);
 
     /*
-     * Explode it as both local and uct time.
+     * Explode it as both local and UTC time.
      */
     struct tm TmLocal;
     if (    !localtime_r(&UnixTime, &TmLocal)
@@ -94,7 +94,7 @@ static int64_t rtTimeLocalUTCOffset(PCRTTIMESPEC pTime, bool fCurrentTime)
         /*
          * Must add 24 hours to the value that is ahead of the other.
          *
-         * To determin which is ahead was busted for a long long time (bugref:9078),
+         * To determine which is ahead was busted for a long long time (bugref:9078),
          * so here are some examples and two different approaches.
          *
          *  TmLocal              TmUtc              => Add 24:00 to     => Diff
@@ -173,10 +173,14 @@ RTDECL(int64_t) RTTimeLocalDeltaNano(void)
 RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 {
     RTTIMESPEC LocalTime = *pTimeSpec;
-    RTTimeSpecAddNano(&LocalTime, rtTimeLocalUTCOffset(&LocalTime, true /* current time, skip fallback */));
+    int64_t LocalUTCOffset = rtTimeLocalUTCOffset(&LocalTime, true /* current time, skip fallback */);
+    RTTimeSpecAddNano(&LocalTime, LocalUTCOffset);
     pTime = RTTimeExplode(pTime, &LocalTime);
     if (pTime)
+    {
         pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
+        pTime->offUTC = LocalUTCOffset / RT_NS_1MIN;
+    }
     return pTime;
 }
 
