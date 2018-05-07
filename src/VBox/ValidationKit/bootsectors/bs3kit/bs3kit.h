@@ -843,6 +843,8 @@ typedef uint32_t            PFNBS3FARADDRCONV;
 #define BS3_SYSCALL_SET_LDTR    UINT16_C(0x000e)
 /** Get the LDT register (value returned in ax). */
 #define BS3_SYSCALL_GET_LDTR    UINT16_C(0x000f)
+/** The last system call value. */
+#define BS3_SYSCALL_LAST        BS3_SYSCALL_GET_LDTR
 /** @} */
 
 
