@@ -1,4 +1,5 @@
 #!/bin/sh -e
+
 #
 # Copyright (C) 2018 Oracle Corporation
 #
@@ -93,7 +94,7 @@ http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/python26-devel-2.6.8
 http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/libffi-3.0.5-1.el5.x86_64.rpm"
       tmpdir=`mktemp -d`
       pushd ${tmpdir}
-      wget ${pythonpkgs}      
+      wget ${pythonpkgs}
       rpm -i *.rpm
       popd
       rm -r ${tmpdir}
@@ -105,7 +106,7 @@ http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/SDL_ttf-2.0.8-3.el5.
 http://archives.fedoraproject.org/pub/archive/epel/5/x86_64/SDL_ttf-devel-2.0.8-3.el5.x86_64.rpm"
       tmpdir=`mktemp -d`
       pushd ${tmpdir}
-      wget ${sdlpkgs}      
+      wget ${sdlpkgs}
       rpm -i *.rpm
       popd
       rm -r ${tmpdir}
