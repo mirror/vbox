@@ -139,20 +139,20 @@ public:
     static QString addStartDelimiter(const QString &path);
 
     static QString sanitize(const QString &path);
-    /** Merge prefix and suffix by making sure they have a single '/' in between */
+    /** Merges prefix and suffix by making sure they have a single '/' in between */
     static QString mergePaths(const QString &path, const QString &baseName);
     /** Returns the last part of the @p path. That is the filename or directory name without the path */
     static QString getObjectName(const QString &path);
-    /** Remove the object name and return the path */
+    /** Removes the object name and return the path */
     static QString getPathExceptObjectName(const QString &path);
-    /** Replace the last part of the @p previusPath with newBaseName */
+    /** Replaces the last part of the @p previusPath with newBaseName */
     static QString constructNewItemPath(const QString &previousPath, const QString &newBaseName);
-    /** Split the path and return it as a QStringList, top most being the 0th element. No delimiters */
+    /** Splits the path and return it as a QStringList, top most being the 0th element. No delimiters */
     static QStringList pathTrail(const QString &path);
     static const QChar delimiter;
     static const QChar dosDelimiter;
 
-    /** Try to guess if the path starts with DOS style drive letters */
+    /** Tries to determine if the path starts with DOS style drive letters. */
     static bool doesPathStartWithDriveLetter(const QString &path);
 
 };
@@ -173,7 +173,7 @@ public:
     void appendChild(UIFileTableItem *child);
 
     UIFileTableItem *child(int row) const;
-    /** Return a child (if possible) by path */
+    /** Searches for the child by path and returns it if found. */
     UIFileTableItem *child(const QString &path) const;
     int childCount() const;
     int columnCount() const;
@@ -192,7 +192,7 @@ public:
     const QString  &path() const;
     void setPath(const QString &path);
 
-    /** True if this is directory and name is ".." */
+    /** Returns true if this is directory and name is ".." */
     bool isUpDirectory() const;
     void clearChildren();
 
@@ -249,7 +249,7 @@ public:
 
     UIGuestControlFileTable(QWidget *pParent = 0);
     virtual ~UIGuestControlFileTable();
-    /** Delete all the tree nodes */
+    /** Deletes all the tree nodes */
     void reset();
     void emitLogOutput(const QString& strOutput);
     /** Returns the path of the rootIndex */
@@ -307,6 +307,7 @@ protected slots:
     void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics);
 
 private slots:
+
     /* index is passed by the item view and represents the double clicked object's 'proxy' model index */
     void sltItemDoubleClicked(const QModelIndex &index);
     void sltGoUp();
@@ -328,7 +329,7 @@ private:
 
     void             prepareObjects();
     void             prepareActions();
-    /* @itemIndex is assumed to be 'model' index not 'proxy model' index */
+    /** @p itemIndex is assumed to be 'model' index not 'proxy model' index */
     void             deleteByIndex(const QModelIndex &itemIndex);
     /** Returns the UIFileTableItem for path / which is a direct (and single) child of m_pRootItem */
     UIFileTableItem *getStartDirectoryItem();
@@ -338,7 +339,7 @@ private:
     void            disableSelectionDependentActions();
     void            deSelectUpDirectoryItem();
     void            setSelectionForAll(QItemSelectionModel::SelectionFlags flags);
-    /** Start directory requires a special attention since on file systems with drive letters
+    /** The start directory requires a special attention since on file systems with drive letters
      *  drive letter are direct children of the start directory. On other systems start directory is '/' */
     void            populateStartDirectory(UIFileTableItem *startItem);
     QModelIndex     currentRootIndex() const;
@@ -358,7 +359,7 @@ private:
     QAction         *m_pShowProperties;
     QAction         *m_pSelectAll;
     QAction         *m_pInvertSelection;
-    /** The vector of action which need some selection to work on like cut, copy etc. */
+    /** The vector of actions which need some selection to work on. Like cut, copy etc. */
     QVector<QAction*> m_selectionDependentActions;
     /** The absolue path list of the file objects which user has chosen to cut/copy. this
      *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */

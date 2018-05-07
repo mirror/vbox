@@ -21,8 +21,8 @@
 /* GUI includes: */
 #include "UIGuestControlFileTable.h"
 
-/** This class scans the host file system by using the Qt
-    and populates the UIGuestControlFileModel*/
+/** This class scans the host file system by using the Qt API
+    and connects to the UIGuestControlFileModel*/
 class UIHostFileTable : public UIGuestControlFileTable
 {
     Q_OBJECT;

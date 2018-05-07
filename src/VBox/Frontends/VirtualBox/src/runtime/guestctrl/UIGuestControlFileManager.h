@@ -48,8 +48,9 @@ class UIGuestSessionCreateWidget;
 class UIToolBar;
 
 
-/** QWidget extension
- *  providing GUI with guest session information and control tab in session-information window. */
+/** A QWidget extension. it includes a QWidget extension for initiating a guest session
+ *  one host and one guest file table views, a log viewer
+ *  and some other file manager related widgets. */
 class UIGuestControlFileManager : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -99,24 +100,24 @@ private:
     template<typename T>
     QStringList       getFsObjInfoStringList(const T &fsObjectInfo) const;
 
-    const int           m_iMaxRecursionDepth;
-    CGuest              m_comGuest;
-    CGuestSession       m_comGuestSession;
-    QVBoxLayout        *m_pMainLayout;
-    QSplitter          *m_pVerticalSplitter;
-    QTextEdit          *m_pLogOutput;
-    UIToolBar          *m_pToolBar;
-    QAction            *m_pCopyGuestToHost;
-    QAction            *m_pCopyHostToGuest;
-    QWidget            *m_pFileTableContainerWidget;
-    QHBoxLayout        *m_pFileTableContainerLayout;
-    QITabWidget        *m_pTabWidget;
+    const int                   m_iMaxRecursionDepth;
+    CGuest                      m_comGuest;
+    CGuestSession               m_comGuestSession;
+    QVBoxLayout                *m_pMainLayout;
+    QSplitter                  *m_pVerticalSplitter;
+    QTextEdit                  *m_pLogOutput;
+    UIToolBar                  *m_pToolBar;
+    QAction                    *m_pCopyGuestToHost;
+    QAction                    *m_pCopyHostToGuest;
+    QWidget                    *m_pFileTableContainerWidget;
+    QHBoxLayout                *m_pFileTableContainerLayout;
+    QITabWidget                *m_pTabWidget;
 
     UIFileOperationsList       *m_pFileOperationsList;
     UIGuestControlConsole      *m_pConsole;
     UIGuestControlInterface    *m_pControlInterface;
     /* m_pSessionCreateWidget is a QWidget extension enabling user to start/stop
-     * a Guest Control session. */
+     * a Guest Control session with password/username fields etc.. */
     UIGuestSessionCreateWidget *m_pSessionCreateWidget;
     UIGuestFileTable           *m_pGuestFileTable;
     UIHostFileTable            *m_pHostFileTable;
@@ -128,4 +129,3 @@ private:
 };
 
 #endif /* !___UIGuestControlFileManager_h___ */
-
