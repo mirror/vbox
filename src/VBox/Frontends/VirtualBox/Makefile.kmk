@@ -682,6 +682,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UIToolBar.h \
+	src/widgets/UIVMNamePathSelector.h \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
@@ -823,6 +824,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UIToolBar.h \
+	src/widgets/UIVMNamePathSelector.h \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
@@ -1266,6 +1268,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBar.cpp \
+	src/widgets/UIVMNamePathSelector.cpp \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
@@ -1434,6 +1437,7 @@ VBoxGlobal_SOURCES = \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBar.cpp \
+	src/widgets/UIVMNamePathSelector.h \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
