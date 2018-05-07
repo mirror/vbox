@@ -211,6 +211,7 @@ typedef enum SCSIMAINTENANCEIN
 #define SCSI_ASC_WRITE_PROTECTED                            0x27
 #define SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED                    0x28
 #define SCSI_ASC_POWER_ON_RESET_BUS_DEVICE_RESET_OCCURRED   0x29
+#define SCSI_ASC_CANNOT_READ_MEDIUM                         0x30
 #define SCSI_ASC_MEDIUM_NOT_PRESENT                         0x3a
 #define SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED            0x39
 #define SCSI_ASC_INVALID_MESSAGE                            0x49
@@ -228,6 +229,9 @@ typedef enum SCSIMAINTENANCEIN
 #define SCSI_ASCQ_EOP_EOM_DETECTED                          0x02
 #define SCSI_ASCQ_SETMARK_DETECTED                          0x03
 #define SCSI_ASCQ_BOP_BOM_DETECTED                          0x04
+
+#define SCSI_ASCQ_UNKNOWN_FORMAT                            0x01
+#define SCSI_ASCQ_INCOMPATIBLE_FORMAT                       0x02
 
 /** @name SCSI_INQUIRY
  * @{
