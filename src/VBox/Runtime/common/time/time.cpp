@@ -546,7 +546,7 @@ static PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
                          ? &g_aiDayOfYearLeap[0]
                          : &g_aiDayOfYear[0];
             pTime->u8Month = 1;
-            while (pTime->u16YearDay > paiDayOfYear[pTime->u8Month] - 1)
+            while (pTime->u16YearDay >= paiDayOfYear[pTime->u8Month])
                 pTime->u8Month++;
             Assert(pTime->u8Month >= 1 && pTime->u8Month <= 12);
             pTime->u8MonthDay = pTime->u16YearDay - paiDayOfYear[pTime->u8Month - 1] + 1;
