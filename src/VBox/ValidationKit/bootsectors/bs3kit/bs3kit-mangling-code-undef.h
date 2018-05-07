@@ -104,6 +104,8 @@
 #undef Bs3RegGetDr6
 #undef Bs3RegGetDr7
 #undef Bs3RegGetDrX
+#undef Bs3RegGetLdtr
+#undef Bs3RegGetTr
 #undef Bs3RegSetCr0
 #undef Bs3RegSetCr2
 #undef Bs3RegSetCr3
@@ -115,6 +117,8 @@
 #undef Bs3RegSetDr6
 #undef Bs3RegSetDr7
 #undef Bs3RegSetDrX
+#undef Bs3RegSetLdtr
+#undef Bs3RegSetTr
 #undef Bs3SelFar32ToFlat32
 #undef Bs3SelFar32ToFlat32NoClobber
 #undef Bs3SelFlatCodeToProtFar16

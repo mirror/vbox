@@ -27,9 +27,8 @@
 %include "bs3kit-template-header.mac"
 
 
-BS3_EXTERN_CMN Bs3Panic
-%if TMPL_BITS == 16
 BS3_EXTERN_CMN Bs3Syscall
+%if TMPL_BITS == 16
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 %endif
 TMPL_BEGIN_TEXT
@@ -50,27 +49,33 @@ BS3_PROC_BEGIN_CMN Bs3RegSetCr3, BS3_PBC_HYBRID_SAFE
         mov     xBP, xSP
         push    sSI
 
-        mov     sSI, [xBP + xCB + cbCurRetAddr]
-
 %if TMPL_BITS == 16
         ; If V8086 mode we have to go thru a syscall.
         test    byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_V86
-        jz      .direct_access
-        push    ax
-        push    dx
-
-        mov     ax, BS3_SYSCALL_SET_CRX
-        mov     dl, 3
-        call    Bs3Syscall
-
-        pop     dx
-        pop     ax
-        jmp     .return
+        jnz     .via_system_call
+        cmp     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
+        je      .direct_access
+%endif
+        ; If not in ring-0, we have to make a system call.
+        mov     si, ss
+        and     si, X86_SEL_RPL
+        jnz     .via_system_call
 
 .direct_access:
-%endif
-        ; Switch (iRegister)
+        mov     sSI, [xBP + xCB + cbCurRetAddr]
         mov     cr3, sSI
+        jmp     .return
+
+.via_system_call:
+        push    xDX
+        push    xAX
+
+        mov     sSI, [xBP + xCB + cbCurRetAddr]
+        mov     xAX, BS3_SYSCALL_SET_DRX
+        mov     dl, 3
+        call    Bs3Syscall
+        pop     xAX
+        pop     xDX
 
 .return:
         pop     sSI

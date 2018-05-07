@@ -131,6 +131,10 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        bs3-cmn-RegSetDr6.asm \
        bs3-cmn-RegSetDr7.asm \
        bs3-cmn-RegSetDrX.asm \
+       bs3-cmn-RegGetTr.asm \
+       bs3-cmn-RegSetTr.asm \
+       bs3-cmn-RegGetLdtr.asm \
+       bs3-cmn-RegSetLdtr.asm \
        bs3-cmn-ExtCtxInit.c \
        bs3-cmn-ExtCtxSave.asm \
        bs3-cmn-ExtCtxRestore.asm \

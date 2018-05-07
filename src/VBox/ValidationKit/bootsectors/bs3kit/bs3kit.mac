@@ -1506,8 +1506,16 @@ endstruc
 %define BS3_SYSCALL_SET_CRX         000ah
 ;; Get CRx register (register number in dl, value returned in ax:dx).
 %define BS3_SYSCALL_GET_CRX         000bh
+;; Set the task register (value in dx). */
+%define BS3_SYSCALL_SET_TR          000ch
+;; Get the task register (value returned in ax).
+%define BS3_SYSCALL_GET_TR          000dh
+;; Set the LDT register (value in dx).
+%define BS3_SYSCALL_SET_LDTR        000eh
+;; Get the LDT register (value returned in ax).
+%define BS3_SYSCALL_GET_LDTR        000fh
 ;; The last system call value.
-%define BS3_SYSCALL_LAST            BS3_SYSCALL_GET_CRX
+%define BS3_SYSCALL_LAST            BS3_SYSCALL_GET_LDTR
 ;; @}
 
 

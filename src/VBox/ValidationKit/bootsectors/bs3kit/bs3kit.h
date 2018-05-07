@@ -835,6 +835,14 @@ typedef uint32_t            PFNBS3FARADDRCONV;
 #define BS3_SYSCALL_SET_CRX     UINT16_C(0x000a)
 /** Get CRx register (register number in dl, value returned in ax:dx). */
 #define BS3_SYSCALL_GET_CRX     UINT16_C(0x000b)
+/** Set the task register (value in ESI). */
+#define BS3_SYSCALL_SET_TR      UINT16_C(0x000c)
+/** Get the task register (value returned in ax). */
+#define BS3_SYSCALL_GET_TR      UINT16_C(0x000d)
+/** Set the LDT register (value in ESI). */
+#define BS3_SYSCALL_SET_LDTR    UINT16_C(0x000e)
+/** Get the LDT register (value returned in ax). */
+#define BS3_SYSCALL_GET_LDTR    UINT16_C(0x000f)
 /** @} */
 
 
@@ -2842,11 +2850,15 @@ BS3_CMN_PROTO_NOSB(RTCCUINTXREG, Bs3RegGetCr0,(void));
 BS3_CMN_PROTO_NOSB(RTCCUINTXREG, Bs3RegGetCr2,(void));
 BS3_CMN_PROTO_NOSB(RTCCUINTXREG, Bs3RegGetCr3,(void));
 BS3_CMN_PROTO_NOSB(RTCCUINTXREG, Bs3RegGetCr4,(void));
+BS3_CMN_PROTO_NOSB(uint16_t, Bs3RegGetTr,(void));
+BS3_CMN_PROTO_NOSB(uint16_t, Bs3RegGetLdtr,(void));
 
 BS3_CMN_PROTO_NOSB(void, Bs3RegSetCr0,(RTCCUINTXREG uValue));
 BS3_CMN_PROTO_NOSB(void, Bs3RegSetCr2,(RTCCUINTXREG uValue));
 BS3_CMN_PROTO_NOSB(void, Bs3RegSetCr3,(RTCCUINTXREG uValue));
 BS3_CMN_PROTO_NOSB(void, Bs3RegSetCr4,(RTCCUINTXREG uValue));
+BS3_CMN_PROTO_NOSB(void, Bs3RegSetTr,(uint16_t uValue));
+BS3_CMN_PROTO_NOSB(void, Bs3RegSetLdtr,(uint16_t uValue));
 /** @} */
 
 

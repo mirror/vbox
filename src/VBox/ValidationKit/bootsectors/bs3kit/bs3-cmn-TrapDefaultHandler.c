@@ -124,6 +124,14 @@ static void bs3TrapDefaultHandlerV8086Syscall(PBS3TRAPFRAME pTrapFrame)
         pTrapFrame->Ctx.rax.u32 = uValue;
         pTrapFrame->Ctx.rdx.u32 = uValue >> 16;
     }
+    else if (uSyscallNo == BS3_SYSCALL_SET_TR)
+        Bs3RegSetTr(pTrapFrame->Ctx.rdx.u16);
+    else if (uSyscallNo == BS3_SYSCALL_GET_TR)
+        pTrapFrame->Ctx.rax.u16 = ASMGetTR();
+    else if (uSyscallNo == BS3_SYSCALL_SET_LDTR)
+        Bs3RegSetLdtr(pTrapFrame->Ctx.rdx.u16);
+    else if (uSyscallNo == BS3_SYSCALL_GET_LDTR)
+        pTrapFrame->Ctx.rax.u16 = ASMGetLDTR();
     else
         Bs3Panic();
 }
@@ -136,8 +144,9 @@ BS3_CMN_DEF(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame))
     /*
      * v8086 VMM tasks.
      */
-//Bs3TestHostPrintf("Bs3____DefaultHandler: %02xh %04RX16:%08RX32 %08RX32 %04RX16:%08RX32 %d %d\n", pTrapFrame->bXcpt,
-//                  pTrapFrame->Ctx.cs, pTrapFrame->Ctx.rip.u32, pTrapFrame->Ctx.rflags.u32, pTrapFrame->Ctx.ss, pTrapFrame->Ctx.rsp.u32, g_fBs3TrapNoV86Assist, 42);
+    //Bs3TestHostPrintf("Bs3____DefaultHandler: %02xh %04RX16:%08RX32 %08RX32 %04RX16:%08RX32 %d %d\n", pTrapFrame->bXcpt,
+    //                  pTrapFrame->Ctx.cs, pTrapFrame->Ctx.rip.u32, pTrapFrame->Ctx.rflags.u32, pTrapFrame->Ctx.ss,
+    //                  pTrapFrame->Ctx.rsp.u32, g_fBs3TrapNoV86Assist, 42);
     if (   (pTrapFrame->Ctx.rflags.u32 & X86_EFL_VM)
         && !g_fBs3TrapNoV86Assist)
     {
@@ -151,14 +160,12 @@ BS3_CMN_DEF(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame))
         pusStack    = (uint16_t      BS3_FAR *)BS3_MAKE_PROT_R0PTR_FROM_REAL(pTrapFrame->Ctx.ss, pTrapFrame->Ctx.rsp.u16);
         pbCode      = (uint8_t const BS3_FAR *)BS3_MAKE_PROT_R0PTR_FROM_REAL(pTrapFrame->Ctx.cs, pTrapFrame->Ctx.rip.u16);
         pbCodeStart = pbCode;
-//Bs3TestHostPrintf("Bs3TrapDefaultHandler: V86 assist...\n");
 
         /*
          * Deal with GPs in V8086 mode.
          */
         if (pTrapFrame->bXcpt == X86_XCPT_GP)
         {
-//Bs3TestHostPrintf("Bs3TrapDefaultHandler: #GP %04RX16:%08RX32 %08RX32\n", pTrapFrame->Ctx.cs, pTrapFrame->Ctx.rip.u32, pTrapFrame->Ctx.rflags.u32);
             bOpCode = *pbCode++;
             if (bOpCode == 0x66)
             {
@@ -261,7 +268,6 @@ BS3_CMN_DEF(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame))
         }
         else
         {
-//Bs3TestHostPrintf("Bs3TrapDefaultHandler: %02x %04RX16:%08RX32 %08RX32\n", pTrapFrame->bXcpt, pTrapFrame->Ctx.cs, pTrapFrame->Ctx.rip.u32, pTrapFrame->Ctx.rflags.u32);
             fHandled = false;
         }
         if (fHandled)
@@ -272,7 +278,6 @@ BS3_CMN_DEF(void, Bs3TrapDefaultHandler,(PBS3TRAPFRAME pTrapFrame))
             Bs3RegCtxPrint(&pTrapFrame->Ctx);
 # endif
             Bs3RegCtxRestore(&pTrapFrame->Ctx, 0 /*fFlags*/); /* does not return. */
-Bs3TestHostPrintf("Bs3TrapDefaultHandler: => Handled\n");
             return;
         }
     }

@@ -28,8 +28,8 @@
 
 
 BS3_EXTERN_CMN Bs3Panic
-%if TMPL_BITS == 16
 BS3_EXTERN_CMN Bs3Syscall
+%if TMPL_BITS == 16
 BS3_EXTERN_DATA16 g_bBs3CurrentMode
 %endif
 TMPL_BEGIN_TEXT
@@ -53,14 +53,16 @@ BS3_PROC_BEGIN_CMN Bs3RegGetDrX, BS3_PBC_HYBRID_SAFE
 %if TMPL_BITS == 16
         ; If V8086 mode we have to go thru a syscall.
         test    byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_CODE_V86
-        jz      .direct_access
-        mov     xAX, BS3_SYSCALL_GET_DRX
-        mov     dl, [xBP + xCB + cbCurRetAddr]
-        call    Bs3Syscall
-        jmp     .return_syscall
+        jnz     .via_system_call
+        cmp     byte [BS3_DATA16_WRT(g_bBs3CurrentMode)], BS3_MODE_RM
+        je      .direct_access
+%endif
+        ; If not in ring-0, we have to make a system call.
+        mov     ax, ss
+        and     ax, X86_SEL_RPL
+        jnz     .via_system_call
 
 .direct_access:
-%endif
         ; Switch (iRegister)
         mov     al, [xBP + xCB + cbCurRetAddr]
         cmp     al, 6
@@ -83,31 +85,39 @@ BS3_PROC_BEGIN_CMN Bs3RegGetDrX, BS3_PBC_HYBRID_SAFE
 
 .get_dr0:
         mov     sAX, dr0
-        jmp     .return
+        jmp     .return_fixup
 .get_dr1:
         mov     sAX, dr1
-        jmp     .return
+        jmp     .return_fixup
 .get_dr2:
         mov     sAX, dr2
-        jmp     .return
+        jmp     .return_fixup
 .get_dr3:
         mov     sAX, dr3
-        jmp     .return
+        jmp     .return_fixup
 .get_dr4:
         mov     sAX, dr4
-        jmp     .return
+        jmp     .return_fixup
 .get_dr5:
         mov     sAX, dr5
-        jmp     .return
+        jmp     .return_fixup
 .get_dr7:
         mov     sAX, dr7
-        jmp     .return
+        jmp     .return_fixup
 .get_dr6:
         mov     sAX, dr6
-.return:
+        jmp     .return_fixup
+
+.via_system_call:
+        mov     xAX, BS3_SYSCALL_GET_DRX
+        mov     dl, [xBP + xCB + cbCurRetAddr]
+        call    Bs3Syscall
+        jmp     .return
+
+.return_fixup:
 TONLY16 mov     edx, eax
 TONLY16 shr     edx, 16
-.return_syscall:
+.return:
         pop     xBP
         BS3_CALL_CONV_EPILOG 1
         BS3_HYBRID_RET
