@@ -28,6 +28,8 @@ ignored there."
 # for distributions we do bot package.
 
 unset NODOCS
+egrepignore=\
+"Setting up Install Process|already installed and latest version|Nothing to do"
 
 usage()
 {
@@ -58,7 +60,7 @@ if test -f /etc/redhat-release; then
     make mkisofs openssl-devel pam-devel \
     python-devel qt-devel rpm-build \
     wget kernel kernel-devel \
-    tar libpng-devel | grep "No package"
+    tar libpng-devel | egrep -v  "${egrepignore}"
   # Not EL5
   if ! grep -q "release 5" /etc/redhat-release; then
     yum install libcurl-devel libstdc++-static libvpx-devel \
@@ -66,11 +68,11 @@ if test -f /etc/redhat-release; then
       texlive-ec texlive-collection-fontsrecommended
       texlive-pdftex-def texlive-fancybox device-mapper-devel \
       glibc-static zlib-static glibc-devel.i686 libstdc++.i686 \
-      qt5-qttools-devel qt5-qtx11extras-devel | grep "No package"
+      qt5-qttools-devel qt5-qtx11extras-devel | egrep -v  "${egrepignore}"
     if test -z "$NODOCS"; then
       yum install texlive-latex texlive-latex-bin texlive-ec \
         texlive-pdftex-def texlive-fancybox device-mapper-devel |
-        grep "No package"
+        egrep -v  "${egrepignore}"
       if test ! -f /usr/share/texmf/tex/latex/bera/beramono.sty; then
         mkdir -p /usr/share/texmf/tex/latex/bera
         pushd /usr/share/texmf/tex/latex/bera
@@ -83,7 +85,7 @@ if test -f /etc/redhat-release; then
   # EL5
   if grep -q "release 5" /etc/redhat-release; then
     yum install -y curl-devel SDL-devel libstdc++-devel.i386 \
-      openssh-clients which gcc44-c++ | grep "No package"
+      openssh-clients which gcc44-c++ | egrep -v  "${egrepignore}"
     ln -sf /usr/bin/gcc44 /usr/local/bin/gcc
     ln -sf /usr/bin/g++44 /usr/local/bin/g++
     if ! rpm -q python26 > /dev/null; then
