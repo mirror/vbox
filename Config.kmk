@@ -2760,6 +2760,7 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 # Produce code optimized for the most common IA32/AMD64/EM64T processors. Introduced with gcc version 4.2.
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mtune-generic         ?= $(call VBOX_GCC_CHECK_CC,-mtune=generic,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_as_needed              ?= $(call VBOX_GCC_CHECK_LD,--as-needed,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_LD_hash_style_sysv        ?= $(call VBOX_GCC_CHECK_LD,--hash-style=sysv,)'
 # gcc version < 3.4 has a bug in handling __attribute__((regparm(3))).
 # See http://osdir.com/ml/gcc.prs/2002-08/msg00223.html and probably http://gcc.gnu.org/bugzilla/show_bug.cgi?id=20004
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_BUGGY_REGPARM         ?= $$(int-lt $$(VBOX_GCC_VERSION_CC),30400)'
@@ -6642,7 +6643,7 @@ TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux    = \
 	$(VBOX_GCC_fno-stack-protector)
 TEMPLATE_VBOXGUESTR3EXE_CFLAGS.linux      = $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux)
 # The GNU_HASH ELF tag is not supported by older systems.
-TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux      += -Wl,--hash-style=sysv
+TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux      += $(VBOX_LD_hash_style_sysv)
 
 #
 # Template for building normal R3 programs for the guest additions.
@@ -6846,7 +6847,7 @@ TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TYPE)      = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TARGET)    = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TARGET) = $(NO_SUCH_VARIABLE)
 # The GNU_HASH ELF tag is not supported by older glibc dynamic linkers.
-TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.linux = --hash-style=sysv
+TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.linux = $(subst -Wl$(COMMA),,$(VBOX_LD_hash_style_sysv))
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TYPE)   = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS          = -r
 if1of ($(KBUILD_TARGET), dragonfly freebsd linux netbsd openbsd) # the gnu ld guys.

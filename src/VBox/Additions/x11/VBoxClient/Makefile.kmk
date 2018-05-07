@@ -38,6 +38,8 @@ VBoxClient_SOURCES += \
 	clipboard.cpp \
 	display-svga.cpp \
 	display-svga-x11.cpp
+VBoxClient_SOURCES.linux = \
+	chk_stubs.c
 VBoxClient_LIBPATH = \
 	$(VBOX_LIBPATH32_X11)
 VBoxClient_LIBS.freebsd = \
@@ -67,29 +69,11 @@ endif
 VBoxClient_LIBS += \
 	supc++ \
 	gcc_eh
-# This has to be in LIBS, so as to be linked in after supc++ and gcc_eh, which
-# depend on the symbols it provides.  Static supc++ and gcc_eh on at least
-# Ubuntu 17.04 contain references to __sprintf_chk and __stack_chk_fail.
-# Furthermore, they contain references to memcpy, which needs to be resolved
-# to memcpy@GLIBC_2.2.5, which we solve in a not-very-satisfactory way with a
-# wrapper.
-##
-## @todo r=bird: With all due respect, what are you smoking??  The above does not compute,
-## so there is either some other reason which you fail to describe or you've got it all wrong.
-## It cannot be for reasons of symbol resolution, because puttin chk_stubs.c in SOURCES would
-## make absolutely sure the symbols in it would always be part of the link and present in the
-## symbol table before any library searching is done.  I cannot see how the --wrap-memcpy could
-## have anything to do with this either.
-##
-## Your query on IRC why chk_stubs.c is treated as C++, that's because the linker is called g++.
-##
-## Please explain why this nonsese is required or I will revert it and leave you deal with the consequences.
-##
-## -bird
-##
+
+# This forces the memcpy references in the static libraries to go to
+# __wrap_memcpy, which we can wrap around memcpy@GLIBC_2.2.5.  I do not know
+# how else to do that without recompiling or implementing our own memcpy.
 ifeq ($(KBUILD_TARGET),linux)
-VBoxClient_LIBS    += \
-	$(PATH_ROOT)/src/VBox/Additions/x11/VBoxClient/chk_stubs.c
 VBoxClient_LDFLAGS.amd64 += \
 	-Wl,--wrap=memcpy
 endif
