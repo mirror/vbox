@@ -2374,7 +2374,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 sessionMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
                 ASSERT(audioAdapter);
 
-                CHECK_ERROR(audioAdapter, COMSETTER(EnabledIn)(ValueUnion.f));
+                CHECK_ERROR(audioAdapter, COMSETTER(EnabledOut)(ValueUnion.f));
                 break;
             }
 
