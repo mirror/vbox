@@ -1571,6 +1571,8 @@ endif
 
 # Pull in the ui files
 $(eval VirtualBox_SOURCES += $(FORMS))
+$(eval VBoxGlobal_SOURCES += $(FORMS))
+
 
 # Resource files with some OSE differences (VirtualBoxBrand.qrc is created further down).
 VirtualBox_SOURCES            += VirtualBox1.qrc
