@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,33 +19,33 @@
 #define ___UIWindowMenuManager_h___
 
 /* Qt includes: */
-#include <QObject>
 #include <QHash>
+#include <QObject>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class UIMenuHelper;
 class QMenu;
+class UIMenuHelper;
 
 /** Singleton QObject extension
   * used as Mac OS X 'Window' menu Manager. */
-class UIWindowMenuManager : public QIWithRetranslateUI3<QObject>
+class SHARED_LIBRARY_STUFF UIWindowMenuManager : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
 public:
 
-    /** Static constructor. */
+    /** Creates instance. */
     static void create();
-    /** Static destructor. */
+    /** Destroyes instance. */
     static void destroy();
-    /** Static instance provider. */
-    static UIWindowMenuManager* instance() { return m_spInstance; }
+    /** Returns current instance. */
+    static UIWindowMenuManager *instance() { return s_pInstance; }
 
     /** Creates 'Window' menu for passed @a pWindow. */
-    QMenu* createMenu(QWidget *pWindow);
+    QMenu *createMenu(QWidget *pWindow);
     /** Destroys 'Window' menu for passed @a pWindow. */
     void destroyMenu(QWidget *pWindow);
 
@@ -55,7 +55,7 @@ public:
     void removeWindow(QWidget *pWindow);
 
     /** Handles translation event. */
-    virtual void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
 protected:
 
@@ -65,21 +65,21 @@ protected:
     ~UIWindowMenuManager();
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent);
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
 
 private:
 
     /** Holds the static instance. */
-    static UIWindowMenuManager *m_spInstance;
+    static UIWindowMenuManager *s_pInstance;
 
     /** Holds the list of the registered window references. */
-    QList<QWidget*> m_windows;
+    QList<QWidget*>  m_windows;
 
     /** Holds the hash of the registered menu-helper instances. */
-    QHash<QWidget*, UIMenuHelper*> m_helpers;
+    QHash<QWidget*, UIMenuHelper*>  m_helpers;
 };
 
+/** Singleton 'Window' menu Manager 'official' name. */
 #define gpWindowMenuManager UIWindowMenuManager::instance()
 
 #endif /* !___UIWindowMenuManager_h___ */
-

@@ -576,9 +576,6 @@ ifdef VBOX_WITH_DRAG_AND_DROP
  endif
 endif
 
-VirtualBox_QT_MOCHDRS.darwin += \
-	src/platform/darwin/UIWindowMenuManager.h
-
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCHDRS += \
 	src/VBoxAboutDlg.h \
@@ -722,7 +719,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  endif
 
  VirtualBox_QT_MOCHDRS.darwin += \
-	src/platform/darwin/UICocoaSpecialControls.h
+	src/platform/darwin/UICocoaSpecialControls.h \
+	src/platform/darwin/UIWindowMenuManager.h
 endif
 
 
@@ -872,7 +870,8 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 endif
 
 VBoxGlobal_QT_MOCHDRS.darwin += \
-	src/platform/darwin/UICocoaSpecialControls.h
+	src/platform/darwin/UICocoaSpecialControls.h \
+	src/platform/darwin/UIWindowMenuManager.h
 
 
 #
@@ -895,9 +894,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
-
-VirtualBox_QT_MOCSRCS.darwin += \
-	src/platform/darwin/UIWindowMenuManager.cpp
 
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCSRCS += \
@@ -927,13 +923,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp
 
- VirtualBox_QT_MOCSRCS.linux += \
-	src/globals/UIDesktopWidgetWatchdog.cpp
- VirtualBox_QT_MOCSRCS.solaris += \
-	src/globals/UIDesktopWidgetWatchdog.cpp
- VirtualBox_QT_MOCSRCS.freebsd += \
-	src/globals/UIDesktopWidgetWatchdog.cpp
-
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VirtualBox_QT_MOCSRCS += \
 	src/net/UINetworkReply.cpp \
@@ -944,6 +933,16 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
   VirtualBox_QT_MOCSRCS += \
 	src/globals/COMDefs.cpp
  endif
+
+ VirtualBox_QT_MOCSRCS.darwin += \
+	src/platform/darwin/UIWindowMenuManager.cpp
+
+ VirtualBox_QT_MOCSRCS.linux += \
+	src/globals/UIDesktopWidgetWatchdog.cpp
+ VirtualBox_QT_MOCSRCS.solaris += \
+	src/globals/UIDesktopWidgetWatchdog.cpp
+ VirtualBox_QT_MOCSRCS.freebsd += \
+	src/globals/UIDesktopWidgetWatchdog.cpp
 endif
 
 
@@ -978,13 +977,6 @@ VBoxGlobal_QT_MOCSRCS = \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp
 
-VBoxGlobal_QT_MOCSRCS.linux += \
-	src/globals/UIDesktopWidgetWatchdog.cpp
-VBoxGlobal_QT_MOCSRCS.solaris += \
-	src/globals/UIDesktopWidgetWatchdog.cpp
-VBoxGlobal_QT_MOCSRCS.freebsd += \
-	src/globals/UIDesktopWidgetWatchdog.cpp
-
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  VBoxGlobal_QT_MOCSRCS += \
 	src/net/UINetworkReply.cpp \
@@ -994,6 +986,16 @@ endif
 ifdef VBOX_WITH_XPCOM
  VBoxGlobal_QT_MOCSRCS += \
 	src/globals/COMDefs.cpp
+
+VBoxGlobal_QT_MOCSRCS.darwin += \
+	src/platform/darwin/UIWindowMenuManager.cpp
+
+VBoxGlobal_QT_MOCSRCS.linux += \
+	src/globals/UIDesktopWidgetWatchdog.cpp
+VBoxGlobal_QT_MOCSRCS.solaris += \
+	src/globals/UIDesktopWidgetWatchdog.cpp
+VBoxGlobal_QT_MOCSRCS.freebsd += \
+	src/globals/UIDesktopWidgetWatchdog.cpp
 endif
 
 
@@ -1126,7 +1128,8 @@ VirtualBox_SOURCES = \
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIAbstractDockIconPreview.cpp \
 	src/platform/darwin/UICocoaDockIconPreview.mm \
-	src/platform/darwin/UIWindowMenuManager.cpp \
+	src/platform/darwin/UIDesktopServices_darwin.cpp \
+	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
  VirtualBox_SOURCES += \
@@ -1136,10 +1139,6 @@ endif
 VirtualBox_SOURCES.win += \
 	src/platform/win/VirtualBox.rc \
 	src/platform/win/UIDesktopServices_win.cpp
-
-VirtualBox_SOURCES.darwin += \
-	src/platform/darwin/UIDesktopServices_darwin.cpp \
-	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_SOURCES.darwin += \
@@ -1334,6 +1333,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/platform/darwin/DarwinKeyboard.cpp \
 	src/platform/darwin/UICocoaApplication.mm \
 	src/platform/darwin/UICocoaSpecialControls.mm \
+	src/platform/darwin/UIWindowMenuManager.cpp \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
 endif
@@ -1510,6 +1510,7 @@ VBoxGlobal_SOURCES.darwin += \
 	src/platform/darwin/DarwinKeyboard.cpp \
 	src/platform/darwin/UICocoaApplication.mm \
 	src/platform/darwin/UICocoaSpecialControls.mm \
+	src/platform/darwin/UIWindowMenuManager.cpp \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
 
