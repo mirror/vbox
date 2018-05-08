@@ -35,13 +35,13 @@
 RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 {
     RTTIMESPEC LocalTime = *pTimeSpec;
-    int64_t LocalUTCOffset = RTTimeLocalDeltaNano(); /**< @todo this is obviously wrong. Need RTTimeLocalDeltaNanoFor(pTimeSpec); */
-    RTTimeSpecAddNano(&LocalTime, LocalUTCOffset);
+    int64_t cNsUtcOffset = RTTimeLocalDeltaNano(); /**< @todo this is obviously wrong. Need RTTimeLocalDeltaNanoFor(pTimeSpec); */
+    RTTimeSpecAddNano(&LocalTime, cNsUtcOffset);
     pTime = RTTimeExplode(pTime, &LocalTime);
     if (pTime)
     {
         pTime->fFlags = (pTime->fFlags & ~RTTIME_FLAGS_TYPE_MASK) | RTTIME_FLAGS_TYPE_LOCAL;
-        pTime->offUTC = LocalUTCOffset / RT_NS_1MIN;
+        pTime->offUTC = cNsUtcOffset / RT_NS_1MIN;
     }
     return pTime;
 }
