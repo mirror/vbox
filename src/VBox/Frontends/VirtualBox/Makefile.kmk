@@ -37,6 +37,7 @@ DLLS += VirtualBox
 else
 PROGRAMS += VirtualBox
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+PROGRAMS += VirtualBoxRT
 DLLS += VBoxGlobal
 endif
 endif
@@ -97,7 +98,7 @@ endif
 
 
 #
-# VirtualBox - GUI Application.
+# VirtualBox Manager Application
 #
 VirtualBox_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
 VirtualBox_NAME = VirtualBox
@@ -166,6 +167,76 @@ ifneq ($(KBUILD_TYPE),release)
 endif
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_DEFS.darwin   += VBOX_WITH_ICHAT_THEATER
+endif
+
+
+#
+# VirtualBox Virtual Machine Application
+#
+VirtualBoxRT_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
+VirtualBoxRT_NAME = VirtualBoxRT
+VirtualBoxRT_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
+
+VirtualBoxRT_DEFS           = VBOX_RUNTIME_UI
+VirtualBoxRT_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
+VirtualBoxRT_DEFS.linux     = VBOX_WS_X11
+VirtualBoxRT_DEFS.solaris   = VBOX_WS_X11
+VirtualBoxRT_DEFS.freebsd   = VBOX_WS_X11
+VirtualBoxRT_DEFS.darwin    = VBOX_WS_MAC
+VirtualBoxRT_DEFS.win       = VBOX_WS_WIN
+VirtualBoxRT_DEFS.linux     += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBoxRT_DEFS.solaris   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBoxRT_DEFS.freebsd   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBoxRT_DEFS.darwin    += VBOX_WITH_TRANSLUCENT_SEAMLESS # VBOX_WITH_MASKED_SEAMLESS
+VirtualBoxRT_DEFS.win       += VBOX_WITH_MASKED_SEAMLESS # VBOX_WITH_TRANSLUCENT_SEAMLESS
+VirtualBoxRT_DEFS.darwin    += VBOX_DARWIN_USE_NATIVE_CONTROLS
+VirtualBoxRT_DEFS.win       += UNICODE QT_DLL
+VirtualBoxRT_DEFS           += \
+	$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VBOX_GUI_WITH_SHARED_LIBRARY) \
+	$(if $(VBOX_WITH_ADDITIONS_AUTOUPDATE_UI),VBOX_WITH_ADDITIONS_AUTOUPDATE_UI) \
+	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
+	$(if $(VBOX_WITH_AUDIO_OSS),VBOX_WITH_AUDIO_OSS) \
+	$(if $(VBOX_WITH_AUDIO_ALSA),VBOX_WITH_AUDIO_ALSA) \
+	$(if $(VBOX_WITH_AUDIO_PULSE),VBOX_WITH_AUDIO_PULSE) \
+	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000) \
+	$(if $(VBOX_WITH_NETFLT)$(eq $(KBUILD_TARGET),freebsd),VBOX_WITH_NETFLT) \
+	$(if $(VBOX_WITH_VDE),VBOX_WITH_VDE) \
+	$(if $(VBOX_WITH_UDPTUNNEL),VBOX_WITH_UDPTUNNEL) \
+	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK) \
+	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI) \
+	$(if $(VBOX_WITH_HARDENING),VBOXR3_HARDENED_DLL) \
+	$(if $(VBOX_WITH_DRAG_AND_DROP),VBOX_WITH_DRAG_AND_DROP) \
+	$(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH) \
+	$(if $(VBOX_WITH_DRAG_AND_DROP_PROMISES),VBOX_WITH_DRAG_AND_DROP_PROMISES) \
+	$(if $(VBOX_WITH_CRHGSMI),VBOX_WITH_CRHGSMI) \
+	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO) \
+	$(if $(VBOX_WITH_WDDM),VBOX_WITH_WDDM) \
+	$(if $(VBOX_WITH_CROGL),VBOX_WITH_CROGL) \
+	$(if $(VBOX_GUI_WITH_PIDFILE),VBOX_GUI_WITH_PIDFILE) \
+	$(if $(VBOX_GUI_WITH_KEYS_RESET_HANDLER),VBOX_GUI_WITH_KEYS_RESET_HANDLER) \
+	$(if $(VBOX_GUI_WITH_CUSTOMIZATIONS1),VBOX_GUI_WITH_CUSTOMIZATIONS1) \
+	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE) \
+	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
+ifdef VBOX_WITH_DEBUGGER_GUI
+ VirtualBoxRT_DEFS          += VBOX_WITH_DEBUGGER_GUI
+ if "$(KBUILD_TYPE)" != "release"
+  VirtualBoxRT_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
+ endif
+endif
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VirtualBoxRT_DEFS          += VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
+else ifdef VBOX_GUI_USE_QGL
+ VirtualBoxRT_DEFS          += VBOX_GUI_USE_QGL
+endif
+ifdef VBOX_WITH_LIBCURL
+ VirtualBoxRT_DEFS          += VBOX_GUI_WITH_NETWORK_MANAGER
+ VBOX_GUI_WITH_NETWORK_MANAGER := 1
+endif
+ifneq ($(KBUILD_TYPE),release)
+ VirtualBoxRT_DEFS          += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+endif
+ifdef VBOX_WITH_ICHAT_THEATER
+ VirtualBoxRT_DEFS.darwin   += VBOX_WITH_ICHAT_THEATER
 endif
 
 
@@ -273,12 +344,22 @@ VBOX_GUI_INC_DIRS += \
 endif
 
 #
-# VirtualBox - GUI Application.
+# VirtualBox Manager Application
 # Include folders.
 #
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
 	$(VirtualBox_0_OUTDIR)/include \
+	$(VBoxGlobal_0_OUTDIR)/include \
+	$(VBOX_GRAPHICS_INCS)
+
+#
+# VirtualBox Virtual Machine Application
+# Include folders.
+#
+VirtualBoxRT_INCS = \
+	$(VBOX_GUI_INC_DIRS) \
+	$(VirtualBoxRT_0_OUTDIR)/include \
 	$(VBoxGlobal_0_OUTDIR)/include \
 	$(VBOX_GRAPHICS_INCS)
 
@@ -292,7 +373,7 @@ VBoxGlobal_INCS = \
 
 
 #
-# VirtualBox - GUI Application.
+# VirtualBox Manager Application
 # Compiling/linking flags.
 #
 ifneq ($(KBUILD_TARGET),win)
@@ -330,6 +411,44 @@ endif
 
 
 #
+# VirtualBox Virtual Machine Application
+# Compiling/linking flags.
+#
+ifneq ($(KBUILD_TARGET),win)
+VirtualBoxRT_CXXFLAGS += -Wno-switch
+endif
+
+## @todo we're using a number of deprecated APIs, please fix and remove these!
+ifdef VBOX_WITH_NEW_XCODE
+ VirtualBoxRT_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
+ VirtualBoxRT_OBJCFLAGS.darwin   += -Wno-error=deprecated-declarations
+ VirtualBoxRT_OBJCXXFLAGS.darwin += -Wno-error=deprecated-declarations
+else
+ VirtualBoxRT_CXXFLAGS.darwin    += -Wno-deprecated-declarations
+ VirtualBoxRT_OBJCFLAGS.darwin   += -Wno-deprecated-declarations
+ VirtualBoxRT_OBJCXXFLAGS.darwin += -Wno-deprecated-declarations
+endif
+
+ifeq ($(KBUILD_TYPE),release)
+ VirtualBoxRT_LDFLAGS.win   += /SUBSYSTEM:windows
+else
+ VirtualBoxRT_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
+ VirtualBoxRT_LDFLAGS.win   += /SUBSYSTEM:console
+endif
+
+VirtualBoxRT_LDFLAGS.darwin = \
+	-framework AppKit -framework Carbon -framework IOKit \
+	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBoxRT.dylib)
+ifdef VBOX_WITH_ICHAT_THEATER
+ VirtualBoxRT_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
+endif
+
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ VirtualBoxRT_LDFLAGS.darwin += -framework OpenGL
+endif
+
+
+#
 # VirtualBox - GUI Global Shared Library.
 # Compiling/linking flags.
 #
@@ -354,7 +473,7 @@ endif
 
 
 #
-# VirtualBox - GUI Application.
+# VirtualBox Manager Application
 # Libraries.
 #
 
@@ -409,6 +528,61 @@ endif
 
 
 #
+# VirtualBox Virtual Machine Application
+# Libraries.
+#
+
+# Library required for the hdd backend enumeration:
+VirtualBoxRT_LIBS = $(LIB_DDU)
+
+# Runtime library loader required on X11 hosts:
+if1of ($(KBUILD_TARGET), linux netbsd openbsd)
+ VirtualBoxRT_LIBS += dl
+endif
+
+# Xinerama library required for multi-monitor support:
+VirtualBoxRT_LIBS.linux   += Xinerama
+VirtualBoxRT_LIBS.solaris += Xinerama
+VirtualBoxRT_LIBS.freebsd += Xinerama
+
+# XCB library required for direct XCB native code support:
+VirtualBoxRT_LIBS.linux   += xcb
+VirtualBoxRT_LIBS.solaris += xcb
+VirtualBoxRT_LIBS.freebsd += xcb
+
+# Various Windows hosts libraries:
+VirtualBoxRT_LIBS.win = \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Htmlhelp.Lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
+
+# VBox keyboard shared library for X11 hosts:
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
+ VirtualBoxRT_LIBS += $(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
+endif
+
+# These are 2D Video Acceleration and 3D Acceleration related libs:
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ VirtualBoxRT_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
+ VirtualBoxRT_LIBS.solaris   += GL
+ VirtualBoxRT_LIBS.linux     += GL
+ VirtualBoxRT_LIBS.freebsd   += GL
+endif
+ifdef VBOX_WITH_CROGL
+ VirtualBoxRT_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
+endif
+
+# This one is global shared GUI library:
+ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+ ifeq ($(KBUILD_TARGET),win)
+  VirtualBoxRT_LIBS += $(PATH_STAGE_LIB)/VBoxGlobal$(VBOX_SUFF_LIB)
+ else
+  VirtualBoxRT_LIBS += $(PATH_STAGE_DLL)/VBoxGlobal$(VBOX_SUFF_DLL)
+ endif
+endif
+
+
+#
 # VirtualBox - GUI Global Shared Library.
 # Libraries.
 #
@@ -445,7 +619,7 @@ endif
 
 
 #
-# VirtualBox - GUI Application.
+# VirtualBox Manager Application
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 #
 VirtualBox_QT_MOCHDRS = \
@@ -454,50 +628,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/hostnetwork/UIHostNetworkManager.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumManager.h \
-	src/runtime/UIConsoleEventHandler.h \
-	src/runtime/UIFrameBuffer.h \
-	src/runtime/UIIndicatorsPool.h \
-	src/runtime/UIKeyboardHandler.h \
-	src/runtime/UIMachine.h \
-	src/runtime/UIMachineLogic.h \
-	src/runtime/UIMachineWindow.h \
-	src/runtime/UIMachineView.h \
-	src/runtime/UIMouseHandler.h \
-	src/runtime/UIMultiScreenLayout.h \
-	src/runtime/UISession.h \
-	src/runtime/UIVMCloseDialog.h \
-	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.h \
-	src/runtime/fullscreen/UIMachineLogicFullscreen.h \
-	src/runtime/fullscreen/UIMachineViewFullscreen.h \
-	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
-	src/runtime/information/UIInformationConfiguration.h \
-	src/runtime/information/UIInformationDataItem.h \
-	src/runtime/information/UIInformationItem.h \
-	src/runtime/information/UIInformationModel.h \
-	src/runtime/information/UIInformationRuntime.h \
-	src/runtime/information/UIInformationView.h \
-	src/runtime/information/UIVMInformationDialog.h \
-	src/runtime/guestctrl/UIGuestControlConsole.h \
-	src/runtime/guestctrl/UIGuestControlFileManager.h \
-	src/runtime/guestctrl/UIGuestControlFileModel.h \
-	src/runtime/guestctrl/UIGuestControlFileTable.h \
-	src/runtime/guestctrl/UIGuestControlInterface.h \
-	src/runtime/guestctrl/UIGuestControlTreeItem.h \
-	src/runtime/guestctrl/UIGuestControlWidget.h \
-	src/runtime/guestctrl/UIGuestFileTable.h \
-	src/runtime/guestctrl/UIHostFileTable.h \
-	src/runtime/normal/UIKeyboardHandlerNormal.h \
-	src/runtime/normal/UIMachineLogicNormal.h \
-	src/runtime/normal/UIMachineViewNormal.h \
-	src/runtime/normal/UIMachineWindowNormal.h \
-	src/runtime/scale/UIKeyboardHandlerScale.h \
-	src/runtime/scale/UIMachineLogicScale.h \
-	src/runtime/scale/UIMachineViewScale.h \
-	src/runtime/scale/UIMachineWindowScale.h \
-	src/runtime/seamless/UIKeyboardHandlerSeamless.h \
-	src/runtime/seamless/UIMachineLogicSeamless.h \
-	src/runtime/seamless/UIMachineViewSeamless.h \
-	src/runtime/seamless/UIMachineWindowSeamless.h \
 	src/selector/UIDesktopPane.h \
 	src/selector/UIVMItem.h \
 	src/selector/UISelectorWindow.h \
@@ -531,7 +661,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UISlidingWidget.h \
 	src/widgets/UITabBar.h \
 	src/widgets/UIMenuToolBar.h \
-	src/widgets/UIMiniToolBar.h \
 	src/widgets/VBoxOSTypeSelectorButton.h \
 	src/widgets/graphics/UIGraphicsButton.h \
 	src/widgets/graphics/UIGraphicsRotatorButton.h \
@@ -563,18 +692,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportApp.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
-	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
-	src/wizards/firstrun/UIWizardFirstRun.h \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
-
-ifdef VBOX_WITH_DRAG_AND_DROP
- VirtualBox_QT_MOCHDRS += \
-	src/runtime/UIDnDHandler.h
- ifdef VBOX_WITH_DRAG_AND_DROP_GH
-  VirtualBox_QT_MOCHDRS += \
-	src/runtime/UIDnDMIMEData.h
- endif
-endif
+	src/wizards/importappliance/UIWizardImportAppPageExpert.h
 
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCHDRS += \
@@ -637,6 +755,50 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumEnumerator.h \
 	src/runtime/UIActionPoolRuntime.h \
+	src/runtime/UIConsoleEventHandler.h \
+	src/runtime/UIFrameBuffer.h \
+	src/runtime/UIIndicatorsPool.h \
+	src/runtime/UIKeyboardHandler.h \
+	src/runtime/UIMachine.h \
+	src/runtime/UIMachineLogic.h \
+	src/runtime/UIMachineWindow.h \
+	src/runtime/UIMachineView.h \
+	src/runtime/UIMouseHandler.h \
+	src/runtime/UIMultiScreenLayout.h \
+	src/runtime/UISession.h \
+	src/runtime/UIVMCloseDialog.h \
+	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.h \
+	src/runtime/fullscreen/UIMachineLogicFullscreen.h \
+	src/runtime/fullscreen/UIMachineViewFullscreen.h \
+	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
+	src/runtime/information/UIInformationConfiguration.h \
+	src/runtime/information/UIInformationDataItem.h \
+	src/runtime/information/UIInformationItem.h \
+	src/runtime/information/UIInformationModel.h \
+	src/runtime/information/UIInformationRuntime.h \
+	src/runtime/information/UIInformationView.h \
+	src/runtime/information/UIVMInformationDialog.h \
+	src/runtime/guestctrl/UIGuestControlConsole.h \
+	src/runtime/guestctrl/UIGuestControlFileManager.h \
+	src/runtime/guestctrl/UIGuestControlFileModel.h \
+	src/runtime/guestctrl/UIGuestControlFileTable.h \
+	src/runtime/guestctrl/UIGuestControlInterface.h \
+	src/runtime/guestctrl/UIGuestControlTreeItem.h \
+	src/runtime/guestctrl/UIGuestControlWidget.h \
+	src/runtime/guestctrl/UIGuestFileTable.h \
+	src/runtime/guestctrl/UIHostFileTable.h \
+	src/runtime/normal/UIKeyboardHandlerNormal.h \
+	src/runtime/normal/UIMachineLogicNormal.h \
+	src/runtime/normal/UIMachineViewNormal.h \
+	src/runtime/normal/UIMachineWindowNormal.h \
+	src/runtime/scale/UIKeyboardHandlerScale.h \
+	src/runtime/scale/UIMachineLogicScale.h \
+	src/runtime/scale/UIMachineViewScale.h \
+	src/runtime/scale/UIMachineWindowScale.h \
+	src/runtime/seamless/UIKeyboardHandlerSeamless.h \
+	src/runtime/seamless/UIMachineLogicSeamless.h \
+	src/runtime/seamless/UIMachineViewSeamless.h \
+	src/runtime/seamless/UIMachineWindowSeamless.h \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/settings/UISettingsDialog.h \
@@ -676,6 +838,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIMediumSizeEditor.h \
 	src/widgets/UIMenuBar.h \
 	src/widgets/UIMenuBarEditorWindow.h \
+	src/widgets/UIMiniToolBar.h \
 	src/widgets/UINameAndSystemEditor.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
@@ -694,11 +857,22 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
+	src/wizards/firstrun/UIWizardFirstRun.h \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.h \
 	src/wizards/newvd/UIWizardNewVD.h \
 	src/wizards/newvd/UIWizardNewVDPageBasic1.h \
 	src/wizards/newvd/UIWizardNewVDPageBasic2.h \
 	src/wizards/newvd/UIWizardNewVDPageBasic3.h \
 	src/wizards/newvd/UIWizardNewVDPageExpert.h
+
+ ifdef VBOX_WITH_DRAG_AND_DROP
+  VirtualBox_QT_MOCHDRS += \
+	src/runtime/UIDnDHandler.h
+  ifdef VBOX_WITH_DRAG_AND_DROP_GH
+   VirtualBox_QT_MOCHDRS += \
+	src/runtime/UIDnDMIMEData.h
+  endif
+ endif
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VirtualBox_QT_MOCHDRS += \
@@ -721,6 +895,70 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCHDRS.darwin += \
 	src/platform/darwin/UICocoaSpecialControls.h \
 	src/platform/darwin/UIWindowMenuManager.h
+endif
+
+
+#
+# VirtualBox Virtual Machine Application
+# Headers containing definitions of classes that use the Q_OBJECT macro.
+#
+VirtualBoxRT_QT_MOCHDRS = \
+	src/globals/UIStarter.h \
+	src/runtime/UIConsoleEventHandler.h \
+	src/runtime/UIFrameBuffer.h \
+	src/runtime/UIIndicatorsPool.h \
+	src/runtime/UIKeyboardHandler.h \
+	src/runtime/UIMachine.h \
+	src/runtime/UIMachineLogic.h \
+	src/runtime/UIMachineWindow.h \
+	src/runtime/UIMachineView.h \
+	src/runtime/UIMouseHandler.h \
+	src/runtime/UIMultiScreenLayout.h \
+	src/runtime/UISession.h \
+	src/runtime/UIVMCloseDialog.h \
+	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.h \
+	src/runtime/fullscreen/UIMachineLogicFullscreen.h \
+	src/runtime/fullscreen/UIMachineViewFullscreen.h \
+	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
+	src/runtime/information/UIInformationConfiguration.h \
+	src/runtime/information/UIInformationDataItem.h \
+	src/runtime/information/UIInformationItem.h \
+	src/runtime/information/UIInformationModel.h \
+	src/runtime/information/UIInformationRuntime.h \
+	src/runtime/information/UIInformationView.h \
+	src/runtime/information/UIVMInformationDialog.h \
+	src/runtime/guestctrl/UIGuestControlConsole.h \
+	src/runtime/guestctrl/UIGuestControlFileManager.h \
+	src/runtime/guestctrl/UIGuestControlFileModel.h \
+	src/runtime/guestctrl/UIGuestControlFileTable.h \
+	src/runtime/guestctrl/UIGuestControlInterface.h \
+	src/runtime/guestctrl/UIGuestControlTreeItem.h \
+	src/runtime/guestctrl/UIGuestControlWidget.h \
+	src/runtime/guestctrl/UIGuestFileTable.h \
+	src/runtime/guestctrl/UIHostFileTable.h \
+	src/runtime/normal/UIKeyboardHandlerNormal.h \
+	src/runtime/normal/UIMachineLogicNormal.h \
+	src/runtime/normal/UIMachineViewNormal.h \
+	src/runtime/normal/UIMachineWindowNormal.h \
+	src/runtime/scale/UIKeyboardHandlerScale.h \
+	src/runtime/scale/UIMachineLogicScale.h \
+	src/runtime/scale/UIMachineViewScale.h \
+	src/runtime/scale/UIMachineWindowScale.h \
+	src/runtime/seamless/UIKeyboardHandlerSeamless.h \
+	src/runtime/seamless/UIMachineLogicSeamless.h \
+	src/runtime/seamless/UIMachineViewSeamless.h \
+	src/runtime/seamless/UIMachineWindowSeamless.h \
+	src/widgets/UIMiniToolBar.h \
+	src/wizards/firstrun/UIWizardFirstRun.h \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
+
+ifdef VBOX_WITH_DRAG_AND_DROP
+ VirtualBoxRT_QT_MOCHDRS += \
+	src/runtime/UIDnDHandler.h
+ ifdef VBOX_WITH_DRAG_AND_DROP_GH
+  VirtualBoxRT_QT_MOCHDRS += \
+	src/runtime/UIDnDMIMEData.h
+ endif
 endif
 
 
@@ -875,23 +1113,14 @@ VBoxGlobal_QT_MOCHDRS.darwin += \
 
 
 #
-# VirtualBox - GUI Application.
+# VirtualBox Manager Application
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 #
 VirtualBox_QT_MOCSRCS = \
-	src/runtime/UIConsoleEventHandler.cpp \
-	src/runtime/UIFrameBuffer.cpp \
-	src/runtime/UIIndicatorsPool.cpp \
-	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
-	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
-	src/runtime/guestctrl/UIGuestControlWidget.cpp \
-	src/runtime/guestctrl/UIGuestFileTable.cpp \
-	src/runtime/guestctrl/UIHostFileTable.cpp \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UISnapshotDetailsWidget.cpp \
 	src/selector/UISnapshotPane.cpp \
 	src/widgets/UIMenuToolBar.cpp \
-	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
@@ -909,6 +1138,14 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
+	src/runtime/UIConsoleEventHandler.cpp \
+	src/runtime/UIFrameBuffer.cpp \
+	src/runtime/UIIndicatorsPool.cpp \
+	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
+	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
+	src/runtime/guestctrl/UIGuestControlWidget.cpp \
+	src/runtime/guestctrl/UIGuestFileTable.cpp \
+	src/runtime/guestctrl/UIHostFileTable.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
@@ -919,6 +1156,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
+	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp
@@ -944,6 +1182,22 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCSRCS.freebsd += \
 	src/globals/UIDesktopWidgetWatchdog.cpp
 endif
+
+
+#
+# VirtualBox Virtual Machine Application
+# Sources containing local definitions of classes that use the Q_OBJECT macro.
+#
+VirtualBoxRT_QT_MOCSRCS = \
+	src/runtime/UIConsoleEventHandler.cpp \
+	src/runtime/UIFrameBuffer.cpp \
+	src/runtime/UIIndicatorsPool.cpp \
+	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
+	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
+	src/runtime/guestctrl/UIGuestControlWidget.cpp \
+	src/runtime/guestctrl/UIGuestFileTable.cpp \
+	src/runtime/guestctrl/UIHostFileTable.cpp \
+	src/widgets/UIMiniToolBar.cpp
 
 
 #
@@ -1000,7 +1254,7 @@ endif
 
 
 #
-# VirtualBox - GUI Application.
+# VirtualBox Manager Application
 # Sources.
 #
 VirtualBox_SOURCES = \
@@ -1011,50 +1265,6 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
-	src/runtime/UIConsoleEventHandler.cpp \
-	src/runtime/UIFrameBuffer.cpp \
-	src/runtime/UIIndicatorsPool.cpp \
-	src/runtime/UIKeyboardHandler.cpp \
-	src/runtime/UIMachine.cpp \
-	src/runtime/UIMachineLogic.cpp \
-	src/runtime/UIMachineView.cpp \
-	src/runtime/UIMachineWindow.cpp \
-	src/runtime/UIMouseHandler.cpp \
-	src/runtime/UIMultiScreenLayout.cpp \
-	src/runtime/UISession.cpp \
-	src/runtime/UIVMCloseDialog.cpp \
-	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.cpp \
-	src/runtime/fullscreen/UIMachineLogicFullscreen.cpp \
-	src/runtime/fullscreen/UIMachineViewFullscreen.cpp \
-	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
-	src/runtime/information/UIInformationConfiguration.cpp \
-	src/runtime/information/UIInformationDataItem.cpp \
-	src/runtime/information/UIInformationItem.cpp \
-	src/runtime/information/UIInformationModel.cpp \
-	src/runtime/information/UIInformationRuntime.cpp \
-	src/runtime/information/UIInformationView.cpp \
-	src/runtime/information/UIVMInformationDialog.cpp \
-	src/runtime/guestctrl/UIGuestControlConsole.cpp \
-	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
-	src/runtime/guestctrl/UIGuestControlFileModel.cpp \
-	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
-	src/runtime/guestctrl/UIGuestControlInterface.cpp \
-	src/runtime/guestctrl/UIGuestControlTreeItem.cpp \
-	src/runtime/guestctrl/UIGuestControlWidget.cpp \
-	src/runtime/guestctrl/UIGuestFileTable.cpp \
-	src/runtime/guestctrl/UIHostFileTable.cpp \
-	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
-	src/runtime/normal/UIMachineLogicNormal.cpp \
-	src/runtime/normal/UIMachineViewNormal.cpp \
-	src/runtime/normal/UIMachineWindowNormal.cpp \
-	src/runtime/scale/UIKeyboardHandlerScale.cpp \
-	src/runtime/scale/UIMachineLogicScale.cpp \
-	src/runtime/scale/UIMachineViewScale.cpp \
-	src/runtime/scale/UIMachineWindowScale.cpp \
-	src/runtime/seamless/UIKeyboardHandlerSeamless.cpp \
-	src/runtime/seamless/UIMachineLogicSeamless.cpp \
-	src/runtime/seamless/UIMachineViewSeamless.cpp \
-	src/runtime/seamless/UIMachineWindowSeamless.cpp \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UIVMItem.cpp \
 	src/selector/UISelectorWindow.cpp \
@@ -1088,7 +1298,6 @@ VirtualBox_SOURCES = \
 	src/widgets/UISlidingWidget.cpp \
 	src/widgets/UITabBar.cpp \
 	src/widgets/UIMenuToolBar.cpp \
-	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
 	src/widgets/graphics/UIGraphicsButton.cpp \
 	src/widgets/graphics/UIGraphicsRotatorButton.cpp \
@@ -1120,13 +1329,9 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportApp.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
-	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
-	src/wizards/firstrun/UIWizardFirstRun.cpp \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
+	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp
 
 VirtualBox_SOURCES.darwin += \
-	src/platform/darwin/UIAbstractDockIconPreview.cpp \
-	src/platform/darwin/UICocoaDockIconPreview.mm \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
 	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm
 
@@ -1149,19 +1354,6 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
 	src/VBox2DHelpers.cpp \
 	src/VBoxFBOverlay.cpp \
 	src/VBoxGLSupportInfo.cpp
-endif
-
-ifdef VBOX_WITH_DRAG_AND_DROP
- VirtualBox_SOURCES += \
-	src/runtime/UIDnDHandler.cpp
- ifdef VBOX_WITH_DRAG_AND_DROP_GH
-  VirtualBox_SOURCES += \
-	src/runtime/UIDnDMIMEData.cpp
-  VirtualBox_SOURCES.win += \
-	src/runtime/UIDnDDropSource_win.cpp \
-	src/runtime/UIDnDDataObject_win.cpp \
-	src/runtime/UIDnDEnumFormat_win.cpp
- endif
 endif
 
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
@@ -1235,6 +1427,50 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumEnumerator.cpp \
 	src/objects/UIRichTextString.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
+	src/runtime/UIConsoleEventHandler.cpp \
+	src/runtime/UIFrameBuffer.cpp \
+	src/runtime/UIIndicatorsPool.cpp \
+	src/runtime/UIKeyboardHandler.cpp \
+	src/runtime/UIMachine.cpp \
+	src/runtime/UIMachineLogic.cpp \
+	src/runtime/UIMachineView.cpp \
+	src/runtime/UIMachineWindow.cpp \
+	src/runtime/UIMouseHandler.cpp \
+	src/runtime/UIMultiScreenLayout.cpp \
+	src/runtime/UISession.cpp \
+	src/runtime/UIVMCloseDialog.cpp \
+	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.cpp \
+	src/runtime/fullscreen/UIMachineLogicFullscreen.cpp \
+	src/runtime/fullscreen/UIMachineViewFullscreen.cpp \
+	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
+	src/runtime/information/UIInformationConfiguration.cpp \
+	src/runtime/information/UIInformationDataItem.cpp \
+	src/runtime/information/UIInformationItem.cpp \
+	src/runtime/information/UIInformationModel.cpp \
+	src/runtime/information/UIInformationRuntime.cpp \
+	src/runtime/information/UIInformationView.cpp \
+	src/runtime/information/UIVMInformationDialog.cpp \
+	src/runtime/guestctrl/UIGuestControlConsole.cpp \
+	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
+	src/runtime/guestctrl/UIGuestControlFileModel.cpp \
+	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
+	src/runtime/guestctrl/UIGuestControlInterface.cpp \
+	src/runtime/guestctrl/UIGuestControlTreeItem.cpp \
+	src/runtime/guestctrl/UIGuestControlWidget.cpp \
+	src/runtime/guestctrl/UIGuestFileTable.cpp \
+	src/runtime/guestctrl/UIHostFileTable.cpp \
+	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
+	src/runtime/normal/UIMachineLogicNormal.cpp \
+	src/runtime/normal/UIMachineViewNormal.cpp \
+	src/runtime/normal/UIMachineWindowNormal.cpp \
+	src/runtime/scale/UIKeyboardHandlerScale.cpp \
+	src/runtime/scale/UIMachineLogicScale.cpp \
+	src/runtime/scale/UIMachineViewScale.cpp \
+	src/runtime/scale/UIMachineWindowScale.cpp \
+	src/runtime/seamless/UIKeyboardHandlerSeamless.cpp \
+	src/runtime/seamless/UIMachineLogicSeamless.cpp \
+	src/runtime/seamless/UIMachineViewSeamless.cpp \
+	src/runtime/seamless/UIMachineWindowSeamless.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/settings/UISettingsDefs.cpp \
@@ -1275,6 +1511,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIMediumSizeEditor.cpp \
 	src/widgets/UIMenuBar.cpp \
 	src/widgets/UIMenuBarEditorWindow.cpp \
+	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UINameAndSystemEditor.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
@@ -1293,11 +1530,26 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
+	src/wizards/firstrun/UIWizardFirstRun.cpp \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp \
 	src/wizards/newvd/UIWizardNewVD.cpp \
 	src/wizards/newvd/UIWizardNewVDPageBasic1.cpp \
 	src/wizards/newvd/UIWizardNewVDPageBasic2.cpp \
 	src/wizards/newvd/UIWizardNewVDPageBasic3.cpp \
 	src/wizards/newvd/UIWizardNewVDPageExpert.cpp
+
+ ifdef VBOX_WITH_DRAG_AND_DROP
+  VirtualBox_SOURCES += \
+   src/runtime/UIDnDHandler.cpp
+  ifdef VBOX_WITH_DRAG_AND_DROP_GH
+   VirtualBox_SOURCES += \
+   src/runtime/UIDnDMIMEData.cpp
+   VirtualBox_SOURCES.win += \
+   src/runtime/UIDnDDropSource_win.cpp \
+   src/runtime/UIDnDDataObject_win.cpp \
+   src/runtime/UIDnDEnumFormat_win.cpp
+  endif
+ endif
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VirtualBox_SOURCES += \
@@ -1331,12 +1583,102 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/CocoaEventHelper.mm \
 	src/platform/darwin/DarwinKeyboard.cpp \
+	src/platform/darwin/UIAbstractDockIconPreview.cpp \
 	src/platform/darwin/UICocoaApplication.mm \
+	src/platform/darwin/UICocoaDockIconPreview.mm \
 	src/platform/darwin/UICocoaSpecialControls.mm \
 	src/platform/darwin/UIWindowMenuManager.cpp \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
 endif
+
+
+#
+# VirtualBox Virtual Machine Application
+# Sources.
+#
+VirtualBoxRT_SOURCES = \
+	src/main.cpp \
+	src/globals/UIStarter.cpp \
+	src/runtime/UIConsoleEventHandler.cpp \
+	src/runtime/UIFrameBuffer.cpp \
+	src/runtime/UIIndicatorsPool.cpp \
+	src/runtime/UIKeyboardHandler.cpp \
+	src/runtime/UIMachine.cpp \
+	src/runtime/UIMachineLogic.cpp \
+	src/runtime/UIMachineView.cpp \
+	src/runtime/UIMachineWindow.cpp \
+	src/runtime/UIMouseHandler.cpp \
+	src/runtime/UIMultiScreenLayout.cpp \
+	src/runtime/UISession.cpp \
+	src/runtime/UIVMCloseDialog.cpp \
+	src/runtime/fullscreen/UIKeyboardHandlerFullscreen.cpp \
+	src/runtime/fullscreen/UIMachineLogicFullscreen.cpp \
+	src/runtime/fullscreen/UIMachineViewFullscreen.cpp \
+	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
+	src/runtime/information/UIInformationConfiguration.cpp \
+	src/runtime/information/UIInformationDataItem.cpp \
+	src/runtime/information/UIInformationItem.cpp \
+	src/runtime/information/UIInformationModel.cpp \
+	src/runtime/information/UIInformationRuntime.cpp \
+	src/runtime/information/UIInformationView.cpp \
+	src/runtime/information/UIVMInformationDialog.cpp \
+	src/runtime/guestctrl/UIGuestControlConsole.cpp \
+	src/runtime/guestctrl/UIGuestControlFileManager.cpp \
+	src/runtime/guestctrl/UIGuestControlFileModel.cpp \
+	src/runtime/guestctrl/UIGuestControlFileTable.cpp \
+	src/runtime/guestctrl/UIGuestControlInterface.cpp \
+	src/runtime/guestctrl/UIGuestControlTreeItem.cpp \
+	src/runtime/guestctrl/UIGuestControlWidget.cpp \
+	src/runtime/guestctrl/UIGuestFileTable.cpp \
+	src/runtime/guestctrl/UIHostFileTable.cpp \
+	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
+	src/runtime/normal/UIMachineLogicNormal.cpp \
+	src/runtime/normal/UIMachineViewNormal.cpp \
+	src/runtime/normal/UIMachineWindowNormal.cpp \
+	src/runtime/scale/UIKeyboardHandlerScale.cpp \
+	src/runtime/scale/UIMachineLogicScale.cpp \
+	src/runtime/scale/UIMachineViewScale.cpp \
+	src/runtime/scale/UIMachineWindowScale.cpp \
+	src/runtime/seamless/UIKeyboardHandlerSeamless.cpp \
+	src/runtime/seamless/UIMachineLogicSeamless.cpp \
+	src/runtime/seamless/UIMachineViewSeamless.cpp \
+	src/runtime/seamless/UIMachineWindowSeamless.cpp \
+	src/widgets/UIMiniToolBar.cpp \
+	src/wizards/firstrun/UIWizardFirstRun.cpp \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
+
+ifdef VBOX_WITH_DRAG_AND_DROP
+ VirtualBoxRT_SOURCES += \
+	src/runtime/UIDnDHandler.cpp
+ ifdef VBOX_WITH_DRAG_AND_DROP_GH
+  VirtualBoxRT_SOURCES += \
+	src/runtime/UIDnDMIMEData.cpp
+  VirtualBoxRT_SOURCES.win += \
+	src/runtime/UIDnDDropSource_win.cpp \
+	src/runtime/UIDnDDataObject_win.cpp \
+	src/runtime/UIDnDEnumFormat_win.cpp
+ endif
+endif
+
+ifdef VBOX_WITH_ICHAT_THEATER
+ VirtualBoxRT_SOURCES.darwin += \
+	src/platform/darwin/VBoxIChatTheaterWrapper.m
+endif
+
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ VirtualBoxRT_SOURCES += \
+	src/VBox2DHelpers.cpp \
+	src/VBoxFBOverlay.cpp \
+	src/VBoxGLSupportInfo.cpp
+endif
+
+VirtualBoxRT_SOURCES.darwin += \
+	src/platform/darwin/UIAbstractDockIconPreview.cpp \
+	src/platform/darwin/UICocoaDockIconPreview.mm
+
+VirtualBoxRT_SOURCES.win += \
+	src/platform/win/VirtualBox.rc
 
 
 #
@@ -1522,7 +1864,7 @@ endif
 
 
 #
-# VirtualBox - GUI Application.
+# VirtualBox Manager Application
 # Deployment.
 #
 if defined(VBOX_WITH_ORACLE_QT) || defined(VBOX_WITH_QT_PAYLOAD)
@@ -1540,7 +1882,7 @@ endif
 
 
 #
-# VirtualBox - GUI Application.
+# VirtualBox Manager Application
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt unit.)
 #
@@ -1552,6 +1894,22 @@ VirtualBox_QT_MODULES.darwin  += MacExtras
 VirtualBox_QT_MODULES.win     += WinExtras
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_QT_MODULES += OpenGL
+endif
+
+
+#
+# VirtualBox Virtual Machine Application
+# The Qt modules we're using.
+# (The include directory and lib/framework for each module will be added by the Qt unit.)
+#
+VirtualBoxRT_QT_MODULES = Core Gui Widgets PrintSupport
+VirtualBoxRT_QT_MODULES.linux   += X11Extras
+VirtualBoxRT_QT_MODULES.solaris += X11Extras
+VirtualBoxRT_QT_MODULES.freebsd += X11Extras
+VirtualBoxRT_QT_MODULES.darwin  += MacExtras
+VirtualBoxRT_QT_MODULES.win     += WinExtras
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ VirtualBoxRT_QT_MODULES += OpenGL
 endif
 
 
@@ -1573,6 +1931,7 @@ endif
 
 # Pull in the ui files
 $(eval VirtualBox_SOURCES += $(FORMS))
+$(eval VirtualBoxRT_SOURCES += $(FORMS))
 $(eval VBoxGlobal_SOURCES += $(FORMS))
 
 
@@ -1600,6 +1959,32 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBoxShaders.qrc_RCCFLAGS = -name SHADERS
 endif
 
+
+# Resource files with some OSE differences (VirtualBoxBrand.qrc is created further down).
+VirtualBoxRT_SOURCES            += VirtualBox1.qrc
+VirtualBox1.qrc_RCCFLAGS       = -name BASIC1
+VirtualBoxRT_SOURCES            += VirtualBox2.qrc
+VirtualBox2.qrc_RCCFLAGS       = -name BASIC2
+VirtualBoxRT_SOURCES             += VirtualBox1_x2.qrc
+VirtualBox1_x2.qrc_RCCFLAGS  = -name BASIC1_X2
+VirtualBoxRT_SOURCES             += VirtualBox2_x2.qrc
+VirtualBox2_x2.qrc_RCCFLAGS  = -name BASIC2_X2
+VirtualBoxRT_SOURCES             += VirtualBox1_x3.qrc
+VirtualBox1_x3.qrc_RCCFLAGS  = -name BASIC1_X3
+VirtualBoxRT_SOURCES             += VirtualBox2_x3.qrc
+VirtualBox2_x3.qrc_RCCFLAGS  = -name BASIC2_X3
+VirtualBoxRT_SOURCES             += VirtualBox1_x4.qrc
+VirtualBox1_x4.qrc_RCCFLAGS  = -name BASIC1_X4
+VirtualBoxRT_SOURCES             += VirtualBox2_x4.qrc
+VirtualBox2_x4.qrc_RCCFLAGS  = -name BASIC2_X4
+VirtualBoxRT_SOURCES += $(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc
+$(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ VirtualBoxRT_SOURCES += VirtualBoxShaders.qrc
+ VirtualBoxShaders.qrc_RCCFLAGS = -name SHADERS
+endif
+
+
 # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts
 VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS) \
 	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts, $(filter nls/VirtualBox_%.ts,$(TRANSLATIONS)))
@@ -1624,7 +2009,7 @@ endif
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 
  #
- # VirtualBox - GUI Application.
+ # VirtualBox Manager Application
  #
  includedep $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep
  VirtualBox_BLDDIRS       += $(VirtualBox_0_OUTDIR)/include
