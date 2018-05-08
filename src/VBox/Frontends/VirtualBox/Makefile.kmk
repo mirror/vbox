@@ -1466,7 +1466,7 @@ VBoxGlobal_SOURCES = \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBar.cpp \
-	src/widgets/UIVMNamePathSelector.h \
+	src/widgets/UIVMNamePathSelector.cpp \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
