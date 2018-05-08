@@ -609,7 +609,9 @@ typedef struct RTTIME
     uint32_t    u32Nanosecond;
     /** Flags, of the RTTIME_FLAGS_* \#defines. */
     uint32_t    fFlags;
-    /** UCT time offset in minutes (-840-840). */
+    /** UCT time offset in minutes (-840-840).  Positive for timezones east of
+     * UTC, negative for zones to the west.  Same as what RTTimeLocalDeltaNano
+     * & RTTimeLocalDeltaNanoFor returns, just different unit. */
     int32_t     offUTC;
 } RTTIME;
 #pragma pack()
