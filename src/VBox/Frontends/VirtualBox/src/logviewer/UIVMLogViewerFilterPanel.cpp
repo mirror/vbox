@@ -104,6 +104,7 @@ private:
 UIVMFilterLineEdit::UIVMFilterLineEdit(QWidget *parent /*= 0*/)
     :QLineEdit(parent)
     , m_pRemoveTermButton(0)
+    , m_pClearAllButton(0)
     , m_iRemoveTermButtonSize(16)
     , m_iTrailingSpaceCount(1)
 {
@@ -145,6 +146,9 @@ void UIVMFilterLineEdit::mousePressEvent(QMouseEvent * event)
 void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
 {
     QLineEdit::paintEvent(event);
+
+    if (!m_pClearAllButton || !m_pRemoveTermButton)
+        createButtons();
     int clearButtonSize = height();
     m_pClearAllButton->setGeometry(width() - clearButtonSize, 0, clearButtonSize, clearButtonSize);
     /* If we have a selected term move the m_pRemoveTermButton to the end of the
@@ -190,19 +194,25 @@ void UIVMFilterLineEdit::sltClearAll()
 
 void UIVMFilterLineEdit::createButtons()
 {
-    m_pRemoveTermButton = new QToolButton(this);
-    if (m_pRemoveTermButton)
+    if (!m_pRemoveTermButton)
     {
-        m_pRemoveTermButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
-        m_pRemoveTermButton->hide();
-        connect(m_pRemoveTermButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
+        m_pRemoveTermButton = new QToolButton(this);
+        if (m_pRemoveTermButton)
+        {
+            m_pRemoveTermButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
+            m_pRemoveTermButton->hide();
+            connect(m_pRemoveTermButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
+        }
     }
 
-    m_pClearAllButton = new QToolButton(this);
-    if (m_pClearAllButton)
+    if (!m_pClearAllButton)
     {
-        m_pClearAllButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_LineEditClearButton));
-        connect(m_pClearAllButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
+        m_pClearAllButton = new QToolButton(this);
+        if (m_pClearAllButton)
+        {
+            m_pClearAllButton->setIcon(m_pClearAllButton->style()->standardIcon(QStyle::SP_LineEditClearButton));
+            connect(m_pClearAllButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
+        }
     }
 }
 
