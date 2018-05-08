@@ -1011,7 +1011,6 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
-	src/objects/UIRichTextString.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -1234,6 +1233,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMediumEnumerator.cpp \
+	src/objects/UIRichTextString.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
@@ -1411,6 +1411,7 @@ VBoxGlobal_SOURCES = \
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMediumEnumerator.cpp \
+	src/objects/UIRichTextString.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
