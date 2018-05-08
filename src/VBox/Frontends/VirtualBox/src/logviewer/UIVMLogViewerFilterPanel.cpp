@@ -46,10 +46,15 @@
 # endif
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* UIVMFilterLineEdit class is used to display and modify the list of filter terms.
-   the terms are displayed as words with spaces in between and it is possible to
-   remove these terms one by one by selecting them or completely by the clearAll button
-   located on the right side of the line edit: */
+
+/*********************************************************************************************************************************
+*   UIVMFilterLineEdit definition.                                                                                               *
+*********************************************************************************************************************************/
+
+/** UIVMFilterLineEdit class is used to display and modify the list of filter terms.
+ *  the terms are displayed as words with spaces in between and it is possible to
+ *  remove these terms one by one by selecting them or completely by the clearAll button
+ *  located on the right side of the line edit: */
 class UIVMFilterLineEdit : public QLineEdit
 {
     Q_OBJECT;
@@ -61,128 +66,145 @@ signals:
 
 public:
 
-    UIVMFilterLineEdit(QWidget *parent = 0)
-        :QLineEdit(parent)
-        , m_pRemoveTermButton(0)
-        , m_iRemoveTermButtonSize(16)
-        , m_iTrailingSpaceCount(1)
-    {
-        setReadOnly(true);
-        home(false);
-        createButtons();
-       /** Try to guess the width of the space between filter terms so that remove button
-                we display when a term is selected does not hide the next/previous word: */
-        int spaceWidth = fontMetrics().width(' ');
-        if (spaceWidth != 0)
-            m_iTrailingSpaceCount = (m_iRemoveTermButtonSize / spaceWidth) + 1;
-    }
-
-    void addFilterTerm(const QString& filterTermString)
-    {
-        if (text().isEmpty())
-            insert(filterTermString);
-        else
-        {
-            QString newString(filterTermString);
-            QString space(m_iTrailingSpaceCount, QChar(' '));
-            insert(newString.prepend(space));
-        }
-    }
-
-    void clearAll()
-    {
-        if (text().isEmpty())
-            return;
-        sltClearAll();
-    }
+    UIVMFilterLineEdit(QWidget *parent = 0);
+    void addFilterTerm(const QString& filterTermString);
+    void clearAll();
 
 protected:
 
-    /* Overload the mouseXXXEvent to control how selection is done: */
-    virtual void        mouseDoubleClickEvent(QMouseEvent *){}
-    virtual void        mouseMoveEvent(QMouseEvent *){}
-    virtual void        mousePressEvent(QMouseEvent * event)
-    {
-        /* Simulate double mouse click to select a word with a single click: */
-        QLineEdit::mouseDoubleClickEvent(event);
-    }
-
+    /* Delete mouseDoubleClick and mouseMoveEvent implementations of the base class */
+    virtual void        mouseDoubleClickEvent(QMouseEvent *) /* override */{}
+    virtual void        mouseMoveEvent(QMouseEvent *) /* override */{}
+    /* Override the mousePressEvent to control how selection is done: */
+    virtual void        mousePressEvent(QMouseEvent * event) /* override */;
     virtual void        mouseReleaseEvent(QMouseEvent *){}
-    virtual void paintEvent(QPaintEvent *event)
-    {
-        QLineEdit::paintEvent(event);
-        int clearButtonSize = height();
-        m_pClearAllButton->setGeometry(width() - clearButtonSize, 0, clearButtonSize, clearButtonSize);
-        /* If we have a selected term move the m_pRemoveTermButton to the end of the
-           or start of the word (depending on the location of the word within line edit itself: */
-        if (hasSelectedText())
-        {
-            m_pRemoveTermButton->show();
-            int buttonY = 0.5 * (height() - 16);
-            int buttonSize = m_iRemoveTermButtonSize;
-            int charWidth = fontMetrics().width('x');
-            int buttonLeft = cursorRect().right() - 0.5 * charWidth;
-            /* If buttonLeft is in far left of the line edit, move the
-               button to left side of the selected word: */
-            if (buttonLeft + buttonSize  >=  width() - clearButtonSize)
-            {
-                int selectionWidth = charWidth * selectedText().length();
-                buttonLeft -= (selectionWidth + buttonSize);
-            }
-            m_pRemoveTermButton->setGeometry(buttonLeft, buttonY, buttonSize, buttonSize);
-        }
-        else
-            m_pRemoveTermButton->hide();
-    }
+    virtual void        paintEvent(QPaintEvent *event);
 
 private slots:
 
     /* Nofifies the listeners that selected word (filter term) has been removed: */
-    void sltRemoveFilterTerm()
-    {
-        if (!hasSelectedText())
-            return;
-        emit sigFilterTermRemoved(selectedText());
-        /* Remove the string from text() including the trailing space: */
-        setText(text().remove(selectionStart(), selectedText().length() + m_iTrailingSpaceCount));
-    }
-
+    void sltRemoveFilterTerm();
     /* The whole content is removed. Listeners are notified: */
-    void sltClearAll()
-    {
-        /* Check if we have some text to avoid recursive calls: */
-        if (text().isEmpty())
-            return;
-
-        clear();
-        emit sigClearAll();
-    }
+    void sltClearAll();
 
 private:
 
-    void createButtons()
-    {
-        m_pRemoveTermButton = new QToolButton(this);
-        if (m_pRemoveTermButton)
-        {
-            m_pRemoveTermButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
-            m_pRemoveTermButton->hide();
-            connect(m_pRemoveTermButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
-        }
-
-        m_pClearAllButton = new QToolButton(this);
-        if (m_pClearAllButton)
-        {
-            m_pClearAllButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_LineEditClearButton));
-            connect(m_pClearAllButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
-        }
-    }
-
+    void         createButtons();
     QToolButton *m_pRemoveTermButton;
     QToolButton *m_pClearAllButton;
     const int    m_iRemoveTermButtonSize;
     int          m_iTrailingSpaceCount;
 };
+
+
+/*********************************************************************************************************************************
+*   UIVMFilterLineEdit implementation.                                                                                           *
+*********************************************************************************************************************************/
+
+UIVMFilterLineEdit::UIVMFilterLineEdit(QWidget *parent /*= 0*/)
+    :QLineEdit(parent)
+    , m_pRemoveTermButton(0)
+    , m_iRemoveTermButtonSize(16)
+    , m_iTrailingSpaceCount(1)
+{
+    setReadOnly(true);
+    home(false);
+    createButtons();
+    /** Try to guess the width of the space between filter terms so that remove button
+        we display when a term is selected does not hide the next/previous word: */
+    int spaceWidth = fontMetrics().width(' ');
+    if (spaceWidth != 0)
+        m_iTrailingSpaceCount = (m_iRemoveTermButtonSize / spaceWidth) + 1;
+}
+
+void UIVMFilterLineEdit::addFilterTerm(const QString& filterTermString)
+{
+    if (text().isEmpty())
+        insert(filterTermString);
+    else
+    {
+        QString newString(filterTermString);
+        QString space(m_iTrailingSpaceCount, QChar(' '));
+        insert(newString.prepend(space));
+    }
+}
+
+void UIVMFilterLineEdit::clearAll()
+{
+    if (text().isEmpty())
+        return;
+    sltClearAll();
+}
+
+void UIVMFilterLineEdit::mousePressEvent(QMouseEvent * event)
+{
+    /* Simulate double mouse click to select a word with a single click: */
+    QLineEdit::mouseDoubleClickEvent(event);
+}
+
+void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
+{
+    QLineEdit::paintEvent(event);
+    int clearButtonSize = height();
+    m_pClearAllButton->setGeometry(width() - clearButtonSize, 0, clearButtonSize, clearButtonSize);
+    /* If we have a selected term move the m_pRemoveTermButton to the end of the
+       or start of the word (depending on the location of the word within line edit itself: */
+    if (hasSelectedText())
+    {
+        m_pRemoveTermButton->show();
+        int buttonY = 0.5 * (height() - 16);
+        int buttonSize = m_iRemoveTermButtonSize;
+        int charWidth = fontMetrics().width('x');
+        int buttonLeft = cursorRect().right() - 0.5 * charWidth;
+        /* If buttonLeft is in far left of the line edit, move the
+           button to left side of the selected word: */
+        if (buttonLeft + buttonSize  >=  width() - clearButtonSize)
+        {
+            int selectionWidth = charWidth * selectedText().length();
+            buttonLeft -= (selectionWidth + buttonSize);
+        }
+        m_pRemoveTermButton->setGeometry(buttonLeft, buttonY, buttonSize, buttonSize);
+    }
+    else
+        m_pRemoveTermButton->hide();
+}
+
+void UIVMFilterLineEdit::sltRemoveFilterTerm()
+{
+    if (!hasSelectedText())
+        return;
+    emit sigFilterTermRemoved(selectedText());
+    /* Remove the string from text() including the trailing space: */
+    setText(text().remove(selectionStart(), selectedText().length() + m_iTrailingSpaceCount));
+}
+
+void UIVMFilterLineEdit::sltClearAll()
+{
+    /* Check if we have some text to avoid recursive calls: */
+    if (text().isEmpty())
+        return;
+
+    clear();
+    emit sigClearAll();
+}
+
+void UIVMFilterLineEdit::createButtons()
+{
+    m_pRemoveTermButton = new QToolButton(this);
+    if (m_pRemoveTermButton)
+    {
+        m_pRemoveTermButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
+        m_pRemoveTermButton->hide();
+        connect(m_pRemoveTermButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
+    }
+
+    m_pClearAllButton = new QToolButton(this);
+    if (m_pClearAllButton)
+    {
+        m_pClearAllButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_LineEditClearButton));
+        connect(m_pClearAllButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
+    }
+}
 
 UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : UIVMLogViewerPanel(pParent, pViewer)
@@ -540,4 +562,3 @@ void UIVMLogViewerFilterPanel::showEvent(QShowEvent *pEvent)
 }
 
 #include "UIVMLogViewerFilterPanel.moc"
-
