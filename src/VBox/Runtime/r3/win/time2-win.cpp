@@ -62,6 +62,10 @@ RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
         /*
          * FileTimeToLocalFileTime does not do the right thing, so we'll have
          * to convert to system time and SystemTimeToTzSpecificLocalTime instead.
+         *
+         * Note! FileTimeToSystemTime drops resoultion down to milliseconds, thus
+         *       we have to do the offUTC calculation using milliseconds and adjust
+         *       u32Nanosecons by sub milliseconds digits.
          */
         SYSTEMTIME SystemTimeIn;
         FILETIME FileTime;
