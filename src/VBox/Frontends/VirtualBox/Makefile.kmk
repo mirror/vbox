@@ -428,8 +428,19 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
 endif
 
 # These are 2D Video Acceleration and 3D Acceleration related libs:
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ VBoxGlobal_LIBS.win     += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
+ VBoxGlobal_LIBS.solaris += GL
+ VBoxGlobal_LIBS.linux   += GL
+ VBoxGlobal_LIBS.freebsd += GL
+endif
 ifdef VBOX_WITH_CROGL
  VBoxGlobal_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
+endif
+if defined(VBOX_WITH_VIDEOHWACCEL)
+ if1of ($(KBUILD_TARGET), win linux freebsd)
+  VBoxGlobal_LIBS += $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB)
+ endif
 endif
 
 
@@ -713,6 +724,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBox_QT_MOCHDRS.darwin += \
 	src/platform/darwin/UICocoaSpecialControls.h
 endif
+
 
 #
 # VirtualBox - GUI Global Shared Library.
@@ -1483,6 +1495,11 @@ VBoxGlobal_SOURCES.darwin += \
 	src/platform/darwin/UICocoaSpecialControls.mm \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
+
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+ VBoxGlobal_SOURCES += \
+	src/VBox2DHelpers.cpp
+endif
 
 
 #
