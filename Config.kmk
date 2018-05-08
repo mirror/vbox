@@ -781,8 +781,6 @@ VBOX_WITH_EXTPACK_VBOXDTRACE = 1
 ## @{
 # Enable to compile with OpenSSL 1.0 (only relevant for Windows, see src/VBox/Runtime/Makefile.kmk)
 #VBOX_WITH_OPENSSL_PRE_1_1 = 1
-# Enable Seamless mode
-VBOX_X11_SEAMLESS_GUEST = 1
 # Enables all the doxgen bits.
 VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Set this to skip installing the redistributable compiler runtime.
