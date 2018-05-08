@@ -3159,13 +3159,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Destination missing.
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = ''),
                   tdTestResult(fRc = False) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows',
+                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = '/placeholder',
                                aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Source missing.
                 [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = ''),
                   tdTestResult(fRc = False) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = 'C:\\Windows',
+                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = '/placeholder',
                                aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Testing DirectoryCopyFlag flags.
@@ -3220,27 +3220,30 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                       tdTestResult(fRc = True) ]
                 ]);
 
-                if oTestVm.isWindows():
-                    aaTests.extend([
-                        # Copy the same file over to the guest, but this time store the file into the former
-                        # file's ADS (Alternate Data Stream). Only works on Windows, of course.
-                        [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                       sDst = os.path.join(sScratchGst, 'HostGuestAdditions.iso:ADS-Test')),
-                          tdTestResult(fRc = True) ]
-                    ]);
+                aaTests.extend([
+                    # Copy the same file over to the guest, but this time store the file into the former
+                    # file's ADS (Alternate Data Stream). Only works on Windows, of course.
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                                   sDst = os.path.join(sScratchGst, 'HostGuestAdditions.iso:ADS-Test')),
+                      tdTestResult(fRc = True) ]
+                ]);
 
             #
             # Directory handling.
             #
             if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
                 if self.oTstDrv.sHost == "win":
+                    sSystemRoot = os.getenv('SystemRoot', 'C:\\Windows')
                     aaTests.extend([
                         # Copying directories with contain files we don't have read access to.
-                        [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\security',
-                                       sDst = sScratchGst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
-                          tdTestResult(fRc = False) ],
+                        ## @todo r=klaus disabled, because this can fill up the guest disk, making other tests fail,
+                        ## additionally it's not really clear if this fails reliably on all Windows versions, even
+                        ## the old ones like XP with a "proper" administrator.
+                        #[ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = os.path.join(sSystemRoot, 'security',
+                        #               sDst = sScratchGst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                        #  tdTestResult(fRc = False) ],
                         # Copying directories with regular files.
-                        [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'C:\\Windows\\Help',
+                        [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = os.path.join(sSystemRoot, 'Help',
                                        sDst = sScratchGst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                           tdTestResult(fRc = True) ]
                         ]);
