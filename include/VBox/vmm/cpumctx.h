@@ -287,6 +287,9 @@ typedef struct CPUMCTXCORE
 
 /**
  * SVM Host-state area (Nested Hw.virt - VirtualBox's layout).
+ *
+ * @warning Exercise caution while modifying the layout of this struct. It's
+ *          part of VM saved states.
  */
 #pragma pack(1)
 typedef struct SVMHOSTSTATE

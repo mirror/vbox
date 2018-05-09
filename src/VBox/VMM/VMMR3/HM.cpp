@@ -3456,6 +3456,11 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 /**
  * Execute state save operation.
  *
+ * Save only data that cannot be re-loaded while entering HM ring-0 code. This
+ * is because we always save the VM state from ring-3 and thus most HM state
+ * will be re-synced dynamically at runtime and don't need to be part of the VM
+ * saved state.
+ *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pSSM            SSM operation handle.
@@ -3468,80 +3473,52 @@ static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        /*
-         * Save the basic bits - fortunately all the other things can be resynced on load.
-         */
-        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.Event.fPending);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.Event.u32ErrCode);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU64(pSSM, pVM->aCpus[i].hm.s.Event.u64IntInfo);
-        AssertRCReturn(rc, rc);
-        /** @todo Shouldn't we be saving GCPtrFaultAddress too? */
-
-        /** @todo We only need to save pVM->aCpus[i].hm.s.vmx.fWasInRealMode and
-         *        perhaps not even that (the initial value of @c true is safe. */
-        uint32_t u32Dummy = PGMMODE_REAL;
-        rc = SSMR3PutU32(pSSM, u32Dummy);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU32(pSSM, u32Dummy);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU32(pSSM, u32Dummy);
-        AssertRCReturn(rc, rc);
+        Assert(!pVM->aCpus[i].hm.s.Event.fPending);
+        if (pVM->cpum.ro.GuestFeatures.fSvm)
+        {
+            PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVM->aCpus[i].hm.s.svm.NstGstVmcbCache;
+            rc  = SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptRdCRx);
+            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptWrCRx);
+            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptRdDRx);
+            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptWrDRx);
+            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16PauseFilterThreshold);
+            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16PauseFilterCount);
+            rc |= SSMR3PutU32(pSSM,  pVmcbNstGstCache->u32InterceptXcpt);
+            rc |= SSMR3PutU64(pSSM,  pVmcbNstGstCache->u64InterceptCtrl);
+            rc |= SSMR3PutU64(pSSM,  pVmcbNstGstCache->u64TSCOffset);
+            rc |= SSMR3PutBool(pSSM, pVmcbNstGstCache->fVIntrMasking);
+            rc |= SSMR3PutBool(pSSM, pVmcbNstGstCache->fNestedPaging);
+            rc |= SSMR3PutBool(pSSM, pVmcbNstGstCache->fLbrVirt);
+            AssertRCReturn(rc, rc);
+        }
     }
 
-#ifdef VBOX_HM_WITH_GUEST_PATCHING
-    rc = SSMR3PutGCPtr(pSSM, pVM->hm.s.pGuestPatchMem);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutGCPtr(pSSM, pVM->hm.s.pFreeGuestPatchMem);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pVM->hm.s.cbGuestPatchMem);
-    AssertRCReturn(rc, rc);
+    /* Save the guest patch data. */
+    rc  = SSMR3PutGCPtr(pSSM, pVM->hm.s.pGuestPatchMem);
+    rc |= SSMR3PutGCPtr(pSSM, pVM->hm.s.pFreeGuestPatchMem);
+    rc |= SSMR3PutU32(pSSM, pVM->hm.s.cbGuestPatchMem);
 
     /* Store all the guest patch records too. */
-    rc = SSMR3PutU32(pSSM, pVM->hm.s.cPatches);
+    rc |= SSMR3PutU32(pSSM, pVM->hm.s.cPatches);
     AssertRCReturn(rc, rc);
 
-    for (unsigned i = 0; i < pVM->hm.s.cPatches; i++)
+    for (uint32_t i = 0; i < pVM->hm.s.cPatches; i++)
     {
-        PHMTPRPATCH pPatch = &pVM->hm.s.aPatches[i];
-
-        rc = SSMR3PutU32(pSSM, pPatch->Core.Key);
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutMem(pSSM, pPatch->aOpcode, sizeof(pPatch->aOpcode));
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutU32(pSSM, pPatch->cbOp);
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutMem(pSSM, pPatch->aNewOpcode, sizeof(pPatch->aNewOpcode));
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutU32(pSSM, pPatch->cbNewOp);
-        AssertRCReturn(rc, rc);
-
         AssertCompileSize(HMTPRINSTR, 4);
-        rc = SSMR3PutU32(pSSM, (uint32_t)pPatch->enmType);
+        PCHMTPRPATCH pPatch = &pVM->hm.s.aPatches[i];
+        rc  = SSMR3PutU32(pSSM, pPatch->Core.Key);
+        rc |= SSMR3PutMem(pSSM, pPatch->aOpcode, sizeof(pPatch->aOpcode));
+        rc |= SSMR3PutU32(pSSM, pPatch->cbOp);
+        rc |= SSMR3PutMem(pSSM, pPatch->aNewOpcode, sizeof(pPatch->aNewOpcode));
+        rc |= SSMR3PutU32(pSSM, pPatch->cbNewOp);
+        rc |= SSMR3PutU32(pSSM, (uint32_t)pPatch->enmType);
+        rc |= SSMR3PutU32(pSSM, pPatch->uSrcOperand);
+        rc |= SSMR3PutU32(pSSM, pPatch->uDstOperand);
+        rc |= SSMR3PutU32(pSSM, pPatch->pJumpTarget);
+        rc |= SSMR3PutU32(pSSM, pPatch->cFaults);
         AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutU32(pSSM, pPatch->uSrcOperand);
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutU32(pSSM, pPatch->uDstOperand);
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutU32(pSSM, pPatch->pJumpTarget);
-        AssertRCReturn(rc, rc);
-
-        rc = SSMR3PutU32(pSSM, pPatch->cFaults);
-        AssertRCReturn(rc, rc);
-        /** @todo We need to save SVMNESTEDVMCBCACHE (if pCtx fHMCached is true as we
-         *        are in nested-geust execution and the cache contains pristine
-         *        fields that we only restore on \#VMEXIT and not on
-         *        every exit-to-ring 3. */
     }
-#endif
+
     return VINF_SUCCESS;
 }
 
@@ -3565,101 +3542,103 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     /*
      * Validate version.
      */
-    if (   uVersion != HM_SAVED_STATE_VERSION
-        && uVersion != HM_SAVED_STATE_VERSION_NO_PATCHING
+    if (   uVersion != HM_SAVED_STATE_VERSION_SVM_NESTED_HWVIRT
+        && uVersion != HM_SAVED_STATE_VERSION_TPR_PATCHING
+        && uVersion != HM_SAVED_STATE_VERSION_NO_TPR_PATCHING
         && uVersion != HM_SAVED_STATE_VERSION_2_0_X)
     {
         AssertMsgFailed(("hmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
+
+    /*
+     * Load per-VCPU state.
+     */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        rc = SSMR3GetU32(pSSM, &pVM->aCpus[i].hm.s.Event.fPending);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetU32(pSSM, &pVM->aCpus[i].hm.s.Event.u32ErrCode);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetU64(pSSM, &pVM->aCpus[i].hm.s.Event.u64IntInfo);
-        AssertRCReturn(rc, rc);
-
-        if (uVersion >= HM_SAVED_STATE_VERSION_NO_PATCHING)
+        if (uVersion >= HM_SAVED_STATE_VERSION_SVM_NESTED_HWVIRT)
         {
-            uint32_t val;
-            /** @todo See note in hmR3Save(). */
-            rc = SSMR3GetU32(pSSM, &val);
-            AssertRCReturn(rc, rc);
-            rc = SSMR3GetU32(pSSM, &val);
-            AssertRCReturn(rc, rc);
-            rc = SSMR3GetU32(pSSM, &val);
+            /* Load the SVM nested hw.virt state if the VM is configured for it. */
+            if (pVM->cpum.ro.GuestFeatures.fSvm)
+            {
+                PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVM->aCpus[i].hm.s.svm.NstGstVmcbCache;
+                rc  = SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16InterceptRdCRx);
+                rc |= SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16InterceptWrCRx);
+                rc |= SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16InterceptRdDRx);
+                rc |= SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16InterceptWrDRx);
+                rc |= SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16PauseFilterThreshold);
+                rc |= SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16PauseFilterCount);
+                rc |= SSMR3GetU32(pSSM,  &pVmcbNstGstCache->u32InterceptXcpt);
+                rc |= SSMR3GetU64(pSSM,  &pVmcbNstGstCache->u64InterceptCtrl);
+                rc |= SSMR3GetU64(pSSM,  &pVmcbNstGstCache->u64TSCOffset);
+                rc |= SSMR3GetBool(pSSM, &pVmcbNstGstCache->fVIntrMasking);
+                rc |= SSMR3GetBool(pSSM, &pVmcbNstGstCache->fNestedPaging);
+                rc |= SSMR3GetBool(pSSM, &pVmcbNstGstCache->fLbrVirt);
+                AssertRCReturn(rc, rc);
+            }
+        }
+        else
+        {
+            /* Pending HM event (obsolete for a long time since TPRM holds the info.) */
+            rc  = SSMR3GetU32(pSSM, &pVM->aCpus[i].hm.s.Event.fPending);
+            rc |= SSMR3GetU32(pSSM, &pVM->aCpus[i].hm.s.Event.u32ErrCode);
+            rc |= SSMR3GetU64(pSSM, &pVM->aCpus[i].hm.s.Event.u64IntInfo);
+
+            /* VMX fWasInRealMode related data. */
+            uint32_t uDummy;
+            rc |= SSMR3GetU32(pSSM, &uDummy);   AssertRCReturn(rc, rc);
+            rc |= SSMR3GetU32(pSSM, &uDummy);   AssertRCReturn(rc, rc);
+            rc |= SSMR3GetU32(pSSM, &uDummy);   AssertRCReturn(rc, rc);
             AssertRCReturn(rc, rc);
         }
     }
-#ifdef VBOX_HM_WITH_GUEST_PATCHING
-    if (uVersion > HM_SAVED_STATE_VERSION_NO_PATCHING)
+
+    /*
+     * Load TPR patching data.
+     */
+    if (uVersion >= HM_SAVED_STATE_VERSION_TPR_PATCHING)
     {
-        rc = SSMR3GetGCPtr(pSSM, &pVM->hm.s.pGuestPatchMem);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetGCPtr(pSSM, &pVM->hm.s.pFreeGuestPatchMem);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetU32(pSSM, &pVM->hm.s.cbGuestPatchMem);
-        AssertRCReturn(rc, rc);
+        rc  = SSMR3GetGCPtr(pSSM, &pVM->hm.s.pGuestPatchMem);
+        rc |= SSMR3GetGCPtr(pSSM, &pVM->hm.s.pFreeGuestPatchMem);
+        rc |= SSMR3GetU32(pSSM, &pVM->hm.s.cbGuestPatchMem);
 
         /* Fetch all TPR patch records. */
-        rc = SSMR3GetU32(pSSM, &pVM->hm.s.cPatches);
+        rc |= SSMR3GetU32(pSSM, &pVM->hm.s.cPatches);
         AssertRCReturn(rc, rc);
-
-        for (unsigned i = 0; i < pVM->hm.s.cPatches; i++)
+        for (uint32_t i = 0; i < pVM->hm.s.cPatches; i++)
         {
             PHMTPRPATCH pPatch = &pVM->hm.s.aPatches[i];
-
-            rc = SSMR3GetU32(pSSM, &pPatch->Core.Key);
-            AssertRCReturn(rc, rc);
-
-            rc = SSMR3GetMem(pSSM, pPatch->aOpcode, sizeof(pPatch->aOpcode));
-            AssertRCReturn(rc, rc);
-
-            rc = SSMR3GetU32(pSSM, &pPatch->cbOp);
-            AssertRCReturn(rc, rc);
-
-            rc = SSMR3GetMem(pSSM, pPatch->aNewOpcode, sizeof(pPatch->aNewOpcode));
-            AssertRCReturn(rc, rc);
-
-            rc = SSMR3GetU32(pSSM, &pPatch->cbNewOp);
-            AssertRCReturn(rc, rc);
-
-            rc = SSMR3GetU32(pSSM, (uint32_t *)&pPatch->enmType);
-            AssertRCReturn(rc, rc);
+            rc  = SSMR3GetU32(pSSM, &pPatch->Core.Key);
+            rc |= SSMR3GetMem(pSSM, pPatch->aOpcode, sizeof(pPatch->aOpcode));
+            rc |= SSMR3GetU32(pSSM, &pPatch->cbOp);
+            rc |= SSMR3GetMem(pSSM, pPatch->aNewOpcode, sizeof(pPatch->aNewOpcode));
+            rc |= SSMR3GetU32(pSSM, &pPatch->cbNewOp);
+            rc |= SSMR3GetU32(pSSM, (uint32_t *)&pPatch->enmType);
 
             if (pPatch->enmType == HMTPRINSTR_JUMP_REPLACEMENT)
                 pVM->hm.s.fTPRPatchingActive = true;
-
             Assert(pPatch->enmType == HMTPRINSTR_JUMP_REPLACEMENT || pVM->hm.s.fTPRPatchingActive == false);
 
-            rc = SSMR3GetU32(pSSM, &pPatch->uSrcOperand);
+            rc |= SSMR3GetU32(pSSM, &pPatch->uSrcOperand);
+            rc |= SSMR3GetU32(pSSM, &pPatch->uDstOperand);
+            rc |= SSMR3GetU32(pSSM, &pPatch->cFaults);
+            rc |= SSMR3GetU32(pSSM, &pPatch->pJumpTarget);
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3GetU32(pSSM, &pPatch->uDstOperand);
-            AssertRCReturn(rc, rc);
+            LogFlow(("hmR3Load: patch %d\n", i));
+            LogFlow(("Key       = %x\n", pPatch->Core.Key));
+            LogFlow(("cbOp      = %d\n", pPatch->cbOp));
+            LogFlow(("cbNewOp   = %d\n", pPatch->cbNewOp));
+            LogFlow(("type      = %d\n", pPatch->enmType));
+            LogFlow(("srcop     = %d\n", pPatch->uSrcOperand));
+            LogFlow(("dstop     = %d\n", pPatch->uDstOperand));
+            LogFlow(("cFaults   = %d\n", pPatch->cFaults));
+            LogFlow(("target    = %x\n", pPatch->pJumpTarget));
 
-            rc = SSMR3GetU32(pSSM, &pPatch->cFaults);
-            AssertRCReturn(rc, rc);
-
-            rc = SSMR3GetU32(pSSM, &pPatch->pJumpTarget);
-            AssertRCReturn(rc, rc);
-
-            Log(("hmR3Load: patch %d\n", i));
-            Log(("Key       = %x\n", pPatch->Core.Key));
-            Log(("cbOp      = %d\n", pPatch->cbOp));
-            Log(("cbNewOp   = %d\n", pPatch->cbNewOp));
-            Log(("type      = %d\n", pPatch->enmType));
-            Log(("srcop     = %d\n", pPatch->uSrcOperand));
-            Log(("dstop     = %d\n", pPatch->uDstOperand));
-            Log(("cFaults   = %d\n", pPatch->cFaults));
-            Log(("target    = %x\n", pPatch->pJumpTarget));
             rc = RTAvloU32Insert(&pVM->hm.s.PatchTree, &pPatch->Core);
-            AssertRC(rc);
+            AssertRCReturn(rc, rc);
         }
     }
-#endif
 
     return VINF_SUCCESS;
 }

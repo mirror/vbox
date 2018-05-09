@@ -281,6 +281,50 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY_TERM()
 };
 
+/** Saved state field descriptors for SVM nested hardware-virtualization
+ *  Host State. */
+static const SSMFIELD g_aSvmHwvirtHostState[] =
+{
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, uEferMsr),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, uCr0),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, uCr4),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, uCr3),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, uRip),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, uRsp),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, uRax),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, rflags),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, es.Sel),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, es.ValidSel),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, es.fFlags),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, es.u64Base),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, es.u32Limit),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, es.Attr),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, cs.Sel),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, cs.ValidSel),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, cs.fFlags),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, cs.u64Base),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, cs.u32Limit),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, cs.Attr),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ss.Sel),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ss.ValidSel),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ss.fFlags),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ss.u64Base),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ss.u32Limit),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ss.Attr),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ds.Sel),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ds.ValidSel),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ds.fFlags),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ds.u64Base),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ds.u32Limit),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, ds.Attr),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, gdtr.cbGdt),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, gdtr.pGdt),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, idtr.cbIdt),
+    SSMFIELD_ENTRY(       SVMHOSTSTATE, idtr.pIdt),
+    SSMFIELD_ENTRY_IGNORE(SVMHOSTSTATE, abPadding),
+    SSMFIELD_ENTRY_TERM()
+};
+
 /** Saved state field descriptors for CPUMCTX. */
 static const SSMFIELD g_aCpumX87Fields[] =
 {
@@ -1379,7 +1423,24 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             PCX86XSAVEZMM16HI pZmm16Hi = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_ZMM_16HI_BIT, PCX86XSAVEZMM16HI);
             SSMR3PutStructEx(pSSM, pZmm16Hi, sizeof(*pZmm16Hi), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumZmm16HiFields, NULL);
         }
-
+        if (pVM->cpum.ro.GuestFeatures.fSvm)
+        {
+            Assert(pGstCtx->hwvirt.svm.CTX_SUFF(pVmcb));
+            SSMR3PutU64(pSSM,    pGstCtx->hwvirt.svm.uMsrHSavePa);
+            SSMR3PutGCPhys(pSSM, pGstCtx->hwvirt.svm.GCPhysVmcb);
+            SSMR3PutU64(pSSM,    pGstCtx->hwvirt.svm.uPrevPauseTick);
+            SSMR3PutU16(pSSM,    pGstCtx->hwvirt.svm.cPauseFilter);
+            SSMR3PutU16(pSSM,    pGstCtx->hwvirt.svm.cPauseFilterThreshold);
+            SSMR3PutBool(pSSM,   pGstCtx->hwvirt.svm.fInterceptEvents);
+            SSMR3PutBool(pSSM,   pGstCtx->hwvirt.svm.fHMCachedVmcb);
+            SSMR3PutStructEx(pSSM, &pGstCtx->hwvirt.svm.HostState, sizeof(pGstCtx->hwvirt.svm.HostState), 0 /* fFlags */,
+                             g_aSvmHwvirtHostState, NULL /* pvUser */);
+            SSMR3PutMem(pSSM,    pGstCtx->hwvirt.svm.pVmcbR3,       SVM_VMCB_PAGES  << X86_PAGE_4K_SHIFT);
+            SSMR3PutMem(pSSM,    pGstCtx->hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
+            SSMR3PutMem(pSSM,    pGstCtx->hwvirt.svm.pvIoBitmapR3,  SVM_IOPM_PAGES  << X86_PAGE_4K_SHIFT);
+            SSMR3PutU32(pSSM,    pGstCtx->hwvirt.fLocalForcedActions);
+            SSMR3PutBool(pSSM,   pGstCtx->hwvirt.fGif);
+        }
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fUseFlags);
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
         AssertCompileSizeAlignment(pVCpu->cpum.s.GuestMsrs.msr, sizeof(uint64_t));
@@ -1412,7 +1473,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     /*
      * Validate version.
      */
-    if (    uVersion != CPUM_SAVED_STATE_VERSION_XSAVE
+    if (    uVersion != CPUM_SAVED_STATE_VERSION_HWVIRT_SVM
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_XSAVE
         &&  uVersion != CPUM_SAVED_STATE_VERSION_GOOD_CPUID_COUNT
         &&  uVersion != CPUM_SAVED_STATE_VERSION_BAD_CPUID_COUNT
         &&  uVersion != CPUM_SAVED_STATE_VERSION_PUT_STRUCT
@@ -1599,6 +1661,27 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                 {
                     PX86XSAVEZMM16HI pZmm16Hi = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_ZMM_16HI_BIT, PX86XSAVEZMM16HI);
                     SSMR3GetStructEx(pSSM, pZmm16Hi, sizeof(*pZmm16Hi), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumZmm16HiFields, NULL);
+                }
+                if (uVersion >= CPUM_SAVED_STATE_VERSION_HWVIRT_SVM)
+                {
+                    if (pVM->cpum.ro.GuestFeatures.fSvm)
+                    {
+                        Assert(pGstCtx->hwvirt.svm.CTX_SUFF(pVmcb));
+                        SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.svm.uMsrHSavePa);
+                        SSMR3GetGCPhys(pSSM,   &pGstCtx->hwvirt.svm.GCPhysVmcb);
+                        SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.svm.uPrevPauseTick);
+                        SSMR3GetU16(pSSM,      &pGstCtx->hwvirt.svm.cPauseFilter);
+                        SSMR3GetU16(pSSM,      &pGstCtx->hwvirt.svm.cPauseFilterThreshold);
+                        SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.svm.fInterceptEvents);
+                        SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.svm.fHMCachedVmcb);
+                        SSMR3GetStructEx(pSSM, &pGstCtx->hwvirt.svm.HostState, sizeof(pGstCtx->hwvirt.svm.HostState),
+                                         0 /* fFlags */, g_aSvmHwvirtHostState, NULL /* pvUser */);
+                        SSMR3GetMem(pSSM,       pGstCtx->hwvirt.svm.pVmcbR3,       SVM_VMCB_PAGES  << X86_PAGE_4K_SHIFT);
+                        SSMR3GetMem(pSSM,       pGstCtx->hwvirt.svm.pvMsrBitmapR3, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
+                        SSMR3GetMem(pSSM,       pGstCtx->hwvirt.svm.pvIoBitmapR3,  SVM_IOPM_PAGES  << X86_PAGE_4K_SHIFT);
+                        SSMR3GetU32(pSSM,      &pGstCtx->hwvirt.fLocalForcedActions);
+                        SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.fGif);
+                    }
                 }
             }
             else

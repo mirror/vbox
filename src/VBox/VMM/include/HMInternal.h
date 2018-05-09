@@ -248,21 +248,16 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 
-/** Enable for TPR guest patching. */
-#define VBOX_HM_WITH_GUEST_PATCHING
-
-/** @name HM saved state versions
+/** @name HM saved state versions.
  * @{
  */
-#ifdef VBOX_HM_WITH_GUEST_PATCHING
-# define HM_SAVED_STATE_VERSION                 5
-# define HM_SAVED_STATE_VERSION_NO_PATCHING     4
-#else
-# define HM_SAVED_STATE_VERSION                 4
-# define HM_SAVED_STATE_VERSION_NO_PATCHING     4
-#endif
-#define HM_SAVED_STATE_VERSION_2_0_X            3
+#define HM_SAVED_STATE_VERSION                         HM_SAVED_STATE_VERSION_SVM_NESTED_HWVIRT
+#define HM_SAVED_STATE_VERSION_SVM_NESTED_HWVIRT       6
+#define HM_SAVED_STATE_VERSION_TPR_PATCHING            5
+#define HM_SAVED_STATE_VERSION_NO_TPR_PATCHING         4
+#define HM_SAVED_STATE_VERSION_2_0_X                   3
 /** @} */
+
 
 /**
  * Global per-cpu information. (host)
@@ -360,6 +355,8 @@ typedef struct
 } HMTPRPATCH;
 /** Pointer to HMTPRPATCH. */
 typedef HMTPRPATCH *PHMTPRPATCH;
+/** Pointer to a const HMTPRPATCH. */
+typedef const HMTPRPATCH *PCHMTPRPATCH;
 
 
 /**

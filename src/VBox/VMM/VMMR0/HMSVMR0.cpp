@@ -5380,24 +5380,14 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                     return VINF_SUCCESS;
                 }
 
-                /** @todo Needed when restoring saved-state when saved state support wasn't yet
-                 *        added. Perhaps it won't be required later. */
-#if 0
                 case SVM_EXIT_NPF:
                 {
                     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
-                    if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_PF))
-                        return HM_SVM_VMEXIT_NESTED(pVCpu, SVM_EXIT_XCPT_14, RT_LO_U32(uExitInfo1), uExitInfo2);
-                    hmR0SvmSetPendingXcptPF(pVCpu, pCtx, RT_LO_U32(uExitInfo1), uExitInfo2);
-                    return VINF_SUCCESS;
+                    return hmR0SvmExitNestedPF(pVCpu, pCtx, pSvmTransient);
                 }
-#else
-                case SVM_EXIT_NPF:
-#endif
+
                 case SVM_EXIT_INIT:  /* We shouldn't get INIT signals while executing a nested-guest. */
-                {
                     return hmR0SvmExitUnexpected(pVCpu, pCtx, pSvmTransient);
-                }
 
                 default:
                 {
@@ -7016,7 +7006,6 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(pVM->hm.s.fNestedPaging);
@@ -7024,14 +7013,16 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
     /* See AMD spec. 15.25.6 "Nested versus Guest Page Faults, Fault Ordering" for VMCB details for #NPF. */
-    PSVMVMCB pVmcb           = pVCpu->hm.s.svm.pVmcb;
-    uint32_t u32ErrCode      = pVmcb->ctrl.u64ExitInfo1;    /** @todo Make it more explicit that high bits can be non-zero. */
+    PSVMVMCB pVmcb           = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
     RTGCPHYS GCPhysFaultAddr = pVmcb->ctrl.u64ExitInfo2;
+    uint32_t u32ErrCode      = pVmcb->ctrl.u64ExitInfo1;    /* Note! High bits in EXITINFO1 may contain additional info and are
+                                                               thus intentionally not copied into u32ErrCode. */
 
     Log4(("#NPF at CS:RIP=%04x:%#RX64 faultaddr=%RGp errcode=%#x \n", pCtx->cs.Sel, pCtx->rip, GCPhysFaultAddr, u32ErrCode));
 
-#ifdef VBOX_HM_WITH_GUEST_PATCHING
-    /* TPR patching for 32-bit guests, using the reserved bit in the page tables for MMIO regions.  */
+    /*
+     * TPR patching for 32-bit guests, using the reserved bit in the page tables for MMIO regions.
+     */
     if (   pVM->hm.s.fTprPatchingAllowed
         && (GCPhysFaultAddr & PAGE_OFFSET_MASK) == XAPIC_OFF_TPR
         && (   !(u32ErrCode & X86_TRAP_PF_P)                                                             /* Not present */
@@ -7051,7 +7042,6 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
                 return VINF_EM_HM_PATCH_TPR_INSTR;
         }
     }
-#endif
 
     /*
      * Determine the nested paging mode.
@@ -7291,8 +7281,9 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     Assert(!pVM->hm.s.fNestedPaging);
 
-#ifdef VBOX_HM_WITH_GUEST_PATCHING
-    /* Shortcut for APIC TPR reads and writes; only applicable to 32-bit guests. */
+    /*
+     * TPR patching shortcut for APIC TPR reads and writes; only applicable to 32-bit guests.
+     */
     if (   pVM->hm.s.fTprPatchingAllowed
         && (uFaultAddress & 0xfff) == XAPIC_OFF_TPR
         && !(u32ErrCode & X86_TRAP_PF_P)              /* Not present. */
@@ -7316,7 +7307,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 return VINF_EM_HM_PATCH_TPR_INSTR;
         }
     }
-#endif
 
     Log4(("#PF: uFaultAddress=%#RX64 CS:RIP=%#04x:%#RX64 u32ErrCode %#RX32 cr3=%#RX64\n", uFaultAddress, pCtx->cs.Sel,
           pCtx->rip, u32ErrCode, pCtx->cr3));
