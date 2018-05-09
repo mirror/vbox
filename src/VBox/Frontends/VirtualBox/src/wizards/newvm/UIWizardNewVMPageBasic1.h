@@ -55,6 +55,9 @@ protected:
     /** Defines the @a strMachineBaseName value. */
     void setMachineBaseName(const QString &strMachineBaseName) { m_strMachineBaseName = strMachineBaseName; }
 
+    /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
+    void composeMachineFilePath();
+
     /** Full path (including the file name) of the machine's configuration file. */
     QString m_strMachineFilePath;
     /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
@@ -65,7 +68,6 @@ protected:
     /** Provides a path selector and a line edit field for path and name entry. */
     UINameAndSystemEditor *m_pNameAndSystemEditor;
 
-    /** Variables: */
     QString m_strGroup;
     bool m_fSupportsHWVirtEx;
     bool m_fSupportsLongMode;
@@ -93,6 +95,7 @@ private slots:
 
     /* Handlers: */
     void sltNameChanged(const QString &strNewText);
+    void sltPathChanged(const QString &strNewPath);
     void sltOsTypeChanged();
 
 private:

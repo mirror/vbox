@@ -97,7 +97,6 @@ void UIVMNamePathSelector::prepareWidgets()
         m_pMainLayout->addWidget(m_pName);
         connect(m_pName, &QILineEdit::textChanged,
                 this, &UIVMNamePathSelector::sigNameChanged);
-
     }
 
 }
@@ -115,6 +114,7 @@ void UIVMNamePathSelector::setPath(const QString &path)
         return;
     m_pPath->setText(path);
     m_pPath->setFixedWidthByText(path);
+    emit sigPathChanged(path);
 }
 
 QString UIVMNamePathSelector::name() const
@@ -135,7 +135,10 @@ void UIVMNamePathSelector::setName(const QString &name)
 
 void UIVMNamePathSelector::retranslateUi()
 {
-    setToolTip(tr("The Virtual Machine files will be saved under ..."));
+    if (m_strToolTipText.isEmpty())
+        return;
+    QString strToolTip = "The Virtual Machine files will be saved under " + m_strToolTipText;
+    setToolTip(tr(qPrintable(strToolTip)));
 }
 
 void UIVMNamePathSelector::sltOpenPathSelector()
@@ -145,7 +148,7 @@ void UIVMNamePathSelector::sltOpenPathSelector()
                                                                  QString("Select a parent folder for new Virtual Machine"));
     if (!strSelectedPath.isEmpty())
     {
-        m_pPath->setText(strSelectedPath);
+        setPath(strSelectedPath);
     }
 }
 
@@ -154,4 +157,17 @@ void UIVMNamePathSelector::setNameFieldValidator(const QString &strValidatorStri
     if (!m_pName)
         return;
     m_pName->setValidator(new QRegExpValidator(QRegExp(strValidatorString), this));
+}
+
+void UIVMNamePathSelector::setToolTipText(const QString &strToolTipText)
+{
+    if (m_strToolTipText == strToolTipText)
+        return;
+    m_strToolTipText = strToolTipText;
+    retranslateUi();
+}
+
+const QString& UIVMNamePathSelector::toolTipText() const
+{
+    return m_strToolTipText;
 }

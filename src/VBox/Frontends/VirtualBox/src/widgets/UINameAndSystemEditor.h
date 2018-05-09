@@ -48,6 +48,7 @@ signals:
 
     /** Notifies listeners about VM name change. */
     void sigNameChanged(const QString &strNewName);
+    void sigPathChanged(const QString &strName);
 
     /** Notifies listeners about VM OS type change. */
     void sigOsTypeChanged();
@@ -72,6 +73,9 @@ public:
     void setType(const CGuestOSType &enmType);
 
     void setNameFieldValidator(const QString &strValidatorString);
+
+    /** Forwards the machine name to UIVMNamePathSelector member instance. */
+    void setMachineFilePath(const QString &strPath);
 
 protected:
 

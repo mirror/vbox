@@ -214,6 +214,25 @@ bool UIWizardNewVMPage1::machineFolderCreated()
     return !m_strMachineFolder.isEmpty();
 }
 
+void UIWizardNewVMPage1::composeMachineFilePath()
+{
+    /* Get VBox: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+
+    /* Compose machine filename: */
+    m_strMachineFilePath = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(),
+                                                       m_strGroup,
+                                                       QString(),
+                                                       m_pNameAndSystemEditor->path());
+    /* Compose machine folder/basename: */
+    const QFileInfo fileInfo(m_strMachineFilePath);
+    m_strMachineFolder = fileInfo.absolutePath();
+    m_strMachineBaseName = fileInfo.completeBaseName();
+
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setMachineFilePath(m_strMachineFolder);
+}
+
 bool UIWizardNewVMPage1::createMachineFolder()
 {
     if (!m_pNameAndSystemEditor)
@@ -225,20 +244,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
         return false;
     }
 
-    /* Get VBox: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    /* Get default machine folder: */
-    //const QString strMachineFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
-
-    /* Compose machine filename: */
-    m_strMachineFilePath = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(),
-                                                       m_strGroup,
-                                                       QString(),
-                                                       m_pNameAndSystemEditor->path());
-    /* Compose machine folder/basename: */
-    const QFileInfo fileInfo(m_strMachineFilePath);
-    m_strMachineFolder = fileInfo.absolutePath();
-    m_strMachineBaseName = fileInfo.completeBaseName();
+    composeMachineFilePath();
 
     /* Make sure that folder doesn't exists: */
     if (QDir(m_strMachineFolder).exists())
@@ -285,8 +291,9 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     }
 
     /* Setup connections: */
-    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
-    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(sltOsTypeChanged()));
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged, this, &UIWizardNewVMPageBasic1::sltNameChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged, this, &UIWizardNewVMPageBasic1::sltPathChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMPageBasic1::sltOsTypeChanged);
 
     /* Register fields: */
     registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
@@ -300,6 +307,12 @@ void UIWizardNewVMPageBasic1::sltNameChanged(const QString &strNewName)
 {
     /* Call to base-class: */
     onNameChanged(strNewName);
+    composeMachineFilePath();
+}
+
+void UIWizardNewVMPageBasic1::sltPathChanged(const QString &strNewPath)
+{
+    composeMachineFilePath();
 }
 
 void UIWizardNewVMPageBasic1::sltOsTypeChanged()

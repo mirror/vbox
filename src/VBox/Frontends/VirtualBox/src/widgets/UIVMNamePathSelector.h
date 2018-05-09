@@ -37,6 +37,7 @@ class SHARED_LIBRARY_STUFF UIVMNamePathSelector : public QIWithRetranslateUI<QWi
 signals:
 
     void sigNameChanged(const QString &strName);
+    void sigPathChanged(const QString &strName);
 
 public:
 
@@ -44,12 +45,15 @@ public:
 
 public slots:
 
-    QString path() const;
-    void    setPath(const QString &path);
+    QString        path() const;
+    void           setPath(const QString &path);
 
-    QString name() const;
-    void    setName(const QString &name);
-    void    setNameFieldValidator(const QString &strValidatorString);
+    QString        name() const;
+    void           setName(const QString &name);
+    void           setNameFieldValidator(const QString &strValidatorString);
+
+    void           setToolTipText(const QString &strToolTipText);
+    const QString& toolTipText() const;
 
 protected:
 
@@ -61,15 +65,16 @@ private slots:
 
 private:
 
-    void         prepareWidgets();
-    QString      defaultMachineFolder() const;
+    void          prepareWidgets();
+    QString       defaultMachineFolder() const;
 
     QHBoxLayout  *m_pMainLayout;
     QILineEdit   *m_pPath;
     QILineEdit   *m_pName;
     QILabel      *m_pSeparator;
     QIToolButton *m_pFileDialogButton;
-
+    /** Tooltip set is set by clients of this widget. */
+    QString       m_strToolTipText;
 };
 
 #endif /* !___UIVMNamePathSelector_h___ */
