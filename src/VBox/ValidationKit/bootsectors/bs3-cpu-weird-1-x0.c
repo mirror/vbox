@@ -519,4 +519,3 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3CpuWeird1_DbgInhibitRingXfer)(uint8_t bM
     return 0;
 }
 
-

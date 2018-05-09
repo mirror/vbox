@@ -57,4 +57,3 @@ BS3_BEGIN_TEXT16
 BS3_INSTANTIATE_COMMON_TEMPLATE          "bs3-cpu-weird-1-template.mac"
 ; BS3_INSTANTIATE_TEMPLATE_WITH_WEIRD_ONES "bs3-cpu-weird-1-template.mac"
 
-
