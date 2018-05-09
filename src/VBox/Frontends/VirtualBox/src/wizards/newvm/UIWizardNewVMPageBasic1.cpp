@@ -216,6 +216,8 @@ bool UIWizardNewVMPage1::machineFolderCreated()
 
 bool UIWizardNewVMPage1::createMachineFolder()
 {
+    if (!m_pNameAndSystemEditor)
+        return false;
     /* Cleanup previosly created folder if any: */
     if (machineFolderCreated() && !cleanupMachineFolder())
     {
@@ -226,35 +228,32 @@ bool UIWizardNewVMPage1::createMachineFolder()
     /* Get VBox: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     /* Get default machine folder: */
-    const QString strDefaultMachineFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+    //const QString strMachineFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+
     /* Compose machine filename: */
-    const QString strMachineFilePath = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(),
-                                                                   m_strGroup,
-                                                                   QString(),
-                                                                   strDefaultMachineFolder);
+    m_strMachineFilePath = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(),
+                                                       m_strGroup,
+                                                       QString(),
+                                                       m_pNameAndSystemEditor->path());
     /* Compose machine folder/basename: */
-    const QFileInfo fileInfo(strMachineFilePath);
-    const QString strMachineFolder = fileInfo.absolutePath();
-    const QString strMachineBaseName = fileInfo.completeBaseName();
+    const QFileInfo fileInfo(m_strMachineFilePath);
+    m_strMachineFolder = fileInfo.absolutePath();
+    m_strMachineBaseName = fileInfo.completeBaseName();
 
     /* Make sure that folder doesn't exists: */
-    if (QDir(strMachineFolder).exists())
+    if (QDir(m_strMachineFolder).exists())
     {
-        msgCenter().cannotRewriteMachineFolder(strMachineFolder, thisImp());
+        msgCenter().cannotRewriteMachineFolder(m_strMachineFolder, thisImp());
         return false;
     }
 
     /* Try to create new folder (and it's predecessors): */
-    bool fMachineFolderCreated = QDir().mkpath(strMachineFolder);
+    bool fMachineFolderCreated = QDir().mkpath(m_strMachineFolder);
     if (!fMachineFolderCreated)
     {
-        msgCenter().cannotCreateMachineFolder(strMachineFolder, thisImp());
+        msgCenter().cannotCreateMachineFolder(m_strMachineFolder, thisImp());
         return false;
     }
-
-    /* Initialize fields: */
-    m_strMachineFolder = strMachineFolder;
-    m_strMachineBaseName = strMachineBaseName;
     return true;
 }
 
@@ -292,6 +291,7 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     /* Register fields: */
     registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
     registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
+    registerField("machineFilePath", this, "machineFilePath");
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
 }
@@ -314,7 +314,7 @@ void UIWizardNewVMPageBasic1::retranslateUi()
     setTitle(UIWizardNewVM::tr("Name and operating system"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name for the new virtual machine "
+    m_pLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "
                                         "and select the type of operating system you intend to install on it. "
                                         "The name you choose will be used throughout VirtualBox "
                                         "to identify this machine."));
@@ -339,4 +339,3 @@ bool UIWizardNewVMPageBasic1::validatePage()
     /* Try to create machine folder: */
     return createMachineFolder();
 }
-

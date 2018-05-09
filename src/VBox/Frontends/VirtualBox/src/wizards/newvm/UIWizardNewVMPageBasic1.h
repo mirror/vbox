@@ -42,6 +42,9 @@ protected:
     bool createMachineFolder();
     bool cleanupMachineFolder();
 
+    QString machineFilePath() const { return m_strMachineFilePath; }
+    void setMachineFilePath(const QString &strMachineFilePath) { m_strMachineFilePath = strMachineFilePath; }
+
     /** Returns the machine folder value. */
     QString machineFolder() const { return m_strMachineFolder; }
     /** Defines the @a strMachineFolder value. */
@@ -52,15 +55,17 @@ protected:
     /** Defines the @a strMachineBaseName value. */
     void setMachineBaseName(const QString &strMachineBaseName) { m_strMachineBaseName = strMachineBaseName; }
 
-    /** Holds the machine folder value. */
+    /** Full path (including the file name) of the machine's configuration file. */
+    QString m_strMachineFilePath;
+    /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
     QString m_strMachineFolder;
-    /** Holds the machine base-name value. */
+    /** Base name of the machine is generated from the m_strMachineFilePath. */
     QString m_strMachineBaseName;
 
-    /* Widgets: */
+    /** Provides a path selector and a line edit field for path and name entry. */
     UINameAndSystemEditor *m_pNameAndSystemEditor;
 
-    /* Variables: */
+    /** Variables: */
     QString m_strGroup;
     bool m_fSupportsHWVirtEx;
     bool m_fSupportsLongMode;
@@ -70,6 +75,7 @@ protected:
 class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
 {
     Q_OBJECT;
+    Q_PROPERTY(QString machineFilePath READ machineFilePath WRITE setMachineFilePath);
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
     Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
 
@@ -106,4 +112,3 @@ private:
 };
 
 #endif // __UIWizardNewVMPageBasic1_h__
-

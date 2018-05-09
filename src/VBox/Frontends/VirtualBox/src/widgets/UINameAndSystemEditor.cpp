@@ -30,6 +30,7 @@
 # include "VBoxGlobal.h"
 # include "UIFilePathSelector.h"
 # include "UINameAndSystemEditor.h"
+# include "UIVMNamePathSelector.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -49,12 +50,11 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent, bool fChooseLocat
     , m_fChooseLocation(fChooseLocation)
     , m_fSupportsHWVirtEx(false)
     , m_fSupportsLongMode(false)
-    , m_pLabelName(0)
     , m_pLabelFamily(0)
     , m_pLabelType(0)
     , m_pIconType(0)
-    , m_pEditorName(0)
-    , m_pEditorLocation(0)
+    , m_pNamePathLabel(0)
+    , m_pNamePathSelector(0)
     , m_pComboFamily(0)
     , m_pComboType(0)
 {
@@ -64,18 +64,23 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent, bool fChooseLocat
 
 QString UINameAndSystemEditor::name() const
 {
-    if (!m_fChooseLocation)
-        return m_pEditorName->text();
-    else
-        return m_pEditorLocation->path();
+    if (!m_pNamePathSelector)
+        return QString();
+    return m_pNamePathSelector->name();
+}
+
+QString UINameAndSystemEditor::path() const
+{
+    if (!m_pNamePathSelector)
+        return vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    return m_pNamePathSelector->path();
 }
 
 void UINameAndSystemEditor::setName(const QString &strName)
 {
-    if (!m_fChooseLocation)
-        m_pEditorName->setText(strName);
-    else
-        m_pEditorLocation->setPath(strName);
+    if (!m_pNamePathSelector)
+        return;
+    m_pNamePathSelector->setName(strName);
 }
 
 CGuestOSType UINameAndSystemEditor::type() const
@@ -111,13 +116,10 @@ void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
 
 void UINameAndSystemEditor::retranslateUi()
 {
-    m_pLabelName->setText(tr("N&ame:"));
     m_pLabelFamily->setText(tr("&Type:"));
     m_pLabelType->setText(tr("&Version:"));
-    if (!m_fChooseLocation)
-        m_pEditorName->setWhatsThis(tr("Holds the name of the virtual machine."));
-    else
-        m_pEditorLocation->setWhatsThis(tr("Holds the location of the virtual machine."));
+    m_pNamePathLabel->setText(tr("Path/Name:"));
+
     m_pComboFamily->setWhatsThis(tr("Selects the operating system family that "
                                     "you plan to install into this virtual machine."));
     m_pComboType->setWhatsThis(tr("Selects the operating system type that "
@@ -226,45 +228,18 @@ void UINameAndSystemEditor::prepareWidgets()
         /* Configure main-layout: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
 
-        /* Create VM name label: */
-        m_pLabelName = new QLabel;
-        if (m_pLabelName)
+        m_pNamePathLabel = new QLabel;
+        if (m_pNamePathLabel)
         {
-            /* Configure VM name label: */
-            m_pLabelName->setAlignment(Qt::AlignRight);
-            m_pLabelName->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            /* Add VM name label into main-layout: */
-            pMainLayout->addWidget(m_pLabelName, 0, 0);
+            m_pNamePathLabel->setAlignment(Qt::AlignRight);
+            m_pNamePathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+            pMainLayout->addWidget(m_pNamePathLabel, 0, 0, 1, 1);
         }
-
-        if (!m_fChooseLocation)
+        m_pNamePathSelector = new UIVMNamePathSelector;
+        if (m_pNamePathSelector)
         {
-            /* Create VM name editor: */
-            m_pEditorName = new QLineEdit;
-            if (m_pEditorName)
-            {
-                /* Configure VM name editor: */
-                m_pEditorName->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                m_pLabelName->setBuddy(m_pEditorName);
-                /* Add VM name editor into main-layout: */
-                pMainLayout->addWidget(m_pEditorName, 0, 1, 1, 2);
-            }
-        }
-        else
-        {
-            /* Create VM location editor: */
-            m_pEditorLocation = new UIFilePathSelector;
-            if (m_pEditorLocation)
-            {
-                /* Configure advanced VM name editor: */
-                m_pEditorLocation->setResetEnabled(false);
-                m_pEditorLocation->setMode(UIFilePathSelector::Mode_File_Save);
-                m_pEditorLocation->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                m_pEditorLocation->setHomeDir(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-                m_pLabelName->setBuddy(m_pEditorLocation);
-                /* Add advanced VM name editor into main-layout: */
-                pMainLayout->addWidget(m_pEditorLocation, 0, 1, 1, 2);
-            }
+            m_pNamePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+            pMainLayout->addWidget(m_pNamePathSelector, 0, 1, 1, 2);
         }
 
         /* Create VM OS family label: */
@@ -324,7 +299,6 @@ void UINameAndSystemEditor::prepareWidgets()
                 /* Add VM OS type icon into sub-layout: */
                 pLayoutIcon->addWidget(m_pIconType);
             }
-
             /* Add stretch to sub-layout: */
             pLayoutIcon->addStretch();
             /* Add sub-layout into main-layout: */
@@ -357,14 +331,17 @@ void UINameAndSystemEditor::prepareFamilyCombo()
 void UINameAndSystemEditor::prepareConnections()
 {
     /* Prepare connections: */
-    if (!m_fChooseLocation)
-        connect(m_pEditorName, &QLineEdit::textChanged,
-                this, &UINameAndSystemEditor::sigNameChanged);
-    else
-        connect(m_pEditorLocation, &UIFilePathSelector::pathChanged,
-                this, &UINameAndSystemEditor::sigNameChanged);
+    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigNameChanged,
+            this, &UINameAndSystemEditor::sigNameChanged);
     connect(m_pComboFamily, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UINameAndSystemEditor::sltFamilyChanged);
     connect(m_pComboType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UINameAndSystemEditor::sltTypeChanged);
+}
+
+void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidatorString)
+{
+    if (!m_pNamePathSelector)
+        return;
+    m_pNamePathSelector->setNameFieldValidator(strValidatorString);
 }

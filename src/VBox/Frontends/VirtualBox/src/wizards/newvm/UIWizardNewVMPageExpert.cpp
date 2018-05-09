@@ -159,6 +159,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     /* Register fields: */
     registerField("name*", m_pNameAndSystemEditor, "name", SIGNAL(sigNameChanged(const QString &)));
     registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
+    registerField("machineFilePath", this, "machineFilePath");
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
     registerField("ram", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
@@ -303,4 +304,3 @@ bool UIWizardNewVMPageExpert::validatePage()
     /* Return result: */
     return fResult;
 }
-

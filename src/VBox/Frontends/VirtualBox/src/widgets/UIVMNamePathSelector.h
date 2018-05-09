@@ -28,13 +28,15 @@
 class QHBoxLayout;
 class QILabel;
 class QILineEdit;
-
+class QIToolButton;
 
 class SHARED_LIBRARY_STUFF UIVMNamePathSelector : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 signals:
+
+    void sigNameChanged(const QString &strName);
 
 public:
 
@@ -47,6 +49,7 @@ public slots:
 
     QString name() const;
     void    setName(const QString &name);
+    void    setNameFieldValidator(const QString &strValidatorString);
 
 protected:
 
@@ -54,16 +57,19 @@ protected:
 
 private slots:
 
+    void sltOpenPathSelector();
 
 private:
 
     void         prepareWidgets();
     QString      defaultMachineFolder() const;
 
-    QHBoxLayout *m_pMainLayout;
-    QILineEdit  *m_pPath;
-    QILineEdit  *m_pName;
-    QILabel     *m_pSeparator;
+    QHBoxLayout  *m_pMainLayout;
+    QILineEdit   *m_pPath;
+    QILineEdit   *m_pName;
+    QILabel      *m_pSeparator;
+    QIToolButton *m_pFileDialogButton;
+
 };
 
 #endif /* !___UIVMNamePathSelector_h___ */
