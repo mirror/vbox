@@ -1824,8 +1824,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
      * CS.limit doesn't change and the limit check is done against the current
      * limit.
      */
-    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_16BIT
-        && IEM_IS_REAL_OR_V86_MODE(pVCpu))
+    if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
     {
         if (offSeg > pCtx->cs.u32Limit)
         {
@@ -1994,13 +1993,12 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
      * CS.limit doesn't change and the limit check is done against the current
      * limit.
      */
-    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_16BIT
-        && IEM_IS_REAL_OR_V86_MODE(pVCpu))
+    if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
     {
         Assert(enmEffOpSize == IEMMODE_16BIT || enmEffOpSize == IEMMODE_32BIT);
 
         /* Check stack first - may #SS(0). */
-        rcStrict = iemMemStackPushBeginSpecial(pVCpu, enmEffOpSize == IEMMODE_32BIT ? 6 : 4,
+        rcStrict = iemMemStackPushBeginSpecial(pVCpu, enmEffOpSize == IEMMODE_32BIT ? 4+4 : 2+2,
                                                &uPtrRet.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
@@ -2018,7 +2016,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
         else
         {
             uPtrRet.pu32[0] = pCtx->eip + cbInstr;
-            uPtrRet.pu16[3] = pCtx->cs.Sel;
+            uPtrRet.pu16[2] = pCtx->cs.Sel;
         }
         rcStrict = iemMemStackPushCommitSpecial(pVCpu, uPtrRet.pv, uNewRsp);
         if (rcStrict != VINF_SUCCESS)
@@ -2248,8 +2246,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     /*
      * Real mode and V8086 mode are easy.
      */
-    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_16BIT
-        && IEM_IS_REAL_OR_V86_MODE(pVCpu))
+    if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
     {
         Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
         /** @todo check how this is supposed to work if sp=0xfffe. */
@@ -4129,8 +4126,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     /*
      * Real mode and V8086 mode are easy.
      */
-    if (   pVCpu->iem.s.enmCpuMode == IEMMODE_16BIT
-        && IEM_IS_REAL_OR_V86_MODE(pVCpu))
+    if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
     {
         *pSel           = uSel;
         pHid->u64Base   = (uint32_t)uSel << 4;

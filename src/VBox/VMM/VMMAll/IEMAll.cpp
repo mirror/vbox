@@ -3655,7 +3655,6 @@ iemRaiseXcptOrIntInRealMode(PVMCPU      pVCpu,
                             uint16_t    uErr,
                             uint64_t    uCr2)
 {
-    AssertReturn(pVCpu->iem.s.enmCpuMode == IEMMODE_16BIT, VERR_IEM_IPE_6);
     NOREF(uErr); NOREF(uCr2);
 
     /*
