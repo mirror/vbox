@@ -31,7 +31,6 @@
 # include <QLineEdit>
 # include <QPlainTextEdit>
 # include <QTextCursor>
-# include <QToolButton>
 # include <QRadioButton>
 # include <QScrollArea>
 
@@ -78,7 +77,7 @@ protected:
     /* Override the mousePressEvent to control how selection is done: */
     virtual void        mousePressEvent(QMouseEvent * event) /* override */;
     virtual void        mouseReleaseEvent(QMouseEvent *){}
-    virtual void        paintEvent(QPaintEvent *event);
+    virtual void        paintEvent(QPaintEvent *event) /* override */;
 
 private slots:
 
@@ -89,11 +88,11 @@ private slots:
 
 private:
 
-    void         createButtons();
-    QToolButton *m_pRemoveTermButton;
-    QToolButton *m_pClearAllButton;
-    const int    m_iRemoveTermButtonSize;
-    int          m_iTrailingSpaceCount;
+    void          createButtons();
+    QIToolButton *m_pRemoveTermButton;
+    QIToolButton *m_pClearAllButton;
+    const int     m_iRemoveTermButtonSize;
+    int           m_iTrailingSpaceCount;
 };
 
 
@@ -196,22 +195,22 @@ void UIVMFilterLineEdit::createButtons()
 {
     if (!m_pRemoveTermButton)
     {
-        m_pRemoveTermButton = new QToolButton(this);
+        m_pRemoveTermButton = new QIToolButton(this);
         if (m_pRemoveTermButton)
         {
             m_pRemoveTermButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
             m_pRemoveTermButton->hide();
-            connect(m_pRemoveTermButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
+            connect(m_pRemoveTermButton, &QIToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
         }
     }
 
     if (!m_pClearAllButton)
     {
-        m_pClearAllButton = new QToolButton(this);
+        m_pClearAllButton = new QIToolButton(this);
         if (m_pClearAllButton)
         {
             m_pClearAllButton->setIcon(m_pClearAllButton->style()->standardIcon(QStyle::SP_LineEditClearButton));
-            connect(m_pClearAllButton, &QToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
+            connect(m_pClearAllButton, &QIToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
         }
     }
 }
