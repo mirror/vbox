@@ -24,11 +24,8 @@
 # include <QHBoxLayout>
 
 /* GUI includes: */
-# include "QIFileDialog.h"
 # include "QILineEdit.h"
 # include "QILabel.h"
-# include "QIToolButton.h"
-# include "UIIconPool.h"
 # include "UIVMNamePathSelector.h"
 # include "VBoxGlobal.h"
 
@@ -37,16 +34,16 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
+
 UIVMNamePathSelector::UIVMNamePathSelector(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
     , m_pPath(0)
     , m_pName(0)
     , m_pSeparator(0)
-    ,m_pFileDialogButton(0)
 {
     prepareWidgets();
-    retranslateUi();
 }
 
 QString UIVMNamePathSelector::defaultMachineFolder() const
@@ -54,7 +51,7 @@ QString UIVMNamePathSelector::defaultMachineFolder() const
     /* Get VBox: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     /* Get default machine folder: */
-    return vbox.GetSystemProperties().GetDefaultMachineFolder();
+    /*const QString strDefaultMachineFolder = */return vbox.GetSystemProperties().GetDefaultMachineFolder();
 
 }
 
@@ -67,14 +64,6 @@ void UIVMNamePathSelector::prepareWidgets()
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     m_pMainLayout->setSpacing(0);
     setLayout(m_pMainLayout);
-
-    m_pFileDialogButton = new QIToolButton(this);
-    if (m_pFileDialogButton)
-    {
-        m_pMainLayout->addWidget(m_pFileDialogButton);
-        m_pFileDialogButton->setIcon(UIIconPool::iconSet(QString(":/sf_add_16px.png")));
-        connect(m_pFileDialogButton, &QIToolButton::clicked, this, &UIVMNamePathSelector::sltOpenPathSelector);
-    }
 
     m_pPath = new QILineEdit;
     if (m_pPath)
@@ -94,9 +83,6 @@ void UIVMNamePathSelector::prepareWidgets()
     if (m_pName)
     {
         m_pMainLayout->addWidget(m_pName);
-        connect(m_pName, &QILineEdit::textChanged,
-                this, &UIVMNamePathSelector::sigNameChanged);
-
     }
 
 }
@@ -134,16 +120,4 @@ void UIVMNamePathSelector::setName(const QString &name)
 
 void UIVMNamePathSelector::retranslateUi()
 {
-    setToolTip(tr("The Virtual Machine files will be saved under ..."));
-}
-
-void UIVMNamePathSelector::sltOpenPathSelector()
-{
-
-    QString strSelectedPath = QIFileDialog::getExistingDirectory(m_pPath->text(), this,
-                                                                 QString("Select a parent folder for new Virtual Machine"));
-    if (!strSelectedPath.isEmpty())
-    {
-        m_pPath->setText(strSelectedPath);
-    }
 }

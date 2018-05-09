@@ -216,8 +216,6 @@ bool UIWizardNewVMPage1::machineFolderCreated()
 
 bool UIWizardNewVMPage1::createMachineFolder()
 {
-    if (!m_pNameAndSystemEditor)
-        return false;
     /* Cleanup previosly created folder if any: */
     if (machineFolderCreated() && !cleanupMachineFolder())
     {
@@ -228,13 +226,12 @@ bool UIWizardNewVMPage1::createMachineFolder()
     /* Get VBox: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     /* Get default machine folder: */
-    //const QString strMachineFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
-
+    const QString strDefaultMachineFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
     /* Compose machine filename: */
     const QString strMachineFilePath = vbox.ComposeMachineFilename(m_pNameAndSystemEditor->name(),
                                                                    m_strGroup,
                                                                    QString(),
-                                                                   m_pNameAndSystemEditor->path());
+                                                                   strDefaultMachineFolder);
     /* Compose machine folder/basename: */
     const QFileInfo fileInfo(strMachineFilePath);
     const QString strMachineFolder = fileInfo.absolutePath();
@@ -317,7 +314,7 @@ void UIWizardNewVMPageBasic1::retranslateUi()
     setTitle(UIWizardNewVM::tr("Name and operating system"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name and destination folder for the new virtual machine "
+    m_pLabel->setText(UIWizardNewVM::tr("Please choose a descriptive name for the new virtual machine "
                                         "and select the type of operating system you intend to install on it. "
                                         "The name you choose will be used throughout VirtualBox "
                                         "to identify this machine."));
@@ -342,3 +339,4 @@ bool UIWizardNewVMPageBasic1::validatePage()
     /* Try to create machine folder: */
     return createMachineFolder();
 }
+

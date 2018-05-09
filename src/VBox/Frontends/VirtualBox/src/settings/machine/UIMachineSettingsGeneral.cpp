@@ -553,7 +553,7 @@ void UIMachineSettingsGeneral::prepareTabBasic()
         AssertPtrReturnVoid(m_pNameAndSystemEditor);
         {
             /* Configure widget: */
-            //m_pNameAndSystemEditor->nameEditor()->setValidator(new QRegExpValidator(QRegExp(".+"), this));
+            m_pNameAndSystemEditor->nameEditor()->setValidator(new QRegExpValidator(QRegExp(".+"), this));
         }
     }
 }

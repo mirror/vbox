@@ -24,16 +24,12 @@
 # include <QVBoxLayout>
 
 /* Local includes: */
-# include "QIRichTextLabel.h"
-# include "UIEmptyFilePathSelector.h"
-# include "UIFilePathSelector.h"
 # include "UIWizardImportAppPageBasic1.h"
 # include "UIWizardImportAppPageBasic2.h"
 # include "UIWizardImportApp.h"
 # include "VBoxGlobal.h"
-
-/* COM includes: */
-# include "CSystemProperties.h"
+# include "UIEmptyFilePathSelector.h"
+# include "QIRichTextLabel.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -57,24 +53,6 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
         }
         pMainLayout->addWidget(m_pLabel);
         pMainLayout->addWidget(m_pFileSelector);
-
-
-        m_pDefaultFolderLabel = new QIRichTextLabel(this);
-        if (m_pDefaultFolderLabel)
-        {
-            pMainLayout->addWidget(m_pDefaultFolderLabel);
-        }
-
-        m_pDestinationFolderSelector = new UIFilePathSelector(this);
-        if (m_pDestinationFolderSelector)
-        {
-            m_pDestinationFolderSelector->setMode(UIFilePathSelector::Mode_Folder);
-            pMainLayout->addWidget(m_pDestinationFolderSelector);
-
-            m_pDestinationFolderSelector->setPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-            m_pDestinationFolderSelector->setResetEnabled(false);
-        }
-
         pMainLayout->addStretch();
     }
 
@@ -91,7 +69,6 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     m_pLabel->setText(UIWizardImportApp::tr("<p>VirtualBox currently supports importing appliances "
                                             "saved in the Open Virtualization Format (OVF). "
                                             "To continue, select the file to import below.</p>"));
-    m_pDefaultFolderLabel->setText(UIWizardImportApp::tr("Select a destionation folder for appliance"));
     m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
     m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
@@ -129,3 +106,4 @@ bool UIWizardImportAppPageBasic1::validatePage()
     /* If we have a valid ovf proceed to the appliance settings page: */
     return pImportApplianceWidget->isValid();
 }
+

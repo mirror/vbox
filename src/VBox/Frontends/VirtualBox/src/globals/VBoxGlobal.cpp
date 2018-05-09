@@ -1160,7 +1160,6 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
     QString strHomeFolder = fUseLastFolder && !strLastFolder.isEmpty() ? strLastFolder :
                             strDefaultFolder.isEmpty() ? vboxGlobal().homeFolder() : strDefaultFolder;
 
-
     /* Prepare filters and backends: */
     for (int i = 0; i < filters.count(); ++i)
     {
@@ -4676,3 +4675,4 @@ bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = 
     /* True finally: */
     return true;
 }
+
