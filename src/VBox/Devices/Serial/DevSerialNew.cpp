@@ -490,6 +490,7 @@ DECLINLINE(int) serialRegThrDllWrite(PDEVSERIAL pThis, uint8_t uVal)
 #else
                 pThis->uRegThr = uVal;
                 UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
+                serialIrqUpdate(pThis);
                 if (pThis->pDrvSerial)
                 {
                     int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial, 1);
