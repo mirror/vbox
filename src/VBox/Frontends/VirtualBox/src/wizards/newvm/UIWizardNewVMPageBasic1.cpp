@@ -312,6 +312,7 @@ void UIWizardNewVMPageBasic1::sltNameChanged(const QString &strNewName)
 
 void UIWizardNewVMPageBasic1::sltPathChanged(const QString &strNewPath)
 {
+    RT_NOREF(strNewPath);
     composeMachineFilePath();
 }
 
