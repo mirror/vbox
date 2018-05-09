@@ -35,6 +35,7 @@ class QLabel;
 class QLineEdit;
 class QString;
 class UIFilePathSelector;
+class UIVMNamePathSelector;
 
 /** QWidget subclass providing complex editor for basic VM parameters. */
 class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public QIWithRetranslateUI<QWidget>
@@ -57,13 +58,11 @@ public:
       * @param  fChooseFullPath  Brings whether we should propose to choose location. */
     UINameAndSystemEditor(QWidget *pParent, bool fChooseLocation = false);
 
-    /** Returns the VM name editor. */
-    QLineEdit *nameEditor() const { return m_pEditorName; }
-    /** Returns the VM location editor. */
-    UIFilePathSelector *locationEditor() const { return m_pEditorLocation; }
-
     /** Returns the VM name. */
     QString name() const;
+    /** Returns path string selected by the user. */
+    QString path() const;
+
     /** Defines the VM @a strName. */
     void setName(const QString &strName);
 
@@ -85,7 +84,7 @@ private slots:
     /** Handles VM OS type @a iIndex change. */
     void sltTypeChanged(int iIndex);
 
-private:
+ private:
 
     /** @name Prepare cascade.
       * @{ */
@@ -112,18 +111,15 @@ private:
     /** Holds whether host supports long mode. */
     bool                    m_fSupportsLongMode;
 
-    /** Holds the VM name label instance. */
-    QLabel                 *m_pLabelName;
     /** Holds the VM OS family label instance. */
     QLabel                 *m_pLabelFamily;
     /** Holds the VM OS type label instance. */
     QLabel                 *m_pLabelType;
     /** Holds the VM OS type icon instance. */
     QLabel                 *m_pIconType;
-    /** Holds the VM name editor instance. */
-    QLineEdit              *m_pEditorName;
-    /** Holds the VM location editor instance. */
-    UIFilePathSelector     *m_pEditorLocation;
+
+    QLabel                 *m_pNamePathLabel;
+    UIVMNamePathSelector   *m_pNamePathSelector;
     /** Holds the VM OS family combo instance. */
     QComboBox              *m_pComboFamily;
     /** Holds the VM OS type combo instance. */

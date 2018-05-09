@@ -57,10 +57,10 @@ protected:
     /** Holds the machine base-name value. */
     QString m_strMachineBaseName;
 
-    /* Widgets: */
+    /** Provides a path selector and a line edit field for path and name entry. */
     UINameAndSystemEditor *m_pNameAndSystemEditor;
 
-    /* Variables: */
+    /** Variables: */
     QString m_strGroup;
     bool m_fSupportsHWVirtEx;
     bool m_fSupportsLongMode;
@@ -106,4 +106,3 @@ private:
 };
 
 #endif // __UIWizardNewVMPageBasic1_h__
-

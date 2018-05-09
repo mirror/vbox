@@ -667,7 +667,7 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
             {
                    UIFilePathSelector *pFileChooser = new UIFilePathSelector(pParent);
                    pFileChooser->setMode(UIFilePathSelector::Mode_File_Save);
-                   pFileChooser->setResetEnabled(false);
+                   pFileChooser->setResetEnabled(true);
                    pEditor = pFileChooser;
                 break;
             }
