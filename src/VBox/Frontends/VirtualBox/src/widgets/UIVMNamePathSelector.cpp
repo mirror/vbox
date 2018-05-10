@@ -23,6 +23,7 @@
 # include <QDir>
 # include <QHBoxLayout>
 # include <QRegExpValidator>
+# include <QStyle>
 
 /* GUI includes: */
 # include "QIFileDialog.h"
@@ -64,16 +65,22 @@ void UIVMNamePathSelector::prepareWidgets()
     m_pMainLayout = new QHBoxLayout;
     if (!m_pMainLayout)
         return;
-    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
-    m_pMainLayout->setSpacing(0);
+            /* Configure layout: */
+#ifdef VBOX_WS_MAC
+            m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+            m_pMainLayout->setSpacing(0);
+#else
+            m_pMainLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
+                                                 qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2, 0);
+            m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+#endif
     setLayout(m_pMainLayout);
 
     m_pFileDialogButton = new QIToolButton(this);
     if (m_pFileDialogButton)
     {
         m_pMainLayout->addWidget(m_pFileDialogButton);
-        m_pFileDialogButton->setIcon(UIIconPool::iconSet(QString(":/sf_add_16px.png")));
+        m_pFileDialogButton->setIcon(UIIconPool::iconSet(QString(":/select_file_16px.png")));
         connect(m_pFileDialogButton, &QIToolButton::clicked, this, &UIVMNamePathSelector::sltOpenPathSelector);
     }
 
@@ -112,9 +119,10 @@ void UIVMNamePathSelector::setPath(const QString &path)
 {
     if (!m_pPath || m_pPath->text() == path)
         return;
-    m_pPath->setText(path);
-    m_pPath->setFixedWidthByText(path);
-    emit sigPathChanged(path);
+    QString nativePath(QDir::toNativeSeparators(path));
+    m_pPath->setText(nativePath);
+    m_pPath->setFixedWidthByText(nativePath);
+    emit sigPathChanged(nativePath);
 }
 
 QString UIVMNamePathSelector::name() const
