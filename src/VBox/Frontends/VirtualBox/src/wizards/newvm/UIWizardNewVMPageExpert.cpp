@@ -187,6 +187,7 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
 
 void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
 {
+    RT_NOREF(strNewPath); /** @todo use this or get rid of it? See also UIWizardNewVMPageBasic1::sltPathChanged(). */
     composeMachineFilePath();
 }
 
