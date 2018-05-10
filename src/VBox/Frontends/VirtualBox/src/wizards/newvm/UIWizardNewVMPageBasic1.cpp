@@ -215,11 +215,6 @@ void UIWizardNewVMPage1::onOsTypeChanged()
         m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), thisImp(), SLOT(sltNameChanged(const QString &)));
 }
 
-// bool UIWizardNewVMPage1::machineFolderCreated()
-// {
-//     return !m_strMachineFolder.isEmpty();
-// }
-
 void UIWizardNewVMPage1::composeMachineFilePath()
 {
     if (!m_pNameAndSystemEditor)
