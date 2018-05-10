@@ -178,7 +178,9 @@ static const osTypePattern gs_OSTypePattern[] =
 };
 
 UIWizardNewVMPage1::UIWizardNewVMPage1(const QString &strGroup)
-    : m_strGroup(strGroup)
+    : m_pNameAndSystemEditor(0)
+    , m_strGroup(strGroup)
+
 {
     CHost host = vboxGlobal().host();
     m_fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
@@ -195,9 +197,12 @@ void UIWizardNewVMPage1::onNameChanged(QString strNewName)
     for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
         if (strNewName.contains(gs_OSTypePattern[i].pattern))
         {
-            m_pNameAndSystemEditor->blockSignals(true);
-            m_pNameAndSystemEditor->setType(vboxGlobal().vmGuestOSType(gs_OSTypePattern[i].pcstId));
-            m_pNameAndSystemEditor->blockSignals(false);
+            if (m_pNameAndSystemEditor)
+            {
+                m_pNameAndSystemEditor->blockSignals(true);
+                m_pNameAndSystemEditor->setType(vboxGlobal().vmGuestOSType(gs_OSTypePattern[i].pcstId));
+                m_pNameAndSystemEditor->blockSignals(false);
+            }
             break;
         }
 }
@@ -206,16 +211,21 @@ void UIWizardNewVMPage1::onOsTypeChanged()
 {
     /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
      * So simply disconnect the text-edit signal. */
-    m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), thisImp(), SLOT(sltNameChanged(const QString &)));
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->disconnect(SIGNAL(sigNameChanged(const QString &)), thisImp(), SLOT(sltNameChanged(const QString &)));
 }
 
-bool UIWizardNewVMPage1::machineFolderCreated()
-{
-    return !m_strMachineFolder.isEmpty();
-}
+// bool UIWizardNewVMPage1::machineFolderCreated()
+// {
+//     return !m_strMachineFolder.isEmpty();
+// }
 
 void UIWizardNewVMPage1::composeMachineFilePath()
 {
+    if (!m_pNameAndSystemEditor)
+        return;
+    if (m_pNameAndSystemEditor->name().isEmpty() || m_pNameAndSystemEditor->path().isEmpty())
+        return;
     /* Get VBox: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
@@ -238,7 +248,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
     if (!m_pNameAndSystemEditor)
         return false;
     /* Cleanup previosly created folder if any: */
-    if (machineFolderCreated() && !cleanupMachineFolder())
+    if (!cleanupMachineFolder())
     {
         msgCenter().cannotRemoveMachineFolder(m_strMachineFolder, thisImp());
         return false;
@@ -260,21 +270,54 @@ bool UIWizardNewVMPage1::createMachineFolder()
         msgCenter().cannotCreateMachineFolder(m_strMachineFolder, thisImp());
         return false;
     }
+    m_strCreatedFolder = m_strMachineFolder;
     return true;
 }
 
 bool UIWizardNewVMPage1::cleanupMachineFolder()
 {
     /* Make sure folder was previosly created: */
-    if (m_strMachineFolder.isEmpty())
-        return false;
-    /* Try to cleanup folder (and it's predecessors): */
-    bool fMachineFolderRemoved = QDir().rmpath(m_strMachineFolder);
-    /* Reset machine folder value: */
-    if (fMachineFolderRemoved)
-        m_strMachineFolder = QString();
-    /* Return cleanup result: */
-    return fMachineFolderRemoved;
+    if (!m_strCreatedFolder.isEmpty() && m_strCreatedFolder != m_strMachineFolder)
+    {
+        /* Try to cleanup folder (and it's predecessors): */
+        bool fMachineFolderRemoved = QDir().rmpath(m_strCreatedFolder);
+        /* Reset machine folder value: */
+        if (fMachineFolderRemoved)
+            m_strCreatedFolder = QString();
+        /* Return cleanup result: */
+        return fMachineFolderRemoved;
+    }
+    return true;
+}
+
+QString UIWizardNewVMPage1::machineFilePath() const
+{
+    return m_strMachineFilePath;
+}
+
+void UIWizardNewVMPage1::setMachineFilePath(const QString &strMachineFilePath)
+{
+    m_strMachineFilePath = strMachineFilePath;
+}
+
+QString UIWizardNewVMPage1::machineFolder() const
+{
+    return m_strMachineFolder;
+}
+
+void UIWizardNewVMPage1::setMachineFolder(const QString &strMachineFolder)
+{
+    m_strMachineFolder = strMachineFolder;
+}
+
+QString UIWizardNewVMPage1::machineBaseName() const
+{
+    return m_strMachineBaseName;
+}
+
+void UIWizardNewVMPage1::setMachineBaseName(const QString &strMachineBaseName)
+{
+    m_strMachineBaseName = strMachineBaseName;
 }
 
 UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)

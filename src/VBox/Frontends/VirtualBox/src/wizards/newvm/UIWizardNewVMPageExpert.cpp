@@ -137,6 +137,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     /* Setup connections: */
     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
             this, &UIWizardNewVMPageExpert::sltNameChanged);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigPathChanged,
+            this, &UIWizardNewVMPageExpert::sltPathChanged);
     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
             this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
     connect(m_pRamSlider, &UIGuestRAMSlider::valueChanged,
@@ -178,8 +180,14 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
     m_pRamSlider->setValue(type.GetRecommendedRAM());
     m_pRamEditor->setValue(type.GetRecommendedRAM());
 
+    composeMachineFilePath();
     /* Broadcast complete-change: */
     emit completeChanged();
+}
+
+void UIWizardNewVMPageExpert::sltPathChanged(const QString &strNewPath)
+{
+    composeMachineFilePath();
 }
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()

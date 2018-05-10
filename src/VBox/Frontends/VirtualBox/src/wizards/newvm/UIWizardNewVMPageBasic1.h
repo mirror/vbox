@@ -38,35 +38,36 @@ protected:
     void onOsTypeChanged();
 
     /* Helping stuff: */
-    bool machineFolderCreated();
+    //bool machineFolderCreated();
     bool createMachineFolder();
     bool cleanupMachineFolder();
 
-    QString machineFilePath() const { return m_strMachineFilePath; }
-    void setMachineFilePath(const QString &strMachineFilePath) { m_strMachineFilePath = strMachineFilePath; }
+    QString machineFilePath() const;
+    void setMachineFilePath(const QString &strMachineFilePath);
 
-    /** Returns the machine folder value. */
-    QString machineFolder() const { return m_strMachineFolder; }
-    /** Defines the @a strMachineFolder value. */
-    void setMachineFolder(const QString &strMachineFolder) { m_strMachineFolder = strMachineFolder; }
+    QString machineFolder() const;
+    void setMachineFolder(const QString &strMachineFolder);
 
-    /** Returns the machine base-name value. */
-    QString machineBaseName() const { return m_strMachineBaseName; }
-    /** Defines the @a strMachineBaseName value. */
-    void setMachineBaseName(const QString &strMachineBaseName) { m_strMachineBaseName = strMachineBaseName; }
+    QString machineBaseName() const;
+    void setMachineBaseName(const QString &strMachineBaseName);
 
     /** calls CVirtualBox::ComposeMachineFilename(...) and sets related member variables */
     void composeMachineFilePath();
+
+    /** Provides a path selector and a line edit field for path and name entry. */
+    UINameAndSystemEditor *m_pNameAndSystemEditor;
+
+private:
 
     /** Full path (including the file name) of the machine's configuration file. */
     QString m_strMachineFilePath;
     /** Path of the folder hosting the machine's configuration file. Generated from m_strMachineFilePath. */
     QString m_strMachineFolder;
+    /** Path of the folder created by this wizard page. Used to remove previously created folders etc. */
+    QString m_strCreatedFolder;
     /** Base name of the machine is generated from the m_strMachineFilePath. */
     QString m_strMachineBaseName;
 
-    /** Provides a path selector and a line edit field for path and name entry. */
-    UINameAndSystemEditor *m_pNameAndSystemEditor;
 
     QString m_strGroup;
     bool m_fSupportsHWVirtEx;
