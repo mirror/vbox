@@ -21,11 +21,15 @@
 /* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIExtraDataManager.h"
-#include "UIMachine.h"
 #include "UIMessageCenter.h"
-#include "UISelectorWindow.h"
-#include "UISession.h"
 #include "UIStarter.h"
+#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
+# include "UISelectorWindow.h"
+#endif
+#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
+# include "UIMachine.h"
+# include "UISession.h"
+# endif
 
 
 /* static */
@@ -110,6 +114,7 @@ void UIStarter::sltShowUI()
     if (!vboxGlobal().isValid())
         return;
 
+#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
     /* Show Selector UI: */
     if (!vboxGlobal().isVMConsoleProcess())
     {
@@ -123,51 +128,65 @@ void UIStarter::sltShowUI()
         /* Create/show selector-window: */
         UISelectorWindow::create();
 
-#ifdef VBOX_BLEEDING_EDGE
+# ifdef VBOX_BLEEDING_EDGE
         /* Show EXPERIMENTAL BUILD warning: */
         msgCenter().showExperimentalBuildWarning();
-#else /* !VBOX_BLEEDING_EDGE */
-# ifndef DEBUG
+# else /* !VBOX_BLEEDING_EDGE */
+#  ifndef DEBUG
         /* Show BETA warning if necessary: */
         const QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
         if (   vboxVersion.contains("BETA")
             && gEDataManager->preventBetaBuildWarningForVersion() != vboxVersion)
             msgCenter().showBetaBuildWarning();
-# endif /* !DEBUG */
-#endif /* !VBOX_BLEEDING_EDGE */
+#  endif /* !DEBUG */
+# endif /* !VBOX_BLEEDING_EDGE */
     }
+#endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || !VBOX_RUNTIME_UI */
+
+#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
     /* Show Runtime UI: */
-    else
+    if (vboxGlobal().isVMConsoleProcess())
     {
         /* Make sure machine is started, quit if not: */
         if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
             return QApplication::quit();
     }
+#endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || VBOX_RUNTIME_UI */
 }
 
 void UIStarter::sltRestartUI()
 {
+#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
     /* Recreate/show selector-window: */
     UISelectorWindow::destroy();
     UISelectorWindow::create();
+#endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || !VBOX_RUNTIME_UI */
 }
 
 void UIStarter::sltDestroyUI()
 {
-    /* Destroy the root GUI windows: */
+#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
+    /* Destroy Selector UI: */
     if (gpSelectorWindow)
         UISelectorWindow::destroy();
+#endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || !VBOX_RUNTIME_UI */
+
+#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
+    /* Destroy Runtime UI: */
     if (gpMachine)
         UIMachine::destroy();
+#endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || VBOX_RUNTIME_UI */
 }
 
 void UIStarter::sltOpenURLs()
 {
+#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
     /* Create/show selector-window: */
     UISelectorWindow::create();
 
     /* Ask the Selector UI to open URLs asynchronously: */
     QMetaObject::invokeMethod(gpSelectorWindow, "sltOpenUrls", Qt::QueuedConnection);
+#endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || !VBOX_RUNTIME_UI */
 }
 
 void UIStarter::sltHandleCommitDataRequest()
@@ -176,6 +195,7 @@ void UIStarter::sltHandleCommitDataRequest()
     if (!vboxGlobal().isValid())
         return;
 
+#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
     /* For VM process: */
     if (vboxGlobal().isVMConsoleProcess())
     {
@@ -183,5 +203,5 @@ void UIStarter::sltHandleCommitDataRequest()
         if (gpMachine->uisession()->defaultCloseAction() == MachineCloseAction_Invalid)
             gpMachine->uisession()->setDefaultCloseAction(MachineCloseAction_SaveState);
     }
+#endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || VBOX_RUNTIME_UI */
 }
-
