@@ -175,14 +175,18 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /*
      * Get the hypercall operation code and modes.
+     * Fast hypercalls have only two or fewer inputs but no output parameters.
      */
     const bool       fIs64BitMode     = CPUMIsGuestIn64BitCodeEx(pCtx);
     const uint64_t   uHyperIn         = fIs64BitMode ? pCtx->rcx : (pCtx->rdx << 32) | pCtx->eax;
     const uint16_t   uHyperOp         = GIM_HV_HYPERCALL_IN_CALL_CODE(uHyperIn);
     const bool       fHyperFast       = GIM_HV_HYPERCALL_IN_IS_FAST(uHyperIn);
-    /*const uint16_t   cHyperReps       = GIM_HV_HYPERCALL_IN_REP_COUNT(uHyperIn); - unused */
-    /*const uint16_t   idxHyperRepStart = GIM_HV_HYPERCALL_IN_REP_START_IDX(uHyperIn); - unused */
+    const uint16_t   cHyperReps       = GIM_HV_HYPERCALL_IN_REP_COUNT(uHyperIn);
+    const uint16_t   idxHyperRepStart = GIM_HV_HYPERCALL_IN_REP_START_IDX(uHyperIn);
     uint64_t         cHyperRepsDone   = 0;
+
+    /* Currently no repeating hypercalls are supported. */
+    RT_NOREF2(cHyperReps, idxHyperRepStart);
 
     int rc     = VINF_SUCCESS;
     int rcHv   = GIM_HV_STATUS_OPERATION_DENIED;
@@ -328,6 +332,44 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
                 }
                 else
                     rcHv = GIM_HV_STATUS_ACCESS_DENIED;
+                break;
+            }
+
+            case GIM_HV_EXT_HYPERCALL_OP_QUERY_CAP:              /* Non-rep, extended hypercall. */
+            {
+                if (pHv->uPartFlags & GIM_HV_PART_FLAGS_EXTENDED_HYPERCALLS)
+                {
+                    rc = gimHvReadSlowHypercallParam(pVM, pCtx, fIs64BitMode, GIMHVHYPERCALLPARAM_OUT, &rcHv);
+                    if (   RT_SUCCESS(rc)
+                        && rcHv == GIM_HV_STATUS_SUCCESS)
+                    {
+                        rc = gimR3HvHypercallExtQueryCap(pVM, &rcHv);
+                    }
+                }
+                else
+                {
+                    LogRel(("GIM: HyperV: Denied HvExtCallQueryCapabilities when the feature is not exposed\n"));
+                    rcHv = GIM_HV_STATUS_ACCESS_DENIED;
+                }
+                break;
+            }
+
+            case GIM_HV_EXT_HYPERCALL_OP_GET_BOOT_ZEROED_MEM:    /* Non-rep, extended hypercall. */
+            {
+                if (pHv->uPartFlags & GIM_HV_PART_FLAGS_EXTENDED_HYPERCALLS)
+                {
+                    rc = gimHvReadSlowHypercallParam(pVM, pCtx, fIs64BitMode, GIMHVHYPERCALLPARAM_OUT, &rcHv);
+                    if (   RT_SUCCESS(rc)
+                        && rcHv == GIM_HV_STATUS_SUCCESS)
+                    {
+                        rc = gimR3HvHypercallExtGetBootZeroedMem(pVM, &rcHv);
+                    }
+                }
+                else
+                {
+                    LogRel(("GIM: HyperV: Denied HvExtCallGetBootZeroedMemory when the feature is not exposed\n"));
+                    rcHv = GIM_HV_STATUS_ACCESS_DENIED;
+                }
                 break;
             }
 

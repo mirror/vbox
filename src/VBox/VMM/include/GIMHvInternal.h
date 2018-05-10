@@ -587,6 +587,25 @@ typedef enum GIMHVHYPERCALLPARAM
 #define GIM_HV_HYPERCALL_OP_RESET_DEBUG_SESSION   0x6B
 /** @} */
 
+/** @name Hyper-V extended hypercall op codes.
+ * @{
+ */
+/** Query extended hypercall capabilities. */
+#define GIM_HV_EXT_HYPERCALL_OP_QUERY_CAP                0x8001
+/** Query guest physical address range that has zero'd filled memory. */
+#define GIM_HV_EXT_HYPERCALL_OP_GET_BOOT_ZEROED_MEM      0x8002
+/** @} */
+
+
+/** @name Hyper-V Extended hypercall - HvExtCallQueryCapabilities.
+ * @{
+ */
+/** Boot time zeroed pages. */
+#define GIM_HV_EXT_HYPERCALL_CAP_ZERO_MEM                       RT_BIT_64(0)
+/** Whether boot time zeroed pages capability is enabled. */
+#define GIM_HV_EXT_HYPERCALL_CAP_IS_ZERO_MEM_ENABLED(a)         RT_BOOL((a) & GIM_HV_EXT_HYPERCALL_CAP_ZERO_MEM)
+/** @} */
+
 
 /** @name Hyper-V hypercall inputs.
  * @{
@@ -1035,11 +1054,36 @@ typedef struct GIMHVDEBUGRETRIEVEOUT
 /** Pointer to a HvRetrieveDebugData output struct. */
 typedef GIMHVDEBUGRETRIEVEOUT *PGIMHVDEBUGRETRIEVEOUT;
 AssertCompileSize(GIMHVDEBUGRETRIEVEOUT, 8);
+
+/**
+ * HvExtCallQueryCapabilities hypercall output.
+ */
+typedef struct GIMHVEXTQUERYCAP
+{
+    uint64_t fCapabilities;
+} GIMHVEXTQUERYCAP;
+/** Pointer to a HvExtCallQueryCapabilities output struct. */
+typedef GIMHVEXTQUERYCAP *PGIMHVEXTQUERYCAP;
+AssertCompileSize(GIMHVEXTQUERYCAP, 8);
+
+/**
+ * HvExtCallGetBootZeroedMemory hypercall output.
+ */
+typedef struct GIMHVEXTGETBOOTZEROMEM
+{
+    RTGCPHYS GCPhysStart;
+    uint64_t cPages;
+} GIMHVEXTGETBOOTZEROMEM;
+/** Pointer to a HvExtCallGetBootZeroedMemory output struct. */
+typedef GIMHVEXTGETBOOTZEROMEM *PGIMHVEXTGETBOOTZEROMEM;
+AssertCompileSize(GIMHVEXTGETBOOTZEROMEM, 16);
 /** @} */
 
 
 /** Hyper-V page size.  */
 #define GIM_HV_PAGE_SIZE                          4096
+/** Hyper-V page shift. */
+#define GIM_HV_PAGE_SHIFT                         12
 
 /** Microsoft Hyper-V vendor signature. */
 #define GIM_HV_VENDOR_MICROSOFT                   "Microsoft Hv"
@@ -1312,6 +1356,9 @@ VMMR3_INT_DECL(int)             gimR3HvHypercallRetrieveDebugData(PVM pVM, int *
 VMMR3_INT_DECL(int)             gimR3HvDebugWrite(PVM pVM, void *pvData, uint32_t cbWrite, uint32_t *pcbWritten, bool fUdpPkt);
 VMMR3_INT_DECL(int)             gimR3HvDebugRead(PVM pVM, void *pvBuf, uint32_t cbBuf, uint32_t cbRead, uint32_t *pcbRead,
                                                  uint32_t cMsTimeout, bool fUdpPkt);
+VMMR3_INT_DECL(int)             gimR3HvHypercallExtQueryCap(PVM pVM, int *prcHv);
+VMMR3_INT_DECL(int)             gimR3HvHypercallExtGetBootZeroedMem(PVM pVM, int *prcHv);
+
 #endif /* IN_RING3 */
 
 VMM_INT_DECL(bool)              gimHvIsParavirtTscEnabled(PVM pVM);

@@ -282,13 +282,16 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
                          | GIM_HV_HINT_X2APIC_MSRS
                          ;
 
+        /* Partition features. */
+        pHv->uPartFlags |= GIM_HV_PART_FLAGS_EXTENDED_HYPERCALLS;
+
         /* Expose more if we're posing as Microsoft. We can, if needed, force MSR-based Hv
            debugging by not exposing these bits while exposing the VS interface. The better
            way is what we do currently, via the GIM_HV_DEBUG_OPTIONS_USE_HYPERCALLS bit. */
         if (pHv->fIsVendorMsHv)
         {
             pHv->uMiscFeat  |= GIM_HV_MISC_FEAT_GUEST_DEBUGGING
-                             | GIM_HV_MISC_FEAT_DEBUG_MSRS;
+                            |  GIM_HV_MISC_FEAT_DEBUG_MSRS;
 
             pHv->uPartFlags |= GIM_HV_PART_FLAGS_DEBUGGING;
         }
@@ -2157,6 +2160,121 @@ VMMR3_INT_DECL(int) gimR3HvHypercallRetrieveDebugData(PVM pVM, int *prcHv)
     }
     else
         Assert(rc == VINF_SUCCESS);
+
+    *prcHv = rcHv;
+    return rc;
+}
+
+
+/**
+ * Performs the HvExtCallQueryCapabilities extended hypercall.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   prcHv       Where to store the result of the hypercall operation.
+ *
+ * @thread  EMT.
+ */
+VMMR3_INT_DECL(int) gimR3HvHypercallExtQueryCap(PVM pVM, int *prcHv)
+{
+    AssertPtr(pVM);
+    AssertPtr(prcHv);
+    PGIMHV pHv  = &pVM->gim.s.u.Hv;
+
+    /*
+     * Grab the parameters.
+     */
+   PGIMHVEXTQUERYCAP pOut = (PGIMHVEXTQUERYCAP)pHv->pbHypercallOut;
+
+    /*
+     * Perform the hypercall.
+     */
+    pOut->fCapabilities = GIM_HV_EXT_HYPERCALL_CAP_ZERO_MEM;
+
+    /*
+     * Update the guest memory with result.
+     */
+    int rcHv;
+    int rc = PGMPhysSimpleWriteGCPhys(pVM, pHv->GCPhysHypercallOut, pHv->pbHypercallOut, sizeof(GIMHVEXTQUERYCAP));
+    if (RT_SUCCESS(rc))
+    {
+        rcHv = GIM_HV_STATUS_SUCCESS;
+        LogRel(("GIM: HyperV: Queried extended hypercall capabilities %#RX64 at %#RGp\n", pOut->fCapabilities,
+                pHv->GCPhysHypercallOut));
+    }
+    else
+    {
+        rcHv = GIM_HV_STATUS_OPERATION_DENIED;
+        LogRelMax(10, ("GIM: HyperV: HvHypercallExtQueryCap failed to update guest memory. rc=%Rrc\n", rc));
+        rc = VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED;
+    }
+
+    *prcHv = rcHv;
+    return rc;
+}
+
+
+/**
+ * Performs the HvExtCallGetBootZeroedMemory extended hypercall.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   prcHv       Where to store the result of the hypercall operation.
+ *
+ * @thread  EMT.
+ */
+VMMR3_INT_DECL(int) gimR3HvHypercallExtGetBootZeroedMem(PVM pVM, int *prcHv)
+{
+    AssertPtr(pVM);
+    AssertPtr(prcHv);
+    PGIMHV pHv  = &pVM->gim.s.u.Hv;
+
+    /*
+     * Grab the parameters.
+     */
+    PGIMHVEXTGETBOOTZEROMEM pOut = (PGIMHVEXTGETBOOTZEROMEM)pHv->pbHypercallOut;
+
+    /*
+     * Perform the hypercall.
+     */
+    uint32_t const cRanges = PGMR3PhysGetRamRangeCount(pVM);
+    pOut->cPages = 0;
+    for (uint32_t iRange = 0; iRange < cRanges; iRange++)
+    {
+        RTGCPHYS GCPhysStart;
+        RTGCPHYS GCPhysEnd;
+        int rc = PGMR3PhysGetRange(pVM, iRange, &GCPhysStart, &GCPhysEnd, NULL /* pszDesc */, NULL /* fIsMmio */);
+        if (RT_FAILURE(rc))
+        {
+            LogRelMax(10, ("GIM: HyperV: HvHypercallExtGetBootZeroedMem: PGMR3PhysGetRange failed for iRange(%u) rc=%Rrc\n",
+                           iRange, rc));
+            *prcHv = GIM_HV_STATUS_OPERATION_DENIED;
+            return rc;
+        }
+
+        RTGCPHYS const cbRange = RT_ALIGN(GCPhysEnd - GCPhysStart + 1, PAGE_SIZE);
+        pOut->cPages += cbRange >> GIM_HV_PAGE_SHIFT;
+        if (iRange == 0)
+            pOut->GCPhysStart = GCPhysStart;
+    }
+
+    /*
+     * Update the guest memory with result.
+     */
+    int rcHv;
+    int rc = PGMPhysSimpleWriteGCPhys(pVM, pHv->GCPhysHypercallOut, pHv->pbHypercallOut, sizeof(GIMHVEXTGETBOOTZEROMEM));
+    if (RT_SUCCESS(rc))
+    {
+        LogRel(("GIM: HyperV: Queried boot zeroed guest memory range (starting at %#RGp spanning %u pages) at %#RGp\n",
+                pOut->GCPhysStart, pOut->cPages, pHv->GCPhysHypercallOut));
+        rcHv = GIM_HV_STATUS_SUCCESS;
+    }
+    else
+    {
+        rcHv = GIM_HV_STATUS_OPERATION_DENIED;
+        LogRelMax(10, ("GIM: HyperV: HvHypercallExtGetBootZeroedMem failed to update guest memory. rc=%Rrc\n", rc));
+        rc = VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED;
+    }
 
     *prcHv = rcHv;
     return rc;
