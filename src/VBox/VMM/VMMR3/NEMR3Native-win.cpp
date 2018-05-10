@@ -2617,7 +2617,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * address if direct access buffering or kernel address if not.
  *
  * The I/O control calls are 'abstracted' in the support driver, see
- * SUPR0IoCtlSetupForHandle(), SUPR0IoctlPerform() and SUPR0IoCtlCleanup().
+ * SUPR0IoCtlSetupForHandle(), SUPR0IoCtlPerform() and SUPR0IoCtlCleanup().
  *
  *
  * @subsection subsect_nem_win_impl_cpumctx     CPUMCTX
