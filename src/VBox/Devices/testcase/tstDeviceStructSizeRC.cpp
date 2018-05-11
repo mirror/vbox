@@ -1343,6 +1343,8 @@ int main()
     GEN_CHECK_OFF(DEVSERIAL, uRegLsr);
     GEN_CHECK_OFF(DEVSERIAL, uRegMsr);
     GEN_CHECK_OFF(DEVSERIAL, uRegScr);
+    GEN_CHECK_OFF(DEVSERIAL, FifoXmit);
+    GEN_CHECK_OFF(DEVSERIAL, FifoRecv);
     GEN_CHECK_OFF(DEVSERIAL, cbAvailRdr);
 #endif
 
