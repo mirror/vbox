@@ -44,12 +44,20 @@ create_log()
     fi
 }
 
-## Writes text to standard error
+## Writes text to standard error, as standard output is masked.
 #
 # Syntax: info text
 info()
 {
     echo 1>&2 "$1"
+}
+
+## Copies standard input to standard error, as standard output is masked.
+#
+# Syntax: info text
+catinfo()
+{
+    cat 1>&2
 }
 
 ## Writes text to the log file

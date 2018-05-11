@@ -34,7 +34,6 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
-LOG="/var/log/vbox-install.log"
 MODPROBE=/sbin/modprobe
 SCRIPTNAME=vboxdrv.sh
 
@@ -45,6 +44,17 @@ SCRIPT_DIR="${TARGET%/[!/]*}"
 if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
 fi
+
+setup_log()
+{
+    test -n "${LOG}" && return 0
+    # Rotate log files
+    LOG="/var/log/vbox-setup.log"
+    mv "${LOG}.3" "${LOG}.4" 2>/dev/null
+    mv "${LOG}.2" "${LOG}.3" 2>/dev/null
+    mv "${LOG}.1" "${LOG}.2" 2>/dev/null
+    mv "${LOG}" "${LOG}.1" 2>/dev/null
+}
 
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
 export BUILD_TYPE
@@ -109,6 +119,20 @@ failure()
 running()
 {
     lsmod | grep -q "$1[^_-]"
+}
+
+log()
+{
+    setup_log
+    echo "${1}" >> "${LOG}"
+}
+
+module_build_log()
+{
+    setup_log
+    echo "${1}" | egrep -v \
+        "^test -e include/generated/autoconf.h|^echo >&2|^/bin/false)$" \
+        >> "${LOG}"
 }
 
 ## Output the vboxdrv part of our udev rule.  This is redirected to the right file.
@@ -397,29 +421,41 @@ cleanup()
 setup()
 {
     begin_msg "Building VirtualBox kernel modules" console
-    if ! $BUILDINTMP \
+    log "Building the main VirtualBox module."
+    if ! myerr=`$BUILDINTMP \
         --save-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxdrv" \
-        --no-print-directory install >> $LOG 2>&1; then
+        --no-print-directory install 2>&1`; then
         "${INSTALL_DIR}/check_module_dependencies.sh" || exit 1
+        log "Error building the module:"
+        module_build_log "$myerr"
         failure "Look at $LOG to find out what went wrong"
     fi
-    if ! $BUILDINTMP \
+    log "Building the net filter module."
+    if ! myerr=`$BUILDINTMP \
         --use-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxnetflt" \
-        --no-print-directory install >> $LOG 2>&1; then
+        --no-print-directory install 2>&1`; then
+        log "Error building the module:"
+        module_build_log "$myerr"
         failure "Look at $LOG to find out what went wrong"
     fi
-    if ! $BUILDINTMP \
+    log "Building the net adaptor module."
+    if ! myerr=`$BUILDINTMP \
         --use-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxnetadp" \
-        --no-print-directory install >> $LOG 2>&1; then
+        --no-print-directory install 2>&1`; then
+        log "Error building the module:"
+        module_build_log "$myerr"
         failure "Look at $LOG to find out what went wrong"
     fi
-    if ! $BUILDINTMP \
+    log "Building the PCI pass-through module."
+    if ! myerr=`$BUILDINTMP \
         --use-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxpci" \
-        --no-print-directory install >> $LOG 2>&1; then
+        --no-print-directory install 2>&1`; then
+        log "Error building the module:"
+        module_build_log "$myerr"
         failure "Look at $LOG to find out what went wrong"
     fi
     rm -f /etc/vbox/module_not_compiled
@@ -474,6 +510,7 @@ restart)
     stop && start
     ;;
 setup)
+    test -n "${2}" && export KERN_VER="${2}"
     # Create udev rule and USB device nodes.
     ## todo Wouldn't it make more sense to install the rule to /lib/udev?  This
     ## is not a user-created configuration file after all.
