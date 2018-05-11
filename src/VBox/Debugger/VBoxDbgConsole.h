@@ -24,6 +24,7 @@
 #include <QComboBox>
 #include <QTimer>
 #include <QEvent>
+#include <QActionGroup>
 
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
@@ -80,6 +81,7 @@ public:
 
 protected:
     typedef enum  { kGreenOnBlack, kBlackOnWhite } VBoxDbgConsoleColor;
+    typedef enum  { kFontType_Monospace, kFontType_Courier } VBoxDbgConsoleFontType;
 
     /**
      * Context menu event.
@@ -88,6 +90,31 @@ protected:
      * @param pEvent   Pointer to the event.
      */
     virtual void contextMenuEvent(QContextMenuEvent *pEvent);
+
+    /**
+     * Sets the color scheme.
+     *
+     * @param   enmScheme       The new color scheme.
+     * @param   fSaveIt         Whether to save it.
+     */
+    void        setColorScheme(VBoxDbgConsoleColor enmScheme, bool fSaveIt);
+
+    /**
+     * Sets the font type / family.
+     *
+     * @param   enmFontType     The font type.
+     * @param   fSaveIt         Whether to save it.
+     */
+    void        setFontType(VBoxDbgConsoleFontType enmFontType, bool fSaveIt);
+
+    /**
+     * Sets the font size.
+     *
+     * @param   uFontSize       The new font size in points.
+     * @param   fSaveIt         Whether to save it.
+     */
+    void        setFontSize(uint32_t uFontSize, bool fSaveIt);
+
 
     /** The current line (paragraph) number. */
     unsigned m_uCurLine;
@@ -100,26 +127,29 @@ protected:
     /** The IVirtualBox object */
     IVirtualBox *m_pVirtualBox;
 
+    /** Array of font size actions 6..22pt. */
+    QAction *m_apFontSizeActions[22 - 6 + 1];
+    /** Action group for m_apFontSizeActions. */
+    QActionGroup *m_pActionFontSizeGroup;
+
+    /** The minimum font size.   */
+    static const uint32_t s_uMinFontSize;
+
 private slots:
     /**
-     * The green-on-black color scheme context-menu item was triggered.
+     * Selects color scheme
      */
-    void        setColorGreenOnBlack();
+    void        sltSelectColorScheme();
 
     /**
-     * The black-on-white color scheme context-menu item was triggered.
+     * Selects font type.
      */
-    void        setColorBlackOnWhite();
+    void        sltSelectFontType();
 
     /**
-     * The courier font family context-menu item was triggered.
+     * Selects font size.
      */
-    void        setFontCourier();
-
-    /**
-     * The monospace font family context-menu item was triggered.
-     */
-    void        setFontMonospace();
+    void        sltSelectFontSize();
 };
 
 
