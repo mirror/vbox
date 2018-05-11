@@ -49,11 +49,13 @@
 /**
  * GIM Hyper-V saved-state version.
  */
-#define GIM_HV_SAVED_STATE_VERSION                UINT32_C(3)
+#define GIM_HV_SAVED_STATE_VERSION                      UINT32_C(4)
+/** Saved states, priot to saving debug UDP source/destination ports.  */
+#define GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG_UDP_PORTS  UINT32_C(3)
 /** Saved states, prior to any synthetic interrupt controller support. */
-#define GIM_HV_SAVED_STATE_VERSION_PRE_SYNIC      UINT32_C(2)
+#define GIM_HV_SAVED_STATE_VERSION_PRE_SYNIC            UINT32_C(2)
 /** Vanilla saved states, prior to any debug support. */
-#define GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG      UINT32_C(1)
+#define GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG            UINT32_C(1)
 
 #ifdef VBOX_WITH_STATISTICS
 # define GIMHV_MSRRANGE(a_uFirst, a_uLast, a_szName) \
@@ -862,6 +864,8 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, pHv->enmDbgReply);
     SSMR3PutU32(pSSM, pHv->uDbgBootpXId);
     SSMR3PutU32(pSSM, pHv->DbgGuestIp4Addr.u);
+    SSMR3PutU16(pSSM, pHv->uUdpGuestDstPort);
+    SSMR3PutU16(pSSM, pHv->uUdpGuestSrcPort);
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
@@ -891,6 +895,7 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM)
     int rc = SSMR3GetU32(pSSM, &uHvSavedStateVersion);
     AssertRCReturn(rc, rc);
     if (   uHvSavedStateVersion != GIM_HV_SAVED_STATE_VERSION
+        && uHvSavedStateVersion != GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG_UDP_PORTS
         && uHvSavedStateVersion != GIM_HV_SAVED_STATE_VERSION_PRE_SYNIC
         && uHvSavedStateVersion != GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG)
         return SSMR3SetLoadError(pSSM, VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION, RT_SRC_POS,
@@ -993,6 +998,11 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM)
         SSMR3GetU32(pSSM, &pHv->uDbgBootpXId);
         rc = SSMR3GetU32(pSSM, &pHv->DbgGuestIp4Addr.u);
         AssertRCReturn(rc, rc);
+        if (uHvSavedStateVersion > GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG_UDP_PORTS)
+        {
+            rc = SSMR3GetU16(pSSM, &pHv->uUdpGuestDstPort);     AssertRCReturn(rc, rc);
+            rc = SSMR3GetU16(pSSM, &pHv->uUdpGuestSrcPort);     AssertRCReturn(rc, rc);
+        }
 
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
