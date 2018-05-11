@@ -3231,7 +3231,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
             # Directory handling.
             #
-            if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
+            ## @todo r=michaln disabled completely, can fill up the guest disk or fail without giving a reason
+            if self.oTstDrv.fpApiVer > 6.0: # Copying directories via Main is supported only in versions > 5.2.
                 if self.oTstDrv.sHost == "win":
                     sSystemRoot = os.getenv('SystemRoot', 'C:\\Windows')
                     aaTests.extend([
