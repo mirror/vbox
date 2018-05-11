@@ -1824,8 +1824,16 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
      * CS.limit doesn't change and the limit check is done against the current
      * limit.
      */
+    /** @todo Robert Collins claims (The Segment Descriptor Cache, DDJ August
+     *        1998) that up to and including the Intel 486, far control
+     *        transfers in real mode set default CS attributes (0x93) and also
+     *        set a 64K segment limit. Starting with the Pentium, the
+     *        attributes and limit are left alone but the access rights are
+     *        ignored. We only implement the Pentium+ behavior.
+     *  */
     if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
     {
+        Assert(enmEffOpSize == IEMMODE_16BIT || enmEffOpSize == IEMMODE_32BIT);
         if (offSeg > pCtx->cs.u32Limit)
         {
             Log(("iemCImpl_FarJmp: 16-bit limit\n"));
@@ -1993,6 +2001,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
      * CS.limit doesn't change and the limit check is done against the current
      * limit.
      */
+    /** @todo See comment for similar code in iemCImpl_FarJmp */
     if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
     {
         Assert(enmEffOpSize == IEMMODE_16BIT || enmEffOpSize == IEMMODE_32BIT);
@@ -2246,6 +2255,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     /*
      * Real mode and V8086 mode are easy.
      */
+    /** @todo See comment for similar code in iemCImpl_FarJmp */
     if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
     {
         Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
@@ -2265,7 +2275,6 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pCtx->cs.u64Base    = (uint32_t)uNewCs << 4;
         pCtx->eflags.Bits.u1RF = 0;
-        /** @todo do we load attribs and limit as well? */
         if (cbPop)
             iemRegAddToRsp(pVCpu, pCtx, cbPop);
         return VINF_SUCCESS;
