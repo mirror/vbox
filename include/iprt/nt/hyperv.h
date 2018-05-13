@@ -538,6 +538,7 @@ typedef enum _HV_REGISTER_NAME
     HvRegisterInterruptState,
     HvRegisterPendingEvent0,                            /**< @since v5 */
     HvRegisterPendingEvent1,                            /**< @since v5 */
+    HvX64RegisterDeliverabilityNotifications,           /**< @since v5c? Late 2017? */
 
     HvX64RegisterRax = 0x00020000,
     HvX64RegisterRcx,
@@ -792,6 +793,7 @@ typedef enum _HV_REGISTER_NAME
 } HV_REGISTER_NAME;
 AssertCompile(HvRegisterInterceptSuspend == 0x00000001);
 AssertCompile(HvRegisterPendingEvent1 == 0x00010005);
+AssertCompile(HvX64RegisterDeliverabilityNotifications == 0x00010006);
 AssertCompile(HvX64RegisterRflags == 0x00020011);
 AssertCompile(HvX64RegisterXmmControlStatus == 0x00030019);
 AssertCompile(HvX64RegisterXfem == 0x00040005);
@@ -889,7 +891,8 @@ typedef union
 /** Pointer to a value of HvRegisterPendingInterruption. */
 typedef HV_X64_PENDING_INTERRUPTION_REGISTER *PHV_X64_PENDING_INTERRUPTION_REGISTER;
 
-/** Value format for HvRegisterPendingEvent0/1.
+/** Value format for HvX64RegisterDeliverabilityNotifications.
+ *  Value format for HvRegisterPendingEvent0/1.
  * @sa WHV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER  */
 typedef union
 {
