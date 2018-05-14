@@ -2150,7 +2150,9 @@ HRESULT Appliance::i_importDoIt(TaskOVF *pTask, AutoWriteLockBase &rWriteLock, R
             /* If everything was successful so far check if some extension
              * pack wants to do file sanity checking. */
             if (SUCCEEDED(hrc))
+            {
                 /** @todo */;
+            }
         }
         catch (HRESULT hrcXcpt)
         {
