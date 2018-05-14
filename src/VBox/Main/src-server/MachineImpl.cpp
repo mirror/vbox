@@ -10816,12 +10816,15 @@ void Machine::i_addMediumToRegistry(ComObjPtr<Medium> &pMedium)
 
     // decide which medium registry to use now that the medium is attached:
     Guid uuid;
-    if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
+    bool fCanHaveOwnMediaRegistry = mData->pMachineConfigFile->canHaveOwnMediaRegistry();
+    if (fCanHaveOwnMediaRegistry)
         // machine XML is VirtualBox 4.0 or higher:
         uuid = i_getId();     // machine UUID
     else
         uuid = mParent->i_getGlobalRegistryId(); // VirtualBox global registry UUID
 
+    if (fCanHaveOwnMediaRegistry && pMedium->i_removeRegistry(mParent->i_getGlobalRegistryId()))
+        mParent->i_markRegistryModified(mParent->i_getGlobalRegistryId());
     if (pMedium->i_addRegistry(uuid))
         mParent->i_markRegistryModified(uuid);
 
@@ -10831,6 +10834,12 @@ void Machine::i_addMediumToRegistry(ComObjPtr<Medium> &pMedium)
     {
         /* Tree lock needed by Medium::addRegistry when recursing. */
         AutoReadLock treeLock(&mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        if (fCanHaveOwnMediaRegistry && pMedium->i_removeRegistryRecursive(mParent->i_getGlobalRegistryId()))
+        {
+            treeLock.release();
+            mParent->i_markRegistryModified(mParent->i_getGlobalRegistryId());
+            treeLock.acquire();
+        }
         if (pBase->i_addRegistryRecursive(uuid))
         {
             treeLock.release();

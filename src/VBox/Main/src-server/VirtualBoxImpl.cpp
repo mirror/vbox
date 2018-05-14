@@ -4381,12 +4381,17 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
     AutoCaller mediumCaller(pMedium);
     AssertComRCReturnRC(mediumCaller.rc());
 
+    bool fAddToGlobalRegistry = false;
     const char *pszDevType = NULL;
+    Guid regId;
     ObjectsList<Medium> *pall = NULL;
     DeviceType_T devType;
     {
         AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
         devType = pMedium->i_getDeviceType();
+
+        if (!pMedium->i_getFirstRegistryMachineId(regId))
+            fAddToGlobalRegistry = true;
     }
     switch (devType)
     {
@@ -4461,6 +4466,13 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
         // must not hold the media tree write lock any more
         Assert(!i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
         *ppMedium = pDupMedium;
+    }
+
+    if (fAddToGlobalRegistry)
+    {
+        AutoWriteLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
+        if (pMedium->i_addRegistry(m->uuidMediaRegistry))
+            i_markRegistryModified(m->uuidMediaRegistry);
     }
 
     // Restore the initial lock state, so that no unexpected lock changes are
