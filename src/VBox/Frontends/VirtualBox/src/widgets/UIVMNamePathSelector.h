@@ -75,6 +75,8 @@ private:
     QIToolButton *m_pFileDialogButton;
     /** Tooltip set is set by clients of this widget. */
     QString       m_strToolTipText;
+    /** Path string whose separators are not converted to native ones. */
+    QString       m_strNonNativePath;
 };
 
 #endif /* !___UIVMNamePathSelector_h___ */

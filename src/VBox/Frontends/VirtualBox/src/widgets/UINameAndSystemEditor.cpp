@@ -239,6 +239,7 @@ void UINameAndSystemEditor::prepareWidgets()
         if (m_pNamePathSelector)
         {
             m_pNamePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+            m_pNamePathSelector->setPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
             pMainLayout->addWidget(m_pNamePathSelector, 0, 1, 1, 2);
         }
 
@@ -348,7 +349,7 @@ void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidatorStr
     m_pNamePathSelector->setNameFieldValidator(strValidatorString);
 }
 
-void UINameAndSystemEditor::setMachineFilePath(const QString &strPath)
+void UINameAndSystemEditor::setMachineFolder(const QString &strPath)
 {
     if (!m_pNamePathSelector)
         return;

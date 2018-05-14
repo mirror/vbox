@@ -28,14 +28,15 @@
 # include <QRadioButton>
 
 /* Local includes: */
+# include "UIVMNamePathSelector.h"
 # include "UIWizardCloneVMPageExpert.h"
 # include "UIWizardCloneVM.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalName, bool fAdditionalInfo, bool fShowChildsOption)
-    : UIWizardCloneVMPage1(strOriginalName)
+UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalName, const QString &strDefaultPath, bool fAdditionalInfo, bool fShowChildsOption)
+    : UIWizardCloneVMPage1(strOriginalName, strDefaultPath)
     , UIWizardCloneVMPage2(fAdditionalInfo)
     , UIWizardCloneVMPage3(fShowChildsOption)
 {
@@ -46,11 +47,11 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
         {
             QVBoxLayout *pNameCntLayout = new QVBoxLayout(m_pNameCnt);
             {
-                m_pNameEditor = new QLineEdit(m_pNameCnt);
+                m_pNamePathSelector = new UIVMNamePathSelector(m_pNameCnt);
                 {
-                    m_pNameEditor->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
+                    m_pNamePathSelector->setName(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
                 }
-                pNameCntLayout->addWidget(m_pNameEditor);
+                pNameCntLayout->addWidget(m_pNamePathSelector);
             }
         }
         m_pCloneTypeCnt = new QGroupBox(this);
@@ -100,8 +101,14 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
     }
 
     /* Setup connections: */
-    connect(m_pNameEditor, &QLineEdit::textChanged,
+    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigNameChanged,
             this, &UIWizardCloneVMPageExpert::completeChanged);
+    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigPathChanged,
+            this, &UIWizardCloneVMPageExpert::completeChanged);
+    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigNameChanged,
+            this, &UIWizardCloneVMPageExpert::sltNameChanged);
+    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigPathChanged,
+            this, &UIWizardCloneVMPageExpert::sltPathChanged);
     connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
             this, &UIWizardCloneVMPageExpert::sltButtonClicked);
 
@@ -109,9 +116,11 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
     qRegisterMetaType<KCloneMode>();
     /* Register fields: */
     registerField("cloneName", this, "cloneName");
+    registerField("clonePath", this, "clonePath");
     registerField("reinitMACs", this, "reinitMACs");
     registerField("linkedClone", this, "linkedClone");
     registerField("cloneMode", this, "cloneMode");
+    composeCloneFilePath();
 }
 
 void UIWizardCloneVMPageExpert::sltButtonClicked(QAbstractButton *pButton)
@@ -143,8 +152,14 @@ void UIWizardCloneVMPageExpert::initializePage()
 
 bool UIWizardCloneVMPageExpert::isComplete() const
 {
+    if (!m_pNamePathSelector)
+        return false;
+
+    QString path = m_pNamePathSelector->path();
+    if (path.isEmpty())
+        return false;
     /* Make sure VM name feat the rules: */
-    QString strName = m_pNameEditor->text().trimmed();
+    QString strName = m_pNamePathSelector->name().trimmed();
     return !strName.isEmpty() && strName != m_strOriginalName;
 }
 
@@ -167,3 +182,12 @@ bool UIWizardCloneVMPageExpert::validatePage()
     return fResult;
 }
 
+void UIWizardCloneVMPageExpert::sltNameChanged()
+{
+    composeCloneFilePath();
+}
+
+void UIWizardCloneVMPageExpert::sltPathChanged()
+{
+    composeCloneFilePath();
+}

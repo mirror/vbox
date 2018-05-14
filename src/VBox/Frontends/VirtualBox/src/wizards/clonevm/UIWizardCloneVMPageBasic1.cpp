@@ -25,56 +25,116 @@
 # include <QCheckBox>
 
 /* GUI includes: */
-# include "UIWizardCloneVMPageBasic1.h"
-# include "UIWizardCloneVM.h"
 # include "QIRichTextLabel.h"
+# include "UIVMNamePathSelector.h"
+# include "UIWizardCloneVM.h"
+# include "UIWizardCloneVMPageBasic1.h"
+# include "VBoxGlobal.h"
+
+/* COM includes: */
+# include "CVirtualBox.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIWizardCloneVMPage1::UIWizardCloneVMPage1(const QString &strOriginalName)
+UIWizardCloneVMPage1::UIWizardCloneVMPage1(const QString &strOriginalName, const QString &strDefaultPath)
     : m_strOriginalName(strOriginalName)
+    , m_strDefaultPath(strDefaultPath)
 {
 }
 
 QString UIWizardCloneVMPage1::cloneName() const
 {
-    return m_pNameEditor->text();
+    return m_pNamePathSelector->name();
 }
 
 void UIWizardCloneVMPage1::setCloneName(const QString &strName)
 {
-    m_pNameEditor->setText(strName);
+    m_pNamePathSelector->setName(strName);
 }
+
+QString UIWizardCloneVMPage1::clonePath() const
+{
+    if (!m_pNamePathSelector)
+        return QString();
+    return m_pNamePathSelector->path();
+}
+
+void UIWizardCloneVMPage1::setClonePath(const QString &strPath)
+{
+    m_pNamePathSelector->setPath(strPath);
+}
+
+QString UIWizardCloneVMPage1::cloneFilePath() const
+{
+    return m_strCloneFilePath;
+}
+
+void UIWizardCloneVMPage1::setCloneFilePath(const QString &path)
+{
+    if (m_strCloneFilePath == path)
+        return;
+    m_strCloneFilePath = path;
+}
+
 
 bool UIWizardCloneVMPage1::isReinitMACsChecked() const
 {
     return m_pReinitMACsCheckBox->isChecked();
 }
 
-UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalName)
-    : UIWizardCloneVMPage1(strOriginalName)
+void UIWizardCloneVMPage1::composeCloneFilePath()
+{
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    setCloneFilePath(vbox.ComposeMachineFilename(m_pNamePathSelector->name(),
+                                                 QString::null,
+                                                 QString::null,
+                                                 m_pNamePathSelector->path()));
+    const QFileInfo fileInfo(m_strCloneFilePath);
+    m_strCloneFolder = fileInfo.absolutePath();
+    if (m_pNamePathSelector)
+        m_pNamePathSelector->setToolTipText(m_strCloneFolder);
+}
+
+UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalName, const QString &strDefaultPath)
+    : UIWizardCloneVMPage1(strOriginalName, strDefaultPath)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pNameEditor = new QLineEdit(this);
+        if (m_pLabel)
         {
-            m_pNameEditor->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
+            pMainLayout->addWidget(m_pLabel);
         }
+
+        m_pNamePathSelector = new UIVMNamePathSelector(this);
+        if (m_pNamePathSelector)
+        {
+            pMainLayout->addWidget(m_pNamePathSelector);
+            m_pNamePathSelector->setName(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
+            m_pNamePathSelector->setPath(m_strDefaultPath);
+        }
+
         m_pReinitMACsCheckBox = new QCheckBox(this);
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pNameEditor);
-        pMainLayout->addWidget(m_pReinitMACsCheckBox);
+
+        if (m_pReinitMACsCheckBox)
+        {
+            pMainLayout->addWidget(m_pReinitMACsCheckBox);
+        }
         pMainLayout->addStretch();
     }
 
     /* Setup connections: */
-    connect(m_pNameEditor, &QLineEdit::textChanged, this, &UIWizardCloneVMPageBasic1::completeChanged);
+    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigNameChanged, this, &UIWizardCloneVMPageBasic1::completeChanged);
+    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigPathChanged, this, &UIWizardCloneVMPageBasic1::completeChanged);
+
+    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigNameChanged, this, &UIWizardCloneVMPageBasic1::sltNameChanged);
+    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigPathChanged, this, &UIWizardCloneVMPageBasic1::sltPathChanged);
 
     /* Register fields: */
     registerField("cloneName", this, "cloneName");
+    registerField("clonePath", this, "clonePath");
     registerField("reinitMACs", this, "reinitMACs");
 }
 
@@ -84,7 +144,7 @@ void UIWizardCloneVMPageBasic1::retranslateUi()
     setTitle(UIWizardCloneVM::tr("New machine name"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardCloneVM::tr("<p>Please choose a name for the new virtual machine. "
+    m_pLabel->setText(UIWizardCloneVM::tr("<p>Please choose a folder and a name for the new virtual machine. "
                                           "The new machine will be a clone of the machine <b>%1</b>.</p>")
                                           .arg(m_strOriginalName));
     m_pReinitMACsCheckBox->setToolTip(UIWizardCloneVM::tr("When checked a new unique MAC address will be assigned to all configured network cards."));
@@ -99,8 +159,23 @@ void UIWizardCloneVMPageBasic1::initializePage()
 
 bool UIWizardCloneVMPageBasic1::isComplete() const
 {
+    if (!m_pNamePathSelector)
+        return false;
+
+    QString path = m_pNamePathSelector->path();
+    if (path.isEmpty())
+        return false;
     /* Make sure VM name feat the rules: */
-    QString strName = m_pNameEditor->text().trimmed();
+    QString strName = m_pNamePathSelector->name().trimmed();
     return !strName.isEmpty() && strName != m_strOriginalName;
 }
 
+void UIWizardCloneVMPageBasic1::sltNameChanged()
+{
+    composeCloneFilePath();
+}
+
+void UIWizardCloneVMPageBasic1::sltPathChanged()
+{
+    composeCloneFilePath();
+}

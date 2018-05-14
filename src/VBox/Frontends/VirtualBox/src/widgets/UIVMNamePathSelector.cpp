@@ -110,19 +110,21 @@ void UIVMNamePathSelector::prepareWidgets()
 
 QString UIVMNamePathSelector::path() const
 {
-    if (!m_pPath)
-        return QString();
-    return m_pPath->text();
+    return m_strNonNativePath;
 }
 
 void UIVMNamePathSelector::setPath(const QString &path)
 {
-    if (!m_pPath || m_pPath->text() == path)
+    if (m_strNonNativePath == path)
         return;
-    QString nativePath(QDir::toNativeSeparators(path));
-    m_pPath->setText(nativePath);
-    m_pPath->setFixedWidthByText(nativePath);
-    emit sigPathChanged(nativePath);
+    m_strNonNativePath = path;
+    if (m_pPath)
+    {
+        QString nativePath(QDir::toNativeSeparators(path));
+        m_pPath->setText(nativePath);
+        m_pPath->setFixedWidthByText(nativePath);
+    }
+    emit sigPathChanged(m_strNonNativePath);
 }
 
 QString UIVMNamePathSelector::name() const
@@ -130,7 +132,6 @@ QString UIVMNamePathSelector::name() const
     if (!m_pName)
         return QString();
     return m_pName->text();
-
 }
 
 void UIVMNamePathSelector::setName(const QString &name)
@@ -140,19 +141,20 @@ void UIVMNamePathSelector::setName(const QString &name)
     m_pName->setText(name);
 }
 
-
 void UIVMNamePathSelector::retranslateUi()
 {
     if (m_strToolTipText.isEmpty())
+    {
+        setToolTip(tr("You have to enter a name for the virtual machine"));
         return;
+    }
     QString strToolTip = "The Virtual Machine files will be saved under " + m_strToolTipText;
     setToolTip(tr(qPrintable(strToolTip)));
 }
 
 void UIVMNamePathSelector::sltOpenPathSelector()
 {
-
-    QString strSelectedPath = QIFileDialog::getExistingDirectory(m_pPath->text(), this,
+    QString strSelectedPath = QIFileDialog::getExistingDirectory(m_strNonNativePath, this,
                                                                  QString("Select a parent folder for new Virtual Machine"));
     if (!strSelectedPath.isEmpty())
     {

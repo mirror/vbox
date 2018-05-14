@@ -34,6 +34,7 @@ class UIWizardCloneVMPageExpert : public UIWizardPage,
 {
     Q_OBJECT;
     Q_PROPERTY(QString cloneName READ cloneName WRITE setCloneName);
+    Q_PROPERTY(QString clonePath READ clonePath WRITE setClonePath);
     Q_PROPERTY(bool reinitMACs READ isReinitMACsChecked);
     Q_PROPERTY(bool linkedClone READ isLinkedClone);
     Q_PROPERTY(KCloneMode cloneMode READ cloneMode WRITE setCloneMode);
@@ -41,12 +42,15 @@ class UIWizardCloneVMPageExpert : public UIWizardPage,
 public:
 
     /* Constructor: */
-    UIWizardCloneVMPageExpert(const QString &strOriginalName, bool fAdditionalInfo, bool fShowChildsOption);
+    UIWizardCloneVMPageExpert(const QString &strOriginalName, const QString &strDefaultPath,
+                              bool fAdditionalInfo, bool fShowChildsOption);
 
 private slots:
 
     /* Button click handler: */
     void sltButtonClicked(QAbstractButton *pButton);
+    void sltNameChanged();
+    void sltPathChanged();
 
 private:
 
@@ -67,4 +71,3 @@ private:
 };
 
 #endif // __UIWizardCloneVMPageExpert_h__
-

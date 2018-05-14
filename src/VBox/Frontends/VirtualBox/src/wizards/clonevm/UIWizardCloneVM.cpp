@@ -30,6 +30,7 @@
 
 /* COM includes: */
 # include "CConsole.h"
+# include "CSystemProperties.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -50,8 +51,12 @@ UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine, CSna
 
 bool UIWizardCloneVM::cloneVM()
 {
-    /* Get clone name: */
+    /* Get the clone name: */
     QString strName = field("cloneName").toString();
+    /* Get the clone path: */
+    QString strPath = field("clonePath").toString();
+    QString strSettingsFile = field("cloneFilePath").toString();
+
     /* Should we reinit mac status? */
     bool fReinitMACs = field("reinitMACs").toBool();
     /* Should we create linked clone? */
@@ -117,7 +122,6 @@ bool UIWizardCloneVM::cloneVM()
     }
 
     /* Create a new machine object. */
-    const QString &strSettingsFile = vbox.ComposeMachineFilename(strName, QString::null /**< @todo group support */, QString::null, QString::null);
     CMachine cloneMachine = vbox.CreateMachine(strSettingsFile, strName, QVector<QString>(), QString::null, QString::null);
     if (!vbox.isOk())
     {
@@ -174,12 +178,13 @@ void UIWizardCloneVM::retranslateUi()
 
 void UIWizardCloneVM::prepare()
 {
+    QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     /* Create corresponding pages: */
     switch (mode())
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardCloneVMPageBasic1(m_machine.GetName()));
+            setPage(Page1, new UIWizardCloneVMPageBasic1(m_machine.GetName(), strDefaultMachineFolder));
             setPage(Page2, new UIWizardCloneVMPageBasic2(m_snapshot.isNull()));
             if (m_machine.GetSnapshotCount() > 0)
                 setPage(Page3, new UIWizardCloneVMPageBasic3(m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
@@ -188,6 +193,7 @@ void UIWizardCloneVM::prepare()
         case WizardMode_Expert:
         {
             setPage(PageExpert, new UIWizardCloneVMPageExpert(m_machine.GetName(),
+                                                              strDefaultMachineFolder,
                                                               m_snapshot.isNull(),
                                                               m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
             break;
@@ -201,4 +207,3 @@ void UIWizardCloneVM::prepare()
     /* Call to base-class: */
     UIWizard::prepare();
 }
-

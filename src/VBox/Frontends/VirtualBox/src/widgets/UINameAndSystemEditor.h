@@ -75,7 +75,7 @@ public:
     void setNameFieldValidator(const QString &strValidatorString);
 
     /** Forwards the machine name to UIVMNamePathSelector member instance. */
-    void setMachineFilePath(const QString &strPath);
+    void setMachineFolder(const QString &strPath);
 
 protected:
 

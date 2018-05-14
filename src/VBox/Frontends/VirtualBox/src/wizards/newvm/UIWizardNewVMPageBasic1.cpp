@@ -235,7 +235,7 @@ void UIWizardNewVMPage1::composeMachineFilePath()
     m_strMachineBaseName = fileInfo.completeBaseName();
 
     if (m_pNameAndSystemEditor)
-        m_pNameAndSystemEditor->setMachineFilePath(m_strMachineFolder);
+        m_pNameAndSystemEditor->setMachineFolder(m_strMachineFolder);
 }
 
 bool UIWizardNewVMPage1::createMachineFolder()
