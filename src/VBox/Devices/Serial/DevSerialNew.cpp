@@ -193,6 +193,7 @@
 /** Size of a FIFO. */
 #define UART_FIFO_LENGTH                     16
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -997,7 +998,7 @@ DECLINLINE(int) serialRegRbrDllRead(PDEVSERIAL pThis, uint32_t *puVal)
         {
             /*
              * Only go back to R3 if there is new data available for the FIFO
-             * and we would clear the interrupt to fill it up again 
+             * and we would clear the interrupt to fill it up again.
              */
             if (   pThis->FifoRecv.cbUsed <= pThis->FifoRecv.cbItl
                 && ASMAtomicReadU32(&pThis->cbAvailRdr) > 0)
