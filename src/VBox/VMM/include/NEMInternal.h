@@ -75,7 +75,15 @@ typedef struct NEMWINIOCTL
     ( ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K) || ((RTGCPHYS)(a_GCPhys) < (RTGCPHYS)_64K) )
 
 /** The CPUMCTX_EXTRN_XXX mask for IEM. */
-# define NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM     CPUMCTX_EXTRN_ALL
+# define NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM     (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI)
+
+/** @name Windows: Interrupt window flags (NEM_WIN_INTW_F_XXX).
+ * @{  */
+# define NEM_WIN_INTW_F_NMI             UINT8_C(0x01)
+# define NEM_WIN_INTW_F_REGULAR         UINT8_C(0x02)
+# define NEM_WIN_INTW_F_PRIO_MASK       UINT8_C(0x3c)
+# define NEM_WIN_INTW_F_PRIO_SHIFT      2
+/** @} */
 
 #endif /* RT_OS_WINDOWS */
 
@@ -170,6 +178,13 @@ typedef struct NEMCPU
     /** NEMCPU_MAGIC. */
     uint32_t                    u32Magic;
 #ifdef RT_OS_WINDOWS
+    /** The current state of the interrupt windows (NEM_WIN_INTW_F_XXX). */
+    uint8_t                     fCurrentInterruptWindows;
+    /** The desired state of the interrupt windows (NEM_WIN_INTW_F_XXX). */
+    uint8_t                     fDesiredInterruptWindows;
+    /** Last copy of HV_X64_VP_EXECUTION_STATE::InterruptShadow. */
+    bool                        fLastInterruptShadow : 1;
+    bool                        afPadding[1];
 # ifdef NEM_WIN_USE_OUR_OWN_RUN_API
     /** Pending VERR_NEM_CHANGE_PGM_MODE or VERR_NEM_FLUSH_TLB. */
     int32_t                     rcPgmPending;
@@ -217,6 +232,7 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatExitMemUnmapped;
     STAMCOUNTER                 StatExitMemIntercept;
     STAMCOUNTER                 StatExitHalt;
+    STAMCOUNTER                 StatExitInterruptWindow;
     STAMCOUNTER                 StatGetMsgTimeout;
     STAMCOUNTER                 StatStopCpuSuccess;
     STAMCOUNTER                 StatStopCpuPending;

@@ -47,6 +47,7 @@
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/apic.h>
+#include <VBox/vmm/pdm.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
 
@@ -1161,6 +1162,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitMemUnmapped,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unmapped memory exits",        "/NEM/CPU%u/ExitMemUnmapped", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitMemIntercept,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of intercepted memory exits",     "/NEM/CPU%u/ExitMemIntercept", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitHalt,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitHalt", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitInterruptWindow, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitInterruptWindow", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPending,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stops",            "/NEM/CPU%u/StopCpuPending", iCpu);
@@ -2044,6 +2046,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         else
             AssertMsg(rcPgmPending == VINF_SUCCESS, ("rcPgmPending=%Rrc\n", VBOXSTRICTRC_VAL(rcPgmPending) ));
     }
+    LogFlow(("nemR3NativeRunGC: returns %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
     return rcStrict;
 #endif
 }

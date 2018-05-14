@@ -29,6 +29,7 @@
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/apic.h>
+#include <VBox/vmm/pdm.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/gvm.h>
 #include <VBox/vmm/vm.h>
@@ -1019,7 +1020,57 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Elements[iReg].Value.Reg64          = 0;
         iReg++;
     }
-    /// @todo HvRegisterInterruptState
+
+    /* Interruptibility state.  This can get a little complicated since we get
+       half of the state via HV_X64_VP_EXECUTION_STATE. */
+    if (   (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+        ==          (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI) )
+    {
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvRegisterInterruptState;
+        pInput->Elements[iReg].Value.Reg64          = 0;
+        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
+            pInput->Elements[iReg].Value.InterruptState.InterruptShadow = 1;
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            pInput->Elements[iReg].Value.InterruptState.NmiMasked = 1;
+        iReg++;
+    }
+    else if (fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT)
+    {
+        if (   pVCpu->nem.s.fLastInterruptShadow
+            || (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip))
+        {
+            HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+            pInput->Elements[iReg].Name                 = HvRegisterInterruptState;
+            pInput->Elements[iReg].Value.Reg64          = 0;
+            if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
+                pInput->Elements[iReg].Value.InterruptState.InterruptShadow = 1;
+            /** @todo Retrieve NMI state, currently assuming it's zero. (yes this may happen on I/O) */
+            //if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            //    pInput->Elements[iReg].Value.InterruptState.NmiMasked = 1;
+            iReg++;
+        }
+    }
+    else
+        Assert(!(fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI));
+
+    /* Interrupt windows. */
+    uint8_t const fDesiredIntWin = pVCpu->nem.s.fDesiredInterruptWindows;
+    if (pVCpu->nem.s.fCurrentInterruptWindows != fDesiredIntWin)
+    {
+        pVCpu->nem.s.fCurrentInterruptWindows = pVCpu->nem.s.fDesiredInterruptWindows;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                                         = HvX64RegisterDeliverabilityNotifications;
+        pInput->Elements[iReg].Value.DeliverabilityNotifications.AsUINT64   = fDesiredIntWin;
+        Assert(pInput->Elements[iReg].Value.DeliverabilityNotifications.NmiNotification == RT_BOOL(fDesiredIntWin & NEM_WIN_INTW_F_NMI));
+        Assert(pInput->Elements[iReg].Value.DeliverabilityNotifications.InterruptNotification == RT_BOOL(fDesiredIntWin & NEM_WIN_INTW_F_REGULAR));
+        Assert(pInput->Elements[iReg].Value.DeliverabilityNotifications.InterruptPriority == (fDesiredIntWin & NEM_WIN_INTW_F_PRIO_MASK) >> NEM_WIN_INTW_F_PRIO_SHIFT);
+        iReg++;
+    }
+
     /// @todo HvRegisterPendingEvent0
     /// @todo HvRegisterPendingEvent1
 
@@ -1254,10 +1305,15 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Names[iReg++] = HvX64RegisterPat;
     }
 
+    /* Interruptibility. */
+    if (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+    {
+        pInput->Names[iReg++] = HvRegisterInterruptState;
+        pInput->Names[iReg++] = HvX64RegisterRip;
+    }
+
     /* event injection */
     pInput->Names[iReg++] = HvRegisterPendingInterruption;
-    pInput->Names[iReg++] = HvRegisterInterruptState;
-    pInput->Names[iReg++] = HvRegisterInterruptState;
     pInput->Names[iReg++] = HvRegisterPendingEvent0;
     pInput->Names[iReg++] = HvRegisterPendingEvent1;
     size_t const cRegs   = iReg;
@@ -1697,6 +1753,36 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         iReg++;
     }
 
+    /* Interruptibility. */
+    if (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+    {
+        Assert(pInput->Names[iReg] == HvRegisterInterruptState);
+        Assert(pInput->Names[iReg + 1] == HvX64RegisterRip);
+
+        if (!(pCtx->fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT))
+        {
+            pVCpu->nem.s.fLastInterruptShadow = paValues[iReg].InterruptState.InterruptShadow;
+            if (paValues[iReg].InterruptState.InterruptShadow)
+            {
+                EMSetInhibitInterruptsPC(pVCpu, paValues[iReg + 1].Reg64);
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+            }
+            else
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        }
+
+        if (!(pCtx->fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+        {
+            if (paValues[iReg].InterruptState.NmiMasked)
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+            else
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
+
+        fWhat |= CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI;
+        iReg += 2;
+    }
+
     /* Event injection. */
     /// @todo HvRegisterPendingInterruption
     Assert(pInput->Names[iReg] == HvRegisterPendingInterruption);
@@ -1710,7 +1796,6 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
                   ("%#RX64\n", paValues[iReg].PendingInterruption.AsUINT64));
     }
 
-    /// @todo HvRegisterInterruptState
     /// @todo HvRegisterPendingEvent0
     /// @todo HvRegisterPendingEvent1
 

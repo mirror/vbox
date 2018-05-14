@@ -2838,6 +2838,27 @@
 #define VERR_NEM_CHANGE_PGM_MODE                    (-6810)
 /** Get register caller must change the CPU mode. */
 #define VINF_NEM_CHANGE_PGM_MODE                    (6810)
+
+/** NEM internal processing error \#0. */
+#define VINF_NEM_IPE_0                              (6890)
+/** NEM internal processing error \#1. */
+#define VINF_NEM_IPE_1                              (6891)
+/** NEM internal processing error \#2. */
+#define VINF_NEM_IPE_2                              (6892)
+/** NEM internal processing error \#3. */
+#define VINF_NEM_IPE_3                              (6893)
+/** NEM internal processing error \#4. */
+#define VINF_NEM_IPE_4                              (6894)
+/** NEM internal processing error \#5. */
+#define VINF_NEM_IPE_5                              (6895)
+/** NEM internal processing error \#6. */
+#define VINF_NEM_IPE_6                              (6896)
+/** NEM internal processing error \#7. */
+#define VINF_NEM_IPE_7                              (6897)
+/** NEM internal processing error \#8. */
+#define VINF_NEM_IPE_8                              (6898)
+/** NEM internal processing error \#9. */
+#define VINF_NEM_IPE_9                              (6899)
 /** @} */
 
 /** @name Audio / Video recording Status Codes

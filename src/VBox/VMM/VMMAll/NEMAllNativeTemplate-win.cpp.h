@@ -385,6 +385,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
     /// @todo WHvRegisterInterruptState
     /// @todo WHvRegisterPendingEvent0
     /// @todo WHvRegisterPendingEvent1
+    /// @todo WHvX64RegisterDeliverabilityNotifications
 
     /*
      * Set the registers.
@@ -423,6 +424,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX 
 
 # else
     WHV_REGISTER_NAME  aenmNames[128];
+AssertFailed(); /** @todo this code is out of date! */
 
     /* GPRs */
     aenmNames[0]  = WHvX64RegisterRax;
@@ -1205,7 +1207,7 @@ nemHCWinHandleMemoryAccessPageCheckerCallback(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
  * @param   pGVCpu          The global (ring-0) per CPU structure.
  * @param   pCtx            The CPU context to import into.
  * @param   fWhat           What to import.
- * @param   pszCaller       Whoe is doing the importing.
+ * @param   pszCaller       Who is doing the importing.
  */
 DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat, const char *pszCaller)
 {
@@ -1226,22 +1228,69 @@ DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, PC
 }
 # endif /* IN_RING0 */
 
+
+/**
+ * Wrapper around nemR0WinImportStateStrict and nemHCWinCopyStateFromHyperV.
+ *
+ * Unlike the wrapped APIs, this checks whether it's necessary.
+ *
+ * @returns VBox strict status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @param   pGVCpu          The global (ring-0) per CPU structure.
+ * @param   pCtx            The CPU context to import into.
+ * @param   fWhat           What to import.
+ * @param   pszCaller       Who is doing the importing.
+ */
+DECLINLINE(VBOXSTRICTRC) nemHCWinImportStateIfNeededStrict(PVMCPU pVCpu, PGVMCPU pGVCpu, PCPUMCTX pCtx,
+                                                           uint64_t fWhat, const char *pszCaller)
+{
+    if (pCtx->fExtrn & fWhat)
+    {
+# ifdef IN_RING0
+        RT_NOREF(pVCpu);
+        return nemR0WinImportStateStrict(pGVCpu->pGVM, pGVCpu, pCtx, fWhat, pszCaller);
+# else
+        RT_NOREF(pGVCpu, pszCaller);
+        int rc = nemHCWinCopyStateFromHyperV(pVCpu->pVMR3, pVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM);
+        AssertRCReturn(rc, rc);
+# endif
+    }
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Copies register state from the X64 intercept message header.
  *
  * ASSUMES no state copied yet.
  *
+ * @param   pVCpu           The cross context per CPU structure.
  * @param   pCtx            The registe rcontext.
  * @param   pHdr            The X64 intercept message header.
  */
-DECLINLINE(void) nemHCWinCopyStateFromX64Header(PCPUMCTX pCtx, HV_X64_INTERCEPT_MESSAGE_HEADER const *pHdr)
+DECLINLINE(void) nemHCWinCopyStateFromX64Header(PVMCPU pVCpu, PCPUMCTX pCtx, HV_X64_INTERCEPT_MESSAGE_HEADER const *pHdr)
 {
-    Assert(    (pCtx->fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS))
-            ==                 (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS));
+    Assert(    (pCtx->fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT))
+            ==                 (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT));
     NEM_WIN_COPY_BACK_SEG(pCtx->cs, pHdr->CsSegment);
-    pCtx->rip    = pHdr->Rip;
+    pCtx->rip      = pHdr->Rip;
     pCtx->rflags.u = pHdr->Rflags;
-    pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS);
+
+    pVCpu->nem.s.fLastInterruptShadow = pHdr->ExecutionState.InterruptShadow;
+    if (!pHdr->ExecutionState.InterruptShadow)
+    {
+        if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        { /* likely */ }
+        else
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    }
+    else
+    {
+        EMSetInhibitInterruptsPC(pVCpu, pHdr->Rip);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    }
+
+    pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT);
 }
 
 
@@ -1264,10 +1313,10 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, 
     AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
 
     /*
-     * Whatever we do, we must clear pending event ejection upon resume.
+     * Whatever we do, we must clear pending event injection upon resume.
      */
     if (pMsg->Header.ExecutionState.InterruptionPending)
-        pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_MASK;
+        pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
 
 #if 0 /* Experiment: 20K -> 34K exit/s. */
     if (   pMsg->Header.ExecutionState.EferLma
@@ -1324,7 +1373,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, 
     /*
      * Emulate the memory access, either access handler or special memory.
      */
-    nemHCWinCopyStateFromX64Header(pCtx, &pMsg->Header);
+    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
     VBOXSTRICTRC rcStrict;
 # ifdef IN_RING0
     rcStrict = nemR0WinImportStateStrict(pGVCpu->pGVM, pGVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "MemExit");
@@ -1377,7 +1426,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, 
      * Whatever we do, we must clear pending event ejection upon resume.
      */
     if (pMsg->Header.ExecutionState.InterruptionPending)
-        pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_MASK;
+        pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
 
     VBOXSTRICTRC rcStrict;
     if (!pMsg->AccessInfo.StringOp)
@@ -1396,7 +1445,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, 
                   (uint32_t)pMsg->Rax & fAndMask, pMsg->AccessInfo.AccessSize, VBOXSTRICTRC_VAL(rcStrict) ));
             if (IOM_SUCCESS(rcStrict))
             {
-                nemHCWinCopyStateFromX64Header(pCtx, &pMsg->Header);
+                nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
                 nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
             }
         }
@@ -1414,7 +1463,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, 
                     pCtx->rax = uValue;
                 pCtx->fExtrn &= ~CPUMCTX_EXTRN_RAX;
                 Log4(("IOExit/%u: RAX %#RX64 -> %#RX64\n", pVCpu->idCpu, pMsg->Rax, pCtx->rax));
-                nemHCWinCopyStateFromX64Header(pCtx, &pMsg->Header);
+                nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
                 nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
             }
         }
@@ -1435,7 +1484,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, 
          * experiments to figure out how it's communicated.  Alternatively, we can scan
          * the opcode bytes for possible evil prefixes.
          */
-        nemHCWinCopyStateFromX64Header(pCtx, &pMsg->Header);
+        nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
         pCtx->fExtrn &= ~(  CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX | CPUMCTX_EXTRN_RDI | CPUMCTX_EXTRN_RSI
                           | CPUMCTX_EXTRN_DS  | CPUMCTX_EXTRN_ES);
         NEM_WIN_COPY_BACK_SEG(pCtx->ds, pMsg->DsSegment);
@@ -1478,6 +1527,40 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, 
 
 
 /**
+ * Deals with interrupt window message.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context per CPU structure.
+ * @param   pMsg            The message.
+ * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
+ */
+NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageInterruptWindow(PVM pVM, PVMCPU pVCpu,
+                                                                  HV_X64_INTERRUPT_WINDOW_MESSAGE const *pMsg,
+                                                                  PCPUMCTX pCtx, PGVMCPU pGVCpu)
+{
+    /*
+     * Assert message sanity.
+     */
+    Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_EXECUTE
+           || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ   // READ & WRITE are probably not used here
+           || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
+    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
+    AssertMsg(pMsg->Type == HvX64PendingInterrupt || pMsg->Type == HvX64PendingNmi, ("%#x\n", pMsg->Type));
+
+    /*
+     * Just copy the state we've got and handle it in the loop for now.
+     */
+    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
+    Log4(("IOIntW/%u: %04x:%08RX64: %u\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, pMsg->Type));
+
+    /** @todo call nemHCWinHandleInterruptFF   */
+    RT_NOREF(pVM, pGVCpu);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Handles messages (VM exits).
  *
  * @returns Strict VBox status code.
@@ -1513,17 +1596,20 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
 
             case HvMessageTypeX64Halt:
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHalt);
+                Log4(("HaltExit\n"));
                 return VINF_EM_HALT;
 
             case HvMessageTypeX64InterruptWindow:
-                AssertLogRelMsgFailedReturn(("Message type %#x not implemented!\n", pMsg->Header.MessageType),
-                                            VERR_INTERNAL_ERROR_2);
+                Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64InterruptWindow));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitInterruptWindow);
+                return nemHCWinHandleMessageInterruptWindow(pVM, pVCpu, &pMsg->X64InterruptWindow, pCtx, pGVCpu);
 
             case HvMessageTypeInvalidVpRegisterValue:
             case HvMessageTypeUnrecoverableException:
             case HvMessageTypeUnsupportedFeature:
             case HvMessageTypeTlbPageSizeMismatch:
-                AssertLogRelMsgFailedReturn(("Message type %#x not implemented!\n", pMsg->Header.MessageType),
+                LogRel(("Unimplemented msg:\n%.*Rhxd\n", (int)sizeof(*pMsg), pMsg));
+                AssertLogRelMsgFailedReturn(("Message type %#x not implemented!\n%.32Rhxd\n", pMsg->Header.MessageType, pMsg),
                                             VERR_INTERNAL_ERROR_2);
 
             case HvMessageTypeX64MsrIntercept:
@@ -1536,10 +1622,12 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
             case HvMessageTypeFerrAsserted:
             case HvMessageTypeEventLogBufferComplete:
             case HvMessageTimerExpired:
+                LogRel(("Unexpected msg:\n%.*Rhxd\n", (int)sizeof(*pMsg), pMsg));
                 AssertLogRelMsgFailedReturn(("Unexpected message on CPU #%u: #x\n", pVCpu->idCpu, pMsg->Header.MessageType),
                                             VERR_INTERNAL_ERROR_2);
 
             default:
+                LogRel(("Unknown msg:\n%.*Rhxd\n", (int)sizeof(*pMsg), pMsg));
                 AssertLogRelMsgFailedReturn(("Unknown message on CPU #%u: #x\n", pVCpu->idCpu, pMsg->Header.MessageType),
                                             VERR_INTERNAL_ERROR_2);
         }
@@ -1693,6 +1781,109 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
 }
 
 
+/**
+ * Deals with pending interrupt related force flags, may inject interrupt.
+ *
+ * @returns VBox strict status code.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pVCpu               The cross context per CPU structure.
+ * @param   pGVCpu              The global (ring-0) per CPU structure.
+ * @param   pCtx                The register context.
+ * @param   pfInterruptWindows  Where to return interrupt window flags.
+ */
+NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVM pVM, PVMCPU pVCpu, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint8_t *pfInterruptWindows)
+{
+    Assert(!TRPMHasTrap(pVCpu));
+    RT_NOREF_PV(pVM);
+
+    /*
+     * First update APIC.
+     */
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
+    {
+        APICUpdatePendingInterrupts(pVCpu);
+        if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+                                      | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
+            return VINF_SUCCESS;
+    }
+
+    /*
+     * We don't currently implement SMIs.
+     */
+    AssertReturn(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_SMI), VINF_NEM_IPE_0);
+
+    /*
+     * Check if we've got the minimum of state required for deciding whether we
+     * can inject interrupts and NMIs.  If we don't have it, get all we might require
+     * for injection via IEM.
+     */
+    bool const fPendingNmi = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+    uint64_t   fNeedExtrn  = CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS
+                           | (fPendingNmi ? CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI : 0);
+    if (pCtx->fExtrn & fNeedExtrn)
+    {
+        VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "IntFF");
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
+    bool const fInhibitInterrupts = VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                                 && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip;
+
+    /*
+     * NMI? Try deliver it first.
+     */
+    if (fPendingNmi)
+    {
+        if (   !fInhibitInterrupts
+            && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        {
+            VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "NMI");
+            if (rcStrict == VINF_SUCCESS)
+            {
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+                rcStrict = IEMInjectTrap(pVCpu, X86_XCPT_NMI, TRPM_HARDWARE_INT, 0, 0, 0);
+                Log8(("Injected NMI on %u (%d)\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+            }
+            return rcStrict;
+        }
+        *pfInterruptWindows |= NEM_WIN_INTW_F_NMI;
+    }
+
+    /*
+     * APIC or PIC interrupt?
+     */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+    {
+        if (   !fInhibitInterrupts
+            && pCtx->rflags.Bits.u1IF)
+        {
+            VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "NMI");
+            if (rcStrict == VINF_SUCCESS)
+            {
+                uint8_t bInterrupt;
+                int rc = PDMGetInterrupt(pVCpu, &bInterrupt);
+                if (RT_SUCCESS(rc))
+                {
+                    rcStrict = IEMInjectTrap(pVCpu, bInterrupt, TRPM_HARDWARE_INT, 0, 0, 0);
+                    Log8(("Injected interrupt %#x on %u (%d)\n", bInterrupt, pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+                }
+                else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
+                {
+                    *pfInterruptWindows |= (bInterrupt >> 4 /*??*/) << NEM_WIN_INTW_F_PRIO_SHIFT;
+                    Log8(("VERR_APIC_INTR_MASKED_BY_TPR: *pfInterruptWindows=%#x\n", *pfInterruptWindows));
+                }
+                else
+                    Log8(("PDMGetInterrupt failed -> %d\n", rc));
+            }
+            return rcStrict;
+        }
+        *pfInterruptWindows |= NEM_WIN_INTW_F_REGULAR;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGVMCPU pGVCpu)
 {
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
@@ -1721,15 +1912,40 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
      * everything every time.  This will be optimized later.
      */
     VID_MESSAGE_MAPPING_HEADER volatile *pMappingHeader = (VID_MESSAGE_MAPPING_HEADER volatile *)pVCpu->nem.s.pvMsgSlotMapping;
-    uint32_t     cMillies           = 5000; /** @todo lower this later... */
-    const bool   fSingleStepping    = false; /** @todo get this from somewhere. */
-    VBOXSTRICTRC rcStrict           = VINF_SUCCESS;
-    for (unsigned iLoop = 0;;iLoop++)
+    uint32_t        cMillies            = 5000; /** @todo lower this later... */
+    const bool      fSingleStepping     = DBGFIsStepping(pVCpu);
+//    const uint32_t  fCheckVmFFs         = !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK
+//                                                           : VM_FF_HP_R0_PRE_HM_STEP_MASK;
+//    const uint32_t  fCheckCpuFFs        = !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK;
+    VBOXSTRICTRC    rcStrict            = VINF_SUCCESS;
+    for (unsigned iLoop = 0;; iLoop++)
     {
+        /*
+         * Pending interrupts or such?  Need to check and deal with this prior to the state syncing.
+         * Note! This may stop execution.
+         */
+        pVCpu->nem.s.fDesiredInterruptWindows = 0;
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC
+                                     | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
+        {
+            if (pVCpu->nem.s.fHandleAndGetFlags == VID_MSHAGN_F_GET_NEXT_MESSAGE)
+            {
+                pVCpu->nem.s.fHandleAndGetFlags = 0;
+                rcStrict = nemHCWinStopCpu(pVM, pVCpu, rcStrict, pMappingHeader, pGVM, pGVCpu);
+                if (rcStrict != VINF_SUCCESS)
+                    break;
+            }
+            rcStrict = nemHCWinHandleInterruptFF(pVM, pVCpu, pGVCpu, pCtx, &pVCpu->nem.s.fDesiredInterruptWindows);
+            if (rcStrict != VINF_SUCCESS)
+                break;
+        }
+
         /*
          * Ensure that hyper-V has the whole state.
          */
-        if ((pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK)) != (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK))
+        if (      (pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK))
+               !=                 (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK)
+            || pVCpu->nem.s.fCurrentInterruptWindows != pVCpu->nem.s.fDesiredInterruptWindows)
         {
 # ifdef IN_RING0
             int rc2 = nemR0WinExportState(pGVM, pGVCpu, pCtx);

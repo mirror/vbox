@@ -881,8 +881,12 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
 
 /** NEM/Win: Event injection (known was interruption) pending state. */
 #define CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT      UINT64_C(0x0001000000000000)
+/** NEM/Win: Inhibit maskable interrupts (VMCPU_FF_INHIBIT_INTERRUPTS). */
+#define CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT       UINT64_C(0x0002000000000000)
+/** NEM/Win: Inhibit non-maskable interrupts (VMCPU_FF_BLOCK_NMIS). */
+#define CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI       UINT64_C(0x0002000000000000)
 /** NEM/Win: Mask. */
-#define CPUMCTX_EXTRN_NEM_WIN_MASK              UINT64_C(0x0001000000000000)
+#define CPUMCTX_EXTRN_NEM_WIN_MASK              UINT64_C(0x0003000000000000)
 
 /** All CPUM state bits, not including keeper specific ones. */
 #define CPUMCTX_EXTRN_ALL                       UINT64_C(0x000000fffffffffc)
