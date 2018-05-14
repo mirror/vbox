@@ -251,11 +251,19 @@ bool UIWizardNewVMPage1::createMachineFolder()
 
     composeMachineFilePath();
 
-    /* Make sure that folder doesn't exists: */
+
+    /* Check if the folder already exists and check if it has been created by this wizard */
     if (QDir(m_strMachineFolder).exists())
     {
-        msgCenter().cannotRewriteMachineFolder(m_strMachineFolder, thisImp());
-        return false;
+        /* Looks like we have already created this folder for this run of the wizard. Just return */
+        if (m_strCreatedFolder == m_strMachineFolder)
+            return true;
+        /* The folder is there but not because of this wizard. Avoid overwriting a existing machine's folder */
+        else
+        {
+            msgCenter().cannotRewriteMachineFolder(m_strMachineFolder, thisImp());
+            return false;
+        }
     }
 
     /* Try to create new folder (and it's predecessors): */
