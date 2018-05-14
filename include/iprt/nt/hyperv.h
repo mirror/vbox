@@ -1430,6 +1430,35 @@ typedef struct
 } HV_X64_HALT_MESSAGE_FULL;
 
 
+/**
+ * The payload format for HvMessageTypeX64InterruptWindow,
+ *
+ * @note This message does not include HV_X64_INTERCEPT_MESSAGE_HEADER!
+ */
+typedef struct
+{
+    /** 0x00: The usual intercept header. */
+    HV_X64_INTERCEPT_MESSAGE_HEADER     Header;
+    /** 0x28: What's pending. */
+    HV_X64_PENDING_INTERRUPTION_TYPE    Type;
+    /** 0x2c: Explicit structure alignment padding.. */
+    uint32_t                            u32ExplicitPadding;
+} HV_X64_INTERRUPT_WINDOW_MESSAGE;
+AssertCompileSize(HV_X64_INTERRUPT_WINDOW_MESSAGE, 0x30);
+/** Pointer to a HvMessageTypeX64InterruptWindow payload. */
+typedef HV_X64_INTERRUPT_WINDOW_MESSAGE *PHV_X64_INTERRUPT_WINDOW_MESSAGE;
+/** Pointer to a const HvMessageTypeX64InterruptWindow payload. */
+typedef HV_X64_INTERRUPT_WINDOW_MESSAGE const *PCHV_X64_INTERRUPT_WINDOW_MESSAGE;
+
+/** Full HvMessageTypeX64InterruptWindow message. */
+typedef struct
+{
+    /** Payload size is 0x30.   */
+    HV_MESSAGE_HEADER                   MsgHdr;
+    HV_X64_INTERRUPT_WINDOW_MESSAGE     Payload;
+} HV_X64_INTERRUPT_WINDOW_MESSAGE_FULL;
+
+
 
 /** Hyper-V SynIC message. */
 typedef struct
@@ -1448,8 +1477,11 @@ typedef struct
         HV_X64_IO_PORT_INTERCEPT_MESSAGE    X64IoPortIntercept;
         /** HvMessageTypeX64ExceptionIntercept */
         HV_X64_EXCEPTION_INTERCEPT_MESSAGE  X64ExceptionIntercept;
-        /** HvMessageTypeX64Halt. */
+        /** HvMessageTypeX64Halt.
+         * @note No intercept header?  */
         HV_X64_HALT_MESSAGE                 X64Halt;
+        /** HvMessageTypeX64InterruptWindow. */
+        HV_X64_INTERRUPT_WINDOW_MESSAGE     X64InterruptWindow;
     };
 } HV_MESSAGE;
 AssertCompileSize(HV_MESSAGE, HV_MESSAGE_SIZE);
