@@ -2146,6 +2146,11 @@ HRESULT Appliance::i_importDoIt(TaskOVF *pTask, AutoWriteLockBase &rWriteLock, R
 
             /* We should've processed all the files now, so compare. */
             hrc = i_verifyManifestFile(stack);
+
+            /* If everything was successful so far check if some extension
+             * pack wants to do file sanity checking. */
+            if (SUCCEEDED(hrc))
+                /** @todo */;
         }
         catch (HRESULT hrcXcpt)
         {
