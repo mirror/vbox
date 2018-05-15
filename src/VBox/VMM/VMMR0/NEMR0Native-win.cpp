@@ -518,7 +518,8 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     pInput->RsvdZ       = 0;
 
     uint64_t const fWhat = ~pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK);
-    if (!fWhat)
+    if (   !fWhat
+        && pVCpu->nem.s.fCurrentInterruptWindows == pVCpu->nem.s.fDesiredInterruptWindows)
         return VINF_SUCCESS;
     uintptr_t iReg = 0;
 

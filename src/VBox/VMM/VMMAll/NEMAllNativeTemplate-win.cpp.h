@@ -1552,7 +1552,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageInterruptWindow(PVM pVM, PVMCP
      * Just copy the state we've got and handle it in the loop for now.
      */
     nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
-    Log4(("IOIntW/%u: %04x:%08RX64: %u\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, pMsg->Type));
+    Log4(("IntWinExit/%u: %04x:%08RX64: %u IF=%d InterruptShadow=%d\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
+          pMsg->Header.Rip, pMsg->Type, RT_BOOL(pMsg->Header.Rflags & X86_EFL_IF), pMsg->Header.ExecutionState.InterruptShadow));
 
     /** @todo call nemHCWinHandleInterruptFF   */
     RT_NOREF(pVM, pGVCpu);
@@ -1847,6 +1848,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVM pVM, PVMCPU pVCpu, PG
             return rcStrict;
         }
         *pfInterruptWindows |= NEM_WIN_INTW_F_NMI;
+        Log8(("NMI window pending on %u\n", pVCpu->idCpu));
     }
 
     /*
@@ -1878,6 +1880,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVM pVM, PVMCPU pVCpu, PG
             return rcStrict;
         }
         *pfInterruptWindows |= NEM_WIN_INTW_F_REGULAR;
+        Log8(("Interrupt window pending on %u\n", pVCpu->idCpu));
     }
 
     return VINF_SUCCESS;
@@ -1921,23 +1924,38 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
     for (unsigned iLoop = 0;; iLoop++)
     {
         /*
-         * Pending interrupts or such?  Need to check and deal with this prior to the state syncing.
-         * Note! This may stop execution.
+         * Pending interrupts or such?  Need to check and deal with this prior
+         * to the state syncing.
          */
         pVCpu->nem.s.fDesiredInterruptWindows = 0;
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC
                                      | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
         {
+            /* Make sure the CPU isn't executing. */
             if (pVCpu->nem.s.fHandleAndGetFlags == VID_MSHAGN_F_GET_NEXT_MESSAGE)
             {
                 pVCpu->nem.s.fHandleAndGetFlags = 0;
                 rcStrict = nemHCWinStopCpu(pVM, pVCpu, rcStrict, pMappingHeader, pGVM, pGVCpu);
-                if (rcStrict != VINF_SUCCESS)
+                if (rcStrict == VINF_SUCCESS)
+                { /* likely */ }
+                else
+                {
+                    LogFlow(("NEM/%u: breaking: nemHCWinStopCpu -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+                    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
                     break;
+                }
             }
+
+            /* Try inject interrupt. */
             rcStrict = nemHCWinHandleInterruptFF(pVM, pVCpu, pGVCpu, pCtx, &pVCpu->nem.s.fDesiredInterruptWindows);
-            if (rcStrict != VINF_SUCCESS)
+            if (rcStrict == VINF_SUCCESS)
+            { /* likely */ }
+            else
+            {
+                LogFlow(("NEM/%u: breaking: nemHCWinHandleInterruptFF -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
                 break;
+            }
         }
 
         /*
@@ -1947,6 +1965,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                !=                 (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK)
             || pVCpu->nem.s.fCurrentInterruptWindows != pVCpu->nem.s.fDesiredInterruptWindows)
         {
+            Assert(pVCpu->nem.s.fHandleAndGetFlags != VID_MSHAGN_F_GET_NEXT_MESSAGE /* not running */);
 # ifdef IN_RING0
             int rc2 = nemR0WinExportState(pGVM, pGVCpu, pCtx);
 # else
