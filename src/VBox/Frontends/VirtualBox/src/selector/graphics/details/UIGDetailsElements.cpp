@@ -251,6 +251,14 @@ void UIGDetailsUpdateTaskGeneral::run()
         table << UITextTableLine(QApplication::translate("UIGDetails", "Operating System", "details (general)"),
                                  vboxGlobal().vmGuestOSTypeDescription(machine.GetOSTypeId()));
 
+        /* Location of the settings file: */
+        QString strSettingsFile = machine.GetSettingsFilePath();
+        if (!strSettingsFile.isEmpty())
+        {
+            table << UITextTableLine(QApplication::translate("UIGDetails", "Settings File Location", "details (general)"),
+                                     QFileInfo(strSettingsFile).absolutePath());
+        }
+
         /* Get groups: */
         QStringList groups = machine.GetGroups().toList();
         /* Do not show groups for machine which is in root group only: */
@@ -931,4 +939,3 @@ void UIGDetailsUpdateTaskDescription::run()
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
-
