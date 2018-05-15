@@ -4388,6 +4388,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIE
     uint8_t *pbMsrBitmap;
     if (!pSvmTransient->fIsNestedGuest)
         pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     else
     {
         hmR0SvmMergeMsrpmNested(pHostCpu, pVCpu, pCtx);
@@ -4396,6 +4397,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIE
         pVmcb->ctrl.u64MSRPMPhysAddr = pHostCpu->n.svm.HCPhysNstGstMsrpm;
         pbMsrBitmap = (uint8_t *)pHostCpu->n.svm.pvNstGstMsrpm;
     }
+#endif
 
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
     /* Flush the appropriate tagged-TLB entries. */
