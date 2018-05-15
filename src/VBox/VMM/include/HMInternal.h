@@ -285,7 +285,7 @@ typedef struct HMGLOBALCPUINFO
     bool                fIgnoreAMDVInUseError;
     /** In use by our code. (for power suspend) */
     volatile bool       fInUse;
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /** Nested-guest union (put data common to SVM/VMX outside the union). */
     union
     {

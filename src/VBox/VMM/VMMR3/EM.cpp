@@ -1655,7 +1655,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     return rc;
 }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Helper for emR3ForcedActions() for injecting interrupts into the
  * nested-guest.
@@ -2076,7 +2076,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             {
                 Assert(!HMR3IsEventPending(pVCpu));
                 PCPUMCTX pCtx = pVCpu->em.s.pCtx;
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
                 if (CPUMIsGuestInNestedHwVirtMode(pCtx))
                 {
                     bool fResched, fInject;
@@ -2095,7 +2095,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 #endif
                 {
                     if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
                         && pCtx->hwvirt.fGif
 #endif
 #ifdef VBOX_WITH_RAW_MODE

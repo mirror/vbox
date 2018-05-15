@@ -247,7 +247,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
              * On Intel or when nested hardware virtualization support isn't compiled
              * we still need to implement hypercalls rather than throw a #UD.
              */
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (pVM->cpum.ro.GuestFeatures.fSvm)
             {
                 rc = emR3ExecuteInstruction(pVM, pVCpu, "Hypercall");

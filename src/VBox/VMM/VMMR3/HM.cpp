@@ -1084,7 +1084,7 @@ static int hmR3InitCPU(PVM pVM)
         Assert(pVCpu->hm.s.paStatExitReasonR0 != NIL_RTR0PTR);
 # endif
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         /*
          * Nested-guest Exit reason stats.
          */

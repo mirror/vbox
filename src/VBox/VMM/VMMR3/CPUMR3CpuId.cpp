@@ -3932,7 +3932,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = CFGMR3QueryU32Def(pCpumCfg, "MaxCentaurLeaf", &pConfig->uMaxCentaurLeaf, UINT32_C(0xc0000004));
     AssertLogRelRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /** @cfgm{/CPUM/NestedHWVirt, bool, false}
      * Whether to expose the hardware virtualization (VMX/SVM) feature to the guest.
      * The default is false, and when enabled requires nested paging and AMD-V or

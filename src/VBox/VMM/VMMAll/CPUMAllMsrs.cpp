@@ -183,7 +183,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32TimestampCounter(PVMCPU pVCpu, u
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = TMCpuTickGet(pVCpu);
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     *puValue = CPUMApplyNestedGuestTscOffset(pVCpu, *puValue);
 #endif
     return VINF_SUCCESS;
@@ -344,7 +344,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MPerf(PVMCPU pVCpu, uint32_t idM
     /** @todo Read MPERF: Adjust against previously written MPERF value.  Is TSC
      *        what we want? */
     *puValue = TMCpuTickGet(pVCpu);
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     *puValue = CPUMApplyNestedGuestTscOffset(pVCpu, *puValue);
 #endif
     return VINF_SUCCESS;
@@ -367,7 +367,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32APerf(PVMCPU pVCpu, uint32_t idM
     /** @todo Read APERF: Adjust against previously written MPERF value.  Is TSC
      *        what we want? */
     *puValue = TMCpuTickGet(pVCpu);
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     *puValue = CPUMApplyNestedGuestTscOffset(pVCpu, *puValue);
 #endif
     return VINF_SUCCESS;
@@ -4933,7 +4933,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdFam14hIbsBrTarget(PVMCPU pVCpu, u
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Gim(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /* Raise #GP(0) like a physical CPU would since the nested-hypervisor hasn't intercept these MSRs. */
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (CPUMIsGuestInNestedHwVirtMode(pCtx))
@@ -4946,7 +4946,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Gim(PVMCPU pVCpu, uint32_t idMsr, PC
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Gim(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /* Raise #GP(0) like a physical CPU would since the nested-hypervisor hasn't intercept these MSRs. */
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (CPUMIsGuestInNestedHwVirtMode(pCtx))
