@@ -1441,7 +1441,7 @@ typedef struct
     HV_X64_INTERCEPT_MESSAGE_HEADER     Header;
     /** 0x28: What's pending. */
     HV_X64_PENDING_INTERRUPTION_TYPE    Type;
-    /** 0x2c: Explicit structure alignment padding.. */
+    /** 0x2c: Explicit structure alignment padding. */
     uint32_t                            u32ExplicitPadding;
 } HV_X64_INTERRUPT_WINDOW_MESSAGE;
 AssertCompileSize(HV_X64_INTERRUPT_WINDOW_MESSAGE, 0x30);
