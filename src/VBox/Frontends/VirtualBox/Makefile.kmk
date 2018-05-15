@@ -1240,6 +1240,7 @@ endif
 ifdef VBOX_WITH_XPCOM
  VBoxGlobal_QT_MOCSRCS += \
 	src/globals/COMDefs.cpp
+endif
 
 VBoxGlobal_QT_MOCSRCS.darwin += \
 	src/platform/darwin/UIWindowMenuManager.cpp
@@ -1250,7 +1251,6 @@ VBoxGlobal_QT_MOCSRCS.solaris += \
 	src/globals/UIDesktopWidgetWatchdog.cpp
 VBoxGlobal_QT_MOCSRCS.freebsd += \
 	src/globals/UIDesktopWidgetWatchdog.cpp
-endif
 
 
 #
@@ -2228,7 +2228,7 @@ VirtualBox.app_SOURCES = \
  VirtualBoxVM.app_SOURCES = \
  	src/platform/darwin/VM-PkgInfo=>PkgInfo \
  	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist \
-        $(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
+ 	$(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
  VirtualBoxVM.app_SYMLINKS = \
  	MacOS=>../../../MacOS/
 
