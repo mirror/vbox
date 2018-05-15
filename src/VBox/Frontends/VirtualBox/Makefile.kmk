@@ -31,15 +31,15 @@ USES += qt5
 # Targets.
 #
 ifdef VBOX_WITH_HARDENING
-PROGRAMS += VirtualBoxHardened
-PROGRAMS.darwin += VirtualBoxVM
-DLLS += VirtualBox
+ PROGRAMS += VirtualBoxHardened
+ PROGRAMS.darwin += VirtualBoxVM
+ DLLS += VirtualBox
 else
-PROGRAMS += VirtualBox
-ifdef VBOX_GUI_WITH_SHARED_LIBRARY
-PROGRAMS += VirtualBoxRT
-DLLS += VBoxGlobal
-endif
+ PROGRAMS += VirtualBox
+ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+  PROGRAMS += VirtualBoxRT
+  DLLS += VBoxGlobal
+ endif
 endif
 INSTALLS += VirtualBox.nls
 
@@ -175,9 +175,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  # VirtualBox Virtual Machine Application
  #
  VirtualBoxRT_TEMPLATE       := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
- VirtualBoxRT_NAME = VirtualBoxRT
+ VirtualBoxRT_NAME           = VirtualBoxRT
  VirtualBoxRT_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
-
  VirtualBoxRT_DEFS           = VBOX_RUNTIME_UI
  VirtualBoxRT_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
  VirtualBoxRT_DEFS.linux     = VBOX_WS_X11
@@ -1872,7 +1871,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 
  if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
   VBoxGlobal_SOURCES += \
-	src/VBox2DHelpers.cpp
+	src/VBox2DHelpers.cpp \
+	src/VBoxGLSupportInfo.cpp
  endif
 endif
 
