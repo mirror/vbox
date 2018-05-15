@@ -214,6 +214,11 @@ QString UIVMItem::toolTipText() const
     return toolTip;
 }
 
+const QStringList& UIVMItem::groups()
+{
+    return m_groups;
+}
+
 bool UIVMItem::recache()
 {
     bool needsResort = true;
@@ -240,6 +245,8 @@ bool UIVMItem::recache()
         m_pixmap = vboxGlobal().vmUserPixmapDefault(m_machine, &m_logicalPixmapSize);
         if (m_pixmap.isNull())
             m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
+
+        m_groups = m_machine.GetGroups().toList();
 
         if (   m_machineState == KMachineState_PoweredOff
             || m_machineState == KMachineState_Saved
@@ -290,7 +297,7 @@ bool UIVMItem::recache()
         m_cSnaphot = 0;
 
         m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault("Other", &m_logicalPixmapSize);
-
+        m_groups.clear();
         m_pid = (ULONG) ~0;
     /// @todo Remove. See @c todo in #switchTo() below.
 #if 0
@@ -542,4 +549,3 @@ QString UIVMItemMimeData::type()
 {
     return m_type;
 }
-

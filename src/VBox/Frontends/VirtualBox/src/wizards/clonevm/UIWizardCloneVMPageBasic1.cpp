@@ -37,9 +37,10 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIWizardCloneVMPage1::UIWizardCloneVMPage1(const QString &strOriginalName, const QString &strDefaultPath)
+UIWizardCloneVMPage1::UIWizardCloneVMPage1(const QString &strOriginalName, const QString &strDefaultPath, const QString &strGroup)
     : m_strOriginalName(strOriginalName)
     , m_strDefaultPath(strDefaultPath)
+    , m_strGroup(strGroup)
 {
 }
 
@@ -87,7 +88,7 @@ void UIWizardCloneVMPage1::composeCloneFilePath()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
     setCloneFilePath(vbox.ComposeMachineFilename(m_pNamePathSelector->name(),
-                                                 QString::null,
+                                                 m_strGroup,
                                                  QString::null,
                                                  m_pNamePathSelector->path()));
     const QFileInfo fileInfo(m_strCloneFilePath);
@@ -96,8 +97,8 @@ void UIWizardCloneVMPage1::composeCloneFilePath()
         m_pNamePathSelector->setToolTipText(m_strCloneFolder);
 }
 
-UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalName, const QString &strDefaultPath)
-    : UIWizardCloneVMPage1(strOriginalName, strDefaultPath)
+UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalName, const QString &strDefaultPath, const QString &strGroup)
+    : UIWizardCloneVMPage1(strOriginalName, strDefaultPath, strGroup)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -134,7 +135,7 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
 
     /* Register fields: */
     registerField("cloneName", this, "cloneName");
-    registerField("clonePath", this, "clonePath");
+    registerField("cloneFilePath", this, "cloneFilePath");
     registerField("reinitMACs", this, "reinitMACs");
 }
 

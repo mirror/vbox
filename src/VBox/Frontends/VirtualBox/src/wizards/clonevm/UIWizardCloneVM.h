@@ -48,7 +48,8 @@ public:
     };
 
     /* Constructor: */
-    UIWizardCloneVM(QWidget *pParent, const CMachine &machine, CSnapshot snapshot = CSnapshot());
+    UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
+                    const QString &strGroup, CSnapshot snapshot = CSnapshot());
 
 protected:
 
@@ -69,9 +70,9 @@ private:
     void prepare();
 
     /* Variables: */
-    CMachine m_machine;
+    CMachine  m_machine;
     CSnapshot m_snapshot;
+    QString   m_strGroup;
 };
 
 #endif // __UIWizardCloneVM_h__
-

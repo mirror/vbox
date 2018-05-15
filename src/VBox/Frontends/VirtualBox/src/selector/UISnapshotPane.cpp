@@ -1837,7 +1837,7 @@ void UISnapshotPane::cloneSnapshot()
     AssertReturnVoid(!comMachine.isNull());
 
     /* Show Clone VM wizard: */
-    UISafePointerWizard pWizard = new UIWizardCloneVM(this, comMachine, comSnapshot);
+    UISafePointerWizard pWizard = new UIWizardCloneVM(this, comMachine, QString(), comSnapshot);
     pWizard->prepare();
     pWizard->exec();
     if (pWizard)
@@ -1907,4 +1907,3 @@ void UISnapshotPane::expandItemChildren(QTreeWidgetItem *pItem)
 }
 
 #include "UISnapshotPane.moc"
-

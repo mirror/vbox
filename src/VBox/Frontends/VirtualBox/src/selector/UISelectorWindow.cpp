@@ -681,7 +681,10 @@ void UISelectorWindow::sltOpenCloneMachineWizard()
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
     QWidget *pWizardParent = windowManager().realParentWindow(this);
-    UISafePointerWizard pWizard = new UIWizardCloneVM(pWizardParent, pItem->machine());
+
+    const QStringList &machineGroupNames = pItem->groups();
+    QString strGroup = !machineGroupNames.isEmpty() ? machineGroupNames.at(0) : QString();
+    UISafePointerWizard pWizard = new UIWizardCloneVM(pWizardParent, pItem->machine(), strGroup);
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->prepare();
     pWizard->exec();
@@ -2771,4 +2774,3 @@ bool UISelectorWindow::isAtLeastOneItemRunning(const QList<UIVMItem*> &items)
             return true;
     return false;
 }
-

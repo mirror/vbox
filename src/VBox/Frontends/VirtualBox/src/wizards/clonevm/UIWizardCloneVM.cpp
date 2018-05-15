@@ -35,10 +35,12 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine, CSnapshot snapshot /* = CSnapshot() */)
+UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
+                                 const QString &strGroup, CSnapshot snapshot /* = CSnapshot() */)
     : UIWizard(pParent, WizardType_CloneVM)
     , m_machine(machine)
     , m_snapshot(snapshot)
+    , m_strGroup(strGroup)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -53,8 +55,7 @@ bool UIWizardCloneVM::cloneVM()
 {
     /* Get the clone name: */
     QString strName = field("cloneName").toString();
-    /* Get the clone path: */
-    QString strPath = field("clonePath").toString();
+    /* Get the clone setting file path: */
     QString strSettingsFile = field("cloneFilePath").toString();
 
     /* Should we reinit mac status? */
@@ -184,7 +185,7 @@ void UIWizardCloneVM::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardCloneVMPageBasic1(m_machine.GetName(), strDefaultMachineFolder));
+            setPage(Page1, new UIWizardCloneVMPageBasic1(m_machine.GetName(), strDefaultMachineFolder, m_strGroup));
             setPage(Page2, new UIWizardCloneVMPageBasic2(m_snapshot.isNull()));
             if (m_machine.GetSnapshotCount() > 0)
                 setPage(Page3, new UIWizardCloneVMPageBasic3(m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
@@ -195,7 +196,8 @@ void UIWizardCloneVM::prepare()
             setPage(PageExpert, new UIWizardCloneVMPageExpert(m_machine.GetName(),
                                                               strDefaultMachineFolder,
                                                               m_snapshot.isNull(),
-                                                              m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
+                                                              m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0,
+                                                              m_strGroup));
             break;
         }
         default:
