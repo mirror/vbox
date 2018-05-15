@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 # include "IEMAllCImplSvmInstr.cpp.h"
 #endif
 
@@ -5116,7 +5116,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 4: crX = pCtx->cr4; break;
         case 8:
         {
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             {
                 PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
@@ -5163,7 +5163,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
     PCPUMCTX        pCtx  = IEM_GET_CTX(pVCpu);
     VBOXSTRICTRC    rcStrict;
     int             rc;
-#ifndef VBOX_WITH_NESTED_HWVIRT
+#ifndef VBOX_WITH_NESTED_HWVIRT_SVM
     RT_NOREF2(iGReg, enmAccessCrX);
 #endif
 
@@ -5524,7 +5524,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
             {
                 if (IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(pVCpu, /*cr*/ 8))
@@ -5987,7 +5987,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
      * Do the job.
      */
     uint64_t uTicks = TMCpuTickGet(pVCpu);
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     uTicks = CPUMApplyNestedGuestTscOffset(pVCpu, uTicks);
 #endif
     pCtx->rax = RT_LO_U32(uTicks);
@@ -6039,7 +6039,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
         pCtx->rcx &= UINT32_C(0xffffffff);
 
         uint64_t uTicks = TMCpuTickGet(pVCpu);
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         uTicks = CPUMApplyNestedGuestTscOffset(pVCpu, uTicks);
 #endif
         pCtx->rax = RT_LO_U32(uTicks);
@@ -6097,7 +6097,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
      */
     RTUINT64U uValue;
     VBOXSTRICTRC rcStrict;
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
     {
         rcStrict = iemSvmHandleMsrIntercept(pVCpu, pCtx, pCtx->ecx, false /* fWrite */);
@@ -6164,7 +6164,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     uValue.s.Hi = pCtx->edx;
 
     VBOXSTRICTRC rcStrict;
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
     {
         rcStrict = iemSvmHandleMsrIntercept(pVCpu, pCtx, pCtx->ecx, true /* fWrite */);
@@ -6238,7 +6238,7 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
     /*
      * Check SVM nested-guest IO intercept.
      */
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
         uint8_t cAddrSizeBits;
@@ -6335,7 +6335,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
     /*
      * Check SVM nested-guest IO intercept.
      */
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT))
     {
         uint8_t cAddrSizeBits;

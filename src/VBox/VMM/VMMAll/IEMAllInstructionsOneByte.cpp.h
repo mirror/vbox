@@ -4455,7 +4455,7 @@ FNIEMOP_DEF(iemOp_nop)
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK)
     {
         IEMOP_MNEMONIC(pause, "pause");
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         bool fCheckIntercept = true;
         if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilter)
         {

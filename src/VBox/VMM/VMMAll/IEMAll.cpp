@@ -101,7 +101,7 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hm.h>
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 # include <VBox/vmm/em.h>
 # include <VBox/vmm/hm_svm.h>
 #endif
@@ -387,7 +387,7 @@ typedef enum IEMXCPTCLASS
 # define IEM_USE_UNALIGNED_DATA_ACCESS
 #endif
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Check the common SVM instruction preconditions.
  */
@@ -498,7 +498,7 @@ typedef enum IEMXCPTCLASS
 # define IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2)          do { return VERR_SVM_IPE_1; } while (0)
 # define IEM_RETURN_SVM_CRX_VMEXIT(a_pVCpu, a_uExitCode, a_enmAccessCrX, a_iGReg)         do { return VERR_SVM_IPE_1; } while (0)
 
-#endif /* VBOX_WITH_NESTED_HWVIRT */
+#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
 
 /*********************************************************************************************************************************
@@ -910,7 +910,7 @@ IEM_STATIC PIEMVERIFYEVTREC iemVerifyAllocRecord(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVerifyFakeIOPortRead(PVMCPU pVCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue);
 IEM_STATIC VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PVMCPU pVCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue);
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 IEM_STATIC VBOXSTRICTRC     iemSvmVmexit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1,
                                          uint64_t uExitInfo2);
 IEM_STATIC VBOXSTRICTRC     iemHandleSvmEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t u8Vector, uint32_t fFlags,
@@ -1055,7 +1055,7 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
 #endif
 }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Performs a minimal reinitialization of the execution state.
  *
@@ -5417,7 +5417,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
                       pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp);
 #endif
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
         /*
@@ -5438,7 +5438,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
                 return rcStrict0;
         }
     }
-#endif /* VBOX_WITH_NESTED_HWVIRT */
+#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
     /*
      * Do recursion accounting.
@@ -12852,7 +12852,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     } while (0)
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /** Check and handles SVM nested-guest instruction intercept and updates
  *  NRIP if needed. */
 # define IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
@@ -12876,10 +12876,10 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         } \
     } while (0)
 
-#else  /* !VBOX_WITH_NESTED_HWVIRT */
+#else  /* !VBOX_WITH_NESTED_HWVIRT_SVM */
 # define IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)  do { } while (0)
 # define IEMOP_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2)                            do { } while (0)
-#endif /* !VBOX_WITH_NESTED_HWVIRT */
+#endif /* !VBOX_WITH_NESTED_HWVIRT_SVM */
 
 
 /**
@@ -13929,7 +13929,7 @@ IEM_STATIC void iemExecVerificationModeSetup(PVMCPU pVCpu)
      */
     pVCpu->iem.s.uInjectCpl = UINT8_MAX;
     /** @todo Maybe someday we can centralize this under CPUMCanInjectInterrupt()? */
-#if defined(VBOX_WITH_NESTED_HWVIRT)
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     bool fIntrEnabled = pOrgCtx->hwvirt.Gif;
     if (fIntrEnabled)
     {
@@ -14897,7 +14897,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
                       , ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 /** @todo adjust for VINF_EM_RAW_EMULATE_INSTR   */
             int32_t const rcPassUp = pVCpu->iem.s.rcPassUp;
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (   rcStrict == VINF_SVM_VMEXIT
                 && rcPassUp == VINF_SUCCESS)
                 rcStrict = VINF_SUCCESS;
@@ -15290,7 +15290,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
 # endif
 
     /** @todo Maybe someday we can centralize this under CPUMCanInjectInterrupt()? */
-# if defined(VBOX_WITH_NESTED_HWVIRT)
+# if defined(VBOX_WITH_NESTED_HWVIRT_SVM)
     bool fIntrEnabled = pCtx->hwvirt.Gif;
     if (fIntrEnabled)
     {
@@ -15356,7 +15356,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
 # endif
 
     /** @todo Can we centralize this under CPUMCanInjectInterrupt()? */
-# if defined(VBOX_WITH_NESTED_HWVIRT)
+# if defined(VBOX_WITH_NESTED_HWVIRT_SVM)
     bool fIntrEnabled = pCtx->hwvirt.fGif;
     if (fIntrEnabled)
     {
@@ -15478,7 +15478,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &IEM_GET_CTX(pVCpu)->gs));
 # endif
     }
-# ifdef VBOX_WITH_NESTED_HWVIRT
+# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     else
     {
         /*
@@ -16145,7 +16145,7 @@ VMM_INT_DECL(bool) IEMGetCurrentXcpt(PVMCPU pVCpu, uint8_t *puVector, uint32_t *
     return fRaisingXcpt;
 }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Interface for HM and EM to emulate the CLGI instruction.
  *
@@ -16269,7 +16269,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
     VBOXSTRICTRC rcStrict = iemSvmVmexit(pVCpu, IEM_GET_CTX(pVCpu), uExitCode, uExitInfo1, uExitInfo2);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
-#endif /* VBOX_WITH_NESTED_HWVIRT */
+#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
 #ifdef IN_RING3
 

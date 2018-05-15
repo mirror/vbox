@@ -1217,7 +1217,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
             return rcStrict;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /*
      * Check SVM nested-guest IO intercept.
      */
@@ -1289,7 +1289,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
             return rcStrict;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /*
      * Check SVM nested-guest IO intercept.
      */
@@ -1492,7 +1492,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
             return rcStrict;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /*
      * Check SVM nested-guest IO intercept.
      */
@@ -1554,7 +1554,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             return rcStrict;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /*
      * Check SVM nested-guest IO intercept.
      */

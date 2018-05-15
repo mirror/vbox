@@ -217,7 +217,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, ui
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedInvlpg(PVMCPU pVCpu,  uint8_t cbInstr, RTGCPTR GCPtrPage);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedInvpcid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t uType, RTGCPTR GCPtrInvpcidDesc);
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedClgi(PVMCPU pVCpu, uint8_t cbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedStgi(PVMCPU pVCpu, uint8_t cbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmload(PVMCPU pVCpu, uint8_t cbInstr);

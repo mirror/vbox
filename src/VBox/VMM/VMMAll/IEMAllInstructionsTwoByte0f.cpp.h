@@ -431,7 +431,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_lidt, uint8_t, bRm)
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /** Opcode 0x0f 0x01 0xd8. */
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmrun)
 {
@@ -517,7 +517,7 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_invlpga);
 
 /** Opcode 0x0f 0x01 0xde. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_skinit);
-#endif /* VBOX_WITH_NESTED_HWVIRT */
+#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
 /** Opcode 0x0f 0x01 /4. */
 FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
@@ -886,7 +886,7 @@ FNIEMOP_DEF(iemOp_sysret)
 FNIEMOP_DEF(iemOp_invd)
 {
     IEMOP_MNEMONIC(invd, "invd");
-#ifdef VBOX_WITH_NESTED_HWVIRT
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
     IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0);
 #else
