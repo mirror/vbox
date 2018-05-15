@@ -68,7 +68,7 @@ src/platform/win/VirtualBoxHardened.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox
 ifeq ($(KBUILD_TARGET),darwin)
  VirtualBoxVM_EXTENDS = VirtualBoxHardened
  VirtualBoxVM_NAME    = VirtualBoxVM
- VirtualBoxVM_DEFS    = $(VirtualBoxHardened_DEFS) VIRTUALBOX_VM
+ VirtualBoxVM_DEFS    = $(VirtualBoxHardened_DEFS) VBOX_RUNTIME_UI
 endif
 
 
