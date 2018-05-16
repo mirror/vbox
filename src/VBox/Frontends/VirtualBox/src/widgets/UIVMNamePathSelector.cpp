@@ -181,3 +181,9 @@ const QString& UIVMNamePathSelector::toolTipText() const
 {
     return m_strToolTipText;
 }
+
+void UIVMNamePathSelector::showEvent(QShowEvent *pEvent)
+{
+    QWidget::showEvent(pEvent);
+    m_pName->setFocus();
+}
