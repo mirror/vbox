@@ -252,11 +252,11 @@ void UIGDetailsUpdateTaskGeneral::run()
                                  vboxGlobal().vmGuestOSTypeDescription(machine.GetOSTypeId()));
 
         /* Location of the settings file: */
-        QString strSettingsFile = machine.GetSettingsFilePath();
-        if (!strSettingsFile.isEmpty())
+        const QString strSettingsFilePath = machine.GetSettingsFilePath();
+        if (!strSettingsFilePath.isEmpty())
         {
             table << UITextTableLine(QApplication::translate("UIGDetails", "Settings File Location", "details (general)"),
-                                     QFileInfo(strSettingsFile).absolutePath());
+                                     QDir::toNativeSeparators(QFileInfo(strSettingsFilePath).absolutePath()));
         }
 
         /* Get groups: */
