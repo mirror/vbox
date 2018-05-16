@@ -1167,6 +1167,18 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                                                      empReport(vboxGlobal().vmGuestOSTypeDescription(comMachine.GetOSTypeId()),
                                                                vboxGlobal().vmGuestOSTypeDescription(comMachineOld.GetOSTypeId())));
 
+            /* Location of the settings file: */
+            QString strSettingsFilePath = comMachine.GetSettingsFilePath();
+            QString strOldSettingsFilePath = comMachineOld.GetSettingsFilePath();
+            QString strSettingsFolder = !strSettingsFilePath.isEmpty() ?
+                QDir::toNativeSeparators(QFileInfo(strSettingsFilePath).absolutePath()) : QString();
+            QString strOldSettingsFolder  = !strOldSettingsFilePath.isEmpty() ?
+                QDir::toNativeSeparators(QFileInfo(strOldSettingsFilePath).absolutePath()) : QString();
+
+            ++iRowCount;
+            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Settings File Location", "details (general)"),
+                                                     empReport(strSettingsFolder, strOldSettingsFolder));
+
             /* Groups? */
             const QString strGroups = groupReport(comMachine);
             const QString strGroupsOld = groupReport(comMachineOld);
@@ -1940,4 +1952,3 @@ QString UISnapshotDetailsWidget::summarizeGenericProperties(const CNetworkAdapte
 }
 
 #include "UISnapshotDetailsWidget.moc"
-
