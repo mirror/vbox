@@ -241,6 +241,7 @@ void UINameAndSystemEditor::prepareWidgets()
             m_pNamePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
             m_pNamePathSelector->setPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
             pMainLayout->addWidget(m_pNamePathSelector, 0, 1, 1, 2);
+            setFocusProxy(m_pNamePathSelector);
         }
 
         /* Create VM OS family label: */

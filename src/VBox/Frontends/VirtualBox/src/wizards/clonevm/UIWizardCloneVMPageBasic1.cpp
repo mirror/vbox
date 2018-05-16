@@ -156,6 +156,8 @@ void UIWizardCloneVMPageBasic1::initializePage()
 {
     /* Translate page: */
     retranslateUi();
+    if (m_pNamePathSelector)
+        m_pNamePathSelector->setFocus();
 }
 
 bool UIWizardCloneVMPageBasic1::isComplete() const

@@ -384,6 +384,8 @@ void UIWizardNewVMPageBasic1::initializePage()
 {
     /* Translate page: */
     retranslateUi();
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setFocus();
 }
 
 void UIWizardNewVMPageBasic1::cleanupPage()

@@ -104,8 +104,10 @@ void UIVMNamePathSelector::prepareWidgets()
         m_pMainLayout->addWidget(m_pName);
         connect(m_pName, &QILineEdit::textChanged,
                 this, &UIVMNamePathSelector::sigNameChanged);
+        setFocusProxy(m_pName);
+        if (m_pFileDialogButton)
+            m_pFileDialogButton->setFocusProxy(m_pName);
     }
-
 }
 
 QString UIVMNamePathSelector::path() const
@@ -180,10 +182,4 @@ void UIVMNamePathSelector::setToolTipText(const QString &strToolTipText)
 const QString& UIVMNamePathSelector::toolTipText() const
 {
     return m_strToolTipText;
-}
-
-void UIVMNamePathSelector::showEvent(QShowEvent *pEvent)
-{
-    QWidget::showEvent(pEvent);
-    m_pName->setFocus();
 }
