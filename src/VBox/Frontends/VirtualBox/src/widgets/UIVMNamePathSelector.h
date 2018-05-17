@@ -26,9 +26,9 @@
 
 /* Forward declarations: */
 class QHBoxLayout;
-class QILabel;
 class QILineEdit;
 class QIToolButton;
+class UIPathLabel;
 
 class SHARED_LIBRARY_STUFF UIVMNamePathSelector : public QIWithRetranslateUI<QWidget>
 {
@@ -58,6 +58,7 @@ public slots:
 protected:
 
     void retranslateUi() /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
 
 private slots:
 
@@ -69,14 +70,16 @@ private:
     QString       defaultMachineFolder() const;
 
     QHBoxLayout  *m_pMainLayout;
-    QILineEdit   *m_pPath;
+    UIPathLabel  *m_pPath;
     QILineEdit   *m_pName;
-    QILabel      *m_pSeparator;
     QIToolButton *m_pFileDialogButton;
     /** Tooltip set is set by clients of this widget. */
     QString       m_strToolTipText;
     /** Path string whose separators are not converted to native ones. */
     QString       m_strNonNativePath;
+    /** This widget's width is multiplied with this weight to compute max.
+     * width the path label can have */
+    static const float s_fPathLabelWidthWeight;
 };
 
 #endif /* !___UIVMNamePathSelector_h___ */

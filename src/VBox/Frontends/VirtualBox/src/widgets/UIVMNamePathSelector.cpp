@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QFontMetrics>
 # include <QDir>
 # include <QHBoxLayout>
 # include <QRegExpValidator>
@@ -39,12 +40,71 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+const float UIVMNamePathSelector::s_fPathLabelWidthWeight = 0.65;
+
+class UIPathLabel : public QLabel
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIPathLabel(QWidget *parent = 0);
+
+    int maxWidth() const;
+    void setMaxWidth(int width);
+    void setText(const QString &text);
+
+private:
+
+    /** Compact the text this is not wider than maxWidth */
+    void compactText();
+
+    int m_maxWidth;
+    QString m_strOriginalText;
+};
+
+UIPathLabel::UIPathLabel(QWidget *parent /* = 0*/)
+    :QLabel(parent)
+    , m_maxWidth(0)
+{
+}
+
+void UIPathLabel::compactText()
+{
+    QFontMetrics fontMetrics = this->fontMetrics();
+    QString strCompactedText = fontMetrics.elidedText(m_strOriginalText, Qt::ElideMiddle, m_maxWidth);
+    QLabel::setText(strCompactedText);
+}
+
+int UIPathLabel::maxWidth() const
+{
+    return m_maxWidth;
+}
+
+void UIPathLabel::setMaxWidth(int width)
+{
+    if (m_maxWidth == width)
+        return;
+    m_maxWidth = width;
+    compactText();
+}
+
+void UIPathLabel::setText(const QString &text)
+{
+    if (m_strOriginalText == text)
+        return;
+
+    m_strOriginalText = text;
+    compactText();
+}
+
+
 UIVMNamePathSelector::UIVMNamePathSelector(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
     , m_pPath(0)
     , m_pName(0)
-    , m_pSeparator(0)
     ,m_pFileDialogButton(0)
 {
     prepareWidgets();
@@ -84,18 +144,12 @@ void UIVMNamePathSelector::prepareWidgets()
         connect(m_pFileDialogButton, &QIToolButton::clicked, this, &UIVMNamePathSelector::sltOpenPathSelector);
     }
 
-    m_pPath = new QILineEdit;
+    m_pPath = new UIPathLabel;
     if (m_pPath)
     {
         m_pMainLayout->addWidget(m_pPath);
-        m_pPath->setReadOnly(true);
         setPath(defaultMachineFolder());
-    }
-    m_pSeparator = new QILabel;
-    if (m_pSeparator)
-    {
-        m_pSeparator->setText(QDir::separator());
-        m_pMainLayout->addWidget(m_pSeparator);
+        m_pPath->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     }
 
     m_pName = new QILineEdit;
@@ -120,11 +174,14 @@ void UIVMNamePathSelector::setPath(const QString &path)
     if (m_strNonNativePath == path)
         return;
     m_strNonNativePath = path;
+
     if (m_pPath)
     {
         QString nativePath(QDir::toNativeSeparators(path));
+        /** make sure we have a trailing seperator */
+        if (!nativePath.isEmpty() && !nativePath.endsWith(QDir::toNativeSeparators("/")))
+            nativePath += QDir::toNativeSeparators("/");
         m_pPath->setText(nativePath);
-        m_pPath->setFixedWidthByText(nativePath);
     }
     emit sigPathChanged(m_strNonNativePath);
 }
@@ -152,6 +209,14 @@ void UIVMNamePathSelector::retranslateUi()
     }
     QString strToolTip = "The Virtual Machine files will be saved under " + m_strToolTipText;
     setToolTip(tr(qPrintable(strToolTip)));
+}
+
+void UIVMNamePathSelector::resizeEvent(QResizeEvent *pEvent)
+{
+    QWidget::resizeEvent(pEvent);
+
+    if (m_pPath)
+        m_pPath->setMaxWidth(s_fPathLabelWidthWeight * width());
 }
 
 void UIVMNamePathSelector::sltOpenPathSelector()
@@ -183,3 +248,5 @@ const QString& UIVMNamePathSelector::toolTipText() const
 {
     return m_strToolTipText;
 }
+
+#include "UIVMNamePathSelector.moc"

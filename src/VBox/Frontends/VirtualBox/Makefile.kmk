@@ -1177,7 +1177,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
-	src/widgets/UIStatusBarEditorWindow.cpp
+	src/widgets/UIStatusBarEditorWindow.cpp \
+	src/widgets/UIVMNamePathSelector.cpp
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VirtualBox_QT_MOCSRCS += \
