@@ -1399,18 +1399,18 @@ def formatIntervalSeconds(cSeconds):
     if cSeconds < 60:
         return '%ss' % (cSeconds,);
     if cSeconds < 3600:
-        cMins = cSeconds / 60;
+        cMins = cSeconds // 60;
         cSecs = cSeconds % 60;
         if cSecs == 0:
             return '%sm' % (cMins,);
         return '%sm %ss' % (cMins, cSecs,);
 
     # Generic and a bit slower.
-    cDays     = cSeconds / 86400;
+    cDays     = cSeconds // 86400;
     cSeconds %= 86400;
-    cHours    = cSeconds / 3600;
+    cHours    = cSeconds // 3600;
     cSeconds %= 3600;
-    cMins     = cSeconds / 60;
+    cMins     = cSeconds // 60;
     cSecs     = cSeconds % 60;
     sRet = '';
     if cDays > 0:
@@ -1821,8 +1821,16 @@ def hasNonAsciiCharacters(sText):
     """
     Returns True is specified string has non-ASCII characters, False if ASCII only.
     """
-    sTmp = unicode(sText, errors='ignore') if isinstance(sText, str) else sText;
-    return not all(ord(ch) < 128 for ch in sTmp);
+    if isString(sText):
+        for ch in sText:
+            if ord(ch) >= 128:
+                return True;
+    else:
+        # Probably byte array or some such thing.
+        for ch in sText:
+            if ch >= 128 or ch < 0:
+                return True;
+    return False;
 
 
 def chmodPlusX(sFile):
@@ -2074,10 +2082,14 @@ class BuildCategoryDataTestCase(unittest.TestCase):
     def testHasNonAsciiChars(self):
         self.assertEqual(hasNonAsciiCharacters(''), False);
         self.assertEqual(hasNonAsciiCharacters('asdfgebASDFKJ@#$)(!@#UNASDFKHB*&$%&)@#(!)@(#!(#$&*#$&%*Y@#$IQWN---00;'), False);
+        self.assertEqual(hasNonAsciiCharacters('\x80 '), True);
+        self.assertEqual(hasNonAsciiCharacters('\x79 '), False);
         self.assertEqual(hasNonAsciiCharacters(u'12039889y!@#$%^&*()0-0asjdkfhoiuyweasdfASDFnvV'), False);
         self.assertEqual(hasNonAsciiCharacters(u'\u0079'), False);
         self.assertEqual(hasNonAsciiCharacters(u'\u0080'), True);
         self.assertEqual(hasNonAsciiCharacters(u'\u0081 \u0100'), True);
+        self.assertEqual(hasNonAsciiCharacters(b'\x20\x20\x20'), False);
+        self.assertEqual(hasNonAsciiCharacters(b'\x20\x81\x20'), True);
 
 if __name__ == '__main__':
     unittest.main();
