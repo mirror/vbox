@@ -40,7 +40,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-const float UIVMNamePathSelector::s_fPathLabelWidthWeight = 0.65;
+const float UIVMNamePathSelector::s_fPathLabelWidthWeight = 0.65f;
 
 class UIPathLabel : public QLabel
 {
