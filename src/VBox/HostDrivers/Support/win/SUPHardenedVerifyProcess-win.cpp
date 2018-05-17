@@ -212,7 +212,11 @@ static const char *g_apszSupNtVpAllowedDlls[] =
 static const char *g_apszSupNtVpAllowedVmExes[] =
 {
     "VBoxHeadless.exe",
+#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
     "VirtualBox.exe",
+#else
+    "VirtualBoxVM.exe",
+#endif
     "VBoxSDL.exe",
     "VBoxNetDHCP.exe",
     "VBoxNetNAT.exe",

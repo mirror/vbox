@@ -88,6 +88,7 @@ else
  VirtualBoxHardenedVM_SOURCES = src/hardenedmain.cpp
  VirtualBoxHardenedVM_SOURCES.win = src/platform/win/VirtualBoxHardened.rc
  VirtualBoxHardenedVM_NAME = VirtualBoxVM
+ VirtualBoxHardenedVM_DEFS = VBOX_GUI_WITH_SHARED_LIBRARY
  VirtualBoxHardenedVM_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
  src/platform/win/VirtualBoxHardened.rc_INCS  = $(VirtualBox_0_OUTDIR)
  src/platform/win/VirtualBoxHardened.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
