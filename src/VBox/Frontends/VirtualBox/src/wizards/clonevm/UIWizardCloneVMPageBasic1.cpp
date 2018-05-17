@@ -137,6 +137,7 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
     registerField("cloneName", this, "cloneName");
     registerField("cloneFilePath", this, "cloneFilePath");
     registerField("reinitMACs", this, "reinitMACs");
+    composeCloneFilePath();
 }
 
 void UIWizardCloneVMPageBasic1::retranslateUi()
