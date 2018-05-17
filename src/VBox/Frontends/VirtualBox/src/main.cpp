@@ -38,15 +38,16 @@
 # include <VBox/version.h>
 # ifdef VBOX_WITH_HARDENING
 #  include <VBox/sup.h>
-# else /* !VBOX_WITH_HARDENING */
+# endif
+# if !defined(VBOX_WITH_HARDENING) || defined(VBOX_GUI_WITH_SHARED_LIBRARY) && !defined(VBOX_RUNTIME_UI)
 #  include <iprt/initterm.h>
 #  ifdef VBOX_WS_MAC
 #   include <iprt/asm.h>
-#  endif /* VBOX_WS_MAC */
-# endif /* !VBOX_WITH_HARDENING */
+#  endif
+# endif
 # ifdef VBOX_WS_X11
 #  include <iprt/env.h>
-# endif /* VBOX_WS_X11 */
+# endif
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -515,7 +516,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     return iResultCode;
 }
 
-#ifndef VBOX_WITH_HARDENING
+#if !defined(VBOX_WITH_HARDENING) || defined(VBOX_GUI_WITH_SHARED_LIBRARY) && !defined(VBOX_RUNTIME_UI)
 
 int main(int argc, char **argv, char **envp)
 {
@@ -610,8 +611,9 @@ int main(int argc, char **argv, char **envp)
     return TrustedMain(argc, argv, envp);
 }
 
-#else  /* VBOX_WITH_HARDENING */
+#endif
 
+#ifdef VBOX_WITH_HARDENING
 
 /**
  * Special entrypoint used by the hardening code when something goes south.
@@ -730,4 +732,3 @@ extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat
 }
 
 #endif /* VBOX_WITH_HARDENING */
-
