@@ -31,9 +31,16 @@ USES += qt5
 # Targets.
 #
 ifdef VBOX_WITH_HARDENING
- PROGRAMS += VirtualBoxHardened
- PROGRAMS.darwin += VirtualBoxVM
- DLLS += VirtualBox
+ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
+  PROGRAMS += VirtualBoxHardened
+  PROGRAMS.darwin += VirtualBoxVM
+  DLLS += VirtualBox
+ else
+  PROGRAMS += VirtualBox
+  PROGRAMS += VirtualBoxHardenedVM
+  DLLS += VirtualBoxVM
+  DLLS += VBoxGlobal
+ endif
 else
  PROGRAMS += VirtualBox
  ifdef VBOX_GUI_WITH_SHARED_LIBRARY
@@ -50,33 +57,41 @@ INSTALLS += VirtualBox.nls
 include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
 
 
-#
-# Hardened VirtualBox.
-#
-VirtualBoxHardened_TEMPLATE = VBOXR3HARDENEDEXE
-VirtualBoxHardened_SOURCES = src/hardenedmain.cpp
-VirtualBoxHardened_SOURCES.win = src/platform/win/VirtualBoxHardened.rc
-VirtualBoxHardened_NAME = VirtualBox
-VirtualBoxHardened_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
-src/platform/win/VirtualBoxHardened.rc_INCS  = $(VirtualBox_0_OUTDIR)
-src/platform/win/VirtualBoxHardened.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
-
-
-#
-# Hardened VirtualBoxVM.
-#
 ifndef VBOX_GUI_WITH_SHARED_LIBRARY
+
+ #
+ # Hardened VirtualBox.
+ #
+ VirtualBoxHardened_TEMPLATE = VBOXR3HARDENEDEXE
+ VirtualBoxHardened_SOURCES = src/hardenedmain.cpp
+ VirtualBoxHardened_SOURCES.win = src/platform/win/VirtualBoxHardened.rc
+ VirtualBoxHardened_NAME = VirtualBox
+ VirtualBoxHardened_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
+ src/platform/win/VirtualBoxHardened.rc_INCS  = $(VirtualBox_0_OUTDIR)
+ src/platform/win/VirtualBoxHardened.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+
+ #
+ # Hardened VirtualBoxVM.
+ #
  ifeq ($(KBUILD_TARGET),darwin)
   VirtualBoxVM_EXTENDS = VirtualBoxHardened
   VirtualBoxVM_NAME    = VirtualBoxVM
   VirtualBoxVM_DEFS    = $(VirtualBoxHardened_DEFS) VBOX_RUNTIME_UI
  endif
+
 else
- ifdef VBOX_WITH_HARDENING
-  VirtualBoxVM_EXTENDS = VirtualBoxHardened
-  VirtualBoxVM_NAME    = VirtualBoxVM
-  VirtualBoxVM_DEFS    = $(VirtualBoxHardened_DEFS)
- endif
+
+ #
+ # Hardened VirtualBoxVM.
+ #
+ VirtualBoxHardenedVM_TEMPLATE = VBOXR3HARDENEDEXE
+ VirtualBoxHardenedVM_SOURCES = src/hardenedmain.cpp
+ VirtualBoxHardenedVM_SOURCES.win = src/platform/win/VirtualBoxHardened.rc
+ VirtualBoxHardenedVM_NAME = VirtualBoxVM
+ VirtualBoxHardenedVM_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
+ src/platform/win/VirtualBoxHardened.rc_INCS  = $(VirtualBox_0_OUTDIR)
+ src/platform/win/VirtualBoxHardened.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+
 endif
 
 
@@ -108,7 +123,11 @@ endif
 #
 # VirtualBox Manager Application
 #
-VirtualBox_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
+ifndef VBOX_GUI_WITH_SHARED_LIBRARY
+ VirtualBox_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
+else
+ VirtualBox_TEMPLATE := VBOXQTGUIEXE
+endif
 VirtualBox_NAME = VirtualBox
 # For the launch trick we need different inode numbers.
 if !defined(VBOX_WITH_HARDENING) && !defined(VBOX_GUI_WITH_SHARED_LIBRARY)
@@ -411,8 +430,11 @@ else
 endif
 
 VirtualBox_LDFLAGS.darwin = \
-	-framework AppKit -framework Carbon -framework IOKit \
+	-framework AppKit -framework Carbon -framework IOKit
+ifndef VBOX_GUI_WITH_SHARED_LIBRARY
+ VirtualBox_LDFLAGS.darwin += \
 	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBox.dylib)
+endif
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
