@@ -42,6 +42,12 @@
 
 const float UIVMNamePathSelector::s_fPathLabelWidthWeight = 0.65f;
 
+
+/*********************************************************************************************************************************
+*   UIPathLabel definition.                                                                                                      *
+*********************************************************************************************************************************/
+/** A QLabel extension used to display long texts in a single line with ellipses (if necessary). The client passes
+ * a maximum width the label can have. If the original text is wider than it is compacted */
 class UIPathLabel : public QLabel
 {
 
@@ -51,18 +57,23 @@ public:
 
     UIPathLabel(QWidget *parent = 0);
 
-    int maxWidth() const;
+    int  maxWidth() const;
     void setMaxWidth(int width);
-    void setText(const QString &text);
+    void setText(const QString &text) /* override */;
 
 private:
 
-    /** Compact the text this is not wider than maxWidth */
+    /** Compact the text so that the label is not wider than maxWidth */
     void compactText();
 
-    int m_maxWidth;
+    int     m_maxWidth;
     QString m_strOriginalText;
 };
+
+
+/*********************************************************************************************************************************
+*   UIPathLabel implemetation.                                                                                                   *
+*********************************************************************************************************************************/
 
 UIPathLabel::UIPathLabel(QWidget *parent /* = 0*/)
     :QLabel(parent)
@@ -99,6 +110,10 @@ void UIPathLabel::setText(const QString &text)
     compactText();
 }
 
+
+/*********************************************************************************************************************************
+*   UIVMNamePathSelector implemetation.                                                                                          *
+*********************************************************************************************************************************/
 
 UIVMNamePathSelector::UIVMNamePathSelector(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
