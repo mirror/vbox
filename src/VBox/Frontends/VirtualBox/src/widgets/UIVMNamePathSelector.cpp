@@ -125,11 +125,12 @@ void UIVMNamePathSelector::prepareWidgets()
     m_pMainLayout = new QHBoxLayout;
     if (!m_pMainLayout)
         return;
-            /* Configure layout: */
+    /* Configure layout: */
+    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
 #ifdef VBOX_WS_MAC
-            m_pMainLayout->setSpacing(0);
+    m_pMainLayout->setSpacing(0);
 #else
-            m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+    m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
 #endif
     setLayout(m_pMainLayout);
 
