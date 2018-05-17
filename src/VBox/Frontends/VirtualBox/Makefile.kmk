@@ -184,7 +184,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  # VirtualBox Virtual Machine Application
  #
  VirtualBoxVM_TEMPLATE       := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
- VirtualBoxVM_NAME           = VirtualBoxRT
+ VirtualBoxVM_NAME           = VirtualBoxVM
  VirtualBoxVM_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  VirtualBoxVM_DEFS           += VBOX_RUNTIME_UI
  VirtualBoxVM_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
