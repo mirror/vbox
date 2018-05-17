@@ -9131,14 +9131,17 @@ IEM_STATIC void iemMemRollback(PVMCPU pVCpu)
     uint32_t iMemMap = RT_ELEMENTS(pVCpu->iem.s.aMemMappings);
     while (iMemMap-- > 0)
     {
-        uint32_t fAccess = pVCpu->iem.s.aMemMappings[iMemMap].fAccess;
+        uint32_t const fAccess = pVCpu->iem.s.aMemMappings[iMemMap].fAccess;
         if (fAccess != IEM_ACCESS_INVALID)
         {
             AssertMsg(!(fAccess & ~IEM_ACCESS_VALID_MASK) && fAccess != 0, ("%#x\n", fAccess));
             pVCpu->iem.s.aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
             if (!(fAccess & IEM_ACCESS_BOUNCE_BUFFERED))
                 PGMPhysReleasePageMappingLock(pVCpu->CTX_SUFF(pVM), &pVCpu->iem.s.aMemMappingLocks[iMemMap].Lock);
-            Assert(pVCpu->iem.s.cActiveMappings > 0);
+            AssertMsg(pVCpu->iem.s.cActiveMappings > 0,
+                      ("iMemMap=%u fAccess=%#x pv=%p GCPhysFirst=%RGp GCPhysSecond=%RGp\n",
+                       iMemMap, fAccess, pVCpu->iem.s.aMemMappings[iMemMap].pv,
+                       pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond));
             pVCpu->iem.s.cActiveMappings--;
         }
     }
@@ -14954,6 +14957,10 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
  */
 DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit)
 {
+    AssertMsg(pVCpu->iem.s.aMemMappings[0].fAccess == IEM_ACCESS_INVALID, ("0: %#x %RGp\n", pVCpu->iem.s.aMemMappings[0].fAccess, pVCpu->iem.s.aMemBbMappings[0].GCPhysFirst));
+    AssertMsg(pVCpu->iem.s.aMemMappings[1].fAccess == IEM_ACCESS_INVALID, ("1: %#x %RGp\n", pVCpu->iem.s.aMemMappings[1].fAccess, pVCpu->iem.s.aMemBbMappings[1].GCPhysFirst));
+    AssertMsg(pVCpu->iem.s.aMemMappings[2].fAccess == IEM_ACCESS_INVALID, ("2: %#x %RGp\n", pVCpu->iem.s.aMemMappings[2].fAccess, pVCpu->iem.s.aMemBbMappings[2].GCPhysFirst));
+
 #ifdef IEM_WITH_SETJMP
     VBOXSTRICTRC rcStrict;
     jmp_buf      JmpBuf;
@@ -14978,6 +14985,10 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit)
         Assert(rcStrict != VINF_SUCCESS);
         iemMemRollback(pVCpu);
     }
+    AssertMsg(pVCpu->iem.s.aMemMappings[0].fAccess == IEM_ACCESS_INVALID, ("0: %#x %RGp\n", pVCpu->iem.s.aMemMappings[0].fAccess, pVCpu->iem.s.aMemBbMappings[0].GCPhysFirst));
+    AssertMsg(pVCpu->iem.s.aMemMappings[1].fAccess == IEM_ACCESS_INVALID, ("1: %#x %RGp\n", pVCpu->iem.s.aMemMappings[1].fAccess, pVCpu->iem.s.aMemBbMappings[1].GCPhysFirst));
+    AssertMsg(pVCpu->iem.s.aMemMappings[2].fAccess == IEM_ACCESS_INVALID, ("2: %#x %RGp\n", pVCpu->iem.s.aMemMappings[2].fAccess, pVCpu->iem.s.aMemBbMappings[2].GCPhysFirst));
+
 //#ifdef DEBUG
 //    AssertMsg(IEM_GET_INSTR_LEN(pVCpu) == cbInstr || rcStrict != VINF_SUCCESS, ("%u %u\n", IEM_GET_INSTR_LEN(pVCpu), cbInstr));
 //#endif
@@ -15016,7 +15027,12 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit)
                 Assert(rcStrict != VINF_SUCCESS);
                 iemMemRollback(pVCpu);
             }
+            AssertMsg(pVCpu->iem.s.aMemMappings[0].fAccess == IEM_ACCESS_INVALID, ("0: %#x %RGp\n", pVCpu->iem.s.aMemMappings[0].fAccess, pVCpu->iem.s.aMemBbMappings[0].GCPhysFirst));
+            AssertMsg(pVCpu->iem.s.aMemMappings[1].fAccess == IEM_ACCESS_INVALID, ("1: %#x %RGp\n", pVCpu->iem.s.aMemMappings[1].fAccess, pVCpu->iem.s.aMemBbMappings[1].GCPhysFirst));
+            AssertMsg(pVCpu->iem.s.aMemMappings[2].fAccess == IEM_ACCESS_INVALID, ("2: %#x %RGp\n", pVCpu->iem.s.aMemMappings[2].fAccess, pVCpu->iem.s.aMemBbMappings[2].GCPhysFirst));
         }
+        else if (pVCpu->iem.s.cActiveMappings > 0)
+            iemMemRollback(pVCpu);
         EMSetInhibitInterruptsPC(pVCpu, UINT64_C(0x7777555533331111));
     }
 
@@ -15089,6 +15105,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, true);
+    else if (pVCpu->iem.s.cActiveMappings > 0)
+        iemMemRollback(pVCpu);
 
 #if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
     /*
@@ -15121,6 +15139,8 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, ui
         if (pcbWritten)
             *pcbWritten = pVCpu->iem.s.cbWritten - cbOldWritten;
     }
+    else if (pVCpu->iem.s.cActiveMappings > 0)
+        iemMemRollback(pVCpu);
 
 #ifdef IN_RC
     rcStrict = iemRCRawMaybeReenter(pVCpu, pCtx, rcStrict);
@@ -15155,9 +15175,9 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXC
     else
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
     if (rcStrict == VINF_SUCCESS)
-    {
         rcStrict = iemExecOneInner(pVCpu, true);
-    }
+    else if (pVCpu->iem.s.cActiveMappings > 0)
+        iemMemRollback(pVCpu);
 
 #ifdef IN_RC
     rcStrict = iemRCRawMaybeReenter(pVCpu, pCtx, rcStrict);
@@ -15179,6 +15199,8 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
         if (pcbWritten)
             *pcbWritten = pVCpu->iem.s.cbWritten - cbOldWritten;
     }
+    else if (pVCpu->iem.s.cActiveMappings > 0)
+        iemMemRollback(pVCpu);
 
 #ifdef IN_RC
     rcStrict = iemRCRawMaybeReenter(pVCpu, pCtx, rcStrict);
@@ -15214,6 +15236,8 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCP
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true);
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, false);
+    else if (pVCpu->iem.s.cActiveMappings > 0)
+        iemMemRollback(pVCpu);
 
 #ifdef IN_RC
     rcStrict = iemRCRawMaybeReenter(pVCpu, pCtx, rcStrict);
@@ -15268,6 +15292,8 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPU pVC
         if (pcbWritten)
             *pcbWritten = pVCpu->iem.s.cbWritten - cbOldWritten;
     }
+    else if (pVCpu->iem.s.cActiveMappings > 0)
+        iemMemRollback(pVCpu);
 
 #ifdef IN_RC
     rcStrict = iemRCRawMaybeReenter(pVCpu, pCtx, rcStrict);
@@ -15329,6 +15355,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, true);
+    else if (pVCpu->iem.s.cActiveMappings > 0)
+        iemMemRollback(pVCpu);
 
     /*
      * Assert some sanity.
@@ -15478,16 +15506,19 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &IEM_GET_CTX(pVCpu)->gs));
 # endif
     }
-# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     else
     {
+        if (pVCpu->iem.s.cActiveMappings > 0)
+            iemMemRollback(pVCpu);
+
+# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         /*
          * When a nested-guest causes an exception intercept (e.g. #PF) when fetching
          * code as part of instruction execution, we need this to fix-up VINF_SVM_VMEXIT.
          */
         rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
-    }
 # endif
+    }
 
     /*
      * Maybe re-enter raw-mode and log.
@@ -15570,7 +15601,11 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVE
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
-    return iemRaiseXcptOrInt(pVCpu, cbInstr, u8TrapNo, fFlags, uErrCode, uCr2);
+    VBOXSTRICTRC rcStrict = iemRaiseXcptOrInt(pVCpu, cbInstr, u8TrapNo, fFlags, uErrCode, uCr2);
+
+    if (pVCpu->iem.s.cActiveMappings > 0)
+        iemMemRollback(pVCpu);
+    return rcStrict;
 }
 
 
