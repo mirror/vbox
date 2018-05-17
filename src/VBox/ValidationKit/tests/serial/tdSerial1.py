@@ -51,6 +51,11 @@ from testdriver import vboxcon;
 
 import loopback;
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    xrange = range; # pylint: disable=redefined-builtin,invalid-name
+
+
 class tdSerial1(vbox.TestDriver):
     """
     VBox serial port testing #1.

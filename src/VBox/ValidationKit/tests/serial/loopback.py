@@ -119,7 +119,7 @@ class SerialLoopbackNamedPipeServ(object):
     """
     def __init__(self, sLocation, iTimeout):
         self.oConn = None;
-        self.oSock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM);
+        self.oSock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM); # pylint: disable=no-member
         self.oSock.settimeout(iTimeout);
         self.oSock.bind(sLocation);
         self.oSock.listen(1);
@@ -159,7 +159,7 @@ class SerialLoopbackNamedPipeClient(object):
     Handler for a named pipe client style connection.
     """
     def __init__(self, sLocation, iTimeout):
-        self.oConn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM);
+        self.oConn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM); # pylint: disable=no-member
         self.oConn.connect(sLocation);
         self.oConn.settimeout(iTimeout);
         self.iTimeout = iTimeout;
