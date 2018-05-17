@@ -127,11 +127,8 @@ void UIVMNamePathSelector::prepareWidgets()
         return;
             /* Configure layout: */
 #ifdef VBOX_WS_MAC
-            m_pMainLayout->setContentsMargins(0, 0, 0, 0);
             m_pMainLayout->setSpacing(0);
 #else
-            m_pMainLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
-                                                 qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2, 0);
             m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
 #endif
     setLayout(m_pMainLayout);
