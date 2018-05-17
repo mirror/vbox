@@ -200,7 +200,7 @@ class SerialLoopback(object):
             self.oIoPumper = SerialLoopbackTcpServ(sLocation, 0.5);
             self.oThread.start();
         elif sType == g_ksLoopbackNamedPipeServ:
-            self.oIoPumper = SerialLoopbackNamedPipeServ(sLocation, 0.5); # pylint: disable=R0204
+            self.oIoPumper = SerialLoopbackNamedPipeServ(sLocation, 0.5); # pylint: disable=redefined-variable-type
             self.oThread.start();
 
     def connect(self):
@@ -212,7 +212,7 @@ class SerialLoopback(object):
             if self.sType == g_ksLoopbackTcpClient:
                 self.oIoPumper = SerialLoopbackTcpClient(self.sLocation, 0.5);
             elif self.sType == g_ksLoopbackNamedPipeClient:
-                self.oIoPumper = SerialLoopbackNamedPipeClient(self.sLocation, 0.5); # pylint: disable=R0204
+                self.oIoPumper = SerialLoopbackNamedPipeClient(self.sLocation, 0.5); # pylint: disable=redefined-variable-type
         except:
             fRc = False;
         else:
