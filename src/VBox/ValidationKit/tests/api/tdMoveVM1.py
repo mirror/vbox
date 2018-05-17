@@ -49,6 +49,7 @@ from testdriver import vboxcon
 from testdriver import vboxwrappers
 from tdMoveMedium1 import SubTstDrvMoveMedium1
 
+
 class SubTstDrvMoveVM1(base.SubTestDriverBase):
     """
     Sub-test driver for VM Move Test #1.
@@ -56,15 +57,25 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
     def __init__(self, oTstDrv):
         base.SubTestDriverBase.__init__(self, 'move-vm', oTstDrv)
-        self.asRsrcs = self.__getResourceSet()
+
+        self.asRsrcs = []
+        self.asRsrcs.append(os.path.join('5.3','isos','tdMoveVM1.iso'));
+        self.asRsrcs.append(os.path.join('5.3','floppy','tdMoveVM1.img'));
+
+        if oTstDrv.asRsrcs is None:
+            oTstDrv.asRsrcs = [];
+        oTstDrv.asRsrcs.extend(self.asRsrcs);
+
         self.asImagesNames = []
-        self.dsKeys = dict (StandardImage = 'SATA Controller',
-                       ISOImage = 'IDE Controller',
-                       FloppyImage = 'Floppy Controller',
-                       SettingsFile = 'Settings File',
-                       LogFile = 'Log File',
-                       SavedStateFile = 'Saved State File',
-                       SnapshotFile = 'Snapshot File')
+        self.dsKeys = {
+            'StandardImage':    'SATA Controller',
+            'ISOImage':         'IDE Controller',
+            'FloppyImage':      'Floppy Controller',
+            'SettingsFile':     'Settings File',
+            'LogFile':          'Log File',
+            'SavedStateFile':   'Saved State File',
+            'SnapshotFile':     'Snapshot File'
+        };
 
     def testIt(self):
         """
@@ -77,10 +88,10 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
     # Test execution helpers.
     #
 
-    #
-    #createTestMachine
-    #
     def createTestMachine(self):
+        """
+        Document me here, not with hashes above.
+        """
         oVM = self.oTstDrv.createTestVM('test-vm-move', 1, None, 4)
         if oVM is None:
             return None
@@ -96,7 +107,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
                 or vboxcon.MediumFormatCapabilities_CreateDynamic not in aoDskFmtCaps:
                 continue
             (asExts, aTypes) = oDskFmt.describeFileExtensions()
-            for i in range(0, len(asExts)): #pylint: disable=consider-using-enumerate
+            for i in range(0, len(asExts)): # pylint: disable=consider-using-enumerate
                 if aTypes[i] is vboxcon.DeviceType_HardDisk:
                     sExt = '.' + asExts[i]
                     break
@@ -111,7 +122,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
                 break
 
             # attach HDD, IDE controller exists by default, but we use SATA just in case
-            sController=self.dsKeys['StandardImage']
+            sController = self.dsKeys['StandardImage']
             fRc = fRc and oSession.attachHd(sHddPath, sController, iPort = len(self.asImagesNames),
                                             fImmutable=False, fForceResource=False)
             if fRc:
@@ -125,16 +136,20 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return oVM
 
-    #
-    #moveVMToLocation
-    #
     def moveVMToLocation(self, sLocation, oVM):
+        """
+        Document me here, not with hashes above.
+        """
         fRc = True
         try:
-            #move machine
+
+            ## @todo r=bird: Too much unncessary crap inside try clause.  Only oVM.moveTo needs to be here.
+            ##               Though, you could make an argument for oVM.name too, perhaps.
+
+            # move machine
             reporter.log('Moving machine "%s" to the "%s"' % (oVM.name, sLocation))
-            oType = 'basic'
-            oProgress = vboxwrappers.ProgressWrapper(oVM.moveTo(sLocation, oType), self.oTstDrv.oVBoxMgr, self.oTstDrv,
+            sType = 'basic'
+            oProgress = vboxwrappers.ProgressWrapper(oVM.moveTo(sLocation, sType), self.oTstDrv.oVBoxMgr, self.oTstDrv,
                                                      'moving machine "%s"' % (oVM.name,))
 
         except:
@@ -149,66 +164,66 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return fRc
 
-    #
-    #checkLocation
-    #
-    #Prerequisites:
-    #1. All standard images are attached to SATA controller
-    #2. All ISO images are attached to IDE controller
-    #3. All floppy images are attached to Floppy controller
-    #4. The type defaultdict from collection is used here (some sort of multimap data structure)
-    #5. The dsReferenceFiles parameter here is the structure defaultdict(set):
-    #   [
-    #   ('StandardImage': ['somedisk.vdi', 'somedisk.vmdk',...]),
-    #    ('ISOImage': ['somedisk_1.iso','somedisk_2.iso',...]),
-    #    ('FloppyImage': ['somedisk_1.img','somedisk_2.img',...]),
-    #    ('SnapshotFile': ['snapshot file 1','snapshot file 2', ...]),
-    #    ('SettingsFile', ['setting file',...]),
-    #    ('SavedStateFile': ['state file 1','state file 2',...]),
-    #    ('LogFile': ['log file 1','log file 2',...]),
-    #    ]
-    #
     def checkLocation(self, oMachine, dsReferenceFiles):
+        """
+        Document me.
+
+        Prerequisites:
+        1. All standard images are attached to SATA controller
+        2. All ISO images are attached to IDE controller
+        3. All floppy images are attached to Floppy controller
+        4. The type defaultdict from collection is used here (some sort of multimap data structure)
+        5. The dsReferenceFiles parameter here is the structure defaultdict(set):
+           [
+           ('StandardImage': ['somedisk.vdi', 'somedisk.vmdk',...]),
+            ('ISOImage': ['somedisk_1.iso','somedisk_2.iso',...]),
+            ('FloppyImage': ['somedisk_1.img','somedisk_2.img',...]),
+            ('SnapshotFile': ['snapshot file 1','snapshot file 2', ...]),
+            ('SettingsFile', ['setting file',...]),
+            ('SavedStateFile': ['state file 1','state file 2',...]),
+            ('LogFile': ['log file 1','log file 2',...]),
+            ]
+        """
 
         fRc = True
 
-        for key, value in self.dsKeys.iteritems():
+        for sKey, sValue in self.dsKeys.items():
             aActuals = set()
             aReferences = set()
 
-            #Check standard images locations, ISO files locations, floppy images locations, snapshots files locations
-            if key == 'StandardImage' or key == 'ISOImage' or key == 'FloppyImage':
-                aReferences = dsReferenceFiles[key]
+            # Check standard images locations, ISO files locations, floppy images locations, snapshots files locations
+            if sKey == 'StandardImage' or sKey == 'ISOImage' or sKey == 'FloppyImage':
+                aReferences = dsReferenceFiles[sKey]
                 if aReferences:
-                    aoMediumAttachments = oMachine.getMediumAttachmentsOfController(value)
+                    aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sValue) ##@todo r=bird: API call, try-except!
                     for oAttachment in aoMediumAttachments:
                         aActuals.add(oAttachment.medium.location)
 
-            elif key == 'SnapshotFile':
-                aReferences = dsReferenceFiles[key]
+            elif sKey == 'SnapshotFile':
+                aReferences = dsReferenceFiles[sKey]
                 if aReferences:
                     aActuals = self.__getSnapshotsFiles(oMachine)
 
-            #Check setting file location
-            elif key == 'SettingsFile':
-                aReferences = dsReferenceFiles[key]
+            # Check setting file location
+            elif sKey == 'SettingsFile':
+                aReferences = dsReferenceFiles[sKey]
                 if aReferences:
                     aActuals.add(oMachine.settingsFilePath)
 
-            #Check saved state files location
-            elif key == 'SavedStateFile':
-                aReferences = dsReferenceFiles[key]
+            # Check saved state files location
+            elif sKey == 'SavedStateFile':
+                aReferences = dsReferenceFiles[sKey]
                 if aReferences:
                     aActuals = self.__getStatesFiles(oMachine)
 
-            #Check log files location
-            elif key == 'LogFile':
-                aReferences = dsReferenceFiles[key]
+            # Check log files location
+            elif sKey == 'LogFile':
+                aReferences = dsReferenceFiles[sKey]
                 if aReferences:
                     aActuals = self.__getLogFiles(oMachine)
 
             if aActuals:
-                reporter.log('Check %s' % (key))
+                reporter.log('Check %s' % (sKey))
                 intersection = aReferences.intersection(aActuals)
                 for eachItem in intersection:
                     reporter.log('Item location "%s" is correct' % (eachItem))
@@ -221,20 +236,14 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
                 for eachItem in aReferences:
                     reporter.log(' "%s"' % (eachItem))
 
-                if len (intersection) != len (aActuals):
+                if len(intersection) != len(aActuals):
                     reporter.log('Not all items in the right location. Check it.')
                     fRc = False
 
         return fRc
 
-    #
-    #checkAPIVersion
-    #
     def checkAPIVersion(self):
-        if self.oTstDrv.fpApiVer >= 5.3:
-            return True
-
-        return False
+        return self.oTstDrv.fpApiVer >= 5.3;
 
     def __getStatesFiles(self, oMachine, fPrint = False):
         asStateFilesList = set()
@@ -269,18 +278,12 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
                     reporter.log("Log file is %s" % (sFullPath))
         return asLogFilesList
 
-    def __getResourceSet(self):
-        # Construct the resource list the first time it's queried.
-        if self.oTstDrv.asRsrcs is None:
-            self.oTstDrv.asRsrcs = []
-            self.oTstDrv.asRsrcs.append('5.3' + os.sep + 'isos' + os.sep + 'tdMoveVM1.iso')
-            self.oTstDrv.asRsrcs.append('5.3' + os.sep + 'floppy' + os.sep + 'tdMoveVM1.img')
 
-        return self.oTstDrv.asRsrcs
-
-    # All disks attached to VM are located inside the VM's folder.
-    # There are no any snapshots and logs.
     def __testScenario_2(self, oSession, oMachine, sNewLoc, sOldLoc):
+        """
+        All disks attached to VM are located inside the VM's folder.
+        There are no any snapshots and logs.
+        """
 
         sController = self.dsKeys['StandardImage']
         aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sController)
@@ -313,11 +316,13 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return fRc
 
-    # There are snapshots
     def __testScenario_3(self, oSession, oMachine, sNewLoc):
+        """
+        There are snapshots
+        """
 
-        #At moment, it's used only one snapshot due to the difficulty to get
-        #all attachments of the machine (i.e. not only attached at moment)
+        # At moment, it's used only one snapshot due to the difficulty to get
+        # all attachments of the machine (i.e. not only attached at moment)
         cSnap = 1
 
         for counter in range(1,cSnap+1):
@@ -354,23 +359,25 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return fRc
 
-    # There are one or more save state files in the snapshots folder
-    # and some files in the logs folder.
-    # Here we run VM, next stop it in the "save" state.
-    # And next move VM
     def __testScenario_4(self, oMachine, sNewLoc):
+        """
+        There are one or more save state files in the snapshots folder
+        and some files in the logs folder.
+        Here we run VM, next stop it in the "save" state.
+        And next move VM
+        """
 
-        #Run VM and get new Session object
+        # Run VM and get new Session object.
         oSession = self.oTstDrv.startVm(oMachine)
 
-        #some time interval should be here for not closing VM just after start
+        # Some time interval should be here for not closing VM just after start.
         time.sleep(1)
 
         if oMachine.state != self.oTstDrv.oVBoxMgr.constants.MachineState_Running:
             reporter.log("Machine '%s' is not Running" % (oMachine.name))
             fRc = False
 
-        #call Session::saveState(), already closes session unless it failed
+        # Call Session::saveState(), already closes session unless it failed.
         fRc = oSession.saveState()
         if fRc is True:
             reporter.log("Machine is in saved state")
@@ -378,10 +385,10 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         fRc = self.oTstDrv.terminateVmBySession(oSession)
 
         if fRc is True or False:
-            #create a new Session object for moving VM
+            # Create a new Session object for moving VM.
             oSession = self.oTstDrv.openSession(oMachine)
 
-            #always clear before each scenario
+            # Always clear before each scenario.
             dsReferenceFiles = defaultdict(set)
 
             asLogs = self.__getLogFiles(oMachine)
@@ -416,20 +423,22 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return fRc
 
-    # There is an ISO image (.iso) attached to the VM.
-    # Prerequisites - there is IDE Controller and there are no any images attached to it.
     def __testScenario_5(self, oMachine, sNewLoc, sOldLoc):
+        """
+        There is an ISO image (.iso) attached to the VM.
+        Prerequisites - there is IDE Controller and there are no any images attached to it.
+        """
 
         fRc = True
         sISOImageName = 'tdMoveVM1.iso'
 
-        #always clear before each scenario
+        # Always clear before each scenario.
         dsReferenceFiles = defaultdict(set)
 
-        #create a new Session object
+        # Create a new Session object.
         oSession = self.oTstDrv.openSession(oMachine)
 
-        sISOLoc = self.asRsrcs[0]#'5.3/isos/tdMoveVM1.iso'
+        sISOLoc = self.asRsrcs[0] # '5.3/isos/tdMoveVM1.iso'
         reporter.log("sHost is '%s', sResourcePath is '%s'" % (self.oTstDrv.sHost, self.oTstDrv.sResourcePath))
         sISOLoc = self.oTstDrv.getFullResourceName(sISOLoc)
         reporter.log("sISOLoc is '%s'" % (sISOLoc,))
@@ -438,12 +447,12 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             reporter.log('ISO file does not exist at "%s"' % (sISOLoc,))
             fRc = False
 
-        #Copy ISO image from the common resource folder into machine folder
+        # Copy ISO image from the common resource folder into machine folder.
         shutil.copy(sISOLoc, sOldLoc)
 
-        #attach ISO image to the IDE controller
+        # Attach ISO image to the IDE controller.
         if fRc is True:
-            #set actual ISO location
+            # Set actual ISO location.
             sISOLoc = sOldLoc + os.sep + sISOImageName
             reporter.log("sISOLoc is '%s'" % (sISOLoc,))
             if not os.path.exists(sISOLoc):
@@ -467,7 +476,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         else:
             reporter.testFailure('!!!!!!!!!!!!!!!!!! 5th scenario: Attach ISO image failed... !!!!!!!!!!!!!!!!!!')
 
-        #detach ISO image
+        # Detach ISO image.
         fRes = oSession.detachHd(sController, iPort, 0)
         if fRes is False:
             reporter.log('5th scenario: Couldn\'t detach image from the controller %s '
@@ -483,31 +492,33 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         return fRc
 
-    # There is a floppy image (.img) attached to the VM.
-    # Prerequisites - there is Floppy Controller and there are no any images attached to it.
     def __testScenario_6(self, oMachine, sNewLoc, sOldLoc):
+        """
+        There is a floppy image (.img) attached to the VM.
+        Prerequisites - there is Floppy Controller and there are no any images attached to it.
+        """
 
         fRc = True
 
-        #always clear before each scenario
+        # Always clear before each scenario.
         dsReferenceFiles = defaultdict(set)
 
-        #create a new Session object
+        # Create a new Session object.
         oSession = self.oTstDrv.openSession(oMachine)
 
-        sFloppyLoc = self.asRsrcs[1]#'5.3/floppy/tdMoveVM1.img'
+        sFloppyLoc = self.asRsrcs[1] # '5.3/floppy/tdMoveVM1.img'
         sFloppyLoc = self.oTstDrv.getFullResourceName(sFloppyLoc)
 
         if not os.path.exists(sFloppyLoc):
             reporter.log('Floppy disk does not exist at "%s"' % (sFloppyLoc,))
             fRc = False
 
-        #Copy floppy image from the common resource folder into machine folder
+        # Copy floppy image from the common resource folder into machine folder.
         shutil.copy(sFloppyLoc, sOldLoc)
 
-        #attach floppy image
+        # Attach floppy image.
         if fRc is True:
-            #set actual floppy location
+            # Set actual floppy location.
             sFloppyImageName = 'tdMoveVM1.img'
             sFloppyLoc = sOldLoc + os.sep + sFloppyImageName
             sController=self.dsKeys['FloppyImage']
@@ -525,7 +536,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         else:
             reporter.testFailure('!!!!!!!!!!!!!!!!!! 6th scenario: Attach floppy image failed... !!!!!!!!!!!!!!!!!!')
 
-        #detach floppy image
+        # Detach floppy image.
         fRes = oSession.detachHd(sController, 0, 0)
         if fRes is False:
             reporter.log('6th scenario: Couldn\'t detach image from the controller %s port %s device %s' % (sController, 0, 0))
@@ -539,9 +550,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             reporter.log('6th scenario: Couldn\'t close machine session')
         return fRc
 
-    #
-    #testVMMove
-    #
+
     def testVMMove(self):
         """
         Test machine moving.
@@ -559,39 +568,38 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         else:
             reporter.log('API version is "%s".' % (self.oTstDrv.fpApiVer))
 
-        #Scenarios
-        #1. All disks attached to VM are located outside the VM's folder.
-        #   There are no any snapshots and logs.
-        #   In this case only VM setting file should be moved (.vbox file)
+        # Scenarios
+        # 1. All disks attached to VM are located outside the VM's folder.
+        #    There are no any snapshots and logs.
+        #    In this case only VM setting file should be moved (.vbox file)
         #
-        #2. All disks attached to VM are located inside the VM's folder.
-        #   There are no any snapshots and logs.
+        # 2. All disks attached to VM are located inside the VM's folder.
+        #    There are no any snapshots and logs.
         #
-        #3. There are snapshots.
+        # 3. There are snapshots.
         #
-        #4. There are one or more save state files in the snapshots folder
-        #   and some files in the logs folder.
+        # 4. There are one or more save state files in the snapshots folder
+        #    and some files in the logs folder.
         #
-        #5. There is an ISO image (.iso) attached to the VM.
+        # 5. There is an ISO image (.iso) attached to the VM.
         #
-        #6. There is a floppy image (.img) attached to the VM.
+        # 6. There is a floppy image (.img) attached to the VM.
         #
-        #7. There are shareable disk and immutable disk attached to the VM.
+        # 7. There are shareable disk and immutable disk attached to the VM.
 
         try:
-            #create test machine
+            # Create test machine.
             oMachine = self.createTestMachine()
-
             if oMachine is None:
                 reporter.error('Failed to create test machine')
 
-            #create temporary subdirectory in the current working directory
+            # Create temporary subdirectory in the current working directory.
             sOrigLoc = self.oTstDrv.sScratchPath
             sBaseLoc = os.path.join(sOrigLoc, 'moveFolder')
             os.mkdir(sBaseLoc, 0o775)
 
-            #lock machine
-            #get session machine
+            # lock machine
+            # get session machine
             oSession = self.oTstDrv.openSession(oMachine)
             fRc = True
 
@@ -599,10 +607,13 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
             dsReferenceFiles = defaultdict(set)
 
-############# 1 case. ##########################################################################################
+            #
+            # 1. case:
+            #
             # All disks attached to VM are located outside the VM's folder.
             # There are no any snapshots and logs.
             # In this case only VM setting file should be moved (.vbox file)
+            #
             for s in self.asImagesNames:
                 reporter.log('"%s"' % (s,))
                 dsReferenceFiles['StandardImage'].add(os.path.join(sOrigLoc, s))
@@ -625,9 +636,12 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             if fRc is False:
                 reporter.testFailure('1st scenario: Couldn\'t save machine settings')
 
-############# 2 case. ##########################################################################################
+            #
+            # 2. case:
+            #
             # All disks attached to VM are located inside the VM's folder.
             # There are no any snapshots and logs.
+            #
             sOldLoc = sNewLoc + oMachine.name + os.sep
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_2d_scenario')
             os.mkdir(sNewLoc, 0o775)
@@ -636,8 +650,11 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             if fRc is False:
                 return reporter.testDone()[1] == 0
 
-############# 3 case. ##########################################################################################
+            #
+            # 3. case:
+            #
             # There are snapshots.
+            #
             sOldLoc = sNewLoc + oMachine.name + os.sep
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
             os.mkdir(sNewLoc, 0o775)
@@ -646,17 +663,19 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             if fRc is False:
                 return reporter.testDone()[1] == 0
 
-############# 4 case. ##########################################################################################
+            #
+            # 4. case:
+            #
             # There are one or more save state files in the snapshots folder
             # and some files in the logs folder.
             # Here we run VM, next stop it in the "save" state.
             # And next move VM
-
+            #
             sOldLoc = sNewLoc + oMachine.name + os.sep
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_4th_scenario')
             os.mkdir(sNewLoc, 0o775)
 
-            #Close Session object because after starting VM we get new instance of session
+            # Close Session object because after starting VM we get new instance of session
             fRc = oSession.close() and fRc
             if fRc is False:
                 reporter.log('Couldn\'t close machine session')
@@ -667,10 +686,12 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             if fRc is False:
                 return reporter.testDone()[1] == 0
 
-############## 5 case. ##########################################################################################
+            #
+            # 5. case:
+            #
             # There is an ISO image (.iso) attached to the VM.
             # Prerequisites - there is IDE Controller and there are no any images attached to it.
-
+            #
             sOldLoc = sNewLoc + os.sep + oMachine.name
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_5th_scenario')
             os.mkdir(sNewLoc, 0o775)
@@ -678,10 +699,12 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             if fRc is False:
                 return reporter.testDone()[1] == 0
 
-############# 6 case. ##########################################################################################
+            #
+            # 6. case:
+            #
             # There is a floppy image (.img) attached to the VM.
             # Prerequisites - there is Floppy Controller and there are no any images attached to it.
-
+            #
             sOldLoc = sNewLoc + os.sep + oMachine.name
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_6th_scenario')
             os.mkdir(sNewLoc, 0o775)
@@ -689,10 +712,11 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             if fRc is False:
                 return reporter.testDone()[1] == 0
 
-############# 7 case. ##########################################################################################
-#           #   There are shareable disk and immutable disk attached to the VM.
 #           #
-#
+#           # 7. case:
+#           #
+#           # There are shareable disk and immutable disk attached to the VM.
+#           #
 #           fRc = fRc and oSession.saveSettings()
 #           if fRc is False:
 #               reporter.log('Couldn\'t save machine settings')
