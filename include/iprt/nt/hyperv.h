@@ -1469,7 +1469,8 @@ typedef struct
     {
         uint64_t                            Payload[HV_MESSAGE_MAX_PAYLOAD_QWORD_COUNT];
 
-        /** Common header for X64 intercept messages. */
+        /** Common header for X64 intercept messages.
+         * The HvMessageTypeUnrecoverableException message only has this.  */
         HV_X64_INTERCEPT_MESSAGE_HEADER     X64InterceptHeader;
         /** HvMessageTypeGpaIntercept, HvMessageTypeUnmappedGpa. */
         HV_X64_MEMORY_INTERCEPT_MESSAGE     X64MemoryIntercept;

@@ -1410,6 +1410,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, 
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsg            The message.
+ * @param   pCtx            The register context.
  * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  */
 NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, HV_X64_IO_PORT_INTERCEPT_MESSAGE const *pMsg,
@@ -1533,6 +1534,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, 
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsg            The message.
+ * @param   pCtx            The register context.
  * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  */
 NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageInterruptWindow(PVM pVM, PVMCPU pVCpu,
@@ -1558,6 +1560,36 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageInterruptWindow(PVM pVM, PVMCP
     /** @todo call nemHCWinHandleInterruptFF   */
     RT_NOREF(pVM, pGVCpu);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Deals with unrecoverable exception (triple fault).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context per CPU structure.
+ * @param   pMsgHdr         The message header.
+ * @param   pCtx            The register context.
+ */
+NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageUnrecoverableException(PVMCPU pVCpu,
+                                                                         HV_X64_INTERCEPT_MESSAGE_HEADER const *pMsgHdr,
+                                                                         PCPUMCTX pCtx)
+{
+    /*
+     * Assert message sanity.
+     */
+    //Assert(   pMsgHdr->InterceptAccessType == HV_INTERCEPT_ACCESS_EXECUTE
+    //       || pMsgHdr->InterceptAccessType == HV_INTERCEPT_ACCESS_READ   // READ & WRITE are probably not used here
+    //       || pMsgHdr->InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
+    AssertMsg(pMsgHdr->InstructionLength < 0x10, ("%#x\n", pMsgHdr->InstructionLength));
+
+    /*
+     * Just copy the state we've got and handle it in the loop for now.
+     */
+    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, pMsgHdr);
+    Log(("TripleExit/%u: %04x:%08RX64: RFL=%#RX64 -> VINF_EM_TRIPLE_FAULT\n",
+         pVCpu->idCpu, pMsgHdr->CsSegment.Selector, pMsgHdr->Rip, pMsgHdr->Rflags));
+    return VINF_EM_TRIPLE_FAULT;
 }
 
 
@@ -1605,8 +1637,11 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitInterruptWindow);
                 return nemHCWinHandleMessageInterruptWindow(pVM, pVCpu, &pMsg->X64InterruptWindow, pCtx, pGVCpu);
 
-            case HvMessageTypeInvalidVpRegisterValue:
             case HvMessageTypeUnrecoverableException:
+                Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64InterceptHeader));
+                return nemHCWinHandleMessageUnrecoverableException(pVCpu, &pMsg->X64InterceptHeader, pCtx);
+
+            case HvMessageTypeInvalidVpRegisterValue:
             case HvMessageTypeUnsupportedFeature:
             case HvMessageTypeTlbPageSizeMismatch:
                 LogRel(("Unimplemented msg:\n%.*Rhxd\n", (int)sizeof(*pMsg), pMsg));
