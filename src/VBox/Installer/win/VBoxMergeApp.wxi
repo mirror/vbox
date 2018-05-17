@@ -325,11 +325,25 @@
         <File Id="file_VirtualBox.exe" Name="VirtualBox.exe"
               Source="$(env.PATH_OUT)\bin\VirtualBox.exe">
         </File>
-    <?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
-        <File Id="file_VirtualBox.dll" Name="VirtualBox.dll"
-              Source="$(env.PATH_OUT)\bin\VirtualBox.dll">
-        </File>
-    <?endif ?>
+        <?if $(env.VBOX_GUI_WITH_SHARED_LIBRARY) = "yes" ?>
+                <File Id="file_VirtualBoxVM.exe" Name="VirtualBoxVM.exe"
+                    Source="$(env.PATH_OUT)\bin\VirtualBoxVM.exe">
+                </File>
+                <File Id="file_VBoxGlobal.dll" Name="VBoxGlobal.dll"
+                    Source="$(env.PATH_OUT)\bin\VBoxGlobal.dll">
+                </File>
+        <?endif ?>
+        <?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
+            <?if $(env.VBOX_GUI_WITH_SHARED_LIBRARY) = "yes" ?>
+                <File Id="file_VirtualBoxVM.dll" Name="VirtualBoxVM.dll"
+                    Source="$(env.PATH_OUT)\bin\VirtualBoxVM.dll">
+                </File>
+            <?else ?>
+                <File Id="file_VirtualBox.dll" Name="VirtualBox.dll"
+                    Source="$(env.PATH_OUT)\bin\VirtualBox.dll">
+                </File>
+            <?endif ?>
+        <?endif ?>
         <File Id="file_Qt5Core$(var.VBOX_QT_INFIX).dll" Name="Qt5Core$(var.VBOX_QT_INFIX).dll"
               Source="$(env.PATH_OUT)\bin\Qt5Core$(var.VBOX_QT_INFIX).dll" />
         <File Id="file_Qt5Gui$(var.VBOX_QT_INFIX).dll" Name="Qt5Gui$(var.VBOX_QT_INFIX).dll"
