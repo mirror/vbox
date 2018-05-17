@@ -2018,36 +2018,57 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 #elif 0
     return nemHCWinRunGC(pVM, pVCpu, NULL /*pGVM*/, NULL /*pGVCpu*/);
 #else
-    VBOXSTRICTRC rcStrict = VMMR3CallR0EmtFast(pVM, pVCpu, VMMR0_DO_NEM_RUN);
-    if (RT_SUCCESS(rcStrict))
+    for (;;)
     {
-        /* We deal wtih VINF_NEM_CHANGE_PGM_MODE and VINF_NEM_FLUSH_TLB here, since we're running
-           the risk of getting these while we already got another RC (I/O ports). */
-        VBOXSTRICTRC rcPgmPending = pVCpu->nem.s.rcPgmPending;
-        pVCpu->nem.s.rcPgmPending = VINF_SUCCESS;
-        if (   rcStrict == VINF_NEM_CHANGE_PGM_MODE
-            || rcStrict == VINF_PGM_CHANGE_MODE
-            || rcPgmPending == VINF_NEM_CHANGE_PGM_MODE )
+        VBOXSTRICTRC rcStrict = VMMR3CallR0EmtFast(pVM, pVCpu, VMMR0_DO_NEM_RUN);
+        if (RT_SUCCESS(rcStrict))
         {
-            LogFlow(("nemR3NativeRunGC: calling PGMChangeMode...\n"));
-            int rc = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
-            AssertRCReturn(rc, rc);
-            if (rcStrict == VINF_NEM_CHANGE_PGM_MODE || rcStrict == VINF_NEM_FLUSH_TLB)
-                rcStrict = VINF_SUCCESS;
+            /* We deal with VINF_NEM_CHANGE_PGM_MODE and VINF_NEM_FLUSH_TLB here, since we're running
+               the risk of getting these while we already got another RC (I/O ports). */
+            VBOXSTRICTRC rcPgmPending = pVCpu->nem.s.rcPgmPending;
+            pVCpu->nem.s.rcPgmPending = VINF_SUCCESS;
+            if (   rcStrict == VINF_NEM_CHANGE_PGM_MODE
+                || rcStrict == VINF_PGM_CHANGE_MODE
+                || rcPgmPending == VINF_NEM_CHANGE_PGM_MODE )
+            {
+                LogFlow(("nemR3NativeRunGC: calling PGMChangeMode...\n"));
+                int rc = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
+                AssertRCReturn(rc, rc);
+                if (rcStrict == VINF_NEM_CHANGE_PGM_MODE || rcStrict == VINF_NEM_FLUSH_TLB)
+                {
+                    if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
+                        && !VMCPU_FF_IS_PENDING(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
+                                                       & ~VMCPU_FF_RESUME_GUEST_MASK))
+                    {
+                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
+                        continue;
+                    }
+                    rcStrict = VINF_SUCCESS;
+                }
+            }
+            else if (rcStrict == VINF_NEM_FLUSH_TLB || rcPgmPending == VINF_NEM_FLUSH_TLB)
+            {
+                LogFlow(("nemR3NativeRunGC: calling PGMFlushTLB...\n"));
+                int rc = PGMFlushTLB(pVCpu, CPUMGetGuestCR3(pVCpu), true);
+                AssertRCReturn(rc, rc);
+                if (rcStrict == VINF_NEM_FLUSH_TLB || rcStrict == VINF_NEM_CHANGE_PGM_MODE)
+                {
+                    if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
+                        && !VMCPU_FF_IS_PENDING(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
+                                                       & ~VMCPU_FF_RESUME_GUEST_MASK))
+                    {
+                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
+                        continue;
+                    }
+                    rcStrict = VINF_SUCCESS;
+                }
+            }
+            else
+                AssertMsg(rcPgmPending == VINF_SUCCESS, ("rcPgmPending=%Rrc\n", VBOXSTRICTRC_VAL(rcPgmPending) ));
         }
-        else if (rcStrict == VINF_NEM_FLUSH_TLB || rcPgmPending == VINF_NEM_FLUSH_TLB)
-        {
-            LogFlow(("nemR3NativeRunGC: calling PGMFlushTLB...\n"));
-            int rc = PGMFlushTLB(pVCpu, CPUMGetGuestCR3(pVCpu), true);
-            AssertRCReturn(rc, rc);
-            if (rcStrict == VINF_NEM_FLUSH_TLB || rcStrict == VINF_NEM_CHANGE_PGM_MODE)
-                rcStrict = VINF_SUCCESS;
-        }
-        else
-            AssertMsg(rcPgmPending == VINF_SUCCESS, ("rcPgmPending=%Rrc\n", VBOXSTRICTRC_VAL(rcPgmPending) ));
+        LogFlow(("nemR3NativeRunGC: returns %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
+        return rcStrict;
     }
-    LogFlow(("nemR3NativeRunGC: returns %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
-    return rcStrict;
 #endif
 }
 
