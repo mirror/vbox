@@ -1058,9 +1058,10 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     else
         Assert(!(fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI));
 
-    /* Interrupt windows. */
+    /* Interrupt windows. Always set if active as Hyper-V seems to be forgetful. */
     uint8_t const fDesiredIntWin = pVCpu->nem.s.fDesiredInterruptWindows;
-    if (pVCpu->nem.s.fCurrentInterruptWindows != fDesiredIntWin)
+    if (   fDesiredIntWin
+        || pVCpu->nem.s.fCurrentInterruptWindows != fDesiredIntWin)
     {
         pVCpu->nem.s.fCurrentInterruptWindows = pVCpu->nem.s.fDesiredInterruptWindows;
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
