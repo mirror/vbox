@@ -61,11 +61,32 @@
 static VBOXSTRICTRC iomMmioRing3WritePending(PVMCPU pVCpu, RTGCPHYS GCPhys, void const *pvBuf, size_t cbBuf, PIOMMMIORANGE pRange)
 {
     Log5(("iomMmioRing3WritePending: %RGp LB %#x\n", GCPhys, cbBuf));
-    AssertReturn(pVCpu->iom.s.PendingMmioWrite.cbValue == 0, VERR_IOM_MMIO_IPE_1);
-    pVCpu->iom.s.PendingMmioWrite.GCPhys  = GCPhys;
-    AssertReturn(cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue), VERR_IOM_MMIO_IPE_2);
-    pVCpu->iom.s.PendingMmioWrite.cbValue = (uint32_t)cbBuf;
-    memcpy(pVCpu->iom.s.PendingMmioWrite.abValue, pvBuf, cbBuf);
+    if (pVCpu->iom.s.PendingMmioWrite.cbValue == 0)
+    {
+        pVCpu->iom.s.PendingMmioWrite.GCPhys  = GCPhys;
+        AssertReturn(cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue), VERR_IOM_MMIO_IPE_2);
+        pVCpu->iom.s.PendingMmioWrite.cbValue = (uint32_t)cbBuf;
+        memcpy(pVCpu->iom.s.PendingMmioWrite.abValue, pvBuf, cbBuf);
+    }
+    else
+    {
+        /*
+         * Join with pending if adjecent.
+         *
+         * This may happen if the stack overflows into MMIO territory and RSP/ESP/SP
+         * isn't aligned. IEM will bounce buffer the access and do one write for each
+         * page.  We get here when the 2nd page part is written.
+         */
+        uint32_t const cbOldValue = pVCpu->iom.s.PendingMmioWrite.cbValue;
+        AssertMsgReturn(GCPhys == pVCpu->iom.s.PendingMmioWrite.GCPhys + cbOldValue,
+                        ("pending %RGp LB %#x; incoming %RGp LB %#x\n",
+                         pVCpu->iom.s.PendingMmioWrite.GCPhys, cbOldValue, GCPhys, cbBuf),
+                        VERR_IOM_MMIO_IPE_1);
+        AssertReturn(cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue) - cbOldValue, VERR_IOM_MMIO_IPE_2);
+        pVCpu->iom.s.PendingMmioWrite.cbValue = cbOldValue + (uint32_t)cbBuf;
+        memcpy(&pVCpu->iom.s.PendingMmioWrite.abValue[cbOldValue], pvBuf, cbBuf);
+    }
+
     VMCPU_FF_SET(pVCpu, VMCPU_FF_IOM);
     RT_NOREF_PV(pRange);
     return VINF_IOM_R3_MMIO_COMMIT_WRITE;
