@@ -238,7 +238,7 @@ void UIVMNamePathSelector::setToolTipText(const QString &strToolTipText)
 {
     if (m_strToolTipText == strToolTipText)
         return;
-    m_strToolTipText = strToolTipText;
+    m_strToolTipText = QDir::toNativeSeparators(strToolTipText);
     retranslateUi();
 }
 
