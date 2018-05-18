@@ -80,6 +80,7 @@
 #ifndef NEM_WIN_USE_17110_PLUS_WDK
 typedef HRESULT (WINAPI *PFNWHVGETCAPABILITY_17110)(WHV_CAPABILITY_CODE, void *, uint32_t, uint32_t *);
 typedef HRESULT (WINAPI *PFNWHVSETPARTITIONPROPERTY_17110)(WHV_PARTITION_HANDLE, WHV_PARTITION_PROPERTY_CODE, void *, uint32_t);
+# define WHvCapabilityCodeExceptionExitBitmap ((WHV_CAPABILITY_CODE)0x00000003)
 #endif
 
 
@@ -623,6 +624,18 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     /** @todo RECHECK: WHV_CAPABILITY_FEATURES typedef. */
 
     /*
+     * Check supported exception exit bitmap bits.
+     * We don't currently require this, so we just log failure.
+     */
+    RT_ZERO(Caps);
+    hrc = WHvGetCapabilityWrapper(WHvCapabilityCodeExceptionExitBitmap, &Caps, sizeof(Caps));
+    if (SUCCEEDED(hrc))
+        LogRel(("NEM: Warning! Supported exception exit bitmap: %#RX64\n", Caps.Features.AsUINT64));
+    else
+        LogRel(("NEM: Warning! WHvGetCapability/WHvCapabilityCodeExceptionExitBitmap failed: %Rhrc (Last=%#x/%u)",
+                hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
+
+    /*
      * Check that the CPU vendor is supported.
      */
     RT_ZERO(Caps);
@@ -745,6 +758,12 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
                     LogRel(("NEM: Warning! Unknown capability %#x returning: %.*Rhxs\n", i, sizeof(Caps), &Caps));
             }
     }
+
+    /*
+     * For proper operation, we require CPUID exits.
+     */
+    if (!pVM->nem.s.fExtendedCpuIdExit)
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Missing required extended CPUID exit support");
 
 #undef NEM_LOG_REL_CAP_EX
 #undef NEM_LOG_REL_CAP_SUB_EX
@@ -1068,8 +1087,8 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
     if (SUCCEEDED(hrc))
     {
         RT_ZERO(Property);
-#if 0
-        Property.ExtendedVmExits.X64CpuidExit  = pVM->nem.s.fExtendedCpuIdExit;
+        Property.ExtendedVmExits.X64CpuidExit  = pVM->nem.s.fExtendedCpuIdExit; /** @todo Register fixed results and restrict cpuid exits */
+#if 0 /** @todo handle some MSRs too. */
         Property.ExtendedVmExits.X64MsrExit    = pVM->nem.s.fExtendedMsrExit;
         Property.ExtendedVmExits.ExceptionExit = pVM->nem.s.fExtendedXcptExit;
 #endif

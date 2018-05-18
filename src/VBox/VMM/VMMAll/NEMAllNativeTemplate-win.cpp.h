@@ -1421,7 +1421,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, 
     AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
 
     /*
-     * Whatever we do, we must clear pending event ejection upon resume.
+     * Whatever we do, we must clear pending event injection upon resume.
      */
     if (pMsg->Header.ExecutionState.InterruptionPending)
         pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
@@ -1561,6 +1561,58 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageInterruptWindow(PVM pVM, PVMCP
 
 
 /**
+ * Deals with CPUID intercept message.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context per CPU structure.
+ * @param   pMsg            The message.
+ * @param   pCtx            The register context.
+ */
+NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageCpuId(PVMCPU pVCpu, HV_X64_CPUID_INTERCEPT_MESSAGE const *pMsg, PCPUMCTX pCtx)
+{
+    //Assert(   pMsg->AccessInfo.AccessSize == 1
+    //       || pMsg->AccessInfo.AccessSize == 2
+    //       || pMsg->AccessInfo.AccessSize == 4);
+    //Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
+    //       || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
+    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
+
+    /*
+     * Soak up state and execute the instruction.
+     *
+     * Note! If this grows slightly more complicated, combine into an IEMExecDecodedCpuId
+     *       function and make everyone use it.
+     */
+    /** @todo Combine implementations into IEMExecDecodedCpuId as this will
+     *        only get weirder with nested VT-x and AMD-V support. */
+    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
+
+    /* Copy in the low register values (top is always cleared). */
+    pCtx->rax = (uint32_t)pMsg->Rax;
+    pCtx->rcx = (uint32_t)pMsg->Rcx;
+    pCtx->rdx = (uint32_t)pMsg->Rdx;
+    pCtx->rbx = (uint32_t)pMsg->Rbx;
+    pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX | CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RBX);
+
+    /* Get the correct values. */
+    CPUMGetGuestCpuId(pVCpu, pCtx->eax, pCtx->ecx, &pCtx->eax, &pCtx->ebx, &pCtx->ecx, &pCtx->edx);
+
+    Log4(("CpuIdExit/%u: %04x:%08RX64: rax=%08RX64 / rcx=%08RX64 / rdx=%08RX64 / rbx=%08RX64 -> %08RX32 / %08RX32 / %08RX32 / %08RX32 (hv: %08RX64 / %08RX64 / %08RX64 / %08RX64)\n",
+          pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
+          pMsg->Rax,                           pMsg->Rcx,              pMsg->Rdx,              pMsg->Rbx,
+          pCtx->eax,                           pCtx->ecx,              pCtx->edx,              pCtx->ebx,
+          pMsg->DefaultResultRax, pMsg->DefaultResultRcx, pMsg->DefaultResultRdx, pMsg->DefaultResultRbx));
+
+    /* Move RIP and we're done. */
+    nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+
+    return VINF_SUCCESS;
+}
+
+
+
+
+/**
  * Deals with unrecoverable exception (triple fault).
  *
  * @returns Strict VBox status code.
@@ -1634,6 +1686,10 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitInterruptWindow);
                 return nemHCWinHandleMessageInterruptWindow(pVM, pVCpu, &pMsg->X64InterruptWindow, pCtx, pGVCpu);
 
+            case HvMessageTypeX64CpuidIntercept:
+                Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64CpuIdIntercept));
+                return nemHCWinHandleMessageCpuId(pVCpu, &pMsg->X64CpuIdIntercept, pCtx);
+
             case HvMessageTypeUnrecoverableException:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64InterceptHeader));
                 return nemHCWinHandleMessageUnrecoverableException(pVCpu, &pMsg->X64InterceptHeader, pCtx);
@@ -1646,7 +1702,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
                                             VERR_INTERNAL_ERROR_2);
 
             case HvMessageTypeX64MsrIntercept:
-            case HvMessageTypeX64CpuidIntercept:
             case HvMessageTypeX64ExceptionIntercept:
             case HvMessageTypeX64ApicEoi:
             case HvMessageTypeX64LegacyFpError:
@@ -1656,12 +1711,12 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
             case HvMessageTypeEventLogBufferComplete:
             case HvMessageTimerExpired:
                 LogRel(("Unexpected msg:\n%.*Rhxd\n", (int)sizeof(*pMsg), pMsg));
-                AssertLogRelMsgFailedReturn(("Unexpected message on CPU #%u: #x\n", pVCpu->idCpu, pMsg->Header.MessageType),
+                AssertLogRelMsgFailedReturn(("Unexpected message on CPU #%u: %#x\n", pVCpu->idCpu, pMsg->Header.MessageType),
                                             VERR_INTERNAL_ERROR_2);
 
             default:
                 LogRel(("Unknown msg:\n%.*Rhxd\n", (int)sizeof(*pMsg), pMsg));
-                AssertLogRelMsgFailedReturn(("Unknown message on CPU #%u: #x\n", pVCpu->idCpu, pMsg->Header.MessageType),
+                AssertLogRelMsgFailedReturn(("Unknown message on CPU #%u: %#x\n", pVCpu->idCpu, pMsg->Header.MessageType),
                                             VERR_INTERNAL_ERROR_2);
         }
     }

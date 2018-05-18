@@ -1354,6 +1354,37 @@ typedef struct
 } HV_X64_IO_PORT_INTERCEPT_MESSAGE_FULL;
 
 
+/**
+ * The payload format for HvMessageTypeX64CpuidIntercept,
+ *
+ * @note This message does not include HV_X64_INTERCEPT_MESSAGE_HEADER!
+ */
+typedef struct
+{
+    HV_X64_INTERCEPT_MESSAGE_HEADER     Header;                 /**< 0x00: The usual intercept header. */
+    uint64_t                            Rax;                    /**< 0x28: Input RAX. */
+    uint64_t                            Rcx;                    /**< 0x30: Input RCX. */
+    uint64_t                            Rdx;                    /**< 0x38: Input RDX. */
+    uint64_t                            Rbx;                    /**< 0x40: Input RBX. */
+    uint64_t                            DefaultResultRax;       /**< 0x48: Default result RAX. */
+    uint64_t                            DefaultResultRcx;       /**< 0x50: Default result RCX. */
+    uint64_t                            DefaultResultRdx;       /**< 0x58: Default result RDX. */
+    uint64_t                            DefaultResultRbx;       /**< 0x60: Default result RBX. */
+} HV_X64_CPUID_INTERCEPT_MESSAGE;
+AssertCompileSize(HV_X64_CPUID_INTERCEPT_MESSAGE, 0x68);
+/** Pointer to a HvMessageTypeX64CpuidIntercept payload. */
+typedef HV_X64_CPUID_INTERCEPT_MESSAGE *PHV_X64_CPUID_INTERCEPT_MESSAGE;
+/** Pointer to a const HvMessageTypeX64CpuidIntercept payload. */
+typedef HV_X64_CPUID_INTERCEPT_MESSAGE const *PCHV_X64_CPUID_INTERCEPT_MESSAGE;
+
+/** Full HvMessageTypeX64CpuidIntercept message. */
+typedef struct
+{
+    HV_MESSAGE_HEADER                   MsgHdr;
+    HV_X64_CPUID_INTERCEPT_MESSAGE      Payload;
+} HV_X64_CPUID_INTERCEPT_MESSAGE_FULL;
+
+
 /** X64 exception information (HvMessageTypeX64ExceptionIntercept).
  * @sa WHV_VP_EXCEPTION_INFO */
 typedef union
@@ -1476,6 +1507,8 @@ typedef struct
         HV_X64_MEMORY_INTERCEPT_MESSAGE     X64MemoryIntercept;
         /** HvMessageTypeX64IoPortIntercept */
         HV_X64_IO_PORT_INTERCEPT_MESSAGE    X64IoPortIntercept;
+        /** HvMessageTypeX64CpuidIntercept */
+        HV_X64_CPUID_INTERCEPT_MESSAGE      X64CpuIdIntercept;
         /** HvMessageTypeX64ExceptionIntercept */
         HV_X64_EXCEPTION_INTERCEPT_MESSAGE  X64ExceptionIntercept;
         /** HvMessageTypeX64Halt.
