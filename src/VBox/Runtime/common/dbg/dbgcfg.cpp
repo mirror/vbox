@@ -738,7 +738,6 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
                                       PRTPATHSPLIT pSplitFn, const char *pszCacheSuffix, uint32_t fFlags,
                                       PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
-#ifdef IPRT_WITH_HTTP
     RT_NOREF_PV(pszUuidMappingSubDir); /** @todo do we bother trying pszUuidMappingSubDir? */
     RT_NOREF_PV(pszCacheSuffix); /** @todo do we bother trying pszUuidMappingSubDir? */
     RT_NOREF_PV(fFlags);
@@ -794,55 +793,101 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
         return rc;
 
     /*
-     * Download the file.
+     * Download/copy the file.
      */
-    RTHTTP hHttp;
-    rc = RTHttpCreate(&hHttp);
-    if (RT_FAILURE(rc))
-        return rc;
-    RTHttpUseSystemProxySettings(hHttp);
-
-    static const char * const s_apszHeaders[] =
+    char szUrl[_2K];
+    /* Download URL? */
+    if (   RTStrIStartsWith(pszServer, "http://")
+        || RTStrIStartsWith(pszServer, "https://")
+        || RTStrIStartsWith(pszServer, "ftp://") )
     {
-        "User-Agent: Microsoft-Symbol-Server/6.6.0999.9",
-        "Pragma: no-cache",
-    };
-
-    rc = RTHttpSetHeaders(hHttp, RT_ELEMENTS(s_apszHeaders), s_apszHeaders);
-    if (RT_SUCCESS(rc))
-    {
-        char szUrl[_2K];
-        RTStrPrintf(szUrl, sizeof(szUrl), "%s/%s/%s/%s", pszServer, pszFilename, pszCacheSubDir, pszFilename);
-
-        /** @todo Use some temporary file name and rename it after the operation
-         *        since not all systems support read-deny file sharing
-         *        settings. */
-        rtDbgCfgLog2(pThis, "Downloading '%s' to '%s'...\n", szUrl, pszPath);
-        rc = RTHttpGetFile(hHttp, szUrl, pszPath);
-        if (RT_FAILURE(rc))
+#ifdef IPRT_WITH_HTTP
+        RTHTTP hHttp;
+        rc = RTHttpCreate(&hHttp);
+        if (RT_SUCCESS(rc))
         {
-            RTFileDelete(pszPath);
-            rtDbgCfgLog1(pThis, "%Rrc on URL '%s'\n", rc, szUrl);
-        }
-        if (rc == VERR_HTTP_NOT_FOUND)
-        {
-            /* Try the compressed version of the file. */
-            pszPath[strlen(pszPath) - 1] = '_';
-            szUrl[strlen(szUrl)     - 1] = '_';
-            rtDbgCfgLog2(pThis, "Downloading '%s' to '%s'...\n", szUrl, pszPath);
-            rc = RTHttpGetFile(hHttp, szUrl, pszPath);
-            if (RT_SUCCESS(rc))
-                rc = rtDbgCfgUnpackMsCacheFile(pThis, pszPath, pszFilename);
-            else
+            RTHttpUseSystemProxySettings(hHttp);
+
+            static const char * const s_apszHeaders[] =
             {
-                rtDbgCfgLog1(pThis, "%Rrc on URL '%s'\n", rc, pszPath);
+                "User-Agent: Microsoft-Symbol-Server/6.6.0999.9",
+                "Pragma: no-cache",
+            };
+
+            rc = RTHttpSetHeaders(hHttp, RT_ELEMENTS(s_apszHeaders), s_apszHeaders);
+            if (RT_SUCCESS(rc))
+            {
+                RTStrPrintf(szUrl, sizeof(szUrl), "%s/%s/%s/%s", pszServer, pszFilename, pszCacheSubDir, pszFilename);
+
+                /** @todo Use some temporary file name and rename it after the operation
+                 *        since not all systems support read-deny file sharing
+                 *        settings. */
+                rtDbgCfgLog2(pThis, "Downloading '%s' to '%s'...\n", szUrl, pszPath);
+                rc = RTHttpGetFile(hHttp, szUrl, pszPath);
+                if (RT_FAILURE(rc))
+                {
+                    RTFileDelete(pszPath);
+                    rtDbgCfgLog1(pThis, "%Rrc on URL '%s'\n", rc, szUrl);
+                }
+                if (rc == VERR_HTTP_NOT_FOUND)
+                {
+                    /* Try the compressed version of the file. */
+                    pszPath[strlen(pszPath) - 1] = '_';
+                    szUrl[strlen(szUrl)     - 1] = '_';
+                    rtDbgCfgLog2(pThis, "Downloading '%s' to '%s'...\n", szUrl, pszPath);
+                    rc = RTHttpGetFile(hHttp, szUrl, pszPath);
+                    if (RT_SUCCESS(rc))
+                        rc = rtDbgCfgUnpackMsCacheFile(pThis, pszPath, pszFilename);
+                    else
+                    {
+                        rtDbgCfgLog1(pThis, "%Rrc on URL '%s'\n", rc, pszPath);
+                        RTFileDelete(pszPath);
+                    }
+                }
+            }
+
+            RTHttpDestroy(hHttp);
+        }
+#else
+        rc = VWRN_NOT_FOUND;
+#endif
+    }
+    /* No download, assume dir on server share. */
+    else
+    {
+        if (RTStrIStartsWith(pszServer, "file:///"))
+            pszServer += 4 + 1 + 3 - 1;
+
+        /* Compose the path to the uncompressed file on the server. */
+        rc = RTPathJoin(szUrl, sizeof(szUrl), pszServer, pszFilename);
+        if (RT_SUCCESS(rc))
+            rc = RTPathAppend(szUrl, sizeof(szUrl), pszCacheSubDir);
+        if (RT_SUCCESS(rc))
+            rc = RTPathAppend(szUrl, sizeof(szUrl), pszFilename);
+        if (RT_SUCCESS(rc))
+        {
+            rtDbgCfgLog2(pThis, "Copying '%s' to '%s'...\n", szUrl, pszPath);
+            rc = RTFileCopy(szUrl, pszPath);
+            if (RT_FAILURE(rc))
+            {
                 RTFileDelete(pszPath);
+                rtDbgCfgLog1(pThis, "%Rrc on '%s'\n", rc, szUrl);
+
+                /* Try the compressed version. */
+                pszPath[strlen(pszPath) - 1] = '_';
+                szUrl[strlen(szUrl)     - 1] = '_';
+                rtDbgCfgLog2(pThis, "Copying '%s' to '%s'...\n", szUrl, pszPath);
+                rc = RTFileCopy(szUrl, pszPath);
+                if (RT_SUCCESS(rc))
+                    rc = rtDbgCfgUnpackMsCacheFile(pThis, pszPath, pszFilename);
+                else
+                {
+                    rtDbgCfgLog1(pThis, "%Rrc on '%s'\n", rc, pszPath);
+                    RTFileDelete(pszPath);
+                }
             }
         }
     }
-
-    RTHttpDestroy(hHttp);
-
     if (RT_SUCCESS(rc))
     {
         /*
@@ -868,13 +913,6 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
     }
 
     return rc;
-
-#else  /* !IPRT_WITH_HTTP */
-    RT_NOREF_PV(pThis); RT_NOREF_PV(pszServer); RT_NOREF_PV(pszPath); RT_NOREF_PV(pszCacheSubDir);
-    RT_NOREF_PV(pszUuidMappingSubDir); RT_NOREF_PV(pSplitFn); RT_NOREF_PV(pszCacheSuffix); RT_NOREF_PV(fFlags);
-    RT_NOREF_PV(pfnCallback); RT_NOREF_PV(pvUser1); RT_NOREF_PV(pvUser2);
-    return VWRN_NOT_FOUND;
-#endif /* !IPRT_WITH_HTTP */
 }
 
 
