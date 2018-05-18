@@ -366,12 +366,14 @@ common_testboxscript_args_to_config()
             "--builds-server-share")    TESTBOXSCRIPT_BUILDS_SHARE="$2"; shift;;
             "--builds-server-user")     TESTBOXSCRIPT_BUILDS_USER="$2"; shift;;
             "--builds-server-passwd")   TESTBOXSCRIPT_BUILDS_PASSWD="$2"; shift;;
+            "--builds-server-mountopt") TESTBOXSCRIPT_BUILDS_MOUNTOPT="$2"; shift;;
             "--testrsrc-path")          TESTBOXSCRIPT_TESTRSRC_PATH="$2"; shift;;
             "--testrsrc-server-type")   TESTBOXSCRIPT_TESTRSRC_TYPE="$2"; shift;;
             "--testrsrc-server-name")   TESTBOXSCRIPT_TESTRSRC_NAME="$2"; shift;;
             "--testrsrc-server-share")  TESTBOXSCRIPT_TESTRSRC_SHARE="$2"; shift;;
             "--testrsrc-server-user")   TESTBOXSCRIPT_TESTRSRC_USER="$2"; shift;;
             "--testrsrc-server-passwd") TESTBOXSCRIPT_TESTRSRC_PASSWD="$2"; shift;;
+            "--testrsrc-server-mountopt") TESTBOXSCRIPT_TESTRSRC_MOUNTOPT="$2"; shift;;
             "--putenv")
                 MY_FOUND=no
                 MY_VAR=`echo $2 | sed -e 's/=.*$//' `
@@ -497,8 +499,8 @@ HOST_ARCH=${RETVAL}
 # Config.
 #
 TESTBOXSCRIPT_CFG_NAMES="DIR PYTHON USER HWVIRT IOMMU NESTED_PAGING SYSTEM_UUID PATH_TESTRSRC TEST_MANAGER SCRATCH_ROOT"
-TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES}   BUILDS_PATH   BUILDS_TYPE   BUILDS_NAME   BUILDS_SHARE   BUILDS_USER   BUILDS_PASSWD"
-TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES} TESTRSRC_PATH TESTRSRC_TYPE TESTRSRC_NAME TESTRSRC_SHARE TESTRSRC_USER TESTRSRC_PASSWD"
+TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES}   BUILDS_PATH   BUILDS_TYPE   BUILDS_NAME   BUILDS_SHARE   BUILDS_USER   BUILDS_PASSWD   BUILDS_MOUNTOPT"
+TESTBOXSCRIPT_CFG_NAMES="${TESTBOXSCRIPT_CFG_NAMES} TESTRSRC_PATH TESTRSRC_TYPE TESTRSRC_NAME TESTRSRC_SHARE TESTRSRC_USER TESTRSRC_PASSWD TESTRSRC_MOUNTOPT"
 
 # testboxscript.py option to config mappings.
 TESTBOXSCRIPT_OPT_DIR="--skip"
@@ -519,12 +521,14 @@ TESTBOXSCRIPT_OPT_BUILDS_NAME="--builds-server-name"
 TESTBOXSCRIPT_OPT_BUILDS_SHARE="--builds-server-share"
 TESTBOXSCRIPT_OPT_BUILDS_USER="--builds-server-user"
 TESTBOXSCRIPT_OPT_BUILDS_PASSWD="--builds-server-passwd"
+TESTBOXSCRIPT_OPT_BUILDS_MOUNTOPT="--builds-server-mountopt"
 TESTBOXSCRIPT_OPT_PATH_TESTRSRC="--testrsrc-path"
 TESTBOXSCRIPT_OPT_TESTRSRC_TYPE="--testrsrc-server-type"
 TESTBOXSCRIPT_OPT_TESTRSRC_NAME="--testrsrc-server-name"
 TESTBOXSCRIPT_OPT_TESTRSRC_SHARE="--testrsrc-server-share"
 TESTBOXSCRIPT_OPT_TESTRSRC_USER="--testrsrc-server-user"
 TESTBOXSCRIPT_OPT_TESTRSRC_PASSWD="--testrsrc-server-passwd"
+TESTBOXSCRIPT_OPT_TESTRSRC_MOUNTOPT="--testrsrc-server-mountopt"
 
 # Defaults:
 TESTBOXSCRIPT_DEFAULT_DIR="there-is-no-default-for-this-value"
@@ -543,12 +547,14 @@ TESTBOXSCRIPT_DEFAULT_BUILDS_NAME="vboxstor.de.oracle.com"
 TESTBOXSCRIPT_DEFAULT_BUILDS_SHARE="builds"
 TESTBOXSCRIPT_DEFAULT_BUILDS_USER="guestr"
 TESTBOXSCRIPT_DEFAULT_BUILDS_PASSWD="guestr"
+TESTBOXSCRIPT_DEFAULT_BUILDS_MOUNTOPT=""
 TESTBOXSCRIPT_DEFAULT_TESTRSRC_PATH=""
 TESTBOXSCRIPT_DEFAULT_TESTRSRC_TYPE="cifs"
 TESTBOXSCRIPT_DEFAULT_TESTRSRC_NAME="teststor.de.oracle.com"
 TESTBOXSCRIPT_DEFAULT_TESTRSRC_SHARE="testrsrc"
 TESTBOXSCRIPT_DEFAULT_TESTRSRC_USER="guestr"
 TESTBOXSCRIPT_DEFAULT_TESTRSRC_PASSWD="guestr"
+TESTBOXSCRIPT_DEFAULT_TESTRSRC_MOUNTOPT=""
 
 # Set config values to defaults.
 for var in ${TESTBOXSCRIPT_CFG_NAMES}
@@ -619,12 +625,14 @@ do
         --builds-server-share)      TESTBOXSCRIPT_BUILDS_SHARE="$2"; shift;;
         --builds-server-user)       TESTBOXSCRIPT_BUILDS_USER="$2"; shift;;
         --builds-server-passwd)     TESTBOXSCRIPT_BUILDS_PASSWD="$2"; shift;;
+        --builds-server-mountopt)   TESTBOXSCRIPT_BUILDS_MOUNTOPT="$2"; shift;;
         --testrsrc-path)            TESTBOXSCRIPT_TESTRSRC_PATH="$2"; shift;;
         --testrsrc-server-type)     TESTBOXSCRIPT_TESTRSRC_TYPE="$2"; shift;;
         --testrsrc-server-name)     TESTBOXSCRIPT_TESTRSRC_NAME="$2"; shift;;
         --testrsrc-server-share)    TESTBOXSCRIPT_TESTRSRC_SHARE="$2"; shift;;
         --testrsrc-server-user)     TESTBOXSCRIPT_TESTRSRC_USER="$2"; shift;;
         --testrsrc-server-passwd)   TESTBOXSCRIPT_TESTRSRC_PASSWD="$2"; shift;;
+        --testrsrc-server-mountopt) TESTBOXSCRIPT_TESTRSRC_MOUNTOPT="$2"; shift;;
         *)
             echo 'Syntax error: Unknown option:' "$1" >&2;
             exit 1;

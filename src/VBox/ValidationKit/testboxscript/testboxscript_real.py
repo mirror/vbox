@@ -247,13 +247,15 @@ class TestBoxScript(object):
         """
         self._mountShare(self._oOptions.sBuildsPath, self._oOptions.sBuildsServerType, self._oOptions.sBuildsServerName,
                          self._oOptions.sBuildsServerShare,
-                         self._oOptions.sBuildsServerUser, self._oOptions.sBuildsServerPasswd, 'builds');
+                         self._oOptions.sBuildsServerUser, self._oOptions.sBuildsServerPasswd,
+                         self._oOptions.sBuildsServerMountOpt, 'builds');
         self._mountShare(self._oOptions.sTestRsrcPath, self._oOptions.sTestRsrcServerType, self._oOptions.sTestRsrcServerName,
                          self._oOptions.sTestRsrcServerShare,
-                         self._oOptions.sTestRsrcServerUser, self._oOptions.sTestRsrcServerPasswd, 'testrsrc');
+                         self._oOptions.sTestRsrcServerUser, self._oOptions.sTestRsrcServerPasswd,
+                         self._oOptions.sTestRsrcServerMountOpt, 'testrsrc');
         return True;
 
-    def _mountShare(self, sMountPoint, sType, sServer, sShare, sUser, sPassword, sWhat):
+    def _mountShare(self, sMountPoint, sType, sServer, sShare, sUser, sPassword, sMountOpt, sWhat):
         """
         Mounts the specified share if needed.
         Raises exception on failure.
@@ -272,12 +274,16 @@ class TestBoxScript(object):
         #
         sHostOs = utils.getHostOs()
         if sHostOs in ('darwin', 'freebsd'):
+            if sMountOpt != '':
+                sMountOpt = ',' + sMountOpt
             utils.sudoProcessCall(['/sbin/umount', sMountPoint]);
             utils.sudoProcessCall(['/bin/mkdir', '-p', sMountPoint]);
             utils.sudoProcessCall(['/usr/sbin/chown', str(os.getuid()), sMountPoint]); # pylint: disable=E1101
             if sType == 'cifs':
                 # Note! no smb://server/share stuff here, 10.6.8 didn't like it.
-                utils.processOutputChecked(['/sbin/mount_smbfs', '-o', 'automounted,nostreams,soft,noowners,noatime,rdonly',
+                utils.processOutputChecked(['/sbin/mount_smbfs',
+                                            '-o',
+                                            'automounted,nostreams,soft,noowners,noatime,rdonly' + sMountOpt,
                                             '-f', '0555', '-d', '0555',
                                             '//%s:%s@%s/%s' % (sUser, sPassword, sServer, sShare),
                                             sMountPoint]);
@@ -285,6 +291,8 @@ class TestBoxScript(object):
                 raise TestBoxScriptException('Unsupported server type %s.' % (sType,));
 
         elif sHostOs == 'linux':
+            if sMountOpt != '':
+                sMountOpt = ',' + sMountOpt
             utils.sudoProcessCall(['/bin/umount', sMountPoint]);
             utils.sudoProcessCall(['/bin/mkdir', '-p', sMountPoint]);
             if sType == 'cifs':
@@ -295,12 +303,13 @@ class TestBoxScript(object):
                                                 + ',sec=ntlmv2'
                                                 + ',uid=' + str(os.getuid()) # pylint: disable=E1101
                                                 + ',gid=' + str(os.getgid()) # pylint: disable=E1101
-                                                + ',nounix,file_mode=0555,dir_mode=0555,soft,ro',
+                                                + ',nounix,file_mode=0555,dir_mode=0555,soft,ro'
+                                                + sMountOpt,
                                                 '//%s/%s' % (sServer, sShare),
                                                 sMountPoint]);
             elif sType == 'nfs':
                 utils.sudoProcessOutputChecked(['/bin/mount', '-t', 'nfs',
-                                                '-o', 'soft,ro',
+                                                '-o', 'soft,ro' + sMountOpt,
                                                 '%s:%s' % (sServer, sShare if sShare.find('/') >= 0 else ('/export/' + sShare)),
                                                 sMountPoint]);
 
@@ -308,6 +317,8 @@ class TestBoxScript(object):
                 raise TestBoxScriptException('Unsupported server type %s.' % (sType,));
 
         elif sHostOs == 'solaris':
+            if sMountOpt != '':
+                sMountOpt = ',' + sMountOpt
             utils.sudoProcessCall(['/sbin/umount', sMountPoint]);
             utils.sudoProcessCall(['/bin/mkdir', '-p', sMountPoint]);
             if sType == 'cifs':
@@ -320,14 +331,15 @@ class TestBoxScript(object):
                                                 'user=' + sUser
                                                 + ',uid=' + str(os.getuid()) # pylint: disable=E1101
                                                 + ',gid=' + str(os.getgid()) # pylint: disable=E1101
-                                                + ',fileperms=0555,dirperms=0555,noxattr,ro',
+                                                + ',fileperms=0555,dirperms=0555,noxattr,ro'
+                                                + sMountOpt,
                                                 '//%s/%s' % (sServer, sShare),
                                                 sMountPoint],
                                                stdin = oPasswdFile);
                 oPasswdFile.close();
             elif sType == 'nfs':
                 utils.sudoProcessOutputChecked(['/sbin/mount', '-F', 'nfs',
-                                                '-o', 'noxattr,ro',
+                                                '-o', 'noxattr,ro' + sMountOpt,
                                                 '%s:%s' % (sServer, sShare if sShare.find('/') >= 0 else ('/export/' + sShare)),
                                                 sMountPoint]);
 
@@ -949,6 +961,9 @@ class TestBoxScript(object):
             parser.add_option('--' + sLower + '-server-passwd', '--' + sLower + '-server-password',
                               dest=sPrefix + 'ServerPasswd', metavar='<password>', default='guestr',
                               help='The password to use when accessing the ' + sDesc + ' share.');
+            parser.add_option('--' + sLower + '-server-mountopt',
+                              dest=sPrefix + 'ServerMountOpt', metavar='<mountopt>', default='',
+                              help='The mount options to use when accessing the ' + sDesc + ' share.');
 
         parser.add_option("--test-manager", metavar="<url>",
                           dest="sTestManagerUrl",
