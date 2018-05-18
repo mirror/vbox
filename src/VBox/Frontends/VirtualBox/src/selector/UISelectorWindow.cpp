@@ -629,6 +629,9 @@ void UISelectorWindow::sltOpenMachineSettingsDialog(const QString &strCategoryRe
                                                     const QString &strControlRef /* = QString() */,
                                                     const QString &strID /* = QString() */)
 {
+    /* This slot should not be called when there is not selection: */
+    AssertMsgReturnVoid(currentItem(), ("Current item should be selected!\n"));
+
     /* Check that we do NOT handling that already: */
     if (actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->data().toBool())
         return;
