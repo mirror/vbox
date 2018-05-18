@@ -2390,8 +2390,7 @@ void UISelectorWindow::updateActionsVisibility()
 
 void UISelectorWindow::updateActionsAppearance()
 {
-    /* Get current item(s): */
-    UIVMItem *pItem = currentItem();
+    /* Get current items: */
     QList<UIVMItem*> items = currentItems();
 
     /* Enable/disable group actions: */
@@ -2446,6 +2445,9 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_SaveState, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_PowerOff, items));
+
+    /* Get current item: */
+    UIVMItem *pItem = currentItem();
 
     /* Start/Show action is deremined by 1st item: */
     if (pItem && pItem->accessible())
