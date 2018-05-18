@@ -191,6 +191,8 @@ typedef struct _VBOXNETLWF_MODULE {
     bool fActive;
     /** true if the host wants the adapter to be in promisc mode */
     bool fHostPromisc;
+    /** true if the user wants packets being sent or received by VMs to be visible to the host in promisc mode */
+    bool fPassVmTrafficToHost;
     /** Name of underlying adapter */
     char szMiniportName[1];
 } VBOXNETLWF_MODULE;
@@ -475,7 +477,7 @@ static void vboxNetLwfWinDumpPackets(const char *pszMsg, PNET_BUFFER_LIST pBufLi
     {
         for (PNET_BUFFER pBuf = NET_BUFFER_LIST_FIRST_NB(pList); pBuf; pBuf = NET_BUFFER_NEXT_NB(pBuf))
         {
-            Log6(("%s packet: cb=%d offset=%d", pszMsg, NET_BUFFER_DATA_LENGTH(pBuf), NET_BUFFER_DATA_OFFSET(pBuf)));
+            Log6(("%s packet: src=%p cb=%d offset=%d", pszMsg, pList->SourceHandle, NET_BUFFER_DATA_LENGTH(pBuf), NET_BUFFER_DATA_OFFSET(pBuf)));
             for (PMDL pMdl = NET_BUFFER_FIRST_MDL(pBuf);
                  pMdl != NULL;
                  pMdl = NDIS_MDL_LINKAGE(pMdl))
@@ -1346,10 +1348,37 @@ static NDIS_STATUS vboxNetLwfWinRestart(IN NDIS_HANDLE hModuleCtx, IN PNDIS_FILT
     LogFlow(("==>vboxNetLwfWinRestart: module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModuleCtx = (PVBOXNETLWF_MODULE)hModuleCtx;
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Restarting, LwfState_Paused);
+
+    /* By default the packets that go between VMs and wire are invisible to the host. */
+    pModuleCtx->fPassVmTrafficToHost = false;
+
+    NDIS_HANDLE hConfig;
+    NDIS_CONFIGURATION_OBJECT cfgObj;
+    cfgObj.Header.Type = NDIS_OBJECT_TYPE_CONFIGURATION_OBJECT;
+    cfgObj.Header.Revision = NDIS_CONFIGURATION_OBJECT_REVISION_1;
+    cfgObj.Header.Size = sizeof(NDIS_CONFIGURATION_OBJECT);
+    cfgObj.NdisHandle = g_VBoxNetLwfGlobals.hFilterDriver;
+
+    NDIS_STATUS Status = NdisOpenConfigurationEx(&cfgObj, &hConfig);
+    if (Status == NDIS_STATUS_SUCCESS)
+    {
+        NDIS_STRING strCfgParam = NDIS_STRING_CONST("PassVmTrafficToHost");
+        PNDIS_CONFIGURATION_PARAMETER pParam = NULL;
+        NdisReadConfiguration(&Status, &pParam, hConfig, &strCfgParam, NdisParameterInteger);
+        if (Status != NDIS_STATUS_SUCCESS)
+        {
+            Log(("vboxNetLwfWinRestart: Failed to read 'PassVmTrafficToHost' from the registry.\n"));
+        }
+        else if (pParam->ParameterData.IntegerData != 0)
+        {
+            Log(("vboxNetLwfWinRestart: Allowing the host to see VM traffic in promisc mode by user request.\n"));
+            pModuleCtx->fPassVmTrafficToHost = true;
+        }
+        NdisCloseConfiguration(hConfig);
+    }
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Running, LwfState_Restarting);
-    NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
-    LogFlow(("<==vboxNetLwfWinRestart: Status = 0x%x\n", Status));
-    return Status;
+    LogFlow(("<==vboxNetLwfWinRestart: Status = 0x%x, returning NDIS_STATUS_SUCCESS nontheless.\n", Status));
+    return NDIS_STATUS_SUCCESS;
 }
 
 
@@ -1656,6 +1685,18 @@ static bool vboxNetLwfWinForwardToIntNet(PVBOXNETLWF_MODULE pModuleCtx, PNET_BUF
         Log(("vboxNetLwfWinForwardToIntNet: trunk is inactive, won't forward\n"));
         return false;
     }
+    /* Some NPF protocols make NDIS to loop back packets at miniport level, we must ignore those. */
+    if (NdisTestNblFlag(pBufLists, NDIS_NBL_FLAGS_IS_LOOPBACK_PACKET))
+    {
+        if (pBufLists->SourceHandle == pModuleCtx->hFilter && !pModuleCtx->fPassVmTrafficToHost)
+        {
+            /* Drop the packets we've injected. */
+            vboxNetLwfWinDumpPackets("vboxNetLwfWinForwardToIntNet: dropping loopback", pBufLists);
+            return true;
+        }
+        vboxNetLwfWinDumpPackets("vboxNetLwfWinForwardToIntNet: passing through loopback", pBufLists);
+        return false;
+    }
 
     AssertReturn(pModuleCtx->pNetFlt, false);
     AssertReturn(pModuleCtx->pNetFlt->pSwitchPort, false);
@@ -1694,6 +1735,11 @@ static bool vboxNetLwfWinForwardToIntNet(PVBOXNETLWF_MODULE pModuleCtx, PNET_BUF
         Log(("vboxNetLwfWinForwardToIntNet: list=%d buffers=%d\n", nLists, nBuffers));
     }
     Log(("vboxNetLwfWinForwardToIntNet: lists=%d drop=%s don't=%s\n", nLists, fDropIt ? "true":"false", fDontDrop ? "true":"false"));
+
+    /* If the host (and the user) wants to see all packets we must not drop any. */
+    if (pModuleCtx->fPassVmTrafficToHost && vboxNetLwfWinIsPromiscuous(pModuleCtx))
+        fDropIt = false;
+        
     LogFlow(("<==vboxNetLwfWinForwardToIntNet: return '%s'\n",
              fDropIt ? (fDontDrop ? "do not drop (some)" : "drop it") : "do not drop (any)"));
     return fDropIt && !fDontDrop; /* Drop the list if ALL its buffers are being dropped! */
@@ -1849,7 +1895,7 @@ VOID vboxNetLwfWinReceiveNetBufferLists(IN NDIS_HANDLE hModuleCtx,
     if (!ASMAtomicReadBool(&pModule->fActive))
     {
         /*
-         * The trunk is inactive, jusp pass along all packets to the next
+         * The trunk is inactive, just pass along all packets to the next
          * overlying driver.
          */
         NdisFIndicateReceiveNetBufferLists(pModule->hFilter, pBufLists, nPort, nBufLists, fFlags);
@@ -1861,34 +1907,16 @@ VOID vboxNetLwfWinReceiveNetBufferLists(IN NDIS_HANDLE hModuleCtx,
     {
         if (NDIS_TEST_RECEIVE_CANNOT_PEND(fFlags))
         {
-            /* We do not own NBLs so we do not need to return them */
-            /* First we need to scan through the list to see if some packets must be dropped */
-            bool bDropIt = false;
             for (PNET_BUFFER_LIST pList = pBufLists; pList; pList = NET_BUFFER_LIST_NEXT_NBL(pList))
             {
                 PNET_BUFFER_LIST pNext = NET_BUFFER_LIST_NEXT_NBL(pList);
                 NET_BUFFER_LIST_NEXT_NBL(pList) = NULL; /* Unlink temporarily */
-                if (vboxNetLwfWinForwardToIntNet(pModule, pList, INTNETTRUNKDIR_WIRE))
-                    bDropIt = true;
-                NET_BUFFER_LIST_NEXT_NBL(pList) = pNext; /* Restore the link */
-            }
-            if (bDropIt)
-            {
-                /* Some NBLs must be dropped, indicate selectively one by one */
-                for (PNET_BUFFER_LIST pList = pBufLists; pList; pList = NET_BUFFER_LIST_NEXT_NBL(pList))
+                if (!vboxNetLwfWinForwardToIntNet(pModule, pList, INTNETTRUNKDIR_WIRE))
                 {
-                    PNET_BUFFER_LIST pNext = NET_BUFFER_LIST_NEXT_NBL(pList);
-                    NET_BUFFER_LIST_NEXT_NBL(pList) = NULL; /* Unlink temporarily */
                     vboxNetLwfWinDumpPackets("vboxNetLwfWinReceiveNetBufferLists: passing up", pList);
                     NdisFIndicateReceiveNetBufferLists(pModule->hFilter, pList, nPort, nBufLists, fFlags);
-                    NET_BUFFER_LIST_NEXT_NBL(pList) = pNext; /* Restore the link */
                 }
-            }
-            else
-            {
-                /* All NBLs must be indicated, do it in bulk. */
-                vboxNetLwfWinDumpPackets("vboxNetLwfWinReceiveNetBufferLists: passing up", pBufLists);
-                NdisFIndicateReceiveNetBufferLists(pModule->hFilter, pBufLists, nPort, nBufLists, fFlags);
+                NET_BUFFER_LIST_NEXT_NBL(pList) = pNext; /* Restore the link */
             }
         }
         else
