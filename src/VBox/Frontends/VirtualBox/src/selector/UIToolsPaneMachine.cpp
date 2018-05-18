@@ -199,6 +199,9 @@ void UIToolsPaneMachine::setDetailsError(const QString &strError)
 
 void UIToolsPaneMachine::setCurrentItem(UIVMItem *pItem)
 {
+    if (m_pItem == pItem)
+        return;
+
     /* Do we need translation after that? */
     const bool fTranslationRequired =  (!pItem &&  m_pItem)
                                     || ( pItem && !m_pItem)
@@ -321,4 +324,3 @@ void UIToolsPaneMachine::cleanup()
         delete pWidget;
     }
 }
-
