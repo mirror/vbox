@@ -1285,10 +1285,7 @@ DECLINLINE(void) nemHCWinCopyStateFromX64Header(PVMCPU pVCpu, PCPUMCTX pCtx, HV_
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
     }
     else
-    {
         EMSetInhibitInterruptsPC(pVCpu, pHdr->Rip);
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-    }
 
     pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT);
 }
