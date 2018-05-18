@@ -405,12 +405,14 @@ start() {
         if [ -n "${TESTBOXSCRIPT_BUILDS_SHARE}"    ]; then PARAMS="${PARAMS} --builds-server-share  '${TESTBOXSCRIPT_BUILDS_SHARE}'"; fi
         if [ -n "${TESTBOXSCRIPT_BUILDS_USER}"     ]; then PARAMS="${PARAMS} --builds-server-user   '${TESTBOXSCRIPT_BUILDS_USER}'"; fi
         if [ -n "${TESTBOXSCRIPT_BUILDS_PASSWD}"   ]; then PARAMS="${PARAMS} --builds-server-passwd '${TESTBOXSCRIPT_BUILDS_PASSWD}'"; fi
+        if [ -n "${TESTBOXSCRIPT_BUILDS_MOUNTOPT}" ]; then PARAMS="${PARAMS} --builds-server-mountopt '${TESTBOXSCRIPT_BUILDS_MOUNTOPT}'"; fi
         if [ -n "${TESTBOXSCRIPT_TESTRSRC_PATH}"   ]; then PARAMS="${PARAMS} --testrsrc-path '${TESTBOXSCRIPT_TESTRSRC_PATH}'"; fi
         if [ -n "${TESTBOXSCRIPT_TESTRSRC_TYPE}"   ]; then PARAMS="${PARAMS} --testrsrc-server-type   '${TESTBOXSCRIPT_TESTRSRC_TYPE}'"; fi
         if [ -n "${TESTBOXSCRIPT_TESTRSRC_NAME}"   ]; then PARAMS="${PARAMS} --testrsrc-server-name   '${TESTBOXSCRIPT_TESTRSRC_NAME}'"; fi
         if [ -n "${TESTBOXSCRIPT_TESTRSRC_SHARE}"  ]; then PARAMS="${PARAMS} --testrsrc-server-share  '${TESTBOXSCRIPT_TESTRSRC_SHARE}'"; fi
         if [ -n "${TESTBOXSCRIPT_TESTRSRC_USER}"   ]; then PARAMS="${PARAMS} --testrsrc-server-user   '${TESTBOXSCRIPT_TESTRSRC_USER}'"; fi
         if [ -n "${TESTBOXSCRIPT_TESTRSRC_PASSWD}" ]; then PARAMS="${PARAMS} --testrsrc-server-passwd '${TESTBOXSCRIPT_TESTRSRC_PASSWD}'"; fi
+        if [ -n "${TESTBOXSCRIPT_TESTRSRC_MOUNTOPT}" ]; then PARAMS="${PARAMS} --testrsrc-server-mountopt '${TESTBOXSCRIPT_TESTRSRC_MOUNTOPT}'"; fi
 
         if [ -n "${TESTBOXSCRIPT_PYTHON}" ]; then
             my_start_daemon "${TESTBOXSCRIPT_USER}" "${TESTBOXSCRIPT_PYTHON}" "${binary}" ${PARAMS}
