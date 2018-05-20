@@ -2420,6 +2420,20 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
 }
 
 
+/**
+ * Gets the physical address represented in the guest CR3 as PGM sees it.
+ *
+ * This is mainly for logging and debugging.
+ *
+ * @returns PGM's guest CR3 value.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(RTGCPHYS) PGMGetGuestCR3Phys(PVMCPU pVCpu)
+{
+    return pVCpu->pgm.s.GCPhysCR3;
+}
+
+
 
 /**
  * Notification from CPUM that the EFER.NXE bit has changed.
