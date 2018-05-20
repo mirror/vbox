@@ -164,6 +164,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/vmapi.h> /* VMR3GetVM() */
 #include <VBox/vmm/hm.h>    /* HMR3IsEnabled */
+#include <VBox/vmm/nem.h>   /* NEMR3IsEnabled */
 #include <VBox/err.h>
 #include <VBox/log.h>
 
@@ -1209,7 +1210,7 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
     int rc = dbgcCreate(&pDbgc, pBack, fFlags);
     if (RT_FAILURE(rc))
         return rc;
-    if (!HMR3IsEnabled(pUVM))
+    if (!HMR3IsEnabled(pUVM) && !NEMR3IsEnabled(pUVM))
         pDbgc->hDbgAs = DBGF_AS_RC_AND_GC_GLOBAL;
 
     /*

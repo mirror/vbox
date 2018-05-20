@@ -646,6 +646,13 @@ VMMR3DECL(bool) HMR3IsEnabled(PUVM pUVM)
 }
 
 
+#include <VBox/vmm/nem.h>
+VMMR3DECL(bool) NEMR3IsEnabled(PUVM pUVM)
+{
+    return true;
+}
+
+
 #include <VBox/vmm/pgm.h>
 
 VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
