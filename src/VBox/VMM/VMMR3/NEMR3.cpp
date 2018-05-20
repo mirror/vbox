@@ -33,6 +33,7 @@
 #include <VBox/vmm/nem.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/uvm.h>
 
 #include <iprt/asm.h>
 
@@ -202,6 +203,21 @@ VMMR3_INT_DECL(int) NEMR3Term(PVM pVM)
         pVM->aCpus[iCpu].nem.s.u32Magic = NEMCPU_MAGIC_DEAD;
     pVM->nem.s.u32Magic = NEM_MAGIC_DEAD;
     return rc;
+}
+
+/**
+ * External interface for querying whether native execution API is used.
+ *
+ * @returns true if NEM is being used, otherwise false.
+ * @param   pUVM        The user mode VM handle.
+ * @sa      HMR3IsEnabled
+ */
+VMMR3DECL(bool) NEMR3IsEnabled(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return VM_IS_NEM_ENABLED(pVM);
 }
 
 
