@@ -5892,122 +5892,132 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
      * Iterate the modules in the current address space and print info about
      * those matching the input.
      */
-    RTDBGAS     hAs         = DBGFR3AsResolveAndRetain(pUVM, pDbgc->hDbgAs);
-    uint32_t    cMods       = RTDbgAsModuleCount(hAs);
-    for (uint32_t iMod = 0; iMod < cMods; iMod++)
+    RTDBGAS hAsCurAlias = pDbgc->hDbgAs;
+    for (uint32_t iAs = 0;; iAs++)
     {
-        RTDBGMOD hMod = RTDbgAsModuleByIndex(hAs, iMod);
-        if (hMod != NIL_RTDBGMOD)
+        RTDBGAS     hAs         = DBGFR3AsResolveAndRetain(pUVM, hAsCurAlias);
+        uint32_t    cMods       = RTDbgAsModuleCount(hAs);
+        for (uint32_t iMod = 0; iMod < cMods; iMod++)
         {
-            bool const          fDeferred       = RTDbgModIsDeferred(hMod);
-            bool const          fExports        = RTDbgModIsExports(hMod);
-            uint32_t const      cSegs           = fDeferred ? 1 : RTDbgModSegmentCount(hMod);
-            const char * const  pszName         = RTDbgModName(hMod);
-            const char * const  pszImgFile      = RTDbgModImageFile(hMod);
-            const char * const  pszImgFileUsed  = RTDbgModImageFileUsed(hMod);
-            const char * const  pszDbgFile      = RTDbgModDebugFile(hMod);
-            if (    cArgs == 0
-                ||  dbgcCmdListModuleMatch(pszName, paArgs, cArgs))
+            RTDBGMOD hMod = RTDbgAsModuleByIndex(hAs, iMod);
+            if (hMod != NIL_RTDBGMOD)
             {
-                /*
-                 * Find the mapping with the lower address, preferring a full
-                 * image mapping, for the main line.
-                 */
-                RTDBGASMAPINFO  aMappings[128];
-                uint32_t        cMappings = RT_ELEMENTS(aMappings);
-                int rc = RTDbgAsModuleQueryMapByIndex(hAs, iMod, &aMappings[0], &cMappings, 0 /*fFlags*/);
-                if (RT_SUCCESS(rc))
+                bool const          fDeferred       = RTDbgModIsDeferred(hMod);
+                bool const          fExports        = RTDbgModIsExports(hMod);
+                uint32_t const      cSegs           = fDeferred ? 1 : RTDbgModSegmentCount(hMod);
+                const char * const  pszName         = RTDbgModName(hMod);
+                const char * const  pszImgFile      = RTDbgModImageFile(hMod);
+                const char * const  pszImgFileUsed  = RTDbgModImageFileUsed(hMod);
+                const char * const  pszDbgFile      = RTDbgModDebugFile(hMod);
+                if (    cArgs == 0
+                    ||  dbgcCmdListModuleMatch(pszName, paArgs, cArgs))
                 {
-                    bool        fFull = false;
-                    RTUINTPTR   uMin = RTUINTPTR_MAX;
-                    for (uint32_t iMap = 0; iMap < cMappings; iMap++)
-                        if (    aMappings[iMap].Address < uMin
-                            &&  (   !fFull
-                                 ||  aMappings[iMap].iSeg == NIL_RTDBGSEGIDX))
-                            uMin = aMappings[iMap].Address;
-                    if (!fVerbose || !pszImgFile)
-                        DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %s%s\n", (RTGCUINTPTR)uMin, cSegs, pszName,
-                                         fExports ? " (exports)" : fDeferred ? " (deferred)" : "");
-                    else
-                        DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %-12s  %s%s\n", (RTGCUINTPTR)uMin, cSegs, pszName, pszImgFile,
-                                         fExports ? "  (exports)" : fDeferred ? "  (deferred)" : "");
-                    if (fVerbose && pszImgFileUsed)
-                        DBGCCmdHlpPrintf(pCmdHlp, "    Local image: %s\n", pszImgFileUsed);
-                    if (fVerbose && pszDbgFile)
-                        DBGCCmdHlpPrintf(pCmdHlp, "    Debug file:  %s\n", pszDbgFile);
-
-                    if (fMappings)
+                    /*
+                     * Find the mapping with the lower address, preferring a full
+                     * image mapping, for the main line.
+                     */
+                    RTDBGASMAPINFO  aMappings[128];
+                    uint32_t        cMappings = RT_ELEMENTS(aMappings);
+                    int rc = RTDbgAsModuleQueryMapByIndex(hAs, iMod, &aMappings[0], &cMappings, 0 /*fFlags*/);
+                    if (RT_SUCCESS(rc))
                     {
-                        /* sort by address first - not very efficient. */
-                        for (uint32_t i = 0; i + 1 < cMappings; i++)
-                            for (uint32_t j = i + 1; j < cMappings; j++)
-                                if (aMappings[j].Address < aMappings[i].Address)
-                                {
-                                    RTDBGASMAPINFO Tmp = aMappings[j];
-                                    aMappings[j] = aMappings[i];
-                                    aMappings[i] = Tmp;
-                                }
-
-                        /* print */
-                        if (   cMappings == 1
-                            && aMappings[0].iSeg == NIL_RTDBGSEGIDX
-                            && !fDeferred)
-                        {
-                            for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
-                            {
-                                RTDBGSEGMENT SegInfo;
-                                rc = RTDbgModSegmentByIndex(hMod, iSeg, &SegInfo);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    if (SegInfo.uRva != RTUINTPTR_MAX)
-                                        DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv #%02x %s\n",
-                                                         (RTGCUINTPTR)(aMappings[0].Address + SegInfo.uRva),
-                                                         (RTGCUINTPTR)SegInfo.cb, iSeg, SegInfo.szName);
-                                    else
-                                        DBGCCmdHlpPrintf(pCmdHlp, "    %*s %RGv #%02x %s\n",
-                                                         sizeof(RTGCUINTPTR)*2, "noload",
-                                                         (RTGCUINTPTR)SegInfo.cb, iSeg, SegInfo.szName);
-                                }
-                                else
-                                    DBGCCmdHlpPrintf(pCmdHlp, "    Error query segment #%u: %Rrc\n", iSeg, rc);
-                            }
-                        }
+                        bool        fFull = false;
+                        RTUINTPTR   uMin = RTUINTPTR_MAX;
+                        for (uint32_t iMap = 0; iMap < cMappings; iMap++)
+                            if (    aMappings[iMap].Address < uMin
+                                &&  (   !fFull
+                                     ||  aMappings[iMap].iSeg == NIL_RTDBGSEGIDX))
+                                uMin = aMappings[iMap].Address;
+                        if (!fVerbose || !pszImgFile)
+                            DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %s%s\n", (RTGCUINTPTR)uMin, cSegs, pszName,
+                                             fExports ? " (exports)" : fDeferred ? " (deferred)" : "");
                         else
+                            DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %-12s  %s%s\n", (RTGCUINTPTR)uMin, cSegs, pszName, pszImgFile,
+                                             fExports ? "  (exports)" : fDeferred ? "  (deferred)" : "");
+                        if (fVerbose && pszImgFileUsed)
+                            DBGCCmdHlpPrintf(pCmdHlp, "    Local image: %s\n", pszImgFileUsed);
+                        if (fVerbose && pszDbgFile)
+                            DBGCCmdHlpPrintf(pCmdHlp, "    Debug file:  %s\n", pszDbgFile);
+
+                        if (fMappings)
                         {
-                            for (uint32_t iMap = 0; iMap < cMappings; iMap++)
-                                if (aMappings[iMap].iSeg == NIL_RTDBGSEGIDX)
-                                    DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv <everything>\n",
-                                                     (RTGCUINTPTR)aMappings[iMap].Address,
-                                                     (RTGCUINTPTR)RTDbgModImageSize(hMod));
-                                else if (!fDeferred)
+                            /* sort by address first - not very efficient. */
+                            for (uint32_t i = 0; i + 1 < cMappings; i++)
+                                for (uint32_t j = i + 1; j < cMappings; j++)
+                                    if (aMappings[j].Address < aMappings[i].Address)
+                                    {
+                                        RTDBGASMAPINFO Tmp = aMappings[j];
+                                        aMappings[j] = aMappings[i];
+                                        aMappings[i] = Tmp;
+                                    }
+
+                            /* print */
+                            if (   cMappings == 1
+                                && aMappings[0].iSeg == NIL_RTDBGSEGIDX
+                                && !fDeferred)
+                            {
+                                for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
                                 {
                                     RTDBGSEGMENT SegInfo;
-                                    rc = RTDbgModSegmentByIndex(hMod, aMappings[iMap].iSeg, &SegInfo);
-                                    if (RT_FAILURE(rc))
+                                    rc = RTDbgModSegmentByIndex(hMod, iSeg, &SegInfo);
+                                    if (RT_SUCCESS(rc))
                                     {
-                                        RT_ZERO(SegInfo);
-                                        strcpy(SegInfo.szName, "error");
+                                        if (SegInfo.uRva != RTUINTPTR_MAX)
+                                            DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv #%02x %s\n",
+                                                             (RTGCUINTPTR)(aMappings[0].Address + SegInfo.uRva),
+                                                             (RTGCUINTPTR)SegInfo.cb, iSeg, SegInfo.szName);
+                                        else
+                                            DBGCCmdHlpPrintf(pCmdHlp, "    %*s %RGv #%02x %s\n",
+                                                             sizeof(RTGCUINTPTR)*2, "noload",
+                                                             (RTGCUINTPTR)SegInfo.cb, iSeg, SegInfo.szName);
                                     }
-                                    DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv #%02x %s\n",
-                                                     (RTGCUINTPTR)aMappings[iMap].Address,
-                                                     (RTGCUINTPTR)SegInfo.cb,
-                                                     aMappings[iMap].iSeg, SegInfo.szName);
+                                    else
+                                        DBGCCmdHlpPrintf(pCmdHlp, "    Error query segment #%u: %Rrc\n", iSeg, rc);
                                 }
-                                else
-                                    DBGCCmdHlpPrintf(pCmdHlp, "    %RGv #%02x\n",
-                                                     (RTGCUINTPTR)aMappings[iMap].Address, aMappings[iMap].iSeg);
+                            }
+                            else
+                            {
+                                for (uint32_t iMap = 0; iMap < cMappings; iMap++)
+                                    if (aMappings[iMap].iSeg == NIL_RTDBGSEGIDX)
+                                        DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv <everything>\n",
+                                                         (RTGCUINTPTR)aMappings[iMap].Address,
+                                                         (RTGCUINTPTR)RTDbgModImageSize(hMod));
+                                    else if (!fDeferred)
+                                    {
+                                        RTDBGSEGMENT SegInfo;
+                                        rc = RTDbgModSegmentByIndex(hMod, aMappings[iMap].iSeg, &SegInfo);
+                                        if (RT_FAILURE(rc))
+                                        {
+                                            RT_ZERO(SegInfo);
+                                            strcpy(SegInfo.szName, "error");
+                                        }
+                                        DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv #%02x %s\n",
+                                                         (RTGCUINTPTR)aMappings[iMap].Address,
+                                                         (RTGCUINTPTR)SegInfo.cb,
+                                                         aMappings[iMap].iSeg, SegInfo.szName);
+                                    }
+                                    else
+                                        DBGCCmdHlpPrintf(pCmdHlp, "    %RGv #%02x\n",
+                                                         (RTGCUINTPTR)aMappings[iMap].Address, aMappings[iMap].iSeg);
+                            }
                         }
                     }
+                    else
+                        DBGCCmdHlpPrintf(pCmdHlp, "%.*s %04x %s (rc=%Rrc)\n",
+                                         sizeof(RTGCPTR) * 2, "???????????", cSegs, pszName, rc);
+                    /** @todo missing address space API for enumerating the mappings. */
                 }
-                else
-                    DBGCCmdHlpPrintf(pCmdHlp, "%.*s %04x %s (rc=%Rrc)\n",
-                                     sizeof(RTGCPTR) * 2, "???????????", cSegs, pszName, rc);
-                /** @todo missing address space API for enumerating the mappings. */
+                RTDbgModRelease(hMod);
             }
-            RTDbgModRelease(hMod);
         }
+        RTDbgAsRelease(hAs);
+
+        /* For DBGF_AS_RC_AND_GC_GLOBAL we're required to do more work. */
+        if (hAsCurAlias != DBGF_AS_RC_AND_GC_GLOBAL)
+            break;
+        AssertBreak(iAs == 0);
+        hAsCurAlias = DBGF_AS_GLOBAL;
     }
-    RTDbgAsRelease(hAs);
 
     NOREF(pCmd);
     return VINF_SUCCESS;
