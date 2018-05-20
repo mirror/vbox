@@ -86,6 +86,7 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/patm.h>
+#include <VBox/vmm/iem.h>
 #include "TRPMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/em.h>
@@ -1519,11 +1520,19 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     {
         if (EMIsSupervisorCodeRecompiled(pVM) || !VM_IS_RAW_MODE_ENABLED(pVM))
         {
-            rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
-            AssertRC(rc);
             STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
-            return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM;
+            if (!VM_IS_NEM_ENABLED(pVM))
+            {
+                rc = TRPMAssertTrap(pVCpu, u8Interrupt, enmEvent);
+                AssertRC(rc);
+                return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM;
+            }
+            VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8Interrupt, enmEvent, 0, 0, 0);
+            if (rcStrict == VINF_SUCCESS)
+                return VINF_EM_RESCHEDULE;
+            return VBOXSTRICTRC_TODO(rcStrict);
         }
+
         /* If the guest gate is not patched, then we will check (again) if we can patch it. */
         if (pVM->trpm.s.aGuestTrapHandler[u8Interrupt] == TRPM_INVALID_HANDLER)
         {
@@ -1558,7 +1567,9 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     {
         /* Can happen if the interrupt is masked by TPR or APIC is disabled. */
         AssertMsg(rc == VERR_APIC_INTR_MASKED_BY_TPR || rc == VERR_NO_DATA, ("PDMGetInterrupt failed. rc=%Rrc\n", rc));
-        return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
+        return HMR3IsActive(pVCpu)    ? VINF_EM_RESCHEDULE_HM
+             : VM_IS_NEM_ENABLED(pVM) ? VINF_EM_RESCHEDULE
+             :                          VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
     }
 
     /** @todo check if it's safe to translate the patch address to the original guest address.
@@ -1576,8 +1587,17 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
     if (RT_SUCCESS(rc))
     {
-        rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
-        AssertRC(rc);
+        if (!VM_IS_NEM_ENABLED(pVM))
+        {
+            rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
+            AssertRC(rc);
+        }
+        else
+        {
+            VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8Interrupt, enmEvent, 0, 0, 0);
+            if (rcStrict != VINF_SUCCESS)
+                return VBOXSTRICTRC_TODO(rcStrict);
+        }
         STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
     }
     else
@@ -1585,9 +1605,10 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
         /* Can happen if the interrupt is masked by TPR or APIC is disabled. */
         AssertMsg(rc == VERR_APIC_INTR_MASKED_BY_TPR || rc == VERR_NO_DATA, ("PDMGetInterrupt failed. rc=%Rrc\n", rc));
     }
-    return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
+    return HMR3IsActive(pVCpu)    ? VINF_EM_RESCHEDULE_HM
+         : VM_IS_NEM_ENABLED(pVM) ? VINF_EM_RESCHEDULE
+         :                          VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
 #endif /* !TRPM_FORWARD_TRAPS_IN_GC || IEM_VERIFICATION_MODE */
-
 }
 
 
