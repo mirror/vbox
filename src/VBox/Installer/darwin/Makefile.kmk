@@ -393,11 +393,20 @@ ifdef VBOX_WITH_DEBUGGER_GUI
  	MacOS/DbgPlugInDiggers.dylib
 endif
 ifdef VBOX_WITH_HARDENING
- VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/VirtualBox.dylib \
- 	MacOS/VBoxNetDHCP.dylib \
-	MacOS/VBoxNetNAT.dylib \
- 	MacOS/VBoxHeadless.dylib
+ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
+  VBOX_DI_VBAPP_DYLIBS += \
+  	MacOS/VirtualBox.dylib \
+  	MacOS/VBoxNetDHCP.dylib \
+  	MacOS/VBoxNetNAT.dylib \
+  	MacOS/VBoxHeadless.dylib
+ else
+  VBOX_DI_VBAPP_DYLIBS += \
+  	MacOS/VBoxGlobal.dylib \
+  	MacOS/VirtualBoxVM.dylib \
+  	MacOS/VBoxNetDHCP.dylib \
+  	MacOS/VBoxNetNAT.dylib \
+  	MacOS/VBoxHeadless.dylib
+ endif
 endif
 ifdef VBOX_WITH_HDDPARALLELS_INSTALL
  VBOX_DI_VBAPP_DYLIBS += \
@@ -764,9 +773,15 @@ endif
 	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root
 	sudo chmod u+s $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/VBoxNetAdpCtl
 ifdef VBOX_WITH_HARDENING
+ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	sudo chmod u+s \
 		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetDHCP VBoxNetNAT,\
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/$(bin))
+ else
+	sudo chmod u+s \
+		$(foreach bin,VBoxHeadless VirtualBoxVM VBoxNetDHCP VBoxNetNAT,\
+			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/$(bin))
+ endif
 endif
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
