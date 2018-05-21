@@ -1561,6 +1561,189 @@ static int rtFsNtfsAttr_Read(PRTFSNTFSATTR pAttr, uint64_t off, void *pvBuf, siz
 
 /**
  *
+ * @note    Only modifying non-resident data is currently supported.  No
+ *          shrinking or growing.  Metadata is not modified.
+ */
+static int rtFsNtfsAttr_Write(PRTFSNTFSATTR pAttr, uint64_t off, void const *pvBuf, size_t cbToWrite)
+{
+    PRTFSNTFSVOL pVol = pAttr->pCore->pVol;
+    int          rc;
+    if (!pAttr->pAttrHdr->fNonResident)
+    {
+        /*
+         * The attribute is resident.  Currently not supported.
+         */
+#if 0
+        uint32_t cbAttrib = RT_LE2H_U32(pAttr->pAttrHdr->cbAttrib);
+        uint32_t cbValue  = RT_LE2H_U32(pAttr->pAttrHdr->u.Res.cbValue);
+        uint16_t offValue = RT_LE2H_U16(pAttr->pAttrHdr->u.Res.offValue);
+        if (   off             <  cbValue
+            && cbToWrite       <= cbValue
+            && off + cbToWrite <= cbValue)
+        {
+            if (offValue <= cbAttrib)
+            {
+                cbAttrib -= offValue;
+                if (off < cbAttrib)
+                {
+                    /** @todo check if its possible to have cbValue larger than the attribute and
+                     *        reading those extra bytes as zero. */
+                    if (   pAttr->offAttrHdrInMftRec + offValue + cbAttrib <= pVol->cbMftRecord
+                        && cbAttrib <= pVol->cbMftRecord)
+                    {
+                        size_t cbToCopy = cbAttrib - off;
+                        if (cbToCopy > cbToWrite)
+                            cbToCopy = cbToWrite;
+                        memcpy(pvBuf, (uint8_t *)pAttr->pAttrHdr + offValue, cbToCopy);
+                        pvBuf      = (uint8_t *)pvBuf + cbToCopy;
+                        cbToWrite -= cbToCopy;
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                    {
+                        rc = VERR_VFS_BOGUS_OFFSET;
+                        Log(("rtFsNtfsAttr_Write: bad resident attribute!\n"));
+                    }
+                }
+                else
+                    rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_VFS_BOGUS_FORMAT;
+        }
+        else
+            rc = VERR_EOF;
+#else
+        LogRel(("rtFsNtfsAttr_Write: file too small to write to.\n"));
+        rc = VERR_INTERNAL_ERROR_3;
+#endif
+    }
+    else if (pAttr->pAttrHdr->u.NonRes.uCompressionUnit == 0)
+    {
+        /*
+         * Uncompressed non-resident attribute.
+         * Note! We currently
+         */
+        uint64_t const cbAllocated   = RT_LE2H_U64(pAttr->pAttrHdr->u.NonRes.cbAllocated);
+        if (   off >= cbAllocated
+            || cbToWrite > cbAllocated
+            || off + cbToWrite > cbAllocated)
+            rc = VERR_EOF;
+        else
+        {
+            rc = VINF_SUCCESS;
+
+            uint64_t const cbInitialized = RT_LE2H_U64(pAttr->pAttrHdr->u.NonRes.cbInitialized);
+            if (   off < cbInitialized
+                && cbToWrite > 0)
+            {
+                /*
+                 * Locate the first extent.  This is a tad complicated.
+                 *
+                 * We move off along as we traverse the extent tables, so that it is relative
+                 * to the start of the current extent.
+                 */
+                PRTFSNTFSEXTENTS    pTable   = &pAttr->Extents;
+                uint32_t            iExtent  = 0;
+                PRTFSNTFSATTRSUBREC pCurSub  = NULL;
+                for (;;)
+                {
+                    if (off < pTable->cbData)
+                    {
+                        while (   iExtent < pTable->cExtents
+                               && off >= pTable->paExtents[iExtent].cbExtent)
+                        {
+                            off -= pTable->paExtents[iExtent].cbExtent;
+                            iExtent++;
+                        }
+                        AssertReturn(iExtent < pTable->cExtents, VERR_INTERNAL_ERROR_2);
+                        break;
+                    }
+
+                    /* Next table. */
+                    off -= pTable->cbData;
+                    if (!pCurSub)
+                        pCurSub = pAttr->pSubRecHead;
+                    else
+                        pCurSub = pCurSub->pNext;
+                    if (!pCurSub)
+                    {
+                        iExtent = UINT32_MAX;
+                        break;
+                    }
+                    pTable  = &pCurSub->Extents;
+                    iExtent = 0;
+                }
+
+                /*
+                 * The write loop.
+                 */
+                while (iExtent != UINT32_MAX)
+                {
+                    uint64_t cbMaxWrite = pTable->paExtents[iExtent].cbExtent;
+                    Assert(off < cbMaxWrite);
+                    cbMaxWrite -= off;
+                    size_t const cbThisWrite = cbMaxWrite >= cbToWrite ? cbToWrite : (size_t)cbMaxWrite;
+                    if (pTable->paExtents[iExtent].off == UINT64_MAX)
+                    {
+                        if (!ASMMemIsZero(pvBuf, cbThisWrite))
+                        {
+                            LogRel(("rtFsNtfsAttr_Write: Unable to modify sparse section of file!\n"));
+                            rc = VERR_INTERNAL_ERROR_2;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        rc = RTVfsFileWriteAt(pVol->hVfsBacking, pTable->paExtents[iExtent].off + off, pvBuf, cbThisWrite, NULL);
+                        Log4(("NTFS: Volume write: @%#RX64 LB %#zx -> %Rrc\n", pTable->paExtents[iExtent].off + off, cbThisWrite, rc));
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+                    pvBuf      = (uint8_t const *)pvBuf + cbThisWrite;
+                    cbToWrite -= cbThisWrite;
+                    if (!cbToWrite)
+                        break;
+                    off = 0;
+
+                    /*
+                     * Advance to the next extent.
+                     */
+                    iExtent++;
+                    if (iExtent >= pTable->cExtents)
+                    {
+                        pCurSub = pCurSub ? pCurSub->pNext : pAttr->pSubRecHead;
+                        if (!pCurSub)
+                            break;
+                        pTable  = &pCurSub->Extents;
+                        iExtent = 0;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        LogRel(("rtFsNtfsAttr_Write: Compressed files are not supported\n"));
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    /*
+     * Anything else beyond the end of what's stored/initialized?
+     */
+    if (   cbToWrite > 0
+        && RT_SUCCESS(rc))
+    {
+        LogRel(("rtFsNtfsAttr_Write: Unable to modify sparse section (tail) of file!\n"));
+        rc = VERR_INTERNAL_ERROR_2;
+    }
+
+    return rc;
+}
+
+
+/**
+ *
  * @returns
  * @param   pRecHdr             .
  * @param   cbRec               .
@@ -2236,8 +2419,56 @@ static DECLCALLBACK(int) rtFsNtfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
  */
 static DECLCALLBACK(int) rtFsNtfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
-    RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
-    return VERR_WRITE_PROTECT;
+    PRTFSNTFSFILE pThis = (PRTFSNTFSFILE)pvThis;
+    AssertReturn(pSgBuf->cSegs == 1, VERR_INTERNAL_ERROR_3);
+    RT_NOREF(fBlocking);
+
+    if (off == -1)
+        off = pThis->offFile;
+    else
+        AssertReturn(off >= 0, VERR_INTERNAL_ERROR_3);
+
+    int           rc;
+    PRTFSNTFSATTR pDataAttr = pThis->pShared->pData;
+    size_t        cbToWrite = pSgBuf->paSegs[0].cbSeg;
+    if ((uint64_t)off + cbToWrite <= pDataAttr->cbValue)
+    {
+        rc = rtFsNtfsAttr_Write(pThis->pShared->pData, off, pSgBuf->paSegs[0].pvSeg, cbToWrite);
+        Log6(("rtFsNtfsFile_Write: off=%#RX64 cbToWrite=%#zx -> %Rrc\n", off, cbToWrite, rc));
+        if (RT_SUCCESS(rc))
+            pThis->offFile = off + cbToWrite;
+        if (pcbWritten)
+            *pcbWritten = RT_SUCCESS(rc) ? cbToWrite : 0;
+    }
+    else if ((uint64_t)off < pDataAttr->cbValue)
+    {
+        size_t cbWritten = pDataAttr->cbValue - off;
+        rc = rtFsNtfsAttr_Write(pThis->pShared->pData, off, pSgBuf->paSegs[0].pvSeg, cbWritten);
+        if (RT_SUCCESS(rc))
+        {
+            Log6(("rtFsNtfsFile_Write: off=%#RX64 cbToWrite=%#zx -> VERR_EOF [EOF: %#RX64, Written: %#zx]\n",
+                  off, cbToWrite, pDataAttr->cbValue, cbWritten));
+            pThis->offFile = off + cbWritten;
+            if (pcbWritten)
+                *pcbWritten = cbWritten;
+            rc = VERR_EOF;
+        }
+        else
+        {
+            Log6(("rtFsNtfsFile_Write: off=%#RX64 cbToWrite=%#zx -> %Rrc [EOF: %#RX64]\n", off, cbToWrite, rc, pDataAttr->cbValue));
+            if (pcbWritten)
+                *pcbWritten = 0;
+        }
+    }
+    else
+    {
+        Log6(("rtFsNtfsFile_Write: off=%#RX64 cbToWrite=%#zx -> VERR_EOF [EOF: %#RX64]\n", off, cbToWrite, pDataAttr->cbValue));
+        rc = VERR_EOF;
+        if (pcbWritten)
+            *pcbWritten = 0;
+    }
+
+    return rc;
 }
 
 

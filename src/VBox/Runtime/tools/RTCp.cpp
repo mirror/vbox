@@ -61,6 +61,9 @@ typedef struct RTCMDCPOPTS
     /** -x, --one-filesystem. */
     bool            fOneFileSystem;
 
+    /** Special --no-replace-nor-trucate hack for basic NTFS write support. */
+    bool            fNoReplaceNorTruncate;
+
     /** Number of sources. */
     size_t          cSources;
     /** Source files/dirs. */
@@ -142,8 +145,9 @@ static RTEXITCODE rtCmdCpDoIt(PCRTCMDCPOPTS pOpts)
                 if (RT_SUCCESS(rc))
                 {
                     RTVFSFILE hVfsDst;
-                    rc = RTVfsChainOpenFile(pszDst, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE,
-                                            &hVfsDst, &offError, RTErrInfoInitStatic(&ErrInfo));
+                    uint64_t fDstFlags = (pOpts->fNoReplaceNorTruncate ? RTFILE_O_OPEN_CREATE : RTFILE_O_CREATE_REPLACE)
+                                       | RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE | (0666 << RTFILE_O_CREATE_MODE_SHIFT);
+                    rc = RTVfsChainOpenFile(pszDst, fDstFlags, &hVfsDst, &offError, RTErrInfoInitStatic(&ErrInfo));
                     if (RT_SUCCESS(rc))
                     {
                         /* Copy the bytes. */
@@ -239,6 +243,7 @@ RTEXITCODE RTCmdCp(unsigned cArgs, char **papszArgs)
         { "--update",                           'u', RTGETOPT_REQ_NOTHING },
         { "--verbose",                          'v', RTGETOPT_REQ_NOTHING },
         { "--one-file-system",                  'x', RTGETOPT_REQ_NOTHING },
+        { "--no-replace-nor-trucate",          1032, RTGETOPT_REQ_NOTHING },
     };
 
     RTCMDCPOPTS Opts;
@@ -246,6 +251,7 @@ RTEXITCODE RTCmdCp(unsigned cArgs, char **papszArgs)
     Opts.fFollowCommandLineSymlinks = false;
     Opts.fRecursive                 = false;
     Opts.fOneFileSystem             = false;
+    Opts.fNoReplaceNorTruncate      = false;
     Opts.pszDestination             = NULL;
     Opts.cSources                   = 0;
     Opts.papszSources               = (const char **)RTMemAllocZ(sizeof(const char *) * (cArgs + 2));
@@ -300,6 +306,10 @@ RTEXITCODE RTCmdCp(unsigned cArgs, char **papszArgs)
 
                 case 'v':
                     Opts.fVerbose = true;
+                    break;
+
+                case 1032:
+                    Opts.fNoReplaceNorTruncate = true;
                     break;
 
                 case 'h':
