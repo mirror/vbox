@@ -501,7 +501,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  endif
 
  VBoxGlobal_LDFLAGS.darwin = \
-	-framework AppKit -framework Carbon -framework IOKit
+	-framework AppKit -framework Carbon -framework IOKit \
+	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxGlobal.dylib)
 
  if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
   VBoxGlobal_LDFLAGS.darwin += -framework OpenGL
