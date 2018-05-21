@@ -1739,7 +1739,7 @@ static bool vboxNetLwfWinForwardToIntNet(PVBOXNETLWF_MODULE pModuleCtx, PNET_BUF
     /* If the host (and the user) wants to see all packets we must not drop any. */
     if (pModuleCtx->fPassVmTrafficToHost && vboxNetLwfWinIsPromiscuous(pModuleCtx))
         fDropIt = false;
-        
+
     LogFlow(("<==vboxNetLwfWinForwardToIntNet: return '%s'\n",
              fDropIt ? (fDontDrop ? "do not drop (some)" : "drop it") : "do not drop (any)"));
     return fDropIt && !fDontDrop; /* Drop the list if ALL its buffers are being dropped! */
