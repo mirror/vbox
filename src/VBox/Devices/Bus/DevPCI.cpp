@@ -728,7 +728,7 @@ static int pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
     uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
     RT_NOREF(cbBelow4GB, cbAbove4GB);
 
-    LogRel(("PCI: setting up resources and interrupts\n"));
+    LogRel(("PCI: Setting up resources and interrupts\n"));
 
     /*
      * Set the start addresses.
