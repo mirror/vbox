@@ -533,13 +533,14 @@ udp_attach(PNATState pData, struct socket *so)
     AssertReturn(so->so_type == 0, -1);
     so->so_type = IPPROTO_UDP;
 
-    if ((so->s = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+    so->s = socket(AF_INET, SOCK_DGRAM, 0);
+    if (so->s == -1)
         goto error;
+    fd_nonblock(so->s);
+
     so->so_sottl = 0;
     so->so_sotos = 0;
     so->so_sodf = -1;
-
-    fd_nonblock(so->s);
 
     status = sobind(pData, so);
     if (status != 0)
@@ -547,8 +548,10 @@ udp_attach(PNATState pData, struct socket *so)
 
     /* success, insert in queue */
     so->so_expire = curtime + SO_EXPIRE;
+
     /* enable broadcast for later use */
     setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, (const char *)&opt, sizeof(opt));
+
     status = getsockname(so->s, &sa_addr, &socklen);
 #if 0 /** @todo  Something is explitived here! Temporarily disabled this annoying assertion.  Re-enable when fixed.  */
     Assert(status == 0 && sa_addr.sa_family == AF_INET);
@@ -563,7 +566,7 @@ udp_attach(PNATState pData, struct socket *so)
     QSOCKET_UNLOCK(udb);
     return so->s;
 error:
-    Log2(("NAT: can't create datagramm socket\n"));
+    Log2(("NAT: can't create datagram socket\n"));
     return -1;
 }
 
