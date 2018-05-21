@@ -530,8 +530,9 @@ udp_attach(PNATState pData, struct socket *so)
     int status;
     int opt = 1;
 
-    /* We attaching some olready attched socket ??? */
-    Assert(so->so_type == 0);
+    AssertReturn(so->so_type == 0, -1);
+    so->so_type = IPPROTO_UDP;
+
     if ((so->s = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
         goto error;
     so->so_sottl = 0;
@@ -560,7 +561,6 @@ udp_attach(PNATState pData, struct socket *so)
     insque(pData, so, &udb);
     NSOCK_INC();
     QSOCKET_UNLOCK(udb);
-    so->so_type = IPPROTO_UDP;
     return so->s;
 error:
     Log2(("NAT: can't create datagramm socket\n"));
