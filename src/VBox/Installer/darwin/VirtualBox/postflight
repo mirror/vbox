@@ -85,6 +85,10 @@ fi
 # was an existing installation.
 #
 chown -R root:admin /Applications/VirtualBox.app
+ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+ # For splitted GUI case we need the proper ownership back for non-hardened executable.
+ chown -R "${USER}" /Applications/VirtualBox.app/Contents/MacOS/VirtualBox
+endif
 
 #
 # Workaround for 10.11 beta 6 in which the above chown strips the set-uid-to-root bit.
