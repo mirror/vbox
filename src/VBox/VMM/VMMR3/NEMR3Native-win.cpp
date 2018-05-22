@@ -1498,7 +1498,7 @@ static void nemR3WinLogWHvExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
      */
     if (fExitCtx)
     {
-        const WHV_VP_EXIT_CONTEXT *pVpCtx = &pExitReason->IoPortAccess.VpContext;
+        const WHV_VP_EXIT_CONTEXT *pVpCtx = &pExitReason->VpContext;
         Log2(("Exit: + CS:RIP=%04x:%08RX64 RFLAGS=%06RX64 cbInstr=%u CS={%RX64 L %#RX32, %#x}\n",
               pVpCtx->Cs.Selector,
               pVpCtx->Rip,
@@ -1600,8 +1600,10 @@ static DECLCALLBACK(int) nemR3WinWHvUnmapOnePageCallback(PVM pVM, PVMCPU pVCpu, 
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            The CPU context to update.
  * @param   pMemCtx         The exit reason information.
+ * @param   pVpContext      The processor context info associated with the exit.
  */
-static VBOXSTRICTRC nemR3WinWHvHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_MEMORY_ACCESS_CONTEXT const *pMemCtx)
+static VBOXSTRICTRC nemR3WinWHvHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_MEMORY_ACCESS_CONTEXT const *pMemCtx,
+                                                  WHV_VP_EXIT_CONTEXT const *pVpContext)
 {
     /*
      * Ask PGM for information about the given GCPhys.  We need to check if we're
@@ -1641,7 +1643,7 @@ static VBOXSTRICTRC nemR3WinWHvHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
 
     VBOXSTRICTRC rcStrict;
     if (pMemCtx->InstructionByteCount > 0)
-        rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pMemCtx->VpContext.Rip,
+        rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pVpContext->Rip,
                                                 &pMemCtx->InstructionBytes[0], pMemCtx->InstructionByteCount);
     else
         rcStrict = IEMExecOne(pVCpu);
@@ -1661,8 +1663,9 @@ static VBOXSTRICTRC nemR3WinWHvHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
  * @param   pCtx            The CPU context to update.
  * @param   pIoPortCtx      The exit reason information.
  */
-static VBOXSTRICTRC nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx,
-                                                  WHV_X64_IO_PORT_ACCESS_CONTEXT const *pIoPortCtx)
+static VBOXSTRICTRC
+nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, WHV_X64_IO_PORT_ACCESS_CONTEXT const *pIoPortCtx,
+                              WHV_VP_EXIT_CONTEXT const *pVpContext)
 {
     Assert(   pIoPortCtx->AccessInfo.AccessSize == 1
            || pIoPortCtx->AccessInfo.AccessSize == 2
@@ -1684,7 +1687,7 @@ static VBOXSTRICTRC nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
             rcStrict = IOMIOPortWrite(pVM, pVCpu, pIoPortCtx->PortNumber, (uint32_t)pIoPortCtx->Rax & fAndMask,
                                       pIoPortCtx->AccessInfo.AccessSize);
             if (IOM_SUCCESS(rcStrict))
-                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pIoPortCtx->VpContext);
+                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, pVpContext);
         }
         else
         {
@@ -1694,7 +1697,7 @@ static VBOXSTRICTRC nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
             if (IOM_SUCCESS(rcStrict))
             {
                 pCtx->eax = (pCtx->eax & ~fAndMask) | (uValue & fAndMask);
-                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pIoPortCtx->VpContext);
+                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, pVpContext);
             }
         }
     }
@@ -1732,8 +1735,8 @@ static VBOXSTRICTRC nemR3WinWHvHandleIoPortAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
         /*
          * Do debug checks.
          */
-        if (   pIoPortCtx->VpContext.ExecutionState.DebugActive /** @todo Microsoft: Does DebugActive this only reflext DR7? */
-            || (pIoPortCtx->VpContext.Rflags & X86_EFL_TF)
+        if (   pVpContext->ExecutionState.DebugActive /** @todo Microsoft: Does DebugActive this only reflext DR7? */
+            || (pVpContext->Rflags & X86_EFL_TF)
             || DBGFBpIsHwIoArmed(pVM) )
         {
             /** @todo Debugging. */
@@ -1897,7 +1900,7 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
         {
             /* Frequent exits: */
             case WHvRunVpExitReasonCanceled:
-            case WHvRunVpExitReasonAlerted:
+            //case WHvRunVpExitReasonAlerted:
                 rcStrict = VINF_SUCCESS;
                 break;
 
@@ -1906,11 +1909,11 @@ VBOXSTRICTRC nemR3WinWHvRunGC(PVM pVM, PVMCPU pVCpu)
                 break;
 
             case WHvRunVpExitReasonMemoryAccess:
-                rcStrict = nemR3WinWHvHandleMemoryAccess(pVM, pVCpu, pCtx, &ExitReason.MemoryAccess);
+                rcStrict = nemR3WinWHvHandleMemoryAccess(pVM, pVCpu, pCtx, &ExitReason.MemoryAccess, &ExitReason.VpContext);
                 break;
 
             case WHvRunVpExitReasonX64IoPortAccess:
-                rcStrict = nemR3WinWHvHandleIoPortAccess(pVM, pVCpu, pCtx, &ExitReason.IoPortAccess);
+                rcStrict = nemR3WinWHvHandleIoPortAccess(pVM, pVCpu, pCtx, &ExitReason.IoPortAccess, &ExitReason.VpContext);
                 break;
 
             case WHvRunVpExitReasonX64InterruptWindow:
