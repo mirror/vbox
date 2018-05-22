@@ -183,11 +183,11 @@ sobindto(struct socket *so, uint32_t addr, uint16_t port)
 
     if (addr == INADDR_ANY && port == 0 && so->so_type != IPPROTO_UDP)
     {
-	/* TCP sockets without constraints don't need to be bound */
-	Log2(("NAT: sobind: %s guest %RTnaipv4:%d - nothing to do\n",
-	      so->so_type == IPPROTO_UDP ? "udp" : "tcp",
-	      so->so_laddr.s_addr, ntohs(so->so_lport)));
-	return 0;
+        /* TCP sockets without constraints don't need to be bound */
+        Log2(("NAT: sobind: %s guest %RTnaipv4:%d - nothing to do\n",
+              so->so_type == IPPROTO_UDP ? "udp" : "tcp",
+              so->so_laddr.s_addr, ntohs(so->so_lport)));
+        return 0;
     }
 
     RT_ZERO(self);
@@ -201,25 +201,25 @@ sobindto(struct socket *so, uint32_t addr, uint16_t port)
     status = bind(so->s, (struct sockaddr *)&self, sizeof(self));
     if (status == 0)
     {
-	Log2(("NAT: sobind: %s guest %RTnaipv4:%d to host %RTnaipv4:%d\n",
-	      so->so_type == IPPROTO_UDP ? "udp" : "tcp",
-	      so->so_laddr.s_addr, ntohs(so->so_lport), addr, ntohs(port)));
-	return 0;
+        Log2(("NAT: sobind: %s guest %RTnaipv4:%d to host %RTnaipv4:%d\n",
+              so->so_type == IPPROTO_UDP ? "udp" : "tcp",
+              so->so_laddr.s_addr, ntohs(so->so_lport), addr, ntohs(port)));
+        return 0;
     }
 
     Log2(("NAT: sobind: %s guest %RTnaipv4:%d to host %RTnaipv4:%d error %d%s\n",
-	  so->so_type == IPPROTO_UDP ? "udp" : "tcp",
-	  so->so_laddr.s_addr, ntohs(so->so_lport),
-	  addr, ntohs(port),
-	  errno, port ? " (will retry with random port)" : ""));
+          so->so_type == IPPROTO_UDP ? "udp" : "tcp",
+          so->so_laddr.s_addr, ntohs(so->so_lport),
+          addr, ntohs(port),
+          errno, port ? " (will retry with random port)" : ""));
 
     if (port) /* retry without */
-	status = sobindto(so, addr, 0);
+        status = sobindto(so, addr, 0);
 
     if (addr)
-	return status;
+        return status;
     else
-	return 0;
+        return 0;
 }
 
 
@@ -240,11 +240,11 @@ sobind(PNATState pData, struct socket *so)
     {
         int opt = 1;
         setsockopt(so->s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
-	port = so->so_lport;
+        port = so->so_lport;
     }
     else
     {
-	port = 0;
+        port = 0;
     }
 
     status = sobindto(so, addr, port);
