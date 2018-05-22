@@ -75,16 +75,6 @@
 
 
 /*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-#ifndef NEM_WIN_USE_17110_PLUS_WDK
-typedef HRESULT (WINAPI *PFNWHVGETCAPABILITY_17110)(WHV_CAPABILITY_CODE, void *, uint32_t, uint32_t *);
-typedef HRESULT (WINAPI *PFNWHVSETPARTITIONPROPERTY_17110)(WHV_PARTITION_HANDLE, WHV_PARTITION_PROPERTY_CODE, void *, uint32_t);
-# define WHvCapabilityCodeExceptionExitBitmap ((WHV_CAPABILITY_CODE)0x00000003)
-#endif
-
-
-/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** @name APIs imported from WinHvPlatform.dll
@@ -123,7 +113,7 @@ static decltype(VidGetVirtualProcessorRunningStatus) *g_pfnVidGetVirtualProcesso
 /** @} */
 
 /** The Windows build number. */
-static uint32_t g_uBuildNo = 17110;
+static uint32_t g_uBuildNo = 17134;
 
 
 
@@ -529,16 +519,7 @@ static int nemR3WinInitProbeAndLoad(bool fForced, PRTERRINFO pErrInfo)
  */
 DECLINLINE(HRESULT) WHvGetCapabilityWrapper(WHV_CAPABILITY_CODE enmCap, WHV_CAPABILITY *pOutput, uint32_t cbOutput)
 {
-#ifdef NEM_WIN_USE_17110_PLUS_WDK
     return g_pfnWHvGetCapability(enmCap, pOutput, cbOutput, NULL);
-#else
-    if (g_uBuildNo >= 17110)
-    {
-        PFNWHVGETCAPABILITY_17110 pfnNewVersion = (PFNWHVGETCAPABILITY_17110)g_pfnWHvGetCapability;
-        return pfnNewVersion(enmCap, &pOutput->HypervisorPresent, cbOutput - RT_OFFSETOF(WHV_CAPABILITY, HypervisorPresent), NULL);
-    }
-    return g_pfnWHvGetCapability(enmCap, pOutput, cbOutput);
-#endif
 }
 
 
@@ -1031,18 +1012,7 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
 DECLINLINE(HRESULT) WHvSetPartitionPropertyWrapper(WHV_PARTITION_HANDLE hPartition, WHV_PARTITION_PROPERTY_CODE enmProp,
                                                    WHV_PARTITION_PROPERTY *pInput, uint32_t cbInput)
 {
-#ifdef NEM_WIN_USE_17110_PLUS_WDK
-    return g_pfnWHvSetPartitionProperty(hPartition, enmProp, pInput, cbInput, NULL);
-#else
-    pInput->PropertyCode = enmProp;
-    if (g_uBuildNo >= 17110)
-    {
-        PFNWHVSETPARTITIONPROPERTY_17110 pfnNewVersion = (PFNWHVSETPARTITIONPROPERTY_17110)g_pfnWHvSetPartitionProperty;
-        return pfnNewVersion(hPartition, enmProp, &pInput->ExtendedVmExits,
-                             cbInput - RT_UOFFSETOF(WHV_PARTITION_PROPERTY, ExtendedVmExits));
-    }
-    return g_pfnWHvSetPartitionProperty(hPartition, pInput, cbInput);
-#endif
+    return g_pfnWHvSetPartitionProperty(hPartition, enmProp, pInput, cbInput - RT_UOFFSETOF(WHV_PARTITION_PROPERTY, ExtendedVmExits));
 }
 
 
@@ -1553,8 +1523,7 @@ static void nemR3WinLogWHvExitReason(WHV_RUN_VP_EXIT_CONTEXT const *pExitReason)
          * instructions max 32-bit wide?  Confused. */
         if (fExitInstr && pExitReason->IoPortAccess.InstructionByteCount > 0)
             Log2(("Exit: + Instruction %.*Rhxs\n",
-                  pExitReason->IoPortAccess.InstructionByteCount,
-                  &pExitReason->IoPortAccess.InstructionBytes[g_uBuildNo >= 17110 ? 3 : 0]));
+                  pExitReason->IoPortAccess.InstructionByteCount, &pExitReason->IoPortAccess.InstructionBytes[0]));
     }
 }
 # endif /* LOG_ENABLED */
@@ -1673,8 +1642,7 @@ static VBOXSTRICTRC nemR3WinWHvHandleMemoryAccess(PVM pVM, PVMCPU pVCpu, PCPUMCT
     VBOXSTRICTRC rcStrict;
     if (pMemCtx->InstructionByteCount > 0)
         rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pMemCtx->VpContext.Rip,
-                                                &pMemCtx->InstructionBytes[g_uBuildNo >= 17110 ? 3 : 0],
-                                                pMemCtx->InstructionByteCount);
+                                                &pMemCtx->InstructionBytes[0], pMemCtx->InstructionByteCount);
     else
         rcStrict = IEMExecOne(pVCpu);
     /** @todo do we need to do anything wrt debugging here?   */

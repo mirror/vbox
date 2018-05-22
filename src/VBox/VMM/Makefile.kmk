@@ -315,8 +315,8 @@ if1of ($(USERNAME),bird) # experimental.
  VBoxVMM_SDKS.win          += VBOX_NTDLL
  VMMR3/NEMR3Native-win.cpp_DEFS.amd64 = _AMD64_
  VMMR3/NEMR3Native-win.cpp_INCS = \
- 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17083.0/include/10.0.17083.0/um \
- 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17083.0/include/10.0.17083.0/shared
+ 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/um \
+ 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v10.0.17134.0/include/10.0.17134.0/shared
 endif
 
 VBoxVMM_LIBS = \
