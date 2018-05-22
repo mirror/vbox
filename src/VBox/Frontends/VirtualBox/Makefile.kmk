@@ -893,7 +893,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UIToolBar.h \
-	src/widgets/UIVMNamePathSelector.h \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
@@ -1120,7 +1119,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UIToolBar.h \
-	src/widgets/UIVMNamePathSelector.h \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
 	src/wizards/UIWizardPage.h \
@@ -1201,8 +1199,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
-	src/widgets/UIStatusBarEditorWindow.cpp \
-	src/widgets/UIVMNamePathSelector.cpp
+	src/widgets/UIStatusBarEditorWindow.cpp
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VirtualBox_QT_MOCSRCS += \
@@ -1273,8 +1270,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
-	src/widgets/UIStatusBarEditorWindow.cpp \
-	src/widgets/UIVMNamePathSelector.cpp
+	src/widgets/UIStatusBarEditorWindow.cpp
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
   VBoxGlobal_QT_MOCSRCS += \
@@ -1572,7 +1568,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBar.cpp \
-	src/widgets/UIVMNamePathSelector.cpp \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
@@ -1856,7 +1851,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBar.cpp \
-	src/widgets/UIVMNamePathSelector.cpp \
 	src/widgets/UIWarningPane.cpp \
 	src/wizards/UIWizard.cpp \
 	src/wizards/UIWizardPage.cpp \
