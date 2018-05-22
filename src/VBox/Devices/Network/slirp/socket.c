@@ -172,86 +172,83 @@ sofree(PNATState pData, struct socket *so)
 }
 
 
-int
-sobind(PNATState pData, struct socket *so)
+/*
+ * Worker for sobind() below.
+ */
+static int
+sobindto(struct socket *so, uint32_t addr, uint16_t port)
 {
-    bool fSamePorts = !!(pData->i32AliasMode & PKT_ALIAS_SAME_PORTS);
     struct sockaddr_in self;
-    int opt;
-    int binderr;
-    int ret;
+    int status;
 
-    /* do we need to bind the socket to specific host address/port? */
-    if (pData->bindIP.s_addr == INADDR_ANY && !fSamePorts)
-        return 0;
-
-    opt = 1;
-    setsockopt(so->s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
+    if (addr == INADDR_ANY && port == 0 && so->so_type != IPPROTO_UDP)
+    {
+	/* TCP sockets without constraints don't need to be bound */
+	Log2(("NAT: sobind: %s guest %RTnaipv4:%d - nothing to do\n",
+	      so->so_type == IPPROTO_UDP ? "udp" : "tcp",
+	      so->so_laddr.s_addr, ntohs(so->so_lport)));
+	return 0;
+    }
 
     RT_ZERO(self);
 #ifdef RT_OS_DARWIN
     self.sin_len = sizeof(self);
 #endif
     self.sin_family = AF_INET;
-    self.sin_addr = pData->bindIP;
-    self.sin_port = fSamePorts ? so->so_lport : 0;
+    self.sin_addr.s_addr = addr;
+    self.sin_port = port;
 
-    Log2(("NAT: binding guest %RTnaipv4:%d to host %RTnaipv4:%d\n",
-          so->so_laddr.s_addr, ntohs(so->so_lport),
-          self.sin_addr.s_addr, ntohs(self.sin_port)));
-
-    ret = bind(so->s, (struct sockaddr *)&self, sizeof(self));
-    if (ret == 0)
+    status = bind(so->s, (struct sockaddr *)&self, sizeof(self));
+    if (status == 0)
     {
-        Log2(("NAT: ... bind ok\n"));
-        return 0;
+	Log2(("NAT: sobind: %s guest %RTnaipv4:%d to host %RTnaipv4:%d\n",
+	      so->so_type == IPPROTO_UDP ? "udp" : "tcp",
+	      so->so_laddr.s_addr, ntohs(so->so_lport), addr, ntohs(port)));
+	return 0;
     }
 
-    if (self.sin_port != 0)
+    Log2(("NAT: sobind: %s guest %RTnaipv4:%d to host %RTnaipv4:%d error %d%s\n",
+	  so->so_type == IPPROTO_UDP ? "udp" : "tcp",
+	  so->so_laddr.s_addr, ntohs(so->so_lport),
+	  addr, ntohs(port),
+	  errno, port ? " (will retry with random port)" : ""));
+
+    if (port) /* retry without */
+	status = sobindto(so, addr, 0);
+
+    if (addr)
+	return status;
+    else
+	return 0;
+}
+
+
+/*
+ * Bind the socket to specific host address and/or port if necessary.
+ * We also always bind udp sockets to force the local port to be
+ * allocated and known in advance.
+ */
+int
+sobind(PNATState pData, struct socket *so)
+{
+    uint32_t addr = pData->bindIP.s_addr; /* may be INADDR_ANY */
+    bool fSamePorts = !!(pData->i32AliasMode & PKT_ALIAS_SAME_PORTS);
+    uint16_t port;
+    int status;
+
+    if (fSamePorts)
     {
-        if (pData->bindIP.s_addr != INADDR_ANY)
-        {
-            Log2(("NAT: failed to bind to %RTnaipv4:%d (bindip,sameports),"
-                  " retrying with random port\n",
-                  self.sin_addr.s_addr, self.sin_port));
-
-            /*
-             * don't try to guess why bind() failed, retry without
-             * requesting the same port port
-             */
-            self.sin_port = 0;
-
-            ret = bind(so->s, (struct sockaddr *)&self, sizeof(self));
-            if (ret == 0)   /* bindIP ok (but port is not the same) */
-            {
-                Log2(("NAT: ... bind ok (without sameports)\n"));
-                return 0;
-            }
-        }
-        else
-        {
-            Log2(("NAT: failed to bind to 0.0.0.0:%d (sameports),"
-                  " ignoring sameports\n",
-                  self.sin_port));
-
-            /* it's ok if we failed to get the same port */
-            return 0;
-        }
+        int opt = 1;
+        setsockopt(so->s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
+	port = so->so_lport;
+    }
+    else
+    {
+	port = 0;
     }
 
-    binderr = errno;
-
-    Log2(("NAT: failed to bind to %RTnaipv4 (bindip)\n",
-          self.sin_addr.s_addr));
-
-    closesocket(so->s);
-    so->s = -1;
-#ifdef RT_OS_WINDOWS
-    WSASetLastError(binderr);
-#else
-    errno = binderr;
-#endif
-    return -1;
+    status = sobindto(so, addr, port);
+    return status;
 }
 
 
