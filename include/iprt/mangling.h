@@ -2263,6 +2263,7 @@
 # define RTTimeImplode                                  RT_MANGLER(RTTimeImplode)
 # define RTTimeIsLeapYear                               RT_MANGLER(RTTimeIsLeapYear)
 # define RTTimeLocalDeltaNano                           RT_MANGLER(RTTimeLocalDeltaNano)
+# define RTTimeLocalDeltaNanoFor                        RT_MANGLER(RTTimeLocalDeltaNanoFor)
 # define RTTimeLocalExplode                             RT_MANGLER(RTTimeLocalExplode)
 # define RTTimeLocalNormalize                           RT_MANGLER(RTTimeLocalNormalize)
 # define RTTimeLocalNow                                 RT_MANGLER(RTTimeLocalNow)

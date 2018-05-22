@@ -722,7 +722,7 @@ RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime);
 RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime);
 
 /**
- * Gets the delta between UTC and local time.
+ * Gets the current delta between UTC and local time.
  *
  * @code
  *      RTTIMESPEC LocalTime;
@@ -732,6 +732,20 @@ RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime);
  * @returns Returns the nanosecond delta between UTC and local time.
  */
 RTDECL(int64_t) RTTimeLocalDeltaNano(void);
+
+/**
+ * Gets the delta between UTC and local time at the given time.
+ *
+ * @code
+ *      RTTIMESPEC LocalTime;
+ *      RTTimeNow(&LocalTime);
+ *      RTTimeSpecAddNano(&LocalTime, RTTimeLocalDeltaNanoFor(&LocalTime));
+ * @endcode
+ *
+ * @param   pTimeSpec   The time spec giving the time to get the delta for.
+ * @returns Returns the nanosecond delta between UTC and local time.
+ */
+RTDECL(int64_t) RTTimeLocalDeltaNanoFor(PCRTTIMESPEC pTimeSpec);
 
 /**
  * Explodes a time spec to the localized timezone.

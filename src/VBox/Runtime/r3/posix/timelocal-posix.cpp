@@ -147,7 +147,7 @@ static int64_t rtTimeLocalUTCOffset(PCRTTIMESPEC pTime, bool fCurrentTime)
 
 
 /**
- * Gets the delta between UTC and local time.
+ * Gets the current delta between UTC and local time.
  *
  * @code
  *      RTTIMESPEC LocalTime;
@@ -160,6 +160,25 @@ RTDECL(int64_t) RTTimeLocalDeltaNano(void)
 {
     RTTIMESPEC Time;
     return rtTimeLocalUTCOffset(RTTimeNow(&Time), true /* current time, skip fallback */);
+}
+
+
+/**
+ * Gets the delta between UTC and local time at the given time.
+ *
+ * @code
+ *      RTTIMESPEC LocalTime;
+ *      RTTimeNow(&LocalTime);
+ *      RTTimeSpecAddNano(&LocalTime, RTTimeLocalDeltaNanoFor(&LocalTime));
+ * @endcode
+ *
+ * @param   pTimeSpec   The time spec giving the time to get the delta for.
+ * @returns Returns the nanosecond delta between UTC and local time.
+ */
+RTDECL(int64_t) RTTimeLocalDeltaNanoFor(PCRTTIMESPEC pTimeSpec)
+{
+    AssertPtr(pTimeSpec);
+    return rtTimeLocalUTCOffset(pTimeSpec, false /* current time, skip fallback */);
 }
 
 
