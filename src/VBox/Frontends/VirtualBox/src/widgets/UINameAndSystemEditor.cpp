@@ -23,14 +23,13 @@
 # include <QComboBox>
 # include <QGridLayout>
 # include <QLabel>
-# include <QLineEdit>
 # include <QVBoxLayout>
 
 /* GUI includes: */
+# include "QILineEdit.h"
 # include "VBoxGlobal.h"
 # include "UIFilePathSelector.h"
 # include "UINameAndSystemEditor.h"
-# include "UIVMNamePathSelector.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -53,8 +52,10 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent, bool fChooseLocat
     , m_pLabelFamily(0)
     , m_pLabelType(0)
     , m_pIconType(0)
-    , m_pNamePathLabel(0)
-    , m_pNamePathSelector(0)
+    , m_pNameLabel(0)
+    , m_pPathLabel(0)
+    , m_pNameLineEdit(0)
+    , m_pPathSelector(0)
     , m_pComboFamily(0)
     , m_pComboType(0)
 {
@@ -64,23 +65,23 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent, bool fChooseLocat
 
 QString UINameAndSystemEditor::name() const
 {
-    if (!m_pNamePathSelector)
+    if (!m_pNameLineEdit)
         return QString();
-    return m_pNamePathSelector->name();
+    return m_pNameLineEdit->text();
 }
 
 QString UINameAndSystemEditor::path() const
 {
-    if (!m_pNamePathSelector)
+    if (!m_pPathSelector)
         return vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-    return m_pNamePathSelector->path();
+    return m_pPathSelector->path();
 }
 
 void UINameAndSystemEditor::setName(const QString &strName)
 {
-    if (!m_pNamePathSelector)
+    if (!m_pNameLineEdit)
         return;
-    m_pNamePathSelector->setName(strName);
+    m_pNameLineEdit->setText(strName);
 }
 
 CGuestOSType UINameAndSystemEditor::type() const
@@ -118,7 +119,8 @@ void UINameAndSystemEditor::retranslateUi()
 {
     m_pLabelFamily->setText(tr("&Type:"));
     m_pLabelType->setText(tr("&Version:"));
-    m_pNamePathLabel->setText(tr("Path/Name:"));
+    m_pNameLabel->setText(tr("Name:"));
+    m_pPathLabel->setText(tr("Path:"));
 
     m_pComboFamily->setWhatsThis(tr("Selects the operating system family that "
                                     "you plan to install into this virtual machine."));
@@ -228,20 +230,33 @@ void UINameAndSystemEditor::prepareWidgets()
         /* Configure main-layout: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
 
-        m_pNamePathLabel = new QLabel;
-        if (m_pNamePathLabel)
+        m_pNameLabel = new QLabel;
+        if (m_pNameLabel)
         {
-            m_pNamePathLabel->setAlignment(Qt::AlignRight);
-            m_pNamePathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            pMainLayout->addWidget(m_pNamePathLabel, 0, 0, 1, 1);
+            m_pNameLabel->setAlignment(Qt::AlignRight);
+            m_pNameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+            pMainLayout->addWidget(m_pNameLabel, 0, 0, 1, 1);
         }
-        m_pNamePathSelector = new UIVMNamePathSelector;
-        if (m_pNamePathSelector)
+        m_pNameLineEdit = new QILineEdit;
+        if (m_pNameLineEdit)
         {
-            m_pNamePathSelector->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-            m_pNamePathSelector->setPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-            pMainLayout->addWidget(m_pNamePathSelector, 0, 1, 1, 2);
-            setFocusProxy(m_pNamePathSelector);
+            pMainLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
+        }
+
+        m_pPathLabel = new QLabel;
+        if (m_pPathLabel)
+        {
+            m_pPathLabel->setAlignment(Qt::AlignRight);
+            pMainLayout->addWidget(m_pPathLabel, 1, 0, 1, 1);
+        }
+
+        m_pPathSelector = new UIFilePathSelector;
+        if (m_pPathSelector)
+        {
+            pMainLayout->addWidget(m_pPathSelector, 1, 1, 1, 1);
+            QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+            m_pPathSelector->setPath(strDefaultMachineFolder);
+            m_pPathSelector->setDefaultPath(strDefaultMachineFolder);
         }
 
         /* Create VM OS family label: */
@@ -252,7 +267,7 @@ void UINameAndSystemEditor::prepareWidgets()
             m_pLabelFamily->setAlignment(Qt::AlignRight);
             m_pLabelFamily->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
             /* Add VM OS family label into main-layout: */
-            pMainLayout->addWidget(m_pLabelFamily, 1, 0);
+            pMainLayout->addWidget(m_pLabelFamily, 2, 0);
         }
 
         /* Create VM OS family combo: */
@@ -263,7 +278,7 @@ void UINameAndSystemEditor::prepareWidgets()
             m_pComboFamily->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             m_pLabelFamily->setBuddy(m_pComboFamily);
             /* Add VM OS family combo into main-layout: */
-            pMainLayout->addWidget(m_pComboFamily, 1, 1);
+            pMainLayout->addWidget(m_pComboFamily, 2, 1);
         }
 
         /* Create VM OS type label: */
@@ -274,7 +289,7 @@ void UINameAndSystemEditor::prepareWidgets()
             m_pLabelType->setAlignment(Qt::AlignRight);
             m_pLabelType->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
             /* Add VM OS type label into main-layout: */
-            pMainLayout->addWidget(m_pLabelType, 2, 0);
+            pMainLayout->addWidget(m_pLabelType, 3, 0);
         }
 
         /* Create VM OS type combo: */
@@ -285,7 +300,7 @@ void UINameAndSystemEditor::prepareWidgets()
             m_pComboType->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             m_pLabelType->setBuddy(m_pComboType);
             /* Add VM OS type combo into main-layout: */
-            pMainLayout->addWidget(m_pComboType, 2, 1);
+            pMainLayout->addWidget(m_pComboType, 3, 1);
         }
 
         /* Create sub-layout: */
@@ -304,7 +319,7 @@ void UINameAndSystemEditor::prepareWidgets()
             /* Add stretch to sub-layout: */
             pLayoutIcon->addStretch();
             /* Add sub-layout into main-layout: */
-            pMainLayout->addLayout(pLayoutIcon, 1, 2, 2, 1);
+            pMainLayout->addLayout(pLayoutIcon, 2, 2, 2, 1);
         }
     }
 
@@ -333,9 +348,9 @@ void UINameAndSystemEditor::prepareFamilyCombo()
 void UINameAndSystemEditor::prepareConnections()
 {
     /* Prepare connections: */
-    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigNameChanged,
+    connect(m_pNameLineEdit, &QILineEdit::textChanged,
             this, &UINameAndSystemEditor::sigNameChanged);
-    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigPathChanged,
+    connect(m_pPathSelector, &UIFilePathSelector::pathChanged,
             this, &UINameAndSystemEditor::sigPathChanged);
     connect(m_pComboFamily, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UINameAndSystemEditor::sltFamilyChanged);
@@ -345,14 +360,7 @@ void UINameAndSystemEditor::prepareConnections()
 
 void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidatorString)
 {
-    if (!m_pNamePathSelector)
+    if (!m_pNameLineEdit)
         return;
-    m_pNamePathSelector->setNameFieldValidator(strValidatorString);
-}
-
-void UINameAndSystemEditor::setMachineFolder(const QString &strPath)
-{
-    if (!m_pNamePathSelector)
-        return;
-    m_pNamePathSelector->setToolTipText(strPath);
+    m_pNameLineEdit->setValidator(new QRegExpValidator(QRegExp(strValidatorString), this));
 }

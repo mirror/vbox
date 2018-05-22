@@ -233,9 +233,6 @@ void UIWizardNewVMPage1::composeMachineFilePath()
     const QFileInfo fileInfo(m_strMachineFilePath);
     m_strMachineFolder = fileInfo.absolutePath();
     m_strMachineBaseName = fileInfo.completeBaseName();
-
-    if (m_pNameAndSystemEditor)
-        m_pNameAndSystemEditor->setMachineFolder(m_strMachineFolder);
 }
 
 bool UIWizardNewVMPage1::createMachineFolder()

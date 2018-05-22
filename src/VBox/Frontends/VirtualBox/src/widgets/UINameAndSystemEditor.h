@@ -32,10 +32,9 @@
 /* Forward declarations: */
 class QComboBox;
 class QLabel;
-class QLineEdit;
+class QILineEdit;
 class QString;
 class UIFilePathSelector;
-class UIVMNamePathSelector;
 
 /** QWidget subclass providing complex editor for basic VM parameters. */
 class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public QIWithRetranslateUI<QWidget>
@@ -73,9 +72,6 @@ public:
     void setType(const CGuestOSType &enmType);
 
     void setNameFieldValidator(const QString &strValidatorString);
-
-    /** Forwards the machine name to UIVMNamePathSelector member instance. */
-    void setMachineFolder(const QString &strPath);
 
 protected:
 
@@ -124,8 +120,10 @@ private:
     /** Holds the VM OS type icon instance. */
     QLabel                 *m_pIconType;
 
-    QLabel                 *m_pNamePathLabel;
-    UIVMNamePathSelector   *m_pNamePathSelector;
+    QLabel                 *m_pNameLabel;
+    QLabel                 *m_pPathLabel;
+    QILineEdit             *m_pNameLineEdit;
+    UIFilePathSelector     *m_pPathSelector;
     /** Holds the VM OS family combo instance. */
     QComboBox              *m_pComboFamily;
     /** Holds the VM OS type combo instance. */

@@ -111,6 +111,9 @@ public:
       * @note If nothing set it's generated automatically. */
     void setToolTip(const QString &strToolTip);
 
+    void setDefaultPath(const QString &strDefaultPath);
+    const QString& defaultPath() const;
+
 public slots:
 
     /** Defines the @a strPath and @a fRefreshText after that. */
@@ -203,6 +206,9 @@ private:
 
     /** Holds the copy action instance. */
     QAction *m_pCopyAction;
+
+    /** Path is set to m_strDefaultPath when it is reset. */
+    QString m_strDefaultPath;
 };
 
 #endif /* !___UIFilePathSelector_h___ */

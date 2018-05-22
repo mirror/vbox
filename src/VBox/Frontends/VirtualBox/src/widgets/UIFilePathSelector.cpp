@@ -175,6 +175,20 @@ void UIFilePathSelector::setToolTip(const QString &strToolTip)
     m_fToolTipOverriden = !toolTip().isEmpty();
 }
 
+void UIFilePathSelector::setDefaultPath(const QString &strDefaultPath)
+{
+    if (m_strDefaultPath == strDefaultPath)
+        return;
+    m_strDefaultPath = strDefaultPath;
+    if (currentIndex() == ResetId)
+        setPath(m_strDefaultPath);
+}
+
+const QString& UIFilePathSelector::defaultPath() const
+{
+    return m_strDefaultPath;
+}
+
 void UIFilePathSelector::setPath(const QString &strPath, bool fRefreshText /* = true */)
 {
     m_strPath = strPath.isEmpty() ? QString::null :
@@ -320,7 +334,10 @@ void UIFilePathSelector::onActivated(int iIndex)
         }
         case ResetId:
         {
-            changePath(QString::null);
+            if (m_strDefaultPath.isEmpty())
+                changePath(QString::null);
+            else
+                changePath(m_strDefaultPath);
             break;
         }
         default:
