@@ -90,7 +90,8 @@ chown -R root:admin /Applications/VirtualBox.app
 # Workaround for 10.11 beta 6 in which the above chown strips the set-uid-to-root bit.
 #
 SET_UID_BINARIES="VBoxNetAdpCtl"
-SET_UID_BINARIES="${SET_UID_BINARIES} VBoxHeadless VirtualBox VirtualBoxVM VBoxNetDHCP VBoxNetNAT" # WITH_HARDENING
+SET_UID_BINARIES="${SET_UID_BINARIES} VBoxHeadless VirtualBoxVM VBoxNetDHCP VBoxNetNAT" # WITH_HARDENING
+SET_UID_BINARIES="${SET_UID_BINARIES} VirtualBox"                                       # WITH_HARDENING WITH_SHARED_LIBRARY
 for bin in ${SET_UID_BINARIES}; do
     chmod u+s "/Applications/VirtualBox.app/Contents/MacOS/${bin}"
 done

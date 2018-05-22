@@ -796,10 +796,13 @@ endif
 		$(VBOX_PATH_DI_SRC)/VirtualBox/PkgBuildComponent.plist
 	@# Copy the resources.
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/preflight                         $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/
-ifdef VBOX_WITH_HARDENING
+if defined(VBOX_WITH_HARDENING) && !defined(VBOX_GUI_WITH_SHARED_LIBRARY)
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/postflight                        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/
 else
-	$(SED) -s '/WITH_HARDENING/d' -o $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight $(VBOX_PATH_DI_SRC)/VirtualBox/postflight
+	$(SED)	$(if-expr !defined(VBOX_WITH_HARDENING),-e '/WITH_HARDENING/d',) \
+		$(if-expr !defined(VBOX_GUI_WITH_SHARED_LIBRARY),-e '/WITH_SHARED_LIBRARY/d',) \
+		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight \
+		$(VBOX_PATH_DI_SRC)/VirtualBox/postflight
 	$(CHMOD) 0755 $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight
 endif
 	@# Build the package.
