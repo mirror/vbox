@@ -247,6 +247,7 @@ void UINameAndSystemEditor::prepareWidgets()
         if (m_pPathLabel)
         {
             m_pPathLabel->setAlignment(Qt::AlignRight);
+            m_pPathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
             pMainLayout->addWidget(m_pPathLabel, 1, 0, 1, 1);
         }
 

@@ -20,15 +20,16 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Global includes: */
-# include <QGridLayout>
 # include <QButtonGroup>
-# include <QGroupBox>
-# include <QLineEdit>
 # include <QCheckBox>
+# include <QGridLayout>
+# include <QGroupBox>
+# include <QLabel>
 # include <QRadioButton>
 
 /* Local includes: */
-# include "UIVMNamePathSelector.h"
+# include "QILineEdit.h"
+# include "UIFilePathSelector.h"
 # include "UIWizardCloneVMPageExpert.h"
 # include "UIWizardCloneVM.h"
 
@@ -46,13 +47,39 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
     {
         m_pNameCnt = new QGroupBox(this);
         {
-            QVBoxLayout *pNameCntLayout = new QVBoxLayout(m_pNameCnt);
+            QGridLayout *pNameCntLayout = new QGridLayout(m_pNameCnt);
             {
-                m_pNamePathSelector = new UIVMNamePathSelector(m_pNameCnt);
+                pNameCntLayout->setContentsMargins(0, 0, 0, 0);
+
+                m_pNameLabel = new QLabel;
+                if (m_pNameLabel)
                 {
-                    m_pNamePathSelector->setName(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
+                    m_pNameLabel->setAlignment(Qt::AlignRight);
+                    m_pNameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                    pNameCntLayout->addWidget(m_pNameLabel, 0, 0, 1, 1);
+
                 }
-                pNameCntLayout->addWidget(m_pNamePathSelector);
+                m_pNameLineEdit = new QILineEdit(m_pNameCnt);
+                if (m_pNameLineEdit)
+                {
+                    m_pNameLineEdit->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
+                    pNameCntLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
+                }
+
+                m_pPathLabel = new QLabel(this);
+                if (m_pPathLabel)
+                {
+                    m_pPathLabel->setAlignment(Qt::AlignRight);
+                    m_pPathLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                    pNameCntLayout->addWidget(m_pPathLabel, 1, 0, 1, 1);
+                }
+
+                m_pPathSelector = new UIFilePathSelector(this);
+                if (m_pPathSelector)
+                {
+                    pNameCntLayout->addWidget(m_pPathSelector, 1, 1, 1, 1);
+                    m_pPathSelector->setPath(m_strDefaultPath);
+                }
             }
         }
         m_pCloneTypeCnt = new QGroupBox(this);
@@ -102,13 +129,13 @@ UIWizardCloneVMPageExpert::UIWizardCloneVMPageExpert(const QString &strOriginalN
     }
 
     /* Setup connections: */
-    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigNameChanged,
+    connect(m_pNameLineEdit, &QILineEdit::textChanged,
             this, &UIWizardCloneVMPageExpert::completeChanged);
-    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigPathChanged,
+    connect(m_pPathSelector, &UIFilePathSelector::pathChanged,
             this, &UIWizardCloneVMPageExpert::completeChanged);
-    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigNameChanged,
+    connect(m_pNameLineEdit, &QILineEdit::textChanged,
             this, &UIWizardCloneVMPageExpert::sltNameChanged);
-    connect(m_pNamePathSelector, &UIVMNamePathSelector::sigPathChanged,
+    connect(m_pPathSelector, &UIFilePathSelector::pathChanged,
             this, &UIWizardCloneVMPageExpert::sltPathChanged);
     connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
             this, &UIWizardCloneVMPageExpert::sltButtonClicked);
@@ -133,7 +160,7 @@ void UIWizardCloneVMPageExpert::sltButtonClicked(QAbstractButton *pButton)
 void UIWizardCloneVMPageExpert::retranslateUi()
 {
     /* Translate widgets: */
-    m_pNameCnt->setTitle(UIWizardCloneVM::tr("New machine &name"));
+    m_pNameCnt->setTitle(UIWizardCloneVM::tr("New machine &name and path"));
     m_pCloneTypeCnt->setTitle(UIWizardCloneVM::tr("Clone type"));
     m_pFullCloneRadio->setText(UIWizardCloneVM::tr("&Full Clone"));
     m_pLinkedCloneRadio->setText(UIWizardCloneVM::tr("&Linked Clone"));
@@ -143,6 +170,8 @@ void UIWizardCloneVMPageExpert::retranslateUi()
     m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
     m_pReinitMACsCheckBox->setToolTip(UIWizardCloneVM::tr("When checked a new unique MAC address will be assigned to all configured network cards."));
     m_pReinitMACsCheckBox->setText(UIWizardCloneVM::tr("&Reinitialize the MAC address of all network cards"));
+    m_pNameLabel->setText(UIWizardCloneVM::tr("Name:"));
+    m_pPathLabel->setText(UIWizardCloneVM::tr("Path:"));
 }
 
 void UIWizardCloneVMPageExpert::initializePage()
@@ -153,14 +182,14 @@ void UIWizardCloneVMPageExpert::initializePage()
 
 bool UIWizardCloneVMPageExpert::isComplete() const
 {
-    if (!m_pNamePathSelector)
+    if (!m_pPathSelector)
         return false;
 
-    QString path = m_pNamePathSelector->path();
+    QString path = m_pPathSelector->path();
     if (path.isEmpty())
         return false;
     /* Make sure VM name feat the rules: */
-    QString strName = m_pNamePathSelector->name().trimmed();
+    QString strName = m_pNameLineEdit->text().trimmed();
     return !strName.isEmpty() && strName != m_strOriginalName;
 }
 
