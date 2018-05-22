@@ -61,6 +61,17 @@ typedef uint32_t DWORD; /* for winerror.h constants */
 *********************************************************************************************************************************/
 static uint64_t (*g_pfnHvlInvokeHypercall)(uint64_t uCallInfo, uint64_t HCPhysInput, uint64_t HCPhysOutput);
 
+/**
+ * WinHvr.sys!WinHvDepositMemory
+ *
+ * This API will try allocates cPages on IdealNode and deposit it to the
+ * hypervisor for use with the given partition.  The memory will be freed when
+ * VID.SYS calls WinHvWithdrawAllMemory when the partition is cleanedup.
+ *
+ * Apparently node numbers above 64 has a different meaning.
+ */
+static NTSTATUS (*g_pfnWinHvDepositMemory)(uintptr_t idPartition, size_t cPages, uintptr_t IdealNode, size_t *pcActuallyAdded);
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -71,7 +82,7 @@ NEM_TMPL_STATIC int  nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPh
 NEM_TMPL_STATIC int  nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx);
 NEM_TMPL_STATIC int  nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat);
 DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput,
-                                                     void *pvOutput, uint32_t cbOutput);
+                                             void *pvOutput, uint32_t cbOutput);
 
 
 /*
@@ -99,13 +110,18 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
     /*
      * We want to perform hypercalls here.  The NT kernel started to expose a very low
      * level interface to do this thru somewhere between build 14271 and 16299.  Since
-     * we need build 17083 to get anywhere at all, the exact build is not relevant here.
+     * we need build 17134 to get anywhere at all, the exact build is not relevant here.
+     *
+     * We also need to deposit memory to the hypervisor for use with partition (page
+     * mapping structures, stuff).
      */
     RTDBGKRNLINFO hKrnlInfo;
     rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0);
     if (RT_SUCCESS(rc))
     {
         rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "HvlInvokeHypercall", (void **)&g_pfnHvlInvokeHypercall);
+        if (RT_SUCCESS(rc))
+            rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, "winhvr.sys", "WinHvDepositMemory", (void **)&g_pfnWinHvDepositMemory);
         RTR0DbgKrnlInfoRelease(hKrnlInfo);
         if (RT_SUCCESS(rc))
         {
