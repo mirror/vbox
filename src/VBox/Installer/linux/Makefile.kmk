@@ -253,8 +253,13 @@ ifdef VBOX_WITH_QTGUI
  VBOX_LNX_STRIP_BIN += \
  	VBoxKeyboard.so \
  	VirtualBox \
- 	$(if $(VBOX_WITH_HARDENING),VirtualBox.so) \
+ 	$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VirtualBoxVM) \
+ 	$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VBoxGlobal.so) \
  	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so)
+ ifdef VBOX_WITH_HARDENING
+  VBOX_LNX_STRIP_BIN += \
+ 	$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VirtualBoxVM.so,VirtualBox.so)
+ endif
  VBOX_LNX_NO_STRIP += \
  	virtualbox.desktop \
  	virtualbox.xml \
@@ -402,6 +407,7 @@ $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX
 		-e "s;_BUILD_;$(date-utc );g" \
 		-e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
 		-e "s;_HARDENED_;$(VBOX_WITH_HARDENING);g" \
+		-e "s;_GUI_WITH_SHARED_LIBRARY_;$(VBOX_GUI_WITH_SHARED_LIBRARY);g" \
 		-e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
 		-e "s;_USERNAME_;$(USERNAME);g" \
 		-e "s;_INSTALLATION_DIR_;$(VBOX_LNX_APP_PRIVATE);g" \
