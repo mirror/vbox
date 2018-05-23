@@ -84,8 +84,8 @@ def getHostnameFqdn():
     except:
         return None;
 
-    #if '.' in sHostname or sHostname.startswith('localhost'):
-    #    return sHostname;
+    if '.' in sHostname or sHostname.startswith('localhost'):
+        return sHostname;
 
     #
     # Somewhat misconfigured system, needs expensive approach to guessing FQDN.
