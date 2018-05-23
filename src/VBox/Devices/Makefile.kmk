@@ -819,6 +819,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_CLEAN       += \
  	$(VBoxDD_0_OUTDIR)/vboxaml.hex \
  	$(VBoxDD_0_OUTDIR)/vboxaml.aml \
+ 	$(VBoxDD_0_OUTDIR)/vboxaml.aml.tmp \
  	$(VBoxDD_0_OUTDIR)/vboxssdt_standard.hex \
  	$(VBoxDD_0_OUTDIR)/vboxssdt_standard.aml \
  	$(VBoxDD_0_OUTDIR)/vboxssdt_standard.aml.tmp \
