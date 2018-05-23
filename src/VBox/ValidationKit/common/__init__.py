@@ -31,5 +31,6 @@ __version__ = "$Revision$"
 
 from common import constants;
 from common import utils;
+from common import netutils;
 from common import webutils;
 

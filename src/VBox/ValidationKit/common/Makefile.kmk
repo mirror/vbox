@@ -37,6 +37,7 @@ testboxscript-common_INST = $(INST_TESTBOXSCRIPT)common/
 testboxscript-common_SOURCES = \
 	__init__.py \
 	utils.py \
+	netutils.py \
 	webutils.py \
 	constants/__init__.py=>constants/__init__.py \
 	constants/tbreq.py=>constants/tbreq.py \
