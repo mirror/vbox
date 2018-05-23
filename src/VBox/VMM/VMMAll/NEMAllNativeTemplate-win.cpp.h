@@ -1605,6 +1605,104 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageCpuId(PVMCPU pVCpu, HV_X64_CPU
 }
 
 
+/**
+ * Deals with MSR intercept message.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context per CPU structure.
+ * @param   pMsg            The message.
+ * @param   pCtx            The register context.
+ * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
+ */
+NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_INTERCEPT_MESSAGE const *pMsg,
+                                                      PCPUMCTX pCtx, PGVMCPU pGVCpu)
+{
+    /*
+     * A wee bit of sanity first.
+     */
+    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
+    Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
+           || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
+
+    /*
+     * Check CPL as that's common to both RDMSR and WRMSR.
+     */
+    VBOXSTRICTRC rcStrict;
+    if (pMsg->Header.CsSegment.DescriptorPrivilegeLevel == 0)
+    {
+        /*
+         * Handle writes.
+         */
+        if (pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE)
+        {
+            rcStrict = CPUMSetGuestMsr(pVCpu, pMsg->MsrNummber, RT_MAKE_U64((uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx));
+            Log4(("MsrExit/%u: %04x:%08RX64: WRMSR %08x, %08x:%08x -> %Rrc\n",
+                  pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
+                  pMsg->MsrNummber, (uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
+            if (rcStrict == VINF_SUCCESS)
+            {
+                nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
+                nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+                return VINF_SUCCESS;
+            }
+#ifndef IN_RING3
+            /* move to ring-3 and handle the trap/whatever there, as we want to LogRel this. */
+            if (rcStrict == VERR_CPUM_RAISE_GP_0)
+                rcStrict = VINF_CPUM_R3_MSR_WRITE;
+            return rcStrict;
+#else
+            LogRel(("MsrExit/%u: %04x:%08RX64: WRMSR %08x, %08x:%08x -> %Rrc!\n",
+                    pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
+                    pMsg->MsrNummber, (uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
+#endif
+        }
+        /*
+         * Handle reads.
+         */
+        else
+        {
+            uint64_t uValue = 0;
+            rcStrict = CPUMQueryGuestMsr(pVCpu, pMsg->MsrNummber, &uValue);
+            Log4(("MsrExit/%u: %04x:%08RX64: RDMSR %08x -> %08RX64 / %Rrc\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
+                  pMsg->Header.Rip, pMsg->MsrNummber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
+            if (rcStrict == VINF_SUCCESS)
+            {
+                nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
+                nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+                return VINF_SUCCESS;
+            }
+#ifndef IN_RING3
+            /* move to ring-3 and handle the trap/whatever there, as we want to LogRel this. */
+            if (rcStrict == VERR_CPUM_RAISE_GP_0)
+                rcStrict = VINF_CPUM_R3_MSR_READ;
+            return rcStrict;
+#else
+            LogRel(("MsrExit/%u: %04x:%08RX64: RDMSR %08x -> %08RX64 / %Rrc\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
+                    pMsg->Header.Rip, pMsg->MsrNummber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
+#endif
+        }
+    }
+    else if (pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE)
+        Log4(("MsrExit/%u: CPL %u -> #GP(0); WRMSR %08x, %08x:%08x\n", pVCpu->idCpu,
+              pMsg->Header.CsSegment.DescriptorPrivilegeLevel, pMsg->MsrNummber, (uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx ));
+    else
+        Log4(("MsrExit/%u: CPL %u -> #GP(0); RDMSR %08x\n",
+              pVCpu->idCpu, pMsg->Header.CsSegment.DescriptorPrivilegeLevel, pMsg->MsrNummber));
+
+    /*
+     * If we get down here, we're supposed to #GP(0).
+     */
+    rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "NMI");
+    if (rcStrict == VINF_SUCCESS)
+    {
+        rcStrict = IEMInjectTrap(pVCpu, X86_XCPT_GP, TRPM_TRAP, 0, 0, 0);
+        if (rcStrict == VINF_IEM_RAISED_XCPT)
+            rcStrict = VINF_SUCCESS;
+        else if (rcStrict != VINF_SUCCESS)
+            Log4(("MsrExit/%u: Injecting #GP(0) failed: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
+    }
+    return rcStrict;
+}
 
 
 /**
@@ -1685,6 +1783,10 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64CpuIdIntercept));
                 return nemHCWinHandleMessageCpuId(pVCpu, &pMsg->X64CpuIdIntercept, pCtx);
 
+            case HvMessageTypeX64MsrIntercept:
+                Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64MsrIntercept));
+                return nemHCWinHandleMessageMsr(pVCpu, &pMsg->X64MsrIntercept, pCtx, pGVCpu);
+
             case HvMessageTypeUnrecoverableException:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64InterceptHeader));
                 return nemHCWinHandleMessageUnrecoverableException(pVCpu, &pMsg->X64InterceptHeader, pCtx);
@@ -1696,7 +1798,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
                 AssertLogRelMsgFailedReturn(("Message type %#x not implemented!\n%.32Rhxd\n", pMsg->Header.MessageType, pMsg),
                                             VERR_INTERNAL_ERROR_2);
 
-            case HvMessageTypeX64MsrIntercept:
             case HvMessageTypeX64ExceptionIntercept:
             case HvMessageTypeX64ApicEoi:
             case HvMessageTypeX64LegacyFpError:

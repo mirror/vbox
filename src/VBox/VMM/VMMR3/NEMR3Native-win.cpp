@@ -745,6 +745,8 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
      */
     if (!pVM->nem.s.fExtendedCpuIdExit)
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Missing required extended CPUID exit support");
+    if (!pVM->nem.s.fExtendedMsrExit)
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Missing required extended MSR exit support");
 
 #undef NEM_LOG_REL_CAP_EX
 #undef NEM_LOG_REL_CAP_SUB_EX
@@ -1048,8 +1050,8 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
     {
         RT_ZERO(Property);
         Property.ExtendedVmExits.X64CpuidExit  = pVM->nem.s.fExtendedCpuIdExit; /** @todo Register fixed results and restrict cpuid exits */
-#if 0 /** @todo handle some MSRs too. */
         Property.ExtendedVmExits.X64MsrExit    = pVM->nem.s.fExtendedMsrExit;
+#if 0 /** @todo handle some MSRs too. */
         Property.ExtendedVmExits.ExceptionExit = pVM->nem.s.fExtendedXcptExit;
 #endif
         hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeExtendedVmExits, &Property, sizeof(Property));
