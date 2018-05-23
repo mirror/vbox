@@ -37,6 +37,7 @@ import sys;
 
 # Validation Kit imports.
 from common     import utils;
+from common     import netutils;
 from testdriver import base;
 from testdriver import reporter;
 from testdriver import txsclient;
@@ -1529,49 +1530,36 @@ class SessionWrapper(TdTaskBase):
         Returns True on success and False on failure.  Error information is logged.
         """
 
-        # Resolve missing MAC address prefix
-        cchMacAddr = len(sMacAddr)
+        # Resolve missing MAC address prefix by feeding in the host IP address bytes.
+        cchMacAddr = len(sMacAddr);
         if cchMacAddr > 0 and cchMacAddr < 12:
-            sHostName = ''
-            try:
-                sHostName = socket.getfqdn()
-                if '.' not in sHostName and not sHostName.startswith('localhost'):
-                    # somewhat misconfigured system, needs expensive approach to guessing FQDN
-                    for aAI in socket.getaddrinfo(sHostName, None):
-                        sName, _ = socket.getnameinfo(aAI[4], 0)
-                        if '.' in sName and not set(sName).issubset(set('0123456789.')) and not sName.startswith('localhost'):
-                            sHostName = sName
-                            break
+            sHostIP = netutils.getPrimaryHostIp();
+            abHostIP = socket.inet_aton(sHostIP);
+            if sys.version_info[0] < 3:
+                abHostIP = (ord(abHostIP[0]), ord(abHostIP[1]), ord(abHostIP[2]), ord(abHostIP[3]));
 
-                sHostIP = socket.gethostbyname(sHostName)
-                abHostIP = socket.inet_aton(sHostIP)
-                if sys.version_info[0] < 3:
-                    abHostIP = (ord(abHostIP[0]), ord(abHostIP[1]), ord(abHostIP[2]), ord(abHostIP[3]));
-            except:
-                return reporter.errorXcpt('failed to determine the host IP for "%s".' % (sHostName,))
             if   abHostIP[0] == 127 \
               or (abHostIP[0] == 169 and abHostIP[1] == 254) \
               or (abHostIP[0] == 192 and abHostIP[1] == 168 and abHostIP[2] == 56):
-                return reporter.error('host IP for "%s" is %s, most likely not unique.' % (sHostName, sHostIP))
+                return reporter.error('host IP for "%s" is %s, most likely not unique.' % (netutils.getHostnameFqdn(), sHostIP,));
 
-            sDefaultMac = '%02X%02X%02X%02X%02X%02X' \
-                % (0x02, abHostIP[0], abHostIP[1], abHostIP[2], abHostIP[3], iNic)
-            sMacAddr = sDefaultMac[0:(12 - cchMacAddr)] + sMacAddr
+            sDefaultMac = '%02X%02X%02X%02X%02X%02X' % (0x02, abHostIP[0], abHostIP[1], abHostIP[2], abHostIP[3], iNic);
+            sMacAddr = sDefaultMac[0:(12 - cchMacAddr)] + sMacAddr;
 
         # Get the NIC object and try set it address.
         try:
-            oNic = self.o.machine.getNetworkAdapter(iNic)
+            oNic = self.o.machine.getNetworkAdapter(iNic);
         except:
-            return reporter.errorXcpt('getNetworkAdapter(%s) failed for "%s"' % (iNic, self.sName))
+            return reporter.errorXcpt('getNetworkAdapter(%s) failed for "%s"' % (iNic, self.sName,));
 
         try:
-            oNic.MACAddress = sMacAddr
+            oNic.MACAddress = sMacAddr;
         except:
-            return reporter.errorXcpt('failed to set the MAC address on slot %s to "%s" for VM "%s"' \
-                % (iNic, sMacAddr, self.sName))
+            return reporter.errorXcpt('failed to set the MAC address on slot %s to "%s" for VM "%s"'
+                                      % (iNic, sMacAddr, self.sName));
 
-        reporter.log('set MAC address on slot %s to %s for VM "%s"' % (iNic, sMacAddr, self.sName))
-        return True
+        reporter.log('set MAC address on slot %s to %s for VM "%s"' % (iNic, sMacAddr, self.sName,));
+        return True;
 
     def setRamSize(self, cMB):
         """
