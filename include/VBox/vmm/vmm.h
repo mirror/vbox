@@ -445,6 +445,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_NEM_EXPORT_STATE,
     /** Call NEMR0ImportState() (host specific). */
     VMMR0_DO_NEM_IMPORT_STATE,
+    /** Call NEMR0UpdateStatistics() (host specific). */
+    VMMR0_DO_NEM_UPDATE_STATISTICS,
 
     /** Official call we use for testing Ring-0 APIs. */
     VMMR0_DO_TESTS = 640,

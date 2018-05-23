@@ -229,6 +229,14 @@ typedef enum STAMUNIT
     STAMUNIT_END
 } STAMUNIT;
 
+/** @name STAM_REFRESH_GRP_XXX - STAM refresh groups
+ * @{ */
+#define STAM_REFRESH_GRP_NONE       UINT8_MAX
+#define STAM_REFRESH_GRP_GVMM       0
+#define STAM_REFRESH_GRP_GMM        1
+#define STAM_REFRESH_GRP_NEM        2
+/** @} */
+
 
 /** @def STAM_REL_U8_INC
  * Increments a uint8_t sample by one.
@@ -1205,6 +1213,14 @@ VMMR3DECL(int)  STAMR3RegisterCallback(PVM pVM, void *pvSample, STAMVISIBILITY e
 VMMR3DECL(int)  STAMR3RegisterCallbackV(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
                                         PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
                                         const char *pszDesc, const char *pszName, va_list args) RT_IPRT_FORMAT_ATTR(8, 0);
+
+VMMR3DECL(int)  STAMR3RegisterRefresh(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                                      STAMUNIT enmUnit, uint8_t iRefreshGrp, const char *pszDesc,
+                                      const char *pszName, ...) RT_IPRT_FORMAT_ATTR(8, 9);
+VMMR3DECL(int)  STAMR3RegisterRefreshV(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                                       STAMUNIT enmUnit, uint8_t iRefreshGrp, const char *pszDesc,
+                                       const char *pszName, va_list va) RT_IPRT_FORMAT_ATTR(8, 0);
+
 VMMR3DECL(int)  STAMR3Deregister(PUVM pUVM, const char *pszPat);
 VMMR3DECL(int)  STAMR3DeregisterF(PUVM pUVM, const char *pszPatFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 VMMR3DECL(int)  STAMR3DeregisterV(PUVM pUVM, const char *pszPatFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);

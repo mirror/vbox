@@ -2061,6 +2061,13 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             rc = NEMR0ImportState(pGVM, pVM, idCpu, u64Arg);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
+
+        case VMMR0_DO_NEM_UPDATE_STATISTICS:
+            if (u64Arg || pReqHdr)
+                return VERR_INVALID_PARAMETER;
+            rc = NEMR0UpdateStatistics(pGVM, pVM, idCpu);
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            break;
 # endif
 #endif
 

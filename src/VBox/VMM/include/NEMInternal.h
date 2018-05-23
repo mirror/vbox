@@ -26,6 +26,7 @@
 #include <VBox/vmm/vmapi.h>
 #ifdef RT_OS_WINDOWS
 #include <iprt/nt/hyperv.h>
+#include <iprt/critsect.h>
 #endif
 
 RT_C_DECLS_BEGIN
@@ -159,6 +160,12 @@ typedef struct NEM
     /** Info about the VidStopVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlMessageSlotHandleAndGetNext;
 
+    /** Statistics updated by NEMR0UpdateStatistics. */
+    struct
+    {
+        uint64_t                cPagesAvailable;
+        uint64_t                cPagesInUse;
+    } R0Stats;
 #endif /* RT_OS_WINDOWS */
 } NEM;
 /** Pointer to NEM VM instance data. */
@@ -255,6 +262,22 @@ typedef NEMCPU *PNEMCPU;
 
 
 #ifdef IN_RING0
+# ifdef RT_OS_WINDOWS
+/**
+ * Windows: Hypercall input/ouput page info.
+ */
+typedef struct NEMR0HYPERCALLDATA
+{
+    /** Host physical address of the hypercall input/output page. */
+    RTHCPHYS                    HCPhysPage;
+    /** Pointer to the hypercall input/output page. */
+    uint8_t                    *pbPage;
+    /** Handle to the memory object of the hypercall input/output page. */
+    RTR0MEMOBJ                  hMemObj;
+} NEMR0HYPERCALLDATA;
+/** Pointer to a Windows hypercall input/output page info. */
+typedef NEMR0HYPERCALLDATA *PNEMR0HYPERCALLDATA;
+# endif /* RT_OS_WINDOWS */
 
 /**
  * NEM GVMCPU instance data.
@@ -262,15 +285,8 @@ typedef NEMCPU *PNEMCPU;
 typedef struct NEMR0PERVCPU
 {
 # ifdef RT_OS_WINDOWS
-    /** @name Hypercall input/ouput page.
-     * @{ */
-    /** Host physical address of the hypercall input/output page. */
-    RTHCPHYS                    HCPhysHypercallData;
-    /** Pointer to the hypercall input/output page. */
-    uint8_t                    *pbHypercallData;
-    /** Handle to the memory object of the hypercall input/output page. */
-    RTR0MEMOBJ                  hHypercallDataMemObj;
-    /** @} */
+    /** Hypercall input/ouput page. */
+    NEMR0HYPERCALLDATA          HypercallData;
 # else
     uint32_t                    uDummy;
 # endif
@@ -296,6 +312,11 @@ typedef struct NEMR0PERVM
     NEMWINIOCTL                 IoCtlStopVirtualProcessor;
     /** Info about the VidStopVirtualProcessor I/O control interface. */
     NEMWINIOCTL                 IoCtlMessageSlotHandleAndGetNext;
+
+    /** Hypercall input/ouput page for non-EMT. */
+    NEMR0HYPERCALLDATA          HypercallData;
+    /** Critical section protecting use of HypercallData. */
+    RTCRITSECT                  HypercallDataCritSect;
 
 # else
     uint32_t                    uDummy;

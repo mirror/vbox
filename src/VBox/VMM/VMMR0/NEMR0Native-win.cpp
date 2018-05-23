@@ -90,6 +90,51 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void
  */
 #include "../VMMAll/NEMAllNativeTemplate-win.cpp.h"
 
+/**
+ * Worker for NEMR0InitVM that allocates a hypercall page.
+ *
+ * @returns VBox status code.
+ * @param   pHypercallData  The hypercall data page to initialize.
+ */
+static int nemR0InitHypercallData(PNEMR0HYPERCALLDATA pHypercallData)
+{
+    int rc = RTR0MemObjAllocPage(&pHypercallData->hMemObj, PAGE_SIZE, false /*fExecutable*/);
+    if (RT_SUCCESS(rc))
+    {
+        pHypercallData->HCPhysPage = RTR0MemObjGetPagePhysAddr(pHypercallData->hMemObj, 0 /*iPage*/);
+        AssertStmt(pHypercallData->HCPhysPage != NIL_RTHCPHYS, rc = VERR_INTERNAL_ERROR_3);
+        pHypercallData->pbPage     = (uint8_t *)RTR0MemObjAddress(pHypercallData->hMemObj);
+        AssertStmt(pHypercallData->pbPage, rc = VERR_INTERNAL_ERROR_3);
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+
+        /* bail out */
+        RTR0MemObjFree(pHypercallData->hMemObj, true /*fFreeMappings*/);
+    }
+    pHypercallData->hMemObj     = NIL_RTR0MEMOBJ;
+    pHypercallData->HCPhysPage  = NIL_RTHCPHYS;
+    pHypercallData->pbPage      = NULL;
+    return rc;
+}
+
+/**
+ * Worker for NEMR0CleanupVM and NEMR0InitVM that cleans up a hypercall page.
+ *
+ * @param   pHypercallData  The hypercall data page to uninitialize.
+ */
+static void nemR0DeleteHypercallData(PNEMR0HYPERCALLDATA pHypercallData)
+{
+    /* Check pbPage here since it's NULL, whereas the hMemObj can be either
+       NIL_RTR0MEMOBJ or 0 (they aren't necessarily the same). */
+    if (pHypercallData->pbPage != NULL)
+    {
+        RTR0MemObjFree(pHypercallData->hMemObj, true /*fFreeMappings*/);
+        pHypercallData->pbPage = NULL;
+    }
+    pHypercallData->hMemObj    = NIL_RTR0MEMOBJ;
+    pHypercallData->HCPhysPage = NIL_RTHCPHYS;
+}
+
 
 /**
  * Called by NEMR3Init to make sure we've got what we need.
@@ -126,44 +171,49 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
         if (RT_SUCCESS(rc))
         {
             /*
-             * Allocate a page for each VCPU to place hypercall data on.
+             * Allocate a page for non-EMT threads to use for hypercalls (update
+             * statistics and such) and a critical section protecting it.
              */
-            for (VMCPUID i = 0; i < pGVM->cCpus; i++)
+            rc = RTCritSectInit(&pGVM->nem.s.HypercallDataCritSect);
+            if (RT_SUCCESS(rc))
             {
-                PGVMCPU pGVCpu = &pGVM->aCpus[i];
-                rc = RTR0MemObjAllocPage(&pGVCpu->nem.s.hHypercallDataMemObj, PAGE_SIZE, false /*fExecutable*/);
+                rc = nemR0InitHypercallData(&pGVM->nem.s.HypercallData);
                 if (RT_SUCCESS(rc))
                 {
-                    pGVCpu->nem.s.HCPhysHypercallData = RTR0MemObjGetPagePhysAddr(pGVCpu->nem.s.hHypercallDataMemObj, 0 /*iPage*/);
-                    pGVCpu->nem.s.pbHypercallData     = (uint8_t *)RTR0MemObjAddress(pGVCpu->nem.s.hHypercallDataMemObj);
-                    AssertStmt(pGVCpu->nem.s.HCPhysHypercallData != NIL_RTHCPHYS, rc = VERR_INTERNAL_ERROR_3);
-                    AssertStmt(pGVCpu->nem.s.pbHypercallData, rc = VERR_INTERNAL_ERROR_3);
-                }
-                else
-                    pGVCpu->nem.s.hHypercallDataMemObj = NIL_RTR0MEMOBJ;
-                if (RT_FAILURE(rc))
-                {
-                    /* bail. */
-                    do
+                    /*
+                     * Allocate a page for each VCPU to place hypercall data on.
+                     */
+                    for (VMCPUID i = 0; i < pGVM->cCpus; i++)
                     {
-                        RTR0MemObjFree(pGVCpu->nem.s.hHypercallDataMemObj, true /*fFreeMappings*/);
-                        pGVCpu->nem.s.hHypercallDataMemObj = NIL_RTR0MEMOBJ;
-                        pGVCpu->nem.s.HCPhysHypercallData  = NIL_RTHCPHYS;
-                        pGVCpu->nem.s.pbHypercallData      = NULL;
-                    } while (i-- > 0);
-                    return rc;
-                }
-            }
-            /*
-             * So far, so good.
-             */
-            return rc;
-        }
+                        rc = nemR0InitHypercallData(&pGVM->aCpus[i].nem.s.HypercallData);
+                        if (RT_FAILURE(rc))
+                        {
+                            while (i-- > 0)
+                                nemR0DeleteHypercallData(&pGVM->aCpus[i].nem.s.HypercallData);
+                            break;
+                        }
+                    }
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * So far, so good.
+                         */
+                        return rc;
+                    }
 
-        rc = VERR_NEM_MISSING_KERNEL_API;
+                    /*
+                     * Bail out.
+                     */
+                    nemR0DeleteHypercallData(&pGVM->nem.s.HypercallData);
+                }
+                RTCritSectDelete(&pGVM->nem.s.HypercallDataCritSect);
+            }
+        }
+        else
+            rc = VERR_NEM_MISSING_KERNEL_API;
     }
 
-    RT_NOREF(pGVM, pVM);
+    RT_NOREF(pVM);
     return rc;
 }
 
@@ -308,17 +358,12 @@ VMMR0_INT_DECL(void) NEMR0CleanupVM(PGVM pGVM)
     /* Free the hypercall pages. */
     VMCPUID i = pGVM->cCpus;
     while (i-- > 0)
-    {
-        PGVMCPU pGVCpu = &pGVM->aCpus[i];
-        if (pGVCpu->nem.s.pbHypercallData)
-        {
-            pGVCpu->nem.s.pbHypercallData = NULL;
-            int rc = RTR0MemObjFree(pGVCpu->nem.s.hHypercallDataMemObj, true /*fFreeMappings*/);
-            AssertRC(rc);
-        }
-        pGVCpu->nem.s.hHypercallDataMemObj = NIL_RTR0MEMOBJ;
-        pGVCpu->nem.s.HCPhysHypercallData  = NIL_RTHCPHYS;
-    }
+        nemR0DeleteHypercallData(&pGVM->aCpus[i].nem.s.HypercallData);
+
+    /* The non-EMT one too. */
+    if (RTCritSectIsInitialized(&pGVM->nem.s.HypercallDataCritSect))
+        RTCritSectDelete(&pGVM->nem.s.HypercallDataCritSect);
+    nemR0DeleteHypercallData(&pGVM->nem.s.HypercallData);
 }
 
 
@@ -371,7 +416,7 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHY
      * Compose and make the hypercall.
      * Ring-3 is not allowed to fill in the host physical addresses of the call.
      */
-    HV_INPUT_MAP_GPA_PAGES *pMapPages = (HV_INPUT_MAP_GPA_PAGES *)pGVCpu->nem.s.pbHypercallData;
+    HV_INPUT_MAP_GPA_PAGES *pMapPages = (HV_INPUT_MAP_GPA_PAGES *)pGVCpu->nem.s.HypercallData.pbPage;
     AssertPtrReturn(pMapPages, VERR_INTERNAL_ERROR_3);
     pMapPages->TargetPartitionId    = pGVM->nem.s.idHvPartition;
     pMapPages->TargetGpaBase        = GCPhysDst >> X86_PAGE_SHIFT;
@@ -386,7 +431,7 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHY
     }
 
     uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallMapGpaPages | ((uint64_t)cPages << 32),
-                                               pGVCpu->nem.s.HCPhysHypercallData, 0);
+                                               pGVCpu->nem.s.HypercallData.HCPhysPage, 0);
     Log6(("NEMR0MapPages: %RGp/%RGp L %u prot %#x -> %#RX64\n",
           GCPhysDst, GCPhysSrc - cPages * X86_PAGE_SIZE, cPages, fFlags, uResult));
     if (uResult == ((uint64_t)cPages << 32))
@@ -453,20 +498,20 @@ NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhy
     /*
      * Compose and make the hypercall.
      */
-    HV_INPUT_UNMAP_GPA_PAGES *pUnmapPages = (HV_INPUT_UNMAP_GPA_PAGES *)pGVCpu->nem.s.pbHypercallData;
+    HV_INPUT_UNMAP_GPA_PAGES *pUnmapPages = (HV_INPUT_UNMAP_GPA_PAGES *)pGVCpu->nem.s.HypercallData.pbPage;
     AssertPtrReturn(pUnmapPages, VERR_INTERNAL_ERROR_3);
     pUnmapPages->TargetPartitionId    = pGVM->nem.s.idHvPartition;
     pUnmapPages->TargetGpaBase        = GCPhys >> X86_PAGE_SHIFT;
     pUnmapPages->fFlags               = 0;
 
     uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallUnmapGpaPages | ((uint64_t)cPages << 32),
-                                               pGVCpu->nem.s.HCPhysHypercallData, 0);
+                                               pGVCpu->nem.s.HypercallData.HCPhysPage, 0);
     Log6(("NEMR0UnmapPages: %RGp L %u -> %#RX64\n", GCPhys, cPages, uResult));
     if (uResult == ((uint64_t)cPages << 32))
     {
 #if 1       /* Do we need to do this? Hopefully not... */
         uint64_t volatile uR = g_pfnHvlInvokeHypercall(HvCallUncommitGpaPages | ((uint64_t)cPages << 32),
-                                                       pGVCpu->nem.s.HCPhysHypercallData, 0);
+                                                       pGVCpu->nem.s.HypercallData.HCPhysPage, 0);
         AssertMsg(uR == ((uint64_t)cPages << 32), ("uR=%#RX64\n", uR)); NOREF(uR);
 #endif
         return VINF_SUCCESS;
@@ -526,7 +571,7 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx)
 {
     PVMCPU                     pVCpu  = &pGVM->pVM->aCpus[pGVCpu->idCpu];
-    HV_INPUT_SET_VP_REGISTERS *pInput = (HV_INPUT_SET_VP_REGISTERS *)pGVCpu->nem.s.pbHypercallData;
+    HV_INPUT_SET_VP_REGISTERS *pInput = (HV_INPUT_SET_VP_REGISTERS *)pGVCpu->nem.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
 
     pInput->PartitionId = pGVM->nem.s.idHvPartition;
@@ -1095,13 +1140,13 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     /*
      * Set the registers.
      */
-    Assert((uintptr_t)&pInput->Elements[iReg] - (uintptr_t)pGVCpu->nem.s.pbHypercallData < PAGE_SIZE); /* max is 127 */
+    Assert((uintptr_t)&pInput->Elements[iReg] - (uintptr_t)pGVCpu->nem.s.HypercallData.pbPage < PAGE_SIZE); /* max is 127 */
 
     /*
      * Make the hypercall.
      */
     uint64_t uResult = g_pfnHvlInvokeHypercall(HV_MAKE_CALL_INFO(HvCallSetVpRegisters, iReg),
-                                               pGVCpu->nem.s.HCPhysHypercallData, 0 /*GCPhysOutput*/);
+                                               pGVCpu->nem.s.HypercallData.HCPhysPage, 0 /*GCPhysOutput*/);
     AssertLogRelMsgReturn(uResult == HV_MAKE_CALL_REP_RET(iReg),
                           ("uResult=%RX64 iRegs=%#x\n", uResult, iReg),
                           VERR_NEM_SET_REGISTERS_FAILED);
@@ -1155,7 +1200,7 @@ VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  */
 NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat)
 {
-    HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nem.s.pbHypercallData;
+    HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nem.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
 
     fWhat &= pCtx->fExtrn;
@@ -1338,15 +1383,15 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     size_t const cbInput = RT_ALIGN_Z(RT_OFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[cRegs]), 32);
 
     HV_REGISTER_VALUE *paValues = (HV_REGISTER_VALUE *)((uint8_t *)pInput + cbInput);
-    Assert((uintptr_t)&paValues[cRegs] - (uintptr_t)pGVCpu->nem.s.pbHypercallData < PAGE_SIZE); /* (max is around 168 registers) */
+    Assert((uintptr_t)&paValues[cRegs] - (uintptr_t)pGVCpu->nem.s.HypercallData.pbPage < PAGE_SIZE); /* (max is around 168 registers) */
     RT_BZERO(paValues, cRegs * sizeof(paValues[0]));
 
     /*
      * Make the hypercall.
      */
     uint64_t uResult = g_pfnHvlInvokeHypercall(HV_MAKE_CALL_INFO(HvCallGetVpRegisters, cRegs),
-                                               pGVCpu->nem.s.HCPhysHypercallData,
-                                               pGVCpu->nem.s.HCPhysHypercallData + cbInput);
+                                               pGVCpu->nem.s.HypercallData.HCPhysPage,
+                                               pGVCpu->nem.s.HypercallData.HCPhysPage + cbInput);
     AssertLogRelMsgReturn(uResult == HV_MAKE_CALL_REP_RET(cRegs),
                           ("uResult=%RX64 cRegs=%#x\n", uResult, cRegs),
                           VERR_NEM_GET_REGISTERS_FAILED);
@@ -1890,5 +1935,78 @@ VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
     RT_NOREF(pGVM, idCpu);
     return VERR_NOT_IMPLEMENTED;
 #endif
+}
+
+
+/**
+ * Updates statistics in the VM structure.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        The ring-0 VM handle.
+ * @param   pVM         The cross context VM handle.
+ * @param   idCpu       The calling EMT, or NIL.  Necessary for getting the hypercall
+ *                      page and arguments.
+ */
+VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+{
+    /*
+     * Validate the call.
+     */
+    int rc;
+    if (idCpu == NIL_VMCPUID)
+        rc = GVMMR0ValidateGVMandVM(pGVM, pVM);
+    else
+        rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    if (RT_SUCCESS(rc))
+    {
+        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+
+        PNEMR0HYPERCALLDATA pHypercallData = idCpu != NIL_VMCPUID
+                                           ? &pGVM->aCpus[idCpu].nem.s.HypercallData
+                                           : &pGVM->nem.s.HypercallData;
+        if (   RT_VALID_PTR(pHypercallData->pbPage)
+            && pHypercallData->HCPhysPage != NIL_RTHCPHYS)
+        {
+            if (idCpu == NIL_VMCPUID)
+                rc = RTCritSectEnter(&pGVM->nem.s.HypercallDataCritSect);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Query the memory statistics for the partition.
+                 */
+                HV_INPUT_GET_MEMORY_BALANCE  *pInput = (HV_INPUT_GET_MEMORY_BALANCE *)pHypercallData->pbPage;
+                pInput->TargetPartitionId                               = pGVM->nem.s.idHvPartition;
+                pInput->ProximityDomainInfo.Flags.ProximityPreferred    = 0;
+                pInput->ProximityDomainInfo.Flags.ProxyimityInfoValid   = 0;
+                pInput->ProximityDomainInfo.Flags.Reserved              = 0;
+                pInput->ProximityDomainInfo.Id                          = 0;
+
+                HV_OUTPUT_GET_MEMORY_BALANCE *pOutput = (HV_OUTPUT_GET_MEMORY_BALANCE *)(pInput + 1);
+                RT_ZERO(*pOutput);
+
+                uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallGetMemoryBalance,
+                                                           pHypercallData->HCPhysPage,
+                                                           pHypercallData->HCPhysPage + sizeof(*pInput));
+                if (uResult == HV_STATUS_SUCCESS)
+                {
+                    pVM->nem.s.R0Stats.cPagesAvailable = pOutput->PagesAvailable;
+                    pVM->nem.s.R0Stats.cPagesInUse     = pOutput->PagesInUse;
+                    rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    LogRel(("HvCallGetMemoryBalance -> %#RX64 (%#RX64 %#RX64)!!\n",
+                            uResult, pOutput->PagesAvailable, pOutput->PagesInUse));
+                    rc = VINF_NEM_IPE_0;
+                }
+
+                if (idCpu == NIL_VMCPUID)
+                    RTCritSectLeave(&pGVM->nem.s.HypercallDataCritSect);
+            }
+        }
+        else
+            rc = VERR_WRONG_ORDER;
+    }
+    return rc;
 }
 

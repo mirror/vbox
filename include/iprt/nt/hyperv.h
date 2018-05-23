@@ -326,6 +326,51 @@ typedef uint16_t HV_STATUS;
 /** @} */
 
 
+/** Hyper-V NUMA node ID.
+ * On systems without NUMA, i.e. a single node, it uses 0 as identifier.  */
+typedef uint32_t HV_PROXIMITY_DOMAIN_ID;
+/** Pointer to NUMA node ID. */
+typedef HV_PROXIMITY_DOMAIN_ID *PHV_PROXIMITY_DOMAIN_ID;
+
+/** Hyper-V NUMA flags. */
+typedef struct
+{
+    uint32_t    ProximityPreferred      : 1;    /**< When set, allocations may come from other NUMA nodes.  */
+    uint32_t    Reserved                : 30;   /**< Reserved for future (as of circa v2). */
+    uint32_t    ProxyimityInfoValid     : 1;    /**< Set if the NUMA information is valid. */
+} HV_PROXIMITY_DOMAIN_FLAGS;
+/** Pointer to Hyper-V NUMA flags. */
+typedef HV_PROXIMITY_DOMAIN_FLAGS *PHV_PROXIMITY_DOMAIN_FLAGS;
+
+/** Hyper-V NUMA information. */
+typedef struct
+{
+    HV_PROXIMITY_DOMAIN_ID      Id;             /**< NUMA node identifier.  */
+    HV_PROXIMITY_DOMAIN_FLAGS   Flags;          /**< NUMA flags. */
+} HV_PROXIMITY_DOMAIN_INFO;
+/** Pointer to Hyper-V NUMA information. */
+typedef HV_PROXIMITY_DOMAIN_INFO *PHV_PROXIMITY_DOMAIN_INFO;
+
+/** Input for HvCallGetMemoryBalance. */
+typedef struct
+{
+    HV_PARTITION_ID             TargetPartitionId;
+    HV_PROXIMITY_DOMAIN_INFO    ProximityDomainInfo;
+} HV_INPUT_GET_MEMORY_BALANCE;
+AssertCompileSize(HV_INPUT_GET_MEMORY_BALANCE, 16);
+/** Pointer to the input for HvCallGetMemoryBalance. */
+typedef HV_INPUT_GET_MEMORY_BALANCE *PHV_INPUT_GET_MEMORY_BALANCE;
+
+/** Output for HvCallGetMemoryBalance. */
+typedef struct
+{
+    uint64_t                    PagesAvailable;
+    uint64_t                    PagesInUse;
+} HV_OUTPUT_GET_MEMORY_BALANCE;
+/** Pointer to the output for HvCallGetMemoryBalance. */
+typedef HV_OUTPUT_GET_MEMORY_BALANCE *PHV_OUTPUT_GET_MEMORY_BALANCE;
+
+
 /** @name Flags used with HvCallMapGpaPages and HvCallMapSparseGpaPages.
  * @note There seems to be a more flags defined after v2.
  * @{ */
@@ -1052,7 +1097,7 @@ typedef HV_REGISTER_VALUE *PHV_REGISTER_VALUE;
 typedef HV_REGISTER_VALUE const *PCHV_REGISTER_VALUE;
 
 
-/** Input for HvCallGetVpRegister. */
+/** Input for HvCallGetVpRegisters. */
 typedef struct
 {
     HV_PARTITION_ID     PartitionId;
@@ -1063,12 +1108,12 @@ typedef struct
     HV_REGISTER_NAME    Names[RT_FLEXIBLE_ARRAY];
 } HV_INPUT_GET_VP_REGISTERS;
 AssertCompileMemberOffset(HV_INPUT_GET_VP_REGISTERS, Names, 16);
-/** Pointer to input for HvCallGetVpRegister. */
+/** Pointer to input for HvCallGetVpRegisters. */
 typedef HV_INPUT_GET_VP_REGISTERS *PHV_INPUT_GET_VP_REGISTERS;
-/* Output for HvCallGetVpRegister is an array of HV_REGISTER_VALUE parallel to HV_INPUT_GET_VP_REGISTERS::Names. */
+/* Output for HvCallGetVpRegisters is an array of HV_REGISTER_VALUE parallel to HV_INPUT_GET_VP_REGISTERS::Names. */
 
 
-/** Register and value pair for HvCallSetVpRegister. */
+/** Register and value pair for HvCallSetVpRegisters. */
 typedef struct
 {
     HV_REGISTER_NAME    Name;
@@ -1078,7 +1123,7 @@ typedef struct
 } HV_REGISTER_ASSOC;
 AssertCompileSize(HV_REGISTER_ASSOC, 32);
 AssertCompileMemberOffset(HV_REGISTER_ASSOC, Value, 16);
-/** Pointer to a register and value pair for HvCallSetVpRegister. */
+/** Pointer to a register and value pair for HvCallSetVpRegisters. */
 typedef HV_REGISTER_ASSOC *PHV_REGISTER_ASSOC;
 /** Helper for clearing the alignment padding members. */
 #define HV_REGISTER_ASSOC_ZERO_PADDING(a_pRegAssoc) do { (a_pRegAssoc)->Pad0 = 0; (a_pRegAssoc)->Pad1 = 0; } while (0)
@@ -1087,7 +1132,7 @@ typedef HV_REGISTER_ASSOC *PHV_REGISTER_ASSOC;
 #define HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(a_pRegAssoc) \
     do { (a_pRegAssoc)->Pad0 = 0; (a_pRegAssoc)->Pad1 = 0; (a_pRegAssoc)->Value.Reg128.High64 = 0; } while (0)
 
-/** Input for HvCallSetVpRegister. */
+/** Input for HvCallSetVpRegisters. */
 typedef struct
 {
     HV_PARTITION_ID     PartitionId;
@@ -1097,7 +1142,7 @@ typedef struct
     HV_REGISTER_ASSOC   Elements[RT_FLEXIBLE_ARRAY];
 } HV_INPUT_SET_VP_REGISTERS;
 AssertCompileMemberOffset(HV_INPUT_SET_VP_REGISTERS, Elements, 16);
-/** Pointer to input for HvCallSetVpRegister. */
+/** Pointer to input for HvCallSetVpRegisters. */
 typedef HV_INPUT_SET_VP_REGISTERS *PHV_INPUT_SET_VP_REGISTERS;
 
 

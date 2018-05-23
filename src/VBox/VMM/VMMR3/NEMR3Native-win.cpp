@@ -724,7 +724,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
         {
             uint32_t iMin, iMax; } s_aUnknowns[] =
         {
-            { 0x0003, 0x000f },
+            { 0x0004, 0x000f },
             { 0x1003, 0x100f },
             { 0x2000, 0x200f },
             { 0x3000, 0x300f },
@@ -1007,16 +1007,6 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
 
 
 /**
- * Wrapper for different WHvSetPartitionProperty signatures.
- */
-DECLINLINE(HRESULT) WHvSetPartitionPropertyWrapper(WHV_PARTITION_HANDLE hPartition, WHV_PARTITION_PROPERTY_CODE enmProp,
-                                                   WHV_PARTITION_PROPERTY *pInput, uint32_t cbInput)
-{
-    return g_pfnWHvSetPartitionProperty(hPartition, enmProp, pInput, cbInput - RT_UOFFSETOF(WHV_PARTITION_PROPERTY, ExtendedVmExits));
-}
-
-
-/**
  * Creates and sets up a Hyper-V (exo) partition.
  *
  * @returns VBox status code.
@@ -1053,7 +1043,7 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
     WHV_PARTITION_PROPERTY Property;
     RT_ZERO(Property);
     Property.ProcessorCount = pVM->cCpus;
-    hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeProcessorCount, &Property, sizeof(Property));
+    hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeProcessorCount, &Property, sizeof(Property));
     if (SUCCEEDED(hrc))
     {
         RT_ZERO(Property);
@@ -1062,7 +1052,7 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
         Property.ExtendedVmExits.X64MsrExit    = pVM->nem.s.fExtendedMsrExit;
         Property.ExtendedVmExits.ExceptionExit = pVM->nem.s.fExtendedXcptExit;
 #endif
-        hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeExtendedVmExits, &Property, sizeof(Property));
+        hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeExtendedVmExits, &Property, sizeof(Property));
         if (SUCCEEDED(hrc))
         {
             /*
@@ -1162,6 +1152,14 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                             STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnCancel,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel execution breaks",      "/NEM/CPU%u/BreakOnCancel", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnStatus,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of status code breaks",           "/NEM/CPU%u/BreakOnStatus", iCpu);
                         }
+
+                        PUVM pUVM = pVM->pUVM;
+                        STAMR3RegisterRefresh(pUVM, &pVM->nem.s.R0Stats.cPagesAvailable, STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
+                                              STAMUNIT_PAGES, STAM_REFRESH_GRP_NEM, "Free pages available to the hypervisor",
+                                              "/NEM/R0Stats/cPagesAvailable");
+                        STAMR3RegisterRefresh(pUVM, &pVM->nem.s.R0Stats.cPagesInUse,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
+                                              STAMUNIT_PAGES, STAM_REFRESH_GRP_NEM, "Pages in use by hypervisor",
+                                              "/NEM/R0Stats/cPagesInUse");
                     }
                 }
             }
@@ -1211,7 +1209,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     RT_ZERO(Property);
     Property.ProcessorVendor = pVM->nem.s.enmCpuVendor == CPUMCPUVENDOR_AMD ? WHvProcessorVendorAmd
                              : WHvProcessorVendorIntel;
-    hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeProcessorVendor, &Property, sizeof(Property));
+    hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeProcessorVendor, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorVendor to %u: %Rhrc (Last=%#x/%u)",
@@ -1221,7 +1219,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     /* Not sure if we really need to set the cache line flush size. */
     RT_ZERO(Property);
     Property.ProcessorClFlushSize = pVM->nem.s.cCacheLineFlushShift;
-    hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeProcessorClFlushSize, &Property, sizeof(Property));
+    hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeProcessorClFlushSize, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorClFlushSize to %u: %Rhrc (Last=%#x/%u)",
@@ -1235,7 +1233,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     /* Set the partition property. */
     RT_ZERO(Property);
     Property.ProcessorFeatures.AsUINT64 = pVM->nem.s.uCpuFeatures.u64;
-    hrc = WHvSetPartitionPropertyWrapper(hPartition, WHvPartitionPropertyCodeProcessorFeatures, &Property, sizeof(Property));
+    hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeProcessorFeatures, &Property, sizeof(Property));
     if (FAILED(hrc))
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorFeatures to %'#RX64: %Rhrc (Last=%#x/%u)",
@@ -1330,6 +1328,17 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     if (RT_SUCCESS(rc))
     {
         LogRel(("NEM: Successfully set up partition (device handle %p, partition ID %#llx)\n", hPartitionDevice, idHvPartition));
+
+#if 1
+        VMMR3CallR0Emt(pVM, &pVM->aCpus[0], VMMR0_DO_NEM_UPDATE_STATISTICS, 0, NULL);
+        LogRel(("NEM: Memory balance: %#RX64 out of %#RX64 pages in use\n",
+                pVM->nem.s.R0Stats.cPagesInUse, pVM->nem.s.R0Stats.cPagesAvailable));
+#endif
+
+        /*
+         * Register statistics on shared pages.
+         */
+        /** @todo HvCallMapStatsPage */
         return VINF_SUCCESS;
     }
     return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to NEMR0InitVMPart2 failed: %Rrc", rc);

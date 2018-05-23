@@ -123,6 +123,8 @@ typedef struct STAMDESC
     }                   u;
     /** Unit. */
     STAMUNIT            enmUnit;
+    /** The refresh group number (STAM_REFRESH_GRP_XXX). */
+    uint8_t             iRefreshGroup;
     /** Description. */
     const char         *pszDesc;
 } STAMDESC;

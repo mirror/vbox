@@ -145,7 +145,7 @@ typedef struct GVM
 # ifdef ___NEMInternal_h
         struct NEMR0PERVM   s;
 # endif
-        uint8_t             padding[128];
+        uint8_t             padding[256];
     } nem;
 #endif
 
@@ -165,8 +165,8 @@ AssertCompileMemberOffset(GVM, gvmm,   64);
 AssertCompileMemberOffset(GVM, gmm,    64 + 256);
 #ifdef VBOX_WITH_NEM_R0
 AssertCompileMemberOffset(GVM, nem,    64 + 256 + 512);
-AssertCompileMemberOffset(GVM, rawpci, 64 + 256 + 512 + 128);
-AssertCompileMemberOffset(GVM, aCpus,  64 + 256 + 512 + 128 + 64);
+AssertCompileMemberOffset(GVM, rawpci, 64 + 256 + 512 + 256);
+AssertCompileMemberOffset(GVM, aCpus,  64 + 256 + 512 + 256 + 64);
 #else
 AssertCompileMemberOffset(GVM, rawpci, 64 + 256 + 512);
 AssertCompileMemberOffset(GVM, aCpus,  64 + 256 + 512 + 64);

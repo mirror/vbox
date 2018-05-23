@@ -164,7 +164,7 @@ DECLIMPORT(BOOL) VIDAPI VidStopVirtualProcessor(VID_PARTITION_HANDLE hPartition,
  * VidMessageSlotHandleAndGetNext is later used to wait for the next message and
  * put (??) it into that memory mapping.
  *
- * @returns Success indicator (details in LastStatusValue and LastErrorValue).
+ * @returns Success indicator (details in LastErrorValue).
  *
  * @param   hPartition  The partition handle.
  * @param   pOutput     Where to return the pointer to the message memory
@@ -204,19 +204,56 @@ DECLIMPORT(BOOL) VIDAPI VidMessageSlotHandleAndGetNext(VID_PARTITION_HANDLE hPar
  * implement it, so it's possible to patch it into working.  This works for
  * build 17101: eb vid+12180 0f 84 98 00 00 00
  *
- * @retval STATUS_NOT_IMPLEMENTED
+ * @retval  ERROR_NOT_IMPLEMENTED
+ *
+ * @remarks VidExoFastIoControlPartition probably disapproves of this too.  It
+ *          could be very handy for debugging upon occation.
  */
 DECLIMPORT(BOOL) VIDAPI VidGetVirtualProcessorRunningStatus(VID_PARTITION_HANDLE hPartition, HV_VP_INDEX iCpu,
                                                             VID_PROCESSOR_STATUS *penmStatus);
 
-
+/**
+ * For query virtual processor registers and other state information.
+ *
+ * @returns Success indicator (details in LastErrorValue).
+ */
 DECLIMPORT(BOOL) VIDAPI VidGetVirtualProcessorState(VID_PARTITION_HANDLE hPartition, HV_VP_INDEX iCpu,
                                                     HV_REGISTER_NAME const *paRegNames, uint32_t cRegisters,
                                                     HV_REGISTER_VALUE *paRegValues);
 
+/**
+ * For setting virtual processor registers and other state information.
+ *
+ * @returns Success indicator (details in LastErrorValue).
+ */
 DECLIMPORT(BOOL) VIDAPI VidSetVirtualProcessorState(VID_PARTITION_HANDLE hPartition, HV_VP_INDEX iCpu,
                                                     HV_REGISTER_NAME const *paRegNames, uint32_t cRegisters,
                                                     HV_REGISTER_VALUE const *paRegValues);
+
+/**
+ * Wrapper around the HvCallGetMemoryBalance hypercall.
+ *
+ * When VID.SYS processes the request, it will also query
+ * HvPartitionPropertyVirtualTlbPageCount, so we're passing a 3rd return
+ * parameter in case the API is ever extended to match the I/O control.
+ *
+ * @returns Success indicator (details in LastErrorValue).
+ * @retval  ERROR_NOT_IMPLEMENTED for exo partitions.
+ *
+ * @param   hPartition          The partition handle.
+ * @param   pcPagesAvailable    Where to return the number of unused pages
+ *                              still available to the partition.
+ * @param   pcPagesInUse        Where to return the number of pages currently
+ *                              in use by the partition.
+ * @param   pReserved           Pointer to dummy value, just in case they
+ *                              modify the API to include the nested TLB size.
+ *
+ * @note    Not available for exo partitions, unfortunately.  The
+ *          VidExoFastIoControlPartition function deflects it, failing it with
+ *          STATUS_NOT_IMPLEMENTED / ERROR_NOT_IMPLEMENTED.
+ */
+DECLIMPORT(BOOL) VIDAPI VidGetHvMemoryBalance(VID_PARTITION_HANDLE hPartition, uint64_t *pcPagesAvailable,
+                                              uint64_t *pcPagesInUse, uint64_t *pReserved);
 
 RT_C_DECLS_END
 #endif /* IN_RING3 */
