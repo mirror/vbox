@@ -819,37 +819,41 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_CLEAN       += \
  	$(VBoxDD_0_OUTDIR)/vboxaml.hex \
  	$(VBoxDD_0_OUTDIR)/vboxaml.aml \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt-standard.hex \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt-standard.aml \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt-standard.aml.tmp \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt-cpuhotplug.hex \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt-cpuhotplug.aml \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt-cpuhotplug.aml.tmp \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt-cpuhotplug.aml.pre
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_standard.hex \
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_standard.aml \
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_standard.aml.tmp \
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.hex \
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.aml \
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.aml.tmp \
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.aml.pre
   PC/ACPI/VBoxAcpi.cpp_DEPS = \
  	$(VBoxDD_0_OUTDIR)/vboxaml.hex \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt-standard.hex \
- 	$(VBoxDD_0_OUTDIR)/vboxssdt-cpuhotplug.hex
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_standard.hex \
+ 	$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.hex
 
   $$(VBoxDD_0_OUTDIR)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,VBoxDD,$<,$@)
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
+	$(QUIET)$(MV) -f $@ $@.tmp
+	$(QUIET)$(SED) -e "s/vboxaml_aml_code/AmlCode/g" \
+		--output $@ $@.tmp
+	$(QUIET)$(RM) -f $@.tmp
 
   vboxaml.hex:: $$(VBoxDD_0_OUTDIR)/vboxaml.hex
 
-  $$(VBoxDD_0_OUTDIR)/vboxssdt-standard.hex: $(PATH_SUB_CURRENT)/PC/vbox-standard.dsl | $$(dir $$@)
+  $$(VBoxDD_0_OUTDIR)/vboxssdt_standard.hex: $(PATH_SUB_CURRENT)/PC/vbox-standard.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,VBoxDD,$<,$@)
 	$(QUIET)$(RM) -f $@ $@.tmp
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
 	$(QUIET)$(MV) -f $@ $@.tmp
-	$(QUIET)$(SED) -e "s/AmlCode/AmlCodeSsdtStandard/g" \
+	$(QUIET)$(SED) -e "s/AmlCode\|vboxssdt_standard_aml_code/AmlCodeSsdtStandard/g" \
 		--output $@ $@.tmp
 	$(QUIET)$(RM) -f $@.tmp
 
 
-  vboxssdt-standard.hex:: $$(VBoxDD_0_OUTDIR)/vboxssdt-standard.hex
+  vboxssdt_standard.hex:: $$(VBoxDD_0_OUTDIR)/vboxssdt_standard.hex
 
-  $$(VBoxDD_0_OUTDIR)/vboxssdt-cpuhotplug.hex: $(PATH_SUB_CURRENT)/PC/vbox-cpuhotplug.dsl | $$(dir $$@)
+  $$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.hex: $(PATH_SUB_CURRENT)/PC/vbox-cpuhotplug.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,VBoxDD,$<,$@)
 	$(QUIET)$(RM) -f $@ $@.tmp $@.pre
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -P -x c -o $@.pre $<
@@ -857,12 +861,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 		--output $@.pre1 $@.pre
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $@.pre1
 	$(QUIET)$(MV) -f $@ $@.tmp
-	$(QUIET)$(SED) -e "s/AmlCode/AmlCodeSsdtCpuHotPlug/g" \
+	$(QUIET)$(SED) -e "s/AmlCode\|vboxssdt_cpuhotplug_aml_code/AmlCodeSsdtCpuHotPlug/g" \
 		--output $@ $@.tmp
 	$(QUIET)$(RM) -f $@.tmp $@.pre $@.pre1
 
 
-  vboxssdt-cpuhotplug.hex:: $$(VBoxDD_0_OUTDIR)/vboxssdt-cpuhotplug.hex
+  vboxssdt_cpuhotplug.hex:: $$(VBoxDD_0_OUTDIR)/vboxssdt_cpuhotplug.hex
 
  endif # !VBOX_WITH_DYNAMIC_DSDT
  PC/ACPI/VBoxAcpi.cpp_INCS = $(VBoxDD_0_OUTDIR)
