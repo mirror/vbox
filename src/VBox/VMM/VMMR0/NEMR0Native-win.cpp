@@ -416,29 +416,49 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHY
      * Compose and make the hypercall.
      * Ring-3 is not allowed to fill in the host physical addresses of the call.
      */
-    HV_INPUT_MAP_GPA_PAGES *pMapPages = (HV_INPUT_MAP_GPA_PAGES *)pGVCpu->nem.s.HypercallData.pbPage;
-    AssertPtrReturn(pMapPages, VERR_INTERNAL_ERROR_3);
-    pMapPages->TargetPartitionId    = pGVM->nem.s.idHvPartition;
-    pMapPages->TargetGpaBase        = GCPhysDst >> X86_PAGE_SHIFT;
-    pMapPages->MapFlags             = fFlags;
-    pMapPages->u32ExplicitPadding   = 0;
-    for (uint32_t iPage = 0; iPage < cPages; iPage++, GCPhysSrc += X86_PAGE_SIZE)
+    for (uint32_t iTries = 0;; iTries++)
     {
-        RTHCPHYS HCPhys = NIL_RTGCPHYS;
-        int rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysSrc, &HCPhys);
-        AssertRCReturn(rc, rc);
-        pMapPages->PageList[iPage] = HCPhys >> X86_PAGE_SHIFT;
+        HV_INPUT_MAP_GPA_PAGES *pMapPages = (HV_INPUT_MAP_GPA_PAGES *)pGVCpu->nem.s.HypercallData.pbPage;
+        AssertPtrReturn(pMapPages, VERR_INTERNAL_ERROR_3);
+        pMapPages->TargetPartitionId    = pGVM->nem.s.idHvPartition;
+        pMapPages->TargetGpaBase        = GCPhysDst >> X86_PAGE_SHIFT;
+        pMapPages->MapFlags             = fFlags;
+        pMapPages->u32ExplicitPadding   = 0;
+        for (uint32_t iPage = 0; iPage < cPages; iPage++, GCPhysSrc += X86_PAGE_SIZE)
+        {
+            RTHCPHYS HCPhys = NIL_RTGCPHYS;
+            int rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysSrc, &HCPhys);
+            AssertRCReturn(rc, rc);
+            pMapPages->PageList[iPage] = HCPhys >> X86_PAGE_SHIFT;
+        }
+
+        uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallMapGpaPages | ((uint64_t)cPages << 32),
+                                                   pGVCpu->nem.s.HypercallData.HCPhysPage, 0);
+        Log6(("NEMR0MapPages: %RGp/%RGp L %u prot %#x -> %#RX64\n",
+              GCPhysDst, GCPhysSrc - cPages * X86_PAGE_SIZE, cPages, fFlags, uResult));
+        if (uResult == ((uint64_t)cPages << 32))
+            return VINF_SUCCESS;
+
+        /*
+         * If the partition is out of memory, try donate another 512 pages to
+         * it (2MB).  VID.SYS does multiples of 512 pages, nothing smaller.
+         */
+        if (   uResult != HV_STATUS_INSUFFICIENT_MEMORY
+            || iTries > 16
+            || g_pfnWinHvDepositMemory == NULL)
+        {
+            LogRel(("g_pfnHvlInvokeHypercall/MapGpaPages -> %#RX64\n", uResult));
+            return VERR_NEM_MAP_PAGES_FAILED;
+        }
+
+        size_t cPagesAdded = 0;
+        NTSTATUS rcNt = g_pfnWinHvDepositMemory(pGVM->nem.s.idHvPartition, 512, 0, &cPagesAdded);
+        if (!cPagesAdded)
+        {
+            LogRel(("g_pfnWinHvDepositMemory -> %#x / %#RX64\n", rcNt, uResult));
+            return VERR_NEM_MAP_PAGES_FAILED;
+        }
     }
-
-    uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallMapGpaPages | ((uint64_t)cPages << 32),
-                                               pGVCpu->nem.s.HypercallData.HCPhysPage, 0);
-    Log6(("NEMR0MapPages: %RGp/%RGp L %u prot %#x -> %#RX64\n",
-          GCPhysDst, GCPhysSrc - cPages * X86_PAGE_SIZE, cPages, fFlags, uResult));
-    if (uResult == ((uint64_t)cPages << 32))
-        return VINF_SUCCESS;
-
-    LogRel(("g_pfnHvlInvokeHypercall/MapGpaPages -> %#RX64\n", uResult));
-    return VERR_NEM_MAP_PAGES_FAILED;
 }
 
 
