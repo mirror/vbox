@@ -42,8 +42,8 @@
 #else
 /* Statically compiled AML */
 # include <vboxaml.hex>
-# include <vboxssdt-standard.hex>
-# include <vboxssdt-cpuhotplug.hex>
+# include <vboxssdt_standard.hex>
+# include <vboxssdt_cpuhotplug.hex>
 #endif
 
 #include "VBoxDD.h"
