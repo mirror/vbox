@@ -1355,6 +1355,29 @@ typedef HV_X64_MEMORY_INTERCEPT_MESSAGE *PHV_X64_MEMORY_INTERCEPT_MESSAGE;
 typedef HV_X64_MEMORY_INTERCEPT_MESSAGE const *PCHV_X64_MEMORY_INTERCEPT_MESSAGE;
 
 
+/** The payload format for HvMessageTypeX64MsrIntercept. */
+typedef struct _HV_X64_MSR_INTERCEPT_MESSAGE
+{
+    HV_X64_INTERCEPT_MESSAGE_HEADER     Header;                 /**< 0x00 */
+    uint32_t                            MsrNummber;             /**< 0x28 (ecx) */
+    uint32_t                            Reserved;               /**< 0x2c */
+    uint64_t                            Rdx;                    /**< 0x30 */
+    uint64_t                            Rax;                    /**< 0x38 */
+} HV_X64_MSR_INTERCEPT_MESSAGE;
+AssertCompileSize(HV_X64_MSR_INTERCEPT_MESSAGE, 0x40);
+/** Pointer to a HvMessageTypeX64MsrIntercept payload. */
+typedef HV_X64_MSR_INTERCEPT_MESSAGE *PHV_X64_MSR_INTERCEPT_MESSAGE;
+/** Pointer to a const HvMessageTypeX64MsrIntercept payload. */
+typedef HV_X64_MSR_INTERCEPT_MESSAGE const *PCHV_X64_MSR_INTERCEPT_MESSAGE;
+
+/** Full MSR message. */
+typedef struct
+{
+    HV_MESSAGE_HEADER                   MsgHdr;
+    HV_X64_MSR_INTERCEPT_MESSAGE        Payload;
+} HV_X64_MSR_INTERCEPT_MESSAGE_FULL;
+
+
 /** X64 I/O port access information (HvMessageTypeX64IoPortIntercept). */
 typedef union HV_X64_IO_PORT_ACCESS_INFO
 {
@@ -1552,6 +1575,8 @@ typedef struct
         HV_X64_MEMORY_INTERCEPT_MESSAGE     X64MemoryIntercept;
         /** HvMessageTypeX64IoPortIntercept */
         HV_X64_IO_PORT_INTERCEPT_MESSAGE    X64IoPortIntercept;
+        /** HvMessageTypeX64MsrIntercept */
+        HV_X64_MSR_INTERCEPT_MESSAGE        X64MsrIntercept;
         /** HvMessageTypeX64CpuidIntercept */
         HV_X64_CPUID_INTERCEPT_MESSAGE      X64CpuIdIntercept;
         /** HvMessageTypeX64ExceptionIntercept */
