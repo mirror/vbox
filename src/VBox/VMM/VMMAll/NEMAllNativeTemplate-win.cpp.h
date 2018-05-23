@@ -1781,10 +1781,12 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
 
             case HvMessageTypeX64CpuidIntercept:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64CpuIdIntercept));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitCpuId);
                 return nemHCWinHandleMessageCpuId(pVCpu, &pMsg->X64CpuIdIntercept, pCtx);
 
             case HvMessageTypeX64MsrIntercept:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64MsrIntercept));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMsr);
                 return nemHCWinHandleMessageMsr(pVCpu, &pMsg->X64MsrIntercept, pCtx, pGVCpu);
 
             case HvMessageTypeUnrecoverableException:
