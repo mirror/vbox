@@ -142,11 +142,13 @@ $(VBOX_XIDL_FILE).ts +| $(VBOX_XIDL_FILE): \
 		$(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl \
 		| $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
-# 	$(CP) -fv $(VBOX_XIDL_FILE_SRC) $(VBOX_XIDL_FILE).ts
-	$(QUIET)$(VBOX_XSLTPROC) -o $(VBOX_XIDL_FILE).ts $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl $(VBOX_XIDL_FILE_SRC)
-	$(QUIET)$(CP) --changed -fv $(VBOX_XIDL_FILE).ts $(VBOX_XIDL_FILE)
+	$(QUIET)$(VBOX_XSLTPROC) -o $(VBOX_XIDL_FILE).ts-tmp $(VBOX_PATH_MAIN_SRC)/idl/docstrip.xsl $(VBOX_XIDL_FILE_SRC)
+	$(QUIET)$(SED)  -e 's/ *$(DOLLAR)//g'  -e '/^$(DOLLAR)/d' --output $(VBOX_XIDL_FILE).ts $(VBOX_XIDL_FILE).ts-tmp
+	$(QUIET)$(RM) -- $(VBOX_XIDL_FILE).ts-tmp
+	$(QUIET)$(CP) --changed -fv -- $(VBOX_XIDL_FILE).ts $(VBOX_XIDL_FILE)
 
 OTHER_CLEAN += $(VBOX_XIDL_FILE) $(VBOX_XIDL_FILE).ts
+
 
 #
 # The Main API documentation
