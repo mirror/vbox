@@ -753,6 +753,27 @@ VMMR3DECL(int) EMR3QueryExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool 
 
 
 /**
+ * Queries the main execution engine of the VM.
+ *
+ * @returns VBox status code
+ * @param   pUVM                    The user mode VM handle.
+ * @param   pbMainExecutionEngine   Where to return the result, VM_EXEC_ENGINE_XXX.
+ */
+VMMR3DECL(int) EMR3QueryMainExecutionEngine(PUVM pUVM, uint8_t *pbMainExecutionEngine)
+{
+    AssertPtrReturn(pbMainExecutionEngine, VERR_INVALID_POINTER);
+    *pbMainExecutionEngine = VM_EXEC_ENGINE_NOT_SET;
+
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    *pbMainExecutionEngine = pVM->bMainExecutionEngine;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Raise a fatal error.
  *
  * Safely terminate the VM with full state report and stuff. This function

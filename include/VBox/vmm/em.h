@@ -279,6 +279,7 @@ typedef enum EMEXECPOLICY
 } EMEXECPOLICY;
 VMMR3DECL(int)                  EMR3SetExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool fEnforce);
 VMMR3DECL(int)                  EMR3QueryExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool *pfEnforced);
+VMMR3DECL(int)                  EMR3QueryMainExecutionEngine(PUVM pUVM, uint8_t *pbMainExecutionEngine);
 
 VMMR3_INT_DECL(int)             EMR3Init(PVM pVM);
 VMMR3_INT_DECL(void)            EMR3Relocate(PVM pVM);

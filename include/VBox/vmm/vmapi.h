@@ -38,6 +38,21 @@ RT_C_DECLS_BEGIN
  * @ingroup grp_vm
  * @{ */
 
+/** @name VM_EXEC_ENGINE_XXX - VM::bMainExecutionEngine values.
+ * @sa EMR3QueryMainExecutionEngine, VM_IS_RAW_MODE_ENABLED,  VM_IS_HM_ENABLED,
+ *     VM_IS_HM_OR_NEM_ENABLED, VM_IS_NEM_ENABLED,  VM_SET_MAIN_EXECUTION_ENGINE
+ * @{ */
+/** Has not yet been set. */
+#define VM_EXEC_ENGINE_NOT_SET              UINT8_C(0)
+/** Raw-mode. */
+#define VM_EXEC_ENGINE_RAW_MODE             UINT8_C(1)
+/** Hardware assisted virtualization thru HM. */
+#define VM_EXEC_ENGINE_HW_VIRT              UINT8_C(2)
+/** Hardware assisted virtualization thru native API (NEM). */
+#define VM_EXEC_ENGINE_NATIVE_API           UINT8_C(3)
+/** @} */
+
+
 /** @def VM_RC_ADDR
  * Converts a current context address of data within the VM structure to the equivalent
  * raw-mode address.

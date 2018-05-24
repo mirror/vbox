@@ -184,6 +184,7 @@ EXPORTS
     DBGFR3TypeValDumpEx
 
     EMR3QueryExecutionPolicy
+    EMR3QueryMainExecutionEngine
     EMR3SetExecutionPolicy
 
     FTMR3CancelStandby

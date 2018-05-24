@@ -934,18 +934,6 @@ typedef struct VMCPU
 #endif /* !VBOX_FOR_DTRACE_LIB */
 
 
-/** @name VM_EXEC_ENGINE_XXX - VM::bMainExecutionEngine values.
- * @{ */
-/** Has not yet been set. */
-#define VM_EXEC_ENGINE_NOT_SET              UINT8_C(0)
-/** Raw-mode. */
-#define VM_EXEC_ENGINE_RAW_MODE             UINT8_C(1)
-/** Hardware assisted virtualization thru HM. */
-#define VM_EXEC_ENGINE_HW_VIRT              UINT8_C(2)
-/** Hardware assisted virtualization thru native API (NEM). */
-#define VM_EXEC_ENGINE_NATIVE_API           UINT8_C(3)
-/** @} */
-
 /**
  * Helper that HM and NEM uses for safely modifying VM::bMainExecutionEngine.
  *
