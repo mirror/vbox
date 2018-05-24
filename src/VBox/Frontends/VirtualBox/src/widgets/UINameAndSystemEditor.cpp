@@ -240,7 +240,7 @@ void UINameAndSystemEditor::prepareWidgets()
         m_pNameLineEdit = new QILineEdit;
         if (m_pNameLineEdit)
         {
-            pMainLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 1);
+            pMainLayout->addWidget(m_pNameLineEdit, 0, 1, 1, 2);
         }
 
         m_pPathLabel = new QLabel;
@@ -254,7 +254,7 @@ void UINameAndSystemEditor::prepareWidgets()
         m_pPathSelector = new UIFilePathSelector;
         if (m_pPathSelector)
         {
-            pMainLayout->addWidget(m_pPathSelector, 1, 1, 1, 1);
+            pMainLayout->addWidget(m_pPathSelector, 1, 1, 1, 2);
             QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
             m_pPathSelector->setPath(strDefaultMachineFolder);
             m_pPathSelector->setDefaultPath(strDefaultMachineFolder);
