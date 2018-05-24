@@ -531,6 +531,36 @@ HRESULT MachineDebugger::getLogRelDestinations(com::Utf8Str &aLogRelDestinations
 }
 
 /**
+ * Return the main execution engine of the VM.
+ *
+ * @returns COM status code
+ * @param   apenmEngine     Address of the result variable.
+ */
+HRESULT MachineDebugger::getExecutionEngine(VMExecutionEngine_T *apenmEngine)
+{
+    *apenmEngine = VMExecutionEngine_NotSet;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
+    if (ptrVM.isOk())
+    {
+        uint8_t bEngine = UINT8_MAX;
+        int rc = EMR3QueryMainExecutionEngine(ptrVM.rawUVM(), &bEngine);
+        if (RT_SUCCESS(rc))
+            switch (bEngine)
+            {
+                case VM_EXEC_ENGINE_NOT_SET:    *apenmEngine = VMExecutionEngine_NotSet; break;
+                case VM_EXEC_ENGINE_RAW_MODE:   *apenmEngine = VMExecutionEngine_RawMode; break;
+                case VM_EXEC_ENGINE_HW_VIRT:    *apenmEngine = VMExecutionEngine_HwVirt; break;
+                case VM_EXEC_ENGINE_NATIVE_API: *apenmEngine = VMExecutionEngine_NativeApi; break;
+                default: AssertMsgFailed(("bEngine=%d\n", bEngine));
+            }
+    }
+
+    return S_OK;
+}
+
+/**
  * Returns the current hardware virtualization flag.
  *
  * @returns COM status code
@@ -538,14 +568,16 @@ HRESULT MachineDebugger::getLogRelDestinations(com::Utf8Str &aLogRelDestinations
  */
 HRESULT MachineDebugger::getHWVirtExEnabled(BOOL *aHWVirtExEnabled)
 {
+    *aHWVirtExEnabled = false;
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     Console::SafeVMPtrQuiet ptrVM(mParent);
-
     if (ptrVM.isOk())
-        *aHWVirtExEnabled = HMR3IsEnabled(ptrVM.rawUVM());
-    else
-        *aHWVirtExEnabled = false;
+    {
+        uint8_t bEngine = UINT8_MAX;
+        int rc = EMR3QueryMainExecutionEngine(ptrVM.rawUVM(), &bEngine);
+        *aHWVirtExEnabled = RT_SUCCESS(rc) && bEngine == VM_EXEC_ENGINE_HW_VIRT;
+    }
 
     return S_OK;
 }

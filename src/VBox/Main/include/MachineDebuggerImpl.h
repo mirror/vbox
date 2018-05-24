@@ -65,6 +65,7 @@ private:
     HRESULT getLogRelFlags(com::Utf8Str &aLogRelFlags);
     HRESULT getLogRelGroups(com::Utf8Str &aLogRelGroups);
     HRESULT getLogRelDestinations(com::Utf8Str &aLogRelDestinations);
+    HRESULT getExecutionEngine(VMExecutionEngine_T *apenmEngine);
     HRESULT getHWVirtExEnabled(BOOL *aHWVirtExEnabled);
     HRESULT getHWVirtExNestedPagingEnabled(BOOL *aHWVirtExNestedPagingEnabled);
     HRESULT getHWVirtExVPIDEnabled(BOOL *aHWVirtExVPIDEnabled);

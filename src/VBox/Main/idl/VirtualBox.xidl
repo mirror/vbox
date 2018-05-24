@@ -18313,9 +18313,30 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <enum
+    name="VMExecutionEngine"
+    uuid="56029577-31f7-44d2-3334-7ecbf95294b6"
+    >
+    <desc>
+      The main execution engine of a VM.
+    </desc>
+    <const name="NotSet"            value="0">
+      <desc>Has not yet been set (try again later).</desc>
+    </const>
+    <const name="RawMode"           value="1">
+      <desc>Raw-mode.</desc>
+    </const>
+    <const name="HwVirt"            value="2">
+      <desc>Hardware assisted virtualization thru HM.</desc>
+    </const>
+    <const name="NativeApi"         value="3">
+      <desc>Hardware assisted virtualization thru native API (NEM).</desc>
+    </const>
+  </enum>
+
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="9c0f5269-47ae-ee34-c2fe-53a16e388925"
+    uuid="8b1a74a7-086a-46cc-1229-6a85ad31b7ba"
     wsmap="managed"
     reservedMethods="16" reservedAttributes="15"
     >
@@ -18731,10 +18752,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>The relase logger's destination settings.</desc>
     </attribute>
 
+    <attribute name="executionEngine" type="VMExecutionEngine" readonly="yes">
+      <desc>Gets the main execution engine of the VM.</desc>
+    </attribute>
+
     <attribute name="HWVirtExEnabled" type="boolean" readonly="yes">
       <desc>
         Flag indicating whether the VM is currently making use of CPU hardware
         virtualization extensions.
+
+        Superseeded by mainExecutionMode.
       </desc>
     </attribute>
 
