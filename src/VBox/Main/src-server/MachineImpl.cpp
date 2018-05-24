@@ -7806,7 +7806,11 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         AssertReturn(cchBufLeft > strAppPath.length(), E_UNEXPECTED);
         strcpy(pszNamePart, strAppPath.c_str());
 # else
+#  ifndef VBOX_GUI_WITH_SHARED_LIBRARY
         static const char s_szVirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
+#  else
+        static const char s_szVirtualBox_exe[] = "VirtualBoxVM" HOSTSUFF_EXE;
+#  endif
         Assert(cchBufLeft >= sizeof(s_szVirtualBox_exe));
         strcpy(pszNamePart, s_szVirtualBox_exe);
 # endif
