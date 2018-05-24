@@ -1117,7 +1117,7 @@ static int hdaRegReadWALCLK(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
     return VINF_SUCCESS;
 #else
     RT_NOREF(pThis, iReg, pu32Value);
-    return VINF_IOM_R3_MMIO_WRITE;
+    return VINF_IOM_R3_MMIO_READ;
 #endif
 }
 
@@ -3133,7 +3133,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
 DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, char const *pszLog)
 {
-    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_READ);
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     if (!(HDA_REG(pThis, GCTL) & HDA_GCTL_CRST) && idxRegDsc != HDA_REG_GCTL)
     {
@@ -4501,7 +4501,7 @@ static DECLCALLBACK(int) hdaR3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t
 {
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 
-    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
+    DEVHDA_LOCK_RETURN(pThis, VERR_IGNORED);
 
     LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
 
