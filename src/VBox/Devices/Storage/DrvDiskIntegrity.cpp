@@ -810,6 +810,7 @@ DECLINLINE(void) drvdiskintTraceLogFireEvtFlush(PDRVDISKINTEGRITY pThis, RTTRACE
  * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   uGrp     The group ID.
+ * @param   rcReq    Status code the request completed with.
  * @param   pSgBuf   The S/G buffer holding the data.
  */
 DECLINLINE(void) drvdiskintTraceLogFireEvtComplete(PDRVDISKINTEGRITY pThis, RTTRACELOGEVTGRPID uGrp, int rcReq, PRTSGBUF pSgBuf)
