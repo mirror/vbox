@@ -957,7 +957,6 @@ UISession::UISession(UIMachine *pMachine)
     , m_fIsHidingHostPointer(true)
     , m_enmVMExecutionEngine(KVMExecutionEngine_NotSet)
     /* CPU hardware virtualization features for VM: */
-    , m_fIsHWVirtExEnabled(false)
     , m_fIsHWVirtExNestedPagingEnabled(false)
     , m_fIsHWVirtExUXEnabled(false)
     /* VM's effective paravirtualization provider: */
@@ -2004,8 +2003,8 @@ bool UISession::postprocessInitialization()
     const bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetIs64Bit();
     const bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetRecommendedVirtEx();
     AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
-    const bool fIsVirtActive = debugger().GetHWVirtExEnabled();
-    if (fRecommendVirtEx && !fIsVirtActive)
+    const KVMExecutionEngine enmEngine = debugger().GetExecutionEngine();
+    if (fRecommendVirtEx && enmEngine == KVMExecutionEngine_RawMode)
     {
         /* Check whether vt-x / amd-v supported: */
         bool fVTxAMDVSupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
@@ -2123,8 +2122,6 @@ void UISession::loadVMSettings()
 {
     /* Cache IMachine::ExecutionEngine value. */
     m_enmVMExecutionEngine = m_debugger.GetExecutionEngine();
-    /* Load CPU hardware virtualization extension: */
-    m_fIsHWVirtExEnabled = m_debugger.GetHWVirtExEnabled();
     /* Load nested-paging CPU hardware virtualization extension: */
     m_fIsHWVirtExNestedPagingEnabled = m_debugger.GetHWVirtExNestedPagingEnabled();
     /* Load whether the VM is currently making use of the unrestricted execution feature of VT-x: */

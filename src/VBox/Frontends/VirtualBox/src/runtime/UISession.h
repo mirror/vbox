@@ -267,8 +267,6 @@ public:
      ** @{ */
     /** Returns whether CPU hardware virtualization extension is enabled. */
     KVMExecutionEngine getVMExecutionEngine() const { return m_enmVMExecutionEngine; }
-    /** Returns whether CPU hardware virtualization extension is enabled. */
-    bool isHWVirtExEnabled() const { return m_fIsHWVirtExEnabled; }
     /** Returns whether nested-paging CPU hardware virtualization extension is enabled. */
     bool isHWVirtExNestedPagingEnabled() const { return m_fIsHWVirtExNestedPagingEnabled; }
     /** Returns whether the VM is currently making use of the unrestricted execution feature of VT-x. */
@@ -549,8 +547,6 @@ private:
 
     /** @name CPU hardware virtualization features for VM.
      ** @{ */
-    /** Holds whether CPU hardware virtualization extension is enabled. */
-    bool m_fIsHWVirtExEnabled;
     /** Holds whether nested-paging CPU hardware virtualization extension is enabled. */
     bool m_fIsHWVirtExNestedPagingEnabled;
     /** Holds whether the VM is currently making use of the unrestricted execution feature of VT-x. */
