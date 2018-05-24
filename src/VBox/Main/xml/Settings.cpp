@@ -2773,6 +2773,7 @@ Hardware::Hardware() :
     fVPID(true),
     fUnrestrictedExecution(true),
     fHardwareVirtForce(false),
+    fUseNativeApi(false),
     fTripleFaultReset(false),
     fPAE(false),
     fAPIC(true),
@@ -2930,6 +2931,7 @@ bool Hardware::operator==(const Hardware& h) const
             && fVPID                     == h.fVPID
             && fUnrestrictedExecution    == h.fUnrestrictedExecution
             && fHardwareVirtForce        == h.fHardwareVirtForce
+            && fUseNativeApi             == h.fUseNativeApi
             && fPAE                      == h.fPAE
             && enmLongMode               == h.enmLongMode
             && fTripleFaultReset         == h.fTripleFaultReset
@@ -3907,6 +3909,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("enabled", hw.fUnrestrictedExecution);
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtForce")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirtForce);
+            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExUseNativeApi")))
+                pelmCPUChild->getAttributeValue("enabled", hw.fUseNativeApi);
 
             if (!(pelmCPUChild = pelmHwChild->findChildElement("PAE")))
             {
@@ -5332,6 +5336,9 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         if (hw.fHardwareVirtForce)
             pelmCPU->createChild("HardwareVirtForce")->setAttribute("enabled", hw.fHardwareVirtForce);
     }
+
+    if (m->sv >= SettingsVersion_v1_9 && hw.fUseNativeApi)
+        pelmCPU->createChild("HardwareVirtExUseNativeApi")->setAttribute("enabled", hw.fUseNativeApi);
 
     if (m->sv >= SettingsVersion_v1_10)
     {
@@ -6963,8 +6970,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_17)
     {
-        // VirtualBox 6.0 adds nested hardware virtualization.
-        if (hardwareMachine.fNestedHWVirt)
+        // VirtualBox 6.0 adds nested hardware virtualization, using native API (NEM).
+        if (   hardwareMachine.fNestedHWVirt
+            || hardwareMachine.fUseNativeApi)
         {
             m->sv = SettingsVersion_v1_17;
             return;

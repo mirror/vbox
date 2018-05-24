@@ -281,6 +281,7 @@ public:
         BOOL                mHWVirtExVPIDEnabled;
         BOOL                mHWVirtExUXEnabled;
         BOOL                mHWVirtExForceEnabled;
+        BOOL                mHWVirtExUseNativeApi;
         BOOL                mAccelerate2DVideoEnabled;
         BOOL                mPAEEnabled;
         settings::Hardware::LongModeType mLongMode;

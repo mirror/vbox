@@ -899,6 +899,7 @@ struct Hardware
                         fVPID,
                         fUnrestrictedExecution,
                         fHardwareVirtForce,
+                        fUseNativeApi,
                         fSyntheticCpu,
                         fTripleFaultReset,
                         fPAE,

@@ -1055,7 +1055,7 @@
 
   <enum
     name="HWVirtExPropertyType"
-    uuid="411ad0ea-aeeb-44cb-9d03-1624d0d025ac"
+    uuid="bc05551e-e288-467e-1ea3-233de08e4480"
     >
     <desc>
       Hardware virtualization property type. This enumeration represents possible values
@@ -1095,6 +1095,12 @@
       <desc>
         Whether the VM should fail to start if hardware virtualization (VT-x/AMD-V) cannot be used. If
         not set, there will be an automatic fallback to software virtualization.
+      </desc>
+    </const>
+    <const name="UseNativeApi"          value="7">
+      <desc>
+        Use the native hypervisor API instead of the VirtualBox one (HM) for VT-X/AMD-V.  This is
+        ignored if <link to="HWVirtExPropertyType::Enabled"/> isn't set.
       </desc>
     </const>
   </enum>
