@@ -392,6 +392,13 @@ HRESULT Host::init(VirtualBox *aParent)
             m->fRecheckVTSupported = true; /* Try again later when the driver is loaded. */
     }
 
+    /* Check for NEM in root paritition (hyper-V / windows). */
+    if (!m->fVTSupported && SUPR3IsNemSupportedWhenNoVtxOrAmdV())
+    {
+        m->fVTSupported = m->fNestedPagingSupported = true;
+        m->fRecheckVTSupported = false;
+    }
+
 #ifdef VBOX_WITH_CROGL
     /* Test for 3D hardware acceleration support later when (if ever) need. */
     m->f3DAccelerationSupported = -1;

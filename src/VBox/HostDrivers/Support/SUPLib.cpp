@@ -1705,6 +1705,16 @@ SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pfCaps)
 }
 
 
+SUPR3DECL(bool) SUPR3IsNemSupportedWhenNoVtxOrAmdV(void)
+{
+#ifdef RT_OS_WINDOWS
+    return suplibOsIsNemSupportedWhenNoVtxOrAmdV();
+#else
+    return false;
+#endif
+}
+
+
 SUPR3DECL(int) SUPR3QueryMicrocodeRev(uint32_t *uMicrocodeRev)
 {
     AssertPtrReturn(uMicrocodeRev, VERR_INVALID_POINTER);

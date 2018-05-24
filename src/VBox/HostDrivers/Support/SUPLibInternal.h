@@ -361,6 +361,7 @@ int     suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCp
 int     suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages);
 int     suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t cPages);
 int     suplibOsQueryVTxSupported(const char **ppszWhy);
+bool    suplibOsIsNemSupportedWhenNoVtxOrAmdV(void);
 
 
 /**

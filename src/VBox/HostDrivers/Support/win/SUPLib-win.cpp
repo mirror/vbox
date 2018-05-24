@@ -48,6 +48,10 @@
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#ifndef VBOX_WITH_HARDENING
+# include <iprt/x86.h>
+# include <iprt/ldr.h>
+#endif
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include "../SUPLibInternal.h"
@@ -737,6 +741,56 @@ int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
     if (VirtualFree(pvPages, 0, MEM_RELEASE))
         return VINF_SUCCESS;
     return RTErrConvertFromWin32(GetLastError());
+}
+
+
+bool suplibOsIsNemSupportedWhenNoVtxOrAmdV(void)
+{
+# if ARCH_BITS == 64
+    /*
+     * Check that we're in a VM.
+     */
+    if (!ASMHasCpuId())
+        return false;
+    if (!ASMIsValidStdRange(ASMCpuId_EAX(0)))
+        return false;
+    if (!(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_HVP))
+        return false;
+
+    /*
+     * Try load WinHvPlatform and resolve API for checking.
+     * Note! The two size_t arguments and the ssize_t one are all too big, but who cares.
+     */
+    RTLDRMOD hLdrMod = NIL_RTLDRMOD;
+    int rc = RTLdrLoadSystem("WinHvPlatform.dll", false, &hLdrMod);
+    if (RT_FAILURE(rc))
+        return false;
+
+    bool fRet = false;
+    typedef HRESULT (WINAPI *PFNWHVGETCAPABILITY)(ssize_t, void *, size_t, size_t *);
+    PFNWHVGETCAPABILITY pfnWHvGetCapability = (PFNWHVGETCAPABILITY)RTLdrGetFunction(hLdrMod, "WHvGetCapability");
+    if (pfnWHvGetCapability)
+    {
+        /*
+         * Query the API.
+         */
+        union
+        {
+            BOOL fHypervisorPresent;
+            uint64_t u64Padding;
+        } Caps;
+        RT_ZERO(Caps);
+        size_t cbRetIgn = 0;
+        HRESULT hrc = pfnWHvGetCapability(0 /*WHvCapabilityCodeHypervisorPresent*/, &Caps, sizeof(Caps), &cbRetIgn);
+        if (SUCCEEDED(hrc) && Caps.fHypervisorPresent)
+            fRet = true;
+    }
+
+    RTLdrClose(hLdrMod);
+    return fRet;
+# else
+    return false;
+#endif
 }
 
 

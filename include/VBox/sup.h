@@ -1659,6 +1659,16 @@ SUPR3DECL(int) SUPR3QueryVTxSupported(const char **ppszWhy);
 SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pfCaps);
 
 /**
+ * Check if NEM is supported when no VT-x/AMD-V is indicated by the CPU.
+ *
+ * This is really only for the windows case where we're running in a root
+ * partition and isn't allowed to use the hardware directly.
+ *
+ * @returns True if NEM API support, false if not.
+ */
+SUPR3DECL(bool) SUPR3IsNemSupportedWhenNoVtxOrAmdV(void);
+
+/**
  * Open the tracer.
  *
  * @returns VBox status code.
