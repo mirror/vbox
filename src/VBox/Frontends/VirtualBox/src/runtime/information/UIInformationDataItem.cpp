@@ -672,6 +672,24 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
             QString strVirtualization = debugger.GetHWVirtExEnabled() ?
                                         VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
                                         VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
+            QString strExecutionEngine;
+            switch (debugger.GetExecutionEngine())
+            {
+                case KVMExecutionEngine_HwVirt:
+                    strExecutionEngine = "VT-x/AMD-V";  /* no translation */
+                    break;
+                case KVMExecutionEngine_RawMode:
+                    strExecutionEngine = "raw-mode";    /* no translation */
+                    break;
+                case KVMExecutionEngine_NativeApi:
+                    strExecutionEngine = "native API";  /* no translation */
+                    break;
+                default:
+                    AssertFailed();
+                case KVMExecutionEngine_NotSet:
+                    strExecutionEngine = VBoxGlobal::tr("not set", "details report (execution engine)");
+                    break;
+            }
             QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
                                       VBoxGlobal::tr("Active", "details report (Nested Paging)") :
                                       VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
@@ -708,7 +726,7 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
             for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
                 values << aResolutions[iScreen];
             values << strUptime
-                   << strVirtualization << strNestedPaging << strUnrestrictedExecution
+                   << strExecutionEngine << strNestedPaging << strUnrestrictedExecution
                    << strGAVersion << strOSType << strVRDEInfo;
             int iMaxLength = 0;
             foreach (const QString &strValue, values)
@@ -728,7 +746,7 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
             p_text << UITextTableLine(tr("VM Uptime"), strUptime);
             p_text << UITextTableLine(tr("Clipboard Mode"), strClipboardMode);
             p_text << UITextTableLine(tr("Drag and Drop Mode"), strDnDMode);
-            p_text << UITextTableLine(tr("VT-x/AMD-V", "details report"), strVirtualization);
+            p_text << UITextTableLine(tr("VM Execution Engine", "details report"), strExecutionEngine);
             p_text << UITextTableLine(tr("Nested Paging", "details report"), strNestedPaging);
             p_text << UITextTableLine(tr("Unrestricted Execution", "details report"), strUnrestrictedExecution);
             p_text << UITextTableLine(tr("Paravirtualization Interface", "details report"), strParavirtProvider);
