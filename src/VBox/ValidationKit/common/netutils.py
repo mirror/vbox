@@ -36,6 +36,45 @@ __version__ = "$Revision$"
 import socket;
 
 
+def getPrimaryHostIpByUdp(sPeerIp = '255.255.255.255'):
+    """
+    Worker for getPrimaryHostIp.
+
+    The method is opening a UDP socket targetting a random port on a
+    limited (local LAN) broadcast address.  We then use getsockname() to
+    obtain our own IP address, which should then be the primary IP.
+
+    Unfortunately, this doesn't always work reliably on Solaris.  When for
+    instance our host only is configured, which interface we end up on seems
+    to be totally random.
+    """
+
+    try:    oSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM);
+    except: oSocket = None;
+    if oSocket is not None:
+        try:
+            oSocket.connect((sPeerIp, 1984));
+            sHostIp = oSocket.getsockname()[0];
+        except:
+            sHostIp = None;
+        oSocket.close();
+        if sHostIp is not None:
+            return sHostIp;
+    return '127.0.0.1';
+
+
+def getPrimaryHostIpByHostname():
+    """
+    Worker for getPrimaryHostIp.
+
+    Attempts to resolve the hostname.
+    """
+    try:
+        return socket.gethostbyname(getHostnameFqdn());
+    except:
+        return '127.0.0.1';
+
+
 def getPrimaryHostIp():
     """
     Tries to figure out the primary (the one with default route), local
@@ -45,32 +84,22 @@ def getPrimaryHostIp():
     """
 
     #
-    # The first gambit is opening a UDP socket targetting a random port on a
-    # limited (local LAN) broadcast address.  We then use getsockname() to
-    # obtain our own IP address, which should then be the primary IP.
+    # This isn't quite as easy as one would think.  Doing a UDP connect to
+    # 255.255.255.255 turns out to be problematic on solaris with more than one
+    # network interface (IP is random selected it seems), as well as linux
+    # where we've seen 127.0.1.1 being returned on some hosts.
     #
-    try:    oSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM);
-    except: oSocket = None; print('#1');
-    if oSocket is not None:
-        try:
-            oSocket.connect(('255.255.255.255', 1984));
-            sHostIp = oSocket.getsockname()[0];
-        except:
-            sHostIp = None;
-        oSocket.close();
-        if sHostIp is not None:
-            return sHostIp;
-
+    # So a modified algorithm first try a known public IP address, ASSUMING
+    # that the primary interface is the one that gets us onto the internet.
+    # If that fails, due to routing or whatever, we try 255.255.255.255 and
+    # then finally hostname resolution.
     #
-    # The second attempt is resolving the hostname.
-    #
-    try:
-        return socket.gethostbyname(getHostnameFqdn());
-    except:
-        pass;
-
-    return '127.0.0.1';
-
+    sHostIp = getPrimaryHostIpByUdp('8.8.8.8');
+    if sHostIp.startswith('127.'):
+        sHostIp = getPrimaryHostIpByUdp('255.255.255.255');
+        if sHostIp.startswith('127.'):
+            sHostIp = getPrimaryHostIpByHostname();
+    return sHostIp;
 
 def getHostnameFqdn():
     """
