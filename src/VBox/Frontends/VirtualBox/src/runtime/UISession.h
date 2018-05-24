@@ -266,6 +266,8 @@ public:
     /** @name CPU hardware virtualization features for VM.
      ** @{ */
     /** Returns whether CPU hardware virtualization extension is enabled. */
+    KVMExecutionEngine getVMExecutionEngine() const { return m_enmVMExecutionEngine; }
+    /** Returns whether CPU hardware virtualization extension is enabled. */
     bool isHWVirtExEnabled() const { return m_fIsHWVirtExEnabled; }
     /** Returns whether nested-paging CPU hardware virtualization extension is enabled. */
     bool isHWVirtExNestedPagingEnabled() const { return m_fIsHWVirtExNestedPagingEnabled; }
@@ -541,6 +543,9 @@ private:
     bool m_fIsMouseIntegrated : 1;
     bool m_fIsValidPointerShapePresent : 1;
     bool m_fIsHidingHostPointer : 1;
+
+    /** Copy of IMachineDebugger::ExecutionEngine */
+    KVMExecutionEngine m_enmVMExecutionEngine;
 
     /** @name CPU hardware virtualization features for VM.
      ** @{ */

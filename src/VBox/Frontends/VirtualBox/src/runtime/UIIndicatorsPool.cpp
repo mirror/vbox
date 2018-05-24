@@ -933,8 +933,11 @@ public:
         : UISessionStateStatusBarIndicator(IndicatorType_Features, pSession)
     {
         /* Assign state-icons: */
-        setStateIcon(0, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
-        setStateIcon(1, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
+        setStateIcon(KVMExecutionEngine_NotSet, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
+        setStateIcon(KVMExecutionEngine_RawMode, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
+        setStateIcon(KVMExecutionEngine_HwVirt, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
+        /** @todo new indicator icon, something that looks very very slow (at least on Windows)... @bugref{9044} */
+        setStateIcon(KVMExecutionEngine_NativeApi, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
         /* Translate finally: */
         retranslateUi();
     }
@@ -948,9 +951,26 @@ private:
         const CMachine machine = m_pSession->machine();
 
         /* VT-x/AMD-V feature: */
-        const QString strVirtualization = m_pSession->isHWVirtExEnabled() ?
-                                          VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
-                                          VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
+        KVMExecutionEngine enmEngine = m_pSession->getVMExecutionEngine();
+        QString strExecutionEngine;
+        switch (enmEngine)
+        {
+            case KVMExecutionEngine_HwVirt:
+                strExecutionEngine = "VT-x/AMD-V";  /* no translation */
+                break;
+            case KVMExecutionEngine_RawMode:
+                strExecutionEngine = "raw-mode";    /* no translation */
+                break;
+            case KVMExecutionEngine_NativeApi:
+                strExecutionEngine = "native API";  /* no translation */
+                break;
+            default:
+                AssertFailed();
+                enmEngine = KVMExecutionEngine_NotSet;
+            case KVMExecutionEngine_NotSet:
+                strExecutionEngine = VBoxGlobal::tr("not set", "details report (execution engine)");
+                break;
+        }
 
         /* Nested Paging feature: */
         const QString strNestedPaging = m_pSession->isHWVirtExNestedPagingEnabled() ?
@@ -970,19 +990,20 @@ private:
 
         /* Prepare tool-tip: */
         QString strFullData;
-        strFullData += s_strTableRow2.arg(VBoxGlobal::tr("VT-x/AMD-V", "details report"),                   strVirtualization);
+        //strFullData += s_strTableRow2.arg(VBoxGlobal::tr("VT-x/AMD-V", "details report"),                   strVirtualization);
+        strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Execution engine", "details report"),             strExecutionEngine);
         strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Nested Paging"),                                  strNestedPaging);
         strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Unrestricted Execution"),                         strUnrestrictExec);
         strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Execution Cap", "details report"),                strCPUExecCap);
         strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Paravirtualization Interface", "details report"), strParavirt);
         const int cpuCount = machine.GetCPUCount();
         if (cpuCount > 1)
-            strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Processor(s)", "details report"), QString::number(cpuCount));
+            strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Processors", "details report"), QString::number(cpuCount));
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
         /* Update indicator state: */
-        setState(m_pSession->isHWVirtExEnabled());
+        setState(enmEngine);
     }
 };
 
