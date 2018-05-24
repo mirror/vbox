@@ -101,6 +101,7 @@ def getPrimaryHostIp():
             sHostIp = getPrimaryHostIpByHostname();
     return sHostIp;
 
+
 def getHostnameFqdn():
     """
     Wrapper around getfqdn.
