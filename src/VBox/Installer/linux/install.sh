@@ -33,7 +33,6 @@ SVNREV="_SVNREV_"
 BUILD="_BUILD_"
 ARCH="_ARCH_"
 HARDENED="_HARDENED_"
-GUI_WITH_SHARED_LIBRARY="_GUI_WITH_SHARED_LIBRARY_"
 # The "BUILD_" prefixes prevent the variables from being overwritten when we
 # read the configuration from the previous installation.
 BUILD_BUILDTYPE="_BUILDTYPE_"
@@ -278,7 +277,7 @@ if [ "$ACTION" = "install" ]; then
     #                 create symlinks for working around unsupported $ORIGIN/.. in VBoxC.so (setuid),
     #                 and finally make sure the directory is only writable by the user (paranoid).
     if [ -n "$HARDENED" ]; then
-        if [ -n "$GUI_WITH_SHARED_LIBRARY" ]; then
+        if [ -f $INSTALLATION_DIR/VirtualBoxVM ]; then
             test -e $INSTALLATION_DIR/VirtualBoxVM   && chmod 4511 $INSTALLATION_DIR/VirtualBoxVM
         else
             test -e $INSTALLATION_DIR/VirtualBox     && chmod 4511 $INSTALLATION_DIR/VirtualBox
