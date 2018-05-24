@@ -66,6 +66,8 @@ typedef struct RTTRACELOGWREVTDESC
     size_t                      cbEvtData;
     /** Number of non static raw binary items in the descriptor. */
     uint32_t                    cRawDataNonStatic;
+    /** Pointer to the scratch event data buffer when adding events. */
+    uint8_t                     *pbEvt;
     /** Embedded event descriptor. */
     RTTRACELOGEVTDESC           EvtDesc;
     /** Array of event item descriptors, variable in size. */
@@ -353,6 +355,15 @@ static PRTTRACELOGWREVTDESC rtTraceLogWrEvtDescInit(PCRTTRACELOGEVTDESC pEvtDesc
         }
 
         pEvtDescInt->cbEvtData = cbEvtData;
+        if (cbEvtData)
+        {
+            pEvtDescInt->pbEvt = (uint8_t *)RTMemAllocZ(cbEvtData);
+            if (!pEvtDescInt->pbEvt)
+            {
+                RTMemFree(pEvtDescInt);
+                pEvtDescInt = NULL;
+            }
+        }
     }
 
     return pEvtDescInt;
@@ -513,9 +524,11 @@ static DECLCALLBACK(int) rtTraceLogWrCheckForOverlappingIds(PAVLPVNODECORE pCore
 
 static DECLCALLBACK(int) rtTraceLogWrEvtDescsDestroy(PAVLPVNODECORE pCore, void *pvParam)
 {
+    PRTTRACELOGWREVTDESC pEvtDesc = (PRTTRACELOGWREVTDESC)pCore;
     RT_NOREF(pvParam);
 
-    RTMemFree(pCore);
+    RTMemFree(pEvtDesc->pbEvt);
+    RTMemFree(pEvtDesc);
     return VINF_SUCCESS;
 }
 
@@ -601,6 +614,66 @@ static int rtTraceLogWrEvtDescAdd(PRTTRACELOGWRINT pThis, PCRTTRACELOGEVTDESC pE
         else
             rc = VERR_ALREADY_EXISTS;
         RTSemMutexRelease(pThis->hMtx);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Fills a given buffer with the given event data as described in the given descriptor.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The trace log writer instance.
+ * @param   pEvtDescInt         Pointer to the internal event descriptor.
+ * @param   pb                  The byte buffer to fill.
+ * @param   va                  The event data.
+ */
+static int rtTraceLogWrEvtFill(PRTTRACELOGWRINT pThis, PRTTRACELOGWREVTDESC pEvtDescInt, uint8_t *pb, va_list va)
+{
+    int rc = VINF_SUCCESS;
+    uint8_t *pbCur = pb;
+
+    RT_NOREF(pThis);
+
+    for (unsigned i = 0; i < pEvtDescInt->EvtDesc.cEvtItems; i++)
+    {
+        PCRTTRACELOGEVTITEMDESC pEvtItemDesc = &pEvtDescInt->EvtDesc.paEvtItemDesc[i];
+
+        size_t cbItem = rtTraceLogWrGetEvtItemDataSz(pEvtItemDesc);
+        switch (cbItem)
+        {
+            case sizeof(uint8_t):
+                *pbCur++ = va_arg(va, /*uint8_t*/ unsigned);
+                break;
+            case sizeof(uint16_t):
+                *(uint16_t *)pbCur = va_arg(va, /*uint16_t*/ unsigned);
+                pbCur += sizeof(uint16_t);
+                break;
+            case sizeof(uint32_t):
+                *(uint32_t *)pbCur = va_arg(va, uint32_t);
+                pbCur += sizeof(uint32_t);
+                break;
+            case sizeof(uint64_t):
+                *(uint64_t *)pbCur = va_arg(va, uint64_t);
+                pbCur += sizeof(uint64_t);
+                break;
+            default:
+                /* Some raw data item. */
+                Assert(pEvtItemDesc->enmType == RTTRACELOGTYPE_RAWDATA);
+                if (cbItem != 0)
+                {
+                    /* Static raw data. */
+                    void *pvSrc = va_arg(va, void *);
+                    memcpy(pbCur, pvSrc, cbItem);
+                    pbCur += cbItem;
+                }
+                else
+                {
+                    AssertMsgFailed(("Not implemented!\n"));
+                    rc = VERR_NOT_IMPLEMENTED;
+                }
+        }
     }
 
     return rc;
@@ -840,5 +913,43 @@ RTDECL(int) RTTraceLogWrEvtAddSg(RTTRACELOGWR hTraceLogWr, PCRTTRACELOGEVTDESC p
 {
     RT_NOREF(hTraceLogWr, pEvtDesc, fFlags, uGrpId, uParentGrpId, pSgBufEvtData, pacbRawData);
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+RTDECL(int) RTTraceLogWrEvtAddLV(RTTRACELOGWR hTraceLogWr, PCRTTRACELOGEVTDESC pEvtDesc, uint32_t fFlags,
+                                 RTTRACELOGEVTGRPID uGrpId, RTTRACELOGEVTGRPID uParentGrpId, va_list va)
+{
+    PRTTRACELOGWRINT pThis = hTraceLogWr;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    int rc = VINF_SUCCESS;
+    PRTTRACELOGWREVTDESC pEvtDescInt = rtTraceLogWrEvtDescGetInternal(pThis, pEvtDesc);
+    if (RT_UNLIKELY(!pEvtDescInt))
+        rc = rtTraceLogWrEvtDescAdd(pThis, pEvtDesc, &pEvtDescInt);
+
+    if (   RT_SUCCESS(rc)
+        && VALID_PTR(pEvtDescInt))
+    {
+        TRACELOGEVT Evt;
+        size_t cbEvtData = rtTraceLogWrEvtInit(&Evt, pEvtDescInt, fFlags, uGrpId, uParentGrpId, NULL);
+
+        if (cbEvtData)
+            rc = rtTraceLogWrEvtFill(pThis, pEvtDescInt, pEvtDescInt->pbEvt, va);
+        if (RT_SUCCESS(rc))
+            rc = rtTraceLogWrEvtStream(pThis, &Evt, pEvtDescInt->pbEvt, cbEvtData, NULL);
+    }
+
+    return rc;
+}
+
+
+RTDECL(int) RTTraceLogWrEvtAddL(RTTRACELOGWR hTraceLogWr, PCRTTRACELOGEVTDESC pEvtDesc, uint32_t fFlags,
+                                RTTRACELOGEVTGRPID uGrpId, RTTRACELOGEVTGRPID uParentGrpId, ...)
+{
+    va_list va;
+    va_start(va, uParentGrpId);
+    int rc = RTTraceLogWrEvtAddLV(hTraceLogWr, pEvtDesc, fFlags, uGrpId, uParentGrpId, va);
+    va_end(va);
+    return rc;
 }
 

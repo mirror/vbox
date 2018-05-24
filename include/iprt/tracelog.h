@@ -412,6 +412,42 @@ RTDECL(int) RTTraceLogWrEvtAddSg(RTTRACELOGWR hTraceLogWr, PCRTTRACELOGEVTDESC p
 
 
 /**
+ * Adds a new event to the trace log - list variant.
+ *
+ * @returns IPRT status code.
+ * @param   hTraceLogWr         The trace log writer instance handle.
+ * @param   pEvtDesc            The event descriptor used for formatting the data.
+ * @param   fFlags              Flags to use for this event.
+ * @param   uGrpId              A unique group ID for grouped events.
+ * @param   uParentGrpId        A parent group ID this event originated from.
+ * @param   va                  The event data as single items as described by the descriptor.
+ *
+ * @note The event descriptor is keyed by the pointer for faster lookup in subsequent calls,
+ *       so don't free after this method finishes.
+ */
+RTDECL(int) RTTraceLogWrEvtAddLV(RTTRACELOGWR hTraceLogWr, PCRTTRACELOGEVTDESC pEvtDesc, uint32_t fFlags,
+                                 RTTRACELOGEVTGRPID uGrpId, RTTRACELOGEVTGRPID uParentGrpId, va_list va);
+
+
+/**
+ * Adds a new event to the trace log - list variant.
+ *
+ * @returns IPRT status code.
+ * @param   hTraceLogWr         The trace log writer instance handle.
+ * @param   pEvtDesc            The event descriptor used for formatting the data.
+ * @param   fFlags              Flags to use for this event.
+ * @param   uGrpId              A unique group ID for grouped events.
+ * @param   uParentGrpId        A parent group ID this event originated from.
+ * @param   ...                 The event data as single items as described by the descriptor.
+ *
+ * @note The event descriptor is keyed by the pointer for faster lookup in subsequent calls,
+ *       so don't free after this method finishes.
+ */
+RTDECL(int) RTTraceLogWrEvtAddL(RTTRACELOGWR hTraceLogWr, PCRTTRACELOGEVTDESC pEvtDesc, uint32_t fFlags,
+                                RTTRACELOGEVTGRPID uGrpId, RTTRACELOGEVTGRPID uParentGrpId, ...);
+
+
+/**
  * Creates a new trace log reader instance.
  *
  * @returns IPRT status code.
