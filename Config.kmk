@@ -571,10 +571,8 @@ VBOX_WITH_PLUGIN_CRYPT = 1
 VBOX_WITH_VIRTUALKD = 1
 # NVMe device emulation
 VBOX_WITH_NVME_IMPL = 1
-# Storage related debug driver - Windows disabled because of some linker issue
-ifn1of ($(KBUILD_TARGET), win)
- VBOX_WITH_DRV_DISK_INTEGRITY = 1
-endif
+# Storage related debug drivers
+VBOX_WITH_DRV_DISK_INTEGRITY = 1
 # Enables new LPC device implementation.
 VBOX_WITH_NEW_LPC_DEVICE = 1
 ## @}
@@ -2897,7 +2895,7 @@ endif # !VBOX_NOINC_DYNAMIC_CONFIG_KMK
 VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs \
 	$(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-unused-parameter) $(VBOX_GCC_Wno-language-extension-token) \
 	$(VBOX_GCC_Wno-extended-offsetof) $(VBOX_GCC_Wno-gnu-folding-constant) $(VBOX_GCC_Wno-gnu-anonymous-struct) \
-       $(VBOX_GCC_Wlogical-op) $(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types) $(VBOX_GCC_Wno-variadic-macros)
+	$(VBOX_GCC_Wlogical-op) $(VBOX_GCC_Wno-string-plus-int) $(VBOX_GCC_Wno-nested-anon-types) $(VBOX_GCC_Wno-variadic-macros)
 VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
 if $(VBOX_GCC_VERSION_CXX) >= 40200 || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) # gcc 4.2.x+ (4.1.2 is causing trouble with the extpack & add builds)
  VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter

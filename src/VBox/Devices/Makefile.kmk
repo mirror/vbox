@@ -536,8 +536,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_SOURCES        += \
   	Storage/DrvDiskIntegrity.cpp \
   	Storage/DrvRamDisk.cpp
-  VBoxDD_LIBS           += \
- 	$(PATH_STAGE_LIB)/StorageDbgLib$(VBOX_SUFF_LIB)
  endif
 
  ifdef VBOX_WITH_EFI
