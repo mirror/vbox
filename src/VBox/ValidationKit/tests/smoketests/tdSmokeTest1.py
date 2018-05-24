@@ -99,6 +99,9 @@ class tdSmokeTest1(vbox.TestDriver):
                 elif oTestVm.sVmName == 'tst-sol10':            # SMP, 32-bit
                     oTestVm.asVirtModesSup  = [ 'hwvirt-np' ];
                     oTestVm.acCpusSup       = range(2, 3);
+                elif oTestVm.sVmName == 'tst-nsthwvirt-ubuntu-64':  # Nested hw.virt, 64-bit
+                    oTestVm.asVirtModesSup  = [ 'hwvirt-np' ];
+                    oTestVm.acCpusSup       = range(1, 2);
                 else:
                     oTestVm.fSkip = True;
         else:

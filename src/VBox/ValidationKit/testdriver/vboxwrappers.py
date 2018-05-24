@@ -994,6 +994,27 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
+    def enableNestedHwVirt(self, fEnable):
+        """
+        Enables or disables Nested Hardware-Virtualization.
+        Returns True on success and False on failure.  Error information is logged.
+        """
+        # Supported.
+        if self.fpApiVer < 5.3  or  not hasattr(vboxcon, 'CPUPropertyType_HWVirt'):
+            return True;
+
+        # Enable/disable it.
+        fRc = True;
+        try:
+            self.o.machine.setCPUProperty(vboxcon.CPUPropertyType_HWVirt, fEnable);
+        except:
+            reporter.errorXcpt('failed to set CPUPropertyType_HWVirt=%s for "%s"' % (fEnable, self.sName));
+            fRc = False;
+        else:
+            reporter.log('set CPUPropertyType_HWVirt=%s for "%s"' % (fEnable, self.sName));
+        self.oTstDrv.processPendingEvents();
+        return fRc;
+
     def enablePae(self, fEnable):
         """
         Enables or disables PAE

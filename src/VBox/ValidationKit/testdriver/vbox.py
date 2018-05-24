@@ -1975,6 +1975,8 @@ class TestDriver(base.TestDriver):                                              
         else:
             reporter.log("  PAE:                %s" % (oVM.getCpuProperty(vboxcon.CpuPropertyType_PAE)));
             reporter.log("  Synthetic CPU:      %s" % (oVM.getCpuProperty(vboxcon.CpuPropertyType_Synthetic)));
+        if self.fpApiVer >= 5.3 and hasattr(vboxcon, 'CPUPropertyType_HWVirt'):
+            reporter.log("  Nested VT-x/AMD-V:  %s" % (oVM.getCPUProperty(vboxcon.CPUPropertyType_HWVirt)));
         reporter.log("  ACPI:               %s" % (oVM.BIOSSettings.ACPIEnabled));
         reporter.log("  IO-APIC:            %s" % (oVM.BIOSSettings.IOAPICEnabled));
         if self.fpApiVer >= 3.2:
@@ -2207,6 +2209,7 @@ class TestDriver(base.TestDriver):                                              
                      sDvdImage = None,
                      sKind = "Other",
                      fIoApic = None,
+                     fNstHwVirt = None,
                      fPae = None,
                      fFastBootLogo = True,
                      eNic0Type = None,
@@ -2279,6 +2282,8 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.enableNestedPaging(fNestedPaging);
             if fRc and fIoApic is not None:
                 fRc = oSession.enableIoApic(fIoApic);
+            if fRc and fNstHwVirt is not None:
+                fRc = oSession.enableNestedHwVirt(fNstHwVirt);
             if fRc and fPae is not None:
                 fRc = oSession.enablePae(fPae);
             if fRc and sDvdImage is not None:
