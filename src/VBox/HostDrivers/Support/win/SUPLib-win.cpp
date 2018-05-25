@@ -48,7 +48,7 @@
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
-#ifndef VBOX_WITH_HARDENING
+#ifndef IN_SUP_HARDENED_R3
 # include <iprt/x86.h>
 # include <iprt/ldr.h>
 #endif
