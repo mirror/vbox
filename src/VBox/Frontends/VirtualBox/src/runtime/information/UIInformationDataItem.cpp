@@ -686,6 +686,7 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
                     break;
                 default:
                     AssertFailed();
+                    RT_FALL_THRU();
                 case KVMExecutionEngine_NotSet:
                     strExecutionEngine = VBoxGlobal::tr("not set", "details report (execution engine)");
                     break;

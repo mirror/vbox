@@ -967,6 +967,7 @@ private:
             default:
                 AssertFailed();
                 enmEngine = KVMExecutionEngine_NotSet;
+                RT_FALL_THRU();
             case KVMExecutionEngine_NotSet:
                 strExecutionEngine = VBoxGlobal::tr("not set", "details report (execution engine)");
                 break;
