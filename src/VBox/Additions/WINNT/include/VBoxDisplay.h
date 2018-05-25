@@ -20,6 +20,24 @@
 #include <iprt/types.h>
 #include <iprt/assert.h>
 
+typedef enum
+{
+    VBOXDISPLAY_MODEHINT_ACTIVE = 0x00000001,
+    VBOXDISPLAY_MODEHINT_PRIMARY = 0x00000002,
+    VBOXDISPLAY_MODEHINT_MASK = 0x00000003
+} VBOXDISPLAY_MODEHINT_FLAGS;
+
+typedef struct _VBOXDISPLAY_MODEHINT
+{
+    uint32_t idTarget;
+    int32_t xOrigin;
+    int32_t yOrigin;
+    uint32_t cx;
+    uint32_t cy;
+    uint32_t cBPP;
+    VBOXDISPLAY_MODEHINT_FLAGS fModeHintFlags;
+} VBOXDISPLAY_MODEHINT;
+
 #define VBOXESC_SETVISIBLEREGION            0xABCD9001
 #define VBOXESC_ISVRDPACTIVE                0xABCD9002
 #ifdef VBOX_WITH_WDDM
