@@ -1699,6 +1699,174 @@ static DWORD vboxDispIfWddmEnableDisplaysTryingTopology(PCVBOXDISPIF const pIf, 
     return winEr;
 }
 
+BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cModeHints, const VBOXDISPLAY_MODEHINT* paModeHints)
+{
+    const VBOXDISPLAY_MODEHINT* pHint;
+    VBOXDISPIF_OP Op;
+    DWORD winEr = ERROR_SUCCESS;
+    uint32_t id;
+    int iPath;
+
+    vboxDispIfOpBegin(pIf, &Op);
+
+    for (id = 0; id < cModeHints; ++id)
+    {
+        pHint = &paModeHints[id];
+
+        if (pHint->fModeHintFlags & VBOXDISPLAY_MODEHINT_ACTIVE)
+        {
+            RTRECTSIZE Size;
+
+            Size.cx = pHint->cx;
+            Size.cy = pHint->cy;
+
+            vboxDispIfUpdateModesWDDM(&Op, id, &Size);
+        }
+    }
+
+    vboxDispIfOpEnd(&Op);
+
+    VBOXDISPIF_WDDM_DISPCFG DispCfg;
+
+    vboxDispIfWddmDcCreate(&DispCfg, QDC_ALL_PATHS);
+
+    for (id = 0; id < cModeHints; ++id)
+    {
+        DISPLAYCONFIG_PATH_INFO *pPathInfo;
+
+        pHint = &paModeHints[id];
+        iPath = vboxDispIfWddmDcSearchPath(&DispCfg, id, id);
+
+        if (iPath < 0)
+        {
+            WARN(("VBoxTray:(WDDM) Unexpected iPath(%d) between src(%d) and tgt(%d)\n", iPath, id, id));
+            continue;
+        }
+
+        if (pHint->fModeHintFlags & VBOXDISPLAY_MODEHINT_ACTIVE)
+        {
+            DISPLAYCONFIG_SOURCE_MODE *pSrcMode;
+            DISPLAYCONFIG_TARGET_MODE *pTgtMode;
+
+            pPathInfo = &DispCfg.pPathInfoArray[iPath];
+
+            if (pPathInfo->flags & DISPLAYCONFIG_PATH_ACTIVE)
+            {
+                UINT iSrcMode, iTgtMode;
+
+                iSrcMode = pPathInfo->sourceInfo.modeInfoIdx;
+                iTgtMode = pPathInfo->targetInfo.modeInfoIdx;
+
+                if (iSrcMode >= DispCfg.cModeInfoArray || iTgtMode >= DispCfg.cModeInfoArray)
+                {
+                    WARN(("VBoxTray:(WDDM) Unexpected iSrcMode(%d) and/or iTgtMode(%d)\n", iSrcMode, iTgtMode));
+                    continue;
+                }
+
+                pSrcMode = &DispCfg.pModeInfoArray[iSrcMode].sourceMode;
+                pTgtMode = &DispCfg.pModeInfoArray[iTgtMode].targetMode;
+
+                pSrcMode->width =
+                    pTgtMode->targetVideoSignalInfo.activeSize.cx =
+                    pTgtMode->targetVideoSignalInfo.totalSize.cx  = pHint->cx;
+
+                pSrcMode->height =
+                    pTgtMode->targetVideoSignalInfo.activeSize.cy =
+                    pTgtMode->targetVideoSignalInfo.totalSize.cy  = pHint->cy;
+
+                pSrcMode->position.x = pHint->xOrigin;
+                pSrcMode->position.y = pHint->yOrigin;
+
+                switch (pHint->cBPP)
+                {
+                case 32:
+                    pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
+                    break;
+                case 24:
+                    pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_24BPP;
+                    break;
+                case 16:
+                    pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_16BPP;
+                    break;
+                case 8:
+                    pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_8BPP;
+                    break;
+                default:
+                    LogRel(("VBoxTray: (WDDM) invalid bpp %d, using 32bpp instead\n", pHint->cBPP));
+                    pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
+                    break;
+                }
+            }
+            else
+            {
+                DISPLAYCONFIG_MODE_INFO *pModeInfo, *pModeInfoNew;
+
+                pModeInfo = (DISPLAYCONFIG_MODE_INFO *)realloc(DispCfg.pModeInfoArray, (DispCfg.cModeInfoArray + 2) * sizeof(DISPLAYCONFIG_MODE_INFO));
+
+                if (!pModeInfo)
+                {
+                    WARN(("VBoxTray:(WDDM) Unable to re-allocate DispCfg.pModeInfoArray\n"));
+                    continue;
+                }
+
+                DispCfg.pModeInfoArray = pModeInfo;
+
+                *pPathInfo = DispCfg.pPathInfoArray[0];
+                pPathInfo->sourceInfo.id = id;
+                pPathInfo->targetInfo.id = id;
+
+                pModeInfoNew = &pModeInfo[DispCfg.cModeInfoArray];
+                pModeInfoNew->infoType = DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE;
+                pModeInfoNew->id = id;
+                pModeInfoNew->adapterId = pModeInfo[0].adapterId;
+                pSrcMode = &pModeInfoNew->sourceMode;
+                pSrcMode->width  = pHint->cx;
+                pSrcMode->height = pHint->cy;
+                pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
+                pSrcMode->position.x = pHint->xOrigin;
+                pSrcMode->position.y = pHint->yOrigin;
+                pPathInfo->sourceInfo.modeInfoIdx = DispCfg.cModeInfoArray;
+
+                pModeInfoNew++;
+                pModeInfoNew->infoType = DISPLAYCONFIG_MODE_INFO_TYPE_TARGET;
+                pModeInfoNew->id = id;
+                pModeInfoNew->adapterId = pModeInfo[0].adapterId;
+                pModeInfoNew->targetMode = pModeInfo[0].targetMode;
+                pTgtMode = &pModeInfoNew->targetMode;
+                pTgtMode->targetVideoSignalInfo.activeSize.cx = pHint->cx;
+                pTgtMode->targetVideoSignalInfo.totalSize.cx  = pHint->cx;
+                pTgtMode->targetVideoSignalInfo.activeSize.cy = pHint->cy;
+                pTgtMode->targetVideoSignalInfo.totalSize.cy  = pHint->cy;
+                pPathInfo->targetInfo.modeInfoIdx = DispCfg.cModeInfoArray + 1;
+
+                DispCfg.cModeInfoArray += 2;
+            }
+        }
+        else
+        {
+                DispCfg.pPathInfoArray[id].flags &= ~DISPLAYCONFIG_PATH_ACTIVE;
+        }
+    }
+
+    UINT fSetFlags = SDC_USE_SUPPLIED_DISPLAY_CONFIG;
+    winEr = vboxDispIfWddmDcSet(&DispCfg, fSetFlags | SDC_VALIDATE);
+    if (winEr != ERROR_SUCCESS)
+    {
+        WARN(("VBoxTray:(WDDM) pfnSetDisplayConfig Failed to validate winEr %d.\n", winEr));
+        fSetFlags |= SDC_ALLOW_CHANGES;
+    }
+
+    winEr = vboxDispIfWddmDcSet(&DispCfg, fSetFlags | SDC_SAVE_TO_DATABASE | SDC_APPLY);
+    if (winEr != ERROR_SUCCESS)
+    {
+        WARN(("VBoxTray:(WDDM) pfnSetDisplayConfig Failed to validate winEr %d.\n", winEr));
+    }
+
+    vboxDispIfWddmDcTerm(&DispCfg);
+
+    return (winEr == ERROR_SUCCESS);
+}
+
 static DWORD vboxDispIfWddmResizeDisplay2(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT devModes)
 {
     RT_NOREF(pIf, paDeviceModes);
