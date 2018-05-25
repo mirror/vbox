@@ -219,8 +219,17 @@ typedef struct DRVDISKINTEGRITY
  */
 static const RTTRACELOGEVTITEMDESC g_aEvtItemsReadWrite[] =
 {
-    { "Offset", "Offset to start reading/writing from/to", RTTRACELOGTYPE_UINT64, 0 },
-    { "Size",   "Number of bytes to transfer",             RTTRACELOGTYPE_SIZE,   0 }
+    { "Async",  "Flag whether the request is asynchronous", RTTRACELOGTYPE_BOOL,   0 },
+    { "Offset", "Offset to start reading/writing from/to",  RTTRACELOGTYPE_UINT64, 0 },
+    { "Size",   "Number of bytes to transfer",              RTTRACELOGTYPE_SIZE,   0 }
+};
+
+/**
+ * Flush event items.
+ */
+static const RTTRACELOGEVTITEMDESC g_aEvtItemsFlush[] =
+{
+    { "Async",  "Flag whether the request is asynchronous", RTTRACELOGTYPE_BOOL,   0 }
 };
 
 /**
@@ -239,7 +248,7 @@ static const RTTRACELOGEVTDESC g_EvtWrite =
     { "Write", "Write data to disk", RTTRACELOGEVTSEVERITY_DEBUG, RT_ELEMENTS(g_aEvtItemsReadWrite), &g_aEvtItemsReadWrite[0] };
 /** Flush event descriptor. */
 static const RTTRACELOGEVTDESC g_EvtFlush =
-    { "Flush", "Flush written data to disk", RTTRACELOGEVTSEVERITY_DEBUG, 0, NULL };
+    { "Flush", "Flush written data to disk", RTTRACELOGEVTSEVERITY_DEBUG, RT_ELEMENTS(g_aEvtItemsFlush), &g_aEvtItemsFlush[0] };
 /** I/O request complete event descriptor. */
 static const RTTRACELOGEVTDESC g_EvtComplete =
     { "Complete", "A previously started I/O request completed", RTTRACELOGEVTSEVERITY_DEBUG,
@@ -755,15 +764,16 @@ static int drvdiskintReadAfterWriteVerify(PDRVDISKINTEGRITY pThis, PDRVDISKAIORE
  * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   uGrp     The group ID.
+ * @param   fAsync   Flag whether this is an async request.
  * @param   off      The offset to put into the event log.
  * @param   cbRead   Amount of bytes to read.
  */
-DECLINLINE(void) drvdiskintTraceLogFireEvtRead(PDRVDISKINTEGRITY pThis, uintptr_t uGrp, uint64_t off, size_t cbRead)
+DECLINLINE(void) drvdiskintTraceLogFireEvtRead(PDRVDISKINTEGRITY pThis, uintptr_t uGrp, bool fAsync, uint64_t off, size_t cbRead)
 {
     if (pThis->hIoLogger)
     {
         int rc = RTTraceLogWrEvtAddL(pThis->hIoLogger, &g_EvtRead, RTTRACELOG_WR_ADD_EVT_F_GRP_START,
-                                     (RTTRACELOGEVTGRPID)uGrp, 0, off, cbRead);
+                                     (RTTRACELOGEVTGRPID)uGrp, 0, fAsync, off, cbRead);
         AssertRC(rc);
     }
 }
@@ -775,10 +785,11 @@ DECLINLINE(void) drvdiskintTraceLogFireEvtRead(PDRVDISKINTEGRITY pThis, uintptr_
  * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   uGrp     The group ID.
+ * @param   fAsync   Flag whether this is an async request.
  * @param   off      The offset to put into the event log.
  * @param   cbWrite  Amount of bytes to write.
  */
-DECLINLINE(void) drvdiskintTraceLogFireEvtWrite(PDRVDISKINTEGRITY pThis, uintptr_t uGrp, uint64_t off, size_t cbWrite)
+DECLINLINE(void) drvdiskintTraceLogFireEvtWrite(PDRVDISKINTEGRITY pThis, uintptr_t uGrp, bool fAsync, uint64_t off, size_t cbWrite)
 {
     if (pThis->hIoLogger)
     {
@@ -795,8 +806,9 @@ DECLINLINE(void) drvdiskintTraceLogFireEvtWrite(PDRVDISKINTEGRITY pThis, uintptr
  * @returns nothing.
  * @param   pThis    The driver instance data.
  * @param   uGrp     The group ID.
+ * @param   fAsync   Flag whether this is an async request.
  */
-DECLINLINE(void) drvdiskintTraceLogFireEvtFlush(PDRVDISKINTEGRITY pThis, uintptr_t uGrp)
+DECLINLINE(void) drvdiskintTraceLogFireEvtFlush(PDRVDISKINTEGRITY pThis, uintptr_t uGrp, bool fAsync)
 {
     if (pThis->hIoLogger)
     {
@@ -847,7 +859,7 @@ static DECLCALLBACK(int) drvdiskintRead(PPDMIMEDIA pInterface,
     int rc = VINF_SUCCESS;
     PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
 
-    drvdiskintTraceLogFireEvtRead(pThis, (uintptr_t)pvBuf, off, cbRead);
+    drvdiskintTraceLogFireEvtRead(pThis, (uintptr_t)pvBuf, false /* fAsync */, off, cbRead);
     rc = pThis->pDrvMedia->pfnRead(pThis->pDrvMedia, off, pvBuf, cbRead);
 
     if (pThis->hIoLogger)
@@ -884,7 +896,7 @@ static DECLCALLBACK(int) drvdiskintWrite(PPDMIMEDIA pInterface,
     int rc = VINF_SUCCESS;
     PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
 
-    drvdiskintTraceLogFireEvtWrite(pThis, (uintptr_t)pvBuf, off, cbWrite);
+    drvdiskintTraceLogFireEvtWrite(pThis, (uintptr_t)pvBuf, false /* fAsync */, off, cbWrite);
 
     if (pThis->fRecordWriteBeforeCompletion)
     {
@@ -922,7 +934,7 @@ static DECLCALLBACK(int) drvdiskintFlush(PPDMIMEDIA pInterface)
     int rc = VINF_SUCCESS;
     PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
 
-    drvdiskintTraceLogFireEvtFlush(pThis, 1);
+    drvdiskintTraceLogFireEvtFlush(pThis, 1, false /* fAsync */);
     rc = pThis->pDrvMedia->pfnFlush(pThis->pDrvMedia);
     drvdiskintTraceLogFireEvtComplete(pThis, 1, rc, NULL);
 
@@ -1420,7 +1432,7 @@ static DECLCALLBACK(int) drvdiskintIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEX
     if (pThis->fTraceRequests)
         drvdiskintIoReqAdd(pThis, pIoReq);
 
-    drvdiskintTraceLogFireEvtRead(pThis, (uintptr_t)hIoReq, off, cbRead);
+    drvdiskintTraceLogFireEvtRead(pThis, (uintptr_t)hIoReq, true /* fAsync */, off, cbRead);
     int rc = pThis->pDrvMediaEx->pfnIoReqRead(pThis->pDrvMediaEx, hIoReq, off, cbRead);
     if (rc == VINF_SUCCESS)
     {
@@ -1488,7 +1500,7 @@ static DECLCALLBACK(int) drvdiskintIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAE
     if (pThis->fTraceRequests)
         drvdiskintIoReqAdd(pThis, pIoReq);
 
-    drvdiskintTraceLogFireEvtWrite(pThis, (uintptr_t)hIoReq, off, cbWrite);
+    drvdiskintTraceLogFireEvtWrite(pThis, (uintptr_t)hIoReq, true /* fAsync */, off, cbWrite);
     if (pThis->fRecordWriteBeforeCompletion)
     {
 
@@ -1535,7 +1547,7 @@ static DECLCALLBACK(int) drvdiskintIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAE
     if (pThis->fTraceRequests)
         drvdiskintIoReqAdd(pThis, pIoReq);
 
-    drvdiskintTraceLogFireEvtFlush(pThis, (uintptr_t)hIoReq);
+    drvdiskintTraceLogFireEvtFlush(pThis, (uintptr_t)hIoReq, true /* fAsync */);
     int rc = pThis->pDrvMediaEx->pfnIoReqFlush(pThis->pDrvMediaEx, hIoReq);
     if (rc == VINF_SUCCESS)
         drvdiskintTraceLogFireEvtComplete(pThis, (uintptr_t)hIoReq, rc, NULL);
