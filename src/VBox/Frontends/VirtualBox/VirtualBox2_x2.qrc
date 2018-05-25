@@ -303,6 +303,7 @@
         <file alias="vrdp_warning_16px_x2.png">images/x2/vrdp_warning_16px_x2.png</file>
         <file alias="vtx_amdv_16px_x2.png">images/x2/vtx_amdv_16px_x2.png</file>
         <file alias="vtx_amdv_disabled_16px_x2.png">images/x2/vtx_amdv_disabled_16px_x2.png</file>
+        <file alias="vm_execution_engine_native_api_16px_x2.png">images/x2/vm_execution_engine_native_api_16px_x2.png</file>
         <file alias="web_camera_16px_x2.png">images/x2/web_camera_16px_x2.png</file>
         <file alias="web_camera_disabled_16px_x2.png">images/x2/web_camera_disabled_16px_x2.png</file>
         <file alias="web_camera_unavailable_16px_x2.png">images/x2/web_camera_unavailable_16px_x2.png</file>
