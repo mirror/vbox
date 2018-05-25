@@ -160,6 +160,8 @@ private slots:
 
     /** @name Menu/action stuff.
       * @{ */
+        /** Handles command to add medium. */
+        void sltAddMedium();
         /** Handles command to copy medium. */
         void sltCopyMedium();
         /** Handles command to move medium. */
@@ -343,6 +345,8 @@ private:
         QMenu     *m_pContextMenu;
         /** Holds the menu object instance. */
         QMenu     *m_pMenu;
+        /** Holds the Add action instance. */
+        QAction   *m_pActionAdd;
         /** Holds the Copy action instance. */
         QAction   *m_pActionCopy;
         /** Holds the Move action instance. */
@@ -437,4 +441,3 @@ private:
 };
 
 #endif /* !___UIMediumManager_h___ */
-

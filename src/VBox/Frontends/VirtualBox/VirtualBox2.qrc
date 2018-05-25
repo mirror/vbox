@@ -1,5 +1,7 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="os_netbsd.png">images/os_netbsd.png</file>
+        <file alias="os_netware.png">images/os_netware.png</file>
         <file alias="os_openbsd_64.png">images/os_openbsd_64.png</file>
         <file alias="os_openbsd.png">images/os_openbsd.png</file>
         <file alias="os_opensuse_64.png">images/os_opensuse_64.png</file>
@@ -258,6 +260,7 @@
         <file alias="vm_discard_32px.png">images/vm_discard_32px.png</file>
         <file alias="vm_discard_disabled_16px.png">images/vm_discard_disabled_16px.png</file>
         <file alias="vm_discard_disabled_32px.png">images/vm_discard_disabled_32px.png</file>
+        <file alias="vm_execution_engine_native_api_16px.png">images/vm_execution_engine_native_api_16px.png</file>
         <file alias="vm_group_create_16px.png">images/vm_group_create_16px.png</file>
         <file alias="vm_group_create_disabled_16px.png">images/vm_group_create_disabled_16px.png</file>
         <file alias="vm_group_name_16px.png">images/vm_group_name_16px.png</file>
@@ -315,7 +318,6 @@
         <file alias="vrdp_warning_16px.png">images/vrdp_warning_16px.png</file>
         <file alias="vtx_amdv_16px.png">images/vtx_amdv_16px.png</file>
         <file alias="vtx_amdv_disabled_16px.png">images/vtx_amdv_disabled_16px.png</file>
-        <file alias="vm_execution_engine_native_api_16px.png">images/vm_execution_engine_native_api_16px.png</file>
         <file alias="web_camera_16px.png">images/web_camera_16px.png</file>
         <file alias="web_camera_disabled_16px.png">images/web_camera_disabled_16px.png</file>
         <file alias="web_camera_unavailable_16px.png">images/web_camera_unavailable_16px.png</file>

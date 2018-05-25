@@ -48,9 +48,10 @@
 /* COM includes: */
 # include "COMEnums.h"
 # include "CMachine.h"
+# include "CMediumAttachment.h"
 # include "CMediumFormat.h"
 # include "CStorageController.h"
-# include "CMediumAttachment.h"
+# include "CSystemProperties.h"
 
 # ifdef VBOX_WS_MAC
 #  include "UIWindowMenuManager.h"
@@ -824,7 +825,7 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, QWidget *pPar
     , m_pToolBar(0)
     , m_pContextMenu(0)
     , m_pMenu(0)
-    , m_pActionCopy(0), m_pActionMove(0), m_pActionRemove(0)
+    , m_pActionAdd(0), m_pActionCopy(0), m_pActionMove(0), m_pActionRemove(0)
     , m_pActionRelease(0), m_pActionDetails(0)
     , m_pActionRefresh(0)
     , m_pProgressBar(0)
@@ -849,6 +850,12 @@ void UIMediumManagerWidget::retranslateUi()
         m_pMenu->setTitle(UIMediumManager::tr("&Medium"));
 
     /* Translate actions: */
+    if (m_pActionAdd)
+    {
+        m_pActionAdd->setText(UIMediumManager::tr("&Add..."));
+        m_pActionAdd->setToolTip(UIMediumManager::tr("Add Disk Image File (%1)"));
+        m_pActionAdd->setStatusTip(UIMediumManager::tr("Add disk image file"));
+    }
     if (m_pActionCopy)
     {
         m_pActionCopy->setText(UIMediumManager::tr("&Copy..."));
@@ -1198,6 +1205,12 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationFinish()
     refetchCurrentChosenMediumItem();
 }
 
+void UIMediumManagerWidget::sltAddMedium()
+{
+    QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    vboxGlobal().openMediumWithFileOpenDialog(currentMediumType(), this, strDefaultMachineFolder);
+}
+
 void UIMediumManagerWidget::sltCopyMedium()
 {
     /* Get current medium-item: */
@@ -1397,6 +1410,14 @@ void UIMediumManagerWidget::prepareConnections()
 
 void UIMediumManagerWidget::prepareActions()
 {
+    /* Create 'Add' action: */
+    m_pActionAdd = new QAction(this);
+    AssertPtrReturnVoid(m_pActionAdd);
+    {
+        /* Configure add-action: */
+        m_pActionAdd->setShortcut(QKeySequence("Ctrl+A"));
+        connect(m_pActionAdd, &QAction::triggered, this, &UIMediumManagerWidget::sltAddMedium);
+    }
     /* Create 'Copy' action: */
     m_pActionCopy = new QAction(this);
     AssertPtrReturnVoid(m_pActionCopy);
@@ -1468,6 +1489,8 @@ void UIMediumManagerWidget::prepareMenu()
     AssertPtrReturnVoid(m_pMenu);
     {
         /* Configure 'Medium' menu: */
+        if (m_pActionAdd)
+            m_pMenu->addAction(m_pActionAdd);
         if (m_pActionCopy)
             m_pMenu->addAction(m_pActionCopy);
         if (m_pActionMove)
@@ -1496,6 +1519,8 @@ void UIMediumManagerWidget::prepareContextMenu()
     AssertPtrReturnVoid(m_pContextMenu);
     {
         /* Configure contex-menu: */
+        if (m_pActionAdd)
+            m_pContextMenu->addAction(m_pActionAdd);
         if (m_pActionCopy)
             m_pContextMenu->addAction(m_pActionCopy);
         if (m_pActionMove)
@@ -1546,6 +1571,8 @@ void UIMediumManagerWidget::prepareToolBar()
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         /* Add toolbar actions: */
+        if (m_pActionAdd)
+            m_pToolBar->addAction(m_pActionAdd);
         if (m_pActionCopy)
             m_pToolBar->addAction(m_pActionCopy);
         if (m_pActionMove)
@@ -1826,6 +1853,13 @@ void UIMediumManagerWidget::updateActionIcons()
             default: break;
         }
     }
+
+    if (m_pActionAdd)
+        m_pActionAdd->setIcon(UIIconPool::iconSetFull(QString(":/%1_add_22px.png").arg(strPrefix),
+                                                       QString(":/%1_add_16px.png").arg(strPrefix),
+                                                       QString(":/%1_add_disabled_22px.png").arg(strPrefix),
+                                                       QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
+
     if (m_pActionCopy)
         m_pActionCopy->setIcon(UIIconPool::iconSetFull(QString(":/%1_copy_22px.png").arg(strPrefix),
                                                        QString(":/%1_copy_16px.png").arg(strPrefix),

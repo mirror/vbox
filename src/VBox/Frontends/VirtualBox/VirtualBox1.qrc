@@ -29,7 +29,9 @@
         <file alias="cancel_16px.png">images/cancel_16px.png</file>
         <file alias="cd_16px.png">images/cd_16px.png</file>
         <file alias="cd_add_16px.png">images/cd_add_16px.png</file>
+        <file alias="cd_add_22px.png">images/cd_add_22px.png</file>
         <file alias="cd_add_disabled_16px.png">images/cd_add_disabled_16px.png</file>
+        <file alias="cd_add_disabled_22px.png">images/cd_add_disabled_22px.png</file>
         <file alias="cd_copy_16px.png">images/cd_copy_16px.png</file>
         <file alias="cd_copy_22px.png">images/cd_copy_22px.png</file>
         <file alias="cd_copy_disabled_16px.png">images/cd_copy_disabled_16px.png</file>
@@ -122,7 +124,9 @@
         <file alias="extension_pack_warning_16px.png">images/extension_pack_warning_16px.png</file>
         <file alias="fd_16px.png">images/fd_16px.png</file>
         <file alias="fd_add_16px.png">images/fd_add_16px.png</file>
+        <file alias="fd_add_22px.png">images/fd_add_22px.png</file>
         <file alias="fd_add_disabled_16px.png">images/fd_add_disabled_16px.png</file>
+        <file alias="fd_add_disabled_22px.png">images/fd_add_disabled_22px.png</file>
         <file alias="fd_copy_16px.png">images/fd_copy_16px.png</file>
         <file alias="fd_copy_22px.png">images/fd_copy_22px.png</file>
         <file alias="fd_copy_disabled_16px.png">images/fd_copy_disabled_16px.png</file>
@@ -165,7 +169,9 @@
         <file alias="hd_24px.png">images/hd_24px.png</file>
         <file alias="hd_32px.png">images/hd_32px.png</file>
         <file alias="hd_add_16px.png">images/hd_add_16px.png</file>
+        <file alias="hd_add_22px.png">images/hd_add_22px.png</file>
         <file alias="hd_add_disabled_16px.png">images/hd_add_disabled_16px.png</file>
+        <file alias="hd_add_disabled_22px.png">images/hd_add_disabled_22px.png</file>
         <file alias="hd_copy_16px.png">images/hd_copy_16px.png</file>
         <file alias="hd_copy_22px.png">images/hd_copy_22px.png</file>
         <file alias="hd_copy_disabled_16px.png">images/hd_copy_disabled_16px.png</file>
@@ -317,7 +323,5 @@
         <file alias="os_mandriva_64.png">images/os_mandriva_64.png</file>
         <file alias="os_mandriva.png">images/os_mandriva.png</file>
         <file alias="os_netbsd_64.png">images/os_netbsd_64.png</file>
-        <file alias="os_netbsd.png">images/os_netbsd.png</file>
-        <file alias="os_netware.png">images/os_netware.png</file>
     </qresource>
 </RCC>
