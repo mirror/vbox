@@ -234,6 +234,7 @@ public:
     void warnAboutWrongUSBMounted() const;
 #endif /* RT_OS_LINUX */
     void cannotStartSelector() const;
+    void cannotStartRuntime() const;
     void showBetaBuildWarning() const;
     void showExperimentalBuildWarning() const;
 

@@ -401,6 +401,26 @@ void UIMessageCenter::cannotStartSelector() const
              "<p>The application will now terminate.</p>"));
 }
 
+void UIMessageCenter::cannotStartRuntime() const
+{
+    /* Prepare error string: */
+    const QString strError = tr("<p>You must specify a machine to start, using the command line.</p><p>%1</p>",
+                                "There will be a usage text passed as argument.");
+
+    /* Prepare Usage, it can change in future: */
+    const QString strTable = QString("<table cellspacing=0 style='white-space:pre'>%1</table>");
+    const QString strUsage = tr("<tr>"
+                                "<td>Usage: VirtualBoxVM --startvm &lt;name|UUID&gt;</td>"
+                                "</tr>"
+                                "<tr>"
+                                "<td>Starts the VirtualBox virtual machine with the given "
+                                "name or unique identifier (UUID).</td>"
+                                "</tr>");
+
+    /* Show error: */
+    alert(0, MessageType_Error, strError.arg(strTable.arg(strUsage)));
+}
+
 void UIMessageCenter::showBetaBuildWarning() const
 {
     alert(0, MessageType_Warning,

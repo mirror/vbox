@@ -151,6 +151,14 @@ void UIStarter::sltShowUI()
         if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
             return QApplication::quit();
     }
+# if defined(VBOX_GUI_WITH_SHARED_LIBRARY) && defined(VBOX_RUNTIME_UI)
+    else
+    {
+        /* Show the error message otherwise: */
+        msgCenter().cannotStartRuntime();
+        return QApplication::quit();
+    }
+# endif /* VBOX_GUI_WITH_SHARED_LIBRARY && VBOX_RUNTIME_UI */
 #endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || VBOX_RUNTIME_UI */
 }
 
