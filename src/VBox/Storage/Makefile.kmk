@@ -22,7 +22,6 @@ VBOX_PATH_STORAGE_SRC := $(PATH_SUB_CURRENT)
 
 if !defined(VBOX_ONLY_EXTPACKS)
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
- include $(PATH_SUB_CURRENT)/Debug/Makefile.kmk
 
  #
  # StorageLib - The storage Library.
