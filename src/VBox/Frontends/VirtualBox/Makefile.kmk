@@ -130,6 +130,9 @@ else
  VirtualBox_TEMPLATE := VBOXQTGUIEXE
 endif
 VirtualBox_NAME = VirtualBox
+ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+ VirtualBox_DEPS = $(VBoxGlobal_0_OUTDIR)/include/COMWrappers
+endif
 # For the launch trick we need different inode numbers.
 if !defined(VBOX_WITH_HARDENING) && !defined(VBOX_GUI_WITH_SHARED_LIBRARY)
  VirtualBox_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
@@ -205,6 +208,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  #
  VirtualBoxVM_TEMPLATE       := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
  VirtualBoxVM_NAME           = VirtualBoxVM
+ VirtualBoxVM_DEPS           = $(VBoxGlobal_0_OUTDIR)/include/COMWrappers
  VirtualBoxVM_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  VirtualBoxVM_DEFS           += VBOX_RUNTIME_UI
  VirtualBoxVM_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
