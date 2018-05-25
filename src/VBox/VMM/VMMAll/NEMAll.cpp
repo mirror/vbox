@@ -25,6 +25,20 @@
 #include <VBox/vmm/vm.h>
 
 
+/**
+ * Checks if this VM is in NEM mode and is long-mode capable.
+ *
+ * Use VMR3IsLongModeAllowed() instead of this, when possible.
+ *
+ * @returns true if long mode is allowed, false otherwise.
+ * @param   pVM         The cross context VM structure.
+ * @sa      VMR3IsLongModeAllowed, HMIsLongModeAllowed
+ */
+VMM_INT_DECL(bool) NEMHCIsLongModeAllowed(PVM pVM)
+{
+    return pVM->nem.s.fAllow64BitGuests && VM_IS_NEM_ENABLED(pVM);
+}
+
 
 /**
  * Physical access handler registration notification.

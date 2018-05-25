@@ -107,6 +107,8 @@ typedef struct NEM
 
     /** Set if enabled. */
     bool                        fEnabled;
+    /** Set if long mode guests are allowed. */
+    bool                        fAllow64BitGuests;
 #ifdef RT_OS_WINDOWS
     /** Set if we've created the EMTs. */
     bool                        fCreatedEmts : 1;

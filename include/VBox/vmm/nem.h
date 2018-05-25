@@ -98,6 +98,7 @@ VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 /** @defgroup grp_nem_hc    The NEM Host Context API
  * @{
  */
+VMM_INT_DECL(bool) NEMHCIsLongModeAllowed(PVM pVM);
 VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
 VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
                                                         int fRestoreAsRAM, bool fRestoreAsRAM2);

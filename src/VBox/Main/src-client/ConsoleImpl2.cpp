@@ -1114,7 +1114,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
         InsertConfigInteger(pRoot, "HMEnabled", fHMEnabled);
 
-        /* /HM/xzy */
+        /* /HM/xyz */
         PCFGMNODE pHM;
         InsertConfigNode(pRoot, "HM", &pHM);
         InsertConfigInteger(pHM, "HMForced", fHMForced);
@@ -1184,6 +1184,18 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         /* Reset overwrite. */
         if (i_isResetTurnedIntoPowerOff())
             InsertConfigInteger(pRoot, "PowerOffInsteadOfReset", 1);
+
+        /* Use NEM rather than HM. */
+        BOOL fUseNativeApi = false;
+        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_UseNativeApi, &fUseNativeApi); H();
+        InsertConfigInteger(pHM, "UseNEMInstead", fUseNativeApi);
+
+        /*
+         * NEM
+         */
+        PCFGMNODE pNEM;
+        InsertConfigNode(pRoot, "NEM", &pNEM);
+        InsertConfigInteger(pNEM, "Allow64BitGuests", fIsGuest64Bit);
 
         /*
          * Paravirt. provider.

@@ -23,6 +23,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/hm.h>
+#include <VBox/vmm/nem.h>
 #include <VBox/vmm/ssm.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -4020,7 +4021,8 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
                             && pVM->cpum.s.HostFeatures.fXSaveRstor
                             && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor
 #if HC_ARCH_BITS == 32 /* Seems this may be broken when doing 64-bit on 32-bit, just disable it for now. */
-                            && !HMIsLongModeAllowed(pVM)
+                            && (   !HMIsLongModeAllowed(pVM)
+                                || NEMIsLongModeAllowed(pVM))
 #endif
                             ;
     uint64_t const fXStateHostMask = pVM->cpum.s.fXStateHostMask;

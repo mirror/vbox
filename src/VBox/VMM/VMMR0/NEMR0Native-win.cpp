@@ -1783,6 +1783,8 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         Assert(pInput->Names[iReg] == HvX64RegisterEfer);
         if (paValues[iReg].Reg64 != pCtx->msrEFER)
         {
+            if ((paValues[iReg].Reg64 ^ pCtx->msrEFER) & MSR_K6_EFER_NXE)
+                PGMNotifyNxeChanged(pVCpu, RT_BOOL(paValues[iReg].Reg64 & MSR_K6_EFER_NXE));
             pCtx->msrEFER = paValues[iReg].Reg64;
             fMaybeChangedMode = true;
         }

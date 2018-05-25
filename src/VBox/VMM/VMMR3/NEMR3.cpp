@@ -75,7 +75,8 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
      */
     int rc = CFGMR3ValidateConfig(pCfgNem,
                                   "/NEM/",
-                                  "Enabled",
+                                  "Enabled"
+                                  "|Allow64BitGuests",
                                   "" /* pszValidNodes */, "NEM" /* pszWho */, 0 /* uInstance */);
     if (RT_FAILURE(rc))
         return rc;
@@ -84,6 +85,19 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
      * Whether NEM is enabled. */
     rc = CFGMR3QueryBoolDef(pCfgNem, "Enabled", &pVM->nem.s.fEnabled, true);
     AssertLogRelRCReturn(rc, rc);
+
+
+#ifdef VBOX_WITH_64_BITS_GUESTS
+    /** @cfgm{/HM/Allow64BitGuests, bool, 32-bit:false, 64-bit:true}
+     * Enables AMD64 CPU features.
+     * On 32-bit hosts this isn't default and require host CPU support. 64-bit hosts
+     * already have the support. */
+    rc = CFGMR3QueryBoolDef(pCfgNem, "Allow64BitGuests", &pVM->nem.s.fAllow64BitGuests, HC_ARCH_BITS == 64);
+    AssertLogRelRCReturn(rc, rc);
+#else
+    pVM->nem.s.fAllow64BitGuests = false;
+#endif
+
 
     return VINF_SUCCESS;
 }
@@ -150,12 +164,37 @@ VMMR3_INT_DECL(int) NEMR3Init(PVM pVM, bool fFallback, bool fForced)
 VMMR3_INT_DECL(int) NEMR3InitAfterCPUM(PVM pVM)
 {
     int rc = VINF_SUCCESS;
-#ifdef VBOX_WITH_NATIVE_NEM
     if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
+    {
+        /*
+         * Enable CPU features making general ASSUMPTIONS (there are two similar
+         * blocks of code in HM.cpp), to avoid duplicating this code.  The
+         * native backend can make check capabilities and adjust as needed.
+         */
+        CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
+        if (CPUMGetGuestCpuVendor(pVM) == CPUMCPUVENDOR_AMD)
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);            /* 64 bits only on Intel CPUs */
+        if (pVM->nem.s.fAllow64BitGuests)
+        {
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+        }
+        /* Turn on NXE if PAE has been enabled. */
+        else if (CPUMR3GetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+
+        /*
+         * Do native after-CPUM init.
+         */
+#ifdef VBOX_WITH_NATIVE_NEM
         rc = nemR3NativeInitAfterCPUM(pVM);
 #else
-    RT_NOREF(pVM);
+        RT_NOREF(pVM);
 #endif
+    }
     return rc;
 }
 
