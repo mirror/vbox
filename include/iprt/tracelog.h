@@ -241,6 +241,8 @@ typedef RTTRACELOGRDRIT            *PRTTRACELOGRDRIT;
 typedef struct RTTRACELOGRDREVTINT *RTTRACELOGRDREVT;
 /** Pointer to a trace log reader event handle. */
 typedef RTTRACELOGRDREVT           *PRTTRACELOGRDREVT;
+/** NIL trace log reader event handle. */
+#define NIL_RTTRACELOGRDREVT       ((RTTRACELOGRDREVT)0)
 
 /** A new grouped event is started. */
 #define RTTRACELOG_WR_ADD_EVT_F_GRP_START  RT_BIT_32(0)
