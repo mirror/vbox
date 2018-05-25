@@ -4022,7 +4022,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
                             && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor
 #if HC_ARCH_BITS == 32 /* Seems this may be broken when doing 64-bit on 32-bit, just disable it for now. */
                             && (   !HMIsLongModeAllowed(pVM)
-                                || NEMIsLongModeAllowed(pVM))
+                                || NEMHCIsLongModeAllowed(pVM))
 #endif
                             ;
     uint64_t const fXStateHostMask = pVM->cpum.s.fXStateHostMask;
