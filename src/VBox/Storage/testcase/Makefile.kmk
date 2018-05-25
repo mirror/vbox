@@ -75,10 +75,6 @@ ifdef VBOX_WITH_TESTCASES
 	$(QUIET)$(APPEND) -n "$@" '' \
                $(call TSTVDIO_GEN_TEST_MACRO,VDIoTests,%) \
 
- ifn1of ($(KBUILD_TARGET), win)
-  VBOX_TSTVDIO_WITH_LOG_REPLAY = 1
- endif
-
  tstVDIo_TEMPLATE = VBOXR3TSTEXE
  tstVDIo_INCS := $(PATH_SUB_CURRENT)
 
@@ -98,11 +94,6 @@ ifdef VBOX_WITH_TESTCASES
  	$(TSTVDIO_BUILTIN_TESTS_FILE)
  tstVDIo_LIBS = \
  	$(LIB_DDU)
-
- ifdef VBOX_TSTVDIO_WITH_LOG_REPLAY
-  tstVDIo_LIBS += \
-  	$(PATH_STAGE_LIB)/StorageDbgLib$(VBOX_SUFF_LIB)
- endif
 
  tstVDSnap_TEMPLATE = VBOXR3TSTEXE
  tstVDSnap_LIBS = $(LIB_DDU)
