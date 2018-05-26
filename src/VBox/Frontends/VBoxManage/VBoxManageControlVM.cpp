@@ -1491,7 +1491,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 ULONG aWidth = 0;
                 ULONG aHeight = 0;
                 ULONG aBitsPerPixel = 0;
-                if (aStatus = GuestMonitorStatus_Enabled)
+                if (aStatus == GuestMonitorStatus_Enabled)
                 {
                     if (argc < 7)
                     {
