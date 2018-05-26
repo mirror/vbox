@@ -277,6 +277,60 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy,
 
 
 /**
+ * Query the last display change request sent from the host to the guest.
+ *
+ * @returns iprt status value
+ * @param   cDisplaysIn   How many elements in the paDisplays array.
+ * @param   pcDisplaysOut How many elements were returned.
+ * @param   paDisplays    Display information.
+ * @param   fAck          Whether or not to acknowledge the newest request sent by
+ *                        the host.  If this is set, the function will return the
+ *                        most recent host request, otherwise it will return the
+ *                        last request to be acknowledged.
+ */
+VBGLR3DECL(int) VbglR3GetDisplayChangeRequestMulti(uint32_t cDisplaysIn,
+                                                   uint32_t *pcDisplaysOut,
+                                                   VMMDevDisplayDef *paDisplays,
+                                                   bool fAck)
+{
+    VMMDevDisplayChangeRequestMulti *pReq;
+    size_t cbDisplays;
+    size_t cbAlloc;
+    int rc = VINF_SUCCESS;
+
+    AssertReturn(cDisplaysIn > 0 && cDisplaysIn <= 64 /* VBOX_VIDEO_MAX_SCREENS */, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcDisplaysOut, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(paDisplays, VERR_INVALID_PARAMETER);
+
+    cbDisplays = cDisplaysIn * sizeof(VMMDevDisplayDef);
+    cbAlloc = RT_UOFFSETOF(VMMDevDisplayChangeRequestMulti, aDisplays) + cbDisplays;
+    pReq = (VMMDevDisplayChangeRequestMulti *)RTMemAllocZ(cbAlloc);
+    AssertPtrReturn(pReq, VERR_NO_MEMORY);
+
+    rc = vmmdevInitRequest(&pReq->header, VMMDevReq_GetDisplayChangeRequestMulti);
+    AssertRCReturnStmt(rc, RTMemFree(pReq), rc);
+
+    pReq->header.size += (uint32_t)cbDisplays;
+    pReq->cDisplays = cDisplaysIn;
+    if (fAck)
+        pReq->eventAck = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+
+    rc = vbglR3GRPerform(&pReq->header);
+    AssertRCReturnStmt(rc, RTMemFree(pReq), rc);
+
+    rc = pReq->header.rc;
+    if (RT_SUCCESS(rc))
+    {
+        memcpy(paDisplays, pReq->aDisplays, pReq->cDisplays * sizeof(VMMDevDisplayDef));
+        *pcDisplaysOut = pReq->cDisplays;
+    }
+
+    RTMemFree(pReq);
+    return rc;
+}
+
+
+/**
  * Query the host as to whether it likes a specific video mode.
  *
  * @returns the result of the query

@@ -824,6 +824,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            setvideomodehint <xres> <yres> <bpp>\n"
                      "                                            [[<display>] [<enabled:yes|no> |\n"
                      "                                              [<xorigin> <yorigin>]]] |\n"
+                     "                            setscreenlayout <display> on|primary <xorigin> <yorigin> <xres> <yres> <bpp> | off\n"
                      "                            screenshotpng <file> [display] |\n"
                      "                            videocap on|off |\n"
                      "                            videocapscreens all|none|<screen>,[<screen>...] |\n"

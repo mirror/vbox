@@ -18,6 +18,7 @@
 #ifndef ___VMMDev_VMMDevState_h
 #define ___VMMDev_VMMDevState_h
 
+#include <VBoxVideo.h>  /* For VBVA definitions. */
 #include <VBox/VMMDev.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmifs.h>
@@ -30,24 +31,12 @@
 
 #define VMMDEV_WITH_ALT_TIMESYNC
 
-typedef struct DISPLAYCHANGEINFO
-{
-    uint32_t xres;
-    uint32_t yres;
-    uint32_t bpp;
-    uint32_t display;
-    int32_t xOrigin;
-    int32_t yOrigin;
-    bool fEnabled;
-    bool fChangeOrigin;
-} DISPLAYCHANGEINFO;
-
 typedef struct DISPLAYCHANGEREQUEST
 {
     bool fPending;
     bool afAlignment[3];
-    DISPLAYCHANGEINFO displayChangeRequest;
-    DISPLAYCHANGEINFO lastReadDisplayChangeRequest;
+    VMMDevDisplayDef displayChangeRequest;
+    VMMDevDisplayDef lastReadDisplayChangeRequest;
 } DISPLAYCHANGEREQUEST;
 
 typedef struct DISPLAYCHANGEDATA
@@ -59,7 +48,7 @@ typedef struct DISPLAYCHANGEDATA
     bool fGuestSentChangeEventAck;
     bool afAlignment[3];
 
-    DISPLAYCHANGEREQUEST aRequests[64]; /// @todo maxMonitors
+    DISPLAYCHANGEREQUEST aRequests[VBOX_VIDEO_MAX_SCREENS];
 } DISPLAYCHANGEDATA;
 
 

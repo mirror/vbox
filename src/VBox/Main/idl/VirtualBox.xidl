@@ -17494,7 +17494,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="76eed314-3c72-4bbb-95cf-5eb4947a4041"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
-    reservedMethods="4" reservedAttributes="2"
+    reservedMethods="3" reservedAttributes="2"
     >
     <desc>
       The IDisplay interface represents the virtual machine's display.
@@ -17843,6 +17843,64 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Unplugs monitors from the virtual graphics card.
       </desc>
       <param name="screenIds" type="long" safearray="yes" dir="in"/>
+    </method>
+
+    <method name="createGuestScreenInfo">
+      <desc>
+        Make a IGuestScreenInfo object with the provided parameters.
+      </desc>
+      <param name="display" type="unsigned long" dir="in">
+        <desc>
+          The number of the guest display.
+        </desc>
+      </param>
+      <param name="status" type="GuestMonitorStatus" dir="in">
+        <desc>
+          @c True, if this guest screen is enabled,
+          @c False otherwise.
+        </desc>
+      </param>
+      <param name="primary" type="boolean" dir="in">
+        <desc>
+          Whether this guest monitor must be primary.
+        </desc>
+      </param>
+      <param name="changeOrigin" type="boolean" dir="in">
+        <desc>
+          @c True, if the origin of the guest screen should be changed,
+          @c False otherwise.
+        </desc>
+      </param>
+      <param name="originX" type="long" dir="in">
+        <desc>
+          The X origin of the guest screen.
+        </desc>
+      </param>
+      <param name="originY" type="long" dir="in">
+        <desc>
+          The Y origin of the guest screen.
+        </desc>
+      </param>
+      <param name="width" type="unsigned long" dir="in">
+        <desc>
+          The width of the guest screen.
+        </desc>
+      </param>
+      <param name="height" type="unsigned long" dir="in">
+        <desc>
+          The height of the guest screen.
+        </desc>
+      </param>
+      <param name="bitsPerPixel" type="unsigned long" dir="in">
+        <desc>
+          The number of bits per pixel of the guest screen.
+        </desc>
+      </param>
+      <param name="guestScreenInfo" type="IGuestScreenInfo" dir="out">
+        <desc>
+          The created object.
+        </desc>
+      </param>
     </method>
 
   </interface>

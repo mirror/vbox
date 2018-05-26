@@ -1953,9 +1953,24 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
         if (pVMMDevPort)
-            pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aBitsPerPixel,
-                                                 aDisplay, aOriginX, aOriginY,
-                                                 RT_BOOL(aEnabled), RT_BOOL(aChangeOrigin));
+        {
+            VMMDevDisplayDef d;
+            d.idDisplay     = aDisplay;
+            d.xOrigin       = aOriginX;
+            d.yOrigin       = aOriginY;
+            d.cx            = aWidth;
+            d.cy            = aHeight;
+            d.cBitsPerPixel = aBitsPerPixel;
+            d.fDisplayFlags = VMMDEV_DISPLAY_CX | VMMDEV_DISPLAY_CY | VMMDEV_DISPLAY_BPP;
+            if (!aEnabled)
+                d.fDisplayFlags |= VMMDEV_DISPLAY_DISABLED;
+            if (aChangeOrigin)
+                d.fDisplayFlags |= VMMDEV_DISPLAY_ORIGIN;
+            if (aDisplay == 0)
+                d.fDisplayFlags |= VMMDEV_DISPLAY_PRIMARY;
+
+            pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, 1, &d, false);
+        }
     }
     return S_OK;
 }
@@ -3121,17 +3136,246 @@ HRESULT Display::getGuestScreenLayout(std::vector<ComPtr<IGuestScreenInfo> > &aG
 }
 
 HRESULT Display::setScreenLayout(ScreenLayoutMode_T aScreenLayoutMode,
-                                    const std::vector<ComPtr<IGuestScreenInfo> > &aGuestScreenInfo)
+                                 const std::vector<ComPtr<IGuestScreenInfo> > &aGuestScreenInfo)
 {
-    NOREF(aScreenLayoutMode);
-    NOREF(aGuestScreenInfo);
-    return E_NOTIMPL;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aGuestScreenInfo.size() != mcMonitors)
+        return E_INVALIDARG;
+
+    CHECK_CONSOLE_DRV(mpDrv);
+
+    /*
+     * It is up to the guest to decide whether the hint is
+     * valid. Therefore don't do any VRAM sanity checks here.
+     */
+
+    /* Have to release the lock because the pfnRequestDisplayChange
+     * will call EMT.  */
+    alock.release();
+
+    VMMDev *pVMMDev = mParent->i_getVMMDev();
+    if (pVMMDev)
+    {
+        PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
+        if (pVMMDevPort)
+        {
+            uint32_t const cDisplays = (uint32_t)aGuestScreenInfo.size();
+
+            size_t const cbAlloc = cDisplays * sizeof(VMMDevDisplayDef);
+            VMMDevDisplayDef *paDisplayDefs = (VMMDevDisplayDef *)RTMemAlloc(cbAlloc);
+            if (paDisplayDefs)
+            {
+                for (uint32_t i = 0; i < cDisplays; ++i)
+                {
+                    VMMDevDisplayDef *p = &paDisplayDefs[i];
+                    ComPtr<IGuestScreenInfo> pScreenInfo = aGuestScreenInfo[i];
+
+                    ULONG screenId     = 0;
+                    GuestMonitorStatus_T guestMonitorStatus = GuestMonitorStatus_Enabled;
+                    BOOL  origin       = FALSE;
+                    BOOL  primary      = FALSE;
+                    LONG  originX      = 0;
+                    LONG  originY      = 0;
+                    ULONG width        = 0;
+                    ULONG height       = 0;
+                    ULONG bitsPerPixel = 0;
+
+                    pScreenInfo->COMGETTER(ScreenId)    (&screenId);
+                    pScreenInfo->COMGETTER(GuestMonitorStatus)(&guestMonitorStatus);
+                    pScreenInfo->COMGETTER(Primary)     (&primary);
+                    pScreenInfo->COMGETTER(Origin)      (&origin);
+                    pScreenInfo->COMGETTER(OriginX)     (&originX);
+                    pScreenInfo->COMGETTER(OriginY)     (&originY);
+                    pScreenInfo->COMGETTER(Width)       (&width);
+                    pScreenInfo->COMGETTER(Height)      (&height);
+                    pScreenInfo->COMGETTER(BitsPerPixel)(&bitsPerPixel);
+
+                    LogFlowFunc(("%d %d,%d %dx%d\n", screenId, originX, originY, width, height));
+
+                    p->idDisplay     = screenId;
+                    p->xOrigin       = originX;
+                    p->yOrigin       = originY;
+                    p->cx            = width;
+                    p->cy            = height;
+                    p->cBitsPerPixel = bitsPerPixel;
+                    p->fDisplayFlags = VMMDEV_DISPLAY_CX | VMMDEV_DISPLAY_CY | VMMDEV_DISPLAY_BPP;
+                    if (guestMonitorStatus == GuestMonitorStatus_Disabled)
+                        p->fDisplayFlags |= VMMDEV_DISPLAY_DISABLED;
+                    if (origin)
+                        p->fDisplayFlags |= VMMDEV_DISPLAY_ORIGIN;
+                    if (primary)
+                        p->fDisplayFlags |= VMMDEV_DISPLAY_PRIMARY;
+                }
+
+                bool const fForce =    aScreenLayoutMode == ScreenLayoutMode_Reset
+                                    || aScreenLayoutMode == ScreenLayoutMode_Apply;
+                pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, cDisplays, paDisplayDefs, fForce);
+
+                RTMemFree(paDisplayDefs);
+            }
+        }
+    }
+    return S_OK;
 }
 
 HRESULT Display::detachScreens(const std::vector<LONG> &aScreenIds)
 {
     NOREF(aScreenIds);
     return E_NOTIMPL;
+}
+
+HRESULT Display::createGuestScreenInfo(ULONG aDisplay,
+                                       GuestMonitorStatus_T aStatus,
+                                       BOOL aPrimary,
+                                       BOOL aChangeOrigin,
+                                       LONG aOriginX,
+                                       LONG aOriginY,
+                                       ULONG aWidth,
+                                       ULONG aHeight,
+                                       ULONG aBitsPerPixel,
+                                       ComPtr<IGuestScreenInfo> &aGuestScreenInfo)
+{
+    /* Create a new object. */
+    ComObjPtr<GuestScreenInfo> obj;
+    HRESULT hr = obj.createObject();
+    if (SUCCEEDED(hr))
+        hr = obj->init(aDisplay, aStatus, aPrimary, aChangeOrigin, aOriginX, aOriginY,
+                       aWidth, aHeight, aBitsPerPixel);
+    if (SUCCEEDED(hr))
+        obj.queryInterfaceTo(aGuestScreenInfo.asOutParam());
+
+    return hr;
+}
+
+
+/*
+ * GuestScreenInfo implementation.
+ */
+DEFINE_EMPTY_CTOR_DTOR(GuestScreenInfo)
+
+HRESULT GuestScreenInfo::FinalConstruct()
+{
+    return BaseFinalConstruct();
+}
+
+void GuestScreenInfo::FinalRelease()
+{
+    uninit();
+
+    BaseFinalRelease();
+}
+
+HRESULT GuestScreenInfo::init(ULONG aDisplay,
+                              GuestMonitorStatus_T aGuestMonitorStatus,
+                              BOOL aPrimary,
+                              BOOL aChangeOrigin,
+                              LONG aOriginX,
+                              LONG aOriginY,
+                              ULONG aWidth,
+                              ULONG aHeight,
+                              ULONG aBitsPerPixel)
+{
+    LogFlowThisFunc(("[%u]\n", aDisplay));
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    mScreenId = aDisplay;
+    mGuestMonitorStatus = aGuestMonitorStatus;
+    mPrimary = aPrimary;
+    mOrigin = aChangeOrigin;
+    mOriginX =  aOriginX;
+    mOriginY = aOriginY;
+    mWidth = aWidth;
+    mHeight = aHeight;
+    mBitsPerPixel = aBitsPerPixel;
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
+    return S_OK;
+}
+
+void GuestScreenInfo::uninit()
+{
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan(this);
+    if (autoUninitSpan.uninitDone())
+        return;
+
+    LogFlowThisFunc(("[%u]\n", mScreenId));
+}
+
+HRESULT GuestScreenInfo::getScreenId(ULONG *aScreenId)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aScreenId = mScreenId;
+    return S_OK;
+}
+
+HRESULT GuestScreenInfo::getGuestMonitorStatus(GuestMonitorStatus_T *aGuestMonitorStatus)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aGuestMonitorStatus = mGuestMonitorStatus;
+    return S_OK;
+}
+
+HRESULT GuestScreenInfo::getPrimary(BOOL *aPrimary)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aPrimary = mPrimary;
+    return S_OK;
+}
+
+HRESULT GuestScreenInfo::getOrigin(BOOL *aOrigin)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aOrigin = mOrigin;
+    return S_OK;
+}
+
+HRESULT GuestScreenInfo::getOriginX(LONG *aOriginX)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aOriginX = mOriginX;
+    return S_OK;
+}
+
+HRESULT GuestScreenInfo::getOriginY(LONG *aOriginY)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aOriginY = mOriginY;
+    return S_OK;
+}
+
+HRESULT GuestScreenInfo::getWidth(ULONG *aWidth)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aWidth = mWidth;
+    return S_OK;
+}
+
+HRESULT GuestScreenInfo::getHeight(ULONG *aHeight)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aHeight = mHeight;
+    return S_OK;
+}
+
+HRESULT GuestScreenInfo::getBitsPerPixel(ULONG *aBitsPerPixel)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aBitsPerPixel = mBitsPerPixel;
+    return S_OK;
+}
+
+HRESULT GuestScreenInfo::getExtendedInfo(com::Utf8Str &aExtendedInfo)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aExtendedInfo = com::Utf8Str();
+    return S_OK;
 }
 
 // wrapped IEventListener method

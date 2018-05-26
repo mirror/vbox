@@ -82,7 +82,7 @@
 *********************************************************************************************************************************/
 /* Enable dev_vmm Log3 statements to get IRQ-related logging. */
 #define LOG_GROUP LOG_GROUP_DEV_VMM
-#include <VBoxVideo.h>  /* For VBVA definitions. */
+#include <VBox/AssertGuest.h>
 #include <VBox/VMMDev.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/log.h>
@@ -1310,21 +1310,16 @@ static int vmmdevReqHandler_GetDisplayChangeRequest(PVMMDEV pThis, VMMDevRequest
         pThis->displayChangeData.fGuestSentChangeEventAck = true;
     }
 
-    if (pThis->displayChangeData.fGuestSentChangeEventAck)
-    {
-        pReq->xres = pDispRequest->lastReadDisplayChangeRequest.xres;
-        pReq->yres = pDispRequest->lastReadDisplayChangeRequest.yres;
-        pReq->bpp  = pDispRequest->lastReadDisplayChangeRequest.bpp;
-    }
-    else
-    {
-        /* This is not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
-         * read the last valid video mode hint. This happens when the guest X server
-         * determines the initial mode. */
-        pReq->xres = pDispRequest->displayChangeRequest.xres;
-        pReq->yres = pDispRequest->displayChangeRequest.yres;
-        pReq->bpp  = pDispRequest->displayChangeRequest.bpp;
-    }
+    /* If not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
+     * read the last valid video mode hint. This happens when the guest X server
+     * determines the initial mode. */
+    VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
+                                              &pDispRequest->lastReadDisplayChangeRequest :
+                                              &pDispRequest->displayChangeRequest;
+    pReq->xres = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CX)  ? pDisplayDef->cx : 0;
+    pReq->yres = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CY)  ? pDisplayDef->cy : 0;
+    pReq->bpp  = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_BPP) ? pDisplayDef->cBitsPerPixel : 0;
+
     Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d\n", pReq->xres, pReq->yres, pReq->bpp));
 
     return VINF_SUCCESS;
@@ -1395,23 +1390,17 @@ static int vmmdevReqHandler_GetDisplayChangeRequest2(PVMMDEV pThis, VMMDevReques
         pDispRequest = &pThis->displayChangeData.aRequests[pThis->displayChangeData.iCurrentMonitor];
     }
 
-    if (pThis->displayChangeData.fGuestSentChangeEventAck)
-    {
-        pReq->xres    = pDispRequest->lastReadDisplayChangeRequest.xres;
-        pReq->yres    = pDispRequest->lastReadDisplayChangeRequest.yres;
-        pReq->bpp     = pDispRequest->lastReadDisplayChangeRequest.bpp;
-        pReq->display = pDispRequest->lastReadDisplayChangeRequest.display;
-    }
-    else
-    {
-        /* This is not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
-         * read the last valid video mode hint. This happens when the guest X server
-         * determines the initial video mode. */
-        pReq->xres    = pDispRequest->displayChangeRequest.xres;
-        pReq->yres    = pDispRequest->displayChangeRequest.yres;
-        pReq->bpp     = pDispRequest->displayChangeRequest.bpp;
-        pReq->display = pDispRequest->displayChangeRequest.display;
-    }
+    /* If not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
+     * read the last valid video mode hint. This happens when the guest X server
+     * determines the initial mode. */
+    VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
+                                              &pDispRequest->lastReadDisplayChangeRequest :
+                                              &pDispRequest->displayChangeRequest;
+    pReq->xres    = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CX)  ? pDisplayDef->cx : 0;
+    pReq->yres    = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CY)  ? pDisplayDef->cy : 0;
+    pReq->bpp     = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_BPP) ? pDisplayDef->cBitsPerPixel : 0;
+    pReq->display = pDisplayDef->idDisplay;
+
     Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
          pReq->xres, pReq->yres, pReq->bpp, pReq->display));
 
@@ -1486,34 +1475,80 @@ static int vmmdevReqHandler_GetDisplayChangeRequestEx(PVMMDEV pThis, VMMDevReque
         pDispRequest = &pThis->displayChangeData.aRequests[pThis->displayChangeData.iCurrentMonitor];
     }
 
-    if (pThis->displayChangeData.fGuestSentChangeEventAck)
-    {
-        pReq->xres          = pDispRequest->lastReadDisplayChangeRequest.xres;
-        pReq->yres          = pDispRequest->lastReadDisplayChangeRequest.yres;
-        pReq->bpp           = pDispRequest->lastReadDisplayChangeRequest.bpp;
-        pReq->display       = pDispRequest->lastReadDisplayChangeRequest.display;
-        pReq->cxOrigin      = pDispRequest->lastReadDisplayChangeRequest.xOrigin;
-        pReq->cyOrigin      = pDispRequest->lastReadDisplayChangeRequest.yOrigin;
-        pReq->fEnabled      = pDispRequest->lastReadDisplayChangeRequest.fEnabled;
-        pReq->fChangeOrigin = pDispRequest->lastReadDisplayChangeRequest.fChangeOrigin;
-    }
-    else
-    {
-        /* This is not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
-         * read the last valid video mode hint. This happens when the guest X server
-         * determines the initial video mode. */
-        pReq->xres          = pDispRequest->displayChangeRequest.xres;
-        pReq->yres          = pDispRequest->displayChangeRequest.yres;
-        pReq->bpp           = pDispRequest->displayChangeRequest.bpp;
-        pReq->display       = pDispRequest->displayChangeRequest.display;
-        pReq->cxOrigin      = pDispRequest->displayChangeRequest.xOrigin;
-        pReq->cyOrigin      = pDispRequest->displayChangeRequest.yOrigin;
-        pReq->fEnabled      = pDispRequest->displayChangeRequest.fEnabled;
-        pReq->fChangeOrigin = pDispRequest->displayChangeRequest.fChangeOrigin;
+    /* If not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
+     * read the last valid video mode hint. This happens when the guest X server
+     * determines the initial mode. */
+    VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
+                                              &pDispRequest->lastReadDisplayChangeRequest :
+                                              &pDispRequest->displayChangeRequest;
+    pReq->xres          = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CX)  ? pDisplayDef->cx : 0;
+    pReq->yres          = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_CY)  ? pDisplayDef->cy : 0;
+    pReq->bpp           = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_BPP) ? pDisplayDef->cBitsPerPixel : 0;
+    pReq->display       = pDisplayDef->idDisplay;
+    pReq->cxOrigin      = pDisplayDef->xOrigin;
+    pReq->cyOrigin      = pDisplayDef->yOrigin;
+    pReq->fEnabled      = !RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_DISABLED);
+    pReq->fChangeOrigin = RT_BOOL(pDisplayDef->fDisplayFlags & VMMDEV_DISPLAY_ORIGIN);
 
-    }
     Log(("VMMDevEx: returning display change request xres = %d, yres = %d, bpp = %d id %d xPos = %d, yPos = %d & Enabled=%d\n",
          pReq->xres, pReq->yres, pReq->bpp, pReq->display, pReq->cxOrigin, pReq->cyOrigin, pReq->fEnabled));
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles VMMDevReq_GetDisplayChangeRequestMulti.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThis           The VMMDev instance data.
+ * @param   pReqHdr         The header of the request to handle.
+ */
+static int vmmdevReqHandler_GetDisplayChangeRequestMulti(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
+{
+    VMMDevDisplayChangeRequestMulti *pReq = (VMMDevDisplayChangeRequestMulti *)pReqHdr;
+    unsigned i;
+
+    ASSERT_GUEST_MSG_RETURN(pReq->header.size >= sizeof(*pReq),
+                            ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    uint32_t const cDisplays = pReq->cDisplays;
+    ASSERT_GUEST_MSG_RETURN(cDisplays > 0 && cDisplays <= RT_ELEMENTS(pThis->displayChangeData.aRequests),
+                            ("cDisplays %u\n", cDisplays), VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    ASSERT_GUEST_MSG_RETURN(pReq->header.size >= sizeof(*pReq) + (cDisplays - 1) * sizeof(VMMDevDisplayDef),
+                            ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    if (pReq->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
+    {
+        /* Remember which resolution the client has queried, subsequent reads
+         * will return the same values. */
+        for (i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); ++i)
+        {
+            DISPLAYCHANGEREQUEST *pDCR = &pThis->displayChangeData.aRequests[i];
+
+            pDCR->lastReadDisplayChangeRequest = pDCR->displayChangeRequest;
+            pDCR->fPending = false;
+        }
+    }
+
+    /* Fill the guest request with monitor layout data. */
+    for (i = 0; i < cDisplays; ++i)
+    {
+        /* If not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
+         * read the last valid video mode hint. This happens when the guest X server
+         * determines the initial mode. */
+        DISPLAYCHANGEREQUEST const *pDCR = &pThis->displayChangeData.aRequests[i];
+        VMMDevDisplayDef const *pDisplayDef = pThis->displayChangeData.fGuestSentChangeEventAck ?
+                                                  &pDCR->lastReadDisplayChangeRequest :
+                                                  &pDCR->displayChangeRequest;
+        pReq->aDisplays[i] = *pDisplayDef;
+    }
+
+    Log(("VMMDev: returning multimonitor display change request cDisplays %d\n", cDisplays));
 
     return VINF_SUCCESS;
 }
@@ -2571,6 +2606,10 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
             pReqHdr->rc = vmmdevReqHandler_GetDisplayChangeRequestEx(pThis, pReqHdr);
             break;
 
+        case VMMDevReq_GetDisplayChangeRequestMulti:
+            pReqHdr->rc = vmmdevReqHandler_GetDisplayChangeRequestMulti(pThis, pReqHdr);
+            break;
+
         case VMMDevReq_VideoModeSupported:
             pReqHdr->rc = vmmdevReqHandler_VideoModeSupported(pThis, pReqHdr);
             break;
@@ -3181,68 +3220,103 @@ vmmdevIPort_UpdateMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAd
     return VINF_SUCCESS;
 }
 
+static bool vmmdevIsMonitorDefEqual(VMMDevDisplayDef const *pNew, VMMDevDisplayDef const *pOld)
+{
+    bool     fEqual = pNew->idDisplay == pOld->idDisplay;
+
+    fEqual = fEqual && (   !RT_BOOL(pNew->fDisplayFlags & VMMDEV_DISPLAY_ORIGIN)    /* No change. */
+                        || (   RT_BOOL(pOld->fDisplayFlags & VMMDEV_DISPLAY_ORIGIN) /* Old value exists and */
+                            && pNew->xOrigin == pOld->xOrigin                       /* the old is equal to the new. */
+                            && pNew->yOrigin == pOld->yOrigin));
+
+    fEqual = fEqual && (   !RT_BOOL(pNew->fDisplayFlags & VMMDEV_DISPLAY_CX)
+                        || (   RT_BOOL(pOld->fDisplayFlags & VMMDEV_DISPLAY_CX)
+                            && pNew->cx == pOld->cx));
+
+    fEqual = fEqual && (   !RT_BOOL(pNew->fDisplayFlags & VMMDEV_DISPLAY_CY)
+                        || (   RT_BOOL(pOld->fDisplayFlags & VMMDEV_DISPLAY_CY)
+                            && pNew->cy == pOld->cy));
+
+    fEqual = fEqual && (   !RT_BOOL(pNew->fDisplayFlags & VMMDEV_DISPLAY_BPP)
+                        || (   RT_BOOL(pOld->fDisplayFlags & VMMDEV_DISPLAY_BPP)
+                            && pNew->cBitsPerPixel == pOld->cBitsPerPixel));
+
+    fEqual = fEqual && (   RT_BOOL(pNew->fDisplayFlags & VMMDEV_DISPLAY_DISABLED)
+                        == RT_BOOL(pOld->fDisplayFlags & VMMDEV_DISPLAY_DISABLED));
+
+    fEqual = fEqual && (   RT_BOOL(pNew->fDisplayFlags & VMMDEV_DISPLAY_PRIMARY)
+                        == RT_BOOL(pOld->fDisplayFlags & VMMDEV_DISPLAY_PRIMARY));
+
+    return fEqual;
+}
+
 /**
  * @interface_method_impl{PDMIVMMDEVPORT,pfnRequestDisplayChange}
  */
 static DECLCALLBACK(int)
-vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32_t cy, uint32_t cBits, uint32_t idxDisplay,
-                                 int32_t xOrigin, int32_t yOrigin, bool fEnabled, bool fChangeOrigin)
+vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cDisplays, VMMDevDisplayDef const *paDisplays, bool fForce)
 {
-    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
+    int rc = VINF_SUCCESS;
 
-    if (idxDisplay >= RT_ELEMENTS(pThis->displayChangeData.aRequests))
-        return VERR_INVALID_PARAMETER;
+    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
+    bool fNotifyGuest = false;
 
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
-    DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[idxDisplay];
-
-    /* Verify that the new resolution is different and that guest does not yet know about it. */
-    bool fSameResolution = (!cx    || pRequest->lastReadDisplayChangeRequest.xres == cx)
-                        && (!cy    || pRequest->lastReadDisplayChangeRequest.yres == cy)
-                        && (!cBits || pRequest->lastReadDisplayChangeRequest.bpp  == cBits)
-                        && pRequest->lastReadDisplayChangeRequest.xOrigin  == xOrigin
-                        && pRequest->lastReadDisplayChangeRequest.yOrigin  == yOrigin
-                        && pRequest->lastReadDisplayChangeRequest.fEnabled == fEnabled
-                        && pRequest->lastReadDisplayChangeRequest.display  == idxDisplay;
-
-    if (!cx && !cy && !cBits)
+    uint32_t i;
+    for (i = 0; i < cDisplays; ++i)
     {
-        /* Special case of reset video mode. */
-        fSameResolution = false;
+        VMMDevDisplayDef const *p = &paDisplays[i];
+
+        /* Either one display definition is provided or the display id must be equal to the array index. */
+        AssertBreakStmt(cDisplays == 1 || p->idDisplay == i, rc = VERR_INVALID_PARAMETER);
+        AssertBreakStmt(p->idDisplay < RT_ELEMENTS(pThis->displayChangeData.aRequests), rc = VERR_INVALID_PARAMETER);
+
+        DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[p->idDisplay];
+
+        VMMDevDisplayDef const *pLastRead = &pRequest->lastReadDisplayChangeRequest;
+
+        /* Verify that the new resolution is different and that guest does not yet know about it. */
+        bool const fDifferentResolution = fForce || !vmmdevIsMonitorDefEqual(p, pLastRead);
+
+        LogFunc(("same=%d. New: %dx%d, cBits=%d, id=%d. Old: %dx%d, cBits=%d, id=%d. @%d,%d, Enabled=%d, ChangeOrigin=%d\n",
+                 !fDifferentResolution, p->cx, p->cy, p->cBitsPerPixel, p->idDisplay,
+                 pLastRead->cx, pLastRead->cy, pLastRead->cBitsPerPixel, pLastRead->idDisplay,
+                 p->xOrigin, p->yOrigin,
+                 !RT_BOOL(p->fDisplayFlags & VMMDEV_DISPLAY_DISABLED),
+                 RT_BOOL(p->fDisplayFlags & VMMDEV_DISPLAY_ORIGIN)));
+
+        /* We could validate the information here but hey, the guest can do that as well! */
+        pRequest->displayChangeRequest = *p;
+        pRequest->fPending = fDifferentResolution;
+
+        fNotifyGuest = fNotifyGuest || fDifferentResolution;
     }
 
-    Log3(("vmmdevIPort_RequestDisplayChange: same=%d. new: cx=%d, cy=%d, cBits=%d, idxDisplay=%d.\
-          old: cx=%d, cy=%d, cBits=%d, idxDisplay=%d. \n \
-          ,OriginX = %d , OriginY=%d, Enabled=%d, ChangeOrigin=%d\n",
-          fSameResolution, cx, cy, cBits, idxDisplay, pRequest->lastReadDisplayChangeRequest.xres,
-          pRequest->lastReadDisplayChangeRequest.yres, pRequest->lastReadDisplayChangeRequest.bpp,
-          pRequest->lastReadDisplayChangeRequest.display,
-          xOrigin, yOrigin, fEnabled, fChangeOrigin));
-
-    /* we could validate the information here but hey, the guest can do that as well! */
-    pRequest->displayChangeRequest.xres          = cx;
-    pRequest->displayChangeRequest.yres          = cy;
-    pRequest->displayChangeRequest.bpp           = cBits;
-    pRequest->displayChangeRequest.display       = idxDisplay;
-    pRequest->displayChangeRequest.xOrigin       = xOrigin;
-    pRequest->displayChangeRequest.yOrigin       = yOrigin;
-    pRequest->displayChangeRequest.fEnabled      = fEnabled;
-    pRequest->displayChangeRequest.fChangeOrigin = fChangeOrigin;
-
-    pRequest->fPending = !fSameResolution;
-
-    if (!fSameResolution)
+    if (RT_SUCCESS(rc))
     {
-        LogRel(("VMMDev: SetVideoModeHint: Got a video mode hint (%dx%dx%d)@(%dx%d),(%d;%d) at %d\n",
-                cx, cy, cBits, xOrigin, yOrigin, fEnabled, fChangeOrigin, idxDisplay));
+        if (fNotifyGuest)
+        {
+            for (i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); ++i)
+            {
+                DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[i];
+                if (pRequest->fPending)
+                {
+                    VMMDevDisplayDef const *p = &pRequest->displayChangeRequest;
+                    LogRel(("VMMDev: SetVideoModeHint: Got a video mode hint (%dx%dx%d)@(%dx%d),(%d;%d) at %d\n",
+                            p->cx, p->cy, p->cBitsPerPixel, p->xOrigin, p->yOrigin,
+                            !RT_BOOL(p->fDisplayFlags & VMMDEV_DISPLAY_DISABLED),
+                            RT_BOOL(p->fDisplayFlags & VMMDEV_DISPLAY_ORIGIN), i));
+                }
+            }
 
-        /* IRQ so the guest knows what's going on */
-        VMMDevNotifyGuest(pThis, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+            /* IRQ so the guest knows what's going on */
+            VMMDevNotifyGuest(pThis, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+        }
     }
 
     PDMCritSectLeave(&pThis->CritSect);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**

@@ -146,6 +146,7 @@ typedef enum VMMDevRequestType
     VMMDevReq_SetGuestCapabilities       = 56,
     VMMDevReq_VideoModeSupported2        = 57, /**< @since version 3.2.0 */
     VMMDevReq_GetDisplayChangeRequestEx  = 80, /**< @since version 4.2.4 */
+    VMMDevReq_GetDisplayChangeRequestMulti = 81,
 #ifdef VBOX_WITH_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -1159,6 +1160,41 @@ typedef struct
 AssertCompileSize(VMMDevDisplayChangeRequestEx, 24+32);
 
 
+/** Flags for VMMDevDisplayDef::fDisplayFlags */
+#define VMMDEV_DISPLAY_PRIMARY  UINT32_C(0x00000001) /**< Primary display. */
+#define VMMDEV_DISPLAY_DISABLED UINT32_C(0x00000002) /**< Display is disabled. */
+#define VMMDEV_DISPLAY_ORIGIN   UINT32_C(0x00000004) /**< Change position of the diplay. */
+#define VMMDEV_DISPLAY_CX       UINT32_C(0x00000008) /**< Change the horizontal resolution of the display. */
+#define VMMDEV_DISPLAY_CY       UINT32_C(0x00000010) /**< Change the vertical resolution of the display. */
+#define VMMDEV_DISPLAY_BPP      UINT32_C(0x00000020) /**< Change the color depth of the display. */
+
+/** Definition of one monitor. Used by VMMDevReq_GetDisplayChangeRequestMulti. */
+typedef struct VMMDevDisplayDef
+{
+    uint32_t fDisplayFlags;             /**< VMMDEV_DISPLAY_* flags. */
+    uint32_t idDisplay;                 /**< The display number. */
+    int32_t  xOrigin;                   /**< New OriginX of the guest screen. */
+    int32_t  yOrigin;                   /**< New OriginY of the guest screen.  */
+    uint32_t cx;                        /**< Horizontal pixel resolution. */
+    uint32_t cy;                        /**< Vertical pixel resolution. */
+    uint32_t cBitsPerPixel;             /**< Bits per pixel. */
+} VMMDevDisplayDef;
+AssertCompileSize(VMMDevDisplayDef, 28);
+
+/** Multimonitor display change request structure. Used by VMMDevReq_GetDisplayChangeRequestMulti. */
+typedef struct VMMDevDisplayChangeRequestMulti
+{
+    VMMDevRequestHeader header;         /**< Header. */
+    uint32_t eventAck;                  /**< Setting this to VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST indicates
+                                         * that the request is a response to that event.
+                                         * (Don't confuse this with VMMDevReq_AcknowledgeEvents.) */
+    uint32_t cDisplays;                 /**< Number of monitors. In: how many the guest expects.
+                                         *                      Out: how many the host provided. */
+    VMMDevDisplayDef aDisplays[1];      /**< Layout of monitors. */
+} VMMDevDisplayChangeRequestMulti;
+AssertCompileSize(VMMDevDisplayChangeRequestMulti, 24+8+28);
+
+
 /**
  * Video mode supported request structure.
  *
@@ -1693,6 +1729,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevDisplayChangeRequest2);
         case VMMDevReq_GetDisplayChangeRequestEx:
             return sizeof(VMMDevDisplayChangeRequestEx);
+        case VMMDevReq_GetDisplayChangeRequestMulti:
+            return RT_UOFFSETOF(VMMDevDisplayChangeRequestMulti, aDisplays);
         case VMMDevReq_VideoModeSupported:
             return sizeof(VMMDevVideoModeSupportedRequest);
         case VMMDevReq_GetHeightReduction:

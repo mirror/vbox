@@ -1440,6 +1440,94 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                                                          fChangeOrigin, iOriginX, iOriginY,
                                                          uXRes, uYRes, uBpp));
         }
+        else if (!strcmp(a->argv[1], "setscreenlayout"))
+        {
+            if (a->argc < 4)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }
+
+            ComPtr<IDisplay> pDisplay;
+            CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
+            if (!pDisplay)
+            {
+                RTMsgError("Guest not running");
+                rc = E_FAIL;
+                break;
+            }
+
+            com::SafeIfaceArray<IGuestScreenInfo> aGuestScreenInfos;
+
+            /* Parse "<display> on|primary <xorigin> <yorigin> <xres> <yres> <bpp> | off" sequences. */
+            int argc = a->argc - 2;
+            char **argv = &a->argv[2];
+            while (argc >= 2)
+            {
+                ULONG aDisplay = RTStrToUInt32(argv[0]);
+                BOOL aPrimary = FALSE;
+
+                GuestMonitorStatus_T aStatus;
+                if (RTStrICmp(argv[1], "primary") == 0)
+                {
+                    aStatus = GuestMonitorStatus_Enabled;
+                    aPrimary = TRUE;
+                }
+                else if (RTStrICmp(argv[1], "on") == 0)
+                    aStatus = GuestMonitorStatus_Enabled;
+                else if (RTStrICmp(argv[1], "off") == 0)
+                    aStatus = GuestMonitorStatus_Disabled;
+                else
+                {
+                    errorSyntax(USAGE_CONTROLVM, "Display status must be <on> or <off>");
+                    rc = E_FAIL;
+                    break;
+                }
+
+                BOOL aChangeOrigin = FALSE;
+                LONG aOriginX = 0;
+                LONG aOriginY = 0;
+                ULONG aWidth = 0;
+                ULONG aHeight = 0;
+                ULONG aBitsPerPixel = 0;
+                if (aStatus = GuestMonitorStatus_Enabled)
+                {
+                    if (argc < 7)
+                    {
+                        errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                        rc = E_FAIL;
+                        break;
+                    }
+
+                    aChangeOrigin = TRUE;
+                    aOriginX      = RTStrToUInt32(argv[2]);
+                    aOriginY      = RTStrToUInt32(argv[3]);
+                    aWidth        = RTStrToUInt32(argv[4]);
+                    aHeight       = RTStrToUInt32(argv[5]);
+                    aBitsPerPixel = RTStrToUInt32(argv[6]);
+
+                    argc -= 7;
+                    argv += 7;
+                }
+                else
+                {
+                    argc -= 2;
+                    argv += 2;
+                }
+
+                ComPtr<IGuestScreenInfo> pInfo;
+                CHECK_ERROR_BREAK(pDisplay, CreateGuestScreenInfo(aDisplay, aStatus, aPrimary, aChangeOrigin,
+                                                                  aOriginX, aOriginY, aWidth, aHeight, aBitsPerPixel,
+                                                                  pInfo.asOutParam()));
+                aGuestScreenInfos.push_back(pInfo);
+            }
+
+            if (FAILED(rc))
+                break;
+
+            CHECK_ERROR_BREAK(pDisplay, SetScreenLayout(ScreenLayoutMode_Apply, ComSafeArrayAsInParam(aGuestScreenInfos)));
+        }
         else if (!strcmp(a->argv[1], "setcredentials"))
         {
             bool fAllowLocalLogon = true;

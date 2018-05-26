@@ -81,6 +81,7 @@ DECLR0VBGL(int) VbglGR0Verify(const VMMDevRequestHeader *pReq, size_t cbReq)
      * Note: Keep this list sorted for easier human lookup!
      */
     if (   pReq->requestType == VMMDevReq_ChangeMemBalloon
+        || pReq->requestType == VMMDevReq_GetDisplayChangeRequestMulti
 #ifdef VBOX_WITH_64_BITS_GUESTS
         || pReq->requestType == VMMDevReq_HGCMCall32
         || pReq->requestType == VMMDevReq_HGCMCall64

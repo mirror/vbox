@@ -768,6 +768,56 @@ static BOOL ResizeDisplayDevice(PVBOXDISPLAYCONTEXT pCtx,
     return TRUE;
 }
 
+static void doResize(PVBOXDISPLAYCONTEXT pCtx,
+                     uint32_t iDisplay,
+                     uint32_t cx,
+                     uint32_t cy,
+                     uint32_t cBits,
+                     bool     fEnabled,
+                     uint32_t cxOrigin,
+                     uint32_t cyOrigin,
+                     bool     fChangeOrigin)
+{
+    for (;;)
+    {
+        VBOXDISPLAY_DRIVER_TYPE enmDriverType = getVBoxDisplayDriverType(pCtx);
+        if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_UNKNOWN)
+        {
+            LogFlowFunc(("vboxDisplayDriver is not active\n"));
+            break;
+        }
+
+        if (pCtx->pfnChangeDisplaySettingsEx != 0)
+        {
+            LogFlowFunc(("Detected W2K or later\n"));
+            if (!ResizeDisplayDevice(pCtx,
+                                     iDisplay,
+                                     cx,
+                                     cy,
+                                     cBits,
+                                     fEnabled,
+                                     cxOrigin,
+                                     cyOrigin,
+                                     fChangeOrigin,
+                                     true /*fExtDispSup*/ ))
+            {
+                LogFlowFunc(("ResizeDipspalyDevice return 0\n"));
+                break;
+            }
+
+        }
+        else
+        {
+            LogFlowFunc(("Detected NT\n"));
+            ResizeDisplayDeviceNT4(cx, cy, cBits);
+            break;
+        }
+
+        /* Retry the change a bit later. */
+        RTThreadSleep(1000);
+    }
+}
+
 /**
  * Thread function to wait for and process display change requests.
  */
@@ -821,6 +871,43 @@ static DECLCALLBACK(int) VBoxDisplayWorker(void *pvInstance, bool volatile *pfSh
             {
                 LogFlowFunc(("going to get display change information\n"));
 
+#if 0
+                /* Prototype code which processes the multimonitor resize request. */
+                VMMDevDisplayDef aDisplays[64];
+                uint32_t cDisplays = VBoxDisplayGetCount();
+                rc = VbglR3GetDisplayChangeRequestMulti(cDisplays, &cDisplays, &aDisplays[0], true /* fAck */);
+                if (RT_SUCCESS(rc))
+                {
+                    LogRel(("Got multi resize request %d displays\n", cDisplays));
+
+                    uint32_t i;
+                    for (i = 0; i < cDisplays; ++i)
+                    {
+                        LogRel(("[%d]: %d 0x%02X %d,%d %dx%d %d\n",
+                                 i, aDisplays[i].idDisplay,
+                                 aDisplays[i].fDisplayFlags,
+                                 aDisplays[i].xOrigin,
+                                 aDisplays[i].yOrigin,
+                                 aDisplays[i].cx,
+                                 aDisplays[i].cy,
+                                 aDisplays[i].cBitsPerPixel));
+
+                        doResize(pCtx,
+                                 aDisplays[i].idDisplay,
+                                 (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_CX) ? aDisplays[i].cx : 0,
+                                 (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_CY) ? aDisplays[i].cy : 0,
+                                 (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_BPP) ? aDisplays[i].cBitsPerPixel : 0,
+                                 !RT_BOOL(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED),
+                                 aDisplays[i].xOrigin,
+                                 aDisplays[i].yOrigin,
+                                 RT_BOOL(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN));
+                    }
+
+                    continue; /* Done */
+                }
+                /* Fall back to the single monitor resize request. */
+#endif
+
                 /*
                  * We got at least one event. (bird: What does that mean actually?  The driver wakes us up immediately upon
                  * receiving the event.  Or are we refering to mouse & display?  In the latter case it's misleading.)
@@ -849,44 +936,15 @@ static DECLCALLBACK(int) VBoxDisplayWorker(void *pvInstance, bool volatile *pfSh
                     LogFlowFunc(("DisplayChangeReqEx parameters  iDisplay=%d x cx=%d x cy=%d x cBits=%d x SecondayMonEnb=%d x NewOriginX=%d x NewOriginY=%d x ChangeOrigin=%d\n",
                                  iDisplay, cx, cy, cBits, fEnabled, cxOrigin, cyOrigin, fChangeOrigin));
 
-                    for (;;)
-                    {
-                        VBOXDISPLAY_DRIVER_TYPE enmDriverType = getVBoxDisplayDriverType(pCtx);
-                        if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_UNKNOWN)
-                        {
-                            LogFlowFunc(("vboxDisplayDriver is not active\n"));
-                            break;
-                        }
-
-                        if (pCtx->pfnChangeDisplaySettingsEx != 0)
-                        {
-                            LogFlowFunc(("Detected W2K or later\n"));
-                            if (!ResizeDisplayDevice(pCtx,
-                                                     iDisplay,
-                                                     cx,
-                                                     cy,
-                                                     cBits,
-                                                     fEnabled,
-                                                     cxOrigin,
-                                                     cyOrigin,
-                                                     fChangeOrigin,
-                                                     true /*fExtDispSup*/ ))
-                            {
-                                LogFlowFunc(("ResizeDipspalyDevice return 0\n"));
-                                break;
-                            }
-
-                        }
-                        else
-                        {
-                            LogFlowFunc(("Detected NT\n"));
-                            ResizeDisplayDeviceNT4(cx, cy, cBits);
-                            break;
-                        }
-
-                        /* Retry the change a bit later. */
-                        RTThreadSleep(1000);
-                    }
+                    doResize(pCtx,
+                             iDisplay,
+                             cx,
+                             cy,
+                             cBits,
+                             fEnabled,
+                             cxOrigin,
+                             cyOrigin,
+                             fChangeOrigin);
                 }
             } // if (fDisplayChangeQueried)
 

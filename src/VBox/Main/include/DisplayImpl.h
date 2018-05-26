@@ -37,6 +37,7 @@ struct VIDEORECCONTEXT;
 #endif
 
 #include "DisplaySourceBitmapWrap.h"
+#include "GuestScreenInfoWrap.h"
 
 
 class Console;
@@ -297,6 +298,16 @@ private:
     virtual HRESULT setScreenLayout(ScreenLayoutMode_T aScreenLayoutMode,
                                     const std::vector<ComPtr<IGuestScreenInfo> > &aGuestScreenInfo);
     virtual HRESULT detachScreens(const std::vector<LONG> &aScreenIds);
+    virtual HRESULT createGuestScreenInfo(ULONG aDisplay,
+                                          GuestMonitorStatus_T aStatus,
+                                          BOOL aPrimary,
+                                          BOOL aChangeOrigin,
+                                          LONG aOriginX,
+                                          LONG aOriginY,
+                                          ULONG aWidth,
+                                          ULONG aHeight,
+                                          ULONG aBitsPerPixel,
+                                          ComPtr<IGuestScreenInfo> &aGuestScreenInfo);
 
     // Wrapped IEventListener properties
 
@@ -593,6 +604,52 @@ private:
     };
 
     Data m;
+};
+
+class ATL_NO_VTABLE GuestScreenInfo:
+    public GuestScreenInfoWrap
+{
+public:
+
+    DECLARE_EMPTY_CTOR_DTOR(GuestScreenInfo)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    /* Public initializer/uninitializer for internal purposes only. */
+    HRESULT init(ULONG aDisplay,
+                 GuestMonitorStatus_T aGuestMonitorStatus,
+                 BOOL aPrimary,
+                 BOOL aChangeOrigin,
+                 LONG aOriginX,
+                 LONG aOriginY,
+                 ULONG aWidth,
+                 ULONG aHeight,
+                 ULONG aBitsPerPixel);
+    void uninit();
+
+private:
+    // wrapped IGuestScreenInfo properties
+    virtual HRESULT getScreenId(ULONG *aScreenId);
+    virtual HRESULT getGuestMonitorStatus(GuestMonitorStatus_T *aGuestMonitorStatus);
+    virtual HRESULT getPrimary(BOOL *aPrimary);
+    virtual HRESULT getOrigin(BOOL *aOrigin);
+    virtual HRESULT getOriginX(LONG *aOriginX);
+    virtual HRESULT getOriginY(LONG *aOriginY);
+    virtual HRESULT getWidth(ULONG *aWidth);
+    virtual HRESULT getHeight(ULONG *aHeight);
+    virtual HRESULT getBitsPerPixel(ULONG *aBitsPerPixel);
+    virtual HRESULT getExtendedInfo(com::Utf8Str &aExtendedInfo);
+
+    ULONG mScreenId;
+    GuestMonitorStatus_T mGuestMonitorStatus;
+    BOOL  mPrimary;
+    BOOL  mOrigin;
+    LONG  mOriginX;
+    LONG  mOriginY;
+    ULONG mWidth;
+    ULONG mHeight;
+    ULONG mBitsPerPixel;
 };
 
 #endif // !____H_DISPLAYIMPL

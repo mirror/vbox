@@ -1579,6 +1579,7 @@ typedef struct PDMIACPICONNECTOR
 /** PDMIACPICONNECTOR interface ID. */
 #define PDMIACPICONNECTOR_IID                   "5f14bf8d-1edf-4e3a-a1e1-cca9fd08e359"
 
+struct VMMDevDisplayDef;
 
 /** Pointer to a VMMDevice port interface. */
 typedef struct PDMIVMMDEVPORT *PPDMIVMMDEVPORT;
@@ -1635,23 +1636,13 @@ typedef struct PDMIVMMDEVPORT
      *
      * @returns VBox status code
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   cx              Horizontal pixel resolution (0 = do not change).
-     * @param   cy              Vertical pixel resolution (0 = do not change).
-     * @param   cBits           Bits per pixel (0 = do not change).
-     * @param   idxDisplay      The display index.
-     * @param   xOrigin         The X coordinate of the lower left
-     *                          corner of the secondary display with
-     *                          ID = idxDisplay
-     * @param   yOrigin         The Y coordinate of the lower left
-     *                          corner of the secondary display with
-     *                          ID = idxDisplay
-     * @param   fEnabled        Whether the display is enabled or not. (Guessing
-     *                          again.)
-     * @param   fChangeOrigin   Whether the display origin point changed. (Guess)
+     * @param   cDisplays       Number of displays. Can be either 1 or the number of VM virtual monitors.
+     * @param   paDisplays      Definitions of guest screens to be applied. See VMMDev.h
+     * @param   fForce          Whether to deliver the request to the guest even if the guest has
+     *                          the requested resolution already.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRequestDisplayChange,(PPDMIVMMDEVPORT pInterface, uint32_t cx,
-                         uint32_t cy, uint32_t cBits, uint32_t idxDisplay,
-                         int32_t xOrigin, int32_t yOrigin, bool fEnabled, bool fChangeOrigin));
+    DECLR3CALLBACKMEMBER(int, pfnRequestDisplayChange,(PPDMIVMMDEVPORT pInterface, uint32_t cDisplays,
+                                                       struct VMMDevDisplayDef const *paDisplays, bool fForce));
 
     /**
      * Pass credentials to guest.
@@ -1749,7 +1740,7 @@ typedef struct PDMIVMMDEVPORT
 
 } PDMIVMMDEVPORT;
 /** PDMIVMMDEVPORT interface ID. */
-#define PDMIVMMDEVPORT_IID                      "d7e52035-3b6c-422e-9215-2a75646a945d"
+#define PDMIVMMDEVPORT_IID                      "2ccc19a5-742a-4af0-a7d3-31ea67ff50e9"
 
 
 /** Pointer to a HPET legacy notification interface. */
