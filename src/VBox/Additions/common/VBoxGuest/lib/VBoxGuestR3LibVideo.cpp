@@ -33,9 +33,7 @@
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestPropertySvc.h>  /* For Save and RetrieveVideoMode */
 #include <iprt/assert.h>
-#if !defined(VBOX_VBGLR3_XFREE86) && !defined(VBOX_VBGLR3_XORG)
-# include <iprt/mem.h>
-#endif
+#include <iprt/mem.h>
 #include <iprt/string.h>
 
 #include <stdio.h>
@@ -304,11 +302,12 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequestMulti(uint32_t cDisplaysIn,
 
     cbDisplays = cDisplaysIn * sizeof(VMMDevDisplayDef);
     cbAlloc = RT_UOFFSETOF(VMMDevDisplayChangeRequestMulti, aDisplays) + cbDisplays;
-    pReq = (VMMDevDisplayChangeRequestMulti *)RTMemAllocZ(cbAlloc);
+    pReq = (VMMDevDisplayChangeRequestMulti *)RTMemTmpAlloc(cbAlloc);
     AssertPtrReturn(pReq, VERR_NO_MEMORY);
 
+    memset(pReq, 0, cbAlloc);
     rc = vmmdevInitRequest(&pReq->header, VMMDevReq_GetDisplayChangeRequestMulti);
-    AssertRCReturnStmt(rc, RTMemFree(pReq), rc);
+    AssertRCReturnStmt(rc, RTMemTmpFree(pReq), rc);
 
     pReq->header.size += (uint32_t)cbDisplays;
     pReq->cDisplays = cDisplaysIn;
@@ -316,7 +315,7 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequestMulti(uint32_t cDisplaysIn,
         pReq->eventAck = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
 
     rc = vbglR3GRPerform(&pReq->header);
-    AssertRCReturnStmt(rc, RTMemFree(pReq), rc);
+    AssertRCReturnStmt(rc, RTMemTmpFree(pReq), rc);
 
     rc = pReq->header.rc;
     if (RT_SUCCESS(rc))
@@ -325,7 +324,7 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequestMulti(uint32_t cDisplaysIn,
         *pcDisplaysOut = pReq->cDisplays;
     }
 
-    RTMemFree(pReq);
+    RTMemTmpFree(pReq);
     return rc;
 }
 
