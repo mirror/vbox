@@ -17896,7 +17896,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           The number of bits per pixel of the guest screen.
         </desc>
       </param>
-      <param name="guestScreenInfo" type="IGuestScreenInfo" dir="out">
+      <param name="guestScreenInfo" type="IGuestScreenInfo" dir="return">
         <desc>
           The created object.
         </desc>
