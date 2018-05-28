@@ -487,8 +487,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
                 qApp->setQuitOnLastWindowClosed(false);
             }
 
-            /* Request to Show UI _after_ QApplication executed: */
-            QMetaObject::invokeMethod(gStarter, "sltShowUI", Qt::QueuedConnection);
+            /* Request to Start UI _after_ QApplication executed: */
+            QMetaObject::invokeMethod(gStarter, "sltStartUI", Qt::QueuedConnection);
 
             /* Start application: */
             iResultCode = a.exec();

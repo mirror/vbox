@@ -108,7 +108,7 @@ void UIStarter::cleanup()
     sltDestroyUI();
 }
 
-void UIStarter::sltShowUI()
+void UIStarter::sltStartUI()
 {
     /* Exit if VBoxGlobal is not valid: */
     if (!vboxGlobal().isValid())

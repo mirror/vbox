@@ -54,8 +54,8 @@ public:
 
 private slots:
 
-    /** Shows corresponding part of the UI. */
-    void sltShowUI();
+    /** Starts corresponding part of the UI. */
+    void sltStartUI();
     /** Restarts corresponding part of the UI. */
     void sltRestartUI();
     /** Destroys corresponding part of the UI. */
@@ -77,4 +77,3 @@ private:
 #define gStarter UIStarter::instance()
 
 #endif /* !___UIStarter_h___ */
-
