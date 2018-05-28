@@ -1335,7 +1335,7 @@
 
   <enum
     name="ProcessorFeature"
-    uuid="64c38e6b-8bcf-45ad-ac03-9b406287c5bf"
+    uuid="fed0e385-dc5a-4cef-b9e2-66bafb6af6aa"
     >
     <desc>
       CPU features.
@@ -1345,6 +1345,7 @@
     <const name="PAE"               value="1"/>
     <const name="LongMode"          value="2"/>
     <const name="NestedPaging"      value="3"/>
+    <const name="UnrestrictedGuest" value="4"/>
   </enum>
 
   <enum

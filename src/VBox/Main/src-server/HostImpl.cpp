@@ -216,6 +216,7 @@ struct Host::Data
                             fLongModeSupported,
                             fPAESupported,
                             fNestedPagingSupported,
+                            fUnrestrictedGuestSupported,
                             fRecheckVTSupported;
 
     /** @}  */
@@ -297,6 +298,7 @@ HRESULT Host::init(VirtualBox *aParent)
     m->fLongModeSupported = false;
     m->fPAESupported = false;
     m->fNestedPagingSupported = false;
+    m->fUnrestrictedGuestSupported = false;
     m->fRecheckVTSupported = false;
 
     if (ASMHasCpuId())
@@ -350,6 +352,7 @@ HRESULT Host::init(VirtualBox *aParent)
                    )
                 {
                     m->fVTSupported = true;
+                    m->fUnrestrictedGuestSupported = true;
 
                     /* Query AMD features. */
                     if (uExtMaxId >= 0x8000000a)
@@ -379,11 +382,16 @@ HRESULT Host::init(VirtualBox *aParent)
                     m->fNestedPagingSupported = true;
                 else
                     Assert(m->fNestedPagingSupported == false);
+                if (   (fVTCaps & SUPVTCAPS_AMD_V)
+                    || (fVTCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST))
+                    m->fUnrestrictedGuestSupported = true;
+                else
+                    Assert(m->fUnrestrictedGuestSupported == false);
             }
             else
             {
                 LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
-                m->fVTSupported = m->fNestedPagingSupported = false;
+                m->fVTSupported = m->fNestedPagingSupported = m->fUnrestrictedGuestSupported = false;
             }
             rc = SUPR3Term(false);
             AssertRC(rc);
@@ -1007,6 +1015,7 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
         case ProcessorFeature_PAE:
         case ProcessorFeature_LongMode:
         case ProcessorFeature_NestedPaging:
+        case ProcessorFeature_UnrestrictedGuest:
             break;
         default:
             return setError(E_INVALIDARG, tr("The aFeature value %d (%#x) is out of range."), (int)aFeature, (int)aFeature);
@@ -1021,7 +1030,8 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 
         if (   m->fRecheckVTSupported
             && (   aFeature == ProcessorFeature_HWVirtEx
-                || aFeature == ProcessorFeature_NestedPaging)
+                || aFeature == ProcessorFeature_NestedPaging
+                || aFeature == ProcessorFeature_UnrestrictedGuest)
            )
         {
             alock.release();
@@ -1041,11 +1051,16 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
                         m->fNestedPagingSupported = true;
                     else
                         Assert(m->fNestedPagingSupported == false);
+                    if (   (fVTCaps & SUPVTCAPS_AMD_V)
+                        || (fVTCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST))
+                        m->fUnrestrictedGuestSupported = true;
+                    else
+                        Assert(m->fUnrestrictedGuestSupported == false);
                 }
                 else
                 {
                     LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
-                    m->fVTSupported = m->fNestedPagingSupported = true;
+                    m->fVTSupported = m->fNestedPagingSupported = m->fUnrestrictedGuestSupported = false;
                 }
                 rc = SUPR3Term(false);
                 AssertRC(rc);
@@ -1071,6 +1086,10 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 
             case ProcessorFeature_NestedPaging:
                 *aSupported = m->fNestedPagingSupported;
+                break;
+
+            case ProcessorFeature_UnrestrictedGuest:
+                *aSupported = m->fUnrestrictedGuestSupported;
                 break;
 
             default:
