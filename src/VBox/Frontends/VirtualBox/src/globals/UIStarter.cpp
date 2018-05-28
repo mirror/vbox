@@ -93,6 +93,8 @@ void UIStarter::deinit()
                this, &UIStarter::sltRestartUI);
     disconnect(&vboxGlobal(), &VBoxGlobal::sigAskToOpenURLs,
                this, &UIStarter::sltOpenURLs);
+    disconnect(&vboxGlobal(), &VBoxGlobal::sigAskToCommitData,
+               this, &UIStarter::sltHandleCommitDataRequest);
 }
 
 void UIStarter::prepare()
