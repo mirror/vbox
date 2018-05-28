@@ -1416,6 +1416,15 @@ bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
 }
 #endif /* VBOX_WS_MAC */
 
+void UISelectorWindow::closeEvent(QCloseEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIWithRetranslateUI<QIMainWindow>::closeEvent(pEvent);
+
+    /* Quit application: */
+    QApplication::quit();
+}
+
 void UISelectorWindow::prepare()
 {
 #ifdef VBOX_WS_X11

@@ -141,6 +141,12 @@ void UIMachine::asyncChangeVisualState(UIVisualStateType visualState)
     emit sigRequestAsyncVisualStateChange(visualState);
 }
 
+void UIMachine::closeRuntimeUI()
+{
+    /* Quit application: */
+    QApplication::quit();
+}
+
 void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
 {
     /* Create new machine-logic: */
@@ -303,9 +309,6 @@ void UIMachine::cleanup()
 
     /* Cleanup session UI: */
     cleanupSession();
-
-    /* Quit application: */
-    QApplication::quit();
 }
 
 void UIMachine::enterInitialVisualState()

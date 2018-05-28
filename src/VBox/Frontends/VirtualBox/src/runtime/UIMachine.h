@@ -70,7 +70,7 @@ public:
     void asyncChangeVisualState(UIVisualStateType visualStateType);
 
     /** Close Runtime UI. */
-    void closeRuntimeUI() { destroy(); }
+    void closeRuntimeUI();
 
 private slots:
 

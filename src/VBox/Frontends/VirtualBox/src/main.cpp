@@ -480,12 +480,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             if (vboxGlobal().processArgs())
                 break;
 
-            /* For Runtime UI: */
-            if (vboxGlobal().isVMConsoleProcess())
-            {
-                /* Prevent application from exiting when all window(s) closed: */
-                qApp->setQuitOnLastWindowClosed(false);
-            }
+            // WORKAROUND:
+            // Initially we wanted to make that workaround for Runtime UI only,
+            // because only there we had a strict handling for proper application quit
+            // procedure.  But it appeared on X11 (as usually due to an async nature) there
+            // can happen situations that Qt application is checking whether at least one
+            // window is already shown and if not - exits prematurely _before_ it is actually
+            // shown.  That can happen for example if window is not yet shown because blocked
+            // by startup error message-box which is not treated as real window by some
+            // reason.  So we are making application exit manual everywhere.
+            qApp->setQuitOnLastWindowClosed(false);
 
             /* Request to Start UI _after_ QApplication executed: */
             QMetaObject::invokeMethod(gStarter, "sltStartUI", Qt::QueuedConnection);
