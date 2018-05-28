@@ -61,10 +61,11 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIMediumSelector::UIMediumSelector(KDeviceType deviceType, QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = 0 */)
+UIMediumSelector::UIMediumSelector(KDeviceType deviceType, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QIDialog>(pParent)
     , m_pMainLayout(0)
     , m_pTreeWidget(0)
+    , m_enmDeviceType(deviceType)
 {
     configure();
     finalize();

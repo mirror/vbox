@@ -49,7 +49,7 @@ signals:
 
 public:
 
-    UIMediumSelector(KDeviceType deviceType, QWidget *pParent = 0, Qt::WindowFlags enmFlags = 0);
+    UIMediumSelector(KDeviceType deviceType, QWidget *pParent = 0);
 
 private slots:
 
@@ -74,6 +74,7 @@ private:
 
     QVBoxLayout  *m_pMainLayout;
     QITreeWidget *m_pTreeWidget;
+    KDeviceType   m_enmDeviceType;
 };
 
 #endif /* !___UIMediumSelector_h___ */
