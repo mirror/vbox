@@ -584,7 +584,7 @@ static bool omfWriter_LNamesAddN(POMFWRITER pThis, const char *pchName, size_t c
 {
     /* See if we've already got that name in the list. */
     uint16_t idxName;
-    if (pidxName) /* If pidxName is NULL, we assume the caller migth just be passing stuff thru. */
+    if (pidxName) /* If pidxName is NULL, we assume the caller might just be passing stuff thru. */
     {
         idxName = omfWriter_LNamesLookupN(pThis, pchName, cchName);
         if (idxName != UINT16_MAX)

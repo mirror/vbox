@@ -2968,7 +2968,7 @@ DECLHIDDEN(uint32_t) rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uin
         {
             if (pThis->fSubscribedEvts != pThis->fPollEvts)
             {
-                /** @todo seems like there migth be a call to many here and that fPollEvts is
+                /** @todo seems like there might be a call to many here and that fPollEvts is
                  *        totally unnecessary... (bird) */
                 int rc = rtSocketPollUpdateEvents(pThis, pThis->fPollEvts);
                 if (RT_FAILURE(rc))

@@ -104,7 +104,7 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
  PROGRAMS += vbox-img
 
  #
- # vbox-img - static because it migth be used as a standalone tool.
+ # vbox-img - static because it might be used as a standalone tool.
  #
  vbox-img_TEMPLATE = VBoxR3Static
  vbox-img_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
@@ -161,7 +161,7 @@ if    defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
  PROGRAMS += vdkeystoremgr
 
  #
- # vdkeystoremgr - static because it migth be used as a standalone tool.
+ # vdkeystoremgr - static because it might be used as a standalone tool.
  #
  vdkeystoremgr_TEMPLATE = VBoxR3Static
  vdkeystoremgr_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
