@@ -58,6 +58,7 @@ enum ButtonType
 /** Manager dialog factory insterface. */
 class SHARED_LIBRARY_STUFF QIManagerDialogFactory
 {
+
 public:
 
     /** Constructs Manager dialog factory. */

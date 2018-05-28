@@ -672,6 +672,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/hostnetwork/UIHostNetworkManager.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumManager.h \
+	src/medium/UIMediumSelector.h \
 	src/selector/UIDesktopPane.h \
 	src/selector/UIVMItem.h \
 	src/selector/UISelectorWindow.h \
@@ -1311,6 +1312,7 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
+	src/medium/UIMediumSelector.cpp \
 	src/selector/UIDesktopPane.cpp \
 	src/selector/UIVMItem.cpp \
 	src/selector/UISelectorWindow.cpp \
