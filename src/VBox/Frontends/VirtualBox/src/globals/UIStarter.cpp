@@ -75,13 +75,6 @@ UIStarter::~UIStarter()
     s_pInstance = 0;
 }
 
-void UIStarter::prepare()
-{
-    /* Listen for QApplication signals: */
-    connect(qApp, &QGuiApplication::aboutToQuit,
-            this, &UIStarter::sltDestroyUI);
-}
-
 void UIStarter::init()
 {
     /* Listen for VBoxGlobal signals: */
@@ -102,10 +95,11 @@ void UIStarter::deinit()
                this, &UIStarter::sltOpenURLs);
 }
 
-void UIStarter::cleanup()
+void UIStarter::prepare()
 {
-    /* Destroy UI if there is still something to: */
-    sltDestroyUI();
+    /* Listen for QApplication signals: */
+    connect(qApp, &QGuiApplication::aboutToQuit,
+            this, &UIStarter::cleanup);
 }
 
 void UIStarter::sltStartUI()
@@ -152,9 +146,9 @@ void UIStarter::sltStartUI()
             return QApplication::quit();
     }
 # if defined(VBOX_GUI_WITH_SHARED_LIBRARY) && defined(VBOX_RUNTIME_UI)
+    /* Show the error message otherwise and quit: */
     else
     {
-        /* Show the error message otherwise: */
         msgCenter().cannotStartRuntime();
         return QApplication::quit();
     }
@@ -171,7 +165,7 @@ void UIStarter::sltRestartUI()
 #endif /* !VBOX_GUI_WITH_SHARED_LIBRARY || !VBOX_RUNTIME_UI */
 }
 
-void UIStarter::sltDestroyUI()
+void UIStarter::cleanup()
 {
 #if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
     /* Destroy Selector UI: */
