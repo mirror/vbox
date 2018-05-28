@@ -1708,14 +1708,18 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
 /**
  * Deals with unrecoverable exception (triple fault).
  *
+ * Seen WRMSR 0x201 (IA32_MTRR_PHYSMASK0) writes from grub / debian9 ending up
+ * here too.  So we'll leave it to IEM to decide.
+ *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsgHdr         The message header.
  * @param   pCtx            The register context.
+ * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  */
 NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageUnrecoverableException(PVMCPU pVCpu,
                                                                          HV_X64_INTERCEPT_MESSAGE_HEADER const *pMsgHdr,
-                                                                         PCPUMCTX pCtx)
+                                                                         PCPUMCTX pCtx, PGVMCPU pGVCpu)
 {
     /*
      * Assert message sanity.
@@ -1725,6 +1729,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageUnrecoverableException(PVMCPU 
     //       || pMsgHdr->InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
     AssertMsg(pMsgHdr->InstructionLength < 0x10, ("%#x\n", pMsgHdr->InstructionLength));
 
+#if 0
     /*
      * Just copy the state we've got and handle it in the loop for now.
      */
@@ -1732,6 +1737,34 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageUnrecoverableException(PVMCPU 
     Log(("TripleExit/%u: %04x:%08RX64: RFL=%#RX64 -> VINF_EM_TRIPLE_FAULT\n",
          pVCpu->idCpu, pMsgHdr->CsSegment.Selector, pMsgHdr->Rip, pMsgHdr->Rflags));
     return VINF_EM_TRIPLE_FAULT;
+#else
+    /*
+     * Let IEM decide whether this is really it.
+     */
+/** @todo check if this happens becaused of incorrectly pending interrupts of smth. */
+    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, pMsgHdr);
+    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_ALL, "TripleExit");
+    if (rcStrict == VINF_SUCCESS)
+    {
+        rcStrict = IEMExecOne(pVCpu);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            Log(("UnrecovExit/%u: %04x:%08RX64: RFL=%#RX64 -> VINF_SUCCESS\n",
+                 pVCpu->idCpu, pMsgHdr->CsSegment.Selector, pMsgHdr->Rip, pMsgHdr->Rflags ));
+            return VINF_SUCCESS;
+        }
+        if (rcStrict == VINF_EM_TRIPLE_FAULT)
+            Log(("UnrecovExit/%u: %04x:%08RX64: RFL=%#RX64 -> VINF_EM_TRIPLE_FAULT!\n",
+                 pVCpu->idCpu, pMsgHdr->CsSegment.Selector, pMsgHdr->Rip, pMsgHdr->Rflags, VBOXSTRICTRC_VAL(rcStrict) ));
+        else
+            Log(("UnrecovExit/%u: %04x:%08RX64: RFL=%#RX64 -> %Rrc (IEMExecOne)\n",
+                 pVCpu->idCpu, pMsgHdr->CsSegment.Selector, pMsgHdr->Rip, pMsgHdr->Rflags, VBOXSTRICTRC_VAL(rcStrict) ));
+    }
+    else
+        Log(("UnrecovExit/%u: %04x:%08RX64: RFL=%#RX64 -> %Rrc (state import)\n",
+             pVCpu->idCpu, pMsgHdr->CsSegment.Selector, pMsgHdr->Rip, pMsgHdr->Rflags, VBOXSTRICTRC_VAL(rcStrict) ));
+    return rcStrict;
+#endif
 }
 
 
@@ -1791,7 +1824,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
 
             case HvMessageTypeUnrecoverableException:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64InterceptHeader));
-                return nemHCWinHandleMessageUnrecoverableException(pVCpu, &pMsg->X64InterceptHeader, pCtx);
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitUnrecoverable);
+                return nemHCWinHandleMessageUnrecoverableException(pVCpu, &pMsg->X64InterceptHeader, pCtx, pGVCpu);
 
             case HvMessageTypeInvalidVpRegisterValue:
             case HvMessageTypeUnsupportedFeature:

@@ -576,6 +576,21 @@ VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVMCPU pVCpu)
     return &pVCpu->cpum.s.Guest;
 }
 
+
+/**
+ * Queries the pointer to the internal CPUMCTXMSRS structure.
+ *
+ * This is for NEM only.
+ *
+ * @returns The CPUMCTX pointer.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(PCPUMCTXMSRS) CPUMQueryGuestCtxMsrsPtr(PVMCPU pVCpu)
+{
+    return &pVCpu->cpum.s.GuestMsrs;
+}
+
+
 VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit)
 {
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
@@ -587,6 +602,7 @@ VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GDTR;
     return VINF_SUCCESS; /* formality, consider it void. */
 }
+
 
 VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit)
 {
@@ -600,6 +616,7 @@ VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
     return VINF_SUCCESS; /* formality, consider it void. */
 }
 
+
 VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 {
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
@@ -610,6 +627,7 @@ VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_TR;
     return VINF_SUCCESS; /* formality, consider it void. */
 }
+
 
 VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
 {

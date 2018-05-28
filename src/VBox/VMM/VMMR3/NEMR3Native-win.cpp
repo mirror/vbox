@@ -1146,6 +1146,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitInterruptWindow, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitInterruptWindow", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitCpuId,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of CPUID exits",                  "/NEM/CPU%u/ExitCpuId", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitMsr,             STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of MSR access exits",             "/NEM/CPU%u/ExitMsr", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitUnrecoverable,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unrecoverable exits",          "/NEM/CPU%u/ExitUnrecoverable", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPending,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stops",            "/NEM/CPU%u/StopCpuPending", iCpu);
@@ -1343,6 +1344,14 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
          * Register statistics on shared pages.
          */
         /** @todo HvCallMapStatsPage */
+
+        /*
+         * Adjust features.
+         */
+        /** @todo Figure out how to get X2APIC working on AMD (and possible
+         * intel), but first figure how to disable it dynamically. */
+        /*CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);*/
+
         return VINF_SUCCESS;
     }
     return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to NEMR0InitVMPart2 failed: %Rrc", rc);
@@ -2383,7 +2392,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *
  * Here are some observations (mostly against build 17101):
  *
- * - The VMEXIT performance is dismal (build 17101).
+ * - The VMEXIT performance is dismal (build 17134).
  *
  *   Our proof of concept implementation with a kernel runloop (i.e. not using
  *   WHvRunVirtualProcessor and friends, but calling VID.SYS fast I/O control
@@ -2412,6 +2421,17 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   since emulating instructions without recompilation can be expensive, so
  *   there will only be real gains if the exitting instructions are tightly
  *   packed.
+ *
+ *
+ * - Unable to access WHvX64RegisterMsrMtrrCap on AMD Ryzen (build 17134).
+ *
+ *
+ * - On AMD Ryzen grub/debian 9.0 ends up with a unrecoverable exception
+ *   when IA32_MTRR_PHYSMASK0 is written.
+ *
+ *
+ * - Need to figure out how to emulate X2APIC (AMD Ryzen), doesn't work with
+ *   debian 9.0/64.
  *
  *
  * - The WHvCancelVirtualProcessor API schedules a dummy usermode APC callback

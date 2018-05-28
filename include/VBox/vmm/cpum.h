@@ -1172,6 +1172,8 @@ VMMDECL(int)        CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValu
 VMMDECL(void)       CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t iSubLeaf,
                                       uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 VMMDECL(uint64_t)   CPUMGetGuestEFER(PVMCPU pVCpu);
+VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32MtrrCap(PVMCPU pVCpu);
+VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32FeatureControl(PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue);
 VMMDECL(VBOXSTRICTRC)   CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetGuestCpuVendor(PVM pVM);
@@ -1678,6 +1680,7 @@ VMMDECL(int)            CPUMQueryHyperCtxPtr(PVMCPU pVCpu, PCPUMCTX *ppCtx);
 VMMDECL(PCPUMCTX)       CPUMGetHyperCtxPtr(PVMCPU pVCpu);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetHyperCtxCore(PVMCPU pVCpu);
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);
+VMM_INT_DECL(PCPUMCTXMSRS) CPUMQueryGuestCtxMsrsPtr(PVMCPU pVCpu);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVMCPU pVCpu);
 VMM_INT_DECL(int)       CPUMRawEnter(PVMCPU pVCpu);
 VMM_INT_DECL(int)       CPUMRawLeave(PVMCPU pVCpu, int rc);

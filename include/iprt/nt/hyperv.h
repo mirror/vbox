@@ -848,6 +848,7 @@ AssertCompile(HvX64RegisterDr7 == 0x00050005);
 AssertCompile(HvX64RegisterTr == 0x00060007);
 AssertCompile(HvX64RegisterGdtr == 0x00070001);
 AssertCompile(HvX64RegisterInitialApicId == 0x0008000c);
+AssertCompile(HvX64RegisterMtrrCap == 0x0008000d);
 AssertCompile(HvX64RegisterMtrrDefType == 0x0008000e);
 AssertCompile(HvX64RegisterMtrrPhysBaseF == 0x0008001f);
 AssertCompile(HvX64RegisterMtrrPhysMaskF == 0x0008004f);

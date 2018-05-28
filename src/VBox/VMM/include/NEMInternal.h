@@ -244,6 +244,7 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatExitInterruptWindow;
     STAMCOUNTER                 StatExitCpuId;
     STAMCOUNTER                 StatExitMsr;
+    STAMCOUNTER                 StatExitUnrecoverable;
     STAMCOUNTER                 StatGetMsgTimeout;
     STAMCOUNTER                 StatStopCpuSuccess;
     STAMCOUNTER                 StatStopCpuPending;

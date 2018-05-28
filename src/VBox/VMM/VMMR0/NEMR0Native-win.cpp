@@ -1092,6 +1092,79 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Elements[iReg].Name                 = HvX64RegisterPat;
         pInput->Elements[iReg].Value.Reg64          = pCtx->msrPAT;
         iReg++;
+#if 0 /** @todo HvX64RegisterMtrrCap is read only?  Seems it's not even readable. */
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrCap;
+        pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestIa32MtrrCap(pVCpu);
+        iReg++;
+#endif
+
+        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrDefType;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrDefType;
+        iReg++;
+
+        /** @todo we dont keep state for HvX64RegisterMtrrPhysBaseX and HvX64RegisterMtrrPhysMaskX */
+
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix64k00000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix64K_00000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix16k80000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix16K_80000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix16kA0000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix16K_A0000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kC0000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_C0000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kC8000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_C8000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kD0000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_D0000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kD8000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_D8000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kE0000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_E0000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kE8000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_E8000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kF0000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_F0000;
+        iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kF8000;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_F8000;
+        iReg++;
+
+        const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
+        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
+        {
+            HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+            pInput->Elements[iReg].Name                 = HvX64RegisterIa32MiscEnable;
+            pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MiscEnable;
+            iReg++;
+            HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+            pInput->Elements[iReg].Name                 = HvX64RegisterIa32FeatureControl;
+            pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestIa32FeatureControl(pVCpu);
+            iReg++;
+        }
     }
 
     /* event injection (always clear it). */
@@ -1382,10 +1455,33 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Names[iReg++] = HvX64RegisterSfmask;
     }
 
+    const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         pInput->Names[iReg++] = HvX64RegisterApicBase; /// @todo APIC BASE
         pInput->Names[iReg++] = HvX64RegisterPat;
+#if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
+        pInput->Names[iReg++] = HvX64RegisterMtrrCap;
+#endif
+        pInput->Names[iReg++] = HvX64RegisterMtrrDefType;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix64k00000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix16k80000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix16kA0000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix4kC0000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix4kC8000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix4kD0000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix4kD8000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix4kE0000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix4kE8000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix4kF0000;
+        pInput->Names[iReg++] = HvX64RegisterMtrrFix4kF8000;
+        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
+        {
+            pInput->Names[iReg++] = HvX64RegisterIa32MiscEnable;
+#ifdef LOG_ENABLED
+            pInput->Names[iReg++] = HvX64RegisterIa32FeatureControl;
+#endif
+        }
     }
 
     /* Interruptibility. */
@@ -1783,6 +1879,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         Assert(pInput->Names[iReg] == HvX64RegisterEfer);
         if (paValues[iReg].Reg64 != pCtx->msrEFER)
         {
+            Log7(("NEM/%u: MSR EFER changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrEFER, paValues[iReg].Reg64));
             if ((paValues[iReg].Reg64 ^ pCtx->msrEFER) & MSR_K6_EFER_NXE)
                 PGMNotifyNxeChanged(pVCpu, RT_BOOL(paValues[iReg].Reg64 & MSR_K6_EFER_NXE));
             pCtx->msrEFER = paValues[iReg].Reg64;
@@ -1793,49 +1890,174 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterKernelGsBase);
+        if (pCtx->msrKERNELGSBASE != paValues[iReg].Reg64)
+            Log7(("NEM/%u: MSR KERNELGSBASE changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrKERNELGSBASE, paValues[iReg].Reg64));
         pCtx->msrKERNELGSBASE = paValues[iReg].Reg64;
         iReg++;
     }
     if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterSysenterCs);
+        if (pCtx->SysEnter.cs != paValues[iReg].Reg64)
+            Log7(("NEM/%u: MSR SYSENTER.CS changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->SysEnter.cs, paValues[iReg].Reg64));
         pCtx->SysEnter.cs = paValues[iReg].Reg64;
         iReg++;
+
         Assert(pInput->Names[iReg] == HvX64RegisterSysenterEip);
+        if (pCtx->SysEnter.eip != paValues[iReg].Reg64)
+            Log7(("NEM/%u: MSR SYSENTER.EIP changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->SysEnter.eip, paValues[iReg].Reg64));
         pCtx->SysEnter.eip = paValues[iReg].Reg64;
         iReg++;
+
         Assert(pInput->Names[iReg] == HvX64RegisterSysenterEsp);
+        if (pCtx->SysEnter.esp != paValues[iReg].Reg64)
+            Log7(("NEM/%u: MSR SYSENTER.ESP changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->SysEnter.esp, paValues[iReg].Reg64));
         pCtx->SysEnter.esp = paValues[iReg].Reg64;
         iReg++;
     }
     if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterStar);
+        if (pCtx->msrSTAR != paValues[iReg].Reg64)
+            Log7(("NEM/%u: MSR STAR changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrSTAR, paValues[iReg].Reg64));
         pCtx->msrSTAR   = paValues[iReg].Reg64;
         iReg++;
+
         Assert(pInput->Names[iReg] == HvX64RegisterLstar);
+        if (pCtx->msrLSTAR != paValues[iReg].Reg64)
+            Log7(("NEM/%u: MSR LSTAR changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrLSTAR, paValues[iReg].Reg64));
         pCtx->msrLSTAR  = paValues[iReg].Reg64;
         iReg++;
+
         Assert(pInput->Names[iReg] == HvX64RegisterCstar);
+        if (pCtx->msrCSTAR != paValues[iReg].Reg64)
+            Log7(("NEM/%u: MSR CSTAR changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrCSTAR, paValues[iReg].Reg64));
         pCtx->msrCSTAR  = paValues[iReg].Reg64;
         iReg++;
+
         Assert(pInput->Names[iReg] == HvX64RegisterSfmask);
+        if (pCtx->msrSFMASK != paValues[iReg].Reg64)
+            Log7(("NEM/%u: MSR SFMASK changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrSFMASK, paValues[iReg].Reg64));
         pCtx->msrSFMASK = paValues[iReg].Reg64;
         iReg++;
     }
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterApicBase);
-        if (paValues[iReg].Reg64 != APICGetBaseMsrNoCheck(pVCpu))
+        const uint64_t uOldBase = APICGetBaseMsrNoCheck(pVCpu);
+        if (paValues[iReg].Reg64 != uOldBase)
         {
+            Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
+                  pVCpu->idCpu, uOldBase, paValues[iReg].Reg64, paValues[iReg].Reg64 ^ uOldBase));
             VBOXSTRICTRC rc2 = APICSetBaseMsr(pVCpu, paValues[iReg].Reg64);
             Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
         }
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterPat);
+        if (pCtx->msrPAT != paValues[iReg].Reg64)
+            Log7(("NEM/%u: MSR PAT changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrPAT, paValues[iReg].Reg64));
         pCtx->msrPAT    = paValues[iReg].Reg64;
         iReg++;
+
+#if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrCap);
+        if (paValues[iReg].Reg64 != CPUMGetGuestIa32MtrrCap(pVCpu))
+            Log7(("NEM/%u: MSR MTRR_CAP changed %RX64 -> %RX64 (!!)\n", pVCpu->idCpu, CPUMGetGuestIa32MtrrCap(pVCpu), paValues[iReg].Reg64));
+        iReg++;
+#endif
+
+        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrDefType);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrDefType )
+            Log7(("NEM/%u: MSR MTRR_DEF_TYPE changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrDefType, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrDefType = paValues[iReg].Reg64;
+        iReg++;
+
+        /** @todo we dont keep state for HvX64RegisterMtrrPhysBaseX and HvX64RegisterMtrrPhysMaskX */
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix64k00000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix64K_00000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_00000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix64K_00000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix64K_00000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix16k80000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix16K_80000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_80000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix16K_80000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix16K_80000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix16kA0000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix16K_A0000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_A0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix16K_A0000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix16K_A0000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kC0000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_C0000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_C0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_C0000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix4K_C0000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kC8000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_C8000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_C8000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_C8000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix4K_C8000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kD0000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_D0000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_D0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_D0000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix4K_D0000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kD8000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_D8000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_D8000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_D8000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix4K_D8000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kE0000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_E0000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_E0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_E0000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix4K_E0000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kE8000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_E8000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_E8000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_E8000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix4K_E8000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kF0000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_F0000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_F0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_F0000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix4K_F0000 = paValues[iReg].Reg64;
+        iReg++;
+
+        Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kF8000);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_F8000 )
+            Log7(("NEM/%u: MSR MTRR_FIX16K_F8000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_F8000, paValues[iReg].Reg64));
+        pCtxMsrs->msr.MtrrFix4K_F8000 = paValues[iReg].Reg64;
+        iReg++;
+
+        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
+        {
+            Assert(pInput->Names[iReg] == HvX64RegisterIa32MiscEnable);
+            if (paValues[iReg].Reg64 != pCtxMsrs->msr.MiscEnable)
+                Log7(("NEM/%u: MSR MISC_ENABLE changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MiscEnable, paValues[iReg].Reg64));
+            pCtxMsrs->msr.MiscEnable = paValues[iReg].Reg64;
+            iReg++;
+#ifdef LOG_ENABLED
+            Assert(pInput->Names[iReg] == HvX64RegisterIa32FeatureControl);
+            if (paValues[iReg].Reg64 != CPUMGetGuestIa32FeatureControl(pVCpu))
+                Log7(("NEM/%u: MSR FEATURE_CONTROL changed %RX64 -> %RX64 (!!)\n", pVCpu->idCpu, CPUMGetGuestIa32FeatureControl(pVCpu), paValues[iReg].Reg64));
+            iReg++;
+#endif
+        }
+
+        /** @todo we don't save state for HvX64RegisterIa32FeatureControl */
     }
 
     /* Interruptibility. */

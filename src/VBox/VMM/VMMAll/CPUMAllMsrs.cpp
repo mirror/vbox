@@ -231,11 +231,23 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ApicBase(PVMCPU pVCpu, uint32_t 
 }
 
 
+/**
+ * Get fixed IA32_FEATURE_CONTROL value for NEM and cpumMsrRd_Ia32FeatureControl.
+ *
+ * @returns Fixed IA32_FEATURE_CONTROL value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32FeatureControl(PVMCPU pVCpu)
+{
+    RT_NOREF_PV(pVCpu);
+    return 1; /* Locked, no VT-X, no SYSENTER micromanagement. */
+}
+
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32FeatureControl(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 1; /* Locked, no VT-X, no SYSENTER micromanagement. */
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    *puValue = CPUMGetGuestIa32FeatureControl(pVCpu);
     return VINF_SUCCESS;
 }
 
@@ -383,20 +395,32 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32APerf(PVMCPU pVCpu, uint32_t idM
 }
 
 
-/** @callback_method_impl{FNCPUMRDMSR} */
-static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrCap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+/**
+ * Get fixed IA32_MTRR_CAP value for NEM and cpumMsrRd_Ia32MtrrCap.
+ *
+ * @returns Fixed IA32_MTRR_CAP value.
+ * @param   pVCpu           The cross context per CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32MtrrCap(PVMCPU pVCpu)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    RT_NOREF_PV(pVCpu);
 
     /* This is currently a bit weird. :-) */
     uint8_t const   cVariableRangeRegs              = 0;
     bool const      fSystemManagementRangeRegisters = false;
     bool const      fFixedRangeRegisters            = false;
     bool const      fWriteCombiningType             = false;
-    *puValue = cVariableRangeRegs
-             | (fFixedRangeRegisters            ? RT_BIT_64(8)  : 0)
-             | (fWriteCombiningType             ? RT_BIT_64(10) : 0)
-             | (fSystemManagementRangeRegisters ? RT_BIT_64(11) : 0);
+    return cVariableRangeRegs
+         | (fFixedRangeRegisters            ? RT_BIT_64(8)  : 0)
+         | (fWriteCombiningType             ? RT_BIT_64(10) : 0)
+         | (fSystemManagementRangeRegisters ? RT_BIT_64(11) : 0);
+}
+
+/** @callback_method_impl{FNCPUMRDMSR} */
+static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrCap(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+{
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    *puValue = CPUMGetGuestIa32MtrrCap(pVCpu);
     return VINF_SUCCESS;
 }
 
