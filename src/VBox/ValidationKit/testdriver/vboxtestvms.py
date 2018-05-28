@@ -731,6 +731,10 @@ class TestVmSet(object):
         reporter.log('  --paravirt-modes   <pv1[:pv2[:...]]>');
         reporter.log('      Set of paravirtualized providers (modes) to tests. Intersected with what the test VM supports.');
         reporter.log('      Default is the first PV mode the test VMs support, generally same as "legacy".');
+        reporter.log('  --with-nested-hwvirt-only');
+        reporter.log('      Test VMs using nested hardware-virtualization only.');
+        reporter.log('  --without-nested-hwvirt-only');
+        reporter.log('      Test VMs not using nested hardware-virtualization only.');
         ## @todo Add more options for controlling individual VMs.
         return True;
 
@@ -836,6 +840,16 @@ class TestVmSet(object):
             # HACK ALERT! Reset the random paravirt selection for members.
             for oTestVm in self.aoTestVms:
                 oTestVm.asParavirtModesSup = oTestVm.asParavirtModesSupOrg;
+
+        elif asArgs[iArg] == '--with-nested-hwvirt-only':
+            for oTestVm in self.aoTestVms:
+                if oTestVm.fNstHwVirt is False:
+                    oTestVm.fSkip = True;
+
+        elif asArgs[iArg] == '--without-nested-hwvirt-only':
+            for oTestVm in self.aoTestVms:
+                if oTestVm.fNstHwVirt is True:
+                    oTestVm.fSkip = True;
 
         else:
             return iArg;
