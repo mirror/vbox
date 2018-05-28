@@ -891,17 +891,9 @@ static DECLCALLBACK(int) VBoxDisplayWorker(void *pvInstance, bool volatile *pfSh
                                  aDisplays[i].cx,
                                  aDisplays[i].cy,
                                  aDisplays[i].cBitsPerPixel));
-
-                        doResize(pCtx,
-                                 aDisplays[i].idDisplay,
-                                 (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_CX) ? aDisplays[i].cx : 0,
-                                 (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_CY) ? aDisplays[i].cy : 0,
-                                 (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_BPP) ? aDisplays[i].cBitsPerPixel : 0,
-                                 !RT_BOOL(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED),
-                                 aDisplays[i].xOrigin,
-                                 aDisplays[i].yOrigin,
-                                 RT_BOOL(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN));
                     }
+
+                    vboxDispIfWddmResizeDisplayWin7(&pCtx->pEnv->dispIf, cDisplays, &aDisplays[0]);
 
                     continue; /* Done */
                 }

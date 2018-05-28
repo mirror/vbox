@@ -1699,9 +1699,9 @@ static DWORD vboxDispIfWddmEnableDisplaysTryingTopology(PCVBOXDISPIF const pIf, 
     return winEr;
 }
 
-BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cModeHints, const VBOXDISPLAY_MODEHINT* paModeHints)
+BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, const VMMDevDisplayDef *paDispDef)
 {
-    const VBOXDISPLAY_MODEHINT* pHint;
+    const VMMDevDisplayDef* pDispDef;
     VBOXDISPIF_OP Op;
     DWORD winEr = ERROR_SUCCESS;
     uint32_t id;
@@ -1709,16 +1709,18 @@ BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cModeHints
 
     vboxDispIfOpBegin(pIf, &Op);
 
-    for (id = 0; id < cModeHints; ++id)
+    for (id = 0; id < cDispDef; ++id)
     {
-        pHint = &paModeHints[id];
+        pDispDef = &paDispDef[id];
 
-        if (pHint->fModeHintFlags & VBOXDISPLAY_MODEHINT_ACTIVE)
+        if (!(pDispDef->fDisplayFlags & VMMDEV_DISPLAY_DISABLED) &&
+             (pDispDef->fDisplayFlags | VMMDEV_DISPLAY_CX) || 
+             (pDispDef->fDisplayFlags | VMMDEV_DISPLAY_CY))
         {
             RTRECTSIZE Size;
 
-            Size.cx = pHint->cx;
-            Size.cy = pHint->cy;
+            Size.cx = pDispDef->cx;
+            Size.cy = pDispDef->cy;
 
             vboxDispIfUpdateModesWDDM(&Op, id, &Size);
         }
@@ -1730,11 +1732,11 @@ BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cModeHints
 
     vboxDispIfWddmDcCreate(&DispCfg, QDC_ALL_PATHS);
 
-    for (id = 0; id < cModeHints; ++id)
+    for (id = 0; id < cDispDef; ++id)
     {
         DISPLAYCONFIG_PATH_INFO *pPathInfo;
 
-        pHint = &paModeHints[id];
+        pDispDef = &paDispDef[id];
         iPath = vboxDispIfWddmDcSearchPath(&DispCfg, id, id);
 
         if (iPath < 0)
@@ -1743,7 +1745,7 @@ BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cModeHints
             continue;
         }
 
-        if (pHint->fModeHintFlags & VBOXDISPLAY_MODEHINT_ACTIVE)
+        if (!(pDispDef->fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
         {
             DISPLAYCONFIG_SOURCE_MODE *pSrcMode;
             DISPLAYCONFIG_TARGET_MODE *pTgtMode;
@@ -1768,16 +1770,16 @@ BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cModeHints
 
                 pSrcMode->width =
                     pTgtMode->targetVideoSignalInfo.activeSize.cx =
-                    pTgtMode->targetVideoSignalInfo.totalSize.cx  = pHint->cx;
+                    pTgtMode->targetVideoSignalInfo.totalSize.cx  = pDispDef->cx;
 
                 pSrcMode->height =
                     pTgtMode->targetVideoSignalInfo.activeSize.cy =
-                    pTgtMode->targetVideoSignalInfo.totalSize.cy  = pHint->cy;
+                    pTgtMode->targetVideoSignalInfo.totalSize.cy  = pDispDef->cy;
 
-                pSrcMode->position.x = pHint->xOrigin;
-                pSrcMode->position.y = pHint->yOrigin;
+                pSrcMode->position.x = pDispDef->xOrigin;
+                pSrcMode->position.y = pDispDef->yOrigin;
 
-                switch (pHint->cBPP)
+                switch (pDispDef->cBitsPerPixel)
                 {
                 case 32:
                     pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
@@ -1792,7 +1794,7 @@ BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cModeHints
                     pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_8BPP;
                     break;
                 default:
-                    LogRel(("VBoxTray: (WDDM) invalid bpp %d, using 32bpp instead\n", pHint->cBPP));
+                    LogRel(("VBoxTray: (WDDM) invalid bpp %d, using 32bpp instead\n", pDispDef->cBitsPerPixel));
                     pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
                     break;
                 }
@@ -1820,11 +1822,11 @@ BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cModeHints
                 pModeInfoNew->id = id;
                 pModeInfoNew->adapterId = pModeInfo[0].adapterId;
                 pSrcMode = &pModeInfoNew->sourceMode;
-                pSrcMode->width  = pHint->cx;
-                pSrcMode->height = pHint->cy;
+                pSrcMode->width  = pDispDef->cx;
+                pSrcMode->height = pDispDef->cy;
                 pSrcMode->pixelFormat = DISPLAYCONFIG_PIXELFORMAT_32BPP;
-                pSrcMode->position.x = pHint->xOrigin;
-                pSrcMode->position.y = pHint->yOrigin;
+                pSrcMode->position.x = pDispDef->xOrigin;
+                pSrcMode->position.y = pDispDef->yOrigin;
                 pPathInfo->sourceInfo.modeInfoIdx = DispCfg.cModeInfoArray;
 
                 pModeInfoNew++;
@@ -1833,10 +1835,10 @@ BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cModeHints
                 pModeInfoNew->adapterId = pModeInfo[0].adapterId;
                 pModeInfoNew->targetMode = pModeInfo[0].targetMode;
                 pTgtMode = &pModeInfoNew->targetMode;
-                pTgtMode->targetVideoSignalInfo.activeSize.cx = pHint->cx;
-                pTgtMode->targetVideoSignalInfo.totalSize.cx  = pHint->cx;
-                pTgtMode->targetVideoSignalInfo.activeSize.cy = pHint->cy;
-                pTgtMode->targetVideoSignalInfo.totalSize.cy  = pHint->cy;
+                pTgtMode->targetVideoSignalInfo.activeSize.cx = 
+                    pTgtMode->targetVideoSignalInfo.totalSize.cx = pDispDef->cx;
+                pTgtMode->targetVideoSignalInfo.activeSize.cy = 
+                    pTgtMode->targetVideoSignalInfo.totalSize.cy  = pDispDef->cy;
                 pPathInfo->targetInfo.modeInfoIdx = DispCfg.cModeInfoArray + 1;
 
                 DispCfg.cModeInfoArray += 2;
