@@ -86,7 +86,7 @@ typedef const VMMR3FATALDUMPINFOHLP *PCVMMR3FATALDUMPINFOHLP;
  *
  * @param   pHlp        The instance to flush.
  */
-static void vmmR3FatalDumpInfoHlp_FlushStdErr(PVMMR3FATALDUMPINFOHLP pHlp)
+static void vmmR3FatalDumpInfoHlpFlushStdErr(PVMMR3FATALDUMPINFOHLP pHlp)
 {
     size_t cch = pHlp->offStdErrBuf;
     if (cch)
@@ -109,7 +109,7 @@ static DECLCALLBACK(size_t) vmmR3FatalDumpInfoHlp_BufferedStdErrOutput(void *pvA
         { /* likely */ }
         else
         {
-            vmmR3FatalDumpInfoHlp_FlushStdErr(pHlp);
+            vmmR3FatalDumpInfoHlpFlushStdErr(pHlp);
             if (cbChars < sizeof(pHlp->achStdErrBuf))
                 offBuf = 0;
             else
@@ -272,7 +272,7 @@ static void vmmR3FatalDumpInfoHlpDelete(PVMMR3FATALDUMPINFOHLP pHlp)
     }
 
     if (pHlp->fStdErr)
-        vmmR3FatalDumpInfoHlp_FlushStdErr(pHlp);
+        vmmR3FatalDumpInfoHlpFlushStdErr(pHlp);
 }
 
 
@@ -771,6 +771,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
     /*
      * Repeat the summary to stderr so we don't have to scroll half a mile up.
      */
+    vmmR3FatalDumpInfoHlpFlushStdErr(&Hlp);
     if (Hlp.szSummary[0])
         RTStrmPrintf(g_pStdErr,
                      "%s"
