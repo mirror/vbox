@@ -1714,7 +1714,7 @@ BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, 
         pDispDef = &paDispDef[id];
 
         if (!(pDispDef->fDisplayFlags & VMMDEV_DISPLAY_DISABLED) &&
-             (pDispDef->fDisplayFlags | VMMDEV_DISPLAY_CX) || 
+             (pDispDef->fDisplayFlags | VMMDEV_DISPLAY_CX) ||
              (pDispDef->fDisplayFlags | VMMDEV_DISPLAY_CY))
         {
             RTRECTSIZE Size;
@@ -1835,9 +1835,9 @@ BOOL vboxDispIfWddmResizeDisplayWin7(PCVBOXDISPIF const pIf, uint32_t cDispDef, 
                 pModeInfoNew->adapterId = pModeInfo[0].adapterId;
                 pModeInfoNew->targetMode = pModeInfo[0].targetMode;
                 pTgtMode = &pModeInfoNew->targetMode;
-                pTgtMode->targetVideoSignalInfo.activeSize.cx = 
+                pTgtMode->targetVideoSignalInfo.activeSize.cx =
                     pTgtMode->targetVideoSignalInfo.totalSize.cx = pDispDef->cx;
-                pTgtMode->targetVideoSignalInfo.activeSize.cy = 
+                pTgtMode->targetVideoSignalInfo.activeSize.cy =
                     pTgtMode->targetVideoSignalInfo.totalSize.cy  = pDispDef->cy;
                 pPathInfo->targetInfo.modeInfoIdx = DispCfg.cModeInfoArray + 1;
 
