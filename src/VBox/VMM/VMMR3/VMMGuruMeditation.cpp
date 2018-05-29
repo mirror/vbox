@@ -69,12 +69,60 @@ typedef struct VMMR3FATALDUMPINFOHLP
     /** Whether we're still recording the summary or not. */
     bool        fRecSummary;
     /** Buffer for the summary. */
-    char        szSummary[4096-2];
+    char        szSummary[4096 - 2];
     /** The current summary offset. */
     size_t      offSummary;
+    /** Standard error buffer.   */
+    char        achStdErrBuf[4096 - 8];
+    /** Standard error buffer offset. */
+    size_t      offStdErrBuf;
 } VMMR3FATALDUMPINFOHLP, *PVMMR3FATALDUMPINFOHLP;
 /** Pointer to a VMMR3FATALDUMPINFOHLP structure. */
 typedef const VMMR3FATALDUMPINFOHLP *PCVMMR3FATALDUMPINFOHLP;
+
+
+/**
+ * Flushes the content of achStdErrBuf, setting offStdErrBuf to zero.
+ *
+ * @param   pHlp        The instance to flush.
+ */
+static void vmmR3FatalDumpInfoHlp_FlushStdErr(PVMMR3FATALDUMPINFOHLP pHlp)
+{
+    size_t cch = pHlp->offStdErrBuf;
+    if (cch)
+    {
+        RTStrmWrite(g_pStdErr, pHlp->achStdErrBuf, cch);
+        pHlp->offStdErrBuf = 0;
+    }
+}
+
+/**
+ * @callback_method_impl{FNRTSTROUTPUT, For buffering stderr output.}
+ */
+static DECLCALLBACK(size_t) vmmR3FatalDumpInfoHlp_BufferedStdErrOutput(void *pvArg, const char *pachChars, size_t cbChars)
+{
+    PVMMR3FATALDUMPINFOHLP pHlp = (PVMMR3FATALDUMPINFOHLP)pvArg;
+    if (cbChars)
+    {
+        size_t offBuf = pHlp->offStdErrBuf;
+        if (cbChars < sizeof(pHlp->achStdErrBuf) - offBuf)
+        { /* likely */ }
+        else
+        {
+            vmmR3FatalDumpInfoHlp_FlushStdErr(pHlp);
+            if (cbChars < sizeof(pHlp->achStdErrBuf))
+                offBuf = 0;
+            else
+            {
+                RTStrmWrite(g_pStdErr, pachChars, cbChars);
+                return cbChars;
+            }
+        }
+        memcpy(&pHlp->achStdErrBuf[offBuf], pachChars, cbChars);
+        pHlp->offStdErrBuf = offBuf + cbChars;
+    }
+    return cbChars;
+}
 
 
 /**
@@ -91,7 +139,6 @@ static DECLCALLBACK(void) vmmR3FatalDumpInfoHlp_pfnPrintf(PCDBGFINFOHLP pHlp, co
     pHlp->pfnPrintfV(pHlp, pszFormat, args);
     va_end(args);
 }
-
 
 /**
  * Print formatted string.
@@ -122,7 +169,8 @@ static DECLCALLBACK(void) vmmR3FatalDumpInfoHlp_pfnPrintfV(PCDBGFINFOHLP pHlp, c
     {
         va_list args2;
         va_copy(args2, args);
-        RTStrmPrintfV(g_pStdErr, pszFormat, args);
+        RTStrFormatV(vmmR3FatalDumpInfoHlp_BufferedStdErrOutput, pMyHlp, NULL, NULL, pszFormat, args2);
+        //RTStrmPrintfV(g_pStdErr, pszFormat, args2);
         va_end(args2);
     }
     if (pMyHlp->fRecSummary)
@@ -192,6 +240,7 @@ static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
 #ifdef DEBUG_sandervl
     pHlp->fStdErr = false; /* takes too long to display here */
 #endif
+    pHlp->offStdErrBuf = 0;
 
     /*
      * Init the summary recording.
@@ -221,6 +270,9 @@ static void vmmR3FatalDumpInfoHlpDelete(PVMMR3FATALDUMPINFOHLP pHlp)
         pHlp->pLogger->fFlags     = pHlp->fLoggerFlags;
         pHlp->pLogger->fDestFlags = pHlp->fLoggerDestFlags;
     }
+
+    if (pHlp->fStdErr)
+        vmmR3FatalDumpInfoHlp_FlushStdErr(pHlp);
 }
 
 
