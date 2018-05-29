@@ -45,6 +45,7 @@
 # include "UIToolBar.h"
 # include "UIIconPool.h"
 # include "UIMedium.h"
+# include "UIMediumItem.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -61,11 +62,11 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIMediumSelector::UIMediumSelector(KDeviceType deviceType, QWidget *pParent /* = 0 */)
+UIMediumSelector::UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QIDialog>(pParent)
     , m_pMainLayout(0)
     , m_pTreeWidget(0)
-    , m_enmDeviceType(deviceType)
+    , m_enmMediumType(enmMediumType)
 {
     configure();
     finalize();
@@ -94,6 +95,7 @@ void UIMediumSelector::prepareWidgets()
     {
         m_pMainLayout->addWidget(m_pTreeWidget);
     }
+    repopulateTreeWidget();
     //m_pMainLayout->addWidget(
 }
 
@@ -101,4 +103,61 @@ void UIMediumSelector::finalize()
 {
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIMediumSelector::repopulateTreeWidget()
+{
+    // /* Remember current medium-items: */
+    // if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_HardDisk))
+    //     m_strCurrentIdHD = pMediumItem->id();
+    // if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_DVD))
+    //     m_strCurrentIdCD = pMediumItem->id();
+    // if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_Floppy))
+    //     m_strCurrentIdFD = pMediumItem->id();
+
+    // /* Clear tree-widgets: */
+    // QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
+    // if (pTreeWidgetHD)
+    // {
+    //     setCurrentItem(pTreeWidgetHD, 0);
+    //     pTreeWidgetHD->clear();
+    // }
+    // QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
+    // if (pTreeWidgetCD)
+    // {
+    //     setCurrentItem(pTreeWidgetCD, 0);
+    //     pTreeWidgetCD->clear();
+    // }
+    // QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
+    // if (pTreeWidgetFD)
+    // {
+    //     setCurrentItem(pTreeWidgetFD, 0);
+    //     pTreeWidgetFD->clear();
+    // }
+
+    // /* Create medium-items (do not change current one): */
+    // m_fPreventChangeCurrentItem = true;
+    // foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
+    // {
+    //     //sltHandleMediumCreated(strMediumID);
+    //     UIMedium medium = vboxGlobal().medium(strMediumID);
+    //     if (medium.type() == m_enmMediumType)
+    //         printf("%s %s\n", qPrintable(strMediumID), qPrintable(medium.name()));
+    //     if (m_enmMediumType == UIMediumType_HardDisk)
+    //     {
+    //         //new UIMediumItemHD(medium, m_pTreeWidget);
+    //     }
+    // }
+    // m_fPreventChangeCurrentItem = false;
+
+    // /* Select first item as current one if nothing selected: */
+    // if (pTreeWidgetHD && !mediumItem(UIMediumType_HardDisk))
+    //     if (QTreeWidgetItem *pItem = pTreeWidgetHD->topLevelItem(0))
+    //         setCurrentItem(pTreeWidgetHD, pItem);
+    // if (pTreeWidgetCD && !mediumItem(UIMediumType_DVD))
+    //     if (QTreeWidgetItem *pItem = pTreeWidgetCD->topLevelItem(0))
+    //         setCurrentItem(pTreeWidgetCD, pItem);
+    // if (pTreeWidgetFD && !mediumItem(UIMediumType_Floppy))
+    //     if (QTreeWidgetItem *pItem = pTreeWidgetFD->topLevelItem(0))
+    //         setCurrentItem(pTreeWidgetFD, pItem);
 }

@@ -1473,6 +1473,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMediumEnumerator.cpp \
+	src/medium/UIMediumItem.cpp \
 	src/objects/UIRichTextString.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
@@ -1801,6 +1802,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMedium.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMediumEnumerator.cpp \
+	src/medium/UIMediumItem.cpp \
 	src/objects/UIRichTextString.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/selector/UIActionPoolSelector.cpp \
