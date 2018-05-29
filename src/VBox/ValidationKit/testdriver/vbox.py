@@ -3065,7 +3065,7 @@ class TestDriver(base.TestDriver):                                              
         Returns True / False.
         """
         sCpuDesc = self._getHostCpuDesc(fQuiet);
-        return sCpuDesc.startswith("AMD") or sCpuDesc == 'AuthenticAMD';
+        return 'AMD' in sCpuDesc or sCpuDesc == 'AuthenticAMD';
 
     def isHostCpuIntel(self, fQuiet = False):
         """
