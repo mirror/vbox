@@ -1249,6 +1249,9 @@ ifdef VBOX_ONLY_ADDITIONS
  ifdef VBOX_WITHOUT_ADDITIONS
   $(error VBOX_ONLY_ADDITIONS + VBOX_WITHOUT_ADDITIONS does not add up!)
  endif
+ ifndef VBOX_WITH_ADDITIONS
+  $(error VBOX_ONLY_ADDITIONS + unset VBOX_WITH_ADDITIONS does not add up!)
+ endif
 endif
 
 ifdef VBOX_WITHOUT_ADDITIONS
