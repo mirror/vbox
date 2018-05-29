@@ -799,6 +799,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerTextEdit.h \
 	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumEnumerator.h \
+	src/medium/UIMediumSelector.h \
 	src/runtime/UIActionPoolRuntime.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
@@ -1070,6 +1071,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerTextEdit.h \
 	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIMediumEnumerator.h \
+	src/medium/UIMediumSelector.h \
 	src/runtime/UIActionPoolRuntime.h \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVirtualBoxEventHandler.h \
@@ -1474,6 +1476,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumItem.cpp \
+	src/medium/UIMediumSelector.cpp \
 	src/objects/UIRichTextString.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
@@ -1803,6 +1806,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumItem.cpp \
+	src/medium/UIMediumSelector.cpp \
 	src/objects/UIRichTextString.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/selector/UIActionPoolSelector.cpp \
