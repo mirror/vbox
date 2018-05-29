@@ -1153,6 +1153,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_F8000;
         iReg++;
 
+#if 0 /** @todo Why can't we write these on Intel systems? Not that we really care... */
         const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
         {
@@ -1165,6 +1166,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestIa32FeatureControl(pVCpu);
             iReg++;
         }
+#endif
     }
 
     /* event injection (always clear it). */
@@ -1455,7 +1457,9 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Names[iReg++] = HvX64RegisterSfmask;
     }
 
+#ifdef LOG_ENABLED
     const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
+#endif
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         pInput->Names[iReg++] = HvX64RegisterApicBase; /// @todo APIC BASE
@@ -1475,13 +1479,14 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Names[iReg++] = HvX64RegisterMtrrFix4kE8000;
         pInput->Names[iReg++] = HvX64RegisterMtrrFix4kF0000;
         pInput->Names[iReg++] = HvX64RegisterMtrrFix4kF8000;
+#if 0 /** @todo why can't we read HvX64RegisterIa32MiscEnable? */
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
-        {
             pInput->Names[iReg++] = HvX64RegisterIa32MiscEnable;
+#endif
 #ifdef LOG_ENABLED
+        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
             pInput->Names[iReg++] = HvX64RegisterIa32FeatureControl;
 #endif
-        }
     }
 
     /* Interruptibility. */
@@ -2042,6 +2047,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pCtxMsrs->msr.MtrrFix4K_F8000 = paValues[iReg].Reg64;
         iReg++;
 
+#if 0 /** @todo why can't we even read HvX64RegisterIa32MiscEnable? */
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
         {
             Assert(pInput->Names[iReg] == HvX64RegisterIa32MiscEnable);
@@ -2049,15 +2055,17 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
                 Log7(("NEM/%u: MSR MISC_ENABLE changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MiscEnable, paValues[iReg].Reg64));
             pCtxMsrs->msr.MiscEnable = paValues[iReg].Reg64;
             iReg++;
+        }
+#endif
 #ifdef LOG_ENABLED
+        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
+        {
             Assert(pInput->Names[iReg] == HvX64RegisterIa32FeatureControl);
             if (paValues[iReg].Reg64 != CPUMGetGuestIa32FeatureControl(pVCpu))
                 Log7(("NEM/%u: MSR FEATURE_CONTROL changed %RX64 -> %RX64 (!!)\n", pVCpu->idCpu, CPUMGetGuestIa32FeatureControl(pVCpu), paValues[iReg].Reg64));
             iReg++;
-#endif
         }
-
-        /** @todo we don't save state for HvX64RegisterIa32FeatureControl */
+#endif
     }
 
     /* Interruptibility. */
