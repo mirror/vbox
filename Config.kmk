@@ -622,7 +622,7 @@ VBOX_WITH_WEBSERVICES = 1
 VBOX_WITH_WEBSERVICES_SSL = 1
 # The Qt GUI.
 VBOX_WITH_QTGUI = 1
-if1of ($(KBUILD_TARGET), win linux)
+if1of ($(KBUILD_TARGET), win linux darwin)
  VBOX_GUI_WITH_SHARED_LIBRARY=1
 endif
 # Indicates the Qt is Cocoa based on the Mac.
