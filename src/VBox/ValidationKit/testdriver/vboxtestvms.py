@@ -931,7 +931,7 @@ class TestVmSet(object):
         fRc = True;
         for oTestVm in self.aoTestVms:
             if oTestVm.fNstHwVirt and not oTestDrv.isHostCpuAmd():
-                reporter.log2('Ignoring VM %s (Nested hardware-virtualization only supported on AMD CPUs).' % (oTestVm.sVmName,));
+                reporter.log('Ignoring VM %s (Nested hardware-virtualization only supported on AMD CPUs).' % (oTestVm.sVmName,));
                 continue;
             if oTestVm.fSkip and self.fIgnoreSkippedVm:
                 reporter.log2('Ignoring VM %s (fSkip = True).' % (oTestVm.sVmName,));
