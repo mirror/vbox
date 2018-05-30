@@ -95,7 +95,7 @@ class HostDnsMonitorProxy
     public:
     HostDnsMonitorProxy();
     ~HostDnsMonitorProxy();
-    void init(const HostDnsMonitor *aMonitor, VirtualBox *virtualbox);
+    void init(VirtualBox *virtualbox);
     void notify() const;
 
     HRESULT GetNameServers(std::vector<com::Utf8Str> &aNameServers);

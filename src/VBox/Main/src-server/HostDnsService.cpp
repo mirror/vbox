@@ -335,8 +335,11 @@ HostDnsMonitorProxy::~HostDnsMonitorProxy()
     }
 }
 
-void HostDnsMonitorProxy::init(const HostDnsMonitor *mon, VirtualBox* aParent)
+void HostDnsMonitorProxy::init(VirtualBox* aParent)
 {
+    const HostDnsMonitor *mon = HostDnsMonitor::getHostDnsMonitor(aParent);
+    Assert(mon != NULL);
+
     m = new HostDnsMonitorProxy::Data(mon, aParent);
     m->monitor->addMonitorProxy(this);
     updateInfo();
