@@ -81,13 +81,14 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
 struct HostDnsMonitor::Data
 {
     Data(bool aThreaded)
-      : uLastExtraDataPoll(0),
+      : proxy(NULL),
+        uLastExtraDataPoll(0),
         fLaxComparison(0),
         fThreaded(aThreaded),
         virtualbox(NULL)
     {}
 
-    std::vector<PCHostDnsMonitorProxy> proxies;
+    HostDnsMonitorProxy *proxy;
     HostDnsInformation info;
     uint64_t uLastExtraDataPoll;
     uint32_t fLaxComparison;
@@ -99,7 +100,7 @@ struct HostDnsMonitor::Data
 
 struct HostDnsMonitorProxy::Data
 {
-    Data(const HostDnsMonitor *aMonitor, VirtualBox *aParent)
+    Data(HostDnsMonitor *aMonitor, VirtualBox *aParent)
       : info(NULL)
       , virtualbox(aParent)
       , monitor(aMonitor)
@@ -117,7 +118,7 @@ struct HostDnsMonitorProxy::Data
 
     HostDnsInformation *info;
     VirtualBox *virtualbox;
-    const HostDnsMonitor *monitor;
+    HostDnsMonitor *monitor;
     bool fModified;
 };
 
@@ -137,7 +138,7 @@ HostDnsMonitor::~HostDnsMonitor()
     }
 }
 
-const HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor(VirtualBox *aParent)
+HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor(VirtualBox *aParent)
 {
     /* XXX: Moved initialization from HostImpl.cpp */
     if (!g_monitor)
@@ -163,23 +164,12 @@ const HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor(VirtualBox *aParent)
     return g_monitor;
 }
 
-void HostDnsMonitor::addMonitorProxy(PCHostDnsMonitorProxy proxy) const
+void HostDnsMonitor::setMonitorProxy(HostDnsMonitorProxy *proxy)
 {
     RTCLock grab(m_LockMtx);
-    m->proxies.push_back(proxy);
+    Assert(m != NULL && m->proxy == NULL);
+    m->proxy = proxy;
     proxy->notify();
-}
-
-void HostDnsMonitor::releaseMonitorProxy(PCHostDnsMonitorProxy proxy) const
-{
-    RTCLock grab(m_LockMtx);
-    std::vector<PCHostDnsMonitorProxy>::iterator it;
-    it = std::find(m->proxies.begin(), m->proxies.end(), proxy);
-
-    if (it == m->proxies.end())
-        return;
-
-    m->proxies.erase(it);
 }
 
 void HostDnsMonitor::shutdown()
@@ -224,9 +214,8 @@ void HostDnsMonitor::setInfo(const HostDnsInformation &info)
         return;
     }
 
-    std::vector<PCHostDnsMonitorProxy>::const_iterator it;
-    for (it = m->proxies.begin(); it != m->proxies.end(); ++it)
-        (*it)->notify();
+    if (m->proxy != NULL)
+        m->proxy->notify();
 }
 
 HRESULT HostDnsMonitor::init(VirtualBox *virtualbox)
@@ -328,8 +317,7 @@ HostDnsMonitorProxy::~HostDnsMonitorProxy()
 {
     if (m)
     {
-        if (m->monitor)
-            m->monitor->releaseMonitorProxy(this);
+        /* XXX: m->monitor */
         delete m;
         m = NULL;
     }
@@ -337,11 +325,11 @@ HostDnsMonitorProxy::~HostDnsMonitorProxy()
 
 void HostDnsMonitorProxy::init(VirtualBox* aParent)
 {
-    const HostDnsMonitor *mon = HostDnsMonitor::getHostDnsMonitor(aParent);
+    HostDnsMonitor *mon = HostDnsMonitor::getHostDnsMonitor(aParent);
     Assert(mon != NULL);
 
     m = new HostDnsMonitorProxy::Data(mon, aParent);
-    m->monitor->addMonitorProxy(this);
+    m->monitor->setMonitorProxy(this);
     updateInfo();
 }
 

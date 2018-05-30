@@ -52,11 +52,10 @@ class HostDnsInformation
 class HostDnsMonitor
 {
   public:
-    static const HostDnsMonitor *getHostDnsMonitor(VirtualBox *virtualbox);
+    static HostDnsMonitor *getHostDnsMonitor(VirtualBox *virtualbox);
     static void shutdown();
 
-    void addMonitorProxy(PCHostDnsMonitorProxy) const;
-    void releaseMonitorProxy(PCHostDnsMonitorProxy) const;
+    void setMonitorProxy(HostDnsMonitorProxy *proxy);
     const HostDnsInformation &getInfo() const;
     /* @note: method will wait till client call
        HostDnsService::monitorThreadInitializationDone() */
