@@ -463,8 +463,18 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
         /* Create UI starter: */
         UIStarter::create();
+#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
         /* Create global app instance: */
         VBoxGlobal::create();
+#else
+# ifndef VBOX_RUNTIME_UI
+        /* Create global app instance for Selecotr UI: */
+        VBoxGlobal::create(VBoxGlobal::UIType_SelectorUI);
+# else
+        /* Create global app instance for Runtime UI: */
+        VBoxGlobal::create(VBoxGlobal::UIType_RuntimeUI);
+# endif
+#endif
 
         /* Simulate try-catch block: */
         do

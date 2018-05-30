@@ -64,6 +64,15 @@ class SHARED_LIBRARY_STUFF VBoxGlobal : public QObject
 
 public:
 
+#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+    /** UI types. */
+    enum UIType
+    {
+        UIType_SelectorUI,
+        UIType_RuntimeUI
+    };
+#endif
+
     /** VM launch modes. */
     enum LaunchMode
     {
@@ -83,7 +92,11 @@ public:
 
     /* Static API: Create/destroy stuff: */
     static VBoxGlobal *instance() { return s_pInstance; }
+#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
     static void create();
+#else
+    static void create(UIType enmType);
+#endif
     static void destroy();
 
     bool isValid() { return mValid; }
@@ -500,9 +513,16 @@ protected:
 
 private:
 
-    /* Constructor/destructor: */
+#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
+    /** Construcs global VirtualBox object. */
     VBoxGlobal();
-    ~VBoxGlobal();
+#else
+    /** Construcs global VirtualBox object of passed @a enmType. */
+    VBoxGlobal(UIType enmType);
+#endif
+
+    /** Destrucs global VirtualBox object. */
+    virtual ~VBoxGlobal() /* override */;
 
     /** Re-initializes COM wrappers and containers. */
     void comWrappersReinit();
@@ -516,6 +536,11 @@ private:
     void initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const char *pszExtraDataName, bool fDefault = false);
     void setDebuggerVar(int *piDbgCfgVar, bool fState);
     bool isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName) const;
+#endif
+
+#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+    /** Holds the UI type. */
+    UIType m_enmType;
 #endif
 
     bool mValid;
