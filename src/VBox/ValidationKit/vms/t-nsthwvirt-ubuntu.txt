@@ -1,0 +1,29 @@
+
+Test VM - nsthwvirt-ubuntu - Nested hardware-virtualization Ubuntu
+==================================================================
+
+Setup:
+ - Configure a VM tst-nsthwvirt-ubuntu-64 with default Ubuntu 64-bit setting,
+   with a 6 GB or larger disk.
+ - Configure the VM with 4 GB of RAM.
+ - Make sure networking is NAT.
+ - Disable audio for the VM.
+ - Install Ubuntu 17.04 amd64.
+ - Create a user named 'vbox' with password as 'password'.
+ - Enable auto-login for the user 'vbox'.
+ - Insert the validation kit ISO and install the test execution service (see
+   vboxtxs-runvm-readme.txt).
+ - Disable screen-blanking, and suspend:
+      - Click 'System Settings' from the Unity bar on the left side or open
+        a terminal and run 'unity-control-center'.
+      - From 'Power':
+        - Switch 'Suspend when inactive for' to 'Dont suspend'.
+      - From 'Brightness & Lock':
+        - Switch 'Turn screen off when inactive' to 'Never'
+	- Switch 'Lock' to 'off'.
+      - Close the system settings window.
+ - Eject any CD and shut down the VM.
+
+
+Do  N O T install guest additions!
+
