@@ -827,17 +827,6 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
                 break;
             }
 
-//            /* Fix for http://www.virtualbox.org/ticket/1296:
-//             * when X11 sends events for repeated keys, it always inserts an XKeyRelease before the XKeyPress. */
-//            XEvent returnEvent;
-//            if ((pEvent->type == XKeyRelease) && (XCheckIfEvent(pEvent->xkey.display, &returnEvent,
-//                UIKeyboardHandlerCompEvent, (XPointer)pEvent) == True))
-//            {
-//                XPutBackEvent(pEvent->xkey.display, &returnEvent);
-//                fResult = true;
-//                break;
-//            }
-
             /* Calculate flags: */
             int iflags = 0;
             if (uScan >> 8)
@@ -1028,6 +1017,11 @@ void UIKeyboardHandler::loadSettings()
 #ifdef VBOX_WS_X11
     /* Initialize the X keyboard subsystem: */
     initMappedX11Keyboard(QX11Info::display(), gEDataManager->remappedScanCodes());
+    /* Fix for http://www.virtualbox.org/ticket/1296:
+     * when X11 sends events for repeated keys, it always inserts an XKeyRelease
+     * before the XKeyPress. */
+    /* Disable key release events during key auto-repeat: */
+    XkbSetDetectableAutoRepeat(QX11Info::display(), True, NULL);
 #endif /* VBOX_WS_X11 */
 
     /* Extra data settings: */
