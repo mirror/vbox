@@ -1903,7 +1903,19 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
          */
         if (pVM->hm.s.vmx.fVpid)
         {
-            if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
+            bool fVpidFlush = RT_BOOL(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
+
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
+            /*
+             * Workaround Erratum BV75, AAJ159 and others that affect several Intel CPUs
+             * where executing INVVPID outside 64-bit mode does not flush translations of
+             * 64-bit linear addresses, see @bugref{6208#c72}.
+             */
+            if (RT_HI_U32(GCVirt))
+                fVpidFlush = false;
+#endif
+
+            if (fVpidFlush)
             {
                 hmR0VmxFlushVpid(pVM, pVCpu, VMXFLUSHVPID_INDIV_ADDR, GCVirt);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgVirt);
