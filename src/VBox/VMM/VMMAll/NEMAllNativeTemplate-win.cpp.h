@@ -1255,7 +1255,7 @@ DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, PC
         return VINF_SUCCESS;
     }
 
-    if (rc == VERR_NEM_CHANGE_PGM_MODE || rc == VERR_NEM_FLUSH_TLB)
+    if (rc == VERR_NEM_CHANGE_PGM_MODE || rc == VERR_NEM_FLUSH_TLB || rc == VERR_NEM_UPDATE_APIC_BASE)
     {
         Log4(("%s/%u: nemR0WinImportState -> %Rrc\n", pszCaller, pGVCpu->idCpu, -rc));
         return -rc;
@@ -1795,6 +1795,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageUnrecoverableException(PVMCPU 
         {
             Log(("UnrecovExit/%u: %04x:%08RX64/%s: RFL=%#RX64 -> VINF_SUCCESS\n", pVCpu->idCpu, pMsgHdr->CsSegment.Selector,
                  pMsgHdr->Rip, nemHCWinExecStateToLogStr(pMsgHdr), pMsgHdr->Rflags ));
+            pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT; /* Make sure to reset pending #DB(0). */
             return VINF_SUCCESS;
         }
         if (rcStrict == VINF_EM_TRIPLE_FAULT)
@@ -2366,15 +2367,15 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         int rc2 = nemR0WinImportState(pGVM, pGVCpu, pCtx, CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK);
         if (RT_SUCCESS(rc2))
             pCtx->fExtrn = 0;
-        else if (rc2 == VERR_NEM_CHANGE_PGM_MODE || rc2 == VERR_NEM_FLUSH_TLB)
+        else if (rc2 == VERR_NEM_CHANGE_PGM_MODE || rc2 == VERR_NEM_FLUSH_TLB || rc2 == VERR_NEM_UPDATE_APIC_BASE)
         {
             pCtx->fExtrn = 0;
             if (rcStrict == VINF_SUCCESS || rcStrict == -rc2)
                 rcStrict = -rc2;
             else
             {
-                pVCpu->nem.s.rcPgmPending = -rc2;
-                LogFlow(("NEM/%u: rcPgmPending=%Rrc (rcStrict=%Rrc)\n", pVCpu->idCpu, rc2, VBOXSTRICTRC_VAL(rcStrict) ));
+                pVCpu->nem.s.rcPending = -rc2;
+                LogFlow(("NEM/%u: rcPending=%Rrc (rcStrict=%Rrc)\n", pVCpu->idCpu, rc2, VBOXSTRICTRC_VAL(rcStrict) ));
             }
         }
 # else

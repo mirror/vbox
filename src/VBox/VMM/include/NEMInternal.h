@@ -194,9 +194,12 @@ typedef struct NEMCPU
     /** Last copy of HV_X64_VP_EXECUTION_STATE::InterruptShadow. */
     bool                        fLastInterruptShadow : 1;
     bool                        afPadding[1];
+    /** Pending APIC base value.
+     * This is set to UINT64_MAX when not pending  */
+    uint64_t                    uPendingApicBase;
 # ifdef NEM_WIN_USE_OUR_OWN_RUN_API
-    /** Pending VERR_NEM_CHANGE_PGM_MODE or VERR_NEM_FLUSH_TLB. */
-    int32_t                     rcPgmPending;
+    /** Pending VINF_NEM_CHANGE_PGM_MODE, VINF_NEM_FLUSH_TLB or VINF_NEM_UPDATE_APIC_BASE. */
+    int32_t                     rcPending;
     /** The VID_MSHAGN_F_XXX flags.
      * Either VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE or zero. */
     uint32_t                    fHandleAndGetFlags;

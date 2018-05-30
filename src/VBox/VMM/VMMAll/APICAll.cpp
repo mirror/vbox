@@ -2173,6 +2173,10 @@ VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t 
  * Sets the APIC base MSR.
  *
  * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS
+ * @retval  VINF_CPUM_R3_MSR_WRITE
+ * @retval  VERR_CPUM_RAISE_GP_0
+ *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   u64BaseMsr  The value to set.
  */

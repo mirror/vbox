@@ -723,6 +723,7 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterMtrrFix4kE8000,
     HvX64RegisterMtrrFix4kF0000,
     HvX64RegisterMtrrFix4kF8000,
+    HvX64RegisterTscAux,                            /**< @since v5c? late 2017? */
 
     HvX64RegisterIa32MiscEnable = 0x000800a0,       /**< @since v5 */
     HvX64RegisterIa32FeatureControl,                /**< @since v5 */

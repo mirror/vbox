@@ -2838,6 +2838,10 @@
 #define VERR_NEM_CHANGE_PGM_MODE                    (-6810)
 /** Get register caller must change the CPU mode. */
 #define VINF_NEM_CHANGE_PGM_MODE                    (6810)
+/** Get register caller must update the APIC base (not an error). */
+#define VERR_NEM_UPDATE_APIC_BASE                   (-6811)
+/** Get register caller must update the APIC base. */
+#define VINF_NEM_UPDATE_APIC_BASE                   (6811)
 
 /** NEM internal processing error \#0. */
 #define VINF_NEM_IPE_0                              (6890)

@@ -1152,6 +1152,10 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kF8000;
         pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_F8000;
         iReg++;
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterTscAux;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.TscAux;
+        iReg++;
 
 #if 0 /** @todo Why can't we write these on Intel systems? Not that we really care... */
         const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
@@ -1479,6 +1483,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Names[iReg++] = HvX64RegisterMtrrFix4kE8000;
         pInput->Names[iReg++] = HvX64RegisterMtrrFix4kF0000;
         pInput->Names[iReg++] = HvX64RegisterMtrrFix4kF8000;
+        pInput->Names[iReg++] = HvX64RegisterTscAux;
 #if 0 /** @todo why can't we read HvX64RegisterIa32MiscEnable? */
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
             pInput->Names[iReg++] = HvX64RegisterIa32MiscEnable;
@@ -1946,6 +1951,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pCtx->msrSFMASK = paValues[iReg].Reg64;
         iReg++;
     }
+    bool fUpdateApicBase = false;
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterApicBase);
@@ -1955,7 +1961,13 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
                   pVCpu->idCpu, uOldBase, paValues[iReg].Reg64, paValues[iReg].Reg64 ^ uOldBase));
             VBOXSTRICTRC rc2 = APICSetBaseMsr(pVCpu, paValues[iReg].Reg64);
-            Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
+            if (rc2 == VINF_CPUM_R3_MSR_WRITE)
+            {
+                pVCpu->nem.s.uPendingApicBase = paValues[iReg].Reg64;
+                fUpdateApicBase = true;
+            }
+            else
+                AssertLogRelMsg(rc2 == VINF_SUCCESS, ("rc2=%Rrc [%#RX64]\n", VBOXSTRICTRC_VAL(rc2), paValues[iReg].Reg64));
         }
         iReg++;
 
@@ -2047,6 +2059,12 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pCtxMsrs->msr.MtrrFix4K_F8000 = paValues[iReg].Reg64;
         iReg++;
 
+        Assert(pInput->Names[iReg] == HvX64RegisterTscAux);
+        if (paValues[iReg].Reg64 != pCtxMsrs->msr.TscAux )
+            Log7(("NEM/%u: MSR TSC_AUX changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.TscAux, paValues[iReg].Reg64));
+        pCtxMsrs->msr.TscAux = paValues[iReg].Reg64;
+        iReg++;
+
 #if 0 /** @todo why can't we even read HvX64RegisterIa32MiscEnable? */
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
         {
@@ -2118,7 +2136,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     pCtx->fExtrn &= ~fWhat;
 
     /* Typical. */
-    if (!fMaybeChangedMode && !fFlushTlb)
+    if (!fMaybeChangedMode && !fFlushTlb && !fUpdateApicBase)
         return VINF_SUCCESS;
 
     /*
@@ -2140,6 +2158,12 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         LogFlow(("nemR0WinImportState: -> VERR_NEM_FLUSH_TLB!\n"));
         rc = VERR_NEM_FLUSH_TLB; /* Calling PGMFlushTLB w/o long jump setup doesn't work, ring-3 does it. */
+    }
+
+    if (fUpdateApicBase && rc == VINF_SUCCESS)
+    {
+        LogFlow(("nemR0WinImportState: -> VERR_NEM_UPDATE_APIC_BASE!\n"));
+        rc = VERR_NEM_UPDATE_APIC_BASE;
     }
 
     return rc;
