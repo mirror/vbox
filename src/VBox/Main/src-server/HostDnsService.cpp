@@ -81,33 +81,35 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
 struct HostDnsMonitor::Data
 {
     Data(bool aThreaded)
-      : proxy(NULL),
-        uLastExtraDataPoll(0),
-        fLaxComparison(0),
+      : virtualbox(NULL),
+        proxy(NULL),
         fThreaded(aThreaded),
-        virtualbox(NULL)
+        uLastExtraDataPoll(0),
+        fLaxComparison(0)
     {}
 
+    VirtualBox *virtualbox;
     HostDnsMonitorProxy *proxy;
-    HostDnsInformation info;
+
+    const bool fThreaded;
+    RTSEMEVENT hDnsInitEvent;
+    RTTHREAD hMonitoringThread;
+
     uint64_t uLastExtraDataPoll;
     uint32_t fLaxComparison;
-    const bool fThreaded;
-    RTTHREAD hMonitoringThread;
-    RTSEMEVENT hDnsInitEvent;
-    VirtualBox *virtualbox;
+    HostDnsInformation info;
 };
 
 struct HostDnsMonitorProxy::Data
 {
     Data(HostDnsMonitor *aMonitor, VirtualBox *aParent)
-      : info(NULL)
-      , virtualbox(aParent)
-      , monitor(aMonitor)
-      , fModified(true)
+      : virtualbox(aParent),
+        monitor(aMonitor),
+        info(NULL),
+        fModified(true)
     {}
 
-    virtual ~Data()
+    ~Data()
     {
         if (info)
         {
@@ -116,9 +118,9 @@ struct HostDnsMonitorProxy::Data
         }
     }
 
-    HostDnsInformation *info;
     VirtualBox *virtualbox;
     HostDnsMonitor *monitor;
+    HostDnsInformation *info;
     bool fModified;
 };
 
