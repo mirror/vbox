@@ -141,6 +141,9 @@ start() {
             kernlog_msg "Smoke Test failed! error code ${RETVAL}" console
             RETVAL=7
         fi
+    else
+        kernlog_msg "Starting Nested Smoke Test failed! Pidfile ${PIDFILE} exists" console
+        RETVAL=9
     fi
     return $RETVAL
 }
