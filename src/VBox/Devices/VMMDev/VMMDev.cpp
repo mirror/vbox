@@ -541,7 +541,7 @@ static int vmmDevReqHandler_HeartbeatConfigure(PVMMDEV pThis, VMMDevRequestHeade
     }
     else
     {
-        LogRel(("VMMDev: vmmDevReqHandler_HeartbeatConfigure: No change (fHeartbeatActive=%RTbool).\n", pThis->fHeartbeatActive));
+        LogRel(("VMMDev: vmmDevReqHandler_HeartbeatConfigure: No change (fHeartbeatActive=%RTbool)\n", pThis->fHeartbeatActive));
         rc = VINF_SUCCESS;
     }
 
