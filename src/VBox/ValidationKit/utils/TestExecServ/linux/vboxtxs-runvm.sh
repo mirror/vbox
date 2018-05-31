@@ -120,14 +120,15 @@ start() {
         fixAndTestBinary
         testRsrcPath
         sleep 5
-        $PYTHON_BINARY $SMOKETEST_SCRIPT -v -v -d --vbox-session-type gui --quick all 1> "${SMOKEOUTPUT_PATH}" 2>&1
+        $PYTHON_BINARY $SMOKETEST_SCRIPT -v -v -d --vbox-session-type gui --nic-attachment nat --quick all 1> "${SMOKEOUTPUT_PATH}" 2>&1
         RETVAL=$?
         dumpfile_to_kernlog "${SMOKEOUTPUT_PATH}"
         sync
-        sleep 10
+        sleep 15
         if test $RETVAL -eq 0; then
             kernlog_msg "Nested Smoke Test done; Starting Test Execution service" console
-            mount /dev/cdrom "${CDROM_PATH}" 2> /dev/null > /dev/null
+            mkdir -p "${CDROM_PATH}"
+            mount -o ro /dev/cdrom "${CDROM_PATH}" 2> /dev/null > /dev/null
             $binary --auto-upgrade --scratch="${SCRATCH_PATH}" --cdrom="${CDROM_PATH}" --no-display-output > /dev/null
             RETVAL=$?
             test $RETVAL -eq 0 && sleep 3 && echo `pidof TestExecService` > $PIDFILE

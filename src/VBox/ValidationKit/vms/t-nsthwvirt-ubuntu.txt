@@ -22,6 +22,8 @@ Setup:
         - Switch 'Turn screen off when inactive' to 'Never'
 	- Switch 'Lock' to 'off'.
       - Close the system settings window.
+ - Disable auto-mounting of the CDROM:
+      gsettings set org.gnome.desktop.media-handling automount false
  - Eject any CD and shut down the VM.
 
 
