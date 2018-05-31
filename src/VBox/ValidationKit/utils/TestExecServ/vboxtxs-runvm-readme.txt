@@ -24,8 +24,8 @@ Linux Installation
 7b. systemd: Link/copy the vboxtxs-runvm.system to [/usr]/lib/systemd/system/
     Enable the vboxtxs-runvm service, usually using:
        systemctl enable vboxtxs-runvm
-8.  Check the cdrom location in /opt/validationkit/linux/vboxtxs-runvm and fix
-    it so it's correct.
+8.  Check the cdrom location and /dev/kmsg equivalent of your linux distro
+    in /opt/validationkit/linux/vboxtxs-runvm and fix it so it's correct.
 9.  reboot / done.
 
 TODO: Document other OSes as we add them.

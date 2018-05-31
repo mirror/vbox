@@ -41,6 +41,8 @@ SCRIPTNAME=vboxtxs-runvm.sh
 
 CDROM_PATH=/media/cdrom
 SCRATCH_PATH=/tmp/vboxtxs-scratch
+SMOKEOUTPUT_PATH=/tmp/vboxtxs-smoketestoutput
+DEVKMSG_PATH=/dev/kmsg
 
 PIDFILE="/var/run/vboxtxs"
 
@@ -53,24 +55,27 @@ if [ "`which $0`" = "/sbin/rc" ]; then
     shift
 fi
 
-begin_msg()
-{
-    test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
-    logger -t "${SCRIPTNAME}" "${1}."
+kernlog_msg() {
+    test -n "$2" && echo "${SCRIPTNAME}: ${1}"
+    echo "${SCRIPTNAME}: ${1}" > $DEVKMSG_PATH
 }
 
-succ_msg()
-{
-    logger -t "${SCRIPTNAME}" "${1}."
+dumpfile_to_kernlog() {
+    if test -f "$1"; then
+        kernlog_msg "---------------------- DUMP BEGIN ----------------------"
+        cat "$1" | while read LINE
+        do
+            kernlog_msg "${LINE}"
+        done
+        kernlog_msg "---------------------- DUMP END ------------------------"
+        rm -f "$1"
+    else
+        kernlog_msg "${1}: file not found" console
+    fi
 }
 
-fail_msg()
+killproc()
 {
-    echo "${SCRIPTNAME}: failed: ${1}." >&2
-    logger -t "${SCRIPTNAME}" "failed: ${1}."
-}
-
-killproc() {
     kp_binary="${1##*/}"
     pkill "${kp_binary}" || return 0
     sleep 1
@@ -111,26 +116,30 @@ testRsrcPath() {
 
 start() {
     if ! test -f $PIDFILE; then
-        begin_msg "Starting VirtualBox Nested Hardware-Virtualization Smoke Test" console
+        kernlog_msg "Starting Nested Smoke Test" console
         fixAndTestBinary
         testRsrcPath
         sleep 5
-        $PYTHON_BINARY $SMOKETEST_SCRIPT -v -v -d --vbox-session-type gui --quick all
+        $PYTHON_BINARY $SMOKETEST_SCRIPT -v -v -d --vbox-session-type gui --quick all 1> "${SMOKEOUTPUT_PATH}" 2>&1
         RETVAL=$?
+        dumpfile_to_kernlog "${SMOKEOUTPUT_PATH}"
         if test $RETVAL -eq 0; then
-            begin_msg "Starting VirtualBox Test Execution service" console
+            kernlog_msg "Starting VirtualBox Test Execution service" console
             mount /dev/cdrom "${CDROM_PATH}" 2> /dev/null > /dev/null
             $binary --auto-upgrade --scratch="${SCRATCH_PATH}" --cdrom="${CDROM_PATH}" --no-display-output > /dev/null
             RETVAL=$?
-            test $RETVAL -eq 0 && sleep 2 && echo `pidof TestExecService` > $PIDFILE
+            test $RETVAL -eq 0 && sleep 3 && echo `pidof TestExecService` > $PIDFILE
             if ! test -s "${PIDFILE}"; then
                 RETVAL=5
             fi
-        fi
-        if test $RETVAL -eq 0; then
-            succ_msg "VirtualBox Test Execution service started"
+            if test $RETVAL -eq 0; then
+                kernlog_msg "Test Execution service started" console
+            else
+                kernlog_msg "Test Execution service failed to start" console
+            fi
         else
-            fail_msg "VirtualBox Test Execution service failed to start"
+            kernlog_msg "Smoke Test failed! error code ${RETVAL}" console
+            RETVAL=7
         fi
     fi
     return $RETVAL
@@ -138,8 +147,9 @@ start() {
 
 stop() {
     if test -f $PIDFILE; then
-        begin_msg "Stopping VirtualBox Test Execution Service" console
+        kernlog_msg "Stopping VirtualBox Test Execution Service"
         killproc $binary
+        rm -f $PIDFILE
     fi
 }
 
@@ -179,3 +189,4 @@ cleanup)
 esac
 
 exit $RETVAL
+
