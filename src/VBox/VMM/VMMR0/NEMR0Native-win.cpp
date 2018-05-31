@@ -1033,7 +1033,6 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 
     /* MSRs */
     // HvX64RegisterTsc - don't touch
-    /** @todo does HvX64RegisterTsc include TSC_AUX?  Is it TSC_AUX? */
     if (fWhat & CPUMCTX_EXTRN_EFER)
     {
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
@@ -1173,7 +1172,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 #endif
     }
 
-    /* event injection (always clear it). */
+    /* event injection (clear it). */
     if (fWhat & CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT)
     {
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
@@ -1766,7 +1765,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         Assert(pInput->Names[iReg] == HvX64RegisterDr7);
         if (pCtx->dr[7] != paValues[iReg].Reg64)
-            CPUMSetGuestDR6(pVCpu, paValues[iReg].Reg64);
+            CPUMSetGuestDR7(pVCpu, paValues[iReg].Reg64);
         iReg++;
     }
 
@@ -2096,10 +2095,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         {
             pVCpu->nem.s.fLastInterruptShadow = paValues[iReg].InterruptState.InterruptShadow;
             if (paValues[iReg].InterruptState.InterruptShadow)
-            {
                 EMSetInhibitInterruptsPC(pVCpu, paValues[iReg + 1].Reg64);
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-            }
             else
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
         }

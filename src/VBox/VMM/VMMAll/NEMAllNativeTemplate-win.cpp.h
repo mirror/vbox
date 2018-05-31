@@ -113,279 +113,299 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
     return rc;
 
 # else
+    /*
+     * The following is very similar to what nemR0WinExportState() does.
+     */
     WHV_REGISTER_NAME  aenmNames[128];
     WHV_REGISTER_VALUE aValues[128];
 
+    uint64_t const fWhat = ~pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK);
+    if (   !fWhat
+        && pVCpu->nem.s.fCurrentInterruptWindows == pVCpu->nem.s.fDesiredInterruptWindows)
+        return VINF_SUCCESS;
+    uintptr_t iReg = 0;
+
+#  define ADD_REG64(a_enmName, a_uValue) do { \
+            aenmNames[iReg]      = (a_enmName); \
+            aValues[iReg].Reg128.High64 = 0; \
+            aValues[iReg].Reg64  = (a_uValue); \
+            iReg++; \
+        } while (0)
+#  define ADD_REG128(a_enmName, a_uValueLo, a_uValueHi) do { \
+            aenmNames[iReg] = (a_enmName); \
+            aValues[iReg].Reg128.Low64  = (a_uValueLo); \
+            aValues[iReg].Reg128.High64 = (a_uValueHi); \
+            iReg++; \
+        } while (0)
+
     /* GPRs */
-    aenmNames[0]      = WHvX64RegisterRax;
-    aValues[0].Reg64  = pCtx->rax;
-    aenmNames[1]      = WHvX64RegisterRcx;
-    aValues[1].Reg64  = pCtx->rcx;
-    aenmNames[2]      = WHvX64RegisterRdx;
-    aValues[2].Reg64  = pCtx->rdx;
-    aenmNames[3]      = WHvX64RegisterRbx;
-    aValues[3].Reg64  = pCtx->rbx;
-    aenmNames[4]      = WHvX64RegisterRsp;
-    aValues[4].Reg64  = pCtx->rsp;
-    aenmNames[5]      = WHvX64RegisterRbp;
-    aValues[5].Reg64  = pCtx->rbp;
-    aenmNames[6]      = WHvX64RegisterRsi;
-    aValues[6].Reg64  = pCtx->rsi;
-    aenmNames[7]      = WHvX64RegisterRdi;
-    aValues[7].Reg64  = pCtx->rdi;
-    aenmNames[8]      = WHvX64RegisterR8;
-    aValues[8].Reg64  = pCtx->r8;
-    aenmNames[9]      = WHvX64RegisterR9;
-    aValues[9].Reg64  = pCtx->r9;
-    aenmNames[10]     = WHvX64RegisterR10;
-    aValues[10].Reg64 = pCtx->r10;
-    aenmNames[11]     = WHvX64RegisterR11;
-    aValues[11].Reg64 = pCtx->r11;
-    aenmNames[12]     = WHvX64RegisterR12;
-    aValues[12].Reg64 = pCtx->r12;
-    aenmNames[13]     = WHvX64RegisterR13;
-    aValues[13].Reg64 = pCtx->r13;
-    aenmNames[14]     = WHvX64RegisterR14;
-    aValues[14].Reg64 = pCtx->r14;
-    aenmNames[15]     = WHvX64RegisterR15;
-    aValues[15].Reg64 = pCtx->r15;
+    if (fWhat & CPUMCTX_EXTRN_GPRS_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_RAX)
+            ADD_REG64(WHvX64RegisterRax, pCtx->rax);
+        if (fWhat & CPUMCTX_EXTRN_RCX)
+            ADD_REG64(WHvX64RegisterRcx, pCtx->rcx);
+        if (fWhat & CPUMCTX_EXTRN_RDX)
+            ADD_REG64(WHvX64RegisterRdx, pCtx->rdx);
+        if (fWhat & CPUMCTX_EXTRN_RBX)
+            ADD_REG64(WHvX64RegisterRbx, pCtx->rbx);
+        if (fWhat & CPUMCTX_EXTRN_RSP)
+            ADD_REG64(WHvX64RegisterRsp, pCtx->rsp);
+        if (fWhat & CPUMCTX_EXTRN_RBP)
+            ADD_REG64(WHvX64RegisterRbp, pCtx->rbp);
+        if (fWhat & CPUMCTX_EXTRN_RSI)
+            ADD_REG64(WHvX64RegisterRsi, pCtx->rsi);
+        if (fWhat & CPUMCTX_EXTRN_RDI)
+            ADD_REG64(WHvX64RegisterRdi, pCtx->rdi);
+        if (fWhat & CPUMCTX_EXTRN_R8_R15)
+        {
+            ADD_REG64(WHvX64RegisterR8, pCtx->r8);
+            ADD_REG64(WHvX64RegisterR9, pCtx->r9);
+            ADD_REG64(WHvX64RegisterR10, pCtx->r10);
+            ADD_REG64(WHvX64RegisterR11, pCtx->r11);
+            ADD_REG64(WHvX64RegisterR12, pCtx->r12);
+            ADD_REG64(WHvX64RegisterR13, pCtx->r13);
+            ADD_REG64(WHvX64RegisterR14, pCtx->r14);
+            ADD_REG64(WHvX64RegisterR15, pCtx->r15);
+        }
+    }
 
     /* RIP & Flags */
-    aenmNames[16]     = WHvX64RegisterRip;
-    aValues[16].Reg64 = pCtx->rip;
-    aenmNames[17]     = WHvX64RegisterRflags;
-    aValues[17].Reg64 = pCtx->rflags.u;
+    if (fWhat & CPUMCTX_EXTRN_RIP)
+        ADD_REG64(WHvX64RegisterRip, pCtx->rip);
+    if (fWhat & CPUMCTX_EXTRN_RFLAGS)
+        ADD_REG64(WHvX64RegisterRflags, pCtx->rflags.u);
 
     /* Segments */
-#  define COPY_OUT_SEG(a_idx, a_enmName, a_SReg) \
+#  define ADD_SEG(a_enmName, a_SReg) \
         do { \
-            aenmNames[a_idx]                  = a_enmName; \
-            aValues[a_idx].Segment.Base       = (a_SReg).u64Base; \
-            aValues[a_idx].Segment.Limit      = (a_SReg).u32Limit; \
-            aValues[a_idx].Segment.Selector   = (a_SReg).Sel; \
-            aValues[a_idx].Segment.Attributes = (a_SReg).Attr.u; \
+            aenmNames[iReg]                  = a_enmName; \
+            aValues[iReg].Segment.Base       = (a_SReg).u64Base; \
+            aValues[iReg].Segment.Limit      = (a_SReg).u32Limit; \
+            aValues[iReg].Segment.Selector   = (a_SReg).Sel; \
+            aValues[iReg].Segment.Attributes = (a_SReg).Attr.u; \
+            iReg++; \
         } while (0)
-    COPY_OUT_SEG(18, WHvX64RegisterEs,   pCtx->es);
-    COPY_OUT_SEG(19, WHvX64RegisterCs,   pCtx->cs);
-    COPY_OUT_SEG(20, WHvX64RegisterSs,   pCtx->ss);
-    COPY_OUT_SEG(21, WHvX64RegisterDs,   pCtx->ds);
-    COPY_OUT_SEG(22, WHvX64RegisterFs,   pCtx->fs);
-    COPY_OUT_SEG(23, WHvX64RegisterGs,   pCtx->gs);
-    COPY_OUT_SEG(24, WHvX64RegisterLdtr, pCtx->ldtr);
-    COPY_OUT_SEG(25, WHvX64RegisterTr,   pCtx->tr);
+    if (fWhat & CPUMCTX_EXTRN_SREG_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_ES)
+            ADD_SEG(WHvX64RegisterEs,   pCtx->es);
+        if (fWhat & CPUMCTX_EXTRN_CS)
+            ADD_SEG(WHvX64RegisterCs,   pCtx->cs);
+        if (fWhat & CPUMCTX_EXTRN_SS)
+            ADD_SEG(WHvX64RegisterSs,   pCtx->ss);
+        if (fWhat & CPUMCTX_EXTRN_DS)
+            ADD_SEG(WHvX64RegisterDs,   pCtx->ds);
+        if (fWhat & CPUMCTX_EXTRN_FS)
+            ADD_SEG(WHvX64RegisterFs,   pCtx->fs);
+        if (fWhat & CPUMCTX_EXTRN_GS)
+            ADD_SEG(WHvX64RegisterGs,   pCtx->gs);
+    }
 
-    uintptr_t iReg = 26;
-    /* Descriptor tables. */
-    aenmNames[iReg] = WHvX64RegisterIdtr;
-    aValues[iReg].Table.Limit = pCtx->idtr.cbIdt;
-    aValues[iReg].Table.Base  = pCtx->idtr.pIdt;
-    iReg++;
-    aenmNames[iReg] = WHvX64RegisterGdtr;
-    aValues[iReg].Table.Limit = pCtx->gdtr.cbGdt;
-    aValues[iReg].Table.Base  = pCtx->gdtr.pGdt;
-    iReg++;
+    /* Descriptor tables & task segment. */
+    if (fWhat & CPUMCTX_EXTRN_TABLE_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_LDTR)
+            ADD_SEG(WHvX64RegisterLdtr, pCtx->ldtr);
+        if (fWhat & CPUMCTX_EXTRN_TR)
+            ADD_SEG(WHvX64RegisterTr,   pCtx->tr);
+        if (fWhat & CPUMCTX_EXTRN_IDTR)
+        {
+            aenmNames[iReg] = WHvX64RegisterIdtr;
+            aValues[iReg].Table.Limit = pCtx->idtr.cbIdt;
+            aValues[iReg].Table.Base  = pCtx->idtr.pIdt;
+            iReg++;
+        }
+        if (fWhat & CPUMCTX_EXTRN_GDTR)
+        {
+            aenmNames[iReg] = WHvX64RegisterGdtr;
+            aValues[iReg].Table.Limit = pCtx->gdtr.cbGdt;
+            aValues[iReg].Table.Base  = pCtx->gdtr.pGdt;
+            iReg++;
+        }
+    }
 
     /* Control registers. */
-    aenmNames[iReg]     = WHvX64RegisterCr0;
-    aValues[iReg].Reg64 = pCtx->cr0;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterCr2;
-    aValues[iReg].Reg64 = pCtx->cr2;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterCr3;
-    aValues[iReg].Reg64 = pCtx->cr3;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterCr4;
-    aValues[iReg].Reg64 = pCtx->cr4;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterCr8;
-    aValues[iReg].Reg64 = CPUMGetGuestCR8(pVCpu);
-    iReg++;
+    if (fWhat & CPUMCTX_EXTRN_CR_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_CR0)
+            ADD_REG64(WHvX64RegisterCr0, pCtx->cr0);
+        if (fWhat & CPUMCTX_EXTRN_CR2)
+            ADD_REG64(WHvX64RegisterCr2, pCtx->cr2);
+        if (fWhat & CPUMCTX_EXTRN_CR3)
+            ADD_REG64(WHvX64RegisterCr3, pCtx->cr3);
+        if (fWhat & CPUMCTX_EXTRN_CR4)
+            ADD_REG64(WHvX64RegisterCr4, pCtx->cr4);
+    }
+
+    /** @todo CR8/TPR */
+    ADD_REG64(WHvX64RegisterCr8, CPUMGetGuestCR8(pVCpu));
 
     /* Debug registers. */
 /** @todo fixme. Figure out what the hyper-v version of KVM_SET_GUEST_DEBUG would be. */
-    aenmNames[iReg]     = WHvX64RegisterDr0;
-    //aValues[iReg].Reg64 = CPUMGetHyperDR0(pVCpu);
-    aValues[iReg].Reg64 = pCtx->dr[0];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterDr1;
-    //aValues[iReg].Reg64 = CPUMGetHyperDR1(pVCpu);
-    aValues[iReg].Reg64 = pCtx->dr[1];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterDr2;
-    //aValues[iReg].Reg64 = CPUMGetHyperDR2(pVCpu);
-    aValues[iReg].Reg64 = pCtx->dr[2];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterDr3;
-    //aValues[iReg].Reg64 = CPUMGetHyperDR3(pVCpu);
-    aValues[iReg].Reg64 = pCtx->dr[3];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterDr6;
-    //aValues[iReg].Reg64 = CPUMGetHyperDR6(pVCpu);
-    aValues[iReg].Reg64 = pCtx->dr[6];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterDr7;
-    //aValues[iReg].Reg64 = CPUMGetHyperDR7(pVCpu);
-    aValues[iReg].Reg64 = pCtx->dr[7];
-    iReg++;
-
-    /* Vector state. */
-    aenmNames[iReg]     = WHvX64RegisterXmm0;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[0].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[0].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm1;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[1].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[1].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm2;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[2].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[2].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm3;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[3].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[3].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm4;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[4].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[4].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm5;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[5].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[5].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm6;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[6].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[6].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm7;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[7].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[7].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm8;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[8].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[8].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm9;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[9].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[9].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm10;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm11;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm12;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm13;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm14;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Hi;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterXmm15;
-    aValues[iReg].Reg128.Low64  = pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Lo;
-    aValues[iReg].Reg128.High64 = pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Hi;
-    iReg++;
+    if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+    {
+        ADD_REG64(WHvX64RegisterDr0, pCtx->dr[0]); // CPUMGetHyperDR0(pVCpu));
+        ADD_REG64(WHvX64RegisterDr1, pCtx->dr[1]); // CPUMGetHyperDR1(pVCpu));
+        ADD_REG64(WHvX64RegisterDr2, pCtx->dr[2]); // CPUMGetHyperDR2(pVCpu));
+        ADD_REG64(WHvX64RegisterDr3, pCtx->dr[3]); // CPUMGetHyperDR3(pVCpu));
+    }
+    if (fWhat & CPUMCTX_EXTRN_DR6)
+        ADD_REG64(WHvX64RegisterDr6, pCtx->dr[6]); // CPUMGetHyperDR6(pVCpu));
+    if (fWhat & CPUMCTX_EXTRN_DR7)
+        ADD_REG64(WHvX64RegisterDr7, pCtx->dr[7]); // CPUMGetHyperDR7(pVCpu));
 
     /* Floating point state. */
-    aenmNames[iReg]     = WHvX64RegisterFpMmx0;
-    aValues[iReg].Fp.AsUINT128.Low64  = pCtx->pXStateR3->x87.aRegs[0].au64[0];
-    aValues[iReg].Fp.AsUINT128.High64 = pCtx->pXStateR3->x87.aRegs[0].au64[1];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterFpMmx1;
-    aValues[iReg].Fp.AsUINT128.Low64  = pCtx->pXStateR3->x87.aRegs[1].au64[0];
-    aValues[iReg].Fp.AsUINT128.High64 = pCtx->pXStateR3->x87.aRegs[1].au64[1];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterFpMmx2;
-    aValues[iReg].Fp.AsUINT128.Low64  = pCtx->pXStateR3->x87.aRegs[2].au64[0];
-    aValues[iReg].Fp.AsUINT128.High64 = pCtx->pXStateR3->x87.aRegs[2].au64[1];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterFpMmx3;
-    aValues[iReg].Fp.AsUINT128.Low64  = pCtx->pXStateR3->x87.aRegs[3].au64[0];
-    aValues[iReg].Fp.AsUINT128.High64 = pCtx->pXStateR3->x87.aRegs[3].au64[1];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterFpMmx4;
-    aValues[iReg].Fp.AsUINT128.Low64  = pCtx->pXStateR3->x87.aRegs[4].au64[0];
-    aValues[iReg].Fp.AsUINT128.High64 = pCtx->pXStateR3->x87.aRegs[4].au64[1];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterFpMmx5;
-    aValues[iReg].Fp.AsUINT128.Low64  = pCtx->pXStateR3->x87.aRegs[5].au64[0];
-    aValues[iReg].Fp.AsUINT128.High64 = pCtx->pXStateR3->x87.aRegs[5].au64[1];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterFpMmx6;
-    aValues[iReg].Fp.AsUINT128.Low64  = pCtx->pXStateR3->x87.aRegs[6].au64[0];
-    aValues[iReg].Fp.AsUINT128.High64 = pCtx->pXStateR3->x87.aRegs[6].au64[1];
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterFpMmx7;
-    aValues[iReg].Fp.AsUINT128.Low64  = pCtx->pXStateR3->x87.aRegs[7].au64[0];
-    aValues[iReg].Fp.AsUINT128.High64 = pCtx->pXStateR3->x87.aRegs[7].au64[1];
-    iReg++;
+    if (fWhat & CPUMCTX_EXTRN_X87)
+    {
+        ADD_REG128(WHvX64RegisterFpMmx0, pCtx->pXStateR3->x87.aRegs[0].au64[0], pCtx->pXStateR3->x87.aRegs[0].au64[1]);
+        ADD_REG128(WHvX64RegisterFpMmx1, pCtx->pXStateR3->x87.aRegs[1].au64[0], pCtx->pXStateR3->x87.aRegs[1].au64[1]);
+        ADD_REG128(WHvX64RegisterFpMmx2, pCtx->pXStateR3->x87.aRegs[2].au64[0], pCtx->pXStateR3->x87.aRegs[2].au64[1]);
+        ADD_REG128(WHvX64RegisterFpMmx3, pCtx->pXStateR3->x87.aRegs[3].au64[0], pCtx->pXStateR3->x87.aRegs[3].au64[1]);
+        ADD_REG128(WHvX64RegisterFpMmx4, pCtx->pXStateR3->x87.aRegs[4].au64[0], pCtx->pXStateR3->x87.aRegs[4].au64[1]);
+        ADD_REG128(WHvX64RegisterFpMmx5, pCtx->pXStateR3->x87.aRegs[5].au64[0], pCtx->pXStateR3->x87.aRegs[5].au64[1]);
+        ADD_REG128(WHvX64RegisterFpMmx6, pCtx->pXStateR3->x87.aRegs[6].au64[0], pCtx->pXStateR3->x87.aRegs[6].au64[1]);
+        ADD_REG128(WHvX64RegisterFpMmx7, pCtx->pXStateR3->x87.aRegs[7].au64[0], pCtx->pXStateR3->x87.aRegs[7].au64[1]);
 
-    aenmNames[iReg]     = WHvX64RegisterFpControlStatus;
-    aValues[iReg].FpControlStatus.FpControl = pCtx->pXStateR3->x87.FCW;
-    aValues[iReg].FpControlStatus.FpStatus  = pCtx->pXStateR3->x87.FSW;
-    aValues[iReg].FpControlStatus.FpTag     = pCtx->pXStateR3->x87.FTW;
-    aValues[iReg].FpControlStatus.Reserved  = pCtx->pXStateR3->x87.FTW >> 8;
-    aValues[iReg].FpControlStatus.LastFpOp  = pCtx->pXStateR3->x87.FOP;
-    aValues[iReg].FpControlStatus.LastFpRip = (pCtx->pXStateR3->x87.FPUIP)
-                                            | ((uint64_t)pCtx->pXStateR3->x87.CS << 32)
-                                            | ((uint64_t)pCtx->pXStateR3->x87.Rsrvd1 << 48);
-    iReg++;
+        aenmNames[iReg] = WHvX64RegisterFpControlStatus;
+        aValues[iReg].FpControlStatus.FpControl = pCtx->pXStateR3->x87.FCW;
+        aValues[iReg].FpControlStatus.FpStatus  = pCtx->pXStateR3->x87.FSW;
+        aValues[iReg].FpControlStatus.FpTag     = pCtx->pXStateR3->x87.FTW;
+        aValues[iReg].FpControlStatus.Reserved  = pCtx->pXStateR3->x87.FTW >> 8;
+        aValues[iReg].FpControlStatus.LastFpOp  = pCtx->pXStateR3->x87.FOP;
+        aValues[iReg].FpControlStatus.LastFpRip = (pCtx->pXStateR3->x87.FPUIP)
+                                                | ((uint64_t)pCtx->pXStateR3->x87.CS << 32)
+                                                | ((uint64_t)pCtx->pXStateR3->x87.Rsrvd1 << 48);
+        iReg++;
 
-    aenmNames[iReg]     = WHvX64RegisterXmmControlStatus;
-    aValues[iReg].XmmControlStatus.LastFpRdp            = (pCtx->pXStateR3->x87.FPUDP)
-                                                        | ((uint64_t)pCtx->pXStateR3->x87.DS << 32)
-                                                        | ((uint64_t)pCtx->pXStateR3->x87.Rsrvd2 << 48);
-    aValues[iReg].XmmControlStatus.XmmStatusControl     = pCtx->pXStateR3->x87.MXCSR;
-    aValues[iReg].XmmControlStatus.XmmStatusControlMask = pCtx->pXStateR3->x87.MXCSR_MASK; /** @todo ??? (Isn't this an output field?) */
-    iReg++;
+        aenmNames[iReg] = WHvX64RegisterXmmControlStatus;
+        aValues[iReg].XmmControlStatus.LastFpRdp            = (pCtx->pXStateR3->x87.FPUDP)
+                                                            | ((uint64_t)pCtx->pXStateR3->x87.DS << 32)
+                                                            | ((uint64_t)pCtx->pXStateR3->x87.Rsrvd2 << 48);
+        aValues[iReg].XmmControlStatus.XmmStatusControl     = pCtx->pXStateR3->x87.MXCSR;
+        aValues[iReg].XmmControlStatus.XmmStatusControlMask = pCtx->pXStateR3->x87.MXCSR_MASK; /** @todo ??? (Isn't this an output field?) */
+        iReg++;
+    }
+
+    /* Vector state. */
+    if (fWhat & CPUMCTX_EXTRN_SSE_AVX)
+    {
+        ADD_REG128(WHvX64RegisterXmm0,  pCtx->pXStateR3->x87.aXMM[ 0].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 0].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm1,  pCtx->pXStateR3->x87.aXMM[ 1].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 1].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm2,  pCtx->pXStateR3->x87.aXMM[ 2].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 2].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm3,  pCtx->pXStateR3->x87.aXMM[ 3].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 3].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm4,  pCtx->pXStateR3->x87.aXMM[ 4].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 4].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm5,  pCtx->pXStateR3->x87.aXMM[ 5].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 5].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm6,  pCtx->pXStateR3->x87.aXMM[ 6].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 6].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm7,  pCtx->pXStateR3->x87.aXMM[ 7].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 7].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm8,  pCtx->pXStateR3->x87.aXMM[ 8].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 8].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm9,  pCtx->pXStateR3->x87.aXMM[ 9].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 9].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm10, pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm10, pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm10, pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm10, pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm10, pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Hi);
+        ADD_REG128(WHvX64RegisterXmm10, pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Hi);
+    }
 
     /* MSRs */
     // WHvX64RegisterTsc - don't touch
-    aenmNames[iReg]     = WHvX64RegisterEfer;
-    aValues[iReg].Reg64 = pCtx->msrEFER;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterKernelGsBase;
-    aValues[iReg].Reg64 = pCtx->msrKERNELGSBASE;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterApicBase;
-    aValues[iReg].Reg64 = APICGetBaseMsrNoCheck(pVCpu);
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterPat;
-    aValues[iReg].Reg64 = pCtx->msrPAT;
-    iReg++;
-    /// @todo WHvX64RegisterSysenterCs
-    /// @todo WHvX64RegisterSysenterEip
-    /// @todo WHvX64RegisterSysenterEsp
-    aenmNames[iReg]     = WHvX64RegisterStar;
-    aValues[iReg].Reg64 = pCtx->msrSTAR;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterLstar;
-    aValues[iReg].Reg64 = pCtx->msrLSTAR;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterCstar;
-    aValues[iReg].Reg64 = pCtx->msrCSTAR;
-    iReg++;
-    aenmNames[iReg]     = WHvX64RegisterSfmask;
-    aValues[iReg].Reg64 = pCtx->msrSFMASK;
-    iReg++;
+    if (fWhat & CPUMCTX_EXTRN_EFER)
+        ADD_REG64(WHvX64RegisterEfer, pCtx->msrEFER);
+    if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
+        ADD_REG64(WHvX64RegisterKernelGsBase, pCtx->msrKERNELGSBASE);
+    if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
+    {
+        ADD_REG64(WHvX64RegisterSysenterCs, pCtx->SysEnter.cs);
+        ADD_REG64(WHvX64RegisterSysenterEip, pCtx->SysEnter.eip);
+        ADD_REG64(WHvX64RegisterSysenterEsp, pCtx->SysEnter.esp);
+    }
+    if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
+    {
+        ADD_REG64(WHvX64RegisterStar, pCtx->msrSTAR);
+        ADD_REG64(WHvX64RegisterLstar, pCtx->msrLSTAR);
+        ADD_REG64(WHvX64RegisterCstar, pCtx->msrCSTAR);
+        ADD_REG64(WHvX64RegisterSfmask, pCtx->msrSFMASK);
+    }
+    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+    {
+        ADD_REG64(WHvX64RegisterApicBase, APICGetBaseMsrNoCheck(pVCpu));
+        ADD_REG64(WHvX64RegisterPat, pCtx->msrPAT);
+#if 0 /** @todo check if WHvX64RegisterMsrMtrrCap works here... */
+        ADD_REG64(WHvX64RegisterMsrMtrrCap, CPUMGetGuestIa32MtrrCap(pVCpu));
+#endif
+        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+        ADD_REG64(WHvX64RegisterMsrMtrrDefType, pCtxMsrs->msr.MtrrDefType);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix64k00000, pCtxMsrs->msr.MtrrFix64K_00000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix16k80000, pCtxMsrs->msr.MtrrFix16K_80000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix16kA0000, pCtxMsrs->msr.MtrrFix16K_A0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kC0000,  pCtxMsrs->msr.MtrrFix4K_C0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kC8000,  pCtxMsrs->msr.MtrrFix4K_C8000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kD0000,  pCtxMsrs->msr.MtrrFix4K_D0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kD8000,  pCtxMsrs->msr.MtrrFix4K_D8000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kE0000,  pCtxMsrs->msr.MtrrFix4K_E0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kE8000,  pCtxMsrs->msr.MtrrFix4K_E8000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kF0000,  pCtxMsrs->msr.MtrrFix4K_F0000);
+        ADD_REG64(WHvX64RegisterMsrMtrrFix4kF8000,  pCtxMsrs->msr.MtrrFix4K_F8000);
+        ADD_REG64(WHvX64RegisterTscAux, pCtxMsrs->msr.TscAux);
+#if 0 /** @todo these registers aren't available? Might explain something.. .*/
+        const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
+        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
+        {
+            ADD_REG64(HvX64RegisterIa32MiscEnable, pCtxMsrs->msr.MiscEnable);
+            ADD_REG64(HvX64RegisterIa32FeatureControl, CPUMGetGuestIa32FeatureControl(pVCpu));
+        }
+#endif
+    }
 
-    /* event injection (always clear it). */
-    aenmNames[iReg]     = WHvRegisterPendingInterruption;
-    aValues[iReg].Reg64 = 0;
-    iReg++;
-    /// @todo WHvRegisterInterruptState
+    /* event injection (clear it). */
+    if (fWhat & CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT)
+        ADD_REG64(WHvRegisterPendingInterruption, 0);
+
+    /* Interruptibility state.  This can get a little complicated since we get
+       half of the state via HV_X64_VP_EXECUTION_STATE. */
+    if (   (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+        ==          (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI) )
+    {
+        ADD_REG64(WHvRegisterInterruptState, 0);
+        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
+            aValues[iReg - 1].InterruptState.InterruptShadow = 1;
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            aValues[iReg - 1].InterruptState.NmiMasked = 1;
+    }
+    else if (fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT)
+    {
+        if (   pVCpu->nem.s.fLastInterruptShadow
+            || (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip))
+        {
+            ADD_REG64(WHvRegisterInterruptState, 0);
+            if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
+                aValues[iReg - 1].InterruptState.InterruptShadow = 1;
+            /** @todo Retrieve NMI state, currently assuming it's zero. (yes this may happen on I/O) */
+            //if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            //    aValues[iReg - 1].InterruptState.NmiMasked = 1;
+        }
+    }
+    else
+        Assert(!(fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI));
+
+    /* Interrupt windows. Always set if active as Hyper-V seems to be forgetful. */
+    uint8_t const fDesiredIntWin = pVCpu->nem.s.fDesiredInterruptWindows;
+    if (   fDesiredIntWin
+        || pVCpu->nem.s.fCurrentInterruptWindows != fDesiredIntWin)
+    {
+        pVCpu->nem.s.fCurrentInterruptWindows = pVCpu->nem.s.fDesiredInterruptWindows;
+        ADD_REG64(WHvX64RegisterDeliverabilityNotifications, fDesiredIntWin);
+        Assert(aValues[iReg - 1].DeliverabilityNotifications.NmiNotification == RT_BOOL(fDesiredIntWin & NEM_WIN_INTW_F_NMI));
+        Assert(aValues[iReg - 1].DeliverabilityNotifications.InterruptNotification == RT_BOOL(fDesiredIntWin & NEM_WIN_INTW_F_REGULAR));
+        Assert(aValues[iReg - 1].DeliverabilityNotifications.InterruptPriority == (fDesiredIntWin & NEM_WIN_INTW_F_PRIO_MASK) >> NEM_WIN_INTW_F_PRIO_SHIFT);
+    }
+
     /// @todo WHvRegisterPendingEvent0
     /// @todo WHvRegisterPendingEvent1
-    /// @todo WHvX64RegisterDeliverabilityNotifications
 
     /*
      * Set the registers.
@@ -398,11 +418,19 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
 #  endif
     HRESULT hrc = WHvSetVirtualProcessorRegisters(pVM->nem.s.hPartition, pVCpu->idCpu, aenmNames, iReg, aValues);
     if (SUCCEEDED(hrc))
+    {
+        pCtx->fExtrn |= CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK | CPUMCTX_EXTRN_KEEPER_NEM;
         return VINF_SUCCESS;
+    }
     AssertLogRelMsgFailed(("WHvSetVirtualProcessorRegisters(%p, %u,,%u,) -> %Rhrc (Last=%#x/%u)\n",
                            pVM->nem.s.hPartition, pVCpu->idCpu, iReg,
                            hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
     return VERR_INTERNAL_ERROR;
+
+#  undef ADD_REG64
+#  undef ADD_REG128
+#  undef ADD_SEG
+
 # endif /* !NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 }
 
@@ -424,115 +452,211 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX 
 
 # else
     WHV_REGISTER_NAME  aenmNames[128];
-AssertFailed(); /** @todo this code is out of date! */
+
+    fWhat &= pCtx->fExtrn;
+    uintptr_t iReg = 0;
 
     /* GPRs */
-    aenmNames[0]  = WHvX64RegisterRax;
-    aenmNames[1]  = WHvX64RegisterRcx;
-    aenmNames[2]  = WHvX64RegisterRdx;
-    aenmNames[3]  = WHvX64RegisterRbx;
-    aenmNames[4]  = WHvX64RegisterRsp;
-    aenmNames[5]  = WHvX64RegisterRbp;
-    aenmNames[6]  = WHvX64RegisterRsi;
-    aenmNames[7]  = WHvX64RegisterRdi;
-    aenmNames[8]  = WHvX64RegisterR8;
-    aenmNames[9]  = WHvX64RegisterR9;
-    aenmNames[10] = WHvX64RegisterR10;
-    aenmNames[11] = WHvX64RegisterR11;
-    aenmNames[12] = WHvX64RegisterR12;
-    aenmNames[13] = WHvX64RegisterR13;
-    aenmNames[14] = WHvX64RegisterR14;
-    aenmNames[15] = WHvX64RegisterR15;
+    if (fWhat & CPUMCTX_EXTRN_GPRS_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_RAX)
+            aenmNames[iReg++] = WHvX64RegisterRax;
+        if (fWhat & CPUMCTX_EXTRN_RCX)
+            aenmNames[iReg++] = WHvX64RegisterRcx;
+        if (fWhat & CPUMCTX_EXTRN_RDX)
+            aenmNames[iReg++] = WHvX64RegisterRdx;
+        if (fWhat & CPUMCTX_EXTRN_RBX)
+            aenmNames[iReg++] = WHvX64RegisterRbx;
+        if (fWhat & CPUMCTX_EXTRN_RSP)
+            aenmNames[iReg++] = WHvX64RegisterRsp;
+        if (fWhat & CPUMCTX_EXTRN_RBP)
+            aenmNames[iReg++] = WHvX64RegisterRbp;
+        if (fWhat & CPUMCTX_EXTRN_RSI)
+            aenmNames[iReg++] = WHvX64RegisterRsi;
+        if (fWhat & CPUMCTX_EXTRN_RDI)
+            aenmNames[iReg++] = WHvX64RegisterRdi;
+        if (fWhat & CPUMCTX_EXTRN_R8_R15)
+        {
+            aenmNames[iReg++] = WHvX64RegisterR8;
+            aenmNames[iReg++] = WHvX64RegisterR9;
+            aenmNames[iReg++] = WHvX64RegisterR10;
+            aenmNames[iReg++] = WHvX64RegisterR11;
+            aenmNames[iReg++] = WHvX64RegisterR12;
+            aenmNames[iReg++] = WHvX64RegisterR13;
+            aenmNames[iReg++] = WHvX64RegisterR14;
+            aenmNames[iReg++] = WHvX64RegisterR15;
+        }
+    }
 
     /* RIP & Flags */
-    aenmNames[16] = WHvX64RegisterRip;
-    aenmNames[17] = WHvX64RegisterRflags;
+    if (fWhat & CPUMCTX_EXTRN_RIP)
+        aenmNames[iReg++] = WHvX64RegisterRip;
+    if (fWhat & CPUMCTX_EXTRN_RFLAGS)
+        aenmNames[iReg++] = WHvX64RegisterRflags;
 
     /* Segments */
-    aenmNames[18] = WHvX64RegisterEs;
-    aenmNames[19] = WHvX64RegisterCs;
-    aenmNames[20] = WHvX64RegisterSs;
-    aenmNames[21] = WHvX64RegisterDs;
-    aenmNames[22] = WHvX64RegisterFs;
-    aenmNames[23] = WHvX64RegisterGs;
-    aenmNames[24] = WHvX64RegisterLdtr;
-    aenmNames[25] = WHvX64RegisterTr;
+    if (fWhat & CPUMCTX_EXTRN_SREG_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_ES)
+            aenmNames[iReg++] = WHvX64RegisterEs;
+        if (fWhat & CPUMCTX_EXTRN_CS)
+            aenmNames[iReg++] = WHvX64RegisterCs;
+        if (fWhat & CPUMCTX_EXTRN_SS)
+            aenmNames[iReg++] = WHvX64RegisterSs;
+        if (fWhat & CPUMCTX_EXTRN_DS)
+            aenmNames[iReg++] = WHvX64RegisterDs;
+        if (fWhat & CPUMCTX_EXTRN_FS)
+            aenmNames[iReg++] = WHvX64RegisterFs;
+        if (fWhat & CPUMCTX_EXTRN_GS)
+            aenmNames[iReg++] = WHvX64RegisterGs;
+    }
 
     /* Descriptor tables. */
-    aenmNames[26] = WHvX64RegisterIdtr;
-    aenmNames[27] = WHvX64RegisterGdtr;
+    if (fWhat & CPUMCTX_EXTRN_TABLE_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_LDTR)
+            aenmNames[iReg++] = WHvX64RegisterLdtr;
+        if (fWhat & CPUMCTX_EXTRN_TR)
+            aenmNames[iReg++] = WHvX64RegisterTr;
+        if (fWhat & CPUMCTX_EXTRN_IDTR)
+            aenmNames[iReg++] = WHvX64RegisterIdtr;
+        if (fWhat & CPUMCTX_EXTRN_GDTR)
+            aenmNames[iReg++] = WHvX64RegisterGdtr;
+    }
 
     /* Control registers. */
-    aenmNames[28] = WHvX64RegisterCr0;
-    aenmNames[29] = WHvX64RegisterCr2;
-    aenmNames[30] = WHvX64RegisterCr3;
-    aenmNames[31] = WHvX64RegisterCr4;
-    aenmNames[32] = WHvX64RegisterCr8;
+    if (fWhat & CPUMCTX_EXTRN_CR_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_CR0)
+            aenmNames[iReg++] = WHvX64RegisterCr0;
+        if (fWhat & CPUMCTX_EXTRN_CR2)
+            aenmNames[iReg++] = WHvX64RegisterCr2;
+        if (fWhat & CPUMCTX_EXTRN_CR3)
+            aenmNames[iReg++] = WHvX64RegisterCr3;
+        if (fWhat & CPUMCTX_EXTRN_CR4)
+            aenmNames[iReg++] = WHvX64RegisterCr4;
+    }
+    aenmNames[iReg++] = WHvX64RegisterCr8; /// @todo CR8/TPR
 
     /* Debug registers. */
-    aenmNames[33] = WHvX64RegisterDr0;
-    aenmNames[34] = WHvX64RegisterDr1;
-    aenmNames[35] = WHvX64RegisterDr2;
-    aenmNames[36] = WHvX64RegisterDr3;
-    aenmNames[37] = WHvX64RegisterDr6;
-    aenmNames[38] = WHvX64RegisterDr7;
-
-    /* Vector state. */
-    aenmNames[39] = WHvX64RegisterXmm0;
-    aenmNames[40] = WHvX64RegisterXmm1;
-    aenmNames[41] = WHvX64RegisterXmm2;
-    aenmNames[42] = WHvX64RegisterXmm3;
-    aenmNames[43] = WHvX64RegisterXmm4;
-    aenmNames[44] = WHvX64RegisterXmm5;
-    aenmNames[45] = WHvX64RegisterXmm6;
-    aenmNames[46] = WHvX64RegisterXmm7;
-    aenmNames[47] = WHvX64RegisterXmm8;
-    aenmNames[48] = WHvX64RegisterXmm9;
-    aenmNames[49] = WHvX64RegisterXmm10;
-    aenmNames[50] = WHvX64RegisterXmm11;
-    aenmNames[51] = WHvX64RegisterXmm12;
-    aenmNames[52] = WHvX64RegisterXmm13;
-    aenmNames[53] = WHvX64RegisterXmm14;
-    aenmNames[54] = WHvX64RegisterXmm15;
+    if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+    {
+        aenmNames[iReg++] = WHvX64RegisterDr0;
+        aenmNames[iReg++] = WHvX64RegisterDr1;
+        aenmNames[iReg++] = WHvX64RegisterDr2;
+        aenmNames[iReg++] = WHvX64RegisterDr3;
+    }
+    if (fWhat & CPUMCTX_EXTRN_DR6)
+        aenmNames[iReg++] = WHvX64RegisterDr6;
+    if (fWhat & CPUMCTX_EXTRN_DR7)
+        aenmNames[iReg++] = WHvX64RegisterDr7;
 
     /* Floating point state. */
-    aenmNames[55] = WHvX64RegisterFpMmx0;
-    aenmNames[56] = WHvX64RegisterFpMmx1;
-    aenmNames[57] = WHvX64RegisterFpMmx2;
-    aenmNames[58] = WHvX64RegisterFpMmx3;
-    aenmNames[59] = WHvX64RegisterFpMmx4;
-    aenmNames[60] = WHvX64RegisterFpMmx5;
-    aenmNames[61] = WHvX64RegisterFpMmx6;
-    aenmNames[62] = WHvX64RegisterFpMmx7;
-    aenmNames[63] = WHvX64RegisterFpControlStatus;
-    aenmNames[64] = WHvX64RegisterXmmControlStatus;
+    if (fWhat & CPUMCTX_EXTRN_X87)
+    {
+        aenmNames[iReg++] = WHvX64RegisterFpMmx0;
+        aenmNames[iReg++] = WHvX64RegisterFpMmx1;
+        aenmNames[iReg++] = WHvX64RegisterFpMmx2;
+        aenmNames[iReg++] = WHvX64RegisterFpMmx3;
+        aenmNames[iReg++] = WHvX64RegisterFpMmx4;
+        aenmNames[iReg++] = WHvX64RegisterFpMmx5;
+        aenmNames[iReg++] = WHvX64RegisterFpMmx6;
+        aenmNames[iReg++] = WHvX64RegisterFpMmx7;
+        aenmNames[iReg++] = WHvX64RegisterFpControlStatus;
+    }
+    if (fWhat & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX))
+        aenmNames[iReg++] = WHvX64RegisterXmmControlStatus;
+
+    /* Vector state. */
+    if (fWhat & CPUMCTX_EXTRN_SSE_AVX)
+    {
+        aenmNames[iReg++] = WHvX64RegisterXmm0;
+        aenmNames[iReg++] = WHvX64RegisterXmm1;
+        aenmNames[iReg++] = WHvX64RegisterXmm2;
+        aenmNames[iReg++] = WHvX64RegisterXmm3;
+        aenmNames[iReg++] = WHvX64RegisterXmm4;
+        aenmNames[iReg++] = WHvX64RegisterXmm5;
+        aenmNames[iReg++] = WHvX64RegisterXmm6;
+        aenmNames[iReg++] = WHvX64RegisterXmm7;
+        aenmNames[iReg++] = WHvX64RegisterXmm8;
+        aenmNames[iReg++] = WHvX64RegisterXmm9;
+        aenmNames[iReg++] = WHvX64RegisterXmm10;
+        aenmNames[iReg++] = WHvX64RegisterXmm11;
+        aenmNames[iReg++] = WHvX64RegisterXmm12;
+        aenmNames[iReg++] = WHvX64RegisterXmm13;
+        aenmNames[iReg++] = WHvX64RegisterXmm14;
+        aenmNames[iReg++] = WHvX64RegisterXmm15;
+    }
 
     /* MSRs */
     // WHvX64RegisterTsc - don't touch
-    aenmNames[65] = WHvX64RegisterEfer;
-    aenmNames[66] = WHvX64RegisterKernelGsBase;
-    aenmNames[67] = WHvX64RegisterApicBase;
-    aenmNames[68] = WHvX64RegisterPat;
-    aenmNames[69] = WHvX64RegisterSysenterCs;
-    aenmNames[70] = WHvX64RegisterSysenterEip;
-    aenmNames[71] = WHvX64RegisterSysenterEsp;
-    aenmNames[72] = WHvX64RegisterStar;
-    aenmNames[73] = WHvX64RegisterLstar;
-    aenmNames[74] = WHvX64RegisterCstar;
-    aenmNames[75] = WHvX64RegisterSfmask;
+    if (fWhat & CPUMCTX_EXTRN_EFER)
+        aenmNames[iReg++] = WHvX64RegisterEfer;
+    if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
+        aenmNames[iReg++] = WHvX64RegisterKernelGsBase;
+    if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
+    {
+        aenmNames[iReg++] = WHvX64RegisterSysenterCs;
+        aenmNames[iReg++] = WHvX64RegisterSysenterEip;
+        aenmNames[iReg++] = WHvX64RegisterSysenterEsp;
+    }
+    if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
+    {
+        aenmNames[iReg++] = WHvX64RegisterStar;
+        aenmNames[iReg++] = WHvX64RegisterLstar;
+        aenmNames[iReg++] = WHvX64RegisterCstar;
+        aenmNames[iReg++] = WHvX64RegisterSfmask;
+    }
+
+//#ifdef LOG_ENABLED
+//    const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
+//#endif
+    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+    {
+        aenmNames[iReg++] = WHvX64RegisterApicBase; /// @todo APIC BASE
+        aenmNames[iReg++] = WHvX64RegisterPat;
+#if 0 /*def LOG_ENABLED*/ /** @todo Check if WHvX64RegisterMsrMtrrCap works... */
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrCap;
+#endif
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrDefType;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix64k00000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix16k80000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix16kA0000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kC0000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kC8000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kD0000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kD8000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kE0000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kE8000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kF0000;
+        aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kF8000;
+        aenmNames[iReg++] = WHvX64RegisterTscAux;
+        /** @todo look for HvX64RegisterIa32MiscEnable and HvX64RegisterIa32FeatureControl? */
+//#ifdef LOG_ENABLED
+//        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
+//            aenmNames[iReg++] = HvX64RegisterIa32FeatureControl;
+//#endif
+    }
+
+    /* Interruptibility. */
+    if (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+    {
+        aenmNames[iReg++] = WHvRegisterInterruptState;
+        aenmNames[iReg++] = WHvX64RegisterRip;
+    }
 
     /* event injection */
-    aenmNames[76] = WHvRegisterPendingInterruption;
-    aenmNames[77] = WHvRegisterInterruptState;
-    aenmNames[78] = WHvRegisterInterruptState;
-    aenmNames[79] = WHvRegisterPendingEvent0;
-    aenmNames[80] = WHvRegisterPendingEvent1;
-    unsigned const cRegs = 81;
+    aenmNames[iReg++] = WHvRegisterPendingInterruption;
+    aenmNames[iReg++] = WHvRegisterPendingEvent0;
+    aenmNames[iReg++] = WHvRegisterPendingEvent1;
+
+    size_t const cRegs = iReg;
+    Assert(cRegs < RT_ELEMENTS(aenmNames));
 
     /*
      * Get the registers.
      */
-    WHV_REGISTER_VALUE aValues[cRegs];
+    WHV_REGISTER_VALUE aValues[128];
     RT_ZERO(aValues);
     Assert(RT_ELEMENTS(aValues) >= cRegs);
     Assert(RT_ELEMENTS(aenmNames) >= cRegs);
@@ -540,256 +664,394 @@ AssertFailed(); /** @todo this code is out of date! */
     Log12(("Calling WHvGetVirtualProcessorRegisters(%p, %u, %p, %u, %p)\n",
           pVM->nem.s.hPartition, pVCpu->idCpu, aenmNames, cRegs, aValues));
 #  endif
-    HRESULT hrc = WHvGetVirtualProcessorRegisters(pVM->nem.s.hPartition, pVCpu->idCpu, aenmNames, cRegs, aValues);
-    if (SUCCEEDED(hrc))
+    HRESULT hrc = WHvGetVirtualProcessorRegisters(pVM->nem.s.hPartition, pVCpu->idCpu, aenmNames, (uint32_t)cRegs, aValues);
+    AssertLogRelMsgReturn(SUCCEEDED(hrc),
+                          ("WHvGetVirtualProcessorRegisters(%p, %u,,%u,) -> %Rhrc (Last=%#x/%u)\n",
+                           pVM->nem.s.hPartition, pVCpu->idCpu, cRegs, hrc, RTNtLastStatusValue(), RTNtLastErrorValue())
+                          , VERR_NEM_GET_REGISTERS_FAILED);
+
+    iReg = 0;
+#  define GET_REG64(a_DstVar, a_enmName) do { \
+            Assert(aenmNames[iReg] == (a_enmName)); \
+            (a_DstVar) = aValues[iReg].Reg64; \
+            iReg++; \
+        } while (0)
+#  define GET_REG64_LOG7(a_DstVar, a_enmName, a_szLogName) do { \
+            Assert(aenmNames[iReg] == (a_enmName)); \
+            if ((a_DstVar) != aValues[iReg].Reg64) \
+                Log7(("NEM/%u: " a_szLogName " changed %RX64 -> %RX64\n", pVCpu->idCpu, (a_DstVar), aValues[iReg].Reg64)); \
+            (a_DstVar) = aValues[iReg].Reg64; \
+            iReg++; \
+        } while (0)
+#  define GET_REG128(a_DstVarLo, a_DstVarHi, a_enmName) do { \
+            Assert(aenmNames[iReg] == a_enmName); \
+            (a_DstVarLo) = aValues[iReg].Reg128.Low64; \
+            (a_DstVarHi) = aValues[iReg].Reg128.High64; \
+            iReg++; \
+        } while (0)
+#  define GET_SEG(a_SReg, a_enmName) do { \
+            Assert(aenmNames[iReg] == (a_enmName)); \
+            NEM_WIN_COPY_BACK_SEG(a_SReg, aValues[iReg].Segment); \
+            iReg++; \
+        } while (0)
+
+    /* GPRs */
+    if (fWhat & CPUMCTX_EXTRN_GPRS_MASK)
     {
-        /* GPRs */
-        Assert(aenmNames[0]  == WHvX64RegisterRax);
-        Assert(aenmNames[15] == WHvX64RegisterR15);
-        pCtx->rax = aValues[0].Reg64;
-        pCtx->rcx = aValues[1].Reg64;
-        pCtx->rdx = aValues[2].Reg64;
-        pCtx->rbx = aValues[3].Reg64;
-        pCtx->rsp = aValues[4].Reg64;
-        pCtx->rbp = aValues[5].Reg64;
-        pCtx->rsi = aValues[6].Reg64;
-        pCtx->rdi = aValues[7].Reg64;
-        pCtx->r8  = aValues[8].Reg64;
-        pCtx->r9  = aValues[9].Reg64;
-        pCtx->r10 = aValues[10].Reg64;
-        pCtx->r11 = aValues[11].Reg64;
-        pCtx->r12 = aValues[12].Reg64;
-        pCtx->r13 = aValues[13].Reg64;
-        pCtx->r14 = aValues[14].Reg64;
-        pCtx->r15 = aValues[15].Reg64;
-
-        /* RIP & Flags */
-        Assert(aenmNames[16] == WHvX64RegisterRip);
-        pCtx->rip      = aValues[16].Reg64;
-        pCtx->rflags.u = aValues[17].Reg64;
-
-        /* Segments */
-#  define COPY_BACK_SEG(a_idx, a_enmName, a_SReg) \
-            do { \
-                Assert(aenmNames[a_idx] == a_enmName); \
-                NEM_WIN_COPY_BACK_SEG(a_SReg, aValues[a_idx]); \
-            } while (0)
-        COPY_BACK_SEG(18, WHvX64RegisterEs,   pCtx->es);
-        COPY_BACK_SEG(19, WHvX64RegisterCs,   pCtx->cs);
-        COPY_BACK_SEG(20, WHvX64RegisterSs,   pCtx->ss);
-        COPY_BACK_SEG(21, WHvX64RegisterDs,   pCtx->ds);
-        COPY_BACK_SEG(22, WHvX64RegisterFs,   pCtx->fs);
-        COPY_BACK_SEG(23, WHvX64RegisterGs,   pCtx->gs);
-        COPY_BACK_SEG(24, WHvX64RegisterLdtr, pCtx->ldtr);
-        /* AMD-V likes loading TR with in AVAIL state, whereas intel insists on BUSY.  So,
-           avoid to trigger sanity assertions around the code, always fix this. */
-        COPY_BACK_SEG(25, WHvX64RegisterTr,   pCtx->tr);
-        switch (pCtx->tr.Attr.n.u4Type)
+        if (fWhat & CPUMCTX_EXTRN_RAX)
+            GET_REG64(pCtx->rax, WHvX64RegisterRax);
+        if (fWhat & CPUMCTX_EXTRN_RCX)
+            GET_REG64(pCtx->rcx, WHvX64RegisterRcx);
+        if (fWhat & CPUMCTX_EXTRN_RDX)
+            GET_REG64(pCtx->rdx, WHvX64RegisterRdx);
+        if (fWhat & CPUMCTX_EXTRN_RBX)
+            GET_REG64(pCtx->rbx, WHvX64RegisterRbx);
+        if (fWhat & CPUMCTX_EXTRN_RSP)
+            GET_REG64(pCtx->rsp, WHvX64RegisterRsp);
+        if (fWhat & CPUMCTX_EXTRN_RBP)
+            GET_REG64(pCtx->rbp, WHvX64RegisterRbp);
+        if (fWhat & CPUMCTX_EXTRN_RSI)
+            GET_REG64(pCtx->rsi, WHvX64RegisterRsi);
+        if (fWhat & CPUMCTX_EXTRN_RDI)
+            GET_REG64(pCtx->rdi, WHvX64RegisterRdi);
+        if (fWhat & CPUMCTX_EXTRN_R8_R15)
         {
-            case X86_SEL_TYPE_SYS_386_TSS_BUSY:
-            case X86_SEL_TYPE_SYS_286_TSS_BUSY:
-                break;
-            case X86_SEL_TYPE_SYS_386_TSS_AVAIL:
-                pCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_386_TSS_BUSY;
-                break;
-            case X86_SEL_TYPE_SYS_286_TSS_AVAIL:
-                pCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_286_TSS_BUSY;
-                break;
+            GET_REG64(pCtx->r8, WHvX64RegisterR8);
+            GET_REG64(pCtx->r9, WHvX64RegisterR9);
+            GET_REG64(pCtx->r10, WHvX64RegisterR10);
+            GET_REG64(pCtx->r11, WHvX64RegisterR11);
+            GET_REG64(pCtx->r12, WHvX64RegisterR12);
+            GET_REG64(pCtx->r13, WHvX64RegisterR13);
+            GET_REG64(pCtx->r14, WHvX64RegisterR14);
+            GET_REG64(pCtx->r15, WHvX64RegisterR15);
         }
-
-        /* Descriptor tables. */
-        Assert(aenmNames[26] == WHvX64RegisterIdtr);
-        pCtx->idtr.cbIdt = aValues[26].Table.Limit;
-        pCtx->idtr.pIdt  = aValues[26].Table.Base;
-        Assert(aenmNames[27] == WHvX64RegisterGdtr);
-        pCtx->gdtr.cbGdt = aValues[27].Table.Limit;
-        pCtx->gdtr.pGdt  = aValues[27].Table.Base;
-
-        /* Control registers. */
-        Assert(aenmNames[28] == WHvX64RegisterCr0);
-        bool fMaybeChangedMode = false;
-        bool fFlushTlb         = false;
-        bool fFlushGlobalTlb   = false;
-        if (pCtx->cr0 != aValues[28].Reg64)
-        {
-            CPUMSetGuestCR0(pVCpu, aValues[28].Reg64);
-            fMaybeChangedMode = true;
-            fFlushTlb = fFlushGlobalTlb = true; /// @todo fix this
-        }
-        Assert(aenmNames[29] == WHvX64RegisterCr2);
-        pCtx->cr2 = aValues[29].Reg64;
-        if (pCtx->cr3 != aValues[30].Reg64)
-        {
-            CPUMSetGuestCR3(pVCpu, aValues[30].Reg64);
-            fFlushTlb = true;
-        }
-        if (pCtx->cr4 != aValues[31].Reg64)
-        {
-            CPUMSetGuestCR4(pVCpu, aValues[31].Reg64);
-            fMaybeChangedMode = true;
-            fFlushTlb = fFlushGlobalTlb = true; /// @todo fix this
-        }
-        APICSetTpr(pVCpu, (uint8_t)aValues[32].Reg64 << 4);
-
-        /* Debug registers. */
-        Assert(aenmNames[33] == WHvX64RegisterDr0);
-    /** @todo fixme */
-        if (pCtx->dr[0] != aValues[33].Reg64)
-            CPUMSetGuestDR0(pVCpu, aValues[33].Reg64);
-        if (pCtx->dr[1] != aValues[34].Reg64)
-            CPUMSetGuestDR1(pVCpu, aValues[34].Reg64);
-        if (pCtx->dr[2] != aValues[35].Reg64)
-            CPUMSetGuestDR2(pVCpu, aValues[35].Reg64);
-        if (pCtx->dr[3] != aValues[36].Reg64)
-            CPUMSetGuestDR3(pVCpu, aValues[36].Reg64);
-        Assert(aenmNames[37] == WHvX64RegisterDr6);
-        Assert(aenmNames[38] == WHvX64RegisterDr7);
-        if (pCtx->dr[6] != aValues[37].Reg64)
-            CPUMSetGuestDR6(pVCpu, aValues[37].Reg64);
-        if (pCtx->dr[7] != aValues[38].Reg64)
-            CPUMSetGuestDR6(pVCpu, aValues[38].Reg64);
-
-        /* Vector state. */
-        Assert(aenmNames[39] == WHvX64RegisterXmm0);
-        Assert(aenmNames[54] == WHvX64RegisterXmm15);
-        pCtx->pXStateR3->x87.aXMM[0].uXmm.s.Lo  = aValues[39].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[0].uXmm.s.Hi  = aValues[39].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[1].uXmm.s.Lo  = aValues[40].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[1].uXmm.s.Hi  = aValues[40].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[2].uXmm.s.Lo  = aValues[41].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[2].uXmm.s.Hi  = aValues[41].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[3].uXmm.s.Lo  = aValues[42].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[3].uXmm.s.Hi  = aValues[42].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[4].uXmm.s.Lo  = aValues[43].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[4].uXmm.s.Hi  = aValues[43].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[5].uXmm.s.Lo  = aValues[44].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[5].uXmm.s.Hi  = aValues[44].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[6].uXmm.s.Lo  = aValues[45].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[6].uXmm.s.Hi  = aValues[45].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[7].uXmm.s.Lo  = aValues[46].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[7].uXmm.s.Hi  = aValues[46].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[8].uXmm.s.Lo  = aValues[47].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[8].uXmm.s.Hi  = aValues[47].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[9].uXmm.s.Lo  = aValues[48].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[9].uXmm.s.Hi  = aValues[48].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Lo = aValues[49].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Hi = aValues[49].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Lo = aValues[50].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Hi = aValues[50].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Lo = aValues[51].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Hi = aValues[51].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Lo = aValues[52].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Hi = aValues[52].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Lo = aValues[53].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Hi = aValues[53].Reg128.High64;
-        pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Lo = aValues[54].Reg128.Low64;
-        pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Hi = aValues[54].Reg128.High64;
-
-        /* Floating point state. */
-        Assert(aenmNames[55] == WHvX64RegisterFpMmx0);
-        Assert(aenmNames[62] == WHvX64RegisterFpMmx7);
-        pCtx->pXStateR3->x87.aRegs[0].au64[0] = aValues[55].Fp.AsUINT128.Low64;
-        pCtx->pXStateR3->x87.aRegs[0].au64[1] = aValues[55].Fp.AsUINT128.High64;
-        pCtx->pXStateR3->x87.aRegs[1].au64[0] = aValues[56].Fp.AsUINT128.Low64;
-        pCtx->pXStateR3->x87.aRegs[1].au64[1] = aValues[56].Fp.AsUINT128.High64;
-        pCtx->pXStateR3->x87.aRegs[2].au64[0] = aValues[57].Fp.AsUINT128.Low64;
-        pCtx->pXStateR3->x87.aRegs[2].au64[1] = aValues[57].Fp.AsUINT128.High64;
-        pCtx->pXStateR3->x87.aRegs[3].au64[0] = aValues[58].Fp.AsUINT128.Low64;
-        pCtx->pXStateR3->x87.aRegs[3].au64[1] = aValues[58].Fp.AsUINT128.High64;
-        pCtx->pXStateR3->x87.aRegs[4].au64[0] = aValues[59].Fp.AsUINT128.Low64;
-        pCtx->pXStateR3->x87.aRegs[4].au64[1] = aValues[59].Fp.AsUINT128.High64;
-        pCtx->pXStateR3->x87.aRegs[5].au64[0] = aValues[60].Fp.AsUINT128.Low64;
-        pCtx->pXStateR3->x87.aRegs[5].au64[1] = aValues[60].Fp.AsUINT128.High64;
-        pCtx->pXStateR3->x87.aRegs[6].au64[0] = aValues[61].Fp.AsUINT128.Low64;
-        pCtx->pXStateR3->x87.aRegs[6].au64[1] = aValues[61].Fp.AsUINT128.High64;
-        pCtx->pXStateR3->x87.aRegs[7].au64[0] = aValues[62].Fp.AsUINT128.Low64;
-        pCtx->pXStateR3->x87.aRegs[7].au64[1] = aValues[62].Fp.AsUINT128.High64;
-
-        Assert(aenmNames[63] == WHvX64RegisterFpControlStatus);
-        pCtx->pXStateR3->x87.FCW        = aValues[63].FpControlStatus.FpControl;
-        pCtx->pXStateR3->x87.FSW        = aValues[63].FpControlStatus.FpStatus;
-        pCtx->pXStateR3->x87.FTW        = aValues[63].FpControlStatus.FpTag
-                                        /*| (aValues[63].FpControlStatus.Reserved << 8)*/;
-        pCtx->pXStateR3->x87.FOP        = aValues[63].FpControlStatus.LastFpOp;
-        pCtx->pXStateR3->x87.FPUIP      = (uint32_t)aValues[63].FpControlStatus.LastFpRip;
-        pCtx->pXStateR3->x87.CS         = (uint16_t)(aValues[63].FpControlStatus.LastFpRip >> 32);
-        pCtx->pXStateR3->x87.Rsrvd1     = (uint16_t)(aValues[63].FpControlStatus.LastFpRip >> 48);
-
-        Assert(aenmNames[64] == WHvX64RegisterXmmControlStatus);
-        pCtx->pXStateR3->x87.FPUDP      = (uint32_t)aValues[64].XmmControlStatus.LastFpRdp;
-        pCtx->pXStateR3->x87.DS         = (uint16_t)(aValues[64].XmmControlStatus.LastFpRdp >> 32);
-        pCtx->pXStateR3->x87.Rsrvd2     = (uint16_t)(aValues[64].XmmControlStatus.LastFpRdp >> 48);
-        pCtx->pXStateR3->x87.MXCSR      = aValues[64].XmmControlStatus.XmmStatusControl;
-        pCtx->pXStateR3->x87.MXCSR_MASK = aValues[64].XmmControlStatus.XmmStatusControlMask; /** @todo ??? (Isn't this an output field?) */
-
-        /* MSRs */
-        // WHvX64RegisterTsc - don't touch
-        Assert(aenmNames[65] == WHvX64RegisterEfer);
-        if (aValues[65].Reg64 != pCtx->msrEFER)
-        {
-            pCtx->msrEFER = aValues[65].Reg64;
-            fMaybeChangedMode = true;
-        }
-
-        Assert(aenmNames[66] == WHvX64RegisterKernelGsBase);
-        pCtx->msrKERNELGSBASE = aValues[66].Reg64;
-
-        Assert(aenmNames[67] == WHvX64RegisterApicBase);
-        if (aValues[67].Reg64 != APICGetBaseMsrNoCheck(pVCpu))
-        {
-            VBOXSTRICTRC rc2 = APICSetBaseMsr(pVCpu, aValues[67].Reg64);
-            Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
-        }
-
-        Assert(aenmNames[68] == WHvX64RegisterPat);
-        pCtx->msrPAT    = aValues[68].Reg64;
-        /// @todo WHvX64RegisterSysenterCs
-        /// @todo WHvX64RegisterSysenterEip
-        /// @todo WHvX64RegisterSysenterEsp
-        Assert(aenmNames[72] == WHvX64RegisterStar);
-        pCtx->msrSTAR   = aValues[72].Reg64;
-        Assert(aenmNames[73] == WHvX64RegisterLstar);
-        pCtx->msrLSTAR  = aValues[73].Reg64;
-        Assert(aenmNames[74] == WHvX64RegisterCstar);
-        pCtx->msrCSTAR  = aValues[74].Reg64;
-        Assert(aenmNames[75] == WHvX64RegisterSfmask);
-        pCtx->msrSFMASK = aValues[75].Reg64;
-
-        /// @todo WHvRegisterPendingInterruption
-        Assert(aenmNames[76] == WHvRegisterPendingInterruption);
-        WHV_X64_PENDING_INTERRUPTION_REGISTER const * pPendingInt = (WHV_X64_PENDING_INTERRUPTION_REGISTER const *)&aValues[76];
-        if (pPendingInt->InterruptionPending)
-        {
-            Log7(("PendingInterruption: type=%u vector=%#x errcd=%RTbool/%#x instr-len=%u nested=%u\n",
-                  pPendingInt->InterruptionType, pPendingInt->InterruptionVector, pPendingInt->DeliverErrorCode,
-                  pPendingInt->ErrorCode, pPendingInt->InstructionLength, pPendingInt->NestedEvent));
-            AssertMsg((pPendingInt->AsUINT64 & UINT64_C(0xfc00)) == 0, ("%#RX64\n", pPendingInt->AsUINT64));
-        }
-
-        /// @todo WHvRegisterInterruptState
-        /// @todo WHvRegisterPendingEvent0
-        /// @todo WHvRegisterPendingEvent1
-
-        pCtx->fExtrn = 0;
-
-        if (fMaybeChangedMode)
-        {
-            int rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
-            AssertRC(rc);
-        }
-        if (fFlushTlb)
-        {
-            int rc = PGMFlushTLB(pVCpu, pCtx->cr3, fFlushGlobalTlb);
-            AssertRC(rc);
-        }
-
-        return VINF_SUCCESS;
     }
 
-    AssertLogRelMsgFailed(("WHvGetVirtualProcessorRegisters(%p, %u,,%u,) -> %Rhrc (Last=%#x/%u)\n",
-                           pVM->nem.s.hPartition, pVCpu->idCpu, cRegs,
-                           hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
-    return VERR_INTERNAL_ERROR;
+    /* RIP & Flags */
+    if (fWhat & CPUMCTX_EXTRN_RIP)
+        GET_REG64(pCtx->rip, WHvX64RegisterRip);
+    if (fWhat & CPUMCTX_EXTRN_RFLAGS)
+        GET_REG64(pCtx->rflags.u, WHvX64RegisterRflags);
+
+    /* Segments */
+    if (fWhat & CPUMCTX_EXTRN_SREG_MASK)
+    {
+        GET_SEG(pCtx->es, WHvX64RegisterEs);
+        GET_SEG(pCtx->cs, WHvX64RegisterCs);
+        GET_SEG(pCtx->ss, WHvX64RegisterSs);
+        GET_SEG(pCtx->ds, WHvX64RegisterDs);
+        GET_SEG(pCtx->fs, WHvX64RegisterFs);
+        GET_SEG(pCtx->gs, WHvX64RegisterGs);
+    }
+
+    /* Descriptor tables and the task segment. */
+    if (fWhat & CPUMCTX_EXTRN_TABLE_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_LDTR)
+            GET_SEG(pCtx->ldtr, WHvX64RegisterLdtr);
+
+        if (fWhat & CPUMCTX_EXTRN_TR)
+        {
+            /* AMD-V likes loading TR with in AVAIL state, whereas intel insists on BUSY.  So,
+               avoid to trigger sanity assertions around the code, always fix this. */
+            GET_SEG(pCtx->tr, WHvX64RegisterTr);
+            switch (pCtx->tr.Attr.n.u4Type)
+            {
+                case X86_SEL_TYPE_SYS_386_TSS_BUSY:
+                case X86_SEL_TYPE_SYS_286_TSS_BUSY:
+                    break;
+                case X86_SEL_TYPE_SYS_386_TSS_AVAIL:
+                    pCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_386_TSS_BUSY;
+                    break;
+                case X86_SEL_TYPE_SYS_286_TSS_AVAIL:
+                    pCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_286_TSS_BUSY;
+                    break;
+            }
+        }
+        if (fWhat & CPUMCTX_EXTRN_IDTR)
+        {
+            Assert(aenmNames[iReg] == WHvX64RegisterIdtr);
+            pCtx->idtr.cbIdt = aValues[iReg].Table.Limit;
+            pCtx->idtr.pIdt  = aValues[iReg].Table.Base;
+            iReg++;
+        }
+        if (fWhat & CPUMCTX_EXTRN_GDTR)
+        {
+            Assert(aenmNames[iReg] == WHvX64RegisterGdtr);
+            pCtx->gdtr.cbGdt = aValues[iReg].Table.Limit;
+            pCtx->gdtr.pGdt  = aValues[iReg].Table.Base;
+            iReg++;
+        }
+    }
+
+    /* Control registers. */
+    bool fMaybeChangedMode = false;
+    bool fFlushTlb         = false;
+    bool fFlushGlobalTlb   = false;
+    if (fWhat & CPUMCTX_EXTRN_CR_MASK)
+    {
+        if (fWhat & CPUMCTX_EXTRN_CR0)
+        {
+            Assert(aenmNames[iReg] == WHvX64RegisterCr0);
+            if (pCtx->cr0 != aValues[iReg].Reg64)
+            {
+                CPUMSetGuestCR0(pVCpu, aValues[iReg].Reg64);
+                fMaybeChangedMode = true;
+                fFlushTlb = fFlushGlobalTlb = true; /// @todo fix this
+            }
+            iReg++;
+        }
+        if (fWhat & CPUMCTX_EXTRN_CR2)
+            GET_REG64(pCtx->cr2, WHvX64RegisterCr2);
+        if (fWhat & CPUMCTX_EXTRN_CR3)
+        {
+            if (pCtx->cr3 != aValues[iReg].Reg64)
+            {
+                CPUMSetGuestCR3(pVCpu, aValues[iReg].Reg64);
+                fFlushTlb = true;
+            }
+            iReg++;
+        }
+        if (fWhat & CPUMCTX_EXTRN_CR4)
+        {
+            if (pCtx->cr4 != aValues[iReg].Reg64)
+            {
+                CPUMSetGuestCR4(pVCpu, aValues[iReg].Reg64);
+                fMaybeChangedMode = true;
+                fFlushTlb = fFlushGlobalTlb = true; /// @todo fix this
+            }
+            iReg++;
+        }
+    }
+
+    /// @todo CR8/TPR
+    Assert(aenmNames[iReg] == WHvX64RegisterCr8);
+    APICSetTpr(pVCpu, (uint8_t)aValues[iReg].Reg64 << 4);
+    iReg++;
+
+    /* Debug registers. */
+    /** @todo fixme */
+    if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+    {
+        Assert(aenmNames[iReg] == WHvX64RegisterDr0);
+        Assert(aenmNames[iReg+3] == WHvX64RegisterDr3);
+        if (pCtx->dr[0] != aValues[iReg].Reg64)
+            CPUMSetGuestDR0(pVCpu, aValues[iReg].Reg64);
+        iReg++;
+        if (pCtx->dr[1] != aValues[iReg].Reg64)
+            CPUMSetGuestDR1(pVCpu, aValues[iReg].Reg64);
+        iReg++;
+        if (pCtx->dr[2] != aValues[iReg].Reg64)
+            CPUMSetGuestDR2(pVCpu, aValues[iReg].Reg64);
+        iReg++;
+        if (pCtx->dr[3] != aValues[iReg].Reg64)
+            CPUMSetGuestDR3(pVCpu, aValues[iReg].Reg64);
+        iReg++;
+    }
+    if (fWhat & CPUMCTX_EXTRN_DR6)
+    {
+        Assert(aenmNames[iReg] == WHvX64RegisterDr6);
+        if (pCtx->dr[6] != aValues[iReg].Reg64)
+            CPUMSetGuestDR6(pVCpu, aValues[iReg].Reg64);
+        iReg++;
+    }
+    if (fWhat & CPUMCTX_EXTRN_DR7)
+    {
+        Assert(aenmNames[iReg] == WHvX64RegisterDr7);
+        if (pCtx->dr[7] != aValues[iReg].Reg64)
+            CPUMSetGuestDR7(pVCpu, aValues[iReg].Reg64);
+        iReg++;
+    }
+
+    /* Floating point state. */
+    if (fWhat & CPUMCTX_EXTRN_X87)
+    {
+        GET_REG128(pCtx->pXStateR3->x87.aRegs[0].au64[0], pCtx->pXStateR3->x87.aRegs[0].au64[1], WHvX64RegisterFpMmx0);
+        GET_REG128(pCtx->pXStateR3->x87.aRegs[1].au64[0], pCtx->pXStateR3->x87.aRegs[1].au64[1], WHvX64RegisterFpMmx1);
+        GET_REG128(pCtx->pXStateR3->x87.aRegs[2].au64[0], pCtx->pXStateR3->x87.aRegs[2].au64[1], WHvX64RegisterFpMmx2);
+        GET_REG128(pCtx->pXStateR3->x87.aRegs[3].au64[0], pCtx->pXStateR3->x87.aRegs[3].au64[1], WHvX64RegisterFpMmx3);
+        GET_REG128(pCtx->pXStateR3->x87.aRegs[4].au64[0], pCtx->pXStateR3->x87.aRegs[4].au64[1], WHvX64RegisterFpMmx4);
+        GET_REG128(pCtx->pXStateR3->x87.aRegs[5].au64[0], pCtx->pXStateR3->x87.aRegs[5].au64[1], WHvX64RegisterFpMmx5);
+        GET_REG128(pCtx->pXStateR3->x87.aRegs[6].au64[0], pCtx->pXStateR3->x87.aRegs[6].au64[1], WHvX64RegisterFpMmx6);
+        GET_REG128(pCtx->pXStateR3->x87.aRegs[7].au64[0], pCtx->pXStateR3->x87.aRegs[7].au64[1], WHvX64RegisterFpMmx7);
+
+        Assert(aenmNames[iReg] == WHvX64RegisterFpControlStatus);
+        pCtx->pXStateR3->x87.FCW        = aValues[iReg].FpControlStatus.FpControl;
+        pCtx->pXStateR3->x87.FSW        = aValues[iReg].FpControlStatus.FpStatus;
+        pCtx->pXStateR3->x87.FTW        = aValues[iReg].FpControlStatus.FpTag
+                                        /*| (aValues[iReg].FpControlStatus.Reserved << 8)*/;
+        pCtx->pXStateR3->x87.FOP        = aValues[iReg].FpControlStatus.LastFpOp;
+        pCtx->pXStateR3->x87.FPUIP      = (uint32_t)aValues[iReg].FpControlStatus.LastFpRip;
+        pCtx->pXStateR3->x87.CS         = (uint16_t)(aValues[iReg].FpControlStatus.LastFpRip >> 32);
+        pCtx->pXStateR3->x87.Rsrvd1     = (uint16_t)(aValues[iReg].FpControlStatus.LastFpRip >> 48);
+        iReg++;
+    }
+
+    if (fWhat & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX))
+    {
+        Assert(aenmNames[iReg] == WHvX64RegisterXmmControlStatus);
+        if (fWhat & CPUMCTX_EXTRN_X87)
+        {
+            pCtx->pXStateR3->x87.FPUDP  = (uint32_t)aValues[iReg].XmmControlStatus.LastFpRdp;
+            pCtx->pXStateR3->x87.DS     = (uint16_t)(aValues[iReg].XmmControlStatus.LastFpRdp >> 32);
+            pCtx->pXStateR3->x87.Rsrvd2 = (uint16_t)(aValues[iReg].XmmControlStatus.LastFpRdp >> 48);
+        }
+        pCtx->pXStateR3->x87.MXCSR      = aValues[iReg].XmmControlStatus.XmmStatusControl;
+        pCtx->pXStateR3->x87.MXCSR_MASK = aValues[iReg].XmmControlStatus.XmmStatusControlMask; /** @todo ??? (Isn't this an output field?) */
+        iReg++;
+    }
+
+    /* Vector state. */
+    if (fWhat & CPUMCTX_EXTRN_SSE_AVX)
+    {
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 0].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 0].uXmm.s.Hi, WHvX64RegisterXmm0);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 1].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 1].uXmm.s.Hi, WHvX64RegisterXmm1);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 2].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 2].uXmm.s.Hi, WHvX64RegisterXmm2);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 3].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 3].uXmm.s.Hi, WHvX64RegisterXmm3);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 4].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 4].uXmm.s.Hi, WHvX64RegisterXmm4);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 5].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 5].uXmm.s.Hi, WHvX64RegisterXmm5);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 6].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 6].uXmm.s.Hi, WHvX64RegisterXmm6);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 7].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 7].uXmm.s.Hi, WHvX64RegisterXmm7);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 8].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 8].uXmm.s.Hi, WHvX64RegisterXmm8);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[ 9].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[ 9].uXmm.s.Hi, WHvX64RegisterXmm9);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[10].uXmm.s.Hi, WHvX64RegisterXmm10);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[11].uXmm.s.Hi, WHvX64RegisterXmm11);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[12].uXmm.s.Hi, WHvX64RegisterXmm12);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[13].uXmm.s.Hi, WHvX64RegisterXmm13);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[14].uXmm.s.Hi, WHvX64RegisterXmm14);
+        GET_REG128(pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Lo, pCtx->pXStateR3->x87.aXMM[15].uXmm.s.Hi, WHvX64RegisterXmm15);
+    }
+
+    /* MSRs */
+    // WHvX64RegisterTsc - don't touch
+    if (fWhat & CPUMCTX_EXTRN_EFER)
+    {
+        Assert(aenmNames[iReg] == WHvX64RegisterEfer);
+        if (aValues[iReg].Reg64 != pCtx->msrEFER)
+        {
+            Log7(("NEM/%u: MSR EFER changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrEFER, aValues[iReg].Reg64));
+            if ((aValues[iReg].Reg64 ^ pCtx->msrEFER) & MSR_K6_EFER_NXE)
+                PGMNotifyNxeChanged(pVCpu, RT_BOOL(aValues[iReg].Reg64 & MSR_K6_EFER_NXE));
+            pCtx->msrEFER = aValues[iReg].Reg64;
+            fMaybeChangedMode = true;
+        }
+        iReg++;
+    }
+    if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
+        GET_REG64_LOG7(pCtx->msrKERNELGSBASE, WHvX64RegisterKernelGsBase, "MSR KERNEL_GS_BASE");
+    if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
+    {
+        GET_REG64_LOG7(pCtx->SysEnter.cs,  WHvX64RegisterSysenterCs,  "MSR SYSENTER.CS");
+        GET_REG64_LOG7(pCtx->SysEnter.eip, WHvX64RegisterSysenterEip, "MSR SYSENTER.EIP");
+        GET_REG64_LOG7(pCtx->SysEnter.esp, WHvX64RegisterSysenterEsp, "MSR SYSENTER.ESP");
+    }
+    if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
+    {
+        GET_REG64_LOG7(pCtx->msrSTAR,   WHvX64RegisterStar,   "MSR STAR");
+        GET_REG64_LOG7(pCtx->msrLSTAR,  WHvX64RegisterLstar,  "MSR LSTAR");
+        GET_REG64_LOG7(pCtx->msrCSTAR,  WHvX64RegisterCstar,  "MSR CSTAR");
+        GET_REG64_LOG7(pCtx->msrSFMASK, WHvX64RegisterSfmask, "MSR SFMASK");
+    }
+    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+    {
+        Assert(aenmNames[iReg] == WHvX64RegisterApicBase);
+        const uint64_t uOldBase = APICGetBaseMsrNoCheck(pVCpu);
+        if (aValues[iReg].Reg64 != uOldBase)
+        {
+            Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
+                  pVCpu->idCpu, uOldBase, aValues[iReg].Reg64, aValues[iReg].Reg64 ^ uOldBase));
+            VBOXSTRICTRC rc2 = APICSetBaseMsr(pVCpu, aValues[iReg].Reg64);
+            AssertLogRelMsg(rc2 == VINF_SUCCESS, ("%Rrc %RX64\n", VBOXSTRICTRC_VAL(rc2), aValues[iReg].Reg64));
+        }
+        iReg++;
+
+        GET_REG64_LOG7(pCtx->msrPAT, WHvX64RegisterPat, "MSR PAT");
+#if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
+        GET_REG64_LOG7(pCtx->msrPAT, WHvX64RegisterMsrMtrrCap);
+#endif
+        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrDefType,      WHvX64RegisterMsrMtrrDefType,     "MSR MTRR_DEF_TYPE");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix64K_00000, WHvX64RegisterMsrMtrrFix64k00000, "MSR MTRR_FIX_64K_00000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix16K_80000, WHvX64RegisterMsrMtrrFix16k80000, "MSR MTRR_FIX_16K_80000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix16K_A0000, WHvX64RegisterMsrMtrrFix16kA0000, "MSR MTRR_FIX_16K_A0000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_C0000,  WHvX64RegisterMsrMtrrFix4kC0000,  "MSR MTRR_FIX_4K_C0000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_C8000,  WHvX64RegisterMsrMtrrFix4kC8000,  "MSR MTRR_FIX_4K_C8000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_D0000,  WHvX64RegisterMsrMtrrFix4kD0000,  "MSR MTRR_FIX_4K_D0000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_D8000,  WHvX64RegisterMsrMtrrFix4kD8000,  "MSR MTRR_FIX_4K_D8000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_E0000,  WHvX64RegisterMsrMtrrFix4kE0000,  "MSR MTRR_FIX_4K_E0000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_E8000,  WHvX64RegisterMsrMtrrFix4kE8000,  "MSR MTRR_FIX_4K_E8000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_F0000,  WHvX64RegisterMsrMtrrFix4kF0000,  "MSR MTRR_FIX_4K_F0000");
+        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_F8000,  WHvX64RegisterMsrMtrrFix4kF8000,  "MSR MTRR_FIX_4K_F8000");
+        GET_REG64_LOG7(pCtxMsrs->msr.TscAux,           WHvX64RegisterTscAux,             "MSR TSC_AUX");
+        /** @todo look for HvX64RegisterIa32MiscEnable and HvX64RegisterIa32FeatureControl? */
+    }
+
+    /* Interruptibility. */
+    if (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+    {
+        Assert(aenmNames[iReg] == WHvRegisterInterruptState);
+        Assert(aenmNames[iReg + 1] == WHvX64RegisterRip);
+
+        if (!(pCtx->fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT))
+        {
+            pVCpu->nem.s.fLastInterruptShadow = aValues[iReg].InterruptState.InterruptShadow;
+            if (aValues[iReg].InterruptState.InterruptShadow)
+                EMSetInhibitInterruptsPC(pVCpu, aValues[iReg + 1].Reg64);
+            else
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        }
+
+        if (!(pCtx->fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+        {
+            if (aValues[iReg].InterruptState.NmiMasked)
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+            else
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
+
+        fWhat |= CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI;
+        iReg += 2;
+    }
+
+    /* Event injection. */
+    /// @todo WHvRegisterPendingInterruption
+    Assert(aenmNames[iReg] == WHvRegisterPendingInterruption);
+    if (aValues[iReg].PendingInterruption.InterruptionPending)
+    {
+        Log7(("PendingInterruption: type=%u vector=%#x errcd=%RTbool/%#x instr-len=%u nested=%u\n",
+              aValues[iReg].PendingInterruption.InterruptionType, aValues[iReg].PendingInterruption.InterruptionVector,
+              aValues[iReg].PendingInterruption.DeliverErrorCode, aValues[iReg].PendingInterruption.ErrorCode,
+              aValues[iReg].PendingInterruption.InstructionLength, aValues[iReg].PendingInterruption.NestedEvent));
+        AssertMsg((aValues[iReg].PendingInterruption.AsUINT64 & UINT64_C(0xfc00)) == 0,
+                  ("%#RX64\n", aValues[iReg].PendingInterruption.AsUINT64));
+    }
+
+    /// @todo WHvRegisterPendingEvent0
+    /// @todo WHvRegisterPendingEvent1
+
+    /* Almost done, just update extrn flags and maybe change PGM mode. */
+    pCtx->fExtrn &= ~fWhat;
+
+    /* Typical. */
+    if (!fMaybeChangedMode && !fFlushTlb)
+        return VINF_SUCCESS;
+
+    /*
+     * Slow.
+     */
+    if (fMaybeChangedMode)
+    {
+        int rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
+        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc));
+    }
+
+    if (fFlushTlb)
+    {
+        int rc = PGMFlushTLB(pVCpu, pCtx->cr3, fFlushGlobalTlb);
+        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc));
+    }
+
+    return VINF_SUCCESS;
 # endif /* !NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 }
 
