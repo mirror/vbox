@@ -51,6 +51,8 @@ class HostDnsInformation
  */
 class HostDnsMonitor
 {
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(HostDnsMonitor);
+
   public:
     static HostDnsMonitor *getHostDnsMonitor(VirtualBox *virtualbox);
     static void shutdown();
@@ -73,8 +75,6 @@ class HostDnsMonitor
     virtual int monitorWorker() = 0;
 
   private:
-    HostDnsMonitor(const HostDnsMonitor &);
-    HostDnsMonitor& operator= (const HostDnsMonitor &);
     static DECLCALLBACK(int) threadMonitoringRoutine(RTTHREAD, void *);
     void pollGlobalExtraData();
 
