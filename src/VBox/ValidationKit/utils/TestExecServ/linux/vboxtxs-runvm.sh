@@ -123,8 +123,10 @@ start() {
         $PYTHON_BINARY $SMOKETEST_SCRIPT -v -v -d --vbox-session-type gui --quick all 1> "${SMOKEOUTPUT_PATH}" 2>&1
         RETVAL=$?
         dumpfile_to_kernlog "${SMOKEOUTPUT_PATH}"
+        sync
+        sleep 10
         if test $RETVAL -eq 0; then
-            kernlog_msg "Starting VirtualBox Test Execution service" console
+            kernlog_msg "Nested Smoke Test done; Starting Test Execution service" console
             mount /dev/cdrom "${CDROM_PATH}" 2> /dev/null > /dev/null
             $binary --auto-upgrade --scratch="${SCRATCH_PATH}" --cdrom="${CDROM_PATH}" --no-display-output > /dev/null
             RETVAL=$?
@@ -136,6 +138,7 @@ start() {
                 kernlog_msg "Test Execution service started" console
             else
                 kernlog_msg "Test Execution service failed to start" console
+                RETVAL=6
             fi
         else
             kernlog_msg "Smoke Test failed! error code ${RETVAL}" console
@@ -150,7 +153,7 @@ start() {
 
 stop() {
     if test -f $PIDFILE; then
-        kernlog_msg "Stopping VirtualBox Test Execution Service"
+        kernlog_msg "Stopping Test Execution Service"
         killproc $binary
         rm -f $PIDFILE
     fi
