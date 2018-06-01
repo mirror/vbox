@@ -187,8 +187,6 @@ UIMediumItem* UIMediumSelector::addTreeItem(const UIMedium &medium, QITreeWidget
             return new UIMediumItemHD(medium, pParent);
             break;
     }
-
-    return 0;
 }
 
 void UIMediumSelector::restoreSelection(const QStringList &selectedMediums, QVector<UIMediumItem*> &mediumList)
