@@ -62,6 +62,29 @@ class SHARED_LIBRARY_STUFF VBoxGlobal : public QObject
 {
     Q_OBJECT
 
+signals:
+
+    /** Asks listener to commit data. */
+    void sigAskToCommitData();
+
+    /** Asks listener to open URLs. */
+    void sigAskToOpenURLs();
+
+    /** Asks listener to recreate UI. */
+    void sigAskToRestartUI();
+
+    /** Notifies listeners about the VBoxSVC availability change. */
+    void sigVBoxSVCAvailabilityChange();
+
+    /* Notifiers: Medium-processing stuff: */
+    void sigMediumCreated(const QString &strMediumID);
+    void sigMediumDeleted(const QString &strMediumID);
+
+    /* Notifiers: Medium-enumeration stuff: */
+    void sigMediumEnumerationStarted();
+    void sigMediumEnumerated(const QString &strMediumID);
+    void sigMediumEnumerationFinished();
+
 public:
 
 #ifdef VBOX_GUI_WITH_SHARED_LIBRARY
@@ -99,7 +122,6 @@ public:
 #endif
     static void destroy();
 
-    bool isValid() { return mValid; }
     bool isCleaningUp() { return s_fCleanupInProgress; }
 
     static QString qtRTVersionString();
@@ -107,14 +129,13 @@ public:
     static QString qtCTVersionString();
     static uint qtCTVersion();
 
+    bool isValid() { return mValid; }
+
     QString vboxVersionString() const;
     QString vboxVersionStringNormalized() const;
-
-    QString versionString() const { return mVerString; }
     bool isBeta() const;
 
-    /** Returns whether GUI is separate (from VM) process. */
-    bool isSeparateProcess() const { return m_fSeparateProcess; }
+    QString versionString() const { return mVerString; }
 
 #ifdef VBOX_WS_MAC
     /** Mac OS X: Returns #MacOSXRelease determined using <i>uname</i> call. */
@@ -123,60 +144,36 @@ public:
     MacOSXRelease osRelease() const { return m_osRelease; }
 #endif /* VBOX_WS_MAC */
 
-    /** Try to acquire COM cleanup protection token for reading. */
-    bool comTokenTryLockForRead() { return m_comCleanupProtectionToken.tryLockForRead(); }
-    /** Unlock previously acquired COM cleanup protection token. */
-    void comTokenUnlock() { return m_comCleanupProtectionToken.unlock(); }
-
-    /** Returns the copy of VirtualBox client wrapper. */
-    CVirtualBoxClient virtualBoxClient() const { return m_client; }
-    /** Returns the copy of VirtualBox object wrapper. */
-    CVirtualBox virtualBox() const { return m_vbox; }
-    /** Returns the copy of VirtualBox host-object wrapper. */
-    CHost host() const { return m_host; }
-    /** Returns the symbolic VirtualBox home-folder representation. */
-    QString homeFolder() const { return m_strHomeFolder; }
-
-    /** Returns the VBoxSVC availability value. */
-    bool isVBoxSVCAvailable() const { return m_fVBoxSVCAvailable; }
-
-    /** Returns the thread-pool instance. */
-    UIThreadPool* threadPool() const { return m_pThreadPool; }
-
-    bool is3DAvailableWorker() const;
-    bool is3DAvailable() const { if (m3DAvailable < 0) return is3DAvailableWorker(); return m3DAvailable != 0; }
-
-#ifdef VBOX_GUI_WITH_PIDFILE
-    void createPidfile();
-    void deletePidfile();
-#endif
-
-    /* branding */
-    bool brandingIsActive (bool aForce = false);
-    QString brandingGetKey (QString aKey);
-
-    bool processArgs();
-
-    bool switchToMachine(CMachine &machine);
-
-    bool launchMachine(CMachine &machine, LaunchMode enmLaunchMode = LaunchMode_Default);
-
-    bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
-    bool showStartVMErrors() const { return mShowStartVMErrors; }
-    QString managedVMUuid() const { return vmUuid; }
-    QList<QUrl> &argUrlList() { return m_ArgUrlList; }
-
-    /** Returns whether the Extension Pack installation was requested at startup. */
-    bool isEPInstallationRequested() const { return m_fEPInstallationRequested; }
-    /** Defines whether the Extension Pack installation was @a fRequested at startup. */
-    void setEPInstallationRequested(bool fRequested) { m_fEPInstallationRequested = fRequested; }
-
 #ifdef VBOX_WS_X11
     /** X11: Returns whether the Window Manager we are running at is composition one. */
     bool isCompositingManagerRunning() const { return m_fCompositingManagerRunning; }
     /** X11: Returns the type of the Window Manager we are running under. */
     X11WMType typeOfWindowManager() const { return m_enmWindowManagerType; }
 #endif /* VBOX_WS_X11 */
+
+    /* branding */
+    bool brandingIsActive (bool aForce = false);
+    QString brandingGetKey (QString aKey);
+
+    static bool hasAllowedExtension(const QString &strExt, const QStringList &extList)
+    {
+        for (int i = 0; i < extList.size(); ++i)
+            if (strExt.endsWith(extList.at(i), Qt::CaseInsensitive))
+                return true;
+        return false;
+    }
+
+    bool processArgs();
+
+    QList<QUrl> &argUrlList() { return m_ArgUrlList; }
+
+    QString managedVMUuid() const { return vmUuid; }
+    bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
+    /** Returns whether GUI is separate (from VM) process. */
+    bool isSeparateProcess() const { return m_fSeparateProcess; }
+    bool showStartVMErrors() const { return mShowStartVMErrors; }
+
+    bool agressiveCaching() const { return mAgressiveCaching; }
 
     /** Returns whether we should restore current snapshot before VM started. */
     bool shouldRestoreCurrentSnapshot() const { return mRestoreCurrentSnapshot; }
@@ -214,30 +211,32 @@ public:
 #endif
     }
 
-    /* VBox enum to/from string/icon/color convertors */
+#ifdef VBOX_GUI_WITH_PIDFILE
+    void createPidfile();
+    void deletePidfile();
+#endif
 
-    QList <CGuestOSType> vmGuestOSFamilyList() const;
-    QList <CGuestOSType> vmGuestOSTypeList (const QString &aFamilyId) const;
+    QString languageName() const;
+    QString languageCountry() const;
+    QString languageNameEnglish() const;
+    QString languageCountryEnglish() const;
+    QString languageTranslators() const;
 
-    /** Returns icon defined for a passed @a comMachine. */
-    QIcon vmUserIcon(const CMachine &comMachine) const;
-    /** Returns pixmap of a passed @a size defined for a passed @a comMachine. */
-    QPixmap vmUserPixmap(const CMachine &comMachine, const QSize &size) const;
-    /** Returns pixmap defined for a passed @a comMachine.
-      * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
-    QPixmap vmUserPixmapDefault(const CMachine &comMachine, QSize *pLogicalSize = 0) const;
+    /** Returns VBox language sub-directory. */
+    static QString vboxLanguageSubDirectory();
+    /** Returns VBox language file-base. */
+    static QString vboxLanguageFileBase();
+    /** Returns VBox language file-extension. */
+    static QString vboxLanguageFileExtension();
+    /** Returns VBox language ID reg-exp. */
+    static QString vboxLanguageIdRegExp();
+    /** Returns built in language name. */
+    static QString vboxBuiltInLanguageName();
 
-    /** Returns pixmap corresponding to passed @a strOSTypeID. */
-    QIcon vmGuestOSTypeIcon(const QString &strOSTypeID) const;
-    /** Returns pixmap corresponding to passed @a strOSTypeID and @a size. */
-    QPixmap vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &size) const;
-    /** Returns pixmap corresponding to passed @a strOSTypeID.
-      * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
-    QPixmap vmGuestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
+    static QString languageId();
+    static QString systemLanguageId();
 
-    CGuestOSType vmGuestOSType (const QString &aTypeId,
-                                const QString &aFamilyId = QString::null) const;
-    QString vmGuestOSTypeDescription (const QString &aTypeId) const;
+    static void loadLanguage (const QString &aLangId = QString::null);
 
     static inline QString yearsToString (uint32_t cVal)
     {
@@ -269,6 +268,15 @@ public:
         return tr("%n second(s)", "", cVal);
     }
 
+    static QChar decimalSep();
+    static QString sizeRegexp();
+
+    static quint64 parseSize (const QString &);
+    static QString formatSize (quint64 aSize, uint aDecimal = 2, FormatSize aMode = FormatSize_Round);
+
+    /* Returns full medium-format name for the given base medium-format name: */
+    static QString fullMediumFormatName(const QString &strBaseMediumFormatName);
+
     QStringList COMPortNames() const;
     QString toCOMPortName (ulong aIRQ, ulong aIOBase) const;
     bool toCOMPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
@@ -277,93 +285,15 @@ public:
     QString toLPTPortName (ulong aIRQ, ulong aIOBase) const;
     bool toLPTPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
 
-    static bool hasAllowedExtension(const QString &strExt, const QStringList &extList)
-    {
-        for (int i = 0; i < extList.size(); ++i)
-            if (strExt.endsWith(extList.at(i), Qt::CaseInsensitive))
-                return true;
-        return false;
-    }
+    static QString highlight (const QString &aStr, bool aToolTip = false);
+    static QString emphasize (const QString &aStr);
+    static QString removeAccelMark (const QString &aText);
+    static QString insertKeyToActionText (const QString &aText, const QString &aKey);
 
-    QIcon icon(QFileIconProvider::IconType type) { return m_globalIconProvider.icon(type); }
-    QIcon icon(const QFileInfo &info) { return m_globalIconProvider.icon(info); }
+    static QString replaceHtmlEntities(QString strText);
 
-    QPixmap warningIcon() const { return mWarningIcon; }
-    QPixmap errorIcon() const { return mErrorIcon; }
-
-    /* details generators */
-
-    QString details(const CMedium &medium, bool fPredictDiff, bool fUseHtml = true);
-
-    QString details (const CUSBDevice &aDevice) const;
-    QString toolTip (const CUSBDevice &aDevice) const;
-    QString toolTip (const CUSBDeviceFilter &aFilter) const;
-    QString toolTip(const CHostVideoInputDevice &webcam) const;
-
-    /* VirtualBox helpers */
-
-    CSession openSession(const QString &aId, KLockType aLockType = KLockType_Write);
-
-    /** Shortcut to openSession (aId, true). */
-    CSession openExistingSession(const QString &aId) { return openSession(aId, KLockType_Shared); }
-
-    /* API: Medium-processing stuff: */
-    void createMedium(const UIMedium &medium);
-    void deleteMedium(const QString &strMediumID);
-    QString createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strMachineFolder);
-    QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
-                                         const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
-    QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
-
-    /* API: Medium-enumeration stuff: */
-    void startMediumEnumeration();
-    bool agressiveCaching() const { return mAgressiveCaching; }
-    bool isMediumEnumerationInProgress() const;
-    UIMedium medium(const QString &strMediumID) const;
-    QList<QString> mediumIDs() const;
-
-    /** Prepares storage menu according passed parameters.
-      * @param menu              QMenu being prepared.
-      * @param pListener         Listener QObject, this menu being prepared for.
-      * @param pszSlotName       SLOT in the @a pListener above, this menu will be handled with.
-      * @param machine           CMachine object, this menu being prepared for.
-      * @param strControllerName The name of the CStorageController in the @a machine above.
-      * @param storageSlot       The StorageSlot of the CStorageController called @a strControllerName above. */
-    void prepareStorageMenu(QMenu &menu,
-                            QObject *pListener, const char *pszSlotName,
-                            const CMachine &machine, const QString &strControllerName, const StorageSlot &storageSlot);
-    /** Updates @a constMachine storage with data described by @a target. */
-    void updateMachineStorage(const CMachine &constMachine, const UIMediumTarget &target);
-
-    /* various helpers */
-
-    QString languageName() const;
-    QString languageCountry() const;
-    QString languageNameEnglish() const;
-    QString languageCountryEnglish() const;
-    QString languageTranslators() const;
-
-    void retranslateUi();
-
-    /* public static stuff */
-
-    static bool isDOSType (const QString &aOSTypeId);
-
-    /** Returns VBox language sub-directory. */
-    static QString vboxLanguageSubDirectory();
-    /** Returns VBox language file-base. */
-    static QString vboxLanguageFileBase();
-    /** Returns VBox language file-extension. */
-    static QString vboxLanguageFileExtension();
-    /** Returns VBox language ID reg-exp. */
-    static QString vboxLanguageIdRegExp();
-    /** Returns built in language name. */
-    static QString vboxBuiltInLanguageName();
-    static QString languageId();
-    static void loadLanguage (const QString &aLangId = QString::null);
     QString helpFile() const;
-
-    static void setTextLabel (QToolButton *aToolButton, const QString &aTextLabel);
+    static QString documentsPath();
 
     static QRect normalizeGeometry (const QRect &aRectangle, const QRegion &aBoundRegion,
                                     bool aCanResize = true);
@@ -374,22 +304,12 @@ public:
     static void centerWidget (QWidget *aWidget, QWidget *aRelative,
                               bool aCanResize = true);
 
-    static QChar decimalSep();
-    static QString sizeRegexp();
-
-    static quint64 parseSize (const QString &);
-    static QString formatSize (quint64 aSize, uint aDecimal = 2, FormatSize aMode = FormatSize_Round);
-
-    static quint64 requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors = 1);
-
-    static QString locationForHTML (const QString &aFileName);
-
-    static QString highlight (const QString &aStr, bool aToolTip = false);
-
-    static QString replaceHtmlEntities(QString strText);
-    static QString emphasize (const QString &aStr);
-
-    static QString systemLanguageId();
+    /** Assigns top-level @a pWidget geometry passed as QRect coordinates.
+      * @note  Take into account that this request may fail on X11. */
+    static void setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h);
+    /** Assigns top-level @a pWidget geometry passed as @a rect.
+      * @note  Take into account that this request may fail on X11. */
+    static void setTopLevelGeometry(QWidget *pWidget, const QRect &rect);
 
     static bool activateWindow (WId aWId, bool aSwitchDesktop = true);
 
@@ -409,36 +329,10 @@ public:
     static void setSkipTaskBarFlag(QWidget *pWidget);
     /** X11: Sets _NET_WM_STATE_SKIP_PAGER flag for passed @a pWidget. */
     static void setSkipPagerFlag(QWidget *pWidget);
+
+    /** Assigns WM_CLASS property for passed @a pWidget. */
+    static void setWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString);
 #endif /* VBOX_WS_X11 */
-
-    static QString removeAccelMark (const QString &aText);
-
-    static QString insertKeyToActionText (const QString &aText, const QString &aKey);
-
-    static QPixmap joinPixmaps (const QPixmap &aPM1, const QPixmap &aPM2);
-
-    static QWidget *findWidget (QWidget *aParent, const char *aName,
-                                const char *aClassName = NULL,
-                                bool aRecursive = false);
-
-    static QList <QPair <QString, QString> > MediumBackends(KDeviceType enmDeviceType);
-    static QList <QPair <QString, QString> > HDDBackends();
-    static QList <QPair <QString, QString> > DVDBackends();
-    static QList <QPair <QString, QString> > FloppyBackends();
-
-    static QString documentsPath();
-
-#ifdef VBOX_WITH_CRHGSMI
-    static bool isWddmCompatibleOsType(const QString &strGuestOSTypeId);
-#endif /* VBOX_WITH_CRHGSMI */
-
-    /* Returns full medium-format name for the given base medium-format name: */
-    static QString fullMediumFormatName(const QString &strBaseMediumFormatName);
-
-
-#ifdef RT_OS_LINUX
-    static void checkForWrongUSBMounted();
-#endif /* RT_OS_LINUX */
 
     /* Shame on Qt it hasn't stuff for tuning
      * widget size suitable for reflecting content of desired size.
@@ -446,17 +340,83 @@ public:
      * to strict the minimum width to reflect at least [n] symbols. */
     static void setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount);
 
-    /** Assigns top-level @a pWidget geometry passed as QRect coordinates.
-      * @note  Take into account that this request may fail on X11. */
-    static void setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h);
-    /** Assigns top-level @a pWidget geometry passed as @a rect.
-      * @note  Take into account that this request may fail on X11. */
-    static void setTopLevelGeometry(QWidget *pWidget, const QRect &rect);
+    /** Try to acquire COM cleanup protection token for reading. */
+    bool comTokenTryLockForRead() { return m_comCleanupProtectionToken.tryLockForRead(); }
+    /** Unlock previously acquired COM cleanup protection token. */
+    void comTokenUnlock() { return m_comCleanupProtectionToken.unlock(); }
 
-#ifdef VBOX_WS_X11
-    /** Assigns WM_CLASS property for passed @a pWidget. */
-    static void setWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString);
-#endif
+    /** Returns the copy of VirtualBox client wrapper. */
+    CVirtualBoxClient virtualBoxClient() const { return m_client; }
+    /** Returns the copy of VirtualBox object wrapper. */
+    CVirtualBox virtualBox() const { return m_vbox; }
+    /** Returns the copy of VirtualBox host-object wrapper. */
+    CHost host() const { return m_host; }
+    /** Returns the symbolic VirtualBox home-folder representation. */
+    QString homeFolder() const { return m_strHomeFolder; }
+
+    /** Returns the VBoxSVC availability value. */
+    bool isVBoxSVCAvailable() const { return m_fVBoxSVCAvailable; }
+
+    QList <CGuestOSType> vmGuestOSFamilyList() const;
+    QList <CGuestOSType> vmGuestOSTypeList (const QString &aFamilyId) const;
+
+    CGuestOSType vmGuestOSType (const QString &aTypeId,
+                                const QString &aFamilyId = QString::null) const;
+    QString vmGuestOSTypeDescription (const QString &aTypeId) const;
+
+    static bool isDOSType (const QString &aOSTypeId);
+
+    bool switchToMachine(CMachine &machine);
+    bool launchMachine(CMachine &machine, LaunchMode enmLaunchMode = LaunchMode_Default);
+
+    CSession openSession(const QString &aId, KLockType aLockType = KLockType_Write);
+    /** Shortcut to openSession (aId, true). */
+    CSession openExistingSession(const QString &aId) { return openSession(aId, KLockType_Shared); }
+
+    static QList <QPair <QString, QString> > MediumBackends(KDeviceType enmDeviceType);
+    static QList <QPair <QString, QString> > HDDBackends();
+    static QList <QPair <QString, QString> > DVDBackends();
+    static QList <QPair <QString, QString> > FloppyBackends();
+
+    /* API: Medium-enumeration stuff: */
+    void startMediumEnumeration();
+    bool isMediumEnumerationInProgress() const;
+    UIMedium medium(const QString &strMediumID) const;
+    QList<QString> mediumIDs() const;
+    void createMedium(const UIMedium &medium);
+    void deleteMedium(const QString &strMediumID);
+
+    /* API: Medium-processing stuff: */
+    QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
+
+    QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
+                                         const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
+
+    QString createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strMachineFolder);
+
+    /** Prepares storage menu according passed parameters.
+      * @param menu              QMenu being prepared.
+      * @param pListener         Listener QObject, this menu being prepared for.
+      * @param pszSlotName       SLOT in the @a pListener above, this menu will be handled with.
+      * @param machine           CMachine object, this menu being prepared for.
+      * @param strControllerName The name of the CStorageController in the @a machine above.
+      * @param storageSlot       The StorageSlot of the CStorageController called @a strControllerName above. */
+    void prepareStorageMenu(QMenu &menu,
+                            QObject *pListener, const char *pszSlotName,
+                            const CMachine &machine, const QString &strControllerName, const StorageSlot &storageSlot);
+    /** Updates @a constMachine storage with data described by @a target. */
+    void updateMachineStorage(const CMachine &constMachine, const UIMediumTarget &target);
+
+    QString details(const CMedium &medium, bool fPredictDiff, bool fUseHtml = true);
+
+#ifdef RT_OS_LINUX
+    static void checkForWrongUSBMounted();
+#endif /* RT_OS_LINUX */
+
+    QString details (const CUSBDevice &aDevice) const;
+    QString toolTip (const CUSBDevice &aDevice) const;
+    QString toolTip (const CUSBDeviceFilter &aFilter) const;
+    QString toolTip(const CHostVideoInputDevice &webcam) const;
 
     /** Initiates the extension pack installation process.
       * @param  strFilePath      Brings the extension pack file path.
@@ -468,32 +428,66 @@ public:
                                       QWidget *pParent,
                                       QString *pstrExtPackName);
 
-signals:
+    /** Returns whether the Extension Pack installation was requested at startup. */
+    bool isEPInstallationRequested() const { return m_fEPInstallationRequested; }
+    /** Defines whether the Extension Pack installation was @a fRequested at startup. */
+    void setEPInstallationRequested(bool fRequested) { m_fEPInstallationRequested = fRequested; }
 
-    /** Asks listener to recreate UI. */
-    void sigAskToRestartUI();
-    /** Asks listener to open URLs. */
-    void sigAskToOpenURLs();
-    /** Asks listener to commit data. */
-    void sigAskToCommitData();
+    bool is3DAvailableWorker() const;
+    bool is3DAvailable() const { if (m3DAvailable < 0) return is3DAvailableWorker(); return m3DAvailable != 0; }
 
-    /** Notifies listeners about the VBoxSVC availability change. */
-    void sigVBoxSVCAvailabilityChange();
+#ifdef VBOX_WITH_CRHGSMI
+    static bool isWddmCompatibleOsType(const QString &strGuestOSTypeId);
+#endif /* VBOX_WITH_CRHGSMI */
 
-    /* Notifiers: Medium-processing stuff: */
-    void sigMediumCreated(const QString &strMediumID);
-    void sigMediumDeleted(const QString &strMediumID);
+    static quint64 requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors = 1);
 
-    /* Notifiers: Medium-enumeration stuff: */
-    void sigMediumEnumerationStarted();
-    void sigMediumEnumerated(const QString &strMediumID);
-    void sigMediumEnumerationFinished();
+    /** Returns the thread-pool instance. */
+    UIThreadPool* threadPool() const { return m_pThreadPool; }
+
+    /** Returns icon defined for a passed @a comMachine. */
+    QIcon vmUserIcon(const CMachine &comMachine) const;
+    /** Returns pixmap of a passed @a size defined for a passed @a comMachine. */
+    QPixmap vmUserPixmap(const CMachine &comMachine, const QSize &size) const;
+    /** Returns pixmap defined for a passed @a comMachine.
+      * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
+    QPixmap vmUserPixmapDefault(const CMachine &comMachine, QSize *pLogicalSize = 0) const;
+
+    /** Returns pixmap corresponding to passed @a strOSTypeID. */
+    QIcon vmGuestOSTypeIcon(const QString &strOSTypeID) const;
+    /** Returns pixmap corresponding to passed @a strOSTypeID and @a size. */
+    QPixmap vmGuestOSTypePixmap(const QString &strOSTypeID, const QSize &size) const;
+    /** Returns pixmap corresponding to passed @a strOSTypeID.
+      * In case if non-null @a pLogicalSize pointer provided, it will be updated properly. */
+    QPixmap vmGuestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
+
+    QIcon icon(QFileIconProvider::IconType type) { return m_globalIconProvider.icon(type); }
+    QIcon icon(const QFileInfo &info) { return m_globalIconProvider.icon(info); }
+
+    QPixmap warningIcon() const { return mWarningIcon; }
+    QPixmap errorIcon() const { return mErrorIcon; }
+
+    static QPixmap joinPixmaps (const QPixmap &aPM1, const QPixmap &aPM2);
+
+    static void setTextLabel (QToolButton *aToolButton, const QString &aTextLabel);
+
+    static QString locationForHTML (const QString &aFileName);
+
+    static QWidget *findWidget (QWidget *aParent, const char *aName,
+                                const char *aClassName = NULL,
+                                bool aRecursive = false);
 
 public slots:
 
     bool openURL (const QString &aURL);
 
     void sltGUILanguageChange(QString strLang);
+
+protected:
+
+    bool eventFilter (QObject *, QEvent *);
+
+    void retranslateUi();
 
 protected slots:
 
@@ -506,10 +500,6 @@ protected slots:
 
     /** Handles the VBoxSVC availability change. */
     void sltHandleVBoxSVCAvailabilityChange(bool fAvailable);
-
-protected:
-
-    bool eventFilter (QObject *, QEvent *);
 
 private:
 
@@ -524,9 +514,6 @@ private:
     /** Destrucs global VirtualBox object. */
     virtual ~VBoxGlobal() /* override */;
 
-    /** Re-initializes COM wrappers and containers. */
-    void comWrappersReinit();
-
 #ifdef VBOX_WS_WIN
     /** Wraps WinAPI ShutdownBlockReasonCreate function. */
     static BOOL ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason);
@@ -537,6 +524,18 @@ private:
     void setDebuggerVar(int *piDbgCfgVar, bool fState);
     bool isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName) const;
 #endif
+
+    /** Re-initializes COM wrappers and containers. */
+    void comWrappersReinit();
+
+    /** Holds the singleton VBoxGlobal instance. */
+    static VBoxGlobal *s_pInstance;
+
+    /** Holds the currently loaded language ID. */
+    static QString     s_strLoadedLanguageId;
+
+    /** Holds whether VBoxGlobal cleanup is in progress. */
+    static bool        s_fCleanupInProgress;
 
 #ifdef VBOX_GUI_WITH_SHARED_LIBRARY
     /** Holds the UI type. */
@@ -550,43 +549,6 @@ private:
     MacOSXRelease m_osRelease;
 #endif /* VBOX_WS_MAC */
 
-    /** COM cleanup protection token. */
-    QReadWriteLock m_comCleanupProtectionToken;
-
-    /** Holds the instance of VirtualBox client wrapper. */
-    CVirtualBoxClient m_client;
-    /** Holds the copy of VirtualBox object wrapper. */
-    CVirtualBox m_vbox;
-    /** Holds the copy of VirtualBox host-object wrapper. */
-    CHost m_host;
-    /** Holds the symbolic VirtualBox home-folder representation. */
-    QString m_strHomeFolder;
-    /** Holds the guest OS family IDs. */
-    QList<QString> m_guestOSFamilyIDs;
-    /** Holds the guest OS types for each family ID. */
-    QList<QList<CGuestOSType> > m_guestOSTypes;
-
-    /** Holds whether acquired COM wrappers are currently valid. */
-    bool m_fWrappersValid;
-    /** Holds whether VBoxSVC is currently available. */
-    bool m_fVBoxSVCAvailable;
-
-    /** Holds whether GUI is separate (from VM) process. */
-    bool m_fSeparateProcess;
-
-    QString vmUuid;
-    QList<QUrl> m_ArgUrlList;
-
-    /** Whether to show error message boxes for VM start errors. */
-    bool mShowStartVMErrors;
-
-    /* Variable: Medium-enumeration stuff: */
-    UIMediumEnumerator *m_pMediumEnumerator;
-    mutable QReadWriteLock m_mediumEnumeratorDtorRwLock;
-
-    /** Holds whether the Extension Pack installation was requested at startup. */
-    bool m_fEPInstallationRequested;
-
 #ifdef VBOX_WS_X11
     /** X11: Holds whether the Window Manager we are running at is composition one. */
     bool m_fCompositingManagerRunning;
@@ -594,8 +556,20 @@ private:
     X11WMType m_enmWindowManagerType;
 #endif /* VBOX_WS_X11 */
 
+    QString mVerString;
+    QString mBrandingConfig;
+
+    QList<QUrl> m_ArgUrlList;
+
+    QString vmUuid;
+    /** Holds whether GUI is separate (from VM) process. */
+    bool m_fSeparateProcess;
+    /** Whether to show error message boxes for VM start errors. */
+    bool mShowStartVMErrors;
+
     /** The --aggressive-caching / --no-aggressive-caching option. */
     bool mAgressiveCaching;
+
     /** The --restore-current option. */
     bool mRestoreCurrentSnapshot;
 
@@ -639,32 +613,55 @@ private:
     enum StartRunning m_enmStartRunning;
 #endif
 
-#if defined (VBOX_WS_WIN)
-    DWORD dwHTMLHelpCookie;
-#endif
-
-    QString mVerString;
-    QString mBrandingConfig;
-
-    int m3DAvailable;
-
-    QString mUserDefinedPortName;
-
-    QPixmap mWarningIcon, mErrorIcon;
-
-    QFileIconProvider m_globalIconProvider;
+    char mSettingsPw[256];
+    bool mSettingsPwSet;
 
 #ifdef VBOX_GUI_WITH_PIDFILE
     QString m_strPidfile;
 #endif
 
-    char mSettingsPw[256];
-    bool mSettingsPwSet;
+    QString mUserDefinedPortName;
+
+    /** COM cleanup protection token. */
+    QReadWriteLock m_comCleanupProtectionToken;
+
+    /** Holds the instance of VirtualBox client wrapper. */
+    CVirtualBoxClient m_client;
+    /** Holds the copy of VirtualBox object wrapper. */
+    CVirtualBox m_vbox;
+    /** Holds the copy of VirtualBox host-object wrapper. */
+    CHost m_host;
+    /** Holds the symbolic VirtualBox home-folder representation. */
+    QString m_strHomeFolder;
+
+    /** Holds whether acquired COM wrappers are currently valid. */
+    bool m_fWrappersValid;
+    /** Holds whether VBoxSVC is currently available. */
+    bool m_fVBoxSVCAvailable;
+
+    /** Holds the guest OS family IDs. */
+    QList<QString> m_guestOSFamilyIDs;
+    /** Holds the guest OS types for each family ID. */
+    QList<QList<CGuestOSType> > m_guestOSTypes;
+
+    int m3DAvailable;
+
+    /** Holds the thread-pool instance. */
+    UIThreadPool *m_pThreadPool;
 
     /** General icon-pool. */
     UIIconPoolGeneral *m_pIconPool;
-    /** Holds the thread-pool instance. */
-    UIThreadPool *m_pThreadPool;
+
+    QFileIconProvider m_globalIconProvider;
+
+    QPixmap mWarningIcon, mErrorIcon;
+
+    /* Variable: Medium-enumeration stuff: */
+    mutable QReadWriteLock m_mediumEnumeratorDtorRwLock;
+    UIMediumEnumerator *m_pMediumEnumerator;
+
+    /** Holds whether the Extension Pack installation was requested at startup. */
+    bool m_fEPInstallationRequested;
 
 #if defined(VBOX_WS_WIN) && defined(VBOX_GUI_WITH_SHARED_LIBRARY)
     /** Holds the ATL module instance (for use with VBoxGlobal shared library only).
@@ -672,12 +669,9 @@ private:
     ATL::CComModule _Module;
 #endif
 
-    /** Holds the singleton VBoxGlobal instance. */
-    static VBoxGlobal *s_pInstance;
-    /** Holds whether VBoxGlobal cleanup is in progress. */
-    static bool        s_fCleanupInProgress;
-    /** Holds the currently loaded language ID. */
-    static QString     s_strLoadedLanguageId;
+#if defined (VBOX_WS_WIN)
+    DWORD dwHTMLHelpCookie;
+#endif
 
     /** Allows for shortcut access. */
     friend VBoxGlobal &vboxGlobal();
@@ -687,4 +681,3 @@ private:
 inline VBoxGlobal &vboxGlobal() { return *VBoxGlobal::instance(); }
 
 #endif /* !___VBoxGlobal_h___ */
-
