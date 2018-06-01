@@ -166,7 +166,7 @@ void BIOSCALL apic_setup(void)
     if (apic_mode == APICMODE_X2APIC)
         mask = APICBASE_X2APIC;
     else if (apic_mode == APICMODE_DISABLED)
-        mask = APICBASE_DISABLE;
+        mask = APICBASE_DISABLE; /** @todo r=bird: Shouldn't we clear bit 11 when disabling the APIC? */
     else
         mask = 0;   /* Any other setting leaves things alone. */
 
