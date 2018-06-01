@@ -158,9 +158,11 @@
 # include <sys/utsname.h>
 #endif /* VBOX_WS_MAC */
 #ifdef VBOX_WS_X11
-# undef BOOL /* typedef CARD8 BOOL in Xmd.h conflicts with #define BOOL PRBool
-              * in COMDefs.h. A better fix would be to isolate X11-specific
-              * stuff by placing XX* helpers below to a separate source file. */
+// WORKAROUND:
+// typedef CARD8 BOOL in Xmd.h conflicts with #define BOOL PRBool
+// in COMDefs.h. A better fix would be to isolate X11-specific
+// stuff by placing XX* helpers below to a separate source file.
+# undef BOOL
 # include <X11/X.h>
 # include <X11/Xmd.h>
 # include <X11/Xlib.h>
@@ -176,13 +178,16 @@
 using namespace UIExtraDataDefs;
 
 
+/** QTranslator subclass for VBox needs. */
 class VBoxTranslator : public QTranslator
 {
 public:
 
+    /** Constructs translator passing @a pParent to the base-class. */
     VBoxTranslator (QObject *aParent = 0)
         : QTranslator (aParent) {}
 
+    /** Loads language file with gained @a strFileName. */
     bool loadFile (const QString &aFileName)
     {
         QFile file (aFileName);
@@ -194,12 +199,15 @@ public:
 
 private:
 
+    /** Holds the loaded data. */
     QByteArray mData;
 };
 
+/** Holds the static #VBoxTranslator instance. */
 static VBoxTranslator *sTranslator = 0;
 
 
+/** Port config cache. */
 struct PortConfig
 {
     const char *name;
@@ -207,22 +215,24 @@ struct PortConfig
     const ulong IOBase;
 };
 
+/** Known port config COM ports. */
 static const PortConfig kComKnownPorts[] =
 {
     { "COM1", 4, 0x3F8 },
     { "COM2", 3, 0x2F8 },
     { "COM3", 4, 0x3E8 },
     { "COM4", 3, 0x2E8 },
-    /* must not contain an element with IRQ=0 and IOBase=0 used to cause
+    /* Must not contain an element with IRQ=0 and IOBase=0 used to cause
      * toCOMPortName() to return the "User-defined" string for these values. */
 };
 
+/** Known port config LPT ports. */
 static const PortConfig kLptKnownPorts[] =
 {
     { "LPT1", 7, 0x378 },
     { "LPT2", 5, 0x278 },
     { "LPT1", 2, 0x3BC },
-    /* must not contain an element with IRQ=0 and IOBase=0 used to cause
+    /* Must not contain an element with IRQ=0 and IOBase=0 used to cause
      * toLPTPortName() to return the "User-defined" string for these values. */
 };
 
@@ -399,7 +409,7 @@ MacOSXRelease VBoxGlobal::determineOsRelease()
 }
 #endif /* VBOX_WS_MAC */
 
-bool VBoxGlobal::brandingIsActive (bool aForce /* = false*/)
+bool VBoxGlobal::brandingIsActive (bool aForce /* = false */)
 {
     if (aForce)
         return true;
@@ -412,9 +422,6 @@ bool VBoxGlobal::brandingIsActive (bool aForce /* = false*/)
     return QFile::exists (mBrandingConfig);
 }
 
-/**
-  * Gets a value from the custom .ini file
-  */
 QString VBoxGlobal::brandingGetKey (QString aKey)
 {
     QSettings s(mBrandingConfig, QSettings::IniFormat);
@@ -423,13 +430,15 @@ QString VBoxGlobal::brandingGetKey (QString aKey)
 
 bool VBoxGlobal::processArgs()
 {
+    /* Among those arguments: */
     bool fResult = false;
     QStringList args = qApp->arguments();
+    /* We are looking for a list of file URLs passed to the executable: */
     QList<QUrl> list;
     for (int i = 1; i < args.size(); ++i)
     {
-        /* We break out after the first parameter, cause there could be
-           parameters with arguments (e.g. --comment comment). */
+        /* But we break out after the first parameter, cause there
+         * could be parameters with arguments (e.g. --comment comment). */
         if (args.at(i).startsWith("-"))
             break;
 #ifdef VBOX_WS_MAC
@@ -437,34 +446,40 @@ bool VBoxGlobal::processArgs()
 #else /* VBOX_WS_MAC */
         QString strArg = args.at(i);
 #endif /* !VBOX_WS_MAC */
+        /* So if the argument file exists, we add it to URL list: */
         if (   !strArg.isEmpty()
             && QFile::exists(strArg))
             list << QUrl::fromLocalFile(strArg);
     }
+    /* If there are file URLs: */
     if (!list.isEmpty())
     {
+        /* We enumerate them and: */
         for (int i = 0; i < list.size(); ++i)
         {
+            /* Check which of them has allowed VM extensions: */
             const QString& strFile = list.at(i).toLocalFile();
             if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
             {
+                /* So that we could run existing VMs: */
                 CVirtualBox vbox = virtualBox();
                 CMachine machine = vbox.FindMachine(strFile);
                 if (!machine.isNull())
                 {
                     fResult = true;
                     launchMachine(machine);
-                    /* Remove from the arg list. */
+                    /* And remove their URLs from the ULR list: */
                     list.removeAll(strFile);
                 }
             }
         }
     }
+    /* And if there are *still* URLs: */
     if (!list.isEmpty())
     {
-        /* Store the URLs: */
+        /* We store them: */
         m_ArgUrlList = list;
-        /* Ask UIStarter to open them: */
+        /* And ask UIStarter to open them: */
         emit sigAskToOpenURLs();
     }
     return fResult;
@@ -521,62 +536,44 @@ void VBoxGlobal::deletePidfile()
 
 #endif /* VBOX_GUI_WITH_PIDFILE */
 
-/**
- *  Native language name of the currently installed translation.
- *  Returns "English" if no translation is installed
- *  or if the translation file is invalid.
- */
 QString VBoxGlobal::languageName() const
 {
-
+    /* Returns "English" if no translation is installed
+     * or if the translation file is invalid. */
     return qApp->translate ("@@@", "English",
                             "Native language name");
 }
 
-/**
- *  Native language country name of the currently installed translation.
- *  Returns "--" if no translation is installed or if the translation file is
- *  invalid, or if the language is independent on the country.
- */
 QString VBoxGlobal::languageCountry() const
 {
+    /* Returns "--" if no translation is installed or if the translation file
+     * is invalid, or if the language is independent on the country. */
     return qApp->translate ("@@@", "--",
                             "Native language country name "
                             "(empty if this language is for all countries)");
 }
 
-/**
- *  Language name of the currently installed translation, in English.
- *  Returns "English" if no translation is installed
- *  or if the translation file is invalid.
- */
 QString VBoxGlobal::languageNameEnglish() const
 {
-
+    /* Returns "English" if no translation is installed
+     * or if the translation file is invalid. */
     return qApp->translate ("@@@", "English",
                             "Language name, in English");
 }
 
-/**
- *  Language country name of the currently installed translation, in English.
- *  Returns "--" if no translation is installed or if the translation file is
- *  invalid, or if the language is independent on the country.
- */
 QString VBoxGlobal::languageCountryEnglish() const
 {
+    /* Returns "--" if no translation is installed or if the translation file
+     * is invalid, or if the language is independent on the country. */
     return qApp->translate ("@@@", "--",
                             "Language country name, in English "
                             "(empty if native country name is empty)");
 }
 
-/**
- *  Comma-separated list of authors of the currently installed translation.
- *  Returns "Oracle Corporation" if no translation is installed or if the
- *  translation file is invalid, or if the translation is supplied by Oracle
- *  Corporation
- */
 QString VBoxGlobal::languageTranslators() const
 {
+    /* Returns "Oracle Corporation" if no translation is installed or if the translation file
+     * is invalid, or if the translation is supplied by Oracle Corporation. */
     return qApp->translate ("@@@", "Oracle Corporation",
                             "Comma-separated list of translators");
 }
@@ -611,46 +608,36 @@ QString VBoxGlobal::vboxBuiltInLanguageName()
     return "C";
 }
 
-/**
- *  Returns the loaded (active) language ID.
- *  Note that it may not match with UIExtraDataManager::languageId() if the
- *  specified language cannot be loaded.
- *  If the built-in language is active, this method returns "C".
- *
- *  @note "C" is treated as the built-in language for simplicity -- the C
- *  locale is used in unix environments as a fallback when the requested
- *  locale is invalid. This way we don't need to process both the "built_in"
- *  language and the "C" language (which is a valid environment setting)
- *  separately.
- */
 /* static */
 QString VBoxGlobal::languageId()
 {
+    /* Note that it may not match with UIExtraDataManager::languageId() if the specified language cannot be loaded.
+     *
+     * If the built-in language is active, this method returns "C". "C" is treated as the built-in language for
+     * simplicity -- the C locale is used in unix environments as a fallback when the requested locale is invalid.
+     * This way we don't need to process both the "built_in" language and the "C" language (which is a valid
+     * environment setting) separately. */
+
     return s_strLoadedLanguageId;
 }
 
-/**
- *  This does exactly the same as QLocale::system().name() but corrects its
- *  wrong behavior on Linux systems (LC_NUMERIC for some strange reason takes
- *  precedence over any other locale setting in the QLocale::system()
- *  implementation). This implementation first looks at LC_ALL (as defined by
- *  SUS), then looks at LC_MESSAGES which is designed to define a language for
- *  program messages in case if it differs from the language for other locale
- *  categories. Then it looks for LANG and finally falls back to
- *  QLocale::system().name().
- *
- *  The order of precedence is well defined here:
- *  http://opengroup.org/onlinepubs/007908799/xbd/envvar.html
- *
- *  @note This method will return "C" when the requested locale is invalid or
- *  when the "C" locale is set explicitly.
- */
 /* static */
 QString VBoxGlobal::systemLanguageId()
 {
+    /* This does exactly the same as QLocale::system().name() but corrects its wrong behavior on Linux systems
+     * (LC_NUMERIC for some strange reason takes precedence over any other locale setting in the QLocale::system()
+     * implementation). This implementation first looks at LC_ALL (as defined by SUS), then looks at LC_MESSAGES
+     * which is designed to define a language for program messages in case if it differs from the language for
+     * other locale categories. Then it looks for LANG and finally falls back to QLocale::system().name().
+     *
+     * The order of precedence is well defined here:
+     * http://opengroup.org/onlinepubs/007908799/xbd/envvar.html
+     *
+     * This method will return "C" when the requested locale is invalid or when the "C" locale is set explicitly. */
+
 #if defined (VBOX_WS_MAC)
-    /* QLocale return the right id only if the user select the format of the
-     * language also. So we use our own implementation */
+    /* QLocale return the right id only if the user select the format
+     * of the language also. So we use our own implementation */
     return ::darwinSystemLanguage();
 #elif defined (Q_OS_UNIX)
     const char *s = RTEnvGet ("LC_ALL");
@@ -664,12 +651,6 @@ QString VBoxGlobal::systemLanguageId()
     return  QLocale::system().name();
 }
 
-/**
- *  Loads the language by language ID.
- *
- *  @param aLangId Language ID in in form of xx_YY. QString::null means the
- *                 system default language.
- */
 /* static */
 void VBoxGlobal::loadLanguage (const QString &aLangId)
 {
@@ -731,7 +712,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
         }
     }
 
-    /* delete the old translator if there is one */
+    /* Delete the old translator if there is one: */
     if (sTranslator)
     {
         /* QTranslator destructor will call qApp->removeTranslator() for
@@ -740,7 +721,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
         delete sTranslator;
     }
 
-    /* load new language files */
+    /* Load new language files: */
     sTranslator = new VBoxTranslator (qApp);
     Assert (sTranslator);
     bool loadOk = true;
@@ -751,9 +732,8 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
             Assert (!languageFileName.isNull());
             loadOk = sTranslator->loadFile (languageFileName);
         }
-        /* we install the translator in any case: on failure, this will
-         * activate an empty translator that will give us English
-         * (built-in) */
+        /* We install the translator in any case: on failure, this will
+         * activate an empty translator that will give us English (built-in): */
         qApp->installTranslator (sTranslator);
     }
     else
@@ -767,7 +747,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
         s_strLoadedLanguageId = vboxBuiltInLanguageName();
     }
 
-    /* Try to load the corresponding Qt translation */
+    /* Try to load the corresponding Qt translation: */
     if (languageId() != vboxBuiltInLanguageName() && languageId() != "en")
     {
 #ifdef Q_OS_UNIX
@@ -811,31 +791,24 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
 #endif /* VBOX_WS_MAC */
 }
 
-/**
- *  Returns the decimal separator for the current locale.
- */
 /* static */
 QChar VBoxGlobal::decimalSep()
 {
     return QLocale::system().decimalPoint();
 }
 
-/**
- *  Returns the regexp string that defines the format of the human-readable
- *  size representation: @verbatim ####[.##] B|KB|MB|GB|TB|PB @endverbatim
- *
- *  This regexp will capture 5 groups of text:
- *  - cap(1): integer number in case when no decimal point is present
- *            (if empty, it means that decimal point is present)
- *  - cap(2): size suffix in case when no decimal point is present (may be empty)
- *  - cap(3): integer number in case when decimal point is present (may be empty)
- *  - cap(4): fraction number (hundredth) in case when decimal point is present
- *  - cap(5): size suffix in case when decimal point is present (note that
- *            B cannot appear there)
- */
 /* static */
 QString VBoxGlobal::sizeRegexp()
 {
+    /* This regexp will capture 5 groups of text:
+     * - cap(1): integer number in case when no decimal point is present
+     *           (if empty, it means that decimal point is present)
+     * - cap(2): size suffix in case when no decimal point is present (may be empty)
+     * - cap(3): integer number in case when decimal point is present (may be empty)
+     * - cap(4): fraction number (hundredth) in case when decimal point is present
+     * - cap(5): size suffix in case when decimal point is present (note that
+     *           B cannot appear there). */
+
     QString regexp =
         QString ("^(?:(?:(\\d+)(?:\\s?(%2|%3|%4|%5|%6|%7))?)|(?:(\\d*)%1(\\d{1,2})(?:\\s?(%3|%4|%5|%6|%7))))$")
             .arg (decimalSep())
@@ -848,14 +821,10 @@ QString VBoxGlobal::sizeRegexp()
     return regexp;
 }
 
-/**
- *  Parses the given size string that should be in form of
- *  @verbatim ####[.##] B|KB|MB|GB|TB|PB @endverbatim and returns
- *  the size value in bytes. Zero is returned on error.
- */
 /* static */
 quint64 VBoxGlobal::parseSize (const QString &aText)
 {
+    /* Text should be in form of B|KB|MB|GB|TB|PB. */
     QRegExp regexp (sizeRegexp());
     int pos = regexp.indexIn (aText);
     if (pos != -1)
@@ -897,39 +866,25 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
         return 0;
 }
 
-/**
- * Formats the given @a aSize value in bytes to a human readable string
- * in form of @verbatim ####[.##] B|KB|MB|GB|TB|PB @endverbatim.
- *
- * The @a aMode and @a aDecimal parameters are used for rounding the resulting
- * number when converting the size value to KB, MB, etc gives a fractional part:
- * <ul>
- * <li>When \a aMode is FormatSize_Round, the result is rounded to the
- *     closest number containing \a aDecimal decimal digits.
- * </li>
- * <li>When \a aMode is FormatSize_RoundDown, the result is rounded to the
- *     largest number with \a aDecimal decimal digits that is not greater than
- *     the result. This guarantees that converting the resulting string back to
- *     the integer value in bytes will not produce a value greater that the
- *     initial size parameter.
- * </li>
- * <li>When \a aMode is FormatSize_RoundUp, the result is rounded to the
- *     smallest number with \a aDecimal decimal digits that is not less than the
- *     result. This guarantees that converting the resulting string back to the
- *     integer value in bytes will not produce a value less that the initial
- *     size parameter.
- * </li>
- * </ul>
- *
- * @param aSize     Size value in bytes.
- * @param aMode     Conversion mode.
- * @param aDecimal  Number of decimal digits in result.
- * @return          Human-readable size string.
- */
 /* static */
 QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
                                 FormatSize aMode /* = FormatSize_Round */)
 {
+    /* Text will be in form of B|KB|MB|GB|TB|PB.
+     *
+     * When enmMode is FormatSize_Round, the result is rounded to the
+     *              closest number containing @a aDecimal decimal digits.
+     * When enmMode is FormatSize_RoundDown, the result is rounded to the
+     *              largest number with @a aDecimal decimal digits that is not greater than
+     *              the result. This guarantees that converting the resulting string back to
+     *              the integer value in bytes will not produce a value greater that the
+     *              initial size parameter.
+     * When enmMode is FormatSize_RoundUp, the result is rounded to the
+     *              smallest number with @a aDecimal decimal digits that is not less than the
+     *              result. This guarantees that converting the resulting string back to the
+     *              integer value in bytes will not produce a value less that the initial
+     *              size parameter. */
+
     quint64 denom = 0;
     int suffix = 0;
 
@@ -984,12 +939,12 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
             /* nearest */
             else decm = (decm + denom / 2) / denom;
         }
-        /* check for the fractional part overflow due to rounding */
+        /* Check for the fractional part overflow due to rounding: */
         if (decm == mult)
         {
             decm = 0;
             ++ intg;
-            /* check if we've got 1024 XB after rounding and scale down if so */
+            /* Check if we've got 1024 XB after rounding and scale down if so: */
             if (intg == 1024 && suffix + 1 < (int)SizeSuffix_Max)
             {
                 intg /= 1024;
@@ -1026,9 +981,6 @@ QString VBoxGlobal::fullMediumFormatName(const QString &strBaseMediumFormatName)
     return strBaseMediumFormatName;
 }
 
-/**
- *  Returns the list of the standard COM port names (i.e. "COMx").
- */
 QStringList VBoxGlobal::COMPortNames() const
 {
     QStringList list;
@@ -1038,11 +990,6 @@ QStringList VBoxGlobal::COMPortNames() const
     return list;
 }
 
-/**
- *  Returns the name of the standard COM port corresponding to the given
- *  parameters, or "User-defined" (which is also returned when both
- *  @a aIRQ and @a aIOBase are 0).
- */
 QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
 {
     for (size_t i = 0; i < RT_ELEMENTS (kComKnownPorts); ++ i)
@@ -1053,11 +1000,6 @@ QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
     return mUserDefinedPortName;
 }
 
-/**
- *  Returns port parameters corresponding to the given standard COM name.
- *  Returns @c true on success, or @c false if the given port name is not one
- *  of the standard names (i.e. "COMx").
- */
 bool VBoxGlobal::toCOMPortNumbers (const QString &aName, ulong &aIRQ,
                                    ulong &aIOBase) const
 {
@@ -1072,9 +1014,6 @@ bool VBoxGlobal::toCOMPortNumbers (const QString &aName, ulong &aIRQ,
     return false;
 }
 
-/**
- *  Returns the list of the standard LPT port names (i.e. "LPTx").
- */
 QStringList VBoxGlobal::LPTPortNames() const
 {
     QStringList list;
@@ -1084,11 +1023,6 @@ QStringList VBoxGlobal::LPTPortNames() const
     return list;
 }
 
-/**
- *  Returns the name of the standard LPT port corresponding to the given
- *  parameters, or "User-defined" (which is also returned when both
- *  @a aIRQ and @a aIOBase are 0).
- */
 QString VBoxGlobal::toLPTPortName (ulong aIRQ, ulong aIOBase) const
 {
     for (size_t i = 0; i < RT_ELEMENTS (kLptKnownPorts); ++ i)
@@ -1099,11 +1033,6 @@ QString VBoxGlobal::toLPTPortName (ulong aIRQ, ulong aIOBase) const
     return mUserDefinedPortName;
 }
 
-/**
- *  Returns port parameters corresponding to the given standard LPT name.
- *  Returns @c true on success, or @c false if the given port name is not one
- *  of the standard names (i.e. "LPTx").
- */
 bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
                                    ulong &aIOBase) const
 {
@@ -1118,23 +1047,22 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
     return false;
 }
 
-/**
- *  Reformats the input string @a aStr so that:
- *  - strings in single quotes will be put inside \<nobr\> and marked
- *    with blue color;
- *  - UUIDs be put inside \<nobr\> and marked
- *    with green color;
- *  - replaces new line chars with \</p\>\<p\> constructs to form paragraphs
- *    (note that \<p\> and \</p\> are not appended to the beginning and to the
- *     end of the string respectively, to allow the result be appended
- *     or prepended to the existing paragraph).
- *
- *  If @a aToolTip is true, colouring is not applied, only the \<nobr\> tag
- *  is added. Also, new line chars are replaced with \<br\> instead of \<p\>.
- */
 /* static */
 QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
 {
+    /* We should reformat the input strText so that:
+     * - strings in single quotes will be put inside <nobr> and marked
+     *   with blue color;
+     * - UUIDs be put inside <nobr> and marked
+     *   with green color;
+     * - replaces new line chars with </p><p> constructs to form paragraphs
+     *   (note that <p\> and </p> are not appended to the beginning and to the
+     *    end of the string respectively, to allow the result be appended
+     *    or prepended to the existing paragraph).
+     *
+     *  If @a fToolTip is true, colouring is not applied, only the <nobr> tag
+     *  is added. Also, new line chars are replaced with <br> instead of <p>. */
+
     QString strFont;
     QString uuidFont;
     QString endFont;
@@ -1147,26 +1075,26 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
 
     QString text = aStr;
 
-    /* replace special entities, '&' -- first! */
+    /* Replace special entities, '&' -- first! */
     text.replace ('&', "&amp;");
     text.replace ('<', "&lt;");
     text.replace ('>', "&gt;");
     text.replace ('\"', "&quot;");
 
-    /* mark strings in single quotes with color */
+    /* Mark strings in single quotes with color: */
     QRegExp rx = QRegExp ("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
     rx.setMinimal (true);
     text.replace (rx,
         QString ("\\1%1<nobr>'\\2'</nobr>%2").arg (strFont).arg (endFont));
 
-    /* mark UUIDs with color */
+    /* Mark UUIDs with color: */
     text.replace (QRegExp (
         "((?:^|\\s)[(]?)"
         "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
         "(?=[:.-!);]?(?:\\s|$))"),
         QString ("\\1%1<nobr>\\2</nobr>%2").arg (uuidFont).arg (endFont));
 
-    /* split to paragraphs at \n chars */
+    /* Split to paragraphs at \n chars: */
     if (!aToolTip)
         text.replace ('\n', "</p><p>");
     else
@@ -1175,20 +1103,19 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
     return text;
 }
 
-/**
- *  Reformats the input string @a aStr so that:
- *  - strings in single quotes will be put inside \<nobr\> and marked
- *    with bold style;
- *  - UUIDs be put inside \<nobr\> and marked
- *    with italic style;
- *  - replaces new line chars with \</p\>\<p\> constructs to form paragraphs
- *    (note that \<p\> and \</p\> are not appended to the beginning and to the
- *     end of the string respectively, to allow the result be appended
- *     or prepended to the existing paragraph).
- */
 /* static */
 QString VBoxGlobal::emphasize (const QString &aStr)
 {
+    /* We should reformat the input string @a strText so that:
+     * - strings in single quotes will be put inside \<nobr\> and marked
+     *   with bold style;
+     * - UUIDs be put inside \<nobr\> and marked
+     *   with italic style;
+     * - replaces new line chars with \</p\>\<p\> constructs to form paragraphs
+     *   (note that \<p\> and \</p\> are not appended to the beginning and to the
+     *    end of the string respectively, to allow the result be appended
+     *    or prepended to the existing paragraph). */
+
     QString strEmphStart ("<b>");
     QString strEmphEnd ("</b>");
     QString uuidEmphStart ("<i>");
@@ -1196,52 +1123,40 @@ QString VBoxGlobal::emphasize (const QString &aStr)
 
     QString text = aStr;
 
-    /* replace special entities, '&' -- first! */
+    /* Replace special entities, '&' -- first! */
     text.replace ('&', "&amp;");
     text.replace ('<', "&lt;");
     text.replace ('>', "&gt;");
     text.replace ('\"', "&quot;");
 
-    /* mark strings in single quotes with bold style */
+    /* Mark strings in single quotes with bold style: */
     QRegExp rx = QRegExp ("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
     rx.setMinimal (true);
     text.replace (rx,
         QString ("\\1%1<nobr>'\\2'</nobr>%2").arg (strEmphStart).arg (strEmphEnd));
 
-    /* mark UUIDs with italic style */
+    /* Mark UUIDs with italic style: */
     text.replace (QRegExp (
         "((?:^|\\s)[(]?)"
         "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
         "(?=[:.-!);]?(?:\\s|$))"),
         QString ("\\1%1<nobr>\\2</nobr>%2").arg (uuidEmphStart).arg (uuidEmphEnd));
 
-    /* split to paragraphs at \n chars */
+    /* Split to paragraphs at \n chars: */
     text.replace ('\n', "</p><p>");
 
     return text;
 }
 
-/**
- *  Removes the accelerator mark (the ampersand symbol) from the given string
- *  and returns the result. The string is supposed to be a menu item's text
- *  that may (or may not) contain the accelerator mark.
- *
- *  In order to support accelerators used in non-alphabet languages
- *  (e.g. Japanese) that has a form of "(&\<L\>)" (where \<L\> is a latin letter),
- *  this method first searches for this pattern and, if found, removes it as a
- *  whole. If such a pattern is not found, then the '&' character is simply
- *  removed from the string.
- *
- *  @note This function removes only the first occurrence of the accelerator
- *  mark.
- *
- *  @param aText Menu item's text to remove the accelerator mark from.
- *
- *  @return The resulting string.
- */
 /* static */
 QString VBoxGlobal::removeAccelMark (const QString &aText)
 {
+    /* In order to support accelerators used in non-alphabet languages
+     * (e.g. Japanese) that has a form of "(&<L>)" (where <L> is a latin letter),
+     * this method first searches for this pattern and, if found, removes it as a
+     * whole. If such a pattern is not found, then the '&' character is simply
+     * removed from the string. */
+
     QString result = aText;
 
     QRegExp accel ("\\(&[a-zA-Z]\\)");
@@ -1309,17 +1224,17 @@ QString VBoxGlobal::helpFile() const
      * return "C" which is an valid language code. */
     QLocale lang (VBoxGlobal::languageId());
 
-    /* Construct the path and the filename */
+    /* Construct the path and the filename: */
     QString manual = QString ("%1/%2_%3.%4").arg (szDocsPath)
                                             .arg (name)
                                             .arg (lang.name())
                                             .arg (suffix);
-    /* Check if a help file with that name exists */
+    /* Check if a help file with that name exists: */
     QFileInfo fi (manual);
     if (fi.exists())
         return manual;
 
-    /* Fall back to the standard */
+    /* Fall back to the standard: */
     manual = QString ("%1/%2.%4").arg (szDocsPath)
                                  .arg (name)
                                  .arg (suffix);
@@ -1343,45 +1258,41 @@ QString VBoxGlobal::documentsPath()
     }
 }
 
-/**
- *  Performs direct and flipped search of position for \a aRectangle to make sure
- *  it is fully contained inside \a aBoundRegion region by moving & resizing
- *  \a aRectangle if necessary. Selects the minimum shifted result between direct
- *  and flipped variants.
- */
 /* static */
 QRect VBoxGlobal::normalizeGeometry (const QRect &aRectangle, const QRegion &aBoundRegion,
                                      bool aCanResize /* = true */)
 {
+    /* Perform direct and flipped search of position for @a rectangle to make sure it is fully contained
+     * inside @a boundRegion region by moving & resizing (if @a fCanResize is specified) @a rectangle if
+     * necessary. Selects the minimum shifted result between direct and flipped variants. */
+
     /* Direct search for normalized rectangle */
     QRect var1 (getNormalized (aRectangle, aBoundRegion, aCanResize));
 
-    /* Flipped search for normalized rectangle */
+    /* Flipped search for normalized rectangle: */
     QRect var2 (flip (getNormalized (flip (aRectangle).boundingRect(),
                                      flip (aBoundRegion), aCanResize)).boundingRect());
 
-    /* Calculate shift from starting position for both variants */
+    /* Calculate shift from starting position for both variants: */
     double length1 = sqrt (pow ((double) (var1.x() - aRectangle.x()), (double) 2) +
                            pow ((double) (var1.y() - aRectangle.y()), (double) 2));
     double length2 = sqrt (pow ((double) (var2.x() - aRectangle.x()), (double) 2) +
                            pow ((double) (var2.y() - aRectangle.y()), (double) 2));
 
-    /* Return minimum shifted variant */
+    /* Return minimum shifted variant: */
     return length1 > length2 ? var2 : var1;
 }
 
-/**
- *  Ensures that the given rectangle \a aRectangle is fully contained within the
- *  region \a aBoundRegion by moving \a aRectangle if necessary. If \a aRectangle is
- *  larger than \a aBoundRegion, top left corner of \a aRectangle is aligned with the
- *  top left corner of maximum available rectangle and, if \a aCanResize is true,
- *  \a aRectangle is shrinked to become fully visible.
- */
 /* static */
 QRect VBoxGlobal::getNormalized (const QRect &aRectangle, const QRegion &aBoundRegion,
                                  bool /* aCanResize = true */)
 {
-    /* Storing available horizontal sub-rectangles & vertical shifts */
+    /* Ensures that the given rectangle @a rectangle is fully contained within the region @a boundRegion
+     * by moving @a rectangle if necessary. If @a rectangle is larger than @a boundRegion, top left
+     * corner of @a rectangle is aligned with the top left corner of maximum available rectangle and,
+     * if @a fCanResize is true, @a rectangle is shrinked to become fully visible. */
+
+    /* Storing available horizontal sub-rectangles & vertical shifts: */
     int windowVertical = aRectangle.center().y();
     QVector <QRect> rectanglesVector (aBoundRegion.rects());
     QList <QRect> rectanglesList;
@@ -1411,15 +1322,15 @@ QRect VBoxGlobal::getNormalized (const QRect &aRectangle, const QRegion &aBoundR
         shiftsList.insert (shift2BotPos, shift2Bot);
     }
 
-    /* Trying to find the appropriate place for window */
+    /* Trying to find the appropriate place for window: */
     QRect result;
     for (int i = -1; i < shiftsList.size(); ++ i)
     {
-        /* Move to appropriate vertical */
+        /* Move to appropriate vertical: */
         QRect rectangle (aRectangle);
         if (i >= 0) rectangle.translate (0, shiftsList [i]);
 
-        /* Search horizontal shift */
+        /* Search horizontal shift: */
         int maxShift = 0;
         foreach (QRect item, rectanglesList)
         {
@@ -1439,10 +1350,10 @@ QRect VBoxGlobal::getNormalized (const QRect &aRectangle, const QRegion &aBoundR
             }
         }
 
-        /* Shift across the horizontal direction */
+        /* Shift across the horizontal direction: */
         rectangle.translate (maxShift, 0);
 
-        /* Check the translated rectangle to feat the rules */
+        /* Check the translated rectangle to feat the rules: */
         if (aBoundRegion.united (rectangle) == aBoundRegion)
             result = rectangle;
 
@@ -1452,7 +1363,7 @@ QRect VBoxGlobal::getNormalized (const QRect &aRectangle, const QRegion &aBoundR
     if (result.isNull())
     {
         /* Resize window to feat desirable size
-         * using max of available rectangles */
+         * using max of available rectangles: */
         QRect maxRectangle;
         quint64 maxSquare = 0;
         foreach (QRect item, rectanglesList)
@@ -1476,9 +1387,6 @@ QRect VBoxGlobal::getNormalized (const QRect &aRectangle, const QRegion &aBoundR
     return result;
 }
 
-/**
- *  Returns the flipped (transposed) region.
- */
 /* static */
 QRegion VBoxGlobal::flip (const QRegion &aRegion)
 {
@@ -1490,24 +1398,19 @@ QRegion VBoxGlobal::flip (const QRegion &aRegion)
     return result;
 }
 
-/**
- *  Aligns the center of \a aWidget with the center of \a aRelative.
- *
- *  If necessary, \a aWidget's position is adjusted to make it fully visible
- *  within the available desktop area. If \a aWidget is bigger then this area,
- *  it will also be resized unless \a aCanResize is false or there is an
- *  inappropriate minimum size limit (in which case the top left corner will be
- *  simply aligned with the top left corner of the available desktop area).
- *
- *  \a aWidget must be a top-level widget. \a aRelative may be any widget, but
- *  if it's not top-level itself, its top-level widget will be used for
- *  calculations. \a aRelative can also be NULL, in which case \a aWidget will
- *  be centered relative to the available desktop area.
- */
 /* static */
 void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
                                bool aCanResize /* = true */)
 {
+    /* If necessary, pWidget's position is adjusted to make it fully visible within
+     * the available desktop area. If pWidget is bigger then this area, it will also
+     * be resized unless fCanResize is false or there is an inappropriate minimum
+     * size limit (in which case the top left corner will be simply aligned with the top
+     * left corner of the available desktop area). pWidget must be a top-level widget.
+     * pRelative may be any widget, but if it's not top-level itself, its top-level
+     * widget will be used for calculations. pRelative can also be NULL, in which case
+     * pWidget will be centered relative to the available desktop area. */
+
     AssertReturnVoid (aWidget);
     AssertReturnVoid (aWidget->isTopLevel());
 
@@ -1518,8 +1421,9 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
         w = w->window();
         deskGeo = gpDesktop->availableGeometry (w);
         parentGeo = w->frameGeometry();
-        /* On X11/Gnome, geo/frameGeo.x() and y() are always 0 for top level
-         * widgets with parents, what a shame. Use mapToGlobal() to workaround. */
+        // WORKAROUND:
+        // On X11/Gnome, geo/frameGeo.x() and y() are always 0 for top level
+        // widgets with parents, what a shame. Use mapToGlobal() to workaround.
         QPoint d = w->mapToGlobal (QPoint (0, 0));
         d.rx() -= w->geometry().x() - w->x();
         d.ry() -= w->geometry().y() - w->y();
@@ -1531,10 +1435,11 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
         parentGeo = deskGeo;
     }
 
-    /* On X11, there is no way to determine frame geometry (including WM
-     * decorations) before the widget is shown for the first time. Stupidly
-     * enumerate other top level widgets to find the thickest frame. The code
-     * is based on the idea taken from QDialog::adjustPositionInternal(). */
+    // WORKAROUND:
+    // On X11, there is no way to determine frame geometry (including WM
+    // decorations) before the widget is shown for the first time. Stupidly
+    // enumerate other top level widgets to find the thickest frame. The code
+    // is based on the idea taken from QDialog::adjustPositionInternal().
 
     int extraw = 0, extrah = 0;
 
@@ -1574,12 +1479,13 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
     geo.moveCenter (QPoint (parentGeo.x() + (parentGeo.width() - 1) / 2,
                             parentGeo.y() + (parentGeo.height() - 1) / 2));
 
-    /* ensure the widget is within the available desktop area */
+    /* Ensure the widget is within the available desktop area: */
     QRect newGeo = normalizeGeometry (geo, deskGeo, aCanResize);
 #ifdef VBOX_WS_MAC
-    /* No idea why, but Qt doesn't respect if there is a unified toolbar on the
-     * ::move call. So manually add the height of the toolbar before setting
-     * the position. */
+    // WORKAROUND:
+    // No idea why, but Qt doesn't respect if there is a unified toolbar on the
+    // ::move call. So manually add the height of the toolbar before setting
+    // the position.
     if (w)
         newGeo.translate (0, ::darwinWindowToolBarHeight (aWidget));
 #endif /* VBOX_WS_MAC */
@@ -1624,12 +1530,13 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
 # define QWINDOWSIZE_MAX ((1<<24)-1)
     if (pWidget->isWindow() && pWidget->isVisible())
     {
-        /* X11 window managers are not required to accept geometry changes on
-         * the top-level window.  Unfortunately, current at Qt 5.6 and 5.7, Qt
-         * assumes that the change will succeed, and resizes all sub-windows
-         * unconditionally.  By calling ConfigureWindow directly, Qt will see
-         * our change request as an externally triggered one on success and not
-         * at all if it is rejected. */
+        // WORKAROUND:
+        // X11 window managers are not required to accept geometry changes on
+        // the top-level window.  Unfortunately, current at Qt 5.6 and 5.7, Qt
+        // assumes that the change will succeed, and resizes all sub-windows
+        // unconditionally.  By calling ConfigureWindow directly, Qt will see
+        // our change request as an externally triggered one on success and not
+        // at all if it is rejected.
         const double dDPR = gpDesktop->devicePixelRatio(pWidget);
         uint16_t fMask =   XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
                          | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
@@ -1667,8 +1574,9 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
         xcb_flush(QX11Info::connection());
     }
     else
-        /* Call the Qt method if the window is not visible as otherwise no
-         * Configure event will arrive to tell Qt what geometry we want. */
+        // WORKAROUND:
+        // Call the Qt method if the window is not visible as otherwise no
+        // Configure event will arrive to tell Qt what geometry we want.
         pWidget->setGeometry(x, y, w, h);
 # else /* !VBOX_WS_X11 */
     pWidget->setGeometry(x, y, w, h);
@@ -1681,19 +1589,6 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, const QRect &rect)
     VBoxGlobal::setTopLevelGeometry(pWidget, rect.x(), rect.y(), rect.width(), rect.height());
 }
 
-/**
- * Activates the specified window. If necessary, the window will be
- * de-iconified activation.
- *
- * @note On X11, it is implied that @a aWid represents a window of the same
- * display the application was started on.
- *
- * @param aWId              Window ID to activate.
- * @param aSwitchDesktop    @c true to switch to the window's desktop before
- *                          activation.
- *
- * @return @c true on success and @c false otherwise.
- */
 /* static */
 bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 {
@@ -1721,8 +1616,9 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
         CARD32 *desktop = (CARD32 *) XXGetProperty (dpy, aWId, XA_CARDINAL,
                                                     "_NET_WM_DESKTOP");
         if (desktop == NULL)
-            /* if the NetWM properly is not supported try to find the desktop
-             * ID using the GNOME WM property */
+            // WORKAROUND:
+            // if the NetWM properly is not supported try to find
+            // the desktop ID using the GNOME WM property.
             desktop = (CARD32 *) XXGetProperty (dpy, aWId, XA_CARDINAL,
                                                 "_WIN_WORKSPACE");
 
@@ -1808,7 +1704,7 @@ static Bool XXSendClientMessage (Display *aDpy, Window aWnd, const char *aMsg,
     ev.xclient.window = aWnd;
     ev.xclient.message_type = msgAtom;
 
-    /* always send as 32 bit for now */
+    /* Always send as 32 bit for now: */
     ev.xclient.format = 32;
     ev.xclient.data.l [0] = aData0;
     ev.xclient.data.l [1] = aData1;
@@ -1820,19 +1716,19 @@ static Bool XXSendClientMessage (Display *aDpy, Window aWnd, const char *aMsg,
                        SubstructureRedirectMask, &ev) != 0;
 }
 
-/* This method tests whether the current X11 window manager supports full-screen mode as we need it.
- * Unfortunately the EWMH specification was not fully clear about whether we can expect to find
- * all of these atoms on the _NET_SUPPORTED root window property, so we have to test with all
- * interesting window managers. If this fails for a user when you think it should succeed
- * they should try executing:
- * xprop -root | egrep -w '_NET_WM_FULLSCREEN_MONITORS|_NET_WM_STATE|_NET_WM_STATE_FULLSCREEN'
- * in an X11 terminal window.
- * All three strings should be found under a property called "_NET_SUPPORTED(ATOM)". */
 /* static */
 bool VBoxGlobal::supportsFullScreenMonitorsProtocolX11()
 {
-    /* Using a global to get at the display does not feel right, but that is
-     * how it is done elsewhere in the code. */
+    /* This method tests whether the current X11 window manager supports full-screen mode as we need it.
+     * Unfortunately the EWMH specification was not fully clear about whether we can expect to find
+     * all of these atoms on the _NET_SUPPORTED root window property, so we have to test with all
+     * interesting window managers. If this fails for a user when you think it should succeed
+     * they should try executing:
+     * xprop -root | egrep -w '_NET_WM_FULLSCREEN_MONITORS|_NET_WM_STATE|_NET_WM_STATE_FULLSCREEN'
+     * in an X11 terminal window.
+     * All three strings should be found under a property called "_NET_SUPPORTED(ATOM)". */
+
+    /* Using a global to get at the display does not feel right, but that is how it is done elsewhere in the code. */
     Display *pDisplay = QX11Info::display();
     Atom atomSupported            = XInternAtom(pDisplay, "_NET_SUPPORTED",
                                                 True /* only_if_exists */);
@@ -2016,6 +1912,7 @@ void VBoxGlobal::setSkipPagerFlag(QWidget *pWidget)
     }
 }
 
+/* static */
 void VBoxGlobal::setWMClass(QWidget *pWidget, const QString &strNameString, const QString &strClassString)
 {
     /* Make sure all arguments set: */
@@ -2159,6 +2056,11 @@ QList<ulong> XGetStrut(Window window)
 /* static */
 void VBoxGlobal::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount)
 {
+    /* Shame on Qt it hasn't stuff for tuning
+     * widget size suitable for reflecting content of desired size.
+     * For example QLineEdit, QSpinBox and similar widgets should have a methods
+     * to strict the minimum width to reflect at least [n] symbols. */
+
     /* Load options: */
     QStyleOptionSpinBox option;
     option.initFrom(pSpinBox);
@@ -2181,10 +2083,6 @@ void VBoxGlobal::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCo
     pSpinBox->setMinimumWidth(iTextWidth + iSpinBoxDelta);
 }
 
-/**
- *  Returns the list of few guest OS types, queried from
- *  IVirtualBox corresponding to every family id.
- */
 QList<CGuestOSType> VBoxGlobal::vmGuestOSFamilyList() const
 {
     QList<CGuestOSType> result;
@@ -2193,10 +2091,6 @@ QList<CGuestOSType> VBoxGlobal::vmGuestOSFamilyList() const
     return result;
 }
 
-/**
- *  Returns the list of all guest OS types, queried from
- *  IVirtualBox corresponding to passed family id.
- */
 QList<CGuestOSType> VBoxGlobal::vmGuestOSTypeList(const QString &aFamilyId) const
 {
     AssertMsg(m_guestOSFamilyIDs.contains(aFamilyId), ("Family ID incorrect: '%s'.", aFamilyId.toLatin1().constData()));
@@ -2204,11 +2098,6 @@ QList<CGuestOSType> VBoxGlobal::vmGuestOSTypeList(const QString &aFamilyId) cons
            m_guestOSTypes[m_guestOSFamilyIDs.indexOf(aFamilyId)] : QList<CGuestOSType>();
 }
 
-/**
- *  Returns the guest OS type object corresponding to the given type id of list
- *  containing OS types related to OS family determined by family id attribute.
- *  If the index is invalid a null object is returned.
- */
 CGuestOSType VBoxGlobal::vmGuestOSType(const QString &aTypeId,
              const QString &aFamilyId /* = QString::null */) const
 {
@@ -2229,9 +2118,6 @@ CGuestOSType VBoxGlobal::vmGuestOSType(const QString &aTypeId,
     return CGuestOSType();
 }
 
-/**
- *  Returns the description corresponding to the given guest OS type id.
- */
 QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aTypeId) const
 {
     for (int i = 0; i < m_guestOSFamilyIDs.size(); ++ i)
@@ -2266,8 +2152,9 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
     if (!machine.isOk())
         return false;
 
-    /* winId = 0 it means the console window has already done everything
-     * necessary to implement the "show window" semantics. */
+    // WORKAROUND:
+    // winId = 0 it means the console window has already done everything
+    // necessary to implement the "show window" semantics.
     if (id == 0)
         return true;
 
@@ -2276,10 +2163,9 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
     return vboxGlobal().activateWindow(id, true);
 
 #elif defined(VBOX_WS_MAC)
-    /*
-     * This is just for the case were the other process cannot steal
-     * the focus from us. It will send us a PSN so we can try.
-     */
+    // WORKAROUND:
+    // This is just for the case were the other process cannot steal
+    // the focus from us. It will send us a PSN so we can try.
     ProcessSerialNumber psn;
     psn.highLongOfPSN = id >> 32;
     psn.lowLongOfPSN = (UInt32)id;
@@ -2539,15 +2425,10 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
     return session;
 }
 
-/**
- * Figures out which medium formats are currently supported by VirtualBox for
- * the given device type.
- * Returned is a list of pairs with the form
- *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
- */
 /* static */
 QList <QPair <QString, QString> > VBoxGlobal::MediumBackends(KDeviceType enmType)
 {
+    /* Prepare a list of pairs with the form <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>. */
     CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
     QVector<CMediumFormat> mediumFormats = systemProperties.GetMediumFormats();
     QList< QPair<QString, QString> > backendPropList;
@@ -2570,33 +2451,18 @@ QList <QPair <QString, QString> > VBoxGlobal::MediumBackends(KDeviceType enmType
     return backendPropList;
 }
 
-/**
- * Figures out which hard disk formats are currently supported by VirtualBox.
- * Returned is a list of pairs with the form
- *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
- */
 /* static */
 QList <QPair <QString, QString> > VBoxGlobal::HDDBackends()
 {
     return MediumBackends(KDeviceType_HardDisk);
 }
 
-/**
- * Figures out which optical disk formats are currently supported by VirtualBox.
- * Returned is a list of pairs with the form
- *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
- */
 /* static */
 QList <QPair <QString, QString> > VBoxGlobal::DVDBackends()
 {
     return MediumBackends(KDeviceType_DVD);
 }
 
-/**
- * Figures out which floppy disk formats are currently supported by VirtualBox.
- * Returned is a list of pairs with the form
- *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
- */
 /* static */
 QList <QPair <QString, QString> > VBoxGlobal::FloppyBackends()
 {
@@ -2691,7 +2557,7 @@ void VBoxGlobal::deleteMedium(const QString &strMediumID)
     }
 }
 
-QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent /* = 0*/)
+QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent /* = 0 */)
 {
     /* Convert to native separators: */
     strMediumLocation = QDir::toNativeSeparators(strMediumLocation);
@@ -2754,8 +2620,6 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
     return QString();
 }
 
-/* Open some external medium using file open dialog
- * and temporary cache (enumerate) it in GUI inner mediums cache: */
 QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent,
                                                  const QString &strDefaultFolder /* = QString() */,
                                                  bool fUseLastFolder /* = false */)
@@ -2837,13 +2701,6 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
     return QString();
 }
 
-/**
- * Create a VISO using the file open dialog.
- *
- * Temporarily caches (enumerate) it in GUI inner mediums cache.
- *
- * @returns Medium ID string, empty on abort.
- */
 QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strMachineFolder)
 {
     AssertReturn(!strMachineFolder.isEmpty(), QString());
@@ -2860,7 +2717,7 @@ QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const Q
     QStringList files = QIFileDialog::getOpenFileNames(strDirectory, tr("All files (*)"), pParent,
                                                        /// @todo tr("Please select files and directories to be on the VISO"),
                                                        tr("Please select files to be on the VISO"),
-                                                       0, true /*aResolveSymlinks*/, false /*aSingleFile*/);
+                                                       0, true /* resolve symlinks? */, false /* single file? */);
 
     /* Return if no result. */
     if (files.empty() || files[0].isEmpty())
@@ -3239,7 +3096,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &constMachine, const UIMedi
         session.UnlockMachine();
 }
 
-QString VBoxGlobal::details(const CMedium &cmedium, bool fPredictDiff, bool fUseHtml /* = true*/)
+QString VBoxGlobal::details(const CMedium &cmedium, bool fPredictDiff, bool fUseHtml /* = true */)
 {
     /* Search for corresponding UI medium: */
     const QString strMediumID = cmedium.isNull() ? UIMedium::nullID() : cmedium.GetId();
@@ -3293,9 +3150,6 @@ void VBoxGlobal::checkForWrongUSBMounted()
 }
 #endif /* RT_OS_LINUX */
 
-/**
- *  Returns the details of the given USB device as a single-line string.
- */
 QString VBoxGlobal::details (const CUSBDevice &aDevice) const
 {
     QString sDetails;
@@ -3334,9 +3188,6 @@ QString VBoxGlobal::details (const CUSBDevice &aDevice) const
     return sDetails.trimmed();
 }
 
-/**
- *  Returns the multi-line description of the given USB device.
- */
 QString VBoxGlobal::toolTip (const CUSBDevice &aDevice) const
 {
     QString tip =
@@ -3363,9 +3214,6 @@ QString VBoxGlobal::toolTip (const CUSBDevice &aDevice) const
     return tip;
 }
 
-/**
- *  Returns the multi-line description of the given USB filter
- */
 QString VBoxGlobal::toolTip (const CUSBDeviceFilter &aFilter) const
 {
     QString tip;
@@ -3416,7 +3264,6 @@ QString VBoxGlobal::toolTip (const CUSBDeviceFilter &aFilter) const
     return tip;
 }
 
-/** Returns the multi-line description of the given CHostVideoInputDevice filter. */
 QString VBoxGlobal::toolTip(const CHostVideoInputDevice &webcam) const
 {
     QStringList records;
@@ -3520,19 +3367,15 @@ void VBoxGlobal::doExtPackInstallation(QString const &strFilePath, QString const
         *pstrExtPackName = strPackName;
 }
 
-/**
- * Inner worker that for lazily querying for 3D support.
- *
- * Rational is that when starting a text mode guest (like DOS) that does not
- * have 3D enabled, don't wast the developer's or user's time on launching the
- * test application when starting the VM or editing it's settings.
- *
- * @returns true / false.
- * @note If we ever end up checking this concurrently on multiple threads, use a
- *       RTONCE construct to serialize the efforts.
- */
 bool VBoxGlobal::is3DAvailableWorker() const
 {
+    /* Rational is that when starting a text mode guest (like DOS) that does not
+     * have 3D enabled, don't wast the developer's or user's time on launching the
+     * test application when starting the VM or editing it's settings.
+     *
+     * Keep in mind that if we ever end up checking this concurrently on multiple threads,
+     * use a RTONCE construct to serialize the efforts. */
+
 #ifdef VBOX_WITH_CROGL
     bool fSupported = VBoxOglIs3DAccelerationSupported();
 #else
@@ -3556,10 +3399,6 @@ bool VBoxGlobal::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
 }
 #endif /* VBOX_WITH_CRHGSMI */
 
-/**
- *  Returns the required video memory in bytes for the current desktop
- *  resolution at maximum possible screen depth in bpp.
- */
 /* static */
 quint64 VBoxGlobal::requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors /* = 1 */)
 {
@@ -3576,7 +3415,7 @@ quint64 VBoxGlobal::requiredVideoMemory(const QString &strGuestOSTypeId, int cMo
         QRect r = gpDesktop->screenGeometry(i);
         screenSize[i] = r.width() * r.height();
     }
-    /* Now sort the vector */
+    /* Now sort the vector: */
     qSort(screenSize.begin(), screenSize.end(), qGreater<int>());
     /* For the case that there are more guest screens configured then host
      * screens available, replace all zeros with the greatest value in the
@@ -3588,13 +3427,13 @@ quint64 VBoxGlobal::requiredVideoMemory(const QString &strGuestOSTypeId, int cMo
     quint64 needBits = 0;
     for (int i = 0; i < cMonitors; ++i)
     {
-        /* Calculate summary required memory amount in bits */
+        /* Calculate summary required memory amount in bits: */
         needBits += (screenSize.at(i) * /* with x height */
                      32 + /* we will take the maximum possible bpp for now */
                      8 * _1M) + /* current cache per screen - may be changed in future */
                     8 * 4096; /* adapter info */
     }
-    /* Translate value into megabytes with rounding to highest side */
+    /* Translate value into megabytes with rounding to highest side: */
     quint64 needMBytes = needBits % (8 * _1M) ? needBits / (8 * _1M) + 1 :
                          needBits / (8 * _1M) /* convert to megabytes */;
 
@@ -3604,7 +3443,7 @@ quint64 VBoxGlobal::requiredVideoMemory(const QString &strGuestOSTypeId, int cMo
 #ifdef VBOX_WITH_CRHGSMI
        if (isWddmCompatibleOsType(strGuestOSTypeId))
        {
-           /* wddm mode, there are two surfaces for each screen: shadow & primary */
+           /* WDDM mode, there are two surfaces for each screen: shadow & primary: */
            needMBytes *= 3;
        }
        else
@@ -3689,13 +3528,6 @@ QPixmap VBoxGlobal::vmGuestOSTypePixmapDefault(const QString &strOSTypeID, QSize
     return m_pIconPool->guestOSTypePixmapDefault(strOSTypeID, pLogicalSize);
 }
 
-/**
- * Joins two pixmaps horizontally with 2px space between them and returns the
- * result.
- *
- * @param aPM1 Left pixmap.
- * @param aPM2 Right pixmap.
- */
 /* static */
 QPixmap VBoxGlobal::joinPixmaps (const QPixmap &aPM1, const QPixmap &aPM2)
 {
@@ -3716,18 +3548,6 @@ QPixmap VBoxGlobal::joinPixmaps (const QPixmap &aPM1, const QPixmap &aPM2)
     return result;
 }
 
-/**
- *  Replacement for QToolButton::setTextLabel() that handles the shortcut
- *  letter (if it is present in the argument string) as if it were a setText()
- *  call: the shortcut letter is used to automatically assign an "Alt+<letter>"
- *  accelerator key sequence to the given tool button.
- *
- *  @note This method preserves the icon set if it was assigned before. Only
- *  the text label and the accelerator are changed.
- *
- *  @param aToolButton  Tool button to set the text label on.
- *  @param aTextLabel   Text label to set.
- */
 /* static */
 void VBoxGlobal::setTextLabel (QToolButton *aToolButton,
                                const QString &aTextLabel)
@@ -3745,11 +3565,6 @@ void VBoxGlobal::setTextLabel (QToolButton *aToolButton,
     aToolButton->setShortcut (accel);
 }
 
-/**
- * Puts soft hyphens after every path component in the given file name.
- *
- * @param aFileName File name (must be a full path name).
- */
 /* static */
 QString VBoxGlobal::locationForHTML (const QString &aFileName)
 {
@@ -3765,12 +3580,6 @@ QString VBoxGlobal::locationForHTML (const QString &aFileName)
     return fi.fileName();
 }
 
-/**
- *  Searches for a widget that with @a aName (if it is not NULL) which inherits
- *  @a aClassName (if it is not NULL) and among children of @a aParent. If @a
- *  aParent is NULL, all top-level widgets are searched. If @a aRecursive is
- *  true, child widgets are recursively searched as well.
- */
 /* static */
 QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
                                  const char *aClassName /* = NULL */,
@@ -3805,42 +3614,42 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
     return NULL;
 }
 
-/**
- * Opens the specified URL using OS/Desktop capabilities.
- *
- * @param aURL URL to open
- *
- * @return true on success and false otherwise
- */
 bool VBoxGlobal::openURL (const QString &aURL)
 {
-    /* Service event */
+    /** Service event. */
     class ServiceEvent : public QEvent
     {
         public:
 
+            /** Constructs service event on th basis of passed @a fResult. */
             ServiceEvent (bool aResult) : QEvent (QEvent::User), mResult (aResult) {}
 
+            /** Returns the result which event brings. */
             bool result() const { return mResult; }
 
         private:
 
+            /** Holds the result which event brings. */
             bool mResult;
     };
 
-    /* Service-Client object */
+    /** Service client object. */
     class ServiceClient : public QEventLoop
     {
         public:
 
+            /** Constructs service client on the basis of passed @a fResult. */
             ServiceClient() : mResult (false) {}
 
+            /** Returns the result which event brings. */
             bool result() const { return mResult; }
 
         private:
 
+            /** Handles any Qt @a pEvent. */
             bool event (QEvent *aEvent)
             {
+                /* Handle service event: */
                 if (aEvent->type() == QEvent::User)
                 {
                     ServiceEvent *pEvent = static_cast <ServiceEvent*> (aEvent);
@@ -3855,31 +3664,37 @@ bool VBoxGlobal::openURL (const QString &aURL)
             bool mResult;
     };
 
-    /* Service-Server object */
+    /** Service server object. */
     class ServiceServer : public QThread
     {
         public:
 
+            /** Constructs service server on the basis of passed @a client and @a strUrl. */
             ServiceServer (ServiceClient &aClient, const QString &sURL)
                 : mClient (aClient), mURL (sURL) {}
 
         private:
 
+            /** Executes thread task. */
             void run()
             {
                 QApplication::postEvent (&mClient, new ServiceEvent (QDesktopServices::openUrl (mURL)));
             }
 
+            /** Holds the client reference. */
             ServiceClient &mClient;
+            /** Holds the URL to be processed. */
             const QString &mURL;
     };
 
+    /* Create/start client & server: */
     ServiceClient client;
     ServiceServer server (client, aURL);
     server.start();
     client.exec();
     server.wait();
 
+    /* Acquire client result: */
     bool result = client.result();
 
     if (!result)
@@ -3898,6 +3713,8 @@ void VBoxGlobal::sltGUILanguageChange(QString strLang)
 
 bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
 {
+    /** @todo Just use the QIWithRetranslateUI3 template wrapper. */
+
     if (aEvent->type() == QEvent::LanguageChange &&
         aObject->isWidgetType() &&
         static_cast <QWidget *> (aObject)->isTopLevel())
@@ -3908,19 +3725,16 @@ bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
         QWidgetList list = QApplication::topLevelWidgets();
         if (list.first() == aObject)
         {
-            /* call this only once per every language change (see
-             * QApplication::installTranslator() for details) */
+            /* Call this only once per every language change (see
+             * QApplication::installTranslator() for details): */
             retranslateUi();
         }
     }
 
+    /* Call to base-class: */
     return QObject::eventFilter (aObject, aEvent);
 }
 
-/**
- *  Changes the language of all global string constants according to the
- *  currently installed translations tables.
- */
 void VBoxGlobal::retranslateUi()
 {
     mUserDefinedPortName = tr ("User-defined", "serial port");
@@ -3936,8 +3750,9 @@ void VBoxGlobal::retranslateUi()
         startMediumEnumeration();
 
 #ifdef VBOX_WS_X11
-    /* As X11 do not have functionality for providing human readable key names,
-     * we keep a table of them, which must be updated when the language is changed. */
+    // WORKAROUND:
+    // As X11 do not have functionality for providing human readable key names,
+    // we keep a table of them, which must be updated when the language is changed.
     UINativeHotKey::retranslateKeyNames();
 #endif /* VBOX_WS_X11 */
 }
@@ -4260,7 +4075,7 @@ void VBoxGlobal::prepare()
         vmUuid = machine.GetId();
     }
 
-    /* After initializing *vmUuid* we already know if that is VM process or not: */
+    /* After initializing *m_strManagedVMId* we already know if that is VM process or not: */
     if (!isVMConsoleProcess())
     {
         /* We should create separate logging file for VM selector: */
@@ -4531,15 +4346,6 @@ BOOL VBoxGlobal::ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason)
 # define VBOXGLOBAL_DBG_CFG_VAR_CMD_LINE    RT_BIT(3)
 # define VBOXGLOBAL_DBG_CFG_VAR_DONE        RT_BIT(4)
 
-/**
- * Initialize a debugger config variable.
- *
- * @param   piDbgCfgVar         The debugger config variable to init.
- * @param   pszEnvVar           The environment variable name relating to this
- *                              variable.
- * @param   pszExtraDataName    The extra data name relating to this variable.
- * @param   fDefault            The default value.
- */
 void VBoxGlobal::initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const char *pszExtraDataName, bool fDefault)
 {
     QString strEnvValue;
@@ -4586,12 +4392,6 @@ void VBoxGlobal::initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const 
     }
 }
 
-/**
- * Set a debugger config variable according according to start up argument.
- *
- * @param   piDbgCfgVar         The debugger config variable to set.
- * @param   fState              The value from the command line.
- */
 void VBoxGlobal::setDebuggerVar(int *piDbgCfgVar, bool fState)
 {
     if (!(*piDbgCfgVar & VBOXGLOBAL_DBG_CFG_VAR_DONE))
@@ -4599,14 +4399,6 @@ void VBoxGlobal::setDebuggerVar(int *piDbgCfgVar, bool fState)
                      | VBOXGLOBAL_DBG_CFG_VAR_CMD_LINE;
 }
 
-/**
- * Checks the state of a debugger config variable, updating it with the machine
- * settings on the first invocation.
- *
- * @returns true / false.
- * @param   piDbgCfgVar         The debugger config variable to consult.
- * @param   pszExtraDataName    The extra data name relating to this variable.
- */
 bool VBoxGlobal::isDebuggerWorker(int *piDbgCfgVar, const char *pszExtraDataName) const
 {
     if (!(*piDbgCfgVar & VBOXGLOBAL_DBG_CFG_VAR_DONE))
