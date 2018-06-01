@@ -171,7 +171,7 @@ typedef struct PS2K
     /** Status indicator (LED) state. */
     uint8_t             u8LEDs;
     /** Selected typematic delay/rate. */
-    uint8_t             u8Typematic;
+    uint8_t             u8TypematicCfg;
     /** Usage code of current typematic key, if any. */
     uint8_t             u8TypematicKey;
     /** Current typematic repeat state. */
@@ -665,7 +665,7 @@ static void ps2kSetupTypematic(PPS2K pThis, uint8_t val)
     int         A, B;
     unsigned    period;
 
-    pThis->u8Typematic = val;
+    pThis->u8TypematicCfg = val;
     /* The delay is easy: (1 + value) * 250 ms */
     pThis->uTypematicDelay = (1 + ((val >> 5) & 3)) * 250;
     /* The rate is more complicated: (8 + A) * 2^B * 4.17 ms */
@@ -1191,7 +1191,7 @@ static DECLCALLBACK(void) ps2kInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     pHlp->pfnPrintf(pHlp, "Input queue  : %d items (%d max)\n",
                     pThis->keyQ.cUsed, pThis->keyQ.cSize);
     if (pThis->enmTypematicState != KBD_TMS_IDLE)
-        pHlp->pfnPrintf(pHlp, "Active typematic key %02X (%s)\n", pThis->u8Typematic,
+        pHlp->pfnPrintf(pHlp, "Active typematic key %02X (%s)\n", pThis->u8TypematicKey,
                         pThis->enmTypematicState == KBD_TMS_DELAY ? "delay" : "repeat");
 }
 
@@ -1347,7 +1347,7 @@ void PS2KSaveState(PPS2K pThis, PSSMHANDLE pSSM)
     /* Save the basic keyboard state. */
     SSMR3PutU8(pSSM, pThis->u8CurrCmd);
     SSMR3PutU8(pSSM, pThis->u8LEDs);
-    SSMR3PutU8(pSSM, pThis->u8Typematic);
+    SSMR3PutU8(pSSM, pThis->u8TypematicCfg);
     SSMR3PutU8(pSSM, pThis->u8TypematicKey);
     SSMR3PutU8(pSSM, pThis->u8Modifiers);
     SSMR3PutU8(pSSM, pThis->u8ScanSet);
@@ -1395,7 +1395,7 @@ int PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     /* Load the basic keyboard state. */
     SSMR3GetU8(pSSM, &pThis->u8CurrCmd);
     SSMR3GetU8(pSSM, &pThis->u8LEDs);
-    SSMR3GetU8(pSSM, &pThis->u8Typematic);
+    SSMR3GetU8(pSSM, &pThis->u8TypematicCfg);
     SSMR3GetU8(pSSM, &pThis->u8TypematicKey);
     SSMR3GetU8(pSSM, &pThis->u8Modifiers);
     SSMR3GetU8(pSSM, &pThis->u8ScanSet);
@@ -1415,7 +1415,7 @@ int PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     AssertRCReturn(rc, rc);
 
     /* Recalculate the typematic delay/rate. */
-    ps2kSetupTypematic(pThis, pThis->u8Typematic);
+    ps2kSetupTypematic(pThis, pThis->u8TypematicCfg);
 
     /* Fake key up events for keys that were held down at the time the state was saved. */
     rc = SSMR3GetU32(pSSM, &cPressed);

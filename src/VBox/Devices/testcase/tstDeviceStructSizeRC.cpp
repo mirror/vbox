@@ -478,7 +478,7 @@ int main()
     GEN_CHECK_OFF(PS2K, fScanning);
     GEN_CHECK_OFF(PS2K, fNumLockOn);
     GEN_CHECK_OFF(PS2K, u8ScanSet);
-    GEN_CHECK_OFF(PS2K, u8Typematic);
+    GEN_CHECK_OFF(PS2K, u8TypematicCfg);
     GEN_CHECK_OFF(PS2K, enmTypematicState);
     GEN_CHECK_OFF(PS2K, keyQ);
     GEN_CHECK_OFF(PS2K, cmdQ);
