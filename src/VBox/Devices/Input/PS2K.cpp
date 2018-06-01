@@ -657,6 +657,18 @@ static int ps2kRemoveQueue(GeneriQ *pQ, uint8_t *pVal)
     return rc;
 }
 
+/* Clears the currently active typematic key, if any. */
+static void ps2kStopTypematicRepeat(PPS2K pThis)
+{
+    if (pThis->u8TypematicKey)
+    {
+        LogFunc(("Typematic key %02X\n", pThis->u8TypematicKey));
+        pThis->enmTypematicState = KBD_TMS_IDLE;
+        pThis->u8TypematicKey = 0;
+        TMTimerStop(pThis->CTX_SUFF(pKbdTypematicTimer));
+    }
+}
+
 /* Convert encoded typematic value to milliseconds. Note that the values are rated
  * with +/- 20% accuracy, so there's no need for high precision.
  */
@@ -685,6 +697,7 @@ static void ps2kSetDefaults(PPS2K pThis)
     /* Set default typematic rate/delay. */
     ps2kSetupTypematic(pThis, KBD_DFL_RATE_DELAY);
     /* Clear last typematic key?? */
+    ps2kStopTypematicRepeat(pThis);
 }
 
 /**
@@ -718,13 +731,13 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
         case KCMD_ENABLE:
             pThis->fScanning = true;
             ps2kClearQueue((GeneriQ *)&pThis->keyQ);
-            /* Clear last typematic key?? */
+            ps2kStopTypematicRepeat(pThis);
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
         case KCMD_DFLT_DISABLE:
             pThis->fScanning = false;
-            ps2kSetDefaults(pThis);
+            ps2kSetDefaults(pThis); /* Also clears buffer/typematic state. */
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
@@ -1059,10 +1072,19 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
     }
     else
     {
-        pThis->u8TypematicKey    = 0;
-        pThis->enmTypematicState = KBD_TMS_IDLE;
-        /// @todo Cancel timer right away?
-        /// @todo Cancel timer before pushing key up code!?
+        /* "Typematic operation stops when the last key pressed is released, even
+         * if other keys are still held down." (IBM PS/2 Tech Ref). The last key pressed
+         * is the one that's being repeated.
+         */
+        if (pThis->u8TypematicKey == u8HidCode)
+        {
+            /* This disables the typematic repeat. */
+            pThis->u8TypematicKey    = 0;
+            pThis->enmTypematicState = KBD_TMS_IDLE;
+            /* For good measure, we cancel the timer, too. */
+            TMTimerStop(pThis->CTX_SUFF(pKbdTypematicTimer));
+            Log(("Typematic action cleared for key %02X\n", u8HidCode));
+        }
     }
 
     /* Poke the KBC to update its state. */
