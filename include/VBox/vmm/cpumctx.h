@@ -876,6 +876,10 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
  * CPUMCTX_EXTRN_SYSENTER_MSRS, and CPUMCTX_EXTRN_TSC_AUX.  */
 #define CPUMCTX_EXTRN_OTHER_MSRS                UINT64_C(0x0000008000000000)
 
+/** Mask of all the MSRs. */
+#define CPUMCTX_EXTRN_ALL_MSRS                  (  CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS \
+                                                 | CPUMCTX_EXTRN_SYSENTER_MSRS | CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS)
+
 /** Mask of bits the keepers can use for state tracking. */
 #define CPUMCTX_EXTRN_KEEPER_STATE_MASK         UINT64_C(0xffff000000000000)
 

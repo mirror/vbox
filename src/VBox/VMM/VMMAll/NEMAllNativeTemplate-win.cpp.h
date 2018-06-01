@@ -2310,60 +2310,81 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
     if (pMsg->Header.ExecutionState.Cpl == 0)
     {
         /*
-         * Handle writes.
+         * Get all the MSR state.  Since we're getting EFER, we also need to
+         * get CR0, CR4 and CR3.
          */
-        if (pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE)
+        nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
+        rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx,
+                                                       CPUMCTX_EXTRN_ALL_MSRS | CPUMCTX_EXTRN_CR0
+                                                     | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4,
+                                                     "MSRs");
+        if (rcStrict == VINF_SUCCESS)
         {
-            rcStrict = CPUMSetGuestMsr(pVCpu, pMsg->MsrNumber, RT_MAKE_U64((uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx));
-            Log4(("MsrExit/%u: %04x:%08RX64/%s: WRMSR %08x, %08x:%08x -> %Rrc\n",
-                  pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
-                  pMsg->MsrNumber, (uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
-            if (rcStrict == VINF_SUCCESS)
+
+            /*
+             * Handle writes.
+             */
+            if (pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE)
             {
-                nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
-                nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
-                return VINF_SUCCESS;
-            }
+                rcStrict = CPUMSetGuestMsr(pVCpu, pMsg->MsrNumber, RT_MAKE_U64((uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx));
+                Log4(("MsrExit/%u: %04x:%08RX64/%s: WRMSR %08x, %08x:%08x -> %Rrc\n",
+                      pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
+                      pMsg->MsrNumber, (uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
+                    nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+                    return VINF_SUCCESS;
+                }
 # ifndef IN_RING3
-            /* move to ring-3 and handle the trap/whatever there, as we want to LogRel this. */
-            if (rcStrict == VERR_CPUM_RAISE_GP_0)
-                rcStrict = VINF_CPUM_R3_MSR_WRITE;
-            return rcStrict;
+                /* move to ring-3 and handle the trap/whatever there, as we want to LogRel this. */
+                if (rcStrict == VERR_CPUM_RAISE_GP_0)
+                    rcStrict = VINF_CPUM_R3_MSR_WRITE;
+                return rcStrict;
 # else
-            LogRel(("MsrExit/%u: %04x:%08RX64/%s: WRMSR %08x, %08x:%08x -> %Rrc!\n",
-                    pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
-                    pMsg->MsrNumber, (uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
+                LogRel(("MsrExit/%u: %04x:%08RX64/%s: WRMSR %08x, %08x:%08x -> %Rrc!\n",
+                        pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
+                        pMsg->MsrNumber, (uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
 # endif
+            }
+            /*
+             * Handle reads.
+             */
+            else
+            {
+                uint64_t uValue = 0;
+                rcStrict = CPUMQueryGuestMsr(pVCpu, pMsg->MsrNumber, &uValue);
+                Log4(("MsrExit/%u: %04x:%08RX64/%s: RDMSR %08x -> %08RX64 / %Rrc\n",
+                      pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
+                      pMsg->MsrNumber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
+                    pCtx->rax = (uint32_t)uValue;
+                    pCtx->rdx = uValue >> 32;
+                    pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX);
+                    nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+                    return VINF_SUCCESS;
+                }
+# ifndef IN_RING3
+                /* move to ring-3 and handle the trap/whatever there, as we want to LogRel this. */
+                if (rcStrict == VERR_CPUM_RAISE_GP_0)
+                    rcStrict = VINF_CPUM_R3_MSR_READ;
+                return rcStrict;
+# else
+                LogRel(("MsrExit/%u: %04x:%08RX64/%s: RDMSR %08x -> %08RX64 / %Rrc\n",
+                        pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
+                        pMsg->MsrNumber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
+# endif
+            }
         }
-        /*
-         * Handle reads.
-         */
         else
         {
-            uint64_t uValue = 0;
-            rcStrict = CPUMQueryGuestMsr(pVCpu, pMsg->MsrNumber, &uValue);
-            Log4(("MsrExit/%u: %04x:%08RX64/%s: RDMSR %08x -> %08RX64 / %Rrc\n",
-                  pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
-                  pMsg->MsrNumber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
-            if (rcStrict == VINF_SUCCESS)
-            {
-                nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
-                pCtx->rax = (uint32_t)uValue;
-                pCtx->rdx = uValue >> 32;
-                pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX);
-                nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
-                return VINF_SUCCESS;
-            }
-# ifndef IN_RING3
-            /* move to ring-3 and handle the trap/whatever there, as we want to LogRel this. */
-            if (rcStrict == VERR_CPUM_RAISE_GP_0)
-                rcStrict = VINF_CPUM_R3_MSR_READ;
-            return rcStrict;
-# else
-            LogRel(("MsrExit/%u: %04x:%08RX64/%s: RDMSR %08x -> %08RX64 / %Rrc\n",
+            LogRel(("MsrExit/%u: %04x:%08RX64/%s: %sMSR %08x -> %Rrc - msr state import\n",
                     pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
-                    pMsg->MsrNumber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
-# endif
+                    pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE ? "WR" : "RD",
+                    pMsg->MsrNumber, VBOXSTRICTRC_VAL(rcStrict) ));
+            return rcStrict;
         }
     }
     else if (pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE)
@@ -2378,7 +2399,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
     /*
      * If we get down here, we're supposed to #GP(0).
      */
-    rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "NMI");
+    rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "MSR");
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = IEMInjectTrap(pVCpu, X86_XCPT_GP, TRPM_TRAP, 0, 0, 0);
@@ -2412,62 +2433,80 @@ nemR3WinHandleExitMsr(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExi
     if (pExit->VpContext.ExecutionState.Cpl == 0)
     {
         /*
-         * Handle writes.
+         * Get all the MSR state.  Since we're getting EFER, we also need to
+         * get CR0, CR4 and CR3.
          */
-        if (pExit->MsrAccess.AccessInfo.IsWrite)
+        nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
+        rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL, pCtx,
+                                                       CPUMCTX_EXTRN_ALL_MSRS | CPUMCTX_EXTRN_CR0
+                                                     | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4,
+                                                     "MSRs");
+        if (rcStrict == VINF_SUCCESS)
         {
-            rcStrict = CPUMSetGuestMsr(pVCpu, pExit->MsrAccess.MsrNumber,
-                                       RT_MAKE_U64((uint32_t)pExit->MsrAccess.Rax, (uint32_t)pExit->MsrAccess.Rdx));
-            Log4(("MsrExit/%u: %04x:%08RX64/%s: WRMSR %08x, %08x:%08x -> %Rrc\n",
-                  pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
-                  pExit->MsrAccess.MsrNumber, (uint32_t)pExit->MsrAccess.Rax, (uint32_t)pExit->MsrAccess.Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
-            if (rcStrict == VINF_SUCCESS)
+            /*
+             * Handle writes.
+             */
+            if (pExit->MsrAccess.AccessInfo.IsWrite)
             {
-                nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
-                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext);
-                return VINF_SUCCESS;
+                rcStrict = CPUMSetGuestMsr(pVCpu, pExit->MsrAccess.MsrNumber,
+                                           RT_MAKE_U64((uint32_t)pExit->MsrAccess.Rax, (uint32_t)pExit->MsrAccess.Rdx));
+                Log4(("MsrExit/%u: %04x:%08RX64/%s: WRMSR %08x, %08x:%08x -> %Rrc\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector,
+                      pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->MsrAccess.MsrNumber,
+                      (uint32_t)pExit->MsrAccess.Rax, (uint32_t)pExit->MsrAccess.Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext);
+                    return VINF_SUCCESS;
+                }
+                LogRel(("MsrExit/%u: %04x:%08RX64/%s: WRMSR %08x, %08x:%08x -> %Rrc!\n", pVCpu->idCpu,
+                        pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
+                        pExit->MsrAccess.MsrNumber, (uint32_t)pExit->MsrAccess.Rax, (uint32_t)pExit->MsrAccess.Rdx,
+                        VBOXSTRICTRC_VAL(rcStrict) ));
             }
-            LogRel(("MsrExit/%u: %04x:%08RX64/%s: WRMSR %08x, %08x:%08x -> %Rrc!\n",
-                    pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
-                    pExit->MsrAccess.MsrNumber, (uint32_t)pExit->MsrAccess.Rax, (uint32_t)pExit->MsrAccess.Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
+            /*
+             * Handle reads.
+             */
+            else
+            {
+                uint64_t uValue = 0;
+                rcStrict = CPUMQueryGuestMsr(pVCpu, pExit->MsrAccess.MsrNumber, &uValue);
+                Log4(("MsrExit/%u: %04x:%08RX64/%s: RDMSR %08x -> %08RX64 / %Rrc\n", pVCpu->idCpu,
+                      pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
+                      pExit->MsrAccess.MsrNumber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    pCtx->rax = (uint32_t)uValue;
+                    pCtx->rdx = uValue >> 32;
+                    pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX);
+                    nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext);
+                    return VINF_SUCCESS;
+                }
+                LogRel(("MsrExit/%u: %04x:%08RX64/%s: RDMSR %08x -> %08RX64 / %Rrc\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector,
+                        pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->MsrAccess.MsrNumber,
+                        uValue, VBOXSTRICTRC_VAL(rcStrict) ));
+            }
         }
-        /*
-         * Handle reads.
-         */
         else
         {
-            uint64_t uValue = 0;
-            rcStrict = CPUMQueryGuestMsr(pVCpu, pExit->MsrAccess.MsrNumber, &uValue);
-            Log4(("MsrExit/%u: %04x:%08RX64/%s: RDMSR %08x -> %08RX64 / %Rrc\n",
-                  pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
-                  pExit->MsrAccess.MsrNumber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
-            if (rcStrict == VINF_SUCCESS)
-            {
-                nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
-                pCtx->rax = (uint32_t)uValue;
-                pCtx->rdx = uValue >> 32;
-                pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX);
-                nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext);
-                return VINF_SUCCESS;
-            }
-            LogRel(("MsrExit/%u: %04x:%08RX64/%s: RDMSR %08x -> %08RX64 / %Rrc\n",
+            LogRel(("MsrExit/%u: %04x:%08RX64/%s: %sMSR %08x -> %Rrc - msr state import\n",
                     pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
-                    pExit->MsrAccess.MsrNumber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
+                    pExit->MsrAccess.AccessInfo.IsWrite ? "WR" : "RD", pExit->MsrAccess.MsrNumber, VBOXSTRICTRC_VAL(rcStrict) ));
+            return rcStrict;
         }
     }
     else if (pExit->MsrAccess.AccessInfo.IsWrite)
-        Log4(("MsrExit/%u: %04x:%08RX64/%s: CPL %u -> #GP(0); WRMSR %08x, %08x:%08x\n",
-              pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
-              pExit->VpContext.ExecutionState.Cpl, pExit->MsrAccess.MsrNumber, (uint32_t)pExit->MsrAccess.Rax, (uint32_t)pExit->MsrAccess.Rdx ));
+        Log4(("MsrExit/%u: %04x:%08RX64/%s: CPL %u -> #GP(0); WRMSR %08x, %08x:%08x\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector,
+              pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->VpContext.ExecutionState.Cpl,
+              pExit->MsrAccess.MsrNumber, (uint32_t)pExit->MsrAccess.Rax, (uint32_t)pExit->MsrAccess.Rdx ));
     else
-        Log4(("MsrExit/%u: %04x:%08RX64/%s: CPL %u -> #GP(0); RDMSR %08x\n",
-              pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
-              pExit->VpContext.ExecutionState.Cpl, pExit->MsrAccess.MsrNumber));
+        Log4(("MsrExit/%u: %04x:%08RX64/%s: CPL %u -> #GP(0); RDMSR %08x\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector,
+              pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->VpContext.ExecutionState.Cpl,
+              pExit->MsrAccess.MsrNumber));
 
     /*
      * If we get down here, we're supposed to #GP(0).
      */
-    rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "NMI");
+    rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "MSR");
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = IEMInjectTrap(pVCpu, X86_XCPT_GP, TRPM_TRAP, 0, 0, 0);

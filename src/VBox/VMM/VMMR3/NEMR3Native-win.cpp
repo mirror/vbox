@@ -2431,8 +2431,20 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   when IA32_MTRR_PHYSMASK0 is written.
  *
  *
- * - Need to figure out how to emulate X2APIC (AMD Ryzen), doesn't work with
- *   debian 9.0/64.
+ * - The IA32_APIC_BASE register does not work right:
+ *
+ *      - Attempts by the guest to clear bit 11 (EN) are ignored, both the
+ *        guest and the VMM reads back the old value.
+ *
+ *      - Attempts to modify the base address (bits NN:12) seems to be ignored
+ *        in the same way.
+ *
+ *      - The VMM can modify both the base address as well as the the EN and
+ *        BSP bits, however this is useless if we cannot intercept the WRMSR.
+ *
+ *      - Attempts by the guest to set the EXTD bit (X2APIC) result in #GP(0),
+ *        while the VMM ends up with with ERROR_HV_INVALID_PARAMETER.  Seems
+ *        there is no way to support X2APIC.
  *
  *
  * - The WHvCancelVirtualProcessor API schedules a dummy usermode APC callback
