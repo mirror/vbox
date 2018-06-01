@@ -356,6 +356,7 @@ void UIMediumSelector::finalize()
 
 void UIMediumSelector::showEvent(QShowEvent *pEvent)
 {
+    Q_UNUSED(pEvent);
 
     /* Try to determine the initial size: */
     QSize proposedSize;
