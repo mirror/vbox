@@ -533,7 +533,7 @@ my_generate_usercpp_h()
             # Convert the dotted version number to an integer, checking that
             # it is all numbers in the process.
             set `echo "${MY_CUR_VER}" | ${MY_SED} 's/\./ /g' `
-            i=100000000
+            i=24010000   # == 70*70*70*70; max major version 89.
             while test $# -gt 0;
             do
                 if ! ${MY_EXPR} "$1" + 1 > /dev/null 2> /dev/null; then
@@ -542,7 +542,7 @@ my_generate_usercpp_h()
                 fi
                 if test "$i" -gt 0; then
                     MY_CUR_VER_NUM=$((${MY_CUR_VER_NUM} + $1 * $i))
-                    i=$(($i / 100))
+                    i=$(($i / 70))
                 fi
                 shift
             done
