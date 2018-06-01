@@ -2269,7 +2269,7 @@ VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVM pVM, VMCPUID idCpu)
                 {
                     LogRel(("HvCallGetMemoryBalance -> %#RX64 (%#RX64 %#RX64)!!\n",
                             uResult, pOutput->PagesAvailable, pOutput->PagesInUse));
-                    rc = VINF_NEM_IPE_0;
+                    rc = VERR_NEM_IPE_0;
                 }
 
                 if (idCpu == NIL_VMCPUID)

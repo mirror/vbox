@@ -1361,7 +1361,7 @@ typedef HV_X64_MEMORY_INTERCEPT_MESSAGE const *PCHV_X64_MEMORY_INTERCEPT_MESSAGE
 typedef struct _HV_X64_MSR_INTERCEPT_MESSAGE
 {
     HV_X64_INTERCEPT_MESSAGE_HEADER     Header;                 /**< 0x00 */
-    uint32_t                            MsrNummber;             /**< 0x28 (ecx) */
+    uint32_t                            MsrNumber;              /**< 0x28 (ecx) */
     uint32_t                            Reserved;               /**< 0x2c */
     uint64_t                            Rdx;                    /**< 0x30 */
     uint64_t                            Rax;                    /**< 0x38 */
