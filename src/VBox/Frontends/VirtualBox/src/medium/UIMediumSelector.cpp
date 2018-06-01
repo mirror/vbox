@@ -29,6 +29,7 @@
 # include "QIMessageBox.h"
 # include "QITabWidget.h"
 # include "VBoxGlobal.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIMediumSelector.h"
 # include "UIIconPool.h"
@@ -62,6 +63,7 @@ UIMediumSelector::UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent 
     , m_pActionRefresh(0)
     , m_pAttachedSubTreeRoot(0)
     , m_pNotAttachedSubTreeRoot(0)
+    , m_pParent(pParent)
 {
     configure();
     finalize();
@@ -88,7 +90,7 @@ void UIMediumSelector::retranslateUi()
 {
     if (m_pActionAdd)
     {
-        m_pActionAdd->setText(QApplication::translate("UIMediumManager", "&Add..."));
+        m_pActionAdd->setText(QApplication::translate("UIMediumManager", "&Add from file..."));
         m_pActionAdd->setToolTip(QApplication::translate("UIMediumManager", "Add Disk Image File"));
         m_pActionAdd->setStatusTip(QApplication::translate("UIMediumManager", "Add disk image file"));
     }
@@ -101,15 +103,23 @@ void UIMediumSelector::retranslateUi()
 
     if (m_pButtonBox)
         m_pButtonBox->button(QDialogButtonBox::Ok)->setText("Add Selected");
+
+    if (m_pTreeWidget)
+    {
+        m_pTreeWidget->headerItem()->setText(0, QApplication::translate("UIMediumManager","Name"));
+    }
 }
 
 void UIMediumSelector::configure()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/diskimage_32px.png", ":/diskimage_16px.png"));
+
+
     prepareActions();
     prepareWidgets();
     prepareConnections();
+
 }
 
 void UIMediumSelector::prepareActions()
@@ -165,6 +175,15 @@ void UIMediumSelector::prepareConnections()
         connect(m_pActionAdd, &QAction::triggered, this, &UIMediumSelector::sltAddMedium);
     if (m_pActionRefresh)
         connect(m_pActionRefresh, &QAction::triggered, this, &UIMediumSelector::sltHandleRefresh);
+
+    if (m_pTreeWidget)
+        connect(m_pTreeWidget, &QITreeWidget::itemSelectionChanged, this, &UIMediumSelector::sltHandleItemSelectionChanged);
+
+    if (m_pButtonBox)
+    {
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIMediumSelector::close);
+        connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIMediumSelector::accept);
+    }
 }
 
 UIMediumItem* UIMediumSelector::addTreeItem(const UIMedium &medium, QITreeWidgetItem *pParent)
@@ -243,20 +262,16 @@ void UIMediumSelector::prepareWidgets()
     if (m_pTreeWidget)
     {
         m_pTreeWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-        //connect(m_pTreeWidget, &QITreeWidget::currentItemChanged, this, &UIMediumSelector::sltHandleCurrentItemChanged);
-        connect(m_pTreeWidget, &QITreeWidget::itemSelectionChanged, this, &UIMediumSelector::sltHandleItemSelectionChanged);
         m_pMainLayout->addWidget(m_pTreeWidget);
+
     }
 
-        m_pButtonBox = new QIDialogButtonBox;
+    m_pButtonBox = new QIDialogButtonBox;
     if (m_pButtonBox)
     {
         /* Configure button-box: */
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-        // connect(m_pButtonBox, &QIDialogButtonBox::helpRequested, &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
-        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIMediumSelector::close);
-        connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIMediumSelector::accept);
 
         /* Add button-box into main layout: */
         m_pMainLayout->addWidget(m_pButtonBox);
@@ -339,6 +354,34 @@ void UIMediumSelector::finalize()
     retranslateUi();
 }
 
+void UIMediumSelector::showEvent(QShowEvent *pEvent)
+{
+
+    /* Try to determine the initial size: */
+    QSize proposedSize;
+    int iHostScreen = 0;
+    if (m_pParent)
+        iHostScreen = gpDesktop->screenNumber(m_pParent);
+    else
+        iHostScreen = gpDesktop->screenNumber(this);
+    if (iHostScreen >= 0 && iHostScreen < gpDesktop->screenCount())
+    {
+        /* On the basis of current host-screen geometry if possible: */
+        const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
+        if (screenGeometry.isValid())
+            proposedSize = screenGeometry.size() * 7 / 15;
+    }
+    /* Fallback to default size if we failed: */
+    if (proposedSize.isNull())
+        proposedSize = QSize(800, 600);
+    /* Resize to initial size: */
+    resize(proposedSize);
+
+    if (m_pParent)
+        VBoxGlobal::centerWidget(this, m_pParent, false);
+
+}
+
 void UIMediumSelector::repopulateTreeWidget()
 {
     if (!m_pTreeWidget)
@@ -394,53 +437,5 @@ void UIMediumSelector::repopulateTreeWidget()
 
     if (m_pNotAttachedSubTreeRoot)
         m_pTreeWidget->expandItem(m_pNotAttachedSubTreeRoot);
-
-    // QItemSelectionModel *selectionModel = m_pTreeWidget->selectionModel();
-    // selectionModel->clearSelection();
-
-    // /* Remember current medium-items: */
-    // if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_HardDisk))
-    //     m_strCurrentIdHD = pMediumItem->id();
-    // if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_DVD))
-    //     m_strCurrentIdCD = pMediumItem->id();
-    // if (UIMediumItem *pMediumItem = mediumItem(UIMediumType_Floppy))
-    //     m_strCurrentIdFD = pMediumItem->id();
-
-    // /* Clear tree-widgets: */
-    // QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
-    // if (pTreeWidgetHD)
-    // {
-    //     setCurrentItem(pTreeWidgetHD, 0);
-    //     pTreeWidgetHD->clear();
-    // }
-    // QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
-    // if (pTreeWidgetCD)
-    // {
-    //     setCurrentItem(pTreeWidgetCD, 0);
-    //     pTreeWidgetCD->clear();
-    // }
-    // QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
-    // if (pTreeWidgetFD)
-    // {
-    //     setCurrentItem(pTreeWidgetFD, 0);
-    //     pTreeWidgetFD->clear();
-    // }
-
-    // /* Create medium-items (do not change current one): */
-    // m_fPreventChangeCurrentItem = true;
-
-    // m_fPreventChangeCurrentItem = false;
-
-    // /* Select first item as current one if nothing selected: */
-    // if (pTreeWidgetHD && !mediumItem(UIMediumType_HardDisk))
-    //     if (QTreeWidgetItem *pItem = pTreeWidgetHD->topLevelItem(0))
-    //         setCurrentItem(pTreeWidgetHD, pItem);
-    // if (pTreeWidgetCD && !mediumItem(UIMediumType_DVD))
-    //     if (QTreeWidgetItem *pItem = pTreeWidgetCD->topLevelItem(0))
-    //         setCurrentItem(pTreeWidgetCD, pItem);
-    // if (pTreeWidgetFD && !mediumItem(UIMediumType_Floppy))
-    //     if (QTreeWidgetItem *pItem = pTreeWidgetFD->topLevelItem(0))
-    //         setCurrentItem(pTreeWidgetFD, pItem);
-
 
 }

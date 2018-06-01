@@ -36,7 +36,7 @@ class UIMediumItem;
 class UIToolBar;
 
 
-/** QIDialog extension providing GUI with the dialog to select an existing media. */
+/** QIDialog extension providing GUI with a dialog to select an existing medium. */
 class SHARED_LIBRARY_STUFF UIMediumSelector : public QIWithRetranslateUI<QIDialog>
 {
 
@@ -49,10 +49,13 @@ public:
     UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent = 0);
     QStringList selectedMediumIds() const;
 
+protected:
+
+    void showEvent(QShowEvent *pEvent);
+
 private slots:
 
     void sltAddMedium();
-    //void sltHandleCurrentItemChanged();
     void sltHandleItemSelectionChanged();
     void sltHandleMediumEnumerationStart();
     void sltHandleMediumEnumerated();
@@ -96,6 +99,7 @@ private:
     QITreeWidgetItem  *m_pAttachedSubTreeRoot;
     /** All the known media that are not attached to any vm are added under the following top level tree item */
     QITreeWidgetItem  *m_pNotAttachedSubTreeRoot;
+    QWidget           *m_pParent;
 };
 
 #endif /* !___UIMediumSelector_h___ */
