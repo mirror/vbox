@@ -2332,7 +2332,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
                       pMsg->MsrNumber, (uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
                 if (rcStrict == VINF_SUCCESS)
                 {
-                    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
                     nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
                     return VINF_SUCCESS;
                 }
@@ -2359,7 +2358,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
                       pMsg->MsrNumber, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
                 if (rcStrict == VINF_SUCCESS)
                 {
-                    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
                     pCtx->rax = (uint32_t)uValue;
                     pCtx->rdx = uValue >> 32;
                     pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX);
