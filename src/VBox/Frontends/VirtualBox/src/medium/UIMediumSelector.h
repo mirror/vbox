@@ -26,15 +26,12 @@
 #include "UIMediumDetailsWidget.h"
 
 /* Forward declarations: */
-class CheckIfSuitableBy;
-class QAbstractButton;
-class QLabel;
-class QProgressBar;
-class QTabWidget;
+class QAction;
+class QTreeWidgetItem;
 class QITreeWidget;
+class QITreeWidgetItem;
 class QVBoxLayout;
 class QIDialogButtonBox;
-class QILabel;
 class UIMediumItem;
 class UIToolBar;
 
@@ -50,8 +47,17 @@ signals:
 public:
 
     UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent = 0);
+    QStringList selectedMediumIds() const;
 
 private slots:
+
+    void sltAddMedium();
+    //void sltHandleCurrentItemChanged();
+    void sltHandleItemSelectionChanged();
+    void sltHandleMediumEnumerationStart();
+    void sltHandleMediumEnumerated();
+    void sltHandleMediumEnumerationFinish();
+    void sltHandleRefresh();
 
 private:
 
@@ -65,17 +71,31 @@ private:
     /** @name Prepare/cleanup cascade.
       * @{ */
         /** Configures all. */
-        void configure();
-        void prepareWidgets();
+            void configure();
+            void prepareWidgets();
+            void prepareActions();
+            void prepareConnections();
         /** Perform final preparations. */
         void finalize();
     /** @} */
 
     void repopulateTreeWidget();
+    /** Disable/enable 'ok' button on the basis of having a selected item */
+    void updateOkButton();
+    UIMediumItem* addTreeItem(const UIMedium &medium, QITreeWidgetItem *pParent);
+    void restoreSelection(const QStringList &selectedMediums, QVector<UIMediumItem*> &mediumList);
 
-    QVBoxLayout  *m_pMainLayout;
-    QITreeWidget *m_pTreeWidget;
-    UIMediumType  m_enmMediumType;
+    QVBoxLayout       *m_pMainLayout;
+    QITreeWidget      *m_pTreeWidget;
+    UIMediumType       m_enmMediumType;
+    QIDialogButtonBox *m_pButtonBox;
+    UIToolBar         *m_pToolBar;
+    QAction           *m_pActionAdd;
+    QAction           *m_pActionRefresh;
+    /** All the known media that are already attached to some vm are added under the following top level tree item */
+    QITreeWidgetItem  *m_pAttachedSubTreeRoot;
+    /** All the known media that are not attached to any vm are added under the following top level tree item */
+    QITreeWidgetItem  *m_pNotAttachedSubTreeRoot;
 };
 
 #endif /* !___UIMediumSelector_h___ */

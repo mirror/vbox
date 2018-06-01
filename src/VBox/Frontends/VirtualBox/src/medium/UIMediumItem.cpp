@@ -59,6 +59,13 @@ UIMediumItem::UIMediumItem(const UIMedium &guiMedium, UIMediumItem *pParent)
     refresh();
 }
 
+UIMediumItem::UIMediumItem(const UIMedium &guiMedium, QITreeWidgetItem *pParent)
+    : QITreeWidgetItem(pParent)
+    , m_guiMedium(guiMedium)
+{
+    refresh();
+}
+
 bool UIMediumItem::move()
 {
     /* Open file-save dialog to choose location for current medium: */
@@ -302,6 +309,11 @@ UIMediumItemHD::UIMediumItemHD(const UIMedium &guiMedium, UIMediumItem *pParent)
 {
 }
 
+UIMediumItemHD::UIMediumItemHD(const UIMedium &guiMedium, QITreeWidgetItem *pParent)
+    : UIMediumItem(guiMedium, pParent)
+{
+}
+
 bool UIMediumItemHD::remove()
 {
     /* Confirm medium removal: */
@@ -424,6 +436,11 @@ UIMediumItemCD::UIMediumItemCD(const UIMedium &guiMedium, QITreeWidget *pParent)
 {
 }
 
+UIMediumItemCD::UIMediumItemCD(const UIMedium &guiMedium, QITreeWidgetItem *pParent)
+    : UIMediumItem(guiMedium, pParent)
+{
+}
+
 bool UIMediumItemCD::remove()
 {
     /* Confirm medium removal: */
@@ -486,6 +503,11 @@ bool UIMediumItemCD::releaseFrom(CMachine comMachine)
 *********************************************************************************************************************************/
 
 UIMediumItemFD::UIMediumItemFD(const UIMedium &guiMedium, QITreeWidget *pParent)
+    : UIMediumItem(guiMedium, pParent)
+{
+}
+
+UIMediumItemFD::UIMediumItemFD(const UIMedium &guiMedium, QITreeWidgetItem *pParent)
     : UIMediumItem(guiMedium, pParent)
 {
 }

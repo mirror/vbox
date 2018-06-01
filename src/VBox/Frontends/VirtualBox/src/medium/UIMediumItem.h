@@ -36,6 +36,10 @@ public:
       * @param  guiMedium  Brings the medium to wrap around.
       * @param  pParent    Brings the parent item reference. */
     UIMediumItem(const UIMedium &guiMedium, UIMediumItem *pParent);
+    /** Constructs sub-level item under a QITreeWidgetItem.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent item reference. */
+    UIMediumItem(const UIMedium &guiMedium, QITreeWidgetItem *pParent);
 
     /** Copies UIMedium wrapped by <i>this</i> item. */
     //virtual bool copy();
@@ -129,6 +133,10 @@ public:
       * @param  guiMedium  Brings the medium to wrap around.
       * @param  pParent    Brings the parent item reference. */
     UIMediumItemHD(const UIMedium &guiMedium, UIMediumItem *pParent);
+    /** Constructs sub-level item under a QITreeWidgetItem.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent item reference. */
+    UIMediumItemHD(const UIMedium &guiMedium, QITreeWidgetItem *pParent);
 
 protected:
 
@@ -152,6 +160,10 @@ public:
       * @param  guiMedium  Brings the medium to wrap around.
       * @param  pParent    Brings the parent tree reference. */
     UIMediumItemCD(const UIMedium &guiMedium, QITreeWidget *pParent);
+    /** Constructs sub-level item under a QITreeWidgetItem.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent item reference. */
+    UIMediumItemCD(const UIMedium &guiMedium, QITreeWidgetItem *pParent);
 
 protected:
 
@@ -170,6 +182,10 @@ public:
       * @param  guiMedium  Brings the medium to wrap around.
       * @param  pParent    Brings the parent tree reference. */
     UIMediumItemFD(const UIMedium &guiMedium, QITreeWidget *pParent);
+    /** Constructs sub-level item under a QITreeWidgetItem.
+      * @param  guiMedium  Brings the medium to wrap around.
+      * @param  pParent    Brings the parent item reference. */
+    UIMediumItemFD(const UIMedium &guiMedium, QITreeWidgetItem *pParent);
 
 protected:
 

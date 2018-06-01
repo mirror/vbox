@@ -740,6 +740,8 @@ private:
     void prepareStorageWidgets();
     /** Prepares connections. */
     void prepareConnections();
+    /** Opens medium selector dialog and retrieves uuid of a selected medium (if any). */
+    QString openMediumSelectorDialog(UIMediumType  enmMediumType);
     /** Cleanups all. */
     void cleanup();
 
