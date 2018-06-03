@@ -1800,7 +1800,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
       See <xref lang="" linkend="autostart" /> for more details.</para>
       <itemizedlist>
         <listitem>
-          <para><computeroutput>--autostart on|off</computeroutput>:
+          <para><computeroutput>--autostart-enabled on|off</computeroutput>:
           Enables/disables VM autostart at host system boot-up, using specified user name.</para>
         </listitem>
         <listitem>
