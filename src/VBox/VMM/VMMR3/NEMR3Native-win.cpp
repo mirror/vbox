@@ -1083,6 +1083,68 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
 
 
 /**
+ * Makes sure APIC and firmware will not allow X2APIC mode.
+ *
+ * This is rather ugly.
+ *
+ * @returns VBox status code
+ * @param   pVM             The cross context VM structure.
+ */
+static int nemR3WinDisableX2Apic(PVM pVM)
+{
+    /*
+     * First make sure the 'Mode' config value of the APIC isn't set to X2APIC.
+     * This defaults to APIC, so no need to change unless it's X2APIC.
+     */
+    // /Devices/apic/0/Config/
+    PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/Devices/apic/0/Config");
+    if (pCfg)
+    {
+        uint8_t bMode = 0;
+        int rc = CFGMR3QueryU8(pCfg, "Mode", &bMode);
+        AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_CFGM_VALUE_NOT_FOUND, ("%Rrc\n", rc), rc);
+        if (RT_SUCCESS(rc) && bMode == PDMAPICMODE_X2APIC)
+        {
+            LogRel(("NEM: Adjusting APIC configuration from X2APIC to APIC max mode.  X2APIC is not supported by the WinHvPlatform API!\n"));
+            LogRel(("NEM: Disable Hyper-V if you need X2APIC for your guests!\n"));
+            rc = CFGMR3RemoveValue(pCfg, "Mode");
+            rc = CFGMR3InsertInteger(pCfg, "Mode", PDMAPICMODE_APIC);
+            AssertLogRelRCReturn(rc, rc);
+        }
+    }
+
+    /*
+     * Now the firmwares.
+     * These also defaults to APIC and only needs adjusting if configured to X2APIC (2).
+     */
+    static const char * const s_apszFirmwareConfigs[] =
+    {
+        "/Devices/efi/0/Config",
+        "/Devices/pcbios/0/Config",
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_apszFirmwareConfigs); i++)
+    {
+        pCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/Devices/APIC/0/Config");
+        if (pCfg)
+        {
+            uint8_t bMode = 0;
+            int rc = CFGMR3QueryU8(pCfg, "APIC", &bMode);
+            AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_CFGM_VALUE_NOT_FOUND, ("%Rrc\n", rc), rc);
+            if (RT_SUCCESS(rc) && bMode == 2)
+            {
+                LogRel(("NEM: Adjusting %s/Mode from 2 (X2APIC) to 1 (APIC).\n", s_apszFirmwareConfigs[i]));
+                rc = CFGMR3RemoveValue(pCfg, "APIC");
+                rc = CFGMR3InsertInteger(pCfg, "APIC", 1);
+                AssertLogRelRCReturn(rc, rc);
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Try initialize the native API.
  *
  * This may only do part of the job, more can be done in
@@ -1143,6 +1205,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                     {
                         VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
                         Log(("NEM: Marked active!\n"));
+                        nemR3WinDisableX2Apic(pVM);
 
                         /* Register release statistics */
                         for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
@@ -1356,11 +1419,8 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
 
         /*
          * Adjust features.
+         * Note! We've already disabled X2APIC via CFGM during the first init call.
          */
-        /** @todo Figure out how to get X2APIC working on AMD (and possible
-         * intel), but first figure how to disable it dynamically. */
-        /*CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);*/
-
         return VINF_SUCCESS;
     }
     return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to NEMR0InitVMPart2 failed: %Rrc", rc);
