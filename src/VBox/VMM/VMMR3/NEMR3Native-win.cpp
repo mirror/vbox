@@ -2643,6 +2643,11 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   buffering or similar?
  *
  *
+ * - To handle the VMMCALL / VMCALL instructions, it seems we need to intercept
+ *   \#UD exceptions and inspect the opcodes.  A dedicated exit for hypercalls
+ *   would be more efficient, esp. for guests using \#UD for other purposes..
+ *
+ *
  * - Wrong instruction length in the VpContext with unmapped GPA memory exit
  *   contexts on 17115/AMD.
  *
