@@ -299,8 +299,8 @@ VBoxGlobal::VBoxGlobal(UIType enmType)
     , m_osRelease(MacOSXRelease_Old)
 #endif
 #ifdef VBOX_WS_X11
-    , m_fCompositingManagerRunning(false)
     , m_enmWindowManagerType(X11WMType_Unknown)
+    , m_fCompositingManagerRunning(false)
 #endif
     , m_fSeparateProcess(false)
     , mShowStartVMErrors(true)
