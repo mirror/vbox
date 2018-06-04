@@ -34,8 +34,6 @@
 #include "HostDnsService.h"
 
 
-static HostDnsMonitor *g_monitor;
-
 static void dumpHostDnsInformation(const HostDnsInformation&);
 static void dumpHostDnsStrVector(const std::string&, const std::vector<std::string>&);
 
@@ -81,14 +79,12 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
 struct HostDnsMonitor::Data
 {
     Data(bool aThreaded)
-      : virtualbox(NULL),
-        proxy(NULL),
+      : proxy(NULL),
         fThreaded(aThreaded),
         uLastExtraDataPoll(0),
         fLaxComparison(0)
     {}
 
-    VirtualBox *virtualbox;
     HostDnsMonitorProxy *proxy;
 
     const bool fThreaded;
@@ -140,39 +136,29 @@ HostDnsMonitor::~HostDnsMonitor()
     }
 }
 
-HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor(VirtualBox *aParent)
+HostDnsMonitor *HostDnsMonitor::createHostDnsMonitor()
 {
-    /* XXX: Moved initialization from HostImpl.cpp */
-    if (!g_monitor)
-    {
-# if defined (RT_OS_DARWIN)
-        g_monitor = new HostDnsServiceDarwin();
-# elif defined(RT_OS_WINDOWS)
-        g_monitor = new HostDnsServiceWin();
-# elif defined(RT_OS_LINUX)
-        g_monitor = new HostDnsServiceLinux();
-# elif defined(RT_OS_SOLARIS)
-        g_monitor =  new HostDnsServiceSolaris();
-# elif defined(RT_OS_FREEBSD)
-        g_monitor = new HostDnsServiceFreebsd();
-# elif defined(RT_OS_OS2)
-        g_monitor = new HostDnsServiceOs2();
-# else
-        g_monitor = new HostDnsService();
-# endif
-        g_monitor->init(aParent);
-    }
+    HostDnsMonitor *monitor = NULL;
 
-    return g_monitor;
+#if defined (RT_OS_DARWIN)
+    monitor = new HostDnsServiceDarwin();
+#elif defined(RT_OS_WINDOWS)
+    monitor = new HostDnsServiceWin();
+#elif defined(RT_OS_LINUX)
+    monitor = new HostDnsServiceLinux();
+#elif defined(RT_OS_SOLARIS)
+    monitor =  new HostDnsServiceSolaris();
+#elif defined(RT_OS_FREEBSD)
+    monitor = new HostDnsServiceFreebsd();
+#elif defined(RT_OS_OS2)
+    monitor = new HostDnsServiceOs2();
+#else
+    monitor = new HostDnsService();
+#endif
+
+    return monitor;
 }
 
-void HostDnsMonitor::setMonitorProxy(HostDnsMonitorProxy *proxy)
-{
-    RTCLock grab(m_LockMtx);
-    Assert(m != NULL && m->proxy == NULL);
-    m->proxy = proxy;
-    proxy->notify();
-}
 
 void HostDnsMonitor::shutdown()
 {
@@ -181,12 +167,8 @@ void HostDnsMonitor::shutdown()
      * and automatically deleted when not referenced anymore.
      * Currently HostDnsMonitor can use already deleted m->virtualbox.
      */
-    if (g_monitor)
-    {
-        delete g_monitor;
-        g_monitor = NULL;
-    }
 }
+
 
 const HostDnsInformation &HostDnsMonitor::getInfo() const
 {
@@ -220,9 +202,9 @@ void HostDnsMonitor::setInfo(const HostDnsInformation &info)
         m->proxy->notify();
 }
 
-HRESULT HostDnsMonitor::init(VirtualBox *virtualbox)
+HRESULT HostDnsMonitor::init(HostDnsMonitorProxy *proxy)
 {
-    m->virtualbox = virtualbox;
+    m->proxy = proxy;
 
     pollGlobalExtraData();
 
@@ -244,7 +226,7 @@ HRESULT HostDnsMonitor::init(VirtualBox *virtualbox)
 
 void HostDnsMonitor::pollGlobalExtraData()
 {
-    VirtualBox *virtualbox = m->virtualbox;
+    VirtualBox *virtualbox = m->proxy->getVirtualBox();
     if (RT_UNLIKELY(virtualbox == NULL))
         return;
 
@@ -331,13 +313,20 @@ HostDnsMonitorProxy::~HostDnsMonitorProxy()
 
 void HostDnsMonitorProxy::init(VirtualBox* aParent)
 {
-    HostDnsMonitor *mon = HostDnsMonitor::getHostDnsMonitor(aParent);
-    Assert(mon != NULL);
+    HostDnsMonitor *monitor = HostDnsMonitor::createHostDnsMonitor();
+    m = new HostDnsMonitorProxy::Data(monitor, aParent);
 
-    m = new HostDnsMonitorProxy::Data(mon, aParent);
-    m->monitor->setMonitorProxy(this);
+    m->monitor->init(this);
     updateInfo();
 }
+
+
+VirtualBox *HostDnsMonitorProxy::getVirtualBox() const
+{
+    RTCLock grab(m_LockMtx);
+    return RT_LIKELY(m != NULL) ? m->virtualbox : NULL;
+}
+
 
 void HostDnsMonitorProxy::notify() const
 {

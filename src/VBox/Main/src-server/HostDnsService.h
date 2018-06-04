@@ -54,14 +54,14 @@ class HostDnsMonitor
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(HostDnsMonitor);
 
   public:
-    static HostDnsMonitor *getHostDnsMonitor(VirtualBox *virtualbox);
+    static HostDnsMonitor *createHostDnsMonitor();
     static void shutdown();
 
-    void setMonitorProxy(HostDnsMonitorProxy *proxy);
-    const HostDnsInformation &getInfo() const;
     /* @note: method will wait till client call
        HostDnsService::monitorThreadInitializationDone() */
-    virtual HRESULT init(VirtualBox *virtualbox);
+    virtual HRESULT init(HostDnsMonitorProxy *proxy);
+
+    const HostDnsInformation &getInfo() const;
 
   protected:
     explicit HostDnsMonitor(bool fThreaded = false);
@@ -97,6 +97,8 @@ class HostDnsMonitorProxy
     void init(VirtualBox *virtualbox);
     void notify() const;
 
+    VirtualBox *getVirtualBox() const;
+
     HRESULT GetNameServers(std::vector<com::Utf8Str> &aNameServers);
     HRESULT GetDomainName(com::Utf8Str *pDomainName);
     HRESULT GetSearchStrings(std::vector<com::Utf8Str> &aSearchStrings);
@@ -120,7 +122,7 @@ class HostDnsServiceDarwin : public HostDnsMonitor
   public:
     HostDnsServiceDarwin();
     ~HostDnsServiceDarwin();
-    virtual HRESULT init(VirtualBox *virtualbox);
+    virtual HRESULT init(HostDnsMonitorProxy *proxy);
 
     protected:
     virtual void monitorThreadShutdown();
@@ -139,7 +141,7 @@ class HostDnsServiceWin : public HostDnsMonitor
     public:
     HostDnsServiceWin();
     ~HostDnsServiceWin();
-    virtual HRESULT init(VirtualBox *virtualbox);
+    virtual HRESULT init(HostDnsMonitorProxy *proxy);
 
     protected:
     virtual void monitorThreadShutdown();
@@ -160,7 +162,7 @@ class HostDnsServiceResolvConf: public HostDnsMonitor
   public:
     explicit HostDnsServiceResolvConf(bool fThreaded = false) : HostDnsMonitor(fThreaded), m(NULL) {}
     virtual ~HostDnsServiceResolvConf();
-    virtual HRESULT init(VirtualBox *virtualbox, const char *aResolvConfFileName);
+    virtual HRESULT init(HostDnsMonitorProxy *proxy, const char *aResolvConfFileName);
     const std::string& resolvConf() const;
 
   protected:
@@ -184,8 +186,8 @@ class HostDnsServiceSolaris : public HostDnsServiceResolvConf
   public:
     HostDnsServiceSolaris(){}
     ~HostDnsServiceSolaris(){}
-    virtual HRESULT init(VirtualBox *virtualbox) {
-        return HostDnsServiceResolvConf::init(virtualbox, "/etc/resolv.conf");
+    virtual HRESULT init(HostDnsMonitorProxy *proxy) {
+        return HostDnsServiceResolvConf::init(proxy, "/etc/resolv.conf");
     }
 };
 
@@ -196,8 +198,8 @@ class HostDnsServiceLinux : public HostDnsServiceResolvConf
   public:
     HostDnsServiceLinux():HostDnsServiceResolvConf(true){}
     virtual ~HostDnsServiceLinux();
-    virtual HRESULT init(VirtualBox *virtualbox) {
-        return HostDnsServiceResolvConf::init(virtualbox, "/etc/resolv.conf");
+    virtual HRESULT init(HostDnsMonitorProxy *proxy) {
+        return HostDnsServiceResolvConf::init(proxy, "/etc/resolv.conf");
     }
 
   protected:
@@ -212,8 +214,8 @@ class HostDnsServiceFreebsd: public HostDnsServiceResolvConf
     public:
     HostDnsServiceFreebsd(){}
     ~HostDnsServiceFreebsd(){}
-    virtual HRESULT init(VirtualBox *virtualbox) {
-        return HostDnsServiceResolvConf::init(virtualbox, "/etc/resolv.conf");
+    virtual HRESULT init(HostDnsMonitorProxy *proxy) {
+        return HostDnsServiceResolvConf::init(proxy, "/etc/resolv.conf");
     }
 };
 
@@ -225,8 +227,8 @@ class HostDnsServiceOs2 : public HostDnsServiceResolvConf
     HostDnsServiceOs2(){}
     ~HostDnsServiceOs2(){}
     /* XXX: \\MPTN\\ETC should be taken from environment variable ETC  */
-    virtual HRESULT init(VirtualBox *virtualbox) {
-        return HostDnsServiceResolvConf::init(virtualbox, "\\MPTN\\ETC\\RESOLV2");
+    virtual HRESULT init(HostDnsMonitorProxy *proxy) {
+        return HostDnsServiceResolvConf::init(proxy, "\\MPTN\\ETC\\RESOLV2");
     }
 };
 
