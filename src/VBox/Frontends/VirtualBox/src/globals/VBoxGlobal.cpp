@@ -1589,6 +1589,63 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, const QRect &rect)
     VBoxGlobal::setTopLevelGeometry(pWidget, rect.x(), rect.y(), rect.width(), rect.height());
 }
 
+#if defined (VBOX_WS_X11)
+
+static char *XXGetProperty (Display *aDpy, Window aWnd,
+                            Atom aPropType, const char *aPropName)
+{
+    Atom propNameAtom = XInternAtom (aDpy, aPropName,
+                                     True /* only_if_exists */);
+    if (propNameAtom == None)
+        return NULL;
+
+    Atom actTypeAtom = None;
+    int actFmt = 0;
+    unsigned long nItems = 0;
+    unsigned long nBytesAfter = 0;
+    unsigned char *propVal = NULL;
+    int rc = XGetWindowProperty (aDpy, aWnd, propNameAtom,
+                                 0, LONG_MAX, False /* delete */,
+                                 aPropType, &actTypeAtom, &actFmt,
+                                 &nItems, &nBytesAfter, &propVal);
+    if (rc != Success)
+        return NULL;
+
+    return reinterpret_cast <char *> (propVal);
+}
+
+static Bool XXSendClientMessage (Display *aDpy, Window aWnd, const char *aMsg,
+                                 unsigned long aData0 = 0, unsigned long aData1 = 0,
+                                 unsigned long aData2 = 0, unsigned long aData3 = 0,
+                                 unsigned long aData4 = 0)
+{
+    Atom msgAtom = XInternAtom (aDpy, aMsg, True /* only_if_exists */);
+    if (msgAtom == None)
+        return False;
+
+    XEvent ev;
+
+    ev.xclient.type = ClientMessage;
+    ev.xclient.serial = 0;
+    ev.xclient.send_event = True;
+    ev.xclient.display = aDpy;
+    ev.xclient.window = aWnd;
+    ev.xclient.message_type = msgAtom;
+
+    /* Always send as 32 bit for now: */
+    ev.xclient.format = 32;
+    ev.xclient.data.l [0] = aData0;
+    ev.xclient.data.l [1] = aData1;
+    ev.xclient.data.l [2] = aData2;
+    ev.xclient.data.l [3] = aData3;
+    ev.xclient.data.l [4] = aData4;
+
+    return XSendEvent (aDpy, DefaultRootWindow (aDpy), False,
+                       SubstructureRedirectMask, &ev) != 0;
+}
+
+#endif
+
 /* static */
 bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 {
@@ -1662,59 +1719,6 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 }
 
 #if defined (VBOX_WS_X11)
-
-static char *XXGetProperty (Display *aDpy, Window aWnd,
-                            Atom aPropType, const char *aPropName)
-{
-    Atom propNameAtom = XInternAtom (aDpy, aPropName,
-                                     True /* only_if_exists */);
-    if (propNameAtom == None)
-        return NULL;
-
-    Atom actTypeAtom = None;
-    int actFmt = 0;
-    unsigned long nItems = 0;
-    unsigned long nBytesAfter = 0;
-    unsigned char *propVal = NULL;
-    int rc = XGetWindowProperty (aDpy, aWnd, propNameAtom,
-                                 0, LONG_MAX, False /* delete */,
-                                 aPropType, &actTypeAtom, &actFmt,
-                                 &nItems, &nBytesAfter, &propVal);
-    if (rc != Success)
-        return NULL;
-
-    return reinterpret_cast <char *> (propVal);
-}
-
-static Bool XXSendClientMessage (Display *aDpy, Window aWnd, const char *aMsg,
-                                 unsigned long aData0 = 0, unsigned long aData1 = 0,
-                                 unsigned long aData2 = 0, unsigned long aData3 = 0,
-                                 unsigned long aData4 = 0)
-{
-    Atom msgAtom = XInternAtom (aDpy, aMsg, True /* only_if_exists */);
-    if (msgAtom == None)
-        return False;
-
-    XEvent ev;
-
-    ev.xclient.type = ClientMessage;
-    ev.xclient.serial = 0;
-    ev.xclient.send_event = True;
-    ev.xclient.display = aDpy;
-    ev.xclient.window = aWnd;
-    ev.xclient.message_type = msgAtom;
-
-    /* Always send as 32 bit for now: */
-    ev.xclient.format = 32;
-    ev.xclient.data.l [0] = aData0;
-    ev.xclient.data.l [1] = aData1;
-    ev.xclient.data.l [2] = aData2;
-    ev.xclient.data.l [3] = aData3;
-    ev.xclient.data.l [4] = aData4;
-
-    return XSendEvent (aDpy, DefaultRootWindow (aDpy), False,
-                       SubstructureRedirectMask, &ev) != 0;
-}
 
 /* static */
 bool VBoxGlobal::supportsFullScreenMonitorsProtocolX11()
