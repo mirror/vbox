@@ -554,11 +554,6 @@ public:
                                           QString const &strDigest,
                                           QWidget *pParent,
                                           QString *pstrExtPackName);
-
-        /** @todo remove */
-        bool isEPInstallationRequested() const { return m_fEPInstallationRequested; }
-        /** @todo remove */
-        void setEPInstallationRequested(bool fRequested) { m_fEPInstallationRequested = fRequested; }
     /** @} */
 
     /** @name Display stuff.
@@ -863,9 +858,6 @@ private:
         /** Holds the medium enumerator. */
         UIMediumEnumerator *m_pMediumEnumerator;
     /** @} */
-
-    /** @todo remove */
-    bool m_fEPInstallationRequested;
 
 #if defined(VBOX_WS_WIN) && defined(VBOX_GUI_WITH_SHARED_LIBRARY)
     /** @name ATL stuff.

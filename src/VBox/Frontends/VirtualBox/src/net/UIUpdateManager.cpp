@@ -399,8 +399,8 @@ QString UIUpdateStepVirtualBox::platformInfo()
 
 void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
 {
-    /* Return if Selector UI has a direct request to install EP: */
-    if (vboxGlobal().isEPInstallationRequested())
+    /* Return if Selector UI issued a direct request to install EP: */
+    if (gUpdateManager->isEPInstallationRequested())
     {
         emit sigStepComplete();
         return;
@@ -489,7 +489,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const
 {
     /* Warn the user about extension pack was downloaded and saved, propose to install it: */
     if (msgCenter().proposeInstallExtentionPack(GUI_ExtPackName, strSource, QDir::toNativeSeparators(strTarget)))
-        VBoxGlobal::doExtPackInstallation(strTarget, strDigest, windowManager().networkManagerOrMainWindowShown(), NULL);
+        vboxGlobal().doExtPackInstallation(strTarget, strDigest, windowManager().networkManagerOrMainWindowShown(), NULL);
     /* Propose to delete the downloaded extension pack: */
     if (msgCenter().proposeDeleteExtentionPack(QDir::toNativeSeparators(strTarget)))
     {
@@ -525,6 +525,7 @@ UIUpdateManager::UIUpdateManager()
     : m_pQueue(new UIUpdateQueue(this))
     , m_fIsRunning(false)
     , m_uTime(1 /* day */ * 24 /* hours */ * 60 /* minutes */ * 60 /* seconds */ * 1000 /* ms */)
+    , m_fEPInstallationRequested(false)
 {
     /* Prepare instance: */
     if (s_pInstance != this)

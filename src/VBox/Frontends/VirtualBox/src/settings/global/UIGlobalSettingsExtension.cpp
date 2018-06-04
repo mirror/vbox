@@ -306,7 +306,7 @@ void UIGlobalSettingsExtension::sltAddPackage()
     if (!strFilePath.isEmpty())
     {
         QString strExtPackName;
-        VBoxGlobal::doExtPackInstallation(strFilePath, QString(), this, &strExtPackName);
+        vboxGlobal().doExtPackInstallation(strFilePath, QString(), this, &strExtPackName);
 
         /* Since we might be reinstalling an existing package, we have to
          * do a little refreshing regardless of what the user chose. */

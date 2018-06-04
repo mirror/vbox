@@ -331,7 +331,6 @@ VBoxGlobal::VBoxGlobal(UIType enmType)
     , m_pThreadPool(0)
     , m_pIconPool(0)
     , m_pMediumEnumerator(0)
-    , m_fEPInstallationRequested(false)
 {
     /* Assign instance: */
     s_pInstance = this;

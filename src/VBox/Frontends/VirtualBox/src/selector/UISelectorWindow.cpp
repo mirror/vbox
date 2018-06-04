@@ -49,6 +49,9 @@
 # include "UIVMItem.h"
 # include "UIToolsPaneMachine.h"
 # include "UIToolsToolbar.h"
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+#  include "UIUpdateManager.h"
+# endif
 # include "UIVirtualBoxEventHandler.h"
 # include "UIWizardCloneVM.h"
 # include "UIWizardExportApp.h"
@@ -56,12 +59,12 @@
 # ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 #  include "UINetworkManager.h"
 #  include "UINetworkManagerIndicator.h"
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# endif
 # ifdef VBOX_WS_MAC
 #  include "UIImageTools.h"
 #  include "UIWindowMenuManager.h"
 #  include "VBoxUtils.h"
-# endif /* VBOX_WS_MAC */
+# endif
 # ifdef VBOX_WS_X11
 #  include "UIDesktopWidgetWatchdog.h"
 # endif
@@ -397,12 +400,16 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
             }
             else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxExtPackFileExts))
             {
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
                 /* Prevent update manager from proposing us to update EP: */
-                vboxGlobal().setEPInstallationRequested(true);
+                gUpdateManager->setEPInstallationRequested(true);
+#endif
                 /* Propose the user to install EP described by the arguments @a list. */
-                VBoxGlobal::doExtPackInstallation(strFile, QString(), this, NULL);
+                vboxGlobal().doExtPackInstallation(strFile, QString(), this, NULL);
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
                 /* Allow update manager to propose us to update EP: */
-                vboxGlobal().setEPInstallationRequested(false);
+                gUpdateManager->setEPInstallationRequested(false);
+#endif
             }
         }
     }
