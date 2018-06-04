@@ -792,16 +792,18 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
              *        below. */
             LogFlow(("iemSvmVmrun: Injecting event: %04x:%08RX64 vec=%#x type=%d uErr=%u cr2=%#RX64 cr3=%#RX64 efer=%#RX64\n",
                      pCtx->cs.Sel, pCtx->rip, uVector, enmType, uErrorCode, pCtx->cr2, pCtx->cr3, pCtx->msrEFER));
-#if 0
-            rcStrict = IEMInjectTrap(pVCpu, uVector, enmType, uErrorCode, pCtx->cr2, 0 /* cbInstr */);
-#else
+
+            /*
+             * We shall not inject the event here right away. There may be paging mode related updates
+             * as a result of the world-switch above that are yet to be honored. Instead flag the event
+             * as pending for injection.
+             */
             TRPMAssertTrap(pVCpu, uVector, enmType);
             if (pEventInject->n.u1ErrorCodeValid)
                 TRPMSetErrorCode(pVCpu, uErrorCode);
             if (   enmType == TRPM_TRAP
                 && uVector == X86_XCPT_PF)
                 TRPMSetFaultAddress(pVCpu, pCtx->cr2);
-#endif
         }
         else
             LogFlow(("iemSvmVmrun: Entering nested-guest: %04x:%08RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 efer=%#RX64 efl=%#x\n",
@@ -837,14 +839,12 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
  *          failed and a shutdown needs to be initiated for the geust.
  *
  * @returns VBox strict status code.
- * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
- * @param   u16Port         The IO port being accessed.
- * @param   enmIoType       The type of IO access.
- * @param   cbReg           The IO operand size in bytes.
- * @param   cAddrSizeBits   The address size bits (for 16, 32 or 64).
- * @param   iEffSeg         The effective segment number.
- * @param   fRep            Whether this is a repeating IO instruction (REP prefix).
- * @param   fStrIo          Whether this is a string IO instruction.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   u8Vector    The interrupt or exception vector.
+ * @param   fFlags      The exception flags (see IEM_XCPT_FLAGS_XXX).
+ * @param   uErr        The error-code associated with the exception.
+ * @param   uCr2        The CR2 value in case of a \#PF exception.
  */
 IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr,
                                                    uint64_t uCr2)
