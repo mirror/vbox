@@ -2501,7 +2501,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *      - The VMM can modify both the base address as well as the the EN and
  *        BSP bits, however this is useless if we cannot intercept the WRMSR.
  *
- *      - Attempts by the guest to set the EXTD bit (X2APIC) result in #GP(0),
+ *      - Attempts by the guest to set the EXTD bit (X2APIC) result in \#GP(0),
  *        while the VMM ends up with with ERROR_HV_INVALID_PARAMETER.  Seems
  *        there is no way to support X2APIC.
  *
