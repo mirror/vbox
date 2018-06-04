@@ -183,6 +183,11 @@ if !defined(VBOX_ONLY_BUILD)
  RTTraceLogTool_TEMPLATE = VBoxR3Tool
  RTTraceLogTool_SOURCES = RTTraceLogTool.cpp
 
+ # RTFuzzMaster - Fuzzing master tool.
+ PROGRAMS += RTFuzzMaster
+ RTFuzzMaster_TEMPLATE = VBoxR3Tool
+ RTFuzzMaster_SOURCES = RTFuzzMaster.cpp
+
  if1of ($(KBUILD_TARGET), darwin linux solaris win)
   # RTKrnlModInfo - our lsmod/kextstat clone (for testing the RTKrnlMod code).
   PROGRAMS += RTKrnlModInfo
