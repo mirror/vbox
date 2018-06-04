@@ -1096,7 +1096,6 @@ static int nemR3WinDisableX2Apic(PVM pVM)
      * First make sure the 'Mode' config value of the APIC isn't set to X2APIC.
      * This defaults to APIC, so no need to change unless it's X2APIC.
      */
-    // /Devices/apic/0/Config/
     PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/Devices/apic/0/Config");
     if (pCfg)
     {
