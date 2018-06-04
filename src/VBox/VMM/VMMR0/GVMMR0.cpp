@@ -947,8 +947,9 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                     AssertPtr((void *)pVMR3);
 
                                     /* Initialize all the VM pointers. */
-                                    for (uint32_t i = 0; i < cCpus; i++)
+                                    for (VMCPUID i = 0; i < cCpus; i++)
                                     {
+                                        pVM->aCpus[i].idCpu           = i;
                                         pVM->aCpus[i].pVMR0           = pVM;
                                         pVM->aCpus[i].pVMR3           = pVMR3;
                                         pVM->aCpus[i].idHostCpu       = NIL_RTCPUID;
@@ -977,7 +978,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         pVM->aCpus[0].hNativeThreadR0 = hEMT0;
                                         pGVMM->cEMTs += cCpus;
 
-                                        for (uint32_t i = 0; i < cCpus; i++)
+                                        for (VMCPUID i = 0; i < cCpus; i++)
                                         {
                                             pGVM->aCpus[i].pVCpu          = &pVM->aCpus[i];
                                             pGVM->aCpus[i].pVM            = pVM;
@@ -1068,6 +1069,7 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
 
     for (VMCPUID i = 0; i < pGVM->cCpus; i++)
     {
+        pGVM->aCpus[i].idCpu                 = i;
         pGVM->aCpus[i].gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
         pGVM->aCpus[i].hEMT                  = NIL_RTNATIVETHREAD;
         pGVM->aCpus[i].pGVM                  = pGVM;
