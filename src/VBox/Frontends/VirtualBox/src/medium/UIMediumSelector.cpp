@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QAction>
+# include <QHeaderView>
 # include <QVBoxLayout>
 # include <QPushButton>
 
@@ -90,7 +91,7 @@ void UIMediumSelector::retranslateUi()
 {
     if (m_pActionAdd)
     {
-        m_pActionAdd->setText(QApplication::translate("UIMediumManager", "&Add from file..."));
+        m_pActionAdd->setText(QApplication::translate("UIMediumManager", "&Add"));
         m_pActionAdd->setToolTip(QApplication::translate("UIMediumManager", "Add Disk Image File"));
         m_pActionAdd->setStatusTip(QApplication::translate("UIMediumManager", "Add disk image file"));
     }
@@ -102,11 +103,13 @@ void UIMediumSelector::retranslateUi()
     }
 
     if (m_pButtonBox)
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText("Add Selected");
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText("Choose");
 
     if (m_pTreeWidget)
     {
         m_pTreeWidget->headerItem()->setText(0, QApplication::translate("UIMediumManager","Name"));
+        m_pTreeWidget->headerItem()->setText(1, QApplication::translate("UIMediumManager","Virtual Size"));
+        m_pTreeWidget->headerItem()->setText(2, QApplication::translate("UIMediumManager","Actual Size"));
     }
 }
 
@@ -114,8 +117,6 @@ void UIMediumSelector::configure()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/diskimage_32px.png", ":/diskimage_16px.png"));
-
-
     prepareActions();
     prepareWidgets();
     prepareConnections();
@@ -202,12 +203,12 @@ UIMediumItem* UIMediumSelector::addTreeItem(const UIMedium &medium, QITreeWidget
         case UIMediumType_All:
         case UIMediumType_Invalid:
         default:
-            return createHardDiskItem(medium);
+            return createHardDiskItem(medium, pParent);
             break;
     }
 }
 
-UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium)
+UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium, QITreeWidgetItem *pParent)
 {
     if (medium.medium().isNull())
         return 0;
@@ -230,7 +231,7 @@ UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium)
                 AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toUtf8().constData()));
             /* Try to create parent medium-item: */
             else
-                pParentMediumItem = createHardDiskItem(parentMedium);
+                pParentMediumItem = createHardDiskItem(parentMedium, pParent);
             /* If parent medium-item was found: */
             if (pParentMediumItem)
             {
@@ -245,7 +246,7 @@ UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium)
     /* Else just create item as top-level one: */
     else
     {
-        pMediumItem = new UIMediumItemHD(medium, m_pTreeWidget);
+        pMediumItem = new UIMediumItemHD(medium, pParent);
         LogRel2(("UIMediumManager: Root hard-disk medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
     }
     return pMediumItem;
@@ -306,6 +307,8 @@ void UIMediumSelector::prepareWidgets()
     {
         m_pTreeWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         m_pMainLayout->addWidget(m_pTreeWidget);
+
+        m_pTreeWidget->setAlternatingRowColors(true);
 
     }
 
@@ -413,7 +416,7 @@ void UIMediumSelector::showEvent(QShowEvent *pEvent)
         /* On the basis of current host-screen geometry if possible: */
         const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
         if (screenGeometry.isValid())
-            proposedSize = screenGeometry.size() * 7 / 15;
+            proposedSize = screenGeometry.size() * 5 / 15;
     }
     /* Fallback to default size if we failed: */
     if (proposedSize.isNull())
@@ -481,6 +484,7 @@ void UIMediumSelector::repopulateTreeWidget()
 
     if (m_pNotAttachedSubTreeRoot)
         m_pTreeWidget->expandItem(m_pNotAttachedSubTreeRoot);
+
 }
 
 UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const QString &mediumId)
