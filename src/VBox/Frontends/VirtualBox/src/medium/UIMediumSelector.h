@@ -87,6 +87,8 @@ private:
     void updateOkButton();
     UIMediumItem* addTreeItem(const UIMedium &medium, QITreeWidgetItem *pParent);
     void restoreSelection(const QStringList &selectedMediums, QVector<UIMediumItem*> &mediumList);
+    UIMediumItem* createHardDiskItem(const UIMedium &medium);
+    UIMediumItem* searchItem(const QTreeWidgetItem *pParent, const QString &mediumId);
 
     QVBoxLayout       *m_pMainLayout;
     QITreeWidget      *m_pTreeWidget;

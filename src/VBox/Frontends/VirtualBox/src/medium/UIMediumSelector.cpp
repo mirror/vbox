@@ -197,15 +197,59 @@ UIMediumItem* UIMediumSelector::addTreeItem(const UIMedium &medium, QITreeWidget
             break;
         case UIMediumType_Floppy:
             return new UIMediumItemFD(medium, pParent);
-
             break;
         case UIMediumType_HardDisk:
         case UIMediumType_All:
         case UIMediumType_Invalid:
         default:
-            return new UIMediumItemHD(medium, pParent);
+            return createHardDiskItem(medium);
             break;
     }
+}
+
+UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium)
+{
+    if (medium.medium().isNull())
+        return 0;
+    if (!m_pTreeWidget)
+        return 0;
+    printf("%s\n", qPrintable(medium.id()));
+    /* Search the tree to see if we already have the item: */
+    UIMediumItem *pMediumItem = searchItem(0, medium.id());
+    if (pMediumItem)
+        return pMediumItem;
+    /* Check if the corresponding medium has a parent */
+    if (medium.parentID() != UIMedium::nullID())
+    {
+        UIMediumItem *pParentMediumItem = searchItem(0, medium.parentID());
+        /* If parent medium-item was not found we create it: */
+        if (!pParentMediumItem)
+        {
+            /* Make sure corresponding parent medium is already cached! */
+            UIMedium parentMedium = vboxGlobal().medium(medium.parentID());
+            if (parentMedium.isNull())
+                AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toUtf8().constData()));
+            /* Try to create parent medium-item: */
+            else
+                pParentMediumItem = createHardDiskItem(parentMedium);
+            /* If parent medium-item was found: */
+            if (pParentMediumItem)
+            {
+                pMediumItem = new UIMediumItemHD(medium, pParentMediumItem);
+                LogRel2(("UIMediumManager: Child hard-disk medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
+            }
+            else
+                AssertMsgFailed(("Parent medium with ID={%s} could not be created!\n", medium.parentID().toUtf8().constData()));
+
+        }
+    }
+    /* Else just create item as top-level one: */
+    else
+    {
+        pMediumItem = new UIMediumItemHD(medium, m_pTreeWidget);
+        LogRel2(("UIMediumManager: Root hard-disk medium-item with ID={%s} created.\n", medium.id().toUtf8().constData()));
+    }
+    return pMediumItem;
 }
 
 void UIMediumSelector::restoreSelection(const QStringList &selectedMediums, QVector<UIMediumItem*> &mediumList)
@@ -396,7 +440,7 @@ void UIMediumSelector::repopulateTreeWidget()
     m_pTreeWidget->clear();
     m_pAttachedSubTreeRoot = 0;
     m_pNotAttachedSubTreeRoot = 0;
-    QVector<UIMediumItem*> menuItemList;
+    QVector<UIMediumItem*> menuItemVector;
 
     foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
     {
@@ -427,10 +471,10 @@ void UIMediumSelector::repopulateTreeWidget()
                 }
                 pParent = m_pNotAttachedSubTreeRoot;
             }
-            menuItemList.push_back(addTreeItem(medium, pParent));
+            menuItemVector.push_back(addTreeItem(medium, pParent));
         }
     }
-    restoreSelection(selectedMediums, menuItemList);
+    restoreSelection(selectedMediums, menuItemVector);
 
     updateOkButton();
     if (m_pAttachedSubTreeRoot)
@@ -438,5 +482,31 @@ void UIMediumSelector::repopulateTreeWidget()
 
     if (m_pNotAttachedSubTreeRoot)
         m_pTreeWidget->expandItem(m_pNotAttachedSubTreeRoot);
+}
 
+UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const QString &mediumId)
+{
+    if (!m_pTreeWidget)
+        return 0;
+    if (!pParent)
+    {
+        pParent = m_pTreeWidget->invisibleRootItem();
+    }
+    if (!pParent)
+        return 0;
+
+    for (int i = 0; i < pParent->childCount(); ++i)
+    {
+        QTreeWidgetItem *pChild = pParent->child(i);
+        if (!pChild)
+            continue;
+        UIMediumItem *mediumItem = dynamic_cast<UIMediumItem*>(pChild);
+        if (mediumItem)
+        {
+            if (mediumItem->id() == mediumId)
+                return mediumItem;
+        }
+        searchItem(pChild, mediumId);
+    }
+    return 0;
 }
