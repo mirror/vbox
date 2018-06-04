@@ -557,8 +557,8 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
     }
 
     strDetails = fUseHTML ?
-        QString("%1 (<nobr>%2</nobr>)").arg(VBoxGlobal::locationForHTML(rootMedium.m_strName), strDetails) :
-        QString("%1 (%2)").arg(VBoxGlobal::locationForHTML(rootMedium.m_strName), strDetails);
+        QString("%1 (<nobr>%2</nobr>)").arg(QFileInfo(rootMedium.m_strName).fileName(), strDetails) :
+        QString("%1 (%2)").arg(QFileInfo(rootMedium.m_strName).fileName(), strDetails);
 
     return strDetails;
 }
