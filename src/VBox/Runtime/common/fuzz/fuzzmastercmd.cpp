@@ -125,8 +125,7 @@ static RTEXITCODE rtFuzzCmdMasterDoIt(const char *pszBinary, uint32_t cProcs, co
                             rc = RTFuzzObsExecStart(hFuzzObs, cProcs);
                             if (RT_SUCCESS(rc))
                             {
-                                for (;;)
-                                    RTThreadSleep(3600 * RT_MS_1SEC);
+                                RTThreadSleep(3600 * RT_MS_1SEC);
                                 RTFuzzObsExecStop(hFuzzObs);
                             }
                             else
