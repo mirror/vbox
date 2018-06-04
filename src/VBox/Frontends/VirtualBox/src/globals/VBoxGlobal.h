@@ -164,9 +164,6 @@ public:
         /** Returns whether VBox version string contains BETA word. */
         bool isBeta() const;
 
-        /** todo remove */
-        QString versionString() const { return mVerString; }
-
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Returns #MacOSXRelease determined by <i>uname</i> call. */
         static MacOSXRelease determineOsRelease();
@@ -190,13 +187,7 @@ public:
     /** @name Process arguments stuff.
      * @{ */
         /** Returns whether passed @a strExt ends with one of allowed extension in the @a extList. */
-        static bool hasAllowedExtension(const QString &strExt, const QStringList &extList)
-        {
-            for (int i = 0; i < extList.size(); ++i)
-                if (strExt.endsWith(extList.at(i), Qt::CaseInsensitive))
-                    return true;
-            return false;
-        }
+        static bool hasAllowedExtension(const QString &strExt, const QStringList &extList);
 
         /** Process application args. */
         bool processArgs();
@@ -260,14 +251,7 @@ public:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
         /** Returns whether VM should start paused. */
-        bool shouldStartPaused() const
-        {
-#ifdef VBOX_WITH_DEBUGGER_GUI
-            return m_enmStartRunning == StartRunning_Default ? isDebuggerAutoShowEnabled() : m_enmStartRunning == StartRunning_No;
-#else
-            return false;
-#endif
-        }
+        bool shouldStartPaused() const;
 
 #ifdef VBOX_GUI_WITH_PIDFILE
         /** Creates PID file. */
@@ -312,35 +296,17 @@ public:
         static void loadLanguage (const QString &aLangId = QString::null);
 
         /** Returns tr("%n year(s)"). */
-        static inline QString yearsToString (uint32_t cVal)
-        {
-            return tr("%n year(s)", "", cVal);
-        }
+        static QString yearsToString(uint32_t cVal);
         /** Returns tr("%n month(s)"). */
-        static inline QString monthsToString (uint32_t cVal)
-        {
-            return tr("%n month(s)", "", cVal);
-        }
+        static QString monthsToString(uint32_t cVal);
         /** Returns tr("%n day(s)"). */
-        static inline QString daysToString (uint32_t cVal)
-        {
-            return tr("%n day(s)", "", cVal);
-        }
+        static QString daysToString(uint32_t cVal);
         /** Returns tr("%n hour(s)"). */
-        static inline QString hoursToString (uint32_t cVal)
-        {
-            return tr("%n hour(s)", "", cVal);
-        }
+        static QString hoursToString(uint32_t cVal);
         /** Returns tr("%n minute(s)"). */
-        static inline QString minutesToString (uint32_t cVal)
-        {
-            return tr("%n minute(s)", "", cVal);
-        }
+        static QString minutesToString(uint32_t cVal);
         /** Returns tr("%n second(s)"). */
-        static inline QString secondsToString (uint32_t cVal)
-        {
-            return tr("%n second(s)", "", cVal);
-        }
+        static QString secondsToString(uint32_t cVal);
 
         /** Returns the decimal separator for the current locale. */
         static QChar decimalSep();
@@ -382,9 +348,6 @@ public:
         static QString removeAccelMark (const QString &aText);
         /** Inserts a passed @a strKey into action @a strText. */
         static QString insertKeyToActionText (const QString &aText, const QString &aKey);
-
-        /** @todo remove */
-        static QString replaceHtmlEntities(QString strText);
     /** @} */
 
     /** @name File-system stuff.
@@ -603,7 +566,7 @@ public:
         /** Inner worker for lazily querying for 3D support. */
         bool is3DAvailableWorker() const;
         /** Returns whether 3D is available, runs worker above if necessary. */
-        bool is3DAvailable() const { if (m3DAvailable < 0) return is3DAvailableWorker(); return m3DAvailable != 0; }
+        bool is3DAvailable() const;
 
 #ifdef VBOX_WITH_CRHGSMI
         /** Returns whether guest OS type with passed @a strGuestOSTypeId is WDDM compatible. */
@@ -650,17 +613,6 @@ public:
 
         /** Joins two pixmaps horizontally with 2px space between them and returns the result. */
         static QPixmap joinPixmaps (const QPixmap &aPM1, const QPixmap &aPM2);
-
-        /** @todo remove */
-        static void setTextLabel (QToolButton *aToolButton, const QString &aTextLabel);
-
-        /** @todo remove */
-        static QString locationForHTML (const QString &aFileName);
-
-        /** @todo remove */
-        static QWidget *findWidget (QWidget *aParent, const char *aName,
-                                    const char *aClassName = NULL,
-                                    bool aRecursive = false);
     /** @} */
 
 public slots:
@@ -756,11 +708,11 @@ private:
 
     /** @name Common stuff.
      * @{ */
-        /** Holds the currently loaded language ID. */
-        static QString     s_strLoadedLanguageId;
-
         /** Holds whether VBoxGlobal cleanup is in progress. */
         static bool        s_fCleanupInProgress;
+
+        /** Holds the currently loaded language ID. */
+        static QString     s_strLoadedLanguageId;
 
 #ifdef VBOX_GUI_WITH_SHARED_LIBRARY
         /** Holds the UI type. */
@@ -776,14 +728,12 @@ private:
 #endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WS_X11
-        /** X11: Holds whether the Window Manager we are running at is composition one. */
-        bool m_fCompositingManagerRunning;
         /** X11: Holds the #X11WMType of the Window Manager we are running under. */
         X11WMType m_enmWindowManagerType;
+        /** X11: Holds whether the Window Manager we are running at is composition one. */
+        bool m_fCompositingManagerRunning;
 #endif /* VBOX_WS_X11 */
 
-        /** @todo remove */
-        QString mVerString;
         /** Holds the VBox branding config file path. */
         QString mBrandingConfig;
     /** @} */
@@ -924,11 +874,6 @@ private:
           * @note  Required internally by ATL (constructor records instance in global variable). */
         ATL::CComModule _Module;
     /** @} */
-#endif
-
-#if defined (VBOX_WS_WIN)
-    /** @todo remove */
-    DWORD dwHTMLHelpCookie;
 #endif
 
     /** Allows for shortcut access. */

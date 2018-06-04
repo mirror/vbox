@@ -302,7 +302,6 @@ VBoxGlobal::VBoxGlobal(UIType enmType)
     , m_fCompositingManagerRunning(false)
     , m_enmWindowManagerType(X11WMType_Unknown)
 #endif
-    , mVerString("1.0")
     , m_fSeparateProcess(false)
     , mShowStartVMErrors(true)
 #if defined(DEBUG_bird)
@@ -317,6 +316,14 @@ VBoxGlobal::VBoxGlobal(UIType enmType)
     , mRecompileUser(false)
     , mExecuteAllInIem(false)
     , mWarpPct(100)
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    , m_fDbgEnabled(0)
+    , m_fDbgAutoShow(0)
+    , m_fDbgAutoShowCommandLine(0)
+    , m_fDbgAutoShowStatistics(0)
+    , m_hVBoxDbg(NIL_RTLDRMOD)
+    , m_enmStartRunning(StartRunning_Default)
+#endif
     , mSettingsPwSet(false)
     , m_fWrappersValid(false)
     , m_fVBoxSVCAvailable(true)
@@ -428,6 +435,15 @@ QString VBoxGlobal::brandingGetKey (QString aKey)
     return s.value(QString("%1").arg(aKey)).toString();
 }
 
+/* static */
+bool VBoxGlobal::hasAllowedExtension(const QString &strExt, const QStringList &extList)
+{
+    for (int i = 0; i < extList.size(); ++i)
+        if (strExt.endsWith(extList.at(i), Qt::CaseInsensitive))
+            return true;
+    return false;
+}
+
 bool VBoxGlobal::processArgs()
 {
     /* Among those arguments: */
@@ -508,6 +524,15 @@ bool VBoxGlobal::isDebuggerAutoShowStatisticsEnabled() const
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+bool VBoxGlobal::shouldStartPaused() const
+{
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    return m_enmStartRunning == StartRunning_Default ? isDebuggerAutoShowEnabled() : m_enmStartRunning == StartRunning_No;
+#else
+    return false;
+#endif
+}
 
 #ifdef VBOX_GUI_WITH_PIDFILE
 
@@ -789,6 +814,42 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
      * Manually trigger an update. */
     ::darwinRetranslateAppMenu();
 #endif /* VBOX_WS_MAC */
+}
+
+/* static */
+QString VBoxGlobal::yearsToString(uint32_t cVal)
+{
+    return QApplication::translate("VBoxGlobal", "%n year(s)", "", cVal);
+}
+
+/* static */
+QString VBoxGlobal::monthsToString(uint32_t cVal)
+{
+    return QApplication::translate("VBoxGlobal", "%n month(s)", "", cVal);
+}
+
+/* static */
+QString VBoxGlobal::daysToString(uint32_t cVal)
+{
+    return QApplication::translate("VBoxGlobal", "%n day(s)", "", cVal);
+}
+
+/* static */
+QString VBoxGlobal::hoursToString(uint32_t cVal)
+{
+    return QApplication::translate("VBoxGlobal", "%n hour(s)", "", cVal);
+}
+
+/* static */
+QString VBoxGlobal::minutesToString(uint32_t cVal)
+{
+    return QApplication::translate("VBoxGlobal", "%n minute(s)", "", cVal);
+}
+
+/* static */
+QString VBoxGlobal::secondsToString(uint32_t cVal)
+{
+    return QApplication::translate("VBoxGlobal", "%n second(s)", "", cVal);
 }
 
 /* static */
@@ -1188,16 +1249,6 @@ QString VBoxGlobal::insertKeyToActionText(const QString &strText, const QString 
         return pattern.arg(strText).arg(QKeySequence(strKey).toString(QKeySequence::NativeText));
 }
 
-/* static */
-QString VBoxGlobal::replaceHtmlEntities(QString strText)
-{
-    return strText
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('\"', "&quot;");
-}
-
 QString VBoxGlobal::helpFile() const
 {
 #if defined (VBOX_WS_WIN)
@@ -1458,17 +1509,6 @@ void VBoxGlobal::centerWidget (QWidget *aWidget, QWidget *aRelative,
         extraw = qMax (extraw, framew);
         extrah = qMax (extrah, frameh);
     }
-
-    /// @todo (r=dmik) not sure if we really need this
-#if 0
-    /* sanity check for decoration frames. With embedding, we
-     * might get extraordinary values */
-    if (extraw == 0 || extrah == 0 || extraw > 20 || extrah > 50)
-    {
-        extrah = 50;
-        extraw = 20;
-    }
-#endif
 
     /* On non-X11 platforms, the following would be enough instead of the
      * above workaround: */
@@ -1941,120 +1981,6 @@ void VBoxGlobal::setWMClass(QWidget *pWidget, const QString &strNameString, cons
     XSetClassHint(QX11Info::display(), pWidget->window()->winId(), &windowClass);
 }
 
-QList<QRect> XGetDesktopList()
-{
-    /* Prepare empty resulting list: */
-    QList<QRect> result;
-
-    /* Get current display: */
-    Display* pDisplay = QX11Info::display();
-
-    /* If it's a Xinerama desktop: */
-    if (XineramaIsActive(pDisplay))
-    {
-        /* Reading Xinerama data: */
-        int iScreens = 0;
-        XineramaScreenInfo *pScreensData = XineramaQueryScreens(pDisplay, &iScreens);
-
-        /* Fill resulting list: */
-        for (int i = 0; i < iScreens; ++ i)
-            result << QRect(pScreensData[i].x_org, pScreensData[i].y_org,
-                            pScreensData[i].width, pScreensData[i].height);
-
-        /* Free screens data: */
-        XFree(pScreensData);
-    }
-
-    /* Return resulting list: */
-    return result;
-}
-
-QList<Window> XGetWindowIDList()
-{
-    /* Get current display: */
-    Display *pDisplay = QX11Info::display();
-
-    /* Get virtual desktop window: */
-    Window window = QX11Info::appRootWindow();
-
-    /* Get 'client list' atom: */
-    Atom propNameAtom = XInternAtom(pDisplay, "_NET_CLIENT_LIST", True /* only if exists */);
-
-    /* Prepare empty resulting list: */
-    QList<Window> result;
-
-    /* If atom does not exists return empty list: */
-    if (propNameAtom == None)
-        return result;
-
-    /* Get atom value: */
-    Atom realAtomType = None;
-    int iRealFormat = 0;
-    unsigned long uItemsCount = 0;
-    unsigned long uBytesAfter = 0;
-    unsigned char *pData = 0;
-    int rc = XGetWindowProperty(pDisplay, window, propNameAtom,
-                                0, 0x7fffffff /*LONG_MAX*/, False /* delete */,
-                                XA_WINDOW, &realAtomType, &iRealFormat,
-                                &uItemsCount, &uBytesAfter, &pData);
-
-    /* If get property is failed return empty list: */
-    if (rc != Success)
-        return result;
-
-    /* Fill resulting list with win ids: */
-    Window *pWindowData = reinterpret_cast<Window*>(pData);
-    for (ulong i = 0; i < uItemsCount; ++ i)
-        result << pWindowData[i];
-
-    /* Releasing resources: */
-    XFree(pData);
-
-    /* Return resulting list: */
-    return result;
-}
-
-QList<ulong> XGetStrut(Window window)
-{
-    /* Get current display: */
-    Display *pDisplay = QX11Info::display();
-
-    /* Get 'strut' atom: */
-    Atom propNameAtom = XInternAtom(pDisplay, "_NET_WM_STRUT_PARTIAL", True /* only if exists */);
-
-    /* Prepare empty resulting list: */
-    QList<ulong> result;
-
-    /* If atom does not exists return empty list: */
-    if (propNameAtom == None)
-        return result;
-
-    /* Get atom value: */
-    Atom realAtomType = None;
-    int iRealFormat = 0;
-    ulong uItemsCount = 0;
-    ulong uBytesAfter = 0;
-    unsigned char *pData = 0;
-    int rc = XGetWindowProperty(pDisplay, window, propNameAtom,
-                                0, LONG_MAX, False /* delete */,
-                                XA_CARDINAL, &realAtomType, &iRealFormat,
-                                &uItemsCount, &uBytesAfter, &pData);
-
-    /* If get property is failed return empty list: */
-    if (rc != Success)
-        return result;
-
-    /* Fill resulting list with strut shifts: */
-    ulong *pStrutsData = reinterpret_cast<ulong*>(pData);
-    for (ulong i = 0; i < uItemsCount; ++ i)
-        result << pStrutsData[i];
-
-    /* Releasing resources: */
-    XFree(pData);
-
-    /* Return resulting list: */
-    return result;
-}
 #endif
 
 /* static */
@@ -2190,79 +2116,6 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
 #else
 
     return false;
-
-#endif
-
-
-    /// @todo Below is the old method of switching to the console window
-    //  based on the process ID of the console process. It should go away
-    //  after the new (callback-based) method is fully tested.
-#if 0
-
-    if (!canSwitchTo())
-        return false;
-
-#if defined (VBOX_WS_WIN)
-
-    HWND hwnd = mWinId;
-
-    /* if there are blockers (modal and modeless dialogs, etc), find the
-     * topmost one */
-    HWND hwndAbove = NULL;
-    do
-    {
-        hwndAbove = GetNextWindow(hwnd, GW_HWNDPREV);
-        HWND hwndOwner;
-        if (hwndAbove != NULL &&
-            ((hwndOwner = GetWindow(hwndAbove, GW_OWNER)) == hwnd ||
-             hwndOwner  == hwndAbove))
-            hwnd = hwndAbove;
-        else
-            break;
-    }
-    while (1);
-
-    /* first, check that the primary window is visible */
-    if (IsIconic(mWinId))
-        ShowWindow(mWinId, SW_RESTORE);
-    else if (!IsWindowVisible(mWinId))
-        ShowWindow(mWinId, SW_SHOW);
-
-#if 0
-    LogFlowFunc(("mWinId=%08X hwnd=%08X\n", mWinId, hwnd));
-#endif
-
-    /* then, activate the topmost in the group */
-    AllowSetForegroundWindow(m_pid);
-    SetForegroundWindow(hwnd);
-
-    return true;
-
-#elif defined (VBOX_WS_X11)
-
-    return false;
-
-#elif defined (VBOX_WS_MAC)
-
-    ProcessSerialNumber psn;
-    OSStatus rc = ::GetProcessForPID(m_pid, &psn);
-    if (!rc)
-    {
-        rc = ::SetFrontProcess(&psn);
-
-        if (!rc)
-        {
-            ShowHideProcess(&psn, true);
-            return true;
-        }
-    }
-    return false;
-
-#else
-
-    return false;
-
-#endif
 
 #endif
 }
@@ -3389,6 +3242,13 @@ bool VBoxGlobal::is3DAvailableWorker() const
     return fSupported;
 }
 
+bool VBoxGlobal::is3DAvailable() const
+{
+    if (m3DAvailable < 0)
+        return is3DAvailableWorker();
+    return m3DAvailable != 0;
+}
+
 #ifdef VBOX_WITH_CRHGSMI
 /* static */
 bool VBoxGlobal::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
@@ -3550,72 +3410,6 @@ QPixmap VBoxGlobal::joinPixmaps (const QPixmap &aPM1, const QPixmap &aPM2)
     painter.end();
 
     return result;
-}
-
-/* static */
-void VBoxGlobal::setTextLabel (QToolButton *aToolButton,
-                               const QString &aTextLabel)
-{
-    AssertReturnVoid (aToolButton != NULL);
-
-    /* remember the icon set as setText() will kill it */
-    QIcon iset = aToolButton->icon();
-    /* re-use the setText() method to detect and set the accelerator */
-    aToolButton->setText (aTextLabel);
-    QKeySequence accel = aToolButton->shortcut();
-    aToolButton->setText (aTextLabel);
-    aToolButton->setIcon (iset);
-    /* set the accel last as setIconSet() would kill it */
-    aToolButton->setShortcut (accel);
-}
-
-/* static */
-QString VBoxGlobal::locationForHTML (const QString &aFileName)
-{
-/// @todo (dmik) remove?
-//    QString result = QDir::toNativeSeparators (fn);
-//#ifdef Q_OS_LINUX
-//    result.replace ('/', "/<font color=red>&shy;</font>");
-//#else
-//    result.replace ('\\', "\\<font color=red>&shy;</font>");
-//#endif
-//    return result;
-    QFileInfo fi (aFileName);
-    return fi.fileName();
-}
-
-/* static */
-QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
-                                 const char *aClassName /* = NULL */,
-                                 bool aRecursive /* = false */)
-{
-    if (aParent == NULL)
-    {
-        QWidgetList list = QApplication::topLevelWidgets();
-        foreach(QWidget *w, list)
-        {
-            if ((!aName || strcmp (w->objectName().toLatin1().constData(), aName) == 0) &&
-                (!aClassName || strcmp (w->metaObject()->className(), aClassName) == 0))
-                return w;
-            if (aRecursive)
-            {
-                w = findWidget (w, aName, aClassName, aRecursive);
-                if (w)
-                    return w;
-            }
-        }
-        return NULL;
-    }
-
-    /* Find the first children of aParent with the appropriate properties.
-     * Please note that this call is recursively. */
-    QList<QWidget *> list = aParent->findChildren<QWidget*>(aName);
-    foreach(QWidget *child, list)
-    {
-        if (!aClassName || strcmp (child->metaObject()->className(), aClassName) == 0)
-            return child;
-    }
-    return NULL;
 }
 
 bool VBoxGlobal::openURL (const QString &aURL)
@@ -3790,10 +3584,6 @@ void VBoxGlobal::prepare()
 
     /* Load translation based on the current locale: */
     loadLanguage();
-
-#ifdef DEBUG
-    mVerString += " [DEBUG]";
-#endif
 
     HRESULT rc = COMBase::InitializeCOM(true);
     if (FAILED (rc))
