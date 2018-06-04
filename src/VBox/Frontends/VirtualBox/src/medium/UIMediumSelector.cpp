@@ -213,7 +213,6 @@ UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium)
         return 0;
     if (!m_pTreeWidget)
         return 0;
-    printf("%s\n", qPrintable(medium.id()));
     /* Search the tree to see if we already have the item: */
     UIMediumItem *pMediumItem = searchItem(0, medium.id());
     if (pMediumItem)
