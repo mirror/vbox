@@ -175,6 +175,9 @@ typedef struct RTLOGGERINTERNAL
     char * volatile         pchRingBufCur;
     /** @} */
 
+    /** Thread name for use in ring-0 with RTLOGFLAGS_PREFIX_THREAD. */
+    char                    szR0ThreadName[16];
+
 # ifdef IN_RING3 /* Note! Must be at the end! */
     /** @name File logging bits for the logger.
      * @{ */
@@ -825,9 +828,8 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         pLogger->pInt->pfnFlush                 = NULL;
         pLogger->pInt->pfnPrefix                = NULL;
         pLogger->pInt->pvPrefixUserArg          = NULL;
-        pLogger->pInt->afPadding1[0]            = false;
-        pLogger->pInt->afPadding1[1]            = false;
         pLogger->pInt->fCreated                 = false;
+        RT_ZERO(pLogger->pInt->szR0ThreadName);
         pLogger->pInt->cMaxGroups               = cGroups;
         pLogger->pInt->papszGroups              = papszGroups;
         if (fFlags & RTLOGFLAGS_RESTRICT_GROUPS)
@@ -1273,7 +1275,7 @@ RT_EXPORT_SYMBOL(RTLogFlushRC);
 
 RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger,
                              RTR0PTR pLoggerR0Ptr, RTR0PTR pfnLoggerR0Ptr, RTR0PTR pfnFlushR0Ptr,
-                             uint32_t fFlags, uint32_t fDestFlags)
+                             uint32_t fFlags, uint32_t fDestFlags, char const *pszThreadName)
 {
     /*
      * Validate input.
@@ -1283,6 +1285,8 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger,
     AssertReturn(cbLogger >= cbRequired, VERR_BUFFER_OVERFLOW);
     AssertReturn(pLoggerR0Ptr != NIL_RTR0PTR, VERR_INVALID_PARAMETER);
     AssertReturn(pfnLoggerR0Ptr != NIL_RTR0PTR, VERR_INVALID_PARAMETER);
+    size_t const cchThreadName = pszThreadName ? strlen(pszThreadName) : 0;
+    AssertReturn(cchThreadName < sizeof(pLogger->pInt->szR0ThreadName), VERR_INVALID_NAME);
 
     /*
      * Initialize the ring-0 instance.
@@ -1326,6 +1330,10 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger,
     }
     else
         pInt->pacEntriesPerGroup= NULL;
+
+    RT_ZERO(pInt->szR0ThreadName);
+    if (cchThreadName)
+        memcpy(pInt->szR0ThreadName, pszThreadName, cchThreadName);
 
     pInt->fCreated              = true;
     pLogger->u32Magic           = RTLOGGER_MAGIC;
@@ -3814,7 +3822,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #elif defined IN_RC
                     const char *pszName = "EMT-RC";
 #else
-                    const char *pszName = "R0";
+                    const char *pszName = pLogger->pInt->szR0ThreadName[0] ? pLogger->pInt->szR0ThreadName : "R0";
 #endif
                     psz = rtLogStPNCpyPad(psz, pszName, 16, 8);
                 }

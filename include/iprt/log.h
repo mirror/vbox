@@ -2080,10 +2080,12 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
  * @param   pfnFlushR0Ptr       Pointer to flush function.
  * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
  * @param   fDestFlags          The destination flags.
+ * @param   pszThreadName       The thread name to report in ring-0 when
+ *                              RTLOGFLAGS_PREFIX_THREAD is set.
  */
 RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger,
                              RTR0PTR pLoggerR0Ptr, RTR0PTR pfnLoggerR0Ptr, RTR0PTR pfnFlushR0Ptr,
-                             uint32_t fFlags, uint32_t fDestFlags);
+                             uint32_t fFlags, uint32_t fDestFlags, char const *pszThreadName);
 
 /**
  * Calculates the minimum size of a ring-0 logger instance.

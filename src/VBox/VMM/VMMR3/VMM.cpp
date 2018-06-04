@@ -1016,10 +1016,12 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
                 rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerFlush", &pfnLoggerFlush);
                 AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerFlush not found! rc=%Rra\n", rc), rc);
 
+                char szR0ThreadName[16];
+                RTStrPrintf(szR0ThreadName, sizeof(szR0ThreadName), "EMT-%u-R0", i);
                 rc = RTLogCreateForR0(&pR0LoggerR3->Logger, pR0LoggerR3->cbLogger,
                                       pVCpu->vmm.s.pR0LoggerR0 + RT_OFFSETOF(VMMR0LOGGER, Logger),
                                       pfnLoggerWrapper, pfnLoggerFlush,
-                                      RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY);
+                                      RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY, szR0ThreadName);
                 AssertReleaseMsgRCReturn(rc, ("RTLogCreateForR0 failed! rc=%Rra\n", rc), rc);
 
                 RTR0PTR pfnLoggerPrefix = NIL_RTR0PTR;
