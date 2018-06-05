@@ -1183,6 +1183,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
+	src/medium/UIMediumSelector.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
@@ -1263,6 +1264,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
+	src/medium/UIMediumSelector.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \

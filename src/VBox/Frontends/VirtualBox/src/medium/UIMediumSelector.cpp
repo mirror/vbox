@@ -26,7 +26,9 @@
 # include <QPushButton>
 
 /* GUI includes: */
+# include "QIComboBox.h"
 # include "QIDialogButtonBox.h"
+# include "QILineEdit.h"
 # include "QIMessageBox.h"
 # include "QITabWidget.h"
 # include "VBoxGlobal.h"
@@ -52,6 +54,88 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+class UIMediumSearchWidget : public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    enum SearchType
+    {
+        SearchByName,
+        SearchByUUID,
+        SearchByMax
+    };
+
+signals:
+
+    void sigSearchTypeChanged(int newType);
+    void sigSearchTermChanged(QString searchTerm);
+
+public:
+
+    UIMediumSearchWidget(QWidget *pParent = 0);
+    SearchType searchType() const;
+    QString searchTerm() const;
+
+private:
+
+    void prepareWidgets();
+    QIComboBox *m_pSearchComboxBox;
+    QILineEdit *m_pSearchTermLineEdit;
+};
+
+UIMediumSearchWidget::UIMediumSearchWidget(QWidget *pParent)
+    :QWidget(pParent)
+    , m_pSearchComboxBox(0)
+    , m_pSearchTermLineEdit(0)
+{
+    prepareWidgets();
+}
+
+void UIMediumSearchWidget::prepareWidgets()
+{
+    QHBoxLayout *pLayout = new QHBoxLayout;
+    setLayout(pLayout);
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    pLayout->setSpacing(0);
+
+    m_pSearchComboxBox = new QIComboBox;
+    if (m_pSearchComboxBox)
+    {
+        m_pSearchComboxBox->setEditable(false);
+        m_pSearchComboxBox->insertItem(SearchByName, "By Name");
+        m_pSearchComboxBox->insertItem(SearchByUUID, "By UUID");
+        pLayout->addWidget(m_pSearchComboxBox);
+
+        connect(m_pSearchComboxBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+                this, &UIMediumSearchWidget::sigSearchTypeChanged);
+
+    }
+
+    m_pSearchTermLineEdit = new QILineEdit;
+    if (pLayout)
+    {
+        pLayout->addWidget(m_pSearchTermLineEdit);
+        connect(m_pSearchTermLineEdit, &QILineEdit::textChanged,
+                this, &UIMediumSearchWidget::sigSearchTermChanged);
+    }
+}
+
+UIMediumSearchWidget::SearchType UIMediumSearchWidget::searchType() const
+{
+    if (!m_pSearchComboxBox || m_pSearchComboxBox->currentIndex() >= static_cast<int>(SearchByMax))
+        return SearchByMax;
+    return static_cast<SearchType>(m_pSearchComboxBox->currentIndex());
+}
+
+QString UIMediumSearchWidget::searchTerm() const
+{
+    if (!m_pSearchTermLineEdit)
+        return QString();
+    return m_pSearchTermLineEdit->text();
+}
+
 
 UIMediumSelector::UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QIDialog>(pParent)
@@ -65,6 +149,7 @@ UIMediumSelector::UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent 
     , m_pAttachedSubTreeRoot(0)
     , m_pNotAttachedSubTreeRoot(0)
     , m_pParent(pParent)
+    , m_pSearchWidget(0)
 {
     configure();
     finalize();
@@ -184,6 +269,14 @@ void UIMediumSelector::prepareConnections()
     {
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIMediumSelector::close);
         connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIMediumSelector::accept);
+    }
+
+    if (m_pSearchWidget)
+    {
+        connect(m_pSearchWidget, &UIMediumSearchWidget::sigSearchTypeChanged,
+                this, &UIMediumSelector::sltHandleSearchTypeChange);
+        connect(m_pSearchWidget, &UIMediumSearchWidget::sigSearchTermChanged,
+                this, &UIMediumSelector::sltHandleSearchTermChange);
     }
 }
 
@@ -312,6 +405,12 @@ void UIMediumSelector::prepareWidgets()
 
     }
 
+    m_pSearchWidget = new UIMediumSearchWidget;
+    if (m_pSearchWidget)
+    {
+        m_pMainLayout->addWidget(m_pSearchWidget);
+    }
+
     m_pButtonBox = new QIDialogButtonBox;
     if (m_pButtonBox)
     {
@@ -324,7 +423,6 @@ void UIMediumSelector::prepareWidgets()
     }
 
     repopulateTreeWidget();
-    //m_pMainLayout->addWidget(
 }
 
 void UIMediumSelector::sltAddMedium()
@@ -332,13 +430,6 @@ void UIMediumSelector::sltAddMedium()
     QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, strDefaultMachineFolder);
 }
-
-// void UIMediumSelector::sltHandleCurrentItemChanged()
-// {
-//     printf("%d\n", m_pTreeWidget->selectedItems().size());
-//     updateOkButton();
-
-// }
 
 void UIMediumSelector::sltHandleItemSelectionChanged()
 {
@@ -367,6 +458,18 @@ void UIMediumSelector::sltHandleRefresh()
 {
     /* Initialize media enumation: */
     vboxGlobal().startMediumEnumeration();
+}
+
+void UIMediumSelector::sltHandleSearchTypeChange(int type)
+{
+    Q_UNUSED(type);
+    performMediumSearch();
+}
+
+void UIMediumSelector::sltHandleSearchTermChange(QString searchTerm)
+{
+    Q_UNUSED(searchTerm);
+    performMediumSearch();
 }
 
 void UIMediumSelector::updateOkButton()
@@ -439,6 +542,7 @@ void UIMediumSelector::repopulateTreeWidget()
     QStringList selectedMediums = selectedMediumIds();
     /* uuid list of selected items: */
     /* Reset the related data structure: */
+    m_mediumItemList.clear();
     m_pTreeWidget->clear();
     m_pAttachedSubTreeRoot = 0;
     m_pNotAttachedSubTreeRoot = 0;
@@ -473,18 +577,37 @@ void UIMediumSelector::repopulateTreeWidget()
                 }
                 pParent = m_pNotAttachedSubTreeRoot;
             }
-            menuItemVector.push_back(addTreeItem(medium, pParent));
+            UIMediumItem *treeItem = addTreeItem(medium, pParent);
+            m_mediumItemList.append(treeItem);
+            menuItemVector.push_back(treeItem);
         }
     }
     restoreSelection(selectedMediums, menuItemVector);
-
+    saveDefaultForeground();
     updateOkButton();
     if (m_pAttachedSubTreeRoot)
         m_pTreeWidget->expandItem(m_pAttachedSubTreeRoot);
 
     if (m_pNotAttachedSubTreeRoot)
         m_pTreeWidget->expandItem(m_pNotAttachedSubTreeRoot);
+}
 
+void UIMediumSelector::saveDefaultForeground()
+{
+    if (!m_pTreeWidget)
+        return;
+    if (m_defaultItemForeground == QBrush() && m_pTreeWidget->topLevelItemCount() >= 1)
+    {
+        QTreeWidgetItem *item = m_pTreeWidget->topLevelItem(0);
+        if (item)
+        {
+            QVariant data = item->data(0, Qt::ForegroundRole);
+            if (data.canConvert<QBrush>())
+            {
+                m_defaultItemForeground = data.value<QBrush>();
+            }
+        }
+    }
 }
 
 UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const QString &mediumId)
@@ -513,3 +636,43 @@ UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const
     }
     return 0;
 }
+
+void UIMediumSelector::performMediumSearch()
+{
+    if (!m_pSearchWidget)
+        return;
+    /* Unmark all tree items to remove the highltights: */
+    for (int i = 0; i < m_mediumItemList.size(); ++i)
+    {
+        m_mediumItemList[i]->setData(0, Qt::ForegroundRole, m_defaultItemForeground);
+    }
+
+
+    UIMediumSearchWidget::SearchType searchType =
+        m_pSearchWidget->searchType();
+    if (searchType >= UIMediumSearchWidget::SearchByMax)
+        return;
+    QString strTerm = m_pSearchWidget->searchTerm();
+    if (strTerm.isEmpty())
+        return;
+
+    for (int i = 0; i < m_mediumItemList.size(); ++i)
+    {
+        if (!m_mediumItemList[i])
+            continue;
+        QString strMedium;
+        if (searchType == UIMediumSearchWidget::SearchByName)
+            strMedium = m_mediumItemList[i]->medium().name();
+        else if(searchType == UIMediumSearchWidget::SearchByUUID)
+            strMedium = m_mediumItemList[i]->medium().id();
+        if (strMedium.isEmpty())
+            continue;
+        if (strMedium.contains(strTerm, Qt::CaseInsensitive))
+        {
+            // mark the item
+            m_mediumItemList[i]->setData(0, Qt::ForegroundRole, QBrush(QColor(255, 0, 0)));
+        }
+    }
+}
+
+#include "UIMediumSelector.moc"

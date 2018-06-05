@@ -33,6 +33,7 @@ class QITreeWidgetItem;
 class QVBoxLayout;
 class QIDialogButtonBox;
 class UIMediumItem;
+class UIMediumSearchWidget;
 class UIToolBar;
 
 
@@ -61,6 +62,8 @@ private slots:
     void sltHandleMediumEnumerated();
     void sltHandleMediumEnumerationFinish();
     void sltHandleRefresh();
+    void sltHandleSearchTypeChange(int type);
+    void sltHandleSearchTermChange(QString searchTerm);
 
 private:
 
@@ -82,27 +85,34 @@ private:
         void finalize();
     /** @} */
 
-    void repopulateTreeWidget();
+    void          repopulateTreeWidget();
     /** Disable/enable 'ok' button on the basis of having a selected item */
-    void updateOkButton();
+    void          updateOkButton();
     UIMediumItem* addTreeItem(const UIMedium &medium, QITreeWidgetItem *pParent);
-    void restoreSelection(const QStringList &selectedMediums, QVector<UIMediumItem*> &mediumList);
+    void          restoreSelection(const QStringList &selectedMediums, QVector<UIMediumItem*> &mediumList);
     /** Recursively create the hard disk hierarchy under the tree widget */
     UIMediumItem* createHardDiskItem(const UIMedium &medium, QITreeWidgetItem *pParent);
     UIMediumItem* searchItem(const QTreeWidgetItem *pParent, const QString &mediumId);
+    void          performMediumSearch();
+    /** Remember the default foreground brush of the tree so that we can reset tree items' foreground later */
+    void          saveDefaultForeground();
 
-    QVBoxLayout       *m_pMainLayout;
-    QITreeWidget      *m_pTreeWidget;
-    UIMediumType       m_enmMediumType;
-    QIDialogButtonBox *m_pButtonBox;
-    UIToolBar         *m_pToolBar;
-    QAction           *m_pActionAdd;
-    QAction           *m_pActionRefresh;
+    QVBoxLayout          *m_pMainLayout;
+    QITreeWidget         *m_pTreeWidget;
+    UIMediumType          m_enmMediumType;
+    QIDialogButtonBox    *m_pButtonBox;
+    UIToolBar            *m_pToolBar;
+    QAction              *m_pActionAdd;
+    QAction              *m_pActionRefresh;
     /** All the known media that are already attached to some vm are added under the following top level tree item */
-    QITreeWidgetItem  *m_pAttachedSubTreeRoot;
+    QITreeWidgetItem     *m_pAttachedSubTreeRoot;
     /** All the known media that are not attached to any vm are added under the following top level tree item */
-    QITreeWidgetItem  *m_pNotAttachedSubTreeRoot;
-    QWidget           *m_pParent;
+    QITreeWidgetItem     *m_pNotAttachedSubTreeRoot;
+    QWidget              *m_pParent;
+    UIMediumSearchWidget *m_pSearchWidget;
+    QList<UIMediumItem*>  m_mediumItemList;
+    QBrush                m_defaultItemForeground;
+
 };
 
 #endif /* !___UIMediumSelector_h___ */
