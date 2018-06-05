@@ -3668,7 +3668,10 @@ iemRaiseXcptOrIntInRealMode(PVMCPU      pVCpu,
     RTFAR16 Idte;
     VBOXSTRICTRC rcStrict = iemMemFetchDataU32(pVCpu, (uint32_t *)&Idte, UINT8_MAX, pCtx->idtr.pIdt + UINT32_C(4) * u8Vector);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+    {
+        Log(("iemRaiseXcptOrIntInRealMode: failed to fetch IDT entry! vec=%#x rc=%Rrc\n", u8Vector, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
+    }
 
     /*
      * Push the stack frame.
@@ -4692,7 +4695,10 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
     VBOXSTRICTRC rcStrict = iemMemFetchSysU64(pVCpu, &Idte.u, UINT8_MAX,
                                               pCtx->idtr.pIdt + UINT32_C(8) * u8Vector);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+    {
+        Log(("iemRaiseXcptOrIntInProtMode: failed to fetch IDT entry! vec=%#x rc=%Rrc\n", u8Vector, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
+    }
     Log(("iemRaiseXcptOrIntInProtMode: vec=%#x P=%u DPL=%u DT=%u:%u A=%u %04x:%04x%04x\n",
          u8Vector, Idte.Gate.u1Present, Idte.Gate.u2Dpl, Idte.Gate.u1DescType, Idte.Gate.u4Type,
          Idte.Gate.u5ParmCount, Idte.Gate.u16Sel, Idte.Gate.u16OffsetHigh, Idte.Gate.u16OffsetLow));
@@ -5153,7 +5159,10 @@ iemRaiseXcptOrIntInLongMode(PVMCPU      pVCpu,
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         rcStrict = iemMemFetchSysU64(pVCpu, &Idte.au64[1], UINT8_MAX, pCtx->idtr.pIdt + offIdt + 8);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+    {
+        Log(("iemRaiseXcptOrIntInLongMode: failed to fetch IDT entry! vec=%#x rc=%Rrc\n", u8Vector, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
+    }
     Log(("iemRaiseXcptOrIntInLongMode: vec=%#x P=%u DPL=%u DT=%u:%u IST=%u %04x:%08x%04x%04x\n",
          u8Vector, Idte.Gate.u1Present, Idte.Gate.u2Dpl, Idte.Gate.u1DescType, Idte.Gate.u4Type,
          Idte.Gate.u3IST, Idte.Gate.u16Sel, Idte.Gate.u32OffsetTop, Idte.Gate.u16OffsetHigh, Idte.Gate.u16OffsetLow));
@@ -5590,8 +5599,9 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
     pVCpu->iem.s.cXcptRecursions--;
     pVCpu->iem.s.uCurXcpt = uPrevXcpt;
     pVCpu->iem.s.fCurXcpt = fPrevXcpt;
-    Log(("iemRaiseXcptOrInt: returns %Rrc (vec=%#x); cs:rip=%04x:%RGv ss:rsp=%04x:%RGv cpl=%u\n",
-         VBOXSTRICTRC_VAL(rcStrict), u8Vector, pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->esp, pVCpu->iem.s.uCpl));
+    Log(("iemRaiseXcptOrInt: returns %Rrc (vec=%#x); cs:rip=%04x:%RGv ss:rsp=%04x:%RGv cpl=%u depth=%d\n",
+         VBOXSTRICTRC_VAL(rcStrict), u8Vector, pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->esp, pVCpu->iem.s.uCpl,
+         pVCpu->iem.s.cXcptRecursions + 1));
     return rcStrict;
 }
 
@@ -8110,6 +8120,7 @@ iemMemPageTranslateAndCheckAccess(PVMCPU pVCpu, RTGCPTR GCPtrMem, uint32_t fAcce
     int rc = PGMGstGetPage(pVCpu, GCPtrMem, &fFlags, &GCPhys);
     if (RT_FAILURE(rc))
     {
+        Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - failed to fetch page -> #PF\n", GCPtrMem));
         /** @todo Check unassigned memory in unpaged mode. */
         /** @todo Reserved bits in page tables. Requires new PGM interface. */
         *pGCPhysMem = NIL_RTGCPHYS;
@@ -15630,6 +15641,11 @@ VMMDECL(VBOXSTRICTRC) IEMInjectTrpmEvent(PVMCPU pVCpu)
         return rc;
 
     VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, uErrCode, uCr2, cbInstr);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+    if (rcStrict == VINF_SVM_VMEXIT)
+        rcStrict = VINF_SUCCESS;
+#endif
 
     /** @todo Are there any other codes that imply the event was successfully
      *        delivered to the guest? See @bugref{6607}.  */
