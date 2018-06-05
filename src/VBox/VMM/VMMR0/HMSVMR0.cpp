@@ -90,7 +90,7 @@
         if (RT_LIKELY(rc == VINF_SUCCESS))        { /* continue #VMEXIT handling */ } \
         else if (     rc == VINF_HM_DOUBLE_FAULT) { return VINF_SUCCESS;            } \
         else if (     rc == VINF_EM_RESET \
-                 &&   HMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_SHUTDOWN)) \
+                 &&   CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_SHUTDOWN)) \
             return VBOXSTRICTRC_TODO(IEMExecSvmVmexit(pVCpu, SVM_EXIT_SHUTDOWN, 0, 0)); \
         else \
             return rc; \
@@ -373,7 +373,6 @@ static FNSVMEXITHANDLER hmR0SvmExitXcptBP;
 static FNSVMEXITHANDLER hmR0SvmExitXcptGeneric;
 #endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-static FNSVMEXITHANDLER hmR0SvmExitXcptPFNested;
 static FNSVMEXITHANDLER hmR0SvmExitClgi;
 static FNSVMEXITHANDLER hmR0SvmExitStgi;
 static FNSVMEXITHANDLER hmR0SvmExitVmload;
@@ -5098,11 +5097,11 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 if (HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_PF))
                     return HM_SVM_VMEXIT_NESTED(pVCpu, uExitCode, u32ErrCode, uFaultAddress);
 
-                /* If the nested-guest is not intercepting #PFs, forward the #PF to the nested-guest. */
+                /* If the nested-guest is not intercepting #PFs, forward the #PF to the guest. */
                 hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
                 return VINF_SUCCESS;
             }
-            return hmR0SvmExitXcptPFNested(pVCpu, pCtx,pSvmTransient);
+            return hmR0SvmExitXcptPF(pVCpu, pCtx,pSvmTransient);
         }
 
         case SVM_EXIT_XCPT_UD:
@@ -5882,7 +5881,10 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
 
                     /* Determine a vectoring #PF condition, see comment in hmR0SvmExitXcptPF(). */
                     if (fRaiseInfo & (IEMXCPTRAISEINFO_EXT_INT_PF | IEMXCPTRAISEINFO_NMI_PF))
+                    {
                         pSvmTransient->fVectoringPF = true;
+                        Log4(("IDT: Pending vectoring #PF due to delivery of Ext-Int/NMI. uCR2=%#RX64\n", pCtx->cr2));
+                    }
                     else if (   pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_EXCEPTION
                              && uIdtVector == X86_XCPT_PF)
                     {
@@ -5922,6 +5924,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                  */
                 if (fRaiseInfo & IEMXCPTRAISEINFO_PF_PF)
                 {
+                    Log4(("IDT: Pending vectoring double #PF uCR2=%#RX64\n", pCtx->cr2));
                     pSvmTransient->fVectoringDoublePF = true;
                     Assert(rc == VINF_SUCCESS);
                 }
@@ -7251,26 +7254,26 @@ HMSVM_EXIT_DECL hmR0SvmExitIret(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
 
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
     /* See AMD spec. 15.12.15 "#PF (Page Fault)". */
-    PSVMVMCB    pVmcb         = pVCpu->hm.s.svm.pVmcb;
-    uint32_t    u32ErrCode    = pVmcb->ctrl.u64ExitInfo1;
-    RTGCUINTPTR uFaultAddress = pVmcb->ctrl.u64ExitInfo2;
-    PVM         pVM           = pVCpu->CTX_SUFF(pVM);
+    PVM             pVM           = pVCpu->CTX_SUFF(pVM);
+    PSVMVMCB        pVmcb         = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
+    uint32_t        uErrCode      = pVmcb->ctrl.u64ExitInfo1;
+    uint64_t const  uFaultAddress = pVmcb->ctrl.u64ExitInfo2;
 
 #if defined(HMSVM_ALWAYS_TRAP_ALL_XCPTS) || defined(HMSVM_ALWAYS_TRAP_PF)
     if (pVM->hm.s.fNestedPaging)
     {
         pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory or vectoring #PF. */
-        if (!pSvmTransient->fVectoringDoublePF)
+        if (   !pSvmTransient->fVectoringDoublePF
+            || CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         {
             /* A genuine guest #PF, reflect it to the guest. */
-            hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
-            Log4(("#PF: Guest page fault at %04X:%RGv FaultAddr=%RGv ErrCode=%#x\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip,
-                  uFaultAddress, u32ErrCode));
+            hmR0SvmSetPendingXcptPF(pVCpu, pCtx, uErrCode, uFaultAddress);
+            Log4(("#PF: Guest page fault at %04X:%RGv FaultAddr=%RX64 ErrCode=%#x\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip,
+                  uFaultAddress, uErrCode));
         }
         else
         {
@@ -7290,7 +7293,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
      */
     if (   pVM->hm.s.fTprPatchingAllowed
         && (uFaultAddress & 0xfff) == XAPIC_OFF_TPR
-        && !(u32ErrCode & X86_TRAP_PF_P)              /* Not present. */
+        && !(uErrCode & X86_TRAP_PF_P)                /* Not present. */
+        && !CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
         && !CPUMIsGuestInLongModeEx(pCtx)
         && !CPUMGetGuestCPL(pVCpu)
         && pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
@@ -7312,8 +7316,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         }
     }
 
-    Log4(("#PF: uFaultAddress=%#RX64 CS:RIP=%#04x:%#RX64 u32ErrCode %#RX32 cr3=%#RX64\n", uFaultAddress, pCtx->cs.Sel,
-          pCtx->rip, u32ErrCode, pCtx->cr3));
+    Log4(("#PF: uFaultAddress=%#RX64 CS:RIP=%#04x:%#RX64 uErrCode %#RX32 cr3=%#RX64\n", uFaultAddress, pCtx->cs.Sel,
+          pCtx->rip, uErrCode, pCtx->cr3));
 
     /* If it's a vectoring #PF, emulate injecting the original event injection as PGMTrap0eHandler() is incapable
        of differentiating between instruction emulation and event injection that caused a #PF. See @bugref{6607}. */
@@ -7323,10 +7327,10 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         return VINF_EM_RAW_INJECT_TRPM_EVENT;
     }
 
-    TRPMAssertXcptPF(pVCpu, uFaultAddress, u32ErrCode);
-    int rc = PGMTrap0eHandler(pVCpu, u32ErrCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
+    TRPMAssertXcptPF(pVCpu, uFaultAddress, uErrCode);
+    int rc = PGMTrap0eHandler(pVCpu, uErrCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
 
-    Log4(("#PF rc=%Rrc\n", rc));
+    Log4(("#PF: rc=%Rrc\n", rc));
 
     if (rc == VINF_SUCCESS)
     {
@@ -7336,16 +7340,31 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
         return rc;
     }
-    else if (rc == VINF_EM_RAW_GUEST_TRAP)
+
+    if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory or vectoring #PF. */
 
-        if (!pSvmTransient->fVectoringDoublePF)
+        /*
+         * If a nested-guest delivers a #PF and that causes a #PF which is -not- a shadow #PF,
+         * we should simply forward the #PF to the guest and is up to the nested-hypervisor to
+         * determine whether it is a nested-shadow #PF or a #DF, see @bugref{7243#c121}.
+         */
+        if (  !pSvmTransient->fVectoringDoublePF
+            || CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         {
-            /* It's a guest page fault and needs to be reflected to the guest. */
-            u32ErrCode = TRPMGetErrorCode(pVCpu);        /* The error code might have been changed. */
+            /* It's a guest (or nested-guest) page fault and needs to be reflected. */
+            uErrCode = TRPMGetErrorCode(pVCpu);        /* The error code might have been changed. */
             TRPMResetTrap(pVCpu);
-            hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+            /* If the nested-guest is intercepting #PFs, cause a #PF #VMEXIT. */
+            if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
+                && HMIsGuestSvmXcptInterceptSet(pVCpu, pCtx, X86_XCPT_PF))
+                return VBOXSTRICTRC_TODO(IEMExecSvmVmexit(pVCpu, SVM_EXIT_XCPT_PF, uErrCode, uFaultAddress));
+#endif
+
+            hmR0SvmSetPendingXcptPF(pVCpu, pCtx, uErrCode, uFaultAddress);
         }
         else
         {
@@ -7592,77 +7611,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-/**
- * \#VMEXIT handler for #PF occuring while in nested-guest execution
- * (SVM_EXIT_XCPT_14). Conditional \#VMEXIT.
- */
-HMSVM_EXIT_DECL hmR0SvmExitXcptPFNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
-{
-    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-
-    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
-
-    /* See AMD spec. 15.12.15 "#PF (Page Fault)". */
-    PSVMVMCB       pVmcb         = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
-    uint32_t       u32ErrCode    = pVmcb->ctrl.u64ExitInfo1;
-    uint64_t const uFaultAddress = pVmcb->ctrl.u64ExitInfo2;
-
-    Log4(("#PFNested: uFaultAddress=%#RX64 CS:RIP=%#04x:%#RX64 u32ErrCode=%#RX32 CR3=%#RX64\n", uFaultAddress, pCtx->cs.Sel,
-          pCtx->rip, u32ErrCode, pCtx->cr3));
-
-    /* If it's a vectoring #PF, emulate injecting the original event injection as PGMTrap0eHandler() is incapable
-       of differentiating between instruction emulation and event injection that caused a #PF. See @bugref{6607}. */
-    if (pSvmTransient->fVectoringPF)
-    {
-        Assert(pVCpu->hm.s.Event.fPending);
-        return VINF_EM_RAW_INJECT_TRPM_EVENT;
-    }
-
-    Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
-
-    TRPMAssertXcptPF(pVCpu, uFaultAddress, u32ErrCode);
-    int rc = PGMTrap0eHandler(pVCpu, u32ErrCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
-
-    Log4(("#PFNested: rc=%Rrc\n", rc));
-
-    if (rc == VINF_SUCCESS)
-    {
-        /* Successfully synced shadow pages tables or emulated an MMIO instruction. */
-        TRPMResetTrap(pVCpu);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
-        return rc;
-    }
-
-    if (rc == VINF_EM_RAW_GUEST_TRAP)
-    {
-        pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory or vectoring #PF. */
-
-        if (!pSvmTransient->fVectoringDoublePF)
-        {
-            /* It's a nested-guest page fault and needs to be reflected to the nested-guest. */
-            u32ErrCode = TRPMGetErrorCode(pVCpu);        /* The error code might have been changed. */
-            TRPMResetTrap(pVCpu);
-            hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
-        }
-        else
-        {
-            /* A nested-guest page-fault occurred during delivery of a page-fault. Inject #DF. */
-            TRPMResetTrap(pVCpu);
-            hmR0SvmSetPendingXcptDF(pVCpu);
-            Log4(("#PF: Pending #DF due to vectoring #PF\n"));
-        }
-
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
-        return VINF_SUCCESS;
-    }
-
-    TRPMResetTrap(pVCpu);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPFEM);
-    return rc;
-}
-
-
 /**
  * \#VMEXIT handler for CLGI (SVM_EXIT_CLGI). Conditional \#VMEXIT.
  */
