@@ -611,7 +611,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     RT_ZERO(Caps);
     hrc = WHvGetCapabilityWrapper(WHvCapabilityCodeExceptionExitBitmap, &Caps, sizeof(Caps));
     if (SUCCEEDED(hrc))
-        LogRel(("NEM: Warning! Supported exception exit bitmap: %#RX64\n", Caps.Features.AsUINT64));
+        LogRel(("NEM: Supported exception exit bitmap: %#RX64\n", Caps.ExceptionExitBitmap));
     else
         LogRel(("NEM: Warning! WHvGetCapability/WHvCapabilityCodeExceptionExitBitmap failed: %Rhrc (Last=%#x/%u)",
                 hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
@@ -1051,9 +1051,7 @@ static int nemR3WinInitCreatePartition(PVM pVM, PRTERRINFO pErrInfo)
         RT_ZERO(Property);
         Property.ExtendedVmExits.X64CpuidExit  = pVM->nem.s.fExtendedCpuIdExit; /** @todo Register fixed results and restrict cpuid exits */
         Property.ExtendedVmExits.X64MsrExit    = pVM->nem.s.fExtendedMsrExit;
-#if 0 /** @todo handle some MSRs too. */
         Property.ExtendedVmExits.ExceptionExit = pVM->nem.s.fExtendedXcptExit;
-#endif
         hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeExtendedVmExits, &Property, sizeof(Property));
         if (SUCCEEDED(hrc))
         {
@@ -1217,6 +1215,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitInterruptWindow, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitInterruptWindow", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitCpuId,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of CPUID exits",                  "/NEM/CPU%u/ExitCpuId", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitMsr,             STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of MSR access exits",             "/NEM/CPU%u/ExitMsr", iCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitException,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of exception exits",           "/NEM/CPU%u/ExitException", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatExitUnrecoverable,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unrecoverable exits",          "/NEM/CPU%u/ExitUnrecoverable", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", iCpu);
                             STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", iCpu);
@@ -1300,6 +1299,18 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to set WHvPartitionPropertyCodeProcessorClFlushSize to %u: %Rhrc (Last=%#x/%u)",
                           pVM->nem.s.cCacheLineFlushShift, hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
+
+    /* Intercept #DB, #BP and #UD exceptions. */
+    RT_ZERO(Property);
+    Property.ExceptionExitBitmap = RT_BIT_64(WHvX64ExceptionTypeDivideErrorFault)
+                                 | RT_BIT_64(WHvX64ExceptionTypeBreakpointTrap)
+                                 | RT_BIT_64(WHvX64ExceptionTypeInvalidOpcodeFault);
+    hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeExceptionExitBitmap, &Property, sizeof(Property));
+    if (FAILED(hrc))
+        return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                          "Failed to set WHvPartitionPropertyCodeExceptionExitBitmap to %#RX64: %Rhrc (Last=%#x/%u)",
+                          Property.ExceptionExitBitmap, hrc, RTNtLastStatusValue(), RTNtLastErrorValue());
+
 
     /*
      * Sync CPU features with CPUM.

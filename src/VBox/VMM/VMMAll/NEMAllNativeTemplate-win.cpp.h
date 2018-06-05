@@ -2519,6 +2519,280 @@ nemR3WinHandleExitMsr(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExi
 }
 #endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
 
+
+/**
+ * Worker for nemHCWinHandleMessageException & nemR3WinHandleExitException that
+ * checks if the given opcodes are of interest at all.
+ *
+ * @returns true if interesting, false if not.
+ * @param   cbOpcodes           Number of opcode bytes available.
+ * @param   pbOpcodes           The opcode bytes.
+ * @param   f64BitMode          Whether we're in 64-bit mode.
+ */
+DECLINLINE(bool) nemHcWinIsInterestingUndefinedOpcode(uint8_t cbOpcodes, uint8_t const *pbOpcodes, bool f64BitMode)
+{
+    /*
+     * Currently only interested in VMCALL and VMMCALL.
+     */
+    while (cbOpcodes >= 3)
+    {
+        switch (pbOpcodes[0])
+        {
+            case 0x0f:
+                switch (pbOpcodes[1])
+                {
+                    case 0x01:
+                        switch (pbOpcodes[2])
+                        {
+                            case 0xc1: /* 0f 01 c1  VMCALL */
+                                return true;
+                            case 0xd9: /* 0f 01 d9  VMMCALL */
+                                return true;
+                            default:
+                                break;
+                        }
+                        break;
+                }
+                break;
+
+            default:
+                return false;
+
+            /* prefixes */
+            case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47:
+            case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
+                if (!f64BitMode)
+                    return false;
+                RT_FALL_THRU();
+            case X86_OP_PRF_CS:
+            case X86_OP_PRF_SS:
+            case X86_OP_PRF_DS:
+            case X86_OP_PRF_ES:
+            case X86_OP_PRF_FS:
+            case X86_OP_PRF_GS:
+            case X86_OP_PRF_SIZE_OP:
+            case X86_OP_PRF_SIZE_ADDR:
+            case X86_OP_PRF_LOCK:
+            case X86_OP_PRF_REPZ:
+            case X86_OP_PRF_REPNZ:
+                cbOpcodes--;
+                pbOpcodes++;
+                continue;
+        }
+        break;
+    }
+    return false;
+}
+
+
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+/**
+ * Copies state included in a exception intercept message.
+ *
+ * @param   pVCpu           The cross context per CPU structure.
+ * @param   pMsg            The message.
+ * @param   pCtx            The register context.
+ * @param   fClearXcpt      Clear pending exception.
+ */
+DECLINLINE(void) nemHCWinCopyStateFromExceptionMessage(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE const *pMsg,
+                                                       PCPUMCTX pCtx, bool fClearXcpt)
+{
+    nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
+    pCtx->fExtrn &= ~(  CPUMCTX_EXTRN_GPRS_MASK | CPUMCTX_EXTRN_SS | CPUMCTX_EXTRN_DS
+                      | (fClearXcpt ? CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT : 0) );
+    pCtx->rax = pMsg->Rax;
+    pCtx->rcx = pMsg->Rcx;
+    pCtx->rdx = pMsg->Rdx;
+    pCtx->rbx = pMsg->Rbx;
+    pCtx->rsp = pMsg->Rsp;
+    pCtx->rbp = pMsg->Rbp;
+    pCtx->rsi = pMsg->Rsi;
+    pCtx->rdi = pMsg->Rdi;
+    pCtx->r8  = pMsg->R8;
+    pCtx->r9  = pMsg->R9;
+    pCtx->r10 = pMsg->R10;
+    pCtx->r11 = pMsg->R11;
+    pCtx->r12 = pMsg->R12;
+    pCtx->r13 = pMsg->R13;
+    pCtx->r14 = pMsg->R14;
+    pCtx->r15 = pMsg->R15;
+    NEM_WIN_COPY_BACK_SEG(pCtx->ds, pMsg->DsSegment);
+    NEM_WIN_COPY_BACK_SEG(pCtx->ss, pMsg->SsSegment);
+}
+#elif defined(IN_RING3)
+/**
+ * Copies state included in a exception intercept exit.
+ *
+ * @param   pVCpu           The cross context per CPU structure.
+ * @param   pExit           The VM exit information.
+ * @param   pCtx            The register context.
+ * @param   fClearXcpt      Clear pending exception.
+ */
+DECLINLINE(void) nemR3WinCopyStateFromExceptionMessage(PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExit,
+                                                       PCPUMCTX pCtx, bool fClearXcpt)
+{
+    nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
+    if (fClearXcpt)
+        pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
+}
+#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+
+
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+/**
+ * Deals with exception intercept message (HvMessageTypeX64ExceptionIntercept).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context per CPU structure.
+ * @param   pMsg            The message.
+ * @param   pCtx            The register context.
+ * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
+ * @sa      nemR3WinHandleExitMsr
+ */
+NEM_TMPL_STATIC VBOXSTRICTRC
+nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE const *pMsg, PCPUMCTX pCtx, PGVMCPU pGVCpu)
+{
+    /*
+     * Assert sanity.
+     */
+    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
+    Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
+           || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
+           || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_EXECUTE);
+    Assert(pMsg->Header.ExecutionState.InterruptionPending);
+
+    /*
+     * Handle the intercept.
+     */
+    switch (pMsg->ExceptionVector)
+    {
+        /*
+         * We get undefined opcodes on VMMCALL(AMD) & VMCALL(Intel) instructions
+         * and need to turn them over to GIM.
+         */
+        case X86_XCPT_UD:
+            if (nemHcWinIsInterestingUndefinedOpcode(pMsg->InstructionByteCount, pMsg->InstructionBytes,
+                                                     pMsg->Header.ExecutionState.EferLma && pMsg->Header.CsSegment.Long ))
+            {
+                nemHCWinCopyStateFromExceptionMessage(pVCpu, pMsg, pCtx, true /*fClearXcpt*/);
+                VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx,
+                                                                          NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "#UD");
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pMsg->Header.Rip, pMsg->InstructionBytes,
+                                                            pMsg->InstructionByteCount);
+                    Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD -> emulated -> %Rrc\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
+                          pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header), VBOXSTRICTRC_VAL(rcStrict) ));
+                }
+                else
+                    Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD -> state import (emulate) -> %Rrc\n",
+                          pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
+                          nemHCWinExecStateToLogStr(&pMsg->Header), VBOXSTRICTRC_VAL(rcStrict) ));
+                return rcStrict;
+            }
+            Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD [%.*Rhxs] -> re-injected\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
+                  pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),  pMsg->InstructionByteCount, pMsg->InstructionBytes ));
+            break;
+
+        /*
+         * Filter debug exceptions.
+         */
+        case X86_XCPT_DB:
+            break;
+
+        case X86_XCPT_BP:
+            break;
+
+        /* This shouldn't happen. */
+        default:
+            AssertLogRelMsgFailedReturn(("ExceptionVector=%#x\n", pMsg->ExceptionVector),  VERR_IEM_IPE_6);
+    }
+
+    return VINF_SUCCESS;
+}
+#elif defined(IN_RING3)
+/**
+ * Deals with MSR access exits (WHvRunVpExitReasonException).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context per CPU structure.
+ * @param   pExit           The VM exit information to handle.
+ * @param   pCtx            The register context.
+ * @sa      nemR3WinHandleExitException
+ */
+NEM_TMPL_STATIC VBOXSTRICTRC
+nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExit, PCPUMCTX pCtx)
+{
+    /*
+     * Assert sanity.
+     */
+    AssertMsg(pExit->VpContext.InstructionLength < 0x10, ("%#x\n", pExit->VpContext.InstructionLength));
+#if 0
+    Log4(("XcptExit/%u: %04x:%08RX64/%s: %x\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->VpException.ExceptionType));
+    nemR3WinCopyStateFromExceptionMessage(pVCpu, pExit, pCtx, true /*fClearXcpt*/);
+    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "#UD");
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+#endif
+    Assert(pExit->VpContext.ExecutionState.InterruptionPending);
+
+    /*
+     * Handle the intercept.
+     */
+    switch (pExit->VpException.ExceptionType)
+    {
+        /*
+         * We get undefined opcodes on VMMCALL(AMD) & VMCALL(Intel) instructions
+         * and need to turn them over to GIM.
+         */
+        case X86_XCPT_UD:
+            if (nemHcWinIsInterestingUndefinedOpcode(pExit->VpException.InstructionByteCount, pExit->VpException.InstructionBytes,
+                                                     pExit->VpContext.ExecutionState.EferLma && pExit->VpContext.Cs.Long ))
+            {
+                nemR3WinCopyStateFromExceptionMessage(pVCpu, pExit, pCtx, true /*fClearXcpt*/);
+                VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL, pCtx,
+                                                                          NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "#UD");
+                if (rcStrict == VINF_SUCCESS)
+                {
+                    rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pExit->VpContext.Rip,
+                                                            pExit->VpException.InstructionBytes,
+                                                            pExit->VpException.InstructionByteCount);
+                    Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD -> emulated -> %Rrc\n",
+                          pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip,
+                          nemR3WinExecStateToLogStr(&pExit->VpContext), VBOXSTRICTRC_VAL(rcStrict) ));
+                }
+                else
+                    Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD -> state import (emulate) -> %Rrc\n",
+                          pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip,
+                          nemR3WinExecStateToLogStr(&pExit->VpContext), VBOXSTRICTRC_VAL(rcStrict) ));
+                return rcStrict;
+            }
+            Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD [%.*Rhxs] -> re-injected\n", pVCpu->idCpu,
+                  pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext),
+                  pExit->VpException.InstructionByteCount, pExit->VpException.InstructionBytes ));
+            break;
+
+        /*
+         * Filter debug exceptions.
+         */
+        case X86_XCPT_DB:
+            break;
+
+        case X86_XCPT_BP:
+            break;
+
+        /* This shouldn't happen. */
+        default:
+            AssertLogRelMsgFailedReturn(("ExceptionType=%#x\n", pExit->VpException.ExceptionType),  VERR_IEM_IPE_6);
+    }
+
+    RT_NOREF_PV(pVM);
+    return VINF_SUCCESS;
+}
+#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+
+
 #ifdef NEM_WIN_USE_OUR_OWN_RUN_API
 /**
  * Deals with unrecoverable exception (triple fault).
@@ -2692,6 +2966,11 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMsr);
                 return nemHCWinHandleMessageMsr(pVCpu, &pMsg->X64MsrIntercept, pCtx, pGVCpu);
 
+            case HvMessageTypeX64ExceptionIntercept:
+                Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64ExceptionIntercept));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitException);
+                return nemHCWinHandleMessageException(pVCpu, &pMsg->X64ExceptionIntercept, pCtx, pGVCpu);
+
             case HvMessageTypeUnrecoverableException:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64InterceptHeader));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitUnrecoverable);
@@ -2704,7 +2983,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
                 AssertLogRelMsgFailedReturn(("Message type %#x not implemented!\n%.32Rhxd\n", pMsg->Header.MessageType, pMsg),
                                             VERR_NEM_IPE_3);
 
-            case HvMessageTypeX64ExceptionIntercept:
             case HvMessageTypeX64ApicEoi:
             case HvMessageTypeX64LegacyFpError:
             case HvMessageTypeX64RegisterIntercept:
@@ -2770,11 +3048,14 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVM pVM, PVMCPU pVCpu, WHV_RUN_V
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMsr);
             return nemR3WinHandleExitMsr(pVM, pVCpu, pExit, pCtx);
 
+        case WHvRunVpExitReasonException:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitException);
+            return nemR3WinHandleExitException(pVM, pVCpu, pExit, pCtx);
+
         case WHvRunVpExitReasonUnrecoverableException:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitUnrecoverable);
             return nemR3WinHandleExitUnrecoverableException(pVM, pVCpu, pExit, pCtx);
 
-        case WHvRunVpExitReasonException: /* needs configuring */
         case WHvRunVpExitReasonUnsupportedFeature:
         case WHvRunVpExitReasonInvalidVpRegisterValue:
             LogRel(("Unimplemented exit:\n%.*Rhxd\n", (int)sizeof(*pExit), pExit));
