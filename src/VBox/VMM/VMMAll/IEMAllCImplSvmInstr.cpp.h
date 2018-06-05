@@ -16,6 +16,8 @@
  */
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+
 /**
  * Converts an IEM exception event type to an SVM event type.
  *
@@ -65,9 +67,9 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPU pVCpu, PCPUMCTX pCtx)
      * see comment in iemMemPageTranslateAndCheckAccess().
      */
     int rc = PGMChangeMode(pVCpu, pCtx->cr0 | X86_CR0_PE, pCtx->cr4, pCtx->msrEFER);
-#ifdef IN_RING3
+# ifdef IN_RING3
     Assert(rc != VINF_PGM_CHANGE_MODE);
-#endif
+# endif
     AssertRCReturn(rc, rc);
 
     /* Inform CPUM (recompiler), can later be removed. */
@@ -670,13 +672,13 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbInstr
          * Currently disabled since it's redundant as we unconditionally flush the TLB
          * in iemSvmWorldSwitch() below.
          */
-#if 0
+# if 0
         /** @todo @bugref{7243}: ASID based PGM TLB flushes. */
         if (   pVmcbCtrl->TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_ENTIRE
             || pVmcbCtrl->TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT
             || pVmcbCtrl->TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT_RETAIN_GLOBALS)
             PGMFlushTLB(pVCpu, pVmcbNstGst->u64CR3, true /* fGlobal */);
-#endif
+# endif
 
         /*
          * Copy the remaining guest state from the VMCB to the guest-CPU context.
@@ -890,19 +892,19 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, 
             && !(uErr & X86_TRAP_PF_ID))
         {
             PSVMVMCBCTRL  pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-#ifdef IEM_WITH_CODE_TLB
+# ifdef IEM_WITH_CODE_TLB
             uint8_t const *pbInstrBuf = pVCpu->iem.s.pbInstrBuf;
             uint8_t const  cbInstrBuf = pVCpu->iem.s.cbInstrBuf;
             pVmcbCtrl->cbInstrFetched = RT_MIN(cbInstrBuf, SVM_CTRL_GUEST_INSTR_BYTES_MAX);
             if (   pbInstrBuf
                 && cbInstrBuf > 0)
                 memcpy(&pVmcbCtrl->abInstr[0], pbInstrBuf, pVmcbCtrl->cbInstrFetched);
-#else
+# else
             uint8_t const cbOpcode    = pVCpu->iem.s.cbOpcode;
             pVmcbCtrl->cbInstrFetched = RT_MIN(cbOpcode, SVM_CTRL_GUEST_INSTR_BYTES_MAX);
             if (cbOpcode > 0)
                 memcpy(&pVmcbCtrl->abInstr[0], &pVCpu->iem.s.abOpcode[0], pVmcbCtrl->cbInstrFetched);
-#endif
+# endif
         }
         if (u8Vector == X86_XCPT_BR)
             IEM_SVM_UPDATE_NRIP(pVCpu);
@@ -1051,10 +1053,10 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, PCPUMCTX pCtx, ui
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmrun)
 {
-#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
-#else
+# else
     LogFlow(("iemCImpl_vmrun\n"));
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmrun);
@@ -1081,9 +1083,10 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
         rcStrict = VINF_EM_TRIPLE_FAULT;
     }
     return rcStrict;
-#endif
+# endif
 }
 
+#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
 /**
  * Implements 'VMMCALL'.
@@ -1109,16 +1112,17 @@ IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
     return iemRaiseUndefinedOpcode(pVCpu);
 }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 
 /**
  * Implements 'VMLOAD'.
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmload)
 {
-#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
-#else
+# else
     LogFlow(("iemCImpl_vmload\n"));
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmload);
@@ -1162,7 +1166,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     }
     return rcStrict;
-#endif
+# endif
 }
 
 
@@ -1171,10 +1175,10 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmsave)
 {
-#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
-#else
+# else
     LogFlow(("iemCImpl_vmsave\n"));
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmsave);
@@ -1221,7 +1225,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     }
     return rcStrict;
-#endif
+# endif
 }
 
 
@@ -1230,10 +1234,10 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
  */
 IEM_CIMPL_DEF_0(iemCImpl_clgi)
 {
-#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
-#else
+# else
     LogFlow(("iemCImpl_clgi\n"));
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, clgi);
@@ -1246,12 +1250,12 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
     pCtx->hwvirt.fGif = false;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
-# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+#  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
     return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
-# else
+#  else
     return VINF_SUCCESS;
+#  endif
 # endif
-#endif
 }
 
 
@@ -1260,10 +1264,10 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
  */
 IEM_CIMPL_DEF_0(iemCImpl_stgi)
 {
-#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF2(pVCpu, cbInstr);
     return VINF_EM_RAW_EMULATE_INSTR;
-#else
+# else
     LogFlow(("iemCImpl_stgi\n"));
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, stgi);
@@ -1276,12 +1280,12 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
     pCtx->hwvirt.fGif = true;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
-# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+#  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
     return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false);
-# else
+#  else
     return VINF_SUCCESS;
+#  endif
 # endif
-#endif
 }
 
 
@@ -1294,9 +1298,9 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
     /** @todo Check effective address size using address size prefix. */
     RTGCPTR  const GCPtrPage = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
     /** @todo PGM needs virtual ASID support. */
-#if 0
+# if 0
     uint32_t const uAsid     = pCtx->ecx;
-#endif
+# endif
 
     IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
@@ -1333,4 +1337,6 @@ IEM_CIMPL_DEF_0(iemCImpl_skinit)
     RT_NOREF(cbInstr);
     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
+
+#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 

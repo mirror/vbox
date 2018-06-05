@@ -302,8 +302,8 @@ FNIEMOP_DEF_1(iemOp_Grp7_sgdt, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /0. */
 FNIEMOP_DEF(iemOp_Grp7_vmcall)
 {
-    IEMOP_BITCH_ABOUT_STUB();
-    return IEMOP_RAISE_INVALID_OPCODE();
+    IEMOP_MNEMONIC(vmcall, "vmcall");
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmcall);
 }
 
 
@@ -431,13 +431,16 @@ FNIEMOP_DEF_1(iemOp_Grp7_lidt, uint8_t, bRm)
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /** Opcode 0x0f 0x01 0xd8. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmrun)
 {
     IEMOP_MNEMONIC(vmrun, "vmrun");
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmrun);
 }
+#else
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmrun);
+#endif
 
 /** Opcode 0x0f 0x01 0xd9. */
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmmcall)
@@ -446,78 +449,77 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_vmmcall)
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmmcall);
 }
 
-
 /** Opcode 0x0f 0x01 0xda. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmload)
 {
     IEMOP_MNEMONIC(vmload, "vmload");
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmload);
 }
+#else
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmload);
+#endif
 
 
 /** Opcode 0x0f 0x01 0xdb. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmsave)
 {
     IEMOP_MNEMONIC(vmsave, "vmsave");
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmsave);
 }
+#else
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmsave);
+#endif
 
 
 /** Opcode 0x0f 0x01 0xdc. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 FNIEMOP_DEF(iemOp_Grp7_Amd_stgi)
 {
     IEMOP_MNEMONIC(stgi, "stgi");
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_stgi);
 }
+#else
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_stgi);
+#endif
 
 
 /** Opcode 0x0f 0x01 0xdd. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 FNIEMOP_DEF(iemOp_Grp7_Amd_clgi)
 {
     IEMOP_MNEMONIC(clgi, "clgi");
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_clgi);
 }
+#else
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_clgi);
+#endif
 
 
 /** Opcode 0x0f 0x01 0xdf. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 FNIEMOP_DEF(iemOp_Grp7_Amd_invlpga)
 {
     IEMOP_MNEMONIC(invlpga, "invlpga");
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_invlpga);
 }
+#else
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_invlpga);
+#endif
 
 
 /** Opcode 0x0f 0x01 0xde. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 FNIEMOP_DEF(iemOp_Grp7_Amd_skinit)
 {
     IEMOP_MNEMONIC(skinit, "skinit");
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_skinit);
 }
 #else
-/** Opcode 0x0f 0x01 0xd8. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmrun);
-
-/** Opcode 0x0f 0x01 0xd9. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmmcall);
-
-/** Opcode 0x0f 0x01 0xda. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmload);
-
-/** Opcode 0x0f 0x01 0xdb. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmsave);
-
-/** Opcode 0x0f 0x01 0xdc. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_stgi);
-
-/** Opcode 0x0f 0x01 0xdd. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_clgi);
-
-/** Opcode 0x0f 0x01 0xdf. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_invlpga);
-
-/** Opcode 0x0f 0x01 0xde. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_skinit);
-#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
+#endif
+
 
 /** Opcode 0x0f 0x01 /4. */
 FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)

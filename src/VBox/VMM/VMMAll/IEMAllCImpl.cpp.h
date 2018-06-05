@@ -15,9 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-# include "IEMAllCImplSvmInstr.cpp.h"
-#endif
+#include "IEMAllCImplSvmInstr.cpp.h"
+#include "IEMAllCImplVmxInstr.cpp.h"
+
 
 /** @name Misc Helpers
  * @{

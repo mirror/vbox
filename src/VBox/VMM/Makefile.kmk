@@ -1076,7 +1076,9 @@ IEMAllInstructionsVexMap2.cpp.o    IEMAllInstructionsVexMap2.cpp.obj \
 IEMAllInstructionsVexMap3.cpp.o    IEMAllInstructionsVexMap3.cpp.obj \
 IEMAllInstructions3DNow.cpp.o      IEMAllInstructions3DNow.cpp.obj \
 IEMAllCImpl.cpp.o                  IEMAllCImpl.cpp.obj \
-IEMAllCImplStrInstr.cpp.o          IEMAllCImplStrInstr.cpp.obj: IEMAll.o
+IEMAllCImplStrInstr.cpp.o          IEMAllCImplStrInstr.cpp.obj \
+IEMAllCImplSvmInstr.cpp.o          IEMAllCImplSvmInstr.cpp.obj \
+IEMAllCImplVmxInstr.cpp.o          IEMAllCImplVmxInstr.cpp.obj: IEMAll.o
 
 # Alias the NEM template to the objects where it is used:
 NEMAllNativeTemplate-win.cpp.o:    NEMR3Native-win.o NEMR0Native-win.o
