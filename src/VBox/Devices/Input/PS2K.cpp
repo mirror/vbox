@@ -1538,11 +1538,11 @@ int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance,
     pThis->pCritSectR3 = pDevIns->pCritSectRoR3;
 
     /*
-     * Create the input rate throttling timer. Does not use virtual time!
+     * Create the input rate throttling timer.
      */
     PTMTIMER pTimer;
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2kThrottleTimer, pThis,
-                                    TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Throttle Timer", &pTimer);
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kThrottleTimer, pThis,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Throttle Timer", &pTimer);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1551,9 +1551,9 @@ int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance,
     pThis->pThrottleTimerRC = TMTimerRCPtr(pTimer);
 
     /*
-     * Create the typematic delay/repeat timer. Does not use virtual time!
+     * Create the typematic delay/repeat timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2kTypematicTimer, pThis,
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kTypematicTimer, pThis,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Typematic Timer", &pTimer);
     if (RT_FAILURE(rc))
         return rc;
