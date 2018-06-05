@@ -81,7 +81,7 @@ void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *inf
 }
 
 
-HRESULT HostDnsServiceDarwin::init(VirtualBox *virtualbox)
+HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *proxy)
 {
     SCDynamicStoreContext ctx;
     RT_ZERO(ctx);
@@ -106,7 +106,7 @@ HRESULT HostDnsServiceDarwin::init(VirtualBox *virtualbox)
     m->m_Stopper = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sctx);
     AssertReturn(m->m_Stopper, E_FAIL);
 
-    HRESULT hrc = HostDnsMonitor::init(virtualbox);
+    HRESULT hrc = HostDnsMonitor::init(proxy);
     AssertComRCReturn(hrc, hrc);
 
     return updateInfo();
