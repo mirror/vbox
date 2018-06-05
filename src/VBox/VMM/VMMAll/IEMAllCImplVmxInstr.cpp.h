@@ -46,4 +46,3 @@ IEM_CIMPL_DEF_0(iemCImpl_vmcall)
     return iemRaiseUndefinedOpcode(pVCpu);
 }
 
-
