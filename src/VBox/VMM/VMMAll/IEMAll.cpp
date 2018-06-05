@@ -1091,6 +1091,7 @@ IEM_STATIC void iemReInitExec(PVMCPU pVCpu)
     pVCpu->iem.s.offOpcode        = 0;
     pVCpu->iem.s.cbOpcode         = 0;
 #endif
+    pVCpu->iem.s.rcPassUp         = VINF_SUCCESS;
 }
 #endif
 
