@@ -31,6 +31,7 @@
 # include "QILineEdit.h"
 # include "QIMessageBox.h"
 # include "QITabWidget.h"
+# include "QIToolButton.h"
 # include "VBoxGlobal.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
@@ -53,6 +54,44 @@
 # endif /* VBOX_WS_MAC */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+/*********************************************************************************************************************************
+*   UISearchLineEdit definition.                                                                                           *
+*********************************************************************************************************************************/
+
+class UISearchLineEdit : public QILineEdit
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigFilterTermRemoved(QString removedString);
+    void sigClearAll();
+
+public:
+
+    UISearchLineEdit(QWidget *parent = 0);
+
+protected:
+
+    // /* Delete mouseDoubleClick and mouseMoveEvent implementations of the base class */
+    // virtual void        mouseDoubleClickEvent(QMouseEvent *) /* override */{}
+    // virtual void        mouseMoveEvent(QMouseEvent *) /* override */{}
+    // /* Override the mousePressEvent to control how selection is done: */
+    // virtual void        mousePressEvent(QMouseEvent * event) /* override */;
+    // virtual void        mouseReleaseEvent(QMouseEvent *){}
+    virtual void        paintEvent(QPaintEvent *event) /* override */;
+
+private slots:
+
+    /* The whole content is removed. Listeners are notified: */
+    void sltClearAll();
+
+private:
+
+    void          createButtons();
+    QIToolButton *m_pClearAllButton;
+};
 
 class UIMediumSearchWidget : public QWidget
 {
@@ -81,9 +120,59 @@ public:
 private:
 
     void prepareWidgets();
-    QIComboBox *m_pSearchComboxBox;
-    QILineEdit *m_pSearchTermLineEdit;
+    QIComboBox       *m_pSearchComboxBox;
+    UISearchLineEdit *m_pSearchTermLineEdit;
 };
+
+
+/*********************************************************************************************************************************
+*   UISearchLineEdit implementation.                                                                                             *
+*********************************************************************************************************************************/
+
+UISearchLineEdit::UISearchLineEdit(QWidget *parent /*= 0*/)
+    :QILineEdit(parent)
+    , m_pClearAllButton(0)
+{
+    createButtons();
+}
+
+void UISearchLineEdit::paintEvent(QPaintEvent *event)
+{
+    QLineEdit::paintEvent(event);
+
+    if (!m_pClearAllButton)
+        createButtons();
+    int clearButtonSize = height();
+    m_pClearAllButton->setGeometry(width() - clearButtonSize, 0, clearButtonSize, clearButtonSize);
+}
+
+void UISearchLineEdit::sltClearAll()
+{
+    /* Check if we have some text to avoid recursive calls: */
+    if (text().isEmpty())
+        return;
+
+    clear();
+    emit sigClearAll();
+}
+
+void UISearchLineEdit::createButtons()
+{
+    if (!m_pClearAllButton)
+    {
+        m_pClearAllButton = new QIToolButton(this);
+        if (m_pClearAllButton)
+        {
+            m_pClearAllButton->setIcon(m_pClearAllButton->style()->standardIcon(QStyle::SP_LineEditClearButton));
+            connect(m_pClearAllButton, &QIToolButton::clicked, this, &UISearchLineEdit::sltClearAll);
+        }
+    }
+}
+
+
+/*********************************************************************************************************************************
+*   UIMediumSearchWidget implementation.                                                                                         *
+*********************************************************************************************************************************/
 
 UIMediumSearchWidget::UIMediumSearchWidget(QWidget *pParent)
     :QWidget(pParent)
@@ -104,8 +193,8 @@ void UIMediumSearchWidget::prepareWidgets()
     if (m_pSearchComboxBox)
     {
         m_pSearchComboxBox->setEditable(false);
-        m_pSearchComboxBox->insertItem(SearchByName, "By Name");
-        m_pSearchComboxBox->insertItem(SearchByUUID, "By UUID");
+        m_pSearchComboxBox->insertItem(SearchByName, "Search By Name");
+        m_pSearchComboxBox->insertItem(SearchByUUID, "Search By UUID");
         pLayout->addWidget(m_pSearchComboxBox);
 
         connect(m_pSearchComboxBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
@@ -113,7 +202,7 @@ void UIMediumSearchWidget::prepareWidgets()
 
     }
 
-    m_pSearchTermLineEdit = new QILineEdit;
+    m_pSearchTermLineEdit = new UISearchLineEdit;
     if (pLayout)
     {
         pLayout->addWidget(m_pSearchTermLineEdit);
@@ -153,7 +242,6 @@ UIMediumSelector::UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent 
 {
     configure();
     finalize();
-    //setAttribute(Qt::WA_DeleteOnClose);
 }
 
 QStringList UIMediumSelector::selectedMediumIds() const
@@ -400,9 +488,11 @@ void UIMediumSelector::prepareWidgets()
     {
         m_pTreeWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         m_pMainLayout->addWidget(m_pTreeWidget);
-
         m_pTreeWidget->setAlternatingRowColors(true);
-
+        int iColumnCount = (m_enmMediumType == UIMediumType_HardDisk) ? 3 : 2;
+        m_pTreeWidget->setColumnCount(iColumnCount);
+        m_pTreeWidget->setSortingEnabled(true);
+        m_pTreeWidget->sortItems(0, Qt::AscendingOrder);
     }
 
     m_pSearchWidget = new UIMediumSearchWidget;
@@ -536,7 +626,6 @@ void UIMediumSelector::repopulateTreeWidget()
 {
     if (!m_pTreeWidget)
         return;
-
     /* Cache the currently selected items: */
     QList<QTreeWidgetItem*> selectedItems = m_pTreeWidget->selectedItems();
     QStringList selectedMediums = selectedMediumIds();
@@ -590,6 +679,9 @@ void UIMediumSelector::repopulateTreeWidget()
 
     if (m_pNotAttachedSubTreeRoot)
         m_pTreeWidget->expandItem(m_pNotAttachedSubTreeRoot);
+
+    m_pTreeWidget->resizeColumnToContents(0);
+    performMediumSearch();
 }
 
 void UIMediumSelector::saveDefaultForeground()
@@ -644,7 +736,8 @@ void UIMediumSelector::performMediumSearch()
     /* Unmark all tree items to remove the highltights: */
     for (int i = 0; i < m_mediumItemList.size(); ++i)
     {
-        m_mediumItemList[i]->setData(0, Qt::ForegroundRole, m_defaultItemForeground);
+        for (int j = 0; j < m_pTreeWidget->columnCount(); ++j)
+            m_mediumItemList[i]->setData(j, Qt::ForegroundRole, m_defaultItemForeground);
     }
 
 
@@ -670,7 +763,8 @@ void UIMediumSelector::performMediumSearch()
         if (strMedium.contains(strTerm, Qt::CaseInsensitive))
         {
             // mark the item
-            m_mediumItemList[i]->setData(0, Qt::ForegroundRole, QBrush(QColor(255, 0, 0)));
+            for (int j = 0; j < m_pTreeWidget->columnCount(); ++j)
+                m_mediumItemList[i]->setData(j, Qt::ForegroundRole, QBrush(QColor(255, 0, 0)));
         }
     }
 }
