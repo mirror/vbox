@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Fuzzing framework API (Fuzz).
+ * IPRT - Fuzzing framework API, observer.
  */
 
 /*
@@ -28,20 +28,21 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/fuzz.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/cdefs.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
-#include <iprt/fuzz.h>
-#include <iprt/path.h>
-#include <iprt/pipe.h>
-#include <iprt/process.h>
 #include <iprt/md5.h>
 #include <iprt/mem.h>
 #include <iprt/mp.h>
+#include <iprt/path.h>
+#include <iprt/pipe.h>
+#include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -50,14 +51,8 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 /** Pointer to the internal fuzzing observer state. */
 typedef struct RTFUZZOBSINT *PRTFUZZOBSINT;
 
@@ -68,7 +63,7 @@ typedef struct RTFUZZOBSINT *PRTFUZZOBSINT;
 typedef struct RTFUZZOBSTHRD
 {
     /** The thread handle. */
-    RTTHREAD                    hThrd;
+    RTTHREAD                    hThread;
     /** The observer ID. */
     uint32_t                    idObs;
     /** Flag whether to shutdown. */
@@ -94,11 +89,11 @@ typedef struct RTFUZZOBSINT
     /** The fuzzing context used for this observer. */
     RTFUZZCTX                   hFuzzCtx;
     /** Temp directory for input files. */
-    char                        *pszTmpDir;
+    char                       *pszTmpDir;
     /** The binary to run. */
-    char                        *pszBinary;
+    char                       *pszBinary;
     /** Arguments to run the binary with, terminated by a NULL entry. */
-    char                        **papszArgs;
+    char                      **papszArgs;
     /** Number of arguments. */
     uint32_t                    cArgs;
     /** Flags controlling how the binary is executed. */
@@ -106,37 +101,27 @@ typedef struct RTFUZZOBSINT
     /** Flag whether to shutdown the master and all workers. */
     volatile bool               fShutdown;
     /** Global observer thread handle. */
-    RTTHREAD                    hThrdGlobal;
+    RTTHREAD                    hThreadGlobal;
     /** The event semaphore handle for the global observer thread. */
     RTSEMEVENT                  hEvtGlobal;
     /** Notification event bitmap. */
     volatile uint64_t           bmEvt;
     /** Number of threads created - one for each process. */
-    uint32_t                    cThrds;
+    uint32_t                    cThreads;
     /** Pointer to the array of observer thread states. */
-    PRTFUZZOBSTHRD              paObsThrds;
+    PRTFUZZOBSTHRD              paObsThreads;
 } RTFUZZOBSINT;
 
-
-/*********************************************************************************************************************************
-*   Global variables                                                                                                             *
-*********************************************************************************************************************************/
-
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 
 /**
  * Fuzzing observer worker loop.
  *
  * @returns IPRT status code.
- * @param   hThrd               The thread handle.
+ * @param   hThread               The thread handle.
  * @param   pvUser              Opaque user data.
  */
-static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
+static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThread, void *pvUser)
 {
     PRTFUZZOBSTHRD pObsThrd = (PRTFUZZOBSTHRD)pvUser;
     PRTFUZZOBSINT pThis = pObsThrd->pFuzzObs;
@@ -160,7 +145,7 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
     while (!pObsThrd->fShutdown)
     {
         /* Wait for work. */
-        int rc = RTThreadUserWait(hThrd, RT_INDEFINITE_WAIT);
+        int rc = RTThreadUserWait(hThread, RT_INDEFINITE_WAIT);
         AssertRC(rc);
 
         if (pObsThrd->fShutdown)
@@ -311,16 +296,16 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
  * Fuzzing observer master worker loop.
  *
  * @returns IPRT status code.
- * @param   hThrd               The thread handle.
+ * @param   hThread               The thread handle.
  * @param   pvUser              Opaque user data.
  */
-static DECLCALLBACK(int) rtFuzzObsMasterLoop(RTTHREAD hThrd, void *pvUser)
+static DECLCALLBACK(int) rtFuzzObsMasterLoop(RTTHREAD hThread, void *pvUser)
 {
-    RT_NOREF(hThrd);
+    RT_NOREF(hThread);
     int rc = VINF_SUCCESS;
     PRTFUZZOBSINT pThis = (PRTFUZZOBSINT)pvUser;
 
-    RTThreadUserSignal(hThrd);
+    RTThreadUserSignal(hThread);
 
     while (   !pThis->fShutdown
            && RT_SUCCESS(rc))
@@ -332,7 +317,7 @@ static DECLCALLBACK(int) rtFuzzObsMasterLoop(RTTHREAD hThrd, void *pvUser)
             if (bmEvt & 0x1)
             {
                 /* Create a new input for this observer and kick it. */
-                PRTFUZZOBSTHRD pObsThrd = &pThis->paObsThrds[idxObs];
+                PRTFUZZOBSTHRD pObsThrd = &pThis->paObsThreads[idxObs];
 
                 /* Release the old input. */
                 if (pObsThrd->hFuzzInput)
@@ -350,7 +335,7 @@ static DECLCALLBACK(int) rtFuzzObsMasterLoop(RTTHREAD hThrd, void *pvUser)
                 if (RT_SUCCESS(rc))
                 {
                     ASMAtomicWriteBool(&pObsThrd->fNewInput, true);
-                    RTThreadUserSignal(pObsThrd->hThrd);
+                    RTThreadUserSignal(pObsThrd->hThread);
                 }
             }
 
@@ -381,7 +366,7 @@ static int rtFuzzObsWorkerThreadInit(PRTFUZZOBSINT pThis, uint32_t idObs, PRTFUZ
     pObsThrd->fShutdown  = false;
 
     ASMAtomicBitSet(&pThis->bmEvt, idObs);
-    return RTThreadCreate(&pObsThrd->hThrd, rtFuzzObsWorkerLoop, pObsThrd, 0, RTTHREADTYPE_IO,
+    return RTThreadCreate(&pObsThrd->hThread, rtFuzzObsWorkerLoop, pObsThrd, 0, RTTHREADTYPE_IO,
                           RTTHREADFLAGS_WAITABLE, "Fuzz-Worker");
 }
 
@@ -391,17 +376,17 @@ static int rtFuzzObsWorkerThreadInit(PRTFUZZOBSINT pThis, uint32_t idObs, PRTFUZ
  *
  * @returns IPRT status code.
  * @param   pThis               The internal fuzzing observer state.
- * @param   cThrds              Number of worker threads to create.
+ * @param   cThreads            Number of worker threads to create.
  */
-static int rtFuzzObsWorkersCreate(PRTFUZZOBSINT pThis, uint32_t cThrds)
+static int rtFuzzObsWorkersCreate(PRTFUZZOBSINT pThis, uint32_t cThreads)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZOBSTHRD paObsThrds = (PRTFUZZOBSTHRD)RTMemAllocZ(cThrds * sizeof(RTFUZZOBSTHRD));
-    if (RT_LIKELY(paObsThrds))
+    PRTFUZZOBSTHRD paObsThreads = (PRTFUZZOBSTHRD)RTMemAllocZ(cThreads * sizeof(RTFUZZOBSTHRD));
+    if (RT_LIKELY(paObsThreads))
     {
-        for (unsigned i = 0; i < cThrds && RT_SUCCESS(rc); i++)
+        for (unsigned i = 0; i < cThreads && RT_SUCCESS(rc); i++)
         {
-            rc = rtFuzzObsWorkerThreadInit(pThis, i, &paObsThrds[i]);
+            rc = rtFuzzObsWorkerThreadInit(pThis, i, &paObsThreads[i]);
             if (RT_FAILURE(rc))
             {
                 /* Rollback. */
@@ -410,9 +395,9 @@ static int rtFuzzObsWorkersCreate(PRTFUZZOBSINT pThis, uint32_t cThrds)
         }
 
         if (RT_SUCCESS(rc))
-            pThis->paObsThrds = paObsThrds;
+            pThis->paObsThreads = paObsThreads;
         else
-            RTMemFree(paObsThrds);
+            RTMemFree(paObsThreads);
     }
 
     return rc;
@@ -432,11 +417,11 @@ static int rtFuzzObsMasterCreate(PRTFUZZOBSINT pThis)
     int rc = RTSemEventCreate(&pThis->hEvtGlobal);
     if (RT_SUCCESS(rc))
     {
-        rc = RTThreadCreate(&pThis->hThrdGlobal, rtFuzzObsMasterLoop, pThis, 0, RTTHREADTYPE_IO,
+        rc = RTThreadCreate(&pThis->hThreadGlobal, rtFuzzObsMasterLoop, pThis, 0, RTTHREADTYPE_IO,
                             RTTHREADFLAGS_WAITABLE, "Fuzz-Master");
         if (RT_SUCCESS(rc))
         {
-            RTThreadUserWait(pThis->hThrdGlobal, RT_INDEFINITE_WAIT);
+            RTThreadUserWait(pThis->hThreadGlobal, RT_INDEFINITE_WAIT);
         }
         else
         {
@@ -460,11 +445,11 @@ RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs)
         pThis->pszBinary   = NULL;
         pThis->papszArgs   = NULL;
         pThis->fFlags      = 0;
-        pThis->hThrdGlobal = NIL_RTTHREAD;
+        pThis->hThreadGlobal = NIL_RTTHREAD;
         pThis->hEvtGlobal  = NIL_RTSEMEVENT;
         pThis->bmEvt       = 0;
-        pThis->cThrds      = 0;
-        pThis->paObsThrds  = NULL;
+        pThis->cThreads    = 0;
+        pThis->paObsThreads  = NULL;
         rc = RTFuzzCtxCreate(&pThis->hFuzzCtx);
         if (RT_SUCCESS(rc))
         {
@@ -487,25 +472,25 @@ RTDECL(int) RTFuzzObsDestroy(RTFUZZOBS hFuzzObs)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
 
     /* Wait for the master thread to terminate. */
-    if (pThis->hThrdGlobal != NIL_RTTHREAD)
+    if (pThis->hThreadGlobal != NIL_RTTHREAD)
     {
         ASMAtomicXchgBool(&pThis->fShutdown, true);
-        RTThreadWait(pThis->hThrdGlobal, RT_INDEFINITE_WAIT, NULL);
+        RTThreadWait(pThis->hThreadGlobal, RT_INDEFINITE_WAIT, NULL);
     }
 
     /* Clean up the workers. */
-    if (pThis->paObsThrds)
+    if (pThis->paObsThreads)
     {
-        for (unsigned i = 0; i < pThis->cThrds; i++)
+        for (unsigned i = 0; i < pThis->cThreads; i++)
         {
-            PRTFUZZOBSTHRD pThrd = &pThis->paObsThrds[i];
+            PRTFUZZOBSTHRD pThrd = &pThis->paObsThreads[i];
             ASMAtomicXchgBool(&pThrd->fShutdown, true);
-            RTThreadWait(pThrd->hThrd, RT_INDEFINITE_WAIT, NULL);
+            RTThreadWait(pThrd->hThread, RT_INDEFINITE_WAIT, NULL);
             if (pThrd->hFuzzInput)
                 RTFuzzInputRelease(pThrd->hFuzzInput);
         }
-        RTMemFree(pThis->paObsThrds);
-        pThis->paObsThrds = NULL;
+        RTMemFree(pThis->paObsThreads);
+        pThis->paObsThreads = NULL;
     }
 
     /* Clean up all acquired resources. */

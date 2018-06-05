@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Fuzzing framework API (Fuzz).
+ * IPRT - Fuzzing framework API, master command.
  */
 
 /*
@@ -28,38 +28,20 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/fuzz.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
-#include <iprt/cdefs.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
-#include <iprt/fuzz.h>
 #include <iprt/getopt.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/stream.h>
 #include <iprt/thread.h>
 
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Global variables                                                                                                             *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 
 /**
@@ -176,21 +158,22 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdMaster(unsigned cArgs, char **papszArgs)
     };
 
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-
-    const char *pszBinary = NULL;
-    uint32_t cProcs = 0;
-    const char *pszInpSeedDir = NULL;
-    int cClientArgs = 0;
-    size_t cbInputMax = 0;
-    char **papszClientArgs = NULL;
-    bool fInputFile = false;
-    const char *pszTmpDir = NULL;
-
     RTGETOPTSTATE GetState;
     int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1,
                           RTGETOPTINIT_FLAGS_OPTS_FIRST);
     if (RT_SUCCESS(rc))
     {
+        /* Option variables:  */
+        const char *pszBinary = NULL;
+        uint32_t    cProcs = 0;
+        const char *pszInpSeedDir = NULL;
+        int         cClientArgs = 0;
+        size_t      cbInputMax = 0;
+        char      **papszClientArgs = NULL;
+        bool        fInputFile = false;
+        const char *pszTmpDir = NULL;
+
+        /* Argument parsing loop. */
         bool fContinue = true;
         do
         {

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Fuzzing framework API (Fuzz).
+ * IPRT - Fuzzing framework API, core.
  */
 
 /*
@@ -28,15 +28,16 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/fuzz.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>
-#include <iprt/cdefs.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
-#include <iprt/fuzz.h>
 #include <iprt/md5.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
@@ -46,15 +47,8 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
-
 /** Pointer to the internal fuzzer state. */
 typedef struct RTFUZZCTXINT *PRTFUZZCTXINT;
 
@@ -67,6 +61,7 @@ typedef struct RTFUZZINPUTINT
     AVLU64NODECORE              Core;
     /** Reference counter. */
     volatile uint32_t           cRefs;
+/** @todo add magic here (unused padding space on 64-bit hosts). */
     /** The fuzzer this input belongs to. */
     PRTFUZZCTXINT               pFuzzer;
     /** Complete MD5 hash of the input data. */
@@ -157,10 +152,10 @@ typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOR(PRTFUZZCTXINT pThis, PPRTFUZZINPUTI
 typedef FNRTFUZZCTXMUTATOR *PFNRTFUZZCTXMUTATOR;
 
 
-/*********************************************************************************************************************************
-*   Global variables                                                                                                             *
-*********************************************************************************************************************************/
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlip(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplace(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsert(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
@@ -168,10 +163,14 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceAppend(PRTFUZZCTXINT pThis,
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteDelete(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDelete(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /**
  * Array of all available mutators.
  */
-static PFNRTFUZZCTXMUTATOR s_apfnMutators[] =
+static PFNRTFUZZCTXMUTATOR const g_apfnMutators[] =
 {
     NULL,
     rtFuzzCtxMutatorBitFlip,
@@ -183,11 +182,6 @@ static PFNRTFUZZCTXMUTATOR s_apfnMutators[] =
     NULL
 };
 
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 
 /**
@@ -657,21 +651,35 @@ RTDECL(int) RTFuzzCtxCorpusInputAddFromDirPath(RTFUZZCTX hFuzzCtx, const char *p
     int rc = RTDirOpen(&hDir, pszDirPath);
     if (RT_SUCCESS(rc))
     {
-        RTDIRENTRY DirEntry;
-        while ((rc = RTDirRead(hDir, &DirEntry, NULL)) == VINF_SUCCESS)
+        for (;;)
         {
-            char szFile[RTPATH_MAX];
+            RTDIRENTRY DirEntry;
+            rc = RTDirRead(hDir, &DirEntry, NULL);
+            if (RT_FAILURE(rc))
+                break;
 
-            if (   DirEntry.szName[0] == '.'
-                && (   DirEntry.szName[1] == '\0'
-                    || DirEntry.szName[1] == '.'))
+            /* Skip '.', '..' and other non-files. */
+            if (   DirEntry.enmType != RTDIRENTRYTYPE_UNKNOWN
+                && DirEntry.enmType != RTDIRENTRYTYPE_FILE)
+                continue;
+            if (RTDirEntryIsStdDotLink(&DirEntry))
                 continue;
 
+            /* Compose the full path, result 'unknown' entries and skip non-files. */
+            char szFile[RTPATH_MAX];
             RT_ZERO(szFile);
             rc = RTPathJoin(szFile, sizeof(szFile), pszDirPath, DirEntry.szName);
             if (RT_FAILURE(rc))
                 break;
 
+            if (DirEntry.enmType == RTDIRENTRYTYPE_UNKNOWN)
+            {
+                RTDirQueryUnknownType(szFile, false, &DirEntry.enmType);
+                if (DirEntry.enmType != RTDIRENTRYTYPE_FILE)
+                    continue;
+            }
+
+            /* Okay, it's a file we can add. */
             rc = RTFuzzCtxCorpusInputAddFromFile(hFuzzCtx, szFile);
             if (RT_FAILURE(rc))
                 break;
@@ -756,7 +764,7 @@ RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput)
     {
         RTFUZZCTXMUTATOR enmMutator = (RTFUZZCTXMUTATOR)RTRandAdvU32Ex(pThis->hRand, 1, RTFUZZCTXMUTATOR_LAST);
         PRTFUZZINPUTINT pInput = NULL;
-        rc = s_apfnMutators[enmMutator](pThis, &pInput);
+        rc = g_apfnMutators[enmMutator](pThis, &pInput);
         if (   RT_SUCCESS(rc)
             && VALID_PTR(pInput))
         {
