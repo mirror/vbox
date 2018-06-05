@@ -1715,10 +1715,9 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfResched, bo
                             /** @todo r=ramshankar: Do we need to signal a wakeup here? If a nested-guest
                              *        doesn't intercept HLT but intercepts INTR? */
                             *pfResched = true;
+                            Assert(rcStrict != VINF_PGM_CHANGE_MODE);
                             if (rcStrict == VINF_SVM_VMEXIT)
                                 return VINF_SUCCESS;
-                            if (rcStrict == VINF_PGM_CHANGE_MODE)
-                                return PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
                             return VBOXSTRICTRC_VAL(rcStrict);
                         }
 
@@ -1729,10 +1728,9 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfResched, bo
                     /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                     /** @todo this really isn't nice, should properly handle this */
                     int rc = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
+                    Assert(rc != VINF_PGM_CHANGE_MODE);
                     if (rc == VINF_SVM_VMEXIT)
                         rc = VINF_SUCCESS;
-                    else if (rc == VINF_PGM_CHANGE_MODE)
-                        rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
                     if (pVM->em.s.fIemExecutesAll && (   rc == VINF_EM_RESCHEDULE_REM
                                                       || rc == VINF_EM_RESCHEDULE_HM
                                                       || rc == VINF_EM_RESCHEDULE_RAW))
@@ -1757,10 +1755,9 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfResched, bo
                         /** @todo r=ramshankar: Do we need to signal a wakeup here? If a nested-guest
                          *        doesn't intercept HLT but intercepts VINTR? */
                         *pfResched = true;
+                        Assert(rcStrict != VINF_PGM_CHANGE_MODE);
                         if (rcStrict == VINF_SVM_VMEXIT)
                             return VINF_SUCCESS;
-                        if (rcStrict == VINF_PGM_CHANGE_MODE)
-                            return PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
                         return VBOXSTRICTRC_VAL(rcStrict);
                     }
 
