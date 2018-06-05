@@ -86,7 +86,7 @@ HostDnsServiceWin::~HostDnsServiceWin()
 }
 
 
-HRESULT HostDnsServiceWin::init(VirtualBox *virtualbox)
+HRESULT HostDnsServiceWin::init(HostDnsMonitorProxy *proxy)
 {
     if (m == NULL)
         return E_FAIL;
@@ -128,7 +128,7 @@ HRESULT HostDnsServiceWin::init(VirtualBox *virtualbox)
             return E_FAIL;
     }
 
-    HRESULT hrc = HostDnsMonitor::init(virtualbox);
+    HRESULT hrc = HostDnsMonitor::init(proxy);
     if (FAILED(hrc))
         return hrc;
 
