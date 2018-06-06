@@ -183,7 +183,7 @@ void UIMachineViewNormal::resendSizeHint()
 void UIMachineViewNormal::adjustGuestScreenSize()
 {
     /* Should we adjust guest-screen size? Logging paranoia is required here to reveal the truth. */
-    LogRel(("GUI: UIMachineViewNormal::adjustGuestScreenSize: Adjust guest-screen size if necessary.\n"));
+    LogRel(("GUI: UIMachineViewNormal::adjustGuestScreenSize: Adjust guest-screen size if necessary\n"));
     bool fAdjust = false;
 
     /* Step 1: Is the guest-screen of another size than necessary? */
