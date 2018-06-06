@@ -74,6 +74,7 @@
 *********************************************************************************************************************************/
 static FNSSMINTSAVEEXEC  gimR3Save;
 static FNSSMINTLOADEXEC  gimR3Load;
+static FNSSMINTLOADDONE  gimR3LoadDone;
 
 
 /**
@@ -103,7 +104,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     int rc = SSMR3RegisterInternal(pVM, "GIM", 0 /* uInstance */, GIM_SAVED_STATE_VERSION, sizeof(GIM),
                                    NULL /* pfnLivePrep */, NULL /* pfnLiveExec */, NULL /* pfnLiveVote*/,
                                    NULL /* pfnSavePrep */, gimR3Save,              NULL /* pfnSaveDone */,
-                                   NULL /* pfnLoadPrep */, gimR3Load,              NULL /* pfnLoadDone */);
+                                   NULL /* pfnLoadPrep */, gimR3Load,              gimR3LoadDone);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -320,6 +321,22 @@ static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNSSMINTLOADDONE}
+ */
+static DECLCALLBACK(int) gimR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
+{
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            return gimR3HvLoadDone(pVM, pSSM);
+
+        default:
+            return VINF_SUCCESS;
+    }
 }
 
 

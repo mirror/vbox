@@ -1028,6 +1028,31 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
+ * Hyper-V load-done callback.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pSSM            The saved state handle.
+ */
+VMMR3_INT_DECL(int) gimR3HvLoadDone(PVM pVM, PSSMHANDLE pSSM)
+{
+    if (RT_SUCCESS(SSMR3HandleGetStatus(pSSM)))
+    {
+        /*
+         * Update EM on whether MSR_GIM_HV_GUEST_OS_ID allows hypercall instructions.
+         */
+        if (pVM->gim.s.u.Hv.u64GuestOsIdMsr)
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+                VMMHypercallsEnable(&pVM->aCpus[i]);
+        else
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+                VMMHypercallsDisable(&pVM->aCpus[i]);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Enables the Hyper-V APIC-assist page.
  *
  * @returns VBox status code.
