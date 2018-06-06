@@ -324,6 +324,17 @@ RTDECL(int) RTFuzzObsQueryCtx(RTFUZZOBS hFuzzObs, PRTFUZZCTX phFuzzCtx);
  */
 RTDECL(int) RTFuzzObsSetTmpDirectory(RTFUZZOBS hFuzzObs, const char *pszTmp);
 
+
+/**
+ * Sets the directory to store results to.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzObs            The fuzzing observer handle.
+ * @param   pszResults          The path to store the results.
+ */
+RTDECL(int) RTFuzzObsSetResultDirectory(RTFUZZOBS hFuzzObs, const char *pszResults);
+
+
 /**
  * Sets the binary to run for each fuzzed input.
  *

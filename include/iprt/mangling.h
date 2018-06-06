@@ -1037,6 +1037,7 @@
 # define RTFuzzObsExecStart                             RT_MANGLER(RTFuzzObsExecStart)
 # define RTFuzzObsExecStop                              RT_MANGLER(RTFuzzObsExecStop)
 # define RTFuzzObsQueryCtx                              RT_MANGLER(RTFuzzObsQueryCtx)
+# define RTFuzzObsSetResultDirectory                    RT_MANGLER(RTFuzzObsSetResultDirectory)
 # define RTFuzzObsSetTestBinary                         RT_MANGLER(RTFuzzObsSetTestBinary)
 # define RTFuzzObsSetTestBinaryArgs                     RT_MANGLER(RTFuzzObsSetTestBinaryArgs)
 # define RTFuzzObsSetTmpDirectory                       RT_MANGLER(RTFuzzObsSetTmpDirectory)

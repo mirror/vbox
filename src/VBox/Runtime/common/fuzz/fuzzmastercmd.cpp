@@ -70,8 +70,8 @@ static int rtFuzzCmdMasterErrorRc(PRTERRINFO pErrInfo, int rc, const char *pszFo
  * Executes the
  */
 static RTEXITCODE rtFuzzCmdMasterDoIt(const char *pszBinary, uint32_t cProcs, const char *pszInpSeedDir,
-                                      size_t cbInputMax, const char * const *papszClientArgs, unsigned cClientArgs,
-                                      bool fInputFile, const char *pszTmpDir)
+                                      const char *pszResultsDir, size_t cbInputMax, const char * const *papszClientArgs,
+                                      unsigned cClientArgs, bool fInputFile, const char *pszTmpDir)
 {
     RTFUZZOBS hFuzzObs;
 
@@ -92,38 +92,42 @@ static RTEXITCODE rtFuzzCmdMasterDoIt(const char *pszBinary, uint32_t cProcs, co
             }
 
             if (RT_SUCCESS(rc))
-                rc = RTFuzzObsSetTestBinary(hFuzzObs, pszBinary, fFlags);
+                rc = RTFuzzObsSetResultDirectory(hFuzzObs, pszResultsDir);
             if (RT_SUCCESS(rc))
             {
-                rc = RTFuzzObsSetTestBinaryArgs(hFuzzObs, papszClientArgs, cClientArgs);
+                rc = RTFuzzObsSetTestBinary(hFuzzObs, pszBinary, fFlags);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = RTFuzzCtxCfgSetInputSeedMaximum(hFuzzCtx, cbInputMax);
+                    rc = RTFuzzObsSetTestBinaryArgs(hFuzzObs, papszClientArgs, cClientArgs);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = RTFuzzCtxCorpusInputAddFromDirPath(hFuzzCtx, pszInpSeedDir);
+                        rc = RTFuzzCtxCfgSetInputSeedMaximum(hFuzzCtx, cbInputMax);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = RTFuzzObsExecStart(hFuzzObs, cProcs);
+                            rc = RTFuzzCtxCorpusInputAddFromDirPath(hFuzzCtx, pszInpSeedDir);
                             if (RT_SUCCESS(rc))
                             {
-                                RTThreadSleep(3600 * RT_MS_1SEC);
-                                RTFuzzObsExecStop(hFuzzObs);
+                                rc = RTFuzzObsExecStart(hFuzzObs, cProcs);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    RTThreadSleep(3600 * RT_MS_1SEC);
+                                    RTFuzzObsExecStop(hFuzzObs);
+                                }
+                                else
+                                    rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to start fuzzing observer: %Rrc\n", rc);
                             }
                             else
-                                rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to start fuzzing observer: %Rrc\n", rc);
+                                rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to load corpus seeds from \"%s\": %Rrc\n", pszInpSeedDir, rc);
                         }
                         else
-                            rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to load corpus seeds from \"%s\": %Rrc\n", pszInpSeedDir, rc);
+                            rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to set maximum input size to %zu: %Rrc\n", cbInputMax, rc);
                     }
                     else
-                        rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to set maximum input size to %zu: %Rrc\n", cbInputMax, rc);
+                        rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to set test program arguments: %Rrc\n", rc);
                 }
                 else
-                    rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to set test program arguments: %Rrc\n", rc);
+                    rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to set the specified binary as test program: %Rrc\n", rc);
             }
-            else
-                rc = rtFuzzCmdMasterErrorRc(NULL, rc, "Failed to set the specified binary as test program: %Rrc\n", rc);
 
             RTFuzzCtxRelease(hFuzzCtx);
         }
@@ -152,6 +156,7 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdMaster(unsigned cArgs, char **papszArgs)
         { "--input-seed-file",                 'i', RTGETOPT_REQ_STRING  },
         { "--input-seed-dir",                  's', RTGETOPT_REQ_STRING  },
         { "--input-seed-size-max",             'm', RTGETOPT_REQ_UINT32  },
+        { "--results-dir",                     'r', RTGETOPT_REQ_STRING  },
         { "--args",                            'a', RTGETOPT_REQ_STRING  },
         { "--help",                            'h', RTGETOPT_REQ_NOTHING },
         { "--version",                         'V', RTGETOPT_REQ_NOTHING },
@@ -172,6 +177,7 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdMaster(unsigned cArgs, char **papszArgs)
         char      **papszClientArgs = NULL;
         bool        fInputFile = false;
         const char *pszTmpDir = NULL;
+        const char *pszResultsDir = NULL;
 
         /* Argument parsing loop. */
         bool fContinue = true;
@@ -182,7 +188,7 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdMaster(unsigned cArgs, char **papszArgs)
             switch (chOpt)
             {
                 case 0:
-                    rcExit = rtFuzzCmdMasterDoIt(pszBinary, cProcs, pszInpSeedDir, cbInputMax,
+                    rcExit = rtFuzzCmdMasterDoIt(pszBinary, cProcs, pszInpSeedDir, pszResultsDir, cbInputMax,
                                                  papszClientArgs, cClientArgs, fInputFile, pszTmpDir);
                     fContinue = false;
                     break;
@@ -198,6 +204,10 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdMaster(unsigned cArgs, char **papszArgs)
                 case 'f':
                     pszTmpDir = ValueUnion.psz;
                     fInputFile = true;
+                    break;
+
+                case 'r':
+                    pszResultsDir = ValueUnion.psz;
                     break;
 
                 case 'a':
