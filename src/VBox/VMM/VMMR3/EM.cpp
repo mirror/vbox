@@ -546,26 +546,19 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        int rc = SSMR3PutBool(pSSM, pVCpu->em.s.fForceRAW);
-        AssertRCReturn(rc, rc);
+        SSMR3PutBool(pSSM, pVCpu->em.s.fForceRAW);
 
         Assert(pVCpu->em.s.enmState     == EMSTATE_SUSPENDED);
         Assert(pVCpu->em.s.enmPrevState != EMSTATE_SUSPENDED);
-        rc = SSMR3PutU32(pSSM, pVCpu->em.s.enmPrevState);
-        AssertRCReturn(rc, rc);
+        SSMR3PutU32(pSSM, pVCpu->em.s.enmPrevState);
 
         /* Save mwait state. */
-        rc = SSMR3PutU32(pSSM, pVCpu->em.s.MWait.fWait);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMWaitRAX);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMWaitRCX);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMonitorRAX);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMonitorRCX);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMonitorRDX);
+        SSMR3PutU32(pSSM, pVCpu->em.s.MWait.fWait);
+        SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMWaitRAX);
+        SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMWaitRCX);
+        SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMonitorRAX);
+        SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMonitorRCX);
+        int rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMonitorRDX);
         AssertRCReturn(rc, rc);
     }
     return VINF_SUCCESS;
