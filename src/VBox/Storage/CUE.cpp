@@ -565,15 +565,21 @@ static void cueTokenizerGetStringConst(PCUETOKENIZER pTokenizer, PCUETOKEN pToke
     pToken->enmType = CUETOKENTYPE_STRING;
     pToken->Type.String.psz = pTokenizer->pszInput;
 
-    while (cueTokenizerGetCh(pTokenizer) != '\"')
+    while (   !cueTokenizerIsEos(pTokenizer)
+           && cueTokenizerGetCh(pTokenizer) != '\"')
     {
         cchStr++;
         cueTokenizerSkipCh(pTokenizer);
     }
 
-    cueTokenizerSkipCh(pTokenizer); /* Skip closing " */
-
-    pToken->Type.String.cch = cchStr;
+    /* End of stream without a closing quote is an error. */
+    if (RT_UNLIKELY(cueTokenizerIsEos(pTokenizer)))
+        pToken->enmType = CUETOKENTYPE_ERROR;
+    else
+    {
+        cueTokenizerSkipCh(pTokenizer); /* Skip closing " */
+        pToken->Type.String.cch = cchStr;
+    }
 }
 
 /**
