@@ -1089,27 +1089,62 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
 #endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
 /**
+ * Common code for iemCImpl_vmmcall and iemCImpl_vmcall (latter in IEMAllCImplVmxInstr.cpp.h).
+ */
+IEM_CIMPL_DEF_0(iemCImpl_Hypercall)
+{
+    if (EMAreHypercallInstructionsEnabled(pVCpu))
+    {
+        VBOXSTRICTRC rcStrict = GIMHypercall(pVCpu, IEM_GET_CTX(pVCpu));
+        if (RT_SUCCESS(rcStrict))
+        {
+            if (rcStrict == VINF_SUCCESS)
+                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            if (   rcStrict == VINF_SUCCESS
+                || rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
+                return VINF_SUCCESS;
+            AssertMsgReturn(rcStrict == VINF_GIM_R3_HYPERCALL, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IEM_IPE_4);
+            return rcStrict;
+        }
+        AssertMsgReturn(   rcStrict == VERR_GIM_HYPERCALL_ACCESS_DENIED
+                        || rcStrict == VERR_GIM_HYPERCALLS_NOT_AVAILABLE
+                        || rcStrict == VERR_GIM_NOT_ENABLED
+                        || rcStrict == VERR_GIM_HYPERCALL_MEMORY_READ_FAILED
+                        || rcStrict == VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED,
+                        ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IEM_IPE_4);
+
+        /* Raise #UD on all failures. */
+    }
+    return iemRaiseUndefinedOpcode(pVCpu);
+}
+
+/**
  * Implements 'VMMCALL'.
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
 {
-    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMMCALL))
     {
         Log(("vmmcall: Guest intercept -> #VMEXIT\n"));
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    bool fUpdatedRipAndRF;
-    VBOXSTRICTRC rcStrict = HMSvmVmmcall(pVCpu, pCtx, &fUpdatedRipAndRF);
-    if (RT_SUCCESS(rcStrict))
+#ifndef IN_RC
+    /* This is a little bit more complicated than the VT-x version because HM/SVM may
+       patch MOV CR8 instructions too speed up APIC.TPR access for 32-bit windows guests. */
+    if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
     {
-        if (!fUpdatedRipAndRF)
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        return rcStrict;
+        int rc = HMHCSvmMaybeMovTprHypercall(pVCpu, IEM_GET_CTX(pVCpu));
+        if (RT_SUCCESS(rc))
+        {
+            Log(("vmmcall: MovTrp\n"));
+            return VINF_SUCCESS;
+        }
     }
+#endif
 
-    return iemRaiseUndefinedOpcode(pVCpu);
+    /* Join forces with vmcall. */
+    return IEM_CIMPL_CALL_0(iemCImpl_Hypercall);
 }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM

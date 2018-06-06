@@ -149,8 +149,6 @@ VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
 VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
 VMM_INT_DECL(int)               HMAmdIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
-VMM_INT_DECL(void)              HMHypercallsEnable(PVMCPU pVCpu);
-VMM_INT_DECL(void)              HMHypercallsDisable(PVMCPU pVCpu);
 /** @} */
 
 /** @name All-context SVM helpers.
@@ -164,7 +162,7 @@ VMM_INT_DECL(int)               HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16
 VMM_INT_DECL(bool)              HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
                                                          uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
                                                          PSVMIOIOEXITINFO pIoExitInfo);
-VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfRipUpdated);
+VMM_INT_DECL(int)               HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
 /** @} */
 
 #ifndef IN_RC

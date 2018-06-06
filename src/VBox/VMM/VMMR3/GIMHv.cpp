@@ -27,6 +27,7 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/em.h>
 #include "GIMInternal.h"
 #include <VBox/vmm/vm.h>
 
@@ -1043,10 +1044,10 @@ VMMR3_INT_DECL(int) gimR3HvLoadDone(PVM pVM, PSSMHANDLE pSSM)
          */
         if (pVM->gim.s.u.Hv.u64GuestOsIdMsr)
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                VMMHypercallsEnable(&pVM->aCpus[i]);
+                EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], true);
         else
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                VMMHypercallsDisable(&pVM->aCpus[i]);
+                EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], false);
     }
     return VINF_SUCCESS;
 }

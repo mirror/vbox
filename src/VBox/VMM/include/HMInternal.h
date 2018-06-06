@@ -726,9 +726,7 @@ typedef struct HMCPU
 
     /** Whether \#UD needs to be intercepted (required by certain GIM providers). */
     bool                        fGIMTrapXcptUD;
-    /** Whether paravirt. hypercalls are enabled. */
-    bool                        fHypercallsEnabled;
-    uint8_t                     u8Alignment0[2];
+    uint8_t                     u8Alignment0[3];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;
@@ -1155,6 +1153,8 @@ DECLASM(int) hmR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUM
 # endif
 
 #endif /* IN_RING0 */
+
+int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx);
 
 /** @} */
 

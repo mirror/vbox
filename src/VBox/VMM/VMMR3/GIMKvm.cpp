@@ -25,6 +25,7 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/ssm.h>
+#include <VBox/vmm/em.h>
 #include "GIMInternal.h"
 #include <VBox/vmm/vm.h>
 
@@ -158,7 +159,7 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
      * Setup hypercall and #UD handling.
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        VMMHypercallsEnable(&pVM->aCpus[i]);
+        EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], true);
 
     if (ASMIsAmdCpu())
     {

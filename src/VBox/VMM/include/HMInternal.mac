@@ -78,7 +78,6 @@ struc HMCPU
         .fClearTrapFlag         resb    1
 
         .fGIMTrapXcptUD         resb    1
-        .fHypercallsEnabled     resb    1
         alignb 8
 
         .cWorldSwitchExits      resd    1

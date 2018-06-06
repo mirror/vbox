@@ -173,6 +173,36 @@ VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
 
 
 /**
+ * Enables / disable hypercall instructions.
+ *
+ * This interface is used by GIM to tell the execution monitors whether the
+ * hypercall instruction (VMMCALL & VMCALL) are allowed or should \#UD.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure this applies to.
+ * @param   fEnabled    Whether hypercall instructions are enabled (true) or not.
+ */
+VMMDECL(void) EMSetHypercallInstructionsEnabled(PVMCPU pVCpu, bool fEnabled)
+{
+    pVCpu->em.s.fHypercallEnabled = fEnabled;
+}
+
+
+/**
+ * Checks if hypercall instructions (VMMCALL & VMCALL) are enabled or not.
+ *
+ * @returns true if enabled, false if not.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ *
+ * @note    If this call becomes a performance factor, we can make the data
+ *          field available thru a read-only view in VMCPU.  See VM::cpum.ro.
+ */
+VMMDECL(bool) EMAreHypercallInstructionsEnabled(PVMCPU pVCpu)
+{
+    return pVCpu->em.s.fHypercallEnabled;
+}
+
+
+/**
  * Prepare an MWAIT - essentials of the MONITOR instruction.
  *
  * @returns VINF_SUCCESS

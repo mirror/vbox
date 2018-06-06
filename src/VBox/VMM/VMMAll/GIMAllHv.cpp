@@ -29,6 +29,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/apic.h>
+#include <VBox/vmm/em.h>
 #include "GIMHvInternal.h"
 #include "GIMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -792,15 +793,14 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             pHv->u64GuestOsIdMsr = uRawValue;
 
             /*
-             * Notify VMM that hypercalls are now disabled/enabled.
+             * Update EM on hypercall instruction enabled state.
              */
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
-            {
-                if (uRawValue)
-                    VMMHypercallsEnable(&pVM->aCpus[i]);
-                else
-                    VMMHypercallsDisable(&pVM->aCpus[i]);
-            }
+            if (uRawValue)
+                for (VMCPUID i = 0; i < pVM->cCpus; i++)
+                    EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], true);
+            else
+                for (VMCPUID i = 0; i < pVM->cCpus; i++)
+                    EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], false);
 
             return VINF_SUCCESS;
 #endif /* IN_RING3 */

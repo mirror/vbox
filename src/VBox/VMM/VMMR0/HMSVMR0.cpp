@@ -7168,6 +7168,59 @@ HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT
     return VERR_EM_INTERPRETER;
 }
 
+/**
+ * Performs the operations necessary that are part of the vmmcall instruction
+ * execution in the guest.
+ *
+ * @returns Strict VBox status code (i.e. informational status codes too).
+ * @retval  VINF_SUCCESS on successful handling, no \#UD needs to be thrown,
+ *          update RIP and eflags.RF depending on @a pfUpdatedRipAndRF and
+ *          continue guest execution.
+ * @retval  VINF_GIM_HYPERCALL_CONTINUING continue hypercall without updating
+ *          RIP.
+ * @retval  VINF_GIM_R3_HYPERCALL re-start the hypercall from ring-3.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   pCtx                Pointer to the guest-CPU context.
+ * @param   pfUpdatedRipAndRF   Whether the guest RIP/EIP has been updated as
+ *                              part of handling the VMMCALL operation.
+ *
+ * @todo    r=bird: merge this with hmR0SvmExitVmmCall and fix todos.
+ */
+static VBOXSTRICTRC hmR0SvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpdatedRipAndRF)
+{
+    /*
+     * TPR patched instruction emulation for 32-bit guests.
+     */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->hm.s.fTprPatchingAllowed)
+    {
+        int rc = hmSvmEmulateMovTpr(pVCpu, pCtx);
+        if (RT_SUCCESS(rc))
+        {
+            *pfUpdatedRipAndRF = true;
+            return VINF_SUCCESS;
+        }
+
+        if (rc != VERR_NOT_FOUND)
+        {
+            Log(("hmSvmExitVmmCall: hmSvmEmulateMovTpr returns %Rrc\n", rc));
+            *pfUpdatedRipAndRF = false;
+            return rc;
+        }
+    }
+
+    /*
+     * Paravirtualized hypercalls.
+     */
+    *pfUpdatedRipAndRF = false; /** @todo r=bird: This is misleading/wrong, see GIMHypercall returncode docs.  */
+    if (EMAreHypercallInstructionsEnabled(pVCpu))
+        return GIMHypercall(pVCpu, pCtx);
+
+    return VERR_NOT_AVAILABLE;
+}
+
+
 
 /**
  * \#VMEXIT handler for VMMCALL (SVM_EXIT_VMMCALL). Conditional \#VMEXIT.
@@ -7178,7 +7231,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmcall);
 
     bool fRipUpdated;
-    VBOXSTRICTRC rcStrict = HMSvmVmmcall(pVCpu, pCtx, &fRipUpdated);
+    VBOXSTRICTRC rcStrict = hmR0SvmVmmcall(pVCpu, pCtx, &fRipUpdated);
     if (RT_SUCCESS(rcStrict))
     {
         /* Only update the RIP if we're continuing guest execution and not

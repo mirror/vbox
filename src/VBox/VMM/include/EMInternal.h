@@ -344,7 +344,13 @@ typedef struct EMCPU
      * The flag is cleared upon entering emR3RawExecute() and updated in certain return paths. */
     bool                    fForceRAW;
 
-    uint8_t                 u8Padding[3];
+    /** Set if hypercall instruction VMMCALL (AMD) & VMCALL (Intel) are enabled.
+     * GIM sets this and the execution managers queries it.  Not saved, as GIM
+     * takes care of that bit too.  */
+    bool                    fHypercallEnabled;
+
+    /** Explicit padding. */
+    uint8_t                 abPadding[2];
 
     /** The number of instructions we've executed in IEM since switching to the
      *  EMSTATE_IEM_THEN_REM state. */

@@ -176,6 +176,9 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
 
 VMMDECL(void)                   EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC);
 VMMDECL(RTGCUINTPTR)            EMGetInhibitInterruptsPC(PVMCPU pVCpu);
+VMMDECL(void)                   EMSetHypercallInstructionsEnabled(PVMCPU pVCpu, bool fEnabled);
+VMMDECL(bool)                   EMAreHypercallInstructionsEnabled(PVMCPU pVCpu);
+
 VMM_INT_DECL(int)               EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pCpu, unsigned *pcbInstr);
 VMM_INT_DECL(int)               EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
                                                       PDISCPUSTATE pDISState, unsigned *pcbInstr);

@@ -515,28 +515,6 @@ VMM_INT_DECL(bool) HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
 
 
 /**
- * Notifies HM that paravirtualized hypercalls are now enabled.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-VMM_INT_DECL(void) HMHypercallsEnable(PVMCPU pVCpu)
-{
-    pVCpu->hm.s.fHypercallsEnabled = true;
-}
-
-
-/**
- * Notifies HM that paravirtualized hypercalls are now disabled.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-VMM_INT_DECL(void) HMHypercallsDisable(PVMCPU pVCpu)
-{
-    pVCpu->hm.s.fHypercallsEnabled = false;
-}
-
-
-/**
  * Notifies HM that GIM provider wants to trap \#UD.
  *
  * @param   pVCpu   The cross context virtual CPU structure.

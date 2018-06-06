@@ -11957,7 +11957,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmcall);
 
     VBOXSTRICTRC rcStrict = VERR_VMX_IPE_3;
-    if (pVCpu->hm.s.fHypercallsEnabled)
+    if (EMAreHypercallInstructionsEnabled(pVCpu))
     {
 #if 0
         int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
@@ -11979,7 +11979,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         else
             Assert(   rcStrict == VINF_GIM_R3_HYPERCALL
                    || rcStrict == VINF_GIM_HYPERCALL_CONTINUING
-                   || RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)));
+                   || RT_FAILURE(rcStrict));
 
         /* If the hypercall changes anything other than guest's general-purpose registers,
            we would need to reload the guest changed bits here before VM-entry. */
@@ -11988,7 +11988,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         Log4(("hmR0VmxExitVmcall: Hypercalls not enabled\n"));
 
     /* If hypercalls are disabled or the hypercall failed for some reason, raise #UD and continue. */
-    if (RT_FAILURE(VBOXSTRICTRC_VAL(rcStrict)))
+    if (RT_FAILURE(rcStrict))
     {
         hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
         rcStrict = VINF_SUCCESS;
