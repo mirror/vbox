@@ -251,6 +251,10 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatExitCpuId;
     STAMCOUNTER                 StatExitMsr;
     STAMCOUNTER                 StatExitException;
+    STAMCOUNTER                 StatExitExceptionBp;
+    STAMCOUNTER                 StatExitExceptionDb;
+    STAMCOUNTER                 StatExitExceptionUd;
+    STAMCOUNTER                 StatExitExceptionUdHandled;
     STAMCOUNTER                 StatExitUnrecoverable;
     STAMCOUNTER                 StatGetMsgTimeout;
     STAMCOUNTER                 StatStopCpuSuccess;

@@ -2659,7 +2659,20 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_EXECUTE);
-    Assert(pMsg->Header.ExecutionState.InterruptionPending);
+
+    /*
+     * Get most of the register state since we'll end up making IEM inject the
+     * event.  The exception isn't normally flaged as a pending event, so duh.
+     *
+     * Note! We can optimize this later with event injection.
+     */
+    Log4(("XcptExit/%u: %04x:%08RX64/%s: %x errcd=%#x parm=%RX64\n",
+          pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
+          pMsg->ExceptionVector, pMsg->ErrorCode, pMsg->ExceptionParameter));
+    nemHCWinCopyStateFromExceptionMessage(pVCpu, pMsg, pCtx, true /*fClearXcpt*/);
+    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "Xcpt");
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
 
     /*
      * Handle the intercept.
@@ -2671,23 +2684,17 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
          * and need to turn them over to GIM.
          */
         case X86_XCPT_UD:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUd);
+            /** @todo Call GIMXcptUD if required. */
             if (nemHcWinIsInterestingUndefinedOpcode(pMsg->InstructionByteCount, pMsg->InstructionBytes,
                                                      pMsg->Header.ExecutionState.EferLma && pMsg->Header.CsSegment.Long ))
             {
-                nemHCWinCopyStateFromExceptionMessage(pVCpu, pMsg, pCtx, true /*fClearXcpt*/);
-                VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx,
-                                                                          NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "#UD");
-                if (rcStrict == VINF_SUCCESS)
-                {
-                    rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pMsg->Header.Rip, pMsg->InstructionBytes,
-                                                            pMsg->InstructionByteCount);
-                    Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD -> emulated -> %Rrc\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
-                          pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header), VBOXSTRICTRC_VAL(rcStrict) ));
-                }
-                else
-                    Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD -> state import (emulate) -> %Rrc\n",
-                          pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
-                          nemHCWinExecStateToLogStr(&pMsg->Header), VBOXSTRICTRC_VAL(rcStrict) ));
+                rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(pCtx), pMsg->Header.Rip, pMsg->InstructionBytes,
+                                                        pMsg->InstructionByteCount);
+                Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD -> emulated -> %Rrc\n",
+                      pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
+                      nemHCWinExecStateToLogStr(&pMsg->Header), VBOXSTRICTRC_VAL(rcStrict) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUdHandled);
                 return rcStrict;
             }
             Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD [%.*Rhxs] -> re-injected\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
@@ -2698,9 +2705,15 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
          * Filter debug exceptions.
          */
         case X86_XCPT_DB:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionDb);
+            Log4(("XcptExit/%u: %04x:%08RX64/%s: #DB - TODO\n",
+                  pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header) ));
             break;
 
         case X86_XCPT_BP:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionBp);
+            Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO\n",
+                  pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header) ));
             break;
 
         /* This shouldn't happen. */
@@ -2708,7 +2721,15 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
             AssertLogRelMsgFailedReturn(("ExceptionVector=%#x\n", pMsg->ExceptionVector),  VERR_IEM_IPE_6);
     }
 
-    return VINF_SUCCESS;
+    /*
+     * Inject it.
+     */
+    rcStrict = IEMInjectTrap(pVCpu, pMsg->ExceptionVector, TRPM_TRAP, pMsg->ErrorCode,
+                             pMsg->ExceptionParameter /*??*/, pMsg->Header.InstructionLength);
+    Log4(("XcptExit/%u: %04x:%08RX64/%s: %#u -> injected -> %Rrc\n",
+          pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
+          nemHCWinExecStateToLogStr(&pMsg->Header), pMsg->ExceptionVector, VBOXSTRICTRC_VAL(rcStrict) ));
+    return rcStrict;
 }
 #elif defined(IN_RING3)
 /**
@@ -2753,6 +2774,7 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
          * and need to turn them over to GIM.
          */
         case X86_XCPT_UD:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUd);
             /** @todo Call GIMXcptUD if required. */
             if (nemHcWinIsInterestingUndefinedOpcode(pExit->VpException.InstructionByteCount, pExit->VpException.InstructionBytes,
                                                      pExit->VpContext.ExecutionState.EferLma && pExit->VpContext.Cs.Long ))
@@ -2763,6 +2785,7 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
                 Log4(("XcptExit/%u: %04x:%08RX64/%s: #UD -> emulated -> %Rrc\n",
                       pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip,
                       nemR3WinExecStateToLogStr(&pExit->VpContext), VBOXSTRICTRC_VAL(rcStrict) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUdHandled);
                 return rcStrict;
             }
 
@@ -2775,11 +2798,13 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
          * Filter debug exceptions.
          */
         case X86_XCPT_DB:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionDb);
             Log4(("XcptExit/%u: %04x:%08RX64/%s: #DB - TODO\n",
                   pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext) ));
             break;
 
         case X86_XCPT_BP:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionBp);
             Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO\n",
                   pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext) ));
             break;
