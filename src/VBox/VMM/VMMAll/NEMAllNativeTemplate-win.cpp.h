@@ -2677,6 +2677,7 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
     /*
      * Handle the intercept.
      */
+    TRPMEVENT enmEvtType = TRPM_TRAP;
     switch (pMsg->ExceptionVector)
     {
         /*
@@ -2715,8 +2716,9 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
 
         case X86_XCPT_BP:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionBp);
-            Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO\n",
-                  pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header) ));
+            Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO - %u\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
+                  pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header), pMsg->Header.InstructionLength));
+            enmEvtType = TRPM_SOFTWARE_INT; /* We're at the INT3 instruction, not after it. */
             break;
 
         /* This shouldn't happen. */
@@ -2727,7 +2729,7 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
     /*
      * Inject it.
      */
-    rcStrict = IEMInjectTrap(pVCpu, pMsg->ExceptionVector, TRPM_TRAP, pMsg->ErrorCode,
+    rcStrict = IEMInjectTrap(pVCpu, pMsg->ExceptionVector, enmEvtType, pMsg->ErrorCode,
                              pMsg->ExceptionParameter /*??*/, pMsg->Header.InstructionLength);
     Log4(("XcptExit/%u: %04x:%08RX64/%s: %#u -> injected -> %Rrc\n",
           pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip,
@@ -2770,6 +2772,7 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
     /*
      * Handle the intercept.
      */
+    TRPMEVENT enmEvtType = TRPM_TRAP;
     switch (pExit->VpException.ExceptionType)
     {
         /*
@@ -2811,8 +2814,9 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
 
         case X86_XCPT_BP:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionBp);
-            Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO\n",
-                  pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext) ));
+            Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO - %u\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector,
+                  pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->VpContext.InstructionLength));
+            enmEvtType = TRPM_SOFTWARE_INT; /* We're at the INT3 instruction, not after it. */
             break;
 
         /* This shouldn't happen. */
@@ -2823,7 +2827,7 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
     /*
      * Inject it.
      */
-    rcStrict = IEMInjectTrap(pVCpu, pExit->VpException.ExceptionType, TRPM_TRAP, pExit->VpException.ErrorCode,
+    rcStrict = IEMInjectTrap(pVCpu, pExit->VpException.ExceptionType, enmEvtType, pExit->VpException.ErrorCode,
                              pExit->VpException.ExceptionParameter /*??*/, pExit->VpContext.InstructionLength);
     Log4(("XcptExit/%u: %04x:%08RX64/%s: %#u -> injected -> %Rrc\n",
           pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip,
@@ -3232,29 +3236,30 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
                               ("Unexpected 2nd message following ERROR_VID_STOP_PENDING: %#x LB %#x\n",
                                enmVidMsgType, pMappingHeader->cbMessage),
                               RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
+
+        /*
+         * Mark the VidMessageStopRequestComplete message as handled.
+         */
+# ifdef IN_RING0
+        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
+        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_HANDLE_MESSAGE;
+        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
+        rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                                       &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
+                                       sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
+                                       NULL, 0);
+        AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("3rd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
+                              RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
+# else
+        fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu, VID_MSHAGN_F_HANDLE_MESSAGE, 30000 /*ms*/);
+        AssertLogRelMsgReturn(fWait, ("3rd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %u\n", RTNtLastErrorValue()),
+                              RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
+# endif
+        Log8(("nemHCWinStopCpu: Stopped the CPU (rcStrict=%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict) ));
     }
     else
-        Log8(("nemHCWinStopCpu: 1st VidMessageSlotHandleAndGetNext got VidMessageStopRequestComplete.\n"));
-
-    /*
-     * Mark the VidMessageStopRequestComplete message as handled.
-     */
-# ifdef IN_RING0
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_HANDLE_MESSAGE;
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
-    rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                   &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                   sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
-                                   NULL, 0);
-    AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("3rd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
-                          RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
-# else
-    fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu, VID_MSHAGN_F_HANDLE_MESSAGE, 30000 /*ms*/);
-    AssertLogRelMsgReturn(fWait, ("3rd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %u\n", RTNtLastErrorValue()),
-                          RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
-# endif
-    Log8(("nemHCWinStopCpu: Stopped the CPU (rcStrict=%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict) ));
+        Log8(("nemHCWinStopCpu: Stopped the CPU (rcStrict=%Rrc) - 1st VidMessageSlotHandleAndGetNext got VidMessageStopRequestComplete.\n",
+              VBOXSTRICTRC_VAL(rcStrict) ));
     return rcStrict;
 }
 #endif /* NEM_WIN_USE_OUR_OWN_RUN_API */
