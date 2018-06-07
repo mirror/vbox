@@ -363,6 +363,7 @@ public:
     // initializer for machine config in memory (OVF import)
     HRESULT init(VirtualBox *aParent,
                  const Utf8Str &strName,
+                 const Utf8Str &strSettingsFilename,
                  const settings::MachineConfigFile &config);
 
     void uninit();

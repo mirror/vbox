@@ -199,15 +199,37 @@ HRESULT Appliance::interpret()
                                  nameVBox);
 
             /* Based on the VM name, create a target machine path. */
-            Bstr bstrMachineFilename;
+            Bstr bstrSettingsFilename;
             rc = mVirtualBox->ComposeMachineFilename(Bstr(nameVBox).raw(),
                                                      NULL /* aGroup */,
                                                      NULL /* aCreateFlags */,
                                                      NULL /* aBaseFolder */,
-                                                     bstrMachineFilename.asOutParam());
+                                                     bstrSettingsFilename.asOutParam());
             if (FAILED(rc)) throw rc;
-            /* Determine the machine folder from that */
-            Utf8Str strMachineFolder = Utf8Str(bstrMachineFilename).stripFilename();
+            Utf8Str strMachineFolder(bstrSettingsFilename);
+            strMachineFolder.stripFilename();
+
+#if 1
+            /* The import logic should work exactly the same whether the
+             * following 3 items are present or not, but of course it may have
+             * an influence on the exact presentation of the import settings
+             * of an API client. */
+            Utf8Str strSettingsFilename(bstrSettingsFilename);
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_SettingsFile,
+                                 "",
+                                 "" /* no direct OVF correspondence */,
+                                 strSettingsFilename);
+            Utf8Str strBaseFolder;
+            mVirtualBox->i_getDefaultMachineFolder(strBaseFolder);
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_BaseFolder,
+                                 "",
+                                 "" /* no direct OVF correspondence */,
+                                 strBaseFolder);
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_PrimaryGroup,
+                                 "",
+                                 "" /* no direct OVF correspondence */,
+                                 "");
+#endif
 
             /* VM Product */
             if (!vsysThis.strProduct.isEmpty())
@@ -642,92 +664,53 @@ HRESULT Appliance::interpret()
                     //  - figure out if there is a url specifier for vhd already
                     //  - we need a url specifier for the vdi format
 
+                    Utf8Str strFilename = di.strHref;
                     if (vdf.compare("VMDK", Utf8Str::CaseInsensitive) == 0)
                     {
                         /* If the href is empty use the VM name as filename */
-                        Utf8Str strFilename = di.strHref;
                         if (!strFilename.length())
                             strFilename = Utf8StrFmt("%s.vmdk", hd.strDiskId.c_str());
-
-                        Utf8Str strTargetPath = Utf8Str(strMachineFolder);
-                        strTargetPath.append(RTPATH_DELIMITER).append(di.strHref);
-                        /*
-                         * Remove last extension from the file name if the file is compressed
-                        */
-                        if (di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
-                        {
-                            strTargetPath.stripSuffix();
-                        }
-
-                        i_searchUniqueDiskImageFilePath(strTargetPath);
-
-                        /* find the description for the hard disk controller
-                         * that has the same ID as hd.idController */
-                        const VirtualSystemDescriptionEntry *pController;
-                        if (!(pController = pNewDesc->i_findControllerFromID(hd.idController)))
-                            throw setError(E_FAIL,
-                                           tr("Cannot find hard disk controller with OVF instance ID %RI32 "
-                                              "to which disk \"%s\" should be attached"),
-                                           hd.idController,
-                                           di.strHref.c_str());
-
-                        /* controller to attach to, and the bus within that controller */
-                        Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
-                                                  pController->ulIndex,
-                                                  hd.ulAddressOnParent);
-                        pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                                             hd.strDiskId,
-                                             di.strHref,
-                                             strTargetPath,
-                                             di.ulSuggestedSizeMB,
-                                             strExtraConfig);
                     }
                     else if (vdf.compare("RAW", Utf8Str::CaseInsensitive) == 0)
                     {
                         /* If the href is empty use the VM name as filename */
-                        Utf8Str strFilename = di.strHref;
                         if (!strFilename.length())
                             strFilename = Utf8StrFmt("%s.iso", hd.strDiskId.c_str());
-
-                        Utf8Str strTargetPath = Utf8Str(strMachineFolder)
-                            .append(RTPATH_DELIMITER)
-                            .append(di.strHref);
-                        /*
-                         * Remove last extension from the file name if the file is compressed
-                        */
-                        if (di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
-                        {
-                            strTargetPath.stripSuffix();
-                        }
-
-                        i_searchUniqueDiskImageFilePath(strTargetPath);
-
-                        /* find the description for the hard disk controller
-                         * that has the same ID as hd.idController */
-                        const VirtualSystemDescriptionEntry *pController;
-                        if (!(pController = pNewDesc->i_findControllerFromID(hd.idController)))
-                            throw setError(E_FAIL,
-                                           tr("Cannot find disk controller with OVF instance ID %RI32 "
-                                              "to which disk \"%s\" should be attached"),
-                                           hd.idController,
-                                           di.strHref.c_str());
-
-                        /* controller to attach to, and the bus within that controller */
-                        Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
-                                                  pController->ulIndex,
-                                                  hd.ulAddressOnParent);
-                        pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                                             hd.strDiskId,
-                                             di.strHref,
-                                             strTargetPath,
-                                             di.ulSuggestedSizeMB,
-                                             strExtraConfig);
                     }
                     else
                         throw setError(VBOX_E_FILE_ERROR,
                                        tr("Unsupported format for virtual disk image %s in OVF: \"%s\""),
                                           di.strHref.c_str(),
                                           di.strFormat.c_str());
+
+                    /*
+                     * Remove last extension from the file name if the file is compressed
+                     */
+                    if (di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
+                        strFilename.stripSuffix();
+
+                    i_searchUniqueDiskImageFilePath(strMachineFolder, strFilename);
+
+                    /* find the description for the hard disk controller
+                     * that has the same ID as hd.idController */
+                    const VirtualSystemDescriptionEntry *pController;
+                    if (!(pController = pNewDesc->i_findControllerFromID(hd.idController)))
+                        throw setError(E_FAIL,
+                                       tr("Cannot find hard disk controller with OVF instance ID %RI32 "
+                                          "to which disk \"%s\" should be attached"),
+                                       hd.idController,
+                                       di.strHref.c_str());
+
+                    /* controller to attach to, and the bus within that controller */
+                    Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
+                                              pController->ulIndex,
+                                              hd.ulAddressOnParent);
+                    pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                                         hd.strDiskId,
+                                         di.strHref,
+                                         strFilename,
+                                         di.ulSuggestedSizeMB,
+                                         strExtraConfig);
                 }
             }
 
@@ -2382,21 +2365,27 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
  * This advances stack.pProgress by one operation with the disk's weight.
  *
  * @param di ovfreader.cpp structure describing the disk image from the OVF that is to be imported
- * @param strTargetPath Where to create the target image.
+ * @param strDstPath Where to create the target image.
  * @param pTargetHD out: The newly created target disk. This also gets pushed on stack.llHardDisksCreated for cleanup.
  * @param stack
  */
 void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
-                                     Utf8Str *pStrDstPath,
+                                     const Utf8Str &strDstPath,
                                      ComObjPtr<Medium> &pTargetHD,
                                      ImportStack &stack)
 {
+    char *pszAbsDstPath = RTPathAbsExDup(stack.strMachineFolder.c_str(),
+                                         strDstPath.c_str());
+    Utf8Str strAbsDstPath(pszAbsDstPath);
+    RTStrFree(pszAbsDstPath);
+    pszAbsDstPath = NULL;
+
     ComObjPtr<Progress> pProgress;
     pProgress.createObject();
     HRESULT rc = pProgress->init(mVirtualBox,
                                  static_cast<IAppliance*>(this),
                                  BstrFmt(tr("Creating medium '%s'"),
-                                 pStrDstPath->c_str()).raw(),
+                                         strAbsDstPath.c_str()).raw(),
                                  TRUE);
     if (FAILED(rc)) throw rc;
 
@@ -2417,11 +2406,11 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
         strSrcFilePath.append(strSourceOVF);
     }
 
-    /* First of all check if the path is an UUID. If so, the user like to
-     * import the disk into an existing path. This is useful for iSCSI for
-     * example. */
+    /* First of all check if the original (non-absolute) destination path is
+     * a valid hard disk UUID. If so, the user wants to import the disk into
+     * an existing path. This is useful for iSCSI for example. */
     RTUUID uuid;
-    int vrc = RTUuidFromStr(&uuid, pStrDstPath->c_str());
+    int vrc = RTUuidFromStr(&uuid, strDstPath.c_str());
     if (vrc == VINF_SUCCESS)
     {
         rc = mVirtualBox->i_findHardDiskById(Guid(uuid), true, &pTargetHD);
@@ -2441,7 +2430,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
             Bstr bstrFormatName;
             ULONG lCabs = 0;
 
-            char *pszSuff = RTPathSuffix(pStrDstPath->c_str());
+            char *pszSuff = RTPathSuffix(strAbsDstPath.c_str());
             if (pszSuff != NULL)
             {
                 /*
@@ -2471,9 +2460,9 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     /* change the target extension */
                     strTrgFormat = "vdi";
                     trgFormat = pSysProps->i_mediumFormatFromExtension(strTrgFormat);
-                    *pStrDstPath = pStrDstPath->stripSuffix();
-                    *pStrDstPath = pStrDstPath->append(".");
-                    *pStrDstPath = pStrDstPath->append(strTrgFormat.c_str());
+                    strAbsDstPath.stripSuffix();
+                    strAbsDstPath.append(".");
+                    strAbsDstPath.append(strTrgFormat.c_str());
                 }
 
                 /* Check the capabilities. We need create capabilities. */
@@ -2491,13 +2480,13 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     && !(lCabs & MediumFormatCapabilities_CreateDynamic) )
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                    tr("Could not find a valid medium format for the target disk '%s'"),
-                                   pStrDstPath->c_str());
+                                   strAbsDstPath.c_str());
             }
             else
             {
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("The target disk '%s' has no extension "),
-                               pStrDstPath->c_str(), VERR_INVALID_NAME);
+                               strAbsDstPath.c_str(), VERR_INVALID_NAME);
             }
 
             /* Create an IMedium object. */
@@ -2509,9 +2498,9 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                 try
                 {
                     if (fGzipped)
-                        i_importDecompressFile(stack, strSrcFilePath, *pStrDstPath, strSourceOVF.c_str());
+                        i_importDecompressFile(stack, strSrcFilePath, strAbsDstPath, strSourceOVF.c_str());
                     else
-                        i_importCopyFile(stack, strSrcFilePath, *pStrDstPath, strSourceOVF.c_str());
+                        i_importCopyFile(stack, strSrcFilePath, strAbsDstPath, strSourceOVF.c_str());
                 }
                 catch (HRESULT /*arc*/)
                 {
@@ -2528,14 +2517,14 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
             {
                 rc = pTargetHD->init(mVirtualBox,
                                      strTrgFormat,
-                                     *pStrDstPath,
+                                     strAbsDstPath,
                                      Guid::Empty /* media registry: none yet */,
                                      DeviceType_HardDisk);
                 if (FAILED(rc)) throw rc;
 
                 /* Now create an empty hard disk. */
                 rc = mVirtualBox->CreateMedium(Bstr(strTrgFormat).raw(),
-                                               Bstr(*pStrDstPath).raw(),
+                                               Bstr(strAbsDstPath).raw(),
                                                AccessMode_ReadWrite, DeviceType_HardDisk,
                                                ComPtr<IMedium>(pTargetHD).asOutParam());
                 if (FAILED(rc)) throw rc;
@@ -2555,7 +2544,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     /* Advance to the next operation. */
                     /* operation's weight, as set up with the IProgress originally */
                     stack.pProgress->SetNextOperation(BstrFmt(tr("Creating disk image '%s'"),
-                                                      pStrDstPath->c_str()).raw(),
+                                                      strAbsDstPath.c_str()).raw(),
                                                       di.ulSuggestedSizeMB);
                 }
                 else
@@ -2574,7 +2563,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     /* If gzipped, decompress the GZIP file and save a new file in the target path */
                     if (fGzipped)
                     {
-                        Utf8Str strTargetFilePath(*pStrDstPath);
+                        Utf8Str strTargetFilePath(strAbsDstPath);
                         strTargetFilePath.stripFilename();
                         strTargetFilePath.append(RTPATH_SLASH_STR);
                         strTargetFilePath.append("temp_");
@@ -2684,8 +2673,10 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (FAILED(rc)) throw rc;
 
     /* Create the machine */
-    SafeArray<BSTR> groups; /* no groups */
-    rc = mVirtualBox->CreateMachine(NULL, /* machine name: use default */
+    SafeArray<BSTR> groups; /* no groups, or maybe one group... */
+    if (!stack.strPrimaryGroup.isEmpty())
+        Bstr(stack.strPrimaryGroup).detachTo(groups.appendedRaw());
+    rc = mVirtualBox->CreateMachine(Bstr(stack.strSettingsFilename).raw(),
                                     Bstr(stack.strNameVBox).raw(),
                                     ComSafeArrayAsInParam(groups),
                                     Bstr(stack.strOsTypeVBox).raw(),
@@ -3289,7 +3280,7 @@ l_skipped:
                 Utf8Str savedVBoxCurrent = vsdeTargetHD->strVBoxCurrent;
 
                 i_importOneDiskImage(diCurrent,
-                                     &vsdeTargetHD->strVBoxCurrent,
+                                     vsdeTargetHD->strVBoxCurrent,
                                      pTargetHD,
                                      stack);
 
@@ -3450,6 +3441,12 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
 
     /* OS Type */
     config.machineUserData.strOsType = stack.strOsTypeVBox;
+    /* Groups */
+    if (!stack.strPrimaryGroup.isEmpty())
+    {
+        config.machineUserData.llGroups.clear();
+        config.machineUserData.llGroups.push_back(stack.strPrimaryGroup);
+    }
     /* Description */
     config.machineUserData.strDescription = stack.strDescription;
     /* CPU count & extented attributes */
@@ -3848,7 +3845,7 @@ l_skipped:
                 ComObjPtr<Medium> pTargetHD;
 
                 i_importOneDiskImage(diCurrent,
-                                     &vsdeTargetHD->strVBoxCurrent,
+                                     vsdeTargetHD->strVBoxCurrent,
                                      pTargetHD,
                                      stack);
 
@@ -3941,6 +3938,7 @@ l_skipped:
     // instance that we created from the vbox:Machine
     rc = pNewMachine->init(mVirtualBox,
                            stack.strNameVBox,// name from OVF preparations; can be suffixed to avoid duplicates
+                           stack.strSettingsFilename,
                            config);          // the whole machine config
     if (FAILED(rc)) throw rc;
 
@@ -4001,19 +3999,42 @@ void Appliance::i_importMachines(ImportStack &stack)
                            tr("Missing VM name"));
         stack.strNameVBox = vsdeName.front()->strVBoxCurrent;
 
-        // have VirtualBox suggest where the filename would be placed so we can
-        // put the disk images in the same directory
-        Bstr bstrMachineFilename;
-        rc = mVirtualBox->ComposeMachineFilename(Bstr(stack.strNameVBox).raw(),
-                                                 NULL /* aGroup */,
-                                                 NULL /* aCreateFlags */,
-                                                 NULL /* aBaseFolder */,
-                                                 bstrMachineFilename.asOutParam());
-        if (FAILED(rc)) throw rc;
-        // and determine the machine folder from that
-        stack.strMachineFolder = bstrMachineFilename;
+        // Primary group, which is entirely optional.
+        std::list<VirtualSystemDescriptionEntry*> vsdePrimaryGroup = vsdescThis->i_findByType(VirtualSystemDescriptionType_PrimaryGroup);
+        if (vsdePrimaryGroup.size() >= 1)
+            stack.strPrimaryGroup = vsdePrimaryGroup.front()->strVBoxCurrent;
+
+        // Draw the right conclusions from the (possibly modified) VM settings
+        // file name and base folder. If the VM settings file name is modified,
+        // it takes precedence, otherwise it is recreated from the base folder
+        // and the primary group.
+        std::list<VirtualSystemDescriptionEntry*> vsdeSettingsFile = vsdescThis->i_findByType(VirtualSystemDescriptionType_SettingsFile);
+        if (vsdeSettingsFile.size() >= 1)
+        {
+            VirtualSystemDescriptionEntry *vsdeSF1 = vsdeSettingsFile.front();
+            if (vsdeSF1->strVBoxCurrent != vsdeSF1->strVBoxSuggested)
+            stack.strSettingsFilename = vsdeSF1->strVBoxCurrent;
+        }
+        if (stack.strSettingsFilename.isEmpty())
+        {
+            Utf8Str strBaseFolder;
+            std::list<VirtualSystemDescriptionEntry*> vsdeBaseFolder = vsdescThis->i_findByType(VirtualSystemDescriptionType_BaseFolder);
+            if (vsdeBaseFolder.size() >= 1)
+                strBaseFolder = vsdeBaseFolder.front()->strVBoxCurrent;
+            Bstr bstrSettingsFilename;
+            rc = mVirtualBox->ComposeMachineFilename(Bstr(stack.strNameVBox).raw(),
+                                                     Bstr(stack.strPrimaryGroup).raw(),
+                                                     NULL /* aCreateFlags */,
+                                                     Bstr(strBaseFolder).raw(),
+                                                     bstrSettingsFilename.asOutParam());
+            if (FAILED(rc)) throw rc;
+            stack.strSettingsFilename = bstrSettingsFilename;
+        }
+
+        // Determine the machine folder from the settings file.
+        LogFunc(("i=%zu strName=%s strSettingsFilename=%s\n", i, stack.strNameVBox.c_str(), stack.strSettingsFilename.c_str()));
+        stack.strMachineFolder = stack.strSettingsFilename;
         stack.strMachineFolder.stripFilename();
-        LogFunc(("i=%zu strName=%s bstrMachineFilename=%ls\n", i, stack.strNameVBox.c_str(), bstrMachineFilename.raw()));
 
         // guest OS type
         std::list<VirtualSystemDescriptionEntry*> vsdeOS;

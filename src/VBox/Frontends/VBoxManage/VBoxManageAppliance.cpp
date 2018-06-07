@@ -120,6 +120,9 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "-ostype",                'o', RTGETOPT_REQ_STRING },     // deprecated
     { "--vmname",               'V', RTGETOPT_REQ_STRING },
     { "-vmname",                'V', RTGETOPT_REQ_STRING },     // deprecated
+    { "--settingsfile",         'S', RTGETOPT_REQ_STRING },
+    { "--basefolder",           'p', RTGETOPT_REQ_STRING },
+    { "--group",                'g', RTGETOPT_REQ_STRING },
     { "--memory",               'm', RTGETOPT_REQ_STRING },
     { "-memory",                'm', RTGETOPT_REQ_STRING },     // deprecated
     { "--cpus",                 'c', RTGETOPT_REQ_STRING },
@@ -192,6 +195,24 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 if (ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["vmname"] = ValueUnion.psz;
+                break;
+
+            case 'S':   // --settingsfile
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["settingsfile"] = ValueUnion.psz;
+                break;
+
+            case 'p':   // --basefolder
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["basefolder"] = ValueUnion.psz;
+                break;
+
+            case 'g':   // --group
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["group"] = ValueUnion.psz;
                 break;
 
             case 'd':   // --description
@@ -850,8 +871,44 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                             break;
 
                         case VirtualSystemDescriptionType_SettingsFile:
-                            /** @todo  VirtualSystemDescriptionType_SettingsFile? */
+                            if (findArgValue(strOverride, pmapArgs, "settingsfile"))
+                            {
+                                bstrFinalValue = strOverride;
+                                RTPrintf("%2u: VM settings file name specified with --settingsfile: \"%ls\"\n",
+                                        a, bstrFinalValue.raw());
+                            }
+                            else
+                                RTPrintf("%2u: Suggested VM settings file name \"%ls\""
+                                        "\n    (change with \"--vsys %u --settingsfile <filename>\")\n",
+                                        a, bstrFinalValue.raw(), i);
                             break;
+
+                        case VirtualSystemDescriptionType_BaseFolder:
+                            if (findArgValue(strOverride, pmapArgs, "basefolder"))
+                            {
+                                bstrFinalValue = strOverride;
+                                RTPrintf("%2u: VM base folder specified with --basefolder: \"%ls\"\n",
+                                        a, bstrFinalValue.raw());
+                            }
+                            else
+                                RTPrintf("%2u: Suggested VM base folder \"%ls\""
+                                        "\n    (change with \"--vsys %u --basefolder <path>\")\n",
+                                        a, bstrFinalValue.raw(), i);
+                            break;
+
+                        case VirtualSystemDescriptionType_PrimaryGroup:
+                            if (findArgValue(strOverride, pmapArgs, "group"))
+                            {
+                                bstrFinalValue = strOverride;
+                                RTPrintf("%2u: VM group specified with --group: \"%ls\"\n",
+                                        a, bstrFinalValue.raw());
+                            }
+                            else
+                                RTPrintf("%2u: Suggested VM group \"%ls\""
+                                        "\n    (change with \"--vsys %u --group <group>\")\n",
+                                        a, bstrFinalValue.raw(), i);
+                            break;
+
                         case VirtualSystemDescriptionType_Miscellaneous:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
@@ -946,6 +1003,7 @@ static const RTGETOPTDEF g_aExportOptions[] =
     { "--manifest",             'm', RTGETOPT_REQ_NOTHING },    // obsoleted by --options
     { "--iso",                  'I', RTGETOPT_REQ_NOTHING },    // obsoleted by --options
     { "--vsys",                 's', RTGETOPT_REQ_UINT32 },
+    { "--vmname",               'V', RTGETOPT_REQ_STRING },
     { "--product",              'p', RTGETOPT_REQ_STRING },
     { "--producturl",           'P', RTGETOPT_REQ_STRING },
     { "--vendor",               'n', RTGETOPT_REQ_STRING },
@@ -1019,6 +1077,12 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
 
                 case 's':   // --vsys
                     ulCurVsys = ValueUnion.u32;
+                    break;
+
+                case 'V':   // --vmname
+                    if (ulCurVsys == (uint32_t)-1)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["vmname"] = ValueUnion.psz;
                     break;
 
                 case 'p':   // --product
@@ -1160,7 +1224,11 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                      itD != pmapArgs->end();
                      ++itD)
                 {
-                    if (itD->first == "product")
+                    if (itD->first == "vmname")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_Name,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "product")
                         pVSD->AddDescription(VirtualSystemDescriptionType_Product,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());

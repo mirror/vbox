@@ -3518,7 +3518,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="303c0900-a746-4612-8c67-79003e91f459"
+    uuid="e43225cb-09fc-4e70-a56c-6dad3bcb48a6"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -3547,7 +3547,20 @@
     <const name="USBController" value="22" />
     <const name="SoundCard" value="23" />
     <const name="SettingsFile" value="24">
-      <desc>Not used/implemented right now, will be added later in 4.1.x.</desc>
+      <desc>Optional, may be unset by the API caller. If this is changed by the
+        API caller it defines the absolute path of the VM settings file and
+        therefore also the VM folder with highest priority.</desc>
+    </const>
+    <const name="BaseFolder" value="25">
+      <desc>Optional, may be unset by the API caller. If set (and
+        <link to="#SettingsFile"/> is not changed), defines the VM base folder
+        (taking the primary group into account if also set).</desc>
+    </const>
+    <const name="PrimaryGroup" value="26">
+      <desc>Optional, empty by default and may be unset by the API caller.
+        Defines the primary group of the VM after import. May influence the
+        selection of the VM folder. Additional groups may be configured later
+        using <link to="IMachine::groups"/>, after importing.</desc>
     </const>
   </enum>
 

@@ -953,25 +953,27 @@ HRESULT Appliance::i_searchUniqueVMName(Utf8Str& aName) const
     return S_OK;
 }
 
-HRESULT Appliance::i_searchUniqueDiskImageFilePath(Utf8Str& aName) const
+HRESULT Appliance::i_searchUniqueDiskImageFilePath(const Utf8Str &aMachineFolder, Utf8Str &aName) const
 {
     IMedium *harddisk = NULL;
     char *tmpName = RTStrDup(aName.c_str());
+    char *tmpAbsName = RTPathAbsExDup(aMachineFolder.c_str(), tmpName);
     int i = 1;
     /* Check if the file exists or if a file with this path is registered
      * already */
     /** @todo Maybe too cost-intensive; try to find a lighter way */
-    while (    RTPathExists(tmpName)
-            || mVirtualBox->OpenMedium(Bstr(tmpName).raw(), DeviceType_HardDisk, AccessMode_ReadWrite,
+    while (    RTPathExists(tmpAbsName)
+            || mVirtualBox->OpenMedium(Bstr(tmpAbsName).raw(), DeviceType_HardDisk, AccessMode_ReadWrite,
                                        FALSE /* fForceNewUuid */,  &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
     {
-        RTStrFree(tmpName);
+        RTStrFree(tmpAbsName);
         char *tmpDir = RTStrDup(aName.c_str());
-        RTPathStripFilename(tmpDir);;
+        RTPathStripFilename(tmpDir);
         char *tmpFile = RTStrDup(RTPathFilename(aName.c_str()));
         RTPathStripSuffix(tmpFile);
         const char *pszTmpSuff = RTPathSuffix(aName.c_str());
         RTStrAPrintf(&tmpName, "%s%c%s_%d%s", tmpDir, RTPATH_DELIMITER, tmpFile, i, pszTmpSuff);
+        tmpAbsName = RTPathAbsExDup(aMachineFolder.c_str(), tmpName);
         RTStrFree(tmpFile);
         RTStrFree(tmpDir);
         ++i;

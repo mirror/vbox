@@ -761,6 +761,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--iso]\n"
                      "                            [--options manifest|iso|nomacs|nomacsbutnat]\n"
                      "                            [--vsys <number of virtual system>]\n"
+                     "                                    [--vmname <name>]\n"
                      "                                    [--product <product name>]\n"
                      "                                    [--producturl <product url>]\n"
                      "                                    [--vendor <vendor name>]\n"
