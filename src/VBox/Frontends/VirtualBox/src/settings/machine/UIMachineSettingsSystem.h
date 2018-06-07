@@ -141,6 +141,10 @@ private:
     /** Saves existing 'Acceleration' data from the cache. */
     bool saveAccelerationData();
 
+    /** Disable/enable "hardware virtualization" and "nested paging" check boxes
+     * (but not the "Paravirtualization Interface" combobox)  */
+    void setAccelerationCheckBoxesEnabled(bool fEnabled);
+
     /** Holds the list of all possible boot items. */
     QList<KDeviceType>  m_possibleBootItems;
 
