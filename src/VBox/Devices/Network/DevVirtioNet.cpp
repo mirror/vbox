@@ -65,7 +65,7 @@
 
 /*
  * Commenting out VNET_TX_DELAY enables async transmission in a dedicated thread.
- * When VNET_TX_DELAY is defined, a timer handler does the job. 
+ * When VNET_TX_DELAY is defined, a timer handler does the job.
  */
 //#define VNET_TX_DELAY           150   /**< 150 microseconds */
 #define VNET_MAX_FRAME_SIZE     65535 + 18  /**< Max IP packet size + Ethernet header with VLAN tag */
@@ -1510,7 +1510,7 @@ static DECLCALLBACK(int) vnetTxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         rc = SUPSemEventWaitNoResume(pThis->pSupDrvSession, pThis->hTxEvent, RT_INDEFINITE_WAIT);
         if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
             break;
-        vnetTransmitPendingPackets(pThis, pThis->pTxQueue, false /*fOnWorkerThread*/); // @todo: shouldn't it be true instead?
+        vnetTransmitPendingPackets(pThis, pThis->pTxQueue, false /*fOnWorkerThread*/); /// @todo: shouldn't it be true instead?
         Log(("vnetTxThread: enable kicking and get to sleep\n"));
         vringSetNotification(&pThis->VPCI, &pThis->pTxQueue->VRing, true);
     }
