@@ -747,6 +747,8 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Missing required extended CPUID exit support");
     if (!pVM->nem.s.fExtendedMsrExit)
         return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Missing required extended MSR exit support");
+    if (!pVM->nem.s.fExtendedXcptExit)
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_INIT_FAILED, "Missing required extended exception exit support");
 
 #undef NEM_LOG_REL_CAP_EX
 #undef NEM_LOG_REL_CAP_SUB_EX
@@ -1306,7 +1308,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
 
     /* Intercept #DB, #BP and #UD exceptions. */
     RT_ZERO(Property);
-    Property.ExceptionExitBitmap = RT_BIT_64(WHvX64ExceptionTypeDivideErrorFault)
+    Property.ExceptionExitBitmap = RT_BIT_64(WHvX64ExceptionTypeDebugTrapOrFault)
                                  | RT_BIT_64(WHvX64ExceptionTypeBreakpointTrap)
                                  | RT_BIT_64(WHvX64ExceptionTypeInvalidOpcodeFault);
     hrc = WHvSetPartitionProperty(hPartition, WHvPartitionPropertyCodeExceptionExitBitmap, &Property, sizeof(Property));
