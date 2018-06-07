@@ -1100,7 +1100,7 @@
     <const name="UseNativeApi"          value="7">
       <desc>
         Use the native hypervisor API instead of the VirtualBox one (HM) for VT-X/AMD-V.  This is
-        ignored if <link to="HWVirtExPropertyType::Enabled"/> isn't set.
+        ignored if <link to="HWVirtExPropertyType_Enabled"/> isn't set.
       </desc>
     </const>
   </enum>
