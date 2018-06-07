@@ -31,6 +31,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
 #include <VBox/vmm/nem.h>
+#include <VBox/vmm/gim.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
@@ -208,6 +209,16 @@ VMMR3_INT_DECL(int) NEMR3InitAfterCPUM(PVM pVM)
  */
 VMMR3_INT_DECL(int) NEMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
+    /*
+     * Check if GIM needs #UD, since that applies to everyone.
+     */
+    if (enmWhat == VMINITCOMPLETED_RING3)
+        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+            pVM->aCpus[iCpu].nem.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(&pVM->aCpus[iCpu]);
+
+    /*
+     * Call native code.
+     */
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_NATIVE_NEM
     if (pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)

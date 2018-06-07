@@ -2682,10 +2682,13 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
         /*
          * We get undefined opcodes on VMMCALL(AMD) & VMCALL(Intel) instructions
          * and need to turn them over to GIM.
+         *
+         * Note! We do not check fGIMTrapXcptUD here ASSUMING that GIM only wants
+         *       #UD for handling non-native hypercall instructions.  (IEM will
+         *       decode both and let the GIM provider decide whether to accept it.)
          */
         case X86_XCPT_UD:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUd);
-            /** @todo Call GIMXcptUD if required. */
             if (nemHcWinIsInterestingUndefinedOpcode(pMsg->InstructionByteCount, pMsg->InstructionBytes,
                                                      pMsg->Header.ExecutionState.EferLma && pMsg->Header.CsSegment.Long ))
             {
@@ -2772,10 +2775,13 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
         /*
          * We get undefined opcodes on VMMCALL(AMD) & VMCALL(Intel) instructions
          * and need to turn them over to GIM.
+         *
+         * Note! We do not check fGIMTrapXcptUD here ASSUMING that GIM only wants
+         *       #UD for handling non-native hypercall instructions.  (IEM will
+         *       decode both and let the GIM provider decide whether to accept it.)
          */
         case X86_XCPT_UD:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUd);
-            /** @todo Call GIMXcptUD if required. */
             if (nemHcWinIsInterestingUndefinedOpcode(pExit->VpException.InstructionByteCount, pExit->VpException.InstructionBytes,
                                                      pExit->VpContext.ExecutionState.EferLma && pExit->VpContext.Cs.Long ))
             {
@@ -2946,6 +2952,7 @@ nemR3WinHandleExitUnrecoverableException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_
 }
 #endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
 
+
 #ifdef NEM_WIN_USE_OUR_OWN_RUN_API
 /**
  * Handles messages (VM exits).
@@ -3107,6 +3114,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVM pVM, PVMCPU pVCpu, WHV_RUN_V
 }
 #endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
 
+
 #ifdef NEM_WIN_USE_OUR_OWN_RUN_API
 /**
  * Worker for nemHCWinRunGC that stops the execution on the way out.
@@ -3170,7 +3178,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
     STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuPending);
 
     /*
-     * First message: Exit or similar.
+     * First message: Exit or similar, sometimes VidMessageStopRequestComplete.
      * Note! We can safely ASSUME that rcStrict isn't an important information one.
      */
 # ifdef IN_RING0
@@ -3190,46 +3198,47 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
                           RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
 # endif
 
-    /* It should be a hypervisor message and definitely not a stop request completed message. */
     VID_MESSAGE_TYPE enmVidMsgType = pMappingHeader->enmVidMsgType;
-    AssertLogRelMsgReturn(enmVidMsgType != VidMessageStopRequestComplete,
-                          ("Unexpected 1st message following ERROR_VID_STOP_PENDING: %#x LB %#x\n",
-                           enmVidMsgType, pMappingHeader->cbMessage),
-                          RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
+    if (enmVidMsgType != VidMessageStopRequestComplete)
+    {
+        VBOXSTRICTRC rcStrict2 = nemHCWinHandleMessage(pVM, pVCpu, pMappingHeader, CPUMQueryGuestCtxPtr(pVCpu), pGVCpu);
+        if (rcStrict2 != VINF_SUCCESS && RT_SUCCESS(rcStrict))
+            rcStrict = rcStrict2;
 
-    VBOXSTRICTRC rcStrict2 = nemHCWinHandleMessage(pVM, pVCpu, pMappingHeader, CPUMQueryGuestCtxPtr(pVCpu), pGVCpu);
-    if (rcStrict2 != VINF_SUCCESS && RT_SUCCESS(rcStrict))
-        rcStrict = rcStrict2;
-
-    /*
-     * Mark it as handled and get the stop request completed message, then mark
-     * that as handled too.  CPU is back into fully stopped stated then.
-     */
+        /*
+         * Mark it as handled and get the stop request completed message, then mark
+         * that as handled too.  CPU is back into fully stopped stated then.
+         */
 # ifdef IN_RING0
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE;
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
-    rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                   &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                   sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
-                                   NULL, 0);
-    AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("2nd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
-                          RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
+        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
+        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE;
+        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
+        rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                                       &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
+                                       sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
+                                       NULL, 0);
+        AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("2nd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
+                              RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
 # else
-    fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
-                                                VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE, 30000 /*ms*/);
-    AssertLogRelMsgReturn(fWait, ("2nd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %u\n", RTNtLastErrorValue()),
-                          RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
+        fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
+                                                    VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE, 30000 /*ms*/);
+        AssertLogRelMsgReturn(fWait, ("2nd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %u\n", RTNtLastErrorValue()),
+                              RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
 # endif
 
-    /* It should be a stop request completed message. */
-    enmVidMsgType = pMappingHeader->enmVidMsgType;
-    AssertLogRelMsgReturn(enmVidMsgType == VidMessageStopRequestComplete,
-                          ("Unexpected 2nd message following ERROR_VID_STOP_PENDING: %#x LB %#x\n",
-                           enmVidMsgType, pMappingHeader->cbMessage),
-                          RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
+        /* It should be a stop request completed message. */
+        enmVidMsgType = pMappingHeader->enmVidMsgType;
+        AssertLogRelMsgReturn(enmVidMsgType == VidMessageStopRequestComplete,
+                              ("Unexpected 2nd message following ERROR_VID_STOP_PENDING: %#x LB %#x\n",
+                               enmVidMsgType, pMappingHeader->cbMessage),
+                              RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
+    }
+    else
+        Log8(("nemHCWinStopCpu: 1st VidMessageSlotHandleAndGetNext got VidMessageStopRequestComplete.\n"));
 
-    /* Mark this as handled. */
+    /*
+     * Mark the VidMessageStopRequestComplete message as handled.
+     */
 # ifdef IN_RING0
     pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
     pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_HANDLE_MESSAGE;
