@@ -1380,36 +1380,35 @@ VMM_INT_DECL(bool) gimHvShouldTrapXcptUD(PVMCPU pVCpu)
 
 
 /**
- * Checks the currently disassembled instruction and executes the hypercall if
- * it's a hypercall instruction.
+ * Checks the instruction and executes the hypercall if it's a valid hypercall
+ * instruction.
+ *
+ * This interface is used by \#UD handlers and IEM.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
- * @param   pDis        Pointer to the disassembled instruction state at RIP.
+ * @param   uDisOpcode  The disassembler opcode.
+ * @param   cbInstr     The instruction length.
  *
  * @thread  EMT(pVCpu).
- *
- * @todo    Make this function static when @bugref{7270#c168} is addressed.
  */
-VMM_INT_DECL(VBOXSTRICTRC) gimHvExecHypercallInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercallEx(PVMCPU pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr)
 {
     Assert(pVCpu);
     Assert(pCtx);
-    Assert(pDis);
     VMCPU_ASSERT_EMT(pVCpu);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    CPUMCPUVENDOR const enmGuestCpuVendor = CPUMGetGuestCpuVendor(pVM);
-    if (   (   pDis->pCurInstr->uOpcode == OP_VMCALL
+    CPUMCPUVENDOR const enmGuestCpuVendor = (CPUMCPUVENDOR)pVM->cpum.ro.GuestFeatures.enmCpuVendor;
+    if (   (   uDisOpcode == OP_VMCALL
             && (   enmGuestCpuVendor == CPUMCPUVENDOR_INTEL
                 || enmGuestCpuVendor == CPUMCPUVENDOR_VIA))
-        || (   pDis->pCurInstr->uOpcode == OP_VMMCALL
+        || (   uDisOpcode == OP_VMMCALL
             && enmGuestCpuVendor == CPUMCPUVENDOR_AMD))
-    {
         return gimHvHypercall(pVCpu, pCtx);
-    }
 
+    RT_NOREF_PV(cbInstr);
     return VERR_GIM_INVALID_HYPERCALL_INSTR;
 }
 
@@ -1459,13 +1458,13 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE
         {
             if (pcbInstr)
                 *pcbInstr = (uint8_t)cbInstr;
-            return gimHvExecHypercallInstr(pVCpu, pCtx, &Dis);
+            return gimHvHypercallEx(pVCpu, pCtx, Dis.pCurInstr->uOpcode, Dis.cbInstr);
         }
 
         Log(("GIM: HyperV: Failed to disassemble instruction at CS:RIP=%04x:%08RX64. rc=%Rrc\n", pCtx->cs.Sel, pCtx->rip, rc));
         return rc;
     }
 
-    return gimHvExecHypercallInstr(pVCpu, pCtx, pDis);
+    return gimHvHypercallEx(pVCpu, pCtx, pDis->pCurInstr->uOpcode, pDis->cbInstr);
 }
 

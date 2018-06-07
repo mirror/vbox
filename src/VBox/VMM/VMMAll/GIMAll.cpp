@@ -132,6 +132,56 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
+ * Same as GIMHypercall, except with disassembler opcode and instruction length.
+ *
+ * This is the interface used by IEM.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the hypercall succeeded (even if its operation
+ *          failed).
+ * @retval  VINF_GIM_HYPERCALL_CONTINUING continue hypercall without updating
+ *          RIP.
+ * @retval  VINF_GIM_R3_HYPERCALL re-start the hypercall from ring-3.
+ * @retval  VERR_GIM_HYPERCALL_ACCESS_DENIED CPL is insufficient.
+ * @retval  VERR_GIM_HYPERCALLS_NOT_AVAILABLE hypercalls unavailable.
+ * @retval  VERR_GIM_NOT_ENABLED GIM is not enabled (shouldn't really happen)
+ * @retval  VERR_GIM_HYPERCALL_MEMORY_READ_FAILED hypercall failed while reading
+ *          memory.
+ * @retval  VERR_GIM_HYPERCALL_MEMORY_WRITE_FAILED hypercall failed while
+ *          writing memory.
+ * @retval  VERR_GIM_INVALID_HYPERCALL_INSTR if uDisOpcode is the wrong one; raise \#UD.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   uDisOpcode  The disassembler opcode.
+ * @param   cbInstr     The instruction length.
+ *
+ * @remarks The caller of this function needs to advance RIP as required.
+ * @thread  EMT.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) GIMHypercallEx(PVMCPU pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    if (RT_UNLIKELY(!GIMIsEnabled(pVM)))
+        return VERR_GIM_NOT_ENABLED;
+
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            return gimHvHypercallEx(pVCpu, pCtx, uDisOpcode, cbInstr);
+
+        case GIMPROVIDERID_KVM:
+            return gimKvmHypercallEx(pVCpu, pCtx, uDisOpcode, cbInstr);
+
+        default:
+            AssertMsgFailedReturn(("enmProviderId=%u\n", pVM->gim.s.enmProviderId), VERR_GIM_HYPERCALLS_NOT_AVAILABLE);
+    }
+}
+
+
+/**
  * Disassembles the instruction at RIP and if it's a hypercall
  * instruction, performs the hypercall.
  *
@@ -162,10 +212,10 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMExecHypercallInstr(PVMCPU pVCpu, PCPUMCTX pCtx, ui
         switch (pVM->gim.s.enmProviderId)
         {
             case GIMPROVIDERID_HYPERV:
-                return gimHvExecHypercallInstr(pVCpu, pCtx, &Dis);
+                return gimHvHypercallEx(pVCpu, pCtx, Dis.pCurInstr->uOpcode, Dis.cbInstr);
 
             case GIMPROVIDERID_KVM:
-                return gimKvmExecHypercallInstr(pVCpu, pCtx, &Dis);
+                return gimKvmHypercallEx(pVCpu, pCtx, Dis.pCurInstr->uOpcode, Dis.cbInstr);
 
             default:
                 AssertMsgFailed(("GIMExecHypercallInstr: for provider %u not available/implemented\n", pVM->gim.s.enmProviderId));
@@ -349,5 +399,60 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRA
             AssertMsgFailed(("GIMWriteMsr: for unknown provider %u idMsr=%#RX32 -> #GP(0)", pVM->gim.s.enmProviderId, idMsr));
             return VERR_CPUM_RAISE_GP_0;
     }
+}
+
+
+/**
+ * Queries the opcode bytes for a native hypercall.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pvBuf       The destination buffer.
+ * @param   cbBuf       The size of the buffer.
+ * @param   pcbWritten  Where to return the number of bytes written.  This is
+ *                      reliably updated only on successful return.  Optional.
+ * @param   puDisOpcode Where to return the disassembler opcode.  Optional.
+ */
+VMM_INT_DECL(int) GIMQueryHypercallOpcodeBytes(PVM pVM, void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint16_t *puDisOpcode)
+{
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+
+    CPUMCPUVENDOR  enmHostCpu = CPUMGetHostCpuVendor(pVM);
+    uint8_t const *pbSrc;
+    size_t         cbSrc;
+    switch (enmHostCpu)
+    {
+        case CPUMCPUVENDOR_AMD:
+        {
+            if (puDisOpcode)
+                *puDisOpcode = OP_VMMCALL;
+            static uint8_t const s_abHypercall[] = { 0x0F, 0x01, 0xD9 };   /* VMMCALL */
+            pbSrc = s_abHypercall;
+            cbSrc = sizeof(s_abHypercall);
+            break;
+        }
+
+        case CPUMCPUVENDOR_INTEL:
+        case CPUMCPUVENDOR_VIA:
+        {
+            if (puDisOpcode)
+                *puDisOpcode = OP_VMCALL;
+            static uint8_t const s_abHypercall[] = { 0x0F, 0x01, 0xC1 };   /* VMCALL */
+            pbSrc = s_abHypercall;
+            cbSrc = sizeof(s_abHypercall);
+            break;
+        }
+
+        default:
+            AssertMsgFailedReturn(("%d\n", enmHostCpu), VERR_UNSUPPORTED_CPU);
+    }
+    if (RT_LIKELY(cbBuf >= cbSrc))
+    {
+        memcpy(pvBuf, pbSrc, cbSrc);
+        if (pcbWritten)
+            *pcbWritten = cbSrc;
+        return VINF_SUCCESS;
+    }
+    return VERR_BUFFER_OVERFLOW;
 }
 

@@ -1520,12 +1520,12 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
     /*
      * Patch the hypercall-page.
      */
-    size_t cbWritten = 0;
-    int rc = VMMPatchHypercall(pVM, pvHypercallPage, PAGE_SIZE, &cbWritten);
+    size_t cbHypercall = 0;
+    int rc = GIMQueryHypercallOpcodeBytes(pVM, pvHypercallPage, PAGE_SIZE, &cbHypercall, NULL /*puDisOpcode*/);
     if (   RT_SUCCESS(rc)
-        && cbWritten < PAGE_SIZE)
+        && cbHypercall < PAGE_SIZE)
     {
-        uint8_t *pbLast = (uint8_t *)pvHypercallPage + cbWritten;
+        uint8_t *pbLast = (uint8_t *)pvHypercallPage + cbHypercall;
         *pbLast = 0xc3;  /* RET */
 
         rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysHypercallPage, pvHypercallPage, PAGE_SIZE);
@@ -1542,7 +1542,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
     {
         if (rc == VINF_SUCCESS)
             rc = VERR_GIM_OPERATION_FAILED;
-        LogRel(("GIM: HyperV: VMMPatchHypercall failed. rc=%Rrc cbWritten=%u\n", rc, cbWritten));
+        LogRel(("GIM: HyperV: VMMPatchHypercall failed. rc=%Rrc cbHypercall=%u\n", rc, cbHypercall));
     }
 
     RTMemFree(pvHypercallPage);

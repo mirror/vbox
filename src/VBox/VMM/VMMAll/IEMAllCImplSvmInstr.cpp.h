@@ -1091,11 +1091,12 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
 /**
  * Common code for iemCImpl_vmmcall and iemCImpl_vmcall (latter in IEMAllCImplVmxInstr.cpp.h).
  */
-IEM_CIMPL_DEF_0(iemCImpl_Hypercall)
+IEM_CIMPL_DEF_1(iemCImpl_Hypercall, uint16_t, uDisOpcode)
 {
     if (EMAreHypercallInstructionsEnabled(pVCpu))
     {
-        VBOXSTRICTRC rcStrict = GIMHypercall(pVCpu, IEM_GET_CTX(pVCpu));
+        NOREF(uDisOpcode);
+        VBOXSTRICTRC rcStrict = GIMHypercallEx(pVCpu, IEM_GET_CTX(pVCpu), uDisOpcode, cbInstr);
         if (RT_SUCCESS(rcStrict))
         {
             if (rcStrict == VINF_SUCCESS)
@@ -1144,7 +1145,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
 #endif
 
     /* Join forces with vmcall. */
-    return IEM_CIMPL_CALL_0(iemCImpl_Hypercall);
+    return IEM_CIMPL_CALL_1(iemCImpl_Hypercall, OP_VMMCALL);
 }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM

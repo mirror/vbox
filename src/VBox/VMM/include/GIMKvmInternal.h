@@ -199,7 +199,11 @@ typedef struct GIMKVM
     /** Whether GIM needs to trap \#UD exceptions. */
     bool                        fTrapXcptUD;
     /** Disassembler opcode of hypercall instruction native for this host CPU. */
-    uint16_t                    uOpCodeNative;
+    uint16_t                    uOpcodeNative;
+    /** Native hypercall opcode bytes.  Use for replacing. */
+    uint8_t                     abOpcodeNative[3];
+    /** Alignment padding. */
+    uint8_t                     abPadding[5];
     /** The TSC frequency (in HZ) reported to the guest. */
     uint64_t                    cTscTicksPerSecond;
     /** Spinlock used for protecting GIMKVMCPU::uTsc and
@@ -265,7 +269,7 @@ VMM_INT_DECL(VBOXSTRICTRC)      gimKvmReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCP
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
 VMM_INT_DECL(bool)              gimKvmShouldTrapXcptUD(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
-VMM_INT_DECL(VBOXSTRICTRC)      gimKvmExecHypercallInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis);
+VMM_INT_DECL(VBOXSTRICTRC)      gimKvmHypercallEx(PVMCPU pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr);
 
 
 RT_C_DECLS_END
