@@ -2682,6 +2682,10 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   address size prefixes.  Haven't investigated it any further yet.
  *
  *
+ * - Query WHvCapabilityCodeExceptionExitBitmap returns zero even when
+ *   intercepts demonstrably works (17134).
+ *
+ *
  * - The WHvGetCapability function has a weird design:
  *      - The CapabilityCode parameter is pointlessly duplicated in the output
  *        structure (WHV_CAPABILITY).
