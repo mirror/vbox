@@ -303,6 +303,12 @@ FNIEMOP_DEF_1(iemOp_Grp7_sgdt, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_Grp7_vmcall)
 {
     IEMOP_MNEMONIC(vmcall, "vmcall");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the VMX instructions. ASSUMING no lock for now. */
+
+    /* Note! We do not check any CPUMFEATURES::fSvm here as we (GIM) generally
+             want all hypercalls regardless of instruction used, and if a
+             hypercall isn't handled by GIM or HMSvm will raise an #UD.
+             (NEM/win makes ASSUMPTIONS about this behavior.)  */
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmcall);
 }
 
@@ -436,6 +442,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_lidt, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmrun)
 {
     IEMOP_MNEMONIC(vmrun, "vmrun");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmrun);
 }
 #else
@@ -446,6 +453,12 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmrun);
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmmcall)
 {
     IEMOP_MNEMONIC(vmmcall, "vmmcall");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
+
+    /* Note! We do not check any CPUMFEATURES::fSvm here as we (GIM) generally
+             want all hypercalls regardless of instruction used, and if a
+             hypercall isn't handled by GIM or HMSvm will raise an #UD.
+             (NEM/win makes ASSUMPTIONS about this behavior.) */
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmmcall);
 }
 
@@ -454,6 +467,7 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_vmmcall)
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmload)
 {
     IEMOP_MNEMONIC(vmload, "vmload");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmload);
 }
 #else
@@ -466,6 +480,7 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmload);
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmsave)
 {
     IEMOP_MNEMONIC(vmsave, "vmsave");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmsave);
 }
 #else
@@ -478,6 +493,7 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmsave);
 FNIEMOP_DEF(iemOp_Grp7_Amd_stgi)
 {
     IEMOP_MNEMONIC(stgi, "stgi");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_stgi);
 }
 #else
@@ -490,6 +506,7 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_stgi);
 FNIEMOP_DEF(iemOp_Grp7_Amd_clgi)
 {
     IEMOP_MNEMONIC(clgi, "clgi");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_clgi);
 }
 #else
@@ -502,6 +519,7 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_clgi);
 FNIEMOP_DEF(iemOp_Grp7_Amd_invlpga)
 {
     IEMOP_MNEMONIC(invlpga, "invlpga");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_invlpga);
 }
 #else
@@ -514,6 +532,7 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_invlpga);
 FNIEMOP_DEF(iemOp_Grp7_Amd_skinit)
 {
     IEMOP_MNEMONIC(skinit, "skinit");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_skinit);
 }
 #else
