@@ -3553,8 +3553,9 @@
     </const>
     <const name="BaseFolder" value="25">
       <desc>Optional, may be unset by the API caller. If set (and
-        <link to="#SettingsFile"/> is not changed), defines the VM base folder
-        (taking the primary group into account if also set).</desc>
+        <link to="VirtualSystemDescriptionType_SettingsFile"/> is not changed),
+        defines the VM base folder (taking the primary group into account if
+        also set).</desc>
     </const>
     <const name="PrimaryGroup" value="26">
       <desc>Optional, empty by default and may be unset by the API caller.
