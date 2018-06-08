@@ -101,8 +101,7 @@ struct HostDnsMonitorProxy::Data
     Data(HostDnsMonitor *aMonitor, VirtualBox *aParent)
       : virtualbox(aParent),
         monitor(aMonitor),
-        info(NULL),
-        fModified(true)
+        info(NULL)
     {}
 
     ~Data()
@@ -117,7 +116,6 @@ struct HostDnsMonitorProxy::Data
     VirtualBox *virtualbox;
     HostDnsMonitor *monitor;
     HostDnsInformation *info;
-    bool fModified;
 };
 
 
@@ -328,10 +326,10 @@ VirtualBox *HostDnsMonitorProxy::getVirtualBox() const
 }
 
 
-void HostDnsMonitorProxy::notify() const
+void HostDnsMonitorProxy::notify()
 {
     LogRel(("HostDnsMonitorProxy::notify\n"));
-    m->fModified = true;
+    updateInfo();
     m->virtualbox->i_onHostNameResolutionConfigurationChange();
 }
 
@@ -339,9 +337,6 @@ HRESULT HostDnsMonitorProxy::GetNameServers(std::vector<com::Utf8Str> &aNameServ
 {
     AssertReturn(m && m->info, E_FAIL);
     RTCLock grab(m_LockMtx);
-
-    if (m->fModified)
-        updateInfo();
 
     LogRel(("HostDnsMonitorProxy::GetNameServers:\n"));
     dumpHostDnsStrVector("name server", m->info->servers);
@@ -356,9 +351,6 @@ HRESULT HostDnsMonitorProxy::GetDomainName(com::Utf8Str *pDomainName)
     AssertReturn(m && m->info, E_FAIL);
     RTCLock grab(m_LockMtx);
 
-    if (m->fModified)
-        updateInfo();
-
     LogRel(("HostDnsMonitorProxy::GetDomainName: %s\n",
             m->info->domain.empty() ? "no domain set" : m->info->domain.c_str()));
 
@@ -371,9 +363,6 @@ HRESULT HostDnsMonitorProxy::GetSearchStrings(std::vector<com::Utf8Str> &aSearch
 {
     AssertReturn(m && m->info, E_FAIL);
     RTCLock grab(m_LockMtx);
-
-    if (m->fModified)
-        updateInfo();
 
     LogRel(("HostDnsMonitorProxy::GetSearchStrings:\n"));
     dumpHostDnsStrVector("search string", m->info->searchList);
@@ -396,6 +385,8 @@ bool HostDnsMonitorProxy::operator==(PCHostDnsMonitorProxy& rhs)
 
 void HostDnsMonitorProxy::updateInfo()
 {
+    RTCLock grab(m_LockMtx);
+
     HostDnsInformation *info = new HostDnsInformation(m->monitor->getInfo());
     HostDnsInformation *old = m->info;
 
@@ -404,8 +395,6 @@ void HostDnsMonitorProxy::updateInfo()
     {
         delete old;
     }
-
-    m->fModified = false;
 }
 
 

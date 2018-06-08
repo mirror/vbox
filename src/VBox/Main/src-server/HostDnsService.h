@@ -95,7 +95,7 @@ class HostDnsMonitorProxy
     HostDnsMonitorProxy();
     ~HostDnsMonitorProxy();
     void init(VirtualBox *virtualbox);
-    void notify() const;
+    void notify();
 
     VirtualBox *getVirtualBox() const;
 
