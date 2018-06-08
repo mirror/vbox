@@ -103,8 +103,6 @@ class HostDnsMonitorProxy
     HRESULT GetDomainName(com::Utf8Str *pDomainName);
     HRESULT GetSearchStrings(std::vector<com::Utf8Str> &aSearchStrings);
 
-    bool operator==(PCHostDnsMonitorProxy&);
-
     private:
     void updateInfo();
 

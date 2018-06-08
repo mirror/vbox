@@ -372,17 +372,6 @@ HRESULT HostDnsMonitorProxy::GetSearchStrings(std::vector<com::Utf8Str> &aSearch
     return S_OK;
 }
 
-bool HostDnsMonitorProxy::operator==(PCHostDnsMonitorProxy& rhs)
-{
-    if (!m || !rhs->m)
-        return false;
-
-    /**
-     * we've assigned to the same instance of VirtualBox.
-     */
-    return m->virtualbox == rhs->m->virtualbox;
-}
-
 void HostDnsMonitorProxy::updateInfo()
 {
     RTCLock grab(m_LockMtx);
