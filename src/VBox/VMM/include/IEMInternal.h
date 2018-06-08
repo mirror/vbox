@@ -807,11 +807,14 @@ typedef IEMCPU const *PCIEMCPU;
  * @param   a_fExtrnImport  The mask of CPUMCTX_EXTRN_XXX flags to import.
  */
 #define IEM_CTX_IMPORT_RET(a_pVCpu, a_pCtx, a_fExtrnImport) \
-    if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
-    { /* likely */ } \
-    else do {  \
-        int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
-        AssertRCReturn(rcCtxImport, rcCtxImport); \
+    do { \
+        if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+        { /* likely */ } \
+        else \
+        { \
+            int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
+            AssertRCReturn(rcCtxImport, rcCtxImport); \
+        } \
     } while (0)
 
 /** @def IEM_CTX_IMPORT_NORET
@@ -824,11 +827,14 @@ typedef IEMCPU const *PCIEMCPU;
  * @param   a_fExtrnImport  The mask of CPUMCTX_EXTRN_XXX flags to import.
  */
 #define IEM_CTX_IMPORT_NORET(a_pVCpu, a_pCtx, a_fExtrnImport) \
-    if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
-    { /* likely */ } \
-    else do {  \
-        int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
-        AssertLogRelRC(rcCtxImport); \
+    do { \
+        if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+        { /* likely */ } \
+        else \
+        { \
+            int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
+            AssertLogRelRC(rcCtxImport); \
+        } \
     } while (0)
 
 /** @def IEM_CTX_IMPORT_JMP
@@ -843,11 +849,14 @@ typedef IEMCPU const *PCIEMCPU;
  * @param   a_fExtrnImport  The mask of CPUMCTX_EXTRN_XXX flags to import.
  */
 #define IEM_CTX_IMPORT_JMP(a_pVCpu, a_pCtx, a_fExtrnImport) \
-    if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
-    { /* likely */ } \
-    else do {  \
-        int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
-        AssertRCStmt(rcCtxImport, longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), rcCtxImport)); \
+    do { \
+        if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+        { /* likely */ } \
+        else \
+        { \
+            int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
+            AssertRCStmt(rcCtxImport, longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), rcCtxImport)); \
+        } \
     } while (0)
 
 int iemCtxImport(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fExtrnImport);
