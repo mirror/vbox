@@ -3114,6 +3114,8 @@ VMM_INT_DECL(void) APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8Pendi
  * Updates pending interrupts from the pending-interrupt bitmaps to the IRR.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
+ *
+ * @note    NEM/win is ASSUMING the an up to date TPR is not required here.
  */
 VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
 {
