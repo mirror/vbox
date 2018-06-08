@@ -512,7 +512,8 @@ HRESULT NetworkAdapter::setBridgedInterface(const com::Utf8Str &aBridgedInterfac
     {
         /* if an empty/null string is to be set, bridged interface must be
          * turned off */
-        if (canonicalName.isEmpty()
+        if (   canonicalName.isEmpty()
+            && mData->fEnabled
             && mData->mode == NetworkAttachmentType_Bridged)
         {
             return setError(E_FAIL,
@@ -559,8 +560,9 @@ HRESULT NetworkAdapter::setHostOnlyInterface(const com::Utf8Str &aHostOnlyInterf
     {
         /* if an empty/null string is to be set, host only interface must be
          * turned off */
-        if ( aHostOnlyInterface.isEmpty()
-             && mData->mode == NetworkAttachmentType_HostOnly)
+        if (   aHostOnlyInterface.isEmpty()
+            && mData->fEnabled
+            && mData->mode == NetworkAttachmentType_HostOnly)
         {
             return setError(E_FAIL,
                             tr("Empty or null host only interface name is not valid"));
@@ -607,7 +609,9 @@ HRESULT NetworkAdapter::setInternalNetwork(const com::Utf8Str &aInternalNetwork)
     {
         /* if an empty/null string is to be set, internal networking must be
          * turned off */
-        if (aInternalNetwork.isEmpty() && mData->mode == NetworkAttachmentType_Internal)
+        if (   aInternalNetwork.isEmpty()
+            && mData->fEnabled
+            && mData->mode == NetworkAttachmentType_Internal)
         {
             return setError(E_FAIL,
                             tr("Empty or null internal network name is not valid"));
@@ -653,7 +657,8 @@ HRESULT NetworkAdapter::setNATNetwork(const com::Utf8Str &aNATNetwork)
     {
         /* if an empty/null string is to be set, host only interface must be
          * turned off */
-        if (aNATNetwork.isEmpty()
+        if (   aNATNetwork.isEmpty()
+            && mData->fEnabled
             && mData->mode == NetworkAttachmentType_NATNetwork)
             return setError(E_FAIL,
                             tr("Empty or null NAT network name is not valid"));
