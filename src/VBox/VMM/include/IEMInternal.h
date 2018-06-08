@@ -788,6 +788,71 @@ typedef IEMCPU const *PCIEMCPU;
 # define IEM_GET_CTX(a_pVCpu)           ((a_pVCpu)->iem.s.CTX_SUFF(pCtx))
 #endif
 
+/** @def IEM_CTX_ASSERT
+ * Asserts that the @a a_fExtrnMbz is present in the CPU context.
+ * @param   a_pCtx          The CPUMCTX structure.
+ * @param   a_fExtrnMbz     The mask of CPUMCTX_EXTRN_XXX flags that must be zero.
+ */
+#define IEM_CTX_ASSERT(a_pCtx, a_fExtrnMbz)     Assert(!((a_pCtx)->fExtrn & (a_fExtrnMbz)))
+
+/** @def IEM_CTX_IMPORT_RET
+ * Makes sure the CPU context bits given by @a a_fExtrnImport are imported.
+ *
+ * Will call the keep to import the bits as needed.
+ *
+ * Returns on import failure.
+ *
+ * @param   a_pVCpu         The cross context virtual CPU structure.
+ * @param   a_pCtx          The CPUMCTX structure.
+ * @param   a_fExtrnImport  The mask of CPUMCTX_EXTRN_XXX flags to import.
+ */
+#define IEM_CTX_IMPORT_RET(a_pVCpu, a_pCtx, a_fExtrnImport) \
+    if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+    { /* likely */ } \
+    else do {  \
+        int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
+        AssertRCReturn(rcCtxImport, rcCtxImport); \
+    } while (0)
+
+/** @def IEM_CTX_IMPORT_NORET
+ * Makes sure the CPU context bits given by @a a_fExtrnImport are imported.
+ *
+ * Will call the keep to import the bits as needed.
+ *
+ * @param   a_pVCpu         The cross context virtual CPU structure.
+ * @param   a_pCtx          The CPUMCTX structure.
+ * @param   a_fExtrnImport  The mask of CPUMCTX_EXTRN_XXX flags to import.
+ */
+#define IEM_CTX_IMPORT_NORET(a_pVCpu, a_pCtx, a_fExtrnImport) \
+    if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+    { /* likely */ } \
+    else do {  \
+        int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
+        AssertLogRelRC(rcCtxImport); \
+    } while (0)
+
+/** @def IEM_CTX_IMPORT_JMP
+ * Makes sure the CPU context bits given by @a a_fExtrnImport are imported.
+ *
+ * Will call the keep to import the bits as needed.
+ *
+ * Jumps on import failure.
+ *
+ * @param   a_pVCpu         The cross context virtual CPU structure.
+ * @param   a_pCtx          The CPUMCTX structure.
+ * @param   a_fExtrnImport  The mask of CPUMCTX_EXTRN_XXX flags to import.
+ */
+#define IEM_CTX_IMPORT_JMP(a_pVCpu, a_pCtx, a_fExtrnImport) \
+    if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+    { /* likely */ } \
+    else do {  \
+        int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
+        AssertRCStmt(rcCtxImport, longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), rcCtxImport)); \
+    } while (0)
+
+int iemCtxImport(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fExtrnImport);
+
+
 /** Gets the current IEMTARGETCPU value.
  * @returns IEMTARGETCPU value.
  * @param   a_pVCpu The cross context virtual CPU structure of the calling thread.

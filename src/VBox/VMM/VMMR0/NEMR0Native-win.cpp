@@ -830,11 +830,13 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             iReg++;
         }
     }
-    /** @todo CR8/TPR */
-    HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
-    pInput->Elements[iReg].Name                 = HvX64RegisterCr8;
-    pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestCR8(pVCpu);
-    iReg++;
+    if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
+    {
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterCr8;
+        pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestCR8(pVCpu);
+        iReg++;
+    }
 
     /** @todo does HvX64RegisterXfem mean XCR0? What about the related MSR. */
 
@@ -1388,7 +1390,8 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         if (fWhat & CPUMCTX_EXTRN_CR4)
             pInput->Names[iReg++] = HvX64RegisterCr4;
     }
-    pInput->Names[iReg++] = HvX64RegisterCr8; /// @todo CR8/TPR
+    if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
+        pInput->Names[iReg++] = HvX64RegisterCr8;
 
     /* Debug registers. */
     if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
@@ -1729,11 +1732,12 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             iReg++;
         }
     }
-
-    /// @todo CR8/TPR
-    Assert(pInput->Names[iReg] == HvX64RegisterCr8);
-    APICSetTpr(pVCpu, (uint8_t)paValues[iReg].Reg64 << 4);
-    iReg++;
+    if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
+    {
+        Assert(pInput->Names[iReg] == HvX64RegisterCr8);
+        APICSetTpr(pVCpu, (uint8_t)paValues[iReg].Reg64 << 4);
+        iReg++;
+    }
 
     /* Debug registers. */
 /** @todo fixme */

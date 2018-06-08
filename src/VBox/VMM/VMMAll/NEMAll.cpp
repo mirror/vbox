@@ -121,3 +121,12 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS
 #endif
 }
 
+
+#ifndef VBOX_WITH_NATIVE_NEM
+VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
+{
+    RT_NOREF(pVCpu, pCtx, fWhat);
+    return VERR_NEM_IPE_9;
+}
+#endif
+

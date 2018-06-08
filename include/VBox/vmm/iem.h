@@ -176,6 +176,28 @@ typedef uint8_t IEMMODE;
 /** @} */
 
 
+/** The CPUMCTX_EXTRN_XXX mask required to be cleared when interpreting anything.
+ * IEM will ASSUME the caller of IEM APIs has ensured these are already present. */
+#define IEM_CPUMCTX_EXTRN_MUST_MASK    (  CPUMCTX_EXTRN_GPRS_MASK \
+                                        | CPUMCTX_EXTRN_RIP \
+                                        | CPUMCTX_EXTRN_RFLAGS \
+                                        | CPUMCTX_EXTRN_SS \
+                                        | CPUMCTX_EXTRN_CS \
+                                        | CPUMCTX_EXTRN_CR0 \
+                                        | CPUMCTX_EXTRN_CR3 \
+                                        | CPUMCTX_EXTRN_CR4 \
+                                        | CPUMCTX_EXTRN_APIC_TPR \
+                                        | CPUMCTX_EXTRN_EFER \
+                                        | CPUMCTX_EXTRN_DR7 )
+/** The CPUMCTX_EXTRN_XXX mask needed when injecting an exception/interrupt.
+ * IEM will import missing bits, callers are encouraged to make these registers
+ * available prior to injection calls if fetching state anyway.  */
+#define IEM_CPUMCTX_EXTRN_XCPT_MASK    (  IEM_CPUMCTX_EXTRN_MUST_MASK \
+                                        | CPUMCTX_EXTRN_CR2 \
+                                        | CPUMCTX_EXTRN_SREG_MASK \
+                                        | CPUMCTX_EXTRN_TABLE_MASK )
+
+
 VMMDECL(VBOXSTRICTRC)       IEMExecOne(PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t *pcbWritten);
 VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint64_t OpcodeBytesPC,

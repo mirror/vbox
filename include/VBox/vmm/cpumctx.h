@@ -780,44 +780,53 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
 
 /** The RIP register value is kept externally. */
 #define CPUMCTX_EXTRN_RIP                       UINT64_C(0x0000000000000004)
-/** The CS register values are kept externally. */
-#define CPUMCTX_EXTRN_CS                        UINT64_C(0x0000000000000008)
 /** The RFLAGS register values are kept externally. */
-#define CPUMCTX_EXTRN_RFLAGS                    UINT64_C(0x0000000000000010)
+#define CPUMCTX_EXTRN_RFLAGS                    UINT64_C(0x0000000000000008)
 
 /** The RAX register value is kept externally. */
-#define CPUMCTX_EXTRN_RAX                       UINT64_C(0x0000000000000020)
+#define CPUMCTX_EXTRN_RAX                       UINT64_C(0x0000000000000010)
 /** The RCX register value is kept externally. */
-#define CPUMCTX_EXTRN_RCX                       UINT64_C(0x0000000000000040)
+#define CPUMCTX_EXTRN_RCX                       UINT64_C(0x0000000000000020)
 /** The RDX register value is kept externally. */
-#define CPUMCTX_EXTRN_RDX                       UINT64_C(0x0000000000000080)
+#define CPUMCTX_EXTRN_RDX                       UINT64_C(0x0000000000000040)
 /** The RBX register value is kept externally. */
-#define CPUMCTX_EXTRN_RBX                       UINT64_C(0x0000000000000100)
+#define CPUMCTX_EXTRN_RBX                       UINT64_C(0x0000000000000080)
 /** The RSP register value is kept externally. */
-#define CPUMCTX_EXTRN_RSP                       UINT64_C(0x0000000000000200)
+#define CPUMCTX_EXTRN_RSP                       UINT64_C(0x0000000000000100)
 /** The RBP register value is kept externally. */
-#define CPUMCTX_EXTRN_RBP                       UINT64_C(0x0000000000000400)
+#define CPUMCTX_EXTRN_RBP                       UINT64_C(0x0000000000000200)
 /** The RSI register value is kept externally. */
-#define CPUMCTX_EXTRN_RSI                       UINT64_C(0x0000000000000800)
+#define CPUMCTX_EXTRN_RSI                       UINT64_C(0x0000000000000400)
 /** The RDI register value is kept externally. */
-#define CPUMCTX_EXTRN_RDI                       UINT64_C(0x0000000000001000)
+#define CPUMCTX_EXTRN_RDI                       UINT64_C(0x0000000000000800)
 /** The R8 thru R15 register values are kept externally. */
-#define CPUMCTX_EXTRN_R8_R15                    UINT64_C(0x0000000000002000)
+#define CPUMCTX_EXTRN_R8_R15                    UINT64_C(0x0000000000001000)
 /** General purpose registers mask. */
-#define CPUMCTX_EXTRN_GPRS_MASK                 UINT64_C(0x0000000000003fe0)
+#define CPUMCTX_EXTRN_GPRS_MASK                 UINT64_C(0x0000000000001ff0)
 
-/** The SS register values are kept externally. */
-#define CPUMCTX_EXTRN_SS                        UINT64_C(0x0000000000004000)
-/** The DS register values are kept externally. */
-#define CPUMCTX_EXTRN_DS                        UINT64_C(0x0000000000008000)
 /** The ES register values are kept externally. */
-#define CPUMCTX_EXTRN_ES                        UINT64_C(0x0000000000010000)
+#define CPUMCTX_EXTRN_ES                        UINT64_C(0x0000000000002000)
+/** The CS register values are kept externally. */
+#define CPUMCTX_EXTRN_CS                        UINT64_C(0x0000000000004000)
+/** The SS register values are kept externally. */
+#define CPUMCTX_EXTRN_SS                        UINT64_C(0x0000000000008000)
+/** The DS register values are kept externally. */
+#define CPUMCTX_EXTRN_DS                        UINT64_C(0x0000000000010000)
 /** The FS register values are kept externally. */
 #define CPUMCTX_EXTRN_FS                        UINT64_C(0x0000000000020000)
 /** The GS register values are kept externally. */
 #define CPUMCTX_EXTRN_GS                        UINT64_C(0x0000000000040000)
 /** Segment registers (includes CS). */
-#define CPUMCTX_EXTRN_SREG_MASK                 UINT64_C(0x000000000007c008)
+#define CPUMCTX_EXTRN_SREG_MASK                 UINT64_C(0x000000000007e000)
+/** Converts a X86_XREG_XXX index to a CPUMCTX_EXTRN_xS mask. */
+#define CPUMCTX_EXTRN_SREG_FROM_IDX(a_SRegIdx)  RT_BIT_64((a_SRegIdx) + 13)
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_ES) == CPUMCTX_EXTRN_ES);
+AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_CS) == CPUMCTX_EXTRN_CS);
+AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_DS) == CPUMCTX_EXTRN_DS);
+AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_FS) == CPUMCTX_EXTRN_FS);
+AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
+#endif
 
 /** The GDTR register values are kept externally. */
 #define CPUMCTX_EXTRN_GDTR                      UINT64_C(0x0000000000080000)
@@ -840,41 +849,44 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
 #define CPUMCTX_EXTRN_CR4                       UINT64_C(0x0000000004000000)
 /** Control register mask. */
 #define CPUMCTX_EXTRN_CR_MASK                   UINT64_C(0x0000000007800000)
+/** The TPR/CR8 register value is kept externally. */
+#define CPUMCTX_EXTRN_APIC_TPR                  UINT64_C(0x0000000008000000)
 /** The EFER register value is kept externally. */
-#define CPUMCTX_EXTRN_EFER                      UINT64_C(0x0000000008000000)
+#define CPUMCTX_EXTRN_EFER                      UINT64_C(0x0000000010000000)
 
 /** The DR0, DR1, DR2 and DR3 register values are kept externally. */
-#define CPUMCTX_EXTRN_DR0_DR3                   UINT64_C(0x0000000010000000)
+#define CPUMCTX_EXTRN_DR0_DR3                   UINT64_C(0x0000000020000000)
 /** The DR6 register value is kept externally. */
-#define CPUMCTX_EXTRN_DR6                       UINT64_C(0x0000000020000000)
+#define CPUMCTX_EXTRN_DR6                       UINT64_C(0x0000000040000000)
 /** The DR7 register value is kept externally. */
-#define CPUMCTX_EXTRN_DR7                       UINT64_C(0x0000000040000000)
+#define CPUMCTX_EXTRN_DR7                       UINT64_C(0x0000000080000000)
 /** Debug register mask. */
-#define CPUMCTX_EXTRN_DR_MASK                   UINT64_C(0x0000000070000000)
+#define CPUMCTX_EXTRN_DR_MASK                   UINT64_C(0x00000000e0000000)
 
 /** The XSAVE_C_X87 state is kept externally. */
-#define CPUMCTX_EXTRN_X87                       UINT64_C(0x0000000080000000)
+#define CPUMCTX_EXTRN_X87                       UINT64_C(0x0000000100000000)
 /** The XSAVE_C_SSE, XSAVE_C_YMM, XSAVE_C_ZMM_HI256, XSAVE_C_ZMM_16HI and
  * XSAVE_C_OPMASK state is kept externally. */
-#define CPUMCTX_EXTRN_SSE_AVX                   UINT64_C(0x0000000100000000)
+#define CPUMCTX_EXTRN_SSE_AVX                   UINT64_C(0x0000000200000000)
 /** The state of XSAVE components not covered by CPUMCTX_EXTRN_X87 and
  * CPUMCTX_EXTRN_SEE_AVX is kept externally. */
-#define CPUMCTX_EXTRN_OTHER_XSAVE               UINT64_C(0x0000000200000000)
+#define CPUMCTX_EXTRN_OTHER_XSAVE               UINT64_C(0x0000000400000000)
 /** The state of XCR0 and XCR1 register values are kept externally. */
-#define CPUMCTX_EXTRN_XCRx                      UINT64_C(0x0000000400000000)
+#define CPUMCTX_EXTRN_XCRx                      UINT64_C(0x0000000800000000)
+
 
 /** The KERNEL GS BASE MSR value is kept externally. */
-#define CPUMCTX_EXTRN_KERNEL_GS_BASE            UINT64_C(0x0000000800000000)
+#define CPUMCTX_EXTRN_KERNEL_GS_BASE            UINT64_C(0x0000001000000000)
 /** The STAR, LSTAR, CSTAR and SFMASK MSR values are kept externally. */
-#define CPUMCTX_EXTRN_SYSCALL_MSRS              UINT64_C(0x0000001000000000)
+#define CPUMCTX_EXTRN_SYSCALL_MSRS              UINT64_C(0x0000002000000000)
 /** The SYSENTER_CS, SYSENTER_EIP and SYSENTER_ESP MSR values are kept externally. */
-#define CPUMCTX_EXTRN_SYSENTER_MSRS             UINT64_C(0x0000002000000000)
-/** The SYSENTER_CS, SYSENTER_EIP and SYSENTER_ESP MSR values are kept externally. */
-#define CPUMCTX_EXTRN_TSC_AUX                   UINT64_C(0x0000004000000000)
+#define CPUMCTX_EXTRN_SYSENTER_MSRS             UINT64_C(0x0000004000000000)
+/** The TSC_AUX MSR is kept externally. */
+#define CPUMCTX_EXTRN_TSC_AUX                   UINT64_C(0x0000008000000000)
 /** All other stateful MSRs not covered by CPUMCTX_EXTRN_EFER,
  * CPUMCTX_EXTRN_KERNEL_GS_BASE, CPUMCTX_EXTRN_SYSCALL_MSRS,
  * CPUMCTX_EXTRN_SYSENTER_MSRS, and CPUMCTX_EXTRN_TSC_AUX.  */
-#define CPUMCTX_EXTRN_OTHER_MSRS                UINT64_C(0x0000008000000000)
+#define CPUMCTX_EXTRN_OTHER_MSRS                UINT64_C(0x0000010000000000)
 
 /** Mask of all the MSRs. */
 #define CPUMCTX_EXTRN_ALL_MSRS                  (  CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS \

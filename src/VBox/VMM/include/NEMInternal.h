@@ -79,7 +79,10 @@ typedef struct NEMWINIOCTL
     ( ((RTGCPHYS)((a_GCPhys) - _1M) < (RTGCPHYS)_64K) || ((RTGCPHYS)(a_GCPhys) < (RTGCPHYS)_64K) )
 
 /** The CPUMCTX_EXTRN_XXX mask for IEM. */
-# define NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM     (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI)
+# define NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM      (  IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT \
+                                                  | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI )
+/** The CPUMCTX_EXTRN_XXX mask for IEM when raising exceptions. */
+# define NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT (IEM_CPUMCTX_EXTRN_XCPT_MASK | NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM)
 
 /** @name Windows: Interrupt window flags (NEM_WIN_INTW_F_XXX).
  * @{  */
@@ -260,12 +263,14 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatGetMsgTimeout;
     STAMCOUNTER                 StatStopCpuSuccess;
     STAMCOUNTER                 StatStopCpuPending;
+    STAMCOUNTER                 StatStopCpuPendingOdd;
     STAMCOUNTER                 StatCancelChangedState;
     STAMCOUNTER                 StatCancelAlertedThread;
     STAMCOUNTER                 StatBreakOnCancel;
     STAMCOUNTER                 StatBreakOnFFPre;
     STAMCOUNTER                 StatBreakOnFFPost;
     STAMCOUNTER                 StatBreakOnStatus;
+    STAMCOUNTER                 StatImportOnDemand;
     /** @} */
 #endif /* RT_OS_WINDOWS */
 } NEMCPU;
