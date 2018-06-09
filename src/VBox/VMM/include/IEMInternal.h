@@ -812,7 +812,7 @@ typedef IEMCPU const *PCIEMCPU;
         { /* likely */ } \
         else \
         { \
-            int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
+            int rcCtxImport = CPUMImportGuestStateOnDemand(a_pVCpu, a_fExtrnImport); \
             AssertRCReturn(rcCtxImport, rcCtxImport); \
         } \
     } while (0)
@@ -832,7 +832,7 @@ typedef IEMCPU const *PCIEMCPU;
         { /* likely */ } \
         else \
         { \
-            int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
+            int rcCtxImport = CPUMImportGuestStateOnDemand(a_pVCpu, a_fExtrnImport); \
             AssertLogRelRC(rcCtxImport); \
         } \
     } while (0)
@@ -854,12 +854,11 @@ typedef IEMCPU const *PCIEMCPU;
         { /* likely */ } \
         else \
         { \
-            int rcCtxImport = iemCtxImport(a_pVCpu, a_pCtx, a_fExtrnImport); \
+            int rcCtxImport = CPUMImportGuestStateOnDemand(a_pVCpu, a_fExtrnImport); \
             AssertRCStmt(rcCtxImport, longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), rcCtxImport)); \
         } \
     } while (0)
 
-int iemCtxImport(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fExtrnImport);
 
 
 /** Gets the current IEMTARGETCPU value.

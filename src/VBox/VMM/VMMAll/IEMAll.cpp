@@ -13893,40 +13893,6 @@ IEM_STATIC RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPU pVCpu, uint8_t bRm, uint8_t c
 }
 #endif /* IEM_WITH_SETJMP */
 
-
-/**
- * Used to dynamically imports state residing in NEM or HM.
- *
- * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
- * @param   pCtx            The CPU context structure.
- * @param   fExtrnImport    The fields to import.
- */
-int iemCtxImport(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fExtrnImport)
-{
-    switch (pCtx->fExtrn & CPUMCTX_EXTRN_KEEPER_MASK)
-    {
-#ifndef IN_RC
-        case CPUMCTX_EXTRN_KEEPER_NEM:
-        {
-            int rc = NEMImportStateOnDemand(pVCpu, pCtx, fExtrnImport);
-            Assert(rc == VINF_SUCCESS || RT_FAILURE_NP(rc));
-            return rc;
-        }
-
-        case CPUMCTX_EXTRN_KEEPER_HM: /** @todo make HM use CPUMCTX_EXTRN_XXX. */
-#endif
-
-        default:
-            AssertLogRelMsgFailed(("%RX64\n", fExtrnImport));
-#ifdef IN_RC
-            RT_NOREF_PV(pVCpu); RT_NOREF_PV(fExtrnImport);
-#endif
-            return VERR_IEM_IPE_9;
-    }
-}
-
-
 /** @}  */
 
 

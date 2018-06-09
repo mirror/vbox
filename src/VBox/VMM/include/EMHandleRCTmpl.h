@@ -45,6 +45,8 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 #endif
 {
+    NOREF(pCtx);
+
     switch (rc)
     {
         /*
@@ -110,9 +112,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VERR_EM_RAW_PATCH_CONFLICT:
             AssertReleaseMsgFailed(("%Rrc handling is not yet implemented\n", rc));
             break;
-#endif /* EMHANDLERC_WITH_PATM */
 
-#ifdef EMHANDLERC_WITH_PATM
         /*
          * Memory mapped I/O access - attempt to patch the instruction
          */
@@ -165,6 +165,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          * Paging mode change.
          */
         case VINF_PGM_CHANGE_MODE:
+            CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
             rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
             if (rc == VINF_SUCCESS)
                 rc = VINF_EM_RESCHEDULE;
@@ -239,44 +240,8 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          * GIM hypercall.
          */
         case VINF_GIM_R3_HYPERCALL:
-        {
-            /*
-             * Currently hypercall instruction (vmmcall) emulation is compiled and
-             * implemented only when nested hw. virt feature is enabled in IEM.
-             *
-             * On Intel or when nested hardware virtualization support isn't compiled
-             * we still need to implement hypercalls rather than throw a #UD.
-             */
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-            if (pVM->cpum.ro.GuestFeatures.fSvm)
-            {
-                rc = emR3ExecuteInstruction(pVM, pVCpu, "Hypercall");
-                break;
-            }
-#endif
-            /** @todo IEM/REM need to handle VMCALL/VMMCALL, see
-             *        @bugref{7270#c168}. */
-            uint8_t cbInstr = 0;
-            VBOXSTRICTRC rcStrict = GIMExecHypercallInstr(pVCpu, pCtx, &cbInstr);
-            if (rcStrict == VINF_SUCCESS)
-            {
-                Assert(cbInstr);
-                pCtx->rip += cbInstr;
-                /* Update interrupt inhibition. */
-                if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-                    && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
-                    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-                rc = VINF_SUCCESS;
-            }
-            else if (rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
-                rc = VINF_SUCCESS;
-            else
-            {
-                Assert(rcStrict != VINF_GIM_R3_HYPERCALL);
-                rc = VBOXSTRICTRC_VAL(rcStrict);
-            }
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "Hypercall");
             break;
-        }
 
 #ifdef EMHANDLERC_WITH_HM
         /*
@@ -307,9 +272,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
             rc = emR3ExecuteInstruction(pVM, pVCpu, "TSS FAULT: ");
             break;
-#endif
 
-#ifdef EMHANDLERC_WITH_PATM
         case VINF_PATM_PENDING_IRQ_AFTER_IRET:
             rc = emR3ExecuteInstruction(pVM, pVCpu, "EMUL: ", VINF_PATM_PENDING_IRQ_AFTER_IRET);
             break;
@@ -323,6 +286,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             break;
 
         case VINF_EM_RAW_INJECT_TRPM_EVENT:
+            CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_XCPT_MASK);
             rc = VBOXSTRICTRC_VAL(IEMInjectTrpmEvent(pVCpu));
             /* The following condition should be removed when IEM_IMPLEMENTS_TASKSWITCH becomes true. */
             if (rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED)

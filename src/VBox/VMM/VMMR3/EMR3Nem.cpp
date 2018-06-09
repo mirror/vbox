@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_EM
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/csam.h>
@@ -73,7 +74,7 @@ static int      emR3NemForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 
 /**
- * Executes instruction in HM mode if we can.
+ * Executes instruction in NEM mode if we can.
  *
  * This is somewhat comparable to REMR3EmulateInstruction.
  *
@@ -89,13 +90,13 @@ static int      emR3NemForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  */
 VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 {
-    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
+    Assert(pVCpu->em.s.pCtx == &pVCpu->cpum.GstCtx);
     Assert(!(fFlags & ~EM_ONE_INS_FLAGS_MASK));
 
-    if (!NEMR3CanExecuteGuest(pVM, pVCpu, pCtx))
+    if (!NEMR3CanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
         return VINF_EM_RESCHEDULE;
 
-    uint64_t const uOldRip = pCtx->rip;
+    uint64_t const uOldRip = pVCpu->cpum.GstCtx.rip;
     for (;;)
     {
         /*
@@ -104,7 +105,7 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
             || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-            VBOXSTRICTRC rcStrict = emR3NemForcedActions(pVM, pVCpu, pCtx);
+            VBOXSTRICTRC rcStrict = emR3NemForcedActions(pVM, pVCpu, &pVCpu->cpum.GstCtx);
             if (rcStrict != VINF_SUCCESS)
             {
                 Log(("emR3NemSingleInstruction: FFs before -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -128,26 +129,29 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
             || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
         {
-            rcStrict = emR3HighPriorityPostForcedActions(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict));
+            rcStrict = emR3HighPriorityPostForcedActions(pVM, pVCpu, rcStrict);
             LogFlow(("emR3NemSingleInstruction: FFs after -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         }
 
         if (rcStrict != VINF_SUCCESS && (rcStrict < VINF_EM_FIRST || rcStrict > VINF_EM_LAST))
         {
-            rcStrict = emR3NemHandleRC(pVM, pVCpu, pCtx, VBOXSTRICTRC_TODO(rcStrict));
+            rcStrict = emR3NemHandleRC(pVM, pVCpu, &pVCpu->cpum.GstCtx, VBOXSTRICTRC_TODO(rcStrict));
             Log(("emR3NemSingleInstruction: emR3NemHandleRC -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         }
 
         /*
          * Done?
          */
+        CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP);
         if (   (rcStrict != VINF_SUCCESS && rcStrict != VINF_EM_DBG_STEPPED)
             || !(fFlags & EM_ONE_INS_FLAGS_RIP_CHANGE)
-            || pCtx->rip != uOldRip)
+            || pVCpu->cpum.GstCtx.rip != uOldRip)
         {
-            if (rcStrict == VINF_SUCCESS && pCtx->rip != uOldRip)
+            if (rcStrict == VINF_SUCCESS && pVCpu->cpum.GstCtx.rip != uOldRip)
                 rcStrict = VINF_EM_DBG_STEPPED;
-            Log(("emR3NemSingleInstruction: returns %Rrc (rip %llx -> %llx)\n", VBOXSTRICTRC_VAL(rcStrict), uOldRip, pCtx->rip));
+            Log(("emR3NemSingleInstruction: returns %Rrc (rip %llx -> %llx)\n",
+                 VBOXSTRICTRC_VAL(rcStrict), uOldRip, pVCpu->cpum.GstCtx.rip));
+            CPUM_IMPORT_EXTRN_RET(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK);
             return rcStrict;
         }
     }
@@ -171,7 +175,7 @@ static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC, cons
 static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
 #endif
 {
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED)
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 #endif
     int      rc;
@@ -194,6 +198,7 @@ static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
      * Once IEM gets mature enough, nothing should ever fall back.
      */
     STAM_PROFILE_START(&pVCpu->em.s.StatIEMEmu, a);
+    CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
     rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu));
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIEMEmu, a);
 
@@ -202,6 +207,7 @@ static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     {
 #ifdef VBOX_WITH_REM
         STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, b);
+        CPUM_IMPORT_EXTRN_RET(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK);
         EMRemLock(pVM);
         /* Flush the recompiler TLB if the VCPU has changed. */
         if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
@@ -215,11 +221,6 @@ static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
         NOREF(pVM);
 #endif /* !VBOX_WITH_REM */
     }
-
-#ifdef EM_NOTIFY_HM
-    if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
-        HMR3NotifyEmulated(pVCpu);
-#endif
     return rc;
 }
 
@@ -277,6 +278,7 @@ static int emR3NemExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     /*
      * Hand it over to the interpreter.
      */
+    CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
     VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
     LogFlow(("emR3NemExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoIem);
@@ -442,9 +444,9 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Deal with high priority post execution FFs before doing anything else.
          */
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
-        if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
-            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
-            rcStrict = emR3HighPriorityPostForcedActions(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict));
+        if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
+            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+            rcStrict = emR3HighPriorityPostForcedActions(pVM, pVCpu, rcStrict);
 
         /*
          * Process the returned status code.
@@ -477,8 +479,16 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     }
 
     /*
-     * Return to outer loop.
+     * Return to outer loop, making sure the fetch all state as we leave.
+     *
+     * Note! Not using CPUM_IMPORT_EXTRN_RET here, to prioritize an rcStrict error
+     *       status over import errors.
      */
+    if (pCtx->fExtrn)
+    {
+        int rcImport = NEMImportStateOnDemand(pVCpu, pCtx, pCtx->fExtrn);
+        AssertReturn(RT_SUCCESS(rcImport) || RT_FAILURE_NP(rcStrict), rcImport);
+    }
 #if defined(LOG_ENABLED) && defined(DEBUG)
     RTLogFlush(NULL);
 #endif

@@ -36,6 +36,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_EM
+#define VMCPU_INCL_CPUM_GST_CTX /* for CPUM_IMPORT_GUEST_STATE_RET */
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/patm.h>
@@ -94,7 +95,6 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc);
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu);
 #endif
 static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
-int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
 
 
 /**
@@ -1197,7 +1197,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_WITH_REM
             fInREMState = emR3RemExecuteSyncBack(pVM, pVCpu);
 #endif
-            rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
+            rc = VBOXSTRICTRC_TODO(emR3HighPriorityPostForcedActions(pVM, pVCpu, rc));
         }
 
         /*
@@ -1609,13 +1609,14 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 /**
  * Executes all high priority post execution force actions.
  *
- * @returns rc or a fatal status code.
+ * @returns Strict VBox status code.  Typically @a rc, but may be upgraded to
+ *          fatal error status code.
  *
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   rc          The current rc.
+ * @param   rc          The current strict VBox status code rc.
  */
-int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
 {
     VBOXVMM_EM_FF_HIGH(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions, rc);
 
@@ -1625,6 +1626,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     /* Update CR3 (Nested Paging case for HM). */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
     {
+        CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER, rc);
         int rc2 = PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
         if (RT_FAILURE(rc2))
             return rc2;
@@ -1634,6 +1636,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     /* Update PAE PDPEs. This must be done *after* PGMUpdateCR3() and used only by the Nested Paging case for HM. */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
     {
+        CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER, rc);
         if (CPUMIsGuestInPAEMode(pVCpu))
         {
             PX86PDPE pPdpes = HMGetPaePdpes(pVCpu);
@@ -1648,11 +1651,11 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
     /* IEM has pending work (typically memory write after INS instruction). */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IEM))
-        rc = VBOXSTRICTRC_TODO(IEMR3ProcessForceFlag(pVM, pVCpu, rc));
+        rc = IEMR3ProcessForceFlag(pVM, pVCpu, rc);
 
     /* IOM has pending work (comitting an I/O or MMIO write). */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IOM))
-        rc = VBOXSTRICTRC_TODO(IOMR3ProcessForceFlag(pVM, pVCpu, rc));
+        rc = IOMR3ProcessForceFlag(pVM, pVCpu, rc);
 
 #ifdef VBOX_WITH_RAW_MODE
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
@@ -1828,6 +1831,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
         {
+            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
             /** @todo HACK ALERT! The following test is to make sure EM+TM
@@ -1875,6 +1879,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (   VM_FF_IS_PENDING(pVM, VM_FF_DBGF)
             || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_DBGF) )
         {
+            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = DBGFR3VMMForcedAction(pVM, pVCpu);
             UPDATE_RC();
         }
@@ -1884,6 +1889,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VM_FF_TEST_AND_CLEAR(pVM, VM_FF_RESET))
         {
+            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VBOXSTRICTRC_TODO(VMR3ResetFF(pVM));
             UPDATE_RC();
         }
@@ -1895,11 +1901,10 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
             &&  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE))
         {
-            PCPUMCTX pCtx = pVCpu->em.s.pCtx;
-
             /** @todo check for 16 or 32 bits code! (D bit in the code selector) */
             Log(("Forced action VMCPU_FF_CSAM_SCAN_PAGE\n"));
-
+            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
+            PCPUMCTX pCtx = pVCpu->em.s.pCtx;
             CSAMR3CheckCodeEx(pVM, pCtx, pCtx->eip);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE);
         }
@@ -1944,6 +1949,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
         {
+            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
             /** @todo HACK ALERT! The following test is to make sure EM+TM
@@ -1964,6 +1970,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_REQUEST, VM_FF_PGM_NO_MEMORY))
         {
+            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, false /*fPriorityOnly*/);
             if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE) /** @todo this shouldn't be necessary */
             {
@@ -2018,6 +2025,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
         {
+            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu, false /*fPriorityOnly*/);
             if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE || rc2 == VINF_EM_RESET)
             {
@@ -2078,6 +2086,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
+            CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP);
             if (CPUMGetGuestRIP(pVCpu) != EMGetInhibitInterruptsPC(pVCpu))
             {
                 Log(("Clearing VMCPU_FF_INHIBIT_INTERRUPTS at %RGv - successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVCpu)));
@@ -2107,9 +2116,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     if (fInject)
                     {
                         fWakeupPending = true;
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
                         rcIrq = rc2;
-#endif
+# endif
                     }
                     if (fResched)
                         UPDATE_RC();
@@ -2117,6 +2126,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 else
 #endif
                 {
+                    CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RFLAGS);
                     if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
                         && pCtx->hwvirt.fGif
@@ -2129,6 +2139,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
                         /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                         /** @todo this really isn't nice, should properly handle this */
+                        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_XCPT_MASK);
                         rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
                         Log(("EM: TRPMR3InjectEvent -> %d\n", rc2));
                         if (pVM->em.s.fIemExecutesAll && (   rc2 == VINF_EM_RESCHEDULE_REM
@@ -2164,6 +2175,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_DBGF) )
             && !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY) )
         {
+            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = DBGFR3VMMForcedAction(pVM, pVCpu);
             UPDATE_RC();
         }
@@ -2174,6 +2186,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (   !fWakeupPending /* don't miss the wakeup from EMSTATE_HALTED! */
             && VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
         {
+            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
             /** @todo HACK ALERT! The following test is to make sure EM+TM thinks the VM is

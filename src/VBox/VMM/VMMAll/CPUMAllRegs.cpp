@@ -27,6 +27,10 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
+#ifndef IN_RC
+# include <VBox/vmm/nem.h>
+# include <VBox/vmm/hm.h>
+#endif
 #if defined(VBOX_WITH_RAW_MODE) && !defined(IN_RING0)
 # include <VBox/vmm/selm.h>
 #endif
@@ -41,7 +45,7 @@
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
 #ifdef IN_RING3
-#include <iprt/thread.h>
+# include <iprt/thread.h>
 #endif
 
 /** Disable stack frame pointer generation here. */
@@ -972,24 +976,28 @@ VMMDECL(RTSEL) CPUMGetGuestLdtrEx(PVMCPU pVCpu, uint64_t *pGCPtrBase, uint32_t *
 
 VMMDECL(uint64_t) CPUMGetGuestCR0(PVMCPU pVCpu)
 {
+    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_CR0));
     return pVCpu->cpum.s.Guest.cr0;
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestCR2(PVMCPU pVCpu)
 {
+    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_CR2));
     return pVCpu->cpum.s.Guest.cr2;
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestCR3(PVMCPU pVCpu)
 {
+    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_CR3));
     return pVCpu->cpum.s.Guest.cr3;
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestCR4(PVMCPU pVCpu)
 {
+    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_CR4));
     return pVCpu->cpum.s.Guest.cr4;
 }
 
@@ -1012,12 +1020,14 @@ VMMDECL(void) CPUMGetGuestGDTR(PVMCPU pVCpu, PVBOXGDTR pGDTR)
 
 VMMDECL(uint32_t) CPUMGetGuestEIP(PVMCPU pVCpu)
 {
+    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_RIP));
     return pVCpu->cpum.s.Guest.eip;
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestRIP(PVMCPU pVCpu)
 {
+    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_RIP));
     return pVCpu->cpum.s.Guest.rip;
 }
 
@@ -2768,5 +2778,42 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTic
     RT_NOREF(pVCpu);
 #endif
     return uTicks;
+}
+
+
+/**
+ * Used to dynamically imports state residing in NEM or HM.
+ *
+ * This is a worker for the CPUM_IMPORT_EXTRN_RET() macro and various IEM ones.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   fExtrnImport    The fields to import.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImport)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+    if (pVCpu->cpum.s.Guest.fExtrn & fExtrnImport)
+    {
+#ifndef IN_RC
+        switch (pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_KEEPER_MASK)
+        {
+            case CPUMCTX_EXTRN_KEEPER_NEM:
+            {
+                int rc = NEMImportStateOnDemand(pVCpu, &pVCpu->cpum.s.Guest, fExtrnImport);
+                Assert(rc == VINF_SUCCESS || RT_FAILURE_NP(rc));
+                return rc;
+            }
+
+            case CPUMCTX_EXTRN_KEEPER_HM: /** @todo make HM use CPUMCTX_EXTRN_XXX. */
+            default:
+                AssertLogRelMsgFailedReturn(("%#RX64 vs %#RX64\n", pVCpu->cpum.s.Guest.fExtrn, fExtrnImport), VERR_CPUM_IPE_2);
+        }
+#else
+        AssertLogRelMsgFailedReturn(("%#RX64 vs %#RX64\n", pVCpu->cpum.s.Guest.fExtrn, fExtrnImport), VERR_CPUM_IPE_2);
+#endif
+    }
+    return VINF_SUCCESS;
 }
 

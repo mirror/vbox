@@ -1258,6 +1258,70 @@ VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr
 VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 /** @} */
 
+/** @name Externalized State Helpers.
+ * @{ */
+/** @def CPUM_ASSERT_NOT_EXTRN
+ * Macro for asserting that @a a_fNotExtrn are present.
+ *
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling EMT.
+ * @param   a_fNotExtrn     Mask of CPUMCTX_EXTRN_XXX bits to check.
+ *
+ * @remarks Requires VMCPU_INCL_CPUM_GST_CTX to be defined.
+ */
+#define CPUM_ASSERT_NOT_EXTRN(a_pVCpu, a_fNotExtrn) \
+    AssertMsg(!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fNotExtrn)), \
+              ("%#RX64; a_fNotExtrn=%#RX64\n", (a_pVCpu)->cpum.GstCtx.fExtrn, (a_fNotExtrn)))
+
+/** @def CPUM_IMPORT_EXTRN_RET
+ * Macro for making sure the state specified by @a fExtrnImport is present,
+ * calling CPUMImportGuestStateOnDemand() to get it if necessary.
+ *
+ * Will return if CPUMImportGuestStateOnDemand() fails.
+ *
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling EMT.
+ * @param   a_fExtrnImport  Mask of CPUMCTX_EXTRN_XXX bits to get.
+ * @thread  EMT(a_pVCpu)
+ *
+ * @remarks Requires VMCPU_INCL_CPUM_GST_CTX to be defined.
+ */
+#define CPUM_IMPORT_EXTRN_RET(a_pVCpu, a_fExtrnImport) \
+    do { \
+        if (!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnImport))) \
+        { /* already present, consider this likely */ } \
+        else \
+        { \
+            int rcCpumImport = CPUMImportGuestStateOnDemand(a_pVCpu, a_fExtrnImport); \
+            AssertRCReturn(rcCpumImport, rcCpumImport); \
+        } \
+    } while (0)
+
+/** @def CPUM_IMPORT_EXTRN_RC
+ * Macro for making sure the state specified by @a fExtrnImport is present,
+ * calling CPUMImportGuestStateOnDemand() to get it if necessary.
+ *
+ * Will update a_rcStrict if CPUMImportGuestStateOnDemand() fails.
+ *
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling EMT.
+ * @param   a_fExtrnImport  Mask of CPUMCTX_EXTRN_XXX bits to get.
+ * @param   a_rcStrict      Strict status code variable to update on failure.
+ * @thread  EMT(a_pVCpu)
+ *
+ * @remarks Requires VMCPU_INCL_CPUM_GST_CTX to be defined.
+ */
+#define CPUM_IMPORT_EXTRN_RCSTRICT(a_pVCpu, a_fExtrnImport, a_rcStrict) \
+    do { \
+        if (!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnImport))) \
+        { /* already present, consider this likely */ } \
+        else \
+        { \
+            int rcCpumImport = CPUMImportGuestStateOnDemand(a_pVCpu, a_fExtrnImport); \
+            AssertStmt(RT_SUCCESS(rcCpumImport) || RT_FAILURE_NP(a_rcStrict), a_rcStrict = rcCpumImport); \
+        } \
+    } while (0)
+
+VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImport);
+/** @} */
+
 #ifndef IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS
 
 /**

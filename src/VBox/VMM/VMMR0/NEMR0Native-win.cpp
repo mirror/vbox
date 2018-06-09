@@ -2134,6 +2134,8 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 
     /* Almost done, just update extrn flags and maybe change PGM mode. */
     pCtx->fExtrn &= ~fWhat;
+    if (!(pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT))))
+        pCtx->fExtrn = 0;
 
     /* Typical. */
     if (!fMaybeChangedMode && !fFlushTlb && !fUpdateApicBase)

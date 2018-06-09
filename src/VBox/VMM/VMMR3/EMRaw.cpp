@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_EM
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/patm.h>
@@ -139,7 +140,7 @@ int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
     /*
      * Deal with the return code.
      */
-    rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
+    rc = VBOXSTRICTRC_TODO(emR3HighPriorityPostForcedActions(pVM, pVCpu, rc));
     rc = emR3RawHandleRC(pVM, pVCpu, pCtx, rc);
     rc = emR3RawUpdateForceFlag(pVM, pVCpu, pCtx, rc);
     return rc;
@@ -219,7 +220,7 @@ int emR3RawStep(PVM pVM, PVMCPU pVCpu)
     /*
      * Deal with the return codes.
      */
-    rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
+    rc = VBOXSTRICTRC_TODO(emR3HighPriorityPostForcedActions(pVM, pVCpu, rc));
     rc = emR3RawHandleRC(pVM, pVCpu, pCtx, rc);
     rc = emR3RawUpdateForceFlag(pVM, pVCpu, pCtx, rc);
     return rc;
@@ -1425,7 +1426,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
         if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
             ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
-            rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
+            rc = VBOXSTRICTRC_TODO(emR3HighPriorityPostForcedActions(pVM, pVCpu, rc));
 
 #ifdef VBOX_STRICT
         /*

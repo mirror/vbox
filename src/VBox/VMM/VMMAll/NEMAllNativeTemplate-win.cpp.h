@@ -1038,6 +1038,8 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX 
 
     /* Almost done, just update extrn flags and maybe change PGM mode. */
     pCtx->fExtrn &= ~fWhat;
+    if (!(pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT))))
+        pCtx->fExtrn = 0;
 
     /* Typical. */
     if (!fMaybeChangedMode && !fFlushTlb)
@@ -1049,13 +1051,13 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, PCPUMCTX 
     if (fMaybeChangedMode)
     {
         int rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
-        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc));
+        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
     }
 
     if (fFlushTlb)
     {
         int rc = PGMFlushTLB(pVCpu, pCtx->cr3, fFlushGlobalTlb);
-        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc));
+        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
     }
 
     return VINF_SUCCESS;
@@ -1237,9 +1239,8 @@ NEM_TMPL_STATIC void nemHCWinLogState(PVM pVM, PVMCPU pVCpu)
 #endif /* LOG_ENABLED */
 
 
-#ifdef LOG_ENABLED
 /** Macro used by nemHCWinExecStateToLogStr and nemR3WinExecStateToLogStr. */
-# define SWITCH_IT(a_szPrefix) \
+#define SWITCH_IT(a_szPrefix) \
     do \
         switch (u)\
         { \
@@ -1255,7 +1256,7 @@ NEM_TMPL_STATIC void nemHCWinLogState(PVM pVM, PVMCPU pVCpu)
         } \
     while (0)
 
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
 /**
  * Translates the execution stat bitfield into a short log string, VID version.
  *
@@ -1274,7 +1275,7 @@ static const char *nemHCWinExecStateToLogStr(HV_X64_INTERCEPT_MESSAGE_HEADER con
     else
         SWITCH_IT("RM");
 }
-# elif defined(IN_RING3)
+#elif defined(IN_RING3)
 /**
  * Translates the execution stat bitfield into a short log string, WinHv version.
  *
@@ -1293,9 +1294,8 @@ static const char *nemR3WinExecStateToLogStr(WHV_VP_EXIT_CONTEXT const *pExitCtx
     else
         SWITCH_IT("RM");
 }
-# endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
-# undef SWITCH_IT
-#endif /* LOG_ENABLED */
+#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#undef SWITCH_IT
 
 
 #ifdef NEM_WIN_USE_OUR_OWN_RUN_API
@@ -2801,7 +2801,7 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
           pExit->VpException.ErrorCode, pExit->VpException.ExceptionParameter ));
     nemR3WinCopyStateFromExceptionMessage(pVCpu, pExit, pCtx, true /*fClearXcpt*/);
     uint64_t fWhat = NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM;
-    if (pMsg->ExceptionVector == X86_XCPT_DB)
+    if (pExit->VpException.ExceptionType == X86_XCPT_DB)
         fWhat |= CPUMCTX_EXTRN_DR0_DR3 | CPUMCTX_EXTRN_DR7 | CPUMCTX_EXTRN_DR6;
     VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL, pCtx, fWhat, "Xcpt");
     if (rcStrict != VINF_SUCCESS)
@@ -3669,7 +3669,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
 
     /*
      * If the CPU is running, make sure to stop it before we try sync back the
-     * state and return to EM.
+     * state and return to EM.  We don't sync back the whole state if we can help it.
      */
 # ifdef NEM_WIN_USE_OUR_OWN_RUN_API
     if (pVCpu->nem.s.fHandleAndGetFlags == VID_MSHAGN_F_GET_NEXT_MESSAGE)
@@ -3684,31 +3684,53 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
 
     if (pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT)))
     {
-# ifdef IN_RING0
-        int rc2 = nemR0WinImportState(pGVM, pGVCpu, pCtx, CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK);
-        if (RT_SUCCESS(rc2))
-            pCtx->fExtrn = 0;
-        else if (rc2 == VERR_NEM_CHANGE_PGM_MODE || rc2 == VERR_NEM_FLUSH_TLB || rc2 == VERR_NEM_UPDATE_APIC_BASE)
+        /* Try anticipate what we might need. */
+        uint64_t fImport = IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI;
+        if (   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
+            || RT_FAILURE(rcStrict))
+            fImport = CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
+        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_APIC
+                                          | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI))
+            fImport |= IEM_CPUMCTX_EXTRN_XCPT_MASK;
+        if (pCtx->fExtrn & fImport)
         {
-            pCtx->fExtrn = 0;
-            if (rcStrict == VINF_SUCCESS || rcStrict == -rc2)
-                rcStrict = -rc2;
-            else
+#ifdef IN_RING0
+            int rc2 = nemR0WinImportState(pGVM, pGVCpu, pCtx, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
+            if (RT_SUCCESS(rc2))
+                pCtx->fExtrn &= ~fImport;
+            else if (rc2 == VERR_NEM_CHANGE_PGM_MODE || rc2 == VERR_NEM_FLUSH_TLB || rc2 == VERR_NEM_UPDATE_APIC_BASE)
             {
-                pVCpu->nem.s.rcPending = -rc2;
-                LogFlow(("NEM/%u: rcPending=%Rrc (rcStrict=%Rrc)\n", pVCpu->idCpu, rc2, VBOXSTRICTRC_VAL(rcStrict) ));
+                pCtx->fExtrn &= ~fImport;
+                if (rcStrict == VINF_SUCCESS || rcStrict == -rc2)
+                    rcStrict = -rc2;
+                else
+                {
+                    pVCpu->nem.s.rcPending = -rc2;
+                    LogFlow(("NEM/%u: rcPending=%Rrc (rcStrict=%Rrc)\n", pVCpu->idCpu, rc2, VBOXSTRICTRC_VAL(rcStrict) ));
+                }
             }
-        }
 # else
-        int rc2 = nemHCWinCopyStateFromHyperV(pVM, pVCpu, pCtx, CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK);
-        if (RT_SUCCESS(rc2))
-            pCtx->fExtrn = 0;
+            int rc2 = nemHCWinCopyStateFromHyperV(pVM, pVCpu, pCtx, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
+            if (RT_SUCCESS(rc2))
+                pCtx->fExtrn &= ~fImport;
 # endif
-        else if (RT_SUCCESS(rcStrict))
-            rcStrict = rc2;
+            else if (RT_SUCCESS(rcStrict))
+                rcStrict = rc2;
+            if (!(pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT))))
+                pCtx->fExtrn = 0;
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturn);
+        }
+        else
+        {
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturnSkipped);
+            //pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
+        }
     }
     else
+    {
+        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturnSkipped);
         pCtx->fExtrn = 0;
+    }
 
     LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 => %Rrc\n",
              pVCpu->idCpu, pCtx->cs.Sel, pCtx->rip, pCtx->rflags, VBOXSTRICTRC_VAL(rcStrict) ));

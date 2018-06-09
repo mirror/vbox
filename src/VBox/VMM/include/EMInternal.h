@@ -473,7 +473,7 @@ int     emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
 
 EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 int     emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
-int     emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
+VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc);
 
 int     emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
 int     emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu);
