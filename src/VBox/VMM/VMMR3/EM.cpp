@@ -818,6 +818,99 @@ static const char *emR3GetStateName(EMSTATE enmState)
 
 
 /**
+ * Handle pending ring-3 I/O port write.
+ *
+ * This is in response to a VINF_EM_PENDING_R3_IOPORT_WRITE status code returned
+ * by EMRZSetPendingIoPortWrite() in ring-0 or raw-mode context.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM     The cross context VM structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+VBOXSTRICTRC emR3ExecutePendingIoPortWrite(PVM pVM, PVMCPU pVCpu)
+{
+    CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS);
+
+    /* Get and clear the pending data. */
+    RTIOPORT const uPort   = pVCpu->em.s.PendingIoPortAccess.uPort;
+    uint32_t const uValue  = pVCpu->em.s.PendingIoPortAccess.uValue;
+    uint8_t  const cbValue = pVCpu->em.s.PendingIoPortAccess.cbValue;
+    uint8_t  const cbInstr = pVCpu->em.s.PendingIoPortAccess.cbInstr;
+    pVCpu->em.s.PendingIoPortAccess.cbValue = 0;
+
+    /* Assert sanity. */
+    switch (cbValue)
+    {
+        case 1:     Assert(!(cbValue & UINT32_C(0xffffff00))); break;
+        case 2:     Assert(!(cbValue & UINT32_C(0xffff0000))); break;
+        case 4:     break;
+        default:    AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_EM_INTERNAL_ERROR);
+    }
+    AssertReturn(cbInstr <= 15 && cbInstr >= 1, VERR_EM_INTERNAL_ERROR);
+
+    /* Do the work.*/
+    VBOXSTRICTRC rcStrict = IOMIOPortWrite(pVM, pVCpu, uPort, uValue, cbValue);
+    LogFlow(("EM/OUT: %#x, %#x LB %u -> %Rrc\n", uPort, uValue, cbValue, VBOXSTRICTRC_VAL(rcStrict) ));
+    if (IOM_SUCCESS(rcStrict))
+    {
+        pVCpu->cpum.GstCtx.rip += cbInstr;
+        pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
+    }
+    return rcStrict;
+}
+
+
+/**
+ * Handle pending ring-3 I/O port write.
+ *
+ * This is in response to a VINF_EM_PENDING_R3_IOPORT_WRITE status code returned
+ * by EMRZSetPendingIoPortRead() in ring-0 or raw-mode context.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM     The cross context VM structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+VBOXSTRICTRC emR3ExecutePendingIoPortRead(PVM pVM, PVMCPU pVCpu)
+{
+    CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_RAX);
+
+    /* Get and clear the pending data. */
+    RTIOPORT const uPort   = pVCpu->em.s.PendingIoPortAccess.uPort;
+    uint8_t  const cbValue = pVCpu->em.s.PendingIoPortAccess.cbValue;
+    uint8_t  const cbInstr = pVCpu->em.s.PendingIoPortAccess.cbInstr;
+    pVCpu->em.s.PendingIoPortAccess.cbValue = 0;
+
+    /* Assert sanity. */
+    switch (cbValue)
+    {
+        case 1:     break;
+        case 2:     break;
+        case 4:     break;
+        default:    AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_EM_INTERNAL_ERROR);
+    }
+    AssertReturn(pVCpu->em.s.PendingIoPortAccess.uValue == UINT32_C(0x52454144) /* READ*/, VERR_EM_INTERNAL_ERROR);
+    AssertReturn(cbInstr <= 15 && cbInstr >= 1, VERR_EM_INTERNAL_ERROR);
+
+    /* Do the work.*/
+    uint32_t uValue = 0;
+    VBOXSTRICTRC rcStrict = IOMIOPortRead(pVM, pVCpu, uPort, &uValue, cbValue);
+    LogFlow(("EM/IN: %#x LB %u -> %Rrc, %#x\n", uPort, cbValue, VBOXSTRICTRC_VAL(rcStrict), uValue ));
+    if (IOM_SUCCESS(rcStrict))
+    {
+        if (cbValue == 4)
+            pVCpu->cpum.GstCtx.rax = uValue;
+        else if (cbValue == 2)
+            pVCpu->cpum.GstCtx.ax = (uint16_t)uValue;
+        else
+            pVCpu->cpum.GstCtx.al = (uint8_t)uValue;
+        pVCpu->cpum.GstCtx.rip += cbInstr;
+        pVCpu->cpum.GstCtx.rflags.Bits.u1RF = 0;
+    }
+    return rcStrict;
+}
+
+
+/**
  * Debug loop.
  *
  * @returns VBox status code for EM.

@@ -220,6 +220,16 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             break;
 
         /*
+         * Execute pending I/O Port access.
+         */
+        case VINF_EM_PENDING_R3_IOPORT_WRITE:
+            rc = emR3ExecutePendingIoPortWrite(pVM, pVCpu);
+            break;
+        case VINF_EM_PENDING_R3_IOPORT_READ:
+            rc = emR3ExecutePendingIoPortRead(pVM, pVCpu);
+            break;
+
+        /*
          * Memory mapped I/O access - emulate the instruction.
          */
         case VINF_IOM_R3_MMIO_READ:

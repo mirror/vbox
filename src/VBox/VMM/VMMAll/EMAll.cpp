@@ -349,6 +349,57 @@ VMM_INT_DECL(int) EMUnhaltAndWakeUp(PVM pVM, PVMCPU pVCpuDst)
     return rc;
 }
 
+#ifndef IN_RING3
+
+/**
+ * Makes an I/O port write pending for ring-3 processing.
+ *
+ * @returns VINF_EM_PENDING_R3_IOPORT_READ
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uPort           The I/O port.
+ * @param   cbInstr         The instruction length (for RIP updating).
+ * @param   cbValue         The write size.
+ * @param   uValue          The value being written.
+ * @sa      emR3ExecutePendingIoPortWrite
+ *
+ * @note    Must not be used when I/O port breakpoints are pending or when single stepping.
+ */
+VMMRZ_INT_DECL(VBOXSTRICTRC)
+EMRZSetPendingIoPortWrite(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t cbValue, uint32_t uValue)
+{
+    Assert(pVCpu->em.s.PendingIoPortAccess.cbValue == 0);
+    pVCpu->em.s.PendingIoPortAccess.uPort     = uPort;
+    pVCpu->em.s.PendingIoPortAccess.cbValue   = cbValue;
+    pVCpu->em.s.PendingIoPortAccess.cbInstr   = cbInstr;
+    pVCpu->em.s.PendingIoPortAccess.uValue    = uValue;
+    return VINF_EM_PENDING_R3_IOPORT_WRITE;
+}
+
+
+/**
+ * Makes an I/O port read pending for ring-3 processing.
+ *
+ * @returns VINF_EM_PENDING_R3_IOPORT_READ
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uPort           The I/O port.
+ * @param   cbInstr         The instruction length (for RIP updating).
+ * @param   cbValue         The read size.
+ * @sa      emR3ExecutePendingIoPortRead
+ *
+ * @note    Must not be used when I/O port breakpoints are pending or when single stepping.
+ */
+VMMRZ_INT_DECL(VBOXSTRICTRC)
+EMRZSetPendingIoPortRead(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t cbValue)
+{
+    Assert(pVCpu->em.s.PendingIoPortAccess.cbValue == 0);
+    pVCpu->em.s.PendingIoPortAccess.uPort     = uPort;
+    pVCpu->em.s.PendingIoPortAccess.cbValue   = cbValue;
+    pVCpu->em.s.PendingIoPortAccess.cbInstr   = cbInstr;
+    pVCpu->em.s.PendingIoPortAccess.uValue    = UINT32_C(0x52454144); /* 'READ' */
+    return VINF_EM_PENDING_R3_IOPORT_READ;
+}
+
+#endif /* IN_RING3 */
 
 /**
  * Locks REM execution to a single VCPU.

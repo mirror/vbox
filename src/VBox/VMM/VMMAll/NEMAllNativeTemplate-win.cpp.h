@@ -1929,6 +1929,8 @@ nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, HV_X64_IO_PORT_INTERCEPT_MESS
         static uint32_t const s_fAndMask[8] =
         {   UINT32_MAX, UINT32_C(0xff), UINT32_C(0xffff), UINT32_MAX,   UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX   };
         uint32_t const        fAndMask      = s_fAndMask[pMsg->AccessInfo.AccessSize];
+
+        nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
         if (pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE)
         {
             rcStrict = IOMIOPortWrite(pVM, pVCpu, pMsg->PortNumber, (uint32_t)pMsg->Rax & fAndMask, pMsg->AccessInfo.AccessSize);
@@ -1936,9 +1938,18 @@ nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, HV_X64_IO_PORT_INTERCEPT_MESS
                   pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
                   pMsg->PortNumber, (uint32_t)pMsg->Rax & fAndMask, pMsg->AccessInfo.AccessSize, VBOXSTRICTRC_VAL(rcStrict) ));
             if (IOM_SUCCESS(rcStrict))
-            {
-                nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
                 nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+# ifdef IN_RING0
+            else if (   rcStrict == VINF_IOM_R3_IOPORT_WRITE
+                     && !pCtx->rflags.Bits.u1TF
+                     /** @todo check for debug breakpoints */ )
+                return EMRZSetPendingIoPortWrite(pVCpu, pMsg->PortNumber, pMsg->Header.InstructionLength,
+                                                 pMsg->AccessInfo.AccessSize, (uint32_t)pMsg->Rax & fAndMask);
+# endif
+            else
+            {
+                pCtx->rax = pMsg->Rax;
+                pCtx->fExtrn &= ~CPUMCTX_EXTRN_RAX;
             }
         }
         else
@@ -1956,8 +1967,19 @@ nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, HV_X64_IO_PORT_INTERCEPT_MESS
                     pCtx->rax = uValue;
                 pCtx->fExtrn &= ~CPUMCTX_EXTRN_RAX;
                 Log4(("IOExit/%u: RAX %#RX64 -> %#RX64\n", pVCpu->idCpu, pMsg->Rax, pCtx->rax));
-                nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
                 nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+            }
+            else
+            {
+                pCtx->rax = pMsg->Rax;
+                pCtx->fExtrn &= ~CPUMCTX_EXTRN_RAX;
+# ifdef IN_RING0
+                if (   rcStrict == VINF_IOM_R3_IOPORT_READ
+                    && !pCtx->rflags.Bits.u1TF
+                    /** @todo check for debug breakpoints */ )
+                    return EMRZSetPendingIoPortRead(pVCpu, pMsg->PortNumber, pMsg->Header.InstructionLength,
+                                                    pMsg->AccessInfo.AccessSize);
+# endif
             }
         }
     }
@@ -3689,12 +3711,20 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         if (   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
             || RT_FAILURE(rcStrict))
             fImport = CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
+# ifdef IN_RING0 /* Ring-3 I/O port access optimizations: */
+        else if (   rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE
+                 || rcStrict == VINF_EM_PENDING_R3_IOPORT_WRITE)
+            fImport = CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT;
+        else if (rcStrict == VINF_EM_PENDING_R3_IOPORT_READ)
+            fImport = CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT;
+# endif
         else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_APIC
                                           | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI))
             fImport |= IEM_CPUMCTX_EXTRN_XCPT_MASK;
+
         if (pCtx->fExtrn & fImport)
         {
-#ifdef IN_RING0
+# ifdef IN_RING0
             int rc2 = nemR0WinImportState(pGVM, pGVCpu, pCtx, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
             if (RT_SUCCESS(rc2))
                 pCtx->fExtrn &= ~fImport;
@@ -3723,7 +3753,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         else
         {
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturnSkipped);
-            //pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
+            pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
         }
     }
     else

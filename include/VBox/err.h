@@ -252,6 +252,10 @@
 #define VINF_EM_RAW_INJECT_TRPM_EVENT       1157
 /** Guest tried to trigger a CPU hang.  The guest is probably up to no good. */
 #define VERR_EM_GUEST_CPU_HANG              (-1158)
+/** Reason for leaving RZ: Pending ring-3 IN instruction. */
+#define VINF_EM_PENDING_R3_IOPORT_READ       1159
+/** Reason for leaving RZ: Pending ring-3 OUT instruction. */
+#define VINF_EM_PENDING_R3_IOPORT_WRITE      1160
 /** @} */
 
 

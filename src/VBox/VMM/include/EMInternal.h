@@ -377,18 +377,26 @@ typedef struct EMCPU
     uint64_t                u64TimeSliceStartExec;
     /** Current time slice value. */
     uint64_t                u64TimeSliceExec;
-    uint64_t                u64Alignment;
+
+    /** Pending ring-3 I/O port access (VINF_EM_PENDING_R3_IOPORT_READ / VINF_EM_PENDING_R3_IOPORT_WRITE). */
+    struct
+    {
+        RTIOPORT            uPort;          /**< The I/O port number.*/
+        uint8_t             cbValue;        /**< The value size in bytes.  Zero when not pending. */
+        uint8_t             cbInstr;        /**< The instruction length. */
+        uint32_t            uValue;         /**< The value to write. */
+    } PendingIoPortAccess;
 
     /** MWait halt state. */
     struct
     {
-        uint32_t            fWait;          /** Type of mwait; see EMMWAIT_FLAG_*. */
+        uint32_t            fWait;          /**< Type of mwait; see EMMWAIT_FLAG_*. */
         uint32_t            u32Padding;
-        RTGCPTR             uMWaitRAX;      /** MWAIT hints. */
-        RTGCPTR             uMWaitRCX;      /** MWAIT extensions. */
-        RTGCPTR             uMonitorRAX;    /** Monitored address. */
-        RTGCPTR             uMonitorRCX;    /** Monitor extension. */
-        RTGCPTR             uMonitorRDX;    /** Monitor hint. */
+        RTGCPTR             uMWaitRAX;      /**< MWAIT hints. */
+        RTGCPTR             uMWaitRCX;      /**< MWAIT extensions. */
+        RTGCPTR             uMonitorRAX;    /**< Monitored address. */
+        RTGCPTR             uMonitorRCX;    /**< Monitor extension. */
+        RTGCPTR             uMonitorRDX;    /**< Monitor hint. */
     } MWait;
 
     union
@@ -484,6 +492,9 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
 int     emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations);
 
 bool    emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
+
+VBOXSTRICTRC emR3ExecutePendingIoPortWrite(PVM pVM, PVMCPU pVCpu);
+VBOXSTRICTRC emR3ExecutePendingIoPortRead(PVM pVM, PVMCPU pVCpu);
 
 RT_C_DECLS_END
 
