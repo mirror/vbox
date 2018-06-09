@@ -223,10 +223,10 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          * Execute pending I/O Port access.
          */
         case VINF_EM_PENDING_R3_IOPORT_WRITE:
-            rc = emR3ExecutePendingIoPortWrite(pVM, pVCpu);
+            rc = VBOXSTRICTRC_TODO(emR3ExecutePendingIoPortWrite(pVM, pVCpu));
             break;
         case VINF_EM_PENDING_R3_IOPORT_READ:
-            rc = emR3ExecutePendingIoPortRead(pVM, pVCpu);
+            rc = VBOXSTRICTRC_TODO(emR3ExecutePendingIoPortRead(pVM, pVCpu));
             break;
 
         /*
