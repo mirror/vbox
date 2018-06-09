@@ -405,7 +405,7 @@ ENDPROC TMPL_NM(BenchmarkIoPortNop8Out)
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkIoPortRing3Nop32In)
-        IoPortPrologue TEST_INSTRUCTION_COUNT_IO / 4, VMMDEV_TESTING_IOPORT_NOP_R3
+        IoPortPrologue TEST_INSTRUCTION_COUNT_IO, VMMDEV_TESTING_IOPORT_NOP_R3
 .again:
         in      eax, dx
         in      eax, dx
@@ -414,7 +414,7 @@ BEGINPROC TMPL_NM(BenchmarkIoPortRing3Nop32In)
         in      eax, dx
         dec     ecx
         jnz     .again
-        IoPortEpilogue TEST_INSTRUCTION_COUNT_IO / 4
+        IoPortEpilogue TEST_INSTRUCTION_COUNT_IO
 .s_szTestName:
         db TMPL_MODE_STR, ', 32-bit IN-to-ring-3', 0
 ENDPROC TMPL_NM(BenchmarkIoPortRing3Nop32In)
@@ -426,7 +426,7 @@ ENDPROC TMPL_NM(BenchmarkIoPortRing3Nop32In)
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkIoPortRing3Nop32Out)
-        IoPortPrologue TEST_INSTRUCTION_COUNT_IO / 4, VMMDEV_TESTING_IOPORT_NOP_R3
+        IoPortPrologue TEST_INSTRUCTION_COUNT_IO, VMMDEV_TESTING_IOPORT_NOP_R3
 .again:
         out     dx, eax
         out     dx, eax
@@ -435,7 +435,7 @@ BEGINPROC TMPL_NM(BenchmarkIoPortRing3Nop32Out)
         out     dx, eax
         dec     ecx
         jnz     .again
-        IoPortEpilogue TEST_INSTRUCTION_COUNT_IO / 4
+        IoPortEpilogue TEST_INSTRUCTION_COUNT_IO
 .s_szTestName:
         db TMPL_MODE_STR, ', 32-bit OUT-to-ring-3', 0
 ENDPROC TMPL_NM(BenchmarkIoPortRing3Nop32Out)
@@ -552,7 +552,7 @@ BITS TMPL_BITS
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkMmioNop32Read)
-        MmioPrologue TEST_INSTRUCTION_COUNT_IO, VMMDEV_TESTING_MMIO_NOP
+        MmioPrologue TEST_INSTRUCTION_COUNT_MMIO, VMMDEV_TESTING_MMIO_NOP
 .again:
         mov     eax, [sBX]
         mov     eax, [sBX]
@@ -573,7 +573,7 @@ ENDPROC TMPL_NM(BenchmarkMmioNop32Read)
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkMmioNop32Write)
-        MmioPrologue TEST_INSTRUCTION_COUNT_IO, VMMDEV_TESTING_MMIO_NOP
+        MmioPrologue TEST_INSTRUCTION_COUNT_MMIO, VMMDEV_TESTING_MMIO_NOP
 .again:
         mov     [sBX], eax
         mov     [sBX], eax
@@ -594,7 +594,7 @@ ENDPROC TMPL_NM(BenchmarkMmioNop32Write)
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkMmioNop16Read)
-        MmioPrologue TEST_INSTRUCTION_COUNT_IO, VMMDEV_TESTING_MMIO_NOP
+        MmioPrologue TEST_INSTRUCTION_COUNT_MMIO, VMMDEV_TESTING_MMIO_NOP
 .again:
         mov     ax, [xBX]
         mov     ax, [xBX]
@@ -615,7 +615,7 @@ ENDPROC TMPL_NM(BenchmarkMmioNop16Read)
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkMmioNop16Write)
-        MmioPrologue TEST_INSTRUCTION_COUNT_IO, VMMDEV_TESTING_MMIO_NOP
+        MmioPrologue TEST_INSTRUCTION_COUNT_MMIO, VMMDEV_TESTING_MMIO_NOP
 .again:
         mov     [xBX], ax
         mov     [xBX], ax
@@ -636,7 +636,7 @@ ENDPROC TMPL_NM(BenchmarkMmioNop16Write)
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkMmioNop8Read)
-        MmioPrologue TEST_INSTRUCTION_COUNT_IO, VMMDEV_TESTING_MMIO_NOP
+        MmioPrologue TEST_INSTRUCTION_COUNT_MMIO, VMMDEV_TESTING_MMIO_NOP
 .again:
         mov     al, [xBX]
         mov     al, [xBX]
@@ -657,7 +657,7 @@ ENDPROC TMPL_NM(BenchmarkMmioNop8Read)
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkMmioNop8Write)
-        MmioPrologue TEST_INSTRUCTION_COUNT_IO, VMMDEV_TESTING_MMIO_NOP
+        MmioPrologue TEST_INSTRUCTION_COUNT_MMIO, VMMDEV_TESTING_MMIO_NOP
 .again:
         mov     [xBX], al
         mov     [xBX], al
@@ -678,7 +678,7 @@ ENDPROC TMPL_NM(BenchmarkMmioNop8Write)
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkMmioRing3Nop32Read)
-        MmioPrologue TEST_INSTRUCTION_COUNT_IO / 4, VMMDEV_TESTING_MMIO_NOP_R3
+        MmioPrologue TEST_INSTRUCTION_COUNT_MMIO, VMMDEV_TESTING_MMIO_NOP_R3
 .again:
         mov     eax, [sBX]
         mov     eax, [sBX]
@@ -687,7 +687,7 @@ BEGINPROC TMPL_NM(BenchmarkMmioRing3Nop32Read)
         mov     eax, [sBX]
         dec     ecx
         jnz     .again
-        MmioEpilogue TEST_INSTRUCTION_COUNT_MMIO / 4
+        MmioEpilogue TEST_INSTRUCTION_COUNT_MMIO
 .s_szTestName:
         db TMPL_MODE_STR, ', 32-bit read-to-ring-3', 0
 ENDPROC TMPL_NM(BenchmarkMmioRing3Nop32Read)
@@ -699,7 +699,7 @@ ENDPROC TMPL_NM(BenchmarkMmioRing3Nop32Read)
 ; @uses     nothing
 ;
 BEGINPROC TMPL_NM(BenchmarkMmioRing3Nop32Write)
-        MmioPrologue TEST_INSTRUCTION_COUNT_IO / 4, VMMDEV_TESTING_MMIO_NOP_R3
+        MmioPrologue TEST_INSTRUCTION_COUNT_MMIO, VMMDEV_TESTING_MMIO_NOP_R3
 .again:
         mov     [sBX], eax
         mov     [sBX], eax
@@ -708,7 +708,7 @@ BEGINPROC TMPL_NM(BenchmarkMmioRing3Nop32Write)
         mov     [sBX], eax
         dec     ecx
         jnz     .again
-        MmioEpilogue TEST_INSTRUCTION_COUNT_MMIO / 4
+        MmioEpilogue TEST_INSTRUCTION_COUNT_MMIO
 .s_szTestName:
         db TMPL_MODE_STR, ', 32-bit write-to-ring-3', 0
 ENDPROC TMPL_NM(BenchmarkMmioRing3Nop32Write)
