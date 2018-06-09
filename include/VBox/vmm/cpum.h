@@ -1295,7 +1295,7 @@ VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTi
         } \
     } while (0)
 
-/** @def CPUM_IMPORT_EXTRN_RC
+/** @def CPUM_IMPORT_EXTRN_RCSTRICT
  * Macro for making sure the state specified by @a fExtrnImport is present,
  * calling CPUMImportGuestStateOnDemand() to get it if necessary.
  *
