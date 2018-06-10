@@ -4488,7 +4488,7 @@ IEM_CIMPL_DEF_2(iemCImpl_VerX, uint16_t, uSel, bool, fWrite)
         return rcStrict;
 
     /* commit */
-    IEM_GET_CTX(pVCpu)->eflags.Bits.u1ZF = fAccessible;
+    pVCpu->cpum.GstCtx.eflags.Bits.u1ZF = fAccessible;
 
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
@@ -4594,7 +4594,7 @@ IEM_CIMPL_DEF_3(iemCImpl_LarLsl_u64, uint64_t *, pu64Dst, uint16_t, uSel, bool, 
         return rcStrict;
 
     /* commit flags value and advance rip. */
-    IEM_GET_CTX(pVCpu)->eflags.Bits.u1ZF = fDescOk;
+    pVCpu->cpum.GstCtx.eflags.Bits.u1ZF = fDescOk;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
     return VINF_SUCCESS;
@@ -4629,7 +4629,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
 {
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
-    Assert(!IEM_GET_CTX(pVCpu)->eflags.Bits.u1VM);
+    Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
 
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_GDTR_WRITES))
     {
@@ -4702,7 +4702,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
 {
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
-    Assert(!IEM_GET_CTX(pVCpu)->eflags.Bits.u1VM);
+    Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
 
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IDTR_WRITES))
     {
@@ -5499,7 +5499,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Cd_Rd, uint8_t, iCrReg, uint8_t, iGReg)
 {
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
-    Assert(!IEM_GET_CTX(pVCpu)->eflags.Bits.u1VM);
+    Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
 
     /*
      * Read the new value from the source register and call common worker.
@@ -5760,7 +5760,7 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
     /* ring-0 only. */
     if (pVCpu->iem.s.uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pVCpu);
-    Assert(!IEM_GET_CTX(pVCpu)->eflags.Bits.u1VM);
+    Assert(!pVCpu->cpum.GstCtx.eflags.Bits.u1VM);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
 
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPG))
@@ -5834,8 +5834,8 @@ IEM_CIMPL_DEF_2(iemCImpl_invpcid, uint64_t, uInvpcidType, RTGCPTR, GCPtrInvpcidD
 
         RTGCUINTPTR64 const GCPtrInvAddr = uDesc.s.Hi;
         uint8_t       const uPcid        = uDesc.s.Lo & UINT64_C(0xfff);
-        uint32_t      const uCr4         = IEM_GET_CTX(pVCpu)->cr4;
-        uint64_t      const uCr3         = IEM_GET_CTX(pVCpu)->cr3;
+        uint32_t      const uCr4         = pVCpu->cpum.GstCtx.cr4;
+        uint64_t      const uCr3         = pVCpu->cpum.GstCtx.cr3;
         switch (uInvpcidType)
         {
             case X86_INVPCID_TYPE_INDV_ADDR:
@@ -6220,7 +6220,7 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
  */
 IEM_CIMPL_DEF_1(iemCImpl_in_eAX_DX, uint8_t, cbReg)
 {
-    return IEM_CIMPL_CALL_2(iemCImpl_in, IEM_GET_CTX(pVCpu)->dx, cbReg);
+    return IEM_CIMPL_CALL_2(iemCImpl_in, pVCpu->cpum.GstCtx.dx, cbReg);
 }
 
 
@@ -6312,7 +6312,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
  */
 IEM_CIMPL_DEF_1(iemCImpl_out_DX_eAX, uint8_t, cbReg)
 {
-    return IEM_CIMPL_CALL_2(iemCImpl_out, IEM_GET_CTX(pVCpu)->dx, cbReg);
+    return IEM_CIMPL_CALL_2(iemCImpl_out, pVCpu->cpum.GstCtx.dx, cbReg);
 }
 
 

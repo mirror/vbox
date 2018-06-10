@@ -1435,6 +1435,7 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCCPUMCTX pCtx)
 }
 
 #ifndef IN_RC
+
 /**
  * Checks if the nested-guest VMCB has the specified ctrl/instruction intercept
  * active.
@@ -1620,6 +1621,7 @@ DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cb
     Assert(pVmcb);
     pVmcb->ctrl.u64NextRIP = pCtx->rip + cbInstr;
 }
+
 #endif /* !IN_RC */
 
 /**
