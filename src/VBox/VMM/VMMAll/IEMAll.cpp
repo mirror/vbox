@@ -14019,8 +14019,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPU pVC
                                                                       const void *pvOpcodeBytes, size_t cbOpcodeBytes,
                                                                       uint32_t *pcbWritten)
 {
-    PCPUMCTX pCtx    = IEM_GET_CTX(pVCpu);
-    AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
+    AssertReturn(CPUMCTX2CORE(IEM_GET_CTX(pVCpu)) == pCtxCore, VERR_IEM_IPE_3);
 
     uint32_t const cbOldWritten = pVCpu->iem.s.cbWritten;
     VBOXSTRICTRC rcStrict;
