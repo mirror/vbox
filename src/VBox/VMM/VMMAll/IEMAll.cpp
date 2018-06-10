@@ -11031,17 +11031,17 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return iemRaiseDivideError(pVCpu)
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       \
     do { \
-        if ((pVCpu)->iem.s.CTX_SUFF(pCtx)->cr0 & (X86_CR0_EM | X86_CR0_TS)) \
+        if (IEM_GET_CTX(pVCpu)->cr0 & (X86_CR0_EM | X86_CR0_TS)) \
             return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE()  \
     do { \
-        if (((pVCpu)->iem.s.CTX_SUFF(pCtx)->cr0 & (X86_CR0_MP | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS)) \
+        if ((IEM_GET_CTX(pVCpu)->cr0 & (X86_CR0_MP | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS)) \
             return iemRaiseDeviceNotAvailable(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT() \
     do { \
-        if ((pVCpu)->iem.s.CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87.FSW & X86_FSW_ES) \
+        if (IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.FSW & X86_FSW_ES) \
             return iemRaiseMathFault(pVCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_AVX2_RELATED_XCPT() \
@@ -11100,7 +11100,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     } while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT() \
     do { \
-        if (   ((pVCpu)->iem.s.CTX_SUFF(pCtx)->cr0 & X86_CR0_EM) \
+        if (   (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_EM) \
             || !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fMmx) \
             return iemRaiseUndefinedOpcode(pVCpu); \
         if (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_TS) \
@@ -11108,7 +11108,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     } while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT() \
     do { \
-        if (   ((pVCpu)->iem.s.CTX_SUFF(pCtx)->cr0 & X86_CR0_EM) \
+        if (   (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_EM) \
             || (   !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSse \
                 && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAmdMmxExts) ) \
             return iemRaiseUndefinedOpcode(pVCpu); \
@@ -11149,7 +11149,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     uint32_t a_Name; \
     uint32_t *a_pName = &a_Name
 #define IEM_MC_COMMIT_EFLAGS(a_EFlags) \
-   do { (pVCpu)->iem.s.CTX_SUFF(pCtx)->eflags.u = (a_EFlags); Assert((pVCpu)->iem.s.CTX_SUFF(pCtx)->eflags.u & X86_EFL_1); } while (0)
+   do { IEM_GET_CTX(pVCpu)->eflags.u = (a_EFlags); Assert(IEM_GET_CTX(pVCpu)->eflags.u & X86_EFL_1); } while (0)
 
 #define IEM_MC_ASSIGN(a_VarOrArg, a_CVariableOrConst)   (a_VarOrArg) = (a_CVariableOrConst)
 #define IEM_MC_ASSIGN_TO_SMALLER                        IEM_MC_ASSIGN
@@ -11192,37 +11192,37 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         IEM_CTX_IMPORT_NORET(pVCpu, IEM_GET_CTX(pVCpu), CPUMCTX_EXTRN_SREG_FROM_IDX(a_iSReg)); \
         (a_u32Dst) = iemSRegBaseFetchU64(pVCpu, (a_iSReg)); \
     } while (0)
-#define IEM_MC_FETCH_CR0_U16(a_u16Dst)                  (a_u16Dst) = (uint16_t)(pVCpu)->iem.s.CTX_SUFF(pCtx)->cr0
-#define IEM_MC_FETCH_CR0_U32(a_u32Dst)                  (a_u32Dst) = (uint32_t)(pVCpu)->iem.s.CTX_SUFF(pCtx)->cr0
-#define IEM_MC_FETCH_CR0_U64(a_u64Dst)                  (a_u64Dst) = (pVCpu)->iem.s.CTX_SUFF(pCtx)->cr0
+#define IEM_MC_FETCH_CR0_U16(a_u16Dst)                  (a_u16Dst) = (uint16_t)IEM_GET_CTX(pVCpu)->cr0
+#define IEM_MC_FETCH_CR0_U32(a_u32Dst)                  (a_u32Dst) = (uint32_t)IEM_GET_CTX(pVCpu)->cr0
+#define IEM_MC_FETCH_CR0_U64(a_u64Dst)                  (a_u64Dst) = IEM_GET_CTX(pVCpu)->cr0
 /** @todo IEM_MC_FETCH_LDTR_U16, IEM_MC_FETCH_LDTR_U32, IEM_MC_FETCH_LDTR_U64, IEM_MC_FETCH_TR_U16, IEM_MC_FETCH_TR_U32, and IEM_MC_FETCH_TR_U64 aren't worth it... */
 #define IEM_MC_FETCH_LDTR_U16(a_u16Dst) do { \
         IEM_CTX_IMPORT_NORET(pVCpu, IEM_GET_CTX(pVCpu), CPUMCTX_EXTRN_LDTR); \
-        (a_u16Dst) = (pVCpu)->iem.s.CTX_SUFF(pCtx)->ldtr.Sel; \
+        (a_u16Dst) = IEM_GET_CTX(pVCpu)->ldtr.Sel; \
    } while (0)
 #define IEM_MC_FETCH_LDTR_U32(a_u32Dst) do { \
         IEM_CTX_IMPORT_NORET(pVCpu, IEM_GET_CTX(pVCpu), CPUMCTX_EXTRN_LDTR); \
-        (a_u32Dst) = (pVCpu)->iem.s.CTX_SUFF(pCtx)->ldtr.Sel; \
+        (a_u32Dst) = IEM_GET_CTX(pVCpu)->ldtr.Sel; \
     } while (0)
 #define IEM_MC_FETCH_LDTR_U64(a_u64Dst) do { \
         IEM_CTX_IMPORT_NORET(pVCpu, IEM_GET_CTX(pVCpu), CPUMCTX_EXTRN_LDTR); \
-        (a_u64Dst) = (pVCpu)->iem.s.CTX_SUFF(pCtx)->ldtr.Sel; \
+        (a_u64Dst) = IEM_GET_CTX(pVCpu)->ldtr.Sel; \
    } while (0)
 #define IEM_MC_FETCH_TR_U16(a_u16Dst) do { \
         IEM_CTX_IMPORT_NORET(pVCpu, IEM_GET_CTX(pVCpu), CPUMCTX_EXTRN_TR); \
-        (a_u16Dst) = (pVCpu)->iem.s.CTX_SUFF(pCtx)->tr.Sel; \
+        (a_u16Dst) = IEM_GET_CTX(pVCpu)->tr.Sel; \
    } while (0)
 #define IEM_MC_FETCH_TR_U32(a_u32Dst) do { \
         IEM_CTX_IMPORT_NORET(pVCpu, IEM_GET_CTX(pVCpu), CPUMCTX_EXTRN_TR); \
-        (a_u32Dst) = (pVCpu)->iem.s.CTX_SUFF(pCtx)->tr.Sel; \
+        (a_u32Dst) = IEM_GET_CTX(pVCpu)->tr.Sel; \
    } while (0)
 #define IEM_MC_FETCH_TR_U64(a_u64Dst) do { \
         IEM_CTX_IMPORT_NORET(pVCpu, IEM_GET_CTX(pVCpu), CPUMCTX_EXTRN_TR); \
-        (a_u64Dst) = (pVCpu)->iem.s.CTX_SUFF(pCtx)->tr.Sel; \
+        (a_u64Dst) = IEM_GET_CTX(pVCpu)->tr.Sel; \
    } while (0)
 /** @note Not for IOPL or IF testing or modification. */
-#define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = (pVCpu)->iem.s.CTX_SUFF(pCtx)->eflags.u
-#define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                (a_EFlags) = (uint8_t)(pVCpu)->iem.s.CTX_SUFF(pCtx)->eflags.u
+#define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = IEM_GET_CTX(pVCpu)->eflags.u
+#define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                (a_EFlags) = (uint8_t)IEM_GET_CTX(pVCpu)->eflags.u
 #define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.FSW
 #define IEM_MC_FETCH_FCW(a_u16Fcw)                      (a_u16Fcw) = IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.FCW
 
@@ -11256,7 +11256,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 #define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = iemGRegRefU32(pVCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = iemGRegRefU64(pVCpu, (a_iGReg))
 /** @note Not for IOPL or IF testing or modification. */
-#define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &(pVCpu)->iem.s.CTX_SUFF(pCtx)->eflags.u
+#define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &IEM_GET_CTX(pVCpu)->eflags.u
 
 #define IEM_MC_ADD_GREG_U8(a_iGReg, a_u8Value)          *iemGRegRefU8( pVCpu, (a_iGReg)) += (a_u8Value)
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        *iemGRegRefU16(pVCpu, (a_iGReg)) += (a_u16Value)
@@ -11334,13 +11334,13 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 
 
 /** @note Not for IOPL or IF modification. */
-#define IEM_MC_SET_EFL_BIT(a_fBit)                      do { (pVCpu)->iem.s.CTX_SUFF(pCtx)->eflags.u |= (a_fBit); } while (0)
+#define IEM_MC_SET_EFL_BIT(a_fBit)                      do { IEM_GET_CTX(pVCpu)->eflags.u |= (a_fBit); } while (0)
 /** @note Not for IOPL or IF modification. */
-#define IEM_MC_CLEAR_EFL_BIT(a_fBit)                    do { (pVCpu)->iem.s.CTX_SUFF(pCtx)->eflags.u &= ~(a_fBit); } while (0)
+#define IEM_MC_CLEAR_EFL_BIT(a_fBit)                    do { IEM_GET_CTX(pVCpu)->eflags.u &= ~(a_fBit); } while (0)
 /** @note Not for IOPL or IF modification. */
-#define IEM_MC_FLIP_EFL_BIT(a_fBit)                     do { (pVCpu)->iem.s.CTX_SUFF(pCtx)->eflags.u ^= (a_fBit); } while (0)
+#define IEM_MC_FLIP_EFL_BIT(a_fBit)                     do { IEM_GET_CTX(pVCpu)->eflags.u ^= (a_fBit); } while (0)
 
-#define IEM_MC_CLEAR_FSW_EX()   do { (pVCpu)->iem.s.CTX_SUFF(pCtx)->CTX_SUFF(pXState)->x87.FSW &= X86_FSW_C_MASK | X86_FSW_TOP_MASK; } while (0)
+#define IEM_MC_CLEAR_FSW_EX()   do { IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState)->x87.FSW &= X86_FSW_C_MASK | X86_FSW_TOP_MASK; } while (0)
 
 /** Switches the FPU state to MMX mode (FSW.TOS=0, FTW=0) if necessary. */
 #define IEM_MC_FPU_TO_MMX_MODE() do { \
@@ -12268,7 +12268,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 /** Declares implicit arguments for IEM_MC_CALL_AVX_AIMPL_2,
  *  IEM_MC_CALL_AVX_AIMPL_3, IEM_MC_CALL_AVX_AIMPL_4, ... */
 #define IEM_MC_IMPLICIT_AVX_AIMPL_ARGS() \
-    IEM_MC_ARG_CONST(PX86XSAVEAREA, pXState, (pVCpu)->iem.s.CTX_SUFF(pCtx)->CTX_SUFF(pXState), 0)
+    IEM_MC_ARG_CONST(PX86XSAVEAREA, pXState, IEM_GET_CTX(pVCpu)->CTX_SUFF(pXState), 0)
 
 /**
  * Calls a AVX assembly implementation taking two visible arguments.
