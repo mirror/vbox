@@ -4264,7 +4264,6 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
 #ifndef TST_IEM_CHECK_MC
     /* Calc effective address with modified ESP. */
 /** @todo testcase */
-    PCPUMCTX        pCtx     = IEM_GET_CTX(pVCpu);
     RTGCPTR         GCPtrEff;
     VBOXSTRICTRC    rcStrict;
     switch (pVCpu->iem.s.enmEffOpSize)
@@ -4280,7 +4279,7 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
 
     /* Perform the operation - this should be CImpl. */
     RTUINT64U TmpRsp;
-    TmpRsp.u = pCtx->rsp;
+    TmpRsp.u = pVCpu->cpum.GstCtx.rsp;
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
@@ -4314,7 +4313,7 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
     }
     if (rcStrict == VINF_SUCCESS)
     {
-        pCtx->rsp = TmpRsp.u;
+        pVCpu->cpum.GstCtx.rsp = TmpRsp.u;
         iemRegUpdateRipAndClearRF(pVCpu);
     }
     return rcStrict;
@@ -4460,20 +4459,23 @@ FNIEMOP_DEF(iemOp_nop)
         if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilter)
         {
             /* TSC based pause-filter thresholding. */
-            PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
             if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilterThreshold
-                && pCtx->hwvirt.svm.cPauseFilterThreshold > 0)
+/** @todo r=bird: You're mixing decoding and implementation here!!  pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold can be
+ *  modified by the guest and you cannot have a compile time check on it like this.  Ditto for pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter below.
+ *  You need to move this into IEMAllCImpl.cpp.h!
+ */
+                && pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold > 0)
             {
                 uint64_t const uTick = TMCpuTickGet(pVCpu);
-                if (uTick - pCtx->hwvirt.svm.uPrevPauseTick > pCtx->hwvirt.svm.cPauseFilterThreshold)
-                    pCtx->hwvirt.svm.cPauseFilter = IEM_GET_SVM_PAUSE_FILTER_COUNT(pVCpu);
-                pCtx->hwvirt.svm.uPrevPauseTick = uTick;
+                if (uTick - pVCpu->cpum.GstCtx.hwvirt.svm.uPrevPauseTick > pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold)
+                    pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter = IEM_GET_SVM_PAUSE_FILTER_COUNT(pVCpu);
+                pVCpu->cpum.GstCtx.hwvirt.svm.uPrevPauseTick = uTick;
             }
 
             /* Simple pause-filter counter. */
-            if (pCtx->hwvirt.svm.cPauseFilter > 0)
+            if (pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter > 0)
             {
-                --pCtx->hwvirt.svm.cPauseFilter;
+                --pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter;
                 fCheckIntercept = false;
             }
         }

@@ -635,10 +635,10 @@ typedef IEMCPU const *PCIEMCPU;
 
 /** @def IEM_CTX_ASSERT
  * Asserts that the @a a_fExtrnMbz is present in the CPU context.
- * @param   a_pCtx          The CPUMCTX structure.
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
  * @param   a_fExtrnMbz     The mask of CPUMCTX_EXTRN_XXX flags that must be zero.
  */
-#define IEM_CTX_ASSERT(a_pCtx, a_fExtrnMbz)     Assert(!((a_pCtx)->fExtrn & (a_fExtrnMbz)))
+#define IEM_CTX_ASSERT(a_pVCpu, a_fExtrnMbz)     Assert(!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnMbz)))
 
 /** @def IEM_CTX_IMPORT_RET
  * Makes sure the CPU context bits given by @a a_fExtrnImport are imported.
@@ -647,13 +647,12 @@ typedef IEMCPU const *PCIEMCPU;
  *
  * Returns on import failure.
  *
- * @param   a_pVCpu         The cross context virtual CPU structure.
- * @param   a_pCtx          The CPUMCTX structure.
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
  * @param   a_fExtrnImport  The mask of CPUMCTX_EXTRN_XXX flags to import.
  */
-#define IEM_CTX_IMPORT_RET(a_pVCpu, a_pCtx, a_fExtrnImport) \
+#define IEM_CTX_IMPORT_RET(a_pVCpu, a_fExtrnImport) \
     do { \
-        if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+        if (!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnImport))) \
         { /* likely */ } \
         else \
         { \
@@ -667,13 +666,12 @@ typedef IEMCPU const *PCIEMCPU;
  *
  * Will call the keep to import the bits as needed.
  *
- * @param   a_pVCpu         The cross context virtual CPU structure.
- * @param   a_pCtx          The CPUMCTX structure.
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
  * @param   a_fExtrnImport  The mask of CPUMCTX_EXTRN_XXX flags to import.
  */
-#define IEM_CTX_IMPORT_NORET(a_pVCpu, a_pCtx, a_fExtrnImport) \
+#define IEM_CTX_IMPORT_NORET(a_pVCpu, a_fExtrnImport) \
     do { \
-        if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+        if (!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnImport))) \
         { /* likely */ } \
         else \
         { \
@@ -689,13 +687,12 @@ typedef IEMCPU const *PCIEMCPU;
  *
  * Jumps on import failure.
  *
- * @param   a_pVCpu         The cross context virtual CPU structure.
- * @param   a_pCtx          The CPUMCTX structure.
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
  * @param   a_fExtrnImport  The mask of CPUMCTX_EXTRN_XXX flags to import.
  */
-#define IEM_CTX_IMPORT_JMP(a_pVCpu, a_pCtx, a_fExtrnImport) \
+#define IEM_CTX_IMPORT_JMP(a_pVCpu, a_fExtrnImport) \
     do { \
-        if (!((a_pCtx)->fExtrn & (a_fExtrnImport))) \
+        if (!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnImport))) \
         { /* likely */ } \
         else \
         { \
