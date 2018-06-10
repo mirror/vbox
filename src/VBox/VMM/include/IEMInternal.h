@@ -57,17 +57,6 @@ RT_C_DECLS_BEGIN
  * Includes the VEX decoding. */
 #define IEM_WITH_VEX
 
-
-/** @def IEM_VERIFICATION_MODE_FULL
- * Shorthand for:
- *    defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL)
- */
-#if (defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL) && !defined(IEM_VERIFICATION_MODE_FULL)) \
-  || defined(DOXYGEN_RUNNING)
-# define IEM_VERIFICATION_MODE_FULL
-#endif
-
-
 /** @def IEM_CFG_TARGET_CPU
  * The minimum target CPU for the IEM emulation (IEMTARGETCPU_XXX value).
  *
@@ -190,91 +179,6 @@ AssertCompileMemberOffset(IEMFPURESULTTWO, r80Result2, 12);
 typedef IEMFPURESULTTWO *PIEMFPURESULTTWO;
 /** Pointer to a const FPU result consisting of two output values and FSW. */
 typedef IEMFPURESULTTWO const *PCIEMFPURESULTTWO;
-
-
-
-#ifdef IEM_VERIFICATION_MODE_FULL
-
-/**
- * Verification event type.
- */
-typedef enum IEMVERIFYEVENT
-{
-    IEMVERIFYEVENT_INVALID = 0,
-    IEMVERIFYEVENT_IOPORT_READ,
-    IEMVERIFYEVENT_IOPORT_WRITE,
-    IEMVERIFYEVENT_IOPORT_STR_READ,
-    IEMVERIFYEVENT_IOPORT_STR_WRITE,
-    IEMVERIFYEVENT_RAM_WRITE,
-    IEMVERIFYEVENT_RAM_READ
-} IEMVERIFYEVENT;
-
-/** Checks if the event type is a RAM read or write. */
-# define IEMVERIFYEVENT_IS_RAM(a_enmType)    ((a_enmType) == IEMVERIFYEVENT_RAM_WRITE || (a_enmType) == IEMVERIFYEVENT_RAM_READ)
-
-/**
- * Verification event record.
- */
-typedef struct IEMVERIFYEVTREC
-{
-    /** Pointer to the next record in the list. */
-    struct IEMVERIFYEVTREC *pNext;
-    /** The event type. */
-    IEMVERIFYEVENT          enmEvent;
-    /** The event data. */
-    union
-    {
-        /** IEMVERIFYEVENT_IOPORT_READ */
-        struct
-        {
-            RTIOPORT    Port;
-            uint8_t     cbValue;
-        } IOPortRead;
-
-        /** IEMVERIFYEVENT_IOPORT_WRITE */
-        struct
-        {
-            RTIOPORT    Port;
-            uint8_t     cbValue;
-            uint32_t    u32Value;
-        } IOPortWrite;
-
-        /** IEMVERIFYEVENT_IOPORT_STR_READ */
-        struct
-        {
-            RTIOPORT    Port;
-            uint8_t     cbValue;
-            RTGCUINTREG cTransfers;
-        } IOPortStrRead;
-
-        /** IEMVERIFYEVENT_IOPORT_STR_WRITE */
-        struct
-        {
-            RTIOPORT    Port;
-            uint8_t     cbValue;
-            RTGCUINTREG cTransfers;
-        } IOPortStrWrite;
-
-        /** IEMVERIFYEVENT_RAM_READ */
-        struct
-        {
-            RTGCPHYS    GCPhys;
-            uint32_t    cb;
-        } RamRead;
-
-        /** IEMVERIFYEVENT_RAM_WRITE */
-        struct
-        {
-            RTGCPHYS    GCPhys;
-            uint32_t    cb;
-            uint8_t     ab[512];
-        } RamWrite;
-    } u;
-} IEMVERIFYEVTREC;
-/** Pointer to an IEM event verification records. */
-typedef IEMVERIFYEVTREC *PIEMVERIFYEVTREC;
-
-#endif /* IEM_VERIFICATION_MODE_FULL */
 
 
 /**
@@ -673,41 +577,6 @@ typedef struct IEMCPU
     /** Number of long jumps. */
     uint32_t                cLongJumps;
     uint32_t                uAlignment6; /**< Alignment padding. */
-#ifdef IEM_VERIFICATION_MODE_FULL
-    /** The Number of I/O port reads that has been performed. */
-    uint32_t                cIOReads;
-    /** The Number of I/O port writes that has been performed. */
-    uint32_t                cIOWrites;
-    /** Set if no comparison to REM is currently performed.
-     * This is used to skip past really slow bits.  */
-    bool                    fNoRem;
-    /** Saved fNoRem flag used by #iemInitExec and #iemUninitExec. */
-    bool                    fNoRemSavedByExec;
-    /** Indicates that RAX and RDX differences should be ignored since RDTSC
-     *  and RDTSCP are timing sensitive.  */
-    bool                    fIgnoreRaxRdx;
-    /** Indicates that a MOVS instruction with overlapping source and destination
-     *  was executed, causing the memory write records to be incorrrect. */
-    bool                    fOverlappingMovs;
-    /** Set if there are problematic memory accesses (MMIO, write monitored, ++). */
-    bool                    fProblematicMemory;
-    /** This is used to communicate a CPL changed caused by IEMInjectTrap that
-     * CPUM doesn't yet reflect. */
-    uint8_t                 uInjectCpl;
-    /** To prevent EMR3HmSingleInstruction from triggering endless recursion via
-     *  emR3ExecuteInstruction and iemExecVerificationModeCheck. */
-    uint8_t                 cVerifyDepth;
-    bool                    afAlignment7[2];
-    /** Mask of undefined eflags.
-     * The verifier will any difference in these flags. */
-    uint32_t                fUndefinedEFlags;
-    /** The CS of the instruction being interpreted. */
-    RTSEL                   uOldCs;
-    /** The RIP of the instruction being interpreted. */
-    uint64_t                uOldRip;
-    /** The physical address corresponding to abOpcodes[0]. */
-    RTGCPHYS                GCPhysOpcodes;
-#endif
     /** @} */
 
     /** @name Target CPU information.
@@ -753,19 +622,6 @@ typedef struct IEMCPU
     R3PTRTYPE(PIEMINSTRSTATS) pStatsCCR3;
     /** Pointer to instruction statistics for ring-3 context. */
     R3PTRTYPE(PIEMINSTRSTATS) pStatsR3;
-
-#ifdef IEM_VERIFICATION_MODE_FULL
-    /** The event verification records for what IEM did (LIFO). */
-    R3PTRTYPE(PIEMVERIFYEVTREC)     pIemEvtRecHead;
-    /** Insertion point for pIemEvtRecHead. */
-    R3PTRTYPE(PIEMVERIFYEVTREC *)   ppIemEvtRecNext;
-    /** The event verification records for what the other party did (FIFO). */
-    R3PTRTYPE(PIEMVERIFYEVTREC)     pOtherEvtRecHead;
-    /** Insertion point for pOtherEvtRecHead. */
-    R3PTRTYPE(PIEMVERIFYEVTREC *)   ppOtherEvtRecNext;
-    /** List of free event records. */
-    R3PTRTYPE(PIEMVERIFYEVTREC)     pFreeEvtRec;
-#endif
 } IEMCPU;
 AssertCompileMemberOffset(IEMCPU, fCurXcpt, 0x48);
 AssertCompileMemberAlignment(IEMCPU, DataTlb, 64);
@@ -781,12 +637,7 @@ typedef IEMCPU const *PCIEMCPU;
  * @returns PCPUMCTX
  * @param   a_pVCpu The cross context virtual CPU structure of the calling thread.
  */
-#if !defined(IEM_VERIFICATION_MODE_FULL) && !defined(IEM_VERIFICATION_MODE) \
- && !defined(IEM_VERIFICATION_MODE_MINIMAL) && defined(VMCPU_INCL_CPUM_GST_CTX)
-# define IEM_GET_CTX(a_pVCpu)           (&(a_pVCpu)->cpum.GstCtx)
-#else
-# define IEM_GET_CTX(a_pVCpu)           ((a_pVCpu)->iem.s.CTX_SUFF(pCtx))
-#endif
+#define IEM_GET_CTX(a_pVCpu)                    (&(a_pVCpu)->cpum.GstCtx)
 
 /** @def IEM_CTX_ASSERT
  * Asserts that the @a a_fExtrnMbz is present in the CPU context.
@@ -1073,55 +924,6 @@ typedef enum IEMACCESSCRX
     IEMACCESSCRX_SMSW
 } IEMACCESSCRX;
 
-/**
- * Tests if verification mode is enabled.
- *
- * This expands to @c false when IEM_VERIFICATION_MODE is not defined and
- * should therefore cause the compiler to eliminate the verification branch
- * of an if statement.  */
-#ifdef IEM_VERIFICATION_MODE_FULL
-# define IEM_VERIFICATION_ENABLED(a_pVCpu)      (!(a_pVCpu)->iem.s.fNoRem)
-#elif defined(IEM_VERIFICATION_MODE_MINIMAL)
-# define IEM_VERIFICATION_ENABLED(a_pVCpu)      (true)
-#else
-# define IEM_VERIFICATION_ENABLED(a_pVCpu)      (false)
-#endif
-
-/**
- * Tests if full verification mode is enabled.
- *
- * This expands to @c false when IEM_VERIFICATION_MODE_FULL is not defined and
- * should therefore cause the compiler to eliminate the verification branch
- * of an if statement.  */
-#ifdef IEM_VERIFICATION_MODE_FULL
-# define IEM_FULL_VERIFICATION_ENABLED(a_pVCpu) (!(a_pVCpu)->iem.s.fNoRem)
-#else
-# define IEM_FULL_VERIFICATION_ENABLED(a_pVCpu) (false)
-#endif
-
-/**
- * Tests if full verification mode is enabled again REM.
- *
- * This expands to @c false when IEM_VERIFICATION_MODE_FULL is not defined and
- * should therefore cause the compiler to eliminate the verification branch
- * of an if statement.  */
-#ifdef IEM_VERIFICATION_MODE_FULL
-# ifdef IEM_VERIFICATION_MODE_FULL_HM
-#  define IEM_FULL_VERIFICATION_REM_ENABLED(a_pVCpu)    (!(a_pVCpu)->iem.s.fNoRem && !HMIsEnabled((a_pVCpu)->CTX_SUFF(pVM)))
-# else
-#  define IEM_FULL_VERIFICATION_REM_ENABLED(a_pVCpu)    (!(a_pVCpu)->iem.s.fNoRem)
-# endif
-#else
-# define IEM_FULL_VERIFICATION_REM_ENABLED(a_pVCpu)     (false)
-#endif
-
-/** @def IEM_VERIFICATION_MODE
- * Indicates that one of the verfication modes are enabled.
- */
-#if (defined(IEM_VERIFICATION_MODE_FULL) || defined(IEM_VERIFICATION_MODE_MINIMAL)) && !defined(IEM_VERIFICATION_MODE) \
- || defined(DOXYGEN_RUNNING)
-# define IEM_VERIFICATION_MODE
-#endif
 
 /**
  * Indicates to the verifier that the given flag set is undefined.
@@ -1129,12 +931,11 @@ typedef enum IEMACCESSCRX
  * Can be invoked again to add more flags.
  *
  * This is a NOOP if the verifier isn't compiled in.
+ *
+ * @note We're temporarily keeping this until code is converted to new
+ *       disassembler style opcode handling.
  */
-#ifdef IEM_VERIFICATION_MODE_FULL
-# define IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fEfl) do { pVCpu->iem.s.fUndefinedEFlags |= (a_fEfl); } while (0)
-#else
-# define IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fEfl) do { } while (0)
-#endif
+#define IEMOP_VERIFICATION_UNDEFINED_EFLAGS(a_fEfl) do { } while (0)
 
 
 /** @def IEM_DECL_IMPL_TYPE

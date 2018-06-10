@@ -70,10 +70,10 @@
 #ifdef IN_RC
 # define IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fEflags) \
     do { \
-        if (RT_LIKELY(   (   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
-                                                                                   : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
-                          && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK) ) \
-                      || IEM_VERIFICATION_ENABLED(a_pVCpu) )) \
+        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
+                                                                                : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
+                      && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK) \
+                      )) \
         { \
             RTCCUINTREG fSavedFlags = ASMGetFlags(); \
             if (!(fSavedFlags & X86_EFL_IF)) \
@@ -93,10 +93,10 @@
 #else
 # define IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fEflags) \
     do { \
-        if (RT_LIKELY(   (   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
-                                                                                   : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
-                          && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK) ) \
-                      || IEM_VERIFICATION_ENABLED(a_pVCpu) )) \
+        if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(a_pVCpu, (a_fEflags) & X86_EFL_IF ? VMCPU_FF_YIELD_REPSTR_MASK \
+                                                                                : VMCPU_FF_YIELD_REPSTR_NOINT_MASK) \
+                      && !VM_FF_IS_PENDING(a_pVM, VM_FF_YIELD_REPSTR_MASK) \
+                      )) \
         { /* probable */ } \
         else  \
         { \
@@ -116,8 +116,7 @@
     do { \
         if (RT_LIKELY(   (   !VMCPU_FF_IS_PENDING(a_pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK) \
                           && !VM_FF_IS_PENDING(a_pVM,         VM_FF_HIGH_PRIORITY_POST_REPSTR_MASK)) \
-                      || (a_fExitExpr) \
-                      || IEM_VERIFICATION_ENABLED(a_pVCpu) )) \
+                      || (a_fExitExpr) )) \
         { /* very likely */ } \
         else \
         { \
@@ -137,8 +136,7 @@
 #define IEM_CHECK_FF_CPU_HIGH_PRIORITY_POST_REPSTR_MAYBE_RETURN(a_pVM, a_pVCpu, a_fExitExpr) \
     do { \
         if (RT_LIKELY(   !VMCPU_FF_IS_PENDING(a_pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK) \
-                      || (a_fExitExpr) \
-                      || IEM_VERIFICATION_ENABLED(a_pVCpu) )) \
+                      || (a_fExitExpr) )) \
         { /* very likely */ } \
         else \
         { \
@@ -803,21 +801,6 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     }
 
     /*
-     * If we're reading back what we write, we have to let the verfication code
-     * to prevent a false positive.
-     * Note! This doesn't take aliasing or wrapping into account - lazy bird.
-     */
-#ifdef IEM_VERIFICATION_MODE_FULL
-    if (   IEM_VERIFICATION_ENABLED(pVCpu)
-        && (cbIncr > 0
-            ?    uSrcAddrReg <= uDstAddrReg
-              && uSrcAddrReg + cbIncr * uCounterReg > uDstAddrReg
-            :    uDstAddrReg <= uSrcAddrReg
-              && uDstAddrReg + cbIncr * uCounterReg > uSrcAddrReg))
-        pVCpu->iem.s.fOverlappingMovs = true;
-#endif
-
-    /*
      * The loop.
      */
     for (;;)
@@ -1253,10 +1236,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
         return rcStrict;
 
     uint32_t        u32Value = 0;
-    if (!IEM_VERIFICATION_ENABLED(pVCpu))
-        rcStrict = IOMIOPortRead(pVM, pVCpu, pCtx->dx, &u32Value, OP_SIZE / 8);
-    else
-        rcStrict = iemVerifyFakeIOPortRead(pVCpu, pCtx->dx, &u32Value, OP_SIZE / 8);
+    rcStrict = IOMIOPortRead(pVM, pVCpu, pCtx->dx, &u32Value, OP_SIZE / 8);
     if (IOM_SUCCESS(rcStrict))
     {
         *puMem = (OP_TYPE)u32Value;
@@ -1364,7 +1344,6 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                 || (   uAddrReg < pCtx->es.u32Limit
                     && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->es.u32Limit)
                )
-            && !IEM_VERIFICATION_ENABLED(pVCpu)
            )
         {
             RTGCPHYS GCPhysMem;
@@ -1434,10 +1413,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                 return rcStrict;
 
             uint32_t u32Value = 0;
-            if (!IEM_VERIFICATION_ENABLED(pVCpu))
-                rcStrict = IOMIOPortRead(pVM, pVCpu, u16Port, &u32Value, OP_SIZE / 8);
-            else
-                rcStrict = iemVerifyFakeIOPortRead(pVCpu, u16Port, &u32Value, OP_SIZE / 8);
+            rcStrict = IOMIOPortRead(pVM, pVCpu, u16Port, &u32Value, OP_SIZE / 8);
             if (!IOM_SUCCESS(rcStrict))
                 return rcStrict;
 
@@ -1529,10 +1505,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
     rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pVCpu, &uValue, iEffSeg, pCtx->ADDR_rSI);
     if (rcStrict == VINF_SUCCESS)
     {
-        if (!IEM_VERIFICATION_ENABLED(pVCpu))
-            rcStrict = IOMIOPortWrite(pVM, pVCpu, pCtx->dx, uValue, OP_SIZE / 8);
-        else
-            rcStrict = iemVerifyFakeIOPortWrite(pVCpu, pCtx->dx, uValue, OP_SIZE / 8);
+        rcStrict = IOMIOPortWrite(pVM, pVCpu, pCtx->dx, uValue, OP_SIZE / 8);
         if (IOM_SUCCESS(rcStrict))
         {
             if (!pCtx->eflags.Bits.u1DF)
@@ -1622,7 +1595,6 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 || (   uAddrReg < pHid->u32Limit
                     && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pHid->u32Limit)
                )
-            && !IEM_VERIFICATION_ENABLED(pVCpu)
            )
         {
             RTGCPHYS GCPhysMem;
@@ -1692,10 +1664,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
-            if (!IEM_VERIFICATION_ENABLED(pVCpu))
-                rcStrict = IOMIOPortWrite(pVM, pVCpu, u16Port, uValue, OP_SIZE / 8);
-            else
-                rcStrict = iemVerifyFakeIOPortWrite(pVCpu, u16Port, uValue, OP_SIZE / 8);
+            rcStrict = IOMIOPortWrite(pVM, pVCpu, u16Port, uValue, OP_SIZE / 8);
             if (IOM_SUCCESS(rcStrict))
             {
                 pCtx->ADDR_rSI = uAddrReg += cbIncr;

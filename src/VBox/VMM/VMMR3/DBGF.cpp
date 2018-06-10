@@ -359,7 +359,7 @@ bool dbgfR3WaitForAttach(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent)
      */
 #ifndef RT_OS_L4
 
-# if !defined(DEBUG) || defined(DEBUG_sandervl) || defined(DEBUG_frank) || defined(IEM_VERIFICATION_MODE)
+# if !defined(DEBUG) || defined(DEBUG_sandervl) || defined(DEBUG_frank)
     int cWait = 10;
 # else
     int cWait = !VM_IS_RAW_MODE_ENABLED(pVM)

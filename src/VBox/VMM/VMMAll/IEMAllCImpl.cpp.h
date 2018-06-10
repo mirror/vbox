@@ -187,9 +187,6 @@ static void iemHlpUpdateArithEFlagsU8(PVMCPU pVCpu, uint8_t u8Result, uint32_t f
     iemAImpl_test_u8(&u8Result, u8Result, &fEFlags);
     pCtx->eflags.u &= ~(fToUpdate | fUndefined);
     pCtx->eflags.u |= (fToUpdate | fUndefined) & fEFlags;
-#ifdef IEM_VERIFICATION_MODE_FULL
-    pVCpu->iem.s.fUndefinedEFlags |= fUndefined;
-#endif
 }
 
 
@@ -209,9 +206,6 @@ static void iemHlpUpdateArithEFlagsU16(PVMCPU pVCpu, uint16_t u16Result, uint32_
     iemAImpl_test_u16(&u16Result, u16Result, &fEFlags);
     pCtx->eflags.u &= ~(fToUpdate | fUndefined);
     pCtx->eflags.u |= (fToUpdate | fUndefined) & fEFlags;
-#ifdef IEM_VERIFICATION_MODE_FULL
-    pVCpu->iem.s.fUndefinedEFlags |= fUndefined;
-#endif
 }
 
 
@@ -4702,15 +4696,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
         if (   pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT
             || X86_IS_CANONICAL(GCPtrBase))
         {
-            if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-                rcStrict = CPUMSetGuestGDTR(pVCpu, GCPtrBase, cbLimit);
-            else
-            {
-                PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-                pCtx->gdtr.cbGdt = cbLimit;
-                pCtx->gdtr.pGdt  = GCPtrBase;
-                pCtx->fExtrn     &= ~CPUMCTX_EXTRN_GDTR;
-            }
+            rcStrict = CPUMSetGuestGDTR(pVCpu, GCPtrBase, cbLimit);
             if (rcStrict == VINF_SUCCESS)
                 iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         }
@@ -4784,15 +4770,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
         if (   pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT
             || X86_IS_CANONICAL(GCPtrBase))
         {
-            if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-                CPUMSetGuestIDTR(pVCpu, GCPtrBase, cbLimit);
-            else
-            {
-                PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-                pCtx->idtr.cbIdt = cbLimit;
-                pCtx->idtr.pIdt  = GCPtrBase;
-                pCtx->fExtrn     &= ~CPUMCTX_EXTRN_IDTR;
-            }
+            CPUMSetGuestIDTR(pVCpu, GCPtrBase, cbLimit);
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         }
         else
@@ -4877,23 +4855,15 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
 
         Log(("lldt %04x: Loading NULL selector.\n", uNewLdt));
         pCtx->fExtrn &= ~CPUMCTX_EXTRN_LDTR;
-        if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-            CPUMSetGuestLDTR(pVCpu, uNewLdt);
-        else
-            pCtx->ldtr.Sel = uNewLdt;
+        CPUMSetGuestLDTR(pVCpu, uNewLdt);
         pCtx->ldtr.ValidSel = uNewLdt;
         pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
-        if (IEM_FULL_VERIFICATION_REM_ENABLED(pVCpu))
-        {
-            pCtx->ldtr.Attr.u = X86DESCATTR_UNUSABLE;
-            pCtx->ldtr.u64Base = pCtx->ldtr.u32Limit = 0; /* For verfication against REM. */
-        }
-        else if (IEM_IS_GUEST_CPU_AMD(pVCpu))
+        if (IEM_IS_GUEST_CPU_AMD(pVCpu))
         {
             /* AMD-V seems to leave the base and limit alone. */
             pCtx->ldtr.Attr.u = X86DESCATTR_UNUSABLE;
         }
-        else if (!IEM_FULL_VERIFICATION_REM_ENABLED(pVCpu))
+        else
         {
             /* VT-x (Intel 3960x) seems to be doing the following. */
             pCtx->ldtr.Attr.u   = X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D;
@@ -4963,10 +4933,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
      * It checks out alright, update the registers.
      */
 /** @todo check if the actual value is loaded or if the RPL is dropped */
-    if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-        CPUMSetGuestLDTR(pVCpu, uNewLdt & X86_SEL_MASK_OFF_RPL);
-    else
-        pCtx->ldtr.Sel  = uNewLdt & X86_SEL_MASK_OFF_RPL;
+    CPUMSetGuestLDTR(pVCpu, uNewLdt & X86_SEL_MASK_OFF_RPL);
     pCtx->ldtr.ValidSel = uNewLdt & X86_SEL_MASK_OFF_RPL;
     pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
     pCtx->ldtr.Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
@@ -5091,10 +5058,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
      * It checks out alright, update the registers.
      */
 /** @todo check if the actual value is loaded or if the RPL is dropped */
-    if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-        CPUMSetGuestTR(pVCpu, uNewTr & X86_SEL_MASK_OFF_RPL);
-    else
-        pCtx->tr.Sel  = uNewTr & X86_SEL_MASK_OFF_RPL;
+    CPUMSetGuestTR(pVCpu, uNewTr & X86_SEL_MASK_OFF_RPL);
     pCtx->tr.ValidSel = uNewTr & X86_SEL_MASK_OFF_RPL;
     pCtx->tr.fFlags   = CPUMSELREG_FLAGS_VALID;
     pCtx->tr.Attr.u   = X86DESC_GET_HID_ATTR(&Desc.Legacy);
@@ -5306,10 +5270,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             /*
              * Change CR0.
              */
-            if (!IEM_VERIFICATION_ENABLED(pVCpu))
-                CPUMSetGuestCR0(pVCpu, uNewCrX);
-            else
-                pCtx->cr0 = uNewCrX;
+            CPUMSetGuestCR0(pVCpu, uNewCrX);
             Assert(pCtx->cr0 == uNewCrX);
 
             /*
@@ -5324,29 +5285,21 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 else
                     NewEFER &= ~MSR_K6_EFER_LMA;
 
-                if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-                    CPUMSetGuestEFER(pVCpu, NewEFER);
-                else
-                    pCtx->msrEFER = NewEFER;
+                CPUMSetGuestEFER(pVCpu, NewEFER);
                 Assert(pCtx->msrEFER == NewEFER);
             }
 
             /*
              * Inform PGM.
              */
-            if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
+            if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
+                !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
             {
-                if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
-                    !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) )
-                {
-                    rc = PGMFlushTLB(pVCpu, pCtx->cr3, true /* global */);
-                    AssertRCReturn(rc, rc);
-                    /* ignore informational status codes */
-                }
-                rcStrict = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
+                rc = PGMFlushTLB(pVCpu, pCtx->cr3, true /* global */);
+                AssertRCReturn(rc, rc);
+                /* ignore informational status codes */
             }
-            else
-                rcStrict = VINF_SUCCESS;
+            rcStrict = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
 
 #ifdef IN_RC
             /* Return to ring-3 for rescheduling if WP or AM changes. */
@@ -5430,23 +5383,15 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
              *        invalid bits. */
 
             /* Make the change. */
-            if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-            {
-                rc = CPUMSetGuestCR3(pVCpu, uNewCrX);
-                AssertRCSuccessReturn(rc, rc);
-            }
-            else
-                pCtx->cr3 = uNewCrX;
+            rc = CPUMSetGuestCR3(pVCpu, uNewCrX);
+            AssertRCSuccessReturn(rc, rc);
 
             /* Inform PGM. */
-            if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
+            if (pCtx->cr0 & X86_CR0_PG)
             {
-                if (pCtx->cr0 & X86_CR0_PG)
-                {
-                    rc = PGMFlushTLB(pVCpu, pCtx->cr3, !(pCtx->cr4 & X86_CR4_PGE));
-                    AssertRCReturn(rc, rc);
-                    /* ignore informational status codes */
-                }
+                rc = PGMFlushTLB(pVCpu, pCtx->cr3, !(pCtx->cr4 & X86_CR4_PGE));
+                AssertRCReturn(rc, rc);
+                /* ignore informational status codes */
             }
             rcStrict = VINF_SUCCESS;
             break;
@@ -5516,42 +5461,32 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             /*
              * Change it.
              */
-            if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-            {
-                rc = CPUMSetGuestCR4(pVCpu, uNewCrX);
-                AssertRCSuccessReturn(rc, rc);
-            }
-            else
-                pCtx->cr4 = uNewCrX;
+            rc = CPUMSetGuestCR4(pVCpu, uNewCrX);
+            AssertRCSuccessReturn(rc, rc);
             Assert(pCtx->cr4 == uNewCrX);
 
             /*
              * Notify SELM and PGM.
              */
-            if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
+            /* SELM - VME may change things wrt to the TSS shadowing. */
+            if ((uNewCrX ^ uOldCrX) & X86_CR4_VME)
             {
-                /* SELM - VME may change things wrt to the TSS shadowing. */
-                if ((uNewCrX ^ uOldCrX) & X86_CR4_VME)
-                {
-                    Log(("iemCImpl_load_CrX: VME %d -> %d => Setting VMCPU_FF_SELM_SYNC_TSS\n",
-                         RT_BOOL(uOldCrX & X86_CR4_VME), RT_BOOL(uNewCrX & X86_CR4_VME) ));
+                Log(("iemCImpl_load_CrX: VME %d -> %d => Setting VMCPU_FF_SELM_SYNC_TSS\n",
+                     RT_BOOL(uOldCrX & X86_CR4_VME), RT_BOOL(uNewCrX & X86_CR4_VME) ));
 #ifdef VBOX_WITH_RAW_MODE
-                    if (VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
-                        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+                if (VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 #endif
-                }
-
-                /* PGM - flushing and mode. */
-                if ((uNewCrX ^ uOldCrX) & (X86_CR4_PSE | X86_CR4_PAE | X86_CR4_PGE | X86_CR4_PCIDE /* | X86_CR4_SMEP */))
-                {
-                    rc = PGMFlushTLB(pVCpu, pCtx->cr3, true /* global */);
-                    AssertRCReturn(rc, rc);
-                    /* ignore informational status codes */
-                }
-                rcStrict = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
             }
-            else
-                rcStrict = VINF_SUCCESS;
+
+            /* PGM - flushing and mode. */
+            if ((uNewCrX ^ uOldCrX) & (X86_CR4_PSE | X86_CR4_PAE | X86_CR4_PGE | X86_CR4_PCIDE /* | X86_CR4_SMEP */))
+            {
+                rc = PGMFlushTLB(pVCpu, pCtx->cr3, true /* global */);
+                AssertRCReturn(rc, rc);
+                /* ignore informational status codes */
+            }
+            rcStrict = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
             break;
         }
 
@@ -5586,11 +5521,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 }
             }
 #endif
-            if (!IEM_FULL_VERIFICATION_ENABLED(pVCpu))
-            {
-                uint8_t const u8Tpr = (uint8_t)uNewCrX << 4;
-                APICSetTpr(pVCpu, u8Tpr);
-            }
+            uint8_t const u8Tpr = (uint8_t)uNewCrX << 4;
+            APICSetTpr(pVCpu, u8Tpr);
             rcStrict = VINF_SUCCESS;
             break;
         }
@@ -5870,13 +5802,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
         IEM_CTX_IMPORT_RET(pVCpu, pCtx, CPUMCTX_EXTRN_DR0_DR3);
     else if (iDrReg == 6)
         IEM_CTX_IMPORT_RET(pVCpu, pCtx, CPUMCTX_EXTRN_DR6);
-    if (!IEM_VERIFICATION_ENABLED(pVCpu))
-    {
-        int rc = CPUMSetGuestDRx(pVCpu, iDrReg, uNewDrX);
-        AssertRCSuccessReturn(rc, RT_SUCCESS_NP(rc) ? VERR_IEM_IPE_1 : rc);
-    }
-    else
-        pCtx->dr[iDrReg] = uNewDrX;
+
+    int rc = CPUMSetGuestDRx(pVCpu, iDrReg, uNewDrX);
+    AssertRCSuccessReturn(rc, RT_SUCCESS_NP(rc) ? VERR_IEM_IPE_1 : rc);
 
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
@@ -6060,10 +5988,6 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
 #endif
     pCtx->rax = RT_LO_U32(uTicks);
     pCtx->rdx = RT_HI_U32(uTicks);
-#ifdef IEM_VERIFICATION_MODE_FULL
-    pVCpu->iem.s.fIgnoreRaxRdx = true;
-#endif
-
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -6114,9 +6038,6 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
 #endif
         pCtx->rax = RT_LO_U32(uTicks);
         pCtx->rdx = RT_HI_U32(uTicks);
-#ifdef IEM_VERIFICATION_MODE_FULL
-        pVCpu->iem.s.fIgnoreRaxRdx = true;
-#endif
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     }
     return rcStrict;
@@ -6254,20 +6175,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
 
     IEM_CTX_IMPORT_RET(pVCpu, pCtx, CPUMCTX_EXTRN_ALL_MSRS);
 
-    if (!IEM_VERIFICATION_ENABLED(pVCpu))
-        rcStrict = CPUMSetGuestMsr(pVCpu, pCtx->ecx, uValue.u);
-    else
-    {
-#ifdef IN_RING3
-        CPUMCTX CtxTmp = *pCtx;
-        rcStrict = CPUMSetGuestMsr(pVCpu, pCtx->ecx, uValue.u);
-        PCPUMCTX pCtx2 = CPUMQueryGuestCtxPtr(pVCpu);
-        *pCtx = *pCtx2;
-        *pCtx2 = CtxTmp;
-#else
-        AssertReleaseFailedReturn(VERR_IEM_IPE_2);
-#endif
-    }
+    rcStrict = CPUMSetGuestMsr(pVCpu, pCtx->ecx, uValue.u);
     if (rcStrict == VINF_SUCCESS)
     {
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -6341,11 +6249,8 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
     /*
      * Perform the I/O.
      */
-    uint32_t u32Value;
-    if (!IEM_VERIFICATION_ENABLED(pVCpu))
-        rcStrict = IOMIOPortRead(pVCpu->CTX_SUFF(pVM), pVCpu, u16Port, &u32Value, cbReg);
-    else
-        rcStrict = iemVerifyFakeIOPortRead(pVCpu, u16Port, &u32Value, cbReg);
+    uint32_t u32Value = 0;
+    rcStrict = IOMIOPortRead(pVCpu->CTX_SUFF(pVM), pVCpu, u16Port, &u32Value, cbReg);
     if (IOM_SUCCESS(rcStrict))
     {
         switch (cbReg)
@@ -6447,10 +6352,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         case 4: u32Value = pCtx->eax; break;
         default: AssertFailedReturn(VERR_IEM_IPE_4);
     }
-    if (!IEM_VERIFICATION_ENABLED(pVCpu))
-        rcStrict = IOMIOPortWrite(pVCpu->CTX_SUFF(pVM), pVCpu, u16Port, u32Value, cbReg);
-    else
-        rcStrict = iemVerifyFakeIOPortWrite(pVCpu, u16Port, u32Value, cbReg);
+    rcStrict = IOMIOPortWrite(pVCpu->CTX_SUFF(pVM), pVCpu, u16Port, u32Value, cbReg);
     if (IOM_SUCCESS(rcStrict))
     {
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -6574,7 +6476,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
     /* Commit. */
     IEMMISC_SET_EFL(pVCpu, pCtx, fEfl);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    if ((!(fEflOld & X86_EFL_IF) && (fEfl & X86_EFL_IF)) || IEM_FULL_VERIFICATION_REM_ENABLED(pVCpu))
+    if (!(fEflOld & X86_EFL_IF) && (fEfl & X86_EFL_IF))
         EMSetInhibitInterruptsPC(pVCpu, pCtx->rip);
     Log2(("STI: %#x -> %#x\n", fEflOld, fEfl));
     return VINF_SUCCESS;
@@ -6919,9 +6821,6 @@ IEM_CIMPL_DEF_0(iemCImpl_aaa)
             iemAImpl_add_u16(&pCtx->ax, 0x106, &pCtx->eflags.u32);
             pCtx->eflags.Bits.u1AF = 1;
             pCtx->eflags.Bits.u1CF = 1;
-#ifdef IEM_VERIFICATION_MODE_FULL
-            pVCpu->iem.s.fUndefinedEFlags |= X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF;
-#endif
         }
         else
         {
@@ -6969,9 +6868,6 @@ IEM_CIMPL_DEF_0(iemCImpl_aas)
             iemAImpl_sub_u16(&pCtx->ax, 0x106, &pCtx->eflags.u32);
             pCtx->eflags.Bits.u1AF = 1;
             pCtx->eflags.Bits.u1CF = 1;
-#ifdef IEM_VERIFICATION_MODE_FULL
-            pVCpu->iem.s.fUndefinedEFlags |= X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF;
-#endif
         }
         else
         {

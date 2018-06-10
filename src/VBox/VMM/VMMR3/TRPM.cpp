@@ -1506,7 +1506,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     /* Currently only useful for external hardware interrupts. */
     Assert(enmEvent == TRPM_HARDWARE_INT);
 
-#if defined(TRPM_FORWARD_TRAPS_IN_GC) && !defined(IEM_VERIFICATION_MODE)
+#if defined(TRPM_FORWARD_TRAPS_IN_GC)
 
 # ifdef LOG_ENABLED
     DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", "TRPMInject");
@@ -1580,7 +1580,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     /* Fall back to the recompiler */
     return VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
 
-#else  /* !TRPM_FORWARD_TRAPS_IN_GC || IEM_VERIFICATION_MODE */
+#else  /* !TRPM_FORWARD_TRAPS_IN_GC */
     RT_NOREF(pVM, enmEvent);
     uint8_t u8Interrupt = 0;
     int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
@@ -1608,7 +1608,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     return HMR3IsActive(pVCpu)    ? VINF_EM_RESCHEDULE_HM
          : VM_IS_NEM_ENABLED(pVM) ? VINF_EM_RESCHEDULE
          :                          VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
-#endif /* !TRPM_FORWARD_TRAPS_IN_GC || IEM_VERIFICATION_MODE */
+#endif /* !TRPM_FORWARD_TRAPS_IN_GC */
 }
 
 

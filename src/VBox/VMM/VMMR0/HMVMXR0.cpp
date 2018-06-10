@@ -8935,7 +8935,6 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     else
         return rcStrict;
 
-#ifndef IEM_VERIFICATION_MODE_FULL
     /*
      * Setup the virtualized-APIC accesses.
      *
@@ -8966,7 +8965,6 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
         /* Update the per-VCPU cache of the APIC base MSR. */
         pVCpu->hm.s.vmx.u64MsrApicBase = u64MsrApicBase;
     }
-#endif /* !IEM_VERIFICATION_MODE_FULL */
 
     if (TRPMHasTrap(pVCpu))
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);
