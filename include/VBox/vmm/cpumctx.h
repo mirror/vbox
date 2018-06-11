@@ -900,9 +900,9 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
 /** NEM/Win: Inhibit maskable interrupts (VMCPU_FF_INHIBIT_INTERRUPTS). */
 #define CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT       UINT64_C(0x0002000000000000)
 /** NEM/Win: Inhibit non-maskable interrupts (VMCPU_FF_BLOCK_NMIS). */
-#define CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI       UINT64_C(0x0002000000000000)
+#define CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI       UINT64_C(0x0004000000000000)
 /** NEM/Win: Mask. */
-#define CPUMCTX_EXTRN_NEM_WIN_MASK              UINT64_C(0x0003000000000000)
+#define CPUMCTX_EXTRN_NEM_WIN_MASK              UINT64_C(0x0007000000000000)
 
 /** All CPUM state bits, not including keeper specific ones. */
 #define CPUMCTX_EXTRN_ALL                       UINT64_C(0x000001fffffffffc)
