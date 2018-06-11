@@ -908,7 +908,11 @@ MarkMemoryRangeForRuntimeAccess (
                   );
 
   Status = gDS->AddMemorySpace (
+#ifdef VBOX
+                  EfiGcdMemoryTypeMemoryMappedIo,   /* Must be MMIO to ensure OS can't move the region. */
+#else
                   EfiGcdMemoryTypeSystemMemory,
+#endif
                   BaseAddress,
                   Length,
                   EFI_MEMORY_UC | EFI_MEMORY_RUNTIME
