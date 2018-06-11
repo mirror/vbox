@@ -143,7 +143,7 @@ VBOX_PATH_VMM_SRC = $(PATH_ROOT)/src/VBox/VMM
 #
 ifdef VBOX_WITH_RAW_MODE
  tstVMStructRC_TEMPLATE  = VBoxRcExe
- tstVMStructRC_DEFS      = IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE
+ tstVMStructRC_DEFS      = IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_R0_LOGGING
   tstVMStructRC_DEFS    += VBOX_WITH_R0_LOGGING
  endif
@@ -157,7 +157,7 @@ ifdef VBOX_WITH_RAW_MODE
 endif
 
 tstVMStructSize_TEMPLATE= VBOXR3AUTOTST
-tstVMStructSize_DEFS    = IN_VMM_R3 IN_DIS
+tstVMStructSize_DEFS    = IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
 ifdef VBOX_WITH_RAW_MODE
  tstVMStructSize_DEFS  += VBOX_WITH_RAW_MODE
 endif
@@ -177,7 +177,7 @@ ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 endif
 
 tstAsmStructs_TEMPLATE  = VBOXR3AUTOTST
-tstAsmStructs_DEFS      = IN_VMM_R3 IN_DIS
+tstAsmStructs_DEFS      = IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
 ifdef VBOX_WITH_RAW_MODE
  tstAsmStructs_DEFS    += VBOX_WITH_RAW_MODE
 endif
@@ -195,7 +195,7 @@ tstAsmStructs.cpp_DEPS  = $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h
 
 ifdef VBOX_WITH_RAW_MODE
  tstAsmStructsRC_TEMPLATE= VBoxRcExe
- tstAsmStructsRC_DEFS    = IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE
+ tstAsmStructsRC_DEFS    = IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_R0_LOGGING
   tstAsmStructsRC_DEFS  += VBOX_WITH_R0_LOGGING
  endif
@@ -230,6 +230,7 @@ tstGlobalConfig_LIBS    = $(LIB_RUNTIME)
 #
 tstIEMCheckMc_TEMPLATE  = VBOXR3TSTEXE
 tstIEMCheckMc_SOURCES   = tstIEMCheckMc.cpp
+tstIEMCheckMc_DEFS      = $(VMM_COMMON_DEFS)
 tstIEMCheckMc_LIBS      = $(LIB_RUNTIME)
 ifeq ($(KBUILD_TARGET),win)
  tstIEMCheckMc_CXXFLAGS = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS) -wd4189 # local variable is initialized but not used.
@@ -468,7 +469,7 @@ if !defined(VBOX_ONLY_EXTPACKS) \
      || defined(VBOX_WITH_DTRACE_R0) \
      || defined(VBOX_WITH_DTRACE_RC))
  tstVMStructDTrace_TEMPLATE= VBOXR3AUTOTST
- tstVMStructDTrace_DEFS    = IN_VMM_R3 IN_DIS
+ tstVMStructDTrace_DEFS    = IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_RAW_MODE
   tstVMStructDTrace_DEFS  += VBOX_WITH_RAW_MODE
  endif

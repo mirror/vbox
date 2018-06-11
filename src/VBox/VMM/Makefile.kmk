@@ -18,6 +18,11 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# Include our Config.kmk if kmk is invoked from a parent directory.
+ifndef VBOX_VMM_CONFIG_KMK_INCLUDED
+ include $(PATH_SUB_CURRENT)/Config.kmk
+endif
+
 # Include sub-makefiles.
 ifndef VBOX_ONLY_EXTPACKS
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
@@ -33,70 +38,6 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
   $(error 32-bit solaris is no longer a supported VirtualBox host. Go back to 4.2 or older for 32-bit support.)
  endif
 endif
-
-
-#
-# Globals
-#
-
-## DEFS variable that is picked up by all three VMM targets (R0, R3, RC).
-# Can be prepended to by setting it in LocalConfig.kmk
-VMM_COMMON_DEFS ?= VBOX_IN_VMM
-ifdef VBOX_WITH_2ND_IEM_STEP
- VMM_COMMON_DEFS += VBOX_WITH_2ND_IEM_STEP
-endif
-ifdef VBOX_WITH_3RD_IEM_STEP
- VMM_COMMON_DEFS += VBOX_WITH_3RD_IEM_STEP
-endif
-ifdef VBOX_WITH_NESTED_HWVIRT_SVM
- VMM_COMMON_DEFS += VBOX_WITH_NESTED_HWVIRT_SVM
-endif
-ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
- VMM_COMMON_DEFS += VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
-endif
-#ifdef VBOX_WITH_IEM
-# VMM_COMMON_DEFS += VBOX_WITH_IEM
-#endif
-# part of global DEFS
-#ifdef VBOX_WITH_REM
-# VMM_COMMON_DEFS += VBOX_WITH_REM
-#endif
-ifdef VBOX_WITH_MULTI_CORE
- VMM_COMMON_DEFS += VBOX_WITH_MULTI_CORE
-endif
-ifdef VBOX_WITH_R0_LOGGING
- VMM_COMMON_DEFS += VBOX_WITH_R0_LOGGING
-endif
-ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
- VMM_COMMON_DEFS += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-endif
-ifdef VBOX_WITH_PCI_PASSTHROUGH
- VMM_COMMON_DEFS += VBOX_WITH_PCI_PASSTHROUGH
-endif
-ifdef VBOX_WITH_DTRACE_RC
- VMM_COMMON_DEFS += VBOX_WITH_DTRACE_RC
-endif
-ifdef VBOX_WITH_SAFE_STR
- VMM_COMMON_DEFS += VBOX_WITH_SAFE_STR
-endif
-ifdef VBOX_WITH_RAW_RING1
- VMM_COMMON_DEFS += VBOX_WITH_RAW_RING1
-endif
-ifdef VBOX_WITH_64ON32_IDT
- VMM_COMMON_DEFS += VBOX_WITH_64ON32_IDT
-endif
-ifdef VBOX_WITH_64ON32_CMOS_DEBUG
- VMM_COMMON_DEFS += VBOX_WITH_64ON32_CMOS_DEBUG
-endif
-ifdef VBOXSTRICTRC_STRICT_ENABLED
- VMM_COMMON_DEFS += VBOXSTRICTRC_STRICT_ENABLED
-endif
-ifeq ($(KBUILD_TARGET),amd64)
- VMM_COMMON_DEFS += VBOX_WITH_MORE_RING0_MEM_MAPPINGS
-endif
-
-# VMM_COMMON_DEFS += VBOX_WITH_NS_ACCOUNTING_STATS
-
 
 
 #

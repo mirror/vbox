@@ -1,0 +1,86 @@
+# $Id$
+## @file
+# kBuild Configuration file for the VMM.
+#
+
+#
+# Copyright (C) 2006-2018 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+VBOX_VMM_CONFIG_KMK_INCLUDED = 1
+
+# Include the top-level configure file.
+ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
+ include $(PATH_ROOT)/Config.kmk
+endif
+
+#
+# Globals
+#
+
+## DEFS variable that is picked up by all three VMM targets (R0, R3, RC).
+# Can be prepended to by setting it in LocalConfig.kmk
+VMM_COMMON_DEFS += VBOX_IN_VMM
+ifdef VBOX_WITH_2ND_IEM_STEP
+ VMM_COMMON_DEFS += VBOX_WITH_2ND_IEM_STEP
+endif
+ifdef VBOX_WITH_3RD_IEM_STEP
+ VMM_COMMON_DEFS += VBOX_WITH_3RD_IEM_STEP
+endif
+ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+ VMM_COMMON_DEFS += VBOX_WITH_NESTED_HWVIRT_SVM
+endif
+ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+ VMM_COMMON_DEFS += VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+endif
+#ifdef VBOX_WITH_IEM
+# VMM_COMMON_DEFS += VBOX_WITH_IEM
+#endif
+# part of global DEFS
+#ifdef VBOX_WITH_REM
+# VMM_COMMON_DEFS += VBOX_WITH_REM
+#endif
+ifdef VBOX_WITH_MULTI_CORE
+ VMM_COMMON_DEFS += VBOX_WITH_MULTI_CORE
+endif
+ifdef VBOX_WITH_R0_LOGGING
+ VMM_COMMON_DEFS += VBOX_WITH_R0_LOGGING
+endif
+ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+ VMM_COMMON_DEFS += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+endif
+ifdef VBOX_WITH_PCI_PASSTHROUGH
+ VMM_COMMON_DEFS += VBOX_WITH_PCI_PASSTHROUGH
+endif
+ifdef VBOX_WITH_DTRACE_RC
+ VMM_COMMON_DEFS += VBOX_WITH_DTRACE_RC
+endif
+ifdef VBOX_WITH_SAFE_STR
+ VMM_COMMON_DEFS += VBOX_WITH_SAFE_STR
+endif
+ifdef VBOX_WITH_RAW_RING1
+ VMM_COMMON_DEFS += VBOX_WITH_RAW_RING1
+endif
+ifdef VBOX_WITH_64ON32_IDT
+ VMM_COMMON_DEFS += VBOX_WITH_64ON32_IDT
+endif
+ifdef VBOX_WITH_64ON32_CMOS_DEBUG
+ VMM_COMMON_DEFS += VBOX_WITH_64ON32_CMOS_DEBUG
+endif
+ifdef VBOXSTRICTRC_STRICT_ENABLED
+ VMM_COMMON_DEFS += VBOXSTRICTRC_STRICT_ENABLED
+endif
+ifeq ($(KBUILD_TARGET),amd64)
+ VMM_COMMON_DEFS += VBOX_WITH_MORE_RING0_MEM_MAPPINGS
+endif
+
+# VMM_COMMON_DEFS += VBOX_WITH_NS_ACCOUNTING_STATS
+
