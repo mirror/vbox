@@ -6037,6 +6037,27 @@ IEM_CIMPL_DEF_2(iemCImpl_invpcid, uint64_t, uInvpcidType, RTGCPTR, GCPtrInvpcidD
 
 
 /**
+ * Implements INVD.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_invd)
+{
+    if (pVCpu->iem.s.uCpl != 0)
+    {
+        Log(("invd: CPL != 0 -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0);
+#endif
+
+    /* We currently take no action here. */
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Implements RDTSC.
  */
 IEM_CIMPL_DEF_0(iemCImpl_rdtsc)

@@ -132,7 +132,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_ltr)
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO(); /** @todo test ordre */
+        IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO(); /** @todo test order */
         IEM_MC_FETCH_MEM_U16(u16Sel, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
         IEM_MC_CALL_CIMPL_1(iemCImpl_ltr, u16Sel);
         IEM_MC_END();
@@ -790,20 +790,11 @@ FNIEMOP_DEF(iemOp_sysret)
 /** Opcode 0x0f 0x08. */
 FNIEMOP_DEF(iemOp_invd)
 {
-    IEMOP_MNEMONIC(invd, "invd");
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
-    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0);
-#else
-    RT_NOREF_PV(pVCpu);
-#endif
-    /** @todo implement invd for the regular case (above only handles nested SVM
-     *        exits). */
-    IEMOP_BITCH_ABOUT_STUB();
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    IEMOP_MNEMONIC0(FIXED, INVD, invd, DISOPTYPE_PRIVILEGED, 0);
+    IEMOP_HLP_MIN_486();
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_invd);
 }
-
-// IEMOP_HLP_MIN_486();
 
 
 /** Opcode 0x0f 0x09. */
