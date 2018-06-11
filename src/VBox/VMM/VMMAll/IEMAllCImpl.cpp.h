@@ -4902,7 +4902,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
  */
 IEM_CIMPL_DEF_2(iemCImpl_sldt_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
-    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_LDTR_READS, SVM_EXIT_LDTR_READ, 0, 0);
+    IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_LDTR_READS, SVM_EXIT_LDTR_READ, 0, 0);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_LDTR);
     switch (enmEffOpSize)
@@ -4926,7 +4926,7 @@ IEM_CIMPL_DEF_2(iemCImpl_sldt_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_sldt_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
-    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_LDTR_READS, SVM_EXIT_LDTR_READ, 0, 0);
+    IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_LDTR_READS, SVM_EXIT_LDTR_READ, 0, 0);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_LDTR);
     VBOXSTRICTRC rcStrict = iemMemStoreDataU16(pVCpu, iEffSeg, GCPtrEffDst, pVCpu->cpum.GstCtx.ldtr.Sel);
@@ -5067,7 +5067,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
  */
 IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
-    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
+    IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_TR);
     switch (enmEffOpSize)
@@ -5091,7 +5091,7 @@ IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_str_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
-    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
+    IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_TR);
     VBOXSTRICTRC rcStrict = iemMemStoreDataU16(pVCpu, iEffSeg, GCPtrEffDst, pVCpu->cpum.GstCtx.tr.Sel);
@@ -6047,7 +6047,7 @@ IEM_CIMPL_DEF_0(iemCImpl_invd)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0);
+    IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0);
 
     /* We currently take no action here. */
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -6066,11 +6066,20 @@ IEM_CIMPL_DEF_0(iemCImpl_wbinvd)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_WBINVD, SVM_EXIT_WBINVD, 0, 0);
+    IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_WBINVD, SVM_EXIT_WBINVD, 0, 0);
 
     /* We currently take no action here. */
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
+}
+
+
+/** Opcode 0x0f 0xaa. */
+IEM_CIMPL_DEF_0(iemCImpl_rsm)
+{
+    IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_RSM, SVM_EXIT_RSM, 0, 0);
+    NOREF(cbInstr);
+    return iemRaiseUndefinedOpcode(pVCpu);
 }
 
 

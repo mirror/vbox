@@ -19,9 +19,8 @@
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /** Check and handles SVM nested-guest instruction intercept and updates
  *  NRIP if needed.
- * @todo r=bird: This macro is conceptually wrong.
  */
-# define IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+# define IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
     do \
     { \
         if (IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)) \
@@ -45,7 +44,7 @@
     } while (0)
 
 #else  /* !VBOX_WITH_NESTED_HWVIRT_SVM */
-# define IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)  do { } while (0)
+# define IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)  do { } while (0)
 # define IEMCIMPL_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2)                         do { } while (0)
 #endif /* !VBOX_WITH_NESTED_HWVIRT_SVM */
 
@@ -1419,7 +1418,7 @@ IEM_CIMPL_DEF_0(iemCImpl_svm_pause)
     }
 
     if (fCheckIntercept)
-        IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
+        IEMCIMPL_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
 
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
