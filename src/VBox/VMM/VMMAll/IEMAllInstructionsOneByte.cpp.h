@@ -4456,7 +4456,7 @@ FNIEMOP_DEF(iemOp_nop)
         IEMOP_MNEMONIC(pause, "pause");
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvm)
-            IEM_MC_CALL_CIMPL_0(iemCImpl_svm_pause);
+            return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_svm_pause);
 #endif
     }
     else
