@@ -157,7 +157,11 @@ void UIGuestRAMSlider::prepare()
     setSingleStep(pageStep() / 4);
     setTickInterval(pageStep());
     /* Setup the scale so that ticks are at page step boundaries */
-    setMinimum((m_uMinRAM / pageStep()) * pageStep());
+    if (m_uMinRAM >= static_cast<uint>(pageStep()))
+        setMinimum((m_uMinRAM / pageStep()) * pageStep());
+    else
+        setMinimum(m_uMinRAM);
+
     setMaximum(m_uMaxRAM);
     setSnappingEnabled(true);
     setOptimalHint(m_uMinRAM, m_uMaxRAMOpt);

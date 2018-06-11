@@ -70,8 +70,8 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
                 }
                 m_pRamEditor = new QSpinBox(m_pMemoryCnt);
                 {
-                    m_pRamEditor->setMinimum(m_pRamSlider->minRAM());
-                    m_pRamEditor->setMaximum(m_pRamSlider->maxRAM());
+                    m_pRamEditor->setMinimum(m_pRamSlider->minimum());
+                    m_pRamEditor->setMaximum(m_pRamSlider->maximum());
                     vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pRamEditor, 5);
                 }
                 m_pRamUnits = new QLabel(m_pMemoryCnt);
