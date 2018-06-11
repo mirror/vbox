@@ -124,7 +124,7 @@ int is_cpuid_supported( void )
 
 #define APIC_BASE_MSR       0x1B
 #define APICBASE_X2APIC     0x400   /* bit 10 */
-#define APICBASE_DISABLE    0x800   /* bit 11 */
+#define APICBASE_ENABLE     0x800   /* bit 11 */
 
 /*
  * Set up APIC/x2APIC. See also DevPcBios.cpp.
@@ -144,7 +144,8 @@ int is_cpuid_supported( void )
 void BIOSCALL apic_setup(void)
 {
     uint64_t    base_msr;
-    uint16_t    mask;
+    uint16_t    mask_set;
+    uint16_t    mask_clr;
     uint8_t     apic_mode;
     uint32_t    cpu_id[4];
 
@@ -163,16 +164,18 @@ void BIOSCALL apic_setup(void)
     /* APIC mode at offset 78h in CMOS NVRAM. */
     apic_mode = inb_cmos(0x78);
 
+    mask_set = mask_clr = 0;
     if (apic_mode == APICMODE_X2APIC)
-        mask = APICBASE_X2APIC;
+        mask_set = APICBASE_X2APIC;
     else if (apic_mode == APICMODE_DISABLED)
-        mask = APICBASE_DISABLE; /** @todo r=bird: Shouldn't we clear bit 11 when disabling the APIC? */
+        mask_clr = APICBASE_ENABLE;
     else
-        mask = 0;   /* Any other setting leaves things alone. */
+        ;   /* Any other setting leaves things alone. */
 
-    if (mask) {
+    if (mask_set || mask_clr) {
         base_msr = msr_read(APIC_BASE_MSR);
-        base_msr |= mask;
+        base_msr &= ~(uint64_t)mask_clr;
+        base_msr |= mask_set;
         msr_write(base_msr, APIC_BASE_MSR);
     }
 }
