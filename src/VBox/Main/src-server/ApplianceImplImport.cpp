@@ -198,10 +198,21 @@ HRESULT Appliance::interpret()
                                  vsysThis.strName,
                                  nameVBox);
 
+            /* VM Primary Group */
+            Utf8Str strPrimaryGroup;
+            if (pNewDesc->m->pConfig->machineUserData.llGroups.size())
+                strPrimaryGroup = pNewDesc->m->pConfig->machineUserData.llGroups.front();
+            if (strPrimaryGroup.isEmpty())
+                strPrimaryGroup = "/";
+            pNewDesc->i_addEntry(VirtualSystemDescriptionType_PrimaryGroup,
+                                 "",
+                                 "" /* no direct OVF correspondence */,
+                                 strPrimaryGroup);
+
             /* Based on the VM name, create a target machine path. */
             Bstr bstrSettingsFilename;
             rc = mVirtualBox->ComposeMachineFilename(Bstr(nameVBox).raw(),
-                                                     NULL /* aGroup */,
+                                                     Bstr(strPrimaryGroup).raw(),
                                                      NULL /* aCreateFlags */,
                                                      NULL /* aBaseFolder */,
                                                      bstrSettingsFilename.asOutParam());
@@ -211,7 +222,7 @@ HRESULT Appliance::interpret()
 
 #if 1
             /* The import logic should work exactly the same whether the
-             * following 3 items are present or not, but of course it may have
+             * following 2 items are present or not, but of course it may have
              * an influence on the exact presentation of the import settings
              * of an API client. */
             Utf8Str strSettingsFilename(bstrSettingsFilename);
@@ -225,10 +236,6 @@ HRESULT Appliance::interpret()
                                  "",
                                  "" /* no direct OVF correspondence */,
                                  strBaseFolder);
-            pNewDesc->i_addEntry(VirtualSystemDescriptionType_PrimaryGroup,
-                                 "",
-                                 "" /* no direct OVF correspondence */,
-                                 "");
 #endif
 
             /* VM Product */
@@ -2674,7 +2681,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
     /* Create the machine */
     SafeArray<BSTR> groups; /* no groups, or maybe one group... */
-    if (!stack.strPrimaryGroup.isEmpty())
+    if (!stack.strPrimaryGroup.isEmpty() && stack.strPrimaryGroup != "/")
         Bstr(stack.strPrimaryGroup).detachTo(groups.appendedRaw());
     rc = mVirtualBox->CreateMachine(Bstr(stack.strSettingsFilename).raw(),
                                     Bstr(stack.strNameVBox).raw(),
@@ -3442,10 +3449,17 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
     /* OS Type */
     config.machineUserData.strOsType = stack.strOsTypeVBox;
     /* Groups */
-    if (!stack.strPrimaryGroup.isEmpty())
+    if (stack.strPrimaryGroup.isEmpty() || stack.strPrimaryGroup == "/")
     {
         config.machineUserData.llGroups.clear();
-        config.machineUserData.llGroups.push_back(stack.strPrimaryGroup);
+        config.machineUserData.llGroups.push_back("/");
+    }
+    else
+    {
+        /* Replace the primary group if there is one, otherwise add it. */
+        if (config.machineUserData.llGroups.size())
+            config.machineUserData.llGroups.pop_front();
+        config.machineUserData.llGroups.push_front(stack.strPrimaryGroup);
     }
     /* Description */
     config.machineUserData.strDescription = stack.strDescription;
@@ -4002,7 +4016,11 @@ void Appliance::i_importMachines(ImportStack &stack)
         // Primary group, which is entirely optional.
         std::list<VirtualSystemDescriptionEntry*> vsdePrimaryGroup = vsdescThis->i_findByType(VirtualSystemDescriptionType_PrimaryGroup);
         if (vsdePrimaryGroup.size() >= 1)
+        {
             stack.strPrimaryGroup = vsdePrimaryGroup.front()->strVBoxCurrent;
+            if (stack.strPrimaryGroup.isEmpty())
+                stack.strPrimaryGroup = "/";
+        }
 
         // Draw the right conclusions from the (possibly modified) VM settings
         // file name and base folder. If the VM settings file name is modified,
