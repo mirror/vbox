@@ -548,66 +548,19 @@ FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEMOP_HLP_SVM_READ_CR_INTERCEPT(pVCpu, /*cr*/ 0, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-        switch (pVCpu->iem.s.enmEffOpSize)
-        {
-            case IEMMODE_16BIT:
-                IEM_MC_BEGIN(0, 1);
-                IEM_MC_LOCAL(uint16_t, u16Tmp);
-                IEM_MC_FETCH_CR0_U16(u16Tmp);
-                if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_386)
-                { /* likely */ }
-                else if (IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_386)
-                    IEM_MC_OR_LOCAL_U16(u16Tmp, 0xffe0);
-                else
-                    IEM_MC_OR_LOCAL_U16(u16Tmp, 0xfff0);
-                IEM_MC_STORE_GREG_U16((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u16Tmp);
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-                return VINF_SUCCESS;
-
-            case IEMMODE_32BIT:
-                IEM_MC_BEGIN(0, 1);
-                IEM_MC_LOCAL(uint32_t, u32Tmp);
-                IEM_MC_FETCH_CR0_U32(u32Tmp);
-                IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u32Tmp);
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-                return VINF_SUCCESS;
-
-            case IEMMODE_64BIT:
-                IEM_MC_BEGIN(0, 1);
-                IEM_MC_LOCAL(uint64_t, u64Tmp);
-                IEM_MC_FETCH_CR0_U64(u64Tmp);
-                IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u64Tmp);
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-                return VINF_SUCCESS;
-
-            IEM_NOT_REACHED_DEFAULT_CASE_RET();
-        }
+        return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_smsw_reg, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, pVCpu->iem.s.enmEffOpSize);
     }
-    else
-    {
-        /* Ignore operand size here, memory refs are always 16-bit. */
-        IEM_MC_BEGIN(0, 2);
-        IEM_MC_LOCAL(uint16_t, u16Tmp);
-        IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEMOP_HLP_SVM_READ_CR_INTERCEPT(pVCpu, /*cr*/ 0, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-        IEM_MC_FETCH_CR0_U16(u16Tmp);
-        if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_386)
-        { /* likely */ }
-        else if (pVCpu->iem.s.uTargetCpu >= IEMTARGETCPU_386)
-            IEM_MC_OR_LOCAL_U16(u16Tmp, 0xffe0);
-        else
-            IEM_MC_OR_LOCAL_U16(u16Tmp, 0xfff0);
-        IEM_MC_STORE_MEM_U16(pVCpu->iem.s.iEffSeg, GCPtrEffDst, u16Tmp);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-        return VINF_SUCCESS;
-    }
+
+    /* Ignore operand size here, memory refs are always 16-bit. */
+    IEM_MC_BEGIN(2, 0);
+    IEM_MC_ARG(uint16_t, iEffSeg,               0);
+    IEM_MC_ARG(RTGCPTR,  GCPtrEffDst,           1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_smsw_mem, iEffSeg, GCPtrEffDst);
+    IEM_MC_END();
+    return VINF_SUCCESS;
 }
 
 

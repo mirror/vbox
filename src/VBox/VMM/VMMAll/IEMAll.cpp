@@ -11081,9 +11081,6 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(a_iSReg)); \
         (a_u32Dst) = iemSRegBaseFetchU64(pVCpu, (a_iSReg)); \
     } while (0)
-#define IEM_MC_FETCH_CR0_U16(a_u16Dst)                  (a_u16Dst) = (uint16_t)pVCpu->cpum.GstCtx.cr0
-#define IEM_MC_FETCH_CR0_U32(a_u32Dst)                  (a_u32Dst) = (uint32_t)pVCpu->cpum.GstCtx.cr0
-#define IEM_MC_FETCH_CR0_U64(a_u64Dst)                  (a_u64Dst) = pVCpu->cpum.GstCtx.cr0
 /** @todo IEM_MC_FETCH_LDTR_U16, IEM_MC_FETCH_LDTR_U32, IEM_MC_FETCH_LDTR_U64, IEM_MC_FETCH_TR_U16, IEM_MC_FETCH_TR_U32, and IEM_MC_FETCH_TR_U64 aren't worth it... */
 #define IEM_MC_FETCH_LDTR_U16(a_u16Dst) do { \
         IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_LDTR); \
