@@ -5102,7 +5102,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
  */
 IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
-    IEMOP_HLP_SVM_READ_CR_INTERCEPT(pVCpu, /*cr*/ 0, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    IEMCIMPL_HLP_SVM_READ_CR_INTERCEPT(pVCpu, /*cr*/ 0, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
 
     switch (enmEffOpSize)
     {
@@ -5140,7 +5140,7 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_smsw_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
-    IEMOP_HLP_SVM_READ_CR_INTERCEPT(pVCpu, /*cr*/ 0, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    IEMCIMPL_HLP_SVM_READ_CR_INTERCEPT(pVCpu, /*cr*/ 0, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
 
     uint16_t u16Value;
     if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_386)
