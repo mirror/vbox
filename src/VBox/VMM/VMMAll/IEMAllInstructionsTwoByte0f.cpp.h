@@ -558,8 +558,6 @@ FNIEMOP_DEF(iemOp_Grp7_rdtscp)
 {
     IEMOP_MNEMONIC(rdtscp, "rdtscp");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    /** @todo SVM intercept removal from here. */
-    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_RDTSCP, SVM_EXIT_RDTSCP, 0, 0);
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rdtscp);
 }
 
