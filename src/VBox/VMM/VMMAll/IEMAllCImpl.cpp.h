@@ -5060,6 +5060,48 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
 
 
 /**
+ * Implements str GReg
+ *
+ * @param   iGReg           The general register to store the CRx value in.
+ * @param   enmEffOpSize    The operand size.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_str_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
+{
+    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
+
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_TR);
+    switch (enmEffOpSize)
+    {
+        case IEMMODE_16BIT: *(uint16_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.tr.Sel; break;
+        case IEMMODE_32BIT: *(uint64_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.tr.Sel; break;
+        case IEMMODE_64BIT: *(uint64_t *)iemGRegRef(pVCpu, iGReg) = pVCpu->cpum.GstCtx.tr.Sel; break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements str mem.
+ *
+ * @param   iGReg           The general register to store the CRx value in.
+ * @param   iEffSeg         The effective segment register to use with @a GCPtrMem.
+ * @param   GCPtrEffDst     Where to store the 16-bit CR0 value.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_str_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
+{
+    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
+
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_TR);
+    VBOXSTRICTRC rcStrict = iemMemStoreDataU16(pVCpu, iEffSeg, GCPtrEffDst, pVCpu->cpum.GstCtx.tr.Sel);
+    if (rcStrict == VINF_SUCCESS)
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return rcStrict;
+}
+
+
+/**
  * Implements mov GReg,CRx.
  *
  * @param   iGReg           The general register to store the CRx value in.

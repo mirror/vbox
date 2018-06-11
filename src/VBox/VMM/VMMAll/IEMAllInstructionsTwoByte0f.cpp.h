@@ -42,7 +42,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_sldt)
     IEM_MC_ARG(uint16_t, iEffSeg,               0);
     IEM_MC_ARG(RTGCPTR,  GCPtrEffDst,           1);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_HLP_DECODED_NL_1(OP_SLDT, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
     IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
     IEM_MC_CALL_CIMPL_2(iemCImpl_sldt_mem, iEffSeg, GCPtrEffDst);
     IEM_MC_END();
@@ -57,55 +57,22 @@ FNIEMOPRM_DEF(iemOp_Grp6_str)
     IEMOP_HLP_MIN_286();
     IEMOP_HLP_NO_REAL_OR_V86_MODE();
 
+
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         IEMOP_HLP_DECODED_NL_1(OP_STR, IEMOPFORM_M_REG, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
-        IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
-        switch (pVCpu->iem.s.enmEffOpSize)
-        {
-            case IEMMODE_16BIT:
-                IEM_MC_BEGIN(0, 1);
-                IEM_MC_LOCAL(uint16_t, u16Tr);
-                IEM_MC_FETCH_TR_U16(u16Tr);
-                IEM_MC_STORE_GREG_U16((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u16Tr);
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-                break;
-
-            case IEMMODE_32BIT:
-                IEM_MC_BEGIN(0, 1);
-                IEM_MC_LOCAL(uint32_t, u32Tr);
-                IEM_MC_FETCH_TR_U32(u32Tr);
-                IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u32Tr);
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-                break;
-
-            case IEMMODE_64BIT:
-                IEM_MC_BEGIN(0, 1);
-                IEM_MC_LOCAL(uint64_t, u64Tr);
-                IEM_MC_FETCH_TR_U64(u64Tr);
-                IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, u64Tr);
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-                break;
-
-            IEM_NOT_REACHED_DEFAULT_CASE_RET();
-        }
+        return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_str_reg, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, pVCpu->iem.s.enmEffOpSize);
     }
-    else
-    {
-        IEM_MC_BEGIN(0, 2);
-        IEM_MC_LOCAL(uint16_t, u16Tr);
-        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
-        IEMOP_HLP_DECODED_NL_1(OP_STR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
-        IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_TR_READS, SVM_EXIT_TR_READ, 0, 0);
-        IEM_MC_FETCH_TR_U16(u16Tr);
-        IEM_MC_STORE_MEM_U16(pVCpu->iem.s.iEffSeg, GCPtrEffDst, u16Tr);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
+
+    /* Ignore operand size here, memory refs are always 16-bit. */
+    IEM_MC_BEGIN(2, 0);
+    IEM_MC_ARG(uint16_t, iEffSeg,               0);
+    IEM_MC_ARG(RTGCPTR,  GCPtrEffDst,           1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+    IEMOP_HLP_DECODED_NL_1(OP_STR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
+    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_str_mem, iEffSeg, GCPtrEffDst);
+    IEM_MC_END();
     return VINF_SUCCESS;
 }
 

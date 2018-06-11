@@ -11081,18 +11081,6 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(a_iSReg)); \
         (a_u32Dst) = iemSRegBaseFetchU64(pVCpu, (a_iSReg)); \
     } while (0)
-#define IEM_MC_FETCH_TR_U16(a_u16Dst) do { \
-        IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_TR); \
-        (a_u16Dst) = pVCpu->cpum.GstCtx.tr.Sel; \
-   } while (0)
-#define IEM_MC_FETCH_TR_U32(a_u32Dst) do { \
-        IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_TR); \
-        (a_u32Dst) = pVCpu->cpum.GstCtx.tr.Sel; \
-   } while (0)
-#define IEM_MC_FETCH_TR_U64(a_u64Dst) do { \
-        IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_TR); \
-        (a_u64Dst) = pVCpu->cpum.GstCtx.tr.Sel; \
-   } while (0)
 /** @note Not for IOPL or IF testing or modification. */
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = pVCpu->cpum.GstCtx.eflags.u
 #define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                (a_EFlags) = (uint8_t)pVCpu->cpum.GstCtx.eflags.u
