@@ -1378,6 +1378,7 @@ HRESULT MachineCloneVM::run()
                 }
                 mlock.acquire();
             }
+            pMedium->i_removeRegistry(p->i_getVirtualBox()->i_getGlobalRegistryId());
             pMedium->i_addRegistry(uuid);
         }
         /* Check if a snapshot folder is necessary and if so doesn't already
