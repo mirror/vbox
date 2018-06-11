@@ -17,6 +17,40 @@
 
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+/** Check and handles SVM nested-guest instruction intercept and updates
+ *  NRIP if needed.
+ * @todo r=bird: This macro is conceptually wrong.
+ */
+# define IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2) \
+    do \
+    { \
+        if (IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept)) \
+        { \
+            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
+            IEM_RETURN_SVM_VMEXIT(a_pVCpu, a_uExitCode, a_uExitInfo1, a_uExitInfo2); \
+        } \
+    } while (0)
+
+/** Check and handle SVM nested-guest CR0 read intercept.
+ * @todo r=bird: This macro is conceptually wrong.
+ */
+# define IEMOP_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2) \
+    do \
+    { \
+        if (IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)) \
+        { \
+            IEM_SVM_UPDATE_NRIP(a_pVCpu); \
+            IEM_RETURN_SVM_VMEXIT(a_pVCpu, SVM_EXIT_READ_CR0 + (a_uCr), a_uExitInfo1, a_uExitInfo2); \
+        } \
+    } while (0)
+
+#else  /* !VBOX_WITH_NESTED_HWVIRT_SVM */
+# define IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(a_pVCpu, a_Intercept, a_uExitCode, a_uExitInfo1, a_uExitInfo2)  do { } while (0)
+# define IEMOP_HLP_SVM_READ_CR_INTERCEPT(a_pVCpu, a_uCr, a_uExitInfo1, a_uExitInfo2)                            do { } while (0)
+#endif /* !VBOX_WITH_NESTED_HWVIRT_SVM */
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 
 /**
  * Converts an IEM exception event type to an SVM event type.
@@ -1359,6 +1393,36 @@ IEM_CIMPL_DEF_0(iemCImpl_skinit)
 
     RT_NOREF(cbInstr);
     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+}
+
+IEM_CIMPL_DEF_0(iemCImpl_svm_pause)
+{
+    bool fCheckIntercept = true;
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilter)
+    {
+        /* TSC based pause-filter thresholding. */
+        if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilterThreshold
+            && pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold > 0)
+        {
+            uint64_t const uTick = TMCpuTickGet(pVCpu);
+            if (uTick - pVCpu->cpum.GstCtx.hwvirt.svm.uPrevPauseTick > pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold)
+                pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter = IEM_GET_SVM_PAUSE_FILTER_COUNT(pVCpu);
+            pVCpu->cpum.GstCtx.hwvirt.svm.uPrevPauseTick = uTick;
+        }
+
+        /* Simple pause-filter counter. */
+        if (pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter > 0)
+        {
+            --pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter;
+            fCheckIntercept = false;
+        }
+    }
+
+    if (fCheckIntercept)
+        IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
+
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 #endif /* VBOX_WITH_NESTED_HWVIRT_SVM */

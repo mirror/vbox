@@ -4455,32 +4455,8 @@ FNIEMOP_DEF(iemOp_nop)
     {
         IEMOP_MNEMONIC(pause, "pause");
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-        bool fCheckIntercept = true;
-        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilter)
-        {
-            /* TSC based pause-filter thresholding. */
-            if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilterThreshold
-/** @todo r=bird: You're mixing decoding and implementation here!!  pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold can be
- *  modified by the guest and you cannot have a compile time check on it like this.  Ditto for pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter below.
- *  You need to move this into IEMAllCImpl.cpp.h!
- */
-                && pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold > 0)
-            {
-                uint64_t const uTick = TMCpuTickGet(pVCpu);
-                if (uTick - pVCpu->cpum.GstCtx.hwvirt.svm.uPrevPauseTick > pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold)
-                    pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter = IEM_GET_SVM_PAUSE_FILTER_COUNT(pVCpu);
-                pVCpu->cpum.GstCtx.hwvirt.svm.uPrevPauseTick = uTick;
-            }
-
-            /* Simple pause-filter counter. */
-            if (pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter > 0)
-            {
-                --pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilter;
-                fCheckIntercept = false;
-            }
-        }
-        if (fCheckIntercept)
-            IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_PAUSE, SVM_EXIT_PAUSE, 0, 0);
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvm)
+            IEM_MC_CALL_CIMPL_0(iemCImpl_svm_pause);
 #endif
     }
     else
