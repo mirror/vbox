@@ -905,7 +905,7 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
 #define CPUMCTX_EXTRN_NEM_WIN_MASK              UINT64_C(0x0003000000000000)
 
 /** All CPUM state bits, not including keeper specific ones. */
-#define CPUMCTX_EXTRN_ALL                       UINT64_C(0x000000fffffffffc)
+#define CPUMCTX_EXTRN_ALL                       UINT64_C(0x000001fffffffffc)
 /** @} */
 
 
