@@ -1262,6 +1262,7 @@ RuntimeR3_SOURCES.netbsd = \
 	r3/generic/RTTimeZoneGetCurrent-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTFileSetAllocationSize-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
