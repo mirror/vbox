@@ -944,7 +944,7 @@ HRESULT Appliance::i_searchUniqueVMName(Utf8Str& aName) const
     while (mVirtualBox->FindMachine(Bstr(tmpName).raw(), &machine) != VBOX_E_OBJECT_NOT_FOUND)
     {
         RTStrFree(tmpName);
-        RTStrAPrintf(&tmpName, "%s_%d", aName.c_str(), i);
+        RTStrAPrintf(&tmpName, "%s %d", aName.c_str(), i);
         ++i;
     }
     aName = tmpName;
