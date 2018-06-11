@@ -6047,9 +6047,26 @@ IEM_CIMPL_DEF_0(iemCImpl_invd)
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_INVD, SVM_EXIT_INVD, 0, 0);
-#endif
+
+    /* We currently take no action here. */
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements WBINVD.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_wbinvd)
+{
+    if (pVCpu->iem.s.uCpl != 0)
+    {
+        Log(("wbinvd: CPL != 0 -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    IEMOP_HLP_SVM_INSTR_INTERCEPT_AND_NRIP(pVCpu, SVM_CTRL_INTERCEPT_WBINVD, SVM_EXIT_WBINVD, 0, 0);
 
     /* We currently take no action here. */
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
