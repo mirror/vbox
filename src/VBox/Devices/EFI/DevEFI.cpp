@@ -1245,6 +1245,8 @@ static int efiPortImageEventWrite(PDEVEFI pThis, uint32_t u32, unsigned cb)
         case EFI_IMAGE_EVT_CMD_START_LOAD64:
         case EFI_IMAGE_EVT_CMD_START_UNLOAD32:
         case EFI_IMAGE_EVT_CMD_START_UNLOAD64:
+        case EFI_IMAGE_EVT_CMD_START_RELOC32:
+        case EFI_IMAGE_EVT_CMD_START_RELOC64:
             AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) == 0);
 
             /* Reset the state. */
@@ -1292,6 +1294,13 @@ static int efiPortImageEventWrite(PDEVEFI pThis, uint32_t u32, unsigned cb)
                                              &pThis->ImageEvt.szName[pThis->ImageEvt.offNameLastComponent]);
                         break;
                     }
+                case EFI_IMAGE_EVT_CMD_START_RELOC32:
+                case EFI_IMAGE_EVT_CMD_START_RELOC64:
+                {
+                    LogRel(("EFI: relocate module to %#llx from %#llx\n",
+                            pThis->ImageEvt.uAddr0, pThis->ImageEvt.uAddr1));
+                    break;
+                }
                 }
             }
             return VINF_SUCCESS;
@@ -1308,8 +1317,8 @@ static int efiPortImageEventWrite(PDEVEFI pThis, uint32_t u32, unsigned cb)
 
         case EFI_IMAGE_EVT_CMD_ADDR1:
             AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) <= UINT16_MAX);
-            pThis->ImageEvt.uAddr0 <<= 16;
-            pThis->ImageEvt.uAddr0 |= EFI_IMAGE_EVT_GET_PAYLOAD_U16(u32);
+            pThis->ImageEvt.uAddr1 <<= 16;
+            pThis->ImageEvt.uAddr1 |= EFI_IMAGE_EVT_GET_PAYLOAD_U16(u32);
             return VINF_SUCCESS;
 
         case EFI_IMAGE_EVT_CMD_SIZE0:

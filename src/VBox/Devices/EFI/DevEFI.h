@@ -223,6 +223,10 @@ typedef enum EFIDBGPOINT
 #define EFI_IMAGE_EVT_CMD_START_UNLOAD32        UINT32_C(0x00000004)
 /** Starts a 64-bit unload event. Requires name and address. */
 #define EFI_IMAGE_EVT_CMD_START_UNLOAD64        UINT32_C(0x00000005)
+/** Starts a 32-bit relocation event. RRequires new and old base address. */
+#define EFI_IMAGE_EVT_CMD_START_RELOC32         UINT32_C(0x0000000A)
+/** Starts a 64-bit relocation event. Requires new and old base address. */
+#define EFI_IMAGE_EVT_CMD_START_RELOC64         UINT32_C(0x0000000B)
 
 /** The command for writing to the second address register (64-bit).
  * Takes a 16-bit payload value.  The register value is shifted 16-bits

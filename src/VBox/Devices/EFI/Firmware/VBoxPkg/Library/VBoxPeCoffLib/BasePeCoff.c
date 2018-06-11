@@ -1331,6 +1331,7 @@ PeCoffLoaderLoadImage (
   return Status;
 }
 
+extern VOID EFIAPI VBoxPeCoffLoaderMoveImageExtraAction(IN PHYSICAL_ADDRESS OldBase, IN PHYSICAL_ADDRESS NewBase);
 
 /**
   Reapply fixups on a fixed up PE32/PE32+ image to allow virtual calling at EFI
@@ -1386,6 +1387,8 @@ PeCoffLoaderRelocateImageForRuntime (
   UINT16                              Magic;
   UINT32                              FatOffset = 0;
   EFI_FAT_IMAGE_HEADER                *Fat;
+
+  VBoxPeCoffLoaderMoveImageExtraAction(ImageBase, VirtImageBase);
 
   OldBase = (CHAR8 *)((UINTN)ImageBase);
   NewBase = (CHAR8 *)((UINTN)VirtImageBase);
