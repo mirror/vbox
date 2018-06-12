@@ -371,7 +371,10 @@ Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
              m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
              m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter ||
              m_enmVSDType == KVirtualSystemDescriptionType_HardDiskControllerIDE ||
-             m_enmVSDType == KVirtualSystemDescriptionType_HardDiskImage) &&
+             m_enmVSDType == KVirtualSystemDescriptionType_HardDiskImage ||
+             m_enmVSDType == KVirtualSystemDescriptionType_SettingsFile ||
+             m_enmVSDType == KVirtualSystemDescriptionType_BaseFolder ||
+             m_enmVSDType == KVirtualSystemDescriptionType_PrimaryGroup) &&
             m_checkState == Qt::Checked) /* Item has to be enabled */
             enmFlags |= Qt::ItemIsEditable;
     }
@@ -450,6 +453,9 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_USBController:          value = UIApplianceEditorWidget::tr("USB Controller"); break;
                     case KVirtualSystemDescriptionType_SoundCard:              value = UIApplianceEditorWidget::tr("Sound Card"); break;
                     case KVirtualSystemDescriptionType_HardDiskImage:          value = UIApplianceEditorWidget::tr("Virtual Disk Image"); break;
+                    case KVirtualSystemDescriptionType_SettingsFile:           value = UIApplianceEditorWidget::tr("Settings File"); break;
+                    case KVirtualSystemDescriptionType_BaseFolder:             value = UIApplianceEditorWidget::tr("Base Folder"); break;
+                    case KVirtualSystemDescriptionType_PrimaryGroup:           value = UIApplianceEditorWidget::tr("Primary Group"); break;
                     default:                                                   value = UIApplianceEditorWidget::tr("Unknown Hardware Item"); break;
                 }
             }
@@ -515,6 +521,8 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_NetworkAdapter:         value = UIIconPool::iconSet(":/nw_16px.png"); break;
                     case KVirtualSystemDescriptionType_USBController:          value = UIIconPool::iconSet(":/usb_16px.png"); break;
                     case KVirtualSystemDescriptionType_SoundCard:              value = UIIconPool::iconSet(":/sound_16px.png"); break;
+                    case KVirtualSystemDescriptionType_BaseFolder:             value = vboxGlobal().icon(QFileIconProvider::Folder); break;
+                    case KVirtualSystemDescriptionType_PrimaryGroup:              value = UIIconPool::iconSet(":/vm_group_name_16px.png"); break;
                     default: break;
                 }
             }
@@ -665,10 +673,37 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
             }
             case KVirtualSystemDescriptionType_HardDiskImage:
             {
-                   UIFilePathSelector *pFileChooser = new UIFilePathSelector(pParent);
-                   pFileChooser->setMode(UIFilePathSelector::Mode_File_Save);
-                   pFileChooser->setResetEnabled(false);
-                   pEditor = pFileChooser;
+                UIFilePathSelector *pFileChooser = new UIFilePathSelector(pParent);
+                pFileChooser->setMode(UIFilePathSelector::Mode_File_Save);
+                pFileChooser->setResetEnabled(false);
+                pEditor = pFileChooser;
+                break;
+            }
+            case KVirtualSystemDescriptionType_SettingsFile:
+            {
+                UIFilePathSelector *pFileChooser = new UIFilePathSelector(pParent);
+                pFileChooser->setMode(UIFilePathSelector::Mode_File_Save);
+                pFileChooser->setResetEnabled(false);
+                pEditor = pFileChooser;
+                break;
+            }
+            case KVirtualSystemDescriptionType_BaseFolder:
+            {
+                UIFilePathSelector *pFileChooser = new UIFilePathSelector(pParent);
+                pFileChooser->setMode(UIFilePathSelector::Mode_Folder);
+                pFileChooser->setResetEnabled(false);
+                pEditor = pFileChooser;
+                break;
+            }
+            case KVirtualSystemDescriptionType_PrimaryGroup:
+            {
+                QComboBox *pComboBox = new QComboBox(pParent);
+                pComboBox->setEditable(true);
+                QVector<QString> groupsVector = vboxGlobal().virtualBox().GetMachineGroups();
+
+                for (int i = 0; i < groupsVector.size(); ++i)
+                    pComboBox->addItem(groupsVector.at(i));
+                pEditor = pComboBox;
                 break;
             }
             default: break;
@@ -749,10 +784,21 @@ bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & 
             break;
         }
         case KVirtualSystemDescriptionType_HardDiskImage:
+        case KVirtualSystemDescriptionType_SettingsFile:
+        case KVirtualSystemDescriptionType_BaseFolder:
         {
             if (UIFilePathSelector *pFileChooser = qobject_cast<UIFilePathSelector*>(pEditor))
             {
                 pFileChooser->setPath(m_strConfigValue);
+                fDone = true;
+            }
+            break;
+        }
+        case KVirtualSystemDescriptionType_PrimaryGroup:
+        {
+            if (QComboBox *pGroupCombo = qobject_cast<QComboBox*>(pEditor))
+            {
+                pGroupCombo->setCurrentText(m_strConfigValue);
                 fDone = true;
             }
             break;
@@ -871,11 +917,22 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
             if (QComboBox *pComboBox = qobject_cast<QComboBox*>(pEditor))
             {
                 m_strConfigValue = pComboBox->itemData(pComboBox->currentIndex()).toString();
+                printf("%s\n", qPrintable(pComboBox->itemData(pComboBox->currentIndex()).toString()));
+                fDone = true;
+            }
+            break;
+        }
+        case KVirtualSystemDescriptionType_PrimaryGroup:
+        {
+            if (QComboBox *pComboBox = qobject_cast<QComboBox*>(pEditor))
+            {
+                m_strConfigValue = pComboBox->currentText();
                 fDone = true;
             }
             break;
         }
         case KVirtualSystemDescriptionType_HardDiskImage:
+        case KVirtualSystemDescriptionType_BaseFolder:
         {
             if (UIFilePathSelector *pFileChooser = qobject_cast<UIFilePathSelector*>(pEditor))
             {
@@ -934,9 +991,11 @@ UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QI
         vsd.GetDescription(types, refs, origValues, configValues, extraConfigValues);
         for (int i = 0; i < types.size(); ++i)
         {
+            if (types[i] == KVirtualSystemDescriptionType_SettingsFile)
+                continue;
             /* We add the hard disk images in an second step, so save a
                reference to them. */
-            if (types[i] == KVirtualSystemDescriptionType_HardDiskImage)
+            else if (types[i] == KVirtualSystemDescriptionType_HardDiskImage)
                 hdIndexes << i;
             else
             {
