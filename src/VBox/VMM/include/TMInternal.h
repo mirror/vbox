@@ -328,7 +328,9 @@ typedef enum TMTSCMODE
     /** The guest TSC is an offset of the real TSC. */
     TMTSCMODE_REAL_TSC_OFFSET,
     /** The guest TSC is dynamically derived through emulating or offsetting. */
-    TMTSCMODE_DYNAMIC
+    TMTSCMODE_DYNAMIC,
+    /** The native API provides it. */
+    TMTSCMODE_NATIVE_API
 } TMTSCMODE;
 AssertCompileSize(TMTSCMODE, sizeof(uint32_t));
 

@@ -26,6 +26,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <iprt/nt/nt-and-windows.h>
 #include <iprt/nt/hyperv.h>
 #include <iprt/nt/vid.h>

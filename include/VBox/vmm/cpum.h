@@ -1222,10 +1222,10 @@ VMMDECL(bool)       CPUMSetGuestCpuIdPerCpuApicFeature(PVMCPU pVCpu, bool fVisib
 VMMDECL(void)       CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
 VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu);
 VMM_INT_DECL(void)  CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg);
-VMMR0_INT_DECL(void)        CPUMR0SetGuestTscAux(PVMCPU pVCpu, uint64_t uValue);
-VMMR0_INT_DECL(uint64_t)    CPUMR0GetGuestTscAux(PVMCPU pVCpu);
-VMMR0_INT_DECL(void)        CPUMR0SetGuestSpecCtrl(PVMCPU pVCpu, uint64_t uValue);
-VMMR0_INT_DECL(uint64_t)    CPUMR0GetGuestSpecCtrl(PVMCPU pVCpu);
+VMM_INT_DECL(void)     CPUMSetGuestTscAux(PVMCPU pVCpu, uint64_t uValue);
+VMM_INT_DECL(uint64_t) CPUMGetGuestTscAux(PVMCPU pVCpu);
+VMM_INT_DECL(void)     CPUMSetGuestSpecCtrl(PVMCPU pVCpu, uint64_t uValue);
+VMM_INT_DECL(uint64_t) CPUMGetGuestSpecCtrl(PVMCPU pVCpu);
 /** @} */
 
 

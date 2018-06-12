@@ -21,11 +21,12 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_TM
 #include <VBox/vmm/tm.h>
+#include <VBox/vmm/gim.h>
+#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/nem.h>
 #include <iprt/asm-amd64-x86.h> /* for SUPGetCpuHzFromGIP */
 #include "TMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/vmm/gim.h>
-#include <VBox/vmm/dbgf.h>
 #include <VBox/sup.h>
 
 #include <VBox/param.h>
@@ -81,11 +82,22 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
 
         /** @todo Test that pausing and resuming doesn't cause lag! (I.e. that we're
          *        unpaused before the virtual time and stopped after it. */
-        if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
-            pVCpu->tm.s.offTSCRawSrc = SUPReadTsc() - pVCpu->tm.s.u64TSC;
-        else
-            pVCpu->tm.s.offTSCRawSrc = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
-                                     - pVCpu->tm.s.u64TSC;
+        switch (pVM->tm.s.enmTSCMode)
+        {
+            case TMTSCMODE_REAL_TSC_OFFSET:
+                pVCpu->tm.s.offTSCRawSrc = SUPReadTsc() - pVCpu->tm.s.u64TSC;
+                break;
+            case TMTSCMODE_VIRT_TSC_EMULATED:
+            case TMTSCMODE_DYNAMIC:
+                pVCpu->tm.s.offTSCRawSrc = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
+                                         - pVCpu->tm.s.u64TSC;
+                break;
+            case TMTSCMODE_NATIVE_API:
+                pVCpu->tm.s.offTSCRawSrc = 0; /** @todo ?? */
+                break;
+            default:
+                AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+        }
         return VINF_SUCCESS;
     }
     AssertFailed();
@@ -116,11 +128,22 @@ int tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu)
             STAM_COUNTER_INC(&pVM->tm.s.StatTSCResume);
 
             /* When resuming, use the TSC value of the last stopped VCPU to avoid the TSC going back. */
-            if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
-                pVCpu->tm.s.offTSCRawSrc = SUPReadTsc() - pVM->tm.s.u64LastPausedTSC;
-            else
-                pVCpu->tm.s.offTSCRawSrc = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
-                                         - pVM->tm.s.u64LastPausedTSC;
+            switch (pVM->tm.s.enmTSCMode)
+            {
+                case TMTSCMODE_REAL_TSC_OFFSET:
+                    pVCpu->tm.s.offTSCRawSrc = SUPReadTsc() - pVM->tm.s.u64LastPausedTSC;
+                    break;
+                case TMTSCMODE_VIRT_TSC_EMULATED:
+                case TMTSCMODE_DYNAMIC:
+                    pVCpu->tm.s.offTSCRawSrc = tmCpuTickGetRawVirtual(pVM, false /* don't check for pending timers */)
+                                             - pVM->tm.s.u64LastPausedTSC;
+                    break;
+                case TMTSCMODE_NATIVE_API:
+                    pVCpu->tm.s.offTSCRawSrc = 0; /** @todo ?? */
+                    break;
+                default:
+                    AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+            }
 
             /* Calculate the offset for other VCPUs to use. */
             pVM->tm.s.offTSCPause = pVCpu->tm.s.offTSCRawSrc - offTSCRawSrcOld;
@@ -412,10 +435,27 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
     if (RT_LIKELY(pVCpu->tm.s.fTSCTicking))
     {
         PVM pVM = pVCpu->CTX_SUFF(pVM);
-        if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
-            u64 = SUPReadTsc();
-        else
-            u64 = tmCpuTickGetRawVirtual(pVM, fCheckTimers);
+        switch (pVM->tm.s.enmTSCMode)
+        {
+            case TMTSCMODE_REAL_TSC_OFFSET:
+                u64 = SUPReadTsc();
+                break;
+            case TMTSCMODE_VIRT_TSC_EMULATED:
+            case TMTSCMODE_DYNAMIC:
+                u64 = tmCpuTickGetRawVirtual(pVM, fCheckTimers);
+                break;
+#ifndef IN_RC
+            case TMTSCMODE_NATIVE_API:
+            {
+                u64 = 0;
+                int rcNem = NEMHCQueryCpuTick(pVCpu, &u64, NULL);
+                AssertLogRelRCReturn(rcNem, SUPReadTsc());
+                break;
+            }
+#endif
+            default:
+                AssertFailedBreakStmt(u64 = SUPReadTsc());
+        }
         u64 -= pVCpu->tm.s.offTSCRawSrc;
 
         /* Always return a value higher than what the guest has already seen. */

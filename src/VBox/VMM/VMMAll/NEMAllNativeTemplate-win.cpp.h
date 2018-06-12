@@ -1094,6 +1094,62 @@ VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t f
 }
 
 
+/**
+ * Query the CPU tick counter and optionally the TSC_AUX MSR value.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context CPU structure.
+ * @param   pcTicks     Where to return the CPU tick count.
+ * @param   puAux       Where to return the TSC_AUX register value.
+ */
+VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *puAux)
+{
+#ifdef IN_RING3
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
+    AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_NEM_IPE_9);
+
+# ifdef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
+    /* Call ring-0 and get the values. */
+    int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_QUERY_CPU_TICK, 0, NULL);
+    AssertLogRelRCReturn(rc, rc);
+    *pcTicks = pVCpu->nem.s.Hypercall.QueryCpuTick.cTicks;
+    if (puAux)
+        *puAux = pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX
+               ? pVCpu->nem.s.Hypercall.QueryCpuTick.uAux : CPUMGetGuestTscAux(pVCpu);
+    return VINF_SUCCESS;
+
+# else
+    /* Call the offical API. */
+    WHV_REGISTER_NAME  aenmNames[2] = { WHvX64RegisterTsc, WHvX64RegisterTscAux };
+    WHV_REGISTER_VALUE aValues[2]   = { {0, 0}, {0, 0} };
+    Assert(RT_ELEMENTS(aenmNames) == RT_ELEMENTS(aValues));
+    HRESULT hrc = WHvGetVirtualProcessorRegisters(pVM->nem.s.hPartition, pVCpu->idCpu, aenmNames, 2, aValues);
+    AssertLogRelMsgReturn(SUCCEEDED(hrc),
+                          ("WHvGetVirtualProcessorRegisters(%p, %u,{tsc,tsc_aux},2,) -> %Rhrc (Last=%#x/%u)\n",
+                           pVM->nem.s.hPartition, pVCpu->idCpu, hrc, RTNtLastStatusValue(), RTNtLastErrorValue())
+                          , VERR_NEM_GET_REGISTERS_FAILED);
+    *pcTicks = aValues[0].Reg64;
+    if (puAux)
+        *pcTicks = pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX ? aValues[0].Reg64 : CPUMGetGuestTscAux(pVCpu);
+    return VINF_SUCCESS;
+#endif
+#else  /* IN_RING0 */
+    /** @todo improve and secure this translation */
+    PGVM pGVM = GVMMR0ByHandle(pVCpu->pVMR0->hSelf);
+    AssertReturn(pGVM, VERR_INVALID_VMCPU_HANDLE);
+    VMCPUID idCpu = pVCpu->idCpu;
+    ASMCompilerBarrier();
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_VMCPU_HANDLE);
+
+    int rc = nemR0WinQueryCpuTick(pGVM, &pGVM->aCpus[idCpu], pcTicks, puAux);
+    if (RT_SUCCESS(rc) && puAux && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX))
+        *puAux = CPUMGetGuestTscAux(pVCpu);
+    return rc;
+#endif /* IN_RING0 */
+}
+
+
 #ifdef LOG_ENABLED
 /**
  * Get the virtual processor running status.
@@ -4220,4 +4276,5 @@ void nemHCNativeNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysP
     /* else: ignore since we've got the alias page at this address. */
 #endif
 }
+
 

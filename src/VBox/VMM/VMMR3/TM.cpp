@@ -435,9 +435,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
                           N_("Configuration error: \"TSCTicksPerSecond\" = %RI64 is not in the range 1MHz..4GHz-1"),
                           pVM->tm.s.cTSCTicksPerSecond);
     else
-    {
         pVM->tm.s.enmTSCMode = TMTSCMODE_VIRT_TSC_EMULATED;
-    }
 
     /** @cfgm{/TM/TSCTiedToExecution, bool, false}
      * Whether the TSC should be tied to execution. This will exclude most of the
@@ -1196,12 +1194,22 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
      */
     VM_ASSERT_EMT0(pVM);
     uint64_t offTscRawSrc;
-    if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
-        offTscRawSrc = SUPReadTsc();
-    else
+    switch (pVM->tm.s.enmTSCMode)
     {
-        offTscRawSrc = TMVirtualSyncGetNoCheck(pVM);
-        offTscRawSrc = ASMMultU64ByU32DivByU32(offTscRawSrc, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
+        case TMTSCMODE_REAL_TSC_OFFSET:
+            offTscRawSrc = SUPReadTsc();
+            break;
+        case TMTSCMODE_DYNAMIC:
+        case TMTSCMODE_VIRT_TSC_EMULATED:
+            offTscRawSrc = TMVirtualSyncGetNoCheck(pVM);
+            offTscRawSrc = ASMMultU64ByU32DivByU32(offTscRawSrc, pVM->tm.s.cTSCTicksPerSecond, TMCLOCK_FREQ_VIRTUAL);
+            break;
+        case TMTSCMODE_NATIVE_API:
+            /** @todo NEM TSC reset on reset for Windows8+ bug workaround. */
+            offTscRawSrc = 0;
+            break;
+        default:
+            AssertFailedBreakStmt(offTscRawSrc = 0);
     }
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
@@ -3304,6 +3312,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtEnable(PVM pVM, PVMCPU pVCp
 {
     AssertPtr(pVM); Assert(pVM->tm.s.fTSCModeSwitchAllowed); NOREF(pVCpuEmt); NOREF(pvData);
     Assert(pVM->tm.s.enmTSCMode != TMTSCMODE_REAL_TSC_OFFSET);
+    Assert(pVM->tm.s.enmTSCMode != TMTSCMODE_NATIVE_API); /** @todo figure out NEM/win and paravirt */
     Assert(tmR3HasFixedTSC(pVM));
 
     /*
@@ -3583,6 +3592,8 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
             if (pVCpu->tm.s.offTSCRawSrc)
                 pHlp->pfnPrintf(pHlp, "\n          offset %RU64", pVCpu->tm.s.offTSCRawSrc);
         }
+        else if (pVM->tm.s.enmTSCMode == TMTSCMODE_NATIVE_API)
+            pHlp->pfnPrintf(pHlp, " - native api");
         else
             pHlp->pfnPrintf(pHlp, " - virtual clock");
         pHlp->pfnPrintf(pHlp, "\n");
@@ -3637,6 +3648,7 @@ static const char *tmR3GetTSCModeNameEx(TMTSCMODE enmMode)
         case TMTSCMODE_REAL_TSC_OFFSET:    return "RealTscOffset";
         case TMTSCMODE_VIRT_TSC_EMULATED:  return "VirtTscEmulated";
         case TMTSCMODE_DYNAMIC:            return "Dynamic";
+        case TMTSCMODE_NATIVE_API:         return "NativeApi";
         default:                           return "???";
     }
 }

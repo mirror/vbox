@@ -6304,7 +6304,6 @@ VMMDECL(int) CPUMQueryValidatedGuestEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEf
     return VINF_SUCCESS;
 }
 
-#ifdef IN_RING0
 
 /**
  * Fast way for HM to access the MSR_K8_TSC_AUX register.
@@ -6313,8 +6312,9 @@ VMMDECL(int) CPUMQueryValidatedGuestEfer(PVM pVM, uint64_t uCr0, uint64_t uOldEf
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT(pVCpu)
  */
-VMMR0_INT_DECL(uint64_t) CPUMR0GetGuestTscAux(PVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) CPUMGetGuestTscAux(PVMCPU pVCpu)
 {
+    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_TSC_AUX));
     return pVCpu->cpum.s.GuestMsrs.msr.TscAux;
 }
 
@@ -6326,8 +6326,9 @@ VMMR0_INT_DECL(uint64_t) CPUMR0GetGuestTscAux(PVMCPU pVCpu)
  * @param   uValue  The new value.
  * @thread  EMT(pVCpu)
  */
-VMMR0_INT_DECL(void) CPUMR0SetGuestTscAux(PVMCPU pVCpu, uint64_t uValue)
+VMM_INT_DECL(void) CPUMSetGuestTscAux(PVMCPU pVCpu, uint64_t uValue)
 {
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_TSC_AUX;
     pVCpu->cpum.s.GuestMsrs.msr.TscAux = uValue;
 }
 
@@ -6338,7 +6339,7 @@ VMMR0_INT_DECL(void) CPUMR0SetGuestTscAux(PVMCPU pVCpu, uint64_t uValue)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT(pVCpu)
  */
-VMMR0_INT_DECL(uint64_t) CPUMR0GetGuestSpecCtrl(PVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) CPUMGetGuestSpecCtrl(PVMCPU pVCpu)
 {
     return pVCpu->cpum.s.GuestMsrs.msr.SpecCtrl;
 }
@@ -6351,10 +6352,8 @@ VMMR0_INT_DECL(uint64_t) CPUMR0GetGuestSpecCtrl(PVMCPU pVCpu)
  * @param   uValue  The new value.
  * @thread  EMT(pVCpu)
  */
-VMMR0_INT_DECL(void) CPUMR0SetGuestSpecCtrl(PVMCPU pVCpu, uint64_t uValue)
+VMM_INT_DECL(void) CPUMSetGuestSpecCtrl(PVMCPU pVCpu, uint64_t uValue)
 {
     pVCpu->cpum.s.GuestMsrs.msr.SpecCtrl = uValue;
 }
-
-#endif /* IN_RING0 */
 

@@ -233,6 +233,12 @@ typedef struct NEMCPU
             RTGCPHYS            GCPhys;
             uint32_t            cPages;
         }                       UnmapPages;
+        /** Result from NEMR0QueryCpuTick. */
+        struct
+        {
+            uint64_t            cTicks;
+            uint32_t            uAux;
+        }                       QueryCpuTick;
     } Hypercall;
     /** I/O control buffer, we always use this for I/O controls. */
     union

@@ -6643,12 +6643,12 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     {
         switch (pMsr->u32Msr)
         {
-            case MSR_K8_TSC_AUX:        CPUMR0SetGuestTscAux(pVCpu, pMsr->u64Value);             break;
-            case MSR_K8_LSTAR:          pMixedCtx->msrLSTAR        = pMsr->u64Value;             break;
-            case MSR_K6_STAR:           pMixedCtx->msrSTAR         = pMsr->u64Value;             break;
-            case MSR_K8_SF_MASK:        pMixedCtx->msrSFMASK       = pMsr->u64Value;             break;
-            case MSR_K8_KERNEL_GS_BASE: pMixedCtx->msrKERNELGSBASE = pMsr->u64Value;             break;
-            case MSR_IA32_SPEC_CTRL:    CPUMR0SetGuestSpecCtrl(pVCpu, pMsr->u64Value);           break;
+            case MSR_K8_TSC_AUX:        CPUMSetGuestTscAux(pVCpu, pMsr->u64Value);      break;
+            case MSR_K8_LSTAR:          pMixedCtx->msrLSTAR        = pMsr->u64Value;    break;
+            case MSR_K6_STAR:           pMixedCtx->msrSTAR         = pMsr->u64Value;    break;
+            case MSR_K8_SF_MASK:        pMixedCtx->msrSFMASK       = pMsr->u64Value;    break;
+            case MSR_K8_KERNEL_GS_BASE: pMixedCtx->msrKERNELGSBASE = pMsr->u64Value;    break;
+            case MSR_IA32_SPEC_CTRL:    CPUMSetGuestSpecCtrl(pVCpu, pMsr->u64Value);    break;
             case MSR_K6_EFER: /* Nothing to do here since we intercept writes, see hmR0VmxLoadGuestMsrs(). */
                 break;
 
@@ -9191,7 +9191,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
             AssertRC(rc2);
             Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS));
 
-            rc2 = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, CPUMR0GetGuestTscAux(pVCpu), true /* fUpdateHostMsr */,
+            rc2 = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, CPUMGetGuestTscAux(pVCpu), true /* fUpdateHostMsr */,
                                              &fMsrUpdated);
             AssertRC(rc2);
             Assert(fMsrUpdated || pVCpu->hm.s.vmx.fUpdatedHostMsrs);
@@ -9213,7 +9213,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
         AssertRC(rc2);
         Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS));
 
-        rc2 = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_IA32_SPEC_CTRL, CPUMR0GetGuestSpecCtrl(pVCpu), true /* fUpdateHostMsr */,
+        rc2 = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_IA32_SPEC_CTRL, CPUMGetGuestSpecCtrl(pVCpu), true /* fUpdateHostMsr */,
                                          &fMsrUpdated);
         AssertRC(rc2);
         Assert(fMsrUpdated || pVCpu->hm.s.vmx.fUpdatedHostMsrs);

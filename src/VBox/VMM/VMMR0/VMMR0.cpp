@@ -2062,6 +2062,13 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 
+        case VMMR0_DO_NEM_QUERY_CPU_TICK:
+            if (u64Arg || pReqHdr || idCpu == NIL_VMCPUID)
+                return VERR_INVALID_PARAMETER;
+            rc = NEMR0QueryCpuTick(pGVM, pVM, idCpu);
+            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+            break;
+
         case VMMR0_DO_NEM_UPDATE_STATISTICS:
             if (u64Arg || pReqHdr)
                 return VERR_INVALID_PARAMETER;

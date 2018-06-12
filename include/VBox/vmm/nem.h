@@ -90,6 +90,7 @@ VMMR0_INT_DECL(int)  NEMR0MapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t fWhat);
+VMMR0_INT_DECL(int)  NEMR0QueryCpuTick(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 /** @} */
@@ -121,6 +122,7 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS
 #define NEM_PAGE_PROT_WRITE     RT_BIT(2)       /**< write access. */
 /** @} */
 
+VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *puAux);
 /** @} */
 
 /** @} */

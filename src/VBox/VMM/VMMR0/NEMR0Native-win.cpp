@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <iprt/nt/nt.h>
 #include <iprt/nt/hyperv.h>
 #include <iprt/nt/vid.h>
@@ -81,6 +82,7 @@ NEM_TMPL_STATIC int  nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPH
 NEM_TMPL_STATIC int  nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys, uint32_t cPages);
 NEM_TMPL_STATIC int  nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx);
 NEM_TMPL_STATIC int  nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat);
+NEM_TMPL_STATIC int  nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pcTicks, uint32_t *pcAux);
 DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput,
                                              void *pvOutput, uint32_t cbOutput);
 
@@ -585,7 +587,7 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  *
  * @returns VBox status code.
  * @param   pGVM        The ring-0 VM handle.
- * @param   pGVCpu      The irng-0 VCPU handle.
+ * @param   pGVCpu      The ring-0 VCPU handle.
  * @param   pCtx        The CPU context structure to import into.
  */
 NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx)
@@ -1294,7 +1296,7 @@ VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  *
  * @returns VBox status code.
  * @param   pGVM        The ring-0 VM handle.
- * @param   pGVCpu      The irng-0 VCPU handle.
+ * @param   pGVCpu      The ring-0 VCPU handle.
  * @param   pCtx        The CPU context structure to import into.
  * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX.
  */
@@ -2203,6 +2205,84 @@ VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t
     return rc;
 }
 
+
+/**
+ * Worker for NEMR0QueryCpuTick and the ring-0 NEMHCQueryCpuTick.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        The ring-0 VM handle.
+ * @param   pGVCpu      The ring-0 VCPU handle.
+ * @param   pcTicks     Where to return the current CPU tick count.
+ * @param   pcAux       Where to return the hyper-V TSC_AUX value.  Optional.
+ */
+NEM_TMPL_STATIC int nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pcTicks, uint32_t *pcAux)
+{
+    /*
+     * Hypercall parameters.
+     */
+    HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nem.s.HypercallData.pbPage;
+    AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
+
+    pInput->PartitionId = pGVM->nem.s.idHvPartition;
+    pInput->VpIndex     = pGVCpu->idCpu;
+    pInput->fFlags      = 0;
+    pInput->Names[0]    = HvX64RegisterTsc;
+    pInput->Names[1]    = HvX64RegisterTscAux;
+
+    size_t const cbInput = RT_ALIGN_Z(RT_OFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[2]), 32);
+    HV_REGISTER_VALUE *paValues = (HV_REGISTER_VALUE *)((uint8_t *)pInput + cbInput);
+    RT_BZERO(paValues, sizeof(paValues[0]) * 2);
+
+    /*
+     * Make the hypercall.
+     */
+    uint64_t uResult = g_pfnHvlInvokeHypercall(HV_MAKE_CALL_INFO(HvCallGetVpRegisters, 2),
+                                               pGVCpu->nem.s.HypercallData.HCPhysPage,
+                                               pGVCpu->nem.s.HypercallData.HCPhysPage + cbInput);
+    AssertLogRelMsgReturn(uResult == HV_MAKE_CALL_REP_RET(2), ("uResult=%RX64 cRegs=%#x\n", uResult, 2),
+                          VERR_NEM_GET_REGISTERS_FAILED);
+
+    /*
+     * Get results.
+     */
+    *pcTicks = paValues[0].Reg64;
+    if (pcAux)
+        *pcAux = paValues[0].Reg32;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Queries the TSC and TSC_AUX values, putting the results in .
+ *
+ * @returns VBox status code
+ * @param   pGVM        The ring-0 VM handle.
+ * @param   pVM         The cross context VM handle.
+ * @param   idCpu       The calling EMT.  Necessary for getting the
+ *                      hypercall page and arguments.
+ */
+VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+{
+    /*
+     * Validate the call.
+     */
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    if (RT_SUCCESS(rc))
+    {
+        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+        AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+
+        /*
+         * Call worker.
+         */
+        pVCpu->nem.s.Hypercall.QueryCpuTick.cTicks = 0;
+        pVCpu->nem.s.Hypercall.QueryCpuTick.uAux   = 0;
+        rc = nemR0WinQueryCpuTick(pGVM, pGVCpu, &pVCpu->nem.s.Hypercall.QueryCpuTick.cTicks,
+                                  &pVCpu->nem.s.Hypercall.QueryCpuTick.uAux);
+    }
+    return rc;
+}
 
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
 {
