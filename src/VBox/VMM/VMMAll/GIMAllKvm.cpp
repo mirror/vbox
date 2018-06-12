@@ -271,6 +271,11 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
                     pKvmCpu->fSystemTimeFlags = (SystemTime.fFlags & GIM_KVM_SYSTEM_TIME_FLAGS_GUEST_PAUSED);
             }
 
+            /* We ASSUME that ring-0/raw-mode have updated these. */
+            /** @todo Get logically atomic NanoTS/TSC pairs in ring-3. */
+            Assert(pKvmCpu->uTsc);
+            Assert(pKvmCpu->uVirtNanoTS);
+
             /* Enable and populate the system-time struct. */
             pKvmCpu->u64SystemTimeMsr      = uRawValue;
             pKvmCpu->GCPhysSystemTime      = MSR_GIM_KVM_SYSTEM_TIME_GUEST_GPA(uRawValue);
