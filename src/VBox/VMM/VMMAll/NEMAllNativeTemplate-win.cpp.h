@@ -1104,6 +1104,8 @@ VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t f
  */
 VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *puAux)
 {
+    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatQueryCpuTick);
+
 #ifdef IN_RING3
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
@@ -1175,7 +1177,7 @@ DECLINLINE(VID_PROCESSOR_STATUS) nemHCWinCpuGetRunningStatus(PVMCPU pVCpu)
     return enmCpuStatus;
 # endif
 }
-#endif
+#endif /* LOG_ENABLED */
 
 
 #ifdef NEM_WIN_USE_OUR_OWN_RUN_API

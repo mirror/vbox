@@ -306,6 +306,27 @@ VMMR3_INT_DECL(void) NEMR3ResetCpu(PVMCPU pVCpu, bool fInitIpi)
 }
 
 
+/**
+ * Indicates to TM that TMTSCMODE_NATIVE_API should be used for TSC.
+ *
+ * @returns true if TMTSCMODE_NATIVE_API must be used, otherwise @c false.
+ * @param   pVM     The cross context VM structure.
+ */
+VMMR3_INT_DECL(bool) NEMR3NeedSpecialTscMode(PVM pVM)
+{
+#ifdef VBOX_WITH_NATIVE_NEM
+# ifdef RT_OS_WINDOWS
+    if (VM_IS_NEM_ENABLED(pVM))
+        return true;
+# endif
+#else
+    RT_NOREF(pVM);
+#endif
+    return false;
+}
+
+
+
 VMMR3_INT_DECL(VBOXSTRICTRC) NEMR3RunGC(PVM pVM, PVMCPU pVCpu)
 {
     Assert(VM_IS_NEM_ENABLED(pVM));

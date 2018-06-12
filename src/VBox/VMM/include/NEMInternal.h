@@ -279,6 +279,7 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatImportOnDemand;
     STAMCOUNTER                 StatImportOnReturn;
     STAMCOUNTER                 StatImportOnReturnSkipped;
+    STAMCOUNTER                 StatQueryCpuTick;
     /** @} */
 #endif /* RT_OS_WINDOWS */
 } NEMCPU;
