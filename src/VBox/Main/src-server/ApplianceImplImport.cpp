@@ -200,7 +200,8 @@ HRESULT Appliance::interpret()
 
             /* VM Primary Group */
             Utf8Str strPrimaryGroup;
-            if (pNewDesc->m->pConfig->machineUserData.llGroups.size())
+            if (   vsysThis.pelmVBoxMachine
+                && pNewDesc->m->pConfig->machineUserData.llGroups.size())
                 strPrimaryGroup = pNewDesc->m->pConfig->machineUserData.llGroups.front();
             if (strPrimaryGroup.isEmpty())
                 strPrimaryGroup = "/";
