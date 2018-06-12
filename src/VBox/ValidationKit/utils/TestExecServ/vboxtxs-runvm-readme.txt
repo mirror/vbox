@@ -15,18 +15,20 @@ Linux Installation
 
 1.  scp/download latest release build of VirtualBox and install it in the VM.
 2.  scp/download the required smoke test VDI from remote test-resource to
-    /home/vbox/testrsrc/* (preserve the directory layout)
+    /home/vbox/testrsrc/3.0/tcp/win2k3ent-acpi.vdi
 3.  cd /root
 3.  scp/download VBoxValidationKit*.zip there.
 5.  unzip VBoxValidationKit*.zip
 6.  chmod -R u+w,a+x /opt/validationkit/
-7a. initrc: TODO: document init.rc setup
-7b. systemd: Link/copy the vboxtxs-runvm.system to [/usr]/lib/systemd/system/
-    Enable the vboxtxs-runvm service, usually using:
-       systemctl enable vboxtxs-runvm
-8.  Check the cdrom location and /dev/kmsg equivalent of your linux distro
-    in /opt/validationkit/linux/vboxtxs-runvm and fix it so it's correct.
-9.  reboot / done.
+7a. Gnome: Copy /opt/validationkit/linux/vboxtxs-runvm.desktop to /etc/xdg/autostart
+7b. KDE/Others: TODO: Document other desktop managers
+8.  Add the vbox user to sudo group using:
+        sudo usermod -a -G sudo vbox
+9.  Ensure no password is required for vbox when using sudo:
+        sudo echo "vbox ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/username
+10. Check the cdrom location and /dev/kmsg equivalent of your linux distro
+    in /opt/validationkit/linux/vboxtxs-runvm and fix it so it's correct
+11. Reboot / done.
 
 TODO: Document other OSes as we add them.
 

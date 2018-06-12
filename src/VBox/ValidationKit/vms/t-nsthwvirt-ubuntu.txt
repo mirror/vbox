@@ -24,6 +24,9 @@ Setup:
       - Close the system settings window.
  - Disable auto-mounting of the CDROM:
       gsettings set org.gnome.desktop.media-handling automount false
+ - Disable VirtualBox Guest Additions that ship with Ubuntu 17.04 by default:
+      sudo sh -c "echo 'blacklist vboxguest' > /etc/modprobe.d/blacklist.conf"
+      sudo sh -c "echo 'blacklist vboxvideo' > /etc/modprobe.d/blacklist.conf"
  - Eject any CD and shut down the VM.
 
 

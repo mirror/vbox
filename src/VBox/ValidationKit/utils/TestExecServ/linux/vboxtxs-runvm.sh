@@ -119,7 +119,6 @@ start() {
         kernlog_msg "Starting Nested Smoke Test" console
         fixAndTestBinary
         testRsrcPath
-        sleep 5
         $PYTHON_BINARY $SMOKETEST_SCRIPT -v -v -d --vbox-session-type gui --nic-attachment nat --quick all 1> "${SMOKEOUTPUT_PATH}" 2>&1
         RETVAL=$?
         dumpfile_to_kernlog "${SMOKEOUTPUT_PATH}"
