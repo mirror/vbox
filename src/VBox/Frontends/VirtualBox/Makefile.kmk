@@ -383,8 +383,7 @@ endif
 #
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
-	$(VirtualBox_0_OUTDIR)/include \
-	$(VBoxGlobal_0_OUTDIR)/include \
+	$(if-expr defined(VBOX_GUI_WITH_SHARED_LIBRARY),$(VBoxGlobal_0_OUTDIR)/include,$(VirtualBox_0_OUTDIR)/include) \
 	$(VBOX_GRAPHICS_INCS)
 
 ifdef VBOX_GUI_WITH_SHARED_LIBRARY
@@ -394,7 +393,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  #
  VirtualBoxVM_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
-	$(VirtualBoxVM_0_OUTDIR)/include \
 	$(VBoxGlobal_0_OUTDIR)/include \
 	$(VBOX_GRAPHICS_INCS)
 
@@ -2081,7 +2079,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
  ## @todo kmk doesn't remake optional outputs when they are missing...
  $$(VirtualBox_0_OUTDIR)/include/COMWrappers \
  + $(PATH_TARGET)/VirtualBoxComWrapperFiles.dep \
- + $(if-expr defined(VirtualBox_VBOX_COMWRAPPERS) \
+ +| $(if-expr defined(VirtualBox_VBOX_COMWRAPPERS) \
  , $(VirtualBox_VBOX_COMWRAPPERS) \
  , $$(VirtualBox_0_OUTDIR)/include/COMEnums.h \
    $$(VirtualBox_0_OUTDIR)/include/COMWrappers.cpp \
@@ -2115,7 +2113,7 @@ else
  ## @todo kmk doesn't remake optional outputs when they are missing...
  $$(VBoxGlobal_0_OUTDIR)/include/COMWrappers \
  + $(PATH_TARGET)/VBoxGlobalComWrapperFiles.dep \
- + $(if-expr defined(VBoxGlobal_VBOX_COMWRAPPERS) \
+ +| $(if-expr defined(VBoxGlobal_VBOX_COMWRAPPERS) \
  , $(VBoxGlobal_VBOX_COMWRAPPERS) \
  , $$(VBoxGlobal_0_OUTDIR)/include/COMEnums.h \
    $$(VBoxGlobal_0_OUTDIR)/include/COMWrappers.cpp \
