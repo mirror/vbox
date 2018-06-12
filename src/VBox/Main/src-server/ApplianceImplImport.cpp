@@ -4015,6 +4015,7 @@ void Appliance::i_importMachines(ImportStack &stack)
         stack.strNameVBox = vsdeName.front()->strVBoxCurrent;
 
         // Primary group, which is entirely optional.
+        stack.strPrimaryGroup.setNull();
         std::list<VirtualSystemDescriptionEntry*> vsdePrimaryGroup = vsdescThis->i_findByType(VirtualSystemDescriptionType_PrimaryGroup);
         if (vsdePrimaryGroup.size() >= 1)
         {
@@ -4027,6 +4028,7 @@ void Appliance::i_importMachines(ImportStack &stack)
         // file name and base folder. If the VM settings file name is modified,
         // it takes precedence, otherwise it is recreated from the base folder
         // and the primary group.
+        stack.strSettingsFilename.setNull();
         std::list<VirtualSystemDescriptionEntry*> vsdeSettingsFile = vsdescThis->i_findByType(VirtualSystemDescriptionType_SettingsFile);
         if (vsdeSettingsFile.size() >= 1)
         {
