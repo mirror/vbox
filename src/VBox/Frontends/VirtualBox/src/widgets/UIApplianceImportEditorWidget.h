@@ -21,6 +21,10 @@
 /* GUI includes: */
 #include "UIApplianceEditorWidget.h"
 
+/* Forward declarations: */
+class UIFilePathSelector;
+class QIRichTextLabel;
+
 class UIApplianceImportEditorWidget: public UIApplianceEditorWidget
 {
     Q_OBJECT;
@@ -33,7 +37,19 @@ public:
     bool import();
 
     QList<QPair<QString, QString> > licenseAgreements() const;
+
+protected:
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+private slots:
+
+    void sltHandlePathChanged(const QString &newPath);
+
+private:
+
+    QIRichTextLabel    *m_pPathSelectorLabel;
+    UIFilePathSelector *m_pPathSelector;
 };
 
 #endif /* __UIApplianceImportEditorWidget_h__ */
-

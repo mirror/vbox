@@ -22,15 +22,20 @@
 /* Qt includes: */
 # include <QCheckBox>
 # include <QTextEdit>
+# include <QVBoxLayout>
 
 /* GUI includes: */
+# include "QIRichTextLabel.h"
 # include "QITreeView.h"
 # include "UIApplianceImportEditorWidget.h"
-# include "VBoxGlobal.h"
+# include "UIFilePathSelector.h"
 # include "UIMessageCenter.h"
+# include "UIWizardImportApp.h"
+# include "VBoxGlobal.h"
 
 /* COM includes: */
 # include "CAppliance.h"
+# include "CSystemProperties.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -56,6 +61,23 @@ UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
 {
     /* Show the MAC check box */
     m_pCheckBoxReinitMACs->setHidden(false);
+
+    m_pPathSelectorLabel = new QIRichTextLabel(this);
+    if (m_pPathSelectorLabel)
+    {
+        m_pLayout->addWidget(m_pPathSelectorLabel);
+    }
+    m_pPathSelector = new UIFilePathSelector(this);
+    if (m_pPathSelector)
+    {
+        m_pPathSelector->setResetEnabled(true);
+        m_pPathSelector->setDefaultPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+        m_pPathSelector->setPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+        connect(m_pPathSelector, &UIFilePathSelector::pathChanged, this, &UIApplianceImportEditorWidget::sltHandlePathChanged);
+        m_pLayout->addWidget(m_pPathSelector);
+    }
+    m_pLayout->addStretch();
+    retranslateUi();
 }
 
 bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
@@ -136,6 +158,10 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
             m_pAppliance = NULL;
         }
     }
+    /* Make sure we initialize model items with correct base folder path: */
+    if (m_pPathSelector)
+        sltHandlePathChanged(m_pPathSelector->path());
+
     return fResult;
 }
 
@@ -198,3 +224,16 @@ QList<QPair<QString, QString> > UIApplianceImportEditorWidget::licenseAgreements
     return list;
 }
 
+void UIApplianceImportEditorWidget::retranslateUi()
+{
+    UIApplianceEditorWidget::retranslateUi();
+    m_pPathSelectorLabel->setText(UIWizardImportApp::tr("You can modify the base folder which will host "
+                                                        "all the virtual machines. Virtual home folders "
+                                                        "can also be individually modified."));
+
+}
+
+void UIApplianceImportEditorWidget::sltHandlePathChanged(const QString &newPath)
+{
+    setVirtualSystemBaseFolder(newPath);
+}

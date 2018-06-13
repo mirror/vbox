@@ -20,17 +20,17 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Global includes: */
-# include <QVBoxLayout>
-# include <QTextBrowser>
-# include <QPushButton>
-# include <QPointer>
 # include <QLabel>
+# include <QPointer>
+# include <QPushButton>
+# include <QTextBrowser>
+# include <QVBoxLayout>
 
 /* Local includes: */
-# include "UIWizardImportAppPageBasic2.h"
-# include "UIWizardImportApp.h"
-# include "QIRichTextLabel.h"
 # include "QIDialogButtonBox.h"
+# include "QIRichTextLabel.h"
+# include "UIWizardImportApp.h"
+# include "UIWizardImportAppPageBasic2.h"
 
 /* COM includes: */
 # include "CAppliance.h"
@@ -295,4 +295,3 @@ void UIApplianceUnverifiedCertificateViewer::retranslateUi()
     strTableContent += strTemplateRow.arg(tr("X.509 Version Number"), QString::number(m_certificate.GetVersionNumber()));
     m_pTextBrowser->setText(QString("<table>%1</table>").arg(strTableContent));
 }
-

@@ -112,4 +112,3 @@ private:
 };
 
 #endif /* !___UIWizardImportAppPageBasic2_h___ */
-

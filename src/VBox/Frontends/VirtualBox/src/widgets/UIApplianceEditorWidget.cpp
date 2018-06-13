@@ -194,6 +194,8 @@ public:
     /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
     virtual void putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues) /* override */;
 
+    KVirtualSystemDescriptionType  systemDescriptionType() const;
+
 private:
 
     /** Holds the Virtual System Description type. */
@@ -286,7 +288,6 @@ void UIApplianceModelItem::putBack(QVector<BOOL> &finalStates, QVector<QString> 
     for (int i = 0; i < childCount(); ++i)
         childItem(i)->putBack(finalStates, finalValues, finalExtraValues);
 }
-
 
 /*********************************************************************************************************************************
 *   Class UIVirtualSystemItem implementation.                                                                                    *
@@ -522,7 +523,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_USBController:          value = UIIconPool::iconSet(":/usb_16px.png"); break;
                     case KVirtualSystemDescriptionType_SoundCard:              value = UIIconPool::iconSet(":/sound_16px.png"); break;
                     case KVirtualSystemDescriptionType_BaseFolder:             value = vboxGlobal().icon(QFileIconProvider::Folder); break;
-                    case KVirtualSystemDescriptionType_PrimaryGroup:              value = UIIconPool::iconSet(":/vm_group_name_16px.png"); break;
+                    case KVirtualSystemDescriptionType_PrimaryGroup:           value = UIIconPool::iconSet(":/vm_group_name_16px.png"); break;
                     default: break;
                 }
             }
@@ -917,7 +918,6 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
             if (QComboBox *pComboBox = qobject_cast<QComboBox*>(pEditor))
             {
                 m_strConfigValue = pComboBox->itemData(pComboBox->currentIndex()).toString();
-                printf("%s\n", qPrintable(pComboBox->itemData(pComboBox->currentIndex()).toString()));
                 fDone = true;
             }
             break;
@@ -963,6 +963,11 @@ void UIVirtualHardwareItem::putBack(QVector<BOOL> &finalStates, QVector<QString>
     UIApplianceModelItem::putBack(finalStates, finalValues, finalExtraValues);
 }
 
+
+KVirtualSystemDescriptionType  UIVirtualHardwareItem::systemDescriptionType() const
+{
+    return m_enmVSDType;
+}
 
 /*********************************************************************************************************************************
 *   Class UIApplianceModel implementation.                                                                                       *
@@ -1161,6 +1166,32 @@ void UIApplianceModel::putBack()
     m_pRootItem->putBack(v1, v2, v3);
 }
 
+
+void UIApplianceModel::setVirtualSystemBaseFolder(const QString& path)
+{
+    if (!m_pRootItem)
+        return;
+    /* For each Virtual System: */
+    for (int i = 0; i < m_pRootItem->childCount(); ++i)
+    {
+        UIVirtualSystemItem *pVirtualSystem = dynamic_cast<UIVirtualSystemItem*>(m_pRootItem->childItem(i));
+        if (!pVirtualSystem)
+            continue;
+        int iItemCount = pVirtualSystem->childCount();
+        for (int j = 0; j < iItemCount; ++j)
+        {
+            UIVirtualHardwareItem *pHardwareItem = dynamic_cast<UIVirtualHardwareItem*>(pVirtualSystem->childItem(j));
+            if (!pHardwareItem)
+                continue;
+            if (pHardwareItem->systemDescriptionType() != KVirtualSystemDescriptionType_BaseFolder)
+                continue;
+            QVariant data(path);
+            pHardwareItem->setData(ApplianceViewSection_ConfigValue, data, Qt::EditRole);
+            QModelIndex index = createIndex(pHardwareItem->row(), 0, pHardwareItem);
+            emit dataChanged(index, index);
+        }
+    }
+}
 
 /*********************************************************************************************************************************
 *   Class UIApplianceDelegate implementation.                                                                                    *
@@ -1368,19 +1399,19 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
     initSystemSettings();
 
     /* Create layout: */
-    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    m_pLayout = new QVBoxLayout(this);
     {
         /* Configure information layout: */
-        pLayout->setContentsMargins(0, 0, 0, 0);
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create information pane: */
         m_pPaneInformation = new QWidget;
         {
             /* Create information layout: */
-            QVBoxLayout *pLayoutInformation = new QVBoxLayout(m_pPaneInformation);
+            QVBoxLayout *m_pLayoutInformation = new QVBoxLayout(m_pPaneInformation);
             {
                 /* Configure information layout: */
-                pLayoutInformation->setContentsMargins(0, 0, 0, 0);
+                m_pLayoutInformation->setContentsMargins(0, 0, 0, 0);
 
                 /* Create tree-view: */
                 m_pTreeViewSettings = new QITreeView;
@@ -1393,7 +1424,7 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
                     m_pTreeViewSettings->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
                     /* Add tree-view into information layout: */
-                    pLayoutInformation->addWidget(m_pTreeViewSettings);
+                    m_pLayoutInformation->addWidget(m_pTreeViewSettings);
                 }
 
                 /* Create check-box: */
@@ -1403,12 +1434,12 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
                     m_pCheckBoxReinitMACs->setHidden(true);
 
                     /* Add tree-view into information layout: */
-                    pLayoutInformation->addWidget(m_pCheckBoxReinitMACs);
+                    m_pLayoutInformation->addWidget(m_pCheckBoxReinitMACs);
                 }
             }
 
             /* Add information pane into layout: */
-            pLayout->addWidget(m_pPaneInformation);
+            m_pLayout->addWidget(m_pPaneInformation);
         }
 
         /* Create warning pane: */
@@ -1419,16 +1450,16 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
             m_pPaneWarning->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
             /* Create warning layout: */
-            QVBoxLayout *pLayoutWarning = new QVBoxLayout(m_pPaneWarning);
+            QVBoxLayout *m_pLayoutWarning = new QVBoxLayout(m_pPaneWarning);
             {
                 /* Configure warning layout: */
-                pLayoutWarning->setContentsMargins(0, 0, 0, 0);
+                m_pLayoutWarning->setContentsMargins(0, 0, 0, 0);
 
                 /* Create label: */
                 m_pLabelWarning = new QLabel;
                 {
                     /* Add label into warning layout: */
-                    pLayoutWarning->addWidget(m_pLabelWarning);
+                    m_pLayoutWarning->addWidget(m_pLabelWarning);
                 }
 
                 /* Create text-edit: */
@@ -1440,12 +1471,12 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
                     m_pTextEditWarning->setAutoFormatting(QTextEdit::AutoBulletList);
 
                     /* Add text-edit into warning layout: */
-                    pLayoutWarning->addWidget(m_pTextEditWarning);
+                    m_pLayoutWarning->addWidget(m_pTextEditWarning);
                 }
             }
 
             /* Add warning pane into layout: */
-            pLayout->addWidget(m_pPaneWarning);
+            m_pLayout->addWidget(m_pPaneWarning);
         }
     }
 
@@ -1486,4 +1517,11 @@ void UIApplianceEditorWidget::initSystemSettings()
         m_minGuestCPUCount   = sp.GetMinGuestCPUCount();
         m_maxGuestCPUCount   = sp.GetMaxGuestCPUCount();
     }
+}
+
+void UIApplianceEditorWidget::setVirtualSystemBaseFolder(const QString& path)
+{
+    if (!m_pModel)
+        return;
+    m_pModel->setVirtualSystemBaseFolder(path);
 }
