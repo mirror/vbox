@@ -61,8 +61,6 @@ class HostDnsMonitor
        HostDnsService::monitorThreadInitializationDone() */
     virtual HRESULT init(HostDnsMonitorProxy *proxy);
 
-    const HostDnsInformation &getInfo() const;
-
   protected:
     explicit HostDnsMonitor(bool fThreaded = false);
     virtual ~HostDnsMonitor();
@@ -76,7 +74,6 @@ class HostDnsMonitor
 
   private:
     static DECLCALLBACK(int) threadMonitoringRoutine(RTTHREAD, void *);
-    void pollGlobalExtraData();
 
   protected:
     mutable RTCLockMtx m_LockMtx;
@@ -95,16 +92,15 @@ class HostDnsMonitorProxy
     HostDnsMonitorProxy();
     ~HostDnsMonitorProxy();
     void init(VirtualBox *virtualbox);
-    void notify();
-
-    VirtualBox *getVirtualBox() const;
+    void notify(const HostDnsInformation &info);
 
     HRESULT GetNameServers(std::vector<com::Utf8Str> &aNameServers);
     HRESULT GetDomainName(com::Utf8Str *pDomainName);
     HRESULT GetSearchStrings(std::vector<com::Utf8Str> &aSearchStrings);
 
-    private:
-    void updateInfo();
+  private:
+    void pollGlobalExtraData();
+    bool updateInfo(const HostDnsInformation &info);
 
   private:
     mutable RTCLockMtx m_LockMtx;
