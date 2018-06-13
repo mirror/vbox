@@ -417,7 +417,7 @@ ifeq ($(KBUILD_TARGET_ARCH),amd64)
  #VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM = 1
  ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
   if !defined(VBOX_WITH_NESTED_HWVIRT_SVM) && !defined(VBOX_WITH_NESTED_HWVIRT_VMX)
-   $(error VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM defined without enabling nested VMX and/or nested SVM support)
+   $(error VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM defined without enabling nested VMX or nested SVM support)
   endif
  endif
 endif
