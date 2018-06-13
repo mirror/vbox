@@ -813,11 +813,12 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterIa32MiscEnable = 0x000800a0,       /**< @since v5 @note Appears not to be readable on exo partition (Threadripper). */
     HvX64RegisterIa32FeatureControl,                /**< @since v5 @note Appears not to be readable on exo partition (Threadripper). */
 
-    HvX64RegisterVpRuntime = 0x00090000,            /**< @note 17134/exo/threadripper: 0x5081a0 */
+    /** Uptime counter or some such thing.  Unit is different than HvRegisterTimeRefCount or the accounting is different. */
+    HvX64RegisterVpRuntime = 0x00090000,
     HvX64RegisterHypercall,
     HvRegisterGuestOsId,
     HvRegisterVpIndex,
-    HvRegisterTimeRefCount,
+    HvRegisterTimeRefCount,                         /**< Time counter since partition creation, 100ns units. */
 
     HvRegisterCpuManagementVersion = 0x00090007,    /**< @since v5 @note Appears not to be readable on exo partition. */
 
@@ -825,7 +826,8 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterIcr,                               /**< @note Appears not to be readable on exo partition. */
     HvX64RegisterTpr,                               /**< @note Appears not to be readable on exo partition. */
     HvRegisterVpAssistPage,
-    HvRegisterUnknown90014,                         /**< Readable on exo partition (17134), initial value 0x2f52c. */
+    /** Readable on exo partition (17134). Some kind of counter. */
+    HvRegisterUnknown90014,
 
     HvRegisterStatsPartitionRetail = 0x00090020,
     HvRegisterStatsPartitionInternal,

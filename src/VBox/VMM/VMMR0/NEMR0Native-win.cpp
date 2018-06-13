@@ -2386,6 +2386,8 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_SUCCESS(rc))
     {
+        AssertPtrReturn(g_pfnHvlInvokeHypercall, VERR_INTERNAL_ERROR_3);
+
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
         if (u64Arg == 0)
@@ -2437,6 +2439,28 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_
             pVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
             pVCpu->nem.s.Hypercall.Experiment.uLoValue = pOutput->PropertyValue;
             pVCpu->nem.s.Hypercall.Experiment.uHiValue = 0;
+            rc = VINF_SUCCESS;
+        }
+        else if (u64Arg == 2)
+        {
+            /*
+             * Set register.
+             */
+            HV_INPUT_SET_VP_REGISTERS *pInput = (HV_INPUT_SET_VP_REGISTERS *)pGVCpu->nem.s.HypercallData.pbPage;
+            AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
+            RT_BZERO(pInput, RT_OFFSETOF(HV_INPUT_SET_VP_REGISTERS, Elements[1]));
+
+            pInput->PartitionId = pGVM->nem.s.idHvPartition;
+            pInput->VpIndex     = pGVCpu->idCpu;
+            pInput->RsvdZ      = 0;
+            pInput->Elements[0].Name = (HV_REGISTER_NAME)pVCpu->nem.s.Hypercall.Experiment.uItem;
+            pInput->Elements[0].Value.Reg128.High64 = pVCpu->nem.s.Hypercall.Experiment.uHiValue;
+            pInput->Elements[0].Value.Reg128.Low64  = pVCpu->nem.s.Hypercall.Experiment.uLoValue;
+
+            uint64_t uResult = g_pfnHvlInvokeHypercall(HV_MAKE_CALL_INFO(HvCallSetVpRegisters, 1),
+                                                       pGVCpu->nem.s.HypercallData.HCPhysPage, 0);
+            pVCpu->nem.s.Hypercall.Experiment.fSuccess = uResult == HV_MAKE_CALL_REP_RET(1);
+            pVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
             rc = VINF_SUCCESS;
         }
         else

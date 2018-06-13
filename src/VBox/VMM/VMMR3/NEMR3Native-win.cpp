@@ -1448,37 +1448,107 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         /*
          * Poke and probe a little.
          */
-        for (uint32_t iReg = 0; iReg < 0x001101ff; iReg++)
+        PVMCPU              pVCpu = &pVM->aCpus[0];
+        uint32_t            aRegNames[1024];
+        HV_REGISTER_VALUE   aRegValues[1024];
+        uint32_t            aPropCodes[128];
+        uint64_t            aPropValues[128];
+        for (int iOuter = 0; iOuter < 5; iOuter++)
         {
-            PVMCPU pVCpu = &pVM->aCpus[0];
-            RT_ZERO(pVCpu->nem.s.Hypercall.Experiment);
-            pVCpu->nem.s.Hypercall.Experiment.uItem = iReg;
-            int rc2 = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPERIMENT, 0, NULL);
-            AssertLogRelRCBreak(rc2);
-            if (pVCpu->nem.s.Hypercall.Experiment.fSuccess)
+            LogRel(("\niOuter %d\n", iOuter));
+# if 1
+            /* registers */
+            uint32_t iRegValue = 0;
+            uint32_t cRegChanges = 0;
+            for (uint32_t iReg = 0; iReg < 0x001101ff; iReg++)
             {
-                LogRel(("Register %#010x = %#18RX64, %#18RX64\n", iReg,
-                        pVCpu->nem.s.Hypercall.Experiment.uLoValue, pVCpu->nem.s.Hypercall.Experiment.uHiValue));
-                if (iReg == HvX64RegisterTsc)
+                if (iOuter != 0 && aRegNames[iRegValue] > iReg)
+                    continue;
+                RT_ZERO(pVCpu->nem.s.Hypercall.Experiment);
+                pVCpu->nem.s.Hypercall.Experiment.uItem = iReg;
+                int rc2 = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPERIMENT, 0, NULL);
+                AssertLogRelRCBreak(rc2);
+                if (pVCpu->nem.s.Hypercall.Experiment.fSuccess)
                 {
-                    uint64_t uTsc = ASMReadTSC();
-                    LogRel(("TSC = %#18RX64; Delta %#18RX64 or %#18RX64\n",
-                            uTsc, pVCpu->nem.s.Hypercall.Experiment.uLoValue - uTsc, uTsc - pVCpu->nem.s.Hypercall.Experiment.uLoValue));
+                    LogRel(("Register %#010x = %#18RX64, %#18RX64\n", iReg,
+                            pVCpu->nem.s.Hypercall.Experiment.uLoValue, pVCpu->nem.s.Hypercall.Experiment.uHiValue));
+                    if (iReg == HvX64RegisterTsc)
+                    {
+                        uint64_t uTsc = ASMReadTSC();
+                        LogRel(("TSC = %#18RX64; Delta %#18RX64 or %#18RX64\n",
+                                uTsc, pVCpu->nem.s.Hypercall.Experiment.uLoValue - uTsc, uTsc - pVCpu->nem.s.Hypercall.Experiment.uLoValue));
+                    }
+
+                    if (iOuter == 0)
+                        aRegNames[iRegValue] = iReg;
+                    else if(   aRegValues[iRegValue].Reg128.Low64  != pVCpu->nem.s.Hypercall.Experiment.uLoValue
+                            || aRegValues[iRegValue].Reg128.High64 != pVCpu->nem.s.Hypercall.Experiment.uHiValue)
+                    {
+                        LogRel(("Changed from          %#18RX64, %#18RX64 !!\n",
+                                aRegValues[iRegValue].Reg128.Low64, aRegValues[iRegValue].Reg128.High64));
+                        LogRel(("Delta                 %#18RX64, %#18RX64 !!\n",
+                                pVCpu->nem.s.Hypercall.Experiment.uLoValue - aRegValues[iRegValue].Reg128.Low64,
+                                pVCpu->nem.s.Hypercall.Experiment.uHiValue - aRegValues[iRegValue].Reg128.High64));
+                        cRegChanges++;
+                    }
+                    aRegValues[iRegValue].Reg128.Low64  = pVCpu->nem.s.Hypercall.Experiment.uLoValue;
+                    aRegValues[iRegValue].Reg128.High64 = pVCpu->nem.s.Hypercall.Experiment.uHiValue;
+                    iRegValue++;
+                    AssertBreak(iRegValue < RT_ELEMENTS(aRegValues));
                 }
             }
-        }
-        for (uint32_t iProp = 0; iProp < _1M; iProp++)
-        {
-            if (iProp == HvPartitionPropertyDebugChannelId /* hangs host */)
-                continue;
-            PVMCPU pVCpu = &pVM->aCpus[0];
+            LogRel(("Found %u registers, %u changed\n", iRegValue, cRegChanges));
+# endif
+# if 1
+            /* partition properties */
+            uint32_t iPropValue = 0;
+            uint32_t cPropChanges = 0;
+            for (uint32_t iProp = 0; iProp < 0xc11ff; iProp++)
+            {
+                if (iProp == HvPartitionPropertyDebugChannelId /* hangs host */)
+                    continue;
+                if (iOuter != 0 && aPropCodes[iPropValue] > iProp)
+                    continue;
+                RT_ZERO(pVCpu->nem.s.Hypercall.Experiment);
+                pVCpu->nem.s.Hypercall.Experiment.uItem = iProp;
+                int rc2 = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPERIMENT, 1, NULL);
+                AssertLogRelRCBreak(rc2);
+                if (pVCpu->nem.s.Hypercall.Experiment.fSuccess)
+                {
+                    LogRel(("Property %#010x = %#18RX64\n", iProp, pVCpu->nem.s.Hypercall.Experiment.uLoValue));
+                    if (iOuter == 0)
+                        aPropCodes[iPropValue] = iProp;
+                    else if (aPropValues[iPropValue] != pVCpu->nem.s.Hypercall.Experiment.uLoValue)
+                    {
+                        LogRel(("Changed from          %#18RX64, delta %#18RX64!!\n",
+                                aPropValues[iPropValue], pVCpu->nem.s.Hypercall.Experiment.uLoValue - aPropValues[iPropValue]));
+                        cRegChanges++;
+                    }
+                    aPropValues[iPropValue] = pVCpu->nem.s.Hypercall.Experiment.uLoValue;
+                    iPropValue++;
+                    AssertBreak(iPropValue < RT_ELEMENTS(aPropValues));
+                }
+            }
+            LogRel(("Found %u properties, %u changed\n", iPropValue, cPropChanges));
+# endif
+
+            /* Modify the TSC register value and see what changes. */
+            if (iOuter != 0)
+            {
+                RT_ZERO(pVCpu->nem.s.Hypercall.Experiment);
+                pVCpu->nem.s.Hypercall.Experiment.uItem = HvX64RegisterTsc;
+                pVCpu->nem.s.Hypercall.Experiment.uHiValue = UINT64_C(0x00000fffffffffff) >> iOuter;
+                pVCpu->nem.s.Hypercall.Experiment.uLoValue = UINT64_C(0x0011100000000000) << iOuter;
+                VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPERIMENT, 2, NULL);
+                LogRel(("Setting HvX64RegisterTsc -> %RTbool (%#RX64)\n", pVCpu->nem.s.Hypercall.Experiment.fSuccess, pVCpu->nem.s.Hypercall.Experiment.uStatus));
+            }
+
             RT_ZERO(pVCpu->nem.s.Hypercall.Experiment);
-            pVCpu->nem.s.Hypercall.Experiment.uItem = iProp;
-            int rc2 = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPERIMENT, 1, NULL);
-            AssertLogRelRCBreak(rc2);
-            if (pVCpu->nem.s.Hypercall.Experiment.fSuccess)
-                LogRel(("Property %#010x = %#18RX64\n", iProp, pVCpu->nem.s.Hypercall.Experiment.uLoValue));
+            pVCpu->nem.s.Hypercall.Experiment.uItem = HvX64RegisterTsc;
+            VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPERIMENT, 0, NULL);
+            LogRel(("HvX64RegisterTsc = %#RX64, %#RX64\n", pVCpu->nem.s.Hypercall.Experiment.uLoValue, pVCpu->nem.s.Hypercall.Experiment.uHiValue));
         }
+
 #endif
         return VINF_SUCCESS;
     }
