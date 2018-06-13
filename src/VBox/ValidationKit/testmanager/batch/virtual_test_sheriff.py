@@ -511,6 +511,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Buggy_Build_Broken_Build                  = ( 'Broken Build',      'Buggy build' );
     ktReason_Unknown_VM_Start_Error                    = ( 'Unknown',           'VM Start Error' );
     ktReason_Unknown_VM_Runtime_Error                  = ( 'Unknown',           'VM Runtime Error' );
+    ktReason_GuestBug_CompizVBoxQt                     = ( 'Guest Bug',         'Compiz + VirtualBox Qt GUI crash' );
+
     ## @}
 
     ## BSOD category.
@@ -903,6 +905,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Panic_HugeMemory,                         'mm/huge_memory.c:1988' ),
         ( True,  ktReason_Panic_IOAPICDoesntWork,                   'IO-APIC + timer doesn''t work' ),
         ( True,  ktReason_Panic_TxUnitHang,                         'Detected Tx Unit Hang' ),
+        ( True,  ktReason_GuestBug_CompizVBoxQt,                    'error 4 in libQt5CoreVBox'),
     ];
 
     ## Things we search the _RIGHT_ _STRIPPED_ vgatext for.
