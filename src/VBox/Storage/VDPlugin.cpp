@@ -63,15 +63,19 @@ typedef VDPLUGIN *PVDPLUGIN;
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
 /** Head of loaded plugin list. */
 static RTLISTANCHOR g_ListPluginsLoaded;
+#endif
 
 /** Number of image backends supported. */
 static unsigned g_cBackends = 0;
 /** Array of pointers to the image backends. */
 static PCVDIMAGEBACKEND *g_apBackends = NULL;
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
 /** Array of handles to the corresponding plugin. */
 static RTLDRMOD *g_ahBackendPlugins = NULL;
+#endif
 /** Builtin image backends. */
 static PCVDIMAGEBACKEND aStaticBackends[] =
 {
@@ -93,11 +97,13 @@ static PCVDIMAGEBACKEND aStaticBackends[] =
 static unsigned g_cCacheBackends = 0;
 /** Array of pointers to the cache backends. */
 static PCVDCACHEBACKEND *g_apCacheBackends = NULL;
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
 /** Array of handles to the corresponding plugin.
  *
  * @todo r=bird: This looks rather pointless.
  */
 static RTLDRMOD *g_ahCacheBackendPlugins = NULL;
+#endif
 /** Builtin cache backends. */
 static PCVDCACHEBACKEND aStaticCacheBackends[] =
 {
@@ -135,15 +141,20 @@ static int vdAddBackends(RTLDRMOD hPlugin, PCVDIMAGEBACKEND *ppBackends, unsigne
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
     g_apBackends = pTmp;
+    memcpy(&g_apBackends[g_cBackends], ppBackends, cBackends * sizeof(PCVDIMAGEBACKEND));
 
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemRealloc(g_ahBackendPlugins,
            (g_cBackends + cBackends) * sizeof(RTLDRMOD));
     if (RT_UNLIKELY(!pTmpPlugins))
         return VERR_NO_MEMORY;
     g_ahBackendPlugins = pTmpPlugins;
-    memcpy(&g_apBackends[g_cBackends], ppBackends, cBackends * sizeof(PCVDIMAGEBACKEND));
     for (unsigned i = g_cBackends; i < g_cBackends + cBackends; i++)
         g_ahBackendPlugins[i] = hPlugin;
+#else
+    RT_NOREF(hPlugin);
+#endif
+
     g_cBackends += cBackends;
     return VINF_SUCCESS;
 }
@@ -167,16 +178,21 @@ static int vdAddCacheBackends(RTLDRMOD hPlugin, PCVDCACHEBACKEND *ppBackends, un
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
     g_apCacheBackends = pTmp;
+    memcpy(&g_apCacheBackends[g_cCacheBackends], ppBackends, cBackends * sizeof(PCVDCACHEBACKEND));
 
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemReallocTag(g_ahCacheBackendPlugins,
                                                        (g_cCacheBackends + cBackends) * sizeof(RTLDRMOD),
                                                        "may-leak:vdAddCacheBackend");
     if (RT_UNLIKELY(!pTmpPlugins))
         return VERR_NO_MEMORY;
     g_ahCacheBackendPlugins = pTmpPlugins;
-    memcpy(&g_apCacheBackends[g_cCacheBackends], ppBackends, cBackends * sizeof(PCVDCACHEBACKEND));
     for (unsigned i = g_cCacheBackends; i < g_cCacheBackends + cBackends; i++)
         g_ahCacheBackendPlugins[i] = hPlugin;
+#else
+    RT_NOREF(hPlugin);
+#endif
+
     g_cCacheBackends += cBackends;
     return VINF_SUCCESS;
 }
@@ -226,6 +242,7 @@ static int vdAddFilterBackends(RTLDRMOD hPlugin, PCVDFILTERBACKEND *ppBackends, 
         return VERR_NO_MEMORY;
     g_apFilterBackends = pTmp;
 
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     PRTLDRMOD pTmpPlugins = (PRTLDRMOD)RTMemRealloc(g_pahFilterBackendPlugins,
                                                     (g_cFilterBackends + cBackends) * sizeof(RTLDRMOD));
     if (RT_UNLIKELY(!pTmpPlugins))
@@ -235,6 +252,10 @@ static int vdAddFilterBackends(RTLDRMOD hPlugin, PCVDFILTERBACKEND *ppBackends, 
     memcpy(&g_apFilterBackends[g_cFilterBackends], ppBackends, cBackends * sizeof(PCVDFILTERBACKEND));
     for (unsigned i = g_cFilterBackends; i < g_cFilterBackends + cBackends; i++)
         g_pahFilterBackendPlugins[i] = hPlugin;
+#else
+    RT_NOREF(hPlugin);
+#endif
+
     g_cFilterBackends += cBackends;
     return VINF_SUCCESS;
 }
@@ -718,12 +739,12 @@ DECLHIDDEN(int) vdPluginLoadFromPath(const char *pszPath)
 #endif
 }
 
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
 /**
  * internal: scans plugin directory and loads found plugins.
  */
 static int vdLoadDynamicBackends(void)
 {
-#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     /*
      * Enumerate plugin backends from the application directory where the other
      * shared libraries are.
@@ -734,10 +755,8 @@ static int vdLoadDynamicBackends(void)
         return rc;
 
     return vdPluginLoadFromPath(szPath);
-#else
-    return VINF_SUCCESS;
-#endif
 }
+#endif
 
 /**
  * Worker for VDPluginUnloadFromFilename() and vdPluginUnloadFromPath().
@@ -853,11 +872,13 @@ DECLHIDDEN(int) vdPluginInit(void)
     if (RT_SUCCESS(rc))
     {
         rc = vdAddCacheBackends(NIL_RTLDRMOD, aStaticCacheBackends, RT_ELEMENTS(aStaticCacheBackends));
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
         if (RT_SUCCESS(rc))
         {
             RTListInit(&g_ListPluginsLoaded);
             rc = vdLoadDynamicBackends();
         }
+#endif
     }
 
     return rc;
@@ -874,8 +895,16 @@ DECLHIDDEN(int) vdPluginTerm(void)
     if (!g_apBackends)
         return VERR_INTERNAL_ERROR;
 
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
+    if (g_pahFilterBackendPlugins)
+        RTMemFree(g_pahFilterBackendPlugins);
+#endif
+    if (g_apFilterBackends)
+        RTMemFree(g_apFilterBackends);
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     if (g_ahCacheBackendPlugins)
         RTMemFree(g_ahCacheBackendPlugins);
+#endif
     if (g_apCacheBackends)
         RTMemFree(g_apCacheBackends);
     RTMemFree(g_apBackends);
@@ -886,7 +915,16 @@ DECLHIDDEN(int) vdPluginTerm(void)
     /* Clear the supported cache backends. */
     g_cCacheBackends = 0;
     g_apCacheBackends = NULL;
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     g_ahCacheBackendPlugins = NULL;
+#endif
+
+    /* Clear the supported filter backends. */
+    g_cFilterBackends = 0;
+    g_apFilterBackends = NULL;
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
+    g_pahFilterBackendPlugins = NULL;
+#endif
 
 #ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     PVDPLUGIN pPlugin, pPluginNext;
