@@ -1191,7 +1191,7 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPause
     /* Start with the first CPU. */
     WHV_REGISTER_NAME  enmName   = WHvX64RegisterTsc;
     WHV_REGISTER_VALUE Value     = {0, 0};
-    aValue.Reg64 = uPausedTscValue;
+    Value.Reg64 = uPausedTscValue;
     uint64_t const     uFirstTsc = ASMReadTSC();
     HRESULT hrc = WHvSetVirtualProcessorRegisters(pVM->nem.s.hPartition, 0 /*iCpu*/, &enmName, 1, &Value);
     AssertLogRelMsgReturn(SUCCEEDED(hrc),
@@ -1205,7 +1205,7 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPause
     {
         Assert(enmName == WHvX64RegisterTsc);
         const uint64_t offDelta = (ASMReadTSC() - uFirstTsc);
-        aValue.Reg64 = uPausedTscValue + offDelta;
+        Value.Reg64 = uPausedTscValue + offDelta;
         HRESULT hrc = WHvSetVirtualProcessorRegisters(pVM->nem.s.hPartition, iCpu, &enmName, 1, &Value);
         AssertLogRelMsgReturn(SUCCEEDED(hrc),
                               ("WHvSetVirtualProcessorRegisters(%p, 0,{tsc},2,%#RX64 + %#RX64) -> %Rhrc (Last=%#x/%u)\n",
