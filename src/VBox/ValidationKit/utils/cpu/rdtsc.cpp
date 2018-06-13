@@ -114,6 +114,7 @@ int main(int argc, char **argv)
                                 char *pszNext = NULL;
                                 uValue = strtoul(pszValue, &pszNext, 0);
                                 if (pszNext && *pszNext != '\0')
+                                {
                                     if (*pszNext == 'M'&& pszNext[1] == '\0')
                                         uValue *= _1M;
                                     else if (*pszNext == 'K' && pszNext[1] == '\0')
@@ -125,6 +126,7 @@ int main(int argc, char **argv)
                                         printf("syntax error: Bad value format for option %c: %s\n", chOpt, pszValue);
                                         return RTEXITCODE_SYNTAX;
                                     }
+                                }
                                 break;
                             }
                         }
@@ -258,8 +260,9 @@ int main(int argc, char **argv)
         if (!cMinSeconds)
             break;
         time_t uSecNow;
-        if (   time(&uSecNow) == -1
-            || cMinSeconds == -1
+        if (   time(&uSecNow) == (time_t)-1
+            || uSecNow        == (time_t)-1
+            || uSecStart      == (time_t)-1
             || uSecNow - uSecStart >= cMinSeconds)
             break;
     }
