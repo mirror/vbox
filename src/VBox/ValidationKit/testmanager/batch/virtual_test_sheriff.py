@@ -512,7 +512,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Unknown_VM_Start_Error                    = ( 'Unknown',           'VM Start Error' );
     ktReason_Unknown_VM_Runtime_Error                  = ( 'Unknown',           'VM Runtime Error' );
     ktReason_GuestBug_CompizVBoxQt                     = ( 'Guest Bug',         'Compiz + VirtualBox Qt GUI crash' );
-
     ## @}
 
     ## BSOD category.
