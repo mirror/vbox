@@ -407,15 +407,18 @@ VBOX_WITH_DEBUGGER_GUI = 1
 VBOX_WITH_2ND_IEM_STEP = 1
 # Enables the third step using IEM (the interpreter).
 VBOX_WITH_3RD_IEM_STEP = 1
-# Enables SVM nested hardware virtualization support
-VBOX_WITH_NESTED_HWVIRT_SVM = 1
-# Enables VMX nested hardware virtualization support
-#VBOX_WITH_NESTED_HWVIRT_VMX = 1
-# Enables nested hardware virtualization support but only in IEM
-#VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM = 1
-ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
- if !defined(VBOX_WITH_NESTED_HWVIRT_SVM) && !defined(VBOX_WITH_NESTED_HWVIRT_VMX)
-  $(error VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM defined without enabling nested VMX and/or nested SVM support)
+# Nested hardware virtualization (64-bit hosts only).
+ifeq ($(KBUILD_TARGET_ARCH),amd64)
+ # Enables SVM nested hardware virtualization support.
+ VBOX_WITH_NESTED_HWVIRT_SVM = 1
+ # Enables VMX nested hardware virtualization support.
+ #VBOX_WITH_NESTED_HWVIRT_VMX = 1
+ # Enables nested hardware virtualization support but only in IEM.
+ #VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM = 1
+ ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+  if !defined(VBOX_WITH_NESTED_HWVIRT_SVM) && !defined(VBOX_WITH_NESTED_HWVIRT_VMX)
+   $(error VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM defined without enabling nested VMX and/or nested SVM support)
+  endif
  endif
 endif
 ## @}
