@@ -4279,4 +4279,3 @@ void nemHCNativeNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysP
 #endif
 }
 
-
