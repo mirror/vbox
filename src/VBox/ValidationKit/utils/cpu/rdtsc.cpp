@@ -263,7 +263,7 @@ int main(int argc, char **argv)
         if (   time(&uSecNow) == (time_t)-1
             || uSecNow        == (time_t)-1
             || uSecStart      == (time_t)-1
-            || uSecNow - uSecStart >= cMinSeconds)
+            || uSecNow - uSecStart >= (time_t)cMinSeconds)
             break;
     }
 
