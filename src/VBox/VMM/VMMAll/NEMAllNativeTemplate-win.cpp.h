@@ -1152,6 +1152,73 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *p
 }
 
 
+/**
+ * Resumes CPU clock (TSC) on all virtual CPUs.
+ *
+ * This is called by TM when the VM is started, restored, resumed or similar.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context CPU structure of the calling EMT.
+ * @param   uPausedTscValue The TSC value at the time of pausing.
+ */
+VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPausedTscValue)
+{
+#ifdef IN_RING0
+    /** @todo improve and secure this translation */
+    PGVM pGVM = GVMMR0ByHandle(pVM->hSelf);
+    AssertReturn(pGVM, VERR_INVALID_VMCPU_HANDLE);
+    VMCPUID idCpu = pVCpu->idCpu;
+    ASMCompilerBarrier();
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_VMCPU_HANDLE);
+
+    return nemR0WinResumeCpuTickOnAll(pGVM, &pGVM->aCpus[idCpu], uPausedTscValue);
+#else  /* IN_RING3 */
+    VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
+    AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_NEM_IPE_9);
+
+# ifdef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
+    /* Call ring-0 and do it all there. */
+    return VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_RESUME_CPU_TICK_ON_ALL, uPausedTscValue, NULL);
+
+# else
+    /*
+     * Call the offical API to do the job.
+     */
+    if (pVM->cCpus > 1)
+        RTThreadYield(); /* Try decrease the chance that we get rescheduled in the middle. */
+
+    /* Start with the first CPU. */
+    WHV_REGISTER_NAME  enmName   = WHvX64RegisterTsc;
+    WHV_REGISTER_VALUE Value     = {0, 0};
+    aValue.Reg64 = uPausedTscValue;
+    uint64_t const     uFirstTsc = ASMReadTSC();
+    HRESULT hrc = WHvSetVirtualProcessorRegisters(pVM->nem.s.hPartition, 0 /*iCpu*/, &enmName, 1, &Value);
+    AssertLogRelMsgReturn(SUCCEEDED(hrc),
+                          ("WHvSetVirtualProcessorRegisters(%p, 0,{tsc},2,%#RX64) -> %Rhrc (Last=%#x/%u)\n",
+                           pVM->nem.s.hPartition, uPausedTscValue, hrc, RTNtLastStatusValue(), RTNtLastErrorValue())
+                          , VERR_NEM_SET_TSC);
+
+    /* Do the other CPUs, adjusting for elapsed TSC and keeping finger crossed
+       that we don't introduce too much drift here. */
+    for (VMCPUID iCpu = 1; iCpu < pVM->cCpus; iCpu++)
+    {
+        Assert(enmName == WHvX64RegisterTsc);
+        const uint64_t offDelta = (ASMReadTSC() - uFirstTsc);
+        aValue.Reg64 = uPausedTscValue + offDelta;
+        HRESULT hrc = WHvSetVirtualProcessorRegisters(pVM->nem.s.hPartition, iCpu, &enmName, 1, &Value);
+        AssertLogRelMsgReturn(SUCCEEDED(hrc),
+                              ("WHvSetVirtualProcessorRegisters(%p, 0,{tsc},2,%#RX64 + %#RX64) -> %Rhrc (Last=%#x/%u)\n",
+                               pVM->nem.s.hPartition, iCpu, uPausedTscValue, offDelta, hrc, RTNtLastStatusValue(), RTNtLastErrorValue())
+                              , VERR_NEM_SET_TSC);
+    }
+
+    return VINF_SUCCESS;
+# endif
+#endif /* IN_RING3 */
+}
+
+
 #ifdef LOG_ENABLED
 /**
  * Get the virtual processor running status.

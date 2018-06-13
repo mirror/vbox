@@ -2613,10 +2613,11 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   packed.
  *
  *
- * - How do we modify the TSC offset (or bias if you like).
+ * - We need a way to directly modify the TSC offset (or bias if you like).
  *
- *   This is a show stopper as it breaks both pausing the VM and restoring
- *   of saved state.
+ *   The current approach of setting the WHvX64RegisterTsc register one by one
+ *   on each virtual CPU in sequence will introduce random inaccuracies,
+ *   especially if the thread doing the job is reschduled at a bad time.
  *
  *
  * - Unable to access WHvX64RegisterMsrMtrrCap (build 17134).

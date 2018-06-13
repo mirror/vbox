@@ -94,6 +94,7 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
                 break;
             case TMTSCMODE_NATIVE_API:
                 pVCpu->tm.s.offTSCRawSrc = 0; /** @todo ?? */
+                /* Looks like this is only used by weird modes and MSR TSC writes.  We cannot support either on NEM/win. */
                 break;
             default:
                 AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
@@ -139,13 +140,21 @@ int tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu)
                                              - pVM->tm.s.u64LastPausedTSC;
                     break;
                 case TMTSCMODE_NATIVE_API:
-                    pVCpu->tm.s.offTSCRawSrc = 0; /** @todo ?? */
+                {
+#ifndef IN_RC
+                    int rc = NEMHCResumeCpuTickOnAll(pVM, pVCpu, pVM->tm.s.u64LastPausedTSC);
+                    AssertRCReturn(rc, rc);
+                    pVCpu->tm.s.offTSCRawSrc = offTSCRawSrcOld = 0;
+#else
+                    AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+#endif
                     break;
+                }
                 default:
                     AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
             }
 
-            /* Calculate the offset for other VCPUs to use. */
+            /* Calculate the offset addendum for other VCPUs to use. */
             pVM->tm.s.offTSCPause = pVCpu->tm.s.offTSCRawSrc - offTSCRawSrcOld;
         }
         else

@@ -130,10 +130,21 @@ VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t f
 }
 #endif
 
+
 #ifndef VBOX_WITH_NATIVE_NEM
 VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *puAux)
 {
     RT_NOREF(pVCpu, pcTicks, puAux);
+    AssertFailed();
+    return VERR_NEM_IPE_9;
+}
+#endif
+
+
+#ifndef VBOX_WITH_NATIVE_NEM
+VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPausedTscValue)
+{
+    RT_NOREF(pVM, pVCpu, uPausedTscValue);
     AssertFailed();
     return VERR_NEM_IPE_9;
 }

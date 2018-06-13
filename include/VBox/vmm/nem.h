@@ -92,6 +92,7 @@ VMMR0_INT_DECL(int)  NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t fWhat);
 VMMR0_INT_DECL(int)  NEMR0QueryCpuTick(PGVM pGVM, PVM pVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  NEMR0ResumeCpuTickOnAll(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t uPausedTscValue);
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64Arg);
@@ -125,6 +126,8 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS
 /** @} */
 
 VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *puAux);
+VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPausedTscValue);
+
 /** @} */
 
 /** @} */

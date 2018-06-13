@@ -2848,6 +2848,8 @@
 #define VERR_NEM_UPDATE_APIC_BASE                   (-6811)
 /** Get register caller must update the APIC base. */
 #define VINF_NEM_UPDATE_APIC_BASE                   (6811)
+/** NEM failed to set TSC. */
+#define VERR_NEM_SET_TSC                            (-6812)
 
 /** NEM internal processing error \#0. */
 #define VERR_NEM_IPE_0                              (-6890)

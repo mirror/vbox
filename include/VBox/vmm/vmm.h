@@ -444,6 +444,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_NEM_IMPORT_STATE,
     /** Call NEMR0QueryCpuTick() (host specific). */
     VMMR0_DO_NEM_QUERY_CPU_TICK,
+    /** Call NEMR0ResumeCpuTickOnAll() (host specific). */
+    VMMR0_DO_NEM_RESUME_CPU_TICK_ON_ALL,
     /** Call NEMR0UpdateStatistics() (host specific). */
     VMMR0_DO_NEM_UPDATE_STATISTICS,
     /** Call NEMR0DoExperiment() (host specific, experimental, debug only). */
