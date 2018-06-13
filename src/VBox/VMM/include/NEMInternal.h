@@ -239,6 +239,15 @@ typedef struct NEMCPU
             uint64_t            cTicks;
             uint32_t            uAux;
         }                       QueryCpuTick;
+        /** Input and output for NEMR0DoExperiment. */
+        struct
+        {
+            uint32_t            uItem;
+            bool                fSuccess;
+            uint64_t            uStatus;
+            uint64_t            uLoValue;
+            uint64_t            uHiValue;
+        }                       Experiment;
     } Hypercall;
     /** I/O control buffer, we always use this for I/O controls. */
     union

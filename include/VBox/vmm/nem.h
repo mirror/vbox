@@ -94,6 +94,7 @@ VMMR0_INT_DECL(int)  NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_
 VMMR0_INT_DECL(int)  NEMR0QueryCpuTick(PGVM pGVM, PVM pVM, VMCPUID idCpu);
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVM pVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64Arg);
 /** @} */
 
 

@@ -332,7 +332,6 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVM pVM)
                           ("idHvPartition mismatch: r0=%#RX64, r3=%#RX64\n", pGVM->nem.s.idHvPartition, pVM->nem.s.idHvPartition),
                           VERR_NEM_INIT_FAILED);
 
-
     return rc;
 }
 
@@ -2284,6 +2283,7 @@ VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, PVM pVM, VMCPUID idCpu)
     return rc;
 }
 
+
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
 {
 #ifdef NEM_WIN_USE_OUR_OWN_RUN_API
@@ -2367,4 +2367,82 @@ VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVM pVM, VMCPUID idCpu)
     }
     return rc;
 }
+
+
+#if 1 && defined(DEBUG_bird)
+/**
+ * Debug only interface for poking around and exploring Hyper-V stuff.
+ *
+ * @param   pGVM        The ring-0 VM handle.
+ * @param   pVM         The cross context VM handle.
+ * @param   idCpu       The calling EMT.
+ * @param   u64Arg      What to query.  0 == registers.
+ */
+VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64Arg)
+{
+    /*
+     * Resolve CPU structures.
+     */
+    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    if (RT_SUCCESS(rc))
+    {
+        PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        if (u64Arg == 0)
+        {
+            /*
+             * Query register.
+             */
+            HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nem.s.HypercallData.pbPage;
+            AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
+
+            size_t const cbInput = RT_ALIGN_Z(RT_OFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[1]), 32);
+            HV_REGISTER_VALUE *paValues = (HV_REGISTER_VALUE *)((uint8_t *)pInput + cbInput);
+            RT_BZERO(paValues, sizeof(paValues[0]) * 1);
+
+            pInput->PartitionId = pGVM->nem.s.idHvPartition;
+            pInput->VpIndex     = pGVCpu->idCpu;
+            pInput->fFlags      = 0;
+            pInput->Names[0]    = (HV_REGISTER_NAME)pVCpu->nem.s.Hypercall.Experiment.uItem;
+
+            uint64_t uResult = g_pfnHvlInvokeHypercall(HV_MAKE_CALL_INFO(HvCallGetVpRegisters, 1),
+                                                       pGVCpu->nem.s.HypercallData.HCPhysPage,
+                                                       pGVCpu->nem.s.HypercallData.HCPhysPage + cbInput);
+            pVCpu->nem.s.Hypercall.Experiment.fSuccess = uResult == HV_MAKE_CALL_REP_RET(1);
+            pVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
+            pVCpu->nem.s.Hypercall.Experiment.uLoValue = paValues[0].Reg128.Low64;
+            pVCpu->nem.s.Hypercall.Experiment.uHiValue = paValues[0].Reg128.High64;
+            rc = VINF_SUCCESS;
+        }
+        else if (u64Arg == 1)
+        {
+            /*
+             * Query partition property.
+             */
+            HV_INPUT_GET_PARTITION_PROPERTY *pInput = (HV_INPUT_GET_PARTITION_PROPERTY *)pGVCpu->nem.s.HypercallData.pbPage;
+            AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
+
+            size_t const cbInput = RT_ALIGN_Z(sizeof(*pInput), 32);
+            HV_OUTPUT_GET_PARTITION_PROPERTY *pOutput = (HV_OUTPUT_GET_PARTITION_PROPERTY *)((uint8_t *)pInput + cbInput);
+            pOutput->PropertyValue = 0;
+
+            pInput->PartitionId  = pGVM->nem.s.idHvPartition;
+            pInput->PropertyCode = (HV_PARTITION_PROPERTY_CODE)pVCpu->nem.s.Hypercall.Experiment.uItem;
+            pInput->uPadding     = 0;
+
+            uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallGetPartitionProperty,
+                                                       pGVCpu->nem.s.HypercallData.HCPhysPage,
+                                                       pGVCpu->nem.s.HypercallData.HCPhysPage + cbInput);
+            pVCpu->nem.s.Hypercall.Experiment.fSuccess = uResult == HV_STATUS_SUCCESS;
+            pVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
+            pVCpu->nem.s.Hypercall.Experiment.uLoValue = pOutput->PropertyValue;
+            pVCpu->nem.s.Hypercall.Experiment.uHiValue = 0;
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_INVALID_FUNCTION;
+    }
+    return rc;
+}
+#endif /* DEBUG_bird */
 

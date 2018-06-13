@@ -446,6 +446,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_NEM_QUERY_CPU_TICK,
     /** Call NEMR0UpdateStatistics() (host specific). */
     VMMR0_DO_NEM_UPDATE_STATISTICS,
+    /** Call NEMR0DoExperiment() (host specific, experimental, debug only). */
+    VMMR0_DO_NEM_EXPERIMENT,
 
     /** Official call we use for testing Ring-0 APIs. */
     VMMR0_DO_TESTS = 640,

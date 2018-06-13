@@ -1443,6 +1443,43 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
          * Adjust features.
          * Note! We've already disabled X2APIC via CFGM during the first init call.
          */
+
+#if 1 && defined(DEBUG_bird)
+        /*
+         * Poke and probe a little.
+         */
+        for (uint32_t iReg = 0; iReg < 0x001101ff; iReg++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[0];
+            RT_ZERO(pVCpu->nem.s.Hypercall.Experiment);
+            pVCpu->nem.s.Hypercall.Experiment.uItem = iReg;
+            int rc2 = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPERIMENT, 0, NULL);
+            AssertLogRelRCBreak(rc2);
+            if (pVCpu->nem.s.Hypercall.Experiment.fSuccess)
+            {
+                LogRel(("Register %#010x = %#18RX64, %#18RX64\n", iReg,
+                        pVCpu->nem.s.Hypercall.Experiment.uLoValue, pVCpu->nem.s.Hypercall.Experiment.uHiValue));
+                if (iReg == HvX64RegisterTsc)
+                {
+                    uint64_t uTsc = ASMReadTSC();
+                    LogRel(("TSC = %#18RX64; Delta %#18RX64 or %#18RX64\n",
+                            uTsc, pVCpu->nem.s.Hypercall.Experiment.uLoValue - uTsc, uTsc - pVCpu->nem.s.Hypercall.Experiment.uLoValue));
+                }
+            }
+        }
+        for (uint32_t iProp = 0; iProp < _1M; iProp++)
+        {
+            if (iProp == HvPartitionPropertyDebugChannelId /* hangs host */)
+                continue;
+            PVMCPU pVCpu = &pVM->aCpus[0];
+            RT_ZERO(pVCpu->nem.s.Hypercall.Experiment);
+            pVCpu->nem.s.Hypercall.Experiment.uItem = iProp;
+            int rc2 = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPERIMENT, 1, NULL);
+            AssertLogRelRCBreak(rc2);
+            if (pVCpu->nem.s.Hypercall.Experiment.fSuccess)
+                LogRel(("Property %#010x = %#18RX64\n", iProp, pVCpu->nem.s.Hypercall.Experiment.uLoValue));
+        }
+#endif
         return VINF_SUCCESS;
     }
     return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to NEMR0InitVMPart2 failed: %Rrc", rc);
@@ -2506,7 +2543,13 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   packed.
  *
  *
- * - Unable to access WHvX64RegisterMsrMtrrCap on AMD Ryzen (build 17134).
+ * - How do we modify the TSC offset (or bias if you like).
+ *
+ *   This is a show stopper as it breaks both pausing the VM and restoring
+ *   of saved state.
+ *
+ *
+ * - Unable to access WHvX64RegisterMsrMtrrCap (build 17134).
  *
  *
  * - On AMD Ryzen grub/debian 9.0 ends up with a unrecoverable exception
@@ -2688,8 +2731,12 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *   address size prefixes.  Haven't investigated it any further yet.
  *
  *
- * - Query WHvCapabilityCodeExceptionExitBitmap returns zero even when
+ * - Querying WHvCapabilityCodeExceptionExitBitmap returns zero even when
  *   intercepts demonstrably works (17134).
+ *
+ *
+ * - Querying HvPartitionPropertyDebugChannelId via HvCallGetPartitionProperty
+ *   (hypercall) hangs the host (17134).
  *
  *
  * - The WHvGetCapability function has a weird design:
