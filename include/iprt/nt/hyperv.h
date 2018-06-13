@@ -326,6 +326,87 @@ typedef uint16_t HV_STATUS;
 /** @} */
 
 
+/** Hyper-V partition property value. */
+typedef uint64_t HV_PARTITION_PROPERTY;
+/** Pointer to a partition property value. */
+typedef HV_PARTITION_PROPERTY *PHV_PARTITION_PROPERTY;
+/**
+ * Hyper-V partition property code.
+ * This is documented in TLFS, except version 5.x.
+ */
+typedef enum
+{
+    HvPartitionPropertyPrivilegeFlags = 0x00010000,
+
+    HvPartitionPropertyCpuReserve = 0x00020001,
+    HvPartitionPropertyCpuCap,
+    HvPartitionPropertyCpuWeight,
+    HvPartitionPropertyUnknown20004,                /**< On exo partition (build 17134), initial value zero. */
+
+    HvPartitionPropertyEmulatedTimerPeriod = 0x00030000, /**< @note Fails on exo partition (build 17134). */
+    HvPartitionPropertyEmulatedTimerControl,        /**< @note Fails on exo partition (build 17134). */
+    HvPartitionPropertyPmTimerAssist,               /**< @note Fails on exo partition (build 17134). */
+
+    HvPartitionPropertyDebugChannelId = 0x00040000, /**< @note Hangs system on exo partition hangs (build 17134). */
+
+    HvPartitionPropertyVirtualTlbPageCount = 0x00050000,
+    HvPartitionPropertyUnknown50001,                /**< On exo partition (build 17134), initial value zero. */
+    HvPartitionPropertyUnknown50002,                /**< On exo partition (build 17134), initial value zero. */
+    HvPartitionPropertyUnknown50003,                /**< On exo partition (build 17134), initial value zero. */
+    HvPartitionPropertyUnknown50004,                /**< On exo partition (build 17134), initial value zero. */
+    HvPartitionPropertyUnknown50005,                /**< On exo partition (build 17134), initial value one. */
+    HvPartitionPropertyUnknown50006,                /**< On exo partition (build 17134), initial value zero. */
+
+    HvPartitionPropertyProcessorVendor = 0x00060000,
+    HvPartitionPropertyProcessorFeatures,           /**< On exo/17134/threadripper: 0x6cb26f39fbf */
+    HvPartitionPropertyProcessorXsaveFeatures,
+    HvPartitionPropertyProcessorCLFlushSize,        /**< On exo/17134/threadripper: 8 */
+    HvPartitionPropertyUnknown60004,                /**< On exo partition (build 17134), initial value zero. */
+    HvPartitionPropertyUnknown60005,                /**< On exo partition (build 17134), initial value 0x603. */
+    HvPartitionPropertyUnknown60006,                /**< On exo partition (build 17134), initial value 0x2c. */
+
+    HvPartitionPropertyGuestOsId = 0x00070000,      /**< @since v4 */
+
+    HvPartitionPropertyUnknown800000 = 0x00080000   /**< On exo partition (build 17134), initial value zero. */
+} HV_PARTITION_PROPERTY_CODE;
+AssertCompileSize(HV_PARTITION_PROPERTY_CODE, 4);
+/** Pointer to a partition property code. */
+typedef HV_PARTITION_PROPERTY_CODE *PHV_PARTITION_PROPERTY_CODE;
+
+
+/** Input for HvCallGetPartitionProperty. */
+typedef struct
+{
+    HV_PARTITION_ID             PartitionId;
+    HV_PARTITION_PROPERTY_CODE  PropertyCode;
+    uint32_t                    uPadding;
+} HV_INPUT_GET_PARTITION_PROPERTY;
+AssertCompileSize(HV_INPUT_GET_PARTITION_PROPERTY, 16);
+/** Pointer to input for HvCallGetPartitionProperty. */
+typedef HV_INPUT_GET_PARTITION_PROPERTY *PHV_INPUT_GET_PARTITION_PROPERTY;
+
+/** Output for HvCallGetPartitionProperty. */
+typedef struct
+{
+    HV_PARTITION_PROPERTY       PropertyValue;
+} HV_OUTPUT_GET_PARTITION_PROPERTY;
+/** Pointer to output for HvCallGetPartitionProperty. */
+typedef HV_OUTPUT_GET_PARTITION_PROPERTY *PHV_OUTPUT_GET_PARTITION_PROPERTY;
+
+
+/** Input for HvCallSetPartitionProperty. */
+typedef struct
+{
+    HV_PARTITION_ID             PartitionId;
+    HV_PARTITION_PROPERTY_CODE  PropertyCode;
+    uint32_t                    uPadding;
+    HV_PARTITION_PROPERTY       PropertyValue;
+} HV_INPUT_SET_PARTITION_PROPERTY;
+AssertCompileSize(HV_INPUT_SET_PARTITION_PROPERTY, 24);
+/** Pointer to input for HvCallSetPartitionProperty. */
+typedef HV_INPUT_SET_PARTITION_PROPERTY *PHV_INPUT_SET_PARTITION_PROPERTY;
+
+
 /** Hyper-V NUMA node ID.
  * On systems without NUMA, i.e. a single node, it uses 0 as identifier.  */
 typedef uint32_t HV_PROXIMITY_DOMAIN_ID;
@@ -548,36 +629,38 @@ typedef enum _HV_REGISTER_NAME
 {
     HvRegisterExplicitSuspend = 0x00000000,
     HvRegisterInterceptSuspend,
+    HvRegisterUnknown02,                                /**< Reads as 0 initially on exo part. */
+    HvRegisterUnknown03,                                /**< Reads as 0 initially on exo part. */
 
-    HvRegisterHypervisorVersion = 0x00000100,           /**< @since v5 */
+    HvRegisterHypervisorVersion = 0x00000100,           /**< @since v5 @note Not readable on exo part. */
 
-    HvRegisterPrivilegesAndFeaturesInfo = 0x00000200,   /**< @since v5 */
-    HvRegisterFeaturesInfo,                             /**< @since v5 */
-    HvRegisterImplementationLimitsInfo,                 /**< @since v5 */
-    HvRegisterHardwareFeaturesInfo,                     /**< @since v5 */
+    HvRegisterPrivilegesAndFeaturesInfo = 0x00000200,   /**< @since v5 @note Not readable on exo part. */
+    HvRegisterFeaturesInfo,                             /**< @since v5 @note Not readable on exo part. */
+    HvRegisterImplementationLimitsInfo,                 /**< @since v5 @note Not readable on exo part. */
+    HvRegisterHardwareFeaturesInfo,                     /**< @since v5 @note Not readable on exo part. */
 
-    HvRegisterGuestCrashP0 = 0x00000210,                /**< @since v5 */
-    HvRegisterGuestCrashP1,                             /**< @since v5 */
-    HvRegisterGuestCrashP2,                             /**< @since v5 */
-    HvRegisterGuestCrashP3,                             /**< @since v5 */
-    HvRegisterGuestCrashP4,                             /**< @since v5 */
-    HvRegisterGuestCrashCtl,                            /**< @since v5 */
+    HvRegisterGuestCrashP0 = 0x00000210,                /**< @since v5 @note Not readable on exo part. */
+    HvRegisterGuestCrashP1,                             /**< @since v5 @note Not readable on exo part. */
+    HvRegisterGuestCrashP2,                             /**< @since v5 @note Not readable on exo part. */
+    HvRegisterGuestCrashP3,                             /**< @since v5 @note Not readable on exo part. */
+    HvRegisterGuestCrashP4,                             /**< @since v5 @note Not readable on exo part. */
+    HvRegisterGuestCrashCtl,                            /**< @since v5 @note Not readable on exo part. */
 
-    HvRegisterPowerStateConfigC1 = 0x00000220,          /**< @since v5 */
-    HvRegisterPowerStateTriggerC1,                      /**< @since v5 */
-    HvRegisterPowerStateConfigC2,                       /**< @since v5 */
-    HvRegisterPowerStateTriggerC2,                      /**< @since v5 */
-    HvRegisterPowerStateConfigC3,                       /**< @since v5 */
-    HvRegisterPowerStateTriggerC3,                      /**< @since v5 */
+    HvRegisterPowerStateConfigC1 = 0x00000220,          /**< @since v5 @note Not readable on exo part. */
+    HvRegisterPowerStateTriggerC1,                      /**< @since v5 @note Not readable on exo part. */
+    HvRegisterPowerStateConfigC2,                       /**< @since v5 @note Not readable on exo part. */
+    HvRegisterPowerStateTriggerC2,                      /**< @since v5 @note Not readable on exo part. */
+    HvRegisterPowerStateConfigC3,                       /**< @since v5 @note Not readable on exo part. */
+    HvRegisterPowerStateTriggerC3,                      /**< @since v5 @note Not readable on exo part. */
 
-    HvRegisterSystemReset = 0x00000230,                 /**< @since v5 */
+    HvRegisterSystemReset = 0x00000230,                 /**< @since v5 @note Not readable on exo part. */
 
-    HvRegisterProcessorClockFrequency = 0x00000240,     /**< @since v5 */
-    HvRegisterInterruptClockFrequency,                  /**< @since v5 */
+    HvRegisterProcessorClockFrequency = 0x00000240,     /**< @since v5 @note Not readable on exo part. */
+    HvRegisterInterruptClockFrequency,                  /**< @since v5 @note Not readable on exo part. */
 
-    HvRegisterGuestIdle = 0x00000250,                   /**< @since v5 */
+    HvRegisterGuestIdle = 0x00000250,                   /**< @since v5 @note Not readable on exo part. */
 
-    HvRegisterDebugDeviceOptions = 0x00000260,          /**< @since v5 */
+    HvRegisterDebugDeviceOptions = 0x00000260,          /**< @since v5 @note Not readable on exo part. */
 
     HvRegisterPendingInterruption = 0x00010002,
     HvRegisterInterruptState,
@@ -675,7 +758,7 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterSfmask,
     HvX64RegisterInitialApicId,
 
-    HvX64RegisterMtrrCap,
+    HvX64RegisterMtrrCap,                           /**< Not readable in exo partitions? */
     HvX64RegisterMtrrDefType,
 
     HvX64RegisterMtrrPhysBase0 = 0x00080010,
@@ -686,14 +769,14 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterMtrrPhysBase5,
     HvX64RegisterMtrrPhysBase6,
     HvX64RegisterMtrrPhysBase7,
-    HvX64RegisterMtrrPhysBase8,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysBase9,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysBaseA,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysBaseB,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysBaseC,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysBaseD,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysBaseE,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysBaseF,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysBase8,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysBase9,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysBaseA,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysBaseB,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysBaseC,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysBaseD,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysBaseE,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysBaseF,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
 
     HvX64RegisterMtrrPhysMask0 = 0x00080040,
     HvX64RegisterMtrrPhysMask1,
@@ -703,14 +786,14 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterMtrrPhysMask5,
     HvX64RegisterMtrrPhysMask6,
     HvX64RegisterMtrrPhysMask7,
-    HvX64RegisterMtrrPhysMask8,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysMask9,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysMaskA,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysMaskB,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysMaskC,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysMaskD,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysMaskE,                     /**< @since v4 */
-    HvX64RegisterMtrrPhysMaskF,                     /**< @since v4 */
+    HvX64RegisterMtrrPhysMask8,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysMask9,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysMaskA,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysMaskB,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysMaskC,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysMaskD,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysMaskE,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterMtrrPhysMaskF,                     /**< @since v4 @note Appears not to be readable on exo partition (Threadripper). */
 
     HvX64RegisterMtrrFix64k00000 = 0x00080070,
     HvX64RegisterMtrrFix16k80000,
@@ -725,21 +808,24 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterMtrrFix4kF8000,
     HvX64RegisterTscAux,                            /**< @since v5c? late 2017? */
 
-    HvX64RegisterIa32MiscEnable = 0x000800a0,       /**< @since v5 */
-    HvX64RegisterIa32FeatureControl,                /**< @since v5 */
+    HvX64RegisterUnknown8007d = 0x0008007d,         /**< Readable on exo partition (17134), initial value is zero. */
 
-    HvX64RegisterVpRuntime = 0x00090000,
+    HvX64RegisterIa32MiscEnable = 0x000800a0,       /**< @since v5 @note Appears not to be readable on exo partition (Threadripper). */
+    HvX64RegisterIa32FeatureControl,                /**< @since v5 @note Appears not to be readable on exo partition (Threadripper). */
+
+    HvX64RegisterVpRuntime = 0x00090000,            /**< @note 17134/exo/threadripper: 0x5081a0 */
     HvX64RegisterHypercall,
     HvRegisterGuestOsId,
     HvRegisterVpIndex,
     HvRegisterTimeRefCount,
 
-    HvRegisterCpuManagementVersion = 0x00090007,    /**< @since v5 */
+    HvRegisterCpuManagementVersion = 0x00090007,    /**< @since v5 @note Appears not to be readable on exo partition. */
 
-    HvX64RegisterEoi = 0x00090010,
-    HvX64RegisterIcr,
-    HvX64RegisterTpr,
+    HvX64RegisterEoi = 0x00090010,                  /**< @note Appears not to be readable on exo partition. */
+    HvX64RegisterIcr,                               /**< @note Appears not to be readable on exo partition. */
+    HvX64RegisterTpr,                               /**< @note Appears not to be readable on exo partition. */
     HvRegisterVpAssistPage,
+    HvRegisterUnknown90014,                         /**< Readable on exo partition (17134), initial value 0x2f52c. */
 
     HvRegisterStatsPartitionRetail = 0x00090020,
     HvRegisterStatsPartitionInternal,
@@ -778,7 +864,10 @@ typedef enum _HV_REGISTER_NAME
     HvRegisterStimer3Config,
     HvRegisterStimer3Count,
 
-    HvX64RegisterYmm0Low = 0x000c0000,
+    HvRegisterUnknown0b0100 = 0x000b0100,           /**< Readable on exo partition (17134), initial value is zero. */
+    HvRegisterUnknown0b0101,                        /**< Readable on exo partition (17134), initial value is zero. */
+
+    HvX64RegisterYmm0Low = 0x000c0000,              /**< @note Not readable on exo partition.  Need something enabled? */
     HvX64RegisterYmm1Low,
     HvX64RegisterYmm2Low,
     HvX64RegisterYmm3Low,
@@ -811,14 +900,14 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterYmm14High,
     HvX64RegisterYmm15High,
 
-    HvRegisterVsmVpVtlControl = 0x000d0000,
+    HvRegisterVsmVpVtlControl = 0x000d0000,         /**< @note Not readable on exo partition. */
 
     HvRegisterVsmCodePageOffsets = 0x000d0002,
     HvRegisterVsmVpStatus,
     HvRegisterVsmPartitionStatus,
-    HvRegisterVsmVina,
+    HvRegisterVsmVina,                              /**< @note Not readable on exo partition. */
     HvRegisterVsmCapabilities,
-    HvRegisterVsmPartitionConfig,
+    HvRegisterVsmPartitionConfig,                   /**< @note Not readable on exo partition. */
 
     HvRegisterVsmVpSecureConfigVtl0 = 0x000d0010,   /**< @since v5 */
     HvRegisterVsmVpSecureConfigVtl1,                /**< @since v5 */
@@ -834,8 +923,12 @@ typedef enum _HV_REGISTER_NAME
     HvRegisterVsmVpSecureConfigVtl11,               /**< @since v5 */
     HvRegisterVsmVpSecureConfigVtl12,               /**< @since v5 */
     HvRegisterVsmVpSecureConfigVtl13,               /**< @since v5 */
-    HvRegisterVsmVpSecureConfigVtl14                /**< @since v5 */
+    HvRegisterVsmVpSecureConfigVtl14,               /**< @since v5 */
 
+    HvRegisterUnknown0e0000 = 0x000e0000,           /**< Readable on exo partition (17134), initial value zero. */
+    HvRegisterUnknown0e0001,                        /**< Readable on exo partition (17134), initial value zero. */
+    HvRegisterUnknown0e0002,                        /**< Readable on exo partition (17134), initial value zero. */
+    HvRegisterUnknown0e0003                         /**< Readable on exo partition (17134), initial value zero. */
 } HV_REGISTER_NAME;
 AssertCompile(HvRegisterInterceptSuspend == 0x00000001);
 AssertCompile(HvRegisterPendingEvent1 == 0x00010005);
