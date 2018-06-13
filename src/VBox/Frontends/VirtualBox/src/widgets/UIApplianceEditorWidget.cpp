@@ -289,6 +289,7 @@ void UIApplianceModelItem::putBack(QVector<BOOL> &finalStates, QVector<QString> 
         childItem(i)->putBack(finalStates, finalValues, finalExtraValues);
 }
 
+
 /*********************************************************************************************************************************
 *   Class UIVirtualSystemItem implementation.                                                                                    *
 *********************************************************************************************************************************/
@@ -969,6 +970,7 @@ KVirtualSystemDescriptionType  UIVirtualHardwareItem::systemDescriptionType() co
     return m_enmVSDType;
 }
 
+
 /*********************************************************************************************************************************
 *   Class UIApplianceModel implementation.                                                                                       *
 *********************************************************************************************************************************/
@@ -1192,6 +1194,7 @@ void UIApplianceModel::setVirtualSystemBaseFolder(const QString& path)
         }
     }
 }
+
 
 /*********************************************************************************************************************************
 *   Class UIApplianceDelegate implementation.                                                                                    *
