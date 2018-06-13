@@ -9225,14 +9225,6 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     Assert(!ASMIntAreEnabled());
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
-#ifdef HMVMX_ALWAYS_SWAP_FPU_STATE
-    if (CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVM, pVCpu))
-    {
-        hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
-        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
-    }
-#endif
-
 #if HC_ARCH_BITS == 64
     pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;   /* Host state messed up by VT-x, we must restore. */
 #endif
