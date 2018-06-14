@@ -253,16 +253,16 @@ static DECLCALLBACK(void) emR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const
             if (fReverse)
                 idx -= 1;
             PCEMEXITENTRY const pEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)idx & 0xff];
-            if (!fReverse)
-                idx += 1;
 
             /* Get the exit name. */
             char        szExitName[16];
             const char *pszExitName = emR3HistoryGetExitName(pEntry->uFlagsAndType, szExitName, sizeof(szExitName));
 
+            /* Calc delta (negative if reverse order, positive ascending). */
             int64_t offDelta = uPrevTimestamp != 0 && pEntry->uTimestamp != 0 ? pEntry->uTimestamp - uPrevTimestamp : 0;
             uPrevTimestamp = pEntry->uTimestamp;
 
+            /* Do the printing. */
             if (pEntry->idxSlot == UINT32_MAX)
                 pHlp->pfnPrintf(pHlp, " %10RU64: %#018RX64/%+-9RI64 %016RX64 %#06x %s\n",
                                 idx, pEntry->uTimestamp, offDelta, pEntry->uFlatPC, pEntry->uFlagsAndType, pszExitName);
@@ -273,6 +273,10 @@ static DECLCALLBACK(void) emR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const
                                 idx, pEntry->uTimestamp, offDelta, pEntry->uFlatPC, pEntry->uFlagsAndType, pszExitName,
                                 pEntry->idxSlot);
             }
+
+            /* Advance if ascending. */
+            if (!fReverse)
+                idx += 1;
         } while (--cLeft > 0 && idx > 0);
     }
 }
