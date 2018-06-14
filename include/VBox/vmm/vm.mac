@@ -62,7 +62,6 @@ struc VMCPU
     alignb 64
     .iem                    resb 18496
     .hm                     resb 5888
-    .em                     resb 1408
     .nem                    resb 512
     .trpm                   resb 128
     .tm                     resb 384
@@ -82,6 +81,8 @@ struc VMCPU
     .pgm                    resb 4096
     alignb 4096
     .cpum                   resb 4096
+    alignb 4096
+    .em                     resb 8192
     alignb 4096
 endstruc
 

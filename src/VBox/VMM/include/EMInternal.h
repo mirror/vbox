@@ -291,6 +291,38 @@ typedef EMSTATS *PEMSTATS;
 
 
 /**
+ * Exit history entry.
+ *
+ * @remarks We could perhaps trim this down a little bit by assuming uFlatPC
+ *          only needs 48 bits (currently true but will change) and stuffing
+ *          the flags+type in the available 16 bits made available.  The
+ *          timestamp could likewise be shortened to accomodate the index, or
+ *          we might skip the index entirely.  However, since we will have to
+ *          deal with 56-bit wide PC address before long, there's not point.
+ *
+ *          On the upside, there are unused bits in both uFlagsAndType and the
+ *          idxSlot fields if needed for anything.
+ */
+typedef struct EMEXITENTRY
+{
+    /** The flat PC (CS:EIP/RIP) address of the exit. */
+    uint64_t        uFlatPC;
+    /** The EMEXIT_MAKE_FLAGS_AND_TYPE */
+    uint32_t        uFlagsAndType;
+    /** The index into the exit slot hash table.
+     * UINT32_MAX if too many collisions and not entered into it. */
+    uint32_t        idxSlot;
+    /** The TSC timestamp of the exit.
+     * This is 0 if not timestamped. */
+    uint64_t        uTimestamp;
+} EMEXITENTRY;
+/** Pointer to an exit history entry. */
+typedef EMEXITENTRY *PEMEXITENTRY;
+/** Pointer to a const exit history entry. */
+typedef EMEXITENTRY const *PCEMEXITENTRY;
+
+
+/**
  * Converts a EM pointer into a VM pointer.
  * @returns Pointer to the VM structure the EM is part of.
  * @param   pEM   Pointer to EM instance data.
@@ -463,6 +495,14 @@ typedef struct EMCPU
     /** 64-bit Visual C++ rounds the struct size up to 16 byte. */
     uint64_t                padding1;
 #endif
+
+    /** Where to store the next exit history entry.
+     * Since aExitHistory is 256 items longs, we'll just increment this and
+     * mask it when using it.  That help the readers detect whether we've
+     * wrapped around or not.  */
+    uint64_t                iNextExit;
+    /** Exit history table (6KB). */
+    EMEXITENTRY             aExitHistory[256];
 } EMCPU;
 /** Pointer to EM VM instance data. */
 typedef EMCPU *PEMCPU;

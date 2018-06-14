@@ -162,15 +162,6 @@ typedef struct VMCPU
         uint8_t             padding[5888];      /* multiple of 64 */
     } hm;
 
-    /** EM part. */
-    union VMCPUUNIONEM
-    {
-#ifdef ___EMInternal_h
-        struct EMCPU        s;
-#endif
-        uint8_t             padding[1408];      /* multiple of 64 */
-    } em;
-
     /** NEM part. */
     union VMCPUUNIONNEM
     {
@@ -266,7 +257,7 @@ typedef struct VMCPU
     STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[1528];
+    uint8_t                 abAlignment2[2936];
 
     /** PGM part. */
     union VMCPUUNIONPGM
@@ -291,6 +282,15 @@ typedef struct VMCPU
 #endif
         uint8_t             padding[4096];      /* multiple of 4096 */
     } cpum;
+
+    /** EM part. */
+    union VMCPUUNIONEM
+    {
+#ifdef ___EMInternal_h
+        struct EMCPU        s;
+#endif
+        uint8_t             padding[8192];      /* multiple of 4096 */
+    } em;
 } VMCPU;
 
 

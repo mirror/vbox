@@ -104,6 +104,28 @@ typedef struct NEMWINIOCTL
 
 
 /**
+ * Generic NEM exit type enumeration for use with EMHistoryAddExit.
+ *
+ * On windows we've got two different set of exit types and they are both jumping
+ * around the place value wise, so EM can use their values.
+ *
+ * @note We only have exit types for exits not covered by EM here.
+ */
+typedef enum NEMEXITTYPE
+{
+    /* windows: */
+    NEMEXITTYPE_UNRECOVERABLE_EXCEPTION = 1,
+    NEMEXITTYPE_INVALID_VP_REGISTER_VALUE,
+    NEMEXITTYPE_INTTERRUPT_WINDOW,
+    NEMEXITTYPE_HALT,
+    NEMEXITTYPE_XCPT_UD,
+    NEMEXITTYPE_XCPT_DB,
+    NEMEXITTYPE_XCPT_BP,
+    NEMEXITTYPE_CANCELED
+} NEMEXITTYPE;
+
+
+/**
  * NEM VM Instance data.
  */
 typedef struct NEM

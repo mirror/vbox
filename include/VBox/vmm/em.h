@@ -178,7 +178,65 @@ VMMDECL(void)                   EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTP
 VMMDECL(RTGCUINTPTR)            EMGetInhibitInterruptsPC(PVMCPU pVCpu);
 VMMDECL(void)                   EMSetHypercallInstructionsEnabled(PVMCPU pVCpu, bool fEnabled);
 VMMDECL(bool)                   EMAreHypercallInstructionsEnabled(PVMCPU pVCpu);
+VMM_INT_DECL(bool)              EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(bool)              EMMonitorWaitShouldContinue(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(int)               EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx, uint64_t rdx, RTGCPHYS GCPhys);
+VMM_INT_DECL(bool)              EMMonitorIsArmed(PVMCPU pVCpu);
+VMM_INT_DECL(int)               EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx);
+VMM_INT_DECL(int)               EMUnhaltAndWakeUp(PVM pVM, PVMCPU pVCpuDst);
+VMMRZ_INT_DECL(VBOXSTRICTRC)    EMRZSetPendingIoPortWrite(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t cbValue, uint32_t uValue);
+VMMRZ_INT_DECL(VBOXSTRICTRC)    EMRZSetPendingIoPortRead(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t cbValue);
 
+/**
+ * Common defined exit types that EM knows what to do about.
+ *
+ * These should be used instead of the VT-x, SVM or NEM specific ones for exits
+ * worth optimizing.
+ */
+typedef enum EMEXITTYPE
+{
+    EMEXITTYPE_INVALID = 0,
+    EMEXITTYPE_IO_PORT_READ,
+    EMEXITTYPE_IO_PORT_WRITE,
+    EMEXITTYPE_IO_PORT_STR_READ,
+    EMEXITTYPE_IO_PORT_STR_WRITE,
+    EMEXITTYPE_MMIO_READ,
+    EMEXITTYPE_MMIO_WRITE,
+    EMEXITTYPE_MSR_READ,
+    EMEXITTYPE_MSR_WRITE,
+    EMEXITTYPE_CPUID
+} EMEXITTYPE;
+AssertCompileSize(EMEXITTYPE, 4);
+
+/** @name EMEXIT_F_XXX - EM exit flags.
+ *
+ * The flags the exit type are combined to a 32-bit number using the
+ * EMEXIT_MAKE_FLAGS_AND_TYPE() macro.
+ *
+ * @{  */
+#define EMEXIT_F_TYPE_MASK  UINT32_C(0x0fff)    /**< The exit type mask. */
+#define EMEXIT_F_KIND_EM    UINT32_C(0x0000)    /**< EMEXITTYPE */
+#define EMEXIT_F_KIND_VMX   UINT32_C(0x1000)    /**< VT-x exit codes. */
+#define EMEXIT_F_KIND_SVM   UINT32_C(0x2000)    /**< SVM exit codes. */
+#define EMEXIT_F_KIND_NEM   UINT32_C(0x3000)    /**< NEMEXITTYPE */
+#define EMEXIT_F_KIND_XCPT  UINT32_C(0x4000)    /**< Exception numbers (raw-mode). */
+#define EMEXIT_F_KIND_MASK  UINT32_C(0x7000)
+/** Combines flags and exit type into EMHistoryAddExit() input. */
+#define EMEXIT_MAKE_FLAGS_AND_TYPE(a_fFlags, a_uType)   ((a_fFlags) | (uint32_t)(a_uType))
+/** @} */
+
+typedef enum EMEXITACTION
+{
+    /** Take normal action on the exit. */
+    EMEXITACTION_NORMAL = 0,
+    EMEXITACTION_TODO
+} EMEXITACTION;
+AssertCompileSize(EMEXITACTION, 4);
+
+VMM_INT_DECL(EMEXITACTION)      EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC, uint64_t uTimestamp);
+
+/** @name Deprecated interpretation related APIs (use IEM).
+ * @{ */
 VMM_INT_DECL(int)               EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pCpu, unsigned *pcbInstr);
 VMM_INT_DECL(int)               EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
                                                       PDISCPUSTATE pDISState, unsigned *pcbInstr);
@@ -186,11 +244,9 @@ VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCOR
 VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten);
 VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pCoreCtx,
                                                                  RTGCPTR pvFault, EMCODETYPE enmCodeType);
-
 #ifdef IN_RC
 VMM_INT_DECL(int)               EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 #endif
-
 VMM_INT_DECL(int)               EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMM_INT_DECL(int)               EMInterpretRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMM_INT_DECL(int)               EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
@@ -202,14 +258,7 @@ VMM_INT_DECL(int)               EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUM
 VMM_INT_DECL(int)               EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx);
 VMM_INT_DECL(int)               EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMM_INT_DECL(int)               EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
-VMM_INT_DECL(bool)              EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx);
-VMM_INT_DECL(bool)              EMMonitorWaitShouldContinue(PVMCPU pVCpu, PCPUMCTX pCtx);
-VMM_INT_DECL(int)               EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx, uint64_t rdx, RTGCPHYS GCPhys);
-VMM_INT_DECL(bool)              EMMonitorIsArmed(PVMCPU pVCpu);
-VMM_INT_DECL(int)               EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx);
-VMM_INT_DECL(int)               EMUnhaltAndWakeUp(PVM pVM, PVMCPU pVCpuDst);
-VMMRZ_INT_DECL(VBOXSTRICTRC)    EMRZSetPendingIoPortWrite(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t cbValue, uint32_t uValue);
-VMMRZ_INT_DECL(VBOXSTRICTRC)    EMRZSetPendingIoPortRead(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t cbValue);
+/** @} */
 
 /** @name Assembly routines
  * @{ */

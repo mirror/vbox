@@ -263,6 +263,9 @@ VMMR3_INT_DECL(int)             HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, 
 VMMR3_INT_DECL(int)             HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR3_INT_DECL(bool)            HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx);
 VMMR3_INT_DECL(bool)            HMR3IsVmxPreemptionTimerUsed(PVM pVM);
+VMMR3DECL(const char *)         HMR3GetVmxExitName(uint32_t uExit);
+VMMR3DECL(const char *)         HMR3GetSvmExitName(uint32_t uExit);
+
 /** @} */
 #endif /* IN_RING3 */
 

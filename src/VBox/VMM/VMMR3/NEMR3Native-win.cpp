@@ -1444,7 +1444,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
          * Note! We've already disabled X2APIC via CFGM during the first init call.
          */
 
-#if 1 && defined(DEBUG_bird)
+#if 0 && defined(DEBUG_bird)
         /*
          * Poke and probe a little.
          */

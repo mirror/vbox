@@ -401,6 +401,43 @@ EMRZSetPendingIoPortRead(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t 
 
 #endif /* IN_RING3 */
 
+
+/**
+ * Adds an exit to the history for this CPU.
+ *
+ * @returns Suggested action to take.
+ * @param   pVCpu           The corss context virtual CPU structure.
+ * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
+ * @param   uFlatPC         The flattened program counter (RIP).
+ * @param   uTimestamp      The TSC value for the exit, 0 if not available.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(EMEXITACTION) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC, uint64_t uTimestamp)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /*
+     * Add the exit history entry.
+     */
+    AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
+    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)(pVCpu->em.s.iNextExit++) & 0xff];
+    pHistEntry->uFlatPC       = uFlatPC;
+    pHistEntry->uTimestamp    = uTimestamp;
+    pHistEntry->uFlagsAndType = uFlagsAndType;
+    pHistEntry->idxSlot       = UINT32_MAX;
+
+    /*
+     * If common exit type, we will insert/update the exit into the shared hash table.
+     */
+    if ((uFlagsAndType & EMEXIT_F_KIND_MASK) == EMEXIT_F_KIND_EM)
+    {
+        /** @todo later */
+    }
+
+    return EMEXITACTION_NORMAL;
+}
+
+
 /**
  * Locks REM execution to a single VCPU.
  *

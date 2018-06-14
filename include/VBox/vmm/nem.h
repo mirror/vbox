@@ -52,6 +52,7 @@ VMMR3DECL(bool)      NEMR3IsEnabled(PUVM pVM);
 VMMR3_INT_DECL(bool) NEMR3NeedSpecialTscMode(PVM pVM);
 VMMR3_INT_DECL(void) NEMR3Reset(PVM pVM);
 VMMR3_INT_DECL(void) NEMR3ResetCpu(PVMCPU pVCpu, bool fInitIpi);
+VMMR3DECL(const char *) NEMR3GetExitName(uint32_t uExit);
 VMMR3_INT_DECL(VBOXSTRICTRC) NEMR3RunGC(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(bool) NEMR3CanExecuteGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR3_INT_DECL(bool) NEMR3SetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
