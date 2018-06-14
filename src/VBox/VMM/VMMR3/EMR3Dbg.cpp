@@ -229,7 +229,7 @@ static DECLCALLBACK(void) emR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const
          */
         pHlp->pfnPrintf(pHlp,
                         "CPU[%u]: VM-exit history:\n"
-                        "   Exit No.:      TSC timestamp / delta    Flat RIP         Exit   Name\n"
+                        "   Exit No.:     TSC timestamp / delta    Flat RIP         Exit   Name\n"
                         , pVCpu->idCpu);
 
         /*
