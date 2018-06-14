@@ -47,8 +47,8 @@ public:
 
 private slots:
 
-    /* Button click handler: */
-    void sltButtonClicked(QAbstractButton *pButton);
+    /* Button toggle handler: */
+    void sltButtonToggled(QAbstractButton *pButton, bool fChecked);
     void sltNameChanged();
     void sltPathChanged();
 
