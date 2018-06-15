@@ -879,7 +879,10 @@ static int rtFuzzObsWorkersCreate(PRTFUZZOBSINT pThis, uint32_t cThreads)
         }
 
         if (RT_SUCCESS(rc))
+        {
             pThis->paObsThreads = paObsThreads;
+            pThis->cThreads     = cThreads;
+        }
         else
             RTMemFree(paObsThreads);
     }
@@ -956,27 +959,7 @@ RTDECL(int) RTFuzzObsDestroy(RTFUZZOBS hFuzzObs)
     PRTFUZZOBSINT pThis = hFuzzObs;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
 
-    /* Wait for the master thread to terminate. */
-    if (pThis->hThreadGlobal != NIL_RTTHREAD)
-    {
-        ASMAtomicXchgBool(&pThis->fShutdown, true);
-        RTThreadWait(pThis->hThreadGlobal, RT_INDEFINITE_WAIT, NULL);
-    }
-
-    /* Clean up the workers. */
-    if (pThis->paObsThreads)
-    {
-        for (unsigned i = 0; i < pThis->cThreads; i++)
-        {
-            PRTFUZZOBSTHRD pThrd = &pThis->paObsThreads[i];
-            ASMAtomicXchgBool(&pThrd->fShutdown, true);
-            RTThreadWait(pThrd->hThread, RT_INDEFINITE_WAIT, NULL);
-            if (pThrd->hFuzzInput)
-                RTFuzzInputRelease(pThrd->hFuzzInput);
-        }
-        RTMemFree(pThis->paObsThreads);
-        pThis->paObsThreads = NULL;
-    }
+    RTFuzzObsExecStop(hFuzzObs);
 
     /* Clean up all acquired resources. */
     for (unsigned i = 0; i < pThis->cArgs; i++)
@@ -1144,7 +1127,38 @@ RTDECL(int) RTFuzzObsExecStart(RTFUZZOBS hFuzzObs, uint32_t cProcs)
 
 RTDECL(int) RTFuzzObsExecStop(RTFUZZOBS hFuzzObs)
 {
-    RT_NOREF(hFuzzObs);
-    return VERR_NOT_IMPLEMENTED;
+    PRTFUZZOBSINT pThis = hFuzzObs;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    /* Wait for the master thread to terminate. */
+    if (pThis->hThreadGlobal != NIL_RTTHREAD)
+    {
+        ASMAtomicXchgBool(&pThis->fShutdown, true);
+        RTSemEventSignal(pThis->hEvtGlobal);
+        RTThreadWait(pThis->hThreadGlobal, RT_INDEFINITE_WAIT, NULL);
+        pThis->hThreadGlobal = NIL_RTTHREAD;
+    }
+
+    /* Destroy the workers. */
+    if (pThis->paObsThreads)
+    {
+        for (unsigned i = 0; i < pThis->cThreads; i++)
+        {
+            PRTFUZZOBSTHRD pThrd = &pThis->paObsThreads[i];
+            ASMAtomicXchgBool(&pThrd->fShutdown, true);
+            RTThreadUserSignal(pThrd->hThread);
+            RTThreadWait(pThrd->hThread, RT_INDEFINITE_WAIT, NULL);
+            if (pThrd->hFuzzInput)
+                RTFuzzInputRelease(pThrd->hFuzzInput);
+        }
+
+        RTMemFree(pThis->paObsThreads);
+        pThis->paObsThreads = NULL;
+        pThis->cThreads     = 0;
+    }
+
+    RTSemEventDestroy(pThis->hEvtGlobal);
+    pThis->hEvtGlobal = NIL_RTSEMEVENT;
+    return VINF_SUCCESS;
 }
 

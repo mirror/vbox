@@ -1017,6 +1017,7 @@
 # define RTFuzzCtxCorpusInputAdd                        RT_MANGLER(RTFuzzCtxCorpusInputAdd)
 # define RTFuzzCtxCorpusInputAddFromDirPath             RT_MANGLER(RTFuzzCtxCorpusInputAddFromDirPath)
 # define RTFuzzCtxCorpusInputAddFromFile                RT_MANGLER(RTFuzzCtxCorpusInputAddFromFile)
+# define RTFuzzCtxCorpusInputAddFromVfsFile             RT_MANGLER(RTFuzzCtxCorpusInputAddFromVfsFile)
 # define RTFuzzCtxCreate                                RT_MANGLER(RTFuzzCtxCreate)
 # define RTFuzzCtxCreateFromState                       RT_MANGLER(RTFuzzCtxCreateFromState)
 # define RTFuzzCtxCreateFromStateFile                   RT_MANGLER(RTFuzzCtxCreateFromStateFile)

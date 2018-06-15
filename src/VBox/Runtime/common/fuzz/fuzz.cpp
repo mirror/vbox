@@ -44,6 +44,7 @@
 #include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/vfs.h>
 
 
 /*********************************************************************************************************************************
@@ -641,6 +642,50 @@ RTDECL(int) RTFuzzCtxCorpusInputAddFromFile(RTFUZZCTX hFuzzCtx, const char *pszF
 }
 
 
+RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFile(RTFUZZCTX hFuzzCtx, RTVFSFILE hVfsFile)
+{
+    PRTFUZZCTXINT pThis = hFuzzCtx;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(hVfsFile != NIL_RTVFSFILE, VERR_INVALID_HANDLE);
+
+    uint64_t cbFile = 0;
+    int rc = RTVfsFileGetSize(hVfsFile, &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        PRTFUZZINPUTINT pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_OFFSETOF(RTFUZZINPUTINT, abInput[cbFile]));
+        if (RT_LIKELY(pInput))
+        {
+            pInput->cRefs   = 1;
+            pInput->pFuzzer = pThis;
+            pInput->cbInput = cbFile;
+
+            rc = RTVfsFileRead(hVfsFile, &pInput->abInput[0], cbFile, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                /* Generate MD5 checksum and try to locate input. */
+                uint8_t abDigest[RTMD5_HASH_SIZE];
+                RTMd5(&pInput->abInput[0], cbFile, &abDigest[0]);
+
+                if (!rtFuzzCtxInputLocate(pThis, &abDigest[0], true /*fExact*/, NULL /*ppIntermediate*/))
+                {
+                    memcpy(&pInput->abMd5Hash[0], &abDigest[0], sizeof(abDigest));
+                    rc = rtFuzzCtxInputAdd(pThis, pInput);
+                }
+                else
+                    rc = VERR_ALREADY_EXISTS;
+            }
+
+            if (RT_FAILURE(rc))
+                RTMemFree(pInput);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
 RTDECL(int) RTFuzzCtxCorpusInputAddFromDirPath(RTFUZZCTX hFuzzCtx, const char *pszDirPath)
 {
     PRTFUZZCTXINT pThis = hFuzzCtx;
@@ -697,7 +742,6 @@ RTDECL(int) RTFuzzCtxCfgSetInputSeedMaximum(RTFUZZCTX hFuzzCtx, size_t cbMax)
 {
     PRTFUZZCTXINT pThis = hFuzzCtx;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertReturn(cbMax, VERR_INVALID_PARAMETER);
 
     pThis->cbInputMax = cbMax;
     return VINF_SUCCESS;

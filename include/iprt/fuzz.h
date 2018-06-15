@@ -149,6 +149,15 @@ RTDECL(int) RTFuzzCtxCorpusInputAdd(RTFUZZCTX hFuzzCtx, const void *pvInput, siz
 RTDECL(int) RTFuzzCtxCorpusInputAddFromFile(RTFUZZCTX hFuzzCtx, const char *pszFilename);
 
 /**
+ * Adds a new seed to the input corpus of the given fuzzing context from the given VFS file.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   hVfsFile            The VFS file handle to load the seed from.
+ */
+RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFile(RTFUZZCTX hFuzzCtx, RTVFSFILE hVfsFile);
+
+/**
  * Adds new seeds to the input corpus of the given fuzzing context from the given directory.
  *
  * Will only process regular files, i.e. ignores directories, symbolic links, devices, fifos
@@ -367,7 +376,7 @@ RTDECL(int) RTFuzzObsSetTestBinaryArgs(RTFUZZOBS hFuzzObs, const char * const *p
  * @returns IPRT status code.
  * @param   hFuzzObs            The fuzzing observer handle.
  * @param   cProcs              Number of processes to run simulteanously,
- *                              0 will create as manny processes as there are CPUs available.
+ *                              0 will create as many processes as there are CPUs available.
  */
 RTDECL(int) RTFuzzObsExecStart(RTFUZZOBS hFuzzObs, uint32_t cProcs);
 
