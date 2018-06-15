@@ -14453,6 +14453,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
         }
     }
 
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14572,6 +14575,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
         }
     }
 
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14594,6 +14600,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedOut(PVMCPU pVCpu, uint8_t cbInstr, uint
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_out, u16Port, cbReg);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14614,6 +14621,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedIn(PVMCPU pVCpu, uint8_t cbInstr, uint1
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_in, u16Port, cbReg);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14637,6 +14645,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxWrite(PVMCPU pVCpu, uint8_t cbIns
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_mov_Cd_Rd, iCrReg, iGReg);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14660,6 +14669,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxRead(PVMCPU pVCpu, uint8_t cbInst
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_mov_Rd_Cd, iGReg, iCrReg);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14679,6 +14689,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClts(PVMCPU pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_clts);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14699,6 +14710,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, uin
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_1(iemCImpl_lmsw, uValue);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14720,6 +14732,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_xsetbv);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14739,6 +14752,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvlpg(PVMCPU pVCpu, uint8_t cbInstr, R
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_1(iemCImpl_invlpg, GCPtrPage);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14759,6 +14773,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvpcid(PVMCPU pVCpu, uint8_t cbInstr, 
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_invpcid, uType, GCPtrInvpcidDesc);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14814,6 +14829,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClgi(PVMCPU pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_clgi);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14832,6 +14848,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedStgi(PVMCPU pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_stgi);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14850,6 +14867,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmload(PVMCPU pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmload);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14868,6 +14886,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmsave(PVMCPU pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmsave);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14886,6 +14905,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvlpga(PVMCPU pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_invlpga);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14904,6 +14924,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmrun(PVMCPU pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmrun);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
@@ -14922,6 +14943,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
     VBOXSTRICTRC rcStrict = iemSvmVmexit(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
