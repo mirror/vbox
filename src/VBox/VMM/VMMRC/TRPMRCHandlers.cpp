@@ -844,7 +844,8 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     /*
      * Try handle it here, if not return to HC and emulate/interpret it there.
      */
-    switch (pCpu->pCurInstr->uOpcode)
+    uint16_t const uOpcode = pCpu->pCurInstr->uOpcode;
+    switch (uOpcode)
     {
         case OP_INT3:
             /*
@@ -855,6 +856,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             RT_FALL_THRU();
         case OP_INT:
         {
+            EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_INT));
             Assert(pCpu->Param1.fUse & DISUSE_IMMEDIATE8);
             Assert(!(PATMIsPatchGCAddr(pVM, PC)));
             if (pCpu->Param1.uValue == 3)
@@ -887,6 +889,8 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
 #endif
 
         case OP_HLT:
+            EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_HLT));
+
             /* If it's in patch code, defer to ring-3. */
             if (PATMIsPatchGCAddr(pVM, PC))
                 break;
@@ -907,7 +911,13 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             /* We can safely emulate control/debug register move instructions in patched code. */
             if (    !PATMIsPatchGCAddr(pVM, PC)
                 &&  !CSAMIsKnownDangerousInstr(pVM, PC))
+            {
+                if (uOpcode == OP_MOV_CR)
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_CRX));
+                else
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_DRX));
                 break;
+            }
             RT_FALL_THRU();
         case OP_INVLPG:
         case OP_LLDT:
@@ -919,6 +929,41 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_RDMSR:
         case OP_WRMSR:
         {
+            /* Update history. */
+            switch (uOpcode)
+            {
+                case OP_MOV_CR:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_CRX));
+                    break;
+                case OP_MOV_DR:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_DRX));
+                    break;
+                case OP_INVLPG:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_INVLPG));
+                    break;
+                case OP_LLDT:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_LLDT));
+                    break;
+                case OP_STI:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_STI));
+                    break;
+                case OP_RDPMC:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_RDPMC));
+                    break;
+                case OP_CLTS:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_CLTS));
+                    break;
+                case OP_WBINVD:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_CLTS));
+                    break;
+                case OP_RDMSR:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ));
+                    break;
+                case OP_WRMSR:
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE));
+                    break;
+            }
+
             rc = VBOXSTRICTRC_TODO(EMInterpretInstructionDisasState(pVCpu, pCpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR));
             if (rc == VERR_EM_INTERPRETER)
                 rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
@@ -951,7 +996,8 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
     Assert(!pRegFrame->eflags.Bits.u1VM);
     TRPM_ENTER_DBG_HOOK(0xd);
 
-    switch (pCpu->pCurInstr->uOpcode)
+    uint16_t const uOpcode = pCpu->pCurInstr->uOpcode;
+    switch (uOpcode)
     {
         /*
          * INT3 and INT xx are ring-switching.
@@ -966,6 +1012,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             RT_FALL_THRU();
         case OP_INT:
         {
+            EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_INT));
             Assert(pCpu->Param1.fUse & DISUSE_IMMEDIATE8);
             rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)pCpu->Param1.uValue, pCpu->cbInstr, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT, 0xd);
             if (RT_SUCCESS(rc) && rc != VINF_EM_RAW_GUEST_TRAP)
@@ -985,6 +1032,10 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
          */
         case OP_SYSCALL:
         case OP_SYSENTER:
+            if (uOpcode == OP_SYSCALL)
+                EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_SYSCALL));
+            else
+                EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_SYSENTER));
 #ifdef PATM_EMULATE_SYSENTER
             rc = PATMSysCall(pVM, CPUMCTX_FROM_CORE(pRegFrame), pCpu);
             if (rc == VINF_SUCCESS)
@@ -1126,7 +1177,10 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
      * Note: it's no longer safe to access the instruction opcode directly due to possible stale code TLB entries
      */
     if (Cpu.pCurInstr->uOpcode == OP_RDTSC)
+    {
+        EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_RDTSC));
         return trpmGCTrap0dHandlerRdTsc(pVM, pVCpu, pRegFrame);
+    }
 
     /*
      * Deal with I/O port access.
@@ -1134,6 +1188,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
     if (    pVCpu->trpm.s.uActiveErrorCode == 0
         &&  (Cpu.pCurInstr->fOpType & DISOPTYPE_PORTIO))
     {
+        /* IOMRCIOPortHandler updates exit history. */
         VBOXSTRICTRC rcStrict = IOMRCIOPortHandler(pVM, pVCpu, pRegFrame, &Cpu);
         TRPM_EXIT_DBG_HOOK(0xd);
         return trpmGCExitTrap(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict), pRegFrame);

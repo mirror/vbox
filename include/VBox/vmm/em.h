@@ -204,7 +204,23 @@ typedef enum EMEXITTYPE
     EMEXITTYPE_MMIO_WRITE,
     EMEXITTYPE_MSR_READ,
     EMEXITTYPE_MSR_WRITE,
-    EMEXITTYPE_CPUID
+    EMEXITTYPE_CPUID,
+    EMEXITTYPE_RDTSC,
+    EMEXITTYPE_MOV_CRX,
+    EMEXITTYPE_MOV_DRX,
+
+    /** @name Raw-mode only (for now), keep at end.
+     * @{  */
+    EMEXITTYPE_INVLPG,
+    EMEXITTYPE_LLDT,
+    EMEXITTYPE_RDPMC,
+    EMEXITTYPE_CLTS,
+    EMEXITTYPE_STI,
+    EMEXITTYPE_INT,
+    EMEXITTYPE_SYSCALL,
+    EMEXITTYPE_SYSENTER,
+    EMEXITTYPE_HLT
+    /** @} */
 } EMEXITTYPE;
 AssertCompileSize(EMEXITTYPE, 4);
 
@@ -242,6 +258,8 @@ VMMRC_INT_DECL(void)            EMRCHistoryAddExitNoTs(PVMCPU pVCpu, uint32_t uF
 #ifdef IN_RING0
 VMMR0_INT_DECL(void)            EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fFlattened);
 #endif
+VMM_INT_DECL(EMEXITACTION)      EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFlagsAndType);
+VMM_INT_DECL(EMEXITACTION)      EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC);
 
 
 /** @name Deprecated interpretation related APIs (use IEM).

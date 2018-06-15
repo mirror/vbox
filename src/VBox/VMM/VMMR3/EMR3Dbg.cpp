@@ -70,9 +70,16 @@ static DBGCCMD const g_aCmds[] =
     },
 };
 
-VMM_INT_DECL(const char *) EMR3GetExitTypeName(uint32_t uExitType)
+
+/**
+ * Translates EMEXITTYPE into a name.
+ *
+ * @returns Pointer to read-only name, NULL if unknown type.
+ * @param   uExitType           The exit type to name.
+ */
+VMM_INT_DECL(const char *) EMR3GetExitTypeName(EMEXITTYPE enmExitType)
 {
-    switch ((EMEXITTYPE)uExitType)
+    switch (enmExitType)
     {
         case EMEXITTYPE_INVALID:            return "invalid";
         case EMEXITTYPE_IO_PORT_READ:       return "I/O port read";
@@ -84,9 +91,24 @@ VMM_INT_DECL(const char *) EMR3GetExitTypeName(uint32_t uExitType)
         case EMEXITTYPE_MSR_READ:           return "MSR read";
         case EMEXITTYPE_MSR_WRITE:          return "MSR write";
         case EMEXITTYPE_CPUID:              return "CPUID";
+        case EMEXITTYPE_RDTSC:              return "RDTSC";
+        case EMEXITTYPE_MOV_CRX:            return "MOV CRx";
+        case EMEXITTYPE_MOV_DRX:            return "MOV DRx";
+
+        /* Raw-mode only: */
+        case EMEXITTYPE_INVLPG:             return "INVLPG";
+        case EMEXITTYPE_LLDT:               return "LLDT";
+        case EMEXITTYPE_RDPMC:              return "RDPMC";
+        case EMEXITTYPE_CLTS:               return "CLTS";
+        case EMEXITTYPE_STI:                return "STI";
+        case EMEXITTYPE_INT:                return "INT";
+        case EMEXITTYPE_SYSCALL:            return "SYSCALL";
+        case EMEXITTYPE_SYSENTER:           return "SYSENTER";
+        case EMEXITTYPE_HLT:                return "HLT";
     }
     return NULL;
 }
+
 
 /**
  * Translates flags+type into an exit name.
@@ -102,7 +124,7 @@ static const char *emR3HistoryGetExitName(uint32_t uFlagsAndType, char *pszFallb
     switch (uFlagsAndType & EMEXIT_F_KIND_MASK)
     {
         case EMEXIT_F_KIND_EM:
-            pszExitName = EMR3GetExitTypeName(uFlagsAndType & EMEXIT_F_TYPE_MASK);
+            pszExitName = EMR3GetExitTypeName((EMEXITTYPE)(uFlagsAndType & EMEXIT_F_TYPE_MASK));
             break;
 
         case EMEXIT_F_KIND_VMX:

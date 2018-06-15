@@ -468,7 +468,7 @@ VMMRC_INT_DECL(void) EMRCHistoryAddExitNoTs(PVMCPU pVCpu, uint32_t uFlagsAndType
  * Interface that VT-x uses to supply the PC of an exit when CS:RIP is being read.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uFlatPC         The flattened program counter (RIP).  UINT64_MAX if not available.
+ * @param   uFlatPC         The flattened program counter (RIP).
  * @param   fFlattened      Set if RIP was subjected to CS.BASE, clear if not.
  */
 VMMR0_INT_DECL(void) EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fFlattened)
@@ -482,6 +482,69 @@ VMMR0_INT_DECL(void) EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fF
         pHistEntry->uFlagsAndType |= EMEXIT_F_UNFLATTENED_PC;
 }
 #endif
+
+
+/**
+ * Interface for convering a engine specific exit to a generic one and get guidance.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(EMEXITACTION) EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFlagsAndType)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /*
+     * Do the updating.
+     */
+    AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
+    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[((uintptr_t)pVCpu->em.s.iNextExit - 1) & 0xff];
+    pHistEntry->uFlagsAndType = uFlagsAndType | (pHistEntry->uFlagsAndType & (EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC));
+
+    /*
+     * If common exit type, we will insert/update the exit into the shared hash table.
+     */
+    if ((uFlagsAndType & EMEXIT_F_KIND_MASK) == EMEXIT_F_KIND_EM)
+    {
+        /** @todo later */
+    }
+
+    return EMEXITACTION_NORMAL;
+}
+
+
+/**
+ * Interface for convering a engine specific exit to a generic one and get
+ * guidance, supplying flattened PC too.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
+ * @param   uFlatPC         The flattened program counter (RIP).
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(EMEXITACTION) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /*
+     * Do the updating.
+     */
+    AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
+    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[((uintptr_t)pVCpu->em.s.iNextExit - 1) & 0xff];
+    pHistEntry->uFlagsAndType = uFlagsAndType;
+    pHistEntry->uFlatPC       = uFlatPC;
+
+    /*
+     * If common exit type, we will insert/update the exit into the shared hash table.
+     */
+    if ((uFlagsAndType & EMEXIT_F_KIND_MASK) == EMEXIT_F_KIND_EM)
+    {
+        /** @todo later */
+    }
+
+    return EMEXITACTION_NORMAL;
+}
 
 
 /**
