@@ -449,14 +449,15 @@ VMM_INT_DECL(EMEXITACTION) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType
  * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
  * @param   uCs             The CS.
  * @param   uEip            The EIP.
+ * @param   uTimestamp      The TSC value for the exit, 0 if not available.
  * @thread  EMT(0)
  */
-VMMRC_INT_DECL(void) EMRCHistoryAddExitNoTs(PVMCPU pVCpu, uint32_t uFlagsAndType, uint16_t uCs, uint32_t uEip)
+VMMRC_INT_DECL(void) EMRCHistoryAddExitCsEip(PVMCPU pVCpu, uint32_t uFlagsAndType, uint16_t uCs, uint32_t uEip, uint64_t uTimestamp)
 {
     AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
     PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)(pVCpu->em.s.iNextExit++) & 0xff];
     pHistEntry->uFlatPC       = ((uint64_t)uCs << 32) |  uEip;
-    pHistEntry->uTimestamp    = 0;
+    pHistEntry->uTimestamp    = uTimestamp;
     pHistEntry->uFlagsAndType = uFlagsAndType | EMEXIT_F_CS_EIP;
     pHistEntry->idxSlot       = UINT32_MAX;
 }

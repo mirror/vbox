@@ -253,7 +253,8 @@ AssertCompileSize(EMEXITACTION, 4);
 
 VMM_INT_DECL(EMEXITACTION)      EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC, uint64_t uTimestamp);
 #ifdef IN_RC
-VMMRC_INT_DECL(void)            EMRCHistoryAddExitNoTs(PVMCPU pVCpu, uint32_t uFlagsAndType, uint16_t uCs, uint32_t uEip);
+VMMRC_INT_DECL(void)            EMRCHistoryAddExitCsEip(PVMCPU pVCpu, uint32_t uFlagsAndType, uint16_t uCs, uint32_t uEip,
+                                                        uint64_t uTimestamp);
 #endif
 #ifdef IN_RING0
 VMMR0_INT_DECL(void)            EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fFlattened);
