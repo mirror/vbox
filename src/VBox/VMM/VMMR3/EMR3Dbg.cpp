@@ -75,7 +75,7 @@ static DBGCCMD const g_aCmds[] =
  * Translates EMEXITTYPE into a name.
  *
  * @returns Pointer to read-only name, NULL if unknown type.
- * @param   uExitType           The exit type to name.
+ * @param   enmExitType     The exit type to name.
  */
 VMM_INT_DECL(const char *) EMR3GetExitTypeName(EMEXITTYPE enmExitType)
 {
