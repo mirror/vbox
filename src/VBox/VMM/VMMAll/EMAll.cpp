@@ -438,6 +438,31 @@ VMM_INT_DECL(EMEXITACTION) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType
 }
 
 
+#ifdef IN_RC
+/**
+ * Special raw-mode interface for adding an exit to the history.
+ *
+ * Currently this is only for recording, not optimizing, so no return value.  If
+ * we start seriously caring about raw-mode again, we may extend it.
+ *
+ * @param   pVCpu           The corss context virtual CPU structure.
+ * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
+ * @param   uCs             The CS.
+ * @param   uEip            The EIP.
+ * @thread  EMT(0)
+ */
+VMMRC_INT_DECL(void) EMRCHistoryAddExitNoTs(PVMCPU pVCpu, uint32_t uFlagsAndType, uint16_t uCs, uint32_t uEip)
+{
+    AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
+    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)(pVCpu->em.s.iNextExit++) & 0xff];
+    pHistEntry->uFlatPC       = ((uint64_t)uCs << 32) |  uEip;
+    pHistEntry->uTimestamp    = 0;
+    pHistEntry->uFlagsAndType = uFlagsAndType | EMEXIT_F_CS_EIP;
+    pHistEntry->idxSlot       = UINT32_MAX;
+}
+#endif
+
+
 /**
  * Locks REM execution to a single VCPU.
  *

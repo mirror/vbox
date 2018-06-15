@@ -221,6 +221,7 @@ AssertCompileSize(EMEXITTYPE, 4);
 #define EMEXIT_F_KIND_NEM   UINT32_C(0x3000)    /**< NEMEXITTYPE */
 #define EMEXIT_F_KIND_XCPT  UINT32_C(0x4000)    /**< Exception numbers (raw-mode). */
 #define EMEXIT_F_KIND_MASK  UINT32_C(0x7000)
+#define EMEXIT_F_CS_EIP     UINT32_C(0x8000)
 /** Combines flags and exit type into EMHistoryAddExit() input. */
 #define EMEXIT_MAKE_FLAGS_AND_TYPE(a_fFlags, a_uType)   ((a_fFlags) | (uint32_t)(a_uType))
 /** @} */
@@ -234,6 +235,9 @@ typedef enum EMEXITACTION
 AssertCompileSize(EMEXITACTION, 4);
 
 VMM_INT_DECL(EMEXITACTION)      EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC, uint64_t uTimestamp);
+#ifdef IN_RC
+VMMRC_INT_DECL(void)            EMRCHistoryAddExitNoTs(PVMCPU pVCpu, uint32_t uFlagsAndType, uint16_t uCs, uint32_t uEip);
+#endif
 
 /** @name Deprecated interpretation related APIs (use IEM).
  * @{ */

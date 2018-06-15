@@ -332,6 +332,7 @@ DECLASM(int) TRPMGCTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU      pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC01: cs:eip=%04x:%08x uDr6=%RTreg EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, uDr6, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(1);
+    EMRCHistoryAddExitNoTs(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_DB), pRegFrame->cs.Sel, pRegFrame->eip);
 
     /*
      * We currently don't make use of the X86_DR7_GD bit, but
@@ -385,6 +386,7 @@ DECLASM(int) TRPMGCHyperTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVM         pVM   = TRPMCPU_2_VM(pTrpmCpu);
     PVMCPU      pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     TRPM_ENTER_DBG_HOOK_HYPER(1);
+    EMRCHistoryAddExitNoTs(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_DB), pRegFrame->cs.Sel, pRegFrame->eip);
     LogFlow(("TRPMGCHyper01: cs:eip=%04x:%08x uDr6=%RTreg\n", pRegFrame->cs.Sel, pRegFrame->eip, uDr6));
 
     /*
@@ -425,6 +427,8 @@ DECLASM(int) TRPMGCHyperTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGCTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip));
+    EMRCHistoryAddExitNoTs(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NMI),
+                           pRegFrame->cs.Sel, pRegFrame->eip);
 #if 0 /* Enable this iff you have a COM port and really want this debug info. */
     RTLogComPrintf("TRPMGCTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip);
 #endif
@@ -451,6 +455,8 @@ DECLASM(int) TRPMGCTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCHyperTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGCHyperTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip));
+    EMRCHistoryAddExitNoTs(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NMI),
+                           pRegFrame->cs.Sel, pRegFrame->eip);
 #if 0 /* Enable this iff you have a COM port and really want this debug info. */
     RTLogComPrintf("TRPMGCHyperTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip);
 #endif
@@ -477,6 +483,7 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     int     rc;
     LogFlow(("TRPMGC03: %04x:%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(3);
+    EMRCHistoryAddExitNoTs(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_BP), pRegFrame->cs.Sel, pRegFrame->eip);
     PGMRZDynMapStartAutoSet(pVCpu);
 
     /*
@@ -529,6 +536,7 @@ DECLASM(int) TRPMGCHyperTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGCHyper03: %04x:%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK_HYPER(3);
+    EMRCHistoryAddExitNoTs(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_BP), pRegFrame->cs.Sel, pRegFrame->eip);
 
     /*
      * Hand it over to DBGF.
@@ -560,6 +568,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     int     rc;
     LogFlow(("TRPMGC06: %04x:%08x EFL=%#x/%#x\n", pRegFrame->cs.Sel, pRegFrame->eip, pRegFrame->eflags.u32, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(6);
+    EMRCHistoryAddExitNoTs(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_UD), pRegFrame->cs.Sel, pRegFrame->eip);
     PGMRZDynMapStartAutoSet(pVCpu);
 
     if (CPUMGetGuestCPL(pVCpu) <= (EMIsRawRing1Enabled(pVM) ? 1U : 0U))
@@ -696,6 +705,7 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC07: %04x:%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(7);
+    EMRCHistoryAddExitNoTs(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NM), pRegFrame->cs.Sel, pRegFrame->eip);
     PGMRZDynMapStartAutoSet(pVCpu);
 
     int rc = CPUMHandleLazyFPU(pVCpu);
@@ -722,6 +732,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC0b: %04x:%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(0xb);
+    EMRCHistoryAddExitNoTs(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NP), pRegFrame->cs.Sel, pRegFrame->eip);
     PGMRZDynMapStartAutoSet(pVCpu);
 
     /*
@@ -1183,6 +1194,7 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC0d: %04x:%08x err=%x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, (uint32_t)pVCpu->trpm.s.uActiveErrorCode, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(0xd);
+    EMRCHistoryAddExitNoTs(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_GP), pRegFrame->cs.Sel, pRegFrame->eip);
 
     PGMRZDynMapStartAutoSet(pVCpu);
     int rc = trpmGCTrap0dHandler(pVM, pTrpmCpu, pRegFrame);
@@ -1248,6 +1260,7 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC0e: %04x:%08x err=%x cr2=%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, (uint32_t)pVCpu->trpm.s.uActiveErrorCode, (uint32_t)pVCpu->trpm.s.uActiveCR2, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(0xe);
+    EMRCHistoryAddExitNoTs(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_PF), pRegFrame->cs.Sel, pRegFrame->eip);
 
     /*
      * This is all PGM stuff.
@@ -1363,6 +1376,8 @@ static int trpmGCHyperGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, PCTRPMGCHYPER paH
  */
 DECLASM(int) TRPMGCHyperTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
+    EMRCHistoryAddExitNoTs(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NP),
+                           pRegFrame->cs.Sel, pRegFrame->eip);
     return trpmGCHyperGeneric(TRPMCPU_2_VM(pTrpmCpu), pRegFrame, g_aTrap0bHandlers, g_aTrap0bHandlersEnd);
 }
 
@@ -1382,6 +1397,8 @@ DECLASM(int) TRPMGCHyperTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCHyperTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
+    EMRCHistoryAddExitNoTs(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_GP),
+                           pRegFrame->cs.Sel, pRegFrame->eip);
     return trpmGCHyperGeneric(TRPMCPU_2_VM(pTrpmCpu), pRegFrame, g_aTrap0dHandlers, g_aTrap0dHandlersEnd);
 }
 
@@ -1401,6 +1418,8 @@ DECLASM(int) TRPMGCHyperTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCHyperTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
+    EMRCHistoryAddExitNoTs(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_PF),
+                           pRegFrame->cs.Sel, pRegFrame->eip);
     return trpmGCHyperGeneric(TRPMCPU_2_VM(pTrpmCpu), pRegFrame, g_aTrap0dHandlers, g_aTrap0dHandlersEnd);
 }
 
