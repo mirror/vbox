@@ -242,7 +242,7 @@ static int rtFuzzCmdMasterFuzzRunProcessCfgSizeDef(size_t *pcbVal, const char *p
  * @param   cbDef               Default value if the item wasn't found.
  * @param   pErrInfo            Where to store the error information on failure, optional.
  */
-static int rtFuzzCmdMasterFuzzRunProcessCfgU32Def(uint32_t *pu32Val, const char *pszCfgItem, RTJSONVAL hJsonCfg, size_t u32Def, PRTERRINFO pErrInfo)
+static int rtFuzzCmdMasterFuzzRunProcessCfgU32Def(uint32_t *pu32Val, const char *pszCfgItem, RTJSONVAL hJsonCfg, uint32_t u32Def, PRTERRINFO pErrInfo)
 {
     int64_t i64Val = 0;
     int rc = RTJsonValueQueryIntegerByName(hJsonCfg, pszCfgItem, &i64Val);
