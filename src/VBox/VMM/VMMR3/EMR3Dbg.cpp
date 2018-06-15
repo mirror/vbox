@@ -229,7 +229,7 @@ static DECLCALLBACK(void) emR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const
          */
         pHlp->pfnPrintf(pHlp,
                         "CPU[%u]: VM-exit history:\n"
-                        "   Exit No.:     TSC timestamp / delta    Flat RIP         Exit   Name\n"
+                        "   Exit No.:     TSC timestamp / delta    RIP (Flat/*)      Exit    Name\n"
                         , pVCpu->idCpu);
 
         /*
@@ -264,16 +264,23 @@ static DECLCALLBACK(void) emR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const
             int64_t offDelta = uPrevTimestamp != 0 && pEntry->uTimestamp != 0 ? pEntry->uTimestamp - uPrevTimestamp : 0;
             uPrevTimestamp = pEntry->uTimestamp;
 
+            char szPC[32];
+            if (!(pEntry->uFlagsAndType & (EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)))
+                RTStrPrintf(szPC, sizeof(szPC), "%016RX64 ", pEntry->uFlatPC);
+            else if (pEntry->uFlagsAndType & EMEXIT_F_UNFLATTENED_PC)
+                RTStrPrintf(szPC, sizeof(szPC), "%016RX64*", pEntry->uFlatPC);
+            else
+                RTStrPrintf(szPC, sizeof(szPC), "%04x:%08RX32*   ", (uint32_t)(pEntry->uFlatPC >> 32), (uint32_t)pEntry->uFlatPC);
+
             /* Do the printing. */
             if (pEntry->idxSlot == UINT32_MAX)
-                pHlp->pfnPrintf(pHlp, " %10RU64: %#018RX64/%+-9RI64 %016RX64 %#06x %s\n",
-                                idx, pEntry->uTimestamp, offDelta, pEntry->uFlatPC, pEntry->uFlagsAndType, pszExitName);
+                pHlp->pfnPrintf(pHlp, " %10RU64: %#018RX64/%+-9RI64 %s %#07x %s\n",
+                                idx, pEntry->uTimestamp, offDelta, szPC, pEntry->uFlagsAndType, pszExitName);
             else
             {
                 /** @todo more on this later */
-                pHlp->pfnPrintf(pHlp, " %10RU64: %#018RX64/%+-9RI64 %016RX64 %#06x %s slot=%#x\n",
-                                idx, pEntry->uTimestamp, offDelta, pEntry->uFlatPC, pEntry->uFlagsAndType, pszExitName,
-                                pEntry->idxSlot);
+                pHlp->pfnPrintf(pHlp, " %10RU64: %#018RX64/%+-9RI64 %s %#07x %s slot=%#x\n",
+                                idx, pEntry->uTimestamp, offDelta, szPC, pEntry->uFlagsAndType, pszExitName, pEntry->idxSlot);
             }
 
             /* Advance if ascending. */
