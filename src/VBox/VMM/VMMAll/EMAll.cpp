@@ -446,7 +446,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
          */
         case EMEXITACTION_EXEC_PROBE:
         {
-            LogFlow(("EMHistoryExec/EXEC_PROBE: %RX64, max %u\n", pExitRec->uFlatPC));
+            LogFlow(("EMHistoryExec/EXEC_PROBE: %RX64\n", pExitRec->uFlatPC));
             PEMEXITREC   pExitRecUnconst = (PEMEXITREC)pExitRec;
             VBOXSTRICTRC rcStrict = IEMExecForExits(pVCpu, fWillExit,
                                                     64 /*cMinInstructions*/,

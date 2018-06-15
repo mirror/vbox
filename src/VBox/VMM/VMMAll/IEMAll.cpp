@@ -14182,8 +14182,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
     if (rcStrict == VINF_SUCCESS)
     {
-        uint32_t cInstructionSinceLastExit = 0;
-
 #ifdef IEM_WITH_SETJMP
         jmp_buf         JmpBuf;
         jmp_buf        *pSavedJmpBuf = pVCpu->iem.s.CTX_SUFF(pJmpBuf);
@@ -14192,6 +14190,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
         if ((rcStrict = setjmp(JmpBuf)) == 0)
 #endif
         {
+            uint32_t cInstructionSinceLastExit = 0;
+
             /*
              * The run loop.  We limit ourselves to 4096 instructions right now.
              */
@@ -14250,7 +14250,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
                                           && !VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK) )
                                       || pStats->cInstructions < cMinInstructions))
                         {
-                            if (cMaxInstructions-- > 0)
+                            if (pStats->cInstructions < cMaxInstructions)
                             {
                                 if (cInstructionSinceLastExit <= cMaxInstructionsWithoutExits)
                                 {
@@ -14260,6 +14260,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
                                 }
                             }
                         }
+                        Assert(!(fCpu & VMCPU_FF_IEM));
                     }
                     Assert(pVCpu->iem.s.cActiveMappings == 0);
                 }
