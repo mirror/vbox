@@ -2843,10 +2843,6 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         /* Log the VCPU pointers, useful for debugging SMP VMs. */
         Log4(("VMXR0SetupVM: pVCpu=%p idCpu=%RU32\n", pVCpu, pVCpu->idCpu));
 
-       /* Initialize the VM-exit history array with end-of-array markers (UINT16_MAX). */
-        Assert(!pVCpu->hm.s.idxExitHistoryFree);
-        HMCPU_EXIT_HISTORY_RESET(pVCpu);
-
         /* Set revision dword at the beginning of the VMCS structure. */
         *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.Msrs.u64BasicInfo);
 
@@ -3652,6 +3648,12 @@ static int hmR0VmxLoadGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_RIP);
         Log4(("Load[%RU32]: VMX_VMCS_GUEST_RIP=%#RX64 fContextUseFlags=%#RX32\n", pVCpu->idCpu, pMixedCtx->rip,
               HMCPU_CF_VALUE(pVCpu)));
+
+        /* Update the exit history entry with the correct CS.BASE + RIP or just RIP. */
+        if (HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS))
+            EMR0HistoryUpdatePC(pVCpu, pMixedCtx->cs.u64Base + pMixedCtx->rip, true);
+        else
+            EMR0HistoryUpdatePC(pVCpu, pMixedCtx->rip, false);
     }
     return rc;
 }
@@ -4593,6 +4595,10 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS);
         Log4(("Load[%RU32]: CS=%#RX16 Base=%#RX64 Limit=%#RX32 Attr=%#RX32\n", pVCpu->idCpu, pMixedCtx->cs.Sel,
               pMixedCtx->cs.u64Base, pMixedCtx->cs.u32Limit, pMixedCtx->cs.Attr.u));
+
+        /* Update the exit history entry with the correct CS.BASE + RIP. */
+        if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_RIP))
+            EMR0HistoryUpdatePC(pVCpu, pMixedCtx->cs.u64Base + pMixedCtx->rip, true);
     }
 
     /*
@@ -9207,6 +9213,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
 static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, int rcVMRun)
 {
     NOREF(pVM);
+    uint64_t uHostTsc = ASMReadTSC();
 
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
@@ -9218,7 +9225,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     pVmxTransient->fVectoringDoublePF  = false;                 /* Vectoring double page-fault needs to be determined later. */
 
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVCpu->hm.s.vmx.u64TSCOffset);
+        TMCpuTickSetLastSeen(pVCpu, uHostTsc + pVCpu->hm.s.vmx.u64TSCOffset);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);                                    /* Notify TM that the guest is no longer running. */
@@ -9260,8 +9267,12 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
          * despite @a fVMEntryFailed being false.
          *
          * See Intel spec. 26.7 "VM-Entry failures during or after loading guest state".
+         *
+         * Note! We don't have CS or RIP at this point.  Will probably address that later
+         *       by amending the history entry added here.
          */
-        HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmxTransient->uExitReason);
+        EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_SVM, pVmxTransient->uExitReason & EMEXIT_F_TYPE_MASK),
+                         UINT64_MAX, uHostTsc);
 
         if (!pVmxTransient->fVMEntryFailed)
         {

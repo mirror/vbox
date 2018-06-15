@@ -382,7 +382,7 @@ DECLINLINE(const char *) hmSvmGetSpecialExitReasonDesc(uint16_t uExit)
 static DECLCALLBACK(int)  hmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)  hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(void) hmR3InfoSvmNstGstVmcbCache(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
-static DECLCALLBACK(void) hmR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) hmR3InfoEventPending(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static int                hmR3InitCPU(PVM pVM);
 static int                hmR3InitFinalizeR0(PVM pVM);
@@ -438,8 +438,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /*
      * Register info handlers.
      */
-    rc = DBGFR3InfoRegisterInternalEx(pVM, "exithistory", "Dumps the HM VM-exit history.", hmR3InfoExitHistory,
-                                      DBGFINFO_FLAGS_ALL_EMTS);
+    rc = DBGFR3InfoRegisterInternalEx(pVM, "hm", "Dumps HM info.", hmR3Info, DBGFINFO_FLAGS_ALL_EMTS);
     AssertRCReturn(rc, rc);
 
     rc = DBGFR3InfoRegisterInternalEx(pVM, "hmeventpending", "Dumps the pending HM event.", hmR3InfoEventPending,
@@ -3679,7 +3678,7 @@ VMMR3DECL(const char *) HMR3GetSvmExitName(uint32_t uExit)
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     Arguments, ignored.
  */
-static DECLCALLBACK(void) hmR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     NOREF(pszArgs);
     PVMCPU pVCpu = VMMGetCpu(pVM);
@@ -3688,41 +3687,11 @@ static DECLCALLBACK(void) hmR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const
 
     if (HMIsEnabled(pVM))
     {
-        bool const fIsVtx = pVM->hm.s.vmx.fSupported;
-        const char * const *papszDesc;
-        unsigned cMaxExitDesc;
-        if (fIsVtx)
-        {
-            cMaxExitDesc = MAX_EXITREASON_VTX;
-            papszDesc    = &g_apszVTxExitReasons[0];
-            pHlp->pfnPrintf(pHlp, "CPU[%u]: VT-x VM-exit history:\n", pVCpu->idCpu);
-        }
+        if (pVM->hm.s.vmx.fSupported)
+            pHlp->pfnPrintf(pHlp, "CPU[%u]: VT-x info:\n", pVCpu->idCpu);
         else
-        {
-            cMaxExitDesc = MAX_EXITREASON_AMDV;
-            papszDesc    = &g_apszAmdVExitReasons[0];
-            pHlp->pfnPrintf(pHlp, "CPU[%u]: AMD-V #VMEXIT history:\n", pVCpu->idCpu);
-        }
-
-        pHlp->pfnPrintf(pHlp, "  idxExitHistoryFree = %u\n", pVCpu->hm.s.idxExitHistoryFree);
-        unsigned const idxLast = pVCpu->hm.s.idxExitHistoryFree > 0 ?
-                                                                    pVCpu->hm.s.idxExitHistoryFree - 1 :
-                                                                    RT_ELEMENTS(pVCpu->hm.s.auExitHistory) - 1;
-        for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->hm.s.auExitHistory); i++)
-        {
-            uint16_t const uExit = pVCpu->hm.s.auExitHistory[i];
-            const char *pszExit  = NULL;
-            if (uExit <= cMaxExitDesc)
-                pszExit = papszDesc[uExit];
-            else if (!fIsVtx)
-                pszExit = hmSvmGetSpecialExitReasonDesc(uExit);
-            else
-                pszExit = NULL;
-
-            pHlp->pfnPrintf(pHlp, "  auExitHistory[%2u] = 0x%04x  %s %s\n", i, uExit, pszExit,
-                            idxLast == i ? "<-- Latest exit" : "");
-        }
-        pHlp->pfnPrintf(pHlp, "HM error = %#x (%u)\n", pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError);
+            pHlp->pfnPrintf(pHlp, "CPU[%u]: AMD-V info:\n", pVCpu->idCpu);
+        pHlp->pfnPrintf(pHlp, "  HM error = %#x (%u)\n", pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError);
     }
     else
         pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");

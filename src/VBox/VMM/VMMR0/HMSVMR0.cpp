@@ -1039,10 +1039,6 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     hmR0SvmSetMsrPermission(pCtx, pbMsrBitmap, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     pVmcbCtrl->u64MSRPMPhysAddr = pVCpu->hm.s.svm.HCPhysMsrBitmap;
 
-    /* Initialize the #VMEXIT history array with end-of-array markers (UINT16_MAX). */
-    Assert(!pVCpu->hm.s.idxExitHistoryFree);
-    HMCPU_EXIT_HISTORY_RESET(pVCpu);
-
     /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
     Assert(pVmcbCtrl->u32VmcbCleanBits == 0);
 
@@ -1060,10 +1056,6 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         uint8_t *pbMsrBitmapCur = (uint8_t *)pVCpuCur->hm.s.svm.pvMsrBitmap;
         memcpy(pbMsrBitmapCur, pbMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT);
         pVmcbCtrlCur->u64MSRPMPhysAddr = pVCpuCur->hm.s.svm.HCPhysMsrBitmap;
-
-        /* Initialize the #VMEXIT history array with end-of-array markers (UINT16_MAX). */
-        Assert(!pVCpuCur->hm.s.idxExitHistoryFree);
-        HMCPU_EXIT_HISTORY_RESET(pVCpuCur);
 
         /* Initially all VMCB clean bits MBZ indicating that everything should be loaded from the VMCB in memory. */
         Assert(pVmcbCtrlCur->u32VmcbCleanBits == 0);
@@ -4583,7 +4575,6 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT 
     }
 
     pSvmTransient->u64ExitCode  = pVmcbCtrl->u64ExitCode;       /* Save the #VMEXIT reason. */
-    HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmcbCtrl->u64ExitCode);      /* Update the #VMEXIT history array. */
     pVmcbCtrl->u32VmcbCleanBits       = HMSVM_VMCB_CLEAN_ALL;   /* Mark the VMCB-state cache as unmodified by VMM. */
     pSvmTransient->fVectoringDoublePF = false;                  /* Vectoring double page-fault needs to be determined later. */
     pSvmTransient->fVectoringPF       = false;                  /* Vectoring page-fault needs to be determined later. */
@@ -4610,6 +4601,9 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT 
             HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
         }
     }
+
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_SVM, pSvmTransient->u64ExitCode & EMEXIT_F_TYPE_MASK),
+                     pMixedCtx->cs.u64Base + pMixedCtx->rip, uHostTsc);
 }
 
 

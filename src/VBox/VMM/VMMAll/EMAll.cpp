@@ -406,9 +406,9 @@ EMRZSetPendingIoPortRead(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t 
  * Adds an exit to the history for this CPU.
  *
  * @returns Suggested action to take.
- * @param   pVCpu           The corss context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
- * @param   uFlatPC         The flattened program counter (RIP).
+ * @param   uFlatPC         The flattened program counter (RIP).  UINT64_MAX if not available.
  * @param   uTimestamp      The TSC value for the exit, 0 if not available.
  * @thread  EMT(pVCpu)
  */
@@ -445,7 +445,7 @@ VMM_INT_DECL(EMEXITACTION) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType
  * Currently this is only for recording, not optimizing, so no return value.  If
  * we start seriously caring about raw-mode again, we may extend it.
  *
- * @param   pVCpu           The corss context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
  * @param   uCs             The CS.
  * @param   uEip            The EIP.
@@ -459,6 +459,27 @@ VMMRC_INT_DECL(void) EMRCHistoryAddExitNoTs(PVMCPU pVCpu, uint32_t uFlagsAndType
     pHistEntry->uTimestamp    = 0;
     pHistEntry->uFlagsAndType = uFlagsAndType | EMEXIT_F_CS_EIP;
     pHistEntry->idxSlot       = UINT32_MAX;
+}
+#endif
+
+
+#ifdef IN_RING0
+/**
+ * Interface that VT-x uses to supply the PC of an exit when CS:RIP is being read.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uFlatPC         The flattened program counter (RIP).  UINT64_MAX if not available.
+ * @param   fFlattened      Set if RIP was subjected to CS.BASE, clear if not.
+ */
+VMMR0_INT_DECL(void) EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fFlattened)
+{
+    AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
+    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[((uintptr_t)pVCpu->em.s.iNextExit - 1) & 0xff];
+    pHistEntry->uFlatPC = uFlatPC;
+    if (fFlattened)
+        pHistEntry->uFlagsAndType &= ~EMEXIT_F_UNFLATTENED_PC;
+    else
+        pHistEntry->uFlagsAndType |= EMEXIT_F_UNFLATTENED_PC;
 }
 #endif
 

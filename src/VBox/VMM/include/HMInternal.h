@@ -128,19 +128,6 @@ RT_C_DECLS_BEGIN
 #define HMCPU_CF_VALUE(pVCpu)                     (ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags))
 
 
-/** Resets/initializes the VM-exit/\#VMEXIT history array. */
-#define HMCPU_EXIT_HISTORY_RESET(pVCpu)           (memset(&(pVCpu)->hm.s.auExitHistory, 0xff, sizeof((pVCpu)->hm.s.auExitHistory)))
-
-/** Updates the VM-exit/\#VMEXIT history array. */
-#define HMCPU_EXIT_HISTORY_ADD(pVCpu, a_ExitReason) \
-    do { \
-        AssertMsg((pVCpu)->hm.s.idxExitHistoryFree < RT_ELEMENTS((pVCpu)->hm.s.auExitHistory), ("%u\n", (pVCpu)->hm.s.idxExitHistoryFree)); \
-        (pVCpu)->hm.s.auExitHistory[(pVCpu)->hm.s.idxExitHistoryFree++] = (uint16_t)(a_ExitReason); \
-        if ((pVCpu)->hm.s.idxExitHistoryFree == RT_ELEMENTS((pVCpu)->hm.s.auExitHistory)) \
-            (pVCpu)->hm.s.idxExitHistoryFree = 0; \
-        (pVCpu)->hm.s.auExitHistory[(pVCpu)->hm.s.idxExitHistoryFree] = UINT16_MAX; \
-    } while (0)
-
 /** Maximum number of exit reason statistics counters. */
 #define MAX_EXITREASON_STAT        0x100
 #define MASK_EXITREASON_STAT       0xff
@@ -969,11 +956,6 @@ typedef struct HMCPU
     /** The CPU ID of the CPU currently owning the VMCS. Set in
      * HMR0Enter and cleared in HMR0Leave. */
     RTCPUID                 idEnteredCpu;
-
-    /** VT-x/AMD-V VM-exit/\#VMXEXIT history, circular array. */
-    uint16_t                auExitHistory[31];
-    /** The index of the next free slot in the history array. */
-    uint16_t                idxExitHistoryFree;
 
     /** For saving stack space, the disassembler state is allocated here instead of
      * on the stack. */

@@ -305,7 +305,8 @@ typedef EMSTATS *PEMSTATS;
  */
 typedef struct EMEXITENTRY
 {
-    /** The flat PC (CS:EIP/RIP) address of the exit. */
+    /** The flat PC (CS:EIP/RIP) address of the exit.
+     * UINT64_MAX if not available.  */
     uint64_t        uFlatPC;
     /** The EMEXIT_MAKE_FLAGS_AND_TYPE */
     uint32_t        uFlagsAndType;
