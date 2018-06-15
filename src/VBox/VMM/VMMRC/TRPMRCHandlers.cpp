@@ -1052,6 +1052,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             }
             /* else no break; */
 #endif
+            RT_FALL_THRU();
         case OP_BOUND:
         case OP_INTO:
             pVCpu->trpm.s.uActiveVector = UINT32_MAX;
