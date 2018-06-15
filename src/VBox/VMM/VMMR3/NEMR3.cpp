@@ -344,6 +344,7 @@ VMMR3DECL(const char *) NEMR3GetExitName(uint32_t uExit)
         case NEMEXITTYPE_XCPT_DB:                       return "NEM #DB";
         case NEMEXITTYPE_XCPT_BP:                       return "NEM #BP";
         case NEMEXITTYPE_CANCELED:                      return "NEM canceled";
+        case NEMEXITTYPE_MEMORY_ACCESS:                 return "NEM memory access";
     }
 
     return NULL;
