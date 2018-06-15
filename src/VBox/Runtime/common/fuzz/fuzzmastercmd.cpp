@@ -401,7 +401,7 @@ static int rtFuzzCmdMasterFuzzRunProcessSeed(RTFUZZCTX hFuzzCtx, const char *psz
                     rc = RTVfsIoStrmFromBuffer(RTFILE_O_READ, pbSeedDecoded, cbSeedDecoded, &hVfsIosSeed);
                     if (RT_SUCCESS(rc))
                     {
-                        RTVFSIOSTREAM hVfsDecomp;
+                        RTVFSIOSTREAM hVfsDecomp = NIL_RTVFSIOSTREAM;
 
                         if (!RTStrICmp(pszCompression, "Gzip"))
                             rc = RTZipGzipDecompressIoStream(hVfsIosSeed, RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR, &hVfsDecomp);
