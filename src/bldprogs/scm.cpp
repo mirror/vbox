@@ -785,8 +785,10 @@ static PSCMCFGENTRY scmCfgEntryDup(PCSCMCFGENTRY pEntry)
         PSCMCFGENTRY pDup = (PSCMCFGENTRY)RTMemDup(pEntry, sizeof(*pEntry));
         if (pDup)
         {
-            size_t    cbRewriters = sizeof(pEntry->paRewriters[0]) * RT_ALIGN_Z(pEntry->cRewriters, 8);
-            pDup->paRewriters = (PCSCMREWRITERCFG const *)RTMemDup(pEntry->paRewriters, cbRewriters);
+            size_t cbSrcRewriters = sizeof(pEntry->paRewriters[0]) * pEntry->cRewriters;
+            size_t cbDstRewriters = sizeof(pEntry->paRewriters[0]) * RT_ALIGN_Z(pEntry->cRewriters, 8);
+            pDup->paRewriters = (PCSCMREWRITERCFG const *)RTMemDupEx(pEntry->paRewriters, cbSrcRewriters,
+                                                                     cbDstRewriters - cbSrcRewriters);
             if (pDup->paRewriters)
                 return pDup;
 
