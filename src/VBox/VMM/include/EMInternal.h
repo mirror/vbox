@@ -395,6 +395,8 @@ typedef struct EMCPU
 #ifdef VBOX_WITH_RAW_MODE
     /** Pointer to the PATM status structure. (R3 Ptr) */
     R3PTRTYPE(PPATMGCSTATE) pPatmGCState;
+#else
+    RTR3PTR                 R3PtrPaddingNoRaw;
 #endif
 
     /** Pointer to the guest CPUM state. (R3 Ptr) */
