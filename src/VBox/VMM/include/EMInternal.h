@@ -492,8 +492,7 @@ typedef struct EMCPU
     /** Tree for keeping track of cli occurrences (debug only). */
     R3PTRTYPE(PAVLGCPTRNODECORE) pCliStatTree;
     STAMCOUNTER             StatTotalClis;
-#if 0
-    /** 64-bit Visual C++ rounds the struct size up to 16 byte. */
+#if HC_ARCH_BITS == 32
     uint64_t                padding1;
 #endif
 
@@ -504,6 +503,12 @@ typedef struct EMCPU
     uint64_t                iNextExit;
     /** Exit history table (6KB). */
     EMEXITENTRY             aExitHistory[256];
+    /** Number of exit records in use. */
+    uint32_t                cExitRecordUsed;
+    /** Number of exit records collisions. */
+    uint32_t                cExitRecordCollisions;
+    /** Exit records (32KB). (Aligned on 32 byte boundrary.) */
+    EMEXITREC               aExitRecords[1024];
 } EMCPU;
 /** Pointer to EM VM instance data. */
 typedef EMCPU *PEMCPU;

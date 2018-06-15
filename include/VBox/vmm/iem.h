@@ -209,6 +209,18 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPU pVC
                                                                       const void *pvOpcodeBytes, size_t cbOpcodeBytes,
                                                                       uint32_t *pcbWritten);
 VMMDECL(VBOXSTRICTRC)       IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions);
+/** Statistics returned by IEMExecForExits. */
+typedef struct IEMEXECFOREXITSTATS
+{
+    uint32_t cInstructions;
+    uint32_t cExits;
+    uint32_t cMaxExitDistance;
+    uint32_t cReserved;
+} IEMEXECFOREXITSTATS;
+/** Pointer to statistics returned by IEMExecForExits. */
+typedef IEMEXECFOREXITSTATS *PIEMEXECFOREXITSTATS;
+VMMDECL(VBOXSTRICTRC)       IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t cMinInstructions, uint32_t cMaxInstructions,
+                                            uint32_t cMaxInstructionsWithoutExits, PIEMEXECFOREXITSTATS pStats);
 VMMDECL(VBOXSTRICTRC)       IEMInjectTrpmEvent(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2,
                                           uint8_t cbInstr);

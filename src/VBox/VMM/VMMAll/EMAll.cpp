@@ -403,16 +403,205 @@ EMRZSetPendingIoPortRead(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t 
 
 
 /**
+ * Execute using history.
+ *
+ * This function will be called when EMHistoryAddExit() and friends returns a
+ * non-NULL result.  This happens in response to probing or when probing has
+ * uncovered adjacent exits which can more effectively be reached by using IEM
+ * than restarting execution using the main execution engine and fielding an
+ * regular exit.
+ *
+ * @returns VBox strict status code, see IEMExecForExits.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pExitRec        The exit record return by a previous history add
+ *                          or update call.
+ * @param   fWillExit       Flags indicating to IEM what will cause exits, TBD.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uint32_t fWillExit)
+{
+    Assert(pExitRec);
+    VMCPU_ASSERT_EMT(pVCpu);
+    IEMEXECFOREXITSTATS ExecStats;
+    switch (pExitRec->enmAction)
+    {
+        /*
+         * Executes multiple instruction stopping only when we've gone a given
+         * number without perceived exits.
+         */
+        case EMEXITACTION_EXEC_WITH_MAX:
+        {
+            LogFlow(("EMHistoryExec/EXEC_WITH_MAX: %RX64, max %u\n", pExitRec->uFlatPC, pExitRec->cMaxInstructionsWithoutExit));
+            VBOXSTRICTRC rcStrict = IEMExecForExits(pVCpu, fWillExit,
+                                                    pExitRec->cMaxInstructionsWithoutExit /* cMinInstructions*/,
+                                                    4096 /*cMaxInstructions*/,
+                                                    pExitRec->cMaxInstructionsWithoutExit,
+                                                    &ExecStats);
+            LogFlow(("EMHistoryExec/EXEC_WITH_MAX: %Rrc cExits=%u cMaxExitDistance=%u cInstructions=%u\n",
+                     VBOXSTRICTRC_VAL(rcStrict), ExecStats.cExits, ExecStats.cMaxExitDistance, ExecStats.cInstructions));
+            return rcStrict;
+        }
+
+        /*
+         * Probe a exit for close by exits.
+         */
+        case EMEXITACTION_EXEC_PROBE:
+        {
+            LogFlow(("EMHistoryExec/EXEC_PROBE: %RX64, max %u\n", pExitRec->uFlatPC));
+            PEMEXITREC   pExitRecUnconst = (PEMEXITREC)pExitRec;
+            VBOXSTRICTRC rcStrict = IEMExecForExits(pVCpu, fWillExit,
+                                                    64 /*cMinInstructions*/,
+                                                    4096 /*cMaxInstructions*/,
+                                                    32 /*cMaxInstructionsWithoutExit*/,
+                                                    &ExecStats);
+            LogFlow(("EMHistoryExec/EXEC_PROBE: %Rrc cExits=%u cMaxExitDistance=%u cInstructions=%u\n",
+                     VBOXSTRICTRC_VAL(rcStrict), ExecStats.cExits, ExecStats.cMaxExitDistance, ExecStats.cInstructions));
+            if (ExecStats.cExits >= 2)
+            {
+                Assert(ExecStats.cMaxExitDistance > 0 && ExecStats.cMaxExitDistance <= 32);
+                pExitRecUnconst->cMaxInstructionsWithoutExit = ExecStats.cMaxExitDistance;
+                pExitRecUnconst->enmAction = EMEXITACTION_EXEC_WITH_MAX;
+                LogFlow(("EMHistoryExec/EXEC_PROBE: -> EXEC_WITH_MAX %u\n", ExecStats.cMaxExitDistance));
+            }
+            else
+            {
+                pExitRecUnconst->enmAction = EMEXITACTION_NORMAL_PROBED;
+                LogFlow(("EMHistoryExec/EXEC_PROBE: -> PROBED\n"));
+                /** @todo check for return to ring-3 and such and optimize/reprobe. */
+            }
+            return rcStrict;
+        }
+
+        /* We shouldn't ever see these here! */
+        case EMEXITACTION_FREE_RECORD:
+        case EMEXITACTION_NORMAL:
+        case EMEXITACTION_NORMAL_PROBED:
+            break;
+
+        /* No default case, want compiler warnings. */
+    }
+    AssertLogRelFailedReturn(VERR_EM_INTERNAL_ERROR);
+}
+
+
+DECL_FORCE_INLINE(PCEMEXITREC) emHistoryRecordInit(PEMEXITREC pExitRec, uint64_t uFlatPC, uint32_t uFlagsAndType, uint64_t uExitNo)
+{
+    pExitRec->uFlatPC                     = uFlatPC;
+    pExitRec->uFlagsAndType               = uFlagsAndType;
+    pExitRec->enmAction                   = EMEXITACTION_NORMAL;
+    pExitRec->bUnused                     = 0;
+    pExitRec->cMaxInstructionsWithoutExit = 64;
+    pExitRec->uLastExitNo                 = uExitNo;
+    pExitRec->cHits                       = 1;
+    return NULL;
+}
+
+
+DECL_FORCE_INLINE(PCEMEXITREC) emHistoryRecordInitNew(PVMCPU pVCpu, PEMEXITENTRY pHistEntry, uintptr_t idxSlot,
+                                                      PEMEXITREC pExitRec, uint64_t uFlatPC,
+                                                      uint32_t uFlagsAndType, uint64_t uExitNo)
+{
+    pHistEntry->idxSlot = (uint32_t)idxSlot;
+    pVCpu->em.s.cExitRecordUsed++;
+    LogFlow(("emHistoryRecordInitNew: [%#x] = %#07x %016RX64; (%u of %u used)\n", idxSlot, uFlagsAndType, uFlatPC,
+             pVCpu->em.s.cExitRecordUsed, RT_ELEMENTS(pVCpu->em.s.aExitRecords) ));
+    return emHistoryRecordInit(pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+}
+
+
+/**
+ * Adds or updates the EMEXITREC for this PC/type and decide on an action.
+ *
+ * @returns Pointer to an exit record if special action should be taken using
+ *          EMHistoryExec().  Take normal exit action when NULL.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uFlagsAndType   Combined flags and type, EMEXIT_F_KIND_EM set and
+ *                          both EMEXIT_F_CS_EIP and EMEXIT_F_UNFLATTENED_PC are clear.
+ * @param   uFlatPC         The flattened program counter.
+ * @param   pHistEntry      The exit history entry.
+ * @param   uExitNo         The current exit number.
+ */
+static PCEMEXITREC emHistoryAddOrUpdateRecord(PVMCPU pVCpu, uint64_t uFlagsAndType, uint64_t uFlatPC,
+                                              PEMEXITENTRY pHistEntry, uint64_t uExitNo)
+{
+    /*
+     * Work the hash table.
+     */
+    AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitRecords) == 1024);
+#define EM_EXIT_RECORDS_IDX_MASK 1023
+    uintptr_t  idxSlot  = ((uintptr_t)uFlatPC >> 1) & EM_EXIT_RECORDS_IDX_MASK;
+    PEMEXITREC pExitRec = &pVCpu->em.s.aExitRecords[idxSlot];
+    if (pExitRec->uFlatPC == uFlatPC)
+    {
+        Assert(pExitRec->enmAction != EMEXITACTION_FREE_RECORD);
+        pHistEntry->idxSlot = (uint32_t)idxSlot;
+        if (pExitRec->uFlagsAndType == uFlagsAndType)
+            pExitRec->uLastExitNo = uExitNo;
+        else
+            return emHistoryRecordInit(pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+    }
+    else if (pExitRec->enmAction == EMEXITACTION_FREE_RECORD)
+        return emHistoryRecordInitNew(pVCpu, pHistEntry, idxSlot, pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+    else
+    {
+        /*
+         * Collision. Figure out later.
+         */
+        return NULL;
+    }
+
+
+    /*
+     * Found an existing record.
+     */
+    switch (pExitRec->enmAction)
+    {
+        case EMEXITACTION_NORMAL:
+        {
+            uint64_t const cHits = ++pExitRec->cHits;
+            if (cHits < 256)
+                return NULL;
+            LogFlow(("emHistoryAddOrUpdateRecord: [%#x] %#07x %16RX64: -> EXEC_PROBE\n", idxSlot, uFlagsAndType, uFlatPC));
+            pExitRec->enmAction = EMEXITACTION_EXEC_PROBE;
+            return pExitRec;
+        }
+
+        case EMEXITACTION_NORMAL_PROBED:
+            pExitRec->cHits += 1;
+            return NULL;
+
+        default:
+            pExitRec->cHits += 1;
+            return pExitRec;
+
+        /* This will happen if the caller ignores or cannot serve the probe
+           request (forced to ring-3, whatever).  We retry this 256 times. */
+        case EMEXITACTION_EXEC_PROBE:
+        {
+            uint64_t const cHits = ++pExitRec->cHits;
+            if (cHits < 512)
+                return pExitRec;
+            pExitRec->enmAction = EMEXITACTION_NORMAL_PROBED;
+            LogFlow(("emHistoryAddOrUpdateRecord: [%#x] %#07x %16RX64: -> PROBED\n", idxSlot, uFlagsAndType, uFlatPC));
+            return NULL;
+        }
+    }
+}
+
+
+/**
  * Adds an exit to the history for this CPU.
  *
- * @returns Suggested action to take.
+ * @returns Pointer to an exit record if special action should be taken using
+ *          EMHistoryExec().  Take normal exit action when NULL.
+ *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
  * @param   uFlatPC         The flattened program counter (RIP).  UINT64_MAX if not available.
  * @param   uTimestamp      The TSC value for the exit, 0 if not available.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(EMEXITACTION) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC, uint64_t uTimestamp)
+VMM_INT_DECL(PCEMEXITREC) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC, uint64_t uTimestamp)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -420,21 +609,20 @@ VMM_INT_DECL(EMEXITACTION) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType
      * Add the exit history entry.
      */
     AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
-    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)(pVCpu->em.s.iNextExit++) & 0xff];
+    uint64_t uExitNo = pVCpu->em.s.iNextExit++;
+    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)uExitNo & 0xff];
     pHistEntry->uFlatPC       = uFlatPC;
     pHistEntry->uTimestamp    = uTimestamp;
     pHistEntry->uFlagsAndType = uFlagsAndType;
     pHistEntry->idxSlot       = UINT32_MAX;
 
     /*
-     * If common exit type, we will insert/update the exit into the shared hash table.
+     * If common exit type, we will insert/update the exit into the exit record hash table.
      */
-    if ((uFlagsAndType & EMEXIT_F_KIND_MASK) == EMEXIT_F_KIND_EM)
-    {
-        /** @todo later */
-    }
-
-    return EMEXITACTION_NORMAL;
+    if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
+        && uFlatPC != UINT64_MAX)
+        return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, uFlatPC, pHistEntry, uExitNo);
+    return NULL;
 }
 
 
@@ -475,7 +663,8 @@ VMMRC_INT_DECL(void) EMRCHistoryAddExitCsEip(PVMCPU pVCpu, uint32_t uFlagsAndTyp
 VMMR0_INT_DECL(void) EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fFlattened)
 {
     AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
-    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[((uintptr_t)pVCpu->em.s.iNextExit - 1) & 0xff];
+    uint64_t     uExitNo    = pVCpu->em.s.iNextExit - 1;
+    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)uExitNo & 0xff];
     pHistEntry->uFlatPC = uFlatPC;
     if (fFlattened)
         pHistEntry->uFlagsAndType &= ~EMEXIT_F_UNFLATTENED_PC;
@@ -488,11 +677,14 @@ VMMR0_INT_DECL(void) EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fF
 /**
  * Interface for convering a engine specific exit to a generic one and get guidance.
  *
+ * @returns Pointer to an exit record if special action should be taken using
+ *          EMHistoryExec().  Take normal exit action when NULL.
+ *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(EMEXITACTION) EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFlagsAndType)
+VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFlagsAndType)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -500,18 +692,17 @@ VMM_INT_DECL(EMEXITACTION) EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uF
      * Do the updating.
      */
     AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
-    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[((uintptr_t)pVCpu->em.s.iNextExit - 1) & 0xff];
+    uint64_t     uExitNo    = pVCpu->em.s.iNextExit - 1;
+    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)uExitNo & 0xff];
     pHistEntry->uFlagsAndType = uFlagsAndType | (pHistEntry->uFlagsAndType & (EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC));
 
     /*
-     * If common exit type, we will insert/update the exit into the shared hash table.
+     * If common exit type, we will insert/update the exit into the exit record hash table.
      */
-    if ((uFlagsAndType & EMEXIT_F_KIND_MASK) == EMEXIT_F_KIND_EM)
-    {
-        /** @todo later */
-    }
-
-    return EMEXITACTION_NORMAL;
+    if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
+        && pHistEntry->uFlatPC != UINT64_MAX)
+        return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, pHistEntry->uFlatPC, pHistEntry, uExitNo);
+    return NULL;
 }
 
 
@@ -519,32 +710,34 @@ VMM_INT_DECL(EMEXITACTION) EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uF
  * Interface for convering a engine specific exit to a generic one and get
  * guidance, supplying flattened PC too.
  *
+ * @returns Pointer to an exit record if special action should be taken using
+ *          EMHistoryExec().  Take normal exit action when NULL.
+ *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
  * @param   uFlatPC         The flattened program counter (RIP).
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(EMEXITACTION) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC)
+VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC)
 {
     VMCPU_ASSERT_EMT(pVCpu);
+    Assert(uFlatPC != UINT64_MAX);
 
     /*
      * Do the updating.
      */
     AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
-    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[((uintptr_t)pVCpu->em.s.iNextExit - 1) & 0xff];
+    uint64_t     uExitNo    = pVCpu->em.s.iNextExit - 1;
+    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)uExitNo & 0xff];
     pHistEntry->uFlagsAndType = uFlagsAndType;
     pHistEntry->uFlatPC       = uFlatPC;
 
     /*
-     * If common exit type, we will insert/update the exit into the shared hash table.
+     * If common exit type, we will insert/update the exit into the exit record hash table.
      */
-    if ((uFlagsAndType & EMEXIT_F_KIND_MASK) == EMEXIT_F_KIND_EM)
-    {
-        /** @todo later */
-    }
-
-    return EMEXITACTION_NORMAL;
+    if ((uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM)
+        return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, uFlatPC, pHistEntry, uExitNo);
+    return NULL;
 }
 
 

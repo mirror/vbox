@@ -6800,6 +6800,7 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
     pVCpu->cpum.GstCtx.rdx &= UINT32_C(0xffffffff);
 
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    pVCpu->iem.s.cPotentialExits++;
     return VINF_SUCCESS;
 }
 

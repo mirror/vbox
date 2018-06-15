@@ -289,7 +289,7 @@ typedef struct VMCPU
 #ifdef ___EMInternal_h
         struct EMCPU        s;
 #endif
-        uint8_t             padding[8192];      /* multiple of 4096 */
+        uint8_t             padding[40960];      /* multiple of 4096 */
     } em;
 } VMCPU;
 

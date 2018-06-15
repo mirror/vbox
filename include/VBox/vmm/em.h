@@ -237,21 +237,56 @@ AssertCompileSize(EMEXITTYPE, 4);
 #define EMEXIT_F_KIND_NEM       UINT32_C(0x00003000)    /**< NEMEXITTYPE */
 #define EMEXIT_F_KIND_XCPT      UINT32_C(0x00004000)    /**< Exception numbers (raw-mode). */
 #define EMEXIT_F_KIND_MASK      UINT32_C(0x00007000)
-#define EMEXIT_F_CS_EIP         UINT32_C(0x00008000)    /**< The PC is EIP in the low dword and CS in the high. */
-#define EMEXIT_F_UNFLATTENED_PC UINT32_C(0x00010000)    /**< The PC hasn't had CS.BASE added to it. */
+#define EMEXIT_F_CS_EIP         UINT32_C(0x00010000)    /**< The PC is EIP in the low dword and CS in the high. */
+#define EMEXIT_F_UNFLATTENED_PC UINT32_C(0x00020000)    /**< The PC hasn't had CS.BASE added to it. */
 /** Combines flags and exit type into EMHistoryAddExit() input. */
 #define EMEXIT_MAKE_FLAGS_AND_TYPE(a_fFlags, a_uType)   ((a_fFlags) | (uint32_t)(a_uType))
 /** @} */
 
 typedef enum EMEXITACTION
 {
+    /** The record is free. */
+    EMEXITACTION_FREE_RECORD = 0,
     /** Take normal action on the exit. */
-    EMEXITACTION_NORMAL = 0,
-    EMEXITACTION_TODO
+    EMEXITACTION_NORMAL,
+    /** Take normal action on the exit, already probed and found nothing. */
+    EMEXITACTION_NORMAL_PROBED,
+    /** Do a probe execution. */
+    EMEXITACTION_EXEC_PROBE,
+    /** Execute using EMEXITREC::cMaxInstructionsWithoutExit. */
+    EMEXITACTION_EXEC_WITH_MAX
 } EMEXITACTION;
 AssertCompileSize(EMEXITACTION, 4);
 
-VMM_INT_DECL(EMEXITACTION)      EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC, uint64_t uTimestamp);
+/**
+ * Accumulative exit record.
+ *
+ * This could perhaps be squeezed down a bit, but there isn't too much point.
+ * We'll probably need more data as time goes by.
+ */
+typedef struct EMEXITREC
+{
+    /** The flat PC of the exit. */
+    uint64_t            uFlatPC;
+    /** Flags and type, see EMEXIT_MAKE_FLAGS_AND_TYPE. */
+    uint32_t            uFlagsAndType;
+    /** The action to take (EMEXITACTION). */
+    uint8_t             enmAction;
+    uint8_t             bUnused;
+    /** Maximum number of instructions to execute without hitting an exit. */
+    uint16_t            cMaxInstructionsWithoutExit;
+    /** The exit number (EMCPU::iNextExit) at which it was last updated. */
+    uint64_t            uLastExitNo;
+    /** Number of hits. */
+    uint64_t            cHits;
+} EMEXITREC;
+AssertCompileSize(EMEXITREC, 32);
+/** Pointer to an accumulative exit record. */
+typedef EMEXITREC *PEMEXITREC;
+/** Pointer to a const accumulative exit record. */
+typedef EMEXITREC const *PCEMEXITREC;
+
+VMM_INT_DECL(PCEMEXITREC)       EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC, uint64_t uTimestamp);
 #ifdef IN_RC
 VMMRC_INT_DECL(void)            EMRCHistoryAddExitCsEip(PVMCPU pVCpu, uint32_t uFlagsAndType, uint16_t uCs, uint32_t uEip,
                                                         uint64_t uTimestamp);
@@ -259,8 +294,9 @@ VMMRC_INT_DECL(void)            EMRCHistoryAddExitCsEip(PVMCPU pVCpu, uint32_t u
 #ifdef IN_RING0
 VMMR0_INT_DECL(void)            EMR0HistoryUpdatePC(PVMCPU pVCpu, uint64_t uFlatPC, bool fFlattened);
 #endif
-VMM_INT_DECL(EMEXITACTION)      EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFlagsAndType);
-VMM_INT_DECL(EMEXITACTION)      EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC);
+VMM_INT_DECL(PCEMEXITREC)       EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFlagsAndType);
+VMM_INT_DECL(PCEMEXITREC)       EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_t uFlagsAndType, uint64_t uFlatPC);
+VMM_INT_DECL(VBOXSTRICTRC)      EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uint32_t fWillExit);
 
 
 /** @name Deprecated interpretation related APIs (use IEM).

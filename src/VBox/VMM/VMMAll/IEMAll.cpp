@@ -14151,6 +14151,167 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
 }
 
 
+/**
+ * Interface used by EMExecuteExec, does exit statistics and limits.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   fWillExit           To be defined.
+ * @param   cMinInstructions    Minimum number of instructions to execute before checking for FFs.
+ * @param   cMaxInstructions    Maximum number of instructions to execute.
+ * @param   cMaxInstructionsWithoutExits
+ *                              The max number of instructions without exits.
+ * @param   pStats              Where to return statistics.
+ */
+VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t cMinInstructions, uint32_t cMaxInstructions,
+                                      uint32_t cMaxInstructionsWithoutExits, PIEMEXECFOREXITSTATS pStats)
+{
+    NOREF(fWillExit); /** @todo define flexible exit crits */
+
+    /*
+     * Initialize return stats.
+     */
+    pStats->cInstructions    = 0;
+    pStats->cExits           = 0;
+    pStats->cMaxExitDistance = 0;
+    pStats->cReserved        = 0;
+
+    /*
+     * Initial decoder init w/ prefetch, then setup setjmp.
+     */
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        uint32_t cInstructionSinceLastExit = 0;
+
+#ifdef IEM_WITH_SETJMP
+        jmp_buf         JmpBuf;
+        jmp_buf        *pSavedJmpBuf = pVCpu->iem.s.CTX_SUFF(pJmpBuf);
+        pVCpu->iem.s.CTX_SUFF(pJmpBuf)   = &JmpBuf;
+        pVCpu->iem.s.cActiveMappings     = 0;
+        if ((rcStrict = setjmp(JmpBuf)) == 0)
+#endif
+        {
+            /*
+             * The run loop.  We limit ourselves to 4096 instructions right now.
+             */
+            PVM pVM = pVCpu->CTX_SUFF(pVM);
+            for (;;)
+            {
+                /*
+                 * Log the state.
+                 */
+#ifdef LOG_ENABLED
+                iemLogCurInstr(pVCpu, true);
+#endif
+
+                /*
+                 * Do the decoding and emulation.
+                 */
+                uint32_t const cPotentialExits = pVCpu->iem.s.cPotentialExits;
+
+                uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
+                rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
+
+                if (   cPotentialExits != pVCpu->iem.s.cPotentialExits
+                    && cInstructionSinceLastExit > 0 /* don't count the first */ )
+                {
+                    pStats->cExits += 1;
+                    if (cInstructionSinceLastExit > pStats->cMaxExitDistance)
+                        pStats->cMaxExitDistance = cInstructionSinceLastExit;
+                    cInstructionSinceLastExit = 0;
+                }
+
+                if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+                {
+                    Assert(pVCpu->iem.s.cActiveMappings == 0);
+                    pVCpu->iem.s.cInstructions++;
+                    pStats->cInstructions++;
+                    cInstructionSinceLastExit++;
+                    if (RT_LIKELY(pVCpu->iem.s.rcPassUp == VINF_SUCCESS))
+                    {
+                        uint32_t fCpu = pVCpu->fLocalForcedActions
+                                      & ( VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
+                                                                | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                                                | VMCPU_FF_TLB_FLUSH
+#ifdef VBOX_WITH_RAW_MODE
+                                                                | VMCPU_FF_TRPM_SYNC_IDT
+                                                                | VMCPU_FF_SELM_SYNC_TSS
+                                                                | VMCPU_FF_SELM_SYNC_GDT
+                                                                | VMCPU_FF_SELM_SYNC_LDT
+#endif
+                                                                | VMCPU_FF_INHIBIT_INTERRUPTS
+                                                                | VMCPU_FF_BLOCK_NMIS
+                                                                | VMCPU_FF_UNHALT ));
+
+                        if (RT_LIKELY(   (   (   !fCpu
+                                              || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                                                  && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF))
+                                          && !VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK) )
+                                      || pStats->cInstructions < cMinInstructions))
+                        {
+                            if (cMaxInstructions-- > 0)
+                            {
+                                if (cInstructionSinceLastExit <= cMaxInstructionsWithoutExits)
+                                {
+                                    Assert(pVCpu->iem.s.cActiveMappings == 0);
+                                    iemReInitDecoder(pVCpu);
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                    Assert(pVCpu->iem.s.cActiveMappings == 0);
+                }
+                else if (pVCpu->iem.s.cActiveMappings > 0)
+                        iemMemRollback(pVCpu);
+                rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
+                break;
+            }
+        }
+#ifdef IEM_WITH_SETJMP
+        else
+        {
+            if (pVCpu->iem.s.cActiveMappings > 0)
+                iemMemRollback(pVCpu);
+            pVCpu->iem.s.cLongJumps++;
+        }
+        pVCpu->iem.s.CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
+#endif
+
+        /*
+         * Assert hidden register sanity (also done in iemInitDecoder and iemReInitDecoder).
+         */
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.cs));
+        Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ss));
+    }
+    else
+    {
+        if (pVCpu->iem.s.cActiveMappings > 0)
+            iemMemRollback(pVCpu);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+        /*
+         * When a nested-guest causes an exception intercept (e.g. #PF) when fetching
+         * code as part of instruction execution, we need this to fix-up VINF_SVM_VMEXIT.
+         */
+        rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
+#endif
+    }
+
+    /*
+     * Maybe re-enter raw-mode and log.
+     */
+#ifdef IN_RC
+    rcStrict = iemRCRawMaybeReenter(pVCpu, rcStrict);
+#endif
+    if (rcStrict != VINF_SUCCESS)
+        LogFlow(("IEMExecForExits: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc; ins=%u exits=%u maxdist=%u\n",
+                 pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp,
+                 pVCpu->cpum.GstCtx.eflags.u, VBOXSTRICTRC_VAL(rcStrict), pStats->cInstructions, pStats->cExits, pStats->cMaxExitDistance));
+    return rcStrict;
+}
+
 
 /**
  * Injects a trap, fault, abort, software interrupt or external interrupt.
