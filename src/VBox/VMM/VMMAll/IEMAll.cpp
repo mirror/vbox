@@ -13528,8 +13528,9 @@ IEM_STATIC RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPU pVCpu, uint8_t bRm, uint8_t c
  *                      valid CPU mode info.
  *
  *                      The @a fSameCtx parameter is now misleading and obsolete.
+ * @param   pszFunction The IEM function doing the execution.
  */
-IEM_STATIC void iemLogCurInstr(PVMCPU pVCpu, bool fSameCtx)
+IEM_STATIC void iemLogCurInstr(PVMCPU pVCpu, bool fSameCtx, const char *pszFunction)
 {
 # ifdef IN_RING3
     if (LogIs2Enabled())
@@ -13559,13 +13560,13 @@ IEM_STATIC void iemLogCurInstr(PVMCPU pVCpu, bool fSameCtx)
         }
 
         PCX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
-        Log2(("****\n"
+        Log2(("**** %s\n"
               " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
               " eip=%08x esp=%08x ebp=%08x iopl=%d tr=%04x\n"
               " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
               " fsw=%04x fcw=%04x ftw=%02x mxcsr=%04x/%04x\n"
               " %s\n"
-              ,
+              , pszFunction,
               pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ebx, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.edx, pVCpu->cpum.GstCtx.esi, pVCpu->cpum.GstCtx.edi,
               pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.ebp, pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL, pVCpu->cpum.GstCtx.tr.Sel,
               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.ds.Sel, pVCpu->cpum.GstCtx.es.Sel,
@@ -13578,8 +13579,8 @@ IEM_STATIC void iemLogCurInstr(PVMCPU pVCpu, bool fSameCtx)
     }
     else
 # endif
-        LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n",
-                 pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.u));
+        LogFlow(("%s: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n", pszFunction, pVCpu->cpum.GstCtx.cs.Sel,
+                 pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.u));
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(fSameCtx);
 }
 #endif /* LOG_ENABLED */
@@ -13677,11 +13678,12 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
  * @param   fExecuteInhibit     If set, execute the instruction following CLI,
  *                      POP SS and MOV SS,GR.
  */
-DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit)
+DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, const char *pszFunction)
 {
     AssertMsg(pVCpu->iem.s.aMemMappings[0].fAccess == IEM_ACCESS_INVALID, ("0: %#x %RGp\n", pVCpu->iem.s.aMemMappings[0].fAccess, pVCpu->iem.s.aMemBbMappings[0].GCPhysFirst));
     AssertMsg(pVCpu->iem.s.aMemMappings[1].fAccess == IEM_ACCESS_INVALID, ("1: %#x %RGp\n", pVCpu->iem.s.aMemMappings[1].fAccess, pVCpu->iem.s.aMemBbMappings[1].GCPhysFirst));
     AssertMsg(pVCpu->iem.s.aMemMappings[2].fAccess == IEM_ACCESS_INVALID, ("2: %#x %RGp\n", pVCpu->iem.s.aMemMappings[2].fAccess, pVCpu->iem.s.aMemBbMappings[2].GCPhysFirst));
+    RT_NOREF_PV(pszFunction);
 
 #ifdef IEM_WITH_SETJMP
     VBOXSTRICTRC rcStrict;
@@ -13726,7 +13728,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit)
         if (rcStrict == VINF_SUCCESS)
         {
 #ifdef LOG_ENABLED
-            iemLogCurInstr(pVCpu, false);
+            iemLogCurInstr(pVCpu, false, pszFunction);
 #endif
 #ifdef IEM_WITH_SETJMP
             pVCpu->iem.s.CTX_SUFF(pJmpBuf) = &JmpBuf;
@@ -13806,7 +13808,7 @@ DECLINLINE(VBOXSTRICTRC) iemRCRawMaybeReenter(PVMCPU pVCpu, VBOXSTRICTRC rcStric
 VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
 {
 #ifdef LOG_ENABLED
-    iemLogCurInstr(pVCpu, true);
+    iemLogCurInstr(pVCpu, true, "IEMExecOne");
 #endif
 
     /*
@@ -13814,7 +13816,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
      */
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
     if (rcStrict == VINF_SUCCESS)
-        rcStrict = iemExecOneInner(pVCpu, true);
+        rcStrict = iemExecOneInner(pVCpu, true, "IEMExecOne");
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
@@ -13836,7 +13838,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, ui
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
     if (rcStrict == VINF_SUCCESS)
     {
-        rcStrict = iemExecOneInner(pVCpu, true);
+        rcStrict = iemExecOneInner(pVCpu, true, "IEMExecOneEx");
         if (pcbWritten)
             *pcbWritten = pVCpu->iem.s.cbWritten - cbOldWritten;
     }
@@ -13875,7 +13877,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXC
     else
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
     if (rcStrict == VINF_SUCCESS)
-        rcStrict = iemExecOneInner(pVCpu, true);
+        rcStrict = iemExecOneInner(pVCpu, true, "IEMExecOneWithPrefetchedByPC");
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
@@ -13894,7 +13896,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true);
     if (rcStrict == VINF_SUCCESS)
     {
-        rcStrict = iemExecOneInner(pVCpu, false);
+        rcStrict = iemExecOneInner(pVCpu, false, "IEMExecOneBypassEx");
         if (pcbWritten)
             *pcbWritten = pVCpu->iem.s.cbWritten - cbOldWritten;
     }
@@ -13933,7 +13935,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCP
     else
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true);
     if (rcStrict == VINF_SUCCESS)
-        rcStrict = iemExecOneInner(pVCpu, false);
+        rcStrict = iemExecOneInner(pVCpu, false, "IEMExecOneBypassWithPrefetchedByPC");
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
@@ -13985,7 +13987,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPU pVC
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, true);
     if (rcStrict == VINF_SUCCESS)
     {
-        rcStrict = iemExecOneInner(pVCpu, false);
+        rcStrict = iemExecOneInner(pVCpu, false, "IEMExecOneBypassWithPrefetchedByPCWritten");
         if (pcbWritten)
             *pcbWritten = pVCpu->iem.s.cbWritten - cbOldWritten;
     }
@@ -14057,7 +14059,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
                  * Log the state.
                  */
 #ifdef LOG_ENABLED
-                iemLogCurInstr(pVCpu, true);
+                iemLogCurInstr(pVCpu, true, "IEMExecLots");
 #endif
 
                 /*
@@ -14202,7 +14204,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
                  * Log the state.
                  */
 #ifdef LOG_ENABLED
-                iemLogCurInstr(pVCpu, true);
+                iemLogCurInstr(pVCpu, true, "IEMExecForExits");
 #endif
 
                 /*
