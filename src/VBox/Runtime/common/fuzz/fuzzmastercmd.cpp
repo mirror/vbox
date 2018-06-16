@@ -214,13 +214,12 @@ static int rtFuzzCmdMasterFuzzRunProcessCfgBoolDef(bool *pfVal, const char *pszC
  */
 static int rtFuzzCmdMasterFuzzRunProcessCfgSizeDef(size_t *pcbVal, const char *pszCfgItem, RTJSONVAL hJsonCfg, size_t cbDef, PRTERRINFO pErrInfo)
 {
+    *pcbVal = cbDef; /* Make GCC 6.3.0 happy. */
+
     int64_t i64Val = 0;
     int rc = RTJsonValueQueryIntegerByName(hJsonCfg, pszCfgItem, &i64Val);
     if (rc == VERR_NOT_FOUND)
-    {
-        *pcbVal = cbDef;
         rc = VINF_SUCCESS;
-    }
     else if (RT_FAILURE(rc))
         rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "JSON request malformed: Failed to query size_t value of \"%s\"", pszCfgItem);
     else if (i64Val < 0 || (size_t)i64Val != (uint64_t)i64Val)
