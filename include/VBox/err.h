@@ -256,6 +256,8 @@
 #define VINF_EM_PENDING_R3_IOPORT_READ       1159
 /** Reason for leaving RZ: Pending ring-3 OUT instruction. */
 #define VINF_EM_PENDING_R3_IOPORT_WRITE      1160
+/** Trick for resuming EMHistoryExec after a VMCPU_FF_IOM is handled. */
+#define VINF_EM_RESUME_R3_HISTORY_EXEC       1161
 /** @} */
 
 

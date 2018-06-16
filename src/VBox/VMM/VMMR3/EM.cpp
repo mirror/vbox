@@ -148,8 +148,19 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVM->em.s.fGuruOnTripleFault = true;
     }
 
-    LogRel(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool\n",
-            pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault));
+    /**
+     * @cfgm{/EM/ExitOptimizationEnabled, bool, true}
+     * Whether to try correlate exit history, detect hot spots and try optimize
+     * these using IEM if there are other exits close by.
+     */
+    bool fExitOptimizationEnabled = true;
+    rc = CFGMR3QueryBoolDef(pCfgEM, "ExitOptimizationEnabled", &fExitOptimizationEnabled, true);
+    AssertLogRelRCReturn(rc, rc);
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        pVM->aCpus[i].em.s.fExitOptimizationEnabled = fExitOptimizationEnabled;
+
+    LogRel(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool fExitOptimizationEnabled=%RTbool\n",
+            pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault, fExitOptimizationEnabled));
 
 #ifdef VBOX_WITH_REM
     /*
@@ -174,11 +185,13 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        pVCpu->em.s.enmState     = (i == 0) ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
-        pVCpu->em.s.enmPrevState = EMSTATE_NONE;
-        pVCpu->em.s.fForceRAW    = false;
+        pVCpu->em.s.enmState            = i == 0 ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
+        pVCpu->em.s.enmPrevState        = EMSTATE_NONE;
+        pVCpu->em.s.fForceRAW           = false;
+        pVCpu->em.s.u64TimeSliceStart   = 0; /* paranoia */
+        pVCpu->em.s.idxContinueExitRec  = UINT16_MAX;
 
-        pVCpu->em.s.pCtx         = CPUMQueryGuestCtxPtr(pVCpu);
+        pVCpu->em.s.pCtx                = CPUMQueryGuestCtxPtr(pVCpu);
 #ifdef VBOX_WITH_RAW_MODE
         if (VM_IS_RAW_MODE_ENABLED(pVM))
         {
@@ -186,9 +199,6 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
             AssertMsg(pVCpu->em.s.pPatmGCState, ("PATMR3QueryGCStateHC failed!\n"));
         }
 #endif
-
-        /* Force reset of the time slice. */
-        pVCpu->em.s.u64TimeSliceStart = 0;
 
 # define EM_REG_COUNTER(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b, i); \
@@ -1773,7 +1783,15 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
 
     /* IOM has pending work (comitting an I/O or MMIO write). */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_IOM))
+    {
         rc = IOMR3ProcessForceFlag(pVM, pVCpu, rc);
+        if (pVCpu->em.s.idxContinueExitRec >= RT_ELEMENTS(pVCpu->em.s.aExitRecords))
+        { /* half likely, or at least it's a line shorter. */ }
+        else if (rc == VINF_SUCCESS)
+            rc = VINF_EM_RESUME_R3_HISTORY_EXEC;
+        else
+            pVCpu->em.s.idxContinueExitRec = UINT16_MAX;
+    }
 
 #ifdef VBOX_WITH_RAW_MODE
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))

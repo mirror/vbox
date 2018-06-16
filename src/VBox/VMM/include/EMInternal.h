@@ -399,7 +399,8 @@ typedef struct EMCPU
     RTR3PTR                 R3PtrPaddingNoRaw;
 #endif
 
-    /** Pointer to the guest CPUM state. (R3 Ptr) */
+    /** Pointer to the guest CPUM state. (R3 Ptr)
+     * @obsolete Use pVCpu->cpum.GstCtx!  */
     R3PTRTYPE(PCPUMCTX)     pCtx;
 
 #if GC_ARCH_BITS == 64
@@ -498,14 +499,22 @@ typedef struct EMCPU
     uint64_t                padding1;
 #endif
 
+    /** Exit history table (6KB). */
+    EMEXITENTRY             aExitHistory[256];
     /** Where to store the next exit history entry.
      * Since aExitHistory is 256 items longs, we'll just increment this and
      * mask it when using it.  That help the readers detect whether we've
      * wrapped around or not.  */
     uint64_t                iNextExit;
-    /** Exit history table (6KB). */
-    EMEXITENTRY             aExitHistory[256];
-
+    /** Whether exit optimizations are enabled or not. */
+    bool                    fExitOptimizationEnabled;
+    /** Explicit padding. */
+    bool                    afPadding2[1];
+    /** Index into aExitRecords set by EMHistoryExec when returning to ring-3.
+     * This is UINT16_MAX if not armed.  */
+    uint16_t volatile       idxContinueExitRec;
+    /** Number of exit records in use. */
+    uint32_t                cExitRecordUsed;
     /** Hit statistics for each lookup step. */
     STAMCOUNTER             aStatHistoryRecHits[16];
     /** Type change statistics for each lookup step. */
@@ -514,10 +523,7 @@ typedef struct EMCPU
     STAMCOUNTER             aStatHistoryRecReplaced[16];
     /** New record statistics for each lookup step. */
     STAMCOUNTER             aStatHistoryRecNew[16];
-    /** Number of exit records in use. */
-    uint32_t                cExitRecordUsed;
-    /** Explicit padding. */
-    uint32_t                uPadding2;
+
     /** Exit records (32KB). (Aligned on 32 byte boundrary.) */
     EMEXITREC               aExitRecords[1024];
 } EMCPU;

@@ -403,6 +403,40 @@ EMRZSetPendingIoPortRead(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t 
 
 
 /**
+ * Worker for EMHistoryExec that checks for ring-3 returns and flags
+ * continuation of the EMHistoryExec run there.
+ */
+DECL_FORCE_INLINE(void) emHistoryExecSetContinueExitRecIdx(PVMCPU pVCpu, VBOXSTRICTRC rcStrict, PCEMEXITREC pExitRec)
+{
+    pVCpu->em.s.idxContinueExitRec = UINT16_MAX;
+#ifdef IN_RING3
+    RT_NOREF_PV(rcStrict); RT_NOREF_PV(pExitRec);
+#else
+    switch (VBOXSTRICTRC_VAL(rcStrict))
+    {
+        case VINF_SUCCESS:
+        default:
+            break;
+
+        /* Only status codes that EMHandleRCTmpl.h will resume EMHistoryExec with. */
+        case VINF_IOM_R3_IOPORT_READ:           /* -> emR3ExecuteIOInstruction */
+        case VINF_IOM_R3_IOPORT_WRITE:          /* -> emR3ExecuteIOInstruction */
+        case VINF_IOM_R3_IOPORT_COMMIT_WRITE:   /* -> VMCPU_FF_IOM -> VINF_EM_RESUME_R3_HISTORY_EXEC -> emR3ExecuteIOInstruction */
+        case VINF_IOM_R3_MMIO_READ:             /* -> emR3ExecuteInstruction */
+        case VINF_IOM_R3_MMIO_WRITE:            /* -> emR3ExecuteInstruction */
+        case VINF_IOM_R3_MMIO_READ_WRITE:       /* -> emR3ExecuteInstruction */
+        case VINF_IOM_R3_MMIO_COMMIT_WRITE:     /* -> VMCPU_FF_IOM -> VINF_EM_RESUME_R3_HISTORY_EXEC -> emR3ExecuteIOInstruction */
+        case VINF_CPUM_R3_MSR_READ:             /* -> emR3ExecuteInstruction */
+        case VINF_CPUM_R3_MSR_WRITE:            /* -> emR3ExecuteInstruction */
+        case VINF_GIM_R3_HYPERCALL:             /* -> emR3ExecuteInstruction */
+            pVCpu->em.s.idxContinueExitRec = (uint16_t)(pExitRec - &pVCpu->em.s.aExitRecords[0]);
+            break;
+    }
+#endif /* !IN_RING3 */
+}
+
+
+/**
  * Execute using history.
  *
  * This function will be called when EMHistoryAddExit() and friends returns a
@@ -438,6 +472,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
                                                     &ExecStats);
             LogFlow(("EMHistoryExec/EXEC_WITH_MAX: %Rrc cExits=%u cMaxExitDistance=%u cInstructions=%u\n",
                      VBOXSTRICTRC_VAL(rcStrict), ExecStats.cExits, ExecStats.cMaxExitDistance, ExecStats.cInstructions));
+            emHistoryExecSetContinueExitRecIdx(pVCpu, rcStrict, pExitRec);
             return rcStrict;
         }
 
@@ -455,6 +490,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
                                                     &ExecStats);
             LogFlow(("EMHistoryExec/EXEC_PROBE: %Rrc cExits=%u cMaxExitDistance=%u cInstructions=%u\n",
                      VBOXSTRICTRC_VAL(rcStrict), ExecStats.cExits, ExecStats.cMaxExitDistance, ExecStats.cInstructions));
+            emHistoryExecSetContinueExitRecIdx(pVCpu, rcStrict, pExitRecUnconst);
             if (ExecStats.cExits >= 2)
             {
                 Assert(ExecStats.cMaxExitDistance > 0 && ExecStats.cMaxExitDistance <= 32);
@@ -462,11 +498,15 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
                 pExitRecUnconst->enmAction = EMEXITACTION_EXEC_WITH_MAX;
                 LogFlow(("EMHistoryExec/EXEC_PROBE: -> EXEC_WITH_MAX %u\n", ExecStats.cMaxExitDistance));
             }
+#ifndef IN_RING3
+            else if (pVCpu->em.s.idxContinueExitRec != UINT16_MAX)
+                LogFlow(("EMHistoryExec/EXEC_PROBE: -> ring-3\n"));
+#endif
             else
             {
                 pExitRecUnconst->enmAction = EMEXITACTION_NORMAL_PROBED;
+                pVCpu->em.s.idxContinueExitRec = UINT16_MAX;
                 LogFlow(("EMHistoryExec/EXEC_PROBE: -> PROBED\n"));
-                /** @todo check for return to ring-3 and such and optimize/reprobe. */
             }
             return rcStrict;
         }
@@ -483,6 +523,9 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
 }
 
 
+/**
+ * Worker for emHistoryAddOrUpdateRecord.
+ */
 DECL_FORCE_INLINE(PCEMEXITREC) emHistoryRecordInit(PEMEXITREC pExitRec, uint64_t uFlatPC, uint32_t uFlagsAndType, uint64_t uExitNo)
 {
     pExitRec->uFlatPC                     = uFlatPC;
@@ -496,6 +539,9 @@ DECL_FORCE_INLINE(PCEMEXITREC) emHistoryRecordInit(PEMEXITREC pExitRec, uint64_t
 }
 
 
+/**
+ * Worker for emHistoryAddOrUpdateRecord.
+ */
 DECL_FORCE_INLINE(PCEMEXITREC) emHistoryRecordInitNew(PVMCPU pVCpu, PEMEXITENTRY pHistEntry, uintptr_t idxSlot,
                                                       PEMEXITREC pExitRec, uint64_t uFlatPC,
                                                       uint32_t uFlagsAndType, uint64_t uExitNo)
@@ -504,6 +550,21 @@ DECL_FORCE_INLINE(PCEMEXITREC) emHistoryRecordInitNew(PVMCPU pVCpu, PEMEXITENTRY
     pVCpu->em.s.cExitRecordUsed++;
     LogFlow(("emHistoryRecordInitNew: [%#x] = %#07x %016RX64; (%u of %u used)\n", idxSlot, uFlagsAndType, uFlatPC,
              pVCpu->em.s.cExitRecordUsed, RT_ELEMENTS(pVCpu->em.s.aExitRecords) ));
+    return emHistoryRecordInit(pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+}
+
+
+/**
+ * Worker for emHistoryAddOrUpdateRecord.
+ */
+DECL_FORCE_INLINE(PCEMEXITREC) emHistoryRecordInitReplacement(PEMEXITENTRY pHistEntry, uintptr_t idxSlot,
+                                                              PEMEXITREC pExitRec, uint64_t uFlatPC,
+                                                              uint32_t uFlagsAndType, uint64_t uExitNo)
+{
+    pHistEntry->idxSlot = (uint32_t)idxSlot;
+    LogFlow(("emHistoryRecordInitReplacement: [%#x] = %#07x %016RX64 replacing %#07x %016RX64 with %u hits, %u exits old\n",
+             idxSlot, uFlagsAndType, uFlatPC, pExitRec->uFlagsAndType, pExitRec->uFlatPC, pExitRec->cHits,
+             uExitNo - pExitRec->uLastExitNo));
     return emHistoryRecordInit(pExitRec, uFlatPC, uFlagsAndType, uExitNo);
 }
 
@@ -614,7 +675,7 @@ static PCEMEXITREC emHistoryAddOrUpdateRecord(PVMCPU pVCpu, uint64_t uFlagsAndTy
                 /* Replace the least recently used slot. */
                 STAM_REL_COUNTER_INC(&pVCpu->em.s.aStatHistoryRecReplaced[iOldestStep]);
                 pExitRec = &pVCpu->em.s.aExitRecords[idxOldest];
-                return emHistoryRecordInitNew(pVCpu, pHistEntry, idxOldest, pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+                return emHistoryRecordInitReplacement(pHistEntry, idxOldest, pExitRec, uFlatPC, uFlagsAndType, uExitNo);
             }
         }
     }
@@ -688,6 +749,7 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType,
      * If common exit type, we will insert/update the exit into the exit record hash table.
      */
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
+        && pVCpu->em.s.fExitOptimizationEnabled
         && uFlatPC != UINT64_MAX)
         return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, uFlatPC, pHistEntry, uExitNo);
     return NULL;
@@ -768,6 +830,7 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFl
      * If common exit type, we will insert/update the exit into the exit record hash table.
      */
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
+        && pVCpu->em.s.fExitOptimizationEnabled
         && pHistEntry->uFlatPC != UINT64_MAX)
         return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, pHistEntry->uFlatPC, pHistEntry, uExitNo);
     return NULL;
@@ -803,7 +866,8 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_
     /*
      * If common exit type, we will insert/update the exit into the exit record hash table.
      */
-    if ((uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM)
+    if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
+        && pVCpu->em.s.fExitOptimizationEnabled)
         return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, uFlatPC, pHistEntry, uExitNo);
     return NULL;
 }

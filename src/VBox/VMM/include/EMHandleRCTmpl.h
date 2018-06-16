@@ -216,6 +216,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          */
         case VINF_IOM_R3_IOPORT_READ:
         case VINF_IOM_R3_IOPORT_WRITE:
+        case VINF_EM_RESUME_R3_HISTORY_EXEC: /* Resume EMHistoryExec after VMCPU_FF_IOM. */
             rc = emR3ExecuteIOInstruction(pVM, pVCpu);
             break;
 

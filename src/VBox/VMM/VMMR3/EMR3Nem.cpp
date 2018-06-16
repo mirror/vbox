@@ -178,7 +178,6 @@ static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
 #if defined(LOG_ENABLED)
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 #endif
-    int      rc;
     NOREF(rcRC);
 
 #ifdef LOG_ENABLED
@@ -198,12 +197,26 @@ static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
      * Once IEM gets mature enough, nothing should ever fall back.
      */
     STAM_PROFILE_START(&pVCpu->em.s.StatIEMEmu, a);
-    CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
-    rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu));
+
+    VBOXSTRICTRC rcStrict;
+    uint32_t     idxContinueExitRec = pVCpu->em.s.idxContinueExitRec;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+    if (idxContinueExitRec >= RT_ELEMENTS(pVCpu->em.s.aExitRecords))
+    {
+        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        rcStrict = IEMExecOne(pVCpu);
+    }
+    else
+    {
+        RT_UNTRUSTED_VALIDATED_FENCE();
+        rcStrict = EMHistoryExec(pVCpu, &pVCpu->em.s.aExitRecords[idxContinueExitRec], 0);
+        LogFlow(("emR3NemExecuteInstruction: %Rrc (EMHistoryExec)\n", VBOXSTRICTRC_VAL(rcStrict)));
+    }
+
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIEMEmu, a);
 
-    if (   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
-        || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED)
+    if (   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+        || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
     {
 #ifdef VBOX_WITH_REM
         STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, b);
@@ -214,14 +227,14 @@ static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
             CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
         pVM->em.s.idLastRemCpu = pVCpu->idCpu;
 
-        rc = REMR3EmulateInstruction(pVM, pVCpu);
+        rcStrict = REMR3EmulateInstruction(pVM, pVCpu);
         EMRemUnlock(pVM);
         STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, b);
 #else  /* !VBOX_WITH_REM */
         NOREF(pVM);
 #endif /* !VBOX_WITH_REM */
     }
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
@@ -258,30 +271,26 @@ static int emR3NemExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     RT_NOREF_PV(pVM);
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
 
-#if 0
-    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
-
-    /*
-     * Try to restart the io instruction that was refused in ring-0.
-     */
-    VBOXSTRICTRC rcStrict = HMR3RestartPendingIOInstr(pVM, pVCpu, pCtx);
-    if (IOM_SUCCESS(rcStrict))
-    {
-        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
-        STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-        return VBOXSTRICTRC_TODO(rcStrict);     /* rip already updated. */
-    }
-    AssertMsgReturn(rcStrict == VERR_NOT_FOUND, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
-                    RT_SUCCESS_NP(rcStrict) ? VERR_IPE_UNEXPECTED_INFO_STATUS : VBOXSTRICTRC_TODO(rcStrict));
-#endif
-
     /*
      * Hand it over to the interpreter.
      */
     CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
-    VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
-    LogFlow(("emR3NemExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoIem);
+    VBOXSTRICTRC rcStrict;
+    uint32_t     idxContinueExitRec = pVCpu->em.s.idxContinueExitRec;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+    if (idxContinueExitRec >= RT_ELEMENTS(pVCpu->em.s.aExitRecords))
+    {
+        rcStrict = IEMExecOne(pVCpu);
+        LogFlow(("emR3NemExecuteIOInstruction: %Rrc (IEMExecOne)\n", VBOXSTRICTRC_VAL(rcStrict)));
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoIem);
+    }
+    else
+    {
+        RT_UNTRUSTED_VALIDATED_FENCE();
+        rcStrict = EMHistoryExec(pVCpu, &pVCpu->em.s.aExitRecords[idxContinueExitRec], 0);
+        LogFlow(("emR3NemExecuteIOInstruction: %Rrc (EMHistoryExec)\n", VBOXSTRICTRC_VAL(rcStrict)));
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
+    }
 
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
     return VBOXSTRICTRC_TODO(rcStrict);
