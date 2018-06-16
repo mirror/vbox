@@ -515,6 +515,23 @@ typedef struct EMCPU
     uint16_t volatile       idxContinueExitRec;
     /** Number of exit records in use. */
     uint32_t                cExitRecordUsed;
+    /** Profiling the EMHistoryExec when executing (not probing). */
+    STAMPROFILE             StatHistoryExec;
+    /** Number of saved exits. */
+    STAMCOUNTER             StatHistoryExecSavedExits;
+    /** Number of instructions executed by EMHistoryExec. */
+    STAMCOUNTER             StatHistoryExecInstructions;
+    uint64_t                aPadding3[2];
+    /** Number of instructions executed by EMHistoryExec when probing. */
+    STAMCOUNTER             StatHistoryProbeInstructions;
+    /** Number of times probing resulted in EMEXITACTION_NORMAL_PROBED. */
+    STAMCOUNTER             StatHistoryProbedNormal;
+    /** Number of times probing resulted in EMEXITACTION_EXEC_WITH_MAX. */
+    STAMCOUNTER             StatHistoryProbedExecWithMax;
+    /** Number of times probing resulted in ring-3 continuation. */
+    STAMCOUNTER             StatHistoryProbedToRing3;
+    /** Profiling the EMHistoryExec when probing.*/
+    STAMPROFILE             StatHistoryProbe;
     /** Hit statistics for each lookup step. */
     STAMCOUNTER             aStatHistoryRecHits[16];
     /** Type change statistics for each lookup step. */

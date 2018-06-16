@@ -483,6 +483,15 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
                                  "Number of new inserts at this step.",     "/EM/CPU%u/ExitHashing/Step%02u-NewInserts", i, iStep);
             AssertRC(rc);
         }
+
+        EM_REG_PROFILE(&pVCpu->em.s.StatHistoryExec,              "/EM/CPU%d/ExitOpt/Exec",              "Profiling normal EMHistoryExec operation.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryExecSavedExits,    "/EM/CPU%d/ExitOpt/ExecSavedExit",     "Net number of saved exits.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryExecInstructions,  "/EM/CPU%d/ExitOpt/ExecInstructions",  "Number of instructions executed during normal operation.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHistoryProbe,             "/EM/CPU%d/ExitOpt/Probe",             "Profiling EMHistoryExec when probing.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbeInstructions, "/EM/CPU%d/ExitOpt/ProbeInstructions", "Number of instructions executed during probing.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbedNormal,      "/EM/CPU%d/ExitOpt/ProbedNormal",      "Number of EMEXITACTION_NORMAL_PROBED results.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbedExecWithMax, "/EM/CPU%d/ExitOpt/ProbedExecWithMax", "Number of EMEXITACTION_EXEC_WITH_MAX results.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbedToRing3,     "/EM/CPU%d/ExitOpt/ProbedToRing3",     "Number of ring-3 probe continuations.");
     }
 
     emR3InitDbg(pVM);

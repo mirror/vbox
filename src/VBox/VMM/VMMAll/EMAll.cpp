@@ -418,7 +418,9 @@ DECL_FORCE_INLINE(void) emHistoryExecSetContinueExitRecIdx(PVMCPU pVCpu, VBOXSTR
         default:
             break;
 
-        /* Only status codes that EMHandleRCTmpl.h will resume EMHistoryExec with. */
+        /*
+         * Only status codes that EMHandleRCTmpl.h will resume EMHistoryExec with.
+         */
         case VINF_IOM_R3_IOPORT_READ:           /* -> emR3ExecuteIOInstruction */
         case VINF_IOM_R3_IOPORT_WRITE:          /* -> emR3ExecuteIOInstruction */
         case VINF_IOM_R3_IOPORT_COMMIT_WRITE:   /* -> VMCPU_FF_IOM -> VINF_EM_RESUME_R3_HISTORY_EXEC -> emR3ExecuteIOInstruction */
@@ -464,6 +466,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
          */
         case EMEXITACTION_EXEC_WITH_MAX:
         {
+            STAM_REL_PROFILE_START(&pVCpu->em.s.StatHistoryExec, a);
             LogFlow(("EMHistoryExec/EXEC_WITH_MAX: %RX64, max %u\n", pExitRec->uFlatPC, pExitRec->cMaxInstructionsWithoutExit));
             VBOXSTRICTRC rcStrict = IEMExecForExits(pVCpu, fWillExit,
                                                     pExitRec->cMaxInstructionsWithoutExit /* cMinInstructions*/,
@@ -473,6 +476,10 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
             LogFlow(("EMHistoryExec/EXEC_WITH_MAX: %Rrc cExits=%u cMaxExitDistance=%u cInstructions=%u\n",
                      VBOXSTRICTRC_VAL(rcStrict), ExecStats.cExits, ExecStats.cMaxExitDistance, ExecStats.cInstructions));
             emHistoryExecSetContinueExitRecIdx(pVCpu, rcStrict, pExitRec);
+            if (ExecStats.cExits > 1)
+                STAM_REL_COUNTER_ADD(&pVCpu->em.s.StatHistoryExecSavedExits, ExecStats.cExits - 1);
+            STAM_REL_COUNTER_ADD(&pVCpu->em.s.StatHistoryExecInstructions, ExecStats.cInstructions);
+            STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatHistoryExec, a);
             return rcStrict;
         }
 
@@ -481,6 +488,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
          */
         case EMEXITACTION_EXEC_PROBE:
         {
+            STAM_REL_PROFILE_START(&pVCpu->em.s.StatHistoryProbe, b);
             LogFlow(("EMHistoryExec/EXEC_PROBE: %RX64\n", pExitRec->uFlatPC));
             PEMEXITREC   pExitRecUnconst = (PEMEXITREC)pExitRec;
             VBOXSTRICTRC rcStrict = IEMExecForExits(pVCpu, fWillExit,
@@ -497,17 +505,24 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
                 pExitRecUnconst->cMaxInstructionsWithoutExit = ExecStats.cMaxExitDistance;
                 pExitRecUnconst->enmAction = EMEXITACTION_EXEC_WITH_MAX;
                 LogFlow(("EMHistoryExec/EXEC_PROBE: -> EXEC_WITH_MAX %u\n", ExecStats.cMaxExitDistance));
+                STAM_REL_COUNTER_INC(&pVCpu->em.s.StatHistoryProbedExecWithMax);
             }
 #ifndef IN_RING3
             else if (pVCpu->em.s.idxContinueExitRec != UINT16_MAX)
+            {
+                STAM_REL_COUNTER_INC(&pVCpu->em.s.StatHistoryProbedToRing3);
                 LogFlow(("EMHistoryExec/EXEC_PROBE: -> ring-3\n"));
+            }
 #endif
             else
             {
                 pExitRecUnconst->enmAction = EMEXITACTION_NORMAL_PROBED;
                 pVCpu->em.s.idxContinueExitRec = UINT16_MAX;
                 LogFlow(("EMHistoryExec/EXEC_PROBE: -> PROBED\n"));
+                STAM_REL_COUNTER_INC(&pVCpu->em.s.StatHistoryProbedNormal);
             }
+            STAM_REL_COUNTER_ADD(&pVCpu->em.s.StatHistoryProbeInstructions, ExecStats.cInstructions);
+            STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatHistoryProbe, b);
             return rcStrict;
         }
 
