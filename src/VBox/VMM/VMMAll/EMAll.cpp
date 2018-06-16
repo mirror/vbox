@@ -528,7 +528,7 @@ static PCEMEXITREC emHistoryAddOrUpdateRecord(PVMCPU pVCpu, uint64_t uFlagsAndTy
      * Work the hash table.
      */
     AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitRecords) == 1024);
-#define EM_EXIT_RECORDS_IDX_MASK 1023
+#define EM_EXIT_RECORDS_IDX_MASK 0x3ff
     uintptr_t  idxSlot  = ((uintptr_t)uFlatPC >> 1) & EM_EXIT_RECORDS_IDX_MASK;
     PEMEXITREC pExitRec = &pVCpu->em.s.aExitRecords[idxSlot];
     if (pExitRec->uFlatPC == uFlatPC)
@@ -536,20 +536,88 @@ static PCEMEXITREC emHistoryAddOrUpdateRecord(PVMCPU pVCpu, uint64_t uFlagsAndTy
         Assert(pExitRec->enmAction != EMEXITACTION_FREE_RECORD);
         pHistEntry->idxSlot = (uint32_t)idxSlot;
         if (pExitRec->uFlagsAndType == uFlagsAndType)
+        {
             pExitRec->uLastExitNo = uExitNo;
+            STAM_REL_COUNTER_INC(&pVCpu->em.s.aStatHistoryRecHits[0]);
+        }
         else
+        {
+            STAM_REL_COUNTER_INC(&pVCpu->em.s.aStatHistoryRecTypeChanged[0]);
             return emHistoryRecordInit(pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+        }
     }
     else if (pExitRec->enmAction == EMEXITACTION_FREE_RECORD)
+    {
+        STAM_REL_COUNTER_INC(&pVCpu->em.s.aStatHistoryRecNew[0]);
         return emHistoryRecordInitNew(pVCpu, pHistEntry, idxSlot, pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+    }
     else
     {
         /*
-         * Collision. Figure out later.
+         * Collision.  We calculate a new hash for stepping away from the first,
+         * doing up to 8 steps away before replacing the least recently used record.
          */
-        return NULL;
-    }
+        uintptr_t idxOldest     = idxSlot;
+        uint64_t  uOldestExitNo = pExitRec->uLastExitNo;
+        unsigned  iOldestStep   = 0;
+        unsigned  iStep         = 1;
+        uintptr_t const idxAdd  = (uintptr_t)(uFlatPC >> 11) & (EM_EXIT_RECORDS_IDX_MASK / 4);
+        for (;;)
+        {
+            Assert(iStep < RT_ELEMENTS(pVCpu->em.s.aStatHistoryRecHits));
+            AssertCompile(RT_ELEMENTS(pVCpu->em.s.aStatHistoryRecNew)         == RT_ELEMENTS(pVCpu->em.s.aStatHistoryRecHits));
+            AssertCompile(RT_ELEMENTS(pVCpu->em.s.aStatHistoryRecReplaced)    == RT_ELEMENTS(pVCpu->em.s.aStatHistoryRecHits));
+            AssertCompile(RT_ELEMENTS(pVCpu->em.s.aStatHistoryRecTypeChanged) == RT_ELEMENTS(pVCpu->em.s.aStatHistoryRecHits));
 
+            /* Step to the next slot. */
+            idxSlot += idxAdd;
+            idxSlot &= EM_EXIT_RECORDS_IDX_MASK;
+            pExitRec = &pVCpu->em.s.aExitRecords[idxSlot];
+
+            /* Does it match? */
+            if (pExitRec->uFlatPC == uFlatPC)
+            {
+                Assert(pExitRec->enmAction != EMEXITACTION_FREE_RECORD);
+                pHistEntry->idxSlot = (uint32_t)idxSlot;
+                if (pExitRec->uFlagsAndType == uFlagsAndType)
+                {
+                    pExitRec->uLastExitNo = uExitNo;
+                    STAM_REL_COUNTER_INC(&pVCpu->em.s.aStatHistoryRecHits[iStep]);
+                    break;
+                }
+                STAM_REL_COUNTER_INC(&pVCpu->em.s.aStatHistoryRecTypeChanged[iStep]);
+                return emHistoryRecordInit(pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+            }
+
+            /* Is it free? */
+            if (pExitRec->enmAction == EMEXITACTION_FREE_RECORD)
+            {
+                STAM_REL_COUNTER_INC(&pVCpu->em.s.aStatHistoryRecNew[iStep]);
+                return emHistoryRecordInitNew(pVCpu, pHistEntry, idxSlot, pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+            }
+
+            /* Is it the least recently used one? */
+            if (pExitRec->uLastExitNo < uOldestExitNo)
+            {
+                uOldestExitNo = pExitRec->uLastExitNo;
+                idxOldest     = idxSlot;
+                iOldestStep   = iStep;
+            }
+
+            /* Next iteration? */
+            iStep++;
+            Assert(iStep < RT_ELEMENTS(pVCpu->em.s.aStatHistoryRecReplaced));
+            if (RT_LIKELY(iStep < 8 + 1))
+            { /* likely */ }
+            else
+            {
+                /* Replace the least recently used slot. */
+                STAM_REL_COUNTER_INC(&pVCpu->em.s.aStatHistoryRecReplaced[iOldestStep]);
+                pExitRec = &pVCpu->em.s.aExitRecords[idxOldest];
+                return emHistoryRecordInitNew(pVCpu, pHistEntry, idxOldest, pExitRec, uFlatPC, uFlagsAndType, uExitNo);
+            }
+        }
+    }
 
     /*
      * Found an existing record.
