@@ -400,7 +400,7 @@ typedef struct EMCPU
 #endif
 
     /** Pointer to the guest CPUM state. (R3 Ptr)
-     * @obsolete Use pVCpu->cpum.GstCtx!  */
+     * @deprecated Use pVCpu->cpum.GstCtx!  */
     R3PTRTYPE(PCPUMCTX)     pCtx;
 
 #if GC_ARCH_BITS == 64
