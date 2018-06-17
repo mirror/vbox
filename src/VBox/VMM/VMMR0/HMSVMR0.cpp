@@ -6123,7 +6123,6 @@ DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Gets the length of the current instruction if the CPU supports the NRIP_SAVE
  * feature. Otherwise, returns the value in @a cbLikely.
@@ -6145,7 +6144,6 @@ DECLINLINE(uint8_t) hmR0SvmGetInstrLengthHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, u
     }
     return cbLikely;
 }
-#endif
 
 
 /**
@@ -6256,12 +6254,20 @@ HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = EMInterpretRdtsc(pVM, pVCpu, CPUMCTX2CORE(pCtx));
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+#if 0 /** @todo Needs testing. @bugref{6973} */
+    VBOXSTRICTRC rcStrict = IEMExecDecodedRdtsc(pVCpu, hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 2));
+    if (rcStrict == VINF_SUCCESS)
+        pSvmTransient->fUpdateTscOffsetting = true;
+    else if (rcStrict == VINF_EM_RESCHEDULE)
+        rcStrict = VINF_SUCCESS;
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
+    return VBOXSTRICTRC_TODO(rcStrict);
+#else
+    int rc = EMInterpretRdtsc(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
         pSvmTransient->fUpdateTscOffsetting = true;
-        hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     }
     else
@@ -6271,6 +6277,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     }
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
     return rc;
+#endif
 }
 
 
@@ -6280,6 +6287,16 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+#if 0 /** @todo Needs testing. @bugref{6973} */
+    VBOXSTRICTRC rcStrict = IEMExecDecodedRdtscp(pVCpu, hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 2));
+    if (rcStrict == VINF_SUCCESS)
+        pSvmTransient->fUpdateTscOffsetting = true;
+    else if (rcStrict == VINF_EM_RESCHEDULE)
+        rcStrict = VINF_SUCCESS;
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtscp);
+    return VBOXSTRICTRC_TODO(rcStrict);
+#else
     int rc = EMInterpretRdtscp(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
@@ -6294,6 +6311,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     }
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtscp);
     return rc;
+#endif
 }
 
 

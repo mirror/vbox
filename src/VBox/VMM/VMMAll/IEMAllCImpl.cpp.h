@@ -6093,12 +6093,14 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fTsc)
         return iemRaiseUndefinedOpcode(pVCpu);
 
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
-    if (   (pVCpu->cpum.GstCtx.cr4 & X86_CR4_TSD)
-        && pVCpu->iem.s.uCpl != 0)
+    if (pVCpu->iem.s.uCpl != 0)
     {
-        Log(("rdtsc: CR4.TSD and CPL=%u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        return iemRaiseGeneralProtectionFault0(pVCpu);
+        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
+        if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_TSD)
+        {
+            Log(("rdtsc: CR4.TSD and CPL=%u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
     }
 
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSC))
@@ -6117,6 +6119,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
 #endif
     pVCpu->cpum.GstCtx.rax = RT_LO_U32(uTicks);
     pVCpu->cpum.GstCtx.rdx = RT_HI_U32(uTicks);
+    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX); /* For IEMExecDecodedRdtsc. */
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
 }
@@ -6133,12 +6136,14 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fRdTscP)
         return iemRaiseUndefinedOpcode(pVCpu);
 
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
-    if (   (pVCpu->cpum.GstCtx.cr4 & X86_CR4_TSD)
-        && pVCpu->iem.s.uCpl != 0)
+    if (pVCpu->iem.s.uCpl != 0)
     {
-        Log(("rdtscp: CR4.TSD and CPL=%u -> #GP(0)\n", pVCpu->iem.s.uCpl));
-        return iemRaiseGeneralProtectionFault0(pVCpu);
+        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
+        if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_TSD)
+        {
+            Log(("rdtscp: CR4.TSD and CPL=%u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+            return iemRaiseGeneralProtectionFault0(pVCpu);
+        }
     }
 
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_RDTSCP))
@@ -6165,6 +6170,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
 #endif
         pVCpu->cpum.GstCtx.rax = RT_LO_U32(uTicks);
         pVCpu->cpum.GstCtx.rdx = RT_HI_U32(uTicks);
+        pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RCX); /* For IEMExecDecodedRdtscp. */
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     }
     return rcStrict;

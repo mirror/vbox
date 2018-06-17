@@ -7099,7 +7099,7 @@ static int hmR0VmxSaveGuestRegsForIemExec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool
     rc     |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     if (fNeedRsp)
         rc |= hmR0VmxSaveGuestRsp(pVCpu, pMixedCtx);
-    rc     |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    rc     |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx); /** @todo Only CS and SS are required here. */
     if (!fMemory)
         rc |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     else
@@ -11828,6 +11828,22 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
+#if 0 /** @todo Needs testing. @bugref{6973} */
+    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);      /* Needed for CPL < 0 only, really. */
+    rc    |= hmR0VmxSaveGuestRegsForIemExec(pVCpu, pMixedCtx, false /*fMemory*/, false /*fNeedRsp*/);
+    AssertRCReturn(rc, rc);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedRdtsc(pVCpu, pVmxTransient->cbInstr);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    {
+        /* If we get a spurious VM-exit when offsetting is enabled, we must reset offsetting on VM-reentry. See @bugref{6634}. */
+        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING)
+            pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
+    }
+    else if (rcStrict == VINF_EM_RESCHEDULE)
+        rcStrict = VINF_SUCCESS;
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
+    return rcStrict;
+#else
     int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
@@ -11845,6 +11861,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         rc = VERR_EM_INTERPRETER;
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
     return rc;
+#endif
 }
 
 
@@ -11854,6 +11871,23 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
+#if 0 /** @todo Needs testing. @bugref{6973} */
+    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);      /* Needed for CPL < 0 only, really. */
+    rc    |= hmR0VmxSaveGuestRegsForIemExec(pVCpu, pMixedCtx, false /*fMemory*/, false /*fNeedRsp*/);
+    rc    |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);  /* For MSR_K8_TSC_AUX */
+    AssertRCReturn(rc, rc);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedRdtscp(pVCpu, pVmxTransient->cbInstr);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    {
+        /* If we get a spurious VM-exit when offsetting is enabled, we must reset offsetting on VM-reentry. See @bugref{6634}. */
+        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING)
+            pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
+    }
+    else if (rcStrict == VINF_EM_RESCHEDULE)
+        rcStrict = VINF_SUCCESS;
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtscp);
+    return rcStrict;
+#else
     int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
     rc    |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);  /* For MSR_K8_TSC_AUX */
     AssertRCReturn(rc, rc);
@@ -11873,8 +11907,9 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         AssertMsgFailed(("hmR0VmxExitRdtscp: EMInterpretRdtscp failed with %Rrc\n", rc));
         rc = VERR_EM_INTERPRETER;
     }
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtscp);
     return rc;
+#endif
 }
 
 

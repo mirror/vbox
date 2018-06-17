@@ -1865,6 +1865,8 @@ VMM_INT_DECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
 }
 
 
+#if 1 /** @todo Remove after testing and enabling @bugref{6973}. */
+
 /**
  * Interpret RDTSC.
  *
@@ -1938,6 +1940,8 @@ VMM_INT_DECL(int) EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     return VINF_SUCCESS;
 }
+
+#endif /* Trying to use IEM APIs instead. */
 
 /**
  * Interpret RDPMC.
