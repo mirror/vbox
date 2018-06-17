@@ -6265,7 +6265,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     return VBOXSTRICTRC_TODO(rcStrict);
 #else
     int rc = EMInterpretRdtsc(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
-    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         pSvmTransient->fUpdateTscOffsetting = true;
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
