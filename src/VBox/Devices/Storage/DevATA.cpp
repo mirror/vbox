@@ -7621,6 +7621,8 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatFlushes,      STAMTYPE_PROFILE,     STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
                                    "Profiling of the flush operations.",        "/Devices/IDE%d/ATA%d/Unit%d/Flushes", iInstance, i, j);
 #endif
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatStatusYields, STAMTYPE_PROFILE,     STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                   "Profiling of status polling yields.",        "/Devices/IDE%d/ATA%d/Unit%d/StatusYields", iInstance, i, j);
         }
 #ifdef VBOX_WITH_STATISTICS /** @todo release too. */
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncOps,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
