@@ -1859,7 +1859,8 @@ static int rtFsNtfsVol_NewCoreForMftIdx(PRTFSNTFSVOL pThis, uint64_t idxMft, boo
             return VINF_SUCCESS;
         }
 
-        rtFsNtfsCore_Destroy(pRec->pCore);
+        if (pRec->pCore)
+            rtFsNtfsCore_Destroy(pRec->pCore);
         rtFsNtfsMftRec_Release(pRec, pThis);
     }
     return rc;
@@ -5345,7 +5346,8 @@ static int rtFsNtfsVolLoadMft(PRTFSNTFSVOL pThis, PRTERRINFO pErrInfo)
             else
                 rc = RTERRINFO_LOG_REL_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "MFT record #0 has no unnamed DATA attribute!");
         }
-        rtFsNtfsCore_Destroy(pRec->pCore);
+        if (pRec->pCore)
+            rtFsNtfsCore_Destroy(pRec->pCore);
         rtFsNtfsMftRec_Release(pRec, pThis);
     }
     else
