@@ -5639,7 +5639,7 @@ static int rtFsFatVolTryInit(PRTFSFATVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     if (Buf.BootSector.uSignature != FATBOOTSECTOR_SIGNATURE)
     {
         if (Buf.BootSector.uSignature != 0)
-            return RTErrInfoSetF(pErrInfo, rc, "No DOS bootsector signature: %#06x", Buf.BootSector.uSignature);
+            return RTErrInfoSetF(pErrInfo, VERR_VFS_UNKNOWN_FORMAT, "No DOS bootsector signature: %#06x", Buf.BootSector.uSignature);
         rc = rtFsFatVolTryInitDos1x(pThis, &Buf.BootSector, &Buf.ab[512], pErrInfo);
     }
     else
