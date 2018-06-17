@@ -285,7 +285,8 @@ typedef struct ATADevState
     /** Pointer to the I/O buffer. */
     RCPTRTYPE(uint8_t *)                pbIOBufferRC;
 
-    RTRCPTR                             Aligmnent1; /**< Align the statistics at an 8-byte boundary. */
+    /** Counter for number of busy status seen in GC/R0 in a row. */
+    uint32_t                            cBusyStatusHack;
 
     /*
      * No data that is part of the saved state after this point!!!!!
@@ -4451,9 +4452,6 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
         default:
         case 7: /* primary status */
         {
-            /* Counter for number of busy status seen in GC in a row. */
-            static unsigned cBusy = 0;
-
             if (!s->pDrvMedia)
                 val = 0;
             else
@@ -4470,10 +4468,10 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
             if (val & ATA_STAT_BUSY)
             {
 #ifdef IN_RING3
-                cBusy = 0;
+                s->cBusyStatusHack = 0;
                 ataR3LockLeave(pCtl);
 
-#ifndef RT_OS_WINDOWS
+# ifndef RT_OS_WINDOWS
                 /*
                  * The thread might be stuck in an I/O operation
                  * due to a high I/O load on the host. (see @bugref{3301})
@@ -4497,7 +4495,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
                         RTThreadPoke(pCtl->AsyncIOThread);
                     }
                 }
-#endif
+# endif
 
                 RTThreadYield();
 
@@ -4509,15 +4507,15 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
                  * to host context for each and every busy status is too costly,
                  * especially on SMP systems where we don't gain much by
                  * yielding the CPU to someone else. */
-                if (++cBusy >= 20)
+                if (++s->cBusyStatusHack >= 20)
                 {
-                    cBusy = 0;
+                    s->cBusyStatusHack = 0;
                     return VINF_IOM_R3_IOPORT_READ;
                 }
 #endif /* !IN_RING3 */
             }
             else
-                cBusy = 0;
+                s->cBusyStatusHack = 0;
             ataUnsetIRQ(s);
             break;
         }
