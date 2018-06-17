@@ -46,11 +46,12 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #ifdef IN_RING3
-# include <iprt/uuid.h>
+# include <iprt/mem.h>
+# include <iprt/mp.h>
 # include <iprt/semaphore.h>
 # include <iprt/thread.h>
 # include <iprt/time.h>
-# include <iprt/alloc.h>
+# include <iprt/uuid.h>
 #endif /* IN_RING3 */
 #include <iprt/critsect.h>
 #include <iprt/asm.h>
@@ -285,25 +286,35 @@ typedef struct ATADevState
     /** Pointer to the I/O buffer. */
     RCPTRTYPE(uint8_t *)                pbIOBufferRC;
 
-    /** Counter for number of busy status seen in GC/R0 in a row. */
-    uint32_t                            cBusyStatusHack;
-
     /*
      * No data that is part of the saved state after this point!!!!!
      */
 
-    /* Release statistics: number of ATA DMA commands. */
+    /** Counter for number of busy status seen in R3 in a row. */
+    uint8_t                             cBusyStatusHackR3;
+    /** Counter for number of busy status seen in GC/R0 in a row. */
+    uint8_t                             cBusyStatusHackRZ;
+    /** Defines the R3 yield rate by a mask (power of 2 minus one).
+     * Lower is more agressive. */
+    uint8_t                             cBusyStatusHackR3Rate;
+    /** Defines the RZ yield rate by number of status requests before returning
+     * to ring-3 and yielding there.  Lower is more agressive. */
+    uint8_t                             cBusyStatusHackRZRate;
+
+    /** Release statistics: number of ATA DMA commands. */
     STAMCOUNTER                         StatATADMA;
-    /* Release statistics: number of ATA PIO commands. */
+    /** Release statistics: number of ATA PIO commands. */
     STAMCOUNTER                         StatATAPIO;
-    /* Release statistics: number of ATAPI PIO commands. */
+    /** Release statistics: number of ATAPI PIO commands. */
     STAMCOUNTER                         StatATAPIDMA;
-    /* Release statistics: number of ATAPI PIO commands. */
+    /** Release statistics: number of ATAPI PIO commands. */
     STAMCOUNTER                         StatATAPIPIO;
 #ifdef VBOX_INSTRUMENT_DMA_WRITES
-    /* Release statistics: number of DMA sector writes and the time spent. */
+    /** Release statistics: number of DMA sector writes and the time spent. */
     STAMPROFILEADV                      StatInstrVDWrites;
 #endif
+    /** Release statistics: Profiling RTThreadYield calls during status polling. */
+    STAMPROFILEADV                      StatStatusYields;
 
     /** Statistics: number of read operations and the time spent reading. */
     STAMPROFILEADV                      StatReads;
@@ -4468,36 +4479,45 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
             if (val & ATA_STAT_BUSY)
             {
 #ifdef IN_RING3
-                s->cBusyStatusHack = 0;
+                /* @bugref{1960}: Don't yield all the time, unless it's a reset (can be tricky). */
+                bool fYield = (s->cBusyStatusHackR3++ & s->cBusyStatusHackR3Rate) == 0
+                            || pCtl->fReset;
+
                 ataR3LockLeave(pCtl);
 
-# ifndef RT_OS_WINDOWS
                 /*
-                 * The thread might be stuck in an I/O operation
-                 * due to a high I/O load on the host. (see @bugref{3301})
-                 * To perform the reset successfully
-                 * we interrupt the operation by sending a signal to the thread
-                 * if the thread didn't responded in 10ms.
-                 * This works only on POSIX hosts (Windows has a CancelSynchronousIo function which
-                 * does the same but it was introduced with Vista) but so far
-                 * this hang was only observed on Linux and Mac OS X.
+                 * The thread might be stuck in an I/O operation due to a high I/O
+                 * load on the host (see @bugref{3301}).  To perform the reset
+                 * successfully we interrupt the operation by sending a signal to
+                 * the thread if the thread didn't responded in 10ms.
+                 *
+                 * This works only on POSIX hosts (Windows has a CancelSynchronousIo
+                 * function which does the same but it was introduced with Vista) but
+                 * so far this hang was only observed on Linux and Mac OS X.
                  *
                  * This is a workaround and needs to be solved properly.
                  */
                 if (pCtl->fReset)
                 {
                     uint64_t u64ResetTimeStop = RTTimeMilliTS();
-
-                    if ((u64ResetTimeStop - pCtl->u64ResetTime) >= 10)
+                    if (u64ResetTimeStop - pCtl->u64ResetTime >= 10)
                     {
                         LogRel(("PIIX3 ATA LUN#%d: Async I/O thread probably stuck in operation, interrupting\n", s->iLUN));
                         pCtl->u64ResetTime = u64ResetTimeStop;
+# ifndef RT_OS_WINDOWS /* We've got this API on windows, but it doesn't necessarily interrupt I/O. */
                         RTThreadPoke(pCtl->AsyncIOThread);
+# endif
+                        Assert(fYield);
                     }
                 }
-# endif
 
-                RTThreadYield();
+                if (fYield)
+                {
+                    STAM_REL_PROFILE_ADV_START(&s->StatStatusYields, a);
+                    RTThreadYield();
+                    STAM_REL_PROFILE_ADV_STOP(&s->StatStatusYields, a);
+                }
+                ASMNopPause();
 
                 ataR3LockEnter(pCtl);
 
@@ -4507,15 +4527,19 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
                  * to host context for each and every busy status is too costly,
                  * especially on SMP systems where we don't gain much by
                  * yielding the CPU to someone else. */
-                if (++s->cBusyStatusHack >= 20)
+                if (++s->cBusyStatusHackRZ >= s->cBusyStatusHackRZRate)
                 {
-                    s->cBusyStatusHack = 0;
+                    s->cBusyStatusHackRZ = 0;
+                    s->cBusyStatusHackR3 = 0; /* Forces a yield. */
                     return VINF_IOM_R3_IOPORT_READ;
                 }
 #endif /* !IN_RING3 */
             }
             else
-                s->cBusyStatusHack = 0;
+            {
+                s->cBusyStatusHackRZ = 0;
+                s->cBusyStatusHackR3 = 0;
+            }
             ataUnsetIRQ(s);
             break;
         }
@@ -6495,6 +6519,38 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         if (pIf->pDrvMedia->pfnDiscard)
             LogRel(("PIIX3 ATA: LUN#%d: TRIM enabled\n", pIf->iLUN));
     }
+
+    /*
+     * Check if SMP system to adjust the agressiveness of the busy yield hack (@bugref{1960}).
+     *
+     * The hack is an ancient (2006?) one for dealing with UNI CPU systems where EMT
+     * would potentially monopolise the CPU and starve I/O threads.  It causes the EMT to
+     * yield it's timeslice if the guest polls the status register during I/O.  On modern
+     * multicore and multithreaded systems, yielding EMT too often may have adverse
+     * effects (slow grub) so we aim at avoiding repeating the yield there too often.
+     */
+    RTCPUID cCpus = RTMpGetOnlineCount();
+    if (cCpus <= 1)
+    {
+        pIf->cBusyStatusHackR3Rate = 1;
+        pIf->cBusyStatusHackRZRate = 8;
+    }
+    else if (cCpus <= 2)
+    {
+        pIf->cBusyStatusHackR3Rate = 3;
+        pIf->cBusyStatusHackRZRate = 20;
+    }
+    else if (cCpus <= 4)
+    {
+        pIf->cBusyStatusHackR3Rate = 15;
+        pIf->cBusyStatusHackRZRate = 32;
+    }
+    else
+    {
+        pIf->cBusyStatusHackR3Rate = 127;
+        pIf->cBusyStatusHackRZRate = 128;
+    }
+
     return rc;
 }
 
