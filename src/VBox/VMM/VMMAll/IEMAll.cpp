@@ -14256,9 +14256,18 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
                             {
                                 if (cInstructionSinceLastExit <= cMaxInstructionsWithoutExits)
                                 {
-                                    Assert(pVCpu->iem.s.cActiveMappings == 0);
-                                    iemReInitDecoder(pVCpu);
-                                    continue;
+#ifdef IN_RING0
+                                    if (!RTThreadPreemptIsPending(NIL_RTTHREAD))
+#endif
+                                    {
+                                        Assert(pVCpu->iem.s.cActiveMappings == 0);
+                                        iemReInitDecoder(pVCpu);
+                                        continue;
+                                    }
+#ifdef IN_RING0
+                                    rcStrict = VINF_EM_RAW_INTERRUPT;
+                                    break;
+#endif
                                 }
                             }
                         }
