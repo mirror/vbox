@@ -54,7 +54,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
             m_pNameAndSystemCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             QHBoxLayout *pNameAndSystemCntLayout = new QHBoxLayout(m_pNameAndSystemCnt);
             {
-                m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt, true);
+                m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt, true, strGroup);
                 pNameAndSystemCntLayout->addWidget(m_pNameAndSystemEditor);
             }
         }
