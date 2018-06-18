@@ -752,6 +752,10 @@ static void scmSvnTryResolveFunctions(void)
                         RTPathChangeToDosSlashes(pszEndPath, false);
 # endif
                         rc = RTLdrLoadEx(szPath, &ahMods[iLib], RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR , NULL);
+#ifdef VBOX_WITH_GCC_SANITIZER
+                        if (RT_SUCCESS(rc))
+                            __lsan_ignore_object(ahMods[iLib]);
+#endif
                         if (RT_SUCCESS(rc))
                             break;
                     }

@@ -2936,7 +2936,9 @@ ifdef VBOX_WITH_GCC_SANITIZER
 	-fsanitize=object-size \
 	-fno-sanitize=alignment \
 	-fno-sanitize=vptr \
-	-fno-common
+	-fno-common \
+	-include sanitizer/lsan_interface.h \
+	-DVBOX_WITH_GCC_SANITIZER
 else
  VBOX_GCC_SANITIZER_FLAGS =
 endif

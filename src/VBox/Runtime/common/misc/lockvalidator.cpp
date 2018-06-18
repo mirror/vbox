@@ -1096,6 +1096,9 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
     pThis->cHashMisses          = 0;
 #endif
 
+#ifdef VBOX_WITH_GCC_SANITIZER
+    __lsan_ignore_object(pThis);
+#endif
     *phClass = pThis;
     return VINF_SUCCESS;
 }
