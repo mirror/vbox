@@ -37,6 +37,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_HM
+#define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/mm.h>
@@ -3293,6 +3294,19 @@ VMMR3_INT_DECL(bool) HMR3IsVmxPreemptionTimerUsed(PVM pVM)
     return HMIsEnabled(pVM)
         && pVM->hm.s.vmx.fEnabled
         && pVM->hm.s.vmx.fUsePreemptTimer;
+}
+
+
+/**
+ * Checks if there is an I/O instruction pending.
+ *
+ * @returns true if pending, false if not.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+VMMR3_INT_DECL(bool) HMR3HasPendingIOInstr(PVMCPU pVCpu)
+{
+    return pVCpu->hm.s.PendingIO.enmType != HMPENDINGIO_INVALID
+        && pVCpu->hm.s.PendingIO.GCPtrRip == pVCpu->cpum.GstCtx.rip;
 }
 
 

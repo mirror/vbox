@@ -149,6 +149,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu, uint
             if (rcStrict == VINF_SUCCESS && pCtx->rip != uOldRip)
                 rcStrict = VINF_EM_DBG_STEPPED;
             Log(("EMR3HmSingleInstruction: returns %Rrc (rip %llx -> %llx)\n", VBOXSTRICTRC_VAL(rcStrict), uOldRip, pCtx->rip));
+            CPUM_IMPORT_EXTRN_RET(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK);
             return rcStrict;
         }
     }
@@ -175,7 +176,6 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
 #ifdef LOG_ENABLED
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 #endif
-    int      rc;
     NOREF(rcRC);
 
 #ifdef LOG_ENABLED
@@ -195,11 +195,24 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
      * Once IEM gets mature enough, nothing should ever fall back.
      */
     STAM_PROFILE_START(&pVCpu->em.s.StatIEMEmu, a);
-    rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu));
+    VBOXSTRICTRC rcStrict;
+    uint32_t     idxContinueExitRec = pVCpu->em.s.idxContinueExitRec;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+    if (idxContinueExitRec >= RT_ELEMENTS(pVCpu->em.s.aExitRecords))
+    {
+        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        rcStrict = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu));
+    }
+    else
+    {
+        RT_UNTRUSTED_VALIDATED_FENCE();
+        rcStrict = EMHistoryExec(pVCpu, &pVCpu->em.s.aExitRecords[idxContinueExitRec], 0);
+        LogFlow(("emR3HmExecuteInstruction: %Rrc (EMHistoryExec)\n", VBOXSTRICTRC_VAL(rcStrict)));
+    }
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIEMEmu, a);
 
-    if (   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
-        || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED)
+    if (   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+        || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
     {
 #ifdef VBOX_WITH_REM
         STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, b);
@@ -209,7 +222,7 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
             CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
         pVM->em.s.idLastRemCpu = pVCpu->idCpu;
 
-        rc = REMR3EmulateInstruction(pVM, pVCpu);
+        rcStrict = REMR3EmulateInstruction(pVM, pVCpu);
         EMRemUnlock(pVM);
         STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, b);
 #else  /* !VBOX_WITH_REM */
@@ -221,7 +234,7 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
         HMR3NotifyEmulated(pVCpu);
 #endif
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
@@ -259,24 +272,41 @@ static int emR3HmExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
 
-    /*
-     * Try to restart the io instruction that was refused in ring-0.
-     */
-    VBOXSTRICTRC rcStrict = HMR3RestartPendingIOInstr(pVM, pVCpu, pCtx);
-    if (IOM_SUCCESS(rcStrict))
+    VBOXSTRICTRC rcStrict;
+    uint32_t     idxContinueExitRec = pVCpu->em.s.idxContinueExitRec;
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+    if (idxContinueExitRec >= RT_ELEMENTS(pVCpu->em.s.aExitRecords))
     {
-        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
-        STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-        return VBOXSTRICTRC_TODO(rcStrict);     /* rip already updated. */
-    }
-    AssertMsgReturn(rcStrict == VERR_NOT_FOUND, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
-                    RT_SUCCESS_NP(rcStrict) ? VERR_IPE_UNEXPECTED_INFO_STATUS : VBOXSTRICTRC_TODO(rcStrict));
+        /*
+         * Try to restart the io instruction that was refused in ring-0.
+         */
+        rcStrict = HMR3RestartPendingIOInstr(pVM, pVCpu, pCtx);
+        if (IOM_SUCCESS(rcStrict))
+        {
+            STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
+            return VBOXSTRICTRC_TODO(rcStrict);     /* rip already updated. */
+        }
+        AssertMsgReturn(rcStrict == VERR_NOT_FOUND, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
+                        RT_SUCCESS_NP(rcStrict) ? VERR_IPE_UNEXPECTED_INFO_STATUS : VBOXSTRICTRC_TODO(rcStrict));
 
-    /*
-     * Hand it over to the interpreter.
-     */
-    rcStrict = IEMExecOne(pVCpu);
-    LogFlow(("emR3HmExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        /*
+         * Hand it over to the interpreter.
+         */
+        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        rcStrict = IEMExecOne(pVCpu);
+        LogFlow(("emR3HmExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    }
+    else
+    {
+        RT_UNTRUSTED_VALIDATED_FENCE();
+        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        Assert(!HMR3HasPendingIOInstr(pVCpu));
+        rcStrict = EMHistoryExec(pVCpu, &pVCpu->em.s.aExitRecords[idxContinueExitRec], 0);
+        LogFlow(("emR3HmExecuteIOInstruction: %Rrc (EMHistoryExec)\n", VBOXSTRICTRC_VAL(rcStrict)));
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
+    }
+
     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoIem);
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -302,6 +332,7 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      */
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
+        CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4);
         Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
         int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
         if (RT_FAILURE(rc))
@@ -313,6 +344,8 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Prefetch pages for EIP and ESP. */
         /** @todo This is rather expensive. Should investigate if it really helps at all. */
+        /** @todo this should be skipped! */
+        CPUM_IMPORT_EXTRN_RET(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_SS);
         rc = PGMPrefetchPage(pVCpu, SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(pCtx), pCtx->rip));
         if (rc == VINF_SUCCESS)
             rc = PGMPrefetchPage(pVCpu, SELMToFlat(pVM, DISSELREG_SS, CPUMCTX2CORE(pCtx), pCtx->rsp));
