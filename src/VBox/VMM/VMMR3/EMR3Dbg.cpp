@@ -86,6 +86,7 @@ VMM_INT_DECL(const char *) EMR3GetExitTypeName(EMEXITTYPE enmExitType)
         case EMEXITTYPE_IO_PORT_WRITE:      return "I/O port write";
         case EMEXITTYPE_IO_PORT_STR_READ:   return "I/O port string read";
         case EMEXITTYPE_IO_PORT_STR_WRITE:  return "I/O port string write";
+        case EMEXITTYPE_MMIO:               return "MMIO access";
         case EMEXITTYPE_MMIO_READ:          return "MMIO read";
         case EMEXITTYPE_MMIO_WRITE:         return "MMIO write";
         case EMEXITTYPE_MSR_READ:           return "MSR read";

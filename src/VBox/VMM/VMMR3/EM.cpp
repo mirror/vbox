@@ -149,13 +149,15 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     }
 
     /**
-     * @cfgm{/EM/ExitOptimizationEnabled, bool, true}
+     * @cfgm{/EM/ExitOptimizationEnabled, bool, true for NEM otherwise false}
      * Whether to try correlate exit history, detect hot spots and try optimize
      * these using IEM if there are other exits close by.
+     * @todo enable for HM too.
      */
     bool fExitOptimizationEnabled = true;
-    rc = CFGMR3QueryBoolDef(pCfgEM, "ExitOptimizationEnabled", &fExitOptimizationEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfgEM, "ExitOptimizationEnabled", &fExitOptimizationEnabled, VM_IS_NEM_ENABLED(pVM));
     AssertLogRelRCReturn(rc, rc);
+
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
         pVM->aCpus[i].em.s.fExitOptimizationEnabled = fExitOptimizationEnabled;
 
