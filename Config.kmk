@@ -403,8 +403,6 @@ VBOX_WITH_PREALLOC_RAM_BY_DEFAULT =
 VBOX_WITH_DEBUGGER = 1
 # Enable the debugger GUI.
 VBOX_WITH_DEBUGGER_GUI = 1
-# Enables the second step using IEM (the interpreter).
-VBOX_WITH_2ND_IEM_STEP = 1
 # Enables the third step using IEM (the interpreter).
 VBOX_WITH_3RD_IEM_STEP = 1
 # Nested hardware virtualization (64-bit hosts only).

@@ -29,9 +29,6 @@ endif
 ## DEFS variable that is picked up by all three VMM targets (R0, R3, RC).
 # Can be prepended to by setting it in LocalConfig.kmk
 VMM_COMMON_DEFS += VBOX_IN_VMM
-ifdef VBOX_WITH_2ND_IEM_STEP
- VMM_COMMON_DEFS += VBOX_WITH_2ND_IEM_STEP
-endif
 ifdef VBOX_WITH_3RD_IEM_STEP
  VMM_COMMON_DEFS += VBOX_WITH_3RD_IEM_STEP
 endif

@@ -1307,15 +1307,7 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
             *ppv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
         }
         else
-# ifdef VBOX_WITH_2ND_IEM_STEP
             *ppv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
-# else
-        {
-            /* This kind of screws up the TLB entry if accessed from a different section afterwards. */
-            static uint8_t s_abPlayItSafe[0x1000*2];  /* I don't dare return the zero page at the moment. */
-            *ppv = (uint8_t *)((uintptr_t)&s_abPlayItSafe[0x1000] & ~(uintptr_t)0xfff);
-        }
-# endif
         *ppMap = NULL;
         return VINF_SUCCESS;
     }
