@@ -262,8 +262,8 @@ void UINameAndSystemEditor::prepareWidgets()
                 pMainLayout->addWidget(m_pPathSelector, iRow++, 1, 1, 2);
                 QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
                 /* Add the group name to the default machine path: */
-                // if (!m_strGroupName.isEmpty() && m_strGroupName != "/")
-                //     strDefaultMachineFolder += m_strGroupName;
+                if (!m_strGroupName.isEmpty() && m_strGroupName != "/")
+                    strDefaultMachineFolder += m_strGroupName;
 
                 m_pPathSelector->setPath(strDefaultMachineFolder);
                 m_pPathSelector->setDefaultPath(strDefaultMachineFolder);
