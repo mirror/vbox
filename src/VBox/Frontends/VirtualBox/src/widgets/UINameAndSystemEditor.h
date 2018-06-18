@@ -55,9 +55,8 @@ signals:
 public:
 
     /** Constructs VM parameters editor passing @a pParent to the base-class.
-      * @param  fChooseFullPath  Controls whether we should propose to choose location.
-      * @param  strGroupName  is used while setting the path and defaultPath of the path selection widget. */
-    UINameAndSystemEditor(QWidget *pParent, bool fChooseLocation = false, const QString &strGroupName = QString());
+     * @param  fChooseFullPath  Controls whether we should propose to choose location. */
+    UINameAndSystemEditor(QWidget *pParent, bool fChooseLocation = false);
 
     /** Returns the VM name. */
     QString name() const;
