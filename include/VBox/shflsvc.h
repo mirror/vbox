@@ -28,7 +28,9 @@
 
 #include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>
-#include <VBox/hgcmsvc.h>
+#include <iprt/string.h>
+#include <VBox/cdefs.h>
+#include <VBox/types.h>
 #include <iprt/fs.h>
 #include <iprt/assert.h>
 

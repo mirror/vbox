@@ -44,7 +44,6 @@ FILES_VBOXSF_NOBIN=" \
     ${PATH_ROOT}/include/iprt/utf16.h=>include/iprt/utf16.h \
     ${PATH_ROOT}/include/VBox/cdefs.h=>include/VBox/cdefs.h \
     ${PATH_ROOT}/include/VBox/err.h=>include/VBox/err.h \
-    ${PATH_ROOT}/include/VBox/hgcmsvc.h=>include/VBox/hgcmsvc.h \
     ${PATH_ROOT}/include/VBox/log.h=>include/VBox/log.h \
     ${PATH_ROOT}/include/VBox/ostypes.h=>include/VBox/ostypes.h \
     ${PATH_ROOT}/include/VBox/param.h=>include/VBox/param.h \
