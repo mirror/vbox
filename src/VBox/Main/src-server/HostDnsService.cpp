@@ -193,7 +193,7 @@ void HostDnsMonitorProxy::pollGlobalExtraData()
         return;
 
     uint64_t uNow = RTTimeNanoTS();
-    if (virtualbox && (uNow - m->uLastExtraDataPoll >= RT_NS_30SEC || m->uLastExtraDataPoll == 0))
+    if (uNow - m->uLastExtraDataPoll >= RT_NS_30SEC || m->uLastExtraDataPoll == 0)
     {
         m->uLastExtraDataPoll = uNow;
 
