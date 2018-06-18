@@ -11828,9 +11828,10 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-#if 0 /** @todo Needs testing. @bugref{6973} */
+#if 1 /** @todo Needs testing. @bugref{6973} */
     int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);      /* Needed for CPL < 0 only, really. */
     rc    |= hmR0VmxSaveGuestRegsForIemExec(pVCpu, pMixedCtx, false /*fMemory*/, false /*fNeedRsp*/);
+    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
     VBOXSTRICTRC rcStrict = IEMExecDecodedRdtsc(pVCpu, pVmxTransient->cbInstr);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
@@ -11871,10 +11872,11 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-#if 0 /** @todo Needs testing. @bugref{6973} */
+#if 1 /** @todo Needs testing. @bugref{6973} */
     int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);      /* Needed for CPL < 0 only, really. */
     rc    |= hmR0VmxSaveGuestRegsForIemExec(pVCpu, pMixedCtx, false /*fMemory*/, false /*fNeedRsp*/);
     rc    |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);  /* For MSR_K8_TSC_AUX */
+    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
     VBOXSTRICTRC rcStrict = IEMExecDecodedRdtscp(pVCpu, pVmxTransient->cbInstr);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
