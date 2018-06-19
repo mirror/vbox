@@ -146,6 +146,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
 	EFI/DevSmc.cpp \
+	EFI/DevFlash.cpp \
  	Graphics/DevVGA.cpp \
  	Storage/DevATA.cpp \
  	PC/DevPit-i8254.cpp \
