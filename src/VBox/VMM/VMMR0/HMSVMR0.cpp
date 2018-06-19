@@ -6254,6 +6254,7 @@ HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+#if 0 /** @todo Needs testing. @bugref{6973} */
     VBOXSTRICTRC rcStrict = IEMExecDecodedRdtsc(pVCpu, hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 2));
     if (rcStrict == VINF_SUCCESS)
         pSvmTransient->fUpdateTscOffsetting = true;
@@ -6262,6 +6263,22 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
     return VBOXSTRICTRC_TODO(rcStrict);
+#else
+    int rc = EMInterpretRdtsc(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+    {
+        pSvmTransient->fUpdateTscOffsetting = true;
+        hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+    }
+    else
+    {
+        AssertMsgFailed(("hmR0SvmExitRdtsc: EMInterpretRdtsc failed with %Rrc\n", rc));
+        rc = VERR_EM_INTERPRETER;
+    }
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
+    return rc;
+#endif
 }
 
 
@@ -6271,6 +6288,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+#if 0 /** @todo Needs testing. @bugref{6973} */
     VBOXSTRICTRC rcStrict = IEMExecDecodedRdtscp(pVCpu, hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3));
     if (rcStrict == VINF_SUCCESS)
         pSvmTransient->fUpdateTscOffsetting = true;
@@ -6279,6 +6297,22 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtscp);
     return VBOXSTRICTRC_TODO(rcStrict);
+#else
+    int rc = EMInterpretRdtscp(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+    {
+        pSvmTransient->fUpdateTscOffsetting = true;
+        hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 3);
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+    }
+    else
+    {
+        AssertMsgFailed(("hmR0SvmExitRdtsc: EMInterpretRdtscp failed with %Rrc\n", rc));
+        rc = VERR_EM_INTERPRETER;
+    }
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtscp);
+    return rc;
+#endif
 }
 
 
