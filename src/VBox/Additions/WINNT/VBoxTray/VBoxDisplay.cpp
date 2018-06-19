@@ -893,7 +893,14 @@ static DECLCALLBACK(int) VBoxDisplayWorker(void *pvInstance, bool volatile *pfSh
                                  aDisplays[i].cBitsPerPixel));
                     }
 
-                    vboxDispIfWddmResizeDisplayWin7(&pCtx->pEnv->dispIf, cDisplays, &aDisplays[0]);
+                    if (pCtx->pEnv->dispIf.enmMode >= VBOXDISPIF_MODE_WDDM_W7)
+                    {
+                        VBoxDispIfResizeDisplayWin7(&pCtx->pEnv->dispIf, cDisplays, &aDisplays[0]);
+                    }
+                    else if (pCtx->pEnv->dispIf.enmMode == VBOXDISPIF_MODE_WDDM)
+                    {
+                        VBoxDispIfResizeDisplayVista(&pCtx->pEnv->dispIf, cDisplays, &aDisplays[0]);
+                    }
 
                     continue; /* Done */
                 }
