@@ -1954,14 +1954,14 @@ BOOL VBoxDispIfResizeDisplayVista(PCVBOXDISPIF const pIf, uint32_t cDispDef, con
     }
 
     vboxDispIfOpEnd(&Op);
-    
+
     for (id = 0; id < cDispDef; id++)
     {
         DEVMODE tempDevMode;
-        
+
         ZeroMemory (&tempDevMode, sizeof (tempDevMode));
         tempDevMode.dmSize = sizeof(DEVMODE);
-        
+
         EnumDisplaySettings((LPSTR)paDisplayDevices[id].DeviceName, 0xffffff, &tempDevMode);
     }
 
