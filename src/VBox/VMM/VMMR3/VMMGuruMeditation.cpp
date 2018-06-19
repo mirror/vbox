@@ -756,7 +756,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
     DBGFR3InfoMulti(pVM,
                     "*",
                     "mappings|hma|cpum|cpumguest|cpumguesthwvirt|cpumguestinstr|cpumhyper|cpumhost|mode|cpuid"
-                    "|pgmpd|pgmcr3|timers|activetimers|handlers|help",
+                    "|pgmpd|pgmcr3|timers|activetimers|handlers|help|exithistory",
                     "!!\n"
                     "!! {%s}\n"
                     "!!\n",
