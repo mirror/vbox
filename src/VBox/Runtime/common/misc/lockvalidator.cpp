@@ -1045,7 +1045,8 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
      */
     size_t const       cbFile   = pSrcPos->pszFile ? strlen(pSrcPos->pszFile) + 1 : 0;
     size_t const     cbFunction = pSrcPos->pszFile ? strlen(pSrcPos->pszFunction) + 1 : 0;
-    RTLOCKVALCLASSINT *pThis    = (RTLOCKVALCLASSINT *)RTMemAllocVar(sizeof(*pThis) + cbFile + cbFunction + cbName);
+    RTLOCKVALCLASSINT *pThis    = (RTLOCKVALCLASSINT *)RTMemAllocVarTag(sizeof(*pThis) + cbFile + cbFunction + cbName,
+                                                                        "may-leak:RTLockValidatorClassCreateExV");
     if (!pThis)
         return VERR_NO_MEMORY;
 
@@ -1096,9 +1097,6 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
     pThis->cHashMisses          = 0;
 #endif
 
-#ifdef VBOX_WITH_GCC_SANITIZER
-    __lsan_ignore_object(pThis);
-#endif
     *phClass = pThis;
     return VINF_SUCCESS;
 }

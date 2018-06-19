@@ -85,6 +85,41 @@
 #undef RTALLOC_USE_EFENCE
 
 
+#ifdef VBOX_WITH_GCC_SANITIZER
+/**
+ * Checks if @a pszTag is a leak tag.
+ *
+ * @returns true if leak tag, false if not.
+ * @param   pszTag              Tage to inspect.
+ */
+DECLINLINE(bool) rtMemIsLeakTag(const char *pszTag)
+{
+    char ch = *pszTag;
+    if (ch != 'w')
+    { /* likely */ }
+    else
+        return pszTag[1] == 'i'
+            && pszTag[2] == 'l'
+            && pszTag[3] == 'l'
+            && pszTag[4] == '-'
+            && pszTag[5] == 'l'
+            && pszTag[6] == 'e'
+            && pszTag[7] == 'a'
+            && pszTag[8] == 'k';
+    if (ch != 'm')
+        return false;
+    return pszTag[1] == 'm'
+        && pszTag[2] == 'a'
+        && pszTag[3] == 'y'
+        && pszTag[4] == '-'
+        && pszTag[5] == 'l'
+        && pszTag[6] == 'e'
+        && pszTag[7] == 'a'
+        && pszTag[8] == 'k';
+}
+#endif /* VBOX_WITH_GCC_SANITIZER */
+
+
 RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     return RTMemAllocTag(cb, pszTag);
@@ -122,6 +157,10 @@ RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
               || ( (cb & RTMEM_ALIGNMENT) + ((uintptr_t)pv & RTMEM_ALIGNMENT)) == RTMEM_ALIGNMENT
               , ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
 #endif /* !RTALLOC_USE_EFENCE */
+#ifdef VBOX_WITH_GCC_SANITIZER
+    if (rtMemIsLeakTag(pszTag))
+        __lsan_ignore_object(pv);
+#endif
     return pv;
 }
 
@@ -146,6 +185,10 @@ RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
               || ( (cb & RTMEM_ALIGNMENT) + ((uintptr_t)pv & RTMEM_ALIGNMENT)) == RTMEM_ALIGNMENT
               , ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
 #endif /* !RTALLOC_USE_EFENCE */
+#ifdef VBOX_WITH_GCC_SANITIZER
+    if (rtMemIsLeakTag(pszTag))
+        __lsan_ignore_object(pv);
+#endif
     return pv;
 }
 
