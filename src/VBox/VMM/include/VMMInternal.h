@@ -331,7 +331,15 @@ typedef struct VMM
     volatile bool               fRendezvousRecursion;
 
     /** @} */
-    bool                        afAlignment2[HC_ARCH_BITS == 32 ? 7 : 3]; /**< Alignment padding. */
+
+    /** RTThreadPreemptIsPendingTrusty() result, set by vmmR0InitVM() for
+     * release logging purposes. */
+    bool                        fIsPreemptPendingApiTrusty : 1;
+    /** The RTThreadPreemptIsPossible() result,  set by vmmR0InitVM() for
+     * release logging purposes.  */
+    bool                        fIsPreemptPossible : 1;
+
+    bool                        afAlignment2[HC_ARCH_BITS == 32 ? 6 : 2]; /**< Alignment padding. */
 
     /** Buffer for storing the standard assertion message for a ring-0 assertion.
      * Used for saving the assertion message text for the release log and guru

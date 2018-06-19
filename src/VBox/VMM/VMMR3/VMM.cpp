@@ -605,6 +605,16 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
     else
         LogRel(("VMM: Thread-context hooks unavailable\n"));
 
+    /* Log RTThreadPreemptIsPendingTrusty() and RTThreadPreemptIsPossible() results. */
+    if (pVM->vmm.s.fIsPreemptPendingApiTrusty)
+        LogRel(("VMM: RTThreadPreemptIsPending() can be trusted\n"));
+    else
+        LogRel(("VMM: Warning! RTThreadPreemptIsPending() cannot be trusted!  Need to update kernel info?\n"));
+    if (pVM->vmm.s.fIsPreemptPossible)
+        LogRel(("VMM: Kernel preemption is possible.\n"));
+    else
+        LogRel(("VMM: Kernel preemption is not possible it seems.\n"));
+
     /*
      * Send all EMTs to ring-0 to get their logger initialized.
      */

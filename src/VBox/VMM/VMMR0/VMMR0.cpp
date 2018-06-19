@@ -482,6 +482,13 @@ static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType
                             if (RT_SUCCESS(rc))
                             {
                                 GVMMR0DoneInitVM(pGVM);
+
+                                /*
+                                 * Collect a bit of info for the VM release log.
+                                 */
+                                pVM->vmm.s.fIsPreemptPendingApiTrusty = RTThreadPreemptIsPendingTrusty();
+                                pVM->vmm.s.fIsPreemptPossible         = RTThreadPreemptIsPossible();;
+
                                 VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
                                 return rc;
                             }
