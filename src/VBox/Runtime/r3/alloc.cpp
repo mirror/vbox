@@ -85,7 +85,7 @@
 #undef RTALLOC_USE_EFENCE
 
 
-#ifdef VBOX_WITH_GCC_SANITIZER
+#ifdef IPRT_WITH_GCC_SANITIZER
 /**
  * Checks if @a pszTag is a leak tag.
  *
@@ -117,7 +117,7 @@ DECLINLINE(bool) rtMemIsLeakTag(const char *pszTag)
         && pszTag[7] == 'a'
         && pszTag[8] == 'k';
 }
-#endif /* VBOX_WITH_GCC_SANITIZER */
+#endif /* IPRT_WITH_GCC_SANITIZER */
 
 
 RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
@@ -157,7 +157,7 @@ RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
               || ( (cb & RTMEM_ALIGNMENT) + ((uintptr_t)pv & RTMEM_ALIGNMENT)) == RTMEM_ALIGNMENT
               , ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
 #endif /* !RTALLOC_USE_EFENCE */
-#ifdef VBOX_WITH_GCC_SANITIZER
+#ifdef IPRT_WITH_GCC_SANITIZER
     if (rtMemIsLeakTag(pszTag))
         __lsan_ignore_object(pv);
 #endif
@@ -185,7 +185,7 @@ RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
               || ( (cb & RTMEM_ALIGNMENT) + ((uintptr_t)pv & RTMEM_ALIGNMENT)) == RTMEM_ALIGNMENT
               , ("pv=%p RTMEM_ALIGNMENT=%#x\n", pv, RTMEM_ALIGNMENT));
 #endif /* !RTALLOC_USE_EFENCE */
-#ifdef VBOX_WITH_GCC_SANITIZER
+#ifdef IPRT_WITH_GCC_SANITIZER
     if (rtMemIsLeakTag(pszTag))
         __lsan_ignore_object(pv);
 #endif

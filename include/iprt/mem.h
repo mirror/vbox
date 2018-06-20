@@ -499,6 +499,30 @@ RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW_PRO
  */
 RTDECL(void) RTMemWipeThoroughly(void *pv, size_t cb, size_t cMinPasses) RT_NO_THROW_PROTO;
 
+
+/** @def RTMEM_WILL_LEAK
+ * Macro for hinting that a memory allocation @a a_pv will leak.
+ *
+ * @note This shall only be used in code that doesn't allocate the object.
+ *       Code allocating memory knowing it will leak shall start the allocation
+ *       tag string with 'will-leak:'.
+ */
+/** @def RTMEM_MAY_LEAK
+ * Macro for hinting that a memory allocation @a a_pv may leak.
+ *
+ * @note This shall only be used in code that doesn't allocate the object.
+ *       Code allocating memory knowing it may leak shall start the allocation
+ *       tag string with 'may-leak:'.
+ */
+#ifdef IPRT_WITH_GCC_SANITIZER
+# define RTMEM_WILL_LEAK(a_pv)   __lsan_ignore_object(a_pv)
+# define RTMEM_MAY_LEAK(a_pv)    __lsan_ignore_object(a_pv)
+#else
+# define RTMEM_WILL_LEAK(a_pv)   do { } while (0)
+# define RTMEM_MAY_LEAK(a_pv)    do { } while (0)
+#endif
+
+
 #ifdef IN_RING0
 
 /**

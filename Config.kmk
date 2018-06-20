@@ -2929,16 +2929,17 @@ endif
 # set VBOX_WITH_GCC_SANITIZER_STATIC in addition.
 ifdef VBOX_WITH_GCC_SANITIZER
  VBOX_GCC_SANITIZER_FLAGS := \
-	-fsanitize=undefined \
-	-fsanitize=address \
-	-fsanitize=return \
-	-fsanitize=bounds \
-	-fsanitize=object-size \
-	-fno-sanitize=alignment \
-	-fno-sanitize=vptr \
-	-fno-common \
-	-include sanitizer/lsan_interface.h \
-	-DVBOX_WITH_GCC_SANITIZER
+ 	-fsanitize=undefined \
+ 	-fsanitize=address \
+ 	-fsanitize=return \
+ 	-fsanitize=bounds \
+ 	-fsanitize=object-size \
+ 	-fno-sanitize=alignment \
+ 	-fno-sanitize=vptr \
+ 	-fno-common \
+  	-include sanitizer/lsan_interface.h \
+ 	-DIPRT_WITH_GCC_SANITIZER \
+ 	-DVBOX_WITH_GCC_SANITIZER
 else
  VBOX_GCC_SANITIZER_FLAGS =
 endif
