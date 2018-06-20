@@ -298,7 +298,7 @@ class TestBoxCommand(object):
                     except Exception as oXcpt2:
                         testboxcommons.log('Failed to NACK "%s": %s' % (sCmdName, oXcpt2));
         elif sCmdName in [constants.tbresp.STATUS_DEAD, constants.tbresp.STATUS_NACK]:
-            testboxcommons.log('Received status in stead of command: %s' % (sCmdName, ));
+            testboxcommons.log('Received status instead of command: %s' % (sCmdName, ));
         else:
             # NOTSUP the unknown command.
             testboxcommons.log('Received unknown command: %s' % (sCmdName, ));
