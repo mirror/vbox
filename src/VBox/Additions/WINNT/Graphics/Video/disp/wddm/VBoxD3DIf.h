@@ -39,7 +39,6 @@ HRESULT VBoxD3DIfLockRect(struct VBOXWDDMDISP_RESOURCE *pRc, UINT iAlloc,
 HRESULT VBoxD3DIfUnlockRect(struct VBOXWDDMDISP_RESOURCE *pRc, UINT iAlloc);
 void VBoxD3DIfLockUnlockMemSynch(struct VBOXWDDMDISP_ALLOCATION *pAlloc, D3DLOCKED_RECT *pLockInfo, RECT *pRect, bool bToLockInfo);
 
-int vboxD3DIfSetHostId(PVBOXWDDMDISP_ALLOCATION pAlloc, uint32_t hostID, uint32_t *pHostID);
 IUnknown* vboxD3DIfCreateSharedPrimary(PVBOXWDDMDISP_ALLOCATION pAlloc);
 
 

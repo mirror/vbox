@@ -290,6 +290,9 @@ typedef struct VBOXWDDM_DBG_ALLOC
 
 static HRESULT vboxWddmDalNotifyChange(PVBOXWDDMDISP_DEVICE pDevice)
 {
+    if (!pDevice->DefaultContext.ContextInfo.hContext)
+        return E_FAIL;
+
     VBOXWDDMDISP_NSCADD NscAdd = { NULL }; /* Shuts up MSC. */
     BOOL bReinitRenderData = TRUE;
 #ifdef DEBUG_misha
@@ -470,7 +473,7 @@ BOOLEAN vboxWddmDalCheckNotifyRemove(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP
         }
         else
         {
-            WARN(("vboxWddmDalNotifyChange failed %#x", hr));
+            // WARN(("vboxWddmDalNotifyChange failed %#x", hr));
             if (pAlloc->DirtyAllocListEntry.pNext)
                 vboxWddmDalRemove(pAlloc);
         }
@@ -748,6 +751,8 @@ static HRESULT vboxWddmSwapchainKmSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
     Assert(cAllocsKm == Buf.SwapchainInfo.SwapchainInfo.cAllocs || !cAllocsKm);
     if (cAllocsKm == Buf.SwapchainInfo.SwapchainInfo.cAllocs)
     {
+        AssertReturn(pDevice->DefaultContext.ContextInfo.hContext, E_FAIL);
+
         D3DDDICB_ESCAPE DdiEscape = {0};
         DdiEscape.hContext = pDevice->DefaultContext.ContextInfo.hContext;
         DdiEscape.hDevice = pDevice->hDevice;

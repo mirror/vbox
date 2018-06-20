@@ -208,6 +208,9 @@ HRESULT vboxDispCmSessionCtxDestroy(PVBOXDISPCM_SESSION pSession, PVBOXWDDMDISP_
 
 HRESULT vboxDispCmCtxDestroy(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT pContext)
 {
+    if (!pContext->ContextInfo.hContext)
+        return S_OK;
+
     return vboxDispCmSessionCtxDestroy(&g_pVBoxCmMgr.Session, pDevice, pContext);
 }
 
