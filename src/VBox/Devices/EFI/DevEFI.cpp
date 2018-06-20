@@ -173,6 +173,8 @@ typedef struct DEVEFI
     uint8_t                *pu8EfiRom;
     /** The size of the system EFI ROM. */
     uint64_t                cbEfiRom;
+    /** Offset into the actual ROM within EFI FW volume. */
+    uint64_t                uEfiRomOfs;
     /** The name of the EFI ROM file. */
     char                   *pszEfiRomFile;
     /** Thunk page pointer. */
@@ -197,6 +199,9 @@ typedef struct DEVEFI
     uint16_t                cNumDmiTables;
     /** The DMI tables. */
     uint8_t                 au8DMIPage[0x1000];
+
+    /** Should NVRAM range be reserved for flash? */
+    bool                    fSkipNvramRange;
 
     /** I/O-APIC enabled? */
     uint8_t                 u8IOAPIC;
@@ -1893,7 +1898,7 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
 
     if (pThis->pu8EfiRom)
     {
-        RTFileReadAllFree(pThis->pu8EfiRom, (size_t)pThis->cbEfiRom);
+        RTFileReadAllFree(pThis->pu8EfiRom, (size_t)pThis->cbEfiRom + pThis->uEfiRomOfs);
         pThis->pu8EfiRom = NULL;
     }
 
@@ -1984,6 +1989,15 @@ static int efiParseFirmware(PDEVEFI pThis)
 
     AssertLogRelMsgReturn(!(pThis->cbEfiRom & PAGE_OFFSET_MASK), ("%RX64\n", pThis->cbEfiRom), VERR_INVALID_PARAMETER);
 
+    LogRel(("Found EFI FW Volume, %u bytes (%u %u-byte blocks)\n", pFwVolHdr->FvLength, pFwVolHdr->BlockMap[0].NumBlocks, pFwVolHdr->BlockMap[0].Length));
+
+    /* Adjust the FW variables to skip the NVRAM volume. */
+    if (pThis->fSkipNvramRange)
+    {
+        pThis->cbEfiRom  -= pFwVolHdr->FvLength;
+        pThis->uEfiRomOfs = pFwVolHdr->FvLength;
+    }
+
     pThis->GCLoadAddress = UINT32_C(0xfffff000) - pThis->cbEfiRom + PAGE_SIZE;
 
     return VINF_SUCCESS;
@@ -2035,7 +2049,7 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
     rc = PDMDevHlpROMRegister(pThis->pDevIns,
                               pThis->GCLoadAddress,
                               cbQuart,
-                              pThis->pu8EfiRom,
+                              pThis->pu8EfiRom + pThis->uEfiRomOfs,
                               cbQuart,
                               PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
                               "EFI Firmware Volume");
@@ -2045,7 +2059,7 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
     rc = PDMDevHlpROMRegister(pThis->pDevIns,
                               pThis->GCLoadAddress + cbQuart,
                               cbQuart,
-                              pThis->pu8EfiRom + cbQuart,
+                              pThis->pu8EfiRom + pThis->uEfiRomOfs + cbQuart,
                               cbQuart,
                               PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
                               "EFI Firmware Volume (Part 2)");
@@ -2054,7 +2068,7 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
     rc = PDMDevHlpROMRegister(pThis->pDevIns,
                               pThis->GCLoadAddress + cbQuart * 2,
                               cbQuart,
-                              pThis->pu8EfiRom + cbQuart * 2,
+                              pThis->pu8EfiRom + pThis->uEfiRomOfs + cbQuart * 2,
                               cbQuart,
                               PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
                               "EFI Firmware Volume (Part 3)");
@@ -2063,7 +2077,7 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
     rc = PDMDevHlpROMRegister(pThis->pDevIns,
                               pThis->GCLoadAddress + cbQuart * 3,
                               pThis->cbEfiRom - cbQuart * 3,
-                              pThis->pu8EfiRom + cbQuart * 3,
+                              pThis->pu8EfiRom + pThis->uEfiRomOfs + cbQuart * 3,
                               pThis->cbEfiRom - cbQuart * 3,
                               PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
                               "EFI Firmware Volume (Part 4)");
@@ -2197,6 +2211,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "64BitEntry\0"
                               "BootArgs\0"
                               "DeviceProps\0"
+                              "SkipNvramRange\0"            // legacy
                               "GopMode\0"                   // legacy
                               "GraphicsMode\0"
                               "UgaHorizontalResolution\0"   // legacy
@@ -2269,6 +2284,12 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         MMR3HeapFree(pThis->pszEfiRomFile);
         pThis->pszEfiRomFile = NULL;
     }
+
+    rc = CFGMR3QueryBoolDef(pCfg, "SkipNvramRange", &pThis->fSkipNvramRange, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"SkipNvramRange\" as integer failed"));
+
 
     /*
      * NVRAM processing.
