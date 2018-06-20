@@ -42,6 +42,7 @@ else:
     from urllib.parse   import quote        as urllib_quote;        # pylint: disable=import-error,no-name-in-module
     from urllib.parse   import urlencode    as urllib_urlencode;    # pylint: disable=import-error,no-name-in-module
     from urllib.request import urlopen      as urllib_urlopen;      # pylint: disable=import-error,no-name-in-module
+    import urllib.request;                                          # pylint: disable=import-error,no-name-in-module
 
 # Validation Kit imports.
 from common import utils;
@@ -146,8 +147,6 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
     Note! This method may use proxies configured on the system and the
           http_proxy, ftp_proxy, no_proxy environment variables.
 
-    @todo Fixed build burn here. Please set default value for fNoProxies
-          to appropriate one.
     """
     if fnError is None:
         fnError = fnLog;
@@ -159,10 +158,14 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
         fnLog('Downloading "%s" to "%s"...' % (sUrlFile, sDstFile));
         try:
             ## @todo We get 404.html content instead of exceptions here, which is confusing and should be addressed.
-            if fNoProxies:
+            if not fNoProxies:
                 oSrc = urllib_urlopen(sUrlFile);
-            else:
+            elif sys.version_info[0] < 3:
                 oSrc = urllib_urlopen(sUrlFile, proxies = dict());
+            else:
+                oProxyHandler = urllib.request.ProxyHandler(proxies = dict()); # p?ylint: disable=???
+                oOpener = urllib.request.build_opener(oProxyHandler)           # p?ylint: disable=???
+                oSrc = oOpener.open(sUrlFile);
             oDst = utils.openNoInherit(sDstFile, 'wb');
             oDst.write(oSrc.read());
             oDst.close();
