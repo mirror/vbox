@@ -163,8 +163,8 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
             elif sys.version_info[0] < 3:
                 oSrc = urllib_urlopen(sUrlFile, proxies = dict());
             else:
-                oProxyHandler = urllib.request.ProxyHandler(proxies = dict()); # p?ylint: disable=???
-                oOpener = urllib.request.build_opener(oProxyHandler)           # p?ylint: disable=???
+                oProxyHandler = urllib.request.ProxyHandler(proxies = dict()); # pylint: disable=no-member
+                oOpener = urllib.request.build_opener(oProxyHandler)           # pylint: disable=no-member
                 oSrc = oOpener.open(sUrlFile);
             oDst = utils.openNoInherit(sDstFile, 'wb');
             oDst.write(oSrc.read());
