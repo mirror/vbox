@@ -412,7 +412,7 @@ static DECLCALLBACK(int) flashDestruct(PPDMDEVINS pDevIns)
 }
 
 /** @todo this does not really belong here; workaround for EFI failing to init empty flash. */
-uint8_t aHdrBegin[] = {
+static const uint8_t aHdrBegin[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x8D, 0x2B, 0xF1, 0xFF, 0x96, 0x76, 0x8B, 0x4C, 0xA9, 0x85, 0x27, 0x47, 0x07, 0x5B, 0x4F, 0x50,
     0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5F, 0x46, 0x56, 0x48, 0xFF, 0xFE, 0x04, 0x00,
@@ -486,16 +486,21 @@ static DECLCALLBACK(int) flashConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (!pThis->pbFlash)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to allocate heap memory"));
 
-    memset(pThis->pbFlash, 0xff, pThis->cbFlashSize);
-    memcpy(pThis->pbFlash, aHdrBegin, sizeof(aHdrBegin));
-
     size_t cbRead = 0;
     rc = RTFileRead(pThis->hFlashFile, pThis->pbFlash, pThis->cbFlashSize, &cbRead);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to read flash file"));
-    Log(("Read %zu bytes from file (asked for %u).", cbRead, pThis->cbFlashSize));
+    Log(("Read %zu bytes from file (asked for %u)\n.", cbRead, pThis->cbFlashSize));
+
+    /* If the file didn't exist, or someone truncated it, we'll initialize
+     * the storage with default contents.
+     */
     if (cbRead != pThis->cbFlashSize)
-        return PDMDEV_SET_ERROR(pDevIns, VERR_READ_ERROR, N_("Failed to read flash file"));
+    {
+        memset(pThis->pbFlash, 0xff, pThis->cbFlashSize);
+        memcpy(pThis->pbFlash, aHdrBegin, sizeof(aHdrBegin));
+        LogRel(("Only read %zu bytes from flash file (asked for %u). Initializing with defaults.\n", cbRead, pThis->cbFlashSize));
+    }
 
     /* Reset the dynamic state.*/
     flashReset(pDevIns);
