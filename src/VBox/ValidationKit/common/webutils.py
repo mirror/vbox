@@ -37,12 +37,13 @@ import unittest;
 if sys.version_info[0] < 3:
     from urllib2        import quote        as urllib_quote;        # pylint: disable=import-error,no-name-in-module
     from urllib         import urlencode    as urllib_urlencode;    # pylint: disable=import-error,no-name-in-module
-    from urllib         import urlopen      as urllib_urlopen;      # pylint: disable=import-error,no-name-in-module
+    from urllib2        import ProxyHandler as urllib_ProxyHandler; # pylint: disable=import-error,no-name-in-module
+    from urllib2        import build_opener as urllib_build_opener; # pylint: disable=import-error,no-name-in-module
 else:
     from urllib.parse   import quote        as urllib_quote;        # pylint: disable=import-error,no-name-in-module
     from urllib.parse   import urlencode    as urllib_urlencode;    # pylint: disable=import-error,no-name-in-module
-    from urllib.request import urlopen      as urllib_urlopen;      # pylint: disable=import-error,no-name-in-module
-    import urllib.request;                                          # pylint: disable=import-error,no-name-in-module
+    from urllib.request import ProxyHandler as urllib_ProxyHandler; # pylint: disable=import-error,no-name-in-module
+    from urllib.request import build_opener as urllib_build_opener; # pylint: disable=import-error,no-name-in-module
 
 # Validation Kit imports.
 from common import utils;
@@ -159,13 +160,10 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
         try:
             ## @todo We get 404.html content instead of exceptions here, which is confusing and should be addressed.
             if not fNoProxies:
-                oSrc = urllib_urlopen(sUrlFile);
-            elif sys.version_info[0] < 3:
-                oSrc = urllib_urlopen(sUrlFile, proxies = dict());
+                oOpener = urllib_build_opener();
             else:
-                oProxyHandler = urllib.request.ProxyHandler(proxies = dict()); # pylint: disable=no-member
-                oOpener = urllib.request.build_opener(oProxyHandler)           # pylint: disable=no-member
-                oSrc = oOpener.open(sUrlFile);
+                oOpener = urllib_build_opener(urllib_ProxyHandler(proxies = dict()));
+            oSrc = oOpener.open(sUrlFile);
             oDst = utils.openNoInherit(sDstFile, 'wb');
             oDst.write(oSrc.read());
             oDst.close();
