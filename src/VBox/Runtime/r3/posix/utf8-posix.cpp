@@ -42,11 +42,11 @@
 /* iconv prototype changed with 165+ (thanks to PSARC/2010/160 Bugster 7037400) */
 #if defined(RT_OS_SOLARIS)
 # if !defined(_XPG6)
-#  define VBOX_XPG6_TMP_DEF
+#  define IPRT_XPG6_TMP_DEF
 #  define _XPG6
 # endif
 # if defined(__USE_LEGACY_PROTOTYPES__)
-#  define VBOX_LEGACY_PROTO_TMP_DEF
+#  define IPRT_LEGACY_PROTO_TMP_DEF
 #  undef __USE_LEGACY_PROTOTYPES__
 # endif
 #endif /* RT_OS_SOLARIS */
@@ -54,13 +54,13 @@
 # include <iconv.h>
 
 #if defined(RT_OS_SOLARIS)
-# if defined(VBOX_XPG6_TMP_DEF)
+# if defined(IPRT_XPG6_TMP_DEF)
 #  undef _XPG6
-#  undef VBOX_XPG6_TMP_DEF
+#  undef IPRT_XPG6_TMP_DEF
 # endif
-# if defined(VBOX_LEGACY_PROTO_TMP_DEF)
+# if defined(IPRT_LEGACY_PROTO_TMP_DEF)
 #  define __USE_LEGACY_PROTOTYPES__
-#  undef VBOX_LEGACY_PROTO_TMP_DEF
+#  undef IPRT_LEGACY_PROTO_TMP_DEF
 # endif
 #endif /* RT_OS_SOLARIS */
 
