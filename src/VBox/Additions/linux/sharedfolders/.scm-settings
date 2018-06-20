@@ -19,3 +19,11 @@
 /*.c|/*.h:     --no-convert-tabs
 /Makefile.module: --treat-as Makefile
 
+# MIT licence to make it easier to re-import code from the in-kernel version.
+/dirops.c:     --license-mit
+/lnkops.c:     --license-mit
+/regops.c:     --license-mit
+/utils.c:      --license-mit
+/vbsfmount.h:  --license-mit
+/vfsmod.c:     --license-mit
+/vfsmod.h:     --license-mit

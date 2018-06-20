@@ -45,6 +45,14 @@
 /VBox/Graphics/VBoxVideoVBE.h:          --license-mit
 /VBox/Graphics/VBoxVideoVBEPrivate.h:   --license-mit
 
+# And so are some files used by the shared folder guest code.
+/VBox/shflsvc.h:                        --license-mit
+/VBox/VBoxGuest.h:                      --license-mit
+/VBox/VBoxGuestCoreTypes.h:             --license-mit
+/VBox/VBoxGuestLib.h:                   --license-mit
+/VBox/VBoxGuestLibSharedFolders.h:      --license-mit
+/VBox/VMMDev.h:                         --license-mit
+/VBox/VMMDevCoreTypes.h:                --license-mit
 
 /VBox/HostServices/glext.h:             --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 /VBox/HostServices/glxext.h:            --external-copyright --no-convert-tabs --no-strip-trailing-blanks
