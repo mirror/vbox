@@ -63,9 +63,10 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static int      emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc);
 DECLINLINE(int) emR3NemExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
 static int      emR3NemExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
-static int      emR3NemForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+static int      emR3NemForcedActions(PVM pVM, PVMCPU pVCpu);
 
 #define EMHANDLERC_WITH_NEM
 #define emR3ExecuteInstruction   emR3NemExecuteInstruction
@@ -90,10 +91,9 @@ static int      emR3NemForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  */
 VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 {
-    Assert(pVCpu->em.s.pCtx == &pVCpu->cpum.GstCtx);
     Assert(!(fFlags & ~EM_ONE_INS_FLAGS_MASK));
 
-    if (!NEMR3CanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
+    if (!NEMR3CanExecuteGuest(pVM, pVCpu))
         return VINF_EM_RESCHEDULE;
 
     uint64_t const uOldRip = pVCpu->cpum.GstCtx.rip;
@@ -105,7 +105,7 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
             || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-            VBOXSTRICTRC rcStrict = emR3NemForcedActions(pVM, pVCpu, &pVCpu->cpum.GstCtx);
+            VBOXSTRICTRC rcStrict = emR3NemForcedActions(pVM, pVCpu);
             if (rcStrict != VINF_SUCCESS)
             {
                 Log(("emR3NemSingleInstruction: FFs before -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -135,7 +135,7 @@ VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 
         if (rcStrict != VINF_SUCCESS && (rcStrict < VINF_EM_FIRST || rcStrict > VINF_EM_LAST))
         {
-            rcStrict = emR3NemHandleRC(pVM, pVCpu, &pVCpu->cpum.GstCtx, VBOXSTRICTRC_TODO(rcStrict));
+            rcStrict = emR3NemHandleRC(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict));
             Log(("emR3NemSingleInstruction: emR3NemHandleRC -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         }
 
@@ -175,16 +175,13 @@ static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC, cons
 static int emR3NemExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
 #endif
 {
-#if defined(LOG_ENABLED)
-    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
-#endif
     NOREF(rcRC);
 
 #ifdef LOG_ENABLED
     /*
      * Log it.
      */
-    Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
+    Log(("EMINS: %04x:%RGv RSP=%RGv\n", pVCpu->cpum.GstCtx.cs.Sel, (RTGCPTR)pVCpu->cpum.GstCtx.rip, (RTGCPTR)pVCpu->cpum.GstCtx.rsp));
     if (pszPrefix)
     {
         DBGFR3_INFO_LOG(pVM, pVCpu, "cpumguest", pszPrefix);
@@ -307,9 +304,8 @@ static int emR3NemExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
  *          EM statuses.
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest CPU context.
  */
-static int emR3NemForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int emR3NemForcedActions(PVM pVM, PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_RAW_MODE
     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
@@ -344,7 +340,6 @@ static int emR3NemForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
         return VINF_EM_NO_MEMORY;
 
-    RT_NOREF_PV(pCtx);
     return VINF_SUCCESS;
 }
 
@@ -366,9 +361,8 @@ static int emR3NemForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
     VBOXSTRICTRC rcStrict = VERR_IPE_UNINITIALIZED_STATUS;
-    PCPUMCTX     pCtx     = pVCpu->em.s.pCtx;
 
-    LogFlow(("emR3NemExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
+    LogFlow(("emR3NemExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, (RTGCPTR)pVCpu->cpum.GstCtx.rip));
     *pfFFDone = false;
 
     STAM_REL_COUNTER_INC(&pVCpu->em.s.StatNEMExecuteCalled);
@@ -382,7 +376,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 
 #if 0
         /* Check if a forced reschedule is pending. */
-        if (NEMR3IsRescheduleRequired(pVM, pCtx))
+        if (NEMR3IsRescheduleRequired(pVCpu))
         {
             rcStrict = VINF_EM_RESCHEDULE;
             break;
@@ -395,7 +389,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (   VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
             || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-            rcStrict = emR3NemForcedActions(pVM, pVCpu, pCtx);
+            rcStrict = emR3NemForcedActions(pVM, pVCpu);
             if (rcStrict != VINF_SUCCESS)
                 break;
         }
@@ -405,26 +399,26 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Log important stuff before entering GC.
          */
         if (TRPMHasTrap(pVCpu))
-            Log(("CPU%d: Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", pVCpu->idCpu, TRPMGetTrapNo(pVCpu), pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
+            Log(("CPU%d: Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", pVCpu->idCpu, TRPMGetTrapNo(pVCpu), pVCpu->cpum.GstCtx.cs.Sel, (RTGCPTR)pVCpu->cpum.GstCtx.rip));
 
         uint32_t cpl = CPUMGetGuestCPL(pVCpu);
         if (pVM->cCpus == 1)
         {
-            if (pCtx->eflags.Bits.u1VM)
-                Log(("NEMV86: %08x IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
-            else if (CPUMIsGuestIn64BitCodeEx(pCtx))
-                Log(("NEMR%d: %04x:%RGv ESP=%RGv IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs.Sel, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+            if (pVCpu->cpum.GstCtx.eflags.Bits.u1VM)
+                Log(("NEMV86: %08x IF=%d\n", pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.Bits.u1IF));
+            else if (CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx))
+                Log(("NEMR%d: %04x:%RGv ESP=%RGv IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->cpum.GstCtx.cs.Sel, (RTGCPTR)pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.Bits.u1IF, pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL, (uint32_t)pVCpu->cpum.GstCtx.cr0, (uint32_t)pVCpu->cpum.GstCtx.cr4, (uint32_t)pVCpu->cpum.GstCtx.msrEFER));
             else
-                Log(("NEMR%d: %04x:%08x ESP=%08X IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs.Sel,          pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+                Log(("NEMR%d: %04x:%08x ESP=%08X IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->cpum.GstCtx.cs.Sel,          pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.eflags.Bits.u1IF, pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL, (uint32_t)pVCpu->cpum.GstCtx.cr0, (uint32_t)pVCpu->cpum.GstCtx.cr4, (uint32_t)pVCpu->cpum.GstCtx.msrEFER));
         }
         else
         {
-            if (pCtx->eflags.Bits.u1VM)
-                Log(("NEMV86-CPU%d: %08x IF=%d\n", pVCpu->idCpu, pCtx->eip, pCtx->eflags.Bits.u1IF));
-            else if (CPUMIsGuestIn64BitCodeEx(pCtx))
-                Log(("NEMR%d-CPU%d: %04x:%RGv ESP=%RGv IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->idCpu, pCtx->cs.Sel, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+            if (pVCpu->cpum.GstCtx.eflags.Bits.u1VM)
+                Log(("NEMV86-CPU%d: %08x IF=%d\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.Bits.u1IF));
+            else if (CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx))
+                Log(("NEMR%d-CPU%d: %04x:%RGv ESP=%RGv IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, (RTGCPTR)pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.Bits.u1IF, pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL, (uint32_t)pVCpu->cpum.GstCtx.cr0, (uint32_t)pVCpu->cpum.GstCtx.cr4, (uint32_t)pVCpu->cpum.GstCtx.msrEFER));
             else
-                Log(("NEMR%d-CPU%d: %04x:%08x ESP=%08X IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->idCpu, pCtx->cs.Sel,          pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pCtx->eflags.Bits.u2IOPL, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+                Log(("NEMR%d-CPU%d: %04x:%08x ESP=%08X IF=%d IOPL=%d CR0=%x CR4=%x EFER=%x\n", cpl, pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel,          pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.eflags.Bits.u1IF, pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL, (uint32_t)pVCpu->cpum.GstCtx.cr0, (uint32_t)pVCpu->cpum.GstCtx.cr4, (uint32_t)pVCpu->cpum.GstCtx.msrEFER));
         }
 #endif /* LOG_ENABLED */
 
@@ -463,7 +457,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
             break;
 
-        rcStrict = emR3NemHandleRC(pVM, pVCpu, pCtx, VBOXSTRICTRC_TODO(rcStrict));
+        rcStrict = emR3NemHandleRC(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict));
         if (rcStrict != VINF_SUCCESS)
             break;
 
@@ -493,9 +487,9 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
      * Note! Not using CPUM_IMPORT_EXTRN_RET here, to prioritize an rcStrict error
      *       status over import errors.
      */
-    if (pCtx->fExtrn)
+    if (pVCpu->cpum.GstCtx.fExtrn)
     {
-        int rcImport = NEMImportStateOnDemand(pVCpu, pCtx, pCtx->fExtrn);
+        int rcImport = NEMImportStateOnDemand(pVCpu, &pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.fExtrn);
         AssertReturn(RT_SUCCESS(rcImport) || RT_FAILURE_NP(rcStrict), rcImport);
     }
 #if defined(LOG_ENABLED) && defined(DEBUG)

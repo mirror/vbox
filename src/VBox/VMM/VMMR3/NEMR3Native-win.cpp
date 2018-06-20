@@ -2276,9 +2276,9 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 }
 
 
-bool nemR3NativeCanExecuteGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+bool nemR3NativeCanExecuteGuest(PVM pVM, PVMCPU pVCpu)
 {
-    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx);
+    NOREF(pVM); NOREF(pVCpu);
     return true;
 }
 

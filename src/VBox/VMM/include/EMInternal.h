@@ -398,11 +398,7 @@ typedef struct EMCPU
 #else
     RTR3PTR                 R3PtrPaddingNoRaw;
 #endif
-
-    /** Pointer to the guest CPUM state. (R3 Ptr)
-     * @deprecated Use pVCpu->cpum.GstCtx!  */
-    R3PTRTYPE(PCPUMCTX)     pCtx;
-
+    RTR3PTR                 R3PtrNullPadding; /**< Used to be pCtx. */
 #if GC_ARCH_BITS == 64
     RTGCPTR                 aPadding1;
 #endif
@@ -549,32 +545,27 @@ typedef EMCPU *PEMCPU;
 
 /** @} */
 
-int     emR3InitDbg(PVM pVM);
+int             emR3InitDbg(PVM pVM);
 
-int          emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
-VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
-int          emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
+int             emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
+VBOXSTRICTRC    emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
+int             emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
 
-int     emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
-int     emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
-int     emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
+EMSTATE         emR3Reschedule(PVM pVM, PVMCPU pVCpu);
+int             emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
+VBOXSTRICTRC    emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc);
 
-EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-int     emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
-VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc);
+int             emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu);
+int             emR3RawStep(PVM pVM, PVMCPU pVCpu);
 
-int     emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
-int     emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu);
-int     emR3RawStep(PVM pVM, PVMCPU pVCpu);
+VBOXSTRICTRC    emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
 
-VBOXSTRICTRC emR3NemSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
+int             emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations);
 
-int     emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations);
+bool            emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
 
-bool    emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
-
-VBOXSTRICTRC emR3ExecutePendingIoPortWrite(PVM pVM, PVMCPU pVCpu);
-VBOXSTRICTRC emR3ExecutePendingIoPortRead(PVM pVM, PVMCPU pVCpu);
+VBOXSTRICTRC    emR3ExecutePendingIoPortWrite(PVM pVM, PVMCPU pVCpu);
+VBOXSTRICTRC    emR3ExecutePendingIoPortRead(PVM pVM, PVMCPU pVCpu);
 
 RT_C_DECLS_END
 

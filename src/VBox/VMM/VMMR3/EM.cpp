@@ -193,7 +193,6 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVCpu->em.s.u64TimeSliceStart   = 0; /* paranoia */
         pVCpu->em.s.idxContinueExitRec  = UINT16_MAX;
 
-        pVCpu->em.s.pCtx                = CPUMQueryGuestCtxPtr(pVCpu);
 #ifdef VBOX_WITH_RAW_MODE
         if (VM_IS_RAW_MODE_ENABLED(pVM))
         {
@@ -1234,13 +1233,12 @@ DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
 static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
 #ifdef LOG_ENABLED
-    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
     uint32_t cpl = CPUMGetGuestCPL(pVCpu);
 
-    if (pCtx->eflags.Bits.u1VM)
-        Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs.Sel, pCtx->eip, pCtx->eflags.Bits.u1IF));
+    if (pVCpu->cpum.GstCtx.eflags.Bits.u1VM)
+        Log(("EMV86: %04X:%08X IF=%d\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.eflags.Bits.u1IF));
     else
-        Log(("EMR%d: %04X:%08X ESP=%08X IF=%d CR0=%x eflags=%x\n", cpl, pCtx->cs.Sel, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, pCtx->eflags.u));
+        Log(("EMR%d: %04X:%08X ESP=%08X IF=%d CR0=%x eflags=%x\n", cpl, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.eflags.Bits.u1IF, (uint32_t)pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.eflags.u));
 #endif
     STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatREMTotal, a);
 
@@ -1353,7 +1351,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
                 if (   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED)
                 {
-                    EMSTATE enmNewState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+                    EMSTATE enmNewState = emR3Reschedule(pVM, pVCpu);
                     if (enmNewState != EMSTATE_REM && enmNewState != EMSTATE_IEM_THEN_REM)
                     {
                         rc = VINF_EM_RESCHEDULE;
@@ -1410,7 +1408,7 @@ l_REMDoForcedActions:
          */
         if (!(++cLoops & 7))
         {
-            EMSTATE enmCheck = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+            EMSTATE enmCheck = emR3Reschedule(pVM, pVCpu);
             if (   enmCheck != EMSTATE_REM
                 && enmCheck != EMSTATE_IEM_THEN_REM)
                 return VINF_EM_RESCHEDULE;
@@ -1447,7 +1445,7 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
         DBGFR3PrgStep(pVCpu);
         DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "RSS");
         emR3RemStep(pVM, pVCpu);
-        if (emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx) != EMSTATE_REM)
+        if (emR3Reschedule(pVM, pVCpu) != EMSTATE_REM)
             break;
     }
     Log(("Single step END:\n"));
@@ -1494,7 +1492,7 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             return rcStrict;
         }
 
-        EMSTATE enmNewState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+        EMSTATE enmNewState = emR3Reschedule(pVM, pVCpu);
         if (enmNewState != EMSTATE_REM && enmNewState != EMSTATE_IEM_THEN_REM)
         {
             LogFlow(("emR3ExecuteIemThenRem: -> %d (%s) after %u instructions\n",
@@ -1527,9 +1525,8 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
  * @returns new EM state
  * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The cross context virtual CPU structure.
- * @param   pCtx    Pointer to the guest CPU context.
  */
-EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu)
 {
     /*
      * When forcing raw-mode execution, things are simple.
@@ -1553,17 +1550,17 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
 
-    X86EFLAGS EFlags = pCtx->eflags;
+    X86EFLAGS EFlags = pVCpu->cpum.GstCtx.eflags;
     if (!VM_IS_RAW_MODE_ENABLED(pVM))
     {
         if (EMIsHwVirtExecutionEnabled(pVM))
         {
             if (VM_IS_HM_ENABLED(pVM))
             {
-                if (HMR3CanExecuteGuest(pVM, pCtx))
+                if (HMR3CanExecuteGuest(pVM, &pVCpu->cpum.GstCtx))
                     return EMSTATE_HM;
             }
-            else if (NEMR3CanExecuteGuest(pVM, pVCpu, pCtx))
+            else if (NEMR3CanExecuteGuest(pVM, pVCpu))
                 return EMSTATE_NEM;
 
             /*
@@ -1596,14 +1593,14 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 # endif
 
     /** @todo check up the X86_CR0_AM flag in respect to raw mode!!! We're probably not emulating it right! */
-    uint32_t u32CR0 = pCtx->cr0;
+    uint32_t u32CR0 = pVCpu->cpum.GstCtx.cr0;
     if ((u32CR0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE))
     {
         //Log2(("raw mode refused: %s%s%s\n", (u32CR0 & X86_CR0_PG) ? "" : " !PG", (u32CR0 & X86_CR0_PE) ? "" : " !PE", (u32CR0 & X86_CR0_AM) ? "" : " !AM"));
         return EMSTATE_REM;
     }
 
-    if (pCtx->cr4 & X86_CR4_PAE)
+    if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
     {
         uint32_t u32Dummy, u32Features;
 
@@ -1612,8 +1609,8 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             return EMSTATE_REM;
     }
 
-    unsigned uSS = pCtx->ss.Sel;
-    if (    pCtx->eflags.Bits.u1VM
+    unsigned uSS = pVCpu->cpum.GstCtx.ss.Sel;
+    if (    pVCpu->cpum.GstCtx.eflags.Bits.u1VM
         ||  (uSS & X86_SEL_RPL) == 3)
     {
         if (!EMIsRawRing3Enabled(pVM))
@@ -1654,8 +1651,8 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         // Let's start with pure 32 bits ring 0 code first
         /** @todo What's pure 32-bit mode? flat? */
-        if (    !(pCtx->ss.Attr.n.u1DefBig)
-            ||  !(pCtx->cs.Attr.n.u1DefBig))
+        if (    !(pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
+            ||  !(pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig))
         {
             Log2(("raw r0 mode refused: SS/CS not 32bit\n"));
             return EMSTATE_REM;
@@ -1669,11 +1666,11 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
 
 # ifdef VBOX_WITH_RAW_MODE
-        if (PATMShouldUseRawMode(pVM, (RTGCPTR)pCtx->eip))
+        if (PATMShouldUseRawMode(pVM, (RTGCPTR)pVCpu->cpum.GstCtx.eip))
         {
             Log2(("raw r0 mode forced: patch code\n"));
 #  ifdef VBOX_WITH_SAFE_STR
-            Assert(pCtx->tr.Sel);
+            Assert(pVCpu->cpum.GstCtx.tr.Sel);
 #  endif
             return EMSTATE_RAW;
         }
@@ -1701,39 +1698,39 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Stale hidden selectors means raw-mode is unsafe (being very careful).
      */
-    if (pCtx->cs.fFlags & CPUMSELREG_FLAGS_STALE)
+    if (pVCpu->cpum.GstCtx.cs.fFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale CS\n"));
         return EMSTATE_REM;
     }
-    if (pCtx->ss.fFlags & CPUMSELREG_FLAGS_STALE)
+    if (pVCpu->cpum.GstCtx.ss.fFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale SS\n"));
         return EMSTATE_REM;
     }
-    if (pCtx->ds.fFlags & CPUMSELREG_FLAGS_STALE)
+    if (pVCpu->cpum.GstCtx.ds.fFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale DS\n"));
         return EMSTATE_REM;
     }
-    if (pCtx->es.fFlags & CPUMSELREG_FLAGS_STALE)
+    if (pVCpu->cpum.GstCtx.es.fFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale ES\n"));
         return EMSTATE_REM;
     }
-    if (pCtx->fs.fFlags & CPUMSELREG_FLAGS_STALE)
+    if (pVCpu->cpum.GstCtx.fs.fFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale FS\n"));
         return EMSTATE_REM;
     }
-    if (pCtx->gs.fFlags & CPUMSELREG_FLAGS_STALE)
+    if (pVCpu->cpum.GstCtx.gs.fFlags & CPUMSELREG_FLAGS_STALE)
     {
         Log2(("raw mode refused: stale GS\n"));
         return EMSTATE_REM;
     }
 
 # ifdef VBOX_WITH_SAFE_STR
-    if (pCtx->tr.Sel == 0)
+    if (pVCpu->cpum.GstCtx.tr.Sel == 0)
     {
         Log(("Raw mode refused -> TR=0\n"));
         return EMSTATE_REM;
@@ -1826,31 +1823,30 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the nested-guest CPU context.
  * @param   pfResched   Where to store whether a reschedule is required.
  * @param   pfInject    Where to store whether an interrupt was injected (and if
  *                      a wake up is pending).
  */
-static int emR3NstGstInjectIntr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfResched, bool *pfInject)
+static int emR3NstGstInjectIntr(PVMCPU pVCpu, bool *pfResched, bool *pfInject)
 {
     *pfResched = false;
     *pfInject  = false;
-    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
     {
         PVM pVM  = pVCpu->CTX_SUFF(pVM);
-        Assert(pCtx->hwvirt.fGif);
-        bool fVirtualGif = CPUMGetSvmNstGstVGif(pCtx);
+        Assert(pVCpu->cpum.GstCtx.hwvirt.fGif);
+        bool fVirtualGif = CPUMGetSvmNstGstVGif(&pVCpu->cpum.GstCtx);
 #ifdef VBOX_WITH_RAW_MODE
-        fVirtualGif     &= !PATMIsPatchGCAddr(pVM, pCtx->eip);
+        fVirtualGif     &= !PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip);
 #endif
         if (fVirtualGif)
         {
-            if (CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx))
+            if (CPUMCanSvmNstGstTakePhysIntr(pVCpu, &pVCpu->cpum.GstCtx))
             {
                 Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
                 if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
                 {
-                    if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_INTR))
+                    if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_INTR))
                     {
                         VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
                         if (RT_SUCCESS(rcStrict))
@@ -1888,9 +1884,9 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfResched, bo
             }
 
             if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
-                && CPUMCanSvmNstGstTakeVirtIntr(pVCpu, pCtx))
+                && CPUMCanSvmNstGstTakeVirtIntr(pVCpu, &pVCpu->cpum.GstCtx))
             {
-                if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_VINTR))
+                if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_VINTR))
                 {
                     VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
                     if (RT_SUCCESS(rcStrict))
@@ -1909,7 +1905,7 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfResched, bo
                 }
 
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
-                uint8_t const uNstGstVector = CPUMGetSvmNstGstInterrupt(pCtx);
+                uint8_t const uNstGstVector = CPUMGetSvmNstGstInterrupt(&pVCpu->cpum.GstCtx);
                 AssertMsg(uNstGstVector > 0 && uNstGstVector <= X86_XCPT_LAST, ("Invalid VINTR vector %#x\n", uNstGstVector));
                 TRPMAssertTrap(pVCpu, uNstGstVector, TRPM_HARDWARE_INT);
                 Log(("EM: Asserting nested-guest virt. hardware intr: %#x\n", uNstGstVector));
@@ -1922,7 +1918,7 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfResched, bo
         return VINF_SUCCESS;
     }
 
-    if (CPUMIsGuestInVmxNestedHwVirtMode(pCtx))
+    if (CPUMIsGuestInVmxNestedHwVirtMode(&pVCpu->cpum.GstCtx))
     { /** @todo Nested VMX. */ }
 
     /* Shouldn't really get here. */
@@ -2051,8 +2047,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             /** @todo check for 16 or 32 bits code! (D bit in the code selector) */
             Log(("Forced action VMCPU_FF_CSAM_SCAN_PAGE\n"));
             CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
-            PCPUMCTX pCtx = pVCpu->em.s.pCtx;
-            CSAMR3CheckCodeEx(pVM, pCtx, pCtx->eip);
+            CSAMR3CheckCodeEx(pVM, &pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.eip);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE);
         }
 #endif
@@ -2254,12 +2249,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 && !TRPMHasTrap(pVCpu)) /* an interrupt could already be scheduled for dispatching in the recompiler. */
             {
                 Assert(!HMR3IsEventPending(pVCpu));
-                PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-                if (CPUMIsGuestInNestedHwVirtMode(pCtx))
+                if (CPUMIsGuestInNestedHwVirtMode(&pVCpu->cpum.GstCtx))
                 {
                     bool fResched, fInject;
-                    rc2 = emR3NstGstInjectIntr(pVCpu, pCtx, &fResched, &fInject);
+                    rc2 = emR3NstGstInjectIntr(pVCpu, &fResched, &fInject);
                     if (fInject)
                     {
                         fWakeupPending = true;
@@ -2276,12 +2270,12 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RFLAGS);
                     if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-                        && pCtx->hwvirt.fGif
+                        && pVCpu->cpum.GstCtx.hwvirt.fGif
 #endif
 #ifdef VBOX_WITH_RAW_MODE
-                        && !PATMIsPatchGCAddr(pVM, pCtx->eip)
+                        && !PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip)
 #endif
-                        && pCtx->eflags.Bits.u1IF)
+                        && pVCpu->cpum.GstCtx.eflags.Bits.u1IF)
                     {
                         Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
                         /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
@@ -2506,7 +2500,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  || pVCpu->em.s.enmPrevState == EMSTATE_HALTED))
             pVCpu->em.s.enmState = pVCpu->em.s.enmPrevState;
         else
-            pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+            pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu);
         pVCpu->em.s.cIemThenRemInstructions = 0;
         Log(("EMR3ExecuteVM: enmState=%s\n", emR3GetStateName(pVCpu->em.s.enmState)));
 
@@ -2634,7 +2628,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESCHEDULE:
                 {
-                    EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+                    EMSTATE enmState = emR3Reschedule(pVM, pVCpu);
                     Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE: %d -> %d (%s)\n", enmOldState, enmState, emR3GetStateName(enmState)));
                     if (pVCpu->em.s.enmState != enmState && enmState == EMSTATE_IEM_THEN_REM)
                         pVCpu->em.s.cIemThenRemInstructions = 0;
@@ -2678,7 +2672,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 {
                     if (pVCpu->idCpu == 0)
                     {
-                        EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+                        EMSTATE enmState = emR3Reschedule(pVM, pVCpu);
                         Log2(("EMR3ExecuteVM: VINF_EM_RESET: %d -> %d (%s)\n", enmOldState, enmState, emR3GetStateName(enmState)));
                         if (pVCpu->em.s.enmState != enmState && enmState == EMSTATE_IEM_THEN_REM)
                             pVCpu->em.s.cIemThenRemInstructions = 0;

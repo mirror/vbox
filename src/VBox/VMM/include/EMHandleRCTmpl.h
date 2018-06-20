@@ -24,7 +24,7 @@
 
 
 /**
- * Process a subset of the raw-mode and hm return codes.
+ * Process a subset of the raw-mode, HM and NEM return codes.
  *
  * Since we have to share this with raw-mode single stepping, this inline
  * function has been created to avoid code duplication.
@@ -34,19 +34,16 @@
  *
  * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The cross context virtual CPU structure.
- * @param   pCtx    Pointer to the guest CPU context.
  * @param   rc      The return code.
  */
 #ifdef EMHANDLERC_WITH_PATM
-int emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+int emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
 #elif defined(EMHANDLERC_WITH_HM) || defined(DOXYGEN_RUNNING)
-int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
 #elif defined(EMHANDLERC_WITH_NEM)
-int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
 #endif
 {
-    NOREF(pCtx);
-
     switch (rc)
     {
         /*
@@ -76,7 +73,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             /*
              * Got a trap which needs dispatching.
              */
-            if (PATMR3IsInsidePatchJump(pVM, pCtx->eip, NULL))
+            if (PATMR3IsInsidePatchJump(pVM, pVCpu->cpum.GstCtx.eip, NULL))
             {
                 AssertReleaseMsgFailed(("FATAL ERROR: executing random instruction inside generated patch jump %08X\n", CPUMGetGuestEIP(pVCpu)));
                 rc = VERR_EM_RAW_PATCH_CONFLICT;
@@ -90,12 +87,12 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          */
         case VINF_PATM_PATCH_TRAP_PF:
         case VINF_PATM_PATCH_INT3:
-            rc = emR3RawPatchTrap(pVM, pVCpu, pCtx, rc);
+            rc = emR3RawPatchTrap(pVM, pVCpu, rc);
             break;
 
         case VINF_PATM_DUPLICATE_FUNCTION:
-            Assert(PATMIsPatchGCAddr(pVM, pCtx->eip));
-            rc = PATMR3DuplicateFunctionRequest(pVM, pCtx);
+            Assert(PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip));
+            rc = PATMR3DuplicateFunctionRequest(pVM, &pVCpu->cpum.GstCtx);
             AssertRC(rc);
             rc = VINF_SUCCESS;
             break;
@@ -117,7 +114,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          * Memory mapped I/O access - attempt to patch the instruction
          */
         case VINF_PATM_HC_MMIO_PATCH_READ:
-            rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
+            rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pVCpu->cpum.GstCtx.eip),
                                       PATMFL_MMIO_ACCESS
                                     | (CPUMGetGuestCodeBits(pVCpu) == 32 ? PATMFL_CODE32 : 0));
             if (RT_FAILURE(rc))
@@ -166,7 +163,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          */
         case VINF_PGM_CHANGE_MODE:
             CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
-            rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
+            rc = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
             if (rc == VINF_SUCCESS)
                 rc = VINF_EM_RESCHEDULE;
             AssertMsg(RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST), ("%Rrc\n", rc));
@@ -187,7 +184,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_INTERRUPT_PENDING:
         case VINF_EM_RAW_RING_SWITCH_INT:
             Assert(TRPMHasTrap(pVCpu));
-            Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
+            Assert(!PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip));
 
             if (TRPMHasTrap(pVCpu))
             {
@@ -259,11 +256,11 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          * (MM)IO intensive code block detected; fall back to the recompiler for better performance
          */
         case VINF_EM_RAW_EMULATE_IO_BLOCK:
-            rc = HMR3EmulateIoBlock(pVM, pCtx);
+            rc = HMR3EmulateIoBlock(pVM, &pVCpu->cpum.GstCtx);
             break;
 
         case VINF_EM_HM_PATCH_TPR_INSTR:
-            rc = HMR3PatchTprInstr(pVM, pVCpu, pCtx);
+            rc = HMR3PatchTprInstr(pVM, pVCpu, &pVCpu->cpum.GstCtx);
             break;
 #endif
 
@@ -312,9 +309,9 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_STALE_SELECTOR:
         case VINF_EM_RAW_IRET_TRAP:
             /* We will not go to the recompiler if EIP points to patch code. */
-            if (PATMIsPatchGCAddr(pVM, pCtx->eip))
+            if (PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip))
             {
-                pCtx->eip = PATMR3PatchToGCPtr(pVM, (RTGCPTR)pCtx->eip, 0);
+                pVCpu->cpum.GstCtx.eip = PATMR3PatchToGCPtr(pVM, (RTGCPTR)pVCpu->cpum.GstCtx.eip, 0);
             }
             LogFlow(("emR3RawHandleRC: %Rrc -> %Rrc\n", rc, VINF_EM_RESCHEDULE_REM));
             rc = VINF_EM_RESCHEDULE_REM;

@@ -363,13 +363,13 @@ VMMR3_INT_DECL(VBOXSTRICTRC) NEMR3RunGC(PVM pVM, PVMCPU pVCpu)
 }
 
 
-VMMR3_INT_DECL(bool) NEMR3CanExecuteGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR3_INT_DECL(bool) NEMR3CanExecuteGuest(PVM pVM, PVMCPU pVCpu)
 {
     Assert(VM_IS_NEM_ENABLED(pVM));
 #ifdef VBOX_WITH_NATIVE_NEM
-    return nemR3NativeCanExecuteGuest(pVM, pVCpu, pCtx);
+    return nemR3NativeCanExecuteGuest(pVM, pVCpu);
 #else
-    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx);
+    NOREF(pVM); NOREF(pVCpu);
     return false;
 #endif
 }

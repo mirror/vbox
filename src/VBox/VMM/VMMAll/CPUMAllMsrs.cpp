@@ -6332,6 +6332,7 @@ VMM_INT_DECL(void) CPUMSetGuestTscAux(PVMCPU pVCpu, uint64_t uValue)
     pVCpu->cpum.s.GuestMsrs.msr.TscAux = uValue;
 }
 
+
 /**
  * Fast way for HM to access the IA32_SPEC_CTRL register.
  *
