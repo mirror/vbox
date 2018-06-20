@@ -11916,7 +11916,7 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-#if 0 /** @todo Needs testing. @bugref{6973} */
+#if 1 /** @todo Needs testing. @bugref{6973} */
     int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);      /* Needed for CPL < 0 only, really. */
     rc    |= hmR0VmxSaveGuestRegsForIemExec(pVCpu, pMixedCtx, false /*fMemory*/, false /*fNeedRsp*/);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -11928,8 +11928,9 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
     }
-    else if (rcStrict == VINF_EM_RESCHEDULE)
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
         rcStrict = VINF_SUCCESS;
+    HMCPU_CF_SET(pVCpu, rcStrict != VINF_IEM_RAISED_XCPT ? HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS : HM_CHANGED_ALL_GUEST);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
     return rcStrict;
 #else
@@ -11960,7 +11961,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-#if 0 /** @todo Needs testing. @bugref{6973} */
+#if 1 /** @todo Needs testing. @bugref{6973} */
     int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);      /* Needed for CPL < 0 only, really. */
     rc    |= hmR0VmxSaveGuestRegsForIemExec(pVCpu, pMixedCtx, false /*fMemory*/, false /*fNeedRsp*/);
     rc    |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);  /* For MSR_K8_TSC_AUX */
@@ -11973,8 +11974,9 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
     }
-    else if (rcStrict == VINF_EM_RESCHEDULE)
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
         rcStrict = VINF_SUCCESS;
+    HMCPU_CF_SET(pVCpu, rcStrict != VINF_IEM_RAISED_XCPT ? HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS : HM_CHANGED_ALL_GUEST);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtscp);
     return rcStrict;
 #else
