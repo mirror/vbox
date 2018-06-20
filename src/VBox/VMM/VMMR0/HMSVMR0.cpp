@@ -6260,7 +6260,6 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
         pSvmTransient->fUpdateTscOffsetting = true;
     else if (rcStrict == VINF_EM_RESCHEDULE)
         rcStrict = VINF_SUCCESS;
-    HMSVM_UPDATE_INTR_SHADOW(pVCpu, pCtx);
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -6295,7 +6294,6 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         pSvmTransient->fUpdateTscOffsetting = true;
     else if (rcStrict == VINF_EM_RESCHEDULE)
         rcStrict = VINF_SUCCESS;
-    HMSVM_UPDATE_INTR_SHADOW(pVCpu, pCtx);
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtscp);
     return VBOXSTRICTRC_TODO(rcStrict);
