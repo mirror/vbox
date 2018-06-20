@@ -121,11 +121,11 @@ public:
     };
 
     /** VM launch running options. */
-    enum StartRunning
+    enum LaunchRunning
     {
-        StartRunning_Default, /**< Default (depends on debug settings). */
-        StartRunning_No,      /**< Start the VM paused. */
-        StartRunning_Yes      /**< Start the VM running. */
+        LaunchRunning_Default, /**< Default (depends on debug settings). */
+        LaunchRunning_No,      /**< Start the VM paused. */
+        LaunchRunning_Yes      /**< Start the VM running. */
     };
 
     /** Returns VBoxGlobal instance. */
@@ -143,7 +143,7 @@ public:
     /** @name Common stuff.
      * @{ */
         /** Returns whether VBoxGlobal cleanup is in progress. */
-        bool isCleaningUp() { return s_fCleanupInProgress; }
+        bool isCleaningUp() { return s_fCleaningUp; }
 
         /** Returns Qt runtime version string. */
         static QString qtRTVersionString();
@@ -155,7 +155,7 @@ public:
         static uint qtCTVersion();
 
         /** Returns whether VBoxGlobal instance is properly initialized. */
-        bool isValid() { return mValid; }
+        bool isValid() { return m_fValid; }
 
         /** Returns VBox version string. */
         QString vboxVersionString() const;
@@ -168,7 +168,7 @@ public:
         /** Mac OS X: Returns #MacOSXRelease determined by <i>uname</i> call. */
         static MacOSXRelease determineOsRelease();
         /** Mac OS X: Returns #MacOSXRelease determined during VBoxGlobal prepare routine. */
-        MacOSXRelease osRelease() const { return m_osRelease; }
+        MacOSXRelease osRelease() const { return m_enmMacOSVersion; }
 #endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WS_X11
@@ -179,9 +179,9 @@ public:
 #endif /* VBOX_WS_X11 */
 
         /** Returns whether branding is active. */
-        bool brandingIsActive (bool aForce = false);
+        bool brandingIsActive (bool fForce = false);
         /** Returns value for certain branding @a strKey from custom.ini file. */
-        QString brandingGetKey (QString aKey);
+        QString brandingGetKey (QString strKey);
     /** @} */
 
     /** @name Process arguments stuff.
@@ -193,24 +193,24 @@ public:
         bool processArgs();
 
         /** Returns the URL arguments list. */
-        QList<QUrl> &argUrlList() { return m_ArgUrlList; }
+        QList<QUrl> &argUrlList() { return m_listArgUrls; }
 
         /** Returns the --startvm option value (managed VM id). */
-        QString managedVMUuid() const { return vmUuid; }
+        QString managedVMUuid() const { return m_strManagedVMId; }
         /** Returns whether this is VM console process. */
-        bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
+        bool isVMConsoleProcess() const { return !m_strManagedVMId.isNull(); }
         /** Returns the --separate option value (whether GUI process is separate from VM process). */
         bool isSeparateProcess() const { return m_fSeparateProcess; }
         /** Returns the --no-startvm-errormsgbox option value (whether startup VM errors are disabled). */
-        bool showStartVMErrors() const { return mShowStartVMErrors; }
+        bool showStartVMErrors() const { return m_fShowStartVMErrors; }
 
         /** Returns the --aggressive-caching / --no-aggressive-caching option value (whether medium-enumeration is required). */
-        bool agressiveCaching() const { return mAgressiveCaching; }
+        bool agressiveCaching() const { return m_fAgressiveCaching; }
 
         /** Returns the --restore-current option value (whether we should restore current snapshot before VM started). */
-        bool shouldRestoreCurrentSnapshot() const { return mRestoreCurrentSnapshot; }
+        bool shouldRestoreCurrentSnapshot() const { return m_fRestoreCurrentSnapshot; }
         /** Defines whether we should fRestore current snapshot before VM started. */
-        void setShouldRestoreCurrentSnapshot(bool fRestore) { mRestoreCurrentSnapshot = fRestore; }
+        void setShouldRestoreCurrentSnapshot(bool fRestore) { m_fRestoreCurrentSnapshot = fRestore; }
 
         /** Returns the --fda option value (whether we have floppy image). */
         bool hasFloppyImageToMount() const { return !m_strFloppyImage.isEmpty(); }
@@ -222,19 +222,19 @@ public:
         QString const &getDvdImage() const { return m_strDvdImage; }
 
         /** Returns the --disable-patm option value. */
-        bool isPatmDisabled() const { return mDisablePatm; }
+        bool isPatmDisabled() const { return m_fDisablePatm; }
         /** Returns the --disable-csam option value. */
-        bool isCsamDisabled() const { return mDisableCsam; }
+        bool isCsamDisabled() const { return m_fDisableCsam; }
         /** Returns the --recompile-supervisor option value. */
-        bool isSupervisorCodeExecedRecompiled() const { return mRecompileSupervisor; }
+        bool isSupervisorCodeExecedRecompiled() const { return m_fRecompileSupervisor; }
         /** Returns the --recompile-user option value. */
-        bool isUserCodeExecedRecompiled()       const { return mRecompileUser; }
+        bool isUserCodeExecedRecompiled()       const { return m_fRecompileUser; }
         /** Returns the --execute-all-in-iem option value. */
-        bool areWeToExecuteAllInIem()           const { return mExecuteAllInIem; }
+        bool areWeToExecuteAllInIem()           const { return m_fExecuteAllInIem; }
         /** Returns whether --warp-factor option value is equal to 100. */
-        bool isDefaultWarpPct() const { return mWarpPct == 100; }
+        bool isDefaultWarpPct() const { return m_uWarpPct == 100; }
         /** Returns the --warp-factor option value. */
-        uint32_t getWarpPct()       const { return mWarpPct; }
+        uint32_t getWarpPct()       const { return m_uWarpPct; }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /** Holds whether the debugger should be accessible. */
@@ -293,7 +293,7 @@ public:
         /** Loads the language by language ID.
           * @param  strLangId  Brings the language ID in in form of xx_YY.
           *                    QString() means the system default language. */
-        static void loadLanguage (const QString &aLangId = QString::null);
+        static void loadLanguage (const QString &strLangId = QString());
 
         /** Returns tr("%n year(s)"). */
         static QString yearsToString(uint32_t cVal);
@@ -313,12 +313,12 @@ public:
         /** Returns the regexp string that defines the format of the human-readable size representation. */
         static QString sizeRegexp();
         /** Parses the given size strText and returns the size value in bytes. */
-        static quint64 parseSize (const QString &);
+        static quint64 parseSize (const QString &strText);
         /** Formats the given @a uSize value in bytes to a human readable string.
           * @param  uSize     Brings the size value in bytes.
           * @param  enmMode   Brings the conversion mode.
           * @param  cDecimal  Brings the number of decimal digits in result. */
-        static QString formatSize (quint64 aSize, uint aDecimal = 2, FormatSize aMode = FormatSize_Round);
+        static QString formatSize (quint64 uSize, uint cDecimal = 2, FormatSize enmMode = FormatSize_Round);
 
         /** Returns full medium-format name for the given @a strBaseMediumFormatName. */
         static QString fullMediumFormatName(const QString &strBaseMediumFormatName);
@@ -327,27 +327,27 @@ public:
         QStringList COMPortNames() const;
         /** Returns the name of the standard COM port corresponding to the given parameters,
           * or "User-defined" (which is also returned when both @a uIRQ and @a uIOBase are 0). */
-        QString toCOMPortName (ulong aIRQ, ulong aIOBase) const;
+        QString toCOMPortName (ulong uIRQ, ulong uIOBase) const;
         /** Returns port parameters corresponding to the given standard COM name.
           * Returns @c true on success, or @c false if the given port name is not one of the standard names (i.e. "COMx"). */
-        bool toCOMPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
+        bool toCOMPortNumbers (const QString &strName, ulong &uIRQ, ulong &uIOBase) const;
         /** Returns the list of the standard LPT port names (i.e. "LPTx"). */
         QStringList LPTPortNames() const;
         /** Returns the name of the standard LPT port corresponding to the given parameters,
           * or "User-defined" (which is also returned when both @a uIRQ and @a uIOBase are 0). */
-        QString toLPTPortName (ulong aIRQ, ulong aIOBase) const;
+        QString toLPTPortName (ulong uIRQ, ulong uIOBase) const;
         /** Returns port parameters corresponding to the given standard LPT name.
           * Returns @c true on success, or @c false if the given port name is not one of the standard names (i.e. "LPTx"). */
-        bool toLPTPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
+        bool toLPTPortNumbers (const QString &strName, ulong &uIRQ, ulong &uIOBase) const;
 
         /** Reformats the input @a strText to highlight it. */
-        static QString highlight (const QString &aStr, bool aToolTip = false);
+        static QString highlight (const QString &strText, bool fToolTip = false);
         /** Reformats the input @a strText to emphasize it. */
-        static QString emphasize (const QString &aStr);
+        static QString emphasize (const QString &strText);
         /** Removes the first occurrence of the accelerator mark (the ampersand symbol) from the given @a strText. */
-        static QString removeAccelMark (const QString &aText);
+        static QString removeAccelMark (const QString &strText);
         /** Inserts a passed @a strKey into action @a strText. */
-        static QString insertKeyToActionText (const QString &aText, const QString &aKey);
+        static QString insertKeyToActionText (const QString &strText, const QString &strKey);
     /** @} */
 
     /** @name File-system stuff.
@@ -362,17 +362,17 @@ public:
     /** @name Window/widget geometry stuff.
      * @{ */
         /** Search position for @a rectangle to make sure it is fully contained @a boundRegion. */
-        static QRect normalizeGeometry (const QRect &aRectangle, const QRegion &aBoundRegion,
-                                        bool aCanResize = true);
+        static QRect normalizeGeometry (const QRect &rectangle, const QRegion &boundRegion,
+                                        bool fCanResize = true);
         /** Ensures that the given rectangle @a rectangle is fully contained within the region @a boundRegion. */
-        static QRect getNormalized (const QRect &aRectangle, const QRegion &aBoundRegion,
-                                    bool aCanResize = true);
+        static QRect getNormalized (const QRect &rectangle, const QRegion &boundRegion,
+                                    bool fCanResize = true);
         /** Returns the flipped (transposed) @a region. */
-        static QRegion flip (const QRegion &aRegion);
+        static QRegion flip (const QRegion &region);
 
         /** Aligns the center of @a pWidget with the center of @a pRelative. */
-        static void centerWidget (QWidget *aWidget, QWidget *aRelative,
-                                  bool aCanResize = true);
+        static void centerWidget (QWidget *pWidget, QWidget *pRelative,
+                                  bool fCanResize = true);
 
         /** Assigns top-level @a pWidget geometry passed as QRect coordinates.
           * @note  Take into account that this request may fail on X11. */
@@ -382,7 +382,7 @@ public:
         static void setTopLevelGeometry(QWidget *pWidget, const QRect &rect);
 
         /** Activates the specified window with given @a wId. Can @a fSwitchDesktop if requested. */
-        static bool activateWindow (WId aWId, bool aSwitchDesktop = true);
+        static bool activateWindow (WId wId, bool fSwitchDesktop = true);
 
 #ifdef VBOX_WS_X11
         /** X11: Test whether the current window manager supports full screen mode. */
@@ -417,11 +417,11 @@ public:
         void comTokenUnlock() { return m_comCleanupProtectionToken.unlock(); }
 
         /** Returns the copy of VirtualBox client wrapper. */
-        CVirtualBoxClient virtualBoxClient() const { return m_client; }
+        CVirtualBoxClient virtualBoxClient() const { return m_comVBoxClient; }
         /** Returns the copy of VirtualBox object wrapper. */
-        CVirtualBox virtualBox() const { return m_vbox; }
+        CVirtualBox virtualBox() const { return m_comVBox; }
         /** Returns the copy of VirtualBox host-object wrapper. */
-        CHost host() const { return m_host; }
+        CHost host() const { return m_comHost; }
         /** Returns the symbolic VirtualBox home-folder representation. */
         QString homeFolder() const { return m_strHomeFolder; }
 
@@ -436,31 +436,31 @@ public:
         QList <CGuestOSType> vmGuestOSFamilyList() const;
         /** Returns the list of all guest OS types, queried from
           * IVirtualBox corresponding to passed family id. */
-        QList <CGuestOSType> vmGuestOSTypeList (const QString &aFamilyId) const;
+        QList <CGuestOSType> vmGuestOSTypeList (const QString &strFamilyId) const;
 
         /** Returns the guest OS type object corresponding to the given type id of list
           * containing OS types related to OS family determined by family id attribute.
           * If the index is invalid a null object is returned. */
-        CGuestOSType vmGuestOSType (const QString &aTypeId,
-                                    const QString &aFamilyId = QString::null) const;
+        CGuestOSType vmGuestOSType (const QString &strTypeId,
+                                    const QString &strFamilyId = QString()) const;
         /** Returns the description corresponding to the given guest OS type id. */
-        QString vmGuestOSTypeDescription (const QString &aTypeId) const;
+        QString vmGuestOSTypeDescription (const QString &strTypeId) const;
 
         /** Returns whether guest type with passed @a strOSTypeId is one of DOS types. */
-        static bool isDOSType (const QString &aOSTypeId);
+        static bool isDOSType (const QString &strOSTypeId);
     /** @} */
 
     /** @name COM: Virtual Machine stuff.
      * @{ */
         /** Switches to certain @a comMachine. */
-        bool switchToMachine(CMachine &machine);
+        bool switchToMachine(CMachine &comMachine);
         /** Launches certain @a comMachine in specified @a enmLaunchMode. */
-        bool launchMachine(CMachine &machine, LaunchMode enmLaunchMode = LaunchMode_Default);
+        bool launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode = LaunchMode_Default);
 
         /** Opens session of certain @a enmLockType for VM with certain @a strId. */
-        CSession openSession(const QString &aId, KLockType aLockType = KLockType_Write);
+        CSession openSession(const QString &strId, KLockType enmLockType = KLockType_Write);
         /** Opens session of KLockType_Shared type for VM with certain @a strId. */
-        CSession openExistingSession(const QString &aId) { return openSession(aId, KLockType_Shared); }
+        CSession openExistingSession(const QString &strId) { return openSession(strId, KLockType_Shared); }
     /** @} */
 
     /** @name COM: Virtual Media stuff.
@@ -483,7 +483,7 @@ public:
         /** Returns enumerated medium IDs. */
         QList<QString> mediumIDs() const;
         /** Creates medium on the basis of passed @a guiMedium description. */
-        void createMedium(const UIMedium &medium);
+        void createMedium(const UIMedium &guiMedium);
         /** Deletes medium with certain @a strMediumID. */
         void deleteMedium(const QString &strMediumID);
 
@@ -492,38 +492,38 @@ public:
           * @param  pParent            Brings the dialog parent.
           * @param  strMediumLocation  Brings the file path to load medium from.
           * @param  pParent            Brings the dialog parent. */
-        QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
+        QString openMedium(UIMediumType enmMediumType, QString strMediumLocation, QWidget *pParent = 0);
 
         /** Opens external medium using file-open dialog.
           * @param  enmMediumType     Brings the medium type.
           * @param  pParent           Brings the dialog parent.
           * @param  strDefaultFolder  Brings the folder to browse for medium.
           * @param  fUseLastFolder    Brings whether we should propose to use last used folder. */
-        QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
+        QString openMediumWithFileOpenDialog(UIMediumType enmMediumType, QWidget *pParent = 0,
                                              const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
 
         /** Creates a VISO using the file-open dialog.
           * @param  pParent    Brings the dialog parent.
           * @param  strFolder  Brings the folder to browse for VISO file contents. */
-        QString createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strMachineFolder);
+        QString createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strFolder);
 
         /** Prepares storage menu according passed parameters.
           * @param  menu               Brings the #QMenu to be prepared.
           * @param  pListener          Brings the listener #QObject, this @a menu being prepared for.
           * @param  pszSlotName        Brings the name of the SLOT in the @a pListener above, this menu will be handled with.
-          * @param  machine            Brings the #CMachine object, this @a menu being prepared for.
+          * @param  comMachine         Brings the #CMachine object, this @a menu being prepared for.
           * @param  strControllerName  Brings the name of the #CStorageController in the @a machine above.
           * @param  storageSlot        Brings the #StorageSlot of the storage controller with @a strControllerName above. */
         void prepareStorageMenu(QMenu &menu,
                                 QObject *pListener, const char *pszSlotName,
-                                const CMachine &machine, const QString &strControllerName, const StorageSlot &storageSlot);
+                                const CMachine &comMachine, const QString &strControllerName, const StorageSlot &storageSlot);
         /** Updates @a comConstMachine storage with data described by @a target. */
-        void updateMachineStorage(const CMachine &constMachine, const UIMediumTarget &target);
+        void updateMachineStorage(const CMachine &comConstMachine, const UIMediumTarget &target);
 
         /** Generates details for passed @a comMedium.
           * @param  fPredictDiff  Brings whether medium will be marked differencing on attaching.
           * @param  fUseHtml      Brings whether HTML subsets should be used in the generated output. */
-        QString details(const CMedium &medium, bool fPredictDiff, bool fUseHtml = true);
+        QString details(const CMedium &comMedium, bool fPredictDiff, bool fUseHtml = true);
     /** @} */
 
     /** @name COM: USB stuff.
@@ -534,13 +534,13 @@ public:
 #endif /* RT_OS_LINUX */
 
         /** Generates details for passed USB @a comDevice. */
-        QString details (const CUSBDevice &aDevice) const;
+        QString details(const CUSBDevice &comDevice) const;
         /** Generates tool-tip for passed USB @a comDevice. */
-        QString toolTip (const CUSBDevice &aDevice) const;
+        QString toolTip(const CUSBDevice &comDevice) const;
         /** Generates tool-tip for passed USB @a comFilter. */
-        QString toolTip (const CUSBDeviceFilter &aFilter) const;
+        QString toolTip(const CUSBDeviceFilter &comFilter) const;
         /** Generates tool-tip for passed USB @a comWebcam. */
-        QString toolTip(const CHostVideoInputDevice &webcam) const;
+        QString toolTip(const CHostVideoInputDevice &comWebcam) const;
     /** @} */
 
     /** @name COM: Extension Pack stuff.
@@ -597,17 +597,17 @@ public:
         QPixmap vmGuestOSTypePixmapDefault(const QString &strOSTypeID, QSize *pLogicalSize = 0) const;
 
         /** Returns default icon of certain @a enmType. */
-        QIcon icon(QFileIconProvider::IconType type) { return m_globalIconProvider.icon(type); }
+        QIcon icon(QFileIconProvider::IconType enmType) { return m_fileIconProvider.icon(enmType); }
         /** Returns file icon fetched from passed file @a info. */
-        QIcon icon(const QFileInfo &info) { return m_globalIconProvider.icon(info); }
+        QIcon icon(const QFileInfo &info) { return m_fileIconProvider.icon(info); }
 
         /** Returns cached default warning pixmap. */
-        QPixmap warningIcon() const { return mWarningIcon; }
+        QPixmap warningIcon() const { return m_pixWarning; }
         /** Returns cached default error pixmap. */
-        QPixmap errorIcon() const { return mErrorIcon; }
+        QPixmap errorIcon() const { return m_pixError; }
 
         /** Joins two pixmaps horizontally with 2px space between them and returns the result. */
-        static QPixmap joinPixmaps (const QPixmap &aPM1, const QPixmap &aPM2);
+        static QPixmap joinPixmaps (const QPixmap &pixmap1, const QPixmap &pixmap2);
     /** @} */
 
 public slots:
@@ -615,19 +615,19 @@ public slots:
     /** @name Process arguments stuff.
      * @{ */
         /** Opens the specified URL using OS/Desktop capabilities. */
-        bool openURL (const QString &aURL);
+        bool openURL (const QString &strURL);
     /** @} */
 
     /** @name Localization stuff.
      * @{ */
         /** Handles language change to new @a strLanguage. */
-        void sltGUILanguageChange(QString strLang);
+        void sltGUILanguageChange(QString strLanguage);
     /** @} */
 
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    bool eventFilter (QObject *, QEvent *);
+    bool eventFilter (QObject *pObject, QEvent *pEvent);
 
     /** Handles translation event. */
     void retranslateUi();
@@ -704,7 +704,7 @@ private:
     /** @name Common stuff.
      * @{ */
         /** Holds whether VBoxGlobal cleanup is in progress. */
-        static bool        s_fCleanupInProgress;
+        static bool        s_fCleaningUp;
 
         /** Holds the currently loaded language ID. */
         static QString     s_strLoadedLanguageId;
@@ -715,11 +715,11 @@ private:
 #endif
 
         /** Holds whether VBoxGlobal instance is properly initialized. */
-        bool mValid;
+        bool m_fValid;
 
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Holds the #MacOSXRelease determined using <i>uname</i> call. */
-        MacOSXRelease m_osRelease;
+        MacOSXRelease m_enmMacOSVersion;
 #endif /* VBOX_WS_MAC */
 
 #ifdef VBOX_WS_X11
@@ -730,26 +730,26 @@ private:
 #endif /* VBOX_WS_X11 */
 
         /** Holds the VBox branding config file path. */
-        QString mBrandingConfig;
+        QString m_strBrandingConfigFilePath;
     /** @} */
 
     /** @name Process arguments stuff.
      * @{ */
         /** Holds the URL arguments list. */
-        QList<QUrl> m_ArgUrlList;
+        QList<QUrl> m_listArgUrls;
 
         /** Holds the --startvm option value (managed VM id). */
-        QString vmUuid;
+        QString m_strManagedVMId;
         /** Holds the --separate option value (whether GUI process is separate from VM process). */
         bool m_fSeparateProcess;
         /** Holds the --no-startvm-errormsgbox option value (whether startup VM errors are disabled). */
-        bool mShowStartVMErrors;
+        bool m_fShowStartVMErrors;
 
         /** Holds the --aggressive-caching / --no-aggressive-caching option value (whether medium-enumeration is required). */
-        bool mAgressiveCaching;
+        bool m_fAgressiveCaching;
 
         /** Holds the --restore-current option value. */
-        bool mRestoreCurrentSnapshot;
+        bool m_fRestoreCurrentSnapshot;
 
         /** Holds the --fda option value (floppy image). */
         QString m_strFloppyImage;
@@ -757,17 +757,17 @@ private:
         QString m_strDvdImage;
 
         /** Holds the --disable-patm option value. */
-        bool mDisablePatm;
+        bool m_fDisablePatm;
         /** Holds the --disable-csam option value. */
-        bool mDisableCsam;
+        bool m_fDisableCsam;
         /** Holds the --recompile-supervisor option value. */
-        bool mRecompileSupervisor;
+        bool m_fRecompileSupervisor;
         /** Holds the --recompile-user option value. */
-        bool mRecompileUser;
+        bool m_fRecompileUser;
         /** Holds the --execute-all-in-iem option value. */
-        bool mExecuteAllInIem;
+        bool m_fExecuteAllInIem;
         /** Holds the --warp-factor option value. */
-        uint32_t mWarpPct;
+        uint32_t m_uWarpPct;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /** Holds whether the debugger should be accessible. */
@@ -782,21 +782,21 @@ private:
         RTLDRMOD m_hVBoxDbg;
 
         /** Holds whether --start-running, --start-paused or nothing was given. */
-        enum StartRunning m_enmStartRunning;
+        enum LaunchRunning m_enmLaunchRunning;
 #endif
 
         /** Holds the --settingspw option value. */
-        char mSettingsPw[256];
+        char m_astrSettingsPw[256];
         /** Holds the --settingspwfile option value. */
-        bool mSettingsPwSet;
+        bool m_fSettingsPwSet;
 
 #ifdef VBOX_GUI_WITH_PIDFILE
         /** Holds the --pidfile option value (application PID file path). */
-        QString m_strPidfile;
+        QString m_strPidFile;
 #endif
 
         /** @todo remove */
-        QString mUserDefinedPortName;
+        QString m_strUserDefinedPortName;
     /** @} */
 
     /** @name COM stuff.
@@ -805,11 +805,11 @@ private:
         QReadWriteLock m_comCleanupProtectionToken;
 
         /** Holds the instance of VirtualBox client wrapper. */
-        CVirtualBoxClient m_client;
+        CVirtualBoxClient m_comVBoxClient;
         /** Holds the copy of VirtualBox object wrapper. */
-        CVirtualBox m_vbox;
+        CVirtualBox m_comVBox;
         /** Holds the copy of VirtualBox host-object wrapper. */
-        CHost m_host;
+        CHost m_comHost;
         /** Holds the symbolic VirtualBox home-folder representation. */
         QString m_strHomeFolder;
 
@@ -827,7 +827,7 @@ private:
     /** @name Display stuff.
      * @{ */
         /** Holds whether 3D is available. */
-        int m3DAvailable;
+        int m_i3DAvailable;
     /** @} */
 
     /** @name Thread stuff.
@@ -842,18 +842,18 @@ private:
         UIIconPoolGeneral *m_pIconPool;
 
         /** Holds the global file icon provider instance. */
-        QFileIconProvider m_globalIconProvider;
+        QFileIconProvider m_fileIconProvider;
 
         /** Holds the warning pixmap. */
-        QPixmap mWarningIcon;
+        QPixmap m_pixWarning;
         /** Holds the error pixmap. */
-        QPixmap mErrorIcon;
+        QPixmap m_pixError;
     /** @} */
 
     /** @name Media related stuff.
      * @{ */
         /** Holds the medium enumerator cleanup protection token. */
-        mutable QReadWriteLock m_mediumEnumeratorDtorRwLock;
+        mutable QReadWriteLock m_meCleanupProtectionToken;
 
         /** Holds the medium enumerator. */
         UIMediumEnumerator *m_pMediumEnumerator;
