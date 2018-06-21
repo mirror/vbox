@@ -1066,8 +1066,10 @@ typedef struct SVMNESTEDVMCBCACHE
     bool                fNestedPaging;
     /** Cache of the LBR virtualization bit. */
     bool                fLbrVirt;
+    /** Whether the VMCB is cached by HM.  */
+    bool                fCacheValid;
     /** Alignment. */
-    bool                afPadding0[5];
+    bool                afPadding0[4];
 } SVMNESTEDVMCBCACHE;
 #pragma pack()
 /** Pointer to the SVMNESTEDVMCBCACHE structure. */
@@ -1075,10 +1077,6 @@ typedef SVMNESTEDVMCBCACHE *PSVMNESTEDVMCBCACHE;
 /** Pointer to a const SVMNESTEDVMCBCACHE structure. */
 typedef const SVMNESTEDVMCBCACHE *PCSVMNESTEDVMCBCACHE;
 AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
-
-#ifdef IN_RING0
-VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
-#endif /* IN_RING0 */
 
 /**
  * Segment attribute conversion between CPU and AMD-V VMCB format.
@@ -1139,15 +1137,17 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
  * These functions are only here because the inline functions in cpum.h calls them.
  * Don't add any more functions here unless there is no other option.
  */
-VMM_INT_DECL(bool)     HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fIntercept);
-VMM_INT_DECL(bool)     HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr);
-VMM_INT_DECL(bool)     HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr);
-VMM_INT_DECL(bool)     HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr);
-VMM_INT_DECL(bool)     HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr);
-VMM_INT_DECL(bool)     HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector);
-VMM_INT_DECL(bool)     HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool)     HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)     HMHasGuestSvmVmcbCached(PVMCPU pVCpu);
+VMM_INT_DECL(bool)     HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, uint64_t fIntercept);
+VMM_INT_DECL(bool)     HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, uint8_t uCr);
+VMM_INT_DECL(bool)     HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, uint8_t uCr);
+VMM_INT_DECL(bool)     HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, uint8_t uDr);
+VMM_INT_DECL(bool)     HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, uint8_t uDr);
+VMM_INT_DECL(bool)     HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, uint8_t uVector);
+VMM_INT_DECL(bool)     HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu);
+VMM_INT_DECL(bool)     HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu);
+VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PVMCPU pVCpu);
+
 /** @} */
 
 #endif

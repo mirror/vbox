@@ -142,8 +142,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t 
     if (   CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu))
         || uExitCode == SVM_EXIT_INVALID)
     {
-        LogFlow(("iemSvmVmexit: CS:RIP=%04x:%08RX64 uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", pVCpu->cpum.GstCtx.cs.Sel,
-                 pVCpu->cpum.GstCtx.rip, uExitCode, uExitInfo1, uExitInfo2));
+        LogFlow(("iemSvmVmexit: CS:RIP=%04x:%08RX64 uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n",
+                 pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uExitCode, uExitInfo1, uExitInfo2));
 
         /*
          * Disable the global interrupt flag to prevent interrupts during the 'atomic' world switch.
@@ -823,7 +823,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPh
              *        NRIP for the nested-guest to calculate the instruction length
              *        below. */
             LogFlow(("iemSvmVmrun: Injecting event: %04x:%08RX64 vec=%#x type=%d uErr=%u cr2=%#RX64 cr3=%#RX64 efer=%#RX64\n",
-                     pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uVector, enmType, uErrorCode, pVCpu->cpum.GstCtx.cr2, pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.msrEFER));
+                     pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uVector, enmType, uErrorCode, pVCpu->cpum.GstCtx.cr2,
+                     pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.msrEFER));
 
             /*
              * We shall not inject the event here right away. There may be paging mode related updates
@@ -839,7 +840,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPh
         }
         else
             LogFlow(("iemSvmVmrun: Entering nested-guest: %04x:%08RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64 efer=%#RX64 efl=%#x\n",
-                     pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER, pVCpu->cpum.GstCtx.rflags.u64));
+                     pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr3,
+                     pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER, pVCpu->cpum.GstCtx.rflags.u64));
 
         LogFlow(("iemSvmVmrun: returns %d\n", VBOXSTRICTRC_VAL(rcStrict)));
 
@@ -1263,6 +1265,9 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     if (rcStrict == VINF_SUCCESS)
     {
         LogFlow(("vmsave: Saving VMCB at %#RGp enmEffAddrMode=%d\n", GCPhysVmcb, pVCpu->iem.s.enmEffAddrMode));
+        IEM_CTX_IMPORT_RET(pVCpu,   CPUMCTX_EXTRN_FS | CPUMCTX_EXTRN_GS | CPUMCTX_EXTRN_TR | CPUMCTX_EXTRN_LDTR
+                                  | CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS);
+
         HMSVM_SEG_REG_COPY_TO_VMCB(IEM_GET_CTX(pVCpu), &VmcbNstGst, FS, fs);
         HMSVM_SEG_REG_COPY_TO_VMCB(IEM_GET_CTX(pVCpu), &VmcbNstGst, GS, gs);
         HMSVM_SEG_REG_COPY_TO_VMCB(IEM_GET_CTX(pVCpu), &VmcbNstGst, TR, tr);
@@ -1399,6 +1404,8 @@ IEM_CIMPL_DEF_0(iemCImpl_svm_pause)
     bool fCheckIntercept = true;
     if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilter)
     {
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_HWVIRT);
+
         /* TSC based pause-filter thresholding. */
         if (   IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvmPauseFilterThreshold
             && pVCpu->cpum.GstCtx.hwvirt.svm.cPauseFilterThreshold > 0)

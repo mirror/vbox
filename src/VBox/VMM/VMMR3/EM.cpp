@@ -1885,6 +1885,7 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, bool *pfResched, bool *pfInject)
                 {
                     if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_INTR))
                     {
+                        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
                         VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
                         if (RT_SUCCESS(rcStrict))
                         {
@@ -1903,6 +1904,7 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, bool *pfResched, bool *pfInject)
 
                     /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                     /** @todo this really isn't nice, should properly handle this */
+                    CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_XCPT_MASK);
                     int rc = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
                     Assert(rc != VINF_PGM_CHANGE_MODE);
                     if (rc == VINF_SVM_VMEXIT)
@@ -1925,6 +1927,7 @@ static int emR3NstGstInjectIntr(PVMCPU pVCpu, bool *pfResched, bool *pfInject)
             {
                 if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_VINTR))
                 {
+                    CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
                     VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
                     if (RT_SUCCESS(rcStrict))
                     {

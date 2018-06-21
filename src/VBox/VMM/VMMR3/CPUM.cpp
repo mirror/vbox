@@ -1432,7 +1432,6 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutU16(pSSM,    pGstCtx->hwvirt.svm.cPauseFilter);
             SSMR3PutU16(pSSM,    pGstCtx->hwvirt.svm.cPauseFilterThreshold);
             SSMR3PutBool(pSSM,   pGstCtx->hwvirt.svm.fInterceptEvents);
-            SSMR3PutBool(pSSM,   pGstCtx->hwvirt.svm.fHMCachedVmcb);
             SSMR3PutStructEx(pSSM, &pGstCtx->hwvirt.svm.HostState, sizeof(pGstCtx->hwvirt.svm.HostState), 0 /* fFlags */,
                              g_aSvmHwvirtHostState, NULL /* pvUser */);
             SSMR3PutMem(pSSM,    pGstCtx->hwvirt.svm.pVmcbR3,       SVM_VMCB_PAGES  << X86_PAGE_4K_SHIFT);
@@ -1673,7 +1672,6 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetU16(pSSM,      &pGstCtx->hwvirt.svm.cPauseFilter);
                         SSMR3GetU16(pSSM,      &pGstCtx->hwvirt.svm.cPauseFilterThreshold);
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.svm.fInterceptEvents);
-                        SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.svm.fHMCachedVmcb);
                         SSMR3GetStructEx(pSSM, &pGstCtx->hwvirt.svm.HostState, sizeof(pGstCtx->hwvirt.svm.HostState),
                                          0 /* fFlags */, g_aSvmHwvirtHostState, NULL /* pvUser */);
                         SSMR3GetMem(pSSM,       pGstCtx->hwvirt.svm.pVmcbR3,       SVM_VMCB_PAGES  << X86_PAGE_4K_SHIFT);

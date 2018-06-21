@@ -2534,11 +2534,6 @@ DECLINLINE(uint32_t) VMXGetLastError(void)
 #endif
 }
 
-#ifdef IN_RING0
-VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
-VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys);
-#endif /* IN_RING0 */
-
 /** @} */
 
 /** @} */

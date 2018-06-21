@@ -28,26 +28,27 @@ RT_C_DECLS_BEGIN
 
 #ifdef IN_RING0
 
-VMMR0DECL(int)  VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu);
-VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
-VMMR0DECL(int)  VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys, bool fEnabledBySystem,
-                               void *pvMsrs);
-VMMR0DECL(int)  VMXR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
-VMMR0DECL(int)  VMXR0GlobalInit(void);
-VMMR0DECL(void) VMXR0GlobalTerm(void);
-VMMR0DECL(int)  VMXR0InitVM(PVM pVM);
-VMMR0DECL(int)  VMXR0TermVM(PVM pVM);
-VMMR0DECL(int)  VMXR0SetupVM(PVM pVM);
-VMMR0DECL(int)  VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu);
+VMMR0DECL(void)         VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
+VMMR0DECL(int)          VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys,
+                                       bool fEnabledBySystem, void *pvMsrs);
+VMMR0DECL(int)          VMXR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+VMMR0DECL(int)          VMXR0GlobalInit(void);
+VMMR0DECL(void)         VMXR0GlobalTerm(void);
+VMMR0DECL(int)          VMXR0InitVM(PVM pVM);
+VMMR0DECL(int)          VMXR0TermVM(PVM pVM);
+VMMR0DECL(int)          VMXR0SetupVM(PVM pVM);
+VMMR0DECL(int)          VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
+VMMR0DECL(int)          VMXR0ImportStateOnDemand(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat);
 VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-DECLASM(int)    VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
-DECLASM(int)    VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
-
+DECLASM(int)            VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
+DECLASM(int)            VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 
 # if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-DECLASM(int)    VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int)  VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp, uint32_t cbParam,
-                                         uint32_t *paParam);
+DECLASM(int)            VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp, uint32_t cbParam,
+                                                  uint32_t *paParam);
 # endif
 
 /* Cached VMCS accesses -- defined only for 32-bit hosts (with 64-bit guest support). */

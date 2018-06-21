@@ -81,13 +81,7 @@ VMM_INT_DECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushPageManual);
 #ifdef IN_RING0
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (pVM->hm.s.vmx.fSupported)
-        return VMXR0InvalidatePage(pVM, pVCpu, GCVirt);
-
-    Assert(pVM->hm.s.svm.fSupported);
-    return SVMR0InvalidatePage(pVM, pVCpu, GCVirt);
-
+    return HMR0InvalidatePage(pVCpu, GCVirt);
 #else
     hmQueueInvlPage(pVCpu, GCVirt);
     return VINF_SUCCESS;
@@ -287,39 +281,19 @@ VMM_INT_DECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
     if (!HMIsNestedPagingActive(pVM))
         return VINF_SUCCESS;
 
-#ifdef IN_RING0
-    if (pVM->hm.s.vmx.fSupported)
-    {
-        VMCPUID idThisCpu = VMMGetCpuId(pVM);
-
-        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        {
-            PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-            if (idThisCpu == idCpu)
-            {
-                /** @todo r=ramshankar: Intel does not support flushing by guest physical
-                 *        address either. See comment in VMXR0InvalidatePhysPage(). Fix this. */
-                VMXR0InvalidatePhysPage(pVM, pVCpu, GCPhys);
-            }
-            else
-            {
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-                hmPokeCpuForTlbFlush(pVCpu, true /*fAccountFlushStat*/);
-            }
-        }
-        return VINF_SUCCESS;
-    }
-
-    /* AMD-V doesn't support invalidation with guest physical addresses; see
-       comment in SVMR0InvalidatePhysPage. */
-    Assert(pVM->hm.s.svm.fSupported);
-#else
-    NOREF(GCPhys);
-#endif
-
-    HMFlushTLBOnAllVCpus(pVM);
-    return VINF_SUCCESS;
+    /*
+     * AMD-V: Doesn't support invalidation with guest physical addresses.
+     *
+     * VT-x: Doesn't support invalidation with guest physical addresses.
+     * INVVPID instruction takes only a linear address while invept only flushes by EPT
+     * not individual addresses.
+     *
+     * We update the force flag and flush before the next VM-entry, see @bugref{6568}.
+     */
+    RT_NOREF(GCPhys);
+    /** @todo Remove or figure out to way to update the Phys STAT counter.  */
+    /* STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgPhys); */
+    return HMFlushTLBOnAllVCpus(pVM);
 }
 
 

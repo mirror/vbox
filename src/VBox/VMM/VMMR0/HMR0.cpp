@@ -95,7 +95,7 @@ static struct
     DECLR0CALLBACKMEMBER(int,  pfnDisableCpu, (PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
     DECLR0CALLBACKMEMBER(int,  pfnInitVM, (PVM pVM));
     DECLR0CALLBACKMEMBER(int,  pfnTermVM, (PVM pVM));
-    DECLR0CALLBACKMEMBER(int,  pfnSetupVM ,(PVM pVM));
+    DECLR0CALLBACKMEMBER(int,  pfnSetupVM, (PVM pVM));
     /** @} */
 
     /** Maximum ASID allowed. */
@@ -1643,6 +1643,21 @@ VMMR0_INT_DECL(bool) HMR0SuspendPending(void)
 
 
 /**
+ * Invalidates a guest page from the host TLB.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   GCVirt      Page to invalidate.
+ */
+VMMR0_INT_DECL(int) HMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->hm.s.vmx.fSupported)
+        return VMXR0InvalidatePage(pVM, pVCpu, GCVirt);
+    return SVMR0InvalidatePage(pVM, pVCpu, GCVirt);
+}
+
+
+/**
  * Returns the cpu structure for the current cpu.
  * Keep in mind that there is no guarantee it will stay the same (long jumps to ring 3!!!).
  *
@@ -1678,6 +1693,26 @@ VMMR0_INT_DECL(void) HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, R
     pVCpu->hm.s.PendingIO.s.Port.cbSize   = cbSize;
     return;
 }
+
+
+/**
+ * Interface for importing state on demand (used by IEM).
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context CPU structure.
+ * @param   pCtx        The target CPU context.
+ * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX.
+ */
+VMMR0_INT_DECL(int) HMR0ImportStateOnDemand(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
+{
+    /** @todo Intel. */
+#if 0
+    if (pVCpu->CTX_SUFF(pVM).hm.s.vmx.fSupported)
+        return VMXR0ImportStateOnDemand(pVCpu, pCtx, fWhat);
+#endif
+    return SVMR0ImportStateOnDemand(pVCpu, pCtx, fWhat);
+}
+
 
 #ifdef VBOX_WITH_RAW_MODE
 

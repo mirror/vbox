@@ -510,10 +510,8 @@ typedef struct CPUMCTX
                 uint16_t            cPauseFilterThreshold;
                 /** 0x3c4 - Whether the injected event is subject to event intercepts. */
                 bool                fInterceptEvents;
-                /** 0x3c5 - Whether parts of the VMCB are cached (and potentially modified) by HM. */
-                bool                fHMCachedVmcb;
-                /** 0x3c6 - Padding. */
-                bool                afPadding[2];
+                /** 0x3c5 - Padding. */
+                bool                afPadding[3];
                 /** 0x3c8 - MSR permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)   pvMsrBitmapR0;
 #if HC_ARCH_BITS == 32
@@ -763,7 +761,7 @@ AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(s,n.) gs,   CPUMC
 /** @} */
 
 /** @name CPUMCTX_EXTRN_XXX
- * Used to parts of the CPUM state that is externalized and needs fetching
+ * Used for parts of the CPUM state that is externalized and needs fetching
  * before use.
  *
  * @{ */
@@ -892,6 +890,9 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
 #define CPUMCTX_EXTRN_ALL_MSRS                  (  CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS \
                                                  | CPUMCTX_EXTRN_SYSENTER_MSRS | CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS)
 
+/** Hardware-virtualization (SVM or VMX) state is kept externally. */
+#define CPUMCTX_EXTRN_HWVIRT                    UINT64_C(0x0000020000000000)
+
 /** Mask of bits the keepers can use for state tracking. */
 #define CPUMCTX_EXTRN_KEEPER_STATE_MASK         UINT64_C(0xffff000000000000)
 
@@ -904,8 +905,21 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
 /** NEM/Win: Mask. */
 #define CPUMCTX_EXTRN_NEM_WIN_MASK              UINT64_C(0x0007000000000000)
 
+/** HM/SVM: Inhibit maskable interrupts (VMCPU_FF_INHIBIT_INTERRUPTS). */
+#define CPUMCTX_EXTRN_HM_SVM_INT_SHADOW         UINT64_C(0x0001000000000000)
+/** HM/SVM: Nested-guest interrupt pending (VMCPU_FF_INTERRUPT_NESTED_GUEST). */
+#define CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ        UINT64_C(0x0002000000000000)
+/** HM/SVM: Mask. */
+#define CPUMCTX_EXTRN_HM_SVM_MASK               UINT64_C(0x0003000000000000)
+
+/** HM/VMX: Guest-interruptibility state (VMCPU_FF_INHIBIT_INTERRUPTS,
+ *  VMCPU_FF_BLOCK_NMIS). */
+#define CPUMCTX_EXTRN_HM_VMX_INT_STATE          UINT64_C(0x0001000000000000)
+/** HM/VMX: Mask. */
+#define CPUMCTX_EXTRN_HM_VMX_MASK               UINT64_C(0x0001000000000000)
+
 /** All CPUM state bits, not including keeper specific ones. */
-#define CPUMCTX_EXTRN_ALL                       UINT64_C(0x000001fffffffffc)
+#define CPUMCTX_EXTRN_ALL                       UINT64_C(0x000003fffffffffc)
 /** @} */
 
 

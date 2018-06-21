@@ -242,7 +242,6 @@ struc CPUMCPU
     .Guest.hwvirt.svm.cPauseFilter           resw         1
     .Guest.hwvirt.svm.cPauseFilterThreshold  resw         1
     .Guest.hwvirt.svm.fInterceptEvents       resb         1
-    .Guest.hwvirt.svm.fHMCachedVmcb          resb         1
     alignb 8
     .Guest.hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES  1
     alignb 8
@@ -530,7 +529,6 @@ struc CPUMCPU
     .Hyper.hwvirt.svm.cPauseFilter           resw         1
     .Hyper.hwvirt.svm.cPauseFilterThreshold  resw         1
     .Hyper.hwvirt.svm.fInterceptEvents       resb         1
-    .Hyper.hwvirt.svm.fHMCachedVmcb          resb         1
     alignb 8
     .Hyper.hwvirt.svm.pvMsrBitmapR0          RTR0PTR_RES  1
     alignb 8

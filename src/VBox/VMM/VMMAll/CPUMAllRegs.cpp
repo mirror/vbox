@@ -2449,6 +2449,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
      *         we're in 64-bit mode.  The intel dev box doesn't allow this, on
      *         RPL = CPL.  Weird.
      */
+    Assert(!(pVCpu->cpum.s.Guest.fExtrn & (CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS)));
     uint32_t uCpl;
     if (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
     {
@@ -2765,7 +2766,7 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTic
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
-        if (!pCtx->hwvirt.svm.fHMCachedVmcb)
+        if (!HMHasGuestSvmVmcbCached(pVCpu))
         {
             PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
             return uTicks + pVmcb->ctrl.u64TSCOffset;
@@ -2806,7 +2807,16 @@ VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImpo
                 return rc;
             }
 
-            case CPUMCTX_EXTRN_KEEPER_HM: /** @todo make HM use CPUMCTX_EXTRN_XXX. */
+            case CPUMCTX_EXTRN_KEEPER_HM:
+            {
+#ifdef IN_RING0
+                int rc = HMR0ImportStateOnDemand(pVCpu, &pVCpu->cpum.s.Guest, fExtrnImport);
+                Assert(rc == VINF_SUCCESS || RT_FAILURE_NP(rc));
+                return rc;
+#else
+                return VINF_SUCCESS;
+#endif
+            }
             default:
                 AssertLogRelMsgFailedReturn(("%#RX64 vs %#RX64\n", pVCpu->cpum.s.Guest.fExtrn, fExtrnImport), VERR_CPUM_IPE_2);
         }

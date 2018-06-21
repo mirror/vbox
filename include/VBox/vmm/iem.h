@@ -217,6 +217,26 @@ typedef uint8_t IEMMODE;
                                                     | CPUMCTX_EXTRN_CR4 /* for mode paging mode */ \
                                                     | CPUMCTX_EXTRN_DR7 /* for memory breakpoints */ )
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+/** The CPUMCTX_EXTRN_XXX mask needed when calling IEMExecSvmVmexit().
+ * IEM will ASSUME the caller has ensured these are already present. */
+# define IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK   (  CPUMCTX_EXTRN_RSP \
+                                              | CPUMCTX_EXTRN_RAX \
+                                              | CPUMCTX_EXTRN_RIP \
+                                              | CPUMCTX_EXTRN_RFLAGS \
+                                              | CPUMCTX_EXTRN_CS \
+                                              | CPUMCTX_EXTRN_SS \
+                                              | CPUMCTX_EXTRN_DS \
+                                              | CPUMCTX_EXTRN_ES \
+                                              | CPUMCTX_EXTRN_GDTR \
+                                              | CPUMCTX_EXTRN_IDTR \
+                                              | CPUMCTX_EXTRN_CR_MASK \
+                                              | CPUMCTX_EXTRN_EFER \
+                                              | CPUMCTX_EXTRN_DR6 \
+                                              | CPUMCTX_EXTRN_DR7 \
+                                              | CPUMCTX_EXTRN_OTHER_MSRS \
+                                              | CPUMCTX_EXTRN_HWVIRT)
+#endif
 
 VMMDECL(VBOXSTRICTRC)       IEMExecOne(PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t *pcbWritten);

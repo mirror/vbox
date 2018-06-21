@@ -3490,7 +3490,8 @@ static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
         if (pVM->cpum.ro.GuestFeatures.fSvm)
         {
             PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVM->aCpus[i].hm.s.svm.NstGstVmcbCache;
-            rc  = SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptRdCRx);
+            rc  = SSMR3PutBool(pSSM, pVmcbNstGstCache->fCacheValid);
+            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptRdCRx);
             rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptWrCRx);
             rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptRdDRx);
             rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptWrDRx);
@@ -3575,7 +3576,8 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
             if (pVM->cpum.ro.GuestFeatures.fSvm)
             {
                 PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVM->aCpus[i].hm.s.svm.NstGstVmcbCache;
-                rc  = SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16InterceptRdCRx);
+                rc  = SSMR3GetBool(pSSM, &pVmcbNstGstCache->fCacheValid);
+                rc |= SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16InterceptRdCRx);
                 rc |= SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16InterceptWrCRx);
                 rc |= SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16InterceptRdDRx);
                 rc |= SSMR3GetU16(pSSM,  &pVmcbNstGstCache->u16InterceptWrDRx);
@@ -3686,7 +3688,7 @@ VMMR3DECL(const char *) HMR3GetSvmExitName(uint32_t uExit)
 
 
 /**
- * Displays the guest VM-exit history.
+ * Displays HM info.
  *
  * @param   pVM         The cross context VM structure.
  * @param   pHlp        The info helper functions.
@@ -3760,10 +3762,9 @@ static DECLCALLBACK(void) hmR3InfoSvmNstGstVmcbCache(PVM pVM, PCDBGFINFOHLP pHlp
     if (   fSvmEnabled
         && pVM->cpum.ro.GuestFeatures.fSvm)
     {
-        PCCPUMCTX            pCtx = CPUMQueryGuestCtxPtr(pVCpu);
         PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
         pHlp->pfnPrintf(pHlp, "CPU[%u]: HM SVM nested-guest VMCB cache\n", pVCpu->idCpu);
-        pHlp->pfnPrintf(pHlp, "  fHMCachedVmcb           = %#RTbool\n", pCtx->hwvirt.svm.fHMCachedVmcb);
+        pHlp->pfnPrintf(pHlp, "  fCacheValid             = %#RTbool\n", pVmcbNstGstCache->fCacheValid);
         pHlp->pfnPrintf(pHlp, "  u16InterceptRdCRx       = %#RX16\n",   pVmcbNstGstCache->u16InterceptRdCRx);
         pHlp->pfnPrintf(pHlp, "  u16InterceptWrCRx       = %#RX16\n",   pVmcbNstGstCache->u16InterceptWrCRx);
         pHlp->pfnPrintf(pHlp, "  u16InterceptRdDRx       = %#RX16\n",   pVmcbNstGstCache->u16InterceptRdDRx);
