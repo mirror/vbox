@@ -297,8 +297,8 @@ typedef struct ATADevState
     /** Defines the R3 yield rate by a mask (power of 2 minus one).
      * Lower is more agressive. */
     uint8_t                             cBusyStatusHackR3Rate;
-    /** Defines the RZ yield rate by number of status requests before returning
-     * to ring-3 and yielding there.  Lower is more agressive. */
+    /** Defines the R0/RC yield rate by a mask (power of 2 minus one).
+     * Lower is more agressive. */
     uint8_t                             cBusyStatusHackRZRate;
 
     /** Release statistics: number of ATA DMA commands. */
@@ -4527,9 +4527,8 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
                  * to host context for each and every busy status is too costly,
                  * especially on SMP systems where we don't gain much by
                  * yielding the CPU to someone else. */
-                if (++s->cBusyStatusHackRZ >= s->cBusyStatusHackRZRate)
+                if ((s->cBusyStatusHackRZ++ & s->cBusyStatusHackRZRate) == 1)
                 {
-                    s->cBusyStatusHackRZ = 0;
                     s->cBusyStatusHackR3 = 0; /* Forces a yield. */
                     return VINF_IOM_R3_IOPORT_READ;
                 }
@@ -6533,22 +6532,22 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
     if (cCpus <= 1)
     {
         pIf->cBusyStatusHackR3Rate = 1;
-        pIf->cBusyStatusHackRZRate = 8;
+        pIf->cBusyStatusHackRZRate = 7;
     }
     else if (cCpus <= 2)
     {
         pIf->cBusyStatusHackR3Rate = 3;
-        pIf->cBusyStatusHackRZRate = 20;
+        pIf->cBusyStatusHackRZRate = 15;
     }
     else if (cCpus <= 4)
     {
         pIf->cBusyStatusHackR3Rate = 15;
-        pIf->cBusyStatusHackRZRate = 32;
+        pIf->cBusyStatusHackRZRate = 31;
     }
     else
     {
         pIf->cBusyStatusHackR3Rate = 127;
-        pIf->cBusyStatusHackRZRate = 128;
+        pIf->cBusyStatusHackRZRate = 127;
     }
 
     return rc;
