@@ -58,6 +58,24 @@
 # if RHEL_MAJOR == 7 && RHEL_MINOR >= 3
 #  define RHEL_73
 # endif
+# if RHEL_MAJOR == 7 && RHEL_MINOR >= 1
+#  define RHEL_71
+# endif
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0) || defined(RHEL_71)
+#define U8_MAX          ((u8)~0U)
+#define S8_MAX          ((s8)(U8_MAX>>1))
+#define S8_MIN          ((s8)(-S8_MAX - 1))
+#define U16_MAX         ((u16)~0U)
+#define S16_MAX         ((s16)(U16_MAX>>1))
+#define S16_MIN         ((s16)(-S16_MAX - 1))
+#define U32_MAX         ((u32)~0U)
+#define S32_MAX         ((s32)(U32_MAX>>1))
+#define S32_MIN         ((s32)(-S32_MAX - 1))
+#define U64_MAX         ((u64)~0ULL)
+#define S64_MAX         ((s64)(U64_MAX>>1))
+#define S64_MIN         ((s64)(-S64_MAX - 1))
 #endif
 
 #include <drm/drmP.h>
