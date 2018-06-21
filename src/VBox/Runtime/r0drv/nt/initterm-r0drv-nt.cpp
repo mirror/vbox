@@ -94,6 +94,8 @@ decltype(KeSetImportanceDpc)           *g_pfnrtKeSetImportanceDpc;
 decltype(KeSetTargetProcessorDpc)      *g_pfnrtKeSetTargetProcessorDpc;
 /** KeInitializeTimerEx - Introduced in NT 4. */
 decltype(KeInitializeTimerEx)          *g_pfnrtKeInitializeTimerEx;
+/** KeShouldYieldProcessor - Introduced in Windows 10. */
+PFNKESHOULDYIELDPROCESSOR               g_pfnrtKeShouldYieldProcessor;
 /** Pointer to the MmProtectMdlSystemAddress kernel function if it's available.
  * This API was introduced in XP. */
 decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
@@ -305,6 +307,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
     GET_SYSTEM_ROUTINE(KeSetImportanceDpc);
     GET_SYSTEM_ROUTINE(KeSetTargetProcessorDpc);
     GET_SYSTEM_ROUTINE(KeInitializeTimerEx);
+    GET_SYSTEM_ROUTINE_TYPE(KeShouldYieldProcessor, PFNKESHOULDYIELDPROCESSOR);
     GET_SYSTEM_ROUTINE(MmProtectMdlSystemAddress);
     GET_SYSTEM_ROUTINE(MmAllocatePagesForMdl);
     GET_SYSTEM_ROUTINE(MmFreePagesFromMdl);

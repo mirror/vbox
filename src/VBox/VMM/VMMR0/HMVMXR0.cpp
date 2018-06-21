@@ -9034,8 +9034,11 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     }
 
     /*
-     * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
-     * when thread-context hooks aren't used and we've been running with preemption disabled for a while.
+     * We disable interrupts so that we don't miss any interrupts that would flag
+     * preemption (IPI/timers etc.) when thread-context hooks aren't used and we've
+     * been running with preemption disabled for a while.  Since this is purly to aid
+     * the RTThreadPreemptIsPending code, it doesn't matter that it may temporarily
+     * reenable and disable interrupt on NT.
      *
      * We need to check for force-flags that could've possible been altered since we last checked them (e.g.
      * by PDMGetInterrupt() leaving the PDM critical section, see @bugref{6398}).

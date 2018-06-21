@@ -84,6 +84,7 @@ extern PFNKEDEREGISTERPROCESSORCHANGECALLBACK  g_pfnrtKeDeregisterProcessorChang
 extern decltype(KeSetImportanceDpc)           *g_pfnrtKeSetImportanceDpc;
 extern decltype(KeSetTargetProcessorDpc)      *g_pfnrtKeSetTargetProcessorDpc;
 extern decltype(KeInitializeTimerEx)          *g_pfnrtKeInitializeTimerEx;
+extern PFNKESHOULDYIELDPROCESSOR               g_pfnrtKeShouldYieldProcessor;
 extern decltype(MmProtectMdlSystemAddress)    *g_pfnrtMmProtectMdlSystemAddress;
 extern decltype(MmAllocatePagesForMdl)        *g_pfnrtMmAllocatePagesForMdl;
 extern decltype(MmFreePagesFromMdl)           *g_pfnrtMmFreePagesFromMdl;

@@ -526,7 +526,10 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread);
  * code with preemption disabled.
  *
  * @returns true if pending, false if not.
- * @param       hThread         Must be NIL_RTTHREAD for now.
+ * @param   hThread         Must be NIL_RTTHREAD for now.
+ *
+ * @note    If called with interrupts disabled, the NT kernel may temporarily
+ *          re-enable them while checking.
  */
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread);
 
