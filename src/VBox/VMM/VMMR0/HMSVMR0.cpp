@@ -464,7 +464,7 @@ static R0PTRTYPE(void *)    g_pvIOBitmap;
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pszPrefix   Log prefix.
  * @param   fFlags      Log flags, see HMSVM_LOG_XXX.
- * @param   uVerboses    The verbosity level, currently unused.
+ * @param   uVerbose    The verbosity level, currently unused.
  */
 static void hmR0SvmLogState(PVMCPU pVCpu, PCSVMVMCB pVmcb, PCCPUMCTX pCtx, const char *pszPrefix, uint32_t fFlags,
                              uint8_t uVerbose)
