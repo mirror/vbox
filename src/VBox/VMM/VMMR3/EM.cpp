@@ -148,21 +148,41 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVM->em.s.fGuruOnTripleFault = true;
     }
 
-    /**
-     * @cfgm{/EM/ExitOptimizationEnabled, bool, true for NEM otherwise false}
-     * Whether to try correlate exit history, detect hot spots and try optimize
-     * these using IEM if there are other exits close by.
-     * @todo enable for HM too.
-     */
+    LogRel(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool\n",
+            pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault));
+
+    /** @cfgm{/EM/ExitOptimizationEnabled, bool, true}
+     * Whether to try correlate exit history in any context, detect hot spots and
+     * try optimize these using IEM if there are other exits close by.  This
+     * overrides the context specific settings. */
     bool fExitOptimizationEnabled = true;
-    rc = CFGMR3QueryBoolDef(pCfgEM, "ExitOptimizationEnabled", &fExitOptimizationEnabled, VM_IS_NEM_ENABLED(pVM));
+    rc = CFGMR3QueryBoolDef(pCfgEM, "ExitOptimizationEnabled", &fExitOptimizationEnabled, true);
     AssertLogRelRCReturn(rc, rc);
 
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        pVM->aCpus[i].em.s.fExitOptimizationEnabled = fExitOptimizationEnabled;
+    /** @cfgm{/EM/ExitOptimizationEnabledR0, bool, true}
+     * Whether to optimize exits in ring-0.  Setting this to false will also disable
+     * the /EM/ExitOptimizationEnabledR0PreemptDisabled setting.  Depending on preemption
+     * capabilities of the host kernel, this optimization may be unavailable. */
+    bool fExitOptimizationEnabledR0 = true;
+    rc = CFGMR3QueryBoolDef(pCfgEM, "ExitOptimizationEnabledR0", &fExitOptimizationEnabledR0, true);
+    AssertLogRelRCReturn(rc, rc);
+    fExitOptimizationEnabledR0 &= fExitOptimizationEnabled;
 
-    LogRel(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool fExitOptimizationEnabled=%RTbool\n",
-            pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault, fExitOptimizationEnabled));
+    /** @cfgm{/EM/ExitOptimizationEnabledR0PreemptDisabled, bool, false}
+     * Whether to optimize exits in ring-0 when preemption is disable (or preemption
+     * hooks are in effect). */
+    /** @todo change the default to true here */
+    bool fExitOptimizationEnabledR0PreemptDisabled = true;
+    rc = CFGMR3QueryBoolDef(pCfgEM, "ExitOptimizationEnabledR0PreemptDisabled", &fExitOptimizationEnabledR0PreemptDisabled, false);
+    AssertLogRelRCReturn(rc, rc);
+    fExitOptimizationEnabledR0PreemptDisabled &= fExitOptimizationEnabledR0;
+
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        pVM->aCpus[i].em.s.fExitOptimizationEnabled                  = fExitOptimizationEnabled;
+        pVM->aCpus[i].em.s.fExitOptimizationEnabledR0                = fExitOptimizationEnabledR0;
+        pVM->aCpus[i].em.s.fExitOptimizationEnabledR0PreemptDisabled = fExitOptimizationEnabledR0PreemptDisabled;
+    }
 
 #ifdef VBOX_WITH_REM
     /*
@@ -496,6 +516,23 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     }
 
     emR3InitDbg(pVM);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Called when a VM initialization stage is completed.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   enmWhat         The initialization state that was completed.
+ */
+VMMR3_INT_DECL(int) EMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
+{
+    if (enmWhat == VMINITCOMPLETED_RING0)
+        LogRel(("EM: Exit history optimizations: enabled=%RTbool enabled-r0=%RTbool enabled-r0-no-preemption=%RTbool\n",
+                pVM->aCpus[0].em.s.fExitOptimizationEnabled, pVM->aCpus[0].em.s.fExitOptimizationEnabledR0,
+                pVM->aCpus[0].em.s.fExitOptimizationEnabledR0PreemptDisabled));
     return VINF_SUCCESS;
 }
 

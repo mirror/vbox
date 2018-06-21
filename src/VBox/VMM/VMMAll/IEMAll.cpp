@@ -14192,7 +14192,10 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
         if ((rcStrict = setjmp(JmpBuf)) == 0)
 #endif
         {
-            uint32_t cInstructionSinceLastExit = 0;
+#ifdef IN_RING0
+            bool const fCheckPreemptionPending   = !RTThreadPreemptIsPossible() || !RTThreadPreemptIsEnabled(NIL_RTTHREAD);
+#endif
+            uint32_t   cInstructionSinceLastExit = 0;
 
             /*
              * The run loop.  We limit ourselves to 4096 instructions right now.
@@ -14257,7 +14260,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
                                 if (cInstructionSinceLastExit <= cMaxInstructionsWithoutExits)
                                 {
 #ifdef IN_RING0
-                                    if (!RTThreadPreemptIsPending(NIL_RTTHREAD))
+                                    if (   !fCheckPreemptionPending
+                                        || !RTThreadPreemptIsPending(NIL_RTTHREAD))
 #endif
                                     {
                                         Assert(pVCpu->iem.s.cActiveMappings == 0);

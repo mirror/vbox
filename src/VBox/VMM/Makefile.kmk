@@ -689,6 +689,7 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMR0/GIMR0Kvm.cpp \
  	VMMR0/GMMR0.cpp \
  	VMMR0/GVMMR0.cpp \
+ 	VMMR0/EMR0.cpp \
  	VMMR0/HMR0.cpp \
  	VMMR0/HMR0A.asm \
  	VMMR0/HMVMXR0.cpp \

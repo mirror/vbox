@@ -28,6 +28,7 @@
 
 #include <VBox/types.h>
 #include <VBox/vmm/trpm.h>
+#include <VBox/vmm/vmapi.h>
 
 
 RT_C_DECLS_BEGIN
@@ -231,15 +232,17 @@ AssertCompileSize(EMEXITTYPE, 4);
  * EMEXIT_MAKE_FLAGS_AND_TYPE() macro.
  *
  * @{  */
-#define EMEXIT_F_TYPE_MASK      UINT32_C(0x00000fff)    /**< The exit type mask. */
-#define EMEXIT_F_KIND_EM        UINT32_C(0x00000000)    /**< EMEXITTYPE */
-#define EMEXIT_F_KIND_VMX       UINT32_C(0x00001000)    /**< VT-x exit codes. */
-#define EMEXIT_F_KIND_SVM       UINT32_C(0x00002000)    /**< SVM exit codes. */
-#define EMEXIT_F_KIND_NEM       UINT32_C(0x00003000)    /**< NEMEXITTYPE */
-#define EMEXIT_F_KIND_XCPT      UINT32_C(0x00004000)    /**< Exception numbers (raw-mode). */
-#define EMEXIT_F_KIND_MASK      UINT32_C(0x00007000)
-#define EMEXIT_F_CS_EIP         UINT32_C(0x00010000)    /**< The PC is EIP in the low dword and CS in the high. */
-#define EMEXIT_F_UNFLATTENED_PC UINT32_C(0x00020000)    /**< The PC hasn't had CS.BASE added to it. */
+#define EMEXIT_F_TYPE_MASK          UINT32_C(0x00000fff)    /**< The exit type mask. */
+#define EMEXIT_F_KIND_EM            UINT32_C(0x00000000)    /**< EMEXITTYPE */
+#define EMEXIT_F_KIND_VMX           UINT32_C(0x00001000)    /**< VT-x exit codes. */
+#define EMEXIT_F_KIND_SVM           UINT32_C(0x00002000)    /**< SVM exit codes. */
+#define EMEXIT_F_KIND_NEM           UINT32_C(0x00003000)    /**< NEMEXITTYPE */
+#define EMEXIT_F_KIND_XCPT          UINT32_C(0x00004000)    /**< Exception numbers (raw-mode). */
+#define EMEXIT_F_KIND_MASK          UINT32_C(0x00007000)
+#define EMEXIT_F_CS_EIP             UINT32_C(0x00010000)    /**< The PC is EIP in the low dword and CS in the high. */
+#define EMEXIT_F_UNFLATTENED_PC     UINT32_C(0x00020000)    /**< The PC hasn't had CS.BASE added to it. */
+/** Preemption is currently disabled (or we're using preemption hooks). */
+#define EMEXIT_F_PREEMPT_DISABLED   UINT32_C(0x00040000)
 /** Combines flags and exit type into EMHistoryAddExit() input. */
 #define EMEXIT_MAKE_FLAGS_AND_TYPE(a_fFlags, a_uType)   ((a_fFlags) | (uint32_t)(a_uType))
 /** @} */
@@ -368,6 +371,14 @@ VMM_INT_DECL(int)               EMRemTryLock(PVM pVM);
 /** @} */
 
 
+#ifdef IN_RING0
+/** @defgroup grp_em_r0     The EM Host Context Ring-0 API
+ * @{ */
+VMMR0_INT_DECL(int)             EMR0InitVM(PGVM pGVM, PVM pVM);
+/** @} */
+#endif
+
+
 #ifdef IN_RING3
 /** @defgroup grp_em_r3     The EM Host Context Ring-3 API
  * @{
@@ -399,6 +410,7 @@ VMMR3DECL(int)                  EMR3QueryExecutionPolicy(PUVM pUVM, EMEXECPOLICY
 VMMR3DECL(int)                  EMR3QueryMainExecutionEngine(PUVM pUVM, uint8_t *pbMainExecutionEngine);
 
 VMMR3_INT_DECL(int)             EMR3Init(PVM pVM);
+VMMR3_INT_DECL(int)             EMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3_INT_DECL(void)            EMR3Relocate(PVM pVM);
 VMMR3_INT_DECL(void)            EMR3ResetCpu(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)            EMR3Reset(PVM pVM);

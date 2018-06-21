@@ -29,6 +29,7 @@
 #ifdef VBOX_WITH_NEM_R0
 # include <VBox/vmm/nem.h>
 #endif
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
@@ -469,36 +470,41 @@ static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType
                 if (RT_SUCCESS(rc))
                 {
                     VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
-                    rc = PciRawR0InitVM(pGVM, pVM);
-#endif
+                    rc = EMR0InitVM(pGVM, pVM);
                     if (RT_SUCCESS(rc))
                     {
                         VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-                        rc = GIMR0InitVM(pVM);
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                        rc = PciRawR0InitVM(pGVM, pVM);
+#endif
                         if (RT_SUCCESS(rc))
                         {
-                            VMM_CHECK_SMAP_CHECK2(pVM, rc = VERR_VMM_RING0_ASSERTION);
+                            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+                            rc = GIMR0InitVM(pVM);
                             if (RT_SUCCESS(rc))
                             {
-                                GVMMR0DoneInitVM(pGVM);
+                                VMM_CHECK_SMAP_CHECK2(pVM, rc = VERR_VMM_RING0_ASSERTION);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    GVMMR0DoneInitVM(pGVM);
 
-                                /*
-                                 * Collect a bit of info for the VM release log.
-                                 */
-                                pVM->vmm.s.fIsPreemptPendingApiTrusty = RTThreadPreemptIsPendingTrusty();
-                                pVM->vmm.s.fIsPreemptPossible         = RTThreadPreemptIsPossible();;
+                                    /*
+                                     * Collect a bit of info for the VM release log.
+                                     */
+                                    pVM->vmm.s.fIsPreemptPendingApiTrusty = RTThreadPreemptIsPendingTrusty();
+                                    pVM->vmm.s.fIsPreemptPossible         = RTThreadPreemptIsPossible();;
 
-                                VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-                                return rc;
+                                    VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+                                    return rc;
+                                }
+
+                                /* bail out*/
+                                GIMR0TermVM(pVM);
                             }
-
-                            /* bail out*/
-                            GIMR0TermVM(pVM);
-                        }
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-                        PciRawR0TermVM(pGVM, pVM);
+                            PciRawR0TermVM(pGVM, pVM);
 #endif
+                        }
                     }
                 }
             }

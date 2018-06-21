@@ -502,8 +502,12 @@ typedef struct EMCPU
      * mask it when using it.  That help the readers detect whether we've
      * wrapped around or not.  */
     uint64_t                iNextExit;
-    /** Whether exit optimizations are enabled or not. */
-    bool                    fExitOptimizationEnabled;
+    /** Whether exit optimizations are enabled or not (in general). */
+    bool                    fExitOptimizationEnabled : 1;
+    /** Whether exit optimizations are enabled for ring-0 (in general). */
+    bool                    fExitOptimizationEnabledR0 : 1;
+    /** Whether exit optimizations are enabled for ring-0 when preemption is disabled. */
+    bool                    fExitOptimizationEnabledR0PreemptDisabled : 1;
     /** Explicit padding. */
     bool                    afPadding2[1];
     /** Index into aExitRecords set by EMHistoryExec when returning to ring-3.

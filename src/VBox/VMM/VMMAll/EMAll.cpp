@@ -437,6 +437,7 @@ DECL_FORCE_INLINE(void) emHistoryExecSetContinueExitRecIdx(PVMCPU pVCpu, VBOXSTR
 #endif /* !IN_RING3 */
 }
 
+#ifndef IN_RC
 
 /**
  * Execute using history.
@@ -600,11 +601,16 @@ DECL_FORCE_INLINE(PCEMEXITREC) emHistoryRecordInitReplacement(PEMEXITENTRY pHist
 static PCEMEXITREC emHistoryAddOrUpdateRecord(PVMCPU pVCpu, uint64_t uFlagsAndType, uint64_t uFlatPC,
                                               PEMEXITENTRY pHistEntry, uint64_t uExitNo)
 {
+# ifdef IN_RING0
+    /* Disregard the preempt disabled flag. */
+    uFlagsAndType &= ~EMEXIT_F_PREEMPT_DISABLED;
+# endif
+
     /*
      * Work the hash table.
      */
     AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitRecords) == 1024);
-#define EM_EXIT_RECORDS_IDX_MASK 0x3ff
+# define EM_EXIT_RECORDS_IDX_MASK 0x3ff
     uintptr_t  idxSlot  = ((uintptr_t)uFlatPC >> 1) & EM_EXIT_RECORDS_IDX_MASK;
     PEMEXITREC pExitRec = &pVCpu->em.s.aExitRecords[idxSlot];
     if (pExitRec->uFlatPC == uFlatPC)
@@ -732,6 +738,7 @@ static PCEMEXITREC emHistoryAddOrUpdateRecord(PVMCPU pVCpu, uint64_t uFlagsAndTy
     }
 }
 
+#endif /* !IN_RC */
 
 /**
  * Adds an exit to the history for this CPU.
@@ -760,13 +767,21 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType,
     pHistEntry->uFlagsAndType = uFlagsAndType;
     pHistEntry->idxSlot       = UINT32_MAX;
 
+#ifndef IN_RC
     /*
      * If common exit type, we will insert/update the exit into the exit record hash table.
      */
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
+# ifdef IN_RING0
+        && pVCpu->em.s.fExitOptimizationEnabledR0
+        && ( !(uFlagsAndType & EMEXIT_F_PREEMPT_DISABLED) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
+# else
         && pVCpu->em.s.fExitOptimizationEnabled
-        && uFlatPC != UINT64_MAX)
+# endif
+        && uFlatPC != UINT64_MAX
+       )
         return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, uFlatPC, pHistEntry, uExitNo);
+#endif
     return NULL;
 }
 
@@ -841,13 +856,21 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFl
     PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)uExitNo & 0xff];
     pHistEntry->uFlagsAndType = uFlagsAndType | (pHistEntry->uFlagsAndType & (EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC));
 
+#ifndef IN_RC
     /*
      * If common exit type, we will insert/update the exit into the exit record hash table.
      */
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
+# ifdef IN_RING0
+        && pVCpu->em.s.fExitOptimizationEnabledR0
+        && ( !(uFlagsAndType & EMEXIT_F_PREEMPT_DISABLED) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
+# else
         && pVCpu->em.s.fExitOptimizationEnabled
-        && pHistEntry->uFlatPC != UINT64_MAX)
+# endif
+        && pHistEntry->uFlatPC != UINT64_MAX
+       )
         return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, pHistEntry->uFlatPC, pHistEntry, uExitNo);
+#endif
     return NULL;
 }
 
@@ -878,12 +901,20 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_
     pHistEntry->uFlagsAndType = uFlagsAndType;
     pHistEntry->uFlatPC       = uFlatPC;
 
+#ifndef IN_RC
     /*
      * If common exit type, we will insert/update the exit into the exit record hash table.
      */
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
-        && pVCpu->em.s.fExitOptimizationEnabled)
+# ifdef IN_RING0
+        && pVCpu->em.s.fExitOptimizationEnabledR0
+        && ( !(uFlagsAndType & EMEXIT_F_PREEMPT_DISABLED) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
+# else
+        && pVCpu->em.s.fExitOptimizationEnabled
+# endif
+       )
         return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, uFlatPC, pHistEntry, uExitNo);
+#endif
     return NULL;
 }
 
