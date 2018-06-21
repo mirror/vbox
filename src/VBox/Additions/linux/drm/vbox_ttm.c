@@ -208,10 +208,15 @@ static struct ttm_backend_func vbox_tt_backend_func = {
 	.destroy = &vbox_ttm_backend_destroy,
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
 static struct ttm_tt *vbox_ttm_tt_create(struct ttm_bo_device *bdev,
 					 unsigned long size,
 					 u32 page_flags,
 					 struct page *dummy_read_page)
+#else
+static struct ttm_tt *vbox_ttm_tt_create(struct ttm_buffer_object *bo,
+										 u32 page_flags)
+#endif
 {
 	struct ttm_tt *tt;
 
@@ -220,7 +225,11 @@ static struct ttm_tt *vbox_ttm_tt_create(struct ttm_bo_device *bdev,
 		return NULL;
 
 	tt->func = &vbox_tt_backend_func;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
 	if (ttm_tt_init(tt, bdev, size, page_flags, dummy_read_page)) {
+#else
+	if (ttm_tt_init(tt, bo, page_flags)) {
+#endif
 		kfree(tt);
 		return NULL;
 	}
@@ -401,7 +410,11 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 
 	ret = ttm_bo_init(&vbox->ttm.bdev, &vboxbo->bo, size,
 			  ttm_bo_type_device, &vboxbo->placement,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
 			  align >> PAGE_SHIFT, false, NULL, acc_size,
+#else
+			  align >> PAGE_SHIFT, false, acc_size,
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_73)
 			  NULL,
 #endif
