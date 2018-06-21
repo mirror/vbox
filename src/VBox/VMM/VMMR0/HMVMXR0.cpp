@@ -7083,9 +7083,9 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
     /* RFLAGS and interruptibility-state required while re-evaluating interrupt injection, see hmR0VmxGetGuestIntrState(). */
     if (fWhat & (CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_HM_VMX_INT_STATE))
     {
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RFLAGS, &u64Val);
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Val);
         AssertRCReturn(rc, rc);
-        pCtx->eflags.u32 = u64Val;
+        pCtx->eflags.u32 = u32Val;
         /* Restore eflags for real-on-v86-mode hack. */
         if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
         {
