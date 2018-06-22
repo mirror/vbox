@@ -297,5 +297,6 @@
         <file alias="os_jrockitve_x4.png">images/x4/os_jrockitve_x4.png</file>
         <file alias="os_l4_x4.png">images/x4/os_l4_x4.png</file>
         <file alias="os_linux22_x4.png">images/x4/os_linux22_x4.png</file>
+        <file alias="os_linux24_64_x4.png">images/x4/os_linux24_64_x4.png</file>
     </qresource>
 </RCC>

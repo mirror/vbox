@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="os_linux24_64_x4.png">images/x4/os_linux24_64_x4.png</file>
         <file alias="os_linux24_x4.png">images/x4/os_linux24_x4.png</file>
         <file alias="os_linux26_64_x4.png">images/x4/os_linux26_64_x4.png</file>
         <file alias="os_linux26_x4.png">images/x4/os_linux26_x4.png</file>
@@ -146,6 +145,7 @@
         <file alias="site_32px_x4.png">images/x4/site_32px_x4.png</file>
         <file alias="site_bugtracker_16px_x4.png">images/x4/site_bugtracker_16px_x4.png</file>
         <file alias="site_forum_16px_x4.png">images/x4/site_forum_16px_x4.png</file>
+        <file alias="site_oracle_16px_x4.png">images/x4/site_oracle_16px_x4.png</file>
         <file alias="site_warning_16px_x4.png">images/x4/site_warning_16px_x4.png</file>
         <file alias="snapshot_commit_details_16px_x4.png">images/x4/snapshot_commit_details_16px_x4.png</file>
         <file alias="snapshot_commit_details_22px_x4.png">images/x4/snapshot_commit_details_22px_x4.png</file>
@@ -179,6 +179,7 @@
         <file alias="sound_warning_16px_x4.png">images/x4/sound_warning_16px_x4.png</file>
         <file alias="state_aborted_16px_x4.png">images/x4/state_aborted_16px_x4.png</file>
         <file alias="state_discarding_16px_x4.png">images/x4/state_discarding_16px_x4.png</file>
+        <file alias="state_paused_16px_x4.png">images/x4/state_paused_16px_x4.png</file>
         <file alias="state_powered_off_16px_x4.png">images/x4/state_powered_off_16px_x4.png</file>
         <file alias="state_restoring_16px_x4.png">images/x4/state_restoring_16px_x4.png</file>
         <file alias="state_running_16px_x4.png">images/x4/state_running_16px_x4.png</file>
