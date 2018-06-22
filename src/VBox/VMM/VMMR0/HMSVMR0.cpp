@@ -2784,10 +2784,16 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
     PCSVMVMCBCTRL      pVmcbCtrl  = &pVmcb->ctrl;
 
     Log4(("hmR0SvmImportGuestState: fExtrn=%#RX64 fWhat=%#RX64\n", pCtx->fExtrn, fWhat));
-    if (pCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL)
-    {
-        fWhat &= pCtx->fExtrn;
 
+    /*
+     * We disable interrupts to make the updating of the state and in particular
+     * the fExtrn modification atomic wrt to preemption hooks.
+     */
+    RTCCUINTREG const fSavedFlags = ASMIntDisableFlags();
+
+    fWhat &= pCtx->fExtrn;
+    if (fWhat & pCtx->fExtrn)
+    {
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         if (fWhat & CPUMCTX_EXTRN_HWVIRT)
         {
@@ -2798,7 +2804,6 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
                 Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.fVGif);
                 pCtx->hwvirt.fGif = pVmcbCtrl->IntCtrl.n.u1VGif;
             }
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_HWVIRT);
         }
 
         if (fWhat & CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ)
@@ -2806,10 +2811,7 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
             if (  !pVmcbCtrl->IntCtrl.n.u1VIrqPending
                 && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ);
         }
-#else
-        ASMAtomicUoAndU64(&pCtx->fExtrn, ~(CPUMCTX_EXTRN_HWVIRT | CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ));
 #endif
 
         if (fWhat & CPUMCTX_EXTRN_HM_SVM_INT_SHADOW)
@@ -2818,32 +2820,19 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
                 EMSetInhibitInterruptsPC(pVCpu, pVmcbGuest->u64RIP);
             else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_HM_SVM_INT_SHADOW);
         }
 
         if (fWhat & CPUMCTX_EXTRN_RIP)
-        {
             pCtx->rip = pVmcbGuest->u64RIP;
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_RIP);
-        }
 
         if (fWhat & CPUMCTX_EXTRN_RFLAGS)
-        {
             pCtx->eflags.u32 = pVmcbGuest->u64RFlags;
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_RFLAGS);
-        }
 
         if (fWhat & CPUMCTX_EXTRN_RSP)
-        {
             pCtx->rsp = pVmcbGuest->u64RSP;
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_RSP);
-        }
 
         if (fWhat & CPUMCTX_EXTRN_RAX)
-        {
             pCtx->rax = pVmcbGuest->u64RAX;
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_RAX);
-        }
 
         if (fWhat & CPUMCTX_EXTRN_SREG_MASK)
         {
@@ -2864,7 +2853,6 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
                     pCtx->cs.Attr.n.u1Granularity = 1;
                 }
                 HMSVM_ASSERT_SEG_GRANULARITY(pCtx, cs);
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_CS);
             }
             if (fWhat & CPUMCTX_EXTRN_SS)
             {
@@ -2880,31 +2868,26 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
                 uint8_t const uCpl = pVmcbGuest->u8CPL;
                 if (pCtx->ss.Attr.n.u2Dpl != uCpl)
                     pCtx->ss.Attr.n.u2Dpl = uCpl & 0x3;
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_SS);
             }
             if (fWhat & CPUMCTX_EXTRN_DS)
             {
                 HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcbGuest, DS, ds);
                 HMSVM_ASSERT_SEG_GRANULARITY(pCtx, ds);
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_DS);
             }
             if (fWhat & CPUMCTX_EXTRN_ES)
             {
                 HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcbGuest, ES, es);
                 HMSVM_ASSERT_SEG_GRANULARITY(pCtx, es);
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_ES);
             }
             if (fWhat & CPUMCTX_EXTRN_FS)
             {
                 HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcbGuest, FS, fs);
                 HMSVM_ASSERT_SEG_GRANULARITY(pCtx, fs);
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_FS);
             }
             if (fWhat & CPUMCTX_EXTRN_GS)
             {
                 HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcbGuest, GS, gs);
                 HMSVM_ASSERT_SEG_GRANULARITY(pCtx, gs);
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_GS);
             }
         }
 
@@ -2926,27 +2909,21 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
                     else if (pCtx->tr.Attr.n.u4Type == X86_SEL_TYPE_SYS_286_TSS_AVAIL)
                         pCtx->tr.Attr.n.u4Type = X86_SEL_TYPE_SYS_286_TSS_BUSY;
                 }
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_TR);
             }
 
             if (fWhat & CPUMCTX_EXTRN_LDTR)
-            {
                 HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcbGuest, LDTR, ldtr);
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_LDTR);
-            }
 
             if (fWhat & CPUMCTX_EXTRN_GDTR)
             {
                 pCtx->gdtr.cbGdt = pVmcbGuest->GDTR.u32Limit;
                 pCtx->gdtr.pGdt  = pVmcbGuest->GDTR.u64Base;
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_GDTR);
             }
 
             if (fWhat & CPUMCTX_EXTRN_IDTR)
             {
                 pCtx->idtr.cbIdt = pVmcbGuest->IDTR.u32Limit;
                 pCtx->idtr.pIdt  = pVmcbGuest->IDTR.u64Base;
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_IDTR);
             }
         }
 
@@ -2956,7 +2933,6 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
             pCtx->msrLSTAR  = pVmcbGuest->u64LSTAR;
             pCtx->msrCSTAR  = pVmcbGuest->u64CSTAR;
             pCtx->msrSFMASK = pVmcbGuest->u64SFMASK;
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_SYSCALL_MSRS);
         }
 
         if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
@@ -2964,14 +2940,10 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
             pCtx->SysEnter.cs  = pVmcbGuest->u64SysEnterCS;
             pCtx->SysEnter.eip = pVmcbGuest->u64SysEnterEIP;
             pCtx->SysEnter.esp = pVmcbGuest->u64SysEnterESP;
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_SYSENTER_MSRS);
         }
 
         if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
-        {
             pCtx->msrKERNELGSBASE = pVmcbGuest->u64KernelGSBase;
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_KERNEL_GS_BASE);
-        }
 
         if (fWhat & CPUMCTX_EXTRN_DR_MASK)
         {
@@ -2981,7 +2953,6 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
                     pCtx->dr[6] = pVmcbGuest->u64DR6;
                 else
                     CPUMSetHyperDR6(pVCpu, pVmcbGuest->u64DR6);
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_DR6);
             }
 
             if (fWhat & CPUMCTX_EXTRN_DR7)
@@ -2990,7 +2961,6 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
                     pCtx->dr[7] = pVmcbGuest->u64DR7;
                 else
                     Assert(pVmcbGuest->u64DR7 == CPUMGetHyperDR7(pVCpu));
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_DR7);
             }
         }
 
@@ -3001,15 +2971,13 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
                 /* We intercept changes to all CR0 bits except maybe TS & MP bits. */
                 uint64_t const uCr0 = (pCtx->cr0          & ~(X86_CR0_TS | X86_CR0_MP))
                                     | (pVmcbGuest->u64CR0 &  (X86_CR0_TS | X86_CR0_MP));
+                VMMRZCallRing3Disable(pVCpu); /* CPUM has log statements and calls into PGM. */
                 CPUMSetGuestCR0(pVCpu, uCr0);
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_CR0);
+                VMMRZCallRing3Enable(pVCpu);
             }
 
             if (fWhat & CPUMCTX_EXTRN_CR2)
-            {
                 pCtx->cr2 = pVmcbGuest->u64CR2;
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_CR2);
-            }
 
             if (fWhat & CPUMCTX_EXTRN_CR3)
             {
@@ -3017,32 +2985,27 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat)
                     && pCtx->cr3 != pVmcbGuest->u64CR3)
                 {
                     CPUMSetGuestCR3(pVCpu, pVmcbGuest->u64CR3);
-                    if (VMMRZCallRing3IsEnabled(pVCpu))
-                    {
-                        Log4(("hmR0SvmImportGuestState: Calling PGMUpdateCR3\n"));
-                        PGMUpdateCR3(pVCpu, pVmcbGuest->u64CR3);
-                    }
-                    else
-                    {
-                        Log4(("hmR0SvmImportGuestState: Setting VMCPU_FF_HM_UPDATE_CR3\n"));
-                        VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
-                    }
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
                 }
-                ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_CR3);
             }
 
             /* Changes to CR4 are always intercepted. */
         }
 
+        /* Update fExtrn. */
+        pCtx->fExtrn &= ~fWhat;
+
         /* If everything has been imported, clear the HM keeper bit. */
         if (!(pCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL))
         {
-            ASMAtomicUoAndU64(&pCtx->fExtrn, ~CPUMCTX_EXTRN_KEEPER_HM);
+            pCtx->fExtrn &= ~CPUMCTX_EXTRN_KEEPER_HM;
             Assert(!pCtx->fExtrn);
         }
     }
     else
-        Assert(!pCtx->fExtrn);
+        Assert(!pCtx->fExtrn || (pCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
+
+    ASMSetFlags(fSavedFlags);
 
     /*
      * Honor any pending CR3 updates.
