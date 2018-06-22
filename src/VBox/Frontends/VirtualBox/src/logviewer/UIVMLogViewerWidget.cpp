@@ -603,8 +603,8 @@ void UIVMLogViewerWidget::prepareActionIcons()
         m_pActionBookmarks->setIcon(UIIconPool::iconSet(QString(":/%1_bookmark_24px.png").arg(strPrefix),
                                                        QString(":/%1_bookmark_disabled_24px.png").arg(strPrefix)));
     if (m_pActionSettings)
-        m_pActionSettings->setIcon(UIIconPool::iconSet(QString(":/%1_settings_22px.png").arg(strPrefix),
-                                                       QString(":/%1_settings_disabled_22px.png").arg(strPrefix)));
+        m_pActionSettings->setIcon(UIIconPool::iconSet(QString(":/%1_settings_24px.png").arg(strPrefix),
+                                                       QString(":/%1_settings_disabled_24px.png").arg(strPrefix)));
 }
 
 void UIVMLogViewerWidget::prepareToolBar()

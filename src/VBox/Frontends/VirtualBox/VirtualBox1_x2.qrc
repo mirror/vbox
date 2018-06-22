@@ -222,14 +222,27 @@
         <file alias="list_moveup_disabled_16px_x2.png">images/x2/list_moveup_disabled_16px_x2.png</file>
         <file alias="log_viewer_bookmark_24px_x2.png">images/x2/log_viewer_bookmark_24px_x2.png</file>
         <file alias="log_viewer_bookmark_disabled_24px_x2.png">images/x2/log_viewer_bookmark_disabled_24px_x2.png</file>
+        <file alias="log_viewer_bookmark_off_16px_x2.png">images/x2/log_viewer_bookmark_off_16px_x2.png</file>
+        <file alias="log_viewer_bookmark_on_16px_x2.png">images/x2/log_viewer_bookmark_on_16px_x2.png</file>
+        <file alias="log_viewer_delete_all_bookmarks_16px_x2.png">images/x2/log_viewer_delete_all_bookmarks_16px_x2.png</file>
+        <file alias="log_viewer_delete_all_filters_16px_x2.png">images/x2/log_viewer_delete_all_filters_16px_x2.png</file>
+        <file alias="log_viewer_delete_current_bookmark_16px_x2.png">images/x2/log_viewer_delete_current_bookmark_16px_x2.png</file>
         <file alias="log_viewer_filter_24px_x2.png">images/x2/log_viewer_filter_24px_x2.png</file>
+        <file alias="log_viewer_filter_add_16px_x2.png">images/x2/log_viewer_filter_add_16px_x2.png</file>
         <file alias="log_viewer_filter_disabled_24px_x2.png">images/x2/log_viewer_filter_disabled_24px_x2.png</file>
         <file alias="log_viewer_find_24px_x2.png">images/x2/log_viewer_find_24px_x2.png</file>
         <file alias="log_viewer_find_disabled_24px_x2.png">images/x2/log_viewer_find_disabled_24px_x2.png</file>
+        <file alias="log_viewer_goto_next_bookmark_16px_x2.png">images/x2/log_viewer_goto_next_bookmark_16px_x2.png</file>
+        <file alias="log_viewer_goto_previous_bookmark_16px_x2.png">images/x2/log_viewer_goto_previous_bookmark_16px_x2.png</file>
+        <file alias="log_viewer_goto_selected_bookmark_16px_x2.png">images/x2/log_viewer_goto_selected_bookmark_16px_x2.png</file>
         <file alias="log_viewer_refresh_24px_x2.png">images/x2/log_viewer_refresh_24px_x2.png</file>
         <file alias="log_viewer_refresh_disabled_24px_x2.png">images/x2/log_viewer_refresh_disabled_24px_x2.png</file>
         <file alias="log_viewer_save_24px_x2.png">images/x2/log_viewer_save_24px_x2.png</file>
         <file alias="log_viewer_save_disabled_24px_x2.png">images/x2/log_viewer_save_disabled_24px_x2.png</file>
+        <file alias="log_viewer_search_backward_16px_x2.png">images/x2/log_viewer_search_backward_16px_x2.png</file>
+        <file alias="log_viewer_search_forward_16px_x2.png">images/x2/log_viewer_search_forward_16px_x2.png</file>
+        <file alias="log_viewer_settings_24px_x2.png">images/x2/log_viewer_settings_24px_x2.png</file>
+        <file alias="log_viewer_settings_disabled_24px_x2.png">images/x2/log_viewer_settings_disabled_24px_x2.png</file>
         <file alias="machine_16px_x2.png">images/x2/machine_16px_x2.png</file>
         <file alias="machine_24px_x2.png">images/x2/machine_24px_x2.png</file>
         <file alias="machine_32px_x2.png">images/x2/machine_32px_x2.png</file>
@@ -295,11 +308,5 @@
         <file alias="os_netware_x2.png">images/x2/os_netware_x2.png</file>
         <file alias="os_openbsd_64_x2.png">images/x2/os_openbsd_64_x2.png</file>
         <file alias="os_openbsd_x2.png">images/x2/os_openbsd_x2.png</file>
-        <file alias="os_opensuse_64_x2.png">images/x2/os_opensuse_64_x2.png</file>
-        <file alias="os_opensuse_x2.png">images/x2/os_opensuse_x2.png</file>
-        <file alias="os_oracle_64_x2.png">images/x2/os_oracle_64_x2.png</file>
-        <file alias="os_oracle_x2.png">images/x2/os_oracle_x2.png</file>
-        <file alias="os_oraclesolaris_64_x2.png">images/x2/os_oraclesolaris_64_x2.png</file>
-        <file alias="os_oraclesolaris_x2.png">images/x2/os_oraclesolaris_x2.png</file>
     </qresource>
 </RCC>

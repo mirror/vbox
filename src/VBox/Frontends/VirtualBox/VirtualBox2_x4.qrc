@@ -1,5 +1,7 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="os_linux26_64_x4.png">images/x4/os_linux26_64_x4.png</file>
+        <file alias="os_linux26_x4.png">images/x4/os_linux26_x4.png</file>
         <file alias="os_linux_64_x4.png">images/x4/os_linux_64_x4.png</file>
         <file alias="os_linux_x4.png">images/x4/os_linux_x4.png</file>
         <file alias="os_macosx_64_x4.png">images/x4/os_macosx_64_x4.png</file>

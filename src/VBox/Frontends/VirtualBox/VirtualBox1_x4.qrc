@@ -222,6 +222,7 @@
         <file alias="log_viewer_bookmark_off_16px_x4.png">images/x4/log_viewer_bookmark_off_16px_x4.png</file>
         <file alias="log_viewer_bookmark_on_16px_x4.png">images/x4/log_viewer_bookmark_on_16px_x4.png</file>
         <file alias="log_viewer_delete_all_bookmarks_16px_x4.png">images/x4/log_viewer_delete_all_bookmarks_16px_x4.png</file>
+        <file alias="log_viewer_delete_all_filters_16px_x4.png">images/x4/log_viewer_delete_all_filters_16px_x4.png</file>
         <file alias="log_viewer_delete_current_bookmark_16px_x4.png">images/x4/log_viewer_delete_current_bookmark_16px_x4.png</file>
         <file alias="log_viewer_filter_24px_x4.png">images/x4/log_viewer_filter_24px_x4.png</file>
         <file alias="log_viewer_filter_add_16px_x4.png">images/x4/log_viewer_filter_add_16px_x4.png</file>
@@ -237,6 +238,8 @@
         <file alias="log_viewer_save_disabled_24px_x4.png">images/x4/log_viewer_save_disabled_24px_x4.png</file>
         <file alias="log_viewer_search_backward_16px_x4.png">images/x4/log_viewer_search_backward_16px_x4.png</file>
         <file alias="log_viewer_search_forward_16px_x4.png">images/x4/log_viewer_search_forward_16px_x4.png</file>
+        <file alias="log_viewer_settings_24px_x4.png">images/x4/log_viewer_settings_24px_x4.png</file>
+        <file alias="log_viewer_settings_disabled_24px_x4.png">images/x4/log_viewer_settings_disabled_24px_x4.png</file>
         <file alias="machine_16px_x4.png">images/x4/machine_16px_x4.png</file>
         <file alias="machine_24px_x4.png">images/x4/machine_24px_x4.png</file>
         <file alias="machine_32px_x4.png">images/x4/machine_32px_x4.png</file>
@@ -289,7 +292,5 @@
         <file alias="os_linux22_x4.png">images/x4/os_linux22_x4.png</file>
         <file alias="os_linux24_64_x4.png">images/x4/os_linux24_64_x4.png</file>
         <file alias="os_linux24_x4.png">images/x4/os_linux24_x4.png</file>
-        <file alias="os_linux26_64_x4.png">images/x4/os_linux26_64_x4.png</file>
-        <file alias="os_linux26_x4.png">images/x4/os_linux26_x4.png</file>
     </qresource>
 </RCC>
