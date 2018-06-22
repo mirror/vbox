@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="os_linux22_x3.png">images/x3/os_linux22_x3.png</file>
         <file alias="os_linux24_64_x3.png">images/x3/os_linux24_64_x3.png</file>
         <file alias="os_linux24_x3.png">images/x3/os_linux24_x3.png</file>
         <file alias="os_linux26_64_x3.png">images/x3/os_linux26_64_x3.png</file>
@@ -186,6 +185,8 @@
         <file alias="state_saved_16px_x3.png">images/x3/state_saved_16px_x3.png</file>
         <file alias="state_saving_16px_x3.png">images/x3/state_saving_16px_x3.png</file>
         <file alias="state_stuck_16px_x3.png">images/x3/state_stuck_16px_x3.png</file>
+        <file alias="status_check_16px_x3.png">images/x3/status_check_16px_x3.png</file>
+        <file alias="status_error_16px_x3.png">images/x3/status_error_16px_x3.png</file>
         <file alias="statusbar_16px_x3.png">images/x3/statusbar_16px_x3.png</file>
         <file alias="statusbar_disabled_16px_x3.png">images/x3/statusbar_disabled_16px_x3.png</file>
         <file alias="statusbar_on_16px_x3.png">images/x3/statusbar_on_16px_x3.png</file>

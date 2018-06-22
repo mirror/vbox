@@ -296,5 +296,6 @@
         <file alias="os_gentoo_x3.png">images/x3/os_gentoo_x3.png</file>
         <file alias="os_jrockitve_x3.png">images/x3/os_jrockitve_x3.png</file>
         <file alias="os_l4_x3.png">images/x3/os_l4_x3.png</file>
+        <file alias="os_linux22_x3.png">images/x3/os_linux22_x3.png</file>
     </qresource>
 </RCC>
