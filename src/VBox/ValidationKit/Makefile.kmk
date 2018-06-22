@@ -171,6 +171,7 @@ define def_vbox_validationkit_common_files
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/loadgeneratorR0.r0 \
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/TestExecService$(TMP_SUFF_EXE) \
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/vts_rm$(TMP_SUFF_EXE) \
+      	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/vts_shutdown$(TMP_SUFF_EXE) \
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/vts_tar$(TMP_SUFF_EXE) \
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/xmmsaving$(TMP_SUFF_EXE)
  endif

@@ -44,5 +44,9 @@ vts_tar_TEMPLATE = VBoxValidationKitR3
 vts_tar_SDKS     = VBOX_ZLIB_STATIC
 vts_tar_SOURCES  = vts_tar.cpp
 
+PROGRAMS += vts_shutdown
+vts_shutdown_TEMPLATE = VBoxValidationKitR3
+vts_shutdown_SOURCES  = ../../../Runtime/tools/RTShutdown.cpp
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
