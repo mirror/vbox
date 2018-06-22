@@ -393,8 +393,8 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
         else
         {
             /* Show resize storage progress: */
-            msgCenter().showModalProgressDialog(comProgress, UIMediumManager::tr("Moving medium..."),
-                                                ":/progress_media_move_90px.png", this);
+            msgCenter().showModalProgressDialog(comProgress, UIMediumManager::tr("Resizing medium..."),
+                                                ":/progress_media_resize_90px.png", this);
 
             /* Show error message if necessary: */
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
