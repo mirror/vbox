@@ -173,7 +173,7 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
      * hooks are in effect). */
     /** @todo change the default to true here */
     bool fExitOptimizationEnabledR0PreemptDisabled = true;
-    rc = CFGMR3QueryBoolDef(pCfgEM, "ExitOptimizationEnabledR0PreemptDisabled", &fExitOptimizationEnabledR0PreemptDisabled, true);
+    rc = CFGMR3QueryBoolDef(pCfgEM, "ExitOptimizationEnabledR0PreemptDisabled", &fExitOptimizationEnabledR0PreemptDisabled, false);
     AssertLogRelRCReturn(rc, rc);
     fExitOptimizationEnabledR0PreemptDisabled &= fExitOptimizationEnabledR0;
 
