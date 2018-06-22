@@ -1095,8 +1095,6 @@ RTDECL(int) RTFuzzObsSetTestBinaryArgs(RTFUZZOBS hFuzzObs, const char * const *p
         pThis->papszArgs = (char **)RTMemAllocZ(sizeof(char **) * (cArgs + 1));
         if (RT_LIKELY(pThis->papszArgs))
         {
-            char **ppszOwn = pThis->papszArgs;
-            const char * const *ppsz = papszArgs;
             for (unsigned i = 0; i < cArgs; i++)
             {
                 pThis->papszArgs[i] = RTStrDup(papszArgs[i]);
