@@ -2898,5 +2898,115 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * part of the state is currently externalized (== in Hyper-V).
  *
  *
+ * @subsection sec_nem_win_benchmarks           Benchmarks.
+ *
+ * @subsubsection subsect_nem_win_benchmarks        Bootsector2-test1
+ *
+ * This is ValidationKit/bootsectors/bootsector2-test1.asm as of 2018-06-22
+ * (internal r123172) running a the release build of VirtualBox from the same
+ * source, though with exit optimizations disabled.  Host is AMD Threadripper 1950X
+ * running out an up to date 64-bit Windows 10 build 17134.
+ *
+ * The base line column is using the official WinHv API for everything but physical
+ * memory mapping.  The 2nd column is the default NEM/win configuration where we
+ * put the main execution loop in ring-0, using hypercalls when we can and VID for
+ * managing execution.  The 3rd column is regular VirtualBox using AMD-V directly,
+ * hyper-V is disabled, main execution loop in ring-0.
+ *
+ * @verbatim
+TESTING...                                                           WinHv API           Hypercalls + VID    VirtualBox AMD-V
+  32-bit paged protected mode, CPUID                        :          108 874 ins/sec   113% / 123 602      1198% / 1 305 113
+  32-bit pae protected mode, CPUID                          :          106 722 ins/sec   115% / 122 740      1232% / 1 315 201
+  64-bit long mode, CPUID                                   :          106 798 ins/sec   114% / 122 111      1198% / 1 280 404
+  16-bit unpaged protected mode, CPUID                      :          106 835 ins/sec   114% / 121 994      1216% / 1 299 665
+  32-bit unpaged protected mode, CPUID                      :          105 257 ins/sec   115% / 121 772      1235% / 1 300 860
+  real mode, CPUID                                          :          104 507 ins/sec   116% / 121 800      1228% / 1 283 848
+CPUID EAX=1                                                 : PASSED
+  32-bit paged protected mode, RDTSC                        :       99 581 834 ins/sec   100% / 100 323 307    93% / 93 473 299
+  32-bit pae protected mode, RDTSC                          :       99 620 585 ins/sec   100% / 99 960 952     84% / 83 968 839
+  64-bit long mode, RDTSC                                   :      100 540 009 ins/sec   100% / 100 946 372    93% / 93 652 826
+  16-bit unpaged protected mode, RDTSC                      :       99 688 473 ins/sec   100% / 100 097 751    76% / 76 281 287
+  32-bit unpaged protected mode, RDTSC                      :       98 385 857 ins/sec   102% / 100 510 404    94% / 93 379 536
+  real mode, RDTSC                                          :      100 087 967 ins/sec   101% / 101 386 138    93% / 93 234 999
+RDTSC                                                       : PASSED
+  32-bit paged protected mode, Read CR4                     :        2 156 102 ins/sec    98% / 2 121 967   17114% / 369 009 009
+  32-bit pae protected mode, Read CR4                       :        2 163 820 ins/sec    98% / 2 133 804   17469% / 377 999 261
+  64-bit long mode, Read CR4                                :        2 164 822 ins/sec    98% / 2 128 698   18875% / 408 619 313
+  16-bit unpaged protected mode, Read CR4                   :        2 162 367 ins/sec   100% / 2 168 508   17132% / 370 477 568
+  32-bit unpaged protected mode, Read CR4                   :        2 163 189 ins/sec   100% / 2 169 808   16768% / 362 734 679
+  real mode, Read CR4                                       :        2 162 436 ins/sec   100% / 2 164 914   15551% / 336 288 998
+Read CR4                                                    : PASSED
+  real mode, 32-bit IN                                      :          104 649 ins/sec   118% / 123 513      1028% / 1 075 831
+  real mode, 32-bit OUT                                     :          107 102 ins/sec   115% / 123 660       982% / 1 052 259
+  real mode, 32-bit IN-to-ring-3                            :          105 697 ins/sec    98% / 104 471       201% / 213 216
+  real mode, 32-bit OUT-to-ring-3                           :          105 830 ins/sec    98% / 104 598       198% / 210 495
+  16-bit unpaged protected mode, 32-bit IN                  :          104 855 ins/sec   117% / 123 174      1029% / 1 079 591
+  16-bit unpaged protected mode, 32-bit OUT                 :          107 529 ins/sec   115% / 124 250       992% / 1 067 053
+  16-bit unpaged protected mode, 32-bit IN-to-ring-3        :          106 337 ins/sec   103% / 109 565       196% / 209 367
+  16-bit unpaged protected mode, 32-bit OUT-to-ring-3       :          107 558 ins/sec   100% / 108 237       191% / 206 387
+  32-bit unpaged protected mode, 32-bit IN                  :          106 351 ins/sec   116% / 123 584      1016% / 1 081 325
+  32-bit unpaged protected mode, 32-bit OUT                 :          106 424 ins/sec   116% / 124 252       995% / 1 059 408
+  32-bit unpaged protected mode, 32-bit IN-to-ring-3        :          104 035 ins/sec   101% / 105 305       202% / 210 750
+  32-bit unpaged protected mode, 32-bit OUT-to-ring-3       :          103 831 ins/sec   102% / 106 919       205% / 213 198
+  32-bit paged protected mode, 32-bit IN                    :          103 356 ins/sec   119% / 123 870      1041% / 1 076 463
+  32-bit paged protected mode, 32-bit OUT                   :          107 177 ins/sec   115% / 124 302       998% / 1 069 655
+  32-bit paged protected mode, 32-bit IN-to-ring-3          :          104 491 ins/sec   100% / 104 744       200% / 209 264
+  32-bit paged protected mode, 32-bit OUT-to-ring-3         :          106 603 ins/sec    97% / 103 849       197% / 210 219
+  32-bit pae protected mode, 32-bit IN                      :          105 923 ins/sec   115% / 122 759      1041% / 1 103 261
+  32-bit pae protected mode, 32-bit OUT                     :          107 083 ins/sec   117% / 126 057      1024% / 1 096 667
+  32-bit pae protected mode, 32-bit IN-to-ring-3            :          106 114 ins/sec    97% / 103 496       199% / 211 312
+  32-bit pae protected mode, 32-bit OUT-to-ring-3           :          105 675 ins/sec    96% / 102 096       198% / 209 890
+  64-bit long mode, 32-bit IN                               :          105 800 ins/sec   113% / 120 006      1013% / 1 072 116
+  64-bit long mode, 32-bit OUT                              :          105 635 ins/sec   113% / 120 375       997% / 1 053 655
+  64-bit long mode, 32-bit IN-to-ring-3                     :          105 274 ins/sec    95% / 100 763       197% / 208 026
+  64-bit long mode, 32-bit OUT-to-ring-3                    :          106 262 ins/sec    94% / 100 749       196% / 209 288
+NOP I/O Port Access                                         : PASSED
+  32-bit paged protected mode, 32-bit read                  :           57 687 ins/sec   119% / 69 136       1197% / 690 548
+  32-bit paged protected mode, 32-bit write                 :           57 957 ins/sec   118% / 68 935       1183% / 685 930
+  32-bit paged protected mode, 32-bit read-to-ring-3        :           57 958 ins/sec    95% / 55 432        276% / 160 505
+  32-bit paged protected mode, 32-bit write-to-ring-3       :           57 922 ins/sec   100% / 58 340        304% / 176 464
+  32-bit pae protected mode, 32-bit read                    :           57 478 ins/sec   119% / 68 453       1141% / 656 159
+  32-bit pae protected mode, 32-bit write                   :           57 226 ins/sec   118% / 68 097       1157% / 662 504
+  32-bit pae protected mode, 32-bit read-to-ring-3          :           57 582 ins/sec    94% / 54 651        268% / 154 867
+  32-bit pae protected mode, 32-bit write-to-ring-3         :           57 697 ins/sec   100% / 57 750        299% / 173 030
+  64-bit long mode, 32-bit read                             :           57 128 ins/sec   118% / 67 779       1071% / 611 949
+  64-bit long mode, 32-bit write                            :           57 127 ins/sec   118% / 67 632       1084% / 619 395
+  64-bit long mode, 32-bit read-to-ring-3                   :           57 181 ins/sec    94% / 54 123        265% / 151 937
+  64-bit long mode, 32-bit write-to-ring-3                  :           57 297 ins/sec    99% / 57 286        294% / 168 694
+  16-bit unpaged protected mode, 32-bit read                :           58 827 ins/sec   118% / 69 545       1185% / 697 602
+  16-bit unpaged protected mode, 32-bit write               :           58 678 ins/sec   118% / 69 442       1183% / 694 387
+  16-bit unpaged protected mode, 32-bit read-to-ring-3      :           57 841 ins/sec    96% / 55 730        275% / 159 163
+  16-bit unpaged protected mode, 32-bit write-to-ring-3     :           57 855 ins/sec   101% / 58 834        304% / 176 169
+  32-bit unpaged protected mode, 32-bit read                :           58 063 ins/sec   120% / 69 690       1233% / 716 444
+  32-bit unpaged protected mode, 32-bit write               :           57 936 ins/sec   120% / 69 633       1199% / 694 753
+  32-bit unpaged protected mode, 32-bit read-to-ring-3      :           58 451 ins/sec    96% / 56 183        273% / 159 972
+  32-bit unpaged protected mode, 32-bit write-to-ring-3     :           58 962 ins/sec    99% / 58 955        298% / 175 936
+  real mode, 32-bit read                                    :           58 571 ins/sec   118% / 69 478       1160% / 679 917
+  real mode, 32-bit write                                   :           58 418 ins/sec   118% / 69 320       1185% / 692 513
+  real mode, 32-bit read-to-ring-3                          :           58 072 ins/sec    96% / 55 751        274% / 159 145
+  real mode, 32-bit write-to-ring-3                         :           57 870 ins/sec   101% / 58 755        307% / 178 042
+NOP MMIO Access                                             : PASSED
+SUCCESS
+ * @endverbatim
+ *
+ * What we see here is:
+ *
+ *  - The WinHv API approach is 10 to 12 times slower for exits we can
+ *    handle directly in ring-0 in the VBox AMD-V code.
+ *
+ *  - The WinHv API approach is 2 to 3 times slower for exits we have to
+ *    go to ring-3 to handle with the VBox AMD-V code.
+ *
+ *  - By using hypercalls and VID.SYS from ring-0 we gain between
+ *    13% and 20% over the WinHv API on exits handled in ring-0.
+ *
+ *  - For exits requiring ring-3 handling are between 6% slower and 3% faster
+ *    than the WinHv API.
+ *
+ *
+ * As a side note, it looks like Hyper-V doesn't let the guest read CR4 but
+ * triggers exits all the time.  This isn't all that important these days since
+ * OSes like Linux cache the CR4 value specifically to avoid these kinds of exits.
+ *
  */
 
