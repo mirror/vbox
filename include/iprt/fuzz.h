@@ -296,6 +296,22 @@ RTDECL(int) RTFuzzInputAddToCtxCorpus(RTFUZZINPUT hFuzzInput);
 RTDECL(int) RTFuzzInputRemoveFromCtxCorpus(RTFUZZINPUT hFuzzInput);
 
 
+/**
+ * Fuzzing observer statistics.
+ */
+typedef struct RTFUZZOBSSTATS
+{
+    /** Number of fuzzed inputs per second. */
+    uint32_t                    cFuzzedInputsPerSec;
+    /** Number of overall fuzzed inputs. */
+    uint32_t                    cFuzzedInputs;
+    /** Number of observed hangs. */
+    uint32_t                    cFuzzedInputsHang;
+    /** Number of observed crashes. */
+    uint32_t                    cFuzzedInputsCrash;
+} RTFUZZOBSSTATS;
+/** Pointer to a fuzzing observer statistics record. */
+typedef RTFUZZOBSSTATS *PRTFUZZOBSSTATS;
 
 /**
  * Creates a new fuzzing observer.
@@ -323,6 +339,15 @@ RTDECL(int) RTFuzzObsDestroy(RTFUZZOBS hFuzzObs);
  * @note The fuzzing context handle should be released with RTFuzzCtxRelease() when not used anymore.
  */
 RTDECL(int) RTFuzzObsQueryCtx(RTFUZZOBS hFuzzObs, PRTFUZZCTX phFuzzCtx);
+
+/**
+ * Queries the current statistics for the given fuzzing observer.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzObs            The fuzzing observer handle.
+ * @param   pStats              Where to store the statistics to.
+ */
+RTDECL(int) RTFuzzObsQueryStats(RTFUZZOBS hFuzzObs, PRTFUZZOBSSTATS pStats);
 
 /**
  * Sets the temp directory for the given fuzzing observer.

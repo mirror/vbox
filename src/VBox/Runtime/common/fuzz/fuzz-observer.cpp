@@ -124,6 +124,13 @@ typedef struct RTFUZZOBSINT
     uint32_t                    cThreads;
     /** Pointer to the array of observer thread states. */
     PRTFUZZOBSTHRD              paObsThreads;
+    /** Timestamp of the last stats query. */
+    uint64_t                    tsLastStats;
+    /** Last number of fuzzed inputs per second if we didn't gather enough data in between
+     * statistic queries. */
+    uint32_t                    cFuzzedInputsPerSecLast;
+    /** Fuzzing statistics. */
+    RTFUZZOBSSTATS              Stats;
 } RTFUZZOBSINT;
 
 
@@ -753,13 +760,22 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
         {
             RTPROCSTATUS ProcSts;
             rc = rtFuzzObsExecCtxClientRun(pThis, pExecCtx, &ProcSts);
+            ASMAtomicIncU32(&pThis->Stats.cFuzzedInputs);
+            ASMAtomicIncU32(&pThis->Stats.cFuzzedInputsPerSec);
+
             if (RT_SUCCESS(rc))
             {
                 if (ProcSts.enmReason != RTPROCEXITREASON_NORMAL)
+                {
+                    ASMAtomicIncU32(&pThis->Stats.cFuzzedInputsCrash);
                     rc = rtFuzzObsAddInputToResults(pThis, pObsThrd->hFuzzInput, pExecCtx);
+                }
             }
             else if (rc == VERR_TIMEOUT)
+            {
+                ASMAtomicIncU32(&pThis->Stats.cFuzzedInputsHang);
                 rc = rtFuzzObsAddInputToResults(pThis, pObsThrd->hFuzzInput, pExecCtx);
+            }
             else
                 AssertFailed();
 
@@ -938,6 +954,11 @@ RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs)
         pThis->bmEvt         = 0;
         pThis->cThreads      = 0;
         pThis->paObsThreads  = NULL;
+        pThis->tsLastStats   = RTTimeMilliTS();
+        pThis->Stats.cFuzzedInputsPerSec = 0;
+        pThis->Stats.cFuzzedInputs       = 0;
+        pThis->Stats.cFuzzedInputsHang   = 0;
+        pThis->Stats.cFuzzedInputsCrash  = 0;
         rc = RTFuzzCtxCreate(&pThis->hFuzzCtx);
         if (RT_SUCCESS(rc))
         {
@@ -990,6 +1011,31 @@ RTDECL(int) RTFuzzObsQueryCtx(RTFUZZOBS hFuzzObs, PRTFUZZCTX phFuzzCtx)
 
     RTFuzzCtxRetain(pThis->hFuzzCtx);
     *phFuzzCtx = pThis->hFuzzCtx;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFuzzObsQueryStats(RTFUZZOBS hFuzzObs, PRTFUZZOBSSTATS pStats)
+{
+    PRTFUZZOBSINT pThis = hFuzzObs;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pStats, VERR_INVALID_POINTER);
+
+    uint64_t tsStatsQuery = RTTimeMilliTS();
+    uint32_t cFuzzedInputsPerSec = ASMAtomicXchgU32(&pThis->Stats.cFuzzedInputsPerSec, 0);
+
+    pStats->cFuzzedInputsCrash  = ASMAtomicReadU32(&pThis->Stats.cFuzzedInputsCrash);
+    pStats->cFuzzedInputsHang   = ASMAtomicReadU32(&pThis->Stats.cFuzzedInputsHang);
+    pStats->cFuzzedInputs       = ASMAtomicReadU32(&pThis->Stats.cFuzzedInputs);
+    uint64_t cPeriodSec = (tsStatsQuery - pThis->tsLastStats) / 1000;
+    if (cPeriodSec)
+    {
+        pStats->cFuzzedInputsPerSec    = cFuzzedInputsPerSec / cPeriodSec;
+        pThis->cFuzzedInputsPerSecLast = pStats->cFuzzedInputsPerSec;
+        pThis->tsLastStats             = tsStatsQuery;
+    }
+    else
+        pStats->cFuzzedInputsPerSec = pThis->cFuzzedInputsPerSecLast;
     return VINF_SUCCESS;
 }
 
@@ -1051,22 +1097,18 @@ RTDECL(int) RTFuzzObsSetTestBinaryArgs(RTFUZZOBS hFuzzObs, const char * const *p
         {
             char **ppszOwn = pThis->papszArgs;
             const char * const *ppsz = papszArgs;
-            while (   *ppsz != NULL
-                   && RT_SUCCESS(rc))
+            for (unsigned i = 0; i < cArgs; i++)
             {
-                *ppszOwn = RTStrDup(*ppsz);
-                if (RT_UNLIKELY(!*ppszOwn))
+                pThis->papszArgs[i] = RTStrDup(papszArgs[i]);
+                if (RT_UNLIKELY(!pThis->papszArgs[i]))
                 {
-                    while (ppszOwn > pThis->papszArgs)
+                    while (i > 0)
                     {
-                        ppszOwn--;
-                        RTStrFree(*ppszOwn);
+                        i--;
+                        RTStrFree(pThis->papszArgs[i]);
                     }
                     break;
                 }
-
-                ppszOwn++;
-                ppsz++;
             }
 
             if (RT_FAILURE(rc))

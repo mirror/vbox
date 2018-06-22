@@ -90,6 +90,10 @@ typedef struct RTFUZZCMDMASTER
     const char                  *pszResultsDir;
     /** Flag whether to shutdown. */
     bool                        fShutdown;
+    /** Flag whether to send a response along with the ACK. */
+    bool                        fAckResponse;
+    /** The response message. */
+    char                        aszResponse[_1K];
 } RTFUZZCMDMASTER;
 /** Pointer to a fuzzing master command state. */
 typedef RTFUZZCMDMASTER *PRTFUZZCMDMASTER;
@@ -812,8 +816,30 @@ static int rtFuzzCmdMasterProcessJsonReqResume(PRTFUZZCMDMASTER pThis, RTJSONVAL
  */
 static int rtFuzzCmdMasterProcessJsonReqQueryStats(PRTFUZZCMDMASTER pThis, RTJSONVAL hJsonRoot, PRTERRINFO pErrInfo)
 {
-    RT_NOREF(pThis, hJsonRoot, pErrInfo);
-    return VERR_NOT_IMPLEMENTED;
+    PRTFUZZRUN pFuzzRun;
+    int rc = rtFuzzCmdMasterQueryFuzzRunFromJson(pThis, hJsonRoot, "Id", pErrInfo, &pFuzzRun);
+    if (RT_SUCCESS(rc))
+    {
+        RTFUZZOBSSTATS Stats;
+        rc = RTFuzzObsQueryStats(pFuzzRun->hFuzzObs, &Stats);
+        if (RT_SUCCESS(rc))
+        {
+            const char s_szStats[] = "{ \"FuzzedInputsPerSec\": %u\n"
+                                     "  \"FuzzedInputs\":       %u\n"
+                                     "  \"FuzzedInputsHang\":   %u\n"
+                                     "  \"FuzzedInputsCrash\":   %u\n}";
+            ssize_t cch = RTStrPrintf2(&pThis->aszResponse[0], sizeof(pThis->aszResponse), s_szStats, Stats.cFuzzedInputsPerSec,
+                                       Stats.cFuzzedInputs, Stats.cFuzzedInputsHang, Stats.cFuzzedInputsCrash);
+            if (cch > 0)
+                pThis->fAckResponse = true;
+            else
+                rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_BUFFER_OVERFLOW, "Request error: Response data buffer overflow", rc);
+        }
+        else
+            rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Failed to query fuzzing statistics with %Rrc", rc);
+    }
+
+    return rc;
 }
 
 
@@ -901,11 +927,23 @@ static void rtFuzzCmdMasterDestroy(PRTFUZZCMDMASTER pThis)
  *
  * @returns nothing.
  * @param   hSocket             The socket handle to send the ACK to.
+ * @param   pszResponse         Additional response data.
  */
-static void rtFuzzCmdMasterTcpSendAck(RTSOCKET hSocket)
+static void rtFuzzCmdMasterTcpSendAck(RTSOCKET hSocket, const char *pszResponse)
 {
     const char s_szSucc[] = "{ \"Status\": \"ACK\" }\n";
-    RTTcpWrite(hSocket, s_szSucc, sizeof(s_szSucc));
+    const char s_szSuccResp[] = "{ \"Status\": \"ACK\"\n  \"Response\":\n    %s\n }\n";
+    if (pszResponse)
+    {
+        char szTmp[_1K];
+        ssize_t cchResp = RTStrPrintf2(szTmp, sizeof(szTmp), s_szSuccResp, pszResponse);
+        if (cchResp > 0)
+            RTTcpWrite(hSocket, szTmp, cchResp);
+        else
+            RTTcpWrite(hSocket, s_szSucc, strlen(s_szSucc));
+    }
+    else
+        RTTcpWrite(hSocket, s_szSucc, sizeof(s_szSucc));
 }
 
 
@@ -923,7 +961,7 @@ static void rtFuzzCmdMasterTcpSendNAck(RTSOCKET hSocket, PRTERRINFO pErrInfo)
 
     if (pErrInfo)
     {
-        char szTmp[1024];
+        char szTmp[_1K];
         ssize_t cchResp = RTStrPrintf2(szTmp, sizeof(szTmp), s_szFailInfo, pErrInfo->pszMsg);
         if (cchResp > 0)
             RTTcpWrite(hSocket, szTmp, cchResp);
@@ -972,12 +1010,14 @@ static DECLCALLBACK(int) rtFuzzCmdMasterTcpServe(RTSOCKET hSocket, void *pvUser)
                     RTERRINFOSTATIC ErrInfo;
                     RTErrInfoInitStatic(&ErrInfo);
 
+                    pThis->fAckResponse = false;
+                    RT_ZERO(pThis->aszResponse);
                     rc = RTJsonParseFromBuf(&hJsonReq, pbReq, cbReq, &ErrInfo.Core);
                     if (RT_SUCCESS(rc))
                     {
                         rc = rtFuzzCmdMasterProcessJsonReq(pThis, hJsonReq, &ErrInfo.Core);
                         if (RT_SUCCESS(rc))
-                            rtFuzzCmdMasterTcpSendAck(hSocket);
+                            rtFuzzCmdMasterTcpSendAck(hSocket, pThis->fAckResponse ? pThis->aszResponse : NULL);
                         else
                             rtFuzzCmdMasterTcpSendNAck(hSocket, &ErrInfo.Core);
                         RTJsonValueRelease(hJsonReq);
