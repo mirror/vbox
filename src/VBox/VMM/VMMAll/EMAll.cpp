@@ -602,8 +602,8 @@ static PCEMEXITREC emHistoryAddOrUpdateRecord(PVMCPU pVCpu, uint64_t uFlagsAndTy
                                               PEMEXITENTRY pHistEntry, uint64_t uExitNo)
 {
 # ifdef IN_RING0
-    /* Disregard the preempt disabled flag. */
-    uFlagsAndType &= ~EMEXIT_F_PREEMPT_DISABLED;
+    /* Disregard the hm flag. */
+    uFlagsAndType &= ~EMEXIT_F_HM;
 # endif
 
     /*
@@ -774,7 +774,7 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType,
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
 # ifdef IN_RING0
         && pVCpu->em.s.fExitOptimizationEnabledR0
-        && ( !(uFlagsAndType & EMEXIT_F_PREEMPT_DISABLED) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
+        && ( !(uFlagsAndType & EMEXIT_F_HM) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
 # else
         && pVCpu->em.s.fExitOptimizationEnabled
 # endif
@@ -863,7 +863,7 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFl
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
 # ifdef IN_RING0
         && pVCpu->em.s.fExitOptimizationEnabledR0
-        && ( !(uFlagsAndType & EMEXIT_F_PREEMPT_DISABLED) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
+        && ( !(uFlagsAndType & EMEXIT_F_HM) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
 # else
         && pVCpu->em.s.fExitOptimizationEnabled
 # endif
@@ -908,7 +908,7 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
 # ifdef IN_RING0
         && pVCpu->em.s.fExitOptimizationEnabledR0
-        && ( !(uFlagsAndType & EMEXIT_F_PREEMPT_DISABLED) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
+        && ( !(uFlagsAndType & EMEXIT_F_HM) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
 # else
         && pVCpu->em.s.fExitOptimizationEnabled
 # endif

@@ -1891,7 +1891,7 @@ nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, HV_X64_MEMORY_INTERCEPT_MESSA
                       pMsg->GuestPhysicalAddress, Info.HCPhys, g_apszPageStates[Info.u2NemState], Info.fNemProt,
                       Info.fHasHandlers ? " handlers" : "", Info.fZeroPage    ? " zero-pg" : "",
                       State.fDidSomething ? "" : " no-change", g_apszHvInterceptAccessTypes[pMsg->Header.InterceptAccessType]));
-                EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_MEMORY_ACCESS),
+                EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_MEMORY_ACCESS),
                                  pMsg->Header.Rip + pMsg->Header.CsSegment.Base, uHostTsc);
                 return VINF_SUCCESS;
             }
@@ -1913,8 +1913,8 @@ nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, HV_X64_MEMORY_INTERCEPT_MESSA
      */
     PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu,
                                               pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
-                                            ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
-                                            : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
+                                            ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
+                                            : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
                                             pMsg->Header.Rip + pMsg->Header.CsSegment.Base, uHostTsc);
     nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
     VBOXSTRICTRC rcStrict;
@@ -1999,7 +1999,7 @@ nemR3WinHandleExitMemory(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *p
                       pExit->MemoryAccess.Gpa, Info.HCPhys, g_apszPageStates[Info.u2NemState], Info.fNemProt,
                       Info.fHasHandlers ? " handlers" : "", Info.fZeroPage    ? " zero-pg" : "",
                       State.fDidSomething ? "" : " no-change", g_apszHvInterceptAccessTypes[pExit->MemoryAccess.AccessInfo.AccessType]));
-                EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_MEMORY_ACCESS),
+                EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_MEMORY_ACCESS),
                                  pExit->VpContext.Rip + pExit->VpContext.Cs.Base, uHostTsc);
                 return VINF_SUCCESS;
             }
@@ -2021,8 +2021,8 @@ nemR3WinHandleExitMemory(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *p
      */
     PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu,
                                               pExit->MemoryAccess.AccessInfo.AccessType == WHvMemoryAccessWrite
-                                            ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
-                                            : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
+                                            ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
+                                            : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
                                             pExit->VpContext.Rip + pExit->VpContext.Cs.Base, uHostTsc);
     nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
     rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, pCtx, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_DS | CPUMCTX_EXTRN_ES);
@@ -2089,11 +2089,11 @@ nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, HV_X64_IO_PORT_INTERCEPT_MESS
     PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu,
                                             !pMsg->AccessInfo.StringOp
                                             ? (  pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
-                                               ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_WRITE)
-                                               : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_READ))
+                                               ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_WRITE)
+                                               : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_READ))
                                             : (  pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
-                                               ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_WRITE)
-                                               : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_READ)),
+                                               ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_WRITE)
+                                               : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_READ)),
                                             pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC());
     if (!pExitRec)
     {
@@ -2288,11 +2288,11 @@ nemR3WinHandleExitIoPort(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *p
     PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu,
                                             !pExit->IoPortAccess.AccessInfo.StringOp
                                             ? (  pExit->MemoryAccess.AccessInfo.AccessType == WHvMemoryAccessWrite
-                                               ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_WRITE)
-                                               : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_READ))
+                                               ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_WRITE)
+                                               : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_READ))
                                             : (  pExit->MemoryAccess.AccessInfo.AccessType == WHvMemoryAccessWrite
-                                               ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_WRITE)
-                                               : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_READ)),
+                                               ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_WRITE)
+                                               : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_READ)),
                                             pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
     if (!pExitRec)
     {
@@ -2454,7 +2454,7 @@ nemHCWinHandleMessageInterruptWindow(PVM pVM, PVMCPU pVCpu, HV_X64_INTERRUPT_WIN
     /*
      * Just copy the state we've got and handle it in the loop for now.
      */
-    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_INTTERRUPT_WINDOW),
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_INTTERRUPT_WINDOW),
                      pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC());
 
     nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
@@ -2491,7 +2491,7 @@ nemR3WinHandleExitInterruptWindow(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT
     /*
      * Just copy the state we've got and handle it in the loop for now.
      */
-    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_INTTERRUPT_WINDOW),
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_INTTERRUPT_WINDOW),
                      pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
 
     nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
@@ -2522,7 +2522,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageCpuId(PVM pVM, PVMCPU pVCpu, H
                                                         PGVMCPU pGVCpu)
 {
     AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
-    PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_CPUID),
+    PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_CPUID),
                                             pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC());
     if (!pExitRec)
     {
@@ -2603,7 +2603,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC
 nemR3WinHandleExitCpuId(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExit)
 {
     AssertMsg(pExit->VpContext.InstructionLength < 0x10, ("%#x\n", pExit->VpContext.InstructionLength));
-    PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_CPUID),
+    PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_CPUID),
                                             pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
     if (!pExitRec)
     {
@@ -2699,8 +2699,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
          */
         PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu,
                                                   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
-                                                ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE)
-                                                : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ),
+                                                ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE)
+                                                : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ),
                                                 pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC());
 
         nemHCWinCopyStateFromX64Header(pVCpu, pCtx, &pMsg->Header);
@@ -2844,8 +2844,8 @@ nemR3WinHandleExitMsr(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExi
          */
         PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu,
                                                   pExit->MsrAccess.AccessInfo.IsWrite
-                                                ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE)
-                                                : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ),
+                                                ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE)
+                                                : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ),
                                                 pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
         nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
         rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL, pCtx,
@@ -3125,7 +3125,7 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
          */
         case X86_XCPT_UD:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUd);
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_UD),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_UD),
                              pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC());
 
             if (nemHcWinIsInterestingUndefinedOpcode(pMsg->InstructionByteCount, pMsg->InstructionBytes,
@@ -3148,7 +3148,7 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
          */
         case X86_XCPT_DB:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionDb);
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_DB),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_DB),
                              pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC());
             Log4(("XcptExit/%u: %04x:%08RX64/%s: #DB - TODO\n",
                   pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header) ));
@@ -3156,7 +3156,7 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
 
         case X86_XCPT_BP:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionBp);
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_BP),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_BP),
                              pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC());
             Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO - %u\n", pVCpu->idCpu, pMsg->Header.CsSegment.Selector,
                   pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header), pMsg->Header.InstructionLength));
@@ -3230,7 +3230,7 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
          */
         case X86_XCPT_UD:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionUd);
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_UD),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_UD),
                              pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
             if (nemHcWinIsInterestingUndefinedOpcode(pExit->VpException.InstructionByteCount, pExit->VpException.InstructionBytes,
                                                      pExit->VpContext.ExecutionState.EferLma && pExit->VpContext.Cs.Long ))
@@ -3255,7 +3255,7 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
          */
         case X86_XCPT_DB:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionDb);
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_DB),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_DB),
                              pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
             Log4(("XcptExit/%u: %04x:%08RX64/%s: #DB - TODO\n",
                   pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext) ));
@@ -3263,7 +3263,7 @@ nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
 
         case X86_XCPT_BP:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionBp);
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_BP),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_BP),
                              pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
             Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO - %u\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector,
                   pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->VpContext.InstructionLength));
@@ -3322,7 +3322,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageUnrecoverableException(PVMCPU 
     /*
      * Let IEM decide whether this is really it.
      */
-    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_UNRECOVERABLE_EXCEPTION),
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_UNRECOVERABLE_EXCEPTION),
                      pMsgHdr->Rip + pMsgHdr->CsSegment.Base, ASMReadTSC());
     nemHCWinCopyStateFromX64Header(pVCpu, pCtx, pMsgHdr);
     VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, pCtx,
@@ -3379,7 +3379,7 @@ nemR3WinHandleExitUnrecoverableException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_
     /*
      * Let IEM decide whether this is really it.
      */
-    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_UNRECOVERABLE_EXCEPTION),
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_UNRECOVERABLE_EXCEPTION),
                      pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
     nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
     VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL, pCtx,
@@ -3450,7 +3450,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessage(PVM pVM, PVMCPU pVCpu, VID_ME
 
             case HvMessageTypeX64Halt:
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHalt);
-                EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_HALT),
+                EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_HALT),
                                  pMsg->X64InterceptHeader.Rip + pMsg->X64InterceptHeader.CsSegment.Base, ASMReadTSC());
                 Log4(("HaltExit\n"));
                 return VINF_EM_HALT;
@@ -3534,7 +3534,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVM pVM, PVMCPU pVCpu, WHV_RUN_V
 
         case WHvRunVpExitReasonX64Halt:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHalt);
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_NEM, NEMEXITTYPE_HALT),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_HALT),
                              pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
             Log4(("HaltExit\n"));
             return VINF_EM_HALT;

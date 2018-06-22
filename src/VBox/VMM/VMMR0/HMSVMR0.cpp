@@ -108,7 +108,8 @@
 /** Macro for importing guest state from the VMCB back into CPUMCTX.  */
 #define HMSVM_CPUMCTX_IMPORT_STATE(a_pVCpu, a_pCtx, a_fWhat) \
     do { \
-        hmR0SvmImportGuestState((a_pVCpu), (a_pCtx), (a_fWhat)); \
+        if ((a_pCtx)->fExtrn & (a_fWhat)) \
+            hmR0SvmImportGuestState((a_pVCpu), (a_pCtx), (a_fWhat)); \
     } while (0)
 
 /** Assert that the required state bits are fetched. */
@@ -4900,7 +4901,7 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     }
 
     HMSVM_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
-    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_SVM, pSvmTransient->u64ExitCode & EMEXIT_F_TYPE_MASK),
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_SVM, pSvmTransient->u64ExitCode & EMEXIT_F_TYPE_MASK),
                      pCtx->cs.u64Base + pCtx->rip, uHostTsc);
 }
 
@@ -6497,20 +6498,45 @@ HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = EMInterpretCpuId(pVM, pVCpu, CPUMCTX2CORE(pCtx));
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, pCtx, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS);
+    VBOXSTRICTRC rcStrict;
+    PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
+                                                            EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_CPUID),
+                                                            pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+    if (!pExitRec)
     {
-        hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
-        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
+        rcStrict = EMInterpretCpuId(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        {
+            hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+        }
+        else
+        {
+            AssertMsgFailed(("hmR0SvmExitCpuid: EMInterpretCpuId failed with %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            rcStrict = VERR_EM_INTERPRETER;
+        }
     }
     else
     {
-        AssertMsgFailed(("hmR0SvmExitCpuid: EMInterpretCpuId failed with %Rrc\n", rc));
-        rc = VERR_EM_INTERPRETER;
+        /*
+         * Frequent exit or something needing probing.  Get state and call EMHistoryExec.
+         */
+        Assert(pCtx == &pVCpu->cpum.GstCtx);
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, pCtx, IEM_CPUMCTX_EXTRN_MUST_MASK);
+
+        Log4(("CpuIdExit/%u: %04x:%08RX64: %#x/%#x -> EMHistoryExec\n",
+              pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx));
+
+        rcStrict = EMHistoryExec(pVCpu, pExitRec, 0);
+
+        Log4(("CpuIdExit/%u: %04x:%08RX64: EMHistoryExec -> %Rrc + %04x:%08RX64\n",
+              pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+              VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     }
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCpuid);
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
@@ -7085,166 +7111,202 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         return VERR_EM_INTERPRETER;
     }
 
+    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, pCtx, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS);
     VBOXSTRICTRC rcStrict;
-    bool fUpdateRipAlready = false;
-    if (IoExitInfo.n.u1Str)
+    PCEMEXITREC pExitRec = NULL;
+    if (   !pVCpu->hm.s.fSingleInstruction
+        && !pVCpu->cpum.GstCtx.eflags.Bits.u1TF)
+        pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
+                                                    !IoExitInfo.n.u1Str
+                                                    ? IoExitInfo.n.u1Type == SVM_IOIO_READ
+                                                    ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_READ)
+                                                    : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_WRITE)
+                                                    : IoExitInfo.n.u1Type == SVM_IOIO_READ
+                                                    ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_STR_READ)
+                                                    : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_STR_WRITE),
+                                                    pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+    if (!pExitRec)
     {
-        /* INS/OUTS - I/O String instruction. */
-        /** @todo Huh? why can't we use the segment prefix information given by AMD-V
-         *        in EXITINFO1? Investigate once this thing is up and running. */
-        Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c str\n", pCtx->cs.Sel, pCtx->rip, IoExitInfo.n.u16Port, cbValue,
-              IoExitInfo.n.u1Type == SVM_IOIO_WRITE ? 'w' : 'r'));
-        AssertReturn(pCtx->dx == IoExitInfo.n.u16Port, VERR_SVM_IPE_2);
-        static IEMMODE const s_aenmAddrMode[8] =
+        bool fUpdateRipAlready = false;
+        if (IoExitInfo.n.u1Str)
         {
-            (IEMMODE)-1, IEMMODE_16BIT, IEMMODE_32BIT, (IEMMODE)-1, IEMMODE_64BIT, (IEMMODE)-1, (IEMMODE)-1, (IEMMODE)-1
-        };
-        IEMMODE enmAddrMode = s_aenmAddrMode[(IoExitInfo.u >> 7) & 0x7];
-        if (enmAddrMode != (IEMMODE)-1)
-        {
-            uint64_t cbInstr = pVmcb->ctrl.u64ExitInfo2 - pCtx->rip;
-            if (cbInstr <= 15 && cbInstr >= 1)
+            /* INS/OUTS - I/O String instruction. */
+            /** @todo Huh? why can't we use the segment prefix information given by AMD-V
+             *        in EXITINFO1? Investigate once this thing is up and running. */
+            Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c str\n", pCtx->cs.Sel, pCtx->rip, IoExitInfo.n.u16Port, cbValue,
+                  IoExitInfo.n.u1Type == SVM_IOIO_WRITE ? 'w' : 'r'));
+            AssertReturn(pCtx->dx == IoExitInfo.n.u16Port, VERR_SVM_IPE_2);
+            static IEMMODE const s_aenmAddrMode[8] =
             {
-                Assert(cbInstr >= 1U + IoExitInfo.n.u1Rep);
-                if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
+                (IEMMODE)-1, IEMMODE_16BIT, IEMMODE_32BIT, (IEMMODE)-1, IEMMODE_64BIT, (IEMMODE)-1, (IEMMODE)-1, (IEMMODE)-1
+            };
+            IEMMODE enmAddrMode = s_aenmAddrMode[(IoExitInfo.u >> 7) & 0x7];
+            if (enmAddrMode != (IEMMODE)-1)
+            {
+                uint64_t cbInstr = pVmcb->ctrl.u64ExitInfo2 - pCtx->rip;
+                if (cbInstr <= 15 && cbInstr >= 1)
                 {
-                    /* Don't know exactly how to detect whether u3Seg is valid, currently
-                       only enabling it for Bulldozer and later with NRIP.  OS/2 broke on
-                       2384 Opterons when only checking NRIP. */
-                    bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
-                    if (   fSupportsNextRipSave
-                        && pVM->cpum.ro.GuestFeatures.enmMicroarch >= kCpumMicroarch_AMD_15h_First)
+                    Assert(cbInstr >= 1U + IoExitInfo.n.u1Rep);
+                    if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
                     {
-                        AssertMsg(IoExitInfo.n.u3Seg == X86_SREG_DS || cbInstr > 1U + IoExitInfo.n.u1Rep,
-                                  ("u32Seg=%d cbInstr=%d u1REP=%d", IoExitInfo.n.u3Seg, cbInstr, IoExitInfo.n.u1Rep));
-                        rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1Rep, (uint8_t)cbInstr,
-                                                        IoExitInfo.n.u3Seg, true /*fIoChecked*/);
+                        /* Don't know exactly how to detect whether u3Seg is valid, currently
+                           only enabling it for Bulldozer and later with NRIP.  OS/2 broke on
+                           2384 Opterons when only checking NRIP. */
+                        bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
+                        if (   fSupportsNextRipSave
+                            && pVM->cpum.ro.GuestFeatures.enmMicroarch >= kCpumMicroarch_AMD_15h_First)
+                        {
+                            AssertMsg(IoExitInfo.n.u3Seg == X86_SREG_DS || cbInstr > 1U + IoExitInfo.n.u1Rep,
+                                      ("u32Seg=%d cbInstr=%d u1REP=%d", IoExitInfo.n.u3Seg, cbInstr, IoExitInfo.n.u1Rep));
+                            rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1Rep, (uint8_t)cbInstr,
+                                                            IoExitInfo.n.u3Seg, true /*fIoChecked*/);
+                        }
+                        else if (cbInstr == 1U + IoExitInfo.n.u1Rep)
+                            rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1Rep, (uint8_t)cbInstr,
+                                                            X86_SREG_DS, true /*fIoChecked*/);
+                        else
+                            rcStrict = IEMExecOne(pVCpu);
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
                     }
-                    else if (cbInstr == 1U + IoExitInfo.n.u1Rep)
-                        rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1Rep, (uint8_t)cbInstr,
-                                                        X86_SREG_DS, true /*fIoChecked*/);
                     else
-                        rcStrict = IEMExecOne(pVCpu);
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
+                    {
+                        AssertMsg(IoExitInfo.n.u3Seg == X86_SREG_ES /*=0*/, ("%#x\n", IoExitInfo.n.u3Seg));
+                        rcStrict = IEMExecStringIoRead(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1Rep, (uint8_t)cbInstr,
+                                                       true /*fIoChecked*/);
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
+                    }
                 }
                 else
                 {
-                    AssertMsg(IoExitInfo.n.u3Seg == X86_SREG_ES /*=0*/, ("%#x\n", IoExitInfo.n.u3Seg));
-                    rcStrict = IEMExecStringIoRead(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1Rep, (uint8_t)cbInstr,
-                                                   true /*fIoChecked*/);
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
+                    AssertMsgFailed(("rip=%RX64 nrip=%#RX64 cbInstr=%#RX64\n", pCtx->rip, pVmcb->ctrl.u64ExitInfo2, cbInstr));
+                    rcStrict = IEMExecOne(pVCpu);
                 }
             }
             else
             {
-                AssertMsgFailed(("rip=%RX64 nrip=%#RX64 cbInstr=%#RX64\n", pCtx->rip, pVmcb->ctrl.u64ExitInfo2, cbInstr));
+                AssertMsgFailed(("IoExitInfo=%RX64\n", IoExitInfo.u));
                 rcStrict = IEMExecOne(pVCpu);
             }
+            fUpdateRipAlready = true;
         }
         else
         {
-            AssertMsgFailed(("IoExitInfo=%RX64\n", IoExitInfo.u));
-            rcStrict = IEMExecOne(pVCpu);
-        }
-        fUpdateRipAlready = true;
-    }
-    else
-    {
-        /* IN/OUT - I/O instruction. */
-        Assert(!IoExitInfo.n.u1Rep);
+            /* IN/OUT - I/O instruction. */
+            Assert(!IoExitInfo.n.u1Rep);
 
-        if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
-        {
-            rcStrict = IOMIOPortWrite(pVM, pVCpu, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, cbValue);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
-        }
-        else
-        {
-            uint32_t u32Val = 0;
-            rcStrict = IOMIOPortRead(pVM, pVCpu, IoExitInfo.n.u16Port, &u32Val, cbValue);
-            if (IOM_SUCCESS(rcStrict))
+            if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
             {
-                /* Save result of I/O IN instr. in AL/AX/EAX. */
-                /** @todo r=bird: 32-bit op size should clear high bits of rax! */
-                pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
+                rcStrict = IOMIOPortWrite(pVM, pVCpu, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, cbValue);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
             }
-            else if (rcStrict == VINF_IOM_R3_IOPORT_READ)
-                HMR0SavePendingIOPortRead(pVCpu, pCtx->rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, cbValue);
-
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
-        }
-    }
-
-    if (IOM_SUCCESS(rcStrict))
-    {
-        /* AMD-V saves the RIP of the instruction following the IO instruction in EXITINFO2. */
-        if (!fUpdateRipAlready)
-            pCtx->rip = pVmcb->ctrl.u64ExitInfo2;
-
-        /*
-         * If any I/O breakpoints are armed, we need to check if one triggered
-         * and take appropriate action.
-         * Note that the I/O breakpoint type is undefined if CR4.DE is 0.
-         */
-        /** @todo Optimize away the DBGFBpIsHwIoArmed call by having DBGF tell the
-         *  execution engines about whether hyper BPs and such are pending. */
-        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, pCtx, CPUMCTX_EXTRN_DR7);
-        uint32_t const uDr7 = pCtx->dr[7];
-        if (RT_UNLIKELY(   (   (uDr7 & X86_DR7_ENABLED_MASK)
-                            && X86_DR7_ANY_RW_IO(uDr7)
-                            && (pCtx->cr4 & X86_CR4_DE))
-                        || DBGFBpIsHwIoArmed(pVM)))
-        {
-            /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
-            VMMRZCallRing3Disable(pVCpu);
-            HM_DISABLE_PREEMPT();
-
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
-            CPUMR0DebugStateMaybeSaveGuest(pVCpu, false /*fDr6*/);
-
-            VBOXSTRICTRC rcStrict2 = DBGFBpCheckIo(pVM, pVCpu, pCtx, IoExitInfo.n.u16Port, cbValue);
-            if (rcStrict2 == VINF_EM_RAW_GUEST_TRAP)
+            else
             {
-                /* Raise #DB. */
-                pVmcb->guest.u64DR6 = pCtx->dr[6];
-                pVmcb->guest.u64DR7 = pCtx->dr[7];
-                pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
-                hmR0SvmSetPendingXcptDB(pVCpu);
-            }
-            /* rcStrict is VINF_SUCCESS, VINF_IOM_R3_IOPORT_COMMIT_WRITE, or in [VINF_EM_FIRST..VINF_EM_LAST],
-               however we can ditch VINF_IOM_R3_IOPORT_COMMIT_WRITE as it has VMCPU_FF_IOM as backup. */
-            else if (   rcStrict2 != VINF_SUCCESS
-                     && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
-                rcStrict = rcStrict2;
-            AssertCompile(VINF_EM_LAST < VINF_IOM_R3_IOPORT_COMMIT_WRITE);
+                uint32_t u32Val = 0;
+                rcStrict = IOMIOPortRead(pVM, pVCpu, IoExitInfo.n.u16Port, &u32Val, cbValue);
+                if (IOM_SUCCESS(rcStrict))
+                {
+                    /* Save result of I/O IN instr. in AL/AX/EAX. */
+                    /** @todo r=bird: 32-bit op size should clear high bits of rax! */
+                    pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
+                }
+                else if (rcStrict == VINF_IOM_R3_IOPORT_READ)
+                    HMR0SavePendingIOPortRead(pVCpu, pCtx->rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, cbValue);
 
-            HM_RESTORE_PREEMPT();
-            VMMRZCallRing3Enable(pVCpu);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
+            }
         }
 
-        HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
-    }
+        if (IOM_SUCCESS(rcStrict))
+        {
+            /* AMD-V saves the RIP of the instruction following the IO instruction in EXITINFO2. */
+            if (!fUpdateRipAlready)
+                pCtx->rip = pVmcb->ctrl.u64ExitInfo2;
+
+            /*
+             * If any I/O breakpoints are armed, we need to check if one triggered
+             * and take appropriate action.
+             * Note that the I/O breakpoint type is undefined if CR4.DE is 0.
+             */
+            /** @todo Optimize away the DBGFBpIsHwIoArmed call by having DBGF tell the
+             *  execution engines about whether hyper BPs and such are pending. */
+            HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, pCtx, CPUMCTX_EXTRN_DR7);
+            uint32_t const uDr7 = pCtx->dr[7];
+            if (RT_UNLIKELY(   (   (uDr7 & X86_DR7_ENABLED_MASK)
+                                && X86_DR7_ANY_RW_IO(uDr7)
+                                && (pCtx->cr4 & X86_CR4_DE))
+                            || DBGFBpIsHwIoArmed(pVM)))
+            {
+                /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
+                VMMRZCallRing3Disable(pVCpu);
+                HM_DISABLE_PREEMPT();
+
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
+                CPUMR0DebugStateMaybeSaveGuest(pVCpu, false /*fDr6*/);
+
+                VBOXSTRICTRC rcStrict2 = DBGFBpCheckIo(pVM, pVCpu, pCtx, IoExitInfo.n.u16Port, cbValue);
+                if (rcStrict2 == VINF_EM_RAW_GUEST_TRAP)
+                {
+                    /* Raise #DB. */
+                    pVmcb->guest.u64DR6 = pCtx->dr[6];
+                    pVmcb->guest.u64DR7 = pCtx->dr[7];
+                    pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+                    hmR0SvmSetPendingXcptDB(pVCpu);
+                }
+                /* rcStrict is VINF_SUCCESS, VINF_IOM_R3_IOPORT_COMMIT_WRITE, or in [VINF_EM_FIRST..VINF_EM_LAST],
+                   however we can ditch VINF_IOM_R3_IOPORT_COMMIT_WRITE as it has VMCPU_FF_IOM as backup. */
+                else if (   rcStrict2 != VINF_SUCCESS
+                         && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
+                    rcStrict = rcStrict2;
+                AssertCompile(VINF_EM_LAST < VINF_IOM_R3_IOPORT_COMMIT_WRITE);
+
+                HM_RESTORE_PREEMPT();
+                VMMRZCallRing3Enable(pVCpu);
+            }
+
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+        }
 
 #ifdef VBOX_STRICT
-    if (rcStrict == VINF_IOM_R3_IOPORT_READ)
-        Assert(IoExitInfo.n.u1Type == SVM_IOIO_READ);
-    else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE || rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE)
-        Assert(IoExitInfo.n.u1Type == SVM_IOIO_WRITE);
+        if (rcStrict == VINF_IOM_R3_IOPORT_READ)
+            Assert(IoExitInfo.n.u1Type == SVM_IOIO_READ);
+        else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE || rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE)
+            Assert(IoExitInfo.n.u1Type == SVM_IOIO_WRITE);
+        else
+        {
+            /** @todo r=bird: This is missing a bunch of VINF_EM_FIRST..VINF_EM_LAST
+             *        statuses, that the VMM device and some others may return. See
+             *        IOM_SUCCESS() for guidance. */
+            AssertMsg(   RT_FAILURE(rcStrict)
+                      || rcStrict == VINF_SUCCESS
+                      || rcStrict == VINF_EM_RAW_EMULATE_INSTR
+                      || rcStrict == VINF_EM_DBG_BREAKPOINT
+                      || rcStrict == VINF_EM_RAW_GUEST_TRAP
+                      || rcStrict == VINF_EM_RAW_TO_R3
+                      || rcStrict == VINF_TRPM_XCPT_DISPATCHED
+                      || rcStrict == VINF_EM_TRIPLE_FAULT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        }
+#endif
+    }
     else
     {
-        /** @todo r=bird: This is missing a bunch of VINF_EM_FIRST..VINF_EM_LAST
-         *        statuses, that the VMM device and some others may return. See
-         *        IOM_SUCCESS() for guidance. */
-        AssertMsg(   RT_FAILURE(rcStrict)
-                  || rcStrict == VINF_SUCCESS
-                  || rcStrict == VINF_EM_RAW_EMULATE_INSTR
-                  || rcStrict == VINF_EM_DBG_BREAKPOINT
-                  || rcStrict == VINF_EM_RAW_GUEST_TRAP
-                  || rcStrict == VINF_EM_RAW_TO_R3
-                  || rcStrict == VINF_TRPM_XCPT_DISPATCHED
-                  || rcStrict == VINF_EM_TRIPLE_FAULT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        /*
+         * Frequent exit or something needing probing.  Get state and call EMHistoryExec.
+         */
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, pCtx, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        STAM_COUNTER_INC(!IoExitInfo.n.u1Str
+                         ? IoExitInfo.n.u1Type == SVM_IOIO_WRITE ? &pVCpu->hm.s.StatExitIOWrite : &pVCpu->hm.s.StatExitIORead
+                         : IoExitInfo.n.u1Type == SVM_IOIO_WRITE ? &pVCpu->hm.s.StatExitIOStringWrite : &pVCpu->hm.s.StatExitIOStringRead);
+        Log4(("IOExit/%u: %04x:%08RX64: %s%s%s %#x LB %u -> EMHistoryExec\n",
+              pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, IoExitInfo.n.u1Rep ? "REP " : "",
+              IoExitInfo.n.u1Type == SVM_IOIO_WRITE ? "OUT" : "IN", IoExitInfo.n.u1Str ? "S" : "", IoExitInfo.n.u16Port, uIOWidth));
+
+        rcStrict = EMHistoryExec(pVCpu, pExitRec, 0);
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+
+        Log4(("IOExit/%u: %04x:%08RX64: EMHistoryExec -> %Rrc + %04x:%08RX64\n",
+              pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+              VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     }
-#endif
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 
@@ -7306,7 +7368,6 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     /*
      * MMIO optimization using the reserved (RSVD) bit in the guest page tables for MMIO pages.
      */
-    int rc;
     Assert((u32ErrCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) != X86_TRAP_PF_RSVD);
     if ((u32ErrCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) == (X86_TRAP_PF_RSVD | X86_TRAP_PF_P))
     {
@@ -7315,30 +7376,55 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
         if (pVCpu->hm.s.Event.fPending)
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
 
-        VBOXSTRICTRC rc2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmNestedPagingMode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr,
-                                                         u32ErrCode);
-        rc = VBOXSTRICTRC_VAL(rc2);
-
-        /*
-         * If we succeed, resume guest execution.
-         * If we fail in interpreting the instruction because we couldn't get the guest physical address
-         * of the page containing the instruction via the guest's page tables (we would invalidate the guest page
-         * in the host TLB), resume execution which would cause a guest page fault to let the guest handle this
-         * weird case. See @bugref{6043}.
-         */
-        if (   rc == VINF_SUCCESS
-            || rc == VERR_PAGE_TABLE_NOT_PRESENT
-            || rc == VERR_PAGE_NOT_PRESENT)
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, pCtx, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS);
+        VBOXSTRICTRC rcStrict;
+        PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
+                                                                EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_MMIO),
+                                                                pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+        if (!pExitRec)
         {
-            /* Successfully handled MMIO operation. */
-            HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
-            rc = VINF_SUCCESS;
+
+            rcStrict = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmNestedPagingMode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr,
+                                                     u32ErrCode);
+
+            /*
+             * If we succeed, resume guest execution.
+             * If we fail in interpreting the instruction because we couldn't get the guest physical address
+             * of the page containing the instruction via the guest's page tables (we would invalidate the guest page
+             * in the host TLB), resume execution which would cause a guest page fault to let the guest handle this
+             * weird case. See @bugref{6043}.
+             */
+            if (   rcStrict == VINF_SUCCESS
+                || rcStrict == VERR_PAGE_TABLE_NOT_PRESENT
+                || rcStrict == VERR_PAGE_NOT_PRESENT)
+            {
+                /* Successfully handled MMIO operation. */
+                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
+                rcStrict = VINF_SUCCESS;
+            }
         }
-        return rc;
+        else
+        {
+            /*
+             * Frequent exit or something needing probing.  Get state and call EMHistoryExec.
+             */
+            Assert(pCtx == &pVCpu->cpum.GstCtx);
+            HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, pCtx, IEM_CPUMCTX_EXTRN_MUST_MASK);
+            Log4(("EptMisscfgExit/%u: %04x:%08RX64: %RGp -> EMHistoryExec\n",
+                  pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPhysFaultAddr));
+
+            rcStrict = EMHistoryExec(pVCpu, pExitRec, 0);
+            HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+
+            Log4(("EptMisscfgExit/%u: %04x:%08RX64: EMHistoryExec -> %Rrc + %04x:%08RX64\n",
+                  pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+                  VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+        }
+        return VBOXSTRICTRC_TODO(rcStrict);
     }
 
     TRPMAssertXcptPF(pVCpu, GCPhysFaultAddr, u32ErrCode);
-    rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmNestedPagingMode, u32ErrCode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr);
+    int rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmNestedPagingMode, u32ErrCode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr);
     TRPMResetTrap(pVCpu);
 
     Log4(("#NPF: PGMR0Trap0eHandlerNestedPaging returned %Rrc CS:RIP=%04x:%#RX64\n", rc, pCtx->cs.Sel, pCtx->rip));

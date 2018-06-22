@@ -9729,7 +9729,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
          * Note! We don't have CS or RIP at this point.  Will probably address that later
          *       by amending the history entry added here.
          */
-        EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_VMX, pVmxTransient->uExitReason & EMEXIT_F_TYPE_MASK),
+        EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_VMX, pVmxTransient->uExitReason & EMEXIT_F_TYPE_MASK),
                          UINT64_MAX, uHostTsc);
 
         if (!pVmxTransient->fVMEntryFailed)
@@ -12259,11 +12259,9 @@ HMVMX_EXIT_DECL hmR0VmxExitCpuid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict;
-    PCEMEXITREC pExitRec;
-    pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
-                                                EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM | EMEXIT_F_PREEMPT_DISABLED,
-                                                                           EMEXITTYPE_CPUID),
-                                                pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+    PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
+                                                            EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_CPUID),
+                                                            pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
     if (!pExitRec)
     {
         /*
@@ -12296,6 +12294,7 @@ HMVMX_EXIT_DECL hmR0VmxExitCpuid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx));
 
         rcStrict = EMHistoryExec(pVCpu, pExitRec, 0);
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 
         Log4(("CpuIdExit/%u: %04x:%08RX64: EMHistoryExec -> %Rrc + %04x:%08RX64\n",
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
@@ -13233,15 +13232,11 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
                                                     !fIOString
                                                     ? !fIOWrite
-                                                    ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM | EMEXIT_F_PREEMPT_DISABLED,
-                                                                                 EMEXITTYPE_IO_PORT_READ)
-                                                    : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM | EMEXIT_F_PREEMPT_DISABLED,
-                                                                                 EMEXITTYPE_IO_PORT_WRITE)
+                                                    ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_READ)
+                                                    : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_WRITE)
                                                     : !fIOWrite
-                                                    ? EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM | EMEXIT_F_PREEMPT_DISABLED,
-                                                                                 EMEXITTYPE_IO_PORT_STR_READ)
-                                                    : EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM | EMEXIT_F_PREEMPT_DISABLED,
-                                                                                 EMEXITTYPE_IO_PORT_STR_WRITE),
+                                                    ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_STR_READ)
+                                                    : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_IO_PORT_STR_WRITE),
                                                     pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
     if (!pExitRec)
     {
@@ -13426,13 +13421,15 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
          */
         int rc2 = hmR0VmxSaveGuestRegsForIemInterpreting(pVCpu);
         AssertRCReturn(rc2, rc2);
-
+        STAM_COUNTER_INC(!fIOString ? fIOWrite ? &pVCpu->hm.s.StatExitIOWrite : &pVCpu->hm.s.StatExitIORead
+                         : fIOWrite ? &pVCpu->hm.s.StatExitIOStringWrite : &pVCpu->hm.s.StatExitIOStringRead);
         Log4(("IOExit/%u: %04x:%08RX64: %s%s%s %#x LB %u -> EMHistoryExec\n",
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
               VMX_EXIT_QUALIFICATION_IO_IS_REP(pVmxTransient->uExitQualification) ? "REP " : "",
               fIOWrite ? "OUT" : "IN", fIOString ? "S" : "", uIOPort, uIOWidth));
 
         rcStrict = EMHistoryExec(pVCpu, pExitRec, 0);
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 
         Log4(("IOExit/%u: %04x:%08RX64: EMHistoryExec -> %Rrc + %04x:%08RX64\n",
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
@@ -13730,11 +13727,9 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict;
-    PCEMEXITREC pExitRec;
-    pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
-                                                EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM | EMEXIT_F_PREEMPT_DISABLED,
-                                                                           EMEXITTYPE_MMIO),
-                                                pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
+    PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
+                                                            EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_MMIO),
+                                                            pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
     if (!pExitRec)
     {
         /*
@@ -13772,6 +13767,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPhys));
 
         rcStrict = EMHistoryExec(pVCpu, pExitRec, 0);
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 
         Log4(("EptMisscfgExit/%u: %04x:%08RX64: EMHistoryExec -> %Rrc + %04x:%08RX64\n",
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,

@@ -332,7 +332,7 @@ DECLASM(int) TRPMGCTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU      pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC01: cs:eip=%04x:%08x uDr6=%RTreg EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, uDr6, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(1);
-    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_DB),
+    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_DB),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
 
     /*
@@ -387,7 +387,7 @@ DECLASM(int) TRPMGCHyperTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVM         pVM   = TRPMCPU_2_VM(pTrpmCpu);
     PVMCPU      pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     TRPM_ENTER_DBG_HOOK_HYPER(1);
-    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_DB),
+    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_DB),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
     LogFlow(("TRPMGCHyper01: cs:eip=%04x:%08x uDr6=%RTreg\n", pRegFrame->cs.Sel, pRegFrame->eip, uDr6));
 
@@ -429,7 +429,7 @@ DECLASM(int) TRPMGCHyperTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGCTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip));
-    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NMI),
+    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_NMI),
                            pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
 #if 0 /* Enable this iff you have a COM port and really want this debug info. */
     RTLogComPrintf("TRPMGCTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip);
@@ -457,7 +457,7 @@ DECLASM(int) TRPMGCTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 DECLASM(int) TRPMGCHyperTrap02Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
     LogFlow(("TRPMGCHyperTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip));
-    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NMI),
+    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_NMI),
                            pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
 #if 0 /* Enable this iff you have a COM port and really want this debug info. */
     RTLogComPrintf("TRPMGCHyperTrap02Handler: cs:eip=%04x:%08x\n", pRegFrame->cs.Sel, pRegFrame->eip);
@@ -485,7 +485,7 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     int     rc;
     LogFlow(("TRPMGC03: %04x:%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(3);
-    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_BP),
+    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_BP),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
     PGMRZDynMapStartAutoSet(pVCpu);
 
@@ -539,7 +539,7 @@ DECLASM(int) TRPMGCHyperTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGCHyper03: %04x:%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK_HYPER(3);
-    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_BP),
+    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_BP),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
 
     /*
@@ -572,7 +572,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     int     rc;
     LogFlow(("TRPMGC06: %04x:%08x EFL=%#x/%#x\n", pRegFrame->cs.Sel, pRegFrame->eip, pRegFrame->eflags.u32, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(6);
-    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_UD),
+    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_UD),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
     PGMRZDynMapStartAutoSet(pVCpu);
 
@@ -710,7 +710,7 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC07: %04x:%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(7);
-    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NM),
+    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_NM),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
     PGMRZDynMapStartAutoSet(pVCpu);
 
@@ -738,7 +738,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC0b: %04x:%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(0xb);
-    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NP),
+    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_NP),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
     PGMRZDynMapStartAutoSet(pVCpu);
 
@@ -863,7 +863,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             RT_FALL_THRU();
         case OP_INT:
         {
-            EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_INT));
+            EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_INT));
             Assert(pCpu->Param1.fUse & DISUSE_IMMEDIATE8);
             Assert(!(PATMIsPatchGCAddr(pVM, PC)));
             if (pCpu->Param1.uValue == 3)
@@ -896,7 +896,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
 #endif
 
         case OP_HLT:
-            EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_HLT));
+            EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_HLT));
 
             /* If it's in patch code, defer to ring-3. */
             if (PATMIsPatchGCAddr(pVM, PC))
@@ -920,9 +920,9 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
                 &&  !CSAMIsKnownDangerousInstr(pVM, PC))
             {
                 if (uOpcode == OP_MOV_CR)
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_CRX));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_CRX));
                 else
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_DRX));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_DRX));
                 break;
             }
             RT_FALL_THRU();
@@ -940,34 +940,34 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             switch (uOpcode)
             {
                 case OP_MOV_CR:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_CRX));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_CRX));
                     break;
                 case OP_MOV_DR:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_DRX));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MOV_DRX));
                     break;
                 case OP_INVLPG:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_INVLPG));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_INVLPG));
                     break;
                 case OP_LLDT:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_LLDT));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_LLDT));
                     break;
                 case OP_STI:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_STI));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_STI));
                     break;
                 case OP_RDPMC:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_RDPMC));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_RDPMC));
                     break;
                 case OP_CLTS:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_CLTS));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_CLTS));
                     break;
                 case OP_WBINVD:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_CLTS));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_CLTS));
                     break;
                 case OP_RDMSR:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ));
                     break;
                 case OP_WRMSR:
-                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE));
+                    EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE));
                     break;
             }
 
@@ -1019,7 +1019,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             RT_FALL_THRU();
         case OP_INT:
         {
-            EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_INT));
+            EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_INT));
             Assert(pCpu->Param1.fUse & DISUSE_IMMEDIATE8);
             rc = TRPMForwardTrap(pVCpu, pRegFrame, (uint32_t)pCpu->Param1.uValue, pCpu->cbInstr, TRPM_TRAP_NO_ERRORCODE, TRPM_SOFTWARE_INT, 0xd);
             if (RT_SUCCESS(rc) && rc != VINF_EM_RAW_GUEST_TRAP)
@@ -1040,9 +1040,9 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_SYSCALL:
         case OP_SYSENTER:
             if (uOpcode == OP_SYSCALL)
-                EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_SYSCALL));
+                EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_SYSCALL));
             else
-                EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_SYSENTER));
+                EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_SYSENTER));
 #ifdef PATM_EMULATE_SYSENTER
             rc = PATMSysCall(pVM, CPUMCTX_FROM_CORE(pRegFrame), pCpu);
             if (rc == VINF_SUCCESS)
@@ -1186,7 +1186,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
      */
     if (Cpu.pCurInstr->uOpcode == OP_RDTSC)
     {
-        EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_EM, EMEXITTYPE_RDTSC));
+        EMHistoryUpdateFlagsAndType(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_RDTSC));
         return trpmGCTrap0dHandlerRdTsc(pVM, pVCpu, pRegFrame);
     }
 
@@ -1257,7 +1257,7 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC0d: %04x:%08x err=%x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, (uint32_t)pVCpu->trpm.s.uActiveErrorCode, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(0xd);
-    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_GP),
+    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_GP),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
 
     PGMRZDynMapStartAutoSet(pVCpu);
@@ -1324,7 +1324,7 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PVMCPU  pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
     LogFlow(("TRPMGC0e: %04x:%08x err=%x cr2=%08x EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, (uint32_t)pVCpu->trpm.s.uActiveErrorCode, (uint32_t)pVCpu->trpm.s.uActiveCR2, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(0xe);
-    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_PF),
+    EMRCHistoryAddExitCsEip(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_PF),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
 
     /*
@@ -1441,7 +1441,7 @@ static int trpmGCHyperGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, PCTRPMGCHYPER paH
  */
 DECLASM(int) TRPMGCHyperTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
-    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_NP),
+    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_NP),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
     return trpmGCHyperGeneric(TRPMCPU_2_VM(pTrpmCpu), pRegFrame, g_aTrap0bHandlers, g_aTrap0bHandlersEnd);
 }
@@ -1462,7 +1462,7 @@ DECLASM(int) TRPMGCHyperTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCHyperTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
-    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_GP),
+    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_GP),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
     return trpmGCHyperGeneric(TRPMCPU_2_VM(pTrpmCpu), pRegFrame, g_aTrap0dHandlers, g_aTrap0dHandlersEnd);
 }
@@ -1483,7 +1483,7 @@ DECLASM(int) TRPMGCHyperTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
  */
 DECLASM(int) TRPMGCHyperTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 {
-    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FLAGS_AND_TYPE(EMEXIT_F_KIND_XCPT, X86_XCPT_PF),
+    EMRCHistoryAddExitCsEip(TRPMCPU_2_VMCPU(pTrpmCpu), EMEXIT_MAKE_FT(EMEXIT_F_KIND_XCPT, X86_XCPT_PF),
                             pRegFrame->cs.Sel, pRegFrame->eip, ASMReadTSC());
     return trpmGCHyperGeneric(TRPMCPU_2_VM(pTrpmCpu), pRegFrame, g_aTrap0dHandlers, g_aTrap0dHandlersEnd);
 }

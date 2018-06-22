@@ -229,7 +229,7 @@ AssertCompileSize(EMEXITTYPE, 4);
 /** @name EMEXIT_F_XXX - EM exit flags.
  *
  * The flags the exit type are combined to a 32-bit number using the
- * EMEXIT_MAKE_FLAGS_AND_TYPE() macro.
+ * EMEXIT_MAKE_FT() macro.
  *
  * @{  */
 #define EMEXIT_F_TYPE_MASK          UINT32_C(0x00000fff)    /**< The exit type mask. */
@@ -241,10 +241,10 @@ AssertCompileSize(EMEXITTYPE, 4);
 #define EMEXIT_F_KIND_MASK          UINT32_C(0x00007000)
 #define EMEXIT_F_CS_EIP             UINT32_C(0x00010000)    /**< The PC is EIP in the low dword and CS in the high. */
 #define EMEXIT_F_UNFLATTENED_PC     UINT32_C(0x00020000)    /**< The PC hasn't had CS.BASE added to it. */
-/** Preemption is currently disabled (or we're using preemption hooks). */
-#define EMEXIT_F_PREEMPT_DISABLED   UINT32_C(0x00040000)
+/** HM is calling (from ring-0).  Preemption is currently disabled or we're using preemption hooks. */
+#define EMEXIT_F_HM                 UINT32_C(0x00040000)
 /** Combines flags and exit type into EMHistoryAddExit() input. */
-#define EMEXIT_MAKE_FLAGS_AND_TYPE(a_fFlags, a_uType)   ((a_fFlags) | (uint32_t)(a_uType))
+#define EMEXIT_MAKE_FT(a_fFlags, a_uType)   ((a_fFlags) | (uint32_t)(a_uType))
 /** @} */
 
 typedef enum EMEXITACTION
@@ -272,7 +272,7 @@ typedef struct EMEXITREC
 {
     /** The flat PC of the exit. */
     uint64_t            uFlatPC;
-    /** Flags and type, see EMEXIT_MAKE_FLAGS_AND_TYPE. */
+    /** Flags and type, see EMEXIT_MAKE_FT. */
     uint32_t            uFlagsAndType;
     /** The action to take (EMEXITACTION). */
     uint8_t             enmAction;
