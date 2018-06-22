@@ -2378,9 +2378,6 @@ if [ $OSE -eq 1 -a -r "`cd \`dirname $0\`; pwd`/src/VBox/RDP/server/server.cpp" 
   NOT_OSE=1
 fi
 
-# Always use our own libssl on non-OSE builds for compatibility reasons.
-[ $OSE -eq 1 ] || BUILD_LIBSSL=1
-
 # Change OS specific defaults; must be before all other stuff
 if [ "$OS" = "darwin" ]; then
   WITH_SDL=0
@@ -2412,6 +2409,7 @@ elif [ "$OS" = "haiku" ]; then
   # but the script wants something
   LIBPTHREAD="-lroot"
   #[ $OSE -eq 1 ] || BUILD_LIBCURL=1
+  [ $OSE -eq 1 ] || BUILD_LIBSSL=1
 elif [ "$OS" = "solaris" ]; then
   [ $OSE -eq 1 ] && WITH_LIBVPX=0
 fi
