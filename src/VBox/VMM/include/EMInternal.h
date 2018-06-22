@@ -502,6 +502,10 @@ typedef struct EMCPU
      * mask it when using it.  That help the readers detect whether we've
      * wrapped around or not.  */
     uint64_t                iNextExit;
+
+    /** Index into aExitRecords set by EMHistoryExec when returning to ring-3.
+     * This is UINT16_MAX if not armed.  */
+    uint16_t volatile       idxContinueExitRec;
     /** Whether exit optimizations are enabled or not (in general). */
     bool                    fExitOptimizationEnabled : 1;
     /** Whether exit optimizations are enabled for ring-0 (in general). */
@@ -509,10 +513,14 @@ typedef struct EMCPU
     /** Whether exit optimizations are enabled for ring-0 when preemption is disabled. */
     bool                    fExitOptimizationEnabledR0PreemptDisabled : 1;
     /** Explicit padding. */
-    bool                    afPadding2[1];
-    /** Index into aExitRecords set by EMHistoryExec when returning to ring-3.
-     * This is UINT16_MAX if not armed.  */
-    uint16_t volatile       idxContinueExitRec;
+    bool                    fPadding2;
+    /** Max number of instructions to execute. */
+    uint16_t                cHistoryExecMaxInstructions;
+    /** Min number of instructions to execute while probing. */
+    uint16_t                cHistoryProbeMinInstructions;
+    /** Max number of instructions to execute without an exit before giving up probe. */
+    uint16_t                cHistoryProbeMaxInstructionsWithoutExit;
+    uint16_t                uPadding3;
     /** Number of exit records in use. */
     uint32_t                cExitRecordUsed;
     /** Profiling the EMHistoryExec when executing (not probing). */
@@ -521,7 +529,7 @@ typedef struct EMCPU
     STAMCOUNTER             StatHistoryExecSavedExits;
     /** Number of instructions executed by EMHistoryExec. */
     STAMCOUNTER             StatHistoryExecInstructions;
-    uint64_t                aPadding3[2];
+    uint64_t                uPadding4;
     /** Number of instructions executed by EMHistoryExec when probing. */
     STAMCOUNTER             StatHistoryProbeInstructions;
     /** Number of times probing resulted in EMEXITACTION_NORMAL_PROBED. */

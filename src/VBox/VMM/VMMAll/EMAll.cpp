@@ -471,7 +471,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
             LogFlow(("EMHistoryExec/EXEC_WITH_MAX: %RX64, max %u\n", pExitRec->uFlatPC, pExitRec->cMaxInstructionsWithoutExit));
             VBOXSTRICTRC rcStrict = IEMExecForExits(pVCpu, fWillExit,
                                                     pExitRec->cMaxInstructionsWithoutExit /* cMinInstructions*/,
-                                                    4096 /*cMaxInstructions*/,
+                                                    pVCpu->em.s.cHistoryExecMaxInstructions,
                                                     pExitRec->cMaxInstructionsWithoutExit,
                                                     &ExecStats);
             LogFlow(("EMHistoryExec/EXEC_WITH_MAX: %Rrc cExits=%u cMaxExitDistance=%u cInstructions=%u\n",
@@ -493,9 +493,9 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
             LogFlow(("EMHistoryExec/EXEC_PROBE: %RX64\n", pExitRec->uFlatPC));
             PEMEXITREC   pExitRecUnconst = (PEMEXITREC)pExitRec;
             VBOXSTRICTRC rcStrict = IEMExecForExits(pVCpu, fWillExit,
-                                                    64 /*cMinInstructions*/,
-                                                    4096 /*cMaxInstructions*/,
-                                                    32 /*cMaxInstructionsWithoutExit*/,
+                                                    pVCpu->em.s.cHistoryProbeMinInstructions,
+                                                    pVCpu->em.s.cHistoryExecMaxInstructions,
+                                                    pVCpu->em.s.cHistoryProbeMaxInstructionsWithoutExit,
                                                     &ExecStats);
             LogFlow(("EMHistoryExec/EXEC_PROBE: %Rrc cExits=%u cMaxExitDistance=%u cInstructions=%u\n",
                      VBOXSTRICTRC_VAL(rcStrict), ExecStats.cExits, ExecStats.cMaxExitDistance, ExecStats.cInstructions));
