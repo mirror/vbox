@@ -60,10 +60,6 @@
         <file alias="chipset_warning_16px_x4.png">images/x4/chipset_warning_16px_x4.png</file>
         <file alias="close_16px_x4.png">images/x4/close_16px_x4.png</file>
         <file alias="close_popup_16px_x4.png">images/x4/close_popup_16px_x4.png</file>
-        <file alias="commit_host_iface_16px_x4.png">images/x4/commit_host_iface_16px_x4.png</file>
-        <file alias="commit_host_iface_22px_x4.png">images/x4/commit_host_iface_22px_x4.png</file>
-        <file alias="commit_host_iface_disabled_16px_x4.png">images/x4/commit_host_iface_disabled_16px_x4.png</file>
-        <file alias="commit_host_iface_disabled_22px_x4.png">images/x4/commit_host_iface_disabled_22px_x4.png</file>
         <file alias="connect_16px_on_x4.png">images/x4/connect_16px_on_x4.png</file>
         <file alias="connect_16px_x4.png">images/x4/connect_16px_x4.png</file>
         <file alias="controller_add_16px_x4.png">images/x4/controller_add_16px_x4.png</file>
@@ -199,11 +195,8 @@
         <file alias="host_iface_manager_22px_x4.png">images/x4/host_iface_manager_22px_x4.png</file>
         <file alias="host_iface_manager_32px_x4.png">images/x4/host_iface_manager_32px_x4.png</file>
         <file alias="hostkey_16px_x4.png">images/x4/hostkey_16px_x4.png</file>
-        <file alias="hostkey_24px_x4.png">images/x4/hostkey_24px_x4.png</file>
-        <file alias="hostkey_32px_x4.png">images/x4/hostkey_32px_x4.png</file>
         <file alias="hostkey_captured_16px_x4.png">images/x4/hostkey_captured_16px_x4.png</file>
         <file alias="hostkey_captured_pressed_16px_x4.png">images/x4/hostkey_captured_pressed_16px_x4.png</file>
-        <file alias="hostkey_disabled_16px_x4.png">images/x4/hostkey_disabled_16px_x4.png</file>
         <file alias="hostkey_warning_16px_x4.png">images/x4/hostkey_warning_16px_x4.png</file>
         <file alias="ide_16px_x4.png">images/x4/ide_16px_x4.png</file>
         <file alias="ide_add_16px_x4.png">images/x4/ide_add_16px_x4.png</file>
@@ -274,9 +267,6 @@
         <file alias="nw_24px_x4.png">images/x4/nw_24px_x4.png</file>
         <file alias="nw_32px_x4.png">images/x4/nw_32px_x4.png</file>
         <file alias="nw_disabled_16px_x4.png">images/x4/nw_disabled_16px_x4.png</file>
-        <file alias="nw_disconnected_16px_x4.png">images/x4/nw_disconnected_16px_x4.png</file>
-        <file alias="nw_error_16px_x4.png">images/x4/nw_error_16px_x4.png</file>
-        <file alias="nw_loading_16px_x4.png">images/x4/nw_loading_16px_x4.png</file>
         <file alias="nw_read_16px_x4.png">images/x4/nw_read_16px_x4.png</file>
         <file alias="nw_settings_16px_x4.png">images/x4/nw_settings_16px_x4.png</file>
         <file alias="nw_settings_disabled_16px_x4.png">images/x4/nw_settings_disabled_16px_x4.png</file>
@@ -298,5 +288,8 @@
         <file alias="os_l4_x4.png">images/x4/os_l4_x4.png</file>
         <file alias="os_linux22_x4.png">images/x4/os_linux22_x4.png</file>
         <file alias="os_linux24_64_x4.png">images/x4/os_linux24_64_x4.png</file>
+        <file alias="os_linux24_x4.png">images/x4/os_linux24_x4.png</file>
+        <file alias="os_linux26_64_x4.png">images/x4/os_linux26_64_x4.png</file>
+        <file alias="os_linux26_x4.png">images/x4/os_linux26_x4.png</file>
     </qresource>
 </RCC>

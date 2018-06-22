@@ -1,8 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="os_linux24_x3.png">images/x3/os_linux24_x3.png</file>
-        <file alias="os_linux26_64_x3.png">images/x3/os_linux26_64_x3.png</file>
-        <file alias="os_linux26_x3.png">images/x3/os_linux26_x3.png</file>
         <file alias="os_linux_64_x3.png">images/x3/os_linux_64_x3.png</file>
         <file alias="os_linux_x3.png">images/x3/os_linux_x3.png</file>
         <file alias="os_macosx_64_x3.png">images/x3/os_macosx_64_x3.png</file>
@@ -147,10 +144,6 @@
         <file alias="site_forum_16px_x3.png">images/x3/site_forum_16px_x3.png</file>
         <file alias="site_oracle_16px_x3.png">images/x3/site_oracle_16px_x3.png</file>
         <file alias="site_warning_16px_x3.png">images/x3/site_warning_16px_x3.png</file>
-        <file alias="snapshot_commit_details_16px_x3.png">images/x3/snapshot_commit_details_16px_x3.png</file>
-        <file alias="snapshot_commit_details_22px_x3.png">images/x3/snapshot_commit_details_22px_x3.png</file>
-        <file alias="snapshot_commit_details_disabled_16px_x3.png">images/x3/snapshot_commit_details_disabled_16px_x3.png</file>
-        <file alias="snapshot_commit_details_disabled_22px_x3.png">images/x3/snapshot_commit_details_disabled_22px_x3.png</file>
         <file alias="snapshot_delete_16px_x3.png">images/x3/snapshot_delete_16px_x3.png</file>
         <file alias="snapshot_delete_22px_x3.png">images/x3/snapshot_delete_22px_x3.png</file>
         <file alias="snapshot_delete_disabled_16px_x3.png">images/x3/snapshot_delete_disabled_16px_x3.png</file>
