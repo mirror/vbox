@@ -3030,26 +3030,30 @@ SUCCESS
  * Results:
  *
  *  - WinHv API for all but physical page mappings:
- *         32 min 12.19 seconds
+ *          32 min 12.19 seconds
  *
  *  - The default NEM/win configuration where we put the main execution loop
  *    in ring-0, using hypercalls when we can and VID for managing execution:
- *         3 min 23.18 seconds
+ *          3 min 23.18 seconds
  *
  *  - Regular VirtualBox using AMD-V directly, hyper-V is disabled, main
  *    execution loop in ring-0:
- *        TODO
+ *          58.09 seconds
  *
  *  - WinHv API with exit history based optimizations:
- *        58.66 seconds
+ *          58.66 seconds
  *
  *  - Hypercall + VID.SYS with exit history base optimizations:
- *        58.94 seconds
+ *          58.94 seconds
  *
  * With a well above average machine needing over half an hour for booting a
  * nearly 20 year old guest kind of says it all.  The 13%-20% exit performance
  * increase we get by using hypercalls and VID.SYS directly pays off a lot here.
  * The 3m23s is almost acceptable in comparison to the half an hour.
+ *
+ * The similarity between the last three results strongly hits at windows 2000
+ * doing a lot of waiting during boot and shutdown and isn't the best testcase
+ * once a basic performance level is reached.
  *
  */
 
