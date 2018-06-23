@@ -2900,7 +2900,7 @@ void nemR3NativeNotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *
  * @subsection sec_nem_win_benchmarks           Benchmarks.
  *
- * @subsubsection subsect_nem_win_benchmarks        Bootsector2-test1
+ * @subsubsection subsect_nem_win_benchmarks_bs2t1 Bootsector2-test1
  *
  * This is ValidationKit/bootsectors/bootsector2-test1.asm as of 2018-06-22
  * (internal r123172) running a the release build of VirtualBox from the same
@@ -3007,6 +3007,49 @@ SUCCESS
  * As a side note, it looks like Hyper-V doesn't let the guest read CR4 but
  * triggers exits all the time.  This isn't all that important these days since
  * OSes like Linux cache the CR4 value specifically to avoid these kinds of exits.
+ *
+ *
+ * @subsubsection subsect_nem_win_benchmarks_w2k    Windows 2000 Boot & Shutdown
+ *
+ * Timing the startup and automatic shutdown of a Windows 2000 SP4 guest serves
+ * as a real world benchmark and example of why exit performance is import.  When
+ * Windows 2000 boots up is doing a lot of VGA redrawing of the boot animation,
+ * which is very costly.  Not having installed guest additions leaves it in a VGA
+ * mode after the bootup sequence is done, keep up the screen access expenses,
+ * though the graphics driver more economical than the bootvid code.
+ *
+ * The VM was configured to automatically logon.  A startup script was installed
+ * to perform the automatic shuting down and powering off the VM (thru
+ * vts_shutdown.exe -f -p).  The test time run time is caculated from the
+ * monotonic VBox.log timestamps, starting with the state change to 'RUNNING'
+ * and stopping at 'POWERING_OFF'.
+ *
+ * The host OS and VirtualBox build is the same as for the bootsector2-test1
+ * scenario.
+ *
+ * Results:
+ *
+ *  - WinHv API for all but physical page mappings:
+ *         32 min 12.19 seconds
+ *
+ *  - The default NEM/win configuration where we put the main execution loop
+ *    in ring-0, using hypercalls when we can and VID for managing execution:
+ *         3 min 23.18 seconds
+ *
+ *  - Regular VirtualBox using AMD-V directly, hyper-V is disabled, main
+ *    execution loop in ring-0:
+ *        TODO
+ *
+ *  - WinHv API with exit history based optimizations:
+ *        58.66 seconds
+ *
+ *  - Hypercall + VID.SYS with exit history base optimizations:
+ *        58.94 seconds
+ *
+ * With a well above average machine needing over half an hour for booting a
+ * nearly 20 year old guest kind of says it all.  The 13%-20% exit performance
+ * increase we get by using hypercalls and VID.SYS directly pays off a lot here.
+ * The 3m23s is almost acceptable in comparison to the half an hour.
  *
  */
 
