@@ -3020,9 +3020,10 @@ SUCCESS
  *
  * The VM was configured to automatically logon.  A startup script was installed
  * to perform the automatic shuting down and powering off the VM (thru
- * vts_shutdown.exe -f -p).  The test time run time is caculated from the
- * monotonic VBox.log timestamps, starting with the state change to 'RUNNING'
- * and stopping at 'POWERING_OFF'.
+ * vts_shutdown.exe -f -p).  An offline snapshot of the VM was taken an restored
+ * before each test run.  The test time run time is calculated from the monotonic
+ * VBox.log timestamps, starting with the state change to 'RUNNING' and stopping
+ * at 'POWERING_OFF'.
  *
  * The host OS and VirtualBox build is the same as for the bootsector2-test1
  * scenario.
@@ -3054,6 +3055,138 @@ SUCCESS
  * The similarity between the last three results strongly hits at windows 2000
  * doing a lot of waiting during boot and shutdown and isn't the best testcase
  * once a basic performance level is reached.
+ *
+ *
+ * @subsubsection subsection_iem_win_benchmarks_deb9_nat    Debian 9 NAT performance
+ *
+ * This benchmark is about network performance over NAT from a 64-bit Debian 9
+ * VM with a single CPU.  For network performance measurements, we use our own
+ * NetPerf tool (ValidationKit/utils/network/NetPerf.cpp) to measure latency
+ * and throughput.
+ *
+ * The setups, builds and configurations are as in the previous benchmarks
+ * (release r123172 on 1950X running 64-bit W10/17134).  Please note that the
+ * exit optimizations hasn't yet been in tuned with NetPerf in mind.
+ *
+ * The NAT network setup was selected here since it's the default one and the
+ * slowest one.  There is quite a bit of IPC with worker threads and packet
+ * processing involved.
+ *
+ * Latency test is first up.  This is a classic back and forth between the two
+ * NetPerf instances, where the key measurement is the roundrip latency.  The
+ * values here are the lowest result over 3-6 runs.
+ *
+ * Against host system:
+ *   - 152 258 ns/roundtrip - 100% - regular VirtualBox SVM
+ *   - 271 059 ns/roundtrip - 178% - Hypercalls + VID.SYS in ring-0 with exit optimizations.
+ *   - 280 149 ns/roundtrip - 184% - Hypercalls + VID.SYS in ring-0
+ *   - 317 735 ns/roundtrip - 209% - Win HV API with exit optimizations.
+ *   - 342 440 ns/roundtrip - 225% - Win HV API
+ *
+ * Against a remote Windows 10 system over a 10Gbps link:
+ *   - 243 969 ns/roundtrip - 100% - regular VirtualBox SVM
+ *   - 384 427 ns/roundtrip - 158% - Win HV API with exit optimizations.
+ *   - 402 411 ns/roundtrip - 165% - Hypercalls + VID.SYS in ring-0
+ *   - 406 313 ns/roundtrip - 167% - Win HV API
+ *   - 413 160 ns/roundtrip - 169% - Hypercalls + VID.SYS in ring-0 with exit optimizations.
+ *
+ * What we see here is:
+ *
+ *   - Consistent and signficant latency increase using Hyper-V compared
+ *     to directly harnessing AMD-V ourselves.
+ *
+ *   - When talking to the host, it's clear that the hypercalls + VID.SYS
+ *     in ring-0 method pays off.
+ *
+ *   - When talking to a different host, the numbers are closer and it
+ *     is not longer clear which Hyper-V execution method is better.
+ *
+ *
+ * Throughput benchmarks are performed by one side pushing data full throttle
+ * for 10 seconds (minus a 1 second at each end of the test), then reversing
+ * the roles and measuring it in the other direction.  The tests ran 3-5 times
+ * and below are the highest and lowest results in each direction.
+ *
+ * Receiving from host system:
+ *   - Regular VirtualBox SVM:
+ *      Max: 96 907 549 bytes/s - 100%
+ *      Min: 86 912 095 bytes/s - 100%
+ *   - Hypercalls + VID.SYS in ring-0:
+ *      Max: 84 036 544 bytes/s - 87%
+ *      Min: 64 978 112 bytes/s - 75%
+ *   - Hypercalls + VID.SYS in ring-0 with exit optimizations:
+ *      Max: 77 760 699 bytes/s - 80%
+ *      Min: 72 677 171 bytes/s - 84%
+ *   - Win HV API with exit optimizations:
+ *      Max: 64 465 905 bytes/s - 67%
+ *      Min: 62 286 369 bytes/s - 72%
+ *   - Win HV API:
+ *      Max: 62 466 631 bytes/s - 64%
+ *      Min: 61 362 782 bytes/s - 70%
+ *
+ * Sending to the host system:
+ *   - Regular VirtualBox SVM:
+ *      Max: 87 728 652 bytes/s - 100%
+ *      Min: 86 923 198 bytes/s - 100%
+ *   - Hypercalls + VID.SYS in ring-0:
+ *      Max: 84 280 749 bytes/s - 96%
+ *      Min: 78 369 842 bytes/s - 90%
+ *   - Hypercalls + VID.SYS in ring-0 with exit optimizations:
+ *      Max: 84 119 932 bytes/s - 96%
+ *      Min: 77 396 811 bytes/s - 89%
+ *   - Win HV API:
+ *      Max: 81 714 377 bytes/s - 93%
+ *      Min: 78 697 419 bytes/s - 91%
+ *   - Win HV API with exit optimizations:
+ *      Max: 80 502 488 bytes/s - 91%
+ *      Min: 71 164 978 bytes/s - 82%
+ *
+ * Receiving from a remote Windows 10 system over a 10Gbps link:
+ *   - Hypercalls + VID.SYS in ring-0:
+ *      Max: 115 346 922 bytes/s - 136%
+ *      Min: 112 912 035 bytes/s - 137%
+ *   - Regular VirtualBox SVM:
+ *      Max:  84 517 504 bytes/s - 100%
+ *      Min:  82 597 049 bytes/s - 100%
+ *   - Hypercalls + VID.SYS in ring-0 with exit optimizations:
+ *      Max:  77 736 251 bytes/s - 92%
+ *      Min:  73 813 784 bytes/s - 89%
+ *   - Win HV API with exit optimizations:
+ *      Max:  63 035 587 bytes/s - 75%
+ *      Min:  57 538 380 bytes/s - 70%
+ *   - Win HV API:
+ *      Max:  62 279 185 bytes/s - 74%
+ *      Min:  56 813 866 bytes/s - 69%
+ *
+ * Sending to a remote Windows 10 system over a 10Gbps link:
+ *   - Win HV API with exit optimizations:
+ *      Max: 116 502 357 bytes/s - 103%
+ *      Min:  49 046 550 bytes/s - 59%
+ *   - Regular VirtualBox SVM:
+ *      Max: 113 030 991 bytes/s - 100%
+ *      Min:  83 059 511 bytes/s - 100%
+ *   - Hypercalls + VID.SYS in ring-0:
+ *      Max: 106 435 031 bytes/s - 94%
+ *      Min:  47 253 510 bytes/s - 57%
+ *   - Hypercalls + VID.SYS in ring-0 with exit optimizations:
+ *      Max:  94 842 287 bytes/s - 84%
+ *      Min:  68 362 172 bytes/s - 82%
+ *   - Win HV API:
+ *      Max:  65 165 225 bytes/s - 58%
+ *      Min:  47 246 573 bytes/s - 57%
+ *
+ * What we see here is:
+ *
+ *   - Again consistent numbers when talking to the host.  Showing that the
+ *     ring-0 approach is preferable to the ring-3 one.
+ *
+ *   - Again when talking to a remote host, things get more difficult to
+ *     make sense of.  The spread is larger and direct AMD-V gets beaten by
+ *     a different the Hyper-V approaches in each direction.
+ *
+ *   - However, if we treat the first entry (remote host) as weird spikes, the
+ *     other entries are consistently worse compared to direct AMD-V.  For the
+ *     send case we get really bad results for WinHV.
  *
  */
 
