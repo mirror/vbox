@@ -477,6 +477,15 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
             LogFlow(("EMHistoryExec/EXEC_WITH_MAX: %Rrc cExits=%u cMaxExitDistance=%u cInstructions=%u\n",
                      VBOXSTRICTRC_VAL(rcStrict), ExecStats.cExits, ExecStats.cMaxExitDistance, ExecStats.cInstructions));
             emHistoryExecSetContinueExitRecIdx(pVCpu, rcStrict, pExitRec);
+
+            /* Ignore instructions IEM doesn't know about. */
+            if (   (   rcStrict != VERR_IEM_INSTR_NOT_IMPLEMENTED
+                    && rcStrict != VERR_IEM_ASPECT_NOT_IMPLEMENTED)
+                || ExecStats.cInstructions == 0)
+            { /* likely */ }
+            else
+                rcStrict = VINF_SUCCESS;
+
             if (ExecStats.cExits > 1)
                 STAM_REL_COUNTER_ADD(&pVCpu->em.s.StatHistoryExecSavedExits, ExecStats.cExits - 1);
             STAM_REL_COUNTER_ADD(&pVCpu->em.s.StatHistoryExecInstructions, ExecStats.cInstructions);
@@ -500,7 +509,8 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
             LogFlow(("EMHistoryExec/EXEC_PROBE: %Rrc cExits=%u cMaxExitDistance=%u cInstructions=%u\n",
                      VBOXSTRICTRC_VAL(rcStrict), ExecStats.cExits, ExecStats.cMaxExitDistance, ExecStats.cInstructions));
             emHistoryExecSetContinueExitRecIdx(pVCpu, rcStrict, pExitRecUnconst);
-            if (ExecStats.cExits >= 2)
+            if (   ExecStats.cExits >= 2
+                && RT_SUCCESS(rcStrict))
             {
                 Assert(ExecStats.cMaxExitDistance > 0 && ExecStats.cMaxExitDistance <= 32);
                 pExitRecUnconst->cMaxInstructionsWithoutExit = ExecStats.cMaxExitDistance;
@@ -509,7 +519,8 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
                 STAM_REL_COUNTER_INC(&pVCpu->em.s.StatHistoryProbedExecWithMax);
             }
 #ifndef IN_RING3
-            else if (pVCpu->em.s.idxContinueExitRec != UINT16_MAX)
+            else if (   pVCpu->em.s.idxContinueExitRec != UINT16_MAX
+                     && RT_SUCCESS(rcStrict))
             {
                 STAM_REL_COUNTER_INC(&pVCpu->em.s.StatHistoryProbedToRing3);
                 LogFlow(("EMHistoryExec/EXEC_PROBE: -> ring-3\n"));
@@ -521,6 +532,9 @@ VMM_INT_DECL(VBOXSTRICTRC) EMHistoryExec(PVMCPU pVCpu, PCEMEXITREC pExitRec, uin
                 pVCpu->em.s.idxContinueExitRec = UINT16_MAX;
                 LogFlow(("EMHistoryExec/EXEC_PROBE: -> PROBED\n"));
                 STAM_REL_COUNTER_INC(&pVCpu->em.s.StatHistoryProbedNormal);
+                if (   rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED
+                    || rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED)
+                    rcStrict = VINF_SUCCESS;
             }
             STAM_REL_COUNTER_ADD(&pVCpu->em.s.StatHistoryProbeInstructions, ExecStats.cInstructions);
             STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatHistoryProbe, b);
