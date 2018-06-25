@@ -1386,7 +1386,8 @@ typedef HV_X64_VP_EXECUTION_STATE const *PCHV_X64_VP_EXECUTION_STATE;
 typedef struct
 {
     HV_VP_INDEX                     VpIndex;                /**< 0x00 */
-    uint8_t                         InstructionLength;      /**< 0x04: Zero if not available, instruction fetch exit, ... */
+    uint8_t                         InstructionLength : 4;  /**< 0x04[3:0]: Zero if not available, instruction fetch exit, ... */
+    uint8_t                         Cr8 : 4;                /**< 0x04[7:4]: Not sure since when, but after v2. */
     HV_INTERCEPT_ACCESS_TYPE        InterceptAccessType;    /**< 0x05 */
     HV_X64_VP_EXECUTION_STATE       ExecutionState;         /**< 0x06 */
     HV_X64_SEGMENT_REGISTER         CsSegment;              /**< 0x08 */
