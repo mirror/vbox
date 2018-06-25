@@ -519,7 +519,7 @@ setup)
     ## than the fall-back.  Unnecessary duplication?
     stop && cleanup
     setup_usb "$GROUP" "$DEVICE_MODE" "$INSTALL_DIR"
-    setup && start
+    start
     ;;
 cleanup)
     stop && cleanup
