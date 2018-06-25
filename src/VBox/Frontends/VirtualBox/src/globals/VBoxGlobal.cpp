@@ -347,27 +347,6 @@ VBoxGlobal::~VBoxGlobal()
 }
 
 /* static */
-uint VBoxGlobal::qtRTMajorVersion()
-{
-    QString rt_ver_str("5.11");// = VBoxGlobal::qtRTVersionString();
-    return rt_ver_str.section ('.', 0, 0).toInt();
-}
-
-/* static */
-uint VBoxGlobal::qtRTMinorVersion()
-{
-    QString rt_ver_str("5.11");// = VBoxGlobal::qtRTVersionString();
-    return rt_ver_str.section ('.', 1, 1).toInt();
-}
-
-/* static */
-uint VBoxGlobal::qtRTRevisionNumber()
-{
-    QString rt_ver_str("5.11");// = VBoxGlobal::qtRTVersionString();
-    return rt_ver_str.section ('.', 2, 2).toInt();
-}
-
-/* static */
 QString VBoxGlobal::qtRTVersionString()
 {
     return QString::fromLatin1(qVersion());
@@ -380,6 +359,24 @@ uint VBoxGlobal::qtRTVersion()
     return (strVersionRT.section('.', 0, 0).toInt() << 16) +
            (strVersionRT.section('.', 1, 1).toInt() << 8) +
            strVersionRT.section('.', 2, 2).toInt();
+}
+
+/* static */
+uint VBoxGlobal::qtRTMajorVersion()
+{
+    return VBoxGlobal::qtRTVersionString().section('.', 0, 0).toInt();
+}
+
+/* static */
+uint VBoxGlobal::qtRTMinorVersion()
+{
+    return VBoxGlobal::qtRTVersionString().section('.', 1, 1).toInt();
+}
+
+/* static */
+uint VBoxGlobal::qtRTRevisionNumber()
+{
+    return VBoxGlobal::qtRTVersionString().section('.', 2, 2).toInt();
 }
 
 /* static */
@@ -1812,7 +1809,8 @@ void VBoxGlobal::setCursor(QWidget *pWidget, const QCursor &cursor)
         return;
 
 #ifdef VBOX_WS_X11
-    /* As reported in #9197, in X11 QWidget::setCursor(..) call uses RENDER
+    /* As reported in https://www.virtualbox.org/ticket/16348,
+     * in X11 QWidget::setCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension
      * is missing. Please see https://codereview.qt-project.org/#/c/225665/ for Qt patch: */
     if ((VBoxGlobal::qtRTMajorVersion() < 5) ||
@@ -1833,15 +1831,15 @@ void VBoxGlobal::setCursor(QWidget *pWidget, const QCursor &cursor)
 /* static */
 void VBoxGlobal::setCursor(QGraphicsWidget *pWidget, const QCursor &cursor)
 {
-
     if (!pWidget)
         return;
 
 #ifdef VBOX_WS_X11
-    /* As reported in #9197, in X11 QGraphicsWidget::setCursor(..) call uses RENDER
+    /* As reported in https://www.virtualbox.org/ticket/16348,
+     * in X11 QGraphicsWidget::setCursor(..) call uses RENDER
      * extension. Qt (before 5.11) fails to handle the case where the mentioned extension
      * is missing. Please see https://codereview.qt-project.org/#/c/225665/ for Qt patch: */
-    if ((VBoxGlobal::qtRTMajorVersion() < 5) ||
+     if ((VBoxGlobal::qtRTMajorVersion() < 5) ||
         (VBoxGlobal::qtRTMajorVersion() == 5 && VBoxGlobal::qtRTMinorVersion() < 11))
     {
         if (X11CheckExtension("RENDER"))

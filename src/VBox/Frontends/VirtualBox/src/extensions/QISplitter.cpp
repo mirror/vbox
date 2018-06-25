@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 # include "QISplitter.h"
+# include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
