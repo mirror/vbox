@@ -260,7 +260,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                                 && pMouseEvent->buttons().testFlag(Qt::LeftButton))
                             {
                                 m_fHandleGrabbed = true;
-                                setCursor(Qt::SplitHCursor);
+                                VBoxGlobal::setCursor(this, Qt::SplitHCursor);
                                 qApp->postEvent(pHandle, new QMouseEvent(newME));
                                 return true;
                             }
@@ -272,7 +272,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                                 || (   m_fHandleGrabbed
                                     && pMouseEvent->buttons().testFlag(Qt::LeftButton)))
                             {
-                                setCursor(Qt::SplitHCursor);
+                                VBoxGlobal::setCursor(this, Qt::SplitHCursor);
                                 qApp->postEvent(pHandle, new QMouseEvent(newME));
                                 return true;
                             }
@@ -280,7 +280,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                             {
                                 /* If not, reset the state. */
                                 m_fHandleGrabbed = false;
-                                setCursor(Qt::ArrowCursor);
+                                VBoxGlobal::setCursor(this, Qt::ArrowCursor);
                             }
                         }
                     }
@@ -291,7 +291,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
             case QEvent::MouseButtonRelease:
             {
                 m_fHandleGrabbed = false;
-                setCursor(Qt::ArrowCursor);
+                VBoxGlobal::setCursor(this, Qt::ArrowCursor);
                 break;
             }
             default:

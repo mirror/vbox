@@ -44,10 +44,11 @@
 #endif
 
 /* Forward declarations: */
+class QGraphicsWidget;
 class QMenu;
-class QToolButton;
 class QSessionManager;
 class QSpinBox;
+class QToolButton;
 class CHostVideoInputDevice;
 class CMachine;
 class CMedium;
@@ -149,6 +150,13 @@ public:
         static QString qtRTVersionString();
         /** Returns Qt runtime version. */
         static uint qtRTVersion();
+        /** Returns Qt runtime major version. */
+        static uint qtRTMajorVersion();
+        /** Returns Qt runtime minor version. */
+        static uint qtRTMinorVersion();
+        /** Returns Qt runtime revision number. */
+        static uint qtRTRevisionNumber();
+
         /** Returns Qt compiled version string. */
         static QString qtCTVersionString();
         /** Returns Qt compiled version. */
@@ -359,7 +367,7 @@ public:
         static QString documentsPath();
     /** @} */
 
-    /** @name Window/widget geometry stuff.
+    /** @name Window/widget stuff.
      * @{ */
         /** Search position for @a rectangle to make sure it is fully contained @a boundRegion. */
         static QRect normalizeGeometry(const QRect &rectangle, const QRegion &boundRegion,
@@ -382,6 +390,9 @@ public:
 
         /** Activates the specified window with given @a wId. Can @a fSwitchDesktop if requested. */
         static bool activateWindow(WId wId, bool fSwitchDesktop = true);
+        /** Does some checks on certain platforms before calling QWidget::setCursor(...). */
+        static void setCursor(QWidget *pWidget, const QCursor &cursor);
+        static void setCursor(QGraphicsWidget *pWidget, const QCursor &cursor);
 
 #ifdef VBOX_WS_X11
         /** X11: Test whether the current window manager supports full screen mode. */
