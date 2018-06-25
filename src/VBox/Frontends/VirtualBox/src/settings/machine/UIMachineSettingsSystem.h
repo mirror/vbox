@@ -141,8 +141,8 @@ private:
     /** Saves existing 'Acceleration' data from the cache. */
     bool saveAccelerationData();
 
-    /** Disable/enable "hardware virtualization" and "nested paging" check boxes
-     * (but not the "Paravirtualization Interface" combobox)  */
+    /** Defines whether "hardware virtualization" and "nested paging" check-boxes
+      * (but not the "Paravirtualization Interface" combo-box) is @a fEnabled. */
     void setAccelerationCheckBoxesEnabled(bool fEnabled);
 
     /** Holds the list of all possible boot items. */

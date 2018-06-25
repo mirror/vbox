@@ -492,7 +492,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         {
             message.second << tr(
                 "The hardware virtualization is enabled in the Acceleration section of the System page although "
-                "it is not supported by the host system. It should be disabled in order to start the virtual system");
+                "it is not supported by the host system. It should be disabled in order to start the virtual system.");
 
             fPass = false;
         }
@@ -599,11 +599,11 @@ void UIMachineSettingsSystem::polishPage()
     m_pCheckBoxPAE->setEnabled(isMachineOffline() && systemData.m_fSupportedPAE);
 
     /* Polish 'Acceleration' availability: */
-    /* Enable the hardware virtulization related check boxes if it is supported by the host system or
-       it is enabled in the vm (in this case check box is enabled so that user can deselect the checkbox
-       and disable the hardware virtualization (see #9184 for the discussion) */
-    setAccelerationCheckBoxesEnabled((systemData.m_fSupportedHwVirtEx && isMachineOffline()) ||
-                                     (systemData.m_fEnabledHwVirtEx && isMachineOffline()));
+    /* Enable the hardware virtulization related check-boxes if it is supported by the host system or
+     * it is currently enabled in the vm (in this case check-box is enabled so that user could
+     * uncheck it and that way disable the hardware virtualization. */
+    setAccelerationCheckBoxesEnabled(   (systemData.m_fSupportedHwVirtEx && isMachineOffline())
+                                     || (systemData.m_fEnabledHwVirtEx && isMachineOffline()));
     m_pLabelParavirtProvider->setEnabled(isMachineOffline());
     m_pComboParavirtProvider->setEnabled(isMachineOffline());
     m_pLabelVirtualization->setEnabled(isMachineOffline());
