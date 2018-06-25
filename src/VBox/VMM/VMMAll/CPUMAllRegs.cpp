@@ -83,6 +83,17 @@ AssertCompile2MemberOffsets(VM, cpum.s.GuestFeatures, cpum.ro.GuestFeatures);
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pVCpu, a_pSReg));
 #endif
 
+/** @def CPUM_INT_ASSERT_NOT_EXTRN
+ * Macro for asserting that @a a_fNotExtrn are present.
+ *
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling EMT.
+ * @param   a_fNotExtrn     Mask of CPUMCTX_EXTRN_XXX bits to check.
+ */
+#define CPUM_INT_ASSERT_NOT_EXTRN(a_pVCpu, a_fNotExtrn) \
+    AssertMsg(!((a_pVCpu)->cpum.s.Guest.fExtrn & (a_fNotExtrn)), \
+              ("%#RX64; a_fNotExtrn=%#RX64\n", (a_pVCpu)->cpum.s.Guest.fExtrn, (a_fNotExtrn)))
+
+
 
 
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
@@ -737,6 +748,7 @@ VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
         cr0 |= X86_CR0_ET;
 
     pVCpu->cpum.s.Guest.cr0 = cr0;
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_CR0;
     return VINF_SUCCESS;
 }
 
@@ -744,6 +756,7 @@ VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
 VMMDECL(int) CPUMSetGuestCR2(PVMCPU pVCpu, uint64_t cr2)
 {
     pVCpu->cpum.s.Guest.cr2 = cr2;
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_CR2;
     return VINF_SUCCESS;
 }
 
@@ -752,6 +765,7 @@ VMMDECL(int) CPUMSetGuestCR3(PVMCPU pVCpu, uint64_t cr3)
 {
     pVCpu->cpum.s.Guest.cr3 = cr3;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR3;
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_CR3;
     return VINF_SUCCESS;
 }
 
@@ -766,6 +780,7 @@ VMMDECL(int) CPUMSetGuestCR4(PVMCPU pVCpu, uint64_t cr4)
 
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR4;
     pVCpu->cpum.s.Guest.cr4 = cr4;
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_CR4;
     return VINF_SUCCESS;
 }
 
@@ -773,6 +788,7 @@ VMMDECL(int) CPUMSetGuestCR4(PVMCPU pVCpu, uint64_t cr4)
 VMMDECL(int) CPUMSetGuestEFlags(PVMCPU pVCpu, uint32_t eflags)
 {
     pVCpu->cpum.s.Guest.eflags.u32 = eflags;
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_RFLAGS;
     return VINF_SUCCESS;
 }
 
@@ -885,11 +901,13 @@ VMMDECL(int) CPUMSetGuestGS(PVMCPU pVCpu, uint16_t gs)
 VMMDECL(void) CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val)
 {
     pVCpu->cpum.s.Guest.msrEFER = val;
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_EFER;
 }
 
 
 VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_IDTR);
     if (pcbLimit)
         *pcbLimit = pVCpu->cpum.s.Guest.idtr.cbIdt;
     return pVCpu->cpum.s.Guest.idtr.pIdt;
@@ -898,6 +916,7 @@ VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
 
 VMMDECL(RTSEL) CPUMGetGuestTR(PVMCPU pVCpu, PCPUMSELREGHID pHidden)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_TR);
     if (pHidden)
         *pHidden = pVCpu->cpum.s.Guest.tr;
     return pVCpu->cpum.s.Guest.tr.Sel;
@@ -906,45 +925,52 @@ VMMDECL(RTSEL) CPUMGetGuestTR(PVMCPU pVCpu, PCPUMSELREGHID pHidden)
 
 VMMDECL(RTSEL) CPUMGetGuestCS(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CS);
     return pVCpu->cpum.s.Guest.cs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestDS(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DS);
     return pVCpu->cpum.s.Guest.ds.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestES(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_ES);
     return pVCpu->cpum.s.Guest.es.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestFS(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_FS);
     return pVCpu->cpum.s.Guest.fs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestGS(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_GS);
     return pVCpu->cpum.s.Guest.gs.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestSS(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_SS);
     return pVCpu->cpum.s.Guest.ss.Sel;
 }
 
 
 VMMDECL(uint64_t)   CPUMGetGuestFlatPC(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_EFER);
     CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs);
     if (   !CPUMIsGuestInLongMode(pVCpu)
-        || pVCpu->cpum.s.Guest.cs.Attr.n.u1Long)
+        || !pVCpu->cpum.s.Guest.cs.Attr.n.u1Long)
         return pVCpu->cpum.s.Guest.eip + (uint32_t)pVCpu->cpum.s.Guest.cs.u64Base;
     return pVCpu->cpum.s.Guest.rip + pVCpu->cpum.s.Guest.cs.u64Base;
 }
@@ -952,9 +978,10 @@ VMMDECL(uint64_t)   CPUMGetGuestFlatPC(PVMCPU pVCpu)
 
 VMMDECL(uint64_t)   CPUMGetGuestFlatSP(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_EFER);
     CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.ss);
     if (   !CPUMIsGuestInLongMode(pVCpu)
-        || pVCpu->cpum.s.Guest.ss.Attr.n.u1Long)
+        || !pVCpu->cpum.s.Guest.cs.Attr.n.u1Long)
         return pVCpu->cpum.s.Guest.eip + (uint32_t)pVCpu->cpum.s.Guest.ss.u64Base;
     return pVCpu->cpum.s.Guest.rip + pVCpu->cpum.s.Guest.ss.u64Base;
 }
@@ -962,12 +989,14 @@ VMMDECL(uint64_t)   CPUMGetGuestFlatSP(PVMCPU pVCpu)
 
 VMMDECL(RTSEL) CPUMGetGuestLDTR(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_LDTR);
     return pVCpu->cpum.s.Guest.ldtr.Sel;
 }
 
 
 VMMDECL(RTSEL) CPUMGetGuestLdtrEx(PVMCPU pVCpu, uint64_t *pGCPtrBase, uint32_t *pcbLimit)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_LDTR);
     *pGCPtrBase = pVCpu->cpum.s.Guest.ldtr.u64Base;
     *pcbLimit   = pVCpu->cpum.s.Guest.ldtr.u32Limit;
     return pVCpu->cpum.s.Guest.ldtr.Sel;
@@ -976,28 +1005,28 @@ VMMDECL(RTSEL) CPUMGetGuestLdtrEx(PVMCPU pVCpu, uint64_t *pGCPtrBase, uint32_t *
 
 VMMDECL(uint64_t) CPUMGetGuestCR0(PVMCPU pVCpu)
 {
-    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_CR0));
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return pVCpu->cpum.s.Guest.cr0;
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestCR2(PVMCPU pVCpu)
 {
-    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_CR2));
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR2);
     return pVCpu->cpum.s.Guest.cr2;
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestCR3(PVMCPU pVCpu)
 {
-    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_CR3));
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR3);
     return pVCpu->cpum.s.Guest.cr3;
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestCR4(PVMCPU pVCpu)
 {
-    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_CR4));
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR4);
     return pVCpu->cpum.s.Guest.cr4;
 }
 
@@ -1014,74 +1043,84 @@ VMMDECL(uint64_t) CPUMGetGuestCR8(PVMCPU pVCpu)
 
 VMMDECL(void) CPUMGetGuestGDTR(PVMCPU pVCpu, PVBOXGDTR pGDTR)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_GDTR);
     *pGDTR = pVCpu->cpum.s.Guest.gdtr;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestEIP(PVMCPU pVCpu)
 {
-    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_RIP));
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP);
     return pVCpu->cpum.s.Guest.eip;
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestRIP(PVMCPU pVCpu)
 {
-    Assert(!(pVCpu->cpum.s.Guest.fExtrn & CPUMCTX_EXTRN_RIP));
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP);
     return pVCpu->cpum.s.Guest.rip;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestEAX(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RAX);
     return pVCpu->cpum.s.Guest.eax;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestEBX(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RBX);
     return pVCpu->cpum.s.Guest.ebx;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestECX(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RCX);
     return pVCpu->cpum.s.Guest.ecx;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestEDX(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RDX);
     return pVCpu->cpum.s.Guest.edx;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestESI(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RSI);
     return pVCpu->cpum.s.Guest.esi;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestEDI(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RDI);
     return pVCpu->cpum.s.Guest.edi;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestESP(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RSP);
     return pVCpu->cpum.s.Guest.esp;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestEBP(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RBP);
     return pVCpu->cpum.s.Guest.ebp;
 }
 
 
 VMMDECL(uint32_t) CPUMGetGuestEFlags(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RFLAGS);
     return pVCpu->cpum.s.Guest.eflags.u32;
 }
 
@@ -1091,23 +1130,28 @@ VMMDECL(int) CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
     switch (iReg)
     {
         case DISCREG_CR0:
+            CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
             *pValue = pVCpu->cpum.s.Guest.cr0;
             break;
 
         case DISCREG_CR2:
+            CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR2);
             *pValue = pVCpu->cpum.s.Guest.cr2;
             break;
 
         case DISCREG_CR3:
+            CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR3);
             *pValue = pVCpu->cpum.s.Guest.cr3;
             break;
 
         case DISCREG_CR4:
+            CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR4);
             *pValue = pVCpu->cpum.s.Guest.cr4;
             break;
 
         case DISCREG_CR8:
         {
+            CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_APIC_TPR);
             uint8_t u8Tpr;
             int rc = APICGetTpr(pVCpu, &u8Tpr, NULL /* pfPending */, NULL /* pu8PendingIrq */);
             if (RT_FAILURE(rc))
@@ -1129,42 +1173,49 @@ VMMDECL(int) CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
 
 VMMDECL(uint64_t) CPUMGetGuestDR0(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
     return pVCpu->cpum.s.Guest.dr[0];
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestDR1(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
     return pVCpu->cpum.s.Guest.dr[1];
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestDR2(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
     return pVCpu->cpum.s.Guest.dr[2];
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestDR3(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
     return pVCpu->cpum.s.Guest.dr[3];
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestDR6(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR6);
     return pVCpu->cpum.s.Guest.dr[6];
 }
 
 
 VMMDECL(uint64_t) CPUMGetGuestDR7(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR7);
     return pVCpu->cpum.s.Guest.dr[7];
 }
 
 
 VMMDECL(int) CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValue)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR_MASK);
     AssertReturn(iReg <= DISDREG_DR7, VERR_INVALID_PARAMETER);
     /* DR4 is an alias for DR6, and DR5 is an alias for DR7. */
     if (iReg == 4 || iReg == 5)
@@ -1176,6 +1227,7 @@ VMMDECL(int) CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValue)
 
 VMMDECL(uint64_t) CPUMGetGuestEFER(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_EFER);
     return pVCpu->cpum.s.Guest.msrEFER;
 }
 
@@ -1821,6 +1873,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
  */
 VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_XCRx);
     if (   (uNewValue & ~pVCpu->CTX_SUFF(pVM)->cpum.s.fXStateGuestMask) == 0
         /* The X87 bit cannot be cleared. */
         && (uNewValue & XSAVE_C_X87)
@@ -1871,6 +1924,7 @@ VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue)
  */
 VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_EFER);
     return !!(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE);
 }
 
@@ -1883,6 +1937,7 @@ VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR4);
     /* PAE or AMD64 implies support for big pages regardless of CR4.PSE */
     return !!(pVCpu->cpum.s.Guest.cr4 & (X86_CR4_PSE | X86_CR4_PAE));
 }
@@ -1896,6 +1951,7 @@ VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestPagingEnabled(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return !!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PG);
 }
 
@@ -1908,6 +1964,7 @@ VMMDECL(bool) CPUMIsGuestPagingEnabled(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return !!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_WP);
 }
 
@@ -1920,6 +1977,7 @@ VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return !(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE);
 }
 
@@ -1932,6 +1990,7 @@ VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS);
     return !(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
         || pVCpu->cpum.s.Guest.eflags.Bits.u1VM; /** @todo verify that this cannot be set in long mode. */
 }
@@ -1945,6 +2004,7 @@ VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return !!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE);
 }
 
@@ -1957,6 +2017,7 @@ VMMDECL(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG);
 }
 
@@ -1969,6 +2030,7 @@ VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_EFER);
     return (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA) == MSR_K6_EFER_LMA;
 }
 
@@ -1981,6 +2043,7 @@ VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_EFER);
     /* Intel mentions EFER.LMA and EFER.LME in different parts of their spec. We shall use EFER.LMA rather
        than EFER.LME as it reflects if the CPU has entered paging with EFER.LME set.  */
     return (pVCpu->cpum.s.Guest.cr4 & X86_CR4_PAE)
@@ -1997,6 +2060,7 @@ VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_EFER);
     if (!CPUMIsGuestInLongMode(pVCpu))
         return false;
     CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs);
@@ -2449,7 +2513,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
      *         we're in 64-bit mode.  The intel dev box doesn't allow this, on
      *         RPL = CPL.  Weird.
      */
-    Assert(!(pVCpu->cpum.s.Guest.fExtrn & (CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS)));
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS);
     uint32_t uCpl;
     if (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
     {
@@ -2497,6 +2561,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
  */
 VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_EFER);
     CPUMMODE enmMode;
     if (!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
         enmMode = CPUMMODE_REAL;
@@ -2517,6 +2582,8 @@ VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
  */
 VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS);
+
     if (!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
         return 16;
 
@@ -2540,6 +2607,8 @@ VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu)
 
 VMMDECL(DISCPUMODE)     CPUMGetGuestDisMode(PVMCPU pVCpu)
 {
+    CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS);
+
     if (!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
         return DISCPUMODE_16BIT;
 
