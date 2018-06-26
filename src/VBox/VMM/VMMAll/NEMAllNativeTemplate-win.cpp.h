@@ -29,6 +29,49 @@
                 (a_Dst).fFlags   = CPUMSELREG_FLAGS_VALID; \
             } while (0)
 
+/** @def NEMWIN_ASSERT_MSG_REG_VAL
+ * Asserts the correctness of a register value in a message/context.
+ */
+#if 0
+# define NEMWIN_NEED_GET_REGISTER
+# if defined(IN_RING0) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
+#  define NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, a_Expr, a_Msg) \
+    do { \
+        HV_REGISTER_VALUE TmpVal; \
+        nemHCWinGetRegister(a_pVCpu, a_pGVCpu, a_enmReg, &TmpVal); \
+        AssertMsg(a_Expr, a_Msg); \
+    } while (0)
+# else
+#  define NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, a_Expr, a_Msg) \
+    do { \
+        WHV_REGISTER_VALUE TmpVal; \
+        nemR3WinGetRegister(a_pVCpu, a_enmReg, &TmpVal); \
+        AssertMsg(a_Expr, a_Msg); \
+    } while (0)
+# endif
+#else
+# define NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, a_Expr, a_Msg) do { } while (0)
+#endif
+
+/** @def NEMWIN_ASSERT_MSG_REG_VAL
+ * Asserts the correctness of a 64-bit register value in a message/context.
+ */
+#define NEMWIN_ASSERT_MSG_REG_VAL64(a_pVCpu, a_pGVCpu, a_enmReg, a_u64Val) \
+    NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, (a_u64Val) == TmpVal.Reg64, \
+                              (#a_u64Val "=%#RX64, expected %#RX64\n", (a_u64Val), TmpVal.Reg64))
+/** @def NEMWIN_ASSERT_MSG_REG_VAL
+ * Asserts the correctness of a segment register value in a message/context.
+ */
+#define NEMWIN_ASSERT_MSG_REG_SEG(a_pVCpu, a_pGVCpu, a_enmReg, a_SReg) \
+    NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, \
+                                 (a_SReg).Base       == TmpVal.Segment.Base \
+                              && (a_SReg).Limit      == TmpVal.Segment.Limit \
+                              && (a_SReg).Selector   == TmpVal.Segment.Selector \
+                              && (a_SReg).Attributes == TmpVal.Segment.Attributes, \
+                              ( #a_SReg "=%#RX16 {%#RX64 LB %#RX32,%#RX16} expected %#RX16 {%#RX64 LB %#RX32,%#RX16}\n", \
+                               (a_SReg).Selector, (a_SReg).Base, (a_SReg).Limit, (a_SReg).Attributes, \
+                               TmpVal.Segment.Selector, TmpVal.Segment.Base, TmpVal.Segment.Limit, TmpVal.Segment.Attributes))
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -45,6 +88,7 @@ static const char * const g_apszHvInterceptAccessTypes[4] = { "read", "write", "
 *********************************************************************************************************************************/
 NEM_TMPL_STATIC int nemHCNativeSetPhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
                                            uint32_t fPageProt, uint8_t *pu2State, bool fBackingChanged);
+
 
 
 #ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
@@ -1218,6 +1262,58 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPause
 #endif /* IN_RING3 */
 }
 
+#ifdef NEMWIN_NEED_GET_REGISTER
+# if defined(IN_RING0) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
+/** Worker for assertion macro. */
+NEM_TMPL_STATIC int nemHCWinGetRegister(PVMCPU pVCpu, PGVMCPU pGVCpu, uint32_t enmReg, HV_REGISTER_VALUE *pRetValue)
+{
+    RT_ZERO(*pRetValue);
+#  ifdef IN_RING3
+    RT_NOREF(pVCpu, pGVCpu, enmReg);
+    return VERR_NOT_IMPLEMENTED;
+#  else
+    NOREF(pVCpu);
+
+    /*
+     * Hypercall parameters.
+     */
+    HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nem.s.HypercallData.pbPage;
+    AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
+    AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+
+    pInput->PartitionId = pGVCpu->pGVM->nem.s.idHvPartition;
+    pInput->VpIndex     = pGVCpu->idCpu;
+    pInput->fFlags      = 0;
+    pInput->Names[0]    = (HV_REGISTER_NAME)enmReg;
+
+    size_t const cbInput = RT_ALIGN_Z(RT_OFFSETOF(HV_INPUT_GET_VP_REGISTERS, Names[1]), 32);
+    HV_REGISTER_VALUE *paValues = (HV_REGISTER_VALUE *)((uint8_t *)pInput + cbInput);
+    RT_BZERO(paValues, sizeof(paValues[0]) * 1);
+
+    /*
+     * Make the hypercall and copy out the value.
+     */
+    uint64_t uResult = g_pfnHvlInvokeHypercall(HV_MAKE_CALL_INFO(HvCallGetVpRegisters, 1),
+                                               pGVCpu->nem.s.HypercallData.HCPhysPage,
+                                               pGVCpu->nem.s.HypercallData.HCPhysPage + cbInput);
+    AssertLogRelMsgReturn(uResult == HV_MAKE_CALL_REP_RET(1), ("uResult=%RX64 cRegs=%#x\n", uResult, 1),
+                          VERR_NEM_GET_REGISTERS_FAILED);
+
+    *pRetValue = paValues[0];
+    return VINF_SUCCESS;
+#  endif
+}
+# else
+/** Worker for assertion macro. */
+NEM_TMPL_STATIC int nemR3WinGetRegister(PVMCPU a_pVCpu, uint32_t a_enmReg, WHV_REGISTER_VALUE pValue)
+{
+    RT_ZERO(*pRetValue);
+    RT_NOREF(pVCpu, pGVCpu, enmReg);
+    return VERR_NOT_IMPLEMENTED;
+}
+# endif
+#endif
+
 
 #ifdef LOG_ENABLED
 /**
@@ -1321,7 +1417,7 @@ NEM_TMPL_STATIC void nemHCWinLogState(PVM pVM, PVMCPU pVCpu)
 {
     if (LogIs3Enabled())
     {
-# ifdef IN_RING3
+# if 0 // def IN_RING3 - causes lazy state import assertions all over CPUM.
         char szRegs[4096];
         DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
                         "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
@@ -1432,13 +1528,15 @@ static const char *nemR3WinExecStateToLogStr(WHV_VP_EXIT_CONTEXT const *pExitCtx
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            The CPU context to update.
  * @param   pExitCtx        The exit context.
+ * @param   cbMinInstr      The minimum instruction length, or 1 if not unknown.
  */
-DECLINLINE(void) nemHCWinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, PCPUMCTX pCtx, HV_X64_INTERCEPT_MESSAGE_HEADER const *pMsgHdr)
+DECLINLINE(void) nemHCWinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, PCPUMCTX pCtx,
+                                                   HV_X64_INTERCEPT_MESSAGE_HEADER const *pMsgHdr, uint8_t cbMinInstr)
 {
     Assert(!(pCtx->fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS)));
 
     /* Advance the RIP. */
-    Assert(pMsgHdr->InstructionLength > 0 && pMsgHdr->InstructionLength < 16);
+    Assert(pMsgHdr->InstructionLength >= cbMinInstr);
     pCtx->rip += pMsgHdr->InstructionLength;
     pCtx->rflags.Bits.u1RF = 0;
 
@@ -1457,13 +1555,15 @@ DECLINLINE(void) nemHCWinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, PCPUMCTX pCtx, 
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            The CPU context to update.
  * @param   pExitCtx        The exit context.
+ * @param   cbMinInstr      The minimum instruction length, or 1 if not unknown.
  */
-DECLINLINE(void) nemR3WinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, PCPUMCTX pCtx, WHV_VP_EXIT_CONTEXT const *pExitCtx)
+DECLINLINE(void) nemR3WinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, PCPUMCTX pCtx,
+                                                   WHV_VP_EXIT_CONTEXT const *pExitCtx, uint8_t cbMinInstr)
 {
     Assert(!(pCtx->fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS)));
 
     /* Advance the RIP. */
-    Assert(pExitCtx->InstructionLength > 0 && pExitCtx->InstructionLength < 16);
+    Assert(pExitCtx->InstructionLength > cbMinInstr);
     pCtx->rip += pExitCtx->InstructionLength;
     pCtx->rflags.Bits.u1RF = 0;
 
@@ -1845,7 +1945,6 @@ nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, HV_X64_MEMORY_INTERCEPT_MESSA
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_EXECUTE);
-    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
 
     /*
      * Whatever we do, we must clear pending event injection upon resume.
@@ -1853,7 +1952,7 @@ nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, HV_X64_MEMORY_INTERCEPT_MESSA
     if (pMsg->Header.ExecutionState.InterruptionPending)
         pCtx->fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
 
-#if 0 /* Experiment: 20K -> 34K exit/s. */
+# if 0 /* Experiment: 20K -> 34K exit/s. */
     if (   pMsg->Header.ExecutionState.EferLma
         && pMsg->Header.CsSegment.Long
         && pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE)
@@ -1869,7 +1968,7 @@ nemHCWinHandleMessageMemory(PVM pVM, PVMCPU pVCpu, HV_X64_MEMORY_INTERCEPT_MESSA
             return VINF_SUCCESS;
         }
     }
-#endif
+# endif
 
     /*
      * Ask PGM for information about the given GCPhys.  We need to check if we're
@@ -1971,7 +2070,6 @@ nemR3WinHandleExitMemory(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *p
 {
     uint64_t const uHostTsc = ASMReadTSC();
     Assert(pExit->MemoryAccess.AccessInfo.AccessType != 3);
-    AssertMsg(pExit->VpContext.InstructionLength < 0x10, ("%#x\n", pExit->VpContext.InstructionLength));
 
     /*
      * Whatever we do, we must clear pending event injection upon resume.
@@ -2069,12 +2167,27 @@ nemR3WinHandleExitMemory(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *p
 NEM_TMPL_STATIC VBOXSTRICTRC
 nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, HV_X64_IO_PORT_INTERCEPT_MESSAGE const *pMsg, PCPUMCTX pCtx, PGVMCPU pGVCpu)
 {
+    /*
+     * Assert message sanity.
+     */
     Assert(   pMsg->AccessInfo.AccessSize == 1
            || pMsg->AccessInfo.AccessSize == 2
            || pMsg->AccessInfo.AccessSize == 4);
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
-    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsg->Header.Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRax, pMsg->Rax);
+    if (pMsg->AccessInfo.StringOp)
+    {
+        NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterDs,  pMsg->DsSegment);
+        NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterEs,  pMsg->EsSegment);
+        NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRcx, pMsg->Rcx);
+        NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRsi, pMsg->Rsi);
+        NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdi, pMsg->Rdi);
+    }
 
     /*
      * Whatever we do, we must clear pending event injection upon resume.
@@ -2114,7 +2227,7 @@ nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, HV_X64_IO_PORT_INTERCEPT_MESS
                       pVCpu->idCpu, pMsg->Header.CsSegment.Selector, pMsg->Header.Rip, nemHCWinExecStateToLogStr(&pMsg->Header),
                       pMsg->PortNumber, (uint32_t)pMsg->Rax & fAndMask, pMsg->AccessInfo.AccessSize, VBOXSTRICTRC_VAL(rcStrict) ));
                 if (IOM_SUCCESS(rcStrict))
-                    nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+                    nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header, 1);
 # ifdef IN_RING0
                 else if (   rcStrict == VINF_IOM_R3_IOPORT_WRITE
                          && !pCtx->rflags.Bits.u1TF
@@ -2143,7 +2256,7 @@ nemHCWinHandleMessageIoPort(PVM pVM, PVMCPU pVCpu, HV_X64_IO_PORT_INTERCEPT_MESS
                         pCtx->rax = uValue;
                     pCtx->fExtrn &= ~CPUMCTX_EXTRN_RAX;
                     Log4(("IOExit/%u: RAX %#RX64 -> %#RX64\n", pVCpu->idCpu, pMsg->Rax, pCtx->rax));
-                    nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+                    nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header, 1);
                 }
                 else
                 {
@@ -2274,7 +2387,6 @@ nemR3WinHandleExitIoPort(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *p
     Assert(   pExit->IoPortAccess.AccessInfo.AccessSize == 1
            || pExit->IoPortAccess.AccessInfo.AccessSize == 2
            || pExit->IoPortAccess.AccessInfo.AccessSize == 4);
-    AssertMsg(pExit->VpContext.InstructionLength < 0x10, ("%#x\n", pExit->VpContext.InstructionLength));
 
     /*
      * Whatever we do, we must clear pending event injection upon resume.
@@ -2317,7 +2429,7 @@ nemR3WinHandleExitIoPort(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *p
                 if (IOM_SUCCESS(rcStrict))
                 {
                     nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
-                    nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext);
+                    nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext, 1);
                 }
             }
             else
@@ -2337,7 +2449,7 @@ nemR3WinHandleExitIoPort(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *p
                     pCtx->fExtrn &= ~CPUMCTX_EXTRN_RAX;
                     Log4(("IOExit/%u: RAX %#RX64 -> %#RX64\n", pVCpu->idCpu, pExit->IoPortAccess.Rax, pCtx->rax));
                     nemR3WinCopyStateFromX64Header(pVCpu, pCtx, &pExit->VpContext);
-                    nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext);
+                    nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext, 1);
                 }
             }
         }
@@ -2448,7 +2560,6 @@ nemHCWinHandleMessageInterruptWindow(PVM pVM, PVMCPU pVCpu, HV_X64_INTERRUPT_WIN
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_EXECUTE
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ   // READ & WRITE are probably not used here
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
-    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
     AssertMsg(pMsg->Type == HvX64PendingInterrupt || pMsg->Type == HvX64PendingNmi, ("%#x\n", pMsg->Type));
 
     /*
@@ -2483,7 +2594,6 @@ nemR3WinHandleExitInterruptWindow(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT
     /*
      * Assert message sanity.
      */
-    AssertMsg(pExit->VpContext.InstructionLength < 0x10, ("%#x\n", pExit->VpContext.InstructionLength));
     AssertMsg(   pExit->InterruptWindow.DeliverableType == WHvX64PendingInterrupt
               || pExit->InterruptWindow.DeliverableType == WHvX64PendingNmi,
               ("%#x\n", pExit->InterruptWindow.DeliverableType));
@@ -2521,7 +2631,17 @@ nemR3WinHandleExitInterruptWindow(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT
 NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageCpuId(PVM pVM, PVMCPU pVCpu, HV_X64_CPUID_INTERCEPT_MESSAGE const *pMsg,
                                                         PGVMCPU pGVCpu)
 {
-    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
+    /* Check message register value sanity. */
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsg->Header.Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRax, pMsg->Rax);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRcx, pMsg->Rcx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdx, pMsg->Rdx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRbx, pMsg->Rbx);
+
+    /* Do exit history. */
     PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_CPUID),
                                             pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC());
     if (!pExitRec)
@@ -2554,7 +2674,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageCpuId(PVM pVM, PVMCPU pVCpu, H
               pMsg->DefaultResultRax, pMsg->DefaultResultRcx, pMsg->DefaultResultRdx, pMsg->DefaultResultRbx));
 
         /* Move RIP and we're done. */
-        nemHCWinAdvanceGuestRipAndClearRF(pVCpu, &pVCpu->cpum.GstCtx, &pMsg->Header);
+        nemHCWinAdvanceGuestRipAndClearRF(pVCpu, &pVCpu->cpum.GstCtx, &pMsg->Header, 2);
 
         return VINF_SUCCESS;
     }
@@ -2602,7 +2722,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageCpuId(PVM pVM, PVMCPU pVCpu, H
 NEM_TMPL_STATIC VBOXSTRICTRC
 nemR3WinHandleExitCpuId(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExit)
 {
-    AssertMsg(pExit->VpContext.InstructionLength < 0x10, ("%#x\n", pExit->VpContext.InstructionLength));
     PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_CPUID),
                                             pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
     if (!pExitRec)
@@ -2635,7 +2754,7 @@ nemR3WinHandleExitCpuId(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pE
               pExit->CpuidAccess.DefaultResultRax, pExit->CpuidAccess.DefaultResultRcx, pExit->CpuidAccess.DefaultResultRdx, pExit->CpuidAccess.DefaultResultRbx));
 
         /* Move RIP and we're done. */
-        nemR3WinAdvanceGuestRipAndClearRF(pVCpu, &pVCpu->cpum.GstCtx, &pExit->VpContext);
+        nemR3WinAdvanceGuestRipAndClearRF(pVCpu, &pVCpu->cpum.GstCtx, &pExit->VpContext, 2);
 
         RT_NOREF_PV(pVM);
         return VINF_SUCCESS;
@@ -2683,9 +2802,14 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
     /*
      * A wee bit of sanity first.
      */
-    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsg->Header.Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRax, pMsg->Rax);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdx, pMsg->Rdx);
 
     /*
      * Check CPL as that's common to both RDMSR and WRMSR.
@@ -2724,7 +2848,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
                           pMsg->MsrNumber, (uint32_t)pMsg->Rax, (uint32_t)pMsg->Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
                     if (rcStrict == VINF_SUCCESS)
                     {
-                        nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+                        nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header, 2);
                         return VINF_SUCCESS;
                     }
 # ifndef IN_RING3
@@ -2753,7 +2877,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
                         pCtx->rax = (uint32_t)uValue;
                         pCtx->rdx = uValue >> 32;
                         pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX);
-                        nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header);
+                        nemHCWinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pMsg->Header, 2);
                         return VINF_SUCCESS;
                     }
 # ifndef IN_RING3
@@ -2830,8 +2954,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPU pVCpu, HV_X64_MSR_I
 NEM_TMPL_STATIC VBOXSTRICTRC
 nemR3WinHandleExitMsr(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExit, PCPUMCTX pCtx)
 {
-    AssertMsg(pExit->VpContext.InstructionLength < 0x10, ("%#x\n", pExit->VpContext.InstructionLength));
-
     /*
      * Check CPL as that's common to both RDMSR and WRMSR.
      */
@@ -2869,7 +2991,7 @@ nemR3WinHandleExitMsr(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExi
                           (uint32_t)pExit->MsrAccess.Rax, (uint32_t)pExit->MsrAccess.Rdx, VBOXSTRICTRC_VAL(rcStrict) ));
                     if (rcStrict == VINF_SUCCESS)
                     {
-                        nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext);
+                        nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext, 2);
                         return VINF_SUCCESS;
                     }
                     LogRel(("MsrExit/%u: %04x:%08RX64/%s: WRMSR %08x, %08x:%08x -> %Rrc!\n", pVCpu->idCpu,
@@ -2892,7 +3014,7 @@ nemR3WinHandleExitMsr(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExi
                         pCtx->rax = (uint32_t)uValue;
                         pCtx->rdx = uValue >> 32;
                         pCtx->fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX);
-                        nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext);
+                        nemR3WinAdvanceGuestRipAndClearRF(pVCpu, pCtx, &pExit->VpContext, 2);
                         return VINF_SUCCESS;
                     }
                     LogRel(("MsrExit/%u: %04x:%08RX64/%s: RDMSR %08x -> %08RX64 / %Rrc\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector,
@@ -3087,10 +3209,31 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
     /*
      * Assert sanity.
      */
-    AssertMsg(pMsg->Header.InstructionLength < 0x10, ("%#x\n", pMsg->Header.InstructionLength));
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_EXECUTE);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsg->Header.Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterDs,  pMsg->DsSegment);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterSs,  pMsg->SsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRax, pMsg->Rax);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRcx, pMsg->Rcx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdx, pMsg->Rdx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRbx, pMsg->Rbx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRsp, pMsg->Rsp);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRbp, pMsg->Rbp);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRsi, pMsg->Rsi);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdi, pMsg->Rdi);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR8,  pMsg->R8);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR9,  pMsg->R9);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR10, pMsg->R10);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR11, pMsg->R11);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR12, pMsg->R12);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR13, pMsg->R13);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR14, pMsg->R14);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR15, pMsg->R15);
 
     /*
      * Get most of the register state since we'll end up making IEM inject the
@@ -3192,11 +3335,6 @@ nemHCWinHandleMessageException(PVMCPU pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE 
 NEM_TMPL_STATIC VBOXSTRICTRC
 nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExit, PCPUMCTX pCtx)
 {
-    /*
-     * Assert sanity.
-     */
-    AssertMsg(pExit->VpContext.InstructionLength < 0x10, ("%#x\n", pExit->VpContext.InstructionLength));
-
     /*
      * Get most of the register state since we'll end up making IEM inject the
      * event.  The exception isn't normally flaged as a pending event, so duh.
@@ -3308,7 +3446,11 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageUnrecoverableException(PVMCPU 
                                                                          HV_X64_INTERCEPT_MESSAGE_HEADER const *pMsgHdr,
                                                                          PCPUMCTX pCtx, PGVMCPU pGVCpu)
 {
-    AssertMsg(pMsgHdr->InstructionLength < 0x10, ("%#x\n", pMsgHdr->InstructionLength));
+    /* Check message register value sanity. */
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsgHdr->CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsgHdr->Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsgHdr->Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsgHdr->Cr8);
 
 # if 0
     /*
@@ -3364,8 +3506,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageUnrecoverableException(PVMCPU 
 NEM_TMPL_STATIC VBOXSTRICTRC
 nemR3WinHandleExitUnrecoverableException(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pExit, PCPUMCTX pCtx)
 {
-    AssertMsg(pExit->VpContext.InstructionLength < 0x10, ("%#x\n", pExit->VpContext.InstructionLength));
-
 # if 0
     /*
      * Just copy the state we've got and handle it in the loop for now.
