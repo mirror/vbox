@@ -1372,6 +1372,7 @@ NEM_TMPL_STATIC int nemHCWinCancelRunVirtualProcessor(PVM pVM, PVMCPU pVCpu)
             case VMCPUSTATE_STARTED_EXEC_NEM:
                 if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED, VMCPUSTATE_STARTED_EXEC_NEM))
                 {
+                    DBGFTRACE_CUSTOM(pVM, "VMCPUSTATE_STARTED_EXEC_NEM -> CANCELED");
                     Log8(("nemHCWinCancelRunVirtualProcessor: Switched %u to canceled state\n", pVCpu->idCpu));
                     STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatCancelChangedState);
                     return VINF_SUCCESS;
@@ -1381,10 +1382,13 @@ NEM_TMPL_STATIC int nemHCWinCancelRunVirtualProcessor(PVM pVM, PVMCPU pVCpu)
             case VMCPUSTATE_STARTED_EXEC_NEM_WAIT:
                 if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED, VMCPUSTATE_STARTED_EXEC_NEM_WAIT))
                 {
+                    DBGFTRACE_CUSTOM(pVM, "VMCPUSTATE_STARTED_EXEC_NEM_WAIT -> CANCELED");
 #  ifdef IN_RING0
                     NTSTATUS rcNt = KeAlertThread(??);
+                    DBGFTRACE_CUSTOM(pVM, "KeAlertThread -> %#x", rcNt);
 #  else
                     NTSTATUS rcNt = NtAlertThread(pVCpu->nem.s.hNativeThreadHandle);
+                    DBGFTRACE_CUSTOM(pVM, "NtAlertThread -> %#x", rcNt);
 #  endif
                     Log8(("nemHCWinCancelRunVirtualProcessor: Alerted %u: %#x\n", pVCpu->idCpu, rcNt));
                     Assert(rcNt == STATUS_SUCCESS);
@@ -3740,10 +3744,15 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
                                              VID_MESSAGE_MAPPING_HEADER volatile *pMappingHeader,
                                              PGVM pGVM, PGVMCPU pGVCpu)
 {
+# ifdef DBGFTRACE_ENABLED
+    HV_MESSAGE const volatile *pMsgForTrace = (HV_MESSAGE const volatile *)(pMappingHeader + 1);
+# endif
+
     /*
      * Try stopping the processor.  If we're lucky we manage to do this before it
      * does another VM exit.
      */
+    DBGFTRACE_CUSTOM(pVM, "nemStop#0");
 # ifdef IN_RING0
     pVCpu->nem.s.uIoCtlBuf.idCpu = pGVCpu->idCpu;
     NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlStopVirtualProcessor.uFunction,
@@ -3751,6 +3760,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
                                             NULL, 0);
     if (NT_SUCCESS(rcNt))
     {
+        DBGFTRACE_CUSTOM(pVM, "nemStop#0: okay (%#x)", rcNt);
         Log8(("nemHCWinStopCpu: Stopping CPU succeeded (cpu status %u)\n", nemHCWinCpuGetRunningStatus(pVCpu) ));
         STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuSuccess);
         return rcStrict;
@@ -3759,6 +3769,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
     BOOL fRet = VidStopVirtualProcessor(pVM->nem.s.hPartitionDevice, pVCpu->idCpu);
     if (fRet)
     {
+        DBGFTRACE_CUSTOM(pVM, "nemStop#0: okay");
         Log8(("nemHCWinStopCpu: Stopping CPU succeeded (cpu status %u)\n", nemHCWinCpuGetRunningStatus(pVCpu) ));
         STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuSuccess);
         return rcStrict;
@@ -3770,10 +3781,12 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
      * Dang. The CPU stopped by itself and we got a couple of message to deal with.
      */
 # ifdef IN_RING0
+    DBGFTRACE_CUSTOM(pVM, "nemStop#0: pending (%#x)", rcNt);
     AssertLogRelMsgReturn(rcNt == ERROR_VID_STOP_PENDING, ("rcNt=%#x\n", rcNt),
                           RT_SUCCESS(rcStrict) ?  VERR_NEM_IPE_5 : rcStrict);
 # else
     DWORD dwErr = RTNtLastErrorValue();
+    DBGFTRACE_CUSTOM(pVM, "nemStop#0: pending (%#x)", dwErr);
     AssertLogRelMsgReturn(dwErr == ERROR_VID_STOP_PENDING, ("dwErr=%#u (%#x)\n", dwErr, dwErr),
                           RT_SUCCESS(rcStrict) ?  VERR_NEM_IPE_5 : rcStrict);
 # endif
@@ -3788,15 +3801,19 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
     pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
     pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_GET_NEXT_MESSAGE;
     pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
-    rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                   &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                   sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
-                                   NULL, 0);
-    AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("1st VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
+    rcNt = nemR0NtPerformIoControlRestart(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                                          &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
+                                          sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext));
+    DBGFTRACE_CUSTOM(pVM, "nemStop#1: %#x / %#x %#x %#x", rcNt, pMappingHeader->enmVidMsgType, pMappingHeader->cbMessage,
+                     pMsgForTrace->Header.MessageType);
+    AssertLogRelMsgReturn(rcNt == STATUS_SUCCESS,
+                          ("1st VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
                           RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
 # else
     BOOL fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
                                                      VID_MSHAGN_F_GET_NEXT_MESSAGE, 30000 /*ms*/);
+    DBGFTRACE_CUSTOM(pVM, "nemStop#1: %d+%#x / %#x %#x %#x", fWait, RTNtLastErrorValue(), pMappingHeader->enmVidMsgType,
+                     pMappingHeader->cbMessage, pMsgForTrace->Header.MessageType);
     AssertLogRelMsgReturn(fWait, ("1st VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %u\n", RTNtLastErrorValue()),
                           RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
 # endif
@@ -3807,6 +3824,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
         VBOXSTRICTRC rcStrict2 = nemHCWinHandleMessage(pVM, pVCpu, pMappingHeader, CPUMQueryGuestCtxPtr(pVCpu), pGVCpu);
         if (rcStrict2 != VINF_SUCCESS && RT_SUCCESS(rcStrict))
             rcStrict = rcStrict2;
+        DBGFTRACE_CUSTOM(pVM, "nemStop#1: handled %#x -> %d", pMsgForTrace->Header.MessageType, VBOXSTRICTRC_VAL(rcStrict));
 
         /*
          * Mark it as handled and get the stop request completed message, then mark
@@ -3816,15 +3834,19 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE;
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
-        rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                       &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                       sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
-                                       NULL, 0);
-        AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("2nd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
+        rcNt = nemR0NtPerformIoControlRestart(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                                              &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
+                                              sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext));
+        DBGFTRACE_CUSTOM(pVM, "nemStop#2: %#x / %#x %#x %#x", rcNt, pMappingHeader->enmVidMsgType, pMappingHeader->cbMessage,
+                         pMsgForTrace->Header.MessageType);
+        AssertLogRelMsgReturn(rcNt == STATUS_SUCCESS,
+                              ("2nd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
                               RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
 # else
         fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
                                                     VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE, 30000 /*ms*/);
+        DBGFTRACE_CUSTOM(pVM, "nemStop#2: %d+%#x / %#x %#x %#x", fWait, RTNtLastErrorValue(), pMappingHeader->enmVidMsgType,
+                         pMappingHeader->cbMessage, pMsgForTrace->Header.MessageType);
         AssertLogRelMsgReturn(fWait, ("2nd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %u\n", RTNtLastErrorValue()),
                               RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
 # endif
@@ -3843,14 +3865,18 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_HANDLE_MESSAGE;
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
-        rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                       &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                       sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
-                                       NULL, 0);
-        AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("3rd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
+        rcNt = nemR0NtPerformIoControlRestart(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                                              &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
+                                              sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext));
+        DBGFTRACE_CUSTOM(pVM, "nemStop#3: %#x / %#x %#x %#x", rcNt, pMappingHeader->enmVidMsgType,
+                         pMsgForTrace->Header.MessageType, pMappingHeader->cbMessage, pMsgForTrace->Header.MessageType);
+        AssertLogRelMsgReturn(rcNt == STATUS_SUCCESS,
+                              ("3rd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %#x\n", rcNt),
                               RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
 # else
         fWait = g_pfnVidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu, VID_MSHAGN_F_HANDLE_MESSAGE, 30000 /*ms*/);
+        DBGFTRACE_CUSTOM(pVM, "nemStop#3: %d+%#x / %#x %#x %#x", fWait, RTNtLastErrorValue(), pMappingHeader->enmVidMsgType,
+                         pMsgForTrace->Header.MessageType, pMappingHeader->cbMessage, pMsgForTrace->Header.MessageType);
         AssertLogRelMsgReturn(fWait, ("3rd VidMessageSlotHandleAndGetNext after ERROR_VID_STOP_PENDING failed: %u\n", RTNtLastErrorValue()),
                               RT_SUCCESS(rcStrict) ? VERR_NEM_IPE_5 : rcStrict);
 # endif
@@ -3858,6 +3884,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
     }
     else
     {
+        DBGFTRACE_CUSTOM(pVM, "nemStop#9: %#x %#x %#x", pMappingHeader->enmVidMsgType,
+                         pMappingHeader->cbMessage, pMsgForTrace->Header.MessageType);
         STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuPendingOdd);
         Log8(("nemHCWinStopCpu: Stopped the CPU (rcStrict=%Rrc) - 1st VidMessageSlotHandleAndGetNext got VidMessageStopRequestComplete.\n",
               VBOXSTRICTRC_VAL(rcStrict) ));

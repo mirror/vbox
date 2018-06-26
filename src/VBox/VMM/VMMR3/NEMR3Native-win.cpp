@@ -49,6 +49,7 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/pdm.h>
+#include <VBox/vmm/dbgftrace.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
 
