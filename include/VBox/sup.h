@@ -2011,6 +2011,15 @@ SUPR0DECL(int)  SUPR0Printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2
  */
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
 
+#ifdef ___iprt_log_h
+/** @copydoc RTLogGetDefaultInstanceEx
+ * @remarks To allow overriding RTLogGetDefaultInstanceEx locally. */
+SUPR0DECL(PRTLOGGER) SUPR0GetDefaultLogInstanceEx(uint32_t fFlagsAndGroup);
+/** @copydoc RTLogRelGetDefaultInstanceEx
+ * @remarks To allow overriding RTLogRelGetDefaultInstanceEx locally. */
+SUPR0DECL(PRTLOGGER) SUPR0GetDefaultLogRelInstanceEx(uint32_t fFlagsAndGroup);
+#endif
+
 
 /** @name Absolute symbols
  * Take the address of these, don't try call them.
