@@ -528,8 +528,8 @@ void UIGlobalSettingsNetwork::prepareNATNetworkToolbar()
         m_pToolbarNetworkNAT->setOrientation(Qt::Vertical);
 
         /* Create' Add NAT Network' action: */
-        m_pActionAddNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/add_host_iface_16px.png",
-                                                                                     ":/add_host_iface_disabled_16px.png"),
+        m_pActionAddNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/host_iface_add_16px.png",
+                                                                                     ":/host_iface_add_disabled_16px.png"),
                                                                  QString(), this, SLOT(sltAddNATNetwork()));
         AssertPtrReturnVoid(m_pActionAddNATNetwork);
         {
@@ -538,8 +538,8 @@ void UIGlobalSettingsNetwork::prepareNATNetworkToolbar()
         }
 
         /* Create 'Remove NAT Network' action: */
-        m_pActionRemoveNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/remove_host_iface_16px.png",
-                                                                                        ":/remove_host_iface_disabled_16px.png"),
+        m_pActionRemoveNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/host_iface_remove_16px.png",
+                                                                                        ":/host_iface_remove_disabled_16px.png"),
                                                                     QString(), this, SLOT(sltRemoveNATNetwork()));
         AssertPtrReturnVoid(m_pActionRemoveNATNetwork);
         {
@@ -548,8 +548,8 @@ void UIGlobalSettingsNetwork::prepareNATNetworkToolbar()
         }
 
         /* Create 'Edit NAT Network' action: */
-        m_pActionEditNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/edit_host_iface_16px.png",
-                                                                                      ":/edit_host_iface_disabled_16px.png"),
+        m_pActionEditNATNetwork = m_pToolbarNetworkNAT->addAction(UIIconPool::iconSet(":/host_iface_edit_16px.png",
+                                                                                      ":/host_iface_edit_disabled_16px.png"),
                                                                   QString(), this, SLOT(sltEditNATNetwork()));
         AssertPtrReturnVoid(m_pActionEditNATNetwork);
         {

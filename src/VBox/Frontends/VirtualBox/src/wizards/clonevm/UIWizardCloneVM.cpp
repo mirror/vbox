@@ -44,10 +44,10 @@ UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine,
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
-    assignWatermark(":/vmw_clone.png");
+    assignWatermark(":/wizard_clone.png");
 #else /* VBOX_WS_MAC */
     /* Assign background image: */
-    assignBackground(":/vmw_clone_bg.png");
+    assignBackground(":/wizard_clone_bg.png");
 #endif /* VBOX_WS_MAC */
 }
 

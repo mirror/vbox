@@ -48,10 +48,10 @@ UIWizardExportApp::UIWizardExportApp(QWidget *pParent, const QStringList &select
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
-    assignWatermark(":/vmw_ovf_export.png");
+    assignWatermark(":/wizard_ovf_export.png");
 #else /* VBOX_WS_MAC */
     /* Assign background image: */
-    assignBackground(":/vmw_ovf_export_bg.png");
+    assignBackground(":/wizard_ovf_export_bg.png");
 #endif /* VBOX_WS_MAC */
 }
 

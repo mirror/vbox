@@ -40,10 +40,10 @@ UIWizardFirstRun::UIWizardFirstRun(QWidget *pParent, const CMachine &machine)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
-    assignWatermark(":/vmw_first_run.png");
+    assignWatermark(":/wizard_first_run.png");
 #else /* VBOX_WS_MAC */
     /* Assign background image: */
-    assignBackground(":/vmw_first_run_bg.png");
+    assignBackground(":/wizard_first_run_bg.png");
 #endif /* VBOX_WS_MAC */
 }
 

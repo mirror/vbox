@@ -734,10 +734,10 @@ void UIHostNetworkManagerWidget::prepareActions()
     {
         /* Configure 'Add' action: */
         m_pActionAdd->setShortcut(QKeySequence("Ctrl+A"));
-        m_pActionAdd->setIcon(UIIconPool::iconSetFull(":/add_host_iface_22px.png",
-                                                      ":/add_host_iface_16px.png",
-                                                      ":/add_host_iface_disabled_22px.png",
-                                                      ":/add_host_iface_disabled_16px.png"));
+        m_pActionAdd->setIcon(UIIconPool::iconSetFull(":/host_iface_add_22px.png",
+                                                      ":/host_iface_add_16px.png",
+                                                      ":/host_iface_add_disabled_22px.png",
+                                                      ":/host_iface_add_disabled_16px.png"));
         connect(m_pActionAdd, &QAction::triggered, this, &UIHostNetworkManagerWidget::sltAddHostNetwork);
     }
 
@@ -747,10 +747,10 @@ void UIHostNetworkManagerWidget::prepareActions()
     {
         /* Configure 'Remove' action: */
         m_pActionRemove->setShortcut(QKeySequence("Del"));
-        m_pActionRemove->setIcon(UIIconPool::iconSetFull(":/remove_host_iface_22px.png",
-                                                         ":/remove_host_iface_16px.png",
-                                                         ":/remove_host_iface_disabled_22px.png",
-                                                         ":/remove_host_iface_disabled_16px.png"));
+        m_pActionRemove->setIcon(UIIconPool::iconSetFull(":/host_iface_remove_22px.png",
+                                                         ":/host_iface_remove_16px.png",
+                                                         ":/host_iface_remove_disabled_22px.png",
+                                                         ":/host_iface_remove_disabled_16px.png"));
         connect(m_pActionRemove, &QAction::triggered, this, &UIHostNetworkManagerWidget::sltRemoveHostNetwork);
     }
 
@@ -761,10 +761,10 @@ void UIHostNetworkManagerWidget::prepareActions()
         /* Configure 'Details' action: */
         m_pActionDetails->setCheckable(true);
         m_pActionDetails->setShortcut(QKeySequence("Ctrl+Space"));
-        m_pActionDetails->setIcon(UIIconPool::iconSetFull(":/edit_host_iface_22px.png",
-                                                          ":/edit_host_iface_16px.png",
-                                                          ":/edit_host_iface_disabled_22px.png",
-                                                          ":/edit_host_iface_disabled_16px.png"));
+        m_pActionDetails->setIcon(UIIconPool::iconSetFull(":/host_iface_edit_22px.png",
+                                                          ":/host_iface_edit_16px.png",
+                                                          ":/host_iface_edit_disabled_22px.png",
+                                                          ":/host_iface_edit_disabled_16px.png"));
         connect(m_pActionDetails, &QAction::toggled, this, &UIHostNetworkManagerWidget::sltToggleHostNetworkDetailsVisibility);
     }
 

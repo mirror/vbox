@@ -1,5 +1,9 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="os_netbsd.png">images/os_netbsd.png</file>
+        <file alias="os_netbsd_64.png">images/os_netbsd_64.png</file>
+        <file alias="os_netware.png">images/os_netware.png</file>
+        <file alias="os_openbsd.png">images/os_openbsd.png</file>
         <file alias="os_openbsd_64.png">images/os_openbsd_64.png</file>
         <file alias="os_opensuse.png">images/os_opensuse.png</file>
         <file alias="os_opensuse_64.png">images/os_opensuse_64.png</file>
@@ -95,10 +99,6 @@
         <file alias="refresh_disabled_22px.png">images/refresh_disabled_22px.png</file>
         <file alias="refresh_disabled_32px.png">images/refresh_disabled_32px.png</file>
         <file alias="refresh_warning_16px.png">images/refresh_warning_16px.png</file>
-        <file alias="remove_host_iface_16px.png">images/remove_host_iface_16px.png</file>
-        <file alias="remove_host_iface_22px.png">images/remove_host_iface_22px.png</file>
-        <file alias="remove_host_iface_disabled_16px.png">images/remove_host_iface_disabled_16px.png</file>
-        <file alias="remove_host_iface_disabled_22px.png">images/remove_host_iface_disabled_22px.png</file>
         <file alias="reset_warnings_16px.png">images/reset_warnings_16px.png</file>
         <file alias="restore_16px.png">images/restore_16px.png</file>
         <file alias="sata_16px.png">images/sata_16px.png</file>
@@ -290,18 +290,6 @@
         <file alias="vm_start_disabled_32px.png">images/vm_start_disabled_32px.png</file>
         <file alias="vm_start_headless_16px.png">images/vm_start_headless_16px.png</file>
         <file alias="vm_start_separate_16px.png">images/vm_start_separate_16px.png</file>
-        <file alias="vmw_clone.png">images/vmw_clone.png</file>
-        <file alias="vmw_clone_bg.png">images/vmw_clone_bg.png</file>
-        <file alias="vmw_first_run.png">images/vmw_first_run.png</file>
-        <file alias="vmw_first_run_bg.png">images/vmw_first_run_bg.png</file>
-        <file alias="vmw_new_harddisk.png">images/vmw_new_harddisk.png</file>
-        <file alias="vmw_new_harddisk_bg.png">images/vmw_new_harddisk_bg.png</file>
-        <file alias="vmw_new_welcome.png">images/vmw_new_welcome.png</file>
-        <file alias="vmw_new_welcome_bg.png">images/vmw_new_welcome_bg.png</file>
-        <file alias="vmw_ovf_export.png">images/vmw_ovf_export.png</file>
-        <file alias="vmw_ovf_export_bg.png">images/vmw_ovf_export_bg.png</file>
-        <file alias="vmw_ovf_import.png">images/vmw_ovf_import.png</file>
-        <file alias="vmw_ovf_import_bg.png">images/vmw_ovf_import_bg.png</file>
         <file alias="vrdp_16px.png">images/vrdp_16px.png</file>
         <file alias="vrdp_24px.png">images/vrdp_24px.png</file>
         <file alias="vrdp_32px.png">images/vrdp_32px.png</file>
@@ -316,5 +304,17 @@
         <file alias="web_camera_unavailable_16px.png">images/web_camera_unavailable_16px.png</file>
         <file alias="web_camera_unavailable_disabled_16px.png">images/web_camera_unavailable_disabled_16px.png</file>
         <file alias="welcome_200px.png">images/welcome_200px.png</file>
+        <file alias="wizard_clone.png">images/wizard_clone.png</file>
+        <file alias="wizard_clone_bg.png">images/wizard_clone_bg.png</file>
+        <file alias="wizard_first_run.png">images/wizard_first_run.png</file>
+        <file alias="wizard_first_run_bg.png">images/wizard_first_run_bg.png</file>
+        <file alias="wizard_new_harddisk.png">images/wizard_new_harddisk.png</file>
+        <file alias="wizard_new_harddisk_bg.png">images/wizard_new_harddisk_bg.png</file>
+        <file alias="wizard_new_welcome.png">images/wizard_new_welcome.png</file>
+        <file alias="wizard_new_welcome_bg.png">images/wizard_new_welcome_bg.png</file>
+        <file alias="wizard_ovf_export.png">images/wizard_ovf_export.png</file>
+        <file alias="wizard_ovf_export_bg.png">images/wizard_ovf_export_bg.png</file>
+        <file alias="wizard_ovf_import.png">images/wizard_ovf_import.png</file>
+        <file alias="wizard_ovf_import_bg.png">images/wizard_ovf_import_bg.png</file>
     </qresource>
 </RCC>

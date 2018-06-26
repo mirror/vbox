@@ -1,5 +1,9 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="os_l4_x4.png">images/x4/os_l4_x4.png</file>
+        <file alias="os_linux22_x4.png">images/x4/os_linux22_x4.png</file>
+        <file alias="os_linux24_64_x4.png">images/x4/os_linux24_64_x4.png</file>
+        <file alias="os_linux24_x4.png">images/x4/os_linux24_x4.png</file>
         <file alias="os_linux26_64_x4.png">images/x4/os_linux26_64_x4.png</file>
         <file alias="os_linux26_x4.png">images/x4/os_linux26_x4.png</file>
         <file alias="os_linux_64_x4.png">images/x4/os_linux_64_x4.png</file>
@@ -84,10 +88,6 @@
         <file alias="refresh_disabled_16px_x4.png">images/x4/refresh_disabled_16px_x4.png</file>
         <file alias="refresh_disabled_32px_x4.png">images/x4/refresh_disabled_32px_x4.png</file>
         <file alias="refresh_warning_16px_x4.png">images/x4/refresh_warning_16px_x4.png</file>
-        <file alias="remove_host_iface_16px_x4.png">images/x4/remove_host_iface_16px_x4.png</file>
-        <file alias="remove_host_iface_22px_x4.png">images/x4/remove_host_iface_22px_x4.png</file>
-        <file alias="remove_host_iface_disabled_16px_x4.png">images/x4/remove_host_iface_disabled_16px_x4.png</file>
-        <file alias="remove_host_iface_disabled_22px_x4.png">images/x4/remove_host_iface_disabled_22px_x4.png</file>
         <file alias="reset_warnings_16px_x4.png">images/x4/reset_warnings_16px_x4.png</file>
         <file alias="restore_16px_x4.png">images/x4/restore_16px_x4.png</file>
         <file alias="sata_16px_x4.png">images/x4/sata_16px_x4.png</file>
@@ -274,12 +274,6 @@
         <file alias="vm_start_disabled_32px_x4.png">images/x4/vm_start_disabled_32px_x4.png</file>
         <file alias="vm_start_headless_16px_x4.png">images/x4/vm_start_headless_16px_x4.png</file>
         <file alias="vm_start_separate_16px_x4.png">images/x4/vm_start_separate_16px_x4.png</file>
-        <file alias="vmw_clone_x4.png">images/x4/vmw_clone_x4.png</file>
-        <file alias="vmw_first_run_x4.png">images/x4/vmw_first_run_x4.png</file>
-        <file alias="vmw_new_harddisk_x4.png">images/x4/vmw_new_harddisk_x4.png</file>
-        <file alias="vmw_new_welcome_x4.png">images/x4/vmw_new_welcome_x4.png</file>
-        <file alias="vmw_ovf_export_x4.png">images/x4/vmw_ovf_export_x4.png</file>
-        <file alias="vmw_ovf_import_x4.png">images/x4/vmw_ovf_import_x4.png</file>
         <file alias="vrdp_16px_x4.png">images/x4/vrdp_16px_x4.png</file>
         <file alias="vrdp_24px_x4.png">images/x4/vrdp_24px_x4.png</file>
         <file alias="vrdp_32px_x4.png">images/x4/vrdp_32px_x4.png</file>
@@ -293,5 +287,11 @@
         <file alias="web_camera_disabled_16px_x4.png">images/x4/web_camera_disabled_16px_x4.png</file>
         <file alias="web_camera_unavailable_16px_x4.png">images/x4/web_camera_unavailable_16px_x4.png</file>
         <file alias="web_camera_unavailable_disabled_16px_x4.png">images/x4/web_camera_unavailable_disabled_16px_x4.png</file>
+        <file alias="wizard_clone_x4.png">images/x4/wizard_clone_x4.png</file>
+        <file alias="wizard_first_run_x4.png">images/x4/wizard_first_run_x4.png</file>
+        <file alias="wizard_new_harddisk_x4.png">images/x4/wizard_new_harddisk_x4.png</file>
+        <file alias="wizard_new_welcome_x4.png">images/x4/wizard_new_welcome_x4.png</file>
+        <file alias="wizard_ovf_export_x4.png">images/x4/wizard_ovf_export_x4.png</file>
+        <file alias="wizard_ovf_import_x4.png">images/x4/wizard_ovf_import_x4.png</file>
     </qresource>
 </RCC>

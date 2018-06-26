@@ -1,9 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="add_host_iface_16px_x2.png">images/x2/add_host_iface_16px_x2.png</file>
-        <file alias="add_host_iface_22px_x2.png">images/x2/add_host_iface_22px_x2.png</file>
-        <file alias="add_host_iface_disabled_16px_x2.png">images/x2/add_host_iface_disabled_16px_x2.png</file>
-        <file alias="add_host_iface_disabled_22px_x2.png">images/x2/add_host_iface_disabled_22px_x2.png</file>
         <file alias="adjust_win_size_16px_x2.png">images/x2/adjust_win_size_16px_x2.png</file>
         <file alias="adjust_win_size_disabled_16px_x2.png">images/x2/adjust_win_size_disabled_16px_x2.png</file>
         <file alias="arrow_down_10px_x2.png">images/x2/arrow_down_10px_x2.png</file>
@@ -69,9 +65,6 @@
         <file alias="controller_remove_disabled_16px_x2.png">images/x2/controller_remove_disabled_16px_x2.png</file>
         <file alias="cpu_16px_x2.png">images/x2/cpu_16px_x2.png</file>
         <file alias="description_16px_x2.png">images/x2/description_16px_x2.png</file>
-        <file alias="diskimage_16px_x2.png">images/x2/diskimage_16px_x2.png</file>
-        <file alias="diskimage_22px_x2.png">images/x2/diskimage_22px_x2.png</file>
-        <file alias="diskimage_32px_x2.png">images/x2/diskimage_32px_x2.png</file>
         <file alias="display_hardware_16px_x2.png">images/x2/display_hardware_16px_x2.png</file>
         <file alias="display_hardware_write_16px_x2.png">images/x2/display_hardware_write_16px_x2.png</file>
         <file alias="display_software_16px_x2.png">images/x2/display_software_16px_x2.png</file>
@@ -85,10 +78,13 @@
         <file alias="edata_add_22px_x2.png">images/x2/edata_add_22px_x2.png</file>
         <file alias="edata_add_disabled_16px_x2.png">images/x2/edata_add_disabled_16px_x2.png</file>
         <file alias="edata_add_disabled_22px_x2.png">images/x2/edata_add_disabled_22px_x2.png</file>
+        <file alias="edata_global_32px_x2.png">images/x2/edata_global_32px_x2.png</file>
         <file alias="edata_load_16px_x2.png">images/x2/edata_load_16px_x2.png</file>
         <file alias="edata_load_22px_x2.png">images/x2/edata_load_22px_x2.png</file>
         <file alias="edata_load_disabled_16px_x2.png">images/x2/edata_load_disabled_16px_x2.png</file>
         <file alias="edata_load_disabled_22px_x2.png">images/x2/edata_load_disabled_22px_x2.png</file>
+        <file alias="edata_manager_16px_x2.png">images/x2/edata_manager_16px_x2.png</file>
+        <file alias="edata_manager_32px_x2.png">images/x2/edata_manager_32px_x2.png</file>
         <file alias="edata_remove_16px_x2.png">images/x2/edata_remove_16px_x2.png</file>
         <file alias="edata_remove_22px_x2.png">images/x2/edata_remove_22px_x2.png</file>
         <file alias="edata_remove_disabled_16px_x2.png">images/x2/edata_remove_disabled_16px_x2.png</file>
@@ -97,13 +93,6 @@
         <file alias="edata_save_22px_x2.png">images/x2/edata_save_22px_x2.png</file>
         <file alias="edata_save_disabled_16px_x2.png">images/x2/edata_save_disabled_16px_x2.png</file>
         <file alias="edata_save_disabled_22px_x2.png">images/x2/edata_save_disabled_22px_x2.png</file>
-        <file alias="edataglobal_32px_x2.png">images/x2/edataglobal_32px_x2.png</file>
-        <file alias="edataman_16px_x2.png">images/x2/edataman_16px_x2.png</file>
-        <file alias="edataman_32px_x2.png">images/x2/edataman_32px_x2.png</file>
-        <file alias="edit_host_iface_16px_x2.png">images/x2/edit_host_iface_16px_x2.png</file>
-        <file alias="edit_host_iface_22px_x2.png">images/x2/edit_host_iface_22px_x2.png</file>
-        <file alias="edit_host_iface_disabled_16px_x2.png">images/x2/edit_host_iface_disabled_16px_x2.png</file>
-        <file alias="edit_host_iface_disabled_22px_x2.png">images/x2/edit_host_iface_disabled_22px_x2.png</file>
         <file alias="eraser_16px_x2.png">images/x2/eraser_16px_x2.png</file>
         <file alias="exit_16px_x2.png">images/x2/exit_16px_x2.png</file>
         <file alias="expanding_collapsing_16px_x2.png">images/x2/expanding_collapsing_16px_x2.png</file>
@@ -193,9 +182,21 @@
         <file alias="help_16px_x2.png">images/x2/help_16px_x2.png</file>
         <file alias="help_button_normal_mac_22px_x2.png">images/x2/help_button_normal_mac_22px_x2.png</file>
         <file alias="help_button_pressed_mac_22px_x2.png">images/x2/help_button_pressed_mac_22px_x2.png</file>
+        <file alias="host_iface_add_16px_x2.png">images/x2/host_iface_add_16px_x2.png</file>
+        <file alias="host_iface_add_22px_x2.png">images/x2/host_iface_add_22px_x2.png</file>
+        <file alias="host_iface_add_disabled_16px_x2.png">images/x2/host_iface_add_disabled_16px_x2.png</file>
+        <file alias="host_iface_add_disabled_22px_x2.png">images/x2/host_iface_add_disabled_22px_x2.png</file>
+        <file alias="host_iface_edit_16px_x2.png">images/x2/host_iface_edit_16px_x2.png</file>
+        <file alias="host_iface_edit_22px_x2.png">images/x2/host_iface_edit_22px_x2.png</file>
+        <file alias="host_iface_edit_disabled_16px_x2.png">images/x2/host_iface_edit_disabled_16px_x2.png</file>
+        <file alias="host_iface_edit_disabled_22px_x2.png">images/x2/host_iface_edit_disabled_22px_x2.png</file>
         <file alias="host_iface_manager_16px_x2.png">images/x2/host_iface_manager_16px_x2.png</file>
         <file alias="host_iface_manager_22px_x2.png">images/x2/host_iface_manager_22px_x2.png</file>
         <file alias="host_iface_manager_32px_x2.png">images/x2/host_iface_manager_32px_x2.png</file>
+        <file alias="host_iface_remove_16px_x2.png">images/x2/host_iface_remove_16px_x2.png</file>
+        <file alias="host_iface_remove_22px_x2.png">images/x2/host_iface_remove_22px_x2.png</file>
+        <file alias="host_iface_remove_disabled_16px_x2.png">images/x2/host_iface_remove_disabled_16px_x2.png</file>
+        <file alias="host_iface_remove_disabled_22px_x2.png">images/x2/host_iface_remove_disabled_22px_x2.png</file>
         <file alias="hostkey_16px_x2.png">images/x2/hostkey_16px_x2.png</file>
         <file alias="hostkey_captured_16px_x2.png">images/x2/hostkey_captured_16px_x2.png</file>
         <file alias="hostkey_captured_pressed_16px_x2.png">images/x2/hostkey_captured_pressed_16px_x2.png</file>
@@ -250,6 +251,9 @@
         <file alias="machine_details_manager_16px_x2.png">images/x2/machine_details_manager_16px_x2.png</file>
         <file alias="machine_details_manager_22px_x2.png">images/x2/machine_details_manager_22px_x2.png</file>
         <file alias="machine_warning_16px_x2.png">images/x2/machine_warning_16px_x2.png</file>
+        <file alias="media_manager_16px_x2.png">images/x2/media_manager_16px_x2.png</file>
+        <file alias="media_manager_22px_x2.png">images/x2/media_manager_22px_x2.png</file>
+        <file alias="media_manager_32px_x2.png">images/x2/media_manager_32px_x2.png</file>
         <file alias="meditation_32px_x2.png">images/x2/meditation_32px_x2.png</file>
         <file alias="menubar_16px_x2.png">images/x2/menubar_16px_x2.png</file>
         <file alias="menubar_disabled_16px_x2.png">images/x2/menubar_disabled_16px_x2.png</file>
@@ -304,9 +308,5 @@
         <file alias="os_mandriva_64_x2.png">images/x2/os_mandriva_64_x2.png</file>
         <file alias="os_mandriva_x2.png">images/x2/os_mandriva_x2.png</file>
         <file alias="os_netbsd_64_x2.png">images/x2/os_netbsd_64_x2.png</file>
-        <file alias="os_netbsd_x2.png">images/x2/os_netbsd_x2.png</file>
-        <file alias="os_netware_x2.png">images/x2/os_netware_x2.png</file>
-        <file alias="os_openbsd_64_x2.png">images/x2/os_openbsd_64_x2.png</file>
-        <file alias="os_openbsd_x2.png">images/x2/os_openbsd_x2.png</file>
     </qresource>
 </RCC>

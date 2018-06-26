@@ -54,10 +54,10 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strGroup /* = QStr
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
-    assignWatermark(":/vmw_new_welcome.png");
+    assignWatermark(":/wizard_new_welcome.png");
 #else /* VBOX_WS_MAC */
     /* Assign background image: */
-    assignBackground(":/vmw_new_welcome_bg.png");
+    assignBackground(":/wizard_new_welcome_bg.png");
 #endif /* VBOX_WS_MAC */
     /* Register classes: */
     qRegisterMetaType<CGuestOSType>();

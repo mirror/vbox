@@ -70,7 +70,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorShowVirtualMediaManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/diskimage_16px.png")
+        : UIActionSimple(pParent, ":/media_manager_16px.png")
     {}
 
 protected:
@@ -207,7 +207,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorShowExtraDataManager(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/edataman_16px.png")
+        : UIActionSimple(pParent, ":/edata_manager_16px.png")
     {}
 
 protected:
@@ -1351,8 +1351,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorToolsGlobalShowVirtualMediaManager(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/diskimage_22px.png", ":/diskimage_16px.png",
-                         ":/diskimage_22px.png", ":/diskimage_16px.png")
+                         ":/media_manager_22px.png", ":/media_manager_16px.png",
+                         ":/media_manager_22px.png", ":/media_manager_16px.png")
     {}
 
 protected:

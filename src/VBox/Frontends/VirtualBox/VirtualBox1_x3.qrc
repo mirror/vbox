@@ -1,9 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="add_host_iface_16px_x3.png">images/x3/add_host_iface_16px_x3.png</file>
-        <file alias="add_host_iface_22px_x3.png">images/x3/add_host_iface_22px_x3.png</file>
-        <file alias="add_host_iface_disabled_16px_x3.png">images/x3/add_host_iface_disabled_16px_x3.png</file>
-        <file alias="add_host_iface_disabled_22px_x3.png">images/x3/add_host_iface_disabled_22px_x3.png</file>
         <file alias="adjust_win_size_16px_x3.png">images/x3/adjust_win_size_16px_x3.png</file>
         <file alias="adjust_win_size_disabled_16px_x3.png">images/x3/adjust_win_size_disabled_16px_x3.png</file>
         <file alias="arrow_down_10px_x3.png">images/x3/arrow_down_10px_x3.png</file>
@@ -68,9 +64,6 @@
         <file alias="controller_remove_disabled_16px_x3.png">images/x3/controller_remove_disabled_16px_x3.png</file>
         <file alias="cpu_16px_x3.png">images/x3/cpu_16px_x3.png</file>
         <file alias="description_16px_x3.png">images/x3/description_16px_x3.png</file>
-        <file alias="diskimage_16px_x3.png">images/x3/diskimage_16px_x3.png</file>
-        <file alias="diskimage_22px_x3.png">images/x3/diskimage_22px_x3.png</file>
-        <file alias="diskimage_32px_x3.png">images/x3/diskimage_32px_x3.png</file>
         <file alias="display_hardware_16px_x3.png">images/x3/display_hardware_16px_x3.png</file>
         <file alias="display_hardware_write_16px_x3.png">images/x3/display_hardware_write_16px_x3.png</file>
         <file alias="display_software_16px_x3.png">images/x3/display_software_16px_x3.png</file>
@@ -88,6 +81,8 @@
         <file alias="edata_load_22px_x3.png">images/x3/edata_load_22px_x3.png</file>
         <file alias="edata_load_disabled_16px_x3.png">images/x3/edata_load_disabled_16px_x3.png</file>
         <file alias="edata_load_disabled_22px_x3.png">images/x3/edata_load_disabled_22px_x3.png</file>
+        <file alias="edata_manager_16px_x3.png">images/x3/edata_manager_16px_x3.png</file>
+        <file alias="edata_manager_32px_x3.png">images/x3/edata_manager_32px_x3.png</file>
         <file alias="edata_remove_16px_x3.png">images/x3/edata_remove_16px_x3.png</file>
         <file alias="edata_remove_22px_x3.png">images/x3/edata_remove_22px_x3.png</file>
         <file alias="edata_remove_disabled_16px_x3.png">images/x3/edata_remove_disabled_16px_x3.png</file>
@@ -96,12 +91,6 @@
         <file alias="edata_save_22px_x3.png">images/x3/edata_save_22px_x3.png</file>
         <file alias="edata_save_disabled_16px_x3.png">images/x3/edata_save_disabled_16px_x3.png</file>
         <file alias="edata_save_disabled_22px_x3.png">images/x3/edata_save_disabled_22px_x3.png</file>
-        <file alias="edataman_16px_x3.png">images/x3/edataman_16px_x3.png</file>
-        <file alias="edataman_32px_x3.png">images/x3/edataman_32px_x3.png</file>
-        <file alias="edit_host_iface_16px_x3.png">images/x3/edit_host_iface_16px_x3.png</file>
-        <file alias="edit_host_iface_22px_x3.png">images/x3/edit_host_iface_22px_x3.png</file>
-        <file alias="edit_host_iface_disabled_16px_x3.png">images/x3/edit_host_iface_disabled_16px_x3.png</file>
-        <file alias="edit_host_iface_disabled_22px_x3.png">images/x3/edit_host_iface_disabled_22px_x3.png</file>
         <file alias="eraser_16px_x3.png">images/x3/eraser_16px_x3.png</file>
         <file alias="exit_16px_x3.png">images/x3/exit_16px_x3.png</file>
         <file alias="expanding_collapsing_16px_x3.png">images/x3/expanding_collapsing_16px_x3.png</file>
@@ -191,9 +180,21 @@
         <file alias="help_16px_x3.png">images/x3/help_16px_x3.png</file>
         <file alias="help_button_normal_mac_22px_x3.png">images/x3/help_button_normal_mac_22px_x3.png</file>
         <file alias="help_button_pressed_mac_22px_x3.png">images/x3/help_button_pressed_mac_22px_x3.png</file>
+        <file alias="host_iface_add_16px_x3.png">images/x3/host_iface_add_16px_x3.png</file>
+        <file alias="host_iface_add_22px_x3.png">images/x3/host_iface_add_22px_x3.png</file>
+        <file alias="host_iface_add_disabled_16px_x3.png">images/x3/host_iface_add_disabled_16px_x3.png</file>
+        <file alias="host_iface_add_disabled_22px_x3.png">images/x3/host_iface_add_disabled_22px_x3.png</file>
+        <file alias="host_iface_edit_16px_x3.png">images/x3/host_iface_edit_16px_x3.png</file>
+        <file alias="host_iface_edit_22px_x3.png">images/x3/host_iface_edit_22px_x3.png</file>
+        <file alias="host_iface_edit_disabled_16px_x3.png">images/x3/host_iface_edit_disabled_16px_x3.png</file>
+        <file alias="host_iface_edit_disabled_22px_x3.png">images/x3/host_iface_edit_disabled_22px_x3.png</file>
         <file alias="host_iface_manager_16px_x3.png">images/x3/host_iface_manager_16px_x3.png</file>
         <file alias="host_iface_manager_22px_x3.png">images/x3/host_iface_manager_22px_x3.png</file>
         <file alias="host_iface_manager_32px_x3.png">images/x3/host_iface_manager_32px_x3.png</file>
+        <file alias="host_iface_remove_16px_x3.png">images/x3/host_iface_remove_16px_x3.png</file>
+        <file alias="host_iface_remove_22px_x3.png">images/x3/host_iface_remove_22px_x3.png</file>
+        <file alias="host_iface_remove_disabled_16px_x3.png">images/x3/host_iface_remove_disabled_16px_x3.png</file>
+        <file alias="host_iface_remove_disabled_22px_x3.png">images/x3/host_iface_remove_disabled_22px_x3.png</file>
         <file alias="hostkey_16px_x3.png">images/x3/hostkey_16px_x3.png</file>
         <file alias="hostkey_captured_16px_x3.png">images/x3/hostkey_captured_16px_x3.png</file>
         <file alias="hostkey_captured_pressed_16px_x3.png">images/x3/hostkey_captured_pressed_16px_x3.png</file>
@@ -247,6 +248,9 @@
         <file alias="machine_details_manager_16px_x3.png">images/x3/machine_details_manager_16px_x3.png</file>
         <file alias="machine_details_manager_22px_x3.png">images/x3/machine_details_manager_22px_x3.png</file>
         <file alias="machine_warning_16px_x3.png">images/x3/machine_warning_16px_x3.png</file>
+        <file alias="media_manager_16px_x3.png">images/x3/media_manager_16px_x3.png</file>
+        <file alias="media_manager_22px_x3.png">images/x3/media_manager_22px_x3.png</file>
+        <file alias="media_manager_32px_x3.png">images/x3/media_manager_32px_x3.png</file>
         <file alias="meditation_32px_x3.png">images/x3/meditation_32px_x3.png</file>
         <file alias="menubar_16px_x3.png">images/x3/menubar_16px_x3.png</file>
         <file alias="menubar_disabled_16px_x3.png">images/x3/menubar_disabled_16px_x3.png</file>
@@ -288,9 +292,5 @@
         <file alias="os_gentoo_64_x3.png">images/x3/os_gentoo_64_x3.png</file>
         <file alias="os_gentoo_x3.png">images/x3/os_gentoo_x3.png</file>
         <file alias="os_jrockitve_x3.png">images/x3/os_jrockitve_x3.png</file>
-        <file alias="os_l4_x3.png">images/x3/os_l4_x3.png</file>
-        <file alias="os_linux22_x3.png">images/x3/os_linux22_x3.png</file>
-        <file alias="os_linux24_64_x3.png">images/x3/os_linux24_64_x3.png</file>
-        <file alias="os_linux24_x3.png">images/x3/os_linux24_x3.png</file>
     </qresource>
 </RCC>
