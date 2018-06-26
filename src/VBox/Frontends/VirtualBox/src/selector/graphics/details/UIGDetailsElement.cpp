@@ -682,7 +682,7 @@ void UIGDetailsElement::updateNameHoverLink()
     if (m_fNameHovered)
         VBoxGlobal::setCursor(this, Qt::PointingHandCursor);
     else
-        unsetCursor();
+        VBoxGlobal::unsetCursor(this);
     update();
 }
 

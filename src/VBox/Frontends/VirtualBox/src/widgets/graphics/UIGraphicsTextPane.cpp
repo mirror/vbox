@@ -390,7 +390,7 @@ void UIGraphicsTextPane::updateHoverStuff()
 {
     /* Update mouse-cursor: */
     if (m_strHoveredAnchor.isNull())
-        unsetCursor();
+        VBoxGlobal::unsetCursor(this);
     else
         VBoxGlobal::setCursor(this, Qt::PointingHandCursor);
 
