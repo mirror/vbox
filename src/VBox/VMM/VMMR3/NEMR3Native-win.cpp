@@ -2237,7 +2237,9 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                 LogFlow(("nemR3NativeRunGC: calling PGMChangeMode...\n"));
                 int rc = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
                 AssertRCReturn(rc, rc);
-                if (rcStrict == VINF_NEM_CHANGE_PGM_MODE || rcStrict == VINF_NEM_FLUSH_TLB)
+                if (   rcStrict == VINF_NEM_CHANGE_PGM_MODE
+                    || rcStrict == VINF_PGM_CHANGE_MODE
+                    || rcStrict == VINF_NEM_FLUSH_TLB)
                 {
                     if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
                         && !VMCPU_FF_IS_PENDING(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
