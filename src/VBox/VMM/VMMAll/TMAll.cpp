@@ -20,6 +20,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_TM
+#ifdef DEBUG_bird
+# define DBGFTRACE_DISABLED /* annoying */
+#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/dbgftrace.h>
