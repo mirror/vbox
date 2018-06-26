@@ -530,7 +530,7 @@ class LocalReporter(ReporterBase):
         # Open the destination file and copy over the data.
         fRc = True;
         try:
-            oDstFile = utils.openNoInherit(sDstFilename, 'w');
+            oDstFile = utils.openNoInherit(sDstFilename, 'wb');
         except Exception as oXcpt:
             self.log(0, 'error opening %s: %s' % (sDstFilename, oXcpt), sCaller, sTsPrf);
         else:
