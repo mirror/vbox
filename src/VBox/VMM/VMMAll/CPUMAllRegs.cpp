@@ -1570,6 +1570,7 @@ VMMDECL(int) CPUMSetGuestDR3(PVMCPU pVCpu, uint64_t uDr3)
 VMMDECL(int) CPUMSetGuestDR6(PVMCPU pVCpu, uint64_t uDr6)
 {
     pVCpu->cpum.s.Guest.dr[6] = uDr6;
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_DR6;
     return VINF_SUCCESS; /* No need to recalc. */
 }
 
@@ -1577,6 +1578,7 @@ VMMDECL(int) CPUMSetGuestDR6(PVMCPU pVCpu, uint64_t uDr6)
 VMMDECL(int) CPUMSetGuestDR7(PVMCPU pVCpu, uint64_t uDr7)
 {
     pVCpu->cpum.s.Guest.dr[7] = uDr7;
+    pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_DR7;
     return CPUMRecalcHyperDRx(pVCpu, 7, false);
 }
 

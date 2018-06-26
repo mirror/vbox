@@ -87,7 +87,6 @@ NEM_TMPL_STATIC int  nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *p
 NEM_TMPL_STATIC int  nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64_t uPausedTscValue);
 DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput,
                                              void *pvOutput, uint32_t cbOutput);
-DECLINLINE(NTSTATUS) nemR0NtPerformIoControlRestart(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput);
 
 
 /*
@@ -265,68 +264,6 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void
                                &rcNt);
     if (RT_SUCCESS(rc) || !NT_SUCCESS((NTSTATUS)rcNt))
         return (NTSTATUS)rcNt;
-    return STATUS_UNSUCCESSFUL;
-}
-
-
-/**
- * Perform an I/O control operation on the partition handle (VID.SYS),
- * restarting on alert-like behaviour.
- *
- * @returns NT status code.
- * @param   pGVM            The ring-0 VM structure.
- * @param   uFunction       The function to perform.
- * @param   pvInput         The input buffer.  This must point within the VM
- *                          structure so we can easily convert to a ring-3
- *                          pointer if necessary.
- * @param   cbInput         The size of the input.  @a pvInput must be NULL when
- *                          zero.
- */
-DECLINLINE(NTSTATUS) nemR0NtPerformIoControlRestart(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput)
-{
-#ifdef RT_STRICT
-    /*
-     * Input and output parameters are part of the VM CPU structure.
-     */
-    PVM          pVM  = pGVM->pVM;
-    size_t const cbVM = RT_UOFFSETOF(VM, aCpus[pGVM->cCpus]);
-    if (pvInput)
-        AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pVM <= cbVM, VERR_INVALID_PARAMETER);
-#endif
-
-    int32_t rcNt = STATUS_UNSUCCESSFUL;
-    int rc = SUPR0IoCtlPerform(pGVM->nem.s.pIoCtlCtx, uFunction,
-                               pvInput,
-                               pvInput ? (uintptr_t)pvInput  + pGVM->nem.s.offRing3ConversionDelta : NIL_RTR3PTR,
-                               cbInput,
-                               NULL,
-                               NIL_RTR3PTR,
-                               0,
-                               &rcNt);
-    if (RT_SUCCESS(rc) || !NT_SUCCESS((NTSTATUS)rcNt))
-    {
-        if (RT_LIKELY(rcNt == STATUS_SUCCESS))
-            return rcNt;
-
-        if (   rcNt == STATUS_TIMEOUT
-            || rcNt == STATUS_ALERTED)
-        {
-            DBGFTRACE_CUSTOM(pVM, "nemR0NtPerformIoControlRestart/1 %#x", rcNt);
-            rcNt = STATUS_UNSUCCESSFUL;
-            rc = SUPR0IoCtlPerform(pGVM->nem.s.pIoCtlCtx, uFunction,
-                                   pvInput,
-                                   pvInput ? (uintptr_t)pvInput  + pGVM->nem.s.offRing3ConversionDelta : NIL_RTR3PTR,
-                                   cbInput,
-                                   NULL,
-                                   NIL_RTR3PTR,
-                                   0,
-                                   &rcNt);
-            if (!RT_SUCCESS(rc) && NT_SUCCESS((NTSTATUS)rcNt))
-                rcNt = STATUS_UNSUCCESSFUL;
-            DBGFTRACE_CUSTOM(pVM, "nemR0NtPerformIoControlRestart/2 %#x", rcNt);
-        }
-        return (NTSTATUS)rcNt;
-    }
     return STATUS_UNSUCCESSFUL;
 }
 
@@ -1809,6 +1746,8 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 
     /* Debug registers. */
 /** @todo fixme */
+/** @todo There are recalc issues here. Recalc will get register content and
+ * that may assert since we doesn't clear CPUMCTX_EXTRN_ until the end. */
     if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterDr0);

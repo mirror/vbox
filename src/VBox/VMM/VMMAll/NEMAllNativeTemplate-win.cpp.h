@@ -3722,6 +3722,60 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVM pVM, PVMCPU pVCpu, WHV_RUN_V
 #endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
 
 
+#ifdef IN_RING0
+/**
+ * Perform an I/O control operation on the partition handle (VID.SYS),
+ * restarting on alert-like behaviour.
+ *
+ * @returns NT status code.
+ * @param   pGVM            The ring-0 VM structure.
+ * @param   pGVCpu          The ring-0 CPU structure.
+ * @param   pVCpu           The calling cross context CPU structure.
+ * @param   fFlags          The wait flags.
+ * @param   cMillies        The timeout in milliseconds
+ */
+static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCPU pGVCpu, PVMCPU pVCpu,
+                                                               uint32_t fFlags, uint32_t cMillies)
+{
+    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
+    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = fFlags;
+    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
+    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                                            &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
+                                            sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
+                                            NULL, 0);
+    if (rcNt == STATUS_SUCCESS)
+    { /* likely */ }
+    /*
+     * Generally, if we get down here, we have been interrupted between ACK'ing
+     * a message and waiting for the next due to a NtAlertThread call.  So, we
+     * should stop ACK'ing the previous message and get on waiting on the next.
+     * See similar stuff in nemHCWinRunGC().
+     */
+    else if (   rcNt == STATUS_TIMEOUT
+             || rcNt == STATUS_ALERTED    /* just in case */
+             || rcNt == STATUS_KERNEL_APC /* just in case */
+             || rcNt == STATUS_USER_APC   /* just in case */)
+    {
+        DBGFTRACE_CUSTOM(pVCpu->CTX_SUFF(pVM), "IoCtlMessageSlotHandleAndGetNextRestart/1 %#x (f=%#x)", rcNt, fFlags);
+        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuPendingOdd);
+        Assert(fFlags & VID_MSHAGN_F_GET_NEXT_MESSAGE);
+
+        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pVCpu->idCpu;
+        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = fFlags & ~VID_MSHAGN_F_HANDLE_MESSAGE;
+        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
+        rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                                       &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
+                                       sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
+                                       NULL, 0);
+        DBGFTRACE_CUSTOM(pVCpu->CTX_SUFF(pVM), "IoCtlMessageSlotHandleAndGetNextRestart/2 %#x", rcNt);
+    }
+    return rcNt;
+}
+
+#endif /* IN_RING0 */
+
+
 #ifdef NEM_WIN_USE_OUR_OWN_RUN_API
 /**
  * Worker for nemHCWinRunGC that stops the execution on the way out.
@@ -3798,12 +3852,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
      * Note! We can safely ASSUME that rcStrict isn't an important information one.
      */
 # ifdef IN_RING0
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_GET_NEXT_MESSAGE;
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
-    rcNt = nemR0NtPerformIoControlRestart(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                          &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                          sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext));
+    rcNt = nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(pGVM, pGVCpu, pVCpu, VID_MSHAGN_F_GET_NEXT_MESSAGE, 30000 /*ms*/);
     DBGFTRACE_CUSTOM(pVM, "nemStop#1: %#x / %#x %#x %#x", rcNt, pMappingHeader->enmVidMsgType, pMappingHeader->cbMessage,
                      pMsgForTrace->Header.MessageType);
     AssertLogRelMsgReturn(rcNt == STATUS_SUCCESS,
@@ -3831,12 +3880,9 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
          * that as handled too.  CPU is back into fully stopped stated then.
          */
 # ifdef IN_RING0
-        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
-        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE;
-        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
-        rcNt = nemR0NtPerformIoControlRestart(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                              &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                              sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext));
+        rcNt = nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(pGVM, pGVCpu, pVCpu,
+                                                              VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE,
+                                                              30000 /*ms*/);
         DBGFTRACE_CUSTOM(pVM, "nemStop#2: %#x / %#x %#x %#x", rcNt, pMappingHeader->enmVidMsgType, pMappingHeader->cbMessage,
                          pMsgForTrace->Header.MessageType);
         AssertLogRelMsgReturn(rcNt == STATUS_SUCCESS,
@@ -3862,12 +3908,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
          * Mark the VidMessageStopRequestComplete message as handled.
          */
 # ifdef IN_RING0
-        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
-        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = VID_MSHAGN_F_HANDLE_MESSAGE;
-        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = 30000; /*ms*/
-        rcNt = nemR0NtPerformIoControlRestart(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                              &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                              sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext));
+        rcNt = nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(pGVM, pGVCpu, pVCpu, VID_MSHAGN_F_HANDLE_MESSAGE, 30000 /*ms*/);
         DBGFTRACE_CUSTOM(pVM, "nemStop#3: %#x / %#x %#x %#x", rcNt, pMappingHeader->enmVidMsgType,
                          pMsgForTrace->Header.MessageType, pMappingHeader->cbMessage, pMsgForTrace->Header.MessageType);
         AssertLogRelMsgReturn(rcNt == STATUS_SUCCESS,
@@ -4213,8 +4254,9 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
 #  endif
                     LogFlow(("NEM/%u: VidMessageSlotHandleAndGetNext -> %#x\n", pVCpu->idCpu, rcNt));
                     AssertLogRelMsgReturn(   rcNt == STATUS_TIMEOUT
-                                          || rcNt == STATUS_ALERTED  /* just in case */
-                                          || rcNt == STATUS_USER_APC /* ditto */
+                                          || rcNt == STATUS_ALERTED    /* just in case */
+                                          || rcNt == STATUS_USER_APC   /* ditto */
+                                          || rcNt == STATUS_KERNEL_APC /* ditto */
                                           , ("VidMessageSlotHandleAndGetNext failed for CPU #%u: %#x (%u)\n",
                                              pVCpu->idCpu, rcNt, rcNt),
                                           VERR_NEM_IPE_0);
@@ -4224,7 +4266,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                     AssertLogRelMsgFailedReturn(("WHvRunVirtualProcessor failed for CPU #%u: %#x (%u)\n",
                                                  pVCpu->idCpu, hrc, GetLastError()),
                                                 VERR_NEM_IPE_0);
-
 # endif
                 }
 
