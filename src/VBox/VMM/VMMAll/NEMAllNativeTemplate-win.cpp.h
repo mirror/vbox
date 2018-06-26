@@ -1540,7 +1540,7 @@ DECLINLINE(void) nemHCWinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, PCPUMCTX pCtx,
     Assert(!(pCtx->fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS)));
 
     /* Advance the RIP. */
-    Assert(pMsgHdr->InstructionLength >= cbMinInstr);
+    Assert(pMsgHdr->InstructionLength >= cbMinInstr); RT_NOREF_PV(cbMinInstr);
     pCtx->rip += pMsgHdr->InstructionLength;
     pCtx->rflags.Bits.u1RF = 0;
 
@@ -3758,7 +3758,7 @@ static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCP
              || rcNt == STATUS_USER_APC   /* just in case */)
     {
         DBGFTRACE_CUSTOM(pVCpu->CTX_SUFF(pVM), "IoCtlMessageSlotHandleAndGetNextRestart/1 %#x (f=%#x)", rcNt, fFlags);
-        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuPendingOdd);
+        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuPendingAlerts);
         Assert(fFlags & VID_MSHAGN_F_GET_NEXT_MESSAGE);
 
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pVCpu->idCpu;
@@ -3925,6 +3925,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
     }
     else
     {
+        /** @todo I'm not so sure about this now... */
         DBGFTRACE_CUSTOM(pVM, "nemStop#9: %#x %#x %#x", pMappingHeader->enmVidMsgType,
                          pMappingHeader->cbMessage, pMsgForTrace->Header.MessageType);
         STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuPendingOdd);

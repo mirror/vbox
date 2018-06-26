@@ -301,6 +301,7 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatGetMsgTimeout;
     STAMCOUNTER                 StatStopCpuSuccess;
     STAMCOUNTER                 StatStopCpuPending;
+    STAMCOUNTER                 StatStopCpuPendingAlerts;
     STAMCOUNTER                 StatStopCpuPendingOdd;
     STAMCOUNTER                 StatCancelChangedState;
     STAMCOUNTER                 StatCancelAlertedThread;
