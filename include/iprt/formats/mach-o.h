@@ -310,6 +310,13 @@ typedef struct load_command
 #define LC_DATA_IN_CODE             UINT32_C(0x29)
 #define LC_SOURCE_VERSION           UINT32_C(0x2a)
 #define LC_DYLIB_CODE_SIGN_DRS      UINT32_C(0x2b)
+#define LC_ENCRYPTION_INFO_64       UINT32_C(0x2c)
+#define LC_LINKER_OPTION            UINT32_C(0x2d)
+#define LC_LINKER_OPTIMIZATION_HINT UINT32_C(0x2e)
+#define LC_VERSION_MIN_TVOS         UINT32_C(0x2f)
+#define LC_VERSION_MIN_WATCHOS      UINT32_C(0x30)
+#define LC_NOTE                     UINT32_C(0x31)
+#define LC_BUILD_VERSION            UINT32_C(0x32)
 
 
 typedef struct lc_str
