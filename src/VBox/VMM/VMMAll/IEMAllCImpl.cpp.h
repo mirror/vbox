@@ -7286,10 +7286,12 @@ IEM_CIMPL_DEF_2(iemCImpl_clflush_clflushopt, uint8_t, iEffSeg, RTGCPTR, GCPtrEff
  */
 IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
 {
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_X87);
-
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
     if (pVCpu->cpum.GstCtx.cr0 & (X86_CR0_EM | X86_CR0_TS))
         return iemRaiseDeviceNotAvailable(pVCpu);
+
+    iemFpuActualizeStateForChange(pVCpu);
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_X87);
 
     NOREF(fCheckXcpts); /** @todo trigger pending exceptions:
         if (fCheckXcpts && TODO )
