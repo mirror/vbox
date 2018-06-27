@@ -138,6 +138,9 @@ private:
     void resetDragToken();
     QMimeData* createMimeData();
 
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+
     /* Handler: Resize handling stuff: */
     void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
 

@@ -66,6 +66,8 @@ public:
     QString settingsFile() const { return m_strSettingsFile; }
     const QStringList &groups();
     bool recache();
+    /** Recaches item pixmap. */
+    void recachePixmap();
 
     bool canSwitchTo() const;
     bool switchTo();

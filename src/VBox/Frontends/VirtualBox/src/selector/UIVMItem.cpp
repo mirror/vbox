@@ -242,10 +242,6 @@ bool UIVMItem::recache()
         m_strOSTypeId = m_machine.GetOSTypeId();
         m_cSnaphot = m_machine.GetSnapshotCount();
 
-        m_pixmap = vboxGlobal().vmUserPixmapDefault(m_machine, &m_logicalPixmapSize);
-        if (m_pixmap.isNull())
-            m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
-
         m_groups = m_machine.GetGroups().toList();
 
         if (   m_machineState == KMachineState_PoweredOff
@@ -296,7 +292,6 @@ bool UIVMItem::recache()
         m_strOSTypeId = QString::null;
         m_cSnaphot = 0;
 
-        m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault("Other", &m_logicalPixmapSize);
         m_groups.clear();
         m_pid = (ULONG) ~0;
     /// @todo Remove. See @c todo in #switchTo() below.
@@ -311,7 +306,29 @@ bool UIVMItem::recache()
         m_fHasDetails = true;
     }
 
+    /* Recache item pixmap: */
+    recachePixmap();
+
     return needsResort;
+}
+
+void UIVMItem::recachePixmap()
+{
+    /* If machine is accessible: */
+    if (m_fAccessible)
+    {
+        /* First, we are trying to acquire personal machine guest OS type icon: */
+        m_pixmap = vboxGlobal().vmUserPixmapDefault(m_machine, &m_logicalPixmapSize);
+        /* If there is nothing, we are using icon corresponding to cached guest OS type: */
+        if (m_pixmap.isNull())
+            m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
+    }
+    /* Otherwise: */
+    else
+    {
+        /* We are using "Other" guest OS type icon: */
+        m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault("Other", &m_logicalPixmapSize);
+    }
 }
 
 /**
