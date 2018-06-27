@@ -57,7 +57,14 @@ void UIVMLogViewerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
 UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &machine)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_comMachine(machine)
+    , pWidget(0)
 {
+}
+
+UIVMLogViewerDialog::~UIVMLogViewerDialog()
+{
+    if (pWidget)
+        pWidget->setBeingClosed(true);
 }
 
 void UIVMLogViewerDialog::retranslateUi()
@@ -73,7 +80,7 @@ void UIVMLogViewerDialog::retranslateUi()
 void UIVMLogViewerDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, this, m_comMachine);
+    pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, this, m_comMachine);
     if (pWidget)
     {
         /* Configure widget: */

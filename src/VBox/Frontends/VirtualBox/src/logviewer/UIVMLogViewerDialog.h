@@ -35,6 +35,7 @@
 class QDialogButtonBox;
 class QVBoxLayout;
 class UIVMLogViewerDialog;
+class UIVMLogViewerWidget;
 class CMachine;
 
 
@@ -43,7 +44,7 @@ class SHARED_LIBRARY_STUFF UIVMLogViewerDialogFactory : public QIManagerDialogFa
 {
 public:
     UIVMLogViewerDialogFactory(const CMachine &machine);
-
+    
 protected:
     /** Creates derived @a pDialog instance.
       * @param  pCenterWidget  Brings the widget to center wrt. pCenterWidget. */
@@ -61,6 +62,7 @@ class SHARED_LIBRARY_STUFF UIVMLogViewerDialog : public QIWithRetranslateUI<QIMa
 public:
 
     UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &machine);
+    ~UIVMLogViewerDialog();
 
 protected:
 
@@ -83,6 +85,7 @@ private:
 
     void retranslateUi();
     CMachine m_comMachine;
+    UIVMLogViewerWidget *pWidget;
 };
 
 
