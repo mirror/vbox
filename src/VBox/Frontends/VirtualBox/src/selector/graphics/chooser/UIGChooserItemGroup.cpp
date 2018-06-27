@@ -29,7 +29,6 @@
 # include <QMenu>
 
 /* GUI includes: */
-# include "UIGChooser.h"
 # include "UIGChooserItemGroup.h"
 # include "UIGChooserItemMachine.h"
 # include "UIGChooserModel.h"
@@ -113,7 +112,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     setZValue(parentItem()->zValue() + 1);
     connect(this, SIGNAL(sigToggleStarted()), model(), SIGNAL(sigToggleStarted()));
     connect(this, SIGNAL(sigToggleFinished()), model(), SIGNAL(sigToggleFinished()), Qt::QueuedConnection);
-    connect(model()->chooser()->selector(), &UISelectorWindow::sigWindowRemapped,
+    connect(gpSelectorWindow, &UISelectorWindow::sigWindowRemapped,
             this, &UIGChooserItemGroup::sltHandleWindowRemapped);
 
     /* Translate finally: */
@@ -149,7 +148,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     setZValue(parentItem()->zValue() + 1);
     connect(this, SIGNAL(sigToggleStarted()), model(), SIGNAL(sigToggleStarted()));
     connect(this, SIGNAL(sigToggleFinished()), model(), SIGNAL(sigToggleFinished()));
-    connect(model()->chooser()->selector(), &UISelectorWindow::sigWindowRemapped,
+    connect(gpSelectorWindow, &UISelectorWindow::sigWindowRemapped,
             this, &UIGChooserItemGroup::sltHandleWindowRemapped);
 
     /* Copy content to 'this': */
@@ -555,9 +554,9 @@ void UIGChooserItemGroup::updateVisibleName()
 void UIGChooserItemGroup::updatePixmaps()
 {
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-    m_groupsPixmap = UIIconPool::iconSet(":/group_abstract_16px.png").pixmap(model()->chooser()->window()->windowHandle(),
+    m_groupsPixmap = UIIconPool::iconSet(":/group_abstract_16px.png").pixmap(gpSelectorWindow->windowHandle(),
                                                                              QSize(iIconMetric, iIconMetric));
-    m_machinesPixmap = UIIconPool::iconSet(":/machine_abstract_16px.png").pixmap(model()->chooser()->window()->windowHandle(),
+    m_machinesPixmap = UIIconPool::iconSet(":/machine_abstract_16px.png").pixmap(gpSelectorWindow->windowHandle(),
                                                                                  QSize(iIconMetric, iIconMetric));
     m_pixmapSizeGroups = m_groupsPixmap.size() / m_groupsPixmap.devicePixelRatio();
     m_pixmapSizeMachines = m_machinesPixmap.size() / m_machinesPixmap.devicePixelRatio();
