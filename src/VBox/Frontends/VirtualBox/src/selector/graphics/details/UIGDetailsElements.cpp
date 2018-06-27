@@ -65,9 +65,6 @@ UIGDetailsElementInterface::UIGDetailsElementInterface(UIGDetailsSet *pParent, D
     : UIGDetailsElement(pParent, type, fOpened)
     , m_pTask(0)
 {
-    /* Assign corresponding icon: */
-    setIcon(gpConverter->toIcon(elementType()));
-
     /* Listen for the global thread-pool: */
     connect(vboxGlobal().threadPool(), SIGNAL(sigTaskComplete(UITask*)),
             this, SLOT(sltUpdateAppearanceFinished(UITask*)));
@@ -123,9 +120,6 @@ void UIGDetailsElementInterface::sltUpdateAppearanceFinished(UITask *pTask)
 UIGDetailsElementPreview::UIGDetailsElementPreview(UIGDetailsSet *pParent, bool fOpened)
     : UIGDetailsElement(pParent, DetailsElementType_Preview, fOpened)
 {
-    /* Assign corresponding icon: */
-    setIcon(gpConverter->toIcon(elementType()));
-
     /* Create preview: */
     m_pPreview = new UIGMachinePreview(this);
     AssertPtr(m_pPreview);

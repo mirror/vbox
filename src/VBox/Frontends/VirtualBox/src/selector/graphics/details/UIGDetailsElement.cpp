@@ -34,8 +34,9 @@
 # include "UIGraphicsRotatorButton.h"
 # include "UIGraphicsTextPane.h"
 # include "UIActionPool.h"
-# include "UIIconPool.h"
 # include "UIConverter.h"
+# include "UIIconPool.h"
+# include "UISelectorWindow.h"
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -130,6 +131,12 @@ void UIGDetailsElement::setText(const UITextTable &text)
     m_pTextPane->setText(text);
 }
 
+void UIGDetailsElement::sltHandleWindowRemapped()
+{
+    /* Update icon: */
+    updateIcon();
+}
+
 void UIGDetailsElement::sltToggleButtonClicked()
 {
     emit sigToggleElement(m_type, closed());
@@ -198,6 +205,15 @@ void UIGDetailsElement::sltMountStorageMedium()
     vboxGlobal().updateMachineStorage(machine(), target);
 }
 
+void UIGDetailsElement::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    UIGDetailsItem::showEvent(pEvent);
+
+    /* Update icon: */
+    updateIcon();
+}
+
 void UIGDetailsElement::resizeEvent(QGraphicsSceneResizeEvent*)
 {
     /* Update layout: */
@@ -241,8 +257,11 @@ void UIGDetailsElement::updateMinimumHeaderHeight()
     m_iMinimumHeaderHeight = qMax(m_iMinimumHeaderHeight, m_buttonSize.height());
 }
 
-void UIGDetailsElement::setIcon(const QIcon &icon)
+void UIGDetailsElement::updateIcon()
 {
+    /* Prepare whole icon first of all: */
+    const QIcon icon = gpConverter->toIcon(elementType());
+
     /* Cache icon: */
     if (icon.isNull())
     {
@@ -252,12 +271,11 @@ void UIGDetailsElement::setIcon(const QIcon &icon)
     }
     else
     {
-        /* Determine default the icon size: */
-        const QStyle *pStyle = QApplication::style();
-        const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+        /* Determine default icon size: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         m_pixmapSize = QSize(iIconMetric, iIconMetric);
-        /* Acquire the icon of the corresponding size: */
-        m_pixmap = icon.pixmap(m_pixmapSize);
+        /* Acquire the icon of corresponding size (taking top-level widget DPI into account): */
+        m_pixmap = icon.pixmap(gpSelectorWindow->windowHandle(), m_pixmapSize);
     }
 
     /* Update linked values: */
@@ -411,6 +429,9 @@ void UIGDetailsElement::prepareElement()
     m_nameFont.setWeight(QFont::Bold);
     m_textFont = font();
 
+    /* Update icon: */
+    updateIcon();
+
     /* Create highlight machine: */
     m_pHighlightMachine = new QStateMachine(this);
     /* Create 'default' state: */
@@ -443,7 +464,11 @@ void UIGDetailsElement::prepareElement()
     /* Start state-machine: */
     m_pHighlightMachine->start();
 
-    connect(this, SIGNAL(sigToggleElement(DetailsElementType, bool)), model(), SLOT(sltToggleElements(DetailsElementType, bool)));
+    /* Configure connections: */
+    connect(gpSelectorWindow, &UISelectorWindow::sigWindowRemapped,
+            this, &UIGDetailsElement::sltHandleWindowRemapped);
+    connect(this, SIGNAL(sigToggleElement(DetailsElementType, bool)),
+            model(), SLOT(sltToggleElements(DetailsElementType, bool)));
     connect(this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             model(), SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)));
 }
