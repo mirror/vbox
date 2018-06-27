@@ -1130,7 +1130,6 @@ void UISelectorWindow::sltCloseLogViewerWindow()
        done before closing the dialog which will incur a second call to
        this function and result in double delete!!!: */
     m_logViewers.erase(sendersIterator);
-    pDialog->close();
     UIVMLogViewerDialogFactory(CMachine()).cleanup(pDialog);
 }
 
