@@ -149,7 +149,9 @@ void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
     if (!m_pClearAllButton || !m_pRemoveTermButton)
         createButtons();
     int clearButtonSize = height();
-    m_pClearAllButton->setGeometry(width() - clearButtonSize, 0, clearButtonSize, clearButtonSize);
+
+    int deltaY = 0.5 * (height() - m_pClearAllButton->height());
+    m_pClearAllButton->setGeometry(width() - clearButtonSize, deltaY, clearButtonSize, clearButtonSize);
     /* If we have a selected term move the m_pRemoveTermButton to the end of the
        or start of the word (depending on the location of the word within line edit itself: */
     if (hasSelectedText())
@@ -213,6 +215,12 @@ void UIVMFilterLineEdit::createButtons()
             connect(m_pClearAllButton, &QIToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
         }
     }
+    if (!m_pRemoveTermButton && !m_pClearAllButton)
+        setMinimumHeight(qMax(m_pRemoveTermButton->minimumHeight(), m_pClearAllButton->minimumHeight()));
+    else if (!m_pRemoveTermButton)
+        setMinimumHeight(m_pRemoveTermButton->minimumHeight());
+    else if (!m_pClearAllButton)
+        setMinimumHeight(m_pClearAllButton->minimumHeight());        
 }
 
 
