@@ -324,7 +324,8 @@ HRESULT Machine::init(VirtualBox *aParent,
 
         mUserData->s.strName = strName;
 
-        mUserData->s.llGroups = llGroups;
+        if (llGroups.size())
+            mUserData->s.llGroups = llGroups;
 
         mUserData->s.fDirectoryIncludesUUID = fDirectoryIncludesUUID;
         // the "name sync" flag determines whether the machine directory gets renamed along
