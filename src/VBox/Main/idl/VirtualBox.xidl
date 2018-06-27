@@ -15185,7 +15185,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="description" type="wstring">
+    <attribute name="description" type="wstring" wrap-hint-server="passcaller">
       <desc>
         Optional description of the medium. For a newly created medium the value
         of this attribute is an empty string.
@@ -16144,7 +16144,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <!-- other methods -->
 
-    <method name="setLocation">
+    <method name="setLocation" wrap-hint-server="passcaller">
       <desc>
         Changes the location of this medium. Some medium types may support
         changing the storage unit location by simply changing the value of the
@@ -16306,7 +16306,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="getEncryptionSettings" const="yes">
+    <method name="getEncryptionSettings" const="yes" wrap-hint-server="passcaller">
       <desc>
         Returns the encryption settings for this medium.
 

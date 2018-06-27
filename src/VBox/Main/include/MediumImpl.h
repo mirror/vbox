@@ -229,8 +229,8 @@ private:
 
     // wrapped IMedium properties
     HRESULT getId(com::Guid &aId);
-    HRESULT getDescription(com::Utf8Str &aDescription);
-    HRESULT setDescription(const com::Utf8Str &aDescription);
+    HRESULT getDescription(AutoCaller &autoCaller, com::Utf8Str &aDescription);
+    HRESULT setDescription(AutoCaller &autoCaller, const com::Utf8Str &aDescription);
     HRESULT getState(MediumState_T *aState);
     HRESULT getVariant(std::vector<MediumVariant_T> &aVariant);
     HRESULT getLocation(com::Utf8Str &aLocation);
@@ -292,7 +292,8 @@ private:
     HRESULT cloneToBase(const ComPtr<IMedium> &aTarget,
                         const std::vector<MediumVariant_T> &aVariant,
                         ComPtr<IProgress> &aProgress);
-    HRESULT setLocation(const com::Utf8Str &aLocation,
+    HRESULT setLocation(AutoCaller &autoCaller,
+                        const com::Utf8Str &aLocation,
                         ComPtr<IProgress> &aProgress);
     HRESULT compact(ComPtr<IProgress> &aProgress);
     HRESULT resize(LONG64 aLogicalSize,
@@ -301,7 +302,7 @@ private:
     HRESULT changeEncryption(const com::Utf8Str &aCurrentPassword, const com::Utf8Str &aCipher,
                              const com::Utf8Str &aNewPassword, const com::Utf8Str &aNewPasswordId,
                              ComPtr<IProgress> &aProgress);
-    HRESULT getEncryptionSettings(com::Utf8Str &aCipher, com::Utf8Str &aPasswordId);
+    HRESULT getEncryptionSettings(AutoCaller &autoCaller, com::Utf8Str &aCipher, com::Utf8Str &aPasswordId);
     HRESULT checkEncryptionPassword(const com::Utf8Str &aPassword);
 
     // Private internal nmethods
