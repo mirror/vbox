@@ -859,7 +859,7 @@ void UIVMLogViewerWidget::manageEscapeShortCut()
         return;
     }
     /* Take the escape shortcut from the dialog: */
-    sigSetCloseButtonShortCut(QKeySequence());
+    emit sigSetCloseButtonShortCut(QKeySequence());
     /* Just loop thru the visible panel list and set the esc key to the
        panel which made visible latest */
     for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
