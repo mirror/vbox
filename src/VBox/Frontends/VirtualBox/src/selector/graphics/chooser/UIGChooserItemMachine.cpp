@@ -25,15 +25,15 @@
 # include <QGraphicsSceneMouseEvent>
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
 # include "UIGChooser.h"
-# include "UIGChooserItemMachine.h"
 # include "UIGChooserItemGroup.h"
+# include "UIGChooserItemMachine.h"
 # include "UIGChooserModel.h"
 # include "UIGraphicsToolBar.h"
-# include "UIGraphicsZoomButton.h"
-# include "VBoxGlobal.h"
-# include "UIIconPool.h"
 # include "UIActionPoolSelector.h"
+# include "UIGraphicsZoomButton.h"
+# include "UIIconPool.h"
 # include "UIImageTools.h"
 # include "UISelectorWindow.h"
 

@@ -29,12 +29,14 @@
 # include <QMenu>
 
 /* GUI includes: */
+# include "UIGChooser.h"
 # include "UIGChooserItemGroup.h"
 # include "UIGChooserItemMachine.h"
 # include "UIGChooserModel.h"
-# include "UIIconPool.h"
-# include "UIGraphicsRotatorButton.h"
 # include "UIGChooserView.h"
+# include "UIGraphicsRotatorButton.h"
+# include "UIIconPool.h"
+# include "UISelectorWindow.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -111,11 +113,14 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     setZValue(parentItem()->zValue() + 1);
     connect(this, SIGNAL(sigToggleStarted()), model(), SIGNAL(sigToggleStarted()));
     connect(this, SIGNAL(sigToggleFinished()), model(), SIGNAL(sigToggleFinished()), Qt::QueuedConnection);
+    connect(model()->chooser()->selector(), &UISelectorWindow::sigWindowRemapped,
+            this, &UIGChooserItemGroup::sltHandleWindowRemapped);
 
     /* Translate finally: */
     retranslateUi();
 
     /* Init: */
+    updatePixmaps();
     updateItemCountInfo();
     updateVisibleName();
     updateToolTip();
@@ -144,6 +149,8 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     setZValue(parentItem()->zValue() + 1);
     connect(this, SIGNAL(sigToggleStarted()), model(), SIGNAL(sigToggleStarted()));
     connect(this, SIGNAL(sigToggleFinished()), model(), SIGNAL(sigToggleFinished()));
+    connect(model()->chooser()->selector(), &UISelectorWindow::sigWindowRemapped,
+            this, &UIGChooserItemGroup::sltHandleWindowRemapped);
 
     /* Copy content to 'this': */
     copyContent(pCopyFrom, this);
@@ -152,6 +159,7 @@ UIGChooserItemGroup::UIGChooserItemGroup(UIGChooserItem *pParent,
     retranslateUi();
 
     /* Init: */
+    updatePixmaps();
     updateItemCountInfo();
     updateVisibleName();
     updateToolTip();
@@ -273,6 +281,12 @@ bool UIGChooserItemGroup::isContainsLockedMachine()
             return true;
     /* Found nothing? */
     return false;
+}
+
+void UIGChooserItemGroup::sltHandleWindowRemapped()
+{
+    /* Update pixmaps: */
+    updatePixmaps();
 }
 
 void UIGChooserItemGroup::sltNameEditingFinished()
@@ -409,11 +423,6 @@ void UIGChooserItemGroup::prepare()
     m_nameFont = font();
     m_nameFont.setWeight(QFont::Bold);
     m_infoFont = font();
-    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-    m_groupsPixmap = UIIconPool::iconSet(":/group_abstract_16px.png").pixmap(iIconMetric, iIconMetric);
-    m_machinesPixmap = UIIconPool::iconSet(":/machine_abstract_16px.png").pixmap(iIconMetric, iIconMetric);
-    m_pixmapSizeGroups = m_groupsPixmap.size() / m_groupsPixmap.devicePixelRatio();
-    m_pixmapSizeMachines = m_machinesPixmap.size() / m_machinesPixmap.devicePixelRatio();
     m_minimumHeaderSize = QSize(0, 0);
 
     /* Items except roots: */
@@ -541,6 +550,17 @@ void UIGChooserItemGroup::updateVisibleName()
         m_strVisibleName = strVisibleName;
         update();
     }
+}
+
+void UIGChooserItemGroup::updatePixmaps()
+{
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    m_groupsPixmap = UIIconPool::iconSet(":/group_abstract_16px.png").pixmap(model()->chooser()->window()->windowHandle(),
+                                                                             QSize(iIconMetric, iIconMetric));
+    m_machinesPixmap = UIIconPool::iconSet(":/machine_abstract_16px.png").pixmap(model()->chooser()->window()->windowHandle(),
+                                                                                 QSize(iIconMetric, iIconMetric));
+    m_pixmapSizeGroups = m_groupsPixmap.size() / m_groupsPixmap.devicePixelRatio();
+    m_pixmapSizeMachines = m_machinesPixmap.size() / m_machinesPixmap.devicePixelRatio();
 }
 
 void UIGChooserItemGroup::updateItemCountInfo()
@@ -1482,6 +1502,15 @@ void UIGChooserItemGroup::resetDragToken()
 QMimeData* UIGChooserItemGroup::createMimeData()
 {
     return new UIGChooserItemMimeData(this);
+}
+
+void UIGChooserItemGroup::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    UIGChooserItem::showEvent(pEvent);
+
+    /* Update pixmaps: */
+    updatePixmaps();
 }
 
 void UIGChooserItemGroup::resizeEvent(QGraphicsSceneResizeEvent *pEvent)

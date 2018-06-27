@@ -83,6 +83,9 @@ public:
 
 private slots:
 
+    /** Handles top-level window remaps. */
+    void sltHandleWindowRemapped();
+
     /* Handler: Name editing stuff: */
     void sltNameEditingFinished();
 
@@ -117,6 +120,7 @@ private:
     /* Helpers: Update stuff: */
     void handleRootStatusChange();
     void updateVisibleName();
+    void updatePixmaps();
     void updateItemCountInfo();
     void updateMinimumHeaderSize();
     void updateToolTip();
@@ -166,6 +170,9 @@ private:
     void processDrop(QGraphicsSceneDragDropEvent *pEvent, UIGChooserItem *pFromWho, DragToken where);
     void resetDragToken();
     QMimeData* createMimeData();
+
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
 
     /* Handler: Resize handling stuff: */
     void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
