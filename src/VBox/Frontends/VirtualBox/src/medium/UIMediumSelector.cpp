@@ -55,43 +55,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/*********************************************************************************************************************************
-*   UISearchLineEdit definition.                                                                                           *
-*********************************************************************************************************************************/
-
-class UISearchLineEdit : public QILineEdit
-{
-    Q_OBJECT;
-
-signals:
-
-    void sigFilterTermRemoved(QString removedString);
-    void sigClearAll();
-
-public:
-
-    UISearchLineEdit(QWidget *parent = 0);
-
-protected:
-
-    // /* Delete mouseDoubleClick and mouseMoveEvent implementations of the base class */
-    // virtual void        mouseDoubleClickEvent(QMouseEvent *) /* override */{}
-    // virtual void        mouseMoveEvent(QMouseEvent *) /* override */{}
-    // /* Override the mousePressEvent to control how selection is done: */
-    // virtual void        mousePressEvent(QMouseEvent * event) /* override */;
-    // virtual void        mouseReleaseEvent(QMouseEvent *){}
-    virtual void        paintEvent(QPaintEvent *event) /* override */;
-
-private slots:
-
-    /* The whole content is removed. Listeners are notified: */
-    void sltClearAll();
-
-private:
-
-    void          createButtons();
-    QIToolButton *m_pClearAllButton;
-};
 
 class UIMediumSearchWidget : public QWidget
 {
@@ -121,54 +84,8 @@ private:
 
     void prepareWidgets();
     QIComboBox       *m_pSearchComboxBox;
-    UISearchLineEdit *m_pSearchTermLineEdit;
+    QLineEdit         *m_pSearchTermLineEdit;
 };
-
-
-/*********************************************************************************************************************************
-*   UISearchLineEdit implementation.                                                                                             *
-*********************************************************************************************************************************/
-
-UISearchLineEdit::UISearchLineEdit(QWidget *parent /*= 0*/)
-    :QILineEdit(parent)
-    , m_pClearAllButton(0)
-{
-    createButtons();
-}
-
-void UISearchLineEdit::paintEvent(QPaintEvent *event)
-{
-    QLineEdit::paintEvent(event);
-
-    if (!m_pClearAllButton)
-        createButtons();
-    int clearButtonSize = height();
-    m_pClearAllButton->setGeometry(width() - clearButtonSize, 0, clearButtonSize, clearButtonSize);
-}
-
-void UISearchLineEdit::sltClearAll()
-{
-    /* Check if we have some text to avoid recursive calls: */
-    if (text().isEmpty())
-        return;
-
-    clear();
-    emit sigClearAll();
-}
-
-void UISearchLineEdit::createButtons()
-{
-    if (!m_pClearAllButton)
-    {
-        m_pClearAllButton = new QIToolButton(this);
-        if (m_pClearAllButton)
-        {
-            m_pClearAllButton->setIcon(m_pClearAllButton->style()->standardIcon(QStyle::SP_LineEditClearButton));
-            connect(m_pClearAllButton, &QIToolButton::clicked, this, &UISearchLineEdit::sltClearAll);
-        }
-    }
-}
-
 
 /*********************************************************************************************************************************
 *   UIMediumSearchWidget implementation.                                                                                         *
@@ -202,9 +119,10 @@ void UIMediumSearchWidget::prepareWidgets()
 
     }
 
-    m_pSearchTermLineEdit = new UISearchLineEdit;
-    if (pLayout)
+    m_pSearchTermLineEdit = new QLineEdit;
+    if (m_pSearchTermLineEdit)
     {
+        m_pSearchTermLineEdit->setClearButtonEnabled(true);
         pLayout->addWidget(m_pSearchTermLineEdit);
         connect(m_pSearchTermLineEdit, &QILineEdit::textChanged,
                 this, &UIMediumSearchWidget::sigSearchTermChanged);
