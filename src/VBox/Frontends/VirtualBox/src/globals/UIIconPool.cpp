@@ -28,6 +28,7 @@
 /* GUI includes: */
 # include "UIIconPool.h"
 # include "UIExtraDataManager.h"
+# include "UIModalWindowManager.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -523,8 +524,11 @@ QPixmap UIIconPoolGeneral::guestOSTypePixmapDefault(const QString &strOSTypeID, 
         if (pLogicalSize)
             *pLogicalSize = iconSize;
 
-        /* Get pixmap of requested size: */
-        pixmap = icon.pixmap(iconSize);
+        /* Get pixmap of requested size (take into account the DPI of the main shown window, if possible): */
+        if (windowManager().mainWindowShown() && windowManager().mainWindowShown()->windowHandle())
+            pixmap = icon.pixmap(windowManager().mainWindowShown()->windowHandle(), iconSize);
+        else
+            pixmap = icon.pixmap(iconSize);
     }
 
     /* Return pixmap: */
