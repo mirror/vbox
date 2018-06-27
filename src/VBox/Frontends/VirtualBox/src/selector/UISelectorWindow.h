@@ -50,6 +50,11 @@ class UISelectorWindow : public QIWithRetranslateUI<QIMainWindow>
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about this window remapped onto another screen. */
+    void sigWindowRemapped();
+
 public:
 
     /** Static constructor. */

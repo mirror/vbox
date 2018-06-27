@@ -1307,6 +1307,12 @@ bool UISelectorWindow::event(QEvent *pEvent)
     /* Which event do we have? */
     switch (pEvent->type())
     {
+        /* Handle every ScreenChangeInternal event to notify listeners: */
+        case QEvent::ScreenChangeInternal:
+        {
+            emit sigWindowRemapped();
+            break;
+        }
         /* Handle every Resize and Move we keep track of the geometry. */
         case QEvent::Resize:
         {

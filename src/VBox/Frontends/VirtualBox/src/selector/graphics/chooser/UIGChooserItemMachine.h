@@ -68,6 +68,11 @@ public:
                                       QList<UIGChooserItemMachine*> &ol,
                                       int iEnumerationFlags = 0);
 
+public slots:
+
+    /** Handles top-level window remaps. */
+    void sltHandleWindowRemapped();
+
 private:
 
     /* Data enumerator: */

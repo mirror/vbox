@@ -35,6 +35,7 @@
 # include "UIIconPool.h"
 # include "UIActionPoolSelector.h"
 # include "UIImageTools.h"
+# include "UISelectorWindow.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -60,6 +61,10 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     parentItem()->addItem(this, iPosition);
     setZValue(parentItem()->zValue() + 1);
 
+    /* Configure connections: */
+    connect(model()->chooser()->selector(), &UISelectorWindow::sigWindowRemapped,
+            this, &UIGChooserItemMachine::sltHandleWindowRemapped);
+
     /* Init: */
     updatePixmaps();
     updateName();
@@ -82,6 +87,10 @@ UIGChooserItemMachine::UIGChooserItemMachine(UIGChooserItem *pParent,
     AssertMsg(parentItem(), ("No parent set for machine-item!"));
     parentItem()->addItem(this, iPosition);
     setZValue(parentItem()->zValue() + 1);
+
+    /* Configure connections: */
+    connect(model()->chooser()->selector(), &UISelectorWindow::sigWindowRemapped,
+            this, &UIGChooserItemMachine::sltHandleWindowRemapped);
 
     /* Init: */
     updatePixmaps();
@@ -189,6 +198,13 @@ void UIGChooserItemMachine::enumerateMachineItems(const QList<UIGChooserItem*> &
             enumerateMachineItems(pItem->items(UIGChooserItemType_Group), ol, iEnumerationFlags);
         }
     }
+}
+
+void UIGChooserItemMachine::sltHandleWindowRemapped()
+{
+    /* Recache and update pixmaps: */
+    recachePixmap();
+    updatePixmaps();
 }
 
 QVariant UIGChooserItemMachine::data(int iKey) const
