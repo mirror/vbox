@@ -44,7 +44,7 @@ class SHARED_LIBRARY_STUFF UIVMLogViewerDialogFactory : public QIManagerDialogFa
 {
 public:
     UIVMLogViewerDialogFactory(const CMachine &machine);
-    
+
 protected:
     /** Creates derived @a pDialog instance.
       * @param  pCenterWidget  Brings the widget to center wrt. pCenterWidget. */

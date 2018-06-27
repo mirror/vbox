@@ -220,7 +220,7 @@ void UIVMFilterLineEdit::createButtons()
     else if (!m_pRemoveTermButton)
         setMinimumHeight(m_pRemoveTermButton->minimumHeight());
     else if (!m_pClearAllButton)
-        setMinimumHeight(m_pClearAllButton->minimumHeight());        
+        setMinimumHeight(m_pClearAllButton->minimumHeight());
 }
 
 
