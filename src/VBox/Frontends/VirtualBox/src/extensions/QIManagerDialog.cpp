@@ -168,7 +168,7 @@ void QIManagerDialog::prepareButtonBox()
         /* Disable 'Reset' and 'Apply' initially: */
         button(ButtonType_Reset)->setEnabled(false);
         button(ButtonType_Apply)->setEnabled(false);
-        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QIManagerDialog::sigClose);
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QIManagerDialog::close);
 
         /* Configure button-box: */
         configureButtonBox();
