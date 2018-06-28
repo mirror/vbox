@@ -83,8 +83,8 @@ void UIVMLogViewerPanel::prepareWidgets()
     if (m_pMainLayout)
     {
 #ifdef VBOX_WS_MAC
-        m_pMainLayout->setContentsMargins(5, 0, 0, 5);
-        m_pMainLayout->setSpacing(5);
+        m_pMainLayout->setContentsMargins(5, 0, 5, 0);
+        m_pMainLayout->setSpacing(10);
 #else
         m_pMainLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
                                              qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2, 0);
