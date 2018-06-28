@@ -78,7 +78,7 @@ protected:
     virtual void        mousePressEvent(QMouseEvent * event) /* override */;
     virtual void        mouseReleaseEvent(QMouseEvent *){}
     virtual void        paintEvent(QPaintEvent *event) /* override */;
-    virtual void        resizeEvent(QResizeEvent *event) /* override */;                                                                     
+    virtual void        resizeEvent(QResizeEvent *event) /* override */;
 
 private slots:
 
@@ -146,11 +146,11 @@ void UIVMFilterLineEdit::mousePressEvent(QMouseEvent * event)
 void UIVMFilterLineEdit::resizeEvent(QResizeEvent *event)
 {
     QLineEdit::resizeEvent(event);
-    
+
     if (!m_pClearAllButton || !m_pRemoveTermButton)
         createButtons();
     int clearButtonSize = height();
-    
+
     int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
     m_pClearAllButton->setGeometry(width() - clearButtonSize, deltaHeight, clearButtonSize, clearButtonSize);
 }
@@ -163,7 +163,7 @@ void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
        or start of the word (depending on the location of the word within line edit itself: */
     if (hasSelectedText())
     {
-        int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());        
+        int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
         m_pRemoveTermButton->show();
         int buttonSize = m_iRemoveTermButtonSize;
         int charWidth = fontMetrics().width('x');
