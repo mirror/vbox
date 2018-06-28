@@ -136,7 +136,7 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
         QHBoxLayout *pContainerLayout = new QHBoxLayout(m_pNextPreviousButtonContainer);
         /* Configure layout: */
 #ifdef VBOX_WS_MAC
-            pContainerLayout->setContentsMargins(5, 0, 0, 5);
+            pContainerLayout->setContentsMargins(5, 0, 5, 0);
             pContainerLayout->setSpacing(5);
 #else
             pContainerLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
