@@ -520,8 +520,8 @@ static PRThread* _PR_CreateThread(
 #else  /* VBOX_USE_IPRT_IN_NSPR */
 		rv = RTThreadCreateF(&hThread, _pt_iprt_root, thred, stackSize, enmType, fFlags, "nspr-%u", ASMAtomicIncU32(&s_iThread));
 		if (RT_SUCCESS(rv)) {
-#ifdef VBOX_WITH_GCC_SANITIZER
-			__lsan_ignore_object(hThread);
+#ifdef VBOX_USE_IPRT_IN_NSPR
+			RTMEM_WILL_LEAK(hThread);
 #endif
 			id = (pthread_t)RTThreadGetNative(hThread);
             rv = 0;
