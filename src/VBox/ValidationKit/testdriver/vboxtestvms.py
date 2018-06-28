@@ -1185,9 +1185,9 @@ class TestVmManager(object):
         """
         return self.selectSet(self.kfGrpStandard, sTxsTransport)
 
-    def getSmokeVmSet(self):
+    def getSmokeVmSet(self, sTxsTransport = None):
         """Gets a representative set of VMs for smoke testing. """
-        return self.selectSet(self.kfGrpSmoke);
+        return self.selectSet(self.kfGrpSmoke, sTxsTransport);
 
     def shutUpPyLint(self):
         """ Shut up already! """
