@@ -78,6 +78,7 @@ protected:
     virtual void        mousePressEvent(QMouseEvent * event) /* override */;
     virtual void        mouseReleaseEvent(QMouseEvent *){}
     virtual void        paintEvent(QPaintEvent *event) /* override */;
+    virtual void        resizeEvent(QResizeEvent *event) /* override */;                                                                     
 
 private slots:
 
@@ -142,33 +143,39 @@ void UIVMFilterLineEdit::mousePressEvent(QMouseEvent * event)
     QLineEdit::mouseDoubleClickEvent(event);
 }
 
-void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
+void UIVMFilterLineEdit::resizeEvent(QResizeEvent *event)
 {
-    QLineEdit::paintEvent(event);
-
+    QLineEdit::resizeEvent(event);
+    
     if (!m_pClearAllButton || !m_pRemoveTermButton)
         createButtons();
     int clearButtonSize = height();
+    
+    int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
+    m_pClearAllButton->setGeometry(width() - clearButtonSize, deltaHeight, clearButtonSize, clearButtonSize);
+}
 
-    int deltaY = 0.5 * (height() - m_pClearAllButton->height());
-    m_pClearAllButton->setGeometry(width() - clearButtonSize, deltaY, clearButtonSize, clearButtonSize);
+void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
+{
+    QLineEdit::paintEvent(event);
+    int clearButtonSize = height();
     /* If we have a selected term move the m_pRemoveTermButton to the end of the
        or start of the word (depending on the location of the word within line edit itself: */
     if (hasSelectedText())
     {
+        int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());        
         m_pRemoveTermButton->show();
-        int buttonY = 0.5 * (height() - 16);
         int buttonSize = m_iRemoveTermButtonSize;
         int charWidth = fontMetrics().width('x');
         int buttonLeft = cursorRect().right() - 0.5 * charWidth;
-        /* If buttonLeft is in far left of the line edit, move the
+        /* If buttonLeft is in far right of the line edit, move the
            button to left side of the selected word: */
         if (buttonLeft + buttonSize  >=  width() - clearButtonSize)
         {
             int selectionWidth = charWidth * selectedText().length();
             buttonLeft -= (selectionWidth + buttonSize);
         }
-        m_pRemoveTermButton->setGeometry(buttonLeft, buttonY, buttonSize, buttonSize);
+        m_pRemoveTermButton->setGeometry(buttonLeft, deltaHeight, buttonSize, buttonSize);
     }
     else
         m_pRemoveTermButton->hide();
