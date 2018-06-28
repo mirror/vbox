@@ -61,9 +61,10 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
     def __init__(self):
         vbox.TestDriver.__init__(self);
-        self.oTestVmSet = self.oTestVmManager.getStandardVmSet('nat');
+        self.oTestVmSet = self.oTestVmManager.getSmokeVmSet('nat');
         self.asTestsDef = ['guestprops', 'stdguestprops', 'guestcontrol'];
         self.asTests    = self.asTestsDef;
+        self.asRsrcs    = None
 
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
 
@@ -97,6 +98,14 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
+
+    def getResourceSet(self):
+        if self.asRsrcs is None:
+            self.asRsrcs = []
+            for oSubTstDrv in self.aoSubTstDrvs:
+                self.asRsrcs.extend(oSubTstDrv.asRsrcs)
+            self.asRsrcs.extend(self.oTestVmSet.getResourceSet())
+        return self.asRsrcs
 
     def actionConfig(self):
         if not self.importVBoxApi(): # So we can use the constant below.

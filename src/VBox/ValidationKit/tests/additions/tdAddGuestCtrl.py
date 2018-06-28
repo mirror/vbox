@@ -932,6 +932,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
         self.asTests    = self.asTestsDef;
 
+        self.asRsrcs    = []
+        self.asRsrcs.append('5.3/guestctrl/50mb_rnd.dat')
+
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
         if asArgs[iArg] == '--add-guest-ctrl-tests':
             iArg += 1;
@@ -3133,25 +3136,35 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.error('Could not create scratch directory on guest');
             return (False, oTxsSession);
 
-        # Some stupid trickery to guess the location of the iso.
-        sVBoxValidationKitISO = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxValidationKit.iso'));
-        if not os.path.isfile(sVBoxValidationKitISO):
-            sVBoxValidationKitISO = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxTestSuite.iso'));
-        if not os.path.isfile(sVBoxValidationKitISO):
-            sCur = os.getcwd();
-            for i in range(0, 10):
-                sVBoxValidationKitISO = os.path.join(sCur, 'validationkit/VBoxValidationKit.iso');
-                if os.path.isfile(sVBoxValidationKitISO):
-                    break;
-                sVBoxValidationKitISO = os.path.join(sCur, 'testsuite/VBoxTestSuite.iso');
-                if os.path.isfile(sVBoxValidationKitISO):
-                    break;
-                sCur = os.path.abspath(os.path.join(sCur, '..'));
-                if i is None: pass; # shut up pychecker/pylint.
-        if os.path.isfile(sVBoxValidationKitISO):
-            reporter.log('Validation Kit .ISO found at: %s' % (sVBoxValidationKitISO,));
+        ## @todo r=klaus It's not good to use files with unpredictable size
+        # for testing. Causes all sorts of weird failures as things grow,
+        # exceeding the free space of the test VMs. Especially as this used
+        # the very big (and quickly growing) validation kit ISO originally.
+
+        sTestFileBig = self.oTstDrv.getFullResourceName('5.3/guestctrl/50mb_rnd.dat')
+        if not os.path.isfile(sTestFileBig):
+            sTestFileBig = self.oTstDrv.getGuestAdditionsIso()
+        if sTestFileBig == '' or not os.path.isfile(sTestFileBig):
+            # Some stupid trickery to guess the location of the validation kit iso.
+            sTestFileBig = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxValidationKit.iso'));
+            if not os.path.isfile(sTestFileBig):
+                sTestFileBig = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxTestSuite.iso'));
+            if not os.path.isfile(sTestFileBig):
+                sCur = os.getcwd();
+                for i in range(0, 10):
+                    sTestFileBig = os.path.join(sCur, 'validationkit/VBoxValidationKit.iso');
+                    if os.path.isfile(sTestFileBig):
+                        break;
+                    sTestFileBig = os.path.join(sCur, 'testsuite/VBoxTestSuite.iso');
+                    if os.path.isfile(sTestFileBig):
+                        break;
+                    sCur = os.path.abspath(os.path.join(sCur, '..'));
+                    if i is None: pass; # shut up pychecker/pylint.
+
+        if os.path.isfile(sTestFileBig):
+            reporter.log('Test file for big copy found at: %s' % (sTestFileBig,));
         else:
-            reporter.log('Warning: Validation Kit .ISO not found -- some tests might fail');
+            reporter.log('Warning: Test file for big copy not found -- some tests might fail');
 
         aaTests = [];
         if oTestVm.isWindows():
@@ -3169,11 +3182,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Testing DirectoryCopyFlag flags.
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
                                sDst = sScratchGstInvalid, aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Testing FileCopyFlag flags.
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
                                sDst = sScratchGstInvalid, aFlags = [ 80 ] ),
                   tdTestResult(fRc = False) ],
                 # Nothing to copy (source and/or destination is empty).
@@ -3191,31 +3204,31 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
             if self.oTstDrv.fpApiVer > 5.2:
                 aaTests.extend([
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
                                    sDst = sScratchGstInvalid),
                       tdTestResult(fRc = False) ],
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
                                    sDst = sScratchGstNotExist),
                       tdTestResult(fRc = False) ],
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
                                    sDst = sScratchGstNotExist),
                       tdTestResult(fRc = False) ],
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
                                    sDst = os.path.join(sScratchGstNotExist, 'renamedfile.dll')),
                       tdTestResult(fRc = False) ],
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                   sDst = os.path.join(sScratchGst, 'HostGuestAdditions.iso')),
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
+                                   sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
                       tdTestResult(fRc = True) ],
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                   sDst = os.path.join(sScratchGst, 'HostGuestAdditions.iso')),
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
+                                   sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
                       tdTestResult(fRc = True) ],
                     # Note: Copying files into directories via Main is supported only in versions > 5.2.
                     # Destination is a directory.
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
                                    sDst = sScratchGst),
                       tdTestResult(fRc = True) ],
                     # Copy over file again into same directory (overwrite).
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
                                    sDst = sScratchGst),
                       tdTestResult(fRc = True) ]
                 ]);
@@ -3223,8 +3236,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 aaTests.extend([
                     # Copy the same file over to the guest, but this time store the file into the former
                     # file's ADS (Alternate Data Stream). Only works on Windows, of course.
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO,
-                                   sDst = os.path.join(sScratchGst, 'HostGuestAdditions.iso:ADS-Test')),
+                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
+                                   sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
                       tdTestResult(fRc = True) ]
                 ]);
 
@@ -3614,7 +3627,8 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
 
     def __init__(self):
         vbox.TestDriver.__init__(self);
-        self.oTestVmSet = self.oTestVmManager.getStandardVmSet('nat');
+        self.oTestVmSet = self.oTestVmManager.getSmokeVmSet('nat');
+        self.asRsrcs    = None
         self.fQuick     = False; # Don't skip lengthly tests by default.
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
 
@@ -3643,6 +3657,14 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
+
+    def getResourceSet(self):
+        if self.asRsrcs is None:
+            self.asRsrcs = []
+            for oSubTstDrv in self.aoSubTstDrvs:
+                self.asRsrcs.extend(oSubTstDrv.asRsrcs)
+            self.asRsrcs.extend(self.oTestVmSet.getResourceSet())
+        return self.asRsrcs
 
     def actionConfig(self):
         if not self.importVBoxApi(): # So we can use the constant below.
