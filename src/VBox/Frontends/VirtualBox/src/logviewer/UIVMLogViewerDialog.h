@@ -35,7 +35,6 @@
 class QDialogButtonBox;
 class QVBoxLayout;
 class UIVMLogViewerDialog;
-class UIVMLogViewerWidget;
 class CMachine;
 
 
@@ -49,7 +48,6 @@ protected:
     /** Creates derived @a pDialog instance.
       * @param  pCenterWidget  Brings the widget to center wrt. pCenterWidget. */
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
-
     CMachine m_comMachine;
 };
 
@@ -62,7 +60,6 @@ class SHARED_LIBRARY_STUFF UIVMLogViewerDialog : public QIWithRetranslateUI<QIMa
 public:
 
     UIVMLogViewerDialog(QWidget *pCenterWidget, const CMachine &machine);
-    ~UIVMLogViewerDialog();
 
 protected:
 
@@ -85,7 +82,6 @@ private:
 
     void retranslateUi();
     CMachine m_comMachine;
-    UIVMLogViewerWidget *pWidget;
 };
 
 

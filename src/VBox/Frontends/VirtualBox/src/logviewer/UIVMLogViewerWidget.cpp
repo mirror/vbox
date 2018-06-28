@@ -78,7 +78,6 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding, QWidget *pParent 
     , m_bShowLineNumbers(true)
     , m_bWrapLines(false)
     , m_font(QFontDatabase::systemFont(QFontDatabase::FixedFont))
-    , m_fBeingClosed(false)
 {
     /* Prepare VM Log-Viewer: */
     prepare();
@@ -853,8 +852,6 @@ void UIVMLogViewerWidget::showPanel(UIVMLogViewerPanel* panel)
 
 void UIVMLogViewerWidget::manageEscapeShortCut()
 {
-    if (m_fBeingClosed)
-        return;
     /* if there is no visible panels give the escape shortcut to parent dialog: */
     if (m_visiblePanelsList.isEmpty())
     {
@@ -1000,9 +997,4 @@ QFont UIVMLogViewerWidget::currentFont() const
     if (!logPage)
         return QFont();
     return logPage->currentFont();
-}
-
-void UIVMLogViewerWidget::setBeingClosed(bool flag)
-{
-    m_fBeingClosed = flag;
 }

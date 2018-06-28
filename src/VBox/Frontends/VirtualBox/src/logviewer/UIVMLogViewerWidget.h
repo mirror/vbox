@@ -75,7 +75,6 @@ public:
     /** Sets the machine whose logs to show. */
     void setMachine(const CMachine &machine);
     QFont currentFont() const;
-    void setBeingClosed(bool flag);
 
 protected:
 
@@ -228,7 +227,6 @@ private:
         bool  m_bWrapLines;
         QFont m_font;
     /** @} */
-    bool m_fBeingClosed;
     friend class UIVMLogViewerBookmarksPanel;
     friend class UIVMLogViewerFilterPanel;
     friend class UIVMLogViewerSearchPanel;
