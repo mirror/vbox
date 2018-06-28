@@ -21,6 +21,8 @@
 
 /* Qt includes: */
 # include <QApplication>
+# include <QGraphicsScene>
+# include <QGraphicsView>
 # include <QPainter>
 # include <QStyle>
 # include <QGraphicsSceneMouseEvent>
@@ -89,7 +91,15 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
     const int iMargin = data(GraphicsButton_Margin).toInt();
     const QIcon icon = data(GraphicsButton_Icon).value<QIcon>();
     const QSize expectedIconSize = data(GraphicsButton_IconSize).toSize();
-    const QPixmap pixmap = icon.pixmap(expectedIconSize);
+    /* Determine which QWindow this QGraphicsWidget belongs to: */
+    QWindow *pWindow = 0;
+    if (   scene()
+        && !scene()->views().isEmpty()
+        && scene()->views().first()
+        && scene()->views().first()->window())
+        pWindow = scene()->views().first()->window()->windowHandle();
+    /* Acquire pixmap: */
+    const QPixmap pixmap = icon.pixmap(pWindow, expectedIconSize);
     const QSize actualIconSize = pixmap.size() / pixmap.devicePixelRatio();
     QPoint position = QPoint(iMargin, iMargin);
     if (actualIconSize != expectedIconSize)
