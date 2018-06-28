@@ -1002,7 +1002,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_wrfsbase)(uint8_t bMode)
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_wrgsbase)(uint8_t bMode)
 {
-    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, s_aWrGsBaseWorkers, RT_ELEMENTS(s_aWrGsBaseWorkers), MSR_K8_FS_BASE);
+    bs3CpuInstr2_wrfsbase_wrgsbase_Common(bMode, s_aWrGsBaseWorkers, RT_ELEMENTS(s_aWrGsBaseWorkers), MSR_K8_GS_BASE);
     return 0;
 }
 
