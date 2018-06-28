@@ -588,23 +588,23 @@ void UIVMLogViewerWidget::prepareActionIcons()
     QString strPrefix = "log_viewer";
 
     if (m_pActionFind)
-        m_pActionFind->setIcon(UIIconPool::iconSet(QString(":/%1_find_24px.png").arg(strPrefix),
-                                                       QString(":/%1_find_disabled_24px.png").arg(strPrefix)));
+        m_pActionFind->setIcon(UIIconPool::iconSet(QString(":/%1_find_22px.png").arg(strPrefix),
+                                                       QString(":/%1_find_disabled_22px.png").arg(strPrefix)));
     if (m_pActionFilter)
-        m_pActionFilter->setIcon(UIIconPool::iconSet(QString(":/%1_filter_24px.png").arg(strPrefix),
-                                                         QString(":/%1_filter_disabled_24px.png").arg(strPrefix)));
+        m_pActionFilter->setIcon(UIIconPool::iconSet(QString(":/%1_filter_22px.png").arg(strPrefix),
+                                                         QString(":/%1_filter_disabled_22px.png").arg(strPrefix)));
     if (m_pActionRefresh)
-        m_pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/%1_refresh_24px.png").arg(strPrefix),
-                                                          QString(":/%1_refresh_disabled_24px.png").arg(strPrefix)));
+        m_pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/%1_refresh_22px.png").arg(strPrefix),
+                                                          QString(":/%1_refresh_disabled_22px.png").arg(strPrefix)));
     if (m_pActionSave)
-        m_pActionSave->setIcon(UIIconPool::iconSet(QString(":/%1_save_24px.png").arg(strPrefix),
-                                                       QString(":/%1_save_disabled_24px.png").arg(strPrefix)));
+        m_pActionSave->setIcon(UIIconPool::iconSet(QString(":/%1_save_22px.png").arg(strPrefix),
+                                                       QString(":/%1_save_disabled_22px.png").arg(strPrefix)));
     if (m_pActionBookmarks)
-        m_pActionBookmarks->setIcon(UIIconPool::iconSet(QString(":/%1_bookmark_24px.png").arg(strPrefix),
-                                                       QString(":/%1_bookmark_disabled_24px.png").arg(strPrefix)));
+        m_pActionBookmarks->setIcon(UIIconPool::iconSet(QString(":/%1_bookmark_22px.png").arg(strPrefix),
+                                                       QString(":/%1_bookmark_disabled_22px.png").arg(strPrefix)));
     if (m_pActionSettings)
-        m_pActionSettings->setIcon(UIIconPool::iconSet(QString(":/%1_settings_24px.png").arg(strPrefix),
-                                                       QString(":/%1_settings_disabled_24px.png").arg(strPrefix)));
+        m_pActionSettings->setIcon(UIIconPool::iconSet(QString(":/%1_settings_22px.png").arg(strPrefix),
+                                                       QString(":/%1_settings_disabled_22px.png").arg(strPrefix)));
 }
 
 void UIVMLogViewerWidget::prepareToolBar()

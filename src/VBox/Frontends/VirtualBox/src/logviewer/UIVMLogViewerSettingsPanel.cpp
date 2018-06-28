@@ -115,14 +115,14 @@ void UIVMLogViewerSettingsPanel::prepareWidgets()
     if (m_pOpenFontDialogButton)
     {
         mainLayout()->addWidget(m_pOpenFontDialogButton, 0);
-        m_pOpenFontDialogButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_selected_bookmark_16px.png"));
+        m_pOpenFontDialogButton->setIcon(UIIconPool::iconSet(":/log_viewer_choose_font_16px.png"));
     }
 
     m_pResetToDefaultsButton = new QIToolButton;
     if (m_pResetToDefaultsButton)
     {
         mainLayout()->addWidget(m_pResetToDefaultsButton, 0);
-        m_pResetToDefaultsButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_selected_bookmark_16px.png"));
+        m_pResetToDefaultsButton->setIcon(UIIconPool::iconSet(":/log_viewer_reset_font_16px.png"));
     }
     mainLayout()->addStretch(2);
 }

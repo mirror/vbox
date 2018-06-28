@@ -207,7 +207,7 @@ void UIVMFilterLineEdit::createButtons()
         m_pRemoveTermButton = new QIToolButton(this);
         if (m_pRemoveTermButton)
         {
-            m_pRemoveTermButton->setIcon(m_pRemoveTermButton->style()->standardIcon(QStyle::SP_TitleBarCloseButton));
+            m_pRemoveTermButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_filter_16px.png"));
             m_pRemoveTermButton->hide();
             connect(m_pRemoveTermButton, &QIToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
         }
