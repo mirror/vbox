@@ -3140,27 +3140,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # for testing. Causes all sorts of weird failures as things grow,
         # exceeding the free space of the test VMs. Especially as this used
         # the very big (and quickly growing) validation kit ISO originally.
-
-        sTestFileBig = self.oTstDrv.getFullResourceName('5.3/guestctrl/50mb_rnd.dat')
+        sTestFileBig = self.oTstDrv.getFullResourceName('5.3/guestctrl/50mb_rnd.dat');
         if not os.path.isfile(sTestFileBig):
-            sTestFileBig = self.oTstDrv.getGuestAdditionsIso()
+            sTestFileBig = self.oTstDrv.getGuestAdditionsIso();
         if sTestFileBig == '' or not os.path.isfile(sTestFileBig):
-            # Some stupid trickery to guess the location of the validation kit iso.
-            sTestFileBig = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxValidationKit.iso'));
-            if not os.path.isfile(sTestFileBig):
-                sTestFileBig = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxTestSuite.iso'));
-            if not os.path.isfile(sTestFileBig):
-                sCur = os.getcwd();
-                for i in range(0, 10):
-                    sTestFileBig = os.path.join(sCur, 'validationkit/VBoxValidationKit.iso');
-                    if os.path.isfile(sTestFileBig):
-                        break;
-                    sTestFileBig = os.path.join(sCur, 'testsuite/VBoxTestSuite.iso');
-                    if os.path.isfile(sTestFileBig):
-                        break;
-                    sCur = os.path.abspath(os.path.join(sCur, '..'));
-                    if i is None: pass; # shut up pychecker/pylint.
-
+            sTestFileBig = self.oTstDrv.sVBoxValidationKitIso;
         if os.path.isfile(sTestFileBig):
             reporter.log('Test file for big copy found at: %s' % (sTestFileBig,));
         else:
