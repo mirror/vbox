@@ -12,6 +12,7 @@
         <file alias="attachment_remove_disabled_16px_x4.png">images/x4/attachment_remove_disabled_16px_x4.png</file>
         <file alias="audio_16px_x4.png">images/x4/audio_16px_x4.png</file>
         <file alias="audio_all_off_16px_x4.png">images/x4/audio_all_off_16px_x4.png</file>
+        <file alias="audio_input_16px_x4.png">images/x4/audio_input_16px_x4.png</file>
         <file alias="audio_input_off_16px_x4.png">images/x4/audio_input_off_16px_x4.png</file>
         <file alias="audio_input_on_16px_x4.png">images/x4/audio_input_on_16px_x4.png</file>
         <file alias="audio_output_16px_x4.png">images/x4/audio_output_16px_x4.png</file>
@@ -198,6 +199,7 @@
         <file alias="hostkey_16px_x4.png">images/x4/hostkey_16px_x4.png</file>
         <file alias="hostkey_captured_16px_x4.png">images/x4/hostkey_captured_16px_x4.png</file>
         <file alias="hostkey_captured_pressed_16px_x4.png">images/x4/hostkey_captured_pressed_16px_x4.png</file>
+        <file alias="hostkey_pressed_16px_x4.png">images/x4/hostkey_pressed_16px_x4.png</file>
         <file alias="hostkey_warning_16px_x4.png">images/x4/hostkey_warning_16px_x4.png</file>
         <file alias="ide_16px_x4.png">images/x4/ide_16px_x4.png</file>
         <file alias="ide_add_16px_x4.png">images/x4/ide_add_16px_x4.png</file>
@@ -292,5 +294,18 @@
         <file alias="os_gentoo_64_x4.png">images/x4/os_gentoo_64_x4.png</file>
         <file alias="os_gentoo_x4.png">images/x4/os_gentoo_x4.png</file>
         <file alias="os_jrockitve_x4.png">images/x4/os_jrockitve_x4.png</file>
+        <file alias="os_l4_x4.png">images/x4/os_l4_x4.png</file>
+        <file alias="os_linux22_x4.png">images/x4/os_linux22_x4.png</file>
+        <file alias="os_linux24_64_x4.png">images/x4/os_linux24_64_x4.png</file>
+        <file alias="os_linux24_x4.png">images/x4/os_linux24_x4.png</file>
+        <file alias="os_linux26_64_x4.png">images/x4/os_linux26_64_x4.png</file>
+        <file alias="os_linux26_x4.png">images/x4/os_linux26_x4.png</file>
+        <file alias="os_linux_64_x4.png">images/x4/os_linux_64_x4.png</file>
+        <file alias="os_linux_x4.png">images/x4/os_linux_x4.png</file>
+        <file alias="os_macosx_64_x4.png">images/x4/os_macosx_64_x4.png</file>
+        <file alias="os_macosx_x4.png">images/x4/os_macosx_x4.png</file>
+        <file alias="os_mandriva_64_x4.png">images/x4/os_mandriva_64_x4.png</file>
+        <file alias="os_mandriva_x4.png">images/x4/os_mandriva_x4.png</file>
+        <file alias="os_netbsd_64_x4.png">images/x4/os_netbsd_64_x4.png</file>
     </qresource>
 </RCC>
