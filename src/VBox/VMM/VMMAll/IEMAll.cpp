@@ -14752,9 +14752,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
         }
     }
 
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-
+    Assert(pVCpu->iem.s.cActiveMappings == 0 || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 

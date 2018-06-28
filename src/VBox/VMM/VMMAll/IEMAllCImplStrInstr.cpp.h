@@ -1406,7 +1406,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
             uint32_t u32Value = 0;
             rcStrict = IOMIOPortRead(pVM, pVCpu, u16Port, &u32Value, OP_SIZE / 8);
             if (!IOM_SUCCESS(rcStrict))
+            {
+                iemMemRollback(pVCpu);
                 return rcStrict;
+            }
 
             *puMem = (OP_TYPE)u32Value;
 # ifdef IN_RING3
