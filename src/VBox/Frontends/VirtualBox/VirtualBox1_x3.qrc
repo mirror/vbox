@@ -308,5 +308,6 @@
         <file alias="os_macosx_64_x3.png">images/x3/os_macosx_64_x3.png</file>
         <file alias="os_macosx_x3.png">images/x3/os_macosx_x3.png</file>
         <file alias="os_mandriva_64_x3.png">images/x3/os_mandriva_64_x3.png</file>
+        <file alias="os_mandriva_x3.png">images/x3/os_mandriva_x3.png</file>
     </qresource>
 </RCC>

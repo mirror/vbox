@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="os_mandriva_x4.png">images/x4/os_mandriva_x4.png</file>
         <file alias="os_netbsd_64_x4.png">images/x4/os_netbsd_64_x4.png</file>
         <file alias="os_netbsd_x4.png">images/x4/os_netbsd_x4.png</file>
         <file alias="os_netware_x4.png">images/x4/os_netware_x4.png</file>
@@ -253,6 +252,7 @@
         <file alias="vm_discard_32px_x4.png">images/x4/vm_discard_32px_x4.png</file>
         <file alias="vm_discard_disabled_16px_x4.png">images/x4/vm_discard_disabled_16px_x4.png</file>
         <file alias="vm_discard_disabled_32px_x4.png">images/x4/vm_discard_disabled_32px_x4.png</file>
+        <file alias="vm_execution_engine_native_api_16px_x4.png">images/x4/vm_execution_engine_native_api_16px_x4.png</file>
         <file alias="vm_group_create_16px_x4.png">images/x4/vm_group_create_16px_x4.png</file>
         <file alias="vm_group_create_disabled_16px_x4.png">images/x4/vm_group_create_disabled_16px_x4.png</file>
         <file alias="vm_group_name_16px_x4.png">images/x4/vm_group_name_16px_x4.png</file>
