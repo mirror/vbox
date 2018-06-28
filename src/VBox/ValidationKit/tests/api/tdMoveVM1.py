@@ -62,10 +62,6 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         self.asRsrcs.append(os.path.join('5.3','isos','tdMoveVM1.iso'));
         self.asRsrcs.append(os.path.join('5.3','floppy','tdMoveVM1.img'));
 
-        if oTstDrv.asRsrcs is None:
-            oTstDrv.asRsrcs = [];
-        oTstDrv.asRsrcs.extend(self.asRsrcs);
-
         self.asImagesNames = []
         self.dsKeys = {
             'StandardImage':    'SATA Controller',
