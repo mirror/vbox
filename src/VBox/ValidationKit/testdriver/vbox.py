@@ -1766,9 +1766,11 @@ class TestDriver(base.TestDriver):                                              
         return base.TestDriver.completeOptions(self);
 
     def getResourceSet(self):
+        asRsrcs = []
         if self.oTestVmSet is not None:
-            return self.oTestVmSet.getResourceSet();
-        return base.TestDriver.getResourceSet(self);
+            asRsrcs.extend(self.oTestVmSet.getResourceSet())
+        asRsrcs = base.TestDriver.getResourceSet(self)
+        return asRsrcs
 
     def actionExtract(self):
         return base.TestDriver.actionExtract(self);
