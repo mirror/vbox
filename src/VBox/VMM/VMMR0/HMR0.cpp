@@ -1594,7 +1594,7 @@ VMMR0_INT_DECL(void) HMR0NotifyCpumModifiedHostCr0(PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR0_INT_DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0_INT_DECL(int) HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFpu64SwitchBack);
     if (pVM->hm.s.vmx.fSupported)
@@ -1611,7 +1611,7 @@ VMMR0_INT_DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR0_INT_DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0_INT_DECL(int) HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     STAM_COUNTER_INC(&pVCpu->hm.s.StatDebug64SwitchBack);
     if (pVM->hm.s.vmx.fSupported)
@@ -1626,11 +1626,10 @@ VMMR0_INT_DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-VMMR0_INT_DECL(int)   HMR0TestSwitcher3264(PVM pVM)
+VMMR0_INT_DECL(int) HMR0TestSwitcher3264(PVM pVM)
 {
     PVMCPU   pVCpu     = &pVM->aCpus[0];
-    PCPUMCTX pCtx      = CPUMQueryGuestCtxPtr(pVCpu);
-    uint32_t aParam[5] = {0, 1, 2, 3, 4};
+    uint32_t aParam[5] = { 0, 1, 2, 3, 4 };
     int      rc;
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);
