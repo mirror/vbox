@@ -38,13 +38,13 @@ import threading
 
 # Only the main script needs to modify the path.
 try:    __file__
-except: __file__ = sys.argv[0]
-g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(g_ksValidationKitDir)
+except: __file__ = sys.argv[0];
+g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));
+sys.path.append(g_ksValidationKitDir);
 
 # Validation Kit imports.
-from testdriver import base
-from testdriver import reporter
+from testdriver import base;
+from testdriver import reporter;
 
 
 class SubTstDrvPython1(base.SubTestDriverBase):
@@ -60,7 +60,7 @@ class SubTstDrvPython1(base.SubTestDriverBase):
         Execute the sub-testcase.
         """
         return  self.testEventQueueWaiting() \
-            and self.testEventQueueInterrupt()
+            and self.testEventQueueInterrupt();
 
     #
     # Test execution helpers.
@@ -69,84 +69,84 @@ class SubTstDrvPython1(base.SubTestDriverBase):
     def testEventQueueWaitingThreadProc(self):
         """ Thread procedure for checking that waitForEvents fails when not called by the main thread. """
         try:
-            rc2 = self.oTstDrv.oVBoxMgr.waitForEvents(0)
+            rc2 = self.oTstDrv.oVBoxMgr.waitForEvents(0);
         except:
-            return True
-        reporter.error('waitForEvents() returned "%s" when called on a worker thread, expected exception.' % (rc2,))
-        return False
+            return True;
+        reporter.error('waitForEvents() returned "%s" when called on a worker thread, expected exception.' % (rc2,));
+        return False;
 
     def testEventQueueWaiting(self):
         """
         Test event queue waiting.
         """
-        reporter.testStart('waitForEvents')
+        reporter.testStart('waitForEvents');
 
         # Check return values and such.
         for cMsTimeout in (0, 1, 2, 3, 256, 1000, 0):
-            iLoop = 0
+            iLoop = 0;
             while True:
                 try:
-                    rc = self.oTstDrv.oVBoxMgr.waitForEvents(cMsTimeout)
+                    rc = self.oTstDrv.oVBoxMgr.waitForEvents(cMsTimeout);
                 except:
-                    reporter.errorXcpt()
-                    break
+                    reporter.errorXcpt();
+                    break;
                 if not isinstance(rc, int):
-                    reporter.error('waitForEvents returns non-integer type')
-                    break
+                    reporter.error('waitForEvents returns non-integer type');
+                    break;
                 if rc == 1:
-                    break
+                    break;
                 if rc != 0:
-                    reporter.error('waitForEvents returns "%s", expected 0 or 1' % (rc,))
-                    break
-                iLoop += 1
+                    reporter.error('waitForEvents returns "%s", expected 0 or 1' % (rc,));
+                    break;
+                iLoop += 1;
                 if iLoop > 10240:
                     reporter.error('waitForEvents returns 0 (success) %u times. '
                                    'Expected 1 (timeout/interrupt) after a call or two.'
-                                   % (iLoop,))
-                    break
+                                   % (iLoop,));
+                    break;
             if reporter.testErrorCount() != 0:
-                break
+                break;
 
         # Check that we get an exception when trying to call the method from
         # a different thread.
         reporter.log('If running a debug build, you will see an ignored assertion now. Please ignore it.')
-        sVBoxAssertSaved = os.environ.get('VBOX_ASSERT', 'breakpoint')
-        os.environ['VBOX_ASSERT'] = 'ignore'
-        oThread = threading.Thread(target=self.testEventQueueWaitingThreadProc)
-        oThread.start()
-        oThread.join()
-        os.environ['VBOX_ASSERT'] = sVBoxAssertSaved
+        sVBoxAssertSaved = os.environ.get('VBOX_ASSERT', 'breakpoint');
+        os.environ['VBOX_ASSERT'] = 'ignore';
+        oThread = threading.Thread(target=self.testEventQueueWaitingThreadProc);
+        oThread.start();
+        oThread.join();
+        os.environ['VBOX_ASSERT'] = sVBoxAssertSaved;
 
-        return reporter.testDone()[1] == 0
+        return reporter.testDone()[1] == 0;
 
     def interruptWaitEventsThreadProc(self):
         """ Thread procedure that's used for waking up the main thread. """
-        time.sleep(2)
+        time.sleep(2);
         try:
-            rc2 = self.oTstDrv.oVBoxMgr.interruptWaitEvents()
+            rc2 = self.oTstDrv.oVBoxMgr.interruptWaitEvents();
         except:
-            reporter.errorXcpt()
+            reporter.errorXcpt();
         else:
             if rc2 is True:
-                return True
-            reporter.error('interruptWaitEvents returned "%s" when called from other thread, expected True' % (rc2,))
-        return False
+                return True;
+            reporter.error('interruptWaitEvents returned "%s" when called from other thread, expected True' % (rc2,));
+        return False;
 
     def testEventQueueInterrupt(self):
         """
         Test interrupting an event queue wait.
         """
-        reporter.testStart('interruptWait')
+        reporter.testStart('interruptWait');
 
         # interrupt ourselves first and check the return value.
         for i in range(0, 10):
             try:
-                rc = self.oTstDrv.oVBoxMgr.interruptWaitEvents()
+                rc = self.oTstDrv.oVBoxMgr.interruptWaitEvents();
             except:
-                reporter.errorXcpt()
-                break
+                reporter.errorXcpt();
+                break;
             if rc is not True:
-                reporter.error('interruptWaitEvents returned "%s" expected True' % (rc,))
+                reporter.error('interruptWaitEvents returned "%s" expected True' % (rc,));
                 break
 
         if reporter.testErrorCount() == 0:
@@ -160,52 +160,52 @@ class SubTstDrvPython1(base.SubTestDriverBase):
             for i in range(0, 4):
                 # Try quiesce the event queue.
                 for _ in range(1, 100):
-                    self.oTstDrv.oVBoxMgr.waitForEvents(0)
+                    self.oTstDrv.oVBoxMgr.waitForEvents(0);
 
                 # Create a thread that will interrupt us in 2 seconds.
                 try:
-                    oThread = threading.Thread(target=self.interruptWaitEventsThreadProc)
-                    oThread.setDaemon(False)
+                    oThread = threading.Thread(target=self.interruptWaitEventsThreadProc);
+                    oThread.setDaemon(False);
                 except:
-                    reporter.errorXcpt()
-                    break
+                    reporter.errorXcpt();
+                    break;
 
-                cMsTimeout = 20000
+                cMsTimeout = 20000;
                 if i == 2:
-                    cMsTimeout = -1
+                    cMsTimeout = -1;
                 elif i == 3:
-                    cMsTimeout = -999999
+                    cMsTimeout = -999999;
 
                 # Do the wait.
-                oThread.start()
-                msNow = base.timestampMilli()
+                oThread.start();
+                msNow = base.timestampMilli();
                 try:
-                    rc = self.oTstDrv.oVBoxMgr.waitForEvents(cMsTimeout)
+                    rc = self.oTstDrv.oVBoxMgr.waitForEvents(cMsTimeout);
                 except:
-                    reporter.errorXcpt()
+                    reporter.errorXcpt();
                 else:
-                    msElapsed = base.timestampMilli() - msNow
+                    msElapsed = base.timestampMilli() - msNow;
 
                     # Check the return code and elapsed time.
                     if not isinstance(rc, int):
-                        reporter.error('waitForEvents returns non-integer type after %u ms, expected 1' % (msElapsed,))
+                        reporter.error('waitForEvents returns non-integer type after %u ms, expected 1' % (msElapsed,));
                     elif rc != 1:
-                        reporter.error('waitForEvents returned "%s" after %u ms, expected 1' % (rc, msElapsed))
+                        reporter.error('waitForEvents returned "%s" after %u ms, expected 1' % (rc, msElapsed));
                     if msElapsed > 15000:
-                        reporter.error('waitForEvents after %u ms, expected just above 2-3 seconds' % (msElapsed,))
+                        reporter.error('waitForEvents after %u ms, expected just above 2-3 seconds' % (msElapsed,));
                     elif msElapsed < 100:
-                        reporter.error('waitForEvents after %u ms, expected more than 100 ms.' % (msElapsed,))
+                        reporter.error('waitForEvents after %u ms, expected more than 100 ms.' % (msElapsed,));
 
-                oThread.join()
-                oThread = None
+                oThread.join();
+                oThread = None;
                 if reporter.testErrorCount() != 0:
-                    break
-                reporter.log('Iteration %u was successful...' % (i + 1,))
-        return reporter.testDone()[1] == 0
+                    break;
+                reporter.log('Iteration %u was successful...' % (i + 1,));
+        return reporter.testDone()[1] == 0;
 
 
 if __name__ == '__main__':
-    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    from tdApi1 import tdApi1
-    sys.exit(tdApi1([SubTstDrvPython1]).main(sys.argv))
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)));
+    from tdApi1 import tdApi1;
+    sys.exit(tdApi1([SubTstDrvPython1]).main(sys.argv));
 
