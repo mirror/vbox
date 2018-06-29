@@ -2824,7 +2824,7 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
     RTCCUINTREG const fEFlags = ASMIntDisableFlags();
 
     fWhat &= pCtx->fExtrn;
-    if (fWhat & pCtx->fExtrn)
+    if (fWhat)
     {
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         if (fWhat & CPUMCTX_EXTRN_HWVIRT)

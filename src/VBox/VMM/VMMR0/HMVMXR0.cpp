@@ -6169,7 +6169,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
     RTCCUINTREG const fEFlags = ASMIntDisableFlags();
 
     fWhat &= pCtx->fExtrn;
-    if (fWhat & pCtx->fExtrn)
+    if (fWhat)
     {
         do
         {
