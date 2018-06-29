@@ -71,5 +71,7 @@
  * The type collection qualifiers comes first, then the other qualifiers and
  * finally the type qualifier.
  *
+ * Python statements are terminated by semicolons (';') as a convention.
+ *
  */
 
