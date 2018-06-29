@@ -1,5 +1,8 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="os_macosx_64_x2.png">images/x2/os_macosx_64_x2.png</file>
+        <file alias="os_macosx_x2.png">images/x2/os_macosx_x2.png</file>
+        <file alias="os_mandriva_64_x2.png">images/x2/os_mandriva_64_x2.png</file>
         <file alias="os_mandriva_x2.png">images/x2/os_mandriva_x2.png</file>
         <file alias="os_netbsd_64_x2.png">images/x2/os_netbsd_64_x2.png</file>
         <file alias="os_netbsd_x2.png">images/x2/os_netbsd_x2.png</file>
