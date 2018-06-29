@@ -58,7 +58,6 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
     def __init__(self, oTstDrv):
         base.SubTestDriverBase.__init__(self, 'move-vm', oTstDrv)
 
-        self.asRsrcs = []
         self.asRsrcs.append(os.path.join('5.3','isos','tdMoveVM1.iso'));
         self.asRsrcs.append(os.path.join('5.3','floppy','tdMoveVM1.img'));
 

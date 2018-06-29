@@ -743,6 +743,7 @@ class SubTestDriverBase(object):
     def __init__(self, sName, oTstDrv):
         self.sName              = sName;
         self.oTstDrv            = oTstDrv;
+        self.asRsrcs            = [];
 
 
     def showUsage(self):

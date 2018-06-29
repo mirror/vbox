@@ -59,7 +59,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
         """
         Execute the sub-testcase.
         """
-        return  self.testMediumMove()
+        return self.testMediumMove()
 
     #
     # Test execution helpers.

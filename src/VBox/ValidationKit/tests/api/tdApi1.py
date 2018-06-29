@@ -51,9 +51,9 @@ class tdApi1(vbox.TestDriver):
 
     def __init__(self, aSubTestDrivers = None):
         vbox.TestDriver.__init__(self)
-        self.asRsrcs = None
-        for classSubTestDrivers in aSubTestDrivers:
-            self.addSubTestDriver(classSubTestDrivers(self))
+        self.asRsrcs = None;
+        for oSubTestDriverClass in aSubTestDrivers:
+            self.addSubTestDriver(oSubTestDriverClass(self));
 
     #
     # Overridden methods.
@@ -61,10 +61,10 @@ class tdApi1(vbox.TestDriver):
 
     def getResourceSet(self):
         if self.asRsrcs is None:
-            self.asRsrcs = []
+            self.asRsrcs = [];
             for oSubTstDrv in self.aoSubTstDrvs:
-                self.asRsrcs.extend(oSubTstDrv.asRsrcs)
-        return self.asRsrcs
+                self.asRsrcs.extend(oSubTstDrv.asRsrcs);
+        return self.asRsrcs;
 
     def actionConfig(self):
         """
