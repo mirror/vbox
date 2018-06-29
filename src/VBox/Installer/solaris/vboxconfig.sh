@@ -271,6 +271,7 @@ get_sysinfo()
         11.4.*)
             get_s11_4_sysinfo
             return 0
+            ;;
         # Quick escape workaround for Solaris 11.5. See BugDB #26494983.
         11.5.*)
             get_s11_5_or_newer_sysinfo
