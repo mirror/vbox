@@ -1330,7 +1330,7 @@ VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImpo
  * @returns true if in real mode, otherwise false.
  * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestInRealModeEx(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestInRealModeEx(PCCPUMCTX pCtx)
 {
     return !(pCtx->cr0 & X86_CR0_PE);
 }
@@ -1353,7 +1353,7 @@ DECLINLINE(bool) CPUMIsGuestInRealOrV86ModeEx(PCPUMCTX pCtx)
  * @returns @c true if it is, @c false if not.
  * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestInV86ModeEx(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestInV86ModeEx(PCCPUMCTX pCtx)
 {
     return (pCtx->eflags.Bits.u1VM == 1);
 }
@@ -1403,7 +1403,7 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
  * @returns true if paging is enabled, otherwise false.
  * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestPagingEnabledEx(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestPagingEnabledEx(PCCPUMCTX pCtx)
 {
     return !!(pCtx->cr0 & X86_CR0_PG);
 }
@@ -1414,7 +1414,7 @@ DECLINLINE(bool) CPUMIsGuestPagingEnabledEx(PCPUMCTX pCtx)
  * @returns true if in PAE mode, otherwise false.
  * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCCPUMCTX pCtx)
 {
     /* Intel mentions EFER.LMA and EFER.LME in different parts of their spec. We shall use EFER.LMA rather
        than EFER.LME as it reflects if the CPU has entered paging with EFER.LME set.  */
