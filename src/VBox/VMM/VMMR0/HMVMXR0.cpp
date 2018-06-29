@@ -6864,7 +6864,7 @@ static int hmR0VmxLeaveSession(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturnStmt(rc2, HM_RESTORE_PREEMPT(), rc2);
         pVCpu->hm.s.fLeaveDone = true;
     }
-    Assert(!pMixedCtx->fExtrn);
+    Assert(!pMixedCtx->fExtrn); NOREF(pMixedCtx);
 
     /*
      * !!! IMPORTANT !!!
