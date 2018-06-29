@@ -79,6 +79,8 @@ protected:
     virtual void        mouseReleaseEvent(QMouseEvent *){}
     virtual void        paintEvent(QPaintEvent *event) /* override */;
     virtual void        resizeEvent(QResizeEvent *event) /* override */;
+    /* Override the contextMenuEvent to disable it: */
+    virtual void        contextMenuEvent(QContextMenuEvent *event) /* override */{}
 
 private slots:
 
