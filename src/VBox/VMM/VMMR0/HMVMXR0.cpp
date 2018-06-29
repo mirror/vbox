@@ -4459,22 +4459,17 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             }
         }
 #endif
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_CS_SEL, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
+        rc  = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_CS_SEL, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
                                      VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS, &pMixedCtx->cs);
-        AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_SS_SEL, VMX_VMCS32_GUEST_SS_LIMIT, VMX_VMCS_GUEST_SS_BASE,
+        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_SS_SEL, VMX_VMCS32_GUEST_SS_LIMIT, VMX_VMCS_GUEST_SS_BASE,
                                      VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS, &pMixedCtx->ss);
-        AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_DS_SEL, VMX_VMCS32_GUEST_DS_LIMIT, VMX_VMCS_GUEST_DS_BASE,
+        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_DS_SEL, VMX_VMCS32_GUEST_DS_LIMIT, VMX_VMCS_GUEST_DS_BASE,
                                      VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS, &pMixedCtx->ds);
-        AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_ES_SEL, VMX_VMCS32_GUEST_ES_LIMIT, VMX_VMCS_GUEST_ES_BASE,
+        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_ES_SEL, VMX_VMCS32_GUEST_ES_LIMIT, VMX_VMCS_GUEST_ES_BASE,
                                      VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, &pMixedCtx->es);
-        AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FS_SEL, VMX_VMCS32_GUEST_FS_LIMIT, VMX_VMCS_GUEST_FS_BASE,
+        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FS_SEL, VMX_VMCS32_GUEST_FS_LIMIT, VMX_VMCS_GUEST_FS_BASE,
                                      VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS, &pMixedCtx->fs);
-        AssertRCReturn(rc, rc);
-        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_GS_SEL, VMX_VMCS32_GUEST_GS_LIMIT, VMX_VMCS_GUEST_GS_BASE,
+        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_GS_SEL, VMX_VMCS32_GUEST_GS_LIMIT, VMX_VMCS_GUEST_GS_BASE,
                                      VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS, &pMixedCtx->gs);
         AssertRCReturn(rc, rc);
 
@@ -4551,8 +4546,8 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 
         rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_TR_SEL,           u16Sel);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_LIMIT,         u32Limit);
-        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_TR_BASE,          u64Base);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS, u32AccessRights);
+        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_TR_BASE,          u64Base);
         AssertRCReturn(rc, rc);
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_TR);
@@ -4589,8 +4584,8 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 
         rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_LDTR_SEL,           pMixedCtx->ldtr.Sel);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_LIMIT,         pMixedCtx->ldtr.u32Limit);
-        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_LDTR_BASE,          pMixedCtx->ldtr.u64Base);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, u32Access);
+        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_LDTR_BASE,          pMixedCtx->ldtr.u64Base);
         AssertRCReturn(rc, rc);
 
         /* Validate. */
