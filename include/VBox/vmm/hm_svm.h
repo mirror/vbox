@@ -1103,12 +1103,12 @@ AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
 #define HMSVM_SEG_REG_COPY_TO_VMCB(a_pCtx, a_pVmcbStateSave, a_REG, a_reg) \
     do \
     { \
-        Assert((a_pCtx)->a_reg.fFlags & CPUMSELREG_FLAGS_VALID);  \
-        Assert((a_pCtx)->a_reg.ValidSel == (a_pCtx)->a_reg.Sel);    \
-        (a_pVmcbStateSave)->a_REG.u16Sel    = (a_pCtx)->a_reg.Sel;      \
-        (a_pVmcbStateSave)->a_REG.u32Limit  = (a_pCtx)->a_reg.u32Limit; \
-        (a_pVmcbStateSave)->a_REG.u64Base   = (a_pCtx)->a_reg.u64Base;  \
-        (a_pVmcbStateSave)->a_REG.u16Attr   = HMSVM_CPU_2_VMCB_SEG_ATTR((a_pCtx)->a_reg.Attr.u); \
+        Assert((a_pCtx)->a_reg.fFlags & CPUMSELREG_FLAGS_VALID);       \
+        Assert((a_pCtx)->a_reg.ValidSel == (a_pCtx)->a_reg.Sel);       \
+        (a_pVmcbStateSave)->a_REG.u16Sel   = (a_pCtx)->a_reg.Sel;      \
+        (a_pVmcbStateSave)->a_REG.u32Limit = (a_pCtx)->a_reg.u32Limit; \
+        (a_pVmcbStateSave)->a_REG.u64Base  = (a_pCtx)->a_reg.u64Base;  \
+        (a_pVmcbStateSave)->a_REG.u16Attr  = HMSVM_CPU_2_VMCB_SEG_ATTR((a_pCtx)->a_reg.Attr.u); \
     } while (0)
 
 /** @def HMSVM_SEG_REG_COPY_TO_VMCB
@@ -1125,12 +1125,12 @@ AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
 #define HMSVM_SEG_REG_COPY_FROM_VMCB(a_pCtx, a_pVmcbStateSave, a_REG, a_reg) \
     do \
     { \
-        (a_pCtx)->a_reg.Sel       = (a_pVmcbStateSave)->a_REG.u16Sel;   \
-        (a_pCtx)->a_reg.ValidSel  = (a_pVmcbStateSave)->a_REG.u16Sel;   \
-        (a_pCtx)->a_reg.fFlags    = CPUMSELREG_FLAGS_VALID;    \
-        (a_pCtx)->a_reg.u32Limit  = (a_pVmcbStateSave)->a_REG.u32Limit; \
-        (a_pCtx)->a_reg.u64Base   = (a_pVmcbStateSave)->a_REG.u64Base;  \
-        (a_pCtx)->a_reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR((a_pVmcbStateSave)->a_REG.u16Attr); \
+        (a_pCtx)->a_reg.Sel      = (a_pVmcbStateSave)->a_REG.u16Sel;   \
+        (a_pCtx)->a_reg.ValidSel = (a_pVmcbStateSave)->a_REG.u16Sel;   \
+        (a_pCtx)->a_reg.fFlags   = CPUMSELREG_FLAGS_VALID;             \
+        (a_pCtx)->a_reg.u32Limit = (a_pVmcbStateSave)->a_REG.u32Limit; \
+        (a_pCtx)->a_reg.u64Base  = (a_pVmcbStateSave)->a_REG.u64Base;  \
+        (a_pCtx)->a_reg.Attr.u   = HMSVM_VMCB_2_CPU_SEG_ATTR((a_pVmcbStateSave)->a_REG.u16Attr); \
     } while (0)
 
 /*

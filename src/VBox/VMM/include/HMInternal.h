@@ -35,7 +35,7 @@
 #include <iprt/avl.h>
 #include <iprt/string.h>
 
-#if defined(RT_OS_DARWIN) && HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 && defined(RT_OS_DARWIN)
 # error "32-bit darwin is no longer supported. Go back to 4.3 or earlier!"
 #endif
 
@@ -63,233 +63,152 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** @def HMCPU_CF_CLEAR
- * Clears a HM-context flag.
+/** @name HM_CHANGED_XXX
+ * HM CPU-context changed flags.
  *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlag   The flag to clear.
- */
-#define HMCPU_CF_CLEAR(pVCpu, fFlag)              (ASMAtomicUoAndU32(&(pVCpu)->hm.s.fContextUseFlags, ~(fFlag)))
-
-/** @def HMCPU_CF_SET
- * Sets a HM-context flag.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlag   The flag to set.
- */
-#define HMCPU_CF_SET(pVCpu, fFlag)                (ASMAtomicUoOrU32(&(pVCpu)->hm.s.fContextUseFlags, (fFlag)))
-
-/** @def HMCPU_CF_IS_SET
- * Checks if all the flags in the specified HM-context set is pending.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlag   The flag to check.
- */
-#define HMCPU_CF_IS_SET(pVCpu, fFlag)             ((ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags) & (fFlag)) == (fFlag))
-
-/** @def HMCPU_CF_IS_PENDING
- * Checks if one or more of the flags in the specified HM-context set is
- * pending.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlags  The flags to check for.
- */
-#define HMCPU_CF_IS_PENDING(pVCpu, fFlags)        RT_BOOL(ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags) & (fFlags))
-
-/** @def HMCPU_CF_IS_PENDING_ONLY
- * Checks if -only- one or more of the specified HM-context flags is pending.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlags  The flags to check for.
- */
-#define HMCPU_CF_IS_PENDING_ONLY(pVCpu, fFlags)   !RT_BOOL(ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags) & ~(fFlags))
-
-/** @def HMCPU_CF_IS_SET_ONLY
- * Checks if -only- all the flags in the specified HM-context set is pending.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlags  The flags to check for.
- */
-#define HMCPU_CF_IS_SET_ONLY(pVCpu, fFlags)       (ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags) == (fFlags))
-
-/** @def HMCPU_CF_RESET_TO
- * Resets the HM-context flags to the specified value.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlags  The new value.
- */
-#define HMCPU_CF_RESET_TO(pVCpu, fFlags)          (ASMAtomicUoWriteU32(&(pVCpu)->hm.s.fContextUseFlags, (fFlags)))
-
-/** @def HMCPU_CF_VALUE
- * Returns the current HM-context flags value.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-#define HMCPU_CF_VALUE(pVCpu)                     (ASMAtomicUoReadU32(&(pVCpu)->hm.s.fContextUseFlags))
-
-
-/** Maximum number of exit reason statistics counters. */
-#define MAX_EXITREASON_STAT        0x100
-#define MASK_EXITREASON_STAT       0xff
-#define MASK_INJECT_IRQ_STAT       0xff
-
-/** @name HM changed flags.
- * These flags are used to keep track of which important registers that have
- * been changed since last they were reset.
- *
- * Flags marked "shared" are used for registers that are common to both the host
- * and guest (i.e. without dedicated VMCS/VMCB fields for guest bits).
+ * These flags are used to keep track of which registers and state has been
+ * modified since they were imported back into the guest-CPU context.
  *
  * @{
  */
-#if 0
-#define HM_CHANGED_HOST_CONTEXT                    UINT64_C(0x0000000000000001)
-#define HM_CHANGED_GUEST_RIP                       UINT64_C(0x0000000000000004)
-#define HM_CHANGED_GUEST_RFLAGS                    UINT64_C(0x0000000000000008)
-#define HM_CHANGED_GUEST_RAX                       UINT64_C(0x0000000000000010)
-#define HM_CHANGED_GUEST_RCX                       UINT64_C(0x0000000000000020)
-#define HM_CHANGED_GUEST_RDX                       UINT64_C(0x0000000000000040)
-#define HM_CHANGED_GUEST_RBX                       UINT64_C(0x0000000000000080)
-#define HM_CHANGED_GUEST_RSP                       UINT64_C(0x0000000000000100)
-#define HM_CHANGED_GUEST_RBP                       UINT64_C(0x0000000000000200)
-#define HM_CHANGED_GUEST_RSI                       UINT64_C(0x0000000000000400)
-#define HM_CHANGED_GUEST_RDI                       UINT64_C(0x0000000000000800)
-#define HM_CHANGED_GUEST_R8_R15                    UINT64_C(0x0000000000001000)
-#define HM_CHANGED_GUEST_GPRS_MASK                 UINT64_C(0x0000000000001ff0)
-#define HM_CHANGED_GUEST_ES                        UINT64_C(0x0000000000002000)
-#define HM_CHANGED_GUEST_CS                        UINT64_C(0x0000000000004000)
-#define HM_CHANGED_GUEST_SS                        UINT64_C(0x0000000000008000)
-#define HM_CHANGED_GUEST_DS                        UINT64_C(0x0000000000010000)
-#define HM_CHANGED_GUEST_FS                        UINT64_C(0x0000000000020000)
-#define HM_CHANGED_GUEST_GS                        UINT64_C(0x0000000000040000)
-#define HM_CHANGED_GUEST_SREG_MASK                 UINT64_C(0x000000000007e000)
-#define HM_CHANGED_GUEST_GDTR                      UINT64_C(0x0000000000080000)
-#define HM_CHANGED_GUEST_IDTR                      UINT64_C(0x0000000000100000)
-#define HM_CHANGED_GUEST_LDTR                      UINT64_C(0x0000000000200000)
-#define HM_CHANGED_GUEST_TR                        UINT64_C(0x0000000000400000)
-#define HM_CHANGED_GUEST_TABLE_MASK                UINT64_C(0x0000000000780000)
-#define HM_CHANGED_GUEST_CR0                       UINT64_C(0x0000000000800000)
-#define HM_CHANGED_GUEST_CR2                       UINT64_C(0x0000000001000000)
-#define HM_CHANGED_GUEST_CR3                       UINT64_C(0x0000000002000000)
-#define HM_CHANGED_GUEST_CR4                       UINT64_C(0x0000000004000000)
-#define HM_CHANGED_GUEST_CR_MASK                   UINT64_C(0x0000000007800000)
-#define HM_CHANGED_GUEST_APIC_TPR                  UINT64_C(0x0000000008000000)
-#define HM_CHANGED_GUEST_EFER                      UINT64_C(0x0000000010000000)
-#define HM_CHANGED_GUEST_DR0_DR3                   UINT64_C(0x0000000020000000)
-#define HM_CHANGED_GUEST_DR6                       UINT64_C(0x0000000040000000)
-#define HM_CHANGED_GUEST_DR7                       UINT64_C(0x0000000080000000)
-#define HM_CHANGED_GUEST_DR_MASK                   UINT64_C(0x00000000e0000000)
-#define HM_CHANGED_GUEST_X87                       UINT64_C(0x0000000100000000)
-#define HM_CHANGED_GUEST_SSE_AVX                   UINT64_C(0x0000000200000000)
-#define HM_CHANGED_GUEST_OTHER_XSAVE               UINT64_C(0x0000000400000000)
-#define HM_CHANGED_GUEST_XCRx                      UINT64_C(0x0000000800000000)
-#define HM_CHANGED_GUEST_KERNEL_GS_BASE            UINT64_C(0x0000001000000000)
-#define HM_CHANGED_GUEST_SYSCALL_MSRS              UINT64_C(0x0000002000000000)
-#define HM_CHANGED_GUEST_SYSENTER_MSRS             UINT64_C(0x0000004000000000)
-#define HM_CHANGED_GUEST_TSC_AUX                   UINT64_C(0x0000008000000000)
-#define HM_CHANGED_GUEST_OTHER_MSRS                UINT64_C(0x0000010000000000)
-#define HM_CHANGED_GUEST_ALL_MSRS                  (  HM_CHANGED_GUEST_EFER            \
-                                                    | HM_CHANGED_GUEST_KERNEL_GS_BASE  \
-                                                    | HM_CHANGED_GUEST_SYSCALL_MSRS    \
-                                                    | HM_CHANGED_GUEST_SYSENTER_MSRS   \
-                                                    | HM_CHANGED_GUEST_TSC_AUX         \
-                                                    | HM_CHANGED_GUEST_OTHER_MSRS)
-#define HM_CHANGED_GUEST_HWVIRT                    UINT64_C(0x0000020000000000)
-#define HM_CHANGED_GUEST_CONTEXT                   UINT64_C(0x000003fffffffffc)
+#define HM_CHANGED_HOST_CONTEXT                  UINT64_C(0x0000000000000001)
+#define HM_CHANGED_GUEST_RIP                     UINT64_C(0x0000000000000004)
+#define HM_CHANGED_GUEST_RFLAGS                  UINT64_C(0x0000000000000008)
 
-#define HM_CHANGED_KEEPER_STATE_MASK               UINT64_C(0xffff000000000000)
+#define HM_CHANGED_GUEST_RAX                     UINT64_C(0x0000000000000010)
+#define HM_CHANGED_GUEST_RCX                     UINT64_C(0x0000000000000020)
+#define HM_CHANGED_GUEST_RDX                     UINT64_C(0x0000000000000040)
+#define HM_CHANGED_GUEST_RBX                     UINT64_C(0x0000000000000080)
+#define HM_CHANGED_GUEST_RSP                     UINT64_C(0x0000000000000100)
+#define HM_CHANGED_GUEST_RBP                     UINT64_C(0x0000000000000200)
+#define HM_CHANGED_GUEST_RSI                     UINT64_C(0x0000000000000400)
+#define HM_CHANGED_GUEST_RDI                     UINT64_C(0x0000000000000800)
+#define HM_CHANGED_GUEST_R8_R15                  UINT64_C(0x0000000000001000)
+#define HM_CHANGED_GUEST_GPRS_MASK               UINT64_C(0x0000000000001ff0)
 
-#define HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS       UINT64_C(0x0001000000000000)
-#define HM_CHANGED_VMX_GUEST_AUTO_MSRS             UINT64_C(0x0002000000000000)
-#define HM_CHANGED_VMX_GUEST_LAZY_MSRS             UINT64_C(0x0004000000000000)
-#define HM_CHANGED_VMX_ENTRY_CTLS                  UINT64_C(0x0008000000000000)
-#define HM_CHANGED_VMX_EXIT_CTLS                   UINT64_C(0x0010000000000000)
-#define HM_CHANGED_VMX_MASK                        UINT64_C(0x001f000000000000)
+#define HM_CHANGED_GUEST_ES                      UINT64_C(0x0000000000002000)
+#define HM_CHANGED_GUEST_CS                      UINT64_C(0x0000000000004000)
+#define HM_CHANGED_GUEST_SS                      UINT64_C(0x0000000000008000)
+#define HM_CHANGED_GUEST_DS                      UINT64_C(0x0000000000010000)
+#define HM_CHANGED_GUEST_FS                      UINT64_C(0x0000000000020000)
+#define HM_CHANGED_GUEST_GS                      UINT64_C(0x0000000000040000)
+#define HM_CHANGED_GUEST_SREG_MASK               UINT64_C(0x000000000007e000)
 
-#define HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS       UINT64_C(0x0001000000000000)
-#define HM_CHANGED_SVM_MASK                        UINT64_C(0x0001000000000000)
+#define HM_CHANGED_GUEST_GDTR                    UINT64_C(0x0000000000080000)
+#define HM_CHANGED_GUEST_IDTR                    UINT64_C(0x0000000000100000)
+#define HM_CHANGED_GUEST_LDTR                    UINT64_C(0x0000000000200000)
+#define HM_CHANGED_GUEST_TR                      UINT64_C(0x0000000000400000)
+#define HM_CHANGED_GUEST_TABLE_MASK              UINT64_C(0x0000000000780000)
 
-#define HM_CHANGED_HOST_GUEST_SHARED_STATE         (  HM_CHANGED_GUEST_CR0             \
-                                                    | HM_CHANGED_GUEST_DR_MASK         \
-                                                    | HM_CHANGED_VMX_GUEST_LAZY_MSRS)
+#define HM_CHANGED_GUEST_CR0                     UINT64_C(0x0000000000800000)
+#define HM_CHANGED_GUEST_CR2                     UINT64_C(0x0000000001000000)
+#define HM_CHANGED_GUEST_CR3                     UINT64_C(0x0000000002000000)
+#define HM_CHANGED_GUEST_CR4                     UINT64_C(0x0000000004000000)
+#define HM_CHANGED_GUEST_CR_MASK                 UINT64_C(0x0000000007800000)
 
-#define HM_CHANGED_ALL_GUEST                       (  HM_CHANGED_GUEST_CONTEXT
-                                                    | HM_CHANGED_KEEPER_STATE_MASK)
+#define HM_CHANGED_GUEST_APIC_TPR                UINT64_C(0x0000000008000000)
+#define HM_CHANGED_GUEST_EFER_MSR                UINT64_C(0x0000000010000000)
+
+#define HM_CHANGED_GUEST_DR0_DR3                 UINT64_C(0x0000000020000000)
+#define HM_CHANGED_GUEST_DR6                     UINT64_C(0x0000000040000000)
+#define HM_CHANGED_GUEST_DR7                     UINT64_C(0x0000000080000000)
+#define HM_CHANGED_GUEST_DR_MASK                 UINT64_C(0x00000000e0000000)
+
+#define HM_CHANGED_GUEST_X87                     UINT64_C(0x0000000100000000)
+#define HM_CHANGED_GUEST_SSE_AVX                 UINT64_C(0x0000000200000000)
+#define HM_CHANGED_GUEST_OTHER_XSAVE             UINT64_C(0x0000000400000000)
+#define HM_CHANGED_GUEST_XCRx                    UINT64_C(0x0000000800000000)
+
+#define HM_CHANGED_GUEST_KERNEL_GS_BASE          UINT64_C(0x0000001000000000)
+#define HM_CHANGED_GUEST_SYSCALL_MSRS            UINT64_C(0x0000002000000000)
+#define HM_CHANGED_GUEST_SYSENTER_CS_MSR         UINT64_C(0x0000004000000000)
+#define HM_CHANGED_GUEST_SYSENTER_EIP_MSR        UINT64_C(0x0000008000000000)
+#define HM_CHANGED_GUEST_SYSENTER_ESP_MSR        UINT64_C(0x0000010000000000)
+#define HM_CHANGED_GUEST_SYSENTER_MSR_MASK       UINT64_C(0x000001c000000000)
+#define HM_CHANGED_GUEST_TSC_AUX                 UINT64_C(0x0000020000000000)
+#define HM_CHANGED_GUEST_OTHER_MSRS              UINT64_C(0x0000040000000000)
+#define HM_CHANGED_GUEST_ALL_MSRS                (  HM_CHANGED_GUEST_EFER              \
+                                                  | HM_CHANGED_GUEST_KERNEL_GS_BASE    \
+                                                  | HM_CHANGED_GUEST_SYSCALL_MSRS      \
+                                                  | HM_CHANGED_GUEST_SYSENTER_MSR_MASK \
+                                                  | HM_CHANGED_GUEST_TSC_AUX           \
+                                                  | HM_CHANGED_GUEST_OTHER_MSRS)
+
+#define HM_CHANGED_GUEST_HWVIRT                  UINT64_C(0x0000080000000000)
+#define HM_CHANGED_GUEST_MASK                    UINT64_C(0x00000ffffffffffc)
+
+#define HM_CHANGED_KEEPER_STATE_MASK             UINT64_C(0xffff000000000000)
+
+#define HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS     UINT64_C(0x0001000000000000)
+#define HM_CHANGED_VMX_GUEST_AUTO_MSRS           UINT64_C(0x0002000000000000)
+#define HM_CHANGED_VMX_GUEST_LAZY_MSRS           UINT64_C(0x0004000000000000)
+#define HM_CHANGED_VMX_ENTRY_CTLS                UINT64_C(0x0008000000000000)
+#define HM_CHANGED_VMX_EXIT_CTLS                 UINT64_C(0x0010000000000000)
+#define HM_CHANGED_VMX_MASK                      UINT64_C(0x001f000000000000)
+#define HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE   (  HM_CHANGED_GUEST_DR_MASK \
+                                                  | HM_CHANGED_VMX_GUEST_LAZY_MSRS)
+
+#define HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS     UINT64_C(0x0001000000000000)
+#define HM_CHANGED_SVM_MASK                      UINT64_C(0x0001000000000000)
+#define HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE   HM_CHANGED_GUEST_DR_MASK
+
+#define HM_CHANGED_ALL_GUEST                     (  HM_CHANGED_GUEST_MASK \
+                                                  | HM_CHANGED_KEEPER_STATE_MASK)
+
+/** Mask of what state might have changed when IEM raised an exception.
+  This is a combination IEM_CPUMCTX_EXTRN_MUST_MASK and IEM_CPUMCTX_EXTRN_XCPT_MASK. */
+#define HM_CHANGED_XCPT_RAISED_MASK              (  HM_CHANGED_GUEST_GPRS_MASK  \
+                                                  | HM_CHANGED_GUEST_RIP        \
+                                                  | HM_CHANGED_GUEST_RFLAGS     \
+                                                  | HM_CHANGED_GUEST_SS         \
+                                                  | HM_CHANGED_GUEST_CS         \
+                                                  | HM_CHANGED_GUEST_CR0        \
+                                                  | HM_CHANGED_GUEST_CR3        \
+                                                  | HM_CHANGED_GUEST_CR4        \
+                                                  | HM_CHANGED_GUEST_APIC_TPR   \
+                                                  | HM_CHANGED_GUEST_EFER_MSR   \
+                                                  | HM_CHANGED_GUEST_DR7        \
+                                                  | HM_CHANGED_GUEST_CR2        \
+                                                  | HM_CHANGED_GUEST_SREG_MASK  \
+                                                  | HM_CHANGED_GUEST_TABLE_MASK)
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+/** Mask of what state might have changed when \#VMEXIT is emulated. */
+# define HM_CHANGED_SVM_VMEXIT_MASK              (  HM_CHANGED_GUEST_RSP         \
+                                                  | HM_CHANGED_GUEST_RAX         \
+                                                  | HM_CHANGED_GUEST_RIP         \
+                                                  | HM_CHANGED_GUEST_RFLAGS      \
+                                                  | HM_CHANGED_GUEST_CS          \
+                                                  | HM_CHANGED_GUEST_SS          \
+                                                  | HM_CHANGED_GUEST_DS          \
+                                                  | HM_CHANGED_GUEST_ES          \
+                                                  | HM_CHANGED_GUEST_GDTR        \
+                                                  | HM_CHANGED_GUEST_IDTR        \
+                                                  | HM_CHANGED_GUEST_CR_MASK     \
+                                                  | HM_CHANGED_GUEST_EFER_MSR    \
+                                                  | HM_CHANGED_GUEST_DR6         \
+                                                  | HM_CHANGED_GUEST_DR7         \
+                                                  | HM_CHANGED_GUEST_OTHER_MSRS  \
+                                                  | HM_CHANGED_GUEST_HWVIRT      \
+                                                  | HM_CHANGED_SVM_MASK          \
+                                                  | HM_CHANGED_GUEST_APIC_TPR)
+
+/** Mask of what state might have changed when \#VMEXIT is emulated. */
+# define HM_CHANGED_SVM_VMRUN_MASK               HM_CHANGED_SVM_VMEXIT_MASK
 #endif
-
-#define HM_CHANGED_GUEST_CR0                     RT_BIT(0)      /* Shared */
-#define HM_CHANGED_GUEST_CR3                     RT_BIT(1)
-#define HM_CHANGED_GUEST_CR4                     RT_BIT(2)
-#define HM_CHANGED_GUEST_GDTR                    RT_BIT(3)
-#define HM_CHANGED_GUEST_IDTR                    RT_BIT(4)
-#define HM_CHANGED_GUEST_LDTR                    RT_BIT(5)
-#define HM_CHANGED_GUEST_TR                      RT_BIT(6)
-#define HM_CHANGED_GUEST_SEGMENT_REGS            RT_BIT(7)
-#define HM_CHANGED_GUEST_DEBUG                   RT_BIT(8)      /* Shared */
-#define HM_CHANGED_GUEST_RIP                     RT_BIT(9)
-#define HM_CHANGED_GUEST_RSP                     RT_BIT(10)
-#define HM_CHANGED_GUEST_RFLAGS                  RT_BIT(11)
-#define HM_CHANGED_GUEST_CR2                     RT_BIT(12)
-#define HM_CHANGED_GUEST_SYSENTER_CS_MSR         RT_BIT(13)
-#define HM_CHANGED_GUEST_SYSENTER_EIP_MSR        RT_BIT(14)
-#define HM_CHANGED_GUEST_SYSENTER_ESP_MSR        RT_BIT(15)
-#define HM_CHANGED_GUEST_EFER_MSR                RT_BIT(16)
-#define HM_CHANGED_GUEST_APIC_STATE              RT_BIT(17)
-#define HM_CHANGED_GUEST_HWVIRT                  RT_BIT(18)
-/* Logically common VMM state. */
-#define HM_CHANGED_VMM_GUEST_XCPT_INTERCEPTS     RT_BIT(19)
-#define HM_CHANGED_VMM_GUEST_LAZY_MSRS           RT_BIT(20)
-/* VT-x specific state. */
-#define HM_CHANGED_VMX_GUEST_AUTO_MSRS           RT_BIT(21)
-#define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE      RT_BIT(22)
-#define HM_CHANGED_VMX_ENTRY_CTLS                RT_BIT(23)
-#define HM_CHANGED_VMX_EXIT_CTLS                 RT_BIT(24)
-/* AMD-V specific state. */
-#define HM_CHANGED_SVM_RESERVED1                 RT_BIT(21)
-#define HM_CHANGED_SVM_RESERVED2                 RT_BIT(22)
-#define HM_CHANGED_SVM_RESERVED3                 RT_BIT(23)
-#define HM_CHANGED_SVM_RESERVED4                 RT_BIT(24)
-
-#define HM_CHANGED_ALL_GUEST                     (  HM_CHANGED_GUEST_CR0                 \
-                                                  | HM_CHANGED_GUEST_CR3                 \
-                                                  | HM_CHANGED_GUEST_CR4                 \
-                                                  | HM_CHANGED_GUEST_GDTR                \
-                                                  | HM_CHANGED_GUEST_IDTR                \
-                                                  | HM_CHANGED_GUEST_LDTR                \
-                                                  | HM_CHANGED_GUEST_TR                  \
-                                                  | HM_CHANGED_GUEST_SEGMENT_REGS        \
-                                                  | HM_CHANGED_GUEST_DEBUG               \
-                                                  | HM_CHANGED_GUEST_RIP                 \
-                                                  | HM_CHANGED_GUEST_RSP                 \
-                                                  | HM_CHANGED_GUEST_RFLAGS              \
-                                                  | HM_CHANGED_GUEST_CR2                 \
-                                                  | HM_CHANGED_GUEST_SYSENTER_CS_MSR     \
-                                                  | HM_CHANGED_GUEST_SYSENTER_EIP_MSR    \
-                                                  | HM_CHANGED_GUEST_SYSENTER_ESP_MSR    \
-                                                  | HM_CHANGED_GUEST_EFER_MSR            \
-                                                  | HM_CHANGED_GUEST_APIC_STATE          \
-                                                  | HM_CHANGED_GUEST_HWVIRT              \
-                                                  | HM_CHANGED_VMM_GUEST_XCPT_INTERCEPTS \
-                                                  | HM_CHANGED_VMM_GUEST_LAZY_MSRS       \
-                                                  | HM_CHANGED_VMX_GUEST_AUTO_MSRS       \
-                                                  | HM_CHANGED_VMX_GUEST_ACTIVITY_STATE  \
-                                                  | HM_CHANGED_VMX_ENTRY_CTLS            \
-                                                  | HM_CHANGED_VMX_EXIT_CTLS)
-
-#define HM_CHANGED_HOST_CONTEXT                  RT_BIT(25)
-
-/* Bits shared between host and guest. */
-#define HM_CHANGED_HOST_GUEST_SHARED_STATE       (  HM_CHANGED_GUEST_CR0           \
-                                                  | HM_CHANGED_GUEST_DEBUG         \
-                                                  | HM_CHANGED_VMM_GUEST_LAZY_MSRS)
 /** @} */
 
+/** Maximum number of exit reason statistics counters. */
+#define MAX_EXITREASON_STAT                        0x100
+#define MASK_EXITREASON_STAT                       0xff
+#define MASK_INJECT_IRQ_STAT                       0xff
+
 /** Size for the EPT identity page table (1024 4 MB pages to cover the entire address space). */
-#define HM_EPT_IDENTITY_PG_TABLE_SIZE   PAGE_SIZE
+#define HM_EPT_IDENTITY_PG_TABLE_SIZE               PAGE_SIZE
 /** Size of the TSS structure + 2 pages for the IO bitmap + end byte. */
-#define HM_VTX_TSS_SIZE                 (sizeof(VBOXTSS) + 2 * PAGE_SIZE + 1)
+#define HM_VTX_TSS_SIZE                             (sizeof(VBOXTSS) + 2 * PAGE_SIZE + 1)
 /** Total guest mapped memory needed. */
-#define HM_VTX_TOTAL_DEVHEAP_MEM        (HM_EPT_IDENTITY_PG_TABLE_SIZE + HM_VTX_TSS_SIZE)
+#define HM_VTX_TOTAL_DEVHEAP_MEM                    (HM_EPT_IDENTITY_PG_TABLE_SIZE + HM_VTX_TSS_SIZE)
 
 
 /** @name Macros for enabling and disabling preemption.
@@ -357,7 +276,7 @@ typedef struct HMGLOBALCPUINFO
             /** The active nested-guest MSR permission bitmap memory backing. */
             RTR0MEMOBJ          hNstGstMsrpm;
             /** The physical address of the first page in hNstGstMsrpm (physcially
-             *  contigous allocation). */
+             *  contiguous allocation). */
             RTHCPHYS            HCPhysNstGstMsrpm;
             /** The address of the active nested-guest MSRPM. */
             void               *pvNstGstMsrpm;
@@ -757,12 +676,12 @@ typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
  */
 typedef struct HMCPU
 {
+    /** Set when the TLB has been checked until we return from the world switch. */
+    bool volatile               fCheckedTLBFlush;
     /** Set if we need to flush the TLB during the world switch. */
     bool                        fForceTLBFlush;
     /** Set when we're using VT-x or AMD-V at that moment. */
     bool                        fActive;
-    /** Set when the TLB has been checked until we return from the world switch. */
-    volatile bool               fCheckedTLBFlush;
     /** Whether we've completed the inner HM leave function. */
     bool                        fLeaveDone;
     /** Whether we're using the hyper DR7 or guest DR7. */
@@ -789,11 +708,8 @@ typedef struct HMCPU
     uint8_t                     u8Alignment0[4];
 
     /** World switch exit counter. */
-    volatile uint32_t           cWorldSwitchExits;
-    /** HM_CHANGED_* flags. */
-    volatile uint32_t           fContextUseFlags;
-    /** Id of the last cpu we were executing code on (NIL_RTCPUID for the first
-     *  time). */
+    uint32_t volatile           cWorldSwitchExits;
+    /** The last CPU we were executing code on (NIL_RTCPUID for the first time). */
     RTCPUID                     idLastCpu;
     /** TLB flush count. */
     uint32_t                    cTlbFlushes;
@@ -801,6 +717,10 @@ typedef struct HMCPU
     uint32_t                    uCurrentAsid;
     /** An additional error code used for some gurus. */
     uint32_t                    u32HMError;
+    /** The last exit-to-ring-3 reason. */
+    int32_t                     rcLastExitToR3;
+    /** CPU-context changed flags (see HM_CHANGED_xxx). */
+    uint64_t                    fCtxChanged;
     /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
     uint64_t                    u64HostTscAux;
 
@@ -829,8 +749,7 @@ typedef struct HMCPU
         /** Current exception bitmap. */
         uint32_t                    u32XcptBitmap;
         /** The updated-guest-state mask. */
-        volatile uint32_t           fUpdatedGuestState;
-        uint32_t                    u32Alignment1;
+        uint32_t                    au32Alignment0[2];
 
         /** Physical address of the VM control structure (VMCS). */
         RTHCPHYS                    HCPhysVmcs;
@@ -1042,7 +961,8 @@ typedef struct HMCPU
     STAMPROFILEADV          StatExitIO;
     STAMPROFILEADV          StatExitMovCRx;
     STAMPROFILEADV          StatExitXcptNmi;
-    STAMPROFILEADV          StatLoadGuestState;
+    STAMPROFILEADV          StatImportGuestState;
+    STAMPROFILEADV          StatExportGuestState;
     STAMPROFILEADV          StatLoadGuestFpuState;
     STAMPROFILEADV          StatInGC;
 
@@ -1075,31 +995,29 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitGuestBP;
     STAMCOUNTER             StatExitGuestXF;
     STAMCOUNTER             StatExitGuestXcpUnk;
-    STAMCOUNTER             StatExitInvlpg;
-    STAMCOUNTER             StatExitInvd;
-    STAMCOUNTER             StatExitWbinvd;
-    STAMCOUNTER             StatExitPause;
-    STAMCOUNTER             StatExitCpuid;
-    STAMCOUNTER             StatExitRdtsc;
-    STAMCOUNTER             StatExitRdtscp;
-    STAMCOUNTER             StatExitRdpmc;
-    STAMCOUNTER             StatExitVmcall;
-    STAMCOUNTER             StatExitRdrand;
     STAMCOUNTER             StatExitCli;
     STAMCOUNTER             StatExitSti;
     STAMCOUNTER             StatExitPushf;
     STAMCOUNTER             StatExitPopf;
     STAMCOUNTER             StatExitIret;
     STAMCOUNTER             StatExitInt;
-    STAMCOUNTER             StatExitCRxWrite[16];
-    STAMCOUNTER             StatExitCRxRead[16];
+    STAMCOUNTER             StatExitHlt;
     STAMCOUNTER             StatExitDRxWrite;
     STAMCOUNTER             StatExitDRxRead;
+    STAMCOUNTER             StatExitCR0Read;
+    STAMCOUNTER             StatExitCR2Read;
+    STAMCOUNTER             StatExitCR3Read;
+    STAMCOUNTER             StatExitCR4Read;
+    STAMCOUNTER             StatExitCR8Read;
+    STAMCOUNTER             StatExitCR0Write;
+    STAMCOUNTER             StatExitCR2Write;
+    STAMCOUNTER             StatExitCR3Write;
+    STAMCOUNTER             StatExitCR4Write;
+    STAMCOUNTER             StatExitCR8Write;
     STAMCOUNTER             StatExitRdmsr;
     STAMCOUNTER             StatExitWrmsr;
     STAMCOUNTER             StatExitClts;
     STAMCOUNTER             StatExitXdtrAccess;
-    STAMCOUNTER             StatExitHlt;
     STAMCOUNTER             StatExitMwait;
     STAMCOUNTER             StatExitMonitor;
     STAMCOUNTER             StatExitLmsw;
@@ -1141,7 +1059,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatSwitchHltToR3;
     STAMCOUNTER             StatSwitchApicAccessToR3;
     STAMCOUNTER             StatSwitchPreempt;
-    STAMCOUNTER             StatSwitchPreemptSaveHostState;
+    STAMCOUNTER             StatSwitchPreemptExportHostState;
 
     STAMCOUNTER             StatTscParavirt;
     STAMCOUNTER             StatTscOffset;
@@ -1152,8 +1070,8 @@ typedef struct HMCPU
     STAMCOUNTER             StatDRxContextSwitch;
     STAMCOUNTER             StatDRxIoCheck;
 
-    STAMCOUNTER             StatLoadMinimal;
-    STAMCOUNTER             StatLoadFull;
+    STAMCOUNTER             StatExportMinimal;
+    STAMCOUNTER             StatExportFull;
     STAMCOUNTER             StatLoadGuestFpu;
 
     STAMCOUNTER             StatVmxCheckBadRmSelBase;
@@ -1187,6 +1105,8 @@ typedef struct HMCPU
 } HMCPU;
 /** Pointer to HM VMCPU instance data. */
 typedef HMCPU *PHMCPU;
+AssertCompileMemberAlignment(HMCPU, cWorldSwitchExits, 4);
+AssertCompileMemberAlignment(HMCPU, fCtxChanged, 8);
 AssertCompileMemberAlignment(HMCPU, vmx, 8);
 AssertCompileMemberAlignment(HMCPU, svm, 8);
 AssertCompileMemberAlignment(HMCPU, Event, 8);

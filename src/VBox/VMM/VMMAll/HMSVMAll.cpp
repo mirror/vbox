@@ -98,10 +98,11 @@ int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx)
 
                 int rc2 = APICSetTpr(pVCpu, u8Tpr);
                 AssertRC(rc2);
-                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_APIC_STATE);
-
                 pCtx->rip += pPatch->cbOp;
                 pCtx->eflags.Bits.u1RF = 0;
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_APIC_TPR
+                                                           | HM_CHANGED_GUEST_RIP
+                                                           | HM_CHANGED_GUEST_RFLAGS);
                 break;
             }
 
@@ -155,20 +156,20 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /*
-     * Currently, VMRUN, #VMEXIT transitions involves trips to ring-3 that would flag a full
-     * CPU state change. However, if we exit to ring-3 in response to receiving a physical
-     * interrupt, we skip signaling any CPU state change as normally no change is done to the
-     * execution state (see VINF_EM_RAW_INTERRUPT handling in hmR0SvmExitToRing3).
+     * Transitions to ring-3 flag a full CPU-state change except if we transition to ring-3
+     * in response to a physical CPU interrupt as no changes to the guest-CPU state are
+     * expected (see VINF_EM_RAW_INTERRUPT handling in hmR0SvmExitToRing3).
      *
-     * With nested-guests, the state can change on trip to ring-3 for e.g., we might perform a
-     * SVM_EXIT_INTR #VMEXIT for the nested-guest in ring-3. Hence we signal a full CPU state
-     * change here.
+     * However, with nested-guests, the state -can- change on trips to ring-3 for we might
+     * try to inject a nested-guest physical interrupt and cause a SVM_EXIT_INTR #VMEXIT for
+     * the nested-guest from ring-3. Hence we signal the required CPU state change here.
      */
-    /** @todo Only signal state needed for VM-exit (e.g. skip
-     *        LDTR, TR etc., see IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK.
-     *        Do this while extending HM_CHANGED_xxx flags. See
-     *        todo in hmR0SvmHandleExitNested(). */
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+    /** @todo Figure out why using HM_CHANGED_SVM_VMEXIT_MASK instead of
+     *        HM_CHANGED_ALL_GUEST breaks nested guests (XP Pro, DSL etc.), see also
+     *        hmR0SvmHandleExitNested(). */
+    AssertMsg(!(pVCpu->cpum.GstCtx.fExtrn & IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK),
+              ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", pVCpu->cpum.GstCtx.fExtrn, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK));
+    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 }
 
 

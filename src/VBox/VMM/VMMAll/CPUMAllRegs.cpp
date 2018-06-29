@@ -2881,7 +2881,7 @@ VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImpo
             case CPUMCTX_EXTRN_KEEPER_HM:
             {
 #ifdef IN_RING0
-                int rc = HMR0ImportStateOnDemand(pVCpu, &pVCpu->cpum.s.Guest, fExtrnImport);
+                int rc = HMR0ImportStateOnDemand(pVCpu, fExtrnImport);
                 Assert(rc == VINF_SUCCESS || RT_FAILURE_NP(rc));
                 return rc;
 #else

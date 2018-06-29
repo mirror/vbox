@@ -216,15 +216,13 @@ VMMR0_INT_DECL(void)            HMR0NotifyCpumUnloadedGuestFpuState(PVMCPU VCpu)
 VMMR0_INT_DECL(void)            HMR0NotifyCpumModifiedHostCr0(PVMCPU VCpu);
 VMMR0_INT_DECL(bool)            HMR0SuspendPending(void);
 VMMR0_INT_DECL(int)             HMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
-VMMR0_INT_DECL(int)             HMR0ImportStateOnDemand(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat);
+VMMR0_INT_DECL(int)             HMR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
 
 # if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
 VMMR0_INT_DECL(int)             HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0_INT_DECL(int)             HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0_INT_DECL(int)             HMR0TestSwitcher3264(PVM pVM);
 # endif
-
-VMMR0_INT_DECL(int)             HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixedCtx);
 
 /** @} */
 #endif /* IN_RING0 */

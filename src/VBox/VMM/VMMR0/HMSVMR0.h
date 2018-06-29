@@ -48,14 +48,13 @@ VMMR0DECL(int)          SVMR0InitVM(PVM pVM);
 VMMR0DECL(int)          SVMR0TermVM(PVM pVM);
 VMMR0DECL(int)          SVMR0SetupVM(PVM pVM);
 VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(int)          SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int)          SVMR0ImportStateOnDemand(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat);
+VMMR0DECL(int)          SVMR0ExportHostState(PVMCPU pVCpu);
+VMMR0DECL(int)          SVMR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
 VMMR0DECL(int)          SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
 DECLASM(int)            SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int)          SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp, uint32_t cbParam,
-                                                  uint32_t *paParam);
+VMMR0DECL(int)          SVMR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_t cbParam, uint32_t *paParam);
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
 
 /**

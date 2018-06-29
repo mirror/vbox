@@ -57,61 +57,21 @@
  * @{
  */
 
-/** @def HMVMXCPU_GST_SET_UPDATED
- * Sets a guest-state-updated flag.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlag   The flag to set.
- */
-#define HMVMXCPU_GST_SET_UPDATED(pVCpu, fFlag)        (ASMAtomicUoOrU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState, (fFlag)))
-
-/** @def HMVMXCPU_GST_IS_SET
- * Checks if all the flags in the specified guest-state-updated set is pending.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlag   The flag to check.
- */
-#define HMVMXCPU_GST_IS_SET(pVCpu, fFlag)             ((ASMAtomicUoReadU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState) & (fFlag)) == (fFlag))
-
-/** @def HMVMXCPU_GST_IS_UPDATED
- * Checks if one or more of the flags in the specified guest-state-updated set
- * is updated.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlags  The flags to check for.
- */
-#define HMVMXCPU_GST_IS_UPDATED(pVCpu, fFlags)        RT_BOOL(ASMAtomicUoReadU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState) & (fFlags))
-
-/** @def HMVMXCPU_GST_RESET_TO
- * Resets the guest-state-updated flags to the specified value.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- * @param   fFlags  The new value.
- */
-#define HMVMXCPU_GST_RESET_TO(pVCpu, fFlags)          (ASMAtomicUoWriteU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState, (fFlags)))
-
-/** @def HMVMXCPU_GST_VALUE
- * Returns the current guest-state-updated flags value.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-#define HMVMXCPU_GST_VALUE(pVCpu)                     (ASMAtomicUoReadU32(&(pVCpu)->hm.s.vmx.fUpdatedGuestState))
-
 /** @name Host-state restoration flags.
  * @note If you change these values don't forget to update the assembly
  *       defines as well!
  * @{
  */
-#define VMX_RESTORE_HOST_SEL_DS               RT_BIT(0)
-#define VMX_RESTORE_HOST_SEL_ES               RT_BIT(1)
-#define VMX_RESTORE_HOST_SEL_FS               RT_BIT(2)
-#define VMX_RESTORE_HOST_SEL_GS               RT_BIT(3)
-#define VMX_RESTORE_HOST_SEL_TR               RT_BIT(4)
-#define VMX_RESTORE_HOST_GDTR                 RT_BIT(5)
-#define VMX_RESTORE_HOST_IDTR                 RT_BIT(6)
-#define VMX_RESTORE_HOST_GDT_READ_ONLY        RT_BIT(7)
-#define VMX_RESTORE_HOST_REQUIRED             RT_BIT(8)
-#define VMX_RESTORE_HOST_GDT_NEED_WRITABLE    RT_BIT(9)
+#define VMX_RESTORE_HOST_SEL_DS                                 RT_BIT(0)
+#define VMX_RESTORE_HOST_SEL_ES                                 RT_BIT(1)
+#define VMX_RESTORE_HOST_SEL_FS                                 RT_BIT(2)
+#define VMX_RESTORE_HOST_SEL_GS                                 RT_BIT(3)
+#define VMX_RESTORE_HOST_SEL_TR                                 RT_BIT(4)
+#define VMX_RESTORE_HOST_GDTR                                   RT_BIT(5)
+#define VMX_RESTORE_HOST_IDTR                                   RT_BIT(6)
+#define VMX_RESTORE_HOST_GDT_READ_ONLY                          RT_BIT(7)
+#define VMX_RESTORE_HOST_REQUIRED                               RT_BIT(8)
+#define VMX_RESTORE_HOST_GDT_NEED_WRITABLE                      RT_BIT(9)
 /** @} */
 
 /**
@@ -149,9 +109,9 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
  * @{
  */
 /** The host MSRs have been saved. */
-#define VMX_LAZY_MSRS_SAVED_HOST              RT_BIT(0)
+#define VMX_LAZY_MSRS_SAVED_HOST                                RT_BIT(0)
 /** The guest MSRs are loaded and in effect. */
-#define VMX_LAZY_MSRS_LOADED_GUEST            RT_BIT(1)
+#define VMX_LAZY_MSRS_LOADED_GUEST                              RT_BIT(1)
 /** @} */
 
 /** @name VMX HM-error codes for VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO.
@@ -465,8 +425,8 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_VMCS_GUEST_RIP_CACHE_IDX                            11
 #define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                   12
 #define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                   13
-#define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                14
-#define VMX_VMCS_MAX_CACHE_IDX                                  (VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX + 1)
+#define VMX_VMCS_RO_EXIT_QUAL_CACHE_IDX                         14
+#define VMX_VMCS_MAX_CACHE_IDX                                  (VMX_VMCS_RO_EXIT_QUAL_CACHE_IDX + 1)
 #define VMX_VMCS_GUEST_CR3_CACHE_IDX                            15
 #define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                    (VMX_VMCS_GUEST_CR3_CACHE_IDX + 1)
 /** @} */
@@ -606,7 +566,6 @@ typedef EPTPDPT *PEPTPDPT;
 /** Pointer to a const EPT Page Directory Pointer Table. */
 typedef const EPTPDPT *PCEPTPDPT;
 
-
 /**
  * EPT Page Directory Table Entry. Bit view.
  */
@@ -704,18 +663,16 @@ typedef EPTPD *PEPTPD;
 /** Pointer to a const EPT Page Directory Table. */
 typedef const EPTPD *PCEPTPD;
 
-
 /**
  * EPT Page Table Entry. Bit view.
  */
 typedef struct EPTPTEBITS
 {
     /** 0 - Present bit.
-     * @remark This is a convenience "misnomer".  The bit actually indicates
-     *         read access and the CPU will consider an entry with any of the
-     *         first three bits set as present.  Since all our valid entries
-     *         will have this bit set, it can be used as a present indicator
-     *         and allow some code sharing. */
+     * @remarks This is a convenience "misnomer". The bit actually indicates read access
+     *          and the CPU will consider an entry with any of the first three bits set
+     *          as present.  Since all our valid entries will have this bit set, it can
+     *          be used as a present indicator and allow some code sharing. */
     uint64_t    u1Present       : 1;
     /** 1 - Writable bit. */
     uint64_t    u1Write         : 1;
@@ -1384,6 +1341,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /* All other bits are reserved and must be set according to MSR IA32_VMX_PROCBASED_CTLS. */
 /** @} */
 
+
 /** @name VMX_VMCS_CTRL_PROC_EXEC
  * @{
  */
@@ -1430,6 +1388,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** Determines whether the secondary processor based VM-execution controls are used. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL         RT_BIT(31)
 /** @} */
+
 
 /** @name VMX_VMCS_CTRL_PROC_EXEC2
  * @{
@@ -1541,17 +1500,19 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_VMCS32_RO_EXIT_REASON                               0x4402
 #define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO                    0x4404
 #define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE              0x4406
-#define VMX_VMCS32_RO_IDT_INFO                                  0x4408
-#define VMX_VMCS32_RO_IDT_ERROR_CODE                            0x440A
+#define VMX_VMCS32_RO_IDT_VECTORING_INFO                        0x4408
+#define VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE                  0x440A
 #define VMX_VMCS32_RO_EXIT_INSTR_LENGTH                         0x440C
 #define VMX_VMCS32_RO_EXIT_INSTR_INFO                           0x440E
 /** @} */
+
 
 /** @name VMX_VMCS32_RO_EXIT_REASON
  * @{
  */
 #define VMX_EXIT_REASON_BASIC(a)                                ((a) & 0xffff)
 /** @} */
+
 
 /** @name VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO
  * @{
@@ -1577,6 +1538,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)      ((a) & ~RT_BIT(12))
 /** @} */
 
+
 /** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
  * @{
  */
@@ -1587,6 +1549,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_PRIV_SW_XCPT            5
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT                 6
 /** @} */
+
 
 /** @name VMX_VMCS32_RO_IDT_VECTORING_INFO
  * @{
@@ -1599,6 +1562,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_IDT_VECTORING_INFO_VALID(a)                         ((a) & RT_BIT(31))
 #define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                ((a) & ~RT_BIT(12))
 /** @} */
+
 
 /** @name VMX_VMCS_RO_IDT_VECTORING_INFO_TYPE
  * @{
@@ -1670,6 +1634,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_VMCS32_HOST_SYSENTER_CS                             0x4C00
 /** @} */
 
+
 /** @name Natural width control fields
  * @{
  */
@@ -1700,69 +1665,71 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
  * @{
  */
 /** 0-2:  Debug register number */
-#define VMX_EXIT_QUALIFICATION_DRX_REGISTER(a)                  ((a) & 7)
+#define VMX_EXIT_QUAL_DRX_REGISTER(a)                  ((a) & 7)
 /** 3:    Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_DRX_RES1(a)                      (((a) >> 3) & 1)
+#define VMX_EXIT_QUAL_DRX_RES1(a)                      (((a) >> 3) & 1)
 /** 4:    Direction of move (0 = write, 1 = read) */
-#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION(a)                 (((a) >> 4) & 1)
+#define VMX_EXIT_QUAL_DRX_DIRECTION(a)                 (((a) >> 4) & 1)
 /** 5-7:  Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_DRX_RES2(a)                      (((a) >> 5) & 7)
+#define VMX_EXIT_QUAL_DRX_RES2(a)                      (((a) >> 5) & 7)
 /** 8-11: General purpose register number. */
-#define VMX_EXIT_QUALIFICATION_DRX_GENREG(a)                    (((a) >> 8) & 0xF)
+#define VMX_EXIT_QUAL_DRX_GENREG(a)                    (((a) >> 8) & 0xF)
 /** Rest: reserved. */
 /** @} */
 
-/** @name VMX_EXIT_QUALIFICATION_DRX_DIRECTION values
+
+/** @name VMX_EXIT_QUAL_DRX_DIRECTION values
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE              0
-#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION_READ               1
+#define VMX_EXIT_QUAL_DRX_DIRECTION_WRITE              0
+#define VMX_EXIT_QUAL_DRX_DIRECTION_READ               1
 /** @} */
-
 
 
 /** @name CRx accesses
  * @{
  */
 /** 0-3:   Control register number (0 for CLTS & LMSW) */
-#define VMX_EXIT_QUALIFICATION_CRX_REGISTER(a)                  ((a) & 0xF)
+#define VMX_EXIT_QUAL_CRX_REGISTER(a)                  ((a) & 0xF)
 /** 4-5:   Access type. */
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS(a)                    (((a) >> 4) & 3)
+#define VMX_EXIT_QUAL_CRX_ACCESS(a)                    (((a) >> 4) & 3)
 /** 6:     LMSW operand type */
-#define VMX_EXIT_QUALIFICATION_CRX_LMSW_OP(a)                   (((a) >> 6) & 1)
+#define VMX_EXIT_QUAL_CRX_LMSW_OP(a)                   (((a) >> 6) & 1)
 /** 7:     Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_CRX_RES1(a)                      (((a) >> 7) & 1)
+#define VMX_EXIT_QUAL_CRX_RES1(a)                      (((a) >> 7) & 1)
 /** 8-11:  General purpose register number (0 for CLTS & LMSW). */
-#define VMX_EXIT_QUALIFICATION_CRX_GENREG(a)                    (((a) >> 8) & 0xF)
+#define VMX_EXIT_QUAL_CRX_GENREG(a)                    (((a) >> 8) & 0xF)
 /** 12-15: Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_CRX_RES2(a)                      (((a) >> 12) & 0xF)
+#define VMX_EXIT_QUAL_CRX_RES2(a)                      (((a) >> 12) & 0xF)
 /** 16-31: LMSW source data (else 0). */
-#define VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(a)                 (((a) >> 16) & 0xFFFF)
+#define VMX_EXIT_QUAL_CRX_LMSW_DATA(a)                 (((a) >> 16) & 0xFFFF)
 /* Rest: reserved. */
 /** @} */
 
-/** @name VMX_EXIT_QUALIFICATION_CRX_ACCESS
+
+/** @name VMX_EXIT_QUAL_CRX_ACCESS
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE                 0
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ                  1
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS                  2
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW                  3
+#define VMX_EXIT_QUAL_CRX_ACCESS_WRITE                 0
+#define VMX_EXIT_QUAL_CRX_ACCESS_READ                  1
+#define VMX_EXIT_QUAL_CRX_ACCESS_CLTS                  2
+#define VMX_EXIT_QUAL_CRX_ACCESS_LMSW                  3
 /** @} */
 
-/** @name VMX_EXIT_QUALIFICATION_TASK_SWITCH
+
+/** @name VMX_EXIT_QUAL_TASK_SWITCH
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_SELECTOR(a)          ((a) & 0xffff)
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE(a)              (((a) >> 30) & 0x3)
+#define VMX_EXIT_QUAL_TASK_SWITCH_SELECTOR(a)          ((a) & 0xffff)
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE(a)              (((a) >> 30) & 0x3)
 /** Task switch caused by a call instruction. */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_CALL            0
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_CALL            0
 /** Task switch caused by an iret instruction. */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IRET            1
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_IRET            1
 /** Task switch caused by a jmp instruction. */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_JMP             2
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_JMP             2
 /** Task switch caused by an interrupt gate. */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IDT             3
+#define VMX_EXIT_QUAL_TASK_SWITCH_TYPE_IDT             3
 /** @} */
 
 
@@ -1770,24 +1737,24 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
  * @{
  */
 /** Set if the violation was caused by a data read. */
-#define VMX_EXIT_QUALIFICATION_EPT_DATA_READ                    RT_BIT(0)
+#define VMX_EXIT_QUAL_EPT_DATA_READ                    RT_BIT(0)
 /** Set if the violation was caused by a data write. */
-#define VMX_EXIT_QUALIFICATION_EPT_DATA_WRITE                   RT_BIT(1)
+#define VMX_EXIT_QUAL_EPT_DATA_WRITE                   RT_BIT(1)
 /** Set if the violation was caused by an instruction fetch. */
-#define VMX_EXIT_QUALIFICATION_EPT_INSTR_FETCH                  RT_BIT(2)
+#define VMX_EXIT_QUAL_EPT_INSTR_FETCH                  RT_BIT(2)
 /** AND of the present bit of all EPT structures. */
-#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT                RT_BIT(3)
+#define VMX_EXIT_QUAL_EPT_ENTRY_PRESENT                RT_BIT(3)
 /** AND of the write bit of all EPT structures. */
-#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_WRITE                  RT_BIT(4)
+#define VMX_EXIT_QUAL_EPT_ENTRY_WRITE                  RT_BIT(4)
 /** AND of the execute bit of all EPT structures. */
-#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_EXECUTE                RT_BIT(5)
+#define VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE                RT_BIT(5)
 /** Set if the guest linear address field contains the faulting address. */
-#define VMX_EXIT_QUALIFICATION_EPT_GUEST_ADDR_VALID             RT_BIT(7)
+#define VMX_EXIT_QUAL_EPT_GUEST_ADDR_VALID             RT_BIT(7)
 /** If bit 7 is one: (reserved otherwise)
  *  1 - violation due to physical address access.
  *  0 - violation caused by page walk or access/dirty bit updates
  */
-#define VMX_EXIT_QUALIFICATION_EPT_TRANSLATED_ACCESS            RT_BIT(8)
+#define VMX_EXIT_QUAL_EPT_TRANSLATED_ACCESS            RT_BIT(8)
 /** @} */
 
 
@@ -1795,47 +1762,49 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
  * @{
  */
 /** 0-2:   IO operation width. */
-#define VMX_EXIT_QUALIFICATION_IO_WIDTH(a)                      ((a) & 7)
+#define VMX_EXIT_QUAL_IO_WIDTH(a)                      ((a) & 7)
 /** 3:     IO operation direction. */
-#define VMX_EXIT_QUALIFICATION_IO_DIRECTION(a)                  (((a) >> 3) & 1)
+#define VMX_EXIT_QUAL_IO_DIRECTION(a)                  (((a) >> 3) & 1)
 /** 4:     String IO operation (INS / OUTS). */
-#define VMX_EXIT_QUALIFICATION_IO_IS_STRING(a)                  RT_BOOL((a) & RT_BIT_64(4))
+#define VMX_EXIT_QUAL_IO_IS_STRING(a)                  RT_BOOL((a) & RT_BIT_64(4))
 /** 5:     Repeated IO operation. */
-#define VMX_EXIT_QUALIFICATION_IO_IS_REP(a)                     RT_BOOL((a) & RT_BIT_64(5))
+#define VMX_EXIT_QUAL_IO_IS_REP(a)                     RT_BOOL((a) & RT_BIT_64(5))
 /** 6:     Operand encoding. */
-#define VMX_EXIT_QUALIFICATION_IO_ENCODING(a)                   (((a) >> 6) & 1)
+#define VMX_EXIT_QUAL_IO_ENCODING(a)                   (((a) >> 6) & 1)
 /** 16-31: IO Port (0-0xffff). */
-#define VMX_EXIT_QUALIFICATION_IO_PORT(a)                       (((a) >> 16) & 0xffff)
+#define VMX_EXIT_QUAL_IO_PORT(a)                       (((a) >> 16) & 0xffff)
 /* Rest reserved. */
 /** @} */
 
-/** @name VMX_EXIT_QUALIFICATION_IO_DIRECTION
+
+/** @name VMX_EXIT_QUAL_IO_DIRECTION
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT                 0
-#define VMX_EXIT_QUALIFICATION_IO_DIRECTION_IN                  1
+#define VMX_EXIT_QUAL_IO_DIRECTION_OUT                 0
+#define VMX_EXIT_QUAL_IO_DIRECTION_IN                  1
 /** @} */
 
 
-/** @name VMX_EXIT_QUALIFICATION_IO_ENCODING
+/** @name VMX_EXIT_QUAL_IO_ENCODING
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_IO_ENCODING_DX                   0
-#define VMX_EXIT_QUALIFICATION_IO_ENCODING_IMM                  1
+#define VMX_EXIT_QUAL_IO_ENCODING_DX                   0
+#define VMX_EXIT_QUAL_IO_ENCODING_IMM                  1
 /** @} */
+
 
 /** @name VMX_EXIT_APIC_ACCESS
  * @{
  */
 /** 0-11:   If the APIC-access VM-exit is due to a linear access, the offset of access within the APIC page. */
-#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(a)            ((a) & 0xfff)
+#define VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(a)            ((a) & 0xfff)
 /** 12-15:  Access type. */
-#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(a)              (((a) & 0xf000) >> 12)
+#define VMX_EXIT_QUAL_APIC_ACCESS_TYPE(a)              (((a) & 0xf000) >> 12)
 /* Rest reserved. */
 /** @} */
 
 
-/** @name VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE return values
+/** @name VMX_EXIT_QUAL_APIC_ACCESS_TYPE return values
  * @{
  */
 /** Linear read access. */
@@ -1851,6 +1820,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** Physical access for an instruction fetch or during instruction execution. */
 #define VMX_APIC_ACCESS_TYPE_PHYSICAL_INSTR                     15
 /** @} */
+
 
 /** @name VMX_XDTR_INSINFO_XXX - VMX_EXIT_XDTR_ACCESS instruction information
  * Found in VMX_VMCS32_RO_EXIT_INSTR_INFO.

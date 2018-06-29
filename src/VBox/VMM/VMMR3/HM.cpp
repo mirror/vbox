@@ -892,9 +892,13 @@ static int hmR3InitCPU(PVM pVM)
                              "/PROF/CPU%d/HM/SwitchFromGC_2/XcptNmi", i);
         AssertRC(rc);
 
-        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatLoadGuestState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of VMXR0LoadGuestState",
-                             "/PROF/CPU%d/HM/StatLoadGuestState", i);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatImportGuestState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
+                             "Profiling of hmR0VmxImportGuestState or hmR0SvmImportGuestState",
+                             "/PROF/CPU%d/HM/StatImportGuestState", i);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExportGuestState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
+                             "Profiling of hmR0VmxExportGuestState or hmR0SvmExportGuestState",
+                             "/PROF/CPU%d/HM/StatExportGuestState", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatLoadGuestFpuState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of CPUMR0LoadGuestFPU",
@@ -941,21 +945,23 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestBP,            "/HM/CPU%d/Exit/Trap/Gst/#BP", "Guest #BP (breakpoint) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestXF,            "/HM/CPU%d/Exit/Trap/Gst/#XF", "Guest #XF (extended math fault, SIMD FPU) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestXcpUnk,        "/HM/CPU%d/Exit/Trap/Gst/Other", "Other guest exceptions.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitInvlpg,             "/HM/CPU%d/Exit/Instr/Invlpg", "Guest attempted to execute INVLPG.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitInvd,               "/HM/CPU%d/Exit/Instr/Invd", "Guest attempted to execute INVD.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitWbinvd,             "/HM/CPU%d/Exit/Instr/Wbinvd", "Guest attempted to execute WBINVD.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitPause,              "/HM/CPU%d/Exit/Instr/Pause", "Guest attempted to execute PAUSE.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCpuid,              "/HM/CPU%d/Exit/Instr/Cpuid", "Guest attempted to execute CPUID.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdtsc,              "/HM/CPU%d/Exit/Instr/Rdtsc", "Guest attempted to execute RDTSC.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdtscp,             "/HM/CPU%d/Exit/Instr/Rdtscp", "Guest attempted to execute RDTSCP.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdpmc,              "/HM/CPU%d/Exit/Instr/Rdpmc", "Guest attempted to execute RDPMC.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdrand,             "/HM/CPU%d/Exit/Instr/Rdrand", "Guest attempted to execute RDRAND.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitHlt,                "/HM/CPU%d/Exit/Instr/Hlt", "Guest attempted to execute HLT.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdmsr,              "/HM/CPU%d/Exit/Instr/Rdmsr", "Guest attempted to execute RDMSR.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitWrmsr,              "/HM/CPU%d/Exit/Instr/Wrmsr", "Guest attempted to execute WRMSR.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMwait,              "/HM/CPU%d/Exit/Instr/Mwait", "Guest attempted to execute MWAIT.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMonitor,            "/HM/CPU%d/Exit/Instr/Monitor", "Guest attempted to execute MONITOR.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxWrite,           "/HM/CPU%d/Exit/Instr/DR/Write", "Guest attempted to write a debug register.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxRead,            "/HM/CPU%d/Exit/Instr/DR/Read", "Guest attempted to read a debug register.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxWrite,           "/HM/CPU%d/Exit/Instr/DR-Write", "Guest attempted to write a debug register.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxRead,            "/HM/CPU%d/Exit/Instr/DR-Read", "Guest attempted to read a debug register.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR0Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR0", "Guest attempted to read CR0.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR2Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR2", "Guest attempted to read CR2.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR3Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR3", "Guest attempted to read CR3.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR4Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR4", "Guest attempted to read CR4.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR8Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR8", "Guest attempted to read CR8.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR0Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR0", "Guest attempted to write CR0.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR2Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR2", "Guest attempted to write CR2.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR3Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR3", "Guest attempted to write CR3.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR4Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR4", "Guest attempted to write CR4.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR8Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR8", "Guest attempted to write CR8.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitClts,               "/HM/CPU%d/Exit/Instr/CLTS", "Guest attempted to execute CLTS.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitLmsw,               "/HM/CPU%d/Exit/Instr/LMSW", "Guest attempted to execute LMSW.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitCli,                "/HM/CPU%d/Exit/Instr/Cli", "Guest attempted to execute CLI.");
@@ -964,7 +970,6 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitPopf,               "/HM/CPU%d/Exit/Instr/Popf", "Guest attempted to execute POPF.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIret,               "/HM/CPU%d/Exit/Instr/Iret", "Guest attempted to execute IRET.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitInt,                "/HM/CPU%d/Exit/Instr/Int", "Guest attempted to execute INT.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitHlt,                "/HM/CPU%d/Exit/Instr/Hlt", "Guest attempted to execute HLT.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitXdtrAccess,         "/HM/CPU%d/Exit/Instr/XdtrAccess", "Guest attempted to access descriptor table register (GDTR, IDTR, LDTR).");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOWrite,            "/HM/CPU%d/Exit/IO/Write", "I/O write.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIORead,             "/HM/CPU%d/Exit/IO/Read", "I/O read.");
@@ -993,7 +998,7 @@ static int hmR3InitCPU(PVM pVM)
 #endif
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchPreempt,          "/HM/CPU%d/Switch/Preempting", "EMT has been preempted while in HM context.");
 #ifdef VBOX_WITH_STATISTICS
-        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchPreemptSaveHostState, "/HM/CPU%d/Switch/SaveHostState", "Preemption caused us to resave host state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchPreemptExportHostState, "/HM/CPU%d/Switch/ExportHostState", "Preemption caused us to re-export the host state.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatInjectInterrupt,        "/HM/CPU%d/EventInject/Interrupt", "Injected an external interrupt into the guest.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatInjectXcpt,             "/HM/CPU%d/EventInject/Trap", "Injected an exception into the guest.");
@@ -1023,9 +1028,9 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatDRxContextSwitch,       "/HM/CPU%d/Debug/ContextSwitch", "Loaded guest-debug state on MOV DRx.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatDRxIoCheck,             "/HM/CPU%d/Debug/IOCheck", "Checking for I/O breakpoint.");
 
-        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadMinimal,            "/HM/CPU%d/Load/Minimal", "VM-entry loading minimal guest-state.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadFull,               "/HM/CPU%d/Load/Full", "VM-entry loading the full guest-state.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadFull,               "/HM/CPU%d/Load/GuestFpu", "VM-entry loading the guest-FPU state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExportMinimal,          "/HM/CPU%d/Load/Minimal", "VM-entry exporting minimal guest-state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExportFull,             "/HM/CPU%d/Load/Full", "VM-entry exporting the full guest-state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadGuestFpu,           "/HM/CPU%d/Load/GuestFpu", "VM-entry loading the guest-FPU state.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelBase,   "/HM/CPU%d/VMXCheck/RMSelBase", "Could not use VMX due to unsuitable real-mode selector base.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelLimit,  "/HM/CPU%d/VMXCheck/RMSelLimit", "Could not use VMX due to unsuitable real-mode selector limit.");
@@ -1040,18 +1045,6 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatFpu64SwitchBack,        "/HM/CPU%d/Switch64/Fpu", "Saving guest FPU/XMM state.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatDebug64SwitchBack,      "/HM/CPU%d/Switch64/Debug", "Saving guest debug state.");
 #endif
-
-        for (unsigned j = 0; j < RT_ELEMENTS(pVCpu->hm.s.StatExitCRxWrite); j++)
-        {
-            rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitCRxWrite[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                 STAMUNIT_OCCURENCES, "Profiling of CRx writes",
-                                 "/HM/CPU%d/Exit/Instr/CR/Write/%x", i, j);
-            AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitCRxRead[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                 STAMUNIT_OCCURENCES, "Profiling of CRx reads",
-                                 "/HM/CPU%d/Exit/Instr/CR/Read/%x", i, j);
-            AssertRC(rc);
-        }
 
 #undef HM_REG_COUNTER
 
@@ -1206,8 +1199,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
      * Hack to allow users to work around broken BIOSes that incorrectly set
      * EFER.SVME, which makes us believe somebody else is already using AMD-V.
      */
-    if (    !pVM->hm.s.vmx.fSupported
-        &&  !pVM->hm.s.svm.fSupported
+    if (   !pVM->hm.s.vmx.fSupported
+        && !pVM->hm.s.svm.fSupported
         &&  pVM->hm.s.lLastError == VERR_SVM_IN_USE /* implies functional AMD-V */
         &&  RTEnvExist("VBOX_HWVIRTEX_IGNORE_SVM_IN_USE"))
     {
@@ -2016,7 +2009,7 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
 {
     /* Sync. entire state on VM reset R0-reentry. It's safe to reset
        the HM flags here, all other EMTs are in ring-3. See VMR3Reset(). */
-    HMCPU_CF_RESET_TO(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
+    pVCpu->hm.s.fCtxChanged |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
 
     pVCpu->hm.s.vmx.u32CR0Mask        = 0;
     pVCpu->hm.s.vmx.u32CR4Mask        = 0;
@@ -3107,7 +3100,7 @@ VMMR3_INT_DECL(void) HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
 {
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+    pVCpu->hm.s.fCtxChanged |= HM_CHANGED_ALL_GUEST;
 }
 
 
@@ -3118,7 +3111,7 @@ VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
  */
 VMMR3_INT_DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
 {
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+    pVCpu->hm.s.fCtxChanged |= HM_CHANGED_ALL_GUEST;
 }
 
 
@@ -3707,7 +3700,8 @@ static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             pHlp->pfnPrintf(pHlp, "CPU[%u]: VT-x info:\n", pVCpu->idCpu);
         else
             pHlp->pfnPrintf(pHlp, "CPU[%u]: AMD-V info:\n", pVCpu->idCpu);
-        pHlp->pfnPrintf(pHlp, "  HM error = %#x (%u)\n", pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError);
+        pHlp->pfnPrintf(pHlp, "  HM error       = %#x (%u)\n", pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError);
+        pHlp->pfnPrintf(pHlp, "  rcLastExitToR3 = %Rrc\n", pVCpu->hm.s.rcLastExitToR3);
     }
     else
         pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");
