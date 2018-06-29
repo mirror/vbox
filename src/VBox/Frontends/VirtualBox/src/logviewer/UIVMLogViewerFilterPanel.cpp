@@ -78,7 +78,6 @@ protected:
     virtual void        mousePressEvent(QMouseEvent * event) /* override */;
     virtual void        mouseReleaseEvent(QMouseEvent *){}
     virtual void        paintEvent(QPaintEvent *event) /* override */;
-    virtual void        resizeEvent(QResizeEvent *event) /* override */;
     /* Override the contextMenuEvent to disable it: */
     virtual void        contextMenuEvent(QContextMenuEvent *event) /* override */{}
 
@@ -145,9 +144,10 @@ void UIVMFilterLineEdit::mousePressEvent(QMouseEvent * event)
     QLineEdit::mouseDoubleClickEvent(event);
 }
 
-void UIVMFilterLineEdit::resizeEvent(QResizeEvent *event)
+void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
 {
-    QLineEdit::resizeEvent(event);
+    QLineEdit::paintEvent(event);
+
 
     if (!m_pClearAllButton || !m_pRemoveTermButton)
         createButtons();
@@ -155,17 +155,14 @@ void UIVMFilterLineEdit::resizeEvent(QResizeEvent *event)
 
     int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
     m_pClearAllButton->setGeometry(width() - clearButtonSize, deltaHeight, clearButtonSize, clearButtonSize);
-}
 
-void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
-{
-    QLineEdit::paintEvent(event);
-    int clearButtonSize = height();
+
+
     /* If we have a selected term move the m_pRemoveTermButton to the end of the
        or start of the word (depending on the location of the word within line edit itself: */
     if (hasSelectedText())
     {
-        int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
+        //int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
         m_pRemoveTermButton->show();
         int buttonSize = m_iRemoveTermButtonSize;
         int charWidth = fontMetrics().width('x');
