@@ -1394,10 +1394,28 @@ class TestDriverBase(object): # pylint: disable=R0902
         Handle the action that extracts the test resources for off site use.
         Returns a success indicator and error details with the reporter.
 
-        Usually no need to override this.
+        There is usually no need to override this.
         """
-        reporter.error('the extract action is not implemented')
-        return False;
+        fRc = True;
+        asRsrcs = self.getResourceSet();
+        for iRsrc, sRsrc in enumerate(asRsrcs):
+            reporter.log('Resource #%s: "%s"' % (iRsrc, sRsrc));
+            sSrcPath = os.path.normpath(os.path.abspath(os.path.join(self.sResourcePath, sRsrc.replace('/', os.path.sep))));
+            sDstPath = os.path.normpath(os.path.join(self.sExtractDstPath, sRsrc.replace('/', os.path.sep)));
+
+            sDstDir = os.path.dirname(sDstPath);
+            if not os.path.exists(sDstDir):
+                try:    os.makedirs(sDstDir, 0o775);
+                except: fRc = reporter.errorXcpt('Error creating directory "%s":' % (sDstDir,));
+
+            if os.path.isfile(sSrcPath):
+                try:    utils.copyFileSimple(sSrcPath, sDstPath);
+                except: fRc = reporter.errorXcpt('Error copying "%s" to "%s":' % (sSrcPath, sDstPath,));
+            elif os.path.isdir(sSrcPath):
+                fRc = reporter.error('Extracting directories have not been implemented yet');
+            else:
+                fRc = reporter.error('Missing or unsupported resource type: %s' % (sSrcPath,));
+        return fRc;
 
     def actionVerify(self):
         """
