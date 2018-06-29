@@ -737,14 +737,13 @@ class SubTestDriverBase(object):
 
     The test drivers invokes the sub-test drivers in a private manner during
     test execution, but some of the generic bits are done automagically by the
-    base class: options, help, various other actions.
+    base class: options, help, resources, various other actions.
     """
 
     def __init__(self, sName, oTstDrv):
         self.sName              = sName;
         self.oTstDrv            = oTstDrv;
         self.asRsrcs            = [];
-
 
     def showUsage(self):
         """
