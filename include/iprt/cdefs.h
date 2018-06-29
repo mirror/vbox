@@ -296,7 +296,7 @@
  * Used to indicate that we're compiling code which is running
  * in the Raw-mode Context (implies R0).
  */
-#if !defined(IN_RING3) && !defined(IN_RING0) && !defined(IN_RC) && !defined(IN_RC)
+#if !defined(IN_RING3) && !defined(IN_RING0) && !defined(IN_RC)
 # error "You must define which context the compiled code should run in; IN_RING3, IN_RING0 or IN_RC"
 #endif
 #if (defined(IN_RING3) && (defined(IN_RING0) || defined(IN_RC)) ) \
