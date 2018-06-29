@@ -201,6 +201,6 @@ class SubTstDrvAppliance1(base.SubTestDriverBase):
 
 
 if __name__ == '__main__':
-    from tests.api.tdApi1 import tdApi1
-    sys.exit(tdApi1([SubTstDrvAppliance1]).main(sys.argv))
+    from tests.api.tdApi1 import tdApi1;
+    sys.exit(tdApi1([SubTstDrvAppliance1]).main(sys.argv));
 
