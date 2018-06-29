@@ -4672,7 +4672,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             rc    |= hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE, false, NULL);
             AssertRCReturn(rc, rc);
 # ifdef LOG_ENABLED
-            PCVMXAUTOMSR pMsr = (PVMXAUTOMSR)CpVCpu->hm.s.vmx.pvGuestMsr;
+            PCVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
             for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
                 Log4Func(("MSR[%RU32]: u32Msr=%#RX32 u64Value=%#RX64\n", i, pMsr->u32Msr, pMsr->u64Value));
 # endif

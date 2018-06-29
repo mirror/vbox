@@ -425,8 +425,8 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_VMCS_GUEST_RIP_CACHE_IDX                            11
 #define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                   12
 #define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                   13
-#define VMX_VMCS_RO_EXIT_QUAL_CACHE_IDX                         14
-#define VMX_VMCS_MAX_CACHE_IDX                                  (VMX_VMCS_RO_EXIT_QUAL_CACHE_IDX + 1)
+#define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                14
+#define VMX_VMCS_MAX_CACHE_IDX                                  (VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX + 1)
 #define VMX_VMCS_GUEST_CR3_CACHE_IDX                            15
 #define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                    (VMX_VMCS_GUEST_CR3_CACHE_IDX + 1)
 /** @} */
