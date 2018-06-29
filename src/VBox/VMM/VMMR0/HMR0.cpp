@@ -1347,7 +1347,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
      */
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     RTThreadPreemptDisable(&PreemptState);
-    RTCPUID idCpu = RTMpCpuId();
+    RTCPUID const idCpu = RTMpCpuId();
 
     /* Enable VT-x or AMD-V if local init is required. */
     int rc;
@@ -1442,12 +1442,12 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     if (g_HmR0.vmx.fSupported)
     {
         Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
-               == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
+                                       == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
     }
     else
     {
         Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE))
-               == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
+                                       == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
     }
 
     rc = g_HmR0.pfnEnterSession(pVM, pVCpu, pCpu);

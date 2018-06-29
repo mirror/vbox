@@ -2543,8 +2543,10 @@ static int hmR0SvmExportGuestState(PVMCPU pVCpu)
  * @param   pHostCpu        Pointer to the physical CPU HM info. struct.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pCtx            Pointer to the nested-guest-CPU context.
+ *
+ * @remarks No-long-jmp zone!!!
  */
-static void hmR0SvmMergeMsrpmNested(PHMGLOBALCPUINFO pHostCpu, PVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(void) hmR0SvmMergeMsrpmNested(PHMGLOBALCPUINFO pHostCpu, PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     uint64_t const *pu64GstMsrpm    = (uint64_t const *)pVCpu->hm.s.svm.pvMsrBitmap;
     uint64_t const *pu64NstGstMsrpm = (uint64_t const *)pCtx->hwvirt.svm.CTX_SUFF(pvMsrBitmap);
