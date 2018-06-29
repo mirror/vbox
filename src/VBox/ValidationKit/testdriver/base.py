@@ -856,7 +856,7 @@ class TestDriverBase(object): # pylint: disable=R0902
         self.secTimeoutFudge = 30;
 
         # List of sub-test drivers (SubTestDriverBase derivatives).
-        self.aoSubTstDrvs    = [];
+        self.aoSubTstDrvs    = [];          # type: list(SubTestDriverBase)
 
         # Use the scratch path for temporary files.
         if self.sHost in ['win', 'os2']:
@@ -1383,9 +1383,12 @@ class TestDriverBase(object): # pylint: disable=R0902
         Returns a set of file and/or directory names relative to
         TESTBOX_PATH_RESOURCES.
 
-        Override this.
+        Override this, call super when using sub-test drivers.
         """
-        return [];
+        asRsrcs = [];
+        for oSubTstDrv in self.aoSubTstDrvs:
+            asRsrcs.extend(oSubTstDrv.asRsrcs);
+        return asRsrcs;
 
     def actionExtract(self):
         """

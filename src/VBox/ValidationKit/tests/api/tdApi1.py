@@ -49,22 +49,14 @@ class tdApi1(vbox.TestDriver):
     API Test wrapper #1.
     """
 
-    def __init__(self, aSubTestDrivers = None):
+    def __init__(self, aoSubTestDriverClasses = None):
         vbox.TestDriver.__init__(self)
-        self.asRsrcs = None;
-        for oSubTestDriverClass in aSubTestDrivers:
+        for oSubTestDriverClass in aoSubTestDriverClasses:
             self.addSubTestDriver(oSubTestDriverClass(self));
 
     #
     # Overridden methods.
     #
-
-    def getResourceSet(self):
-        if self.asRsrcs is None:
-            self.asRsrcs = [];
-            for oSubTstDrv in self.aoSubTstDrvs:
-                self.asRsrcs.extend(oSubTstDrv.asRsrcs);
-        return self.asRsrcs;
 
     def actionConfig(self):
         """
@@ -78,19 +70,19 @@ class tdApi1(vbox.TestDriver):
         """
         Execute the testcase, i.e. all sub-tests.
         """
-        fRc = True
+        fRc = True;
         for oSubTstDrv in self.aoSubTstDrvs:
-            fRc &= oSubTstDrv.testIt()
-        return fRc
+            fRc &= oSubTstDrv.testIt();
+        return fRc;
 
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    from tdPython1 import SubTstDrvPython1
-    from tdAppliance1 import SubTstDrvAppliance1
-    from tdMoveMedium1 import SubTstDrvMoveMedium1
-    from tdTreeDepth1 import SubTstDrvTreeDepth1
-    from tdMoveVM1 import SubTstDrvMoveVM1
+    from tdPython1     import SubTstDrvPython1;
+    from tdAppliance1  import SubTstDrvAppliance1;
+    from tdMoveMedium1 import SubTstDrvMoveMedium1;
+    from tdTreeDepth1  import SubTstDrvTreeDepth1;
+    from tdMoveVM1     import SubTstDrvMoveVM1;
     sys.exit(tdApi1([SubTstDrvPython1, SubTstDrvAppliance1, SubTstDrvMoveMedium1,
                      SubTstDrvTreeDepth1, SubTstDrvMoveVM1]).main(sys.argv))
 

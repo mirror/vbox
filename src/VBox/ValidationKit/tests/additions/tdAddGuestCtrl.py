@@ -3640,14 +3640,6 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
 
-    def getResourceSet(self):
-        if self.asRsrcs is None:
-            self.asRsrcs = [];
-            for oSubTstDrv in self.aoSubTstDrvs:
-                self.asRsrcs.extend(oSubTstDrv.asRsrcs);
-            self.asRsrcs.extend(self.oTestVmSet.getResourceSet());
-        return self.asRsrcs;
-
     def actionConfig(self):
         if not self.importVBoxApi(): # So we can use the constant below.
             return False;
