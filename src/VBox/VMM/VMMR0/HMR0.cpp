@@ -1614,7 +1614,6 @@ VMMR0_INT_DECL(int) HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMMR0_INT_DECL(int) HMR0SaveDebugState(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    RT_NOREF(pVM);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatDebug64SwitchBack);
     if (pVM->hm.s.vmx.fSupported)
         return VMXR0Execute64BitsHandler(pVCpu, HM64ON32OP_HMRCSaveGuestDebug64, 0, NULL);
