@@ -1596,7 +1596,7 @@ VMMR0_INT_DECL(void) HMR0NotifyCpumModifiedHostCr0(PVMCPU pVCpu)
  */
 VMMR0_INT_DECL(int) HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    RT_NOREF(pVM);
+    RT_NOREF(pCtx);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFpu64SwitchBack);
     if (pVM->hm.s.vmx.fSupported)
         return VMXR0Execute64BitsHandler(pVCpu, HM64ON32OP_HMRCSaveGuestFPU64, 0, NULL);
@@ -1612,8 +1612,9 @@ VMMR0_INT_DECL(int) HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR0_INT_DECL(int) HMR0SaveDebugState(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0_INT_DECL(int) HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    RT_NOREF(pCtx);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatDebug64SwitchBack);
     if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported)
         return VMXR0Execute64BitsHandler(pVCpu, HM64ON32OP_HMRCSaveGuestDebug64, 0, NULL);
