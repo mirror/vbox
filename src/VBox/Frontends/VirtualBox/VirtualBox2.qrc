@@ -1,5 +1,6 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="os_mandriva.png">images/os_mandriva.png</file>
         <file alias="os_mandriva_64.png">images/os_mandriva_64.png</file>
         <file alias="os_netbsd.png">images/os_netbsd.png</file>
         <file alias="os_netbsd_64.png">images/os_netbsd_64.png</file>
@@ -206,7 +207,6 @@
         <file alias="tools_banner_machine_200px.png">images/tools_banner_machine_200px.png</file>
         <file alias="tools_global_32px.png">images/tools_global_32px.png</file>
         <file alias="tools_machine_32px.png">images/tools_machine_32px.png</file>
-        <file alias="tpixel.png">images/tpixel.png</file>
         <file alias="usb_16px.png">images/usb_16px.png</file>
         <file alias="usb_24px.png">images/usb_24px.png</file>
         <file alias="usb_32px.png">images/usb_32px.png</file>

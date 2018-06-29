@@ -316,6 +316,5 @@
         <file alias="os_linux_64.png">images/os_linux_64.png</file>
         <file alias="os_macosx.png">images/os_macosx.png</file>
         <file alias="os_macosx_64.png">images/os_macosx_64.png</file>
-        <file alias="os_mandriva.png">images/os_mandriva.png</file>
     </qresource>
 </RCC>
