@@ -79,11 +79,9 @@ private:
 
 UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : UIVMLogViewerPanel(pParent, pViewer)
-    , m_pSearchLabel(0)
     , m_pSearchEditor(0)
     , m_pNextButton(0)
     , m_pPreviousButton(0)
-    , m_pNextPreviousButtonContainer(0)
     , m_pCaseSensitiveCheckBox(0)
     , m_pMatchWholeWordCheckBox(0)
     , m_pHighlightAllCheckBox(0)
@@ -184,7 +182,7 @@ void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
     else
     {
         /* we need this check not to remove the 'not found' label
-           when the user toggles with this checkbox: */
+           when the user toggles with this check-box: */
         if (m_iMatchCount != 0)
             clearHighlighting(-1);
         else
@@ -209,131 +207,108 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
     if (!mainLayout())
         return;
 
-    /* Create search-editor: */
-    m_pSearchEditor = new UIVMLogViewerSearchField(0 /* parent */);
-    if (m_pSearchEditor)
+    /* Create search field layout: */
+    QHBoxLayout *pSearchFieldLayout = new QHBoxLayout;
+    if (pSearchFieldLayout)
     {
-        /* Configure search-editor: */
-        m_pSearchEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        /* Add search-editor to main-layout: */
-        mainLayout()->addWidget(m_pSearchEditor);
-    }
-
-    /* Create search-label: */
-    m_pSearchLabel = new QLabel;
-    if (m_pSearchLabel)
-    {
-        /* Configure search-label: */
-        m_pSearchLabel->setBuddy(m_pSearchEditor);
-        /* Prepare font: */
-#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-        QFont font = m_pSearchLabel->font();
-        font.setPointSize(::darwinSmallFontSize());
-        m_pSearchLabel->setFont(font);
-#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-        /* Add search-label to main-layout: */
-        mainLayout()->addWidget(m_pSearchLabel);
-    }
-
-    /* Create Next/Previous buttons: */
-    m_pNextPreviousButtonContainer = new QFrame;
-    if (m_pNextPreviousButtonContainer)
-    {
-        mainLayout()->addWidget(m_pNextPreviousButtonContainer);
-        QHBoxLayout *pContainerLayout = new QHBoxLayout(m_pNextPreviousButtonContainer);
-        /* Configure layout: */
+        pSearchFieldLayout->setContentsMargins(0, 0, 0, 0);
 #ifdef VBOX_WS_MAC
-            pContainerLayout->setContentsMargins(5, 0, 5, 0);
-            pContainerLayout->setSpacing(5);
+        pSearchFieldLayout->setSpacing(5);
 #else
-            pContainerLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
-                                                 qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2, 0);
-            pContainerLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+        pSearchFieldLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
 #endif
-       m_pPreviousButton = new QIToolButton;
-       if (m_pPreviousButton)
-       {
-           pContainerLayout->addWidget(m_pPreviousButton);
-           m_pPreviousButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_backward_16px.png"));
-       }
 
-       m_pNextButton = new QIToolButton;
-       if (m_pNextButton){
-           pContainerLayout->addWidget(m_pNextButton);
-           m_pNextButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_forward_16px.png"));
-       }
+        /* Create search-editor: */
+        m_pSearchEditor = new UIVMLogViewerSearchField(0 /* parent */);
+        if (m_pSearchEditor)
+        {
+            m_pSearchEditor->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            pSearchFieldLayout->addWidget(m_pSearchEditor);
+        }
+
+        /* Create search button layout: */
+        QHBoxLayout *pSearchButtonsLayout = new QHBoxLayout;
+        if (pSearchButtonsLayout)
+        {
+            pSearchButtonsLayout->setContentsMargins(0, 0, 0, 0);
+            pSearchButtonsLayout->setSpacing(0);
+
+            /* Create Previous button: */
+            m_pPreviousButton = new QIToolButton;
+            if (m_pPreviousButton)
+            {
+                m_pPreviousButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_backward_16px.png"));
+                pSearchButtonsLayout->addWidget(m_pPreviousButton);
+            }
+
+            /* Create Next button: */
+            m_pNextButton = new QIToolButton;
+            if (m_pNextButton)
+            {
+                m_pNextButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_forward_16px.png"));
+                pSearchButtonsLayout->addWidget(m_pNextButton);
+            }
+
+            pSearchFieldLayout->addLayout(pSearchButtonsLayout);
+        }
+
+        mainLayout()->addLayout(pSearchFieldLayout);
     }
 
-    /* Create case-sensitive checkbox: */
+    /* Create case-sensitive check-box: */
     m_pCaseSensitiveCheckBox = new QCheckBox;
     if (m_pCaseSensitiveCheckBox)
     {
-        /* Configure font: */
-#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-        QFont font = m_pCaseSensitiveCheckBox->font();
-        font.setPointSize(::darwinSmallFontSize());
-        m_pCaseSensitiveCheckBox->setFont(font);
-#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-        /* Add case-sensitive checkbox to main-layout: */
         mainLayout()->addWidget(m_pCaseSensitiveCheckBox);
     }
 
+    /* Create whole-word check-box: */
     m_pMatchWholeWordCheckBox = new QCheckBox;
     if (m_pMatchWholeWordCheckBox)
     {
-        /* Configure focus for case-sensitive checkbox: */
         setFocusProxy(m_pMatchWholeWordCheckBox);
-        /* Configure font: */
-#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-        QFont font = m_pMatchWholeWordCheckBox->font();
-        font.setPointSize(::darwinSmallFontSize());
-        m_pMatchWholeWordCheckBox->setFont(font);
-#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
         mainLayout()->addWidget(m_pMatchWholeWordCheckBox);
     }
 
+    /* Create highlight-all check-box: */
     m_pHighlightAllCheckBox = new QCheckBox;
     if (m_pHighlightAllCheckBox)
     {
-        /* Configure font: */
-#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-        QFont font = m_pHighlightAllCheckBox->font();
-        font.setPointSize(::darwinSmallFontSize());
-        m_pHighlightAllCheckBox->setFont(font);
-#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-        /* Add case-sensitive checkbox to main-layout: */
         mainLayout()->addWidget(m_pHighlightAllCheckBox);
     }
 
-    /* Create warning-icon: */
-    m_pWarningIcon = new QLabel;
-    if (m_pWarningIcon)
+    /* Create search field layout: */
+    QHBoxLayout *pSearchErrorLayout = new QHBoxLayout;
+    if (pSearchErrorLayout)
     {
-        /* Confifure warning-icon: */
-        m_pWarningIcon->hide();
-        QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, this);
-        if (!icon.isNull())
-            m_pWarningIcon->setPixmap(icon.pixmap(16, 16));
-        /* Add warning-icon to main-layout: */
-        mainLayout()->addWidget(m_pWarningIcon);
-    }
+        pSearchErrorLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+        pSearchErrorLayout->setSpacing(5);
+#else
+        pSearchErrorLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+#endif
 
-    /* Create warning-label: */
-    m_pInfoLabel = new QLabel;
-    if (m_pInfoLabel)
-    {
-        /* Configure warning-label: */
-        m_pInfoLabel->hide();
-        /* Prepare font: */
-#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
-        QFont font = m_pInfoLabel->font();
-        font.setPointSize(::darwinSmallFontSize());
-        m_pInfoLabel->setFont(font);
-#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
-        /* Add warning-label to main-layout: */
-        mainLayout()->addWidget(m_pInfoLabel);
+        /* Create warning-icon: */
+        m_pWarningIcon = new QLabel;
+        if (m_pWarningIcon)
+        {
+            m_pWarningIcon->hide();
+            QIcon icon = UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_MessageBoxWarning, this);
+            if (!icon.isNull())
+                m_pWarningIcon->setPixmap(icon.pixmap(16, 16));
+            pSearchErrorLayout->addWidget(m_pWarningIcon);
+        }
+
+        /* Create warning-label: */
+        m_pInfoLabel = new QLabel;
+        if (m_pInfoLabel)
+        {
+            m_pInfoLabel->hide();
+            pSearchErrorLayout->addWidget(m_pInfoLabel);
+        }
+
+        mainLayout()->addLayout(pSearchErrorLayout);
     }
-    mainLayout()->addStretch(2);
 }
 
 void UIVMLogViewerSearchPanel::prepareConnections()
@@ -352,36 +327,20 @@ void UIVMLogViewerSearchPanel::prepareConnections()
 
 void UIVMLogViewerSearchPanel::retranslateUi()
 {
-    if (m_pSearchLabel)
-        m_pSearchLabel->setText(QString("%1 ").arg(UIVMLogViewerWidget::tr("&Find")));
+    UIVMLogViewerPanel::retranslateUi();
 
-    if (m_pSearchEditor)
-        m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
+    m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
+    m_pNextButton->setToolTip(UIVMLogViewerWidget::tr("Search for the next occurrence of the string (F3)"));
+    m_pPreviousButton->setToolTip(UIVMLogViewerWidget::tr("Search for the previous occurrence of the string (Shift+F3)"));
 
-    if (m_pNextButton)
-        m_pNextButton->setToolTip(UIVMLogViewerWidget::tr("Search for the next occurrence of the string (F3)"));
+    m_pCaseSensitiveCheckBox->setText(UIVMLogViewerWidget::tr("C&ase Sensitive"));
+    m_pCaseSensitiveCheckBox->setToolTip(UIVMLogViewerWidget::tr("When checked, perform case sensitive search"));
 
-    if (m_pPreviousButton)
-        m_pPreviousButton->setToolTip(UIVMLogViewerWidget::tr("Search for the previous occurrence of the string (Shift+F3)"));
+    m_pMatchWholeWordCheckBox->setText(UIVMLogViewerWidget::tr("Ma&tch Whole Word"));
+    m_pMatchWholeWordCheckBox->setToolTip(UIVMLogViewerWidget::tr("When checked, search matches only complete words"));
 
-
-    if (m_pCaseSensitiveCheckBox)
-    {
-        m_pCaseSensitiveCheckBox->setText(UIVMLogViewerWidget::tr("C&ase Sensitive"));
-        m_pCaseSensitiveCheckBox->setToolTip(UIVMLogViewerWidget::tr("Perform case sensitive search (when checked)"));
-    }
-
-    if (m_pMatchWholeWordCheckBox)
-    {
-        m_pMatchWholeWordCheckBox->setText(UIVMLogViewerWidget::tr("Ma&tch Whole Word"));
-        m_pMatchWholeWordCheckBox->setToolTip(UIVMLogViewerWidget::tr("Search matches only complete words when checked"));
-    }
-
-    if (m_pHighlightAllCheckBox)
-    {
-        m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("&Highlight All"));
-        m_pHighlightAllCheckBox->setToolTip(UIVMLogViewerWidget::tr("All occurence of the search text are highlighted"));
-    }
+    m_pHighlightAllCheckBox->setText(UIVMLogViewerWidget::tr("&Highlight All"));
+    m_pHighlightAllCheckBox->setToolTip(UIVMLogViewerWidget::tr("When checked, all occurence of the search text are highlighted"));
 
     if (m_iMatchCount == 0)
         m_pInfoLabel->setText(UIVMLogViewerWidget::tr("String not found"));

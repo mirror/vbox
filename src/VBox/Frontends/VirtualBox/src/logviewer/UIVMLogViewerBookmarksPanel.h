@@ -23,7 +23,7 @@
 
 /* Forward declarations: */
 class QComboBox;
-class QFrame;
+class QWidget;
 class QIToolButton;
 
 /** UIVMLogViewerPanel extension providing GUI for bookmark management. Show a list of bookmarks currently set
@@ -82,7 +82,6 @@ private:
     QIToolButton *m_pDeleteCurrentButton;
     QIToolButton *m_pNextButton;
     QIToolButton *m_pPreviousButton;
-    QFrame       *m_pNextPreviousButtonContainer;
 };
 
 #endif /* !___UIVMLogViewerBookmarksPanel_h___ */

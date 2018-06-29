@@ -83,12 +83,13 @@ void UIVMLogViewerPanel::prepareWidgets()
     if (m_pMainLayout)
     {
 #ifdef VBOX_WS_MAC
-        m_pMainLayout->setContentsMargins(5, 0, 5, 0);
+        m_pMainLayout->setContentsMargins(5 /* since there is always a button */, 0, 10 /* standard */, 0);
         m_pMainLayout->setSpacing(10);
 #else
         m_pMainLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
-                                             qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2, 0);
-        m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+                                          qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2,
+                                          qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) / 2);
+        m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing));
 #endif
     }
     m_pCloseButton = new QIToolButton;
@@ -108,7 +109,7 @@ void UIVMLogViewerPanel::prepareConnections()
 void UIVMLogViewerPanel::retranslateUi()
 {
     if (m_pCloseButton)
-        m_pCloseButton->setToolTip(UIVMLogViewerWidget::tr("Close the search panel."));
+        m_pCloseButton->setToolTip(UIVMLogViewerWidget::tr("Close the pane"));
 }
 
 bool UIVMLogViewerPanel::eventFilter(QObject *pObject, QEvent *pEvent)

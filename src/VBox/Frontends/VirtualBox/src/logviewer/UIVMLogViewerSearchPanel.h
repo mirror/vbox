@@ -26,9 +26,9 @@
 
 /* Forward declarations: */
 class QCheckBox;
-class QFrame;
 class QHBoxLayout;
 class QLabel;
+class QWidget;
 class QIToolButton;
 class UIVMLogViewerSearchField;
 class UIVMLogViewerWidget;
@@ -98,14 +98,11 @@ private:
     /** Constructs the find flags for QTextDocument::find function. */
     QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection);
 
-    /** Holds the instance of search-label we create. */
-    QLabel *m_pSearchLabel;
     /** Holds the instance of search-editor we create. */
     UIVMLogViewerSearchField *m_pSearchEditor;
 
     QIToolButton *m_pNextButton;
     QIToolButton *m_pPreviousButton;
-    QFrame       *m_pNextPreviousButtonContainer;
     /** Holds the instance of case-sensitive checkbox we create. */
     QCheckBox    *m_pCaseSensitiveCheckBox;
     QCheckBox    *m_pMatchWholeWordCheckBox;

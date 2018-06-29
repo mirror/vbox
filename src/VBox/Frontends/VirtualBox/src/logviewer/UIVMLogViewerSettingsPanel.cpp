@@ -82,6 +82,7 @@ void UIVMLogViewerSettingsPanel::prepareWidgets()
     if (!mainLayout())
         return;
 
+    /* Create line-number check-box: */
     m_pLineNumberCheckBox = new QCheckBox;
     if (m_pLineNumberCheckBox)
     {
@@ -89,6 +90,7 @@ void UIVMLogViewerSettingsPanel::prepareWidgets()
         mainLayout()->addWidget(m_pLineNumberCheckBox, 0, Qt::AlignLeft);
     }
 
+    /* Create wrap-lines check-box: */
     m_pWrapLinesCheckBox = new QCheckBox;
     if (m_pWrapLinesCheckBox)
     {
@@ -96,6 +98,7 @@ void UIVMLogViewerSettingsPanel::prepareWidgets()
         mainLayout()->addWidget(m_pWrapLinesCheckBox, 0, Qt::AlignLeft);
     }
 
+    /* Create font-size spin-box: */
     m_pFontSizeSpinBox = new QSpinBox;
     if (m_pFontSizeSpinBox)
     {
@@ -105,25 +108,39 @@ void UIVMLogViewerSettingsPanel::prepareWidgets()
         m_pFontSizeSpinBox->setMinimum(6);
     }
 
+    /* Create font-size label: */
     m_pFontSizeLabel = new QLabel;
     if (m_pFontSizeLabel)
     {
         mainLayout()->addWidget(m_pFontSizeLabel, 0, Qt::AlignLeft);
     }
 
-    m_pOpenFontDialogButton = new QIToolButton;
-    if (m_pOpenFontDialogButton)
+    /* Create combo/button layout: */
+    QHBoxLayout *pButtonLayout = new QHBoxLayout;
+    if (pButtonLayout)
     {
-        mainLayout()->addWidget(m_pOpenFontDialogButton, 0);
-        m_pOpenFontDialogButton->setIcon(UIIconPool::iconSet(":/log_viewer_choose_font_16px.png"));
+        pButtonLayout->setContentsMargins(0, 0, 0, 0);
+        pButtonLayout->setSpacing(0);
+
+        /* Create open font dialog button: */
+        m_pOpenFontDialogButton = new QIToolButton;
+        if (m_pOpenFontDialogButton)
+        {
+            pButtonLayout->addWidget(m_pOpenFontDialogButton, 0);
+            m_pOpenFontDialogButton->setIcon(UIIconPool::iconSet(":/log_viewer_choose_font_16px.png"));
+        }
+
+        /* Create reset font to default button: */
+        m_pResetToDefaultsButton = new QIToolButton;
+        if (m_pResetToDefaultsButton)
+        {
+            pButtonLayout->addWidget(m_pResetToDefaultsButton, 0);
+            m_pResetToDefaultsButton->setIcon(UIIconPool::iconSet(":/log_viewer_reset_font_16px.png"));
+        }
+
+        mainLayout()->addLayout(pButtonLayout);
     }
 
-    m_pResetToDefaultsButton = new QIToolButton;
-    if (m_pResetToDefaultsButton)
-    {
-        mainLayout()->addWidget(m_pResetToDefaultsButton, 0);
-        m_pResetToDefaultsButton->setIcon(UIIconPool::iconSet(":/log_viewer_reset_font_16px.png"));
-    }
     mainLayout()->addStretch(2);
 }
 
@@ -145,29 +162,18 @@ void UIVMLogViewerSettingsPanel::prepareConnections()
 void UIVMLogViewerSettingsPanel::retranslateUi()
 {
     UIVMLogViewerPanel::retranslateUi();
-    if (m_pLineNumberCheckBox)
-    {
-        m_pLineNumberCheckBox->setText(UIVMLogViewerWidget::tr("Show Line Numbers"));
-        m_pLineNumberCheckBox->setToolTip(UIVMLogViewerWidget::tr("Show Line Numbers"));
-    }
 
-    if (m_pWrapLinesCheckBox)
-    {
-        m_pWrapLinesCheckBox->setText(UIVMLogViewerWidget::tr("Wrap Lines"));
-        m_pWrapLinesCheckBox->setToolTip(UIVMLogViewerWidget::tr("Wrap Lines"));
-    }
+    m_pLineNumberCheckBox->setText(UIVMLogViewerWidget::tr("Show Line Numbers"));
+    m_pLineNumberCheckBox->setToolTip(UIVMLogViewerWidget::tr("When checked, show line numbers"));
 
-    if (m_pFontSizeLabel)
-    {
-        m_pFontSizeLabel->setText(UIVMLogViewerWidget::tr("Font Size"));
-        m_pFontSizeSpinBox->setToolTip(UIVMLogViewerWidget::tr("Log Viewer Font Size"));
-    }
+    m_pWrapLinesCheckBox->setText(UIVMLogViewerWidget::tr("Wrap Lines"));
+    m_pWrapLinesCheckBox->setToolTip(UIVMLogViewerWidget::tr("When checked, wrap lines"));
 
-    if (m_pOpenFontDialogButton)
-        m_pOpenFontDialogButton->setToolTip(UIVMLogViewerWidget::tr("Open a font dialog to select font face for the logviewer"));
+    m_pFontSizeLabel->setText(UIVMLogViewerWidget::tr("Font Size"));
+    m_pFontSizeSpinBox->setToolTip(UIVMLogViewerWidget::tr("Log viewer font size"));
 
-    if (m_pResetToDefaultsButton)
-        m_pResetToDefaultsButton->setToolTip(UIVMLogViewerWidget::tr("Reset settings to application defaults"));
+    m_pOpenFontDialogButton->setToolTip(UIVMLogViewerWidget::tr("Open a font dialog to select font face for the logviewer"));
+    m_pResetToDefaultsButton->setToolTip(UIVMLogViewerWidget::tr("Reset settings to application defaults"));
 }
 
 void UIVMLogViewerSettingsPanel::sltOpenFontDialog()

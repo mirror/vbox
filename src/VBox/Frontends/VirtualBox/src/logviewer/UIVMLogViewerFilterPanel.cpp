@@ -145,17 +145,19 @@ void UIVMFilterLineEdit::mousePressEvent(QMouseEvent * event)
 
 void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
 {
+    /* Call to base-class: */
     QLineEdit::paintEvent(event);
-
 
     if (!m_pClearAllButton || !m_pRemoveTermButton)
         createButtons();
     int clearButtonSize = height();
 
     int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
+#ifdef VBOX_WS_MAC
+    m_pClearAllButton->setGeometry(width() - clearButtonSize - 1, deltaHeight, clearButtonSize, clearButtonSize);
+#else
     m_pClearAllButton->setGeometry(width() - clearButtonSize, deltaHeight, clearButtonSize, clearButtonSize);
-
-
+#endif
 
     /* If we have a selected term move the m_pRemoveTermButton to the end of the
        or start of the word (depending on the location of the word within line edit itself: */
@@ -165,7 +167,11 @@ void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
         m_pRemoveTermButton->show();
         int buttonSize = m_iRemoveTermButtonSize;
         int charWidth = fontMetrics().width('x');
+#ifdef VBOX_WS_MAC
+        int buttonLeft = cursorRect().left() + 1;
+#else
         int buttonLeft = cursorRect().right() - 0.5 * charWidth;
+#endif
         /* If buttonLeft is in far right of the line edit, move the
            button to left side of the selected word: */
         if (buttonLeft + buttonSize  >=  width() - clearButtonSize)
@@ -415,36 +421,56 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
 
     prepareRadioButtonGroup();
 
-    m_pFilterComboBox = new QComboBox;
-    if (m_pFilterComboBox)
+    /* Create combo/button layout: */
+    QHBoxLayout *pComboButtonLayout = new QHBoxLayout;
+    if (pComboButtonLayout)
     {
-        m_pFilterComboBox->setEditable(true);
-        QStringList strFilterPresets;
-        strFilterPresets << "" << "GUI" << "NAT" << "AHCI" << "VD" << "Audio" << "VUSB" << "SUP" << "PGM" << "HDA"
-                         << "HM" << "VMM" << "GIM" << "CPUM";
-        strFilterPresets.sort();
-        m_pFilterComboBox->addItems(strFilterPresets);
-        mainLayout()->addWidget(m_pFilterComboBox,1);
+        pComboButtonLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+        pComboButtonLayout->setSpacing(5);
+#else
+        pComboButtonLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+#endif
+
+        /* Create filter combo-box: */
+        m_pFilterComboBox = new QComboBox;
+        if (m_pFilterComboBox)
+        {
+            m_pFilterComboBox->setEditable(true);
+            QStringList strFilterPresets;
+            strFilterPresets << "" << "GUI" << "NAT" << "AHCI" << "VD"
+                             << "Audio" << "VUSB" << "SUP" << "PGM" << "HDA"
+                             << "HM" << "VMM" << "GIM" << "CPUM";
+            strFilterPresets.sort();
+            m_pFilterComboBox->addItems(strFilterPresets);
+            pComboButtonLayout->addWidget(m_pFilterComboBox);
+        }
+
+        /* Create add filter-term button: */
+        m_pAddFilterTermButton = new QIToolButton;
+        if (m_pAddFilterTermButton)
+        {
+            m_pAddFilterTermButton->setIcon(UIIconPool::iconSet(":/log_viewer_filter_add_16px.png"));
+            pComboButtonLayout->addWidget(m_pAddFilterTermButton);
+        }
+
+        mainLayout()->addLayout(pComboButtonLayout, 1);
     }
 
-    m_pAddFilterTermButton = new QIToolButton;
-    if (m_pAddFilterTermButton)
-    {
-        m_pAddFilterTermButton->setIcon(UIIconPool::iconSet(":/log_viewer_filter_add_16px.png"));
-        mainLayout()->addWidget(m_pAddFilterTermButton,0);
-    }
-
+    /* Create filter-term line-edit: */
     m_pFilterTermsLineEdit = new UIVMFilterLineEdit;
     if (m_pFilterTermsLineEdit)
     {
-        mainLayout()->addWidget(m_pFilterTermsLineEdit, 4);
-        m_pFilterTermsLineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum /*vertical */);
+        m_pFilterTermsLineEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        mainLayout()->addWidget(m_pFilterTermsLineEdit, 3);
     }
 
+    /* Create result label: */
     m_pResultLabel = new QLabel;
     if (m_pResultLabel)
     {
-        mainLayout()->addWidget(m_pResultLabel,0);
+        m_pResultLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        mainLayout()->addWidget(m_pResultLabel, 0);
     }
 }
 
@@ -455,6 +481,7 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
     if (m_pRadioButtonContainer)
     {
         /* Configure container: */
+        m_pRadioButtonContainer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         m_pRadioButtonContainer->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 
         /* Create container layout: */
@@ -463,7 +490,7 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
         {
             /* Configure layout: */
 #ifdef VBOX_WS_MAC
-            pContainerLayout->setContentsMargins(5, 0, 0, 5);
+            pContainerLayout->setContentsMargins(5, 0, 0, 7);
             pContainerLayout->setSpacing(5);
 #else
             pContainerLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
@@ -527,11 +554,13 @@ void UIVMLogViewerFilterPanel::prepareConnections()
 void UIVMLogViewerFilterPanel::retranslateUi()
 {
     UIVMLogViewerPanel::retranslateUi();
-    m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Select or enter a term which will be used in filtering the log text."));
-    m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add the filter term to the set of filter terms."));
+
+    m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Select or enter a term which will be used in filtering the log text"));
+    m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add the filter term to the set of filter terms"));
     m_pResultLabel->setText(UIVMLogViewerWidget::tr("Showing %1/%2").arg(m_iFilteredLineCount).arg(m_iUnfilteredLineCount));
-    m_pFilterTermsLineEdit->setToolTip(UIVMLogViewerWidget::tr("The filter terms list. Select one to remove or click the button on the right side to remove them all."));
-    m_pRadioButtonContainer->setToolTip(UIVMLogViewerWidget::tr("The type of boolean operator for filter operation."));
+    m_pFilterTermsLineEdit->setToolTip(UIVMLogViewerWidget::tr("The filter terms list, select one to remove or click "
+                                                               "the button on the right side to remove them all"));
+    m_pRadioButtonContainer->setToolTip(UIVMLogViewerWidget::tr("The type of boolean operator for filter operation"));
 }
 
 bool UIVMLogViewerFilterPanel::eventFilter(QObject *pObject, QEvent *pEvent)
