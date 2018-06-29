@@ -5326,6 +5326,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
                                                                      pCache->TestOut.pCtx));
     Assert(!(pCache->TestOut.eflags & X86_EFL_IF));
 #endif
+    NOREF(pCtx);
     return rc;
 }
 
