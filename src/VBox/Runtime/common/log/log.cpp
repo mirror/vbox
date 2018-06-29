@@ -59,6 +59,7 @@
 #ifdef IN_RING3
 # include <iprt/alloca.h>
 # include <stdio.h>
+# include "internal/time.h" /* For g_u64ProgramStartNanoTS. */
 #endif
 
 
@@ -175,6 +176,8 @@ typedef struct RTLOGGERINTERNAL
     char * volatile         pchRingBufCur;
     /** @} */
 
+    /** Program time base for ring-0 (copy of g_u64ProgramStartNanoTS). */
+    uint64_t                nsR0ProgramStart;
     /** Thread name for use in ring-0 with RTLOGFLAGS_PREFIX_THREAD. */
     char                    szR0ThreadName[16];
 
@@ -206,7 +209,7 @@ typedef struct RTLOGGERINTERNAL
 } RTLOGGERINTERNAL;
 
 /** The revision of the internal logger structure. */
-# define RTLOGGERINTERNAL_REV    UINT32_C(10)
+# define RTLOGGERINTERNAL_REV    UINT32_C(11)
 
 # ifdef IN_RING3
 /** The size of the RTLOGGERINTERNAL structure in ring-0.  */
@@ -828,7 +831,9 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         pLogger->pInt->pfnFlush                 = NULL;
         pLogger->pInt->pfnPrefix                = NULL;
         pLogger->pInt->pvPrefixUserArg          = NULL;
+        pLogger->pInt->fPendingPrefix           = true;
         pLogger->pInt->fCreated                 = false;
+        pLogger->pInt->nsR0ProgramStart         = 0;
         RT_ZERO(pLogger->pInt->szR0ThreadName);
         pLogger->pInt->cMaxGroups               = cGroups;
         pLogger->pInt->papszGroups              = papszGroups;
@@ -1319,7 +1324,7 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger,
     pInt->pfnFlush              = (PFNRTLOGFLUSH)pfnFlushR0Ptr;
     pInt->pfnPrefix             = NULL;
     pInt->pvPrefixUserArg       = NULL;
-    pInt->fPendingPrefix        = false;
+    pInt->fPendingPrefix        = true;
     pInt->cMaxGroups            = cMaxGroups;
     pInt->papszGroups           = NULL;
     pInt->cMaxEntriesPerGroup   = UINT32_MAX;
@@ -1330,7 +1335,7 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger,
     }
     else
         pInt->pacEntriesPerGroup= NULL;
-
+    pInt->nsR0ProgramStart      = g_u64ProgramStartNanoTS;
     RT_ZERO(pInt->szR0ThreadName);
     if (cchThreadName)
         memcpy(pInt->szR0ThreadName, pszThreadName, cchThreadName);
@@ -1400,24 +1405,6 @@ RTDECL(int) RTLogCopyGroupsAndFlagsForR0(PRTLOGGER pDstLogger, RTR0PTR pDstLogge
 }
 RT_EXPORT_SYMBOL(RTLogCopyGroupsAndFlagsForR0);
 
-
-RTDECL(int) RTLogSetCustomPrefixCallbackForR0(PRTLOGGER pLogger, RTR0PTR pLoggerR0Ptr,
-                                              RTR0PTR pfnCallbackR0Ptr, RTR0PTR pvUserR0Ptr)
-{
-    AssertPtrReturn(pLogger, VERR_INVALID_POINTER);
-    AssertReturn(pLogger->u32Magic == RTLOGGER_MAGIC, VERR_INVALID_MAGIC);
-
-    /*
-     * Do the work.
-     */
-    PRTLOGGERINTERNAL pInt = (PRTLOGGERINTERNAL)((uintptr_t)pLogger->pInt - pLoggerR0Ptr + (uintptr_t)pLogger);
-    AssertReturn(pInt->uRevision == RTLOGGERINTERNAL_REV, VERR_LOG_REVISION_MISMATCH);
-    pInt->pvPrefixUserArg = (void *)pvUserR0Ptr;
-    pInt->pfnPrefix       = (PFNRTLOGPREFIX)pfnCallbackR0Ptr;
-
-    return VINF_SUCCESS;
-}
-RT_EXPORT_SYMBOL(RTLogSetCustomPrefixCallbackForR0);
 
 RTDECL(void) RTLogFlushR0(PRTLOGGER pLogger, PRTLOGGER pLoggerR0)
 {
@@ -3723,7 +3710,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #if defined(IN_RING3) || defined(IN_RC)
                     uint64_t u64 = RTTimeProgramMilliTS();
 #else
-                    uint64_t u64 = 0;
+                    uint64_t u64 = (RTTimeNanoTS() - pLogger->pInt->nsR0ProgramStart) / 1000000;
 #endif
                     /* 1E8 milliseconds = 27 hours */
                     psz += RTStrFormatNumber(psz, u64, 10, 9, 0, RTSTR_F_ZEROPAD);
@@ -3757,6 +3744,10 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
 #if defined(IN_RING3) || defined(IN_RC)
                     uint64_t u64 = RTTimeProgramMicroTS();
+#else
+                    uint64_t u64 = (RTTimeNanoTS() - pLogger->pInt->nsR0ProgramStart) / 1000;
+
+#endif
                     psz += RTStrFormatNumber(psz, (uint32_t)(u64 / RT_US_1HOUR), 10, 2, 0, RTSTR_F_ZEROPAD);
                     *psz++ = ':';
                     uint32_t u32 = (uint32_t)(u64 % RT_US_1HOUR);
@@ -3768,10 +3759,6 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     *psz++ = '.';
                     psz += RTStrFormatNumber(psz, u32 % RT_US_1SEC, 10, 6, 0, RTSTR_F_ZEROPAD);
                     *psz++ = ' ';
-#else
-                    memset(psz, ' ', 16);
-                    psz += 16;
-#endif
                 }
 #define CCH_PREFIX_05   CCH_PREFIX_04 + (9+1+2+1+2+1+6+1)
 

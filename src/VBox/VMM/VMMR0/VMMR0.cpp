@@ -389,7 +389,6 @@ static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType
     if (RT_FAILURE(rc))
         return rc;
 
-
 #ifdef LOG_ENABLED
     /*
      * Register the EMT R0 logger instance for VCPU 0.
@@ -2344,39 +2343,6 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 #endif  /* LOG_ENABLED */
 }
 
-/**
- * Internal R0 logger worker: Custom prefix.
- *
- * @returns Number of chars written.
- *
- * @param   pLogger     The logger instance.
- * @param   pchBuf      The output buffer.
- * @param   cchBuf      The size of the buffer.
- * @param   pvUser      User argument (ignored).
- */
-VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser)
-{
-    NOREF(pvUser);
-#ifdef LOG_ENABLED
-    PVMMR0LOGGER pR0Logger = (PVMMR0LOGGER)((uintptr_t)pLogger - RT_OFFSETOF(VMMR0LOGGER, Logger));
-    if (    !VALID_PTR(pR0Logger)
-        ||  !VALID_PTR(pR0Logger + 1)
-        ||  pLogger->u32Magic != RTLOGGER_MAGIC
-        ||  cchBuf < 2)
-        return 0;
-
-    static const char s_szHex[17] = "0123456789abcdef";
-    VMCPUID const     idCpu       = pR0Logger->idCpu;
-    pchBuf[1] = s_szHex[ idCpu       & 15];
-    pchBuf[0] = s_szHex[(idCpu >> 4) & 15];
-
-    return 2;
-#else
-    NOREF(pLogger); NOREF(pchBuf); NOREF(cchBuf);
-    return 0;
-#endif
-}
-
 #ifdef LOG_ENABLED
 
 /**
@@ -2388,6 +2354,8 @@ VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
 {
     if (pVCpu->vmm.s.pR0LoggerR0)
         pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = true;
+    if (pVCpu->vmm.s.pR0RelLoggerR0)
+        pVCpu->vmm.s.pR0RelLoggerR0->fFlushingDisabled = true;
 }
 
 
@@ -2400,6 +2368,8 @@ VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
 {
     if (pVCpu->vmm.s.pR0LoggerR0)
         pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
+    if (pVCpu->vmm.s.pR0RelLoggerR0)
+        pVCpu->vmm.s.pR0RelLoggerR0->fFlushingDisabled = false;
 }
 
 
@@ -2412,9 +2382,47 @@ VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPU pVCpu)
 {
     if (pVCpu->vmm.s.pR0LoggerR0)
         return pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled;
+    if (pVCpu->vmm.s.pR0RelLoggerR0)
+        return pVCpu->vmm.s.pR0RelLoggerR0->fFlushingDisabled;
     return true;
 }
+
 #endif /* LOG_ENABLED */
+
+/**
+ * Override RTLogRelGetDefaultInstanceEx so we can do LogRel to VBox.log from EMTs in ring-0.
+ */
+DECLEXPORT(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
+{
+    PGVMCPU pGVCpu = GVMMR0GetGVCpuByEMT(NIL_RTNATIVETHREAD);
+    if (pGVCpu)
+    {
+        PVMCPU pVCpu = pGVCpu->pVCpu;
+        if (RT_VALID_PTR(pVCpu))
+        {
+            PVMMR0LOGGER pVmmLogger = pVCpu->vmm.s.pR0RelLoggerR0;
+            if (RT_VALID_PTR(pVmmLogger))
+            {
+                if (   pVmmLogger->fCreated
+                    && pVmmLogger->pVM == pGVCpu->pVM)
+                {
+                    if (pVmmLogger->Logger.fFlags & RTLOGFLAGS_DISABLED)
+                        return NULL;
+                    uint16_t const fFlags = RT_LO_U16(fFlagsAndGroup);
+                    uint16_t const iGroup = RT_HI_U16(fFlagsAndGroup);
+                    if (   iGroup != UINT16_MAX
+                        && (   (  pVmmLogger->Logger.afGroups[iGroup < pVmmLogger->Logger.cGroups ? iGroup : 0]
+                                & (fFlags | (uint32_t)RTLOGGRPFLAGS_ENABLED))
+                            != (fFlags | (uint32_t)RTLOGGRPFLAGS_ENABLED)))
+                        return NULL;
+                    return &pVmmLogger->Logger;
+                }
+            }
+        }
+    }
+    return SUPR0GetDefaultLogRelInstanceEx(fFlagsAndGroup);
+}
+
 
 /**
  * Jump back to ring-3 if we're the EMT and the longjmp is armed.

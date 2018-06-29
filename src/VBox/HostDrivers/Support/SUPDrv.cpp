@@ -276,12 +276,12 @@ static SUPFUNC g_aFunctions[] =
     { "RTLogDefaultInstanceEx",                 (void *)(uintptr_t)RTLogDefaultInstanceEx },
     { "RTLogGetDefaultInstance",                (void *)(uintptr_t)RTLogGetDefaultInstance },
     { "RTLogGetDefaultInstanceEx",              (void *)(uintptr_t)RTLogGetDefaultInstanceEx },
-    { "SUPR0GetDefaultLogInstanceEx",           (void *)(uintptr_t)RTLogGetDefaultInstanceEx },
+    { "SUPR0GetDefaultLogInstanceEx",           (void *)(uintptr_t)SUPR0GetDefaultLogInstanceEx },
     { "RTLogLoggerExV",                         (void *)(uintptr_t)RTLogLoggerExV },
     { "RTLogPrintfV",                           (void *)(uintptr_t)RTLogPrintfV },
     { "RTLogRelGetDefaultInstance",             (void *)(uintptr_t)RTLogRelGetDefaultInstance },
     { "RTLogRelGetDefaultInstanceEx",           (void *)(uintptr_t)RTLogRelGetDefaultInstanceEx },
-    { "SUPR0GetDefaultLogRelInstanceEx",        (void *)(uintptr_t)RTLogRelGetDefaultInstanceEx },
+    { "SUPR0GetDefaultLogRelInstanceEx",        (void *)(uintptr_t)SUPR0GetDefaultLogRelInstanceEx },
     { "RTLogSetDefaultInstanceThread",          (void *)(uintptr_t)RTLogSetDefaultInstanceThread },
     { "RTMemAllocExTag",                        (void *)(uintptr_t)RTMemAllocExTag },
     { "RTMemAllocTag",                          (void *)(uintptr_t)RTMemAllocTag },
@@ -3173,6 +3173,22 @@ SUPR0DECL(int) SUPR0SetSessionVM(PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
     }
     RTSpinlockRelease(pSession->pDevExt->Spinlock);
     return VINF_SUCCESS;
+}
+
+
+/** @copydoc RTLogGetDefaultInstanceEx
+ * @remarks To allow overriding RTLogGetDefaultInstanceEx locally. */
+SUPR0DECL(struct RTLOGGER *) SUPR0GetDefaultLogInstanceEx(uint32_t fFlagsAndGroup)
+{
+    return RTLogGetDefaultInstanceEx(fFlagsAndGroup);
+}
+
+
+/** @copydoc RTLogRelGetDefaultInstanceEx
+ * @remarks To allow overriding RTLogRelGetDefaultInstanceEx locally. */
+SUPR0DECL(struct RTLOGGER *) SUPR0GetDefaultLogRelInstanceEx(uint32_t fFlagsAndGroup)
+{
+    return RTLogRelGetDefaultInstanceEx(fFlagsAndGroup);
 }
 
 

@@ -1912,6 +1912,7 @@ GVMMR0DECL(PVM) GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT)
     /*
      * Search the handles in a linear fashion as we don't dare to take the lock (assert).
      */
+/** @todo introduce some pid hash table here, please. */
     for (unsigned i = 1; i < RT_ELEMENTS(pGVMM->aHandles); i++)
     {
         if (    pGVMM->aHandles[i].iSelf == i
@@ -1926,12 +1927,71 @@ GVMMR0DECL(PVM) GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT)
             /* This is fearly safe with the current process per VM approach. */
             PGVM pGVM = pGVMM->aHandles[i].pGVM;
             VMCPUID const cCpus = pGVM->cCpus;
+            ASMCompilerBarrier();
             if (    cCpus < 1
                 ||  cCpus > VMM_MAX_CPU_COUNT)
                 continue;
             for (VMCPUID idCpu = 1; idCpu < cCpus; idCpu++)
                 if (pGVM->aCpus[idCpu].hEMT == hEMT)
                     return pGVMM->aHandles[i].pVM;
+        }
+    }
+    return NULL;
+}
+
+
+/**
+ * Looks up the GVMCPU belonging to the specified EMT thread.
+ *
+ * This is used by the assertion machinery in VMMR0.cpp to avoid causing
+ * unnecessary kernel panics when the EMT thread hits an assertion. The
+ * call may or not be an EMT thread.
+ *
+ * @returns Pointer to the VM on success, NULL on failure.
+ * @param   hEMT    The native thread handle of the EMT.
+ *                  NIL_RTNATIVETHREAD means the current thread
+ */
+GVMMR0DECL(PGVMCPU) GVMMR0GetGVCpuByEMT(RTNATIVETHREAD hEMT)
+{
+    /*
+     * No Assertions here as we're usually called in a AssertMsgN,
+     * RTAssert*, Log and LogRel contexts.
+     */
+    PGVMM pGVMM = g_pGVMM;
+    if (   !VALID_PTR(pGVMM)
+        || pGVMM->u32Magic != GVMM_MAGIC)
+        return NULL;
+
+    if (hEMT == NIL_RTNATIVETHREAD)
+        hEMT = RTThreadNativeSelf();
+    RTPROCESS ProcId = RTProcSelf();
+
+    /*
+     * Search the handles in a linear fashion as we don't dare to take the lock (assert).
+     */
+/** @todo introduce some pid hash table here, please. */
+    for (unsigned i = 1; i < RT_ELEMENTS(pGVMM->aHandles); i++)
+    {
+        if (   pGVMM->aHandles[i].iSelf == i
+            && pGVMM->aHandles[i].ProcId == ProcId
+            && VALID_PTR(pGVMM->aHandles[i].pvObj)
+            && VALID_PTR(pGVMM->aHandles[i].pVM)
+            && VALID_PTR(pGVMM->aHandles[i].pGVM))
+        {
+            PGVM pGVM = pGVMM->aHandles[i].pGVM;
+            if (pGVMM->aHandles[i].hEMT0 == hEMT)
+                return &pGVM->aCpus[0];
+
+            /* This is fearly safe with the current process per VM approach. */
+            VMCPUID const cCpus = pGVM->cCpus;
+            ASMCompilerBarrier();
+            ASMCompilerBarrier();
+            if (   cCpus < 1
+                || cCpus > VMM_MAX_CPU_COUNT)
+                continue;
+            for (VMCPUID idCpu = 1; idCpu < cCpus; idCpu++)
+                if (pGVM->aCpus[idCpu].hEMT == hEMT)
+                    return &pGVM->aCpus[idCpu];
         }
     }
     return NULL;

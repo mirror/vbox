@@ -1326,7 +1326,6 @@
 # define RTLogRelSetDefaultInstance                     RT_MANGLER(RTLogRelSetDefaultInstance)
 # define RTLogSetBuffering                              RT_MANGLER(RTLogSetBuffering)
 # define RTLogSetCustomPrefixCallback                   RT_MANGLER(RTLogSetCustomPrefixCallback)
-# define RTLogSetCustomPrefixCallbackForR0              RT_MANGLER(RTLogSetCustomPrefixCallbackForR0)
 # define RTLogSetDefaultInstance                        RT_MANGLER(RTLogSetDefaultInstance)
 # define RTLogSetDefaultInstanceThread                  RT_MANGLER(RTLogSetDefaultInstanceThread) /* r0drv */
 # define RTLogSetGroupLimit                             RT_MANGLER(RTLogSetGroupLimit)

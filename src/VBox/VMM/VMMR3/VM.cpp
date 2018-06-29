@@ -106,9 +106,6 @@ static int                  vmR3InitRing0(PVM pVM);
 static int                  vmR3InitRC(PVM pVM);
 #endif
 static int                  vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
-#ifdef LOG_ENABLED
-static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
-#endif
 static void                 vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
 static bool                 vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew);
 static void                 vmR3DoAtState(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
@@ -708,10 +705,6 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                                          * Set the state and we're done.
                                          */
                                         vmR3SetState(pVM, VMSTATE_CREATED, VMSTATE_CREATING);
-
-#ifdef LOG_ENABLED
-                                        RTLogSetCustomPrefixCallback(NULL, vmR3LogPrefixCallback, pUVM);
-#endif
                                         return VINF_SUCCESS;
                                     }
                                 }
@@ -1215,40 +1208,6 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
         rc = PDMR3InitCompleted(pVM, enmWhat);
     return rc;
 }
-
-
-#ifdef LOG_ENABLED
-/**
- * Logger callback for inserting a custom prefix.
- *
- * @returns Number of chars written.
- * @param   pLogger             The logger.
- * @param   pchBuf              The output buffer.
- * @param   cchBuf              The output buffer size.
- * @param   pvUser              Pointer to the UVM structure.
- */
-static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser)
-{
-    AssertReturn(cchBuf >= 2, 0);
-    PUVM        pUVM   = (PUVM)pvUser;
-    PUVMCPU     pUVCpu = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
-    if (pUVCpu)
-    {
-        static const char s_szHex[17] = "0123456789abcdef";
-        VMCPUID const     idCpu       = pUVCpu->idCpu;
-        pchBuf[1] = s_szHex[ idCpu       & 15];
-        pchBuf[0] = s_szHex[(idCpu >> 4) & 15];
-    }
-    else
-    {
-        pchBuf[0] = 'x';
-        pchBuf[1] = 'y';
-    }
-
-    NOREF(pLogger);
-    return 2;
-}
-#endif /* LOG_ENABLED */
 
 
 /**
@@ -2748,9 +2707,6 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
     /*
      * Clean up and flush logs.
      */
-#ifdef LOG_ENABLED
-    RTLogSetCustomPrefixCallback(NULL, NULL, NULL);
-#endif
     RTLogFlush(NULL);
 }
 
