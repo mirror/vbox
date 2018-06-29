@@ -1364,7 +1364,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PCCPUMCTX pCtx, PSVMVMCB pVmcb, 
  */
 DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVmcbHost, RTHCPHYS HCPhysVmcb, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
-    RT_NOREF(pVM);
+    RT_NOREF2(pVM, pCtx);
     uint32_t aParam[8];
     aParam[0] = RT_LO_U32(HCPhysVmcbHost);              /* Param 1: HCPhysVmcbHost - Lo. */
     aParam[1] = RT_HI_U32(HCPhysVmcbHost);              /* Param 1: HCPhysVmcbHost - Hi. */
@@ -1456,7 +1456,7 @@ DECLINLINE(void) hmR0SvmClearXcptIntercept(PVMCPU pVCpu, PSVMVMCB pVmcb, uint8_t
     if (pVmcb->ctrl.u32InterceptXcpt & RT_BIT(uXcpt))
     {
         bool fRemove = true;
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         /* Only remove the intercept if the nested-guest is also not intercepting it! */
         PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
         if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
@@ -1464,7 +1464,9 @@ DECLINLINE(void) hmR0SvmClearXcptIntercept(PVMCPU pVCpu, PSVMVMCB pVmcb, uint8_t
             PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu);
             fRemove = !(pVmcbNstGstCache->u32InterceptXcpt & RT_BIT(uXcpt));
         }
-#endif
+# else
+        RT_NOREF(pVCpu);
+# endif
         if (fRemove)
         {
             pVmcb->ctrl.u32InterceptXcpt &= ~RT_BIT(uXcpt);
