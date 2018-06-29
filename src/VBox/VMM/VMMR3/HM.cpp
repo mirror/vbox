@@ -3093,29 +3093,6 @@ VMMR3_INT_DECL(void) HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Notification from EM about a rescheduling into hardware assisted execution
- * mode.
- *
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- */
-VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
-{
-    pVCpu->hm.s.fCtxChanged |= HM_CHANGED_ALL_GUEST;
-}
-
-
-/**
- * Notification from EM about returning from instruction emulation (REM / EM).
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMR3_INT_DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
-{
-    pVCpu->hm.s.fCtxChanged |= HM_CHANGED_ALL_GUEST;
-}
-
-
-/**
  * Checks if we are currently using hardware acceleration.
  *
  * @returns true if hardware acceleration is being used, otherwise false.

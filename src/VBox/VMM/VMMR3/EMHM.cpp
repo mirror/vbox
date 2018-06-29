@@ -53,14 +53,6 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-#if 0 /* Disabled till after 2.1.0 when we've time to test it. */
-#define EM_NOTIFY_HM
-#endif
-
-
-/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int      emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, int rc);
@@ -227,10 +219,6 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
 #endif /* !VBOX_WITH_REM */
     }
 
-#ifdef EM_NOTIFY_HM
-    if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
-        HMR3NotifyEmulated(pVCpu);
-#endif
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 
@@ -406,10 +394,6 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     *pfFFDone = false;
 
     STAM_COUNTER_INC(&pVCpu->em.s.StatHMExecuteCalled);
-
-#ifdef EM_NOTIFY_HM
-    HMR3NotifyScheduled(pVCpu);
-#endif
 
     /*
      * Spin till we get a forced action which returns anything but VINF_SUCCESS.
