@@ -2670,7 +2670,7 @@ static bool hmR3IsCodeSelectorOkForVmx(PCPUMSELREG pSel, unsigned uStackDpl)
      *  - G bit must be clear if any low limit bits are clear.
      */
     if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
-        && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity) )
+        && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
         return true;
     return false;
 }
@@ -2721,7 +2721,7 @@ static bool hmR3IsDataSelectorOkForVmx(PCPUMSELREG pSel)
                          *  - G bit must be clear if any low limit bits are clear.
                          */
                         if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
-                            && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity) )
+                            && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
                             return true;
                     }
                 }
@@ -2775,7 +2775,7 @@ static bool hmR3IsStackSelectorOkForVmx(PCPUMSELREG pSel)
      *  - G bit must be clear if any low limit bits are clear.
      */
     if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
-        && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity) )
+        && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
         return true;
     return false;
 }

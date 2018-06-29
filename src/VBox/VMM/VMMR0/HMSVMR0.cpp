@@ -1184,7 +1184,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
     {
         Log4Func(("%#RGv\n", GCVirt));
 
-        PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
+        PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
         PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
         AssertMsgReturn(pVmcb, ("Invalid pVmcb!\n"), VERR_SVM_INVALID_PVMCB);
 
