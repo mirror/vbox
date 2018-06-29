@@ -220,22 +220,28 @@ typedef uint8_t IEMMODE;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /** The CPUMCTX_EXTRN_XXX mask needed when calling IEMExecSvmVmexit().
  * IEM will ASSUME the caller has ensured these are already present. */
-# define IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK   (  CPUMCTX_EXTRN_RSP \
-                                              | CPUMCTX_EXTRN_RAX \
-                                              | CPUMCTX_EXTRN_RIP \
-                                              | CPUMCTX_EXTRN_RFLAGS \
-                                              | CPUMCTX_EXTRN_CS \
-                                              | CPUMCTX_EXTRN_SS \
-                                              | CPUMCTX_EXTRN_DS \
-                                              | CPUMCTX_EXTRN_ES \
-                                              | CPUMCTX_EXTRN_GDTR \
-                                              | CPUMCTX_EXTRN_IDTR \
-                                              | CPUMCTX_EXTRN_CR_MASK \
-                                              | CPUMCTX_EXTRN_EFER \
-                                              | CPUMCTX_EXTRN_DR6 \
-                                              | CPUMCTX_EXTRN_DR7 \
-                                              | CPUMCTX_EXTRN_OTHER_MSRS \
-                                              | CPUMCTX_EXTRN_HWVIRT)
+# define IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK         (  CPUMCTX_EXTRN_RSP \
+                                                    | CPUMCTX_EXTRN_RAX \
+                                                    | CPUMCTX_EXTRN_RIP \
+                                                    | CPUMCTX_EXTRN_RFLAGS \
+                                                    | CPUMCTX_EXTRN_CS \
+                                                    | CPUMCTX_EXTRN_SS \
+                                                    | CPUMCTX_EXTRN_DS \
+                                                    | CPUMCTX_EXTRN_ES \
+                                                    | CPUMCTX_EXTRN_GDTR \
+                                                    | CPUMCTX_EXTRN_IDTR \
+                                                    | CPUMCTX_EXTRN_CR_MASK \
+                                                    | CPUMCTX_EXTRN_EFER \
+                                                    | CPUMCTX_EXTRN_DR6 \
+                                                    | CPUMCTX_EXTRN_DR7 \
+                                                    | CPUMCTX_EXTRN_OTHER_MSRS \
+                                                    | CPUMCTX_EXTRN_HWVIRT \
+                                                    | CPUMCTX_EXTRN_APIC_TPR \
+                                                    | CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ)
+
+/** The CPUMCTX_EXTRN_XXX mask needed when calling IEMExecDecodedVmrun().
+ *  IEM will ASSUME the caller has ensured these are already present. */
+# define IEM_CPUMCTX_EXTRN_SVM_VMRUN_MASK          IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK
 #endif
 
 VMMDECL(VBOXSTRICTRC)       IEMExecOne(PVMCPU pVCpu);
