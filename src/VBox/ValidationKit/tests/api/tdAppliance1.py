@@ -201,7 +201,6 @@ class SubTstDrvAppliance1(base.SubTestDriverBase):
 
 
 if __name__ == '__main__':
-    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    from tdApi1 import tdApi1
+    from tests.api.tdApi1 import tdApi1
     sys.exit(tdApi1([SubTstDrvAppliance1]).main(sys.argv))
 
