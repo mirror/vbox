@@ -7251,7 +7251,7 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 DECLINLINE(int) hmR0VmxSetPendingDebugXcptVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     RT_NOREF(pVCpu);
-    Assert(!(ASMAtomicUoReadU64(&pMixedCtx->fExtrn) & CPUMCTX_EXTRN_RFLAGS));
+    Assert(!(ASMAtomicUoReadU64(&pMixedCtx->fExtrn) & CPUMCTX_EXTRN_RFLAGS)); NOREF(pMixedCtx);
     return VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
 }
 
