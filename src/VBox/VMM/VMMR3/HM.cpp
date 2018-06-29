@@ -1274,7 +1274,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
         PVMCPU   pVCpu   = &pVM->aCpus[iCpu];
-        PCPUMCTX pCpuCtx = CPUMQueryGuestCtxPtr(pVCpu);
+        PCPUMCTX pCpuCtx = &pVCpu->cpum.GstCtx;
         pCpuCtx->fWorldSwitcher &= ~(CPUMCTX_WSF_IBPB_EXIT | CPUMCTX_WSF_IBPB_ENTRY);
         if (pVM->cpum.ro.HostFeatures.fIbpb)
         {
@@ -1586,8 +1586,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
             {
                 pVM->hm.s.vmx.pNonPagingModeEPTPageTable->a[i].u  = _4M * i;
                 pVM->hm.s.vmx.pNonPagingModeEPTPageTable->a[i].u |= X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US
-                                                                  | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS
-                                                                  | X86_PDE4M_G;
+                                                                 |  X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS
+                                                                 |  X86_PDE4M_G;
             }
 
             /* We convert it here every time as PCI regions could be reconfigured. */
@@ -2228,7 +2228,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, voi
      * We're racing other VCPUs here, so don't try patch the instruction twice
      * and make sure there is still room for our patch record.
      */
-    PCPUMCTX    pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
+    PCPUMCTX    pCtx   = &pVCpu->cpum.GstCtx;
     PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
     if (pPatch)
     {
@@ -2404,7 +2404,7 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
      * We're racing other VCPUs here, so don't try patch the instruction twice
      * and make sure there is still room for our patch record.
      */
-    PCPUMCTX    pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
+    PCPUMCTX    pCtx   = &pVCpu->cpum.GstCtx;
     PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
     if (pPatch)
     {
