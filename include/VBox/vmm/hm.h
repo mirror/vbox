@@ -175,9 +175,11 @@ VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM
 VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
 VMM_INT_DECL(bool)              HMAreMsrBitmapsAvailable(PVM pVM);
 VMM_INT_DECL(PGMMODE)           HMGetShwPagingMode(PVM pVM);
-VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(bool)              HMSvmIsVGifActive(PVM pVM);
 VMM_INT_DECL(uint64_t)          HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks);
+# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx);
+# endif
 #else /* Nops in RC: */
 # define HMFlushTLB(pVCpu)                              do { } while (0)
 # define HMIsNestedPagingActive(pVM)                    false

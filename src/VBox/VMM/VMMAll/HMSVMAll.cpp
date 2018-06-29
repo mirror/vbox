@@ -118,7 +118,7 @@ int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx)
     return fPatchFound ? VINF_SUCCESS : VERR_NOT_FOUND;
 }
 
-
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Notification callback for when a \#VMEXIT happens outside SVM R0 code (e.g.
  * in IEM).
@@ -171,7 +171,7 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
               ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", pVCpu->cpum.GstCtx.fExtrn, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK));
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 }
-
+#endif
 
 /**
  * Checks if the Virtual GIF (Global Interrupt Flag) feature is supported and
