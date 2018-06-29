@@ -2935,8 +2935,8 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             if (    !CPUMIsGuestInLongModeEx(pCtx)
                 &&  !pVM->hm.s.vmx.fUnrestrictedGuest)
             {
-                if (    !pVM->hm.s.fNestedPaging        /* Requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap */
-                    ||  CPUMIsGuestInRealModeEx(pCtx))  /* Requires a fake TSS for real mode - stored in the VMM device heap */
+                if (   !pVM->hm.s.fNestedPaging        /* Requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap */
+                    ||  CPUMIsGuestInRealModeEx(pCtx)) /* Requires a fake TSS for real mode - stored in the VMM device heap */
                     return false;
 
                 /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
@@ -2946,6 +2946,7 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                 /* The guest is about to complete the switch to protected mode. Wait a bit longer. */
                 /* Windows XP; switch to protected mode; all selectors are marked not present in the
                  * hidden registers (possible recompiler bug; see load_seg_vm) */
+                /** @todo Is this supposed recompiler bug still relevant with IEM? */
                 if (pCtx->cs.Attr.n.u1Present == 0)
                     return false;
                 if (pCtx->ss.Attr.n.u1Present == 0)
@@ -2963,40 +2964,41 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     if (pVM->hm.s.vmx.fEnabled)
     {
-        uint32_t mask;
+        uint32_t uCR0Mask;
 
-        /* if bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
-        mask = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr0Fixed0;
-        /* Note: We ignore the NE bit here on purpose; see vmmr0\hmr0.cpp for details. */
-        mask &= ~X86_CR0_NE;
+        /* If bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
+        uCR0Mask = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr0Fixed0;
+
+        /* We ignore the NE bit here on purpose; see HMR0.cpp for details. */
+        uCR0Mask &= ~X86_CR0_NE;
 
         if (fSupportsRealMode)
         {
-            /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
-            mask &= ~(X86_CR0_PG|X86_CR0_PE);
+            /* We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
+            uCR0Mask &= ~(X86_CR0_PG|X86_CR0_PE);
         }
         else
         {
             /* We support protected mode without paging using identity mapping. */
-            mask &= ~X86_CR0_PG;
+            uCR0Mask &= ~X86_CR0_PG;
         }
-        if ((pCtx->cr0 & mask) != mask)
+        if ((pCtx->cr0 & uCR0Mask) != uCR0Mask)
             return false;
 
-        /* if bit N is cleared in cr0_fixed1, then it must be zero in the guest's cr0. */
-        mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
-        if ((pCtx->cr0 & mask) != 0)
+        /* If bit N is cleared in cr0_fixed1, then it must be zero in the guest's cr0. */
+        uCR0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
+        if ((pCtx->cr0 & uCR0Mask) != 0)
             return false;
 
-        /* if bit N is set in cr4_fixed0, then it must be set in the guest's cr4. */
-        mask  = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr4Fixed0;
-        mask &= ~X86_CR4_VMXE;
-        if ((pCtx->cr4 & mask) != mask)
+        /* If bit N is set in cr4_fixed0, then it must be set in the guest's cr4. */
+        uCR0Mask  = (uint32_t)pVM->hm.s.vmx.Msrs.u64Cr4Fixed0;
+        uCR0Mask &= ~X86_CR4_VMXE;
+        if ((pCtx->cr4 & uCR0Mask) != uCR0Mask)
             return false;
 
-        /* if bit N is cleared in cr4_fixed1, then it must be zero in the guest's cr4. */
-        mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
-        if ((pCtx->cr4 & mask) != 0)
+        /* If bit N is cleared in cr4_fixed1, then it must be zero in the guest's cr4. */
+        uCR0Mask = (uint32_t)~pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
+        if ((pCtx->cr4 & uCR0Mask) != 0)
             return false;
 
         pVCpu->hm.s.fActive = true;
