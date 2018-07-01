@@ -7964,7 +7964,6 @@ static int hmR0VmxExportHostState(PVMCPU pVCpu)
  * Saves the host state in the VMCS host-state.
  *
  * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks No-long-jump zone!!!
@@ -8533,7 +8532,6 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
  * Performs some essential restoration of state after running guest code in
  * VT-x.
  *
- * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  * @param   rcVMRun         Return code of VMLAUNCH/VMRESUME.
