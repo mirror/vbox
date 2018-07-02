@@ -6339,11 +6339,13 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
 #endif
                         case MSR_IA32_SPEC_CTRL:    CPUMSetGuestSpecCtrl(pVCpu, pMsr->u64Value);    break;
                         case MSR_K8_TSC_AUX:        CPUMSetGuestTscAux(pVCpu, pMsr->u64Value);      break;
+                        case MSR_K6_EFER: /* EFER can't be changed without causing a VM-exit */     break;
                         default:
                         {
+                            pVCpu->hm.s.u32HMError = pMsr->u32Msr;
+                            ASMSetFlags(fEFlags);
                             AssertMsgFailed(("Unexpected MSR in auto-load/store area. uMsr=%#RX32 cMsrs=%u\n", pMsr->u32Msr,
                                              cMsrs));
-                            pVCpu->hm.s.u32HMError = pMsr->u32Msr;
                             return VERR_HM_UNEXPECTED_LD_ST_MSR;
                         }
                     }
