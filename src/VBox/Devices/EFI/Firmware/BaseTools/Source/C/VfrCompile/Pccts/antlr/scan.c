@@ -19,7 +19,7 @@
 #include "syn.h"
 #include "hash.h"
 #include "generic.h"
-#define zzcr_attr(attr,tok,t)
+#define zzcr_attr(attr,tok,t)   /*vbox: */ memset((attr), 0, sizeof(*attr))
 #include "antlr.h"
 #include "tokens.h"
 #include "dlgdef.h"
