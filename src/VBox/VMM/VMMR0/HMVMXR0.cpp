@@ -5951,7 +5951,8 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pM
  * @param   idxAccess   Index of the access rights of the segment in the VMCS.
  * @param   pSelReg     Pointer to the segment selector.
  *
- * @remarks No-long-jump zone!!!
+ * @remarks Called with interrupts and/or preemption disabled, try not to assert and
+ *          do not log!
  *
  * @remarks Never call this function directly!!! Use the
  *          HMVMX_IMPORT_SREG() macro as that takes care
@@ -6004,12 +6005,15 @@ static int hmR0VmxImportGuestSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t 
         /* Masking off: X86DESCATTR_P, X86DESCATTR_LIMIT_HIGH, and X86DESCATTR_AVL. The latter two are really irrelevant. */
         pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_L    | X86DESCATTR_D  | X86DESCATTR_G
                          | X86DESCATTR_DPL      | X86DESCATTR_TYPE | X86DESCATTR_DT;
-
+#ifdef VBOX_STRICT
+        VMMRZCallRing3Disable(pVCpu);
         Log4Func(("Unusable idxSel=%#x attr=%#x -> %#x\n", idxSel, u32Sel, pSelReg->Attr.u));
-#ifdef DEBUG_bird
+# ifdef DEBUG_bird
         AssertMsg((u32Attr & ~X86DESCATTR_P) == pSelReg->Attr.u,
                   ("%#x: %#x != %#x (sel=%#x base=%#llx limit=%#x)\n",
                    idxSel, u32Sel, pSelReg->Attr.u, pSelReg->Sel, pSelReg->u64Base, pSelReg->u32Limit));
+# endif
+        VMMRZCallRing3Enable(pVCpu);
 #endif
     }
     return VINF_SUCCESS;
@@ -6086,7 +6090,8 @@ DECLINLINE(int) hmR0VmxImportGuestRFlags(PVMCPU pVCpu)
  * @returns VBox status code.
  * @param   pVCpu   The cross context virtual CPU structure.
  *
- * @remarks Called with interrupts and/or preemption disabled, should not assert!
+ * @remarks Called with interrupts and/or preemption disabled, try not to assert and
+ *          do not log!
  * @remarks Do -not- call this function directly, use hmR0VmxImportGuestState()
  *          instead!!!
  */
@@ -10079,6 +10084,7 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hm.s.u32HMError = (uint32_t)VBOXSTRICTRC_VAL(rcStrict);
         rcStrict = rc2;
     }
+    Assert(!ASMAtomicUoReadU64(&pCtx->fExtrn));
     Assert(!VMMRZCallRing3IsNotificationSet(pVCpu));
     return rcStrict;
 }
