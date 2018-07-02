@@ -1,4 +1,8 @@
 #!/bin/sh -e
+# @file
+## $Id$
+# Fetches prerequisites for RPM based GNU/Linux systems.
+#
 
 #
 # Copyright (C) 2018 Oracle Corporation
