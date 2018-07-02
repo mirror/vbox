@@ -433,7 +433,8 @@ static int vboxPciLinuxDevDetachHostDriver(PVBOXRAWPCIINS pIns)
             return VERR_ACCESS_DENIED;
         }
         /** @todo RTStrCopy not exported. */
-        strncpy(pIns->szPrevDriver, currentDriver, sizeof(pIns->szPrevDriver));
+        strncpy(pIns->szPrevDriver, currentDriver, sizeof(pIns->szPrevDriver) - 1);
+        pIns->szPrevDriver[sizeof(pIns->szPrevDriver) - 1] = '\0';
     }
 
     PCI_DEV_PUT(pPciDev);
