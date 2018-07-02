@@ -107,7 +107,6 @@ VBoxPeCoffLoaderMoveImageExtraAction(
   IN PHYSICAL_ADDRESS NewBase
   )
 {
-    ASSERT(ImageContext != NULL);
 #if ARCH_BITS == 32
     ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_CMD_START_RELOC32);
 #else
