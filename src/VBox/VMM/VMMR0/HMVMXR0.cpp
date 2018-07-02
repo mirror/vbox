@@ -4165,7 +4165,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      */
     if (uProcCtls != pVCpu->hm.s.vmx.u32ProcCtls)
     {
-        int rc2 = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+        int rc2 = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
         AssertRCReturn(rc2, rc2);
         pVCpu->hm.s.vmx.u32ProcCtls = uProcCtls;
     }
