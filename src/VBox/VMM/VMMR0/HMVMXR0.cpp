@@ -41,6 +41,8 @@
 #include "HMVMXR0.h"
 #include "dtrace/VBoxVMM.h"
 
+#define HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
+
 #ifdef DEBUG_ramshankar
 # define HMVMX_ALWAYS_SAVE_GUEST_RFLAGS
 # define HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE
@@ -8612,6 +8614,13 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
         {
             VMMRZCallRing3Enable(pVCpu);
 
+#if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
+            rc = hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
+            AssertRC(rc);
+#elif defined(HMVMX_ALWAYS_SAVE_GUEST_RFLAGS)
+            rc = hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_RFLAGS);
+            AssertRC(rc);
+#else
             /*
              * Import the guest-interruptibility state always as we need it while evaluating
              * injecting events on re-entry.
@@ -8621,13 +8630,6 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
              * mode changes wrt CR0 are intercepted.
              */
             rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_HM_VMX_INT_STATE);
-            AssertRC(rc);
-
-#if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
-            rc = hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
-            AssertRC(rc);
-#elif defined(HMVMX_ALWAYS_SAVE_GUEST_RFLAGS)
-            rc = hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_RFLAGS);
             AssertRC(rc);
 #endif
 
