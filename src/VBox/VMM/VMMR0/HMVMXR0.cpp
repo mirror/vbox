@@ -8158,7 +8158,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCCPUM
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
 #ifdef HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
-    pVCpu->hm.s.fCtxChanged |= HM_CHANGED_ALL_GUEST;
+    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 #endif
 
     /*
