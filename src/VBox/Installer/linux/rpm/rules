@@ -102,6 +102,10 @@ ifneq ($(MAKECMDGOALS),clean)
   rpmrel  := $(shell cat /etc/redhat-release 2> /dev/null | sed -ne 's/^Red Hat[a-zA-Z ]*\([1-9][0-9]*\).*/el\1/p')
  endif
  ifeq ($(rpmrel),)
+ # look for openSUSE
+  rpmrel  := $(shell cat /etc/SUSE-brand 2> /dev/null | sed -ne 's/^VERSION *= *\([0-9]*\)\.\([0-9]*\)/openSUSE\1\2/p')
+ endif
+ ifeq ($(rpmrel),)
   $(error failed to detect the release type. Add /etc/distname or hack the detection.)
  endif
 
@@ -113,7 +117,7 @@ ifneq ($(MAKECMDGOALS),clean)
  ifeq ($(filter-out el5 el6 el7 fedora18 fedora19 fedora20 fedora21 fedora22 fedora24 fedora25 fedora26,$(rpmrel)),)
   rpmspec := rpm_redhat
  endif
- ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 openSUSE123 openSUSE131 openSUSE132,$(rpmrel)),)
+ ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 openSUSE123 openSUSE131 openSUSE132 openSUSE150,$(rpmrel)),)
   rpmspec := rpm_suse
  endif
  ifeq ($(rpmspec),)
