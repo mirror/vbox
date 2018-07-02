@@ -47,29 +47,6 @@
  *      - src/VBox/Frontends/VirtualBox/: @ref sec_vbox_guideline_compulsory_cppqtgui
  *
  *
- * @section sec_vbox_guideline_local        Local Coding Guidelines
- *
- * VirtualBox is a large project, so there are parts with additional guidelines
- * that extends the above ones.
- *
- * <ul>
- *
- *   <li> src/VBox/VMM/: @ref pg_vmm_guideline
- *        (src/VBox/VMM/Docs-CodingGuidelines.cpp)
- *
- *   <li> src/VBox/ValidationKit/: @ref pg_validationkit_guideline
- *        (src/VBox/ValidationKit/ValidationKitCodingGuidelines.cpp)
- *
- *   <li> src/VBox/Runtime/: @ref sec_vbox_guideline_optional is mandatory.
- *
- *   <li> src/VBox/Frontends/VirtualBox/: @ref sec_vbox_guideline_compulsory_cppqtgui
- *
- *   <li> src/VBox/Main: @ref sec_vbox_guideline_compulsory_cppmain
- *
- *
- * </ul>
- *
- *
  * @section sec_vbox_guideline_compulsory       Compulsory
  *
  * <ul>
