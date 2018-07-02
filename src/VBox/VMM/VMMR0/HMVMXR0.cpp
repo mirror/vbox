@@ -102,7 +102,7 @@
                                                   | CPUMCTX_EXTRN_RSP             \
                                                   | CPUMCTX_EXTRN_SREG_MASK       \
                                                   | CPUMCTX_EXTRN_TABLE_MASK      \
-                                                  |  CPUMCTX_EXTRN_KERNEL_GS_BASE \
+                                                  | CPUMCTX_EXTRN_KERNEL_GS_BASE  \
                                                   | CPUMCTX_EXTRN_SYSCALL_MSRS    \
                                                   | CPUMCTX_EXTRN_SYSENTER_MSRS   \
                                                   | CPUMCTX_EXTRN_TSC_AUX         \
