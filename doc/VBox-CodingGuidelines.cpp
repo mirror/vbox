@@ -17,13 +17,57 @@
 
 /** @page pg_vbox_guideline                 VBox Coding Guidelines
  *
- * The VBox Coding guidelines are followed by all of VBox with the exception of
- * qemu. Qemu is using whatever the frenchman does.
+ * The compulsory sections of these guidelines are to be followed in all of the
+ * VBox sources.  Please note that local guidelines in parts of the VBox source
+ * tree may promote the optional ones to compulsory status.  The VBox tree also
+ * contains some 3rd party sources where it is good to follow the local coding
+ * style while keeping these guidelines in mind.
  *
- * There are a few compulsory rules and a bunch of optional ones.  The following
- * sections will describe these in details.  In addition there is a section of
- * Subversion 'rules' and one with links to local coding guidelines.
+ * Contents:
+ *      - @ref sec_vbox_guideline_compulsory
+ *          - @ref sec_vbox_guideline_compulsory_sub64
+ *          - @ref sec_vbox_guideline_compulsory_cppmain
+ *          - @ref sec_vbox_guideline_compulsory_cppqtgui
+ *          - @ref sec_vbox_guideline_compulsory_xslt
+ *          - @ref sec_vbox_guideline_compulsory_doxygen
+ *          - @ref sec_vbox_guideline_compulsory_guest
+ *      - @ref sec_vbox_guideline_optional
+ *          - @ref sec_vbox_guideline_optional_layout
+ *          - @ref sec_vbox_guideline_optional_prefix
+ *          - @ref sec_vbox_guideline_optional_misc
+ *      - @ref sec_vbox_guideline_warnings
+ *          - @ref sec_vbox_guideline_warnings_signed_unsigned_compare
+ *      - @ref sec_vbox_guideline_svn
  *
+ * Local guidelines overrides:
+ *      - src/VBox/VMM/:            @ref pg_vmm_guideline (src/VBox/VMM/Docs-CodingGuidelines.cpp)
+ *      - src/VBox/ValidationKit/:  @ref pg_validationkit_guideline  (src/VBox/ValidationKit/ValidationKitCodingGuidelines.cpp)
+ *      - src/VBox/Runtime/:        All of @ref sec_vbox_guideline_optional is mandatory.
+ *      - src/VBox/Main/:           @ref sec_vbox_guideline_compulsory_cppmain
+ *      - src/VBox/Frontends/VirtualBox/: @ref sec_vbox_guideline_compulsory_cppqtgui
+ *
+ *
+ * @section sec_vbox_guideline_local        Local Coding Guidelines
+ *
+ * VirtualBox is a large project, so there are parts with additional guidelines
+ * that extends the above ones.
+ *
+ * <ul>
+ *
+ *   <li> src/VBox/VMM/: @ref pg_vmm_guideline
+ *        (src/VBox/VMM/Docs-CodingGuidelines.cpp)
+ *
+ *   <li> src/VBox/ValidationKit/: @ref pg_validationkit_guideline
+ *        (src/VBox/ValidationKit/ValidationKitCodingGuidelines.cpp)
+ *
+ *   <li> src/VBox/Runtime/: @ref sec_vbox_guideline_optional is mandatory.
+ *
+ *   <li> src/VBox/Frontends/VirtualBox/: @ref sec_vbox_guideline_compulsory_cppqtgui
+ *
+ *   <li> src/VBox/Main: @ref sec_vbox_guideline_compulsory_cppmain
+ *
+ *
+ * </ul>
  *
  *
  * @section sec_vbox_guideline_compulsory       Compulsory
@@ -905,28 +949,6 @@ int main()
  *
  * (Inspired by mozilla tree rules.)
  *
- *
- * @section sec_vbox_guideline_local        Local Coding Guidelines
- *
- * VirtualBox is a large project, so there are parts with additional guidelines
- * that extends the above ones.
- *
- * <ul>
- *
- *   <li> src/VBox/VMM/: @ref pg_vmm_guideline
- *        (src/VBox/VMM/Docs-CodingGuidelines.cpp)
- *
- *   <li> src/VBox/ValidationKit/: @ref pg_validationkit_guideline
- *        (src/VBox/ValidationKit/ValidationKitCodingGuidelines.cpp)
- *
- *   <li> src/VBox/Runtime/: @ref sec_vbox_guideline_optional is mandatory.
- *
- *   <li> src/VBox/Frontends/VirtualBox/: @ref sec_vbox_guideline_compulsory_cppqtgui
- *
- *   <li> src/VBox/Main: @ref sec_vbox_guideline_compulsory_cppmain
- *
- *
- * </ul>
  *
  */
 
