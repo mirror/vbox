@@ -41,8 +41,6 @@
 #include "HMVMXR0.h"
 #include "dtrace/VBoxVMM.h"
 
-#define HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
-
 #ifdef DEBUG_ramshankar
 # define HMVMX_ALWAYS_SAVE_GUEST_RFLAGS
 # define HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE
@@ -7631,29 +7629,32 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
 
     STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[uVector & MASK_INJECT_IRQ_STAT]);
 
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest)
-    {
-        /*
-         * For unrestricted execution enabled CPUs running real-mode guests, we must not set the deliver-error-code bit.
-         * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
-         */
-        u32IntInfo &= ~VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
-    }
-    else
-    {
-        /* We require CR0 to check if the guest is in real-mode. */
-        int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_CR0);
-        AssertRCReturn(rc, rc);
+    /* We require CR0 to check if the guest is in real-mode. */
+    /** @todo No we don't, since CR0.PE is always intercepted. */
+    int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_CR0);
+    AssertRCReturn(rc, rc);
 
-        /*
-         * Hardware interrupts & exceptions cannot be delivered through the software interrupt
-         * redirection bitmap to the real mode task in virtual-8086 mode. We must jump to the
-         * interrupt handler in the (real-mode) guest.
-         *
-         * See Intel spec. 20.3 "Interrupt and Exception handling in Virtual-8086 Mode".
-         * See Intel spec. 20.1.4 "Interrupt and Exception Handling" for real-mode interrupt handling.
-         */
-        if (CPUMIsGuestInRealModeEx(pMixedCtx))
+    /*
+     * Hardware interrupts & exceptions cannot be delivered through the software interrupt
+     * redirection bitmap to the real mode task in virtual-8086 mode. We must jump to the
+     * interrupt handler in the (real-mode) guest.
+     *
+     * See Intel spec. 20.3 "Interrupt and Exception handling in Virtual-8086 Mode".
+     * See Intel spec. 20.1.4 "Interrupt and Exception Handling" for real-mode interrupt handling.
+     */
+    if (CPUMIsGuestInRealModeEx(pMixedCtx))
+    {
+        if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest)
+        {
+            /*
+             * For unrestricted execution enabled CPUs running real-mode guests, we must not                              .
+             * set the deliver-error-code bit                                                                             .
+             *                                                                                                            .
+             * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
+             */
+            u32IntInfo &= ~VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+        }
+        else
         {
             PVM pVM = pVCpu->CTX_SUFF(pVM);
             Assert(PDMVmmDevHeapIsEnabled(pVM));
@@ -7761,7 +7762,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
     Assert(!(u32IntInfo & 0x7ffff000));                                  /* Bits 30:12 MBZ. */
 
     /* Inject. */
-    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntInfo);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntInfo);
     if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo))
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE, u32ErrCode);
     rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, cbInstr);
