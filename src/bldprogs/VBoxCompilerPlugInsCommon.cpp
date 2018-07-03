@@ -332,6 +332,7 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
             case 'j':
                 fFmtSize = RTSTR_Z_INTMAX;
                 ch = *pszFmt++;
+                break;
             case 't':
                 fFmtSize = RTSTR_Z_PTRDIFF;
                 ch = *pszFmt++;
