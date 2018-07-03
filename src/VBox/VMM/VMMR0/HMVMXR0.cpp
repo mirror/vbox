@@ -3662,8 +3662,8 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
     {
         PVM pVM = pVCpu->CTX_SUFF(pVM);
         Assert(!RT_HI_U32(pMixedCtx->cr0));
-        uint32_t const uShadowCR0 = pMixedCtx->cr0;
-        uint32_t       uGuestCR0  = pMixedCtx->cr0;
+        uint32_t const u32ShadowCr0 = pMixedCtx->cr0;
+        uint32_t       u32GuestCr0  = pMixedCtx->cr0;
 
         /*
          * Setup VT-x's view of the guest CR0.
@@ -3692,7 +3692,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
         else
         {
             /* Guest CPL 0 writes to its read-only pages should cause a #PF VM-exit. */
-            uGuestCR0 |= X86_CR0_WP;
+            u32GuestCr0 |= X86_CR0_WP;
         }
 
         /*
@@ -3704,10 +3704,10 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
          * Intel spec. 23.8 "Restrictions on VMX operation" mentions that CR0.NE bit must always be
          * set on the first CPUs to support VT-x and no mention of with regards to UX in VM-entry checks.
          */
-        uGuestCR0 |= X86_CR0_NE;
+        u32GuestCr0 |= X86_CR0_NE;
 
         /* If CR0.NE isn't set, we need to intercept #MF exceptions and report them to the guest differently. */
-        bool const fInterceptMF = !(uShadowCR0 & X86_CR0_NE);
+        bool const fInterceptMF = !(u32ShadowCr0 & X86_CR0_NE);
 
         /*
          * Update exception intercepts.
@@ -3754,56 +3754,56 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
         /*
          * Set/clear the CR0 specific bits along with their exceptions (PE, PG, CD, NW).
          */
-        uint32_t fSetCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
-        uint32_t fZapCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
+        uint32_t fSetCr0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
+        uint32_t fZapCr0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         if (pVM->hm.s.vmx.fUnrestrictedGuest)             /* Exceptions for unrestricted-guests for fixed CR0 bits (PE, PG). */
-            fSetCR0 &= ~(X86_CR0_PE | X86_CR0_PG);
+            fSetCr0 &= ~(X86_CR0_PE | X86_CR0_PG);
         else
-            Assert((fSetCR0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG));
+            Assert((fSetCr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG));
 
-        uGuestCR0 |= fSetCR0;
-        uGuestCR0 &= fZapCR0;
-        uGuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);          /* Always enable caching. */
+        u32GuestCr0 |= fSetCr0;
+        u32GuestCr0 &= fZapCr0;
+        u32GuestCr0 &= ~(X86_CR0_CD | X86_CR0_NW);        /* Always enable caching. */
 
         /*
          * CR0 is shared between host and guest along with a CR0 read shadow. Therefore, certain bits must not be changed
          * by the guest because VT-x ignores saving/restoring them (namely CD, ET, NW) and for certain other bits
          * we want to be notified immediately of guest CR0 changes (e.g. PG to update our shadow page tables).
          */
-        uint32_t uCR0Mask = X86_CR0_PE
-                          | X86_CR0_NE
-                          | (pVM->hm.s.fNestedPaging ? 0 : X86_CR0_WP)
-                          | X86_CR0_PG
-                          | X86_CR0_ET    /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.ET */
-                          | X86_CR0_CD    /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.CD */
-                          | X86_CR0_NW;   /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.NW */
+        uint32_t u32Cr0Mask = X86_CR0_PE
+                            | X86_CR0_NE
+                            | (pVM->hm.s.fNestedPaging ? 0 : X86_CR0_WP)
+                            | X86_CR0_PG
+                            | X86_CR0_ET   /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.ET */
+                            | X86_CR0_CD   /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.CD */
+                            | X86_CR0_NW;  /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.NW */
 
         /** @todo Avoid intercepting CR0.PE with unrestricted guests. Fix PGM
          *        enmGuestMode to be in-sync with the current mode. See @bugref{6398}
          *        and @bugref{6944}. */
 #if 0
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
-            uCr0Mask &= ~X86_CR0_PE;
+            u32Cr0Mask &= ~X86_CR0_PE;
 #endif
         /*
          * Finally, update VMCS fields with the CR0 values.
          */
-        int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, uGuestCR0);
-        rc    |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, uShadowCR0);
-        if (uCR0Mask != pVCpu->hm.s.vmx.u32CR0Mask)
-            rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, uCR0Mask);
+        int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u32GuestCr0);
+        rc    |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, u32ShadowCr0);
+        if (u32Cr0Mask != pVCpu->hm.s.vmx.u32Cr0Mask)
+            rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, u32Cr0Mask);
         if (uProcCtls != pVCpu->hm.s.vmx.u32ProcCtls)
             rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
         AssertRCReturn(rc, rc);
 
         /* Update our caches. */
-        pVCpu->hm.s.vmx.u32CR0Mask  = uCR0Mask;
+        pVCpu->hm.s.vmx.u32Cr0Mask  = u32Cr0Mask;
         pVCpu->hm.s.vmx.u32ProcCtls = uProcCtls;
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_CR0);
 
-        Log4Func(("uCr0Mask=%#RX32 uShadowCR0=%#RX32 uGuestCR0=%#RX32 (fSetCR0=%#RX32 fZapCR0=%#RX32\n", uCR0Mask, uShadowCR0,
-                  uGuestCR0, fSetCR0, fZapCR0));
+        Log4Func(("u32Cr0Mask=%#RX32 u32ShadowCr0=%#RX32 u32GuestCr0=%#RX32 (fSetCr0=%#RX32 fZapCr0=%#RX32\n", u32Cr0Mask,
+                  u32ShadowCr0, u32GuestCr0, fSetCr0, fZapCr0));
     }
 
     return VINF_SUCCESS;
@@ -3914,7 +3914,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
                 GCPhysGuestCR3 = GCPhys;
             }
 
-            Log4Func(("uGuestCR3=%#RGp (GstN)\n", GCPhysGuestCR3));
+            Log4Func(("u32GuestCr3=%#RGp (GstN)\n", GCPhysGuestCR3));
             rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR3, GCPhysGuestCR3);
             AssertRCReturn(rc, rc);
         }
@@ -3923,7 +3923,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
             /* Non-nested paging case, just use the hypervisor's CR3. */
             RTHCPHYS HCPhysGuestCR3 = PGMGetHyperCR3(pVCpu);
 
-            Log4Func(("uGuestCR3=%#RHv (HstN)\n", HCPhysGuestCR3));
+            Log4Func(("u32GuestCr3=%#RHv (HstN)\n", HCPhysGuestCR3));
             rc = VMXWriteVmcsHstN(VMX_VMCS_GUEST_CR3, HCPhysGuestCR3);
             AssertRCReturn(rc, rc);
         }
@@ -3938,8 +3938,8 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CR4)
     {
         Assert(!RT_HI_U32(pMixedCtx->cr4));
-        uint32_t       uGuestCR4  = pMixedCtx->cr4;
-        uint32_t const uShadowCR4 = pMixedCtx->cr4;
+        uint32_t       u32GuestCr4  = pMixedCtx->cr4;
+        uint32_t const u32ShadowCr4 = pMixedCtx->cr4;
 
         /*
          * Setup VT-x's view of the guest CR4.
@@ -3954,7 +3954,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
         {
             Assert(pVM->hm.s.vmx.pRealModeTSS);
             Assert(PDMVmmDevHeapIsEnabled(pVM));
-            uGuestCR4 &= ~X86_CR4_VME;
+            u32GuestCr4 &= ~X86_CR4_VME;
         }
 
         if (pVM->hm.s.fNestedPaging)
@@ -3963,9 +3963,9 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
                 && !pVM->hm.s.vmx.fUnrestrictedGuest)
             {
                 /* We use 4 MB pages in our identity mapping page table when the guest doesn't have paging. */
-                uGuestCR4 |= X86_CR4_PSE;
+                u32GuestCr4 |= X86_CR4_PSE;
                 /* Our identity mapping is a 32-bit page directory. */
-                uGuestCR4 &= ~X86_CR4_PAE;
+                u32GuestCr4 &= ~X86_CR4_PAE;
             }
             /* else use guest CR4.*/
         }
@@ -3981,14 +3981,14 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
                 case PGMMODE_PROTECTED:         /* Protected mode without paging. */
                 case PGMMODE_32_BIT:            /* 32-bit paging. */
                 {
-                    uGuestCR4 &= ~X86_CR4_PAE;
+                    u32GuestCr4 &= ~X86_CR4_PAE;
                     break;
                 }
 
                 case PGMMODE_PAE:               /* PAE paging. */
                 case PGMMODE_PAE_NX:            /* PAE paging with NX. */
                 {
-                    uGuestCR4 |= X86_CR4_PAE;
+                    u32GuestCr4 |= X86_CR4_PAE;
                     break;
                 }
 
@@ -4004,39 +4004,39 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
         }
 
         /* We need to set and clear the CR4 specific bits here (mainly the X86_CR4_VMXE bit). */
-        uint64_t const fSetCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
-        uint64_t const fZapCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
-        uGuestCR4 |= fSetCR4;
-        uGuestCR4 &= fZapCR4;
+        uint64_t const fSetCr4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+        uint64_t const fZapCr4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+        u32GuestCr4 |= fSetCr4;
+        u32GuestCr4 &= fZapCr4;
 
         /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them,
            that would cause a VM-exit. */
-        uint32_t u32CR4Mask = X86_CR4_VME
+        uint32_t u32Cr4Mask = X86_CR4_VME
                             | X86_CR4_PAE
                             | X86_CR4_PGE
                             | X86_CR4_PSE
                             | X86_CR4_VMXE;
         if (pVM->cpum.ro.HostFeatures.fXSaveRstor)
-            u32CR4Mask |= X86_CR4_OSXSAVE;
+            u32Cr4Mask |= X86_CR4_OSXSAVE;
         if (pVM->cpum.ro.GuestFeatures.fPcid)
-            u32CR4Mask |= X86_CR4_PCIDE;
+            u32Cr4Mask |= X86_CR4_PCIDE;
 
         /* Write VT-x's view of the guest CR4, the CR4 modify mask and the read-only CR4 shadow
            into the VMCS and update our cache. */
-        rc  = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, uGuestCR4);
-        rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, uShadowCR4);
-        if (pVCpu->hm.s.vmx.u32CR4Mask != u32CR4Mask)
-            rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32CR4Mask);
+        rc  = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, u32GuestCr4);
+        rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, u32ShadowCr4);
+        if (pVCpu->hm.s.vmx.u32Cr4Mask != u32Cr4Mask)
+            rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32Cr4Mask);
         AssertRCReturn(rc, rc);
-        pVCpu->hm.s.vmx.u32CR4Mask = u32CR4Mask;
+        pVCpu->hm.s.vmx.u32Cr4Mask = u32Cr4Mask;
 
         /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
         pVCpu->hm.s.fLoadSaveGuestXcr0 = (pMixedCtx->cr4 & X86_CR4_OSXSAVE) && pMixedCtx->aXcr[0] != ASMGetXcr0();
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_CR4);
 
-        Log4Func(("uGuestCR4=%#RX32 uShadowCR4=%#RX32 (fSetCR4=%#RX32 fZapCR4=%#RX32)\n", uGuestCR4, uShadowCR4, fSetCR4,
-                  fZapCR4));
+        Log4Func(("u32GuestCr4=%#RX32 u32ShadowCr4=%#RX32 (fSetCr4=%#RX32 fZapCr4=%#RX32)\n", u32GuestCr4, u32ShadowCr4, fSetCr4,
+                  fZapCr4));
     }
     return rc;
 }
@@ -4091,7 +4091,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         }
     }
 
-    uint32_t uGuestDR7;
+    uint32_t u32GuestDr7;
     if (   fSteppingDB
         || (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
     {
@@ -4120,7 +4120,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         }
 
         /* Update DR7 with the hypervisor value (other DRx registers are handled by CPUM one way or another). */
-        uGuestDR7 = (uint32_t)CPUMGetHyperDR7(pVCpu);
+        u32GuestDr7 = (uint32_t)CPUMGetHyperDR7(pVCpu);
         pVCpu->hm.s.fUsingHyperDR7 = true;
         fInterceptMovDRx = true;
     }
@@ -4169,7 +4169,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         }
 
         /* Update DR7 with the actual guest value. */
-        uGuestDR7 = pMixedCtx->dr[7];
+        u32GuestDr7 = pMixedCtx->dr[7];
         pVCpu->hm.s.fUsingHyperDR7 = false;
     }
 
@@ -4192,7 +4192,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Update guest DR7.
      */
-    int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, uGuestDR7);
+    int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, u32GuestDr7);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
@@ -6398,8 +6398,8 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
                     rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,            &u32Val);
                     rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, &u32Shadow);
                     VMXLOCAL_BREAK_RC(rc);
-                    u32Val = (u32Val & ~pVCpu->hm.s.vmx.u32CR0Mask)
-                           | (u32Shadow & pVCpu->hm.s.vmx.u32CR0Mask);
+                    u32Val = (u32Val & ~pVCpu->hm.s.vmx.u32Cr0Mask)
+                           | (u32Shadow & pVCpu->hm.s.vmx.u32Cr0Mask);
                     VMMRZCallRing3Disable(pVCpu);   /* Calls into PGM which has Log statements. */
                     CPUMSetGuestCR0(pVCpu, u32Val);
                     VMMRZCallRing3Enable(pVCpu);
@@ -6410,8 +6410,8 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
                     rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR4,            &u32Val);
                     rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, &u32Shadow);
                     VMXLOCAL_BREAK_RC(rc);
-                    u32Val = (u32Val & ~pVCpu->hm.s.vmx.u32CR4Mask)
-                           | (u32Shadow & pVCpu->hm.s.vmx.u32CR4Mask);
+                    u32Val = (u32Val & ~pVCpu->hm.s.vmx.u32Cr4Mask)
+                           | (u32Shadow & pVCpu->hm.s.vmx.u32Cr4Mask);
                     CPUMSetGuestCR4(pVCpu, u32Val);
                 }
 
@@ -8890,16 +8890,16 @@ static void hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE pDbg
         pDbgState->fModifiedXcptBitmap = true;
     }
 
-    if (pDbgState->fClearCr0Mask && pVCpu->hm.s.vmx.u32CR0Mask != 0)
+    if (pDbgState->fClearCr0Mask && pVCpu->hm.s.vmx.u32Cr0Mask != 0)
     {
-        pVCpu->hm.s.vmx.u32CR0Mask = 0;
+        pVCpu->hm.s.vmx.u32Cr0Mask = 0;
         VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, 0);
         Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS_CTRL_CR0_MASK: 0\n"));
     }
 
-    if (pDbgState->fClearCr4Mask && pVCpu->hm.s.vmx.u32CR4Mask != 0)
+    if (pDbgState->fClearCr4Mask && pVCpu->hm.s.vmx.u32Cr4Mask != 0)
     {
-        pVCpu->hm.s.vmx.u32CR4Mask = 0;
+        pVCpu->hm.s.vmx.u32Cr4Mask = 0;
         VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, 0);
         Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS_CTRL_CR4_MASK: 0\n"));
     }
@@ -10333,21 +10333,21 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * CR0.
          */
-        uint32_t       fSetCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
-        uint32_t const fZapCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
+        uint32_t       fSetCr0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
+        uint32_t const fZapCr0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         /* Exceptions for unrestricted-guests for fixed CR0 bits (PE, PG).
            See Intel spec. 26.3.1 "Checks on Guest Control Registers, Debug Registers and MSRs." */
         if (fUnrestrictedGuest)
-            fSetCR0 &= ~(X86_CR0_PE | X86_CR0_PG);
+            fSetCr0 &= ~(X86_CR0_PE | X86_CR0_PG);
 
-        uint32_t uGuestCR0;
-        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0, &uGuestCR0);
+        uint32_t u32GuestCr0;
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0, &u32GuestCr0);
         AssertRCBreak(rc);
-        HMVMX_CHECK_BREAK((uGuestCR0 & fSetCR0) == fSetCR0, VMX_IGS_CR0_FIXED1);
-        HMVMX_CHECK_BREAK(!(uGuestCR0 & ~fZapCR0), VMX_IGS_CR0_FIXED0);
+        HMVMX_CHECK_BREAK((u32GuestCr0 & fSetCr0) == fSetCr0, VMX_IGS_CR0_FIXED1);
+        HMVMX_CHECK_BREAK(!(u32GuestCr0 & ~fZapCr0), VMX_IGS_CR0_FIXED0);
         if (   !fUnrestrictedGuest
-            &&  (uGuestCR0 & X86_CR0_PG)
-            && !(uGuestCR0 & X86_CR0_PE))
+            &&  (u32GuestCr0 & X86_CR0_PG)
+            && !(u32GuestCr0 & X86_CR0_PE))
         {
             HMVMX_ERROR_BREAK(VMX_IGS_CR0_PG_PE_COMBO);
         }
@@ -10355,14 +10355,14 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * CR4.
          */
-        uint64_t const fSetCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
-        uint64_t const fZapCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+        uint64_t const fSetCr4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+        uint64_t const fZapCr4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
 
-        uint32_t uGuestCR4;
-        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR4, &uGuestCR4);
+        uint32_t u32GuestCr4;
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR4, &u32GuestCr4);
         AssertRCBreak(rc);
-        HMVMX_CHECK_BREAK((uGuestCR4 & fSetCR4) == fSetCR4, VMX_IGS_CR4_FIXED1);
-        HMVMX_CHECK_BREAK(!(uGuestCR4 & ~fZapCR4), VMX_IGS_CR4_FIXED0);
+        HMVMX_CHECK_BREAK((u32GuestCr4 & fSetCr4) == fSetCr4, VMX_IGS_CR4_FIXED1);
+        HMVMX_CHECK_BREAK(!(u32GuestCr4 & ~fZapCr4), VMX_IGS_CR4_FIXED0);
 
         /*
          * IA32_DEBUGCTL MSR.
@@ -10418,7 +10418,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCPUMCTX pCtx)
 
         if (   fLongModeGuest
             || (   fUnrestrictedGuest
-                && !(uGuestCR0 & X86_CR0_PE)))
+                && !(u32GuestCr0 & X86_CR0_PE)))
         {
             HMVMX_CHECK_BREAK(!(u32Eflags & X86_EFL_VM), VMX_IGS_RFLAGS_VM_INVALID);
         }
@@ -10438,12 +10438,12 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCPUMCTX pCtx)
 #if HC_ARCH_BITS == 64
         if (fLongModeGuest)
         {
-            HMVMX_CHECK_BREAK(uGuestCR0 & X86_CR0_PG, VMX_IGS_CR0_PG_LONGMODE);
-            HMVMX_CHECK_BREAK(uGuestCR4 & X86_CR4_PAE, VMX_IGS_CR4_PAE_LONGMODE);
+            HMVMX_CHECK_BREAK(u32GuestCr0 & X86_CR0_PG, VMX_IGS_CR0_PG_LONGMODE);
+            HMVMX_CHECK_BREAK(u32GuestCr4 & X86_CR4_PAE, VMX_IGS_CR4_PAE_LONGMODE);
         }
 
         if (   !fLongModeGuest
-            && (uGuestCR4 & X86_CR4_PCIDE))
+            && (u32GuestCr4 & X86_CR4_PCIDE))
         {
             HMVMX_ERROR_BREAK(VMX_IGS_CR4_PCIDE);
         }
@@ -10515,7 +10515,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCPUMCTX pCtx)
                                                                            & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST),
                               VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH);
             HMVMX_CHECK_BREAK(   fUnrestrictedGuest
-                              || !(uGuestCR0 & X86_CR0_PG)
+                              || !(u32GuestCr0 & X86_CR0_PG)
                               || RT_BOOL(u64Val & MSR_K6_EFER_LMA) == RT_BOOL(u64Val & MSR_K6_EFER_LME),
                               VMX_IGS_EFER_LMA_LME_MISMATCH);
         }

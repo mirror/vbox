@@ -2022,8 +2022,8 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
        the HM flags here, all other EMTs are in ring-3. See VMR3Reset(). */
     pVCpu->hm.s.fCtxChanged |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
 
-    pVCpu->hm.s.vmx.u32CR0Mask        = 0;
-    pVCpu->hm.s.vmx.u32CR4Mask        = 0;
+    pVCpu->hm.s.vmx.u32Cr0Mask        = 0;
+    pVCpu->hm.s.vmx.u32Cr4Mask        = 0;
     pVCpu->hm.s.fActive               = false;
     pVCpu->hm.s.Event.fPending        = false;
     pVCpu->hm.s.vmx.fWasInRealMode    = true;
