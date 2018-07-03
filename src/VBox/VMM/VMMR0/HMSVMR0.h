@@ -39,18 +39,18 @@ RT_C_DECLS_BEGIN
 
 VMMR0DECL(int)          SVMR0GlobalInit(void);
 VMMR0DECL(void)         SVMR0GlobalTerm(void);
-VMMR0DECL(int)          SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu);
+VMMR0DECL(int)          SVMR0Enter(PVMCPU pVCpu, PHMGLOBALCPUINFO pHostCpu);
 VMMR0DECL(void)         SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
-VMMR0DECL(int)          SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS HCPhysCpuPage,
+VMMR0DECL(int)          SVMR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvPageCpu, RTHCPHYS HCPhysCpuPage,
                                        bool fEnabledBySystem, void *pvArg);
-VMMR0DECL(int)          SVMR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+VMMR0DECL(int)          SVMR0DisableCpu(PHMGLOBALCPUINFO pHostCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int)          SVMR0InitVM(PVM pVM);
 VMMR0DECL(int)          SVMR0TermVM(PVM pVM);
 VMMR0DECL(int)          SVMR0SetupVM(PVM pVM);
-VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0DECL(int)          SVMR0ExportHostState(PVMCPU pVCpu);
 VMMR0DECL(int)          SVMR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
-VMMR0DECL(int)          SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
+VMMR0DECL(int)          SVMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
 DECLASM(int)            SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);

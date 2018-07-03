@@ -920,7 +920,7 @@ typedef struct HMCPU
         uint64_t                cr0;
     } EmulateIoBlock;
 
-    /* */
+    /* Pending IO operation. */
     struct
     {
         /** Pending IO operation type. */
@@ -956,8 +956,8 @@ typedef struct HMCPU
     DISCPUSTATE             DisState;
 
     STAMPROFILEADV          StatEntry;
-    STAMPROFILEADV          StatExit1;
-    STAMPROFILEADV          StatExit2;
+    STAMPROFILEADV          StatPreExit;
+    STAMPROFILEADV          StatExitHandling;
     STAMPROFILEADV          StatExitIO;
     STAMPROFILEADV          StatExitMovCRx;
     STAMPROFILEADV          StatExitXcptNmi;
@@ -1113,20 +1113,17 @@ AssertCompileMemberAlignment(HMCPU, Event, 8);
 
 #ifdef IN_RING0
 VMMR0_INT_DECL(PHMGLOBALCPUINFO) hmR0GetCurrentCpu(void);
+VMMR0_INT_DECL(int)              hmR0EnterCpu(PVMCPU pVCpu);
 
 # ifdef VBOX_STRICT
-VMMR0_INT_DECL(void) hmR0DumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
-# else
-#  define hmR0DumpRegs(a, b ,c)          do { } while (0)
-#  define hmR0DumpDescriptor(a, b, c)    do { } while (0)
-# endif /* VBOX_STRICT */
+# endif
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
 DECLASM(int) hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
 DECLASM(int) hmR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
 # endif
-
 #endif /* IN_RING0 */
 
 int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx);

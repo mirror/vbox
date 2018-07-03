@@ -1236,7 +1236,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
                     /*
                      * Enter HM context.
                      */
-                    rc = HMR0Enter(pVM, pVCpu);
+                    rc = HMR0Enter(pVCpu);
                     if (RT_SUCCESS(rc))
                     {
                         VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);

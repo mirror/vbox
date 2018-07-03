@@ -139,7 +139,7 @@ static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(VMX_EXIT_RDRAND                 ,  57, "RDRAND instruction."),
     EXIT_REASON(VMX_EXIT_INVPCID                ,  58, "INVPCID instruction."),
     EXIT_REASON(VMX_EXIT_VMFUNC                 ,  59, "VMFUNC instruction."),
-    EXIT_REASON(VMX_EXIT_ENCLS                  ,  60, "ENCLS instrunction."),
+    EXIT_REASON(VMX_EXIT_ENCLS                  ,  60, "ENCLS instruction."),
     EXIT_REASON(VMX_EXIT_RDSEED                 ,  61, "RDSEED instruction."),
     EXIT_REASON(VMX_EXIT_PML_FULL               ,  62, "Page-modification log full."),
     EXIT_REASON(VMX_EXIT_XSAVES                 ,  63, "XSAVES instruction."),
@@ -257,9 +257,9 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(SVM_EXIT_SMI          ,   98, "System management interrupt (host)."),
     EXIT_REASON(SVM_EXIT_INIT         ,   99, "Physical INIT signal (host)."),
     EXIT_REASON(SVM_EXIT_VINTR        ,  100, "Virtual interrupt-window exit."),
-    EXIT_REASON(SVM_EXIT_CR0_SEL_WRITE,  101, "Write to CR0 that changed any bits other than CR0.TS or CR0.MP."),
-    EXIT_REASON(SVM_EXIT_IDTR_READ    ,  102, "Read IDTR"),
-    EXIT_REASON(SVM_EXIT_GDTR_READ    ,  103, "Read GDTR"),
+    EXIT_REASON(SVM_EXIT_CR0_SEL_WRITE,  101, "Selective CR0 Write (to bits other than CR0.TS and CR0.MP)."),
+    EXIT_REASON(SVM_EXIT_IDTR_READ    ,  102, "Read IDTR."),
+    EXIT_REASON(SVM_EXIT_GDTR_READ    ,  103, "Read GDTR."),
     EXIT_REASON(SVM_EXIT_LDTR_READ    ,  104, "Read LDTR."),
     EXIT_REASON(SVM_EXIT_TR_READ      ,  105, "Read TR."),
     EXIT_REASON(SVM_EXIT_IDTR_WRITE   ,  106, "Write IDTR."),
@@ -279,10 +279,10 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(SVM_EXIT_HLT          ,  120, "HLT instruction."),
     EXIT_REASON(SVM_EXIT_INVLPG       ,  121, "INVLPG instruction."),
     EXIT_REASON(SVM_EXIT_INVLPGA      ,  122, "INVLPGA instruction."),
-    EXIT_REASON(SVM_EXIT_IOIO         ,  123, "IN/OUT accessing protected port."),
+    EXIT_REASON(SVM_EXIT_IOIO         ,  123, "IN/OUT/INS/OUTS instruction."),
     EXIT_REASON(SVM_EXIT_MSR          ,  124, "RDMSR or WRMSR access to protected MSR."),
     EXIT_REASON(SVM_EXIT_TASK_SWITCH  ,  125, "Task switch."),
-    EXIT_REASON(SVM_EXIT_FERR_FREEZE  ,  126, "Legacy FPU handling enabled; CPU frozen in an x87/mmx instr. waiting for interrupt."),
+    EXIT_REASON(SVM_EXIT_FERR_FREEZE  ,  126, "FERR Freeze; CPU frozen in an x87/mmx instruction waiting for interrupt."),
     EXIT_REASON(SVM_EXIT_SHUTDOWN     ,  127, "Shutdown."),
     EXIT_REASON(SVM_EXIT_VMRUN        ,  128, "VMRUN instruction."),
     EXIT_REASON(SVM_EXIT_VMMCALL      ,  129, "VMCALL instruction."),
@@ -882,12 +882,12 @@ static int hmR3InitCPU(PVM pVM)
                              "Profiling of VMXR0RunGuestCode entry",
                              "/PROF/CPU%d/HM/StatEntry", i);
         AssertRC(rc);
-        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit1, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of VMXR0RunGuestCode exit part 1",
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatPreExit, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
+                             "Profiling of pre-exit processing after returning from GC",
                              "/PROF/CPU%d/HM/SwitchFromGC_1", i);
         AssertRC(rc);
-        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit2, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of VMXR0RunGuestCode exit part 2",
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitHandling, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
+                             "Profiling of exit handling (longjmps not included!)",
                              "/PROF/CPU%d/HM/SwitchFromGC_2", i);
         AssertRC(rc);
 
@@ -957,44 +957,44 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestBP,            "/HM/CPU%d/Exit/Trap/Gst/#BP", "Guest #BP (breakpoint) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestXF,            "/HM/CPU%d/Exit/Trap/Gst/#XF", "Guest #XF (extended math fault, SIMD FPU) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestXcpUnk,        "/HM/CPU%d/Exit/Trap/Gst/Other", "Other guest exceptions.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitHlt,                "/HM/CPU%d/Exit/Instr/Hlt", "Guest attempted to execute HLT.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdmsr,              "/HM/CPU%d/Exit/Instr/Rdmsr", "Guest attempted to execute RDMSR.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitWrmsr,              "/HM/CPU%d/Exit/Instr/Wrmsr", "Guest attempted to execute WRMSR.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitMwait,              "/HM/CPU%d/Exit/Instr/Mwait", "Guest attempted to execute MWAIT.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitMonitor,            "/HM/CPU%d/Exit/Instr/Monitor", "Guest attempted to execute MONITOR.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxWrite,           "/HM/CPU%d/Exit/Instr/DR-Write", "Guest attempted to write a debug register.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxRead,            "/HM/CPU%d/Exit/Instr/DR-Read", "Guest attempted to read a debug register.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR0Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR0", "Guest attempted to read CR0.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR2Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR2", "Guest attempted to read CR2.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR3Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR3", "Guest attempted to read CR3.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR4Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR4", "Guest attempted to read CR4.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR8Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR8", "Guest attempted to read CR8.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR0Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR0", "Guest attempted to write CR0.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR2Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR2", "Guest attempted to write CR2.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR3Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR3", "Guest attempted to write CR3.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR4Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR4", "Guest attempted to write CR4.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR8Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR8", "Guest attempted to write CR8.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitClts,               "/HM/CPU%d/Exit/Instr/CLTS", "Guest attempted to execute CLTS.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitLmsw,               "/HM/CPU%d/Exit/Instr/LMSW", "Guest attempted to execute LMSW.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCli,                "/HM/CPU%d/Exit/Instr/Cli", "Guest attempted to execute CLI.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitSti,                "/HM/CPU%d/Exit/Instr/Sti", "Guest attempted to execute STI.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitPushf,              "/HM/CPU%d/Exit/Instr/Pushf", "Guest attempted to execute PUSHF.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitPopf,               "/HM/CPU%d/Exit/Instr/Popf", "Guest attempted to execute POPF.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIret,               "/HM/CPU%d/Exit/Instr/Iret", "Guest attempted to execute IRET.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitInt,                "/HM/CPU%d/Exit/Instr/Int", "Guest attempted to execute INT.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitXdtrAccess,         "/HM/CPU%d/Exit/Instr/XdtrAccess", "Guest attempted to access descriptor table register (GDTR, IDTR, LDTR).");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitHlt,                "/HM/CPU%d/Exit/Instr/Hlt", "HLT instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdmsr,              "/HM/CPU%d/Exit/Instr/Rdmsr", "RDMSR instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitWrmsr,              "/HM/CPU%d/Exit/Instr/Wrmsr", "WRMSR instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitMwait,              "/HM/CPU%d/Exit/Instr/Mwait", "MWAIT instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitMonitor,            "/HM/CPU%d/Exit/Instr/Monitor", "MONITOR instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxWrite,           "/HM/CPU%d/Exit/Instr/DR-Write", "Debug register write.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxRead,            "/HM/CPU%d/Exit/Instr/DR-Read", "Debug register read.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR0Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR0", "CR0 read.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR2Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR2", "CR2 read.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR3Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR3", "CR3 read.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR4Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR4", "CR4 read.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR8Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR8", "CR8 read.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR0Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR0", "CR0 write.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR2Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR2", "CR2 write.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR3Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR3", "CR3 write.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR4Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR4", "CR4 write.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR8Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR8", "CR8 write.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitClts,               "/HM/CPU%d/Exit/Instr/CLTS", "CLTS instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitLmsw,               "/HM/CPU%d/Exit/Instr/LMSW", "LMSW instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCli,                "/HM/CPU%d/Exit/Instr/Cli", "CLI instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitSti,                "/HM/CPU%d/Exit/Instr/Sti", "STI instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitPushf,              "/HM/CPU%d/Exit/Instr/Pushf", "PUSHF instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitPopf,               "/HM/CPU%d/Exit/Instr/Popf", "POPF instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIret,               "/HM/CPU%d/Exit/Instr/Iret", "IRET instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitInt,                "/HM/CPU%d/Exit/Instr/Int", "INT instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitXdtrAccess,         "/HM/CPU%d/Exit/Instr/XdtrAccess", "GDTR, IDTR, LDTR access.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOWrite,            "/HM/CPU%d/Exit/IO/Write", "I/O write.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIORead,             "/HM/CPU%d/Exit/IO/Read", "I/O read.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOStringWrite,      "/HM/CPU%d/Exit/IO/WriteString", "String I/O write.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOStringRead,       "/HM/CPU%d/Exit/IO/ReadString", "String I/O read.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIntWindow,          "/HM/CPU%d/Exit/IntWindow", "Interrupt-window exit. Guest is ready to receive interrupts again.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitExtInt,             "/HM/CPU%d/Exit/ExtInt", "Host interrupt received.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitExtInt,             "/HM/CPU%d/Exit/ExtInt", "Physical maskable interrupt (host).");
 #endif
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitHostNmiInGC,        "/HM/CPU%d/Exit/HostNmiInGC", "Host NMI received while in guest context.");
 #ifdef VBOX_WITH_STATISTICS
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitPreemptTimer,       "/HM/CPU%d/Exit/PreemptTimer", "VMX-preemption timer expired.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitTprBelowThreshold,  "/HM/CPU%d/Exit/TprBelowThreshold", "TPR lowered below threshold by the guest.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitTaskSwitch,         "/HM/CPU%d/Exit/TaskSwitch", "Guest attempted a task switch.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitTaskSwitch,         "/HM/CPU%d/Exit/TaskSwitch", "Task switch.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMtf,                "/HM/CPU%d/Exit/MonitorTrapFlag", "Monitor Trap Flag.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitApicAccess,         "/HM/CPU%d/Exit/ApicAccess", "APIC access. Guest attempted to access memory at a physical address on the APIC-access page.");
 
@@ -1589,9 +1589,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
             *((unsigned char *)pVM->hm.s.vmx.pRealModeTSS + HM_VTX_TSS_SIZE - 2) = 0xff;
 
             /*
-             * Construct a 1024 element page directory with 4 MB pages for
-             * the identity mapped page table used in real and protected mode
-             * without paging with EPT.
+             * Construct a 1024 element page directory with 4 MB pages for the identity mapped
+             * page table used in real and protected mode without paging with EPT.
              */
             pVM->hm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
             for (uint32_t i = 0; i < X86_PG_ENTRIES; i++)
@@ -2103,7 +2102,6 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void 
 
 #ifdef LOG_ENABLED
         char            szOutput[256];
-
         rc = DBGFR3DisasInstrEx(pVM->pUVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                 szOutput, sizeof(szOutput), NULL);
         if (RT_SUCCESS(rc))
@@ -2472,7 +2470,6 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
              * pop EDX                       [5A]
              * pop ECX                       [59]
              * jmp return_address            [E9 return_address]
-             *
              */
             bool fUsesEax = (pDis->Param2.fUse == DISUSE_REG_GEN32 && pDis->Param2.Base.idxGenReg == DISGREG_EAX);
 
@@ -2523,7 +2520,6 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
              * pop EDX                       [5A]
              * pop ECX                       [59]
              * jmp return_address            [E9 return_address]
-             *
              */
             Assert(pDis->Param1.fUse == DISUSE_REG_GEN32);
 
@@ -2729,8 +2725,8 @@ static bool hmR3IsDataSelectorOkForVmx(PCPUMSELREG pSel)
                     {
                         /*
                          * The following two requirements are VT-x specific:
-                         *  - G bit must be set if any high limit bits are set.
-                         *  - G bit must be clear if any low limit bits are clear.
+                         *   - G bit must be set if any high limit bits are set.
+                         *   - G bit must be clear if any low limit bits are clear.
                          */
                         if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
                             && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
@@ -2772,19 +2768,17 @@ static bool hmR3IsStackSelectorOkForVmx(PCPUMSELREG pSel)
     AssertCompile(X86DESCATTR_TYPE == 0xf);
     AssertMsgReturn(   (pSel->Attr.u & (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_WRITE | X86DESCATTR_DT | X86DESCATTR_P | X86_SEL_TYPE_CODE))
                     ==                 (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_WRITE | X86DESCATTR_DT | X86DESCATTR_P),
-                    ("%#x\n", pSel->Attr.u),
-                    false);
+                    ("%#x\n", pSel->Attr.u), false);
 
     /* DPL must equal RPL.
        Note! This is also a hard requirement like above. */
     AssertMsgReturn(pSel->Attr.n.u2Dpl == (pSel->Sel & X86_SEL_RPL),
-                    ("u2Dpl=%u Sel=%#x\n", pSel->Attr.n.u2Dpl, pSel->Sel),
-                    false);
+                    ("u2Dpl=%u Sel=%#x\n", pSel->Attr.n.u2Dpl, pSel->Sel), false);
 
     /*
      * The following two requirements are VT-x specific:
-     *  - G bit must be set if any high limit bits are set.
-     *  - G bit must be clear if any low limit bits are clear.
+     *   - G bit must be set if any high limit bits are set.
+     *   - G bit must be clear if any low limit bits are clear.
      */
     if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
         && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity))
@@ -2842,10 +2836,10 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 #endif
 
     /* If we're still executing the IO code, then return false. */
-    if (    RT_UNLIKELY(pVCpu->hm.s.EmulateIoBlock.fEnabled)
-        &&  pCtx->rip <  pVCpu->hm.s.EmulateIoBlock.GCPtrFunctionEip + 0x200
-        &&  pCtx->rip >  pVCpu->hm.s.EmulateIoBlock.GCPtrFunctionEip - 0x200
-        &&  pCtx->cr0 == pVCpu->hm.s.EmulateIoBlock.cr0)
+    if (   RT_UNLIKELY(pVCpu->hm.s.EmulateIoBlock.fEnabled)
+        && pCtx->rip <  pVCpu->hm.s.EmulateIoBlock.GCPtrFunctionEip + 0x200
+        && pCtx->rip >  pVCpu->hm.s.EmulateIoBlock.GCPtrFunctionEip - 0x200
+        && pCtx->cr0 == pVCpu->hm.s.EmulateIoBlock.cr0)
         return false;
 
     pVCpu->hm.s.EmulateIoBlock.fEnabled = false;
@@ -2874,7 +2868,8 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         {
             if (CPUMIsGuestInRealModeEx(pCtx))
             {
-                /* In V86 mode (VT-x or not), the CPU enforces real-mode compatible selector
+                /*
+                 * In V86 mode (VT-x or not), the CPU enforces real-mode compatible selector
                  * bases and limits, i.e. limit must be 64K and base must be selector * 16.
                  * If this is not true, we cannot execute real mode as V86 and have to fall
                  * back to emulation.
@@ -2903,9 +2898,11 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             }
             else
             {
-                /* Verify the requirements for executing code in protected
-                   mode. VT-x can't handle the CPU state right after a switch
-                   from real to protected mode. (all sorts of RPL & DPL assumptions). */
+                /*
+                 * Verify the requirements for executing code in protected mode. VT-x can't
+                 * handle the CPU state right after a switch from real to protected mode
+                 * (all sorts of RPL & DPL assumptions).
+                 */
                 if (pVCpu->hm.s.vmx.fWasInRealMode)
                 {
                     /** @todo If guest is in V86 mode, these checks should be different! */
@@ -2944,8 +2941,8 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         }
         else
         {
-            if (    !CPUMIsGuestInLongModeEx(pCtx)
-                &&  !pVM->hm.s.vmx.fUnrestrictedGuest)
+            if (   !CPUMIsGuestInLongModeEx(pCtx)
+                && !pVM->hm.s.vmx.fUnrestrictedGuest)
             {
                 if (   !pVM->hm.s.fNestedPaging        /* Requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap */
                     ||  CPUMIsGuestInRealModeEx(pCtx)) /* Requires a fake TSS for real mode - stored in the VMM device heap */
@@ -2955,17 +2952,22 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                 if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr.Sel == 0)
                     return false;
 
-                /* The guest is about to complete the switch to protected mode. Wait a bit longer. */
-                /* Windows XP; switch to protected mode; all selectors are marked not present in the
-                 * hidden registers (possible recompiler bug; see load_seg_vm) */
+                /*
+                 * The guest is about to complete the switch to protected mode. Wait a bit longer.
+                 * Windows XP; switch to protected mode; all selectors are marked not present
+                 * in the hidden registers (possible recompiler bug; see load_seg_vm).
+                 */
                 /** @todo Is this supposed recompiler bug still relevant with IEM? */
                 if (pCtx->cs.Attr.n.u1Present == 0)
                     return false;
                 if (pCtx->ss.Attr.n.u1Present == 0)
                     return false;
 
-                /* Windows XP: possible same as above, but new recompiler requires new heuristics?
-                   VT-x doesn't seem to like something about the guest state and this stuff avoids it. */
+                /*
+                 * Windows XP: possible same as above, but new recompiler requires new
+                 * heuristics? VT-x doesn't seem to like something about the guest state and
+                 * this stuff avoids it.
+                 */
                 /** @todo This check is actually wrong, it doesn't take the direction of the
                  *        stack segment into account. But, it does the job for now. */
                 if (pCtx->rsp >= pCtx->ss.u32Limit)

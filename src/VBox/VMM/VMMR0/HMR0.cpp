@@ -87,10 +87,10 @@ static struct
 
     /** @name Ring-0 method table for AMD-V and VT-x specific operations.
      * @{ */
-    DECLR0CALLBACKMEMBER(int,  pfnEnterSession, (PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu));
+    DECLR0CALLBACKMEMBER(int,  pfnEnterSession, (PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu));
     DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback, (RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit));
     DECLR0CALLBACKMEMBER(int,  pfnExportHostState, (PVMCPU pVCpu));
-    DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
+    DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVMCPU pVCpu, PCPUMCTX pCtx));
     DECLR0CALLBACKMEMBER(int,  pfnEnableCpu, (PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                               bool fEnabledByHost, void *pvArg));
     DECLR0CALLBACKMEMBER(int,  pfnDisableCpu, (PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
@@ -233,9 +233,9 @@ static RTCPUID hmR0FirstRcGetCpuId(PHMR0FIRSTRC pFirstRc)
 /** @name Dummy callback handlers.
  * @{ */
 
-static DECLCALLBACK(int) hmR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
+static DECLCALLBACK(int) hmR0DummyEnter(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 {
-    RT_NOREF3(pVM, pVCpu, pCpu);
+    RT_NOREF2(pVCpu, pCpu);
     return VINF_SUCCESS;
 }
 
@@ -275,9 +275,9 @@ static DECLCALLBACK(int) hmR0DummySetupVM(PVM pVM)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(VBOXSTRICTRC) hmR0DummyRunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static DECLCALLBACK(VBOXSTRICTRC) hmR0DummyRunGuestCode(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    RT_NOREF3(pVM, pVCpu, pCtx);
+    RT_NOREF2(pVCpu, pCtx);
     return VINF_SUCCESS;
 }
 
@@ -1388,7 +1388,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
  *
  * @remarks No-long-jump zone!!!
  */
-VMMR0_INT_DECL(int) HMR0EnterCpu(PVMCPU pVCpu)
+VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -1417,19 +1417,18 @@ VMMR0_INT_DECL(int) HMR0EnterCpu(PVMCPU pVCpu)
  * Enters the VT-x or AMD-V session.
  *
  * @returns VBox status code.
- * @param   pVM        The cross context VM structure.
  * @param   pVCpu      The cross context virtual CPU structure.
  *
  * @remarks This is called with preemption disabled.
  */
-VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) HMR0Enter(PVMCPU pVCpu)
 {
     /* Make sure we can't enter a session after we've disabled HM in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&g_HmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* Load the bare minimum state required for entering HM. */
-    int rc = HMR0EnterCpu(pVCpu);
+    int rc = hmR0EnterCpu(pVCpu);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -1451,7 +1450,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
                                        == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
     }
 
-    rc = g_HmR0.pfnEnterSession(pVM, pVCpu, pCpu);
+    rc = g_HmR0.pfnEnterSession(pVCpu, pCpu);
     AssertMsgRCReturn(rc, ("rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
 
     /* Exports the host-state as we may be resuming code after a longjmp and quite
@@ -1536,6 +1535,8 @@ VMMR0_INT_DECL(void) HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUs
  */
 VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 {
+    RT_NOREF(pVM);
+
 #ifdef VBOX_STRICT
     /* With thread-context hooks we would be running this code with preemption enabled. */
     if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
@@ -1553,7 +1554,7 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     PGMRZDynMapStartAutoSet(pVCpu);
 #endif
 
-    VBOXSTRICTRC rcStrict = g_HmR0.pfnRunGuestCode(pVM, pVCpu, &pVCpu->cpum.GstCtx);
+    VBOXSTRICTRC rcStrict = g_HmR0.pfnRunGuestCode(pVCpu, &pVCpu->cpum.GstCtx);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PGMRZDynMapReleaseAutoSet(pVCpu);
@@ -1668,8 +1669,8 @@ VMMR0_INT_DECL(int) HMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->hm.s.vmx.fSupported)
-        return VMXR0InvalidatePage(pVM, pVCpu, GCVirt);
-    return SVMR0InvalidatePage(pVM, pVCpu, GCVirt);
+        return VMXR0InvalidatePage(pVCpu, GCVirt);
+    return SVMR0InvalidatePage(pVCpu, GCVirt);
 }
 
 
@@ -1727,7 +1728,6 @@ VMMR0_INT_DECL(int) HMR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
 
 
 #ifdef VBOX_WITH_RAW_MODE
-
 /**
  * Raw-mode switcher hook - disable VT-x if it's active *and* the current
  * switcher turns off paging.
@@ -1822,10 +1822,10 @@ VMMR0_INT_DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
         VMXR0EnableCpu(pCpu, pVM, pCpu->pvMemObj, pCpu->HCPhysMemObj, false, &g_HmR0.vmx.Msrs);
     }
 }
-
 #endif /* VBOX_WITH_RAW_MODE */
-#ifdef VBOX_STRICT
 
+
+#ifdef VBOX_STRICT
 /**
  * Dumps a descriptor.
  *
@@ -1952,14 +1952,11 @@ VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char
 /**
  * Formats a full register dump.
  *
- * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the CPU context.
  */
-VMMR0_INT_DECL(void) hmR0DumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    NOREF(pVM);
-
     /*
      * Format the flags.
      */
@@ -2097,6 +2094,5 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     NOREF(pFpuCtx);
 }
-
 #endif /* VBOX_STRICT */
 
