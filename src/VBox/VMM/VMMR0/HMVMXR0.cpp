@@ -5627,11 +5627,11 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
     if (   fOffsettedTsc
         && RT_LIKELY(!pVCpu->hm.s.fDebugWantRdTscExit))
     {
-        if (pVCpu->hm.s.vmx.u64TSCOffset != uTscOffset)
+        if (pVCpu->hm.s.vmx.u64TscOffset != uTscOffset)
         {
-            int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);
+            int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TscOffset);
             AssertRC(rc);
-            pVCpu->hm.s.vmx.u64TSCOffset = uTscOffset;
+            pVCpu->hm.s.vmx.u64TscOffset = uTscOffset;
         }
 
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT)
@@ -8577,7 +8577,7 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
     pVmxTransient->fVectoringDoublePF  = false;                 /* Vectoring double page-fault needs to be determined later. */
 
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
-        TMCpuTickSetLastSeen(pVCpu, uHostTsc + pVCpu->hm.s.vmx.u64TSCOffset);
+        TMCpuTickSetLastSeen(pVCpu, uHostTsc + pVCpu->hm.s.vmx.u64TscOffset);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatPreExit, x);
     TMNotifyEndOfExecution(pVCpu);                                    /* Notify TM that the guest is no longer running. */

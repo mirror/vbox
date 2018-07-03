@@ -813,7 +813,7 @@ typedef struct HMCPU
         /** The cached APIC-base MSR used for identifying when to map the HC physical APIC-access page. */
         uint64_t                    u64MsrApicBase;
         /** Last use TSC offset value. (cached) */
-        uint64_t                    u64TSCOffset;
+        uint64_t                    u64TscOffset;
 
         /** VMCS cache. */
         VMCSCACHE                   VMCSCache;
