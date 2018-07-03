@@ -57,9 +57,10 @@ UITakeSnapshotDialog::UITakeSnapshotDialog(QWidget *pParent, const CMachine &com
     prepare();
 }
 
-void UITakeSnapshotDialog::setPixmap(const QPixmap &pixmap)
+void UITakeSnapshotDialog::setIcon(const QIcon &icon)
 {
-    m_pLabelIcon->setPixmap(pixmap);
+    m_icon = icon;
+    updatePixmap();
 }
 
 void UITakeSnapshotDialog::setName(const QString &strName)
@@ -75,6 +76,26 @@ QString UITakeSnapshotDialog::name() const
 QString UITakeSnapshotDialog::description() const
 {
     return m_pEditorDescription->toPlainText();
+}
+
+bool UITakeSnapshotDialog::event(QEvent *pEvent)
+{
+    /* Handle know event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Show:
+        case QEvent::ScreenChangeInternal:
+        {
+            /* Update pixmap: */
+            updatePixmap();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QIDialog>::event(pEvent);
 }
 
 void UITakeSnapshotDialog::retranslateUi()
@@ -271,4 +292,10 @@ void UITakeSnapshotDialog::prepareContents()
             pLayout->addWidget(m_pButtonBox, 3, 0, 1, 2);
         }
     }
+}
+
+void UITakeSnapshotDialog::updatePixmap()
+{
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+    m_pLabelIcon->setPixmap(m_icon.pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
 }

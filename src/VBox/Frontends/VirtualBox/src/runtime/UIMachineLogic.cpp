@@ -1689,10 +1689,7 @@ void UIMachineLogic::sltTakeSnapshot()
 
     /* Assign corresponding icon: */
     if (uisession() && uisession()->machineWindowIcon())
-    {
-        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-        pDlg->setPixmap(uisession()->machineWindowIcon()->pixmap(QSize(iIconMetric, iIconMetric)));
-    }
+        pDlg->setIcon(*uisession()->machineWindowIcon());
 
     /* Search for the max available filter index: */
     QString strNameTemplate = UITakeSnapshotDialog::tr("Snapshot %1");

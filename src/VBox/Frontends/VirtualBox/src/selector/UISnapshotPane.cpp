@@ -1603,10 +1603,10 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
                 windowManager().registerNewParent(pDlg, pDlgParent);
 
                 /* Assign corresponding icon: */
-                QPixmap pixmap = vboxGlobal().vmUserPixmapDefault(comMachine);
-                if (pixmap.isNull())
-                    pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(comMachine.GetOSTypeId());
-                pDlg->setPixmap(pixmap);
+                QIcon icon = vboxGlobal().vmUserIcon(comMachine);
+                if (icon.isNull())
+                    icon = vboxGlobal().vmGuestOSTypeIcon(comMachine.GetOSTypeId());
+                pDlg->setIcon(icon);
 
                 /* Assign corresponding snapshot name: */
                 pDlg->setName(strFinalName);
