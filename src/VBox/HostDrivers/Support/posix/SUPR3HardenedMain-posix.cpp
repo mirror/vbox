@@ -682,7 +682,7 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
     snprintf(g_szRTAssertMsg1, sizeof(g_szRTAssertMsg1),
              "\n!!Assertion Failed!!\n"
              "Expression: %s\n"
-             "Location  : %s(%d) %s\n",
+             "Location  : %s(%u) %s\n",
              pszExpr, pszFile, uLine, pszFunction);
 }
 
