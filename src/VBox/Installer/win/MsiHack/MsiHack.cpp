@@ -256,7 +256,7 @@ static bool MsiHackHandleEnter(PMSIHACKHANDLE pHandle, HANDLE hHandle)
         if (pvNew)
         {
             g_papHandles = (PMSIHACKHANDLE *)pvNew;
-            memset(&g_papHandles[g_cHandles], 0, (cNew - g_cHandles) * sizeof(sizeof(g_papHandles[0])));
+            memset(&g_papHandles[g_cHandles], 0, (cNew - g_cHandles) * sizeof(g_papHandles[0]));
             g_cHandles   = cNew;
             fOkay = true;
         }
