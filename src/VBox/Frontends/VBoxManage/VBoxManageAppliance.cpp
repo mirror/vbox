@@ -1173,7 +1173,7 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
         if (FAILED(rc))
             break;
 
-        if (llMachines.size() == 0)
+        if (llMachines.empty())
             return errorSyntax(USAGE_EXPORTAPPLIANCE, "At least one machine must be specified with the export command.");
         if (!strOutputFile.length())
             return errorSyntax(USAGE_EXPORTAPPLIANCE, "Missing --output argument with export command.");
