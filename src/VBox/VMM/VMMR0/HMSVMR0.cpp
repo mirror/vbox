@@ -4207,6 +4207,8 @@ static void hmR0SvmReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PCPUMCTX pC
         Log4(("guest.u64BR_TO                        %#RX64\n",   pVmcb->guest.u64BR_TO));
         Log4(("guest.u64LASTEXCPFROM                 %#RX64\n",   pVmcb->guest.u64LASTEXCPFROM));
         Log4(("guest.u64LASTEXCPTO                   %#RX64\n",   pVmcb->guest.u64LASTEXCPTO));
+
+        NOREF(pVmcb);
 #endif  /* VBOX_STRICT */
     }
     else
