@@ -27,6 +27,7 @@
 /* GUI includes: */
 #include "UIDefs.h"
 #include "UILibraryDefs.h"
+#include "UIMediumDefs.h"
 #include "UIExtraDataDefs.h"
 
 /* Other VBox includes: */
@@ -107,6 +108,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<MiniToolbarAlignment>();
 #endif
 template<> SHARED_LIBRARY_STUFF bool canConvert<InformationElementType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<MaxGuestResolutionPolicy>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIMediumFormat>();
 
 
 /* Declare COM canConvert specializations: */
@@ -211,6 +213,9 @@ template<> SHARED_LIBRARY_STUFF InformationElementType fromInternalString<Inform
 template<> SHARED_LIBRARY_STUFF QIcon toIcon(const InformationElementType &informationElementType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const MaxGuestResolutionPolicy &enmMaxGuestResolutionPolicy);
 template<> SHARED_LIBRARY_STUFF MaxGuestResolutionPolicy fromInternalString<MaxGuestResolutionPolicy>(const QString &strMaxGuestResolutionPolicy);
+template<> SHARED_LIBRARY_STUFF QString toString(const UIMediumFormat &enmUIMediumFormat);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIMediumFormat &enmUIMediumFormat);
+template<> SHARED_LIBRARY_STUFF UIMediumFormat fromInternalString<UIMediumFormat>(const QString &strUIMediumFormat);
 
 
 /* Declare COM conversion specializations: */

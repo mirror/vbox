@@ -328,9 +328,6 @@ public:
           * @param  cDecimal  Brings the number of decimal digits in result. */
         static QString formatSize(quint64 uSize, uint cDecimal = 2, FormatSize enmMode = FormatSize_Round);
 
-        /** Returns full medium-format name for the given @a strBaseMediumFormatName. */
-        static QString fullMediumFormatName(const QString &strBaseMediumFormatName);
-
         /** Returns the list of the standard COM port names (i.e. "COMx"). */
         static QStringList COMPortNames();
         /** Returns the name of the standard COM port corresponding to the given parameters,

@@ -32,6 +32,7 @@
 # include <QLabel>
 
 /* GUI includes: */
+# include "UIConverter.h"
 # include "UIWizardNewVDPageExpert.h"
 # include "UIWizardNewVD.h"
 # include "VBoxGlobal.h"
@@ -228,7 +229,8 @@ void UIWizardNewVDPageExpert::retranslateUi()
     for (int i = 0; i < buttons.size(); ++i)
     {
         QAbstractButton *pButton = buttons[i];
-        pButton->setText(VBoxGlobal::fullMediumFormatName(m_formatNames[m_pFormatButtonGroup->id(pButton)]));
+        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
+        pButton->setText(gpConverter->toString(enmFormat));
     }
     m_pVariantCnt->setTitle(UIWizardNewVD::tr("Storage on physical hard disk"));
     m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));

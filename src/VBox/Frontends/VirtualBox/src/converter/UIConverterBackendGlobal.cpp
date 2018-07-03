@@ -72,6 +72,7 @@ template<> bool canConvert<MiniToolbarAlignment>() { return true; }
 #endif
 template<> bool canConvert<InformationElementType>() { return true; }
 template<> bool canConvert<MaxGuestResolutionPolicy>() { return true; }
+template<> bool canConvert<UIMediumFormat>() { return true; }
 
 
 /* QString <= SizeSuffix: */
@@ -1857,3 +1858,63 @@ template<> MaxGuestResolutionPolicy fromInternalString<MaxGuestResolutionPolicy>
     return values.at(keys.indexOf(QRegExp(strMaxGuestResolutionPolicy, Qt::CaseInsensitive)));
 }
 
+/* QString <= UIMediumFormat: */
+template<> QString toString(const UIMediumFormat &enmUIMediumFormat)
+{
+    QString strResult;
+    switch (enmUIMediumFormat)
+    {
+        case UIMediumFormat_VDI:       strResult = QApplication::translate("VBoxGlobal", "VDI (VirtualBox Disk Image)", "UIMediumFormat"); break;
+        case UIMediumFormat_VMDK:      strResult = QApplication::translate("VBoxGlobal", "VMDK (Virtual Machine Disk)", "UIMediumFormat"); break;
+        case UIMediumFormat_VHD:       strResult = QApplication::translate("VBoxGlobal", "VHD (Virtual Hard Disk)", "UIMediumFormat"); break;
+        case UIMediumFormat_Parallels: strResult = QApplication::translate("VBoxGlobal", "HDD (Parallels Hard Disk)", "UIMediumFormat"); break;
+        case UIMediumFormat_QED:       strResult = QApplication::translate("VBoxGlobal", "QED (QEMU enhanced disk)", "UIMediumFormat"); break;
+        case UIMediumFormat_QCOW:      strResult = QApplication::translate("VBoxGlobal", "QCOW (QEMU Copy-On-Write)", "UIMediumFormat"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for medium format=%d", enmUIMediumFormat));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIMediumFormat: */
+template<> QString toInternalString(const UIMediumFormat &enmUIMediumFormat)
+{
+    QString strResult;
+    switch (enmUIMediumFormat)
+    {
+        case UIMediumFormat_VDI:       strResult = "VDI"; break;
+        case UIMediumFormat_VMDK:      strResult = "VMDK"; break;
+        case UIMediumFormat_VHD:       strResult = "VHD"; break;
+        case UIMediumFormat_Parallels: strResult = "Parallels"; break;
+        case UIMediumFormat_QED:       strResult = "QED"; break;
+        case UIMediumFormat_QCOW:      strResult = "QCOW"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for medium format=%d", enmUIMediumFormat));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIMediumFormat <= QString: */
+template<> UIMediumFormat fromInternalString<UIMediumFormat>(const QString &strUIMediumFormat)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;    QList<UIMediumFormat> values;
+    keys << "VDI";       values << UIMediumFormat_VDI;
+    keys << "VMDK";      values << UIMediumFormat_VMDK;
+    keys << "VHD";       values << UIMediumFormat_VHD;
+    keys << "Parallels"; values << UIMediumFormat_Parallels;
+    keys << "QED";       values << UIMediumFormat_QED;
+    keys << "QCOW";      values << UIMediumFormat_QCOW;
+    /* VDI format for unknown words: */
+    if (!keys.contains(strUIMediumFormat, Qt::CaseInsensitive))
+        return UIMediumFormat_VDI;
+    /* Corresponding format for known words: */
+    return values.at(keys.indexOf(QRegExp(strUIMediumFormat, Qt::CaseInsensitive)));
+}

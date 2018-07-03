@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 # include "QIToolButton.h"
+# include "UIConverter.h"
 # include "UIIconPool.h"
 # include "UIMediaComboBox.h"
 # include "UIMessageCenter.h"
@@ -264,7 +265,8 @@ void UIWizardCloneVDPageExpert::retranslateUi()
     for (int i = 0; i < buttons.size(); ++i)
     {
         QAbstractButton *pButton = buttons[i];
-        pButton->setText(VBoxGlobal::fullMediumFormatName(m_formatNames[m_pFormatButtonGroup->id(pButton)]));
+        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
+        pButton->setText(gpConverter->toString(enmFormat));
     }
     m_pVariantCnt->setTitle(UIWizardCloneVD::tr("Storage on physical hard disk"));
     m_pDynamicalButton->setText(UIWizardCloneVD::tr("&Dynamically allocated"));

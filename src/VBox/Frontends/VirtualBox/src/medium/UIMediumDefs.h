@@ -31,6 +31,17 @@
 #include <VBox/com/defs.h>
 
 
+/** Medium formats. */
+enum UIMediumFormat
+{
+    UIMediumFormat_VDI,
+    UIMediumFormat_VMDK,
+    UIMediumFormat_VHD,
+    UIMediumFormat_Parallels,
+    UIMediumFormat_QED,
+    UIMediumFormat_QCOW,
+};
+
 /** UIMediumDefs namespace. */
 namespace UIMediumDefs
 {
