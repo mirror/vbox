@@ -142,7 +142,7 @@ HRESULT MachineMoveVM::init()
         RTStrCopy(path, len, m_targetPath.c_str());
         RTPathEnsureTrailingSeparator(path, len);
         strTargetFolder = m_targetPath = path;
-        delete path;
+        delete[] path;
     }
 
     /*
