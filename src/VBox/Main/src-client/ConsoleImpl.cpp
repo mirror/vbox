@@ -1695,7 +1695,7 @@ int Console::i_loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AssertReturn(m_mapSharedFolders.size() == 0, VERR_INTERNAL_ERROR);
+    AssertReturn(m_mapSharedFolders.empty(), VERR_INTERNAL_ERROR);
 
     uint32_t size = 0;
     int vrc = SSMR3GetU32(pSSM, &size);
@@ -3160,8 +3160,8 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
 {
     HRESULT hrc = S_OK;
 
-    if (   !aIds.size()
-        || !aPasswords.size())
+    if (   aIds.empty()
+        || aPasswords.empty())
         return setError(E_FAIL, tr("IDs and passwords must not be empty"));
 
     if (aIds.size() != aPasswords.size())
@@ -7667,7 +7667,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 
         // If there is immutable drive the process that.
         VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
-        if (aProgress && progresses.size() > 0)
+        if (aProgress && !progresses.empty())
         {
             for (VMPowerUpTask::ProgressList::const_iterator it = progresses.begin(); it !=  progresses.end(); ++it)
             {
