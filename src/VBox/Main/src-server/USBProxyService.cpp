@@ -577,7 +577,7 @@ void USBProxyService::i_deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
             && pHostDevice->i_compare(pDev) < 0)
             break;
 
-        it++;
+        ++it;
     }
 
     mDevices.insert(it, aDevice);
