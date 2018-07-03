@@ -168,21 +168,21 @@ do
     fi
     shift
     case "$1" in
-        install)
+        install|--install)
             ACTION="install"
             ;;
 
-        uninstall)
+        uninstall|--uninstall)
             ACTION="uninstall"
             ;;
 
-        force)
+        force|--force)
             FORCE_UPGRADE=1
             ;;
-        license_accepted_unconditionally)
+        license_accepted_unconditionally|--license_accepted_unconditionally)
             # Legacy option
             ;;
-        no_module)
+        no_module|--no_module)
             BUILD_MODULE=""
             ;;
         *)
