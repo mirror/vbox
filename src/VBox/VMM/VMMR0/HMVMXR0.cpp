@@ -4825,6 +4825,7 @@ static int hmR0VmxSelectVMRunHandler(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             {
                 /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
                 uint64_t const fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
+                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
                 AssertMsg(fCtxChanged & (  HM_CHANGED_VMX_EXIT_CTLS
                                          | HM_CHANGED_VMX_ENTRY_CTLS
                                          | HM_CHANGED_GUEST_EFER_MSR), ("fCtxChanged=%#RX64\n", fCtxChanged));
@@ -4853,6 +4854,7 @@ static int hmR0VmxSelectVMRunHandler(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 # ifdef VBOX_STRICT
             /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
             uint64_t const fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
+            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
             AssertMsg(fCtxChanged & (  HM_CHANGED_VMX_EXIT_CTLS
                                      | HM_CHANGED_VMX_ENTRY_CTLS
                                      | HM_CHANGED_GUEST_EFER_MSR), ("fCtxChanged=%#RX64\n", fCtxChanged));
@@ -8168,6 +8170,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPU pVCpu, PCCPUMCTX pMixe
      */
     VBOXSTRICTRC rcStrict;
     uint64_t     fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     if ((fCtxChanged & (HM_CHANGED_ALL_GUEST & ~HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE)) == HM_CHANGED_GUEST_RIP)
     {
         rcStrict = hmR0VmxExportGuestRip(pVCpu, pMixedCtx);
@@ -8197,6 +8200,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPU pVCpu, PCCPUMCTX pMixe
 #ifdef VBOX_STRICT
     /* All the guest state bits should be loaded except maybe the host context and/or the shared host/guest bits. */
     fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     AssertMsg(!(fCtxChanged & (HM_CHANGED_ALL_GUEST & ~HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE)),
               ("fCtxChanged=%#RX64\n", fCtxChanged));
 #endif

@@ -2511,6 +2511,7 @@ static int hmR0SvmExportGuestState(PVMCPU pVCpu)
      * except for the host-context and/or shared host-guest context bits.
      */
     uint64_t const fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     AssertMsg(!(fCtxChanged & (HM_CHANGED_ALL_GUEST & ~HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE)),
               ("fCtxChanged=%#RX64\n", fCtxChanged));
 
@@ -2741,6 +2742,7 @@ static int hmR0SvmExportGuestStateNested(PVMCPU pVCpu)
      * for the host-context and/or shared host-guest context bits.
      */
     uint64_t const fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     AssertMsg(!(fCtxChanged & (HM_CHANGED_ALL_GUEST & ~HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE)),
               ("fCtxChanged=%#RX64\n", fCtxChanged));
 
