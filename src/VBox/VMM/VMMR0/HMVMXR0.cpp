@@ -2233,9 +2233,9 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
             {
                 /* Neither SINGLE nor ALL-context flush types for VPID is supported by the CPU. Ignore VPID capability. */
                 if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
-                    LogRel(("hmR0VmxSetupTaggedTlb: Only INDIV_ADDR supported. Ignoring VPID.\n"));
+                    LogRelFunc(("Only INDIV_ADDR supported. Ignoring VPID.\n"));
                 if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
-                    LogRel(("hmR0VmxSetupTaggedTlb: Only SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
+                    LogRelFunc(("Only SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
                 pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_NOT_SUPPORTED;
                 pVM->hm.s.vmx.fVpid = false;
             }
@@ -2269,14 +2269,15 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
+ *
+ * @remarks We don't really care about optimizing vmwrites here as it's done only
+ *          once per VM and hence we don't care about VMCS-field cache comparisons.
  */
 static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
 {
-    AssertPtr(pVCpu);
-
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    uint32_t fVal = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.disallowed0;         /* Bits set here must always be set. */
-    uint32_t fZap = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1;            /* Bits cleared here must always be cleared. */
+    uint32_t       fVal = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.disallowed0;   /* Bits set here must always be set. */
+    uint32_t const fZap = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1;      /* Bits cleared here must always be cleared. */
 
     fVal |= VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT              /* External interrupts cause a VM-exit. */
          |  VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT;                 /* Non-maskable interrupts (NMIs) cause a VM-exit. */
@@ -2303,17 +2304,115 @@ static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
 
     if ((fVal & fZap) != fVal)
     {
-        LogRel(("hmR0VmxSetupPinCtls: Invalid pin-based VM-execution controls combo! Cpu=%#RX64 fVal=%#RX64 fZap=%#RX64\n",
-                pVM->hm.s.vmx.Msrs.VmxPinCtls.n.disallowed0, fVal, fZap));
+        LogRelFunc(("Invalid pin-based VM-execution controls combo! Cpu=%#RX64 fVal=%#RX64 fZap=%#RX64\n",
+                    pVM->hm.s.vmx.Msrs.VmxPinCtls.n.disallowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PIN_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
+    /* Commit it to the VMCS and update our cache. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PIN_EXEC, fVal);
     AssertRCReturn(rc, rc);
-
     pVCpu->hm.s.vmx.u32PinCtls = fVal;
-    return rc;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets up secondary processor-based VM-execution controls in the VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ *
+ * @remarks We don't really care about optimizing vmwrites here as it's done only
+ *          once per VM and hence we don't care about VMCS-field cache comparisons.
+ */
+static int hmR0VmxSetupProcCtls2(PVMCPU pVCpu)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    uint32_t       fVal = pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.disallowed0; /* Bits set here must be set in the VMCS. */
+    uint32_t const fZap = pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1;    /* Bits cleared here must be cleared in the VMCS. */
+
+    /* WBINVD causes a VM-exit. */
+    if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT;
+
+    /* Enable EPT (aka nested-paging). */
+    if (pVM->hm.s.fNestedPaging)
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_EPT;
+
+    /*
+     * Enable the INVPCID instruction if supported by the hardware and we expose
+     * it to the guest. Without this, guest executing INVPCID would cause a #UD.
+     */
+    if (   (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_INVPCID)
+        && pVM->cpum.ro.GuestFeatures.fInvpcid)
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_INVPCID;
+
+    /* Enable VPID. */
+    if (pVM->hm.s.vmx.fVpid)
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_VPID;
+
+    /* Enable Unrestricted guest execution. */
+    if (pVM->hm.s.vmx.fUnrestrictedGuest)
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST;
+
+#if 0
+    if (pVM->hm.s.fVirtApicRegs)
+    {
+        /* Enable APIC-register virtualization. */
+        Assert(pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT);
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT;
+
+        /* Enable virtual-interrupt delivery. */
+        Assert(pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY);
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY;
+    }
+#endif
+
+    /* Enable Virtual-APIC page accesses if supported by the CPU. This is where the TPR shadow resides. */
+    /** @todo VIRT_X2APIC support, it's mutually exclusive with this. So must be
+     *        done dynamically. */
+    if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+    {
+        Assert(pVM->hm.s.vmx.HCPhysApicAccess);
+        Assert(!(pVM->hm.s.vmx.HCPhysApicAccess & 0xfff));    /* Bits 11:0 MBZ. */
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;           /* Virtualize APIC accesses. */
+        int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL, pVM->hm.s.vmx.HCPhysApicAccess);
+        AssertRCReturn(rc, rc);
+    }
+
+    /* Enable RDTSCP. */
+    if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP;
+
+    /* Enable Pause-Loop exiting. */
+    if (   pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT
+        && pVM->hm.s.vmx.cPleGapTicks
+        && pVM->hm.s.vmx.cPleWindowTicks)
+    {
+        fVal |= VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT;
+
+        int rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_GAP, pVM->hm.s.vmx.cPleGapTicks);
+        rc     |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_WINDOW, pVM->hm.s.vmx.cPleWindowTicks);
+        AssertRCReturn(rc, rc);
+    }
+
+    if ((fVal & fZap) != fVal)
+    {
+        LogRelFunc(("Invalid secondary processor-based VM-execution controls combo! cpu=%#RX64 fVal=%#RX64 fZap=%#RX64\n",
+                    pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.disallowed0, fVal, fZap));
+        pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC2;
+        return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
+    }
+
+    /* Commit it to the VMCS and update our cache. */
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, fVal);
+    AssertRCReturn(rc, rc);
+    pVCpu->hm.s.vmx.u32ProcCtls2 = fVal;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -2322,15 +2421,15 @@ static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
+ *
+ * @remarks We don't really care about optimizing vmwrites here as it's done only
+ *          once per VM and hence we don't care about VMCS-field cache comparisons.
  */
 static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
 {
-    AssertPtr(pVCpu);
-
-    int rc = VERR_INTERNAL_ERROR_5;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    uint32_t fVal = pVM->hm.s.vmx.Msrs.VmxProcCtls.n.disallowed0; /* Bits set here must be set in the VMCS. */
-    uint32_t fZap = pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1;    /* Bits cleared here must be cleared in the VMCS. */
+    uint32_t       fVal = pVM->hm.s.vmx.Msrs.VmxProcCtls.n.disallowed0;  /* Bits set here must be set in the VMCS. */
+    uint32_t const fZap = pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
     fVal |= VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT                      /* HLT causes a VM-exit. */
          |  VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING            /* Use TSC-offsetting. */
@@ -2344,7 +2443,7 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
     if (   !(pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT)
         ||  (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.disallowed0 & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT))
     {
-        LogRel(("hmR0VmxSetupProcCtls: Unsupported VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT combo!"));
+        LogRelFunc(("Unsupported VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT combo!"));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_MOV_DRX_EXIT;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
@@ -2364,8 +2463,8 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
     {
         Assert(pVCpu->hm.s.vmx.HCPhysVirtApic);
         Assert(!(pVCpu->hm.s.vmx.HCPhysVirtApic & 0xfff));        /* Bits 11:0 MBZ. */
-        rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, 0);
-        rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL, pVCpu->hm.s.vmx.HCPhysVirtApic);
+        int rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, 0);
+        rc     |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL, pVCpu->hm.s.vmx.HCPhysVirtApic);
         AssertRCReturn(rc, rc);
 
         fVal |= VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW;           /* CR8 reads from the Virtual-APIC page. */
@@ -2393,7 +2492,7 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
 
         Assert(pVCpu->hm.s.vmx.HCPhysMsrBitmap);
         Assert(!(pVCpu->hm.s.vmx.HCPhysMsrBitmap & 0xfff));       /* Bits 11:0 MBZ. */
-        rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_MSR_BITMAP_FULL, pVCpu->hm.s.vmx.HCPhysMsrBitmap);
+        int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_MSR_BITMAP_FULL, pVCpu->hm.s.vmx.HCPhysMsrBitmap);
         AssertRCReturn(rc, rc);
 
         /*
@@ -2405,7 +2504,6 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
         hmR0VmxSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_EIP, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         hmR0VmxSetMsrPermission(pVCpu, MSR_K8_GS_BASE,        VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
         hmR0VmxSetMsrPermission(pVCpu, MSR_K8_FS_BASE,        VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
-
 #if HC_ARCH_BITS == 64
         /*
          * Set passthru permissions for the following MSRs (mandatory for VT-x) required for 64-bit guests.
@@ -2434,105 +2532,30 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
 
     if ((fVal & fZap) != fVal)
     {
-        LogRel(("hmR0VmxSetupProcCtls: Invalid processor-based VM-execution controls combo! cpu=%#RX64 fVal=%#RX64 fZap=%#RX64\n",
-                pVM->hm.s.vmx.Msrs.VmxProcCtls.n.disallowed0, fVal, fZap));
+        LogRelFunc(("Invalid processor-based VM-execution controls combo! cpu=%#RX64 fVal=%#RX64 fZap=%#RX64\n",
+                    pVM->hm.s.vmx.Msrs.VmxProcCtls.n.disallowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
-    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, fVal);
+    /* Commit it to the VMCS and update our cache. */
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, fVal);
     AssertRCReturn(rc, rc);
-
     pVCpu->hm.s.vmx.u32ProcCtls = fVal;
 
-    /*
-     * Secondary processor-based VM-execution controls.
-     */
-    if (RT_LIKELY(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL))
+    /* Set up secondary processor-based VM-execution controls if the CPU supports it. */
+    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+        return hmR0VmxSetupProcCtls2(pVCpu);
+
+    /* Sanity check, should not really happen. */
+    if (RT_UNLIKELY(pVM->hm.s.vmx.fUnrestrictedGuest))
     {
-        fVal = pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.disallowed0;     /* Bits set here must be set in the VMCS. */
-        fZap = pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1;        /* Bits cleared here must be cleared in the VMCS. */
-
-        if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT;         /* WBINVD causes a VM-exit. */
-
-        if (pVM->hm.s.fNestedPaging)
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_EPT;                 /* Enable EPT. */
-
-        /*
-         * Enable the INVPCID instruction if supported by the hardware and we expose
-         * it to the guest. Without this, guest executing INVPCID would cause a #UD.
-         */
-        if (   (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_INVPCID)
-            && pVM->cpum.ro.GuestFeatures.fInvpcid)
-        {
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_INVPCID;
-        }
-
-        if (pVM->hm.s.vmx.fVpid)
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_VPID;                /* Enable VPID. */
-
-        if (pVM->hm.s.vmx.fUnrestrictedGuest)
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST;  /* Enable Unrestricted Execution. */
-
-#if 0
-        if (pVM->hm.s.fVirtApicRegs)
-        {
-            Assert(pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT);
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_APIC_REG_VIRT;       /* Enable APIC-register virtualization. */
-
-            Assert(pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY);
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY;  /* Enable virtual-interrupt delivery. */
-        }
-#endif
-
-        /* Enable Virtual-APIC page accesses if supported by the CPU. This is essentially where the TPR shadow resides. */
-        /** @todo VIRT_X2APIC support, it's mutually exclusive with this. So must be
-         *        done dynamically. */
-        if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-        {
-            Assert(pVM->hm.s.vmx.HCPhysApicAccess);
-            Assert(!(pVM->hm.s.vmx.HCPhysApicAccess & 0xfff));    /* Bits 11:0 MBZ. */
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC;           /* Virtualize APIC accesses. */
-            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL, pVM->hm.s.vmx.HCPhysApicAccess);
-            AssertRCReturn(rc, rc);
-        }
-
-        if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP;              /* Enable RDTSCP support. */
-
-        if (   pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT
-            && pVM->hm.s.vmx.cPleGapTicks
-            && pVM->hm.s.vmx.cPleWindowTicks)
-        {
-            fVal |= VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT;     /* Enable pause-loop exiting. */
-
-            rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_GAP, pVM->hm.s.vmx.cPleGapTicks);
-            rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_WINDOW, pVM->hm.s.vmx.cPleWindowTicks);
-            AssertRCReturn(rc, rc);
-        }
-
-        if ((fVal & fZap) != fVal)
-        {
-            LogRel(("hmR0VmxSetupProcCtls: Invalid secondary processor-based VM-execution controls combo! "
-                    "cpu=%#RX64 fVal=%#RX64 fZap=%#RX64\n", pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.disallowed0, fVal, fZap));
-            pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC2;
-            return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
-        }
-
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, fVal);
-        AssertRCReturn(rc, rc);
-
-        pVCpu->hm.s.vmx.u32ProcCtls2 = fVal;
-    }
-    else if (RT_UNLIKELY(pVM->hm.s.vmx.fUnrestrictedGuest))
-    {
-        LogRel(("hmR0VmxSetupProcCtls: Unrestricted Guest set as true when secondary processor-based VM-execution controls not "
-                "available\n"));
+        LogRelFunc(("Unrestricted Guest enabled when secondary processor-based VM-execution controls not available\n"));
         pVCpu->hm.s.u32HMError = VMX_UFC_INVALID_UX_COMBO;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
+    /* Old CPUs without secondary processor-based VM-execution controls would end up here. */
     return VINF_SUCCESS;
 }
 
@@ -2654,7 +2677,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
     int rc = hmR0VmxStructsAlloc(pVM);
     if (RT_FAILURE(rc))
     {
-        LogRel(("VMXR0InitVM: hmR0VmxStructsAlloc failed! rc=%Rrc\n", rc));
+        LogRelFunc(("hmR0VmxStructsAlloc failed! rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -2704,7 +2727,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         &&  (   !pVM->hm.s.vmx.pNonPagingModeEPTPageTable
              || !pVM->hm.s.vmx.pRealModeTSS))
     {
-        LogRel(("VMXR0SetupVM: Invalid real-on-v86 state.\n"));
+        LogRelFunc(("Invalid real-on-v86 state.\n"));
         return VERR_INTERNAL_ERROR;
     }
 
@@ -2716,7 +2739,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     int rc = hmR0VmxSetupTaggedTlb(pVM);
     if (RT_FAILURE(rc))
     {
-        LogRel(("VMXR0SetupVM: hmR0VmxSetupTaggedTlb failed! rc=%Rrc\n", rc));
+        LogRelFunc(("hmR0VmxSetupTaggedTlb failed! rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -3194,9 +3217,9 @@ static int hmR0VmxExportGuestEntryCtls(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_ENTRY_CTLS)
     {
-        PVM pVM       = pVCpu->CTX_SUFF(pVM);
-        uint32_t fVal = pVM->hm.s.vmx.Msrs.VmxEntry.n.disallowed0;       /* Bits set here must be set in the VMCS. */
-        uint32_t fZap = pVM->hm.s.vmx.Msrs.VmxEntry.n.allowed1;          /* Bits cleared here must be cleared in the VMCS. */
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
+        uint32_t       fVal = pVM->hm.s.vmx.Msrs.VmxEntry.n.disallowed0; /* Bits set here must be set in the VMCS. */
+        uint32_t const fZap = pVM->hm.s.vmx.Msrs.VmxEntry.n.allowed1;    /* Bits cleared here must be cleared in the VMCS. */
 
         /* Load debug controls (DR7 & IA32_DEBUGCTL_MSR). The first VT-x capable CPUs only supports the 1-setting of this bit. */
         fVal |= VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG;
@@ -3235,10 +3258,14 @@ static int hmR0VmxExportGuestEntryCtls(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
 
-        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY, fVal);
-        AssertRCReturn(rc, rc);
+        /* Commit it to the VMCS and update our cache. */
+        if (pVCpu->hm.s.vmx.u32EntryCtls != fVal)
+        {
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY, fVal);
+            AssertRCReturn(rc, rc);
+            pVCpu->hm.s.vmx.u32EntryCtls = fVal;
+        }
 
-        pVCpu->hm.s.vmx.u32EntryCtls = fVal;
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_VMX_ENTRY_CTLS);
     }
     return VINF_SUCCESS;
@@ -3260,9 +3287,9 @@ static int hmR0VmxExportGuestExitCtls(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_EXIT_CTLS)
     {
-        PVM pVM       = pVCpu->CTX_SUFF(pVM);
-        uint32_t fVal = pVM->hm.s.vmx.Msrs.VmxExit.n.disallowed0;        /* Bits set here must be set in the VMCS. */
-        uint32_t fZap = pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1;           /* Bits cleared here must be cleared in the VMCS. */
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
+        uint32_t       fVal = pVM->hm.s.vmx.Msrs.VmxExit.n.disallowed0;  /* Bits set here must be set in the VMCS. */
+        uint32_t const fZap = pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
         /* Save debug controls (DR7 & IA32_DEBUGCTL_MSR). The first VT-x CPUs only supported the 1-setting of this bit. */
         fVal |= VMX_VMCS_CTRL_EXIT_SAVE_DEBUG;
@@ -3305,22 +3332,27 @@ static int hmR0VmxExportGuestExitCtls(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
          *        VMX_VMCS_CTRL_EXIT_SAVE_GUEST_PAT_MSR,
          *        VMX_VMCS_CTRL_EXIT_LOAD_HOST_PAT_MSR. */
 
+        /* Enable saving of the VMX preemption timer value on VM-exit. */
         if (    pVM->hm.s.vmx.fUsePreemptTimer
             && (pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1 & VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER))
             fVal |= VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER;
 
         if ((fVal & fZap) != fVal)
         {
-            LogRel(("hmR0VmxSetupProcCtls: Invalid VM-exit controls combo! cpu=%RX64 fVal=%RX64 fZap=%RX64\n",
-                    pVM->hm.s.vmx.Msrs.VmxExit.n.disallowed0, fVal, fZap));
+            LogRelFunc(("Invalid VM-exit controls combo! cpu=%RX64 fVal=%RX64 fZap=%RX64\n",
+                        pVM->hm.s.vmx.Msrs.VmxExit.n.disallowed0, fVal, fZap));
             pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_EXIT;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
 
-        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT, fVal);
-        AssertRCReturn(rc, rc);
+        /* Commit it to the VMCS and update our cache. */
+        if (pVCpu->hm.s.vmx.u32ExitCtls != fVal)
+        {
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT, fVal);
+            AssertRCReturn(rc, rc);
+            pVCpu->hm.s.vmx.u32ExitCtls = fVal;
+        }
 
-        pVCpu->hm.s.vmx.u32ExitCtls = fVal;
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_VMX_EXIT_CTLS);
     }
     return VINF_SUCCESS;
@@ -3764,6 +3796,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
         AssertRCReturn(rc, rc);
 
+        /* Update our caches. */
         pVCpu->hm.s.vmx.u32CR0Mask  = uCR0Mask;
         pVCpu->hm.s.vmx.u32ProcCtls = uProcCtls;
 
@@ -3971,12 +4004,13 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
         }
 
         /* We need to set and clear the CR4 specific bits here (mainly the X86_CR4_VMXE bit). */
-        uint64_t fSetCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
-        uint64_t fZapCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+        uint64_t const fSetCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+        uint64_t const fZapCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
         uGuestCR4 |= fSetCR4;
         uGuestCR4 &= fZapCR4;
 
-        /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them, that would cause a VM-exit. */
+        /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them,
+           that would cause a VM-exit. */
         uint32_t u32CR4Mask = X86_CR4_VME
                             | X86_CR4_PAE
                             | X86_CR4_PGE
@@ -3987,7 +4021,8 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
         if (pVM->cpum.ro.GuestFeatures.fPcid)
             u32CR4Mask |= X86_CR4_PCIDE;
 
-        /* Write VT-x's view of the guest CR4, the CR4 modify mask and the read-only CR4 shadow into the VMCS. */
+        /* Write VT-x's view of the guest CR4, the CR4 modify mask and the read-only CR4 shadow
+           into the VMCS and update our cache. */
         rc  = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, uGuestCR4);
         rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, uShadowCR4);
         if (pVCpu->hm.s.vmx.u32CR4Mask != u32CR4Mask)
@@ -4144,7 +4179,8 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         uProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
 
     /*
-     * Update the processor-based VM-execution controls for MOV-DRx intercepts and the monitor-trap flag.
+     * Update the processor-based VM-execution controls with the MOV-DRx intercepts and the
+     * monitor-trap flag and update our cache.
      */
     if (uProcCtls != pVCpu->hm.s.vmx.u32ProcCtls)
     {
@@ -5165,8 +5201,7 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
  * @param   cParams     Number of parameters.
  * @param   paParam     Array of 32-bit parameters.
  */
-VMMR0DECL(int) VMXR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp,
-                                         uint32_t cParams, uint32_t *paParam)
+VMMR0DECL(int) VMXR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_t cParams, uint32_t *paParam)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
@@ -5555,14 +5590,13 @@ VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
  */
 static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
 {
-    int  rc;
-    bool fOffsettedTsc;
-    bool fParavirtTsc;
-    PVM  pVM = pVCpu->CTX_SUFF(pVM);
+    bool     fOffsettedTsc;
+    bool     fParavirtTsc;
+    PVM      pVM = pVCpu->CTX_SUFF(pVM);
+    uint64_t uTscOffset;
     if (pVM->hm.s.vmx.fUsePreemptTimer)
     {
-        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVM, pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset,
-                                                                     &fOffsettedTsc, &fParavirtTsc);
+        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVM, pVCpu, &uTscOffset, &fOffsettedTsc, &fParavirtTsc);
 
         /* Make sure the returned values have sane upper and lower boundaries. */
         uint64_t u64CpuHz  = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
@@ -5571,10 +5605,11 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
 
         uint32_t cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
-        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE, cPreemptionTickCount);        AssertRC(rc);
+        int rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE, cPreemptionTickCount);
+        AssertRC(rc);
     }
     else
-        fOffsettedTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fParavirtTsc);
+        fOffsettedTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &uTscOffset, &fParavirtTsc);
 
     /** @todo later optimize this to be done elsewhere and not before every
      *        VM-entry. */
@@ -5583,26 +5618,39 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         /* Currently neither Hyper-V nor KVM need to update their paravirt. TSC
            information before every VM-entry, hence disable it for performance sake. */
 #if 0
-        rc = GIMR0UpdateParavirtTsc(pVM, 0 /* u64Offset */);
+        int rc = GIMR0UpdateParavirtTsc(pVM, 0 /* u64Offset */);
         AssertRC(rc);
 #endif
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
 
-    if (fOffsettedTsc && RT_LIKELY(!pVCpu->hm.s.fDebugWantRdTscExit))
+    if (   fOffsettedTsc
+        && RT_LIKELY(!pVCpu->hm.s.fDebugWantRdTscExit))
     {
-        /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
-        rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);     AssertRC(rc);
+        if (pVCpu->hm.s.vmx.u64TSCOffset != uTscOffset)
+        {
+            int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);
+            AssertRC(rc);
+            pVCpu->hm.s.vmx.u64TSCOffset = uTscOffset;
+        }
 
-        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);            AssertRC(rc);
+        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT)
+        {
+            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+            AssertRC(rc);
+        }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
     }
     else
     {
         /* We can't use TSC-offsetting (non-fixed TSC, warp drive active etc.), VM-exit on RDTSC(P). */
-        pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);            AssertRC(rc);
+        if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
+        {
+            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+            AssertRC(rc);
+        }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
 }
@@ -6433,18 +6481,17 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
      */
     if (VMMRZCallRing3IsEnabled(pVCpu))
     {
-        VMMR0LogFlushDisable(pVCpu);
-
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+        {
+            Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & CPUMCTX_EXTRN_CR3));
             PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
+        }
 
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
             PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
 
         Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
         Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
-
-        VMMR0LogFlushEnable(pVCpu);
     }
 
     return VINF_SUCCESS;
@@ -7781,7 +7828,7 @@ VMMR0DECL(int) VMXR0Enter(PVMCPU pVCpu, PHMGLOBALCPUINFO pHostCpu)
     RTCCUINTREG uHostCR4 = ASMGetCR4();
     if (!(uHostCR4 & X86_CR4_VMXE))
     {
-        LogRel(("VMXR0Enter: X86_CR4_VMXE bit in CR4 is not set!\n"));
+        LogRelFunc(("X86_CR4_VMXE bit in CR4 is not set!\n"));
         return VERR_VMX_X86_CR4_VMXE_CLEARED;
     }
 #endif
@@ -10286,8 +10333,8 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * CR0.
          */
-        uint32_t fSetCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
-        uint32_t fZapCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
+        uint32_t       fSetCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
+        uint32_t const fZapCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         /* Exceptions for unrestricted-guests for fixed CR0 bits (PE, PG).
            See Intel spec. 26.3.1 "Checks on Guest Control Registers, Debug Registers and MSRs." */
         if (fUnrestrictedGuest)
@@ -10308,8 +10355,8 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * CR4.
          */
-        uint64_t fSetCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
-        uint64_t fZapCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+        uint64_t const fSetCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+        uint64_t const fZapCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
 
         uint32_t uGuestCR4;
         rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR4, &uGuestCR4);
