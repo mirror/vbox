@@ -3324,6 +3324,7 @@ static int hmR0SvmExitToRing3(PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
  * Updates the use of TSC offsetting mode for the CPU and adjusts the necessary
  * intercepts.
  *
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU or nested-guest-CPU context.
  * @param   pVmcb       Pointer to the VM control block.
  *
