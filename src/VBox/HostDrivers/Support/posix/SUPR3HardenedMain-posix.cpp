@@ -215,8 +215,8 @@ DECLASM(bool) supR3HardenedPosixMonitor_VerifyLibrary(const char *pszFilename)
 static void *supR3HardenedMainPosixGetStartBySymbol(const char *pszSymbol, PFNSUPHARDENEDSYMRESOLVE pfnResolve)
 {
 #ifndef RT_OS_SOLARIS
-    return dlsym(RTLD_DEFAULT, pszSymbol);
     RT_NOREF(pfnResolve);
+    return dlsym(RTLD_DEFAULT, pszSymbol);
 
 #else  /* RT_OS_SOLARIS */
     /*
