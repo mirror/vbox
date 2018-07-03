@@ -409,6 +409,7 @@ cleanup()
                   "${i}/misc/vboxnetflt.ko" "${i}/misc/vboxpci.ko"
             version=`expr "${i}" : "/lib/modules/\(.*\)"`
             depmod -a "${version}"
+            sync
         fi
         # Remove the kernel version folder if it was empty except for us.
         test   "`echo ${i}/misc/* ${i}/misc/.?* ${i}/* ${i}/.?*`" \
@@ -460,6 +461,7 @@ setup()
     fi
     rm -f /etc/vbox/module_not_compiled
     depmod -a
+    sync
     succ_msg "VirtualBox kernel modules built"
 }
 
