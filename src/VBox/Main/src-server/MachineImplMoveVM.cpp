@@ -64,9 +64,12 @@ struct fileList_t
         rangeRes_t res = m_list.equal_range(folder);
         for (it_t it=res.first; it!=res.second;)
         {
-            //until c++11
             if (it->second.equals(filename))
-                m_list.erase(it++);
+            {
+                it_t it2 = it;
+                ++it;
+                m_list.erase(it2);
+            }
             else
                 ++it;
         }
@@ -80,9 +83,12 @@ struct fileList_t
         rangeRes_t res = m_list.equal_range(path);
         for (it_t it=res.first; it!=res.second;)
         {
-            //since c++11
             if (it->second.equals(fileName))
-                it = m_list.erase(it);
+            {
+                it_t it2 = it;
+                ++it;
+                m_list.erase(it2);
+            }
             else
                 ++it;
         }
