@@ -316,7 +316,7 @@ void dbglCheckTexUnits(const struct wined3d_gl_info *gl_info, const struct IWine
             Assert(pTexture->target == pSurf->texture_target);
             Assert(DBGL_OP(IsEnabled(pSurf->texture_target)));
             Assert(pSurf->Flags & SFLAG_INTEXTURE);
-            if (pSurf->Flags & SFLAG_INSYSMEM && !pSurf->Flags & SFLAG_PBO)
+            if ((pSurf->Flags & SFLAG_INSYSMEM) && !(pSurf->Flags & SFLAG_PBO))
             {
                 Assert(pSurf->resource.allocatedMemory);
                 /* we can match GPU & our state */
