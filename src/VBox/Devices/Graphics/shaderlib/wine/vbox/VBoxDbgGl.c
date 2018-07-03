@@ -200,6 +200,7 @@ DECLEXPORT(void) dbglPrint(const char *format, ... )
 
     va_start( args, format );
     vsprintf( txt, format, args );
+    va_end( args );
 
     OutputDebugString(txt);
 }
