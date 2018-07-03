@@ -5626,32 +5626,35 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
 
+    uint32_t uProcCtls = pVCpu->hm.s.vmx.u32ProcCtls;
     if (   fOffsettedTsc
         && RT_LIKELY(!pVCpu->hm.s.fDebugWantRdTscExit))
     {
         if (pVCpu->hm.s.vmx.u64TscOffset != uTscOffset)
         {
-            int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TscOffset);
+            int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, uTscOffset);
             AssertRC(rc);
             pVCpu->hm.s.vmx.u64TscOffset = uTscOffset;
         }
 
-        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT)
+        if (uProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT)
         {
-            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
-            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+            uProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
             AssertRC(rc);
+            pVCpu->hm.s.vmx.u32ProcCtls = uProcCtls;
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
     }
     else
     {
         /* We can't use TSC-offsetting (non-fixed TSC, warp drive active etc.), VM-exit on RDTSC(P). */
-        if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
+        if (!(uProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
         {
-            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
-            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+            uProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
             AssertRC(rc);
+            pVCpu->hm.s.vmx.u32ProcCtls = uProcCtls;
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
