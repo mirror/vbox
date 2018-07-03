@@ -47,7 +47,8 @@ signals:
 
 public:
 
-    UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent = 0);
+    UIMediumSelector(UIMediumType enmMediumType, const QString &machineName = QString(),
+                     const QString &machineSettigFilePath = QString(), QWidget *pParent = 0);
     QStringList selectedMediumIds() const;
 
 protected:
@@ -57,6 +58,7 @@ protected:
 private slots:
 
     void sltAddMedium();
+    void sltCreateMedium();
     void sltHandleItemSelectionChanged();
     void sltHandleMediumEnumerationStart();
     void sltHandleMediumEnumerated();
@@ -97,12 +99,14 @@ private:
     /** Remember the default foreground brush of the tree so that we can reset tree items' foreground later */
     void          saveDefaultForeground();
 
+
     QVBoxLayout          *m_pMainLayout;
     QITreeWidget         *m_pTreeWidget;
     UIMediumType          m_enmMediumType;
     QIDialogButtonBox    *m_pButtonBox;
     UIToolBar            *m_pToolBar;
     QAction              *m_pActionAdd;
+    QAction              *m_pActionCreate;
     QAction              *m_pActionRefresh;
     /** All the known media that are already attached to some vm are added under the following top level tree item */
     QITreeWidgetItem     *m_pAttachedSubTreeRoot;
@@ -112,7 +116,8 @@ private:
     UIMediumSearchWidget *m_pSearchWidget;
     QList<UIMediumItem*>  m_mediumItemList;
     QBrush                m_defaultItemForeground;
-
+    QString               m_strMachineSettingsFilePath;
+    QString               m_strMachineName;
 };
 
 #endif /* !___UIMediumSelector_h___ */

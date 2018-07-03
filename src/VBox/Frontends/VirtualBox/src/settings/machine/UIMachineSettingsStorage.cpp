@@ -2192,6 +2192,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
     /* Gather old common data: */
     m_strMachineId = m_machine.GetId();
     m_strMachineSettingsFilePath = m_machine.GetSettingsFilePath();
+    m_strMachineName = m_machine.GetName();
     m_strMachineGuestOSTypeId = m_machine.GetOSTypeId();
 
     /* For each controller: */
@@ -3796,7 +3797,8 @@ void UIMachineSettingsStorage::addControllerWrapper(const QString &strName, KSto
 QString UIMachineSettingsStorage::openMediumSelectorDialog(UIMediumType  enmMediumType)
 {
     QWidget *pParent = windowManager().realParentWindow(this);
-    QPointer<UIMediumSelector> pSelector = new UIMediumSelector(enmMediumType, pParent);
+    QPointer<UIMediumSelector> pSelector = new UIMediumSelector(enmMediumType, m_strMachineName,
+                                                                m_strMachineSettingsFilePath, pParent);
 
     if (!pSelector)
         return QString();

@@ -28,6 +28,7 @@
 /* GUI includes: */
 # include "QIComboBox.h"
 # include "QIDialogButtonBox.h"
+# include "QIFileDialog.h"
 # include "QILineEdit.h"
 # include "QIMessageBox.h"
 # include "QITabWidget.h"
@@ -35,7 +36,9 @@
 # include "VBoxGlobal.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
+# include "UIFDCreationDialog.h"
 # include "UIMediumSelector.h"
+# include "UIMessageCenter.h"
 # include "UIIconPool.h"
 # include "UIMedium.h"
 # include "UIMediumItem.h"
@@ -145,7 +148,8 @@ QString UIMediumSearchWidget::searchTerm() const
 }
 
 
-UIMediumSelector::UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent /* = 0 */)
+UIMediumSelector::UIMediumSelector(UIMediumType enmMediumType, const QString &machineName /* = QString() */,
+                                   const QString &machineSettigFilePath /* = QString() */, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QIDialog>(pParent)
     , m_pMainLayout(0)
     , m_pTreeWidget(0)
@@ -153,11 +157,14 @@ UIMediumSelector::UIMediumSelector(UIMediumType enmMediumType, QWidget *pParent 
     , m_pButtonBox(0)
     , m_pToolBar(0)
     , m_pActionAdd(0)
+    , m_pActionCreate(0)
     , m_pActionRefresh(0)
     , m_pAttachedSubTreeRoot(0)
     , m_pNotAttachedSubTreeRoot(0)
     , m_pParent(pParent)
     , m_pSearchWidget(0)
+    , m_strMachineSettingsFilePath(machineSettigFilePath)
+    , m_strMachineName(machineName)
 {
     configure();
     finalize();
@@ -187,6 +194,14 @@ void UIMediumSelector::retranslateUi()
         m_pActionAdd->setToolTip(QApplication::translate("UIMediumManager", "Add Disk Image File"));
         m_pActionAdd->setStatusTip(QApplication::translate("UIMediumManager", "Add disk image file"));
     }
+
+    if (m_pActionCreate)
+    {
+        m_pActionCreate->setText(QApplication::translate("UIMediumManager", "&Create"));
+        m_pActionCreate->setToolTip(QApplication::translate("UIMediumManager", "Create an Empty Disk Image"));
+        m_pActionCreate->setStatusTip(QApplication::translate("UIMediumManager", "Create an Empty Disk Image"));
+    }
+
     if (m_pActionRefresh)
     {
         m_pActionRefresh->setText(QApplication::translate("UIMediumManager","Re&fresh"));
@@ -217,33 +232,50 @@ void UIMediumSelector::configure()
 
 void UIMediumSelector::prepareActions()
 {
+    QString strPrefix("hd");
+    switch (m_enmMediumType)
+    {
+        case UIMediumType_DVD:
+            strPrefix = "cd";
+            break;
+        case UIMediumType_Floppy:
+            strPrefix = "fd";
+            break;
+        case UIMediumType_HardDisk:
+        case UIMediumType_All:
+        case UIMediumType_Invalid:
+        default:
+            strPrefix = "hd";
+            break;
+    }
+
     m_pActionAdd = new QAction(this);
     if (m_pActionAdd)
     {
         /* Configure add-action: */
         m_pActionAdd->setShortcut(QKeySequence("Ctrl+A"));
-        QString strPrefix("hd");
-        switch (m_enmMediumType)
-        {
-            case UIMediumType_DVD:
-                strPrefix = "cd";
-                break;
-            case UIMediumType_Floppy:
-                strPrefix = "fd";
-                break;
-            case UIMediumType_HardDisk:
-            case UIMediumType_All:
-            case UIMediumType_Invalid:
-            default:
-                strPrefix = "hd";
-                break;
-        }
 
         m_pActionAdd->setIcon(UIIconPool::iconSetFull(QString(":/%1_add_22px.png").arg(strPrefix),
                                                       QString(":/%1_add_16px.png").arg(strPrefix),
                                                       QString(":/%1_add_disabled_22px.png").arg(strPrefix),
                                                       QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
     }
+
+    /* Currently create is supported only for Floppy: */
+    if (m_enmMediumType == UIMediumType_Floppy)
+    {
+        m_pActionCreate = new QAction(this);
+    }
+    if (m_pActionCreate)
+    {
+
+        m_pActionCreate->setShortcut(QKeySequence("Ctrl+C"));
+        m_pActionCreate->setIcon(UIIconPool::iconSetFull(QString(":/%1_add_22px.png").arg(strPrefix),
+                                                         QString(":/%1_add_16px.png").arg(strPrefix),
+                                                         QString(":/%1_add_disabled_22px.png").arg(strPrefix),
+                                                         QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
+    }
+
 
     m_pActionRefresh = new QAction(this);
     if (m_pActionRefresh)
@@ -266,6 +298,8 @@ void UIMediumSelector::prepareConnections()
             this, &UIMediumSelector::sltHandleMediumEnumerationFinish);
     if (m_pActionAdd)
         connect(m_pActionAdd, &QAction::triggered, this, &UIMediumSelector::sltAddMedium);
+    if (m_pActionCreate)
+        connect(m_pActionCreate, &QAction::triggered, this, &UIMediumSelector::sltCreateMedium);
     if (m_pActionRefresh)
         connect(m_pActionRefresh, &QAction::triggered, this, &UIMediumSelector::sltHandleRefresh);
 
@@ -396,6 +430,8 @@ void UIMediumSelector::prepareWidgets()
         /* Add toolbar actions: */
         if (m_pActionAdd)
             m_pToolBar->addAction(m_pActionAdd);
+        if (m_pActionCreate)
+            m_pToolBar->addAction(m_pActionCreate);
         if (m_pActionRefresh)
             m_pToolBar->addAction(m_pActionRefresh);
 
@@ -438,6 +474,35 @@ void UIMediumSelector::sltAddMedium()
 {
     QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, strDefaultMachineFolder);
+}
+
+
+void UIMediumSelector::sltCreateMedium()
+{
+
+    UIFDCreationDialog *pDialog = new UIFDCreationDialog(this, m_strMachineSettingsFilePath, m_strMachineName);
+    pDialog->exec();
+
+    // QVector<CMediumFormat>  mediumFormats = vboxGlobal().getFormatsForDeviceType(UIMediumDefs::mediumTypeToGlobal(m_enmMediumType));
+    // if (mediumFormats.isEmpty())
+    //     return;
+    // QString strMachineFolder = QFileInfo(m_strMachineSettingsFilePath).absolutePath();
+    // QString strMediumPath =vboxGlobal().getNewMediumPath(m_enmMediumType, this,
+    //                                             strMachineFolder, m_strMachineName);
+    // if (strMediumPath.isEmpty())
+    //     return;
+    // //
+    // CVirtualBox vbox = vboxGlobal().virtualBox();
+
+    // CMedium newMedium = vbox.CreateMedium(mediumFormats[0].GetName(), strMediumPath,
+    //                                       KAccessMode_ReadWrite, UIMediumDefs::mediumTypeToGlobal(m_enmMediumType));
+    // if (!vbox.isOk())
+    // {
+    //     msgCenter().cannotCreateHardDiskStorage(vbox, strMediumPath, this);
+    //     return;
+    // }
+
+
 }
 
 void UIMediumSelector::sltHandleItemSelectionChanged()

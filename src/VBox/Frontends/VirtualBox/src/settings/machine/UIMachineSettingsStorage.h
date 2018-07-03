@@ -796,6 +796,8 @@ private:
     QString  m_strMachineId;
     /** Holds the machine settings file-path. */
     QString  m_strMachineSettingsFilePath;
+    /** Holds the machine settings file-path. */
+    QString  m_strMachineName;
     /** Holds the machine guest OS type ID. */
     QString  m_strMachineGuestOSTypeId;
 
