@@ -1171,7 +1171,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                     itQueue = m_clientQueue.begin();
                 }
 
-                Assert(m_clientQueue.size() == 0);
+                Assert(m_clientQueue.empty());
 
                 /* Tell the host that everything went well. */
                 rc = VINF_SUCCESS;
@@ -1195,7 +1195,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                 break;
             }
 
-            if (m_clientMap.size() == 0) /* At least one client on the guest connected? */
+            if (m_clientMap.empty()) /* At least one client on the guest connected? */
             {
                 /*
                  * Tell the host that the guest does not support drag'n drop.
@@ -1214,7 +1214,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
             }
 
             /* Any clients in our queue ready for processing the next command? */
-            if (m_clientQueue.size() == 0)
+            if (m_clientQueue.empty())
             {
                 LogFlowFunc(("All clients (%zu) busy -- delaying execution\n", m_clientMap.size()));
                 break;

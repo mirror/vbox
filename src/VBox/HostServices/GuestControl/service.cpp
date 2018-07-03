@@ -555,7 +555,7 @@ typedef struct ClientState
      *  NULL if no current command available. */
     const HostCommand *GetCurrent(void)
     {
-        if (!mHostCmdList.size())
+        if (mHostCmdList.empty())
             return NULL;
 
         return (*mHostCmdList.begin());
@@ -1072,7 +1072,7 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
     LogFlowFunc(("[Client %RU32] Disconnected (%zu clients total)\n",
                  u32ClientID, mClientStateMap.size()));
 
-    AssertMsg(mClientStateMap.size(),
+    AssertMsg(!mClientStateMap.empty(),
               ("No clients in list anymore when there should (client ID=%RU32)\n", u32ClientID));
 
     int rc = VINF_SUCCESS;
