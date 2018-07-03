@@ -95,7 +95,7 @@ static int installDriver(bool fStartIt)
             if (StartService(hService, 0, NULL))
                 printf("successfully started driver '%s'\n", szDriver);
             else
-                printf("StartService failed: %d\n", GetLastError(), szDriver);
+                printf("StartService failed: %d\n", GetLastError());
         }
         CloseServiceHandle(hService);
     }
