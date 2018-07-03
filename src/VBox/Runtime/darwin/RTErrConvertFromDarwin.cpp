@@ -116,7 +116,7 @@ RTDECL(int) RTErrConvertFromDarwin(int iNativeCode)
          */
         default:
             if (    (unsigned)iNativeCode >= 0x80000000U
-                &&  (unsigned)iNativeCode >= 0x8000FFFFU)
+                &&  (unsigned)iNativeCode <= 0x8000FFFFU)
                 return RTErrConvertFromDarwinCOM(iNativeCode);
             break;
 #endif /* IN_RING3 */
