@@ -130,6 +130,9 @@ private:
     /** Prepares all. */
     void prepare();
 
+    /** Updates pixmap. */
+    void updatePixmap();
+
     /** Holds the action reference. */
     QAction *m_pAction;
     /** Holds the widget description. */
@@ -179,6 +182,9 @@ public:
 
 protected:
 
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+
     /** Handles translation event. */
     void retranslateUi();
 
@@ -187,6 +193,9 @@ protected:
 
     /** Prepares tools pane. */
     void prepareToolsPane();
+
+    /** Updates pixmap. */
+    void updatePixmap();
 
 private:
 
@@ -211,6 +220,9 @@ private:
     QLabel           *m_pLabelToolsPaneText;
     /** Holds the tools pane icon label instance. */
     QLabel           *m_pLabelToolsPaneIcon;
+
+    /** Holds the tools pane icon instance. */
+    QIcon  m_icon;
 };
 
 
@@ -307,6 +319,14 @@ bool UIToolWidget::event(QEvent *pEvent)
     /* Handle known event types: */
     switch (pEvent->type())
     {
+        case QEvent::Show:
+        case QEvent::ScreenChangeInternal:
+        {
+            /* Update pixmap: */
+            updatePixmap();
+            break;
+        }
+
         /* Update the hovered state on/off: */
         case QEvent::Enter:
         {
@@ -492,13 +512,21 @@ void UIToolWidget::prepare()
         {
             /* Configure label: */
             m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-            m_pLabelIcon->setPixmap(m_pAction->icon().pixmap(iMetric));
 
             /* Add into layout: */
             m_pLayout->addWidget(m_pLabelIcon, 0, 1, 2, 1);
             m_pLayout->setAlignment(m_pLabelIcon, Qt::AlignCenter);
         }
     }
+
+    /* Update pixmap: */
+    updatePixmap();
+}
+
+void UIToolWidget::updatePixmap()
+{
+    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * 1.375;
+    m_pLabelIcon->setPixmap(m_pAction->icon().pixmap(window()->windowHandle(), QSize(iMetric, iMetric)));
 }
 
 
@@ -545,11 +573,10 @@ void UIDesktopPanePrivate::setToolsPaneIcon(const QIcon &icon)
     /* Prepare tools pane if necessary: */
     prepareToolsPane();
 
-    /* Assign corresponding icon: */
-    const QList<QSize> aSizes = icon.availableSizes();
-    const QSize firstOne = aSizes.isEmpty() ? QSize(200, 200) : aSizes.first();
-    const double dRatio = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize) / 32;
-    m_pLabelToolsPaneIcon->setPixmap(icon.pixmap(QSize(firstOne.width() * dRatio, firstOne.height() * dRatio)));
+    /* Save icon: */
+    m_icon = icon;
+    /* Update pixmap: */
+    updatePixmap();
 
     /* Raise corresponding widget: */
     setCurrentWidget(m_pScrollArea);
@@ -584,6 +611,26 @@ void UIDesktopPanePrivate::removeToolDescriptions()
         /* Then the item itself: */
         delete pChild;
     }
+}
+
+bool UIDesktopPanePrivate::event(QEvent *pEvent)
+{
+    /* Handle know event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Show:
+        case QEvent::ScreenChangeInternal:
+        {
+            /* Update pixmap: */
+            updatePixmap();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QStackedWidget>::event(pEvent);
 }
 
 void UIDesktopPanePrivate::retranslateUi()
@@ -740,6 +787,15 @@ void UIDesktopPanePrivate::prepareToolsPane()
         /* Add into the stack: */
         addWidget(m_pScrollArea);
     }
+}
+
+void UIDesktopPanePrivate::updatePixmap()
+{
+    /* Assign corresponding icon: */
+    const QList<QSize> aSizes = m_icon.availableSizes();
+    const QSize firstOne = aSizes.isEmpty() ? QSize(200, 200) : aSizes.first();
+    const double dRatio = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize) / 32;
+    m_pLabelToolsPaneIcon->setPixmap(m_icon.pixmap(window()->windowHandle(), QSize(firstOne.width() * dRatio, firstOne.height() * dRatio)));
 }
 
 
