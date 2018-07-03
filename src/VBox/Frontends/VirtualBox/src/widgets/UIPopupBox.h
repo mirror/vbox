@@ -106,6 +106,9 @@ public:
 
 protected:
 
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+
     /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
 
