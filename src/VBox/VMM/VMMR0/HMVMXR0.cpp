@@ -6491,23 +6491,6 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, PCPUMCTX pMixedCtx, boo
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
-    /* Pending HM CR3 sync. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
-    {
-        Assert(!(ASMAtomicUoReadU64(&pMixedCtx->fExtrn) & CPUMCTX_EXTRN_CR3));
-        int rc2 = PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
-        AssertMsgReturn(rc2 == VINF_SUCCESS || rc2 == VINF_PGM_SYNC_CR3,
-                        ("%Rrc\n", rc2), RT_FAILURE_NP(rc2) ? rc2 : VERR_IPE_UNEXPECTED_INFO_STATUS);
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
-    }
-
-    /* Pending HM PAE PDPEs. */
-    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
-    {
-        PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
-        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
-    }
-
     /*
      * Anything pending?  Should be more likely than not if we're doing a good job.
      */
@@ -8273,6 +8256,26 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     }
 
     /*
+     * A longjump might result in importing CR3 even for VM-exits that don't necessarily
+     * import CR3 themselves. We will need to update them here as even as late as the above
+     * hmR0VmxInjectPendingEvent() call may lazily import guest-CPU state on demand causing
+     * the below force flags to be set.
+     */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+    {
+        Assert(!(ASMAtomicUoReadU64(&pMixedCtx->fExtrn) & CPUMCTX_EXTRN_CR3));
+        int rc2 = PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
+        AssertMsgReturn(rc2 == VINF_SUCCESS || rc2 == VINF_PGM_SYNC_CR3,
+                        ("%Rrc\n", rc2), RT_FAILURE_NP(rc2) ? rc2 : VERR_IPE_UNEXPECTED_INFO_STATUS);
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+    }
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+    {
+        PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+    }
+
+    /*
      * No longjmps to ring-3 from this point on!!!
      * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
      * This also disables flushing of the R0-logger instance (if any).
@@ -8579,6 +8582,9 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
         if (!pVmxTransient->fVMEntryFailed)
         {
             VMMRZCallRing3Enable(pVCpu);
+
+            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
 
 #if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
             rc = hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
