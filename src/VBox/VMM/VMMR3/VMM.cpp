@@ -669,7 +669,7 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
     else
         LogRel(("VMM: Warning! RTThreadPreemptIsPending() cannot be trusted!  Need to update kernel info?\n"));
     if (pVM->vmm.s.fIsPreemptPossible)
-        LogRel(("VMM: Kernel preemption is possible.\n"));
+        LogRel(("VMM: Kernel preemption is possible\n"));
     else
         LogRel(("VMM: Kernel preemption is not possible it seems.\n"));
 
