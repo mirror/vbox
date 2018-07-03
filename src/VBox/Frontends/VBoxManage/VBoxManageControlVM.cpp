@@ -293,7 +293,7 @@ static HRESULT keyboardPutString(IKeyboard *pKeyboard, int argc, char **argv)
     int i;
     for (i = 1 + 1; i < argc; ++i)
     {
-        if (llScancodes.size() > 0)
+        if (!llScancodes.empty())
         {
             /* Insert a SPACE before the next string. */
             llScancodes.push_back(0x39);

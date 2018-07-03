@@ -318,8 +318,8 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
         return errorSyntax(USAGE_DHCPSERVER, "You need to specify either --netname or --ifname to identify the DHCP server");
 
     if(   enmCode != OP_REMOVE
-       && GlobalDhcpOptions.size() == 0
-       && VmSlot2Options.size() == 0)
+       && GlobalDhcpOptions.empty()
+       && VmSlot2Options.empty())
     {
         if(enable < 0 || pIp || pNetmask || pLowerIp || pUpperIp)
         {
