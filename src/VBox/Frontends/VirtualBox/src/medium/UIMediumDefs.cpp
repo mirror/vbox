@@ -22,6 +22,11 @@
 /* GUI includes: */
 # include "UIMediumDefs.h"
 
+/* COM includes: */
+# include "CMediumFormat.h"
+# include "CSystemProperties.h"
+# include "CVirtualBox.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
@@ -59,3 +64,42 @@ KDeviceType UIMediumDefs::mediumTypeToGlobal(UIMediumType localType)
     return KDeviceType_Null;
 }
 
+QList<QPair<QString, QString> > UIMediumDefs::MediumBackends(const CVirtualBox &comVBox, KDeviceType enmType)
+{
+    /* Prepare a list of pairs with the form <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>. */
+    const CSystemProperties comSystemProperties = comVBox.GetSystemProperties();
+    QVector<CMediumFormat> mediumFormats = comSystemProperties.GetMediumFormats();
+    QList<QPair<QString, QString> > backendPropList;
+    for (int i = 0; i < mediumFormats.size(); ++i)
+    {
+        /* Acquire file extensions & device types: */
+        QVector<QString> fileExtensions;
+        QVector<KDeviceType> deviceTypes;
+        mediumFormats[i].DescribeFileExtensions(fileExtensions, deviceTypes);
+
+        /* Compose filters list: */
+        QStringList filters;
+        for (int iExtensionIndex = 0; iExtensionIndex < fileExtensions.size(); ++iExtensionIndex)
+            if (deviceTypes[iExtensionIndex] == enmType)
+                filters << QString("*.%1").arg(fileExtensions[iExtensionIndex]);
+        /* Create a pair out of the backend description and all suffix's. */
+        if (!filters.isEmpty())
+            backendPropList << QPair<QString, QString>(mediumFormats[i].GetName(), filters.join(" "));
+    }
+    return backendPropList;
+}
+
+QList<QPair<QString, QString> > UIMediumDefs::HDDBackends(const CVirtualBox &comVBox)
+{
+    return MediumBackends(comVBox, KDeviceType_HardDisk);
+}
+
+QList<QPair<QString, QString> > UIMediumDefs::DVDBackends(const CVirtualBox &comVBox)
+{
+    return MediumBackends(comVBox, KDeviceType_DVD);
+}
+
+QList<QPair<QString, QString> > UIMediumDefs::FloppyBackends(const CVirtualBox &comVBox)
+{
+    return MediumBackends(comVBox, KDeviceType_Floppy);
+}

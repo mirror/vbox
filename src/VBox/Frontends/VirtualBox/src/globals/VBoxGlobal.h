@@ -474,15 +474,6 @@ public:
 
     /** @name COM: Virtual Media stuff.
      * @{ */
-        /** Returns medium formats which are currently supported by VirtualBox for the given @a enmDeviceType. */
-        QList<QPair<QString, QString> > MediumBackends(KDeviceType enmDeviceType) const;
-        /** Returns which hard disk formats are currently supported by VirtualBox. */
-        QList<QPair<QString, QString> > HDDBackends() const;
-        /** Returns which optical disk formats are currently supported by VirtualBox. */
-        QList<QPair<QString, QString> > DVDBackends() const;
-        /** Returns which floppy disk formats are currently supported by VirtualBox. */
-        QList<QPair<QString, QString> > FloppyBackends() const;
-
         /** Starts medium enumeration. */
         void startMediumEnumeration();
         /** Returns whether medium enumeration is in progress. */

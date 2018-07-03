@@ -26,9 +26,13 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CVirtualBox.h"
 
 /* Other VBox includes: */
 #include <VBox/com/defs.h>
+
+/* Forward declarations: */
+class CVirtualBox;
 
 
 /** Medium formats. */
@@ -57,9 +61,17 @@ namespace UIMediumDefs
 
     /** Converts global medium type (KDeviceType) to local (UIMediumType). */
     SHARED_LIBRARY_STUFF UIMediumType mediumTypeToLocal(KDeviceType globalType);
-
     /** Convert local medium type (UIMediumType) to global (KDeviceType). */
     SHARED_LIBRARY_STUFF KDeviceType mediumTypeToGlobal(UIMediumType localType);
+
+    /** Returns medium formats which are currently supported by @a comVBox for the given @a enmDeviceType. */
+    QList<QPair<QString, QString> > MediumBackends(const CVirtualBox &comVBox, KDeviceType enmDeviceType);
+    /** Returns which hard disk formats are currently supported by @a comVBox. */
+    QList<QPair<QString, QString> > HDDBackends(const CVirtualBox &comVBox);
+    /** Returns which optical disk formats are currently supported by @a comVBox. */
+    QList<QPair<QString, QString> > DVDBackends(const CVirtualBox &comVBox);
+    /** Returns which floppy disk formats are currently supported by @a comVBox. */
+    QList<QPair<QString, QString> > FloppyBackends(const CVirtualBox &comVBox);
 }
 /* Using this namespace globally: */
 using namespace UIMediumDefs;

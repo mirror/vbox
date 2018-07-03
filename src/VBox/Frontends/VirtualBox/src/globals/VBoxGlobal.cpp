@@ -89,7 +89,6 @@
 # include "CExtPackFile.h"
 # include "CExtPackManager.h"
 # include "CMachine.h"
-# include "CSystemProperties.h"
 # include "CUSBDevice.h"
 # include "CUSBDeviceFilters.h"
 # include "CUSBDeviceFilter.h"
@@ -103,7 +102,6 @@
 # include "CUSBController.h"
 # include "CHostUSBDevice.h"
 # include "CHostVideoInputDevice.h"
-# include "CMediumFormat.h"
 # include "CSharedFolder.h"
 # include "CConsole.h"
 # include "CSnapshot.h"
@@ -178,6 +176,7 @@
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
+using namespace UIMediumDefs;
 
 
 /** QTranslator subclass for VBox needs. */
@@ -2414,49 +2413,6 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
     return comSession;
 }
 
-QList<QPair<QString, QString> > VBoxGlobal::MediumBackends(KDeviceType enmType) const
-{
-    /* Prepare a list of pairs with the form <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>. */
-    CSystemProperties comSystemProperties = virtualBox().GetSystemProperties();
-    QVector<CMediumFormat> mediumFormats = comSystemProperties.GetMediumFormats();
-    QList< QPair<QString, QString> > backendPropList;
-    for (int i = 0; i < mediumFormats.size(); ++i)
-    {
-        /* File extensions */
-        QVector <QString> fileExtensions;
-        QVector <KDeviceType> deviceTypes;
-
-        mediumFormats[i].DescribeFileExtensions(fileExtensions, deviceTypes);
-
-        QStringList f;
-        for (int a = 0; a < fileExtensions.size(); ++a)
-            if (deviceTypes[a] == enmType)
-                f << QString("*.%1").arg(fileExtensions[a]);
-        /* Create a pair out of the backend description and all suffix's. */
-        if (!f.isEmpty())
-            backendPropList << QPair<QString, QString>(mediumFormats[i].GetName(), f.join(" "));
-    }
-    return backendPropList;
-}
-
-/* static */
-QList<QPair<QString, QString> > VBoxGlobal::HDDBackends() const
-{
-    return MediumBackends(KDeviceType_HardDisk);
-}
-
-/* static */
-QList<QPair<QString, QString> > VBoxGlobal::DVDBackends() const
-{
-    return MediumBackends(KDeviceType_DVD);
-}
-
-/* static */
-QList<QPair<QString, QString> > VBoxGlobal::FloppyBackends() const
-{
-    return MediumBackends(KDeviceType_Floppy);
-}
-
 void VBoxGlobal::startMediumEnumeration()
 {
     /* Make sure VBoxGlobal is already valid: */
@@ -2625,7 +2581,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType enmMediumType, QWi
     {
         case UIMediumType_HardDisk:
         {
-            filters = HDDBackends();
+            filters = HDDBackends(virtualBox());
             strTitle = tr("Please choose a virtual hard disk file");
             allType = tr("All virtual hard disk files (%1)");
             strLastFolder = gEDataManager->recentFolderForHardDrives();
@@ -2637,7 +2593,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType enmMediumType, QWi
         }
         case UIMediumType_DVD:
         {
-            filters = DVDBackends();
+            filters = DVDBackends(virtualBox());
             strTitle = tr("Please choose a virtual optical disk file");
             allType = tr("All virtual optical disk files (%1)");
             strLastFolder = gEDataManager->recentFolderForOpticalDisks();
@@ -2649,7 +2605,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType enmMediumType, QWi
         }
         case UIMediumType_Floppy:
         {
-            filters = FloppyBackends();
+            filters = FloppyBackends(virtualBox());
             strTitle = tr("Please choose a virtual floppy disk file");
             allType = tr("All virtual floppy disk files (%1)");
             strLastFolder = gEDataManager->recentFolderForFloppyDisks();
