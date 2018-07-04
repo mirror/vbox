@@ -2023,7 +2023,7 @@ int slirp_host_network_configuration_change_strategy_selector(const PNATState pD
         struct rcp_state rcp_state;
         int rc;
 
-        rcp_state.rcps_flags |= RCPSF_IGNORE_IPV6;
+        rcp_state.rcps_flags = RCPSF_IGNORE_IPV6;
         rc = rcp_parse(&rcp_state, RESOLV_CONF_FILE);
         LogRelFunc(("NAT: rcp_parse:%Rrc old domain:%s new domain:%s\n",
                     rc, LIST_EMPTY(&pData->pDomainList)
