@@ -6795,7 +6795,7 @@ static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmT
             /*
              * We've already saved the APIC related guest-state (TPR) in hmR0SvmPostRunGuest().
              * When full APIC register virtualization is implemented we'll have to make sure
-             * APIC state is saved from the VMCB before EMInterpretWrmsr() changes it.
+             * APIC state is saved from the VMCB before IEM changes it.
              */
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
         }
@@ -6814,7 +6814,6 @@ static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmT
         }
     }
 
-    /* RIP has been updated by above after EMInterpretWrmsr() or by EMInterpretInstruction(). */
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 
