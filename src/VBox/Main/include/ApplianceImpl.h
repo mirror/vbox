@@ -138,7 +138,9 @@ private:
 
     Utf8Str i_typeOfVirtualDiskFormatFromURI(Utf8Str type) const;
 
+#if 0 /* unused */
     std::set<Utf8Str> i_URIFromTypeOfVirtualDiskFormat(Utf8Str type);
+#endif
 
     HRESULT i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, ComObjPtr<MediumFormat>& mf);
 

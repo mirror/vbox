@@ -244,8 +244,8 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
     /* First check if the type is other/other_64 */
     if (c == ovf::CIMOSType_CIMOS_Other)
     {
-        for (size_t i=0; i < RT_ELEMENTS(g_aOsTypesPattern); ++i)
-            if (cStr.contains (g_aOsTypesPattern[i].pcszPattern, Utf8Str::CaseInsensitive))
+        for (size_t i = 0; i < RT_ELEMENTS(g_aOsTypesPattern); ++i)
+            if (cStr.contains(g_aOsTypesPattern[i].pcszPattern, Utf8Str::CaseInsensitive))
             {
                 strType = Global::OSTypeId(g_aOsTypesPattern[i].osType);
                 return;
@@ -253,8 +253,8 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
     }
     else if (c == ovf::CIMOSType_CIMOS_Other_64)
     {
-        for (size_t i=0; i < RT_ELEMENTS(g_aOsTypesPattern64); ++i)
-            if (cStr.contains (g_aOsTypesPattern64[i].pcszPattern, Utf8Str::CaseInsensitive))
+        for (size_t i = 0; i < RT_ELEMENTS(g_aOsTypesPattern64); ++i)
+            if (cStr.contains(g_aOsTypesPattern64[i].pcszPattern, Utf8Str::CaseInsensitive))
             {
                 strType = Global::OSTypeId(g_aOsTypesPattern64[i].osType);
                 return;
@@ -744,6 +744,7 @@ Utf8Str Appliance::i_typeOfVirtualDiskFormatFromURI(Utf8Str uri) const
     return Utf8Str();
 }
 
+#if 0 /* unused */
 std::set<Utf8Str> Appliance::i_URIFromTypeOfVirtualDiskFormat(Utf8Str type)
 {
     Assert(g_fInitializedBackendNames);
@@ -755,6 +756,7 @@ std::set<Utf8Str> Appliance::i_URIFromTypeOfVirtualDiskFormat(Utf8Str type)
             UriSet.insert(g_aUriToBackend[i].pszUri);
     return UriSet;
 }
+#endif
 
 /**
  * Returns a medium format object corresponding to the given
