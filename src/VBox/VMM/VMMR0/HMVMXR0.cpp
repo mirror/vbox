@@ -3522,23 +3522,28 @@ static int hmR0VmxExportGuestXcptIntercepts(PVMCPU pVCpu)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS)
     {
+        uint32_t uXcptBitmap = pVCpu->hm.s.vmx.u32XcptBitmap;
+
         /* The remaining exception intercepts are handled elsewhere, e.g. in hmR0VmxExportSharedCR0(). */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
-            pVCpu->hm.s.vmx.u32XcptBitmap |= RT_BIT(X86_XCPT_UD);
+            uXcptBitmap |= RT_BIT(X86_XCPT_UD);
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         else
-            pVCpu->hm.s.vmx.u32XcptBitmap &= ~RT_BIT(X86_XCPT_UD);
+            uXcptBitmap &= ~RT_BIT(X86_XCPT_UD);
 #endif
 
-        Assert(pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT_32(X86_XCPT_AC));
-        Assert(pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT_32(X86_XCPT_DB));
+        Assert(uXcptBitmap & RT_BIT_32(X86_XCPT_AC));
+        Assert(uXcptBitmap & RT_BIT_32(X86_XCPT_DB));
 
-        /** @todo Optimize by checking cache before writing to VMCS. */
-        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
-        AssertRCReturn(rc, rc);
+        if (uXcptBitmap != pVCpu->hm.s.vmx.u32XcptBitmap)
+        {
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, uXcptBitmap);
+            AssertRCReturn(rc, rc);
+            pVCpu->hm.s.vmx.u32XcptBitmap = uXcptBitmap;
+        }
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS);
-        Log4Func(("VMX_VMCS32_CTRL_EXCEPTION_BITMAP=%#RX64\n", pVCpu->hm.s.vmx.u32XcptBitmap));
+        Log4Func(("VMX_VMCS32_CTRL_EXCEPTION_BITMAP=%#RX64\n", uXcptBitmap));
     }
     return VINF_SUCCESS;
 }
