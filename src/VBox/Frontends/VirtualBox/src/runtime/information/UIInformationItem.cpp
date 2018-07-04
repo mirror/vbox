@@ -182,8 +182,13 @@ void UIInformationItem::updateTextLayout() const
     }
 
     /* Add pixmap to text-document as image resource: */
-    m_pTextDocument->addResource(QTextDocument::ImageResource, QUrl(strIconTag),
-                                 UIIconPool::iconSet(m_strIcon).pixmap(iIconMetric, iIconMetric));
+    if (parent() && parent()->isWidgetType() && qobject_cast<QWidget*>(parent())->window())
+        m_pTextDocument->addResource(QTextDocument::ImageResource, QUrl(strIconTag),
+                                     UIIconPool::iconSet(m_strIcon).pixmap(qobject_cast<QWidget*>(parent())->window()->windowHandle(),
+                                                                           QSize(iIconMetric, iIconMetric)));
+    else
+        m_pTextDocument->addResource(QTextDocument::ImageResource, QUrl(strIconTag),
+                                     UIIconPool::iconSet(m_strIcon).pixmap(iIconMetric, iIconMetric));
 
     /* Set html-data: */
     m_pTextDocument->setHtml(report);
