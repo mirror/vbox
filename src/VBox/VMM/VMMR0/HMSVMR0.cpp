@@ -5869,78 +5869,6 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
 
 
 /**
- * Worker for hmR0SvmInterpretInvlpg().
- *
- * @return VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pCpu            Pointer to the disassembler state.
- * @param   pCtx            The guest CPU context.
- */
-static int hmR0SvmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTX pCtx)
-{
-    DISQPVPARAMVAL Param1;
-    RTGCPTR        GCPtrPage;
-
-    int rc = DISQueryParamVal(CPUMCTX2CORE(pCtx), pCpu, &pCpu->Param1, &Param1, DISQPVWHICH_SRC);
-    if (RT_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-    if (   Param1.type == DISQPV_TYPE_IMMEDIATE
-        || Param1.type == DISQPV_TYPE_ADDRESS)
-    {
-        if (!(Param1.flags & (DISQPV_FLAG_32 | DISQPV_FLAG_64)))
-            return VERR_EM_INTERPRETER;
-
-        GCPtrPage = Param1.val.val64;
-        VBOXSTRICTRC rc2 = EMInterpretInvlpg(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx), GCPtrPage);
-        rc = VBOXSTRICTRC_VAL(rc2);
-    }
-    else
-    {
-        Log4Func(("Invalid parameter type %#x\n", Param1.type));
-        rc = VERR_EM_INTERPRETER;
-    }
-
-    return rc;
-}
-
-
-/**
- * Interprets INVLPG.
- *
- * @returns VBox status code.
- * @retval  VINF_*                  Scheduling instructions.
- * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
- * @retval  VERR_*                  Fatal errors.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        The guest CPU context.
- *
- * @remarks Updates the RIP if the instruction was executed successfully.
- */
-static int hmR0SvmInterpretInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    /* Only allow 32 & 64 bit code. */
-    if (CPUMGetGuestCodeBits(pVCpu) != 16)
-    {
-        PDISSTATE pDis = &pVCpu->hm.s.DisState;
-        int rc = EMInterpretDisasCurrent(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, NULL /* pcbInstr */);
-        if (   RT_SUCCESS(rc)
-            && pDis->pCurInstr->uOpcode == OP_INVLPG)
-        {
-            rc = hmR0SvmInterpretInvlPgEx(pVCpu, pDis, pCtx);
-            if (RT_SUCCESS(rc))
-                pCtx->rip += pDis->cbInstr;
-            return rc;
-        }
-        else
-            Log4Func(("EMInterpretDisasCurrent failed! rc=%Rrc uOpCode=%#x\n", rc, pDis->pCurInstr->uOpcode));
-    }
-    return VERR_EM_INTERPRETER;
-}
-
-
-/**
  * Gets the IEM exception flags for the specified SVM event.
  *
  * @returns The IEM exception flags.
@@ -6394,6 +6322,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 
+    VBOXSTRICTRC rcStrict;
     bool const fSupportsDecodeAssists = hmR0SvmSupportsDecodeAssists(pVCpu, pCtx);
     bool const fSupportsNextRipSave   = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
     if (   fSupportsDecodeAssists
@@ -6403,16 +6332,16 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
         uint8_t const cbInstr   = pVmcb->ctrl.u64NextRIP - pCtx->rip;
         RTGCPTR const GCPtrPage = pVmcb->ctrl.u64ExitInfo1;
-        VBOXSTRICTRC rcStrict = IEMExecDecodedInvlpg(pVCpu, cbInstr, GCPtrPage);
-        HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
-        return VBOXSTRICTRC_VAL(rcStrict);
+        rcStrict = IEMExecDecodedInvlpg(pVCpu, cbInstr, GCPtrPage);
+    }
+    else
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        rcStrict = IEMExecOne(pVCpu);
     }
 
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
-    int rc = hmR0SvmInterpretInvlpg(pVCpu, pCtx);    /* Updates RIP if successful. */
-    Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
-    HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
-    return rc;
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);     /* RIP updated by IEMExecDecodedInvlpg() or IEMExecOne(). */
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 
