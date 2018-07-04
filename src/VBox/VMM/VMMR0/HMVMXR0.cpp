@@ -169,8 +169,7 @@
         return VERR_VMX_UNEXPECTED_EXIT; \
     } while (0)
 
-/** Macro for saving segment registers from VMCS into the guest-CPU
- *  context. */
+/** Macro for importing segment registers to the VMCS from the guest-CPU context. */
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 # define HMVMX_IMPORT_SREG(Sel, a_pCtxSelReg) \
     hmR0VmxImportGuestSegmentReg(pVCpu, VMX_VMCS16_GUEST_##Sel##_SEL, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
@@ -180,6 +179,11 @@
     hmR0VmxImportGuestSegmentReg(pVCpu, VMX_VMCS16_GUEST_##Sel##_SEL, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
                                  VMX_VMCS_GUEST_##Sel##_BASE, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, (a_pCtxSelReg))
 #endif
+
+/** Macro for exporting segment registers to the VMCS from the guest-CPU context. */
+# define HMVMX_EXPORT_SREG(Sel, a_pCtxSelReg) \
+    hmR0VmxExportGuestSegmentReg(pVCpu, VMX_VMCS16_GUEST_##Sel##_SEL, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
+                                 VMX_VMCS_GUEST_##Sel##_BASE, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, (a_pCtxSelReg))
 
 
 /*********************************************************************************************************************************
@@ -3166,9 +3170,9 @@ static bool hmR0VmxShouldSwapEferMsr(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
         return false;
 #endif
 
-    PVM      pVM          = pVCpu->CTX_SUFF(pVM);
-    uint64_t u64HostEfer  = pVM->hm.s.vmx.u64HostEfer;
-    uint64_t u64GuestEfer = pMixedCtx->msrEFER;
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    uint64_t const u64HostEfer  = pVM->hm.s.vmx.u64HostEfer;
+    uint64_t const u64GuestEfer = pMixedCtx->msrEFER;
 
     /*
      * For 64-bit guests, if EFER.SCE bit differs, we need to swap EFER to ensure that the
@@ -4215,7 +4219,7 @@ static void hmR0VmxValidateSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pCtx)
      * Validate segment registers. See Intel spec. 26.3.1.2 "Checks on Guest Segment Registers".
      *
      * The reason we check for attribute value 0 in this function and not just the unusable bit is
-     * because hmR0VmxWriteSegmentReg() only updates the VMCS' copy of the value with the unusable bit
+     * because hmR0VmxExportGuestSegmentReg() only updates the VMCS' copy of the value with the unusable bit
      * and doesn't change the guest-context value.
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -4261,7 +4265,7 @@ static void hmR0VmxValidateSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pCtx)
             Assert(   !(pCtx->ss.u32Limit & 0xfff00000)
                    || (pCtx->ss.Attr.n.u1Granularity));
         }
-        /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxWriteSegmentReg(). */
+        /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxExportGuestSegmentReg(). */
         if (pCtx->ds.Attr.u && !(pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE))
         {
             Assert(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
@@ -4331,7 +4335,7 @@ static void hmR0VmxValidateSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pCtx)
                  && !pVM->hm.s.vmx.fUnrestrictedGuest))
     {
         /* Real and v86 mode checks. */
-        /* hmR0VmxWriteSegmentReg() writes the modified in VMCS. We want what we're feeding to VT-x. */
+        /* hmR0VmxExportGuestSegmentReg() writes the modified in VMCS. We want what we're feeding to VT-x. */
         uint32_t u32CSAttr, u32SSAttr, u32DSAttr, u32ESAttr, u32FSAttr, u32GSAttr;
         if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
         {
@@ -4380,7 +4384,7 @@ static void hmR0VmxValidateSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pCtx)
 
 
 /**
- * Writes a guest segment register into the guest-state area in the VMCS.
+ * Exports a guest segment register into the guest-state area in the VMCS.
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -4392,8 +4396,8 @@ static void hmR0VmxValidateSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLimit, uint32_t idxBase,
-                                       uint32_t idxAccess, PCCPUMSELREG pSelReg)
+static int hmR0VmxExportGuestSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLimit, uint32_t idxBase, uint32_t idxAccess,
+                                        PCCPUMSELREG pSelReg)
 {
     int rc = VMXWriteVmcs32(idxSel,    pSelReg->Sel);       /* 16-bit guest selector field. */
     rc    |= VMXWriteVmcs32(idxLimit,  pSelReg->u32Limit);  /* 32-bit guest segment limit field. */
@@ -4455,17 +4459,6 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_SREG_MASK)
     {
-        /* Save the segment attributes for real-on-v86 mode hack, so we can restore them on VM-exit. */
-        if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
-        {
-            pVCpu->hm.s.vmx.RealMode.AttrCS.u = pMixedCtx->cs.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.AttrSS.u = pMixedCtx->ss.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.AttrDS.u = pMixedCtx->ds.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.AttrES.u = pMixedCtx->es.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.AttrFS.u = pMixedCtx->fs.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.AttrGS.u = pMixedCtx->gs.Attr.u;
-        }
-
 #ifdef VBOX_WITH_REM
         if (!pVM->hm.s.vmx.fUnrestrictedGuest)
         {
@@ -4482,19 +4475,59 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             }
         }
 #endif
-        rc  = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_CS_SEL, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
-                                     VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS, &pMixedCtx->cs);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_SS_SEL, VMX_VMCS32_GUEST_SS_LIMIT, VMX_VMCS_GUEST_SS_BASE,
-                                     VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS, &pMixedCtx->ss);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_DS_SEL, VMX_VMCS32_GUEST_DS_LIMIT, VMX_VMCS_GUEST_DS_BASE,
-                                     VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS, &pMixedCtx->ds);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_ES_SEL, VMX_VMCS32_GUEST_ES_LIMIT, VMX_VMCS_GUEST_ES_BASE,
-                                     VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, &pMixedCtx->es);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FS_SEL, VMX_VMCS32_GUEST_FS_LIMIT, VMX_VMCS_GUEST_FS_BASE,
-                                     VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS, &pMixedCtx->fs);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_GS_SEL, VMX_VMCS32_GUEST_GS_LIMIT, VMX_VMCS_GUEST_GS_BASE,
-                                     VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS, &pMixedCtx->gs);
-        AssertRCReturn(rc, rc);
+        if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CS)
+        {
+            if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+                pVCpu->hm.s.vmx.RealMode.AttrCS.u = pMixedCtx->cs.Attr.u;
+            rc = HMVMX_EXPORT_SREG(CS, &pMixedCtx->cs);
+            AssertRCReturn(rc, rc);
+            ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_CS);
+        }
+
+        if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_SS)
+        {
+            if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+                pVCpu->hm.s.vmx.RealMode.AttrSS.u = pMixedCtx->ss.Attr.u;
+            rc = HMVMX_EXPORT_SREG(SS, &pMixedCtx->ss);
+            AssertRCReturn(rc, rc);
+            ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_SS);
+        }
+
+        if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_DS)
+        {
+            if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+                pVCpu->hm.s.vmx.RealMode.AttrDS.u = pMixedCtx->ds.Attr.u;
+            rc = HMVMX_EXPORT_SREG(DS, &pMixedCtx->ds);
+            AssertRCReturn(rc, rc);
+            ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_DS);
+        }
+
+        if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_ES)
+        {
+            if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+                pVCpu->hm.s.vmx.RealMode.AttrES.u = pMixedCtx->es.Attr.u;
+            rc = HMVMX_EXPORT_SREG(ES, &pMixedCtx->es);
+            AssertRCReturn(rc, rc);
+            ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_ES);
+        }
+
+        if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_FS)
+        {
+            if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+                pVCpu->hm.s.vmx.RealMode.AttrFS.u = pMixedCtx->fs.Attr.u;
+            rc = HMVMX_EXPORT_SREG(FS, &pMixedCtx->fs);
+            AssertRCReturn(rc, rc);
+            ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_FS);
+        }
+
+        if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_GS)
+        {
+            if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+                pVCpu->hm.s.vmx.RealMode.AttrGS.u = pMixedCtx->gs.Attr.u;
+            rc = HMVMX_EXPORT_SREG(GS, &pMixedCtx->gs);
+            AssertRCReturn(rc, rc);
+            ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_GS);
+        }
 
 #ifdef VBOX_STRICT
         hmR0VmxValidateSegmentRegs(pVCpu, pMixedCtx);
@@ -4504,7 +4537,6 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_RIP)
             EMR0HistoryUpdatePC(pVCpu, pMixedCtx->cs.u64Base + pMixedCtx->rip, true);
 
-        ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_SREG_MASK);
         Log4Func(("CS=%#RX16 Base=%#RX64 Limit=%#RX32 Attr=%#RX32\n", pMixedCtx->cs.Sel, pMixedCtx->cs.u64Base,
                   pMixedCtx->cs.u32Limit, pMixedCtx->cs.Attr.u));
     }
@@ -8551,9 +8583,12 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     AssertRC(hmR0VmxCheckVmcsCtls(pVCpu));
 #endif
 #ifdef HMVMX_ALWAYS_CHECK_GUEST_STATE
-    uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVCpu, pMixedCtx);
-    if (uInvalidReason != VMX_IGS_REASON_NOT_FOUND)
-        Log4(("hmR0VmxCheckGuestState returned %#x\n", uInvalidReason));
+    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
+    {
+        uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVCpu, pMixedCtx);
+        if (uInvalidReason != VMX_IGS_REASON_NOT_FOUND)
+            Log4(("hmR0VmxCheckGuestState returned %#x\n", uInvalidReason));
+    }
 #endif
 }
 
@@ -10575,7 +10610,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCPUMCTX pCtx)
                                   || (pCtx->ss.Attr.n.u1Granularity), VMX_IGS_SS_ATTR_G_INVALID);
             }
 
-            /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxWriteSegmentReg(). */
+            /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxExportGuestSegmenReg(). */
             if (!(pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE))
             {
                 HMVMX_CHECK_BREAK(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_DS_ATTR_A_INVALID);
@@ -11744,10 +11779,12 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /* EMInterpretRdmsr() requires CR0, Eflags and SS segment register. */
+    /* EMInterpretRdmsr() requires CR0, Eflags and SS segment register. FS, GS (base) can be accessed by MSR reads. */
     int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_CR0
                                             | CPUMCTX_EXTRN_RFLAGS
-                                            | CPUMCTX_EXTRN_SS);
+                                            | CPUMCTX_EXTRN_SS
+                                            | CPUMCTX_EXTRN_FS
+                                            | CPUMCTX_EXTRN_GS);
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
         rc |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
     AssertRCReturn(rc, rc);
@@ -11801,10 +11838,12 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc = VINF_SUCCESS;
 
-    /* EMInterpretWrmsr() requires CR0, EFLAGS and SS segment register. */
+    /* EMInterpretWrmsr() requires CR0, EFLAGS and SS segment register. FS, GS (base) can be accessed by MSR writes. */
     rc  = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_CR0
                                          | CPUMCTX_EXTRN_RFLAGS
-                                         | CPUMCTX_EXTRN_SS);
+                                         | CPUMCTX_EXTRN_SS
+                                         | CPUMCTX_EXTRN_FS
+                                         | CPUMCTX_EXTRN_GS);
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
         rc |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
     AssertRCReturn(rc, rc);
