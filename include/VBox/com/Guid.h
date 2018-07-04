@@ -66,9 +66,7 @@ public:
 
     Guid()
     {
-        ::RTUuidClear(&mUuid);
-        mGuidState = GUID_ZERO;
-        dbg_refresh();
+        clear();
     }
 
     Guid(const Guid &that)
@@ -221,8 +219,7 @@ public:
 
     void clear()
     {
-        ::RTUuidClear(&mUuid);
-        mGuidState = GUID_ZERO;
+        makeClear();
         dbg_refresh();
     }
 
@@ -400,6 +397,18 @@ public:
     static const Guid Empty;
 
 private:
+    void makeClear()
+    {
+        ::RTUuidClear(&mUuid);
+        mGuidState = GUID_ZERO;
+    }
+
+    void makeInvalid()
+    {
+        ::RTUuidClear(&mUuid);
+        mGuidState = GUID_INVALID;
+    }
+
     void updateState()
     {
         if (::RTUuidIsNull(&mUuid))
@@ -412,17 +421,13 @@ private:
     {
         if (!that || !*that)
         {
-            ::RTUuidClear(&mUuid);
-            mGuidState = GUID_ZERO;
+            makeClear();
         }
         else
         {
             int rc = ::RTUuidFromStr(&mUuid, that);
             if (RT_FAILURE(rc))
-            {
-                ::RTUuidClear(&mUuid);
-                mGuidState = GUID_INVALID;
-            }
+                makeInvalid();
             else
                 updateState();
         }
@@ -433,17 +438,13 @@ private:
     {
         if (!that || !*that)
         {
-            ::RTUuidClear(&mUuid);
-            mGuidState = GUID_ZERO;
+            makeClear();
         }
         else
         {
             int rc = ::RTUuidFromUtf16(&mUuid, that);
             if (RT_FAILURE(rc))
-            {
-                ::RTUuidClear(&mUuid);
-                mGuidState = GUID_INVALID;
-            }
+                makeInvalid();
             else
                 updateState();
         }
