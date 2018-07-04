@@ -134,7 +134,7 @@ private:
 
     static void i_importOrExportThreadTask(TaskOVF *pTask);
 
-    HRESULT i_initSetOfSupportedStandardsURI();
+    HRESULT i_initBackendNames();
 
     Utf8Str i_typeOfVirtualDiskFormatFromURI(Utf8Str type) const;
 

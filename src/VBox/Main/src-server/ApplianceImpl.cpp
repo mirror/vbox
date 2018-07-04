@@ -40,20 +40,38 @@ using namespace std;
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static const char * const g_pszISOURI = "http://www.ecma-international.org/publications/standards/Ecma-119.htm";
-static const char * const g_pszVMDKStreamURI = "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized";
-static const char * const g_pszVMDKSparseURI = "http://www.vmware.com/specifications/vmdk.html#sparse";
-static const char * const g_pszVMDKCompressedURI = "http://www.vmware.com/specifications/vmdk.html#compressed";
-static const char * const g_pszVMDKCompressedURI2 = "http://www.vmware.com/interfaces/specifications/vmdk.html#compressed";
-static const char * const g_pszrVHDURI = "http://go.microsoft.com/fwlink/?LinkId=137171";
+static const char * const   g_pszISOURI             = "http://www.ecma-international.org/publications/standards/Ecma-119.htm";
+static const char * const   g_pszVMDKStreamURI      = "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized";
+static const char * const   g_pszVMDKSparseURI      = "http://www.vmware.com/specifications/vmdk.html#sparse";
+static const char * const   g_pszVMDKCompressedURI  = "http://www.vmware.com/specifications/vmdk.html#compressed";
+static const char * const   g_pszVMDKCompressedURI2 = "http://www.vmware.com/interfaces/specifications/vmdk.html#compressed";
+static const char * const   g_pszrVHDURI            = "http://go.microsoft.com/fwlink/?LinkId=137171";
+static char                 g_szIsoBackend[128];
+static char                 g_szVmdkBackend[128];
+static char                 g_szVhdBackend[128];
+/** Set after the g_szXxxxBackend variables has been initialized. */
+static bool volatile        g_fInitializedBackendNames = false;
+
+static struct
+{
+    const char *pszUri, *pszBackend;
+} const g_aUriToBackend[] =
+{
+    { g_pszISOURI,              g_szIsoBackend },
+    { g_pszVMDKStreamURI,       g_szVmdkBackend },
+    { g_pszVMDKSparseURI,       g_szVmdkBackend },
+    { g_pszVMDKCompressedURI,   g_szVmdkBackend },
+    { g_pszVMDKCompressedURI2,  g_szVmdkBackend },
+    { g_pszrVHDURI,             g_szVhdBackend },
+};
 
 static std::map<Utf8Str, Utf8Str> supportedStandardsURI;
 
-static const struct
+static struct
 {
     ovf::CIMOSType_T    cim;
     VBOXOSTYPE          osType;
-} g_aOsTypes[] =
+} const g_aOsTypes[] =
 {
     { ovf::CIMOSType_CIMOS_Unknown,                              VBOXOSTYPE_Unknown },
     { ovf::CIMOSType_CIMOS_OS2,                                  VBOXOSTYPE_OS2 },
@@ -393,7 +411,6 @@ HRESULT VirtualBox::createAppliance(ComPtr<IAppliance> &aAppliance)
 /**
  * Appliance COM initializer.
  * @param   aVirtualBox     The VirtualBox object.
- * @return
  */
 HRESULT Appliance::init(VirtualBox *aVirtualBox)
 {
@@ -410,7 +427,7 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox)
     m->m_pSecretKeyStore = new SecretKeyStore(false /* fRequireNonPageable*/);
     AssertReturn(m->m_pSecretKeyStore, E_FAIL);
 
-    rc = i_initSetOfSupportedStandardsURI();
+    rc = i_initBackendNames();
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -420,7 +437,6 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox)
 
 /**
  * Appliance COM uninitializer.
- * @return
  */
 void Appliance::uninit()
 {
@@ -444,8 +460,6 @@ void Appliance::uninit()
 
 /**
  * Public method implementation.
- * @param   aPath
- * @return
  */
 HRESULT Appliance::getPath(com::Utf8Str &aPath)
 {
@@ -461,8 +475,6 @@ HRESULT Appliance::getPath(com::Utf8Str &aPath)
 
 /**
  * Public method implementation.
- * @param aDisks
- * @return
  */
 HRESULT Appliance::getDisks(std::vector<com::Utf8Str> &aDisks)
 {
@@ -683,86 +695,68 @@ HRESULT Appliance::addPasswords(const std::vector<com::Utf8Str> &aIdentifiers,
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT Appliance::i_initSetOfSupportedStandardsURI()
+HRESULT Appliance::i_initBackendNames()
 {
-    HRESULT rc = S_OK;
-    if (!supportedStandardsURI.empty())
-        return rc;
-
-    /* Get the system properties. */
-    SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
+    HRESULT hrc = S_OK;
+    if (!g_fInitializedBackendNames)
     {
-        ComObjPtr<MediumFormat> trgFormat = pSysProps->i_mediumFormatFromExtension("iso");
-        if (trgFormat.isNull())
-            return setError(E_FAIL, tr("Can't find appropriate medium format for ISO type of a virtual disk."));
+        /*
+         * Use the system properties to translate file extensions into
+         * storage backend names.
+         */
+        static struct
+        {
+            const char *pszExt;         /**< extension */
+            char       *pszBackendName;
+            size_t      cbBackendName;
+        } const s_aFormats[] =
+        {
+            { "iso",   g_szIsoBackend,  sizeof(g_szIsoBackend)  },
+            { "vmdk",  g_szVmdkBackend, sizeof(g_szVmdkBackend) },
+            { "vhd",   g_szVhdBackend,  sizeof(g_szVhdBackend)  },
+        };
+        SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aFormats); i++)
+        {
+            ComObjPtr<MediumFormat> trgFormat = pSysProps->i_mediumFormatFromExtension(s_aFormats[i].pszExt);
+            if (trgFormat.isNotNull())
+            {
+                const char *pszName = trgFormat->i_getName().c_str();
+                int vrc = RTStrCopy(s_aFormats[i].pszBackendName, s_aFormats[i].cbBackendName, pszName);
+                AssertRCStmt(vrc, hrc = setError(E_FAIL, "Unexpected storage backend name copy error %Rrc for %s.", vrc, pszName));
+            }
+            else
+                hrc = setError(E_FAIL, tr("Can't find appropriate medium format for ISO type of a virtual disk."));
+        }
 
-        Bstr bstrFormatName;
-        rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-        if (FAILED(rc)) return rc;
-
-        Utf8Str strTrgFormat = Utf8Str(bstrFormatName);
-
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszISOURI), strTrgFormat));
+        if (SUCCEEDED(hrc))
+            g_fInitializedBackendNames = true;
     }
 
-    {
-        ComObjPtr<MediumFormat> trgFormat = pSysProps->i_mediumFormatFromExtension("vmdk");
-        if (trgFormat.isNull())
-            return setError(E_FAIL, tr("Can't find appropriate medium format for VMDK type of a virtual disk."));
-
-        Bstr bstrFormatName;
-        rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-        if (FAILED(rc)) return rc;
-
-        Utf8Str strTrgFormat = Utf8Str(bstrFormatName);
-
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszVMDKStreamURI), strTrgFormat));
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszVMDKSparseURI), strTrgFormat));
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszVMDKCompressedURI), strTrgFormat));
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszVMDKCompressedURI2), strTrgFormat));
-    }
-
-    {
-        ComObjPtr<MediumFormat> trgFormat = pSysProps->i_mediumFormatFromExtension("vhd");
-        if (trgFormat.isNull())
-            return setError(E_FAIL, tr("Can't find appropriate medium format for VHD type of a virtual disk."));
-
-        Bstr bstrFormatName;
-        rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-        if (FAILED(rc)) return rc;
-
-        Utf8Str strTrgFormat = Utf8Str(bstrFormatName);
-
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszrVHDURI), strTrgFormat));
-    }
-
-    return rc;
+    return hrc;
 }
 
 Utf8Str Appliance::i_typeOfVirtualDiskFormatFromURI(Utf8Str uri) const
 {
-    Utf8Str type;
-    std::map<Utf8Str, Utf8Str>::const_iterator cit = supportedStandardsURI.find(uri);
-    if (cit != supportedStandardsURI.end())
-    {
-        type = cit->second;
-    }
+    Assert(g_fInitializedBackendNames);
 
-    return type;
+    unsigned i = RT_ELEMENTS(g_aUriToBackend);
+    while (i-- > 0)
+        if (RTStrICmp(g_aUriToBackend[i].pszUri, uri.c_str()) == 0)
+            return Utf8Str(g_aUriToBackend[i].pszBackend);
+    return Utf8Str();
 }
 
 std::set<Utf8Str> Appliance::i_URIFromTypeOfVirtualDiskFormat(Utf8Str type)
 {
-    std::set<Utf8Str> uri;
-    std::map<Utf8Str, Utf8Str>::const_iterator cit = supportedStandardsURI.begin();
-    while(cit != supportedStandardsURI.end())
-    {
-        if (cit->second.compare(type,Utf8Str::CaseInsensitive) == 0)
-            uri.insert(cit->first);
-        ++cit;
-    }
+    Assert(g_fInitializedBackendNames);
 
-    return uri;
+    std::set<Utf8Str> UriSet;
+    unsigned i = RT_ELEMENTS(g_aUriToBackend);
+    while (i-- > 0)
+        if (RTStrICmp(g_aUriToBackend[i].pszBackend, type.c_str()) == 0)
+            UriSet.insert(g_aUriToBackend[i].pszUri);
+    return UriSet;
 }
 
 /**

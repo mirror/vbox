@@ -66,6 +66,8 @@ public:
     /** Const, no need to lock */
     const Utf8Str &i_getId() const { return m.strId; }
     /** Const, no need to lock */
+    const Utf8Str &i_getName() const { return m.strName; }
+    /** Const, no need to lock */
     const StrArray &i_getFileExtensions() const { return m.maFileExtensions; }
     /** Const, no need to lock */
     MediumFormatCapabilities_T i_getCapabilities() const { return m.capabilities; }
