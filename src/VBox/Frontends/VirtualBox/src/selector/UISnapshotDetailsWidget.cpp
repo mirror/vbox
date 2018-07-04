@@ -76,9 +76,12 @@ signals:
 public:
 
     /** Constructs details element passing @a pParent to the base-class.
+      * @param  strName       Brings the element name.
+      * @param  icon          Brings the element icon.
       * @param  fLinkSupport  Brings whether we should construct text-browser
       *                       instead of simple text-edit otherwise. */
-    UISnapshotDetailsElement(bool fLinkSupport, QWidget *pParent = 0);
+    UISnapshotDetailsElement(const QString &strName, const QIcon &icon,
+                             bool fLinkSupport, QWidget *pParent = 0);
 
     /** Returns underlying text-document. */
     QTextDocument *document() const;
@@ -91,6 +94,9 @@ public:
 
 protected:
 
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
 
@@ -99,9 +105,16 @@ private:
     /** Prepares all. */
     void prepare();
 
+    /** Updates pixmap. */
+    void updatePixmap();
+
+    /** Holds the element name.*/
+    QString  m_strName;
+    /** Holds the element icon. */
+    QIcon    m_icon;
     /** Holds whether we should construct text-browser
       * instead of simple text-edit otherwise. */
-    bool  m_fLinkSupport;
+    bool     m_fLinkSupport;
 
     /** Holds the text-edit interface instance. */
     QTextEdit *m_pTextEdit;
@@ -177,8 +190,11 @@ private:
 *   Class UISnapshotDetailsElement implementation.                                                                               *
 *********************************************************************************************************************************/
 
-UISnapshotDetailsElement::UISnapshotDetailsElement(bool fLinkSupport, QWidget *pParent /* = 0 */)
+UISnapshotDetailsElement::UISnapshotDetailsElement(const QString &strName, const QIcon &icon,
+                                                   bool fLinkSupport, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
+    , m_strName(strName)
+    , m_icon(icon)
     , m_fLinkSupport(fLinkSupport)
     , m_pTextEdit(0)
 {
@@ -211,6 +227,26 @@ QSize UISnapshotDetailsElement::minimumSizeHint() const
     const int iIdealWidth = (int)m_pTextEdit->document()->idealWidth() + 2 * iDocumentMargin + iLeft + iRight;
     const int iIdealHeight = size.height() + 2 * iDocumentMargin + iTop + iBottom;
     return QSize(iIdealWidth, iIdealHeight);
+}
+
+bool UISnapshotDetailsElement::event(QEvent *pEvent)
+{
+    /* Handle know event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Show:
+        case QEvent::ScreenChangeInternal:
+        {
+            /* Update pixmap: */
+            updatePixmap();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QWidget::event(pEvent);
 }
 
 void UISnapshotDetailsElement::paintEvent(QPaintEvent * /* pEvent */)
@@ -326,6 +362,19 @@ void UISnapshotDetailsElement::prepare()
             layout()->addWidget(m_pTextEdit);
         }
     }
+
+    /* Update pixmap: */
+    updatePixmap();
+}
+
+void UISnapshotDetailsElement::updatePixmap()
+{
+    /* Re-register icon in the element's text-document: */
+    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    document()->addResource(
+        QTextDocument::ImageResource,
+        QUrl(QString("details://%1").arg(m_strName)),
+        QVariant(m_icon.pixmap(window()->windowHandle(), QSize(iMetric, iMetric))));
 }
 
 
@@ -1002,7 +1051,9 @@ UISnapshotDetailsElement *UISnapshotDetailsWidget::createDetailsElement(DetailsE
 {
     /* Create element: */
     const bool fWithHypertextNavigation = enmType == DetailsElementType_Preview;
-    UISnapshotDetailsElement *pElement = new UISnapshotDetailsElement(fWithHypertextNavigation);
+    UISnapshotDetailsElement *pElement = new UISnapshotDetailsElement(gpConverter->toInternalString(enmType),
+                                                                      gpConverter->toIcon(enmType),
+                                                                      fWithHypertextNavigation);
     AssertPtrReturn(pElement, 0);
     {
         /* Configure element: */
@@ -1015,14 +1066,6 @@ UISnapshotDetailsElement *UISnapshotDetailsWidget::createDetailsElement(DetailsE
                 pElement->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
                 break;
         }
-
-        /* Register DetailsElementType icon in the element text-document: */
-        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        const QSize iconSize = QSize(iIconMetric, iIconMetric);
-        pElement->document()->addResource(
-            QTextDocument::ImageResource,
-            QUrl(QString("details://%1").arg(gpConverter->toInternalString(enmType))),
-            QVariant(gpConverter->toIcon(enmType).pixmap(iconSize)));
     }
     /* Return element: */
     return pElement;
