@@ -36,76 +36,24 @@
 
 using namespace std;
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// Appliance constructor / destructor
-//
-// ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(VirtualSystemDescription)
-
-HRESULT VirtualSystemDescription::FinalConstruct()
-{
-    return BaseFinalConstruct();
-}
-
-void VirtualSystemDescription::FinalRelease()
-{
-    uninit();
-
-    BaseFinalRelease();
-}
-
-Appliance::Appliance()
-    : mVirtualBox(NULL)
-{
-}
-
-Appliance::~Appliance()
-{
-}
-
-
-HRESULT Appliance::FinalConstruct()
-{
-    return BaseFinalConstruct();
-}
-
-void Appliance::FinalRelease()
-{
-    uninit();
-
-    BaseFinalRelease();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Internal helpers
-//
-////////////////////////////////////////////////////////////////////////////////
-
-static const char* const strISOURI = "http://www.ecma-international.org/publications/standards/Ecma-119.htm";
-static const char* const strVMDKStreamURI = "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized";
-static const char* const strVMDKSparseURI = "http://www.vmware.com/specifications/vmdk.html#sparse";
-static const char* const strVMDKCompressedURI = "http://www.vmware.com/specifications/vmdk.html#compressed";
-static const char* const strVMDKCompressedURI2 = "http://www.vmware.com/interfaces/specifications/vmdk.html#compressed";
-static const char* const strVHDURI = "http://go.microsoft.com/fwlink/?LinkId=137171";
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static const char * const g_pszISOURI = "http://www.ecma-international.org/publications/standards/Ecma-119.htm";
+static const char * const g_pszVMDKStreamURI = "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized";
+static const char * const g_pszVMDKSparseURI = "http://www.vmware.com/specifications/vmdk.html#sparse";
+static const char * const g_pszVMDKCompressedURI = "http://www.vmware.com/specifications/vmdk.html#compressed";
+static const char * const g_pszVMDKCompressedURI2 = "http://www.vmware.com/interfaces/specifications/vmdk.html#compressed";
+static const char * const g_pszrVHDURI = "http://go.microsoft.com/fwlink/?LinkId=137171";
 
 static std::map<Utf8Str, Utf8Str> supportedStandardsURI;
-
-static const char* const applianceIOTarName = "Appliance::IOTar";
-static const char* const applianceIOShaName = "Appliance::IOSha";
-static const char* const applianceIOFileName = "Appliance::IOFile";
-
-static std::map<APPLIANCEIONAME, Utf8Str> applianceIONameMap;
 
 static const struct
 {
     ovf::CIMOSType_T    cim;
     VBOXOSTYPE          osType;
-}
-g_osTypes[] =
+} g_aOsTypes[] =
 {
     { ovf::CIMOSType_CIMOS_Unknown,                              VBOXOSTYPE_Unknown },
     { ovf::CIMOSType_CIMOS_OS2,                                  VBOXOSTYPE_OS2 },
@@ -218,7 +166,7 @@ struct osTypePattern
 };
 
 /* These are the 32-Bit ones. They are sorted by priority. */
-static const osTypePattern g_osTypesPattern[] =
+static const osTypePattern g_aOsTypesPattern[] =
 {
     {"Windows NT",    VBOXOSTYPE_WinNT4},
     {"Windows XP",    VBOXOSTYPE_WinXP},
@@ -249,7 +197,7 @@ static const osTypePattern g_osTypesPattern[] =
 };
 
 /* These are the 64-Bit ones. They are sorted by priority. */
-static const osTypePattern g_osTypesPattern64[] =
+static const osTypePattern g_aOsTypesPattern64[] =
 {
     {"Windows XP",    VBOXOSTYPE_WinXP_x64},
     {"Windows 2003",  VBOXOSTYPE_Win2k3_x64},
@@ -281,28 +229,28 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
     /* First check if the type is other/other_64 */
     if (c == ovf::CIMOSType_CIMOS_Other)
     {
-        for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern); ++i)
-            if (cStr.contains (g_osTypesPattern[i].pcszPattern, Utf8Str::CaseInsensitive))
+        for (size_t i=0; i < RT_ELEMENTS(g_aOsTypesPattern); ++i)
+            if (cStr.contains (g_aOsTypesPattern[i].pcszPattern, Utf8Str::CaseInsensitive))
             {
-                strType = Global::OSTypeId(g_osTypesPattern[i].osType);
+                strType = Global::OSTypeId(g_aOsTypesPattern[i].osType);
                 return;
             }
     }
     else if (c == ovf::CIMOSType_CIMOS_Other_64)
     {
-        for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern64); ++i)
-            if (cStr.contains (g_osTypesPattern64[i].pcszPattern, Utf8Str::CaseInsensitive))
+        for (size_t i=0; i < RT_ELEMENTS(g_aOsTypesPattern64); ++i)
+            if (cStr.contains (g_aOsTypesPattern64[i].pcszPattern, Utf8Str::CaseInsensitive))
             {
-                strType = Global::OSTypeId(g_osTypesPattern64[i].osType);
+                strType = Global::OSTypeId(g_aOsTypesPattern64[i].osType);
                 return;
             }
     }
 
-    for (size_t i = 0; i < RT_ELEMENTS(g_osTypes); ++i)
+    for (size_t i = 0; i < RT_ELEMENTS(g_aOsTypes); ++i)
     {
-        if (c == g_osTypes[i].cim)
+        if (c == g_aOsTypes[i].cim)
         {
-            strType = Global::OSTypeId(g_osTypes[i].osType);
+            strType = Global::OSTypeId(g_aOsTypes[i].osType);
             return;
         }
     }
@@ -323,24 +271,24 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
  */
 ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox, BOOL fLongMode)
 {
-    for (size_t i = 0; i < RT_ELEMENTS(g_osTypes); ++i)
+    for (size_t i = 0; i < RT_ELEMENTS(g_aOsTypes); ++i)
     {
-        if (!RTStrICmp(pcszVBox, Global::OSTypeId(g_osTypes[i].osType)))
+        if (!RTStrICmp(pcszVBox, Global::OSTypeId(g_aOsTypes[i].osType)))
         {
-            if (fLongMode && !(g_osTypes[i].osType & VBOXOSTYPE_x64))
+            if (fLongMode && !(g_aOsTypes[i].osType & VBOXOSTYPE_x64))
             {
-                VBOXOSTYPE enmDesiredOsType = (VBOXOSTYPE)((int)g_osTypes[i].osType | (int)VBOXOSTYPE_x64);
+                VBOXOSTYPE enmDesiredOsType = (VBOXOSTYPE)((int)g_aOsTypes[i].osType | (int)VBOXOSTYPE_x64);
                 size_t     j = i;
-                while (++j < RT_ELEMENTS(g_osTypes))
-                    if (g_osTypes[j].osType == enmDesiredOsType)
-                        return g_osTypes[j].cim;
+                while (++j < RT_ELEMENTS(g_aOsTypes))
+                    if (g_aOsTypes[j].osType == enmDesiredOsType)
+                        return g_aOsTypes[j].cim;
                 j = i;
                 while (--j > 0)
-                    if (g_osTypes[j].osType == enmDesiredOsType)
-                        return g_osTypes[j].cim;
+                    if (g_aOsTypes[j].osType == enmDesiredOsType)
+                        return g_aOsTypes[j].cim;
                 /* Not all OSes have 64-bit versions, so just return the 32-bit variant. */
             }
-            return g_osTypes[i].cim;
+            return g_aOsTypes[i].cim;
         }
     }
 
@@ -362,6 +310,57 @@ Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type)
     }
     return strType;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Appliance constructor / destructor
+//
+// ////////////////////////////////////////////////////////////////////////////////
+
+DEFINE_EMPTY_CTOR_DTOR(VirtualSystemDescription)
+
+HRESULT VirtualSystemDescription::FinalConstruct()
+{
+    return BaseFinalConstruct();
+}
+
+void VirtualSystemDescription::FinalRelease()
+{
+    uninit();
+
+    BaseFinalRelease();
+}
+
+Appliance::Appliance()
+    : mVirtualBox(NULL)
+{
+}
+
+Appliance::~Appliance()
+{
+}
+
+
+HRESULT Appliance::FinalConstruct()
+{
+    return BaseFinalConstruct();
+}
+
+void Appliance::FinalRelease()
+{
+    uninit();
+
+    BaseFinalRelease();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Internal helpers
+//
+////////////////////////////////////////////////////////////////////////////////
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -410,8 +409,6 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox)
     m = new Data;
     m->m_pSecretKeyStore = new SecretKeyStore(false /* fRequireNonPageable*/);
     AssertReturn(m->m_pSecretKeyStore, E_FAIL);
-
-    i_initApplianceIONameMap();
 
     rc = i_initSetOfSupportedStandardsURI();
 
@@ -705,7 +702,7 @@ HRESULT Appliance::i_initSetOfSupportedStandardsURI()
 
         Utf8Str strTrgFormat = Utf8Str(bstrFormatName);
 
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(strISOURI), strTrgFormat));
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszISOURI), strTrgFormat));
     }
 
     {
@@ -719,10 +716,10 @@ HRESULT Appliance::i_initSetOfSupportedStandardsURI()
 
         Utf8Str strTrgFormat = Utf8Str(bstrFormatName);
 
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVMDKStreamURI), strTrgFormat));
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVMDKSparseURI), strTrgFormat));
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVMDKCompressedURI), strTrgFormat));
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVMDKCompressedURI2), strTrgFormat));
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszVMDKStreamURI), strTrgFormat));
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszVMDKSparseURI), strTrgFormat));
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszVMDKCompressedURI), strTrgFormat));
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszVMDKCompressedURI2), strTrgFormat));
     }
 
     {
@@ -736,7 +733,7 @@ HRESULT Appliance::i_initSetOfSupportedStandardsURI()
 
         Utf8Str strTrgFormat = Utf8Str(bstrFormatName);
 
-        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVHDURI), strTrgFormat));
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(g_pszrVHDURI), strTrgFormat));
     }
 
     return rc;
@@ -767,32 +764,6 @@ std::set<Utf8Str> Appliance::i_URIFromTypeOfVirtualDiskFormat(Utf8Str type)
 
     return uri;
 }
-
-HRESULT Appliance::i_initApplianceIONameMap()
-{
-    HRESULT rc = S_OK;
-    if (!applianceIONameMap.empty())
-        return rc;
-
-    applianceIONameMap.insert(std::make_pair(applianceIOTar, applianceIOTarName));
-    applianceIONameMap.insert(std::make_pair(applianceIOFile, applianceIOFileName));
-    applianceIONameMap.insert(std::make_pair(applianceIOSha, applianceIOShaName));
-
-    return rc;
-}
-
-Utf8Str Appliance::i_applianceIOName(APPLIANCEIONAME type) const
-{
-    Utf8Str name;
-    std::map<APPLIANCEIONAME, Utf8Str>::const_iterator cit = applianceIONameMap.find(type);
-    if (cit != applianceIONameMap.end())
-    {
-        name = cit->second;
-    }
-
-    return name;
-}
-
 
 /**
  * Returns a medium format object corresponding to the given
