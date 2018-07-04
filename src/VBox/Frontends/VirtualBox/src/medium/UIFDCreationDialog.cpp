@@ -20,12 +20,22 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes */
-# include<QVBoxLayout>
+# include<QDialogButtonBox>
+# include<QDir>
+# include<QGridLayout>
+# include<QLabel>
+# include<QPushButton>
 
-/* Other includes */
+/* GUI includes */
 # include "UIFDCreationDialog.h"
 # include "UIFilePathSelector.h"
+# include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
+
+/* COM includes: */
+# include "CSystemProperties.h"
+# include "CMedium.h"
+# include "CMediumFormat.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -37,6 +47,10 @@ UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,
     , m_pFilePathselector(0)
     , m_strMachineName(strMachineName)
     , m_strMachineSettingsFilePath(strMachineSettingsFilePath)
+    , m_pPathLabel(0)
+    , m_pSizeLabel(0)
+    , m_pSizeCombo(0)
+    , m_pButtonBox(0)
 {
 
     prepare();
@@ -51,22 +65,138 @@ UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,
 
 void UIFDCreationDialog::retranslateUi()
 {
-
+    setWindowTitle(QApplication::translate("UIMediumManager", "Create a Floppy Disk"));
+    if (m_pPathLabel)
+        m_pPathLabel->setText(QApplication::translate("UIMediumManager", "File Path:"));
+    if (m_pSizeLabel)
+        m_pSizeLabel->setText(QApplication::translate("UIMediumManager", "Size:"));
+    if (m_pButtonBox)
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText("Create");
+    if (m_pSizeCombo)
+    {
+        m_pSizeCombo->setItemText(FDSize_2_88M, QApplication::translate("UIMediumManager", "2.88M"));
+        m_pSizeCombo->setItemText(FDSize_1_44M, QApplication::translate("UIMediumManager", "1.44M"));
+        m_pSizeCombo->setItemText(FDSize_1_2M, QApplication::translate("UIMediumManager", "1.2M"));
+        m_pSizeCombo->setItemText(FDSize_720K, QApplication::translate("UIMediumManager", "720K"));
+        m_pSizeCombo->setItemText(FDSize_360K, QApplication::translate("UIMediumManager", "360K"));
+    }
 }
 
 void UIFDCreationDialog::prepare()
 {
-    setWindowModality(Qt::WindowModal);
 
-    QVBoxLayout *pMainLayout = new QVBoxLayout;
+#ifndef VBOX_WS_MAC
+    setWindowIcon(QIcon(":/vm_settings_16px.png"));
+#endif
+
+    setWindowModality(Qt::WindowModal);
+    setSizeGripEnabled(false);
+
+
+    QGridLayout *pMainLayout = new QGridLayout;
     if (!pMainLayout)
         return;
     setLayout(pMainLayout);
 
+    m_pPathLabel = new QLabel;
+    if (m_pPathLabel)
+    {
+        pMainLayout->addWidget(m_pPathLabel, 0, 0, 1, 1);
+        m_pPathLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    }
+
     m_pFilePathselector = new UIFilePathSelector;
     if (m_pFilePathselector)
     {
-        pMainLayout->addWidget(m_pFilePathselector);
+        pMainLayout->addWidget(m_pFilePathselector, 0, 1, 1, 2);
         m_pFilePathselector->setMode(UIFilePathSelector::Mode_File_Save);
+        QString strFolder = getDefaultFolder();
+        m_pFilePathselector->setDefaultPath(strFolder);
+        m_pFilePathselector->setPath(strFolder);
     }
+
+    m_pSizeLabel = new QLabel;
+    if (m_pSizeLabel)
+    {
+        pMainLayout->addWidget(m_pSizeLabel, 1, 0, 1, 1);
+        m_pSizeLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    }
+
+    m_pSizeCombo = new QComboBox;
+    if (m_pSizeCombo)
+    {
+        pMainLayout->addWidget(m_pSizeCombo, 1, 1, 1, 2);
+        m_pSizeCombo->insertItem(FDSize_2_88M, "2.88M", 2949120);
+        m_pSizeCombo->insertItem(FDSize_1_44M, "1.44M", 1474560);
+        m_pSizeCombo->insertItem(FDSize_1_2M, "1.2M", 1228800);
+        m_pSizeCombo->insertItem(FDSize_720K, "720K", 737280);
+        m_pSizeCombo->insertItem(FDSize_360K, "360K", 368640);
+        m_pSizeCombo->setCurrentIndex(FDSize_1_44M);
+
+    }
+
+    m_pButtonBox =
+        new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
+    if (m_pButtonBox)
+    {
+        pMainLayout->addWidget(m_pButtonBox, 2, 0, 1, 3);
+        connect(m_pButtonBox, &QDialogButtonBox::accepted, this, &UIFDCreationDialog::accept);
+        connect(m_pButtonBox, &QDialogButtonBox::rejected, this, &UIFDCreationDialog::reject);
+    }
+    retranslateUi();
+}
+
+QString UIFDCreationDialog::getDefaultFolder() const
+{
+    QString strPreferredExtension = UIMediumDefs::getPreferredExtensionForMedium(KDeviceType_Floppy);
+
+    QString strInitialPath = QFileInfo(m_strMachineSettingsFilePath).absolutePath();
+    if (strInitialPath.isEmpty())
+        strInitialPath = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+
+    if (strInitialPath.isEmpty())
+        return strInitialPath;
+
+    strInitialPath = QDir(strInitialPath).absoluteFilePath(m_strMachineName + "." + strPreferredExtension);
+    return strInitialPath;
+}
+
+void UIFDCreationDialog::accept()
+{
+    QVector<CMediumFormat>  mediumFormats = UIMediumDefs::getFormatsForDeviceType(KDeviceType_Floppy);
+
+    if (m_pFilePathselector->path().isEmpty() || mediumFormats.isEmpty())
+        return;
+
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+
+    CMedium newMedium = vbox.CreateMedium(mediumFormats[0].GetName(), m_pFilePathselector->path(),
+                                          KAccessMode_ReadWrite, KDeviceType_Floppy);
+    if (!vbox.isOk())
+    {
+        msgCenter().cannotCreateMediumStorage(vbox, m_pFilePathselector->path(), this);
+        return;
+    }
+    QVector<KMediumVariant> variants(1, KMediumVariant_Fixed);
+    CProgress progress = newMedium.CreateBaseStorage(m_pSizeCombo->currentData().toLongLong(), variants);
+
+    if (!newMedium.isOk())
+    {
+        msgCenter().cannotCreateMediumStorage(newMedium, m_pFilePathselector->path(), this);
+        return;
+    }
+    /* Show creation progress: */
+    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_create_90px.png", this);
+    if (progress.GetCanceled())
+        return;
+
+    if (!progress.isOk() || progress.GetResultCode() != 0)
+    {
+        msgCenter().cannotCreateHardDiskStorage(progress, m_pFilePathselector->path(), this);
+        return;
+    }
+
+    /* After a successful creation and initilization of the floppy disk we call base class accept
+       effectively closing this dialog: */
+    QDialog::accept();
 }

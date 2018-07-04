@@ -26,6 +26,9 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QDialogButtonBox;
+class QLabel;
+class QComboBox;
 class UIFilePathSelector;
 
 /* A QDialog extension to get necessary setting from the user for floppy disk creation */
@@ -39,8 +42,9 @@ public:
 
     UIFDCreationDialog(QWidget *pParent = 0,
                        const QString &strMachineName = QString(),
-                       const QString &strMachineSettingsFilePath = QString()
-                       );
+                       const QString &strMachineSettingsFilePath = QString());
+
+    virtual void accept() /* override */;
 
 protected:
 
@@ -50,12 +54,23 @@ private slots:
 
 
 private:
-
-    void prepare();
-
+    enum FDSize
+    {
+        FDSize_2_88M,
+        FDSize_1_44M,
+        FDSize_1_2M,
+        FDSize_720K,
+        FDSize_360K
+    };
+    void                prepare();
+    QString             getDefaultFolder() const;
     UIFilePathSelector *m_pFilePathselector;
     QString             m_strMachineName;
     QString             m_strMachineSettingsFilePath;
+    QLabel             *m_pPathLabel;
+    QLabel             *m_pSizeLabel;
+    QComboBox          *m_pSizeCombo;
+    QDialogButtonBox   *m_pButtonBox;
 };
 
 #endif // __UIFDCreationDialog_h__

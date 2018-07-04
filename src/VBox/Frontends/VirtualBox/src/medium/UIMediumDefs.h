@@ -72,6 +72,10 @@ namespace UIMediumDefs
     QList<QPair<QString, QString> > DVDBackends(const CVirtualBox &comVBox);
     /** Returns which floppy disk formats are currently supported by @a comVBox. */
     QList<QPair<QString, QString> > FloppyBackends(const CVirtualBox &comVBox);
+
+    /** Returns the first file extension of the list of file extension support for the @a enmDeviceType. */
+   QString getPreferredExtensionForMedium(KDeviceType enmDeviceType);
+   QVector<CMediumFormat>  getFormatsForDeviceType(KDeviceType enmDeviceType);
 }
 /* Using this namespace globally: */
 using namespace UIMediumDefs;
