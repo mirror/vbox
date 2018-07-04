@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,96 +15,164 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIVMCloseDialog_h__
-#define __UIVMCloseDialog_h__
+#ifndef ___UIVMCloseDialog_h___
+#define ___UIVMCloseDialog_h___
+
+/* Qt includes: */
+#include <QIcon>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
+#include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
 
 /* Forward declarations: */
-class CMachine;
+class QCheckBox;
+class QGridLayout;
+class QHBoxLayout;
 class QLabel;
 class QRadioButton;
-class QCheckBox;
+class QVBoxLayout;
+class CMachine;
 
-/* QIDialog extension to handle Runtime UI close-event: */
+/** QIDialog extension to handle Runtime UI close-event. */
 class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructor: */
-    UIVMCloseDialog(QWidget *pParent, CMachine &machine,
+    /** Constructs close dialog passing @a pParent to the base-class.
+      * @param  comMachine             Brings the machine dialog created for.
+      * @param  fIsACPIEnabled         Brings whether ACPI is enabled.
+      * @param  restictedCloseActions  Brings a set of restricted actions. */
+    UIVMCloseDialog(QWidget *pParent, CMachine &comMachine,
                     bool fIsACPIEnabled, MachineCloseAction restictedCloseActions);
 
-    /* API: Validation stuff: */
+    /** Returns whether dialog is valid. */
     bool isValid() const { return m_fValid; }
 
-    /* API: Pixmap stuff: */
-    void setPixmap(const QPixmap &pixmap);
+    /** Defines dialog @a icon. */
+    void setIcon(const QIcon &icon);
+
+protected:
+
+    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
 private slots:
 
-    /* Handler: Update stuff: */
+    /** Updates widgets availability. */
     void sltUpdateWidgetAvailability();
 
-    /* Handler: Accept stuff: */
+    /** Accepts the dialog. */
     void accept();
 
 private:
 
-    /* API: Detach-button stuff: */
-    void setDetachButtonEnabled(bool fEnabled);
-    void setDetachButtonVisible(bool fVisible);
-    /* API: Save-button stuff: */
-    void setSaveButtonEnabled(bool fEnabled);
-    void setSaveButtonVisible(bool fVisible);
-    /* API: Shutdown-button stuff: */
-    void setShutdownButtonEnabled(bool fEnabled);
-    void setShutdownButtonVisible(bool fVisible);
-    /* API: Power-off-button stuff: */
-    void setPowerOffButtonEnabled(bool fEnabled);
-    void setPowerOffButtonVisible(bool fVisible);
-    /* API: Discard-check-box stuff: */
-    void setDiscardCheckBoxVisible(bool fVisible);
+    /** Defines whether 'Detach' button is enabled. */
+    void setButtonEnabledDetach(bool fEnabled);
+    /** Defines whether 'Detach' button is visible. */
+    void setButtonVisibleDetach(bool fVisible);
 
-    /* Helpers: Prepare stuff: */
+    /** Defines whether 'Save' button is enabled. */
+    void setButtonEnabledSave(bool fEnabled);
+    /** Defines whether 'Save' button is visible. */
+    void setButtonVisibleSave(bool fVisible);
+
+    /** Defines whether 'Shutdown' button is enabled. */
+    void setButtonEnabledShutdown(bool fEnabled);
+    /** Defines whether 'Shutdown' button is visible. */
+    void setButtonVisibleShutdown(bool fVisible);
+
+    /** Defines whether 'PowerOff' button is enabled. */
+    void setButtonEnabledPowerOff(bool fEnabled);
+    /** Defines whether 'PowerOff' button is visible. */
+    void setButtonVisiblePowerOff(bool fVisible);
+
+    /** Defines whether 'Discard' check-box is visible. */
+    void setCheckBoxVisibleDiscard(bool fVisible);
+
+    /** Prepares all. */
     void prepare();
+    /** Prepares main layout. */
+    void prepareMainLayout();
+    /** Prepares top layout. */
+    void prepareTopLayout();
+    /** Prepares top-left layout. */
+    void prepareTopLeftLayout();
+    /** Prepares top-right layout. */
+    void prepareTopRightLayout();
+    /** Prepares choice layout. */
+    void prepareChoiceLayout();
+    /** Prepares button-box. */
+    void prepareButtonBox();
+
+    /** Configures dialog. */
     void configure();
 
-    /* Helper: Translate stuff: */
-    void retranslateUi();
+    /** Updates pixmaps. */
+    void updatePixmaps();
 
-    /* Handler: Event-filtering stuff: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+    /** Holds the live machine reference. */
+    CMachine                 &m_comMachine;
+    /** Holds whether ACPI is enabled. */
+    bool                      m_fIsACPIEnabled;
+    /** Holds a set of restricted actions. */
+    const MachineCloseAction  m_restictedCloseActions;
 
-    /* Handler: Polish-event stuff: */
-    void polishEvent(QShowEvent *pEvent);
+    /** Holds whether dialog is valid. */
+    bool  m_fValid;
 
-    /* Widgets: */
-    QLabel *m_pIcon;
-    QLabel *m_pLabel;
-    QLabel *m_pDetachIcon;
-    QRadioButton *m_pDetachRadio;
-    QLabel *m_pSaveIcon;
-    QRadioButton *m_pSaveRadio;
-    QLabel *m_pShutdownIcon;
-    QRadioButton *m_pShutdownRadio;
-    QLabel *m_pPowerOffIcon;
-    QRadioButton *m_pPowerOffRadio;
-    QCheckBox *m_pDiscardCheckBox;
+    /** Holds the dialog icon. */
+    QIcon  m_icon;
 
-    /* Variables: */
-    CMachine &m_machine;
-    const MachineCloseAction m_restictedCloseActions;
-    bool m_fIsACPIEnabled;
-    bool m_fValid;
-    QString m_strDiscardCheckBoxText;
-    MachineCloseAction m_lastCloseAction;
+    /** Holds the main layout instance. */
+    QVBoxLayout *m_pMainLayout;
+    /** Holds the top layout instance. */
+    QHBoxLayout *m_pTopLayout;
+    /** Holds the top-left layout instance. */
+    QVBoxLayout *m_pTopLeftLayout;
+    /** Holds the top-right layout instance. */
+    QVBoxLayout *m_pTopRightLayout;
+    /** Holds the choice layout instance. */
+    QGridLayout *m_pChoiceLayout;
+
+    /** Holds the icon label instance. */
+    QLabel *m_pLabelIcon;
+    /** Holds the text label instance. */
+    QLabel *m_pLabelText;
+
+    /** Holds the 'Detach' icon label instance.  */
+    QLabel       *m_pLabelIconDetach;
+    /** Holds the 'Detach' radio-button instance.  */
+    QRadioButton *m_pRadioButtonDetach;
+    /** Holds the 'Save' icon label instance.  */
+    QLabel       *m_pLabelIconSave;
+    /** Holds the 'Save' radio-button instance.  */
+    QRadioButton *m_pRadioButtonSave;
+    /** Holds the 'Shutdown' icon label instance.  */
+    QLabel       *m_pLabelIconShutdown;
+    /** Holds the 'Shutdown' radio-button instance.  */
+    QRadioButton *m_pRadioButtonShutdown;
+    /** Holds the 'PowerOff' icon label instance.  */
+    QLabel       *m_pLabelIconPowerOff;
+    /** Holds the 'PowerOff' radio-button instance.  */
+    QRadioButton *m_pRadioButtonPowerOff;
+
+    /** Holds the 'Discard' check-box instance.  */
+    QCheckBox *m_pCheckBoxDiscard;
+    /** Holds the 'Discard' check-box text. */
+    QString    m_strDiscardCheckBoxText;
+
+    /** Holds the last close action. */
+    MachineCloseAction  m_enmLastCloseAction;
 };
 
-#endif // __UIVMCloseDialog_h__
-
+#endif /* !___UIVMCloseDialog_h___ */

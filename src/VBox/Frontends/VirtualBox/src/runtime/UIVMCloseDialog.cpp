@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,58 +47,155 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, CMachine &machine,
+UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, CMachine &comMachine,
                                  bool fIsACPIEnabled, MachineCloseAction restictedCloseActions)
     : QIWithRetranslateUI<QIDialog>(pParent)
-    , m_pIcon(0), m_pLabel(0)
-    , m_pDetachIcon(0), m_pDetachRadio(0)
-    , m_pSaveIcon(0), m_pSaveRadio(0)
-    , m_pShutdownIcon(0), m_pShutdownRadio(0)
-    , m_pPowerOffIcon(0), m_pPowerOffRadio(0), m_pDiscardCheckBox(0)
-    , m_machine(machine)
-    , m_restictedCloseActions(restictedCloseActions)
+    , m_comMachine(comMachine)
     , m_fIsACPIEnabled(fIsACPIEnabled)
+    , m_restictedCloseActions(restictedCloseActions)
     , m_fValid(false)
-    , m_lastCloseAction(MachineCloseAction_Invalid)
+    , m_pMainLayout(0)
+    , m_pTopLayout(0)
+    , m_pTopLeftLayout(0)
+    , m_pTopRightLayout(0)
+    , m_pChoiceLayout(0)
+    , m_pLabelIcon(0), m_pLabelText(0)
+    , m_pLabelIconDetach(0), m_pRadioButtonDetach(0)
+    , m_pLabelIconSave(0), m_pRadioButtonSave(0)
+    , m_pLabelIconShutdown(0), m_pRadioButtonShutdown(0)
+    , m_pLabelIconPowerOff(0), m_pRadioButtonPowerOff(0)
+    , m_pCheckBoxDiscard(0)
+    , m_enmLastCloseAction(MachineCloseAction_Invalid)
 {
-    /* Prepare: */
     prepare();
-
-    /* Configure: */
-    configure();
-
-    /* Retranslate: */
-    retranslateUi();
 }
 
-void UIVMCloseDialog::setPixmap(const QPixmap &pixmap)
+void UIVMCloseDialog::setIcon(const QIcon &icon)
 {
-    /* Make sure pixmap is valid: */
-    if (pixmap.isNull())
+    /* Make sure icon is valid: */
+    if (icon.isNull())
         return;
 
-    /* Assign new pixmap: */
-    m_pIcon->setPixmap(pixmap);
+    /* Remember it: */
+    m_icon = icon;
+    /* Update pixmaps: */
+    updatePixmaps();
+}
+
+bool UIVMCloseDialog::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    /* For now we are interested in double-click events only: */
+    if (pEvent->type() == QEvent::MouseButtonDblClick)
+    {
+        /* Make sure it's one of the radio-buttons
+         * which has this event-filter installed: */
+        if (qobject_cast<QRadioButton*>(pObject))
+        {
+            /* Since on double-click the button will be also selected
+             * we are just calling for the *accept* slot: */
+            accept();
+        }
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QIDialog>::eventFilter(pObject, pEvent);
+}
+
+bool UIVMCloseDialog::event(QEvent *pEvent)
+{
+    /* Handle know event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Show:
+        case QEvent::ScreenChangeInternal:
+        {
+            /* Update pixmaps: */
+            updatePixmaps();
+
+            // NOTE:
+            // This thing works after QEvent::Show but isn't
+            // working after QEvent::ScreenChangeInternal,
+            // because it is too early, layout isn't calculated.
+            // We want to "force" it to work, just no idea how.
+            // Resize to minimum size-hint:
+            resize(minimumSizeHint());
+
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QIDialog>::event(pEvent);
+}
+
+void UIVMCloseDialog::retranslateUi()
+{
+    /* Translate title: */
+    setWindowTitle(tr("Close Virtual Machine"));
+
+    /* Translate text label: */
+    m_pLabelText->setText(tr("You want to:"));
+
+    /* Translate radio-buttons: */
+    m_pRadioButtonDetach->setText(tr("&Continue running in the background"));
+    m_pRadioButtonDetach->setWhatsThis(tr("<p>Close the virtual machine windows but keep the virtual machine running.</p>"
+                                          "<p>You can use the VirtualBox Manager to return to running the virtual machine "
+                                          "in a window.</p>"));
+    m_pRadioButtonSave->setText(tr("&Save the machine state"));
+    m_pRadioButtonSave->setWhatsThis(tr("<p>Saves the current execution state of the virtual machine to the physical hard disk "
+                                        "of the host PC.</p>"
+                                        "<p>Next time this machine is started, it will be restored from the saved state and "
+                                        "continue execution from the same place you saved it at, which will let you continue "
+                                        "your work immediately.</p>"
+                                        "<p>Note that saving the machine state may take a long time, depending on the guest "
+                                        "operating system type and the amount of memory you assigned to the virtual "
+                                        "machine.</p>"));
+    m_pRadioButtonShutdown->setText(tr("S&end the shutdown signal"));
+    m_pRadioButtonShutdown->setWhatsThis(tr("<p>Sends the ACPI Power Button press event to the virtual machine.</p>"
+                                            "<p>Normally, the guest operating system running inside the virtual machine will "
+                                            "detect this event and perform a clean shutdown procedure. This is a recommended "
+                                            "way to turn off the virtual machine because all applications running inside it "
+                                            "will get a chance to save their data and state.</p>"
+                                            "<p>If the machine doesn't respond to this action then the guest operating system "
+                                            "may be misconfigured or doesn't understand ACPI Power Button events at all. In "
+                                            "this case you should select the <b>Power off the machine</b> action to stop "
+                                            "virtual machine execution.</p>"));
+    m_pRadioButtonPowerOff->setText(tr("&Power off the machine"));
+    m_pRadioButtonPowerOff->setWhatsThis(tr("<p>Turns off the virtual machine.</p>"
+                                            "<p>Note that this action will stop machine execution immediately so that the guest "
+                                            "operating system running inside it will not be able to perform a clean shutdown "
+                                            "procedure which may result in <i>data loss</i> inside the virtual machine. "
+                                            "Selecting this action is recommended only if the virtual machine does not respond "
+                                            "to the <b>Send the shutdown signal</b> action.</p>"));
+
+    /* Translate check-box: */
+    m_pCheckBoxDiscard->setText(tr("&Restore current snapshot '%1'").arg(m_strDiscardCheckBoxText));
+    m_pCheckBoxDiscard->setToolTip(tr("Restore the machine state stored in the current snapshot"));
+    m_pCheckBoxDiscard->setWhatsThis(tr("<p>When checked, the machine will be returned to the state stored in the current "
+                                        "snapshot after it is turned off. This is useful if you are sure that you want to "
+                                        "discard the results of your last sessions and start again at that snapshot.</p>"));
 }
 
 void UIVMCloseDialog::sltUpdateWidgetAvailability()
 {
     /* Discard option should be enabled only on power-off action: */
-    m_pDiscardCheckBox->setEnabled(m_pPowerOffRadio->isChecked());
+    m_pCheckBoxDiscard->setEnabled(m_pRadioButtonPowerOff->isChecked());
 }
 
 void UIVMCloseDialog::accept()
 {
     /* Calculate result: */
-    if (m_pDetachRadio->isChecked())
+    if (m_pRadioButtonDetach->isChecked())
         setResult(MachineCloseAction_Detach);
-    else if (m_pSaveRadio->isChecked())
+    else if (m_pRadioButtonSave->isChecked())
         setResult(MachineCloseAction_SaveState);
-    else if (m_pShutdownRadio->isChecked())
+    else if (m_pRadioButtonShutdown->isChecked())
         setResult(MachineCloseAction_Shutdown);
-    else if (m_pPowerOffRadio->isChecked())
+    else if (m_pRadioButtonPowerOff->isChecked())
     {
-        if (!m_pDiscardCheckBox->isChecked() || !m_pDiscardCheckBox->isVisible())
+        if (!m_pCheckBoxDiscard->isChecked() || !m_pCheckBoxDiscard->isVisible())
             setResult(MachineCloseAction_PowerOff);
         else
             setResult(MachineCloseAction_PowerOff_RestoringSnapshot);
@@ -108,7 +205,7 @@ void UIVMCloseDialog::accept()
     MachineCloseAction newCloseAction = static_cast<MachineCloseAction>(result());
     /* But make sure 'Shutdown' is preserved if temporary unavailable: */
     if (newCloseAction == MachineCloseAction_PowerOff &&
-        m_lastCloseAction == MachineCloseAction_Shutdown && !m_fIsACPIEnabled)
+        m_enmLastCloseAction == MachineCloseAction_Shutdown && !m_fIsACPIEnabled)
         newCloseAction = MachineCloseAction_Shutdown;
     gEDataManager->setLastMachineCloseAction(newCloseAction, vboxGlobal().managedVMUuid());
 
@@ -116,230 +213,312 @@ void UIVMCloseDialog::accept()
     hide();
 }
 
-void UIVMCloseDialog::setDetachButtonEnabled(bool fEnabled)
+void UIVMCloseDialog::setButtonEnabledDetach(bool fEnabled)
 {
-    m_pDetachIcon->setEnabled(fEnabled);
-    m_pDetachRadio->setEnabled(fEnabled);
+    m_pLabelIconDetach->setEnabled(fEnabled);
+    m_pRadioButtonDetach->setEnabled(fEnabled);
 }
 
-void UIVMCloseDialog::setDetachButtonVisible(bool fVisible)
+void UIVMCloseDialog::setButtonVisibleDetach(bool fVisible)
 {
-    m_pDetachIcon->setVisible(fVisible);
-    m_pDetachRadio->setVisible(fVisible);
+    m_pLabelIconDetach->setVisible(fVisible);
+    m_pRadioButtonDetach->setVisible(fVisible);
 }
 
-void UIVMCloseDialog::setSaveButtonEnabled(bool fEnabled)
+void UIVMCloseDialog::setButtonEnabledSave(bool fEnabled)
 {
-    m_pSaveIcon->setEnabled(fEnabled);
-    m_pSaveRadio->setEnabled(fEnabled);
+    m_pLabelIconSave->setEnabled(fEnabled);
+    m_pRadioButtonSave->setEnabled(fEnabled);
 }
 
-void UIVMCloseDialog::setSaveButtonVisible(bool fVisible)
+void UIVMCloseDialog::setButtonVisibleSave(bool fVisible)
 {
-    m_pSaveIcon->setVisible(fVisible);
-    m_pSaveRadio->setVisible(fVisible);
+    m_pLabelIconSave->setVisible(fVisible);
+    m_pRadioButtonSave->setVisible(fVisible);
 }
 
-void UIVMCloseDialog::setShutdownButtonEnabled(bool fEnabled)
+void UIVMCloseDialog::setButtonEnabledShutdown(bool fEnabled)
 {
-    m_pShutdownIcon->setEnabled(fEnabled);
-    m_pShutdownRadio->setEnabled(fEnabled);
+    m_pLabelIconShutdown->setEnabled(fEnabled);
+    m_pRadioButtonShutdown->setEnabled(fEnabled);
 }
 
-void UIVMCloseDialog::setShutdownButtonVisible(bool fVisible)
+void UIVMCloseDialog::setButtonVisibleShutdown(bool fVisible)
 {
-    m_pShutdownIcon->setVisible(fVisible);
-    m_pShutdownRadio->setVisible(fVisible);
+    m_pLabelIconShutdown->setVisible(fVisible);
+    m_pRadioButtonShutdown->setVisible(fVisible);
 }
 
-void UIVMCloseDialog::setPowerOffButtonEnabled(bool fEnabled)
+void UIVMCloseDialog::setButtonEnabledPowerOff(bool fEnabled)
 {
-    m_pPowerOffIcon->setEnabled(fEnabled);
-    m_pPowerOffRadio->setEnabled(fEnabled);
+    m_pLabelIconPowerOff->setEnabled(fEnabled);
+    m_pRadioButtonPowerOff->setEnabled(fEnabled);
 }
 
-void UIVMCloseDialog::setPowerOffButtonVisible(bool fVisible)
+void UIVMCloseDialog::setButtonVisiblePowerOff(bool fVisible)
 {
-    m_pPowerOffIcon->setVisible(fVisible);
-    m_pPowerOffRadio->setVisible(fVisible);
+    m_pLabelIconPowerOff->setVisible(fVisible);
+    m_pRadioButtonPowerOff->setVisible(fVisible);
 }
 
-void UIVMCloseDialog::setDiscardCheckBoxVisible(bool fVisible)
+void UIVMCloseDialog::setCheckBoxVisibleDiscard(bool fVisible)
 {
-    m_pDiscardCheckBox->setVisible(fVisible);
+    m_pCheckBoxDiscard->setVisible(fVisible);
 }
 
 void UIVMCloseDialog::prepare()
 {
-    /* Prepare 'main' layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    /* Choose default dialog icon: */
+    m_icon = UIIconPool::iconSet(":/os_unknown.png");
+
+    /* Prepare size-grip token: */
+    setSizeGripEnabled(false);
+
+    /* Prepare main layout: */
+    prepareMainLayout();
+
+    /* Update pixmaps: */
+    updatePixmaps();
+
+    /* Configure: */
+    configure();
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIVMCloseDialog::prepareMainLayout()
+{
+    /* Create main layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    if (m_pMainLayout)
     {
         /* Configure layout: */
 #ifdef VBOX_WS_MAC
-        pMainLayout->setContentsMargins(40, 20, 40, 20);
-        pMainLayout->setSpacing(15);
+        m_pMainLayout->setContentsMargins(40, 20, 40, 20);
+        m_pMainLayout->setSpacing(15);
 #else
-        pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) * 2);
+        m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) * 2);
 #endif
 
-        /* Prepare 'top' layout: */
-        QHBoxLayout *pTopLayout = new QHBoxLayout;
-        {
-            /* Configure layout: */
-#ifdef VBOX_WS_MAC
-            pTopLayout->setSpacing(20);
-#else
-            pTopLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) * 2);
-#endif
+        /* Prepare top layout: */
+        prepareTopLayout();
 
-            /* Prepare 'top-left' layout: */
-            QVBoxLayout *pTopLeftLayout = new QVBoxLayout;
-            {
-                /* Prepare 'icon': */
-                m_pIcon = new QLabel(this);
-                {
-                    /* Configure icon: */
-                    m_pIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-                    const QIcon icon = UIIconPool::iconSet(":/os_unknown.png");
-                    m_pIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
-                }
-
-                /* Add into layout: */
-                pTopLeftLayout->addWidget(m_pIcon);
-                pTopLeftLayout->addStretch();
-            }
-            /* Prepare 'top-right' layout: */
-            QVBoxLayout *pTopRightLayout = new QVBoxLayout;
-            {
-                /* Configure layout: */
-#ifdef VBOX_WS_MAC
-                pTopRightLayout->setSpacing(10);
-#else
-                pTopRightLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing));
-#endif
-
-                /* Prepare 'text' label: */
-                m_pLabel = new QLabel(this);
-                /* Prepare 'choice' layout: */
-                QGridLayout *pChoiceLayout = new QGridLayout;
-                {
-                    /* Configure layout: */
-#ifdef VBOX_WS_MAC
-                    pChoiceLayout->setSpacing(10);
-#else
-                    pChoiceLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing));
-#endif
-
-                    /* Prepare icon metric: */
-                    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-                    /* Prepare 'detach' icon: */
-                    m_pDetachIcon = new QLabel(this);
-                    {
-                        /* Configure icon: */
-                        m_pDetachIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        const QIcon icon = UIIconPool::iconSet(":/vm_create_shortcut_16px.png");
-                        m_pDetachIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
-                    }
-                    /* Prepare 'detach' radio-button: */
-                    m_pDetachRadio = new QRadioButton(this);
-                    {
-                        /* Configure button: */
-                        m_pDetachRadio->installEventFilter(this);
-                        connect(m_pDetachRadio, SIGNAL(toggled(bool)), this, SLOT(sltUpdateWidgetAvailability()));
-                    }
-                    /* Prepare 'save' icon: */
-                    m_pSaveIcon = new QLabel(this);
-                    {
-                        /* Configure icon: */
-                        m_pSaveIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        const QIcon icon = UIIconPool::iconSet(":/vm_save_state_16px.png");
-                        m_pSaveIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
-                    }
-                    /* Prepare 'save' radio-button: */
-                    m_pSaveRadio = new QRadioButton(this);
-                    {
-                        /* Configure button: */
-                        m_pSaveRadio->installEventFilter(this);
-                        connect(m_pSaveRadio, SIGNAL(toggled(bool)), this, SLOT(sltUpdateWidgetAvailability()));
-                    }
-                    /* Prepare 'shutdown' icon: */
-                    m_pShutdownIcon = new QLabel(this);
-                    {
-                        /* Configure icon: */
-                        m_pShutdownIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        const QIcon icon = UIIconPool::iconSet(":/vm_shutdown_16px.png");
-                        m_pShutdownIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
-                    }
-                    /* Prepare 'shutdown' radio-button: */
-                    m_pShutdownRadio = new QRadioButton(this);
-                    {
-                        /* Configure button: */
-                        m_pShutdownRadio->installEventFilter(this);
-                        connect(m_pShutdownRadio, SIGNAL(toggled(bool)), this, SLOT(sltUpdateWidgetAvailability()));
-                    }
-                    /* Prepare 'power-off' icon: */
-                    m_pPowerOffIcon = new QLabel(this);
-                    {
-                        /* Configure icon: */
-                        m_pPowerOffIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        const QIcon icon = UIIconPool::iconSet(":/vm_poweroff_16px.png");
-                        m_pPowerOffIcon->setPixmap(icon.pixmap(iIconMetric, iIconMetric));
-                    }
-                    /* Prepare 'shutdown' radio-button: */
-                    m_pPowerOffRadio = new QRadioButton(this);
-                    {
-                        /* Configure button: */
-                        m_pPowerOffRadio->installEventFilter(this);
-                        connect(m_pPowerOffRadio, SIGNAL(toggled(bool)), this, SLOT(sltUpdateWidgetAvailability()));
-                    }
-                    /* Prepare 'discard' check-box: */
-                    m_pDiscardCheckBox = new QCheckBox(this);
-
-                    /* Add into layout: */
-                    pChoiceLayout->addWidget(m_pDetachIcon, 0, 0);
-                    pChoiceLayout->addWidget(m_pDetachRadio, 0, 1);
-                    pChoiceLayout->addWidget(m_pSaveIcon, 1, 0);
-                    pChoiceLayout->addWidget(m_pSaveRadio, 1, 1);
-                    pChoiceLayout->addWidget(m_pShutdownIcon, 2, 0);
-                    pChoiceLayout->addWidget(m_pShutdownRadio, 2, 1);
-                    pChoiceLayout->addWidget(m_pPowerOffIcon, 3, 0);
-                    pChoiceLayout->addWidget(m_pPowerOffRadio, 3, 1);
-                    pChoiceLayout->addWidget(m_pDiscardCheckBox, 4, 1);
-                }
-
-                /* Add into layout: */
-                pTopRightLayout->addWidget(m_pLabel);
-                pTopRightLayout->addItem(pChoiceLayout);
-            }
-
-            /* Add into layout: */
-            pTopLayout->addItem(pTopLeftLayout);
-            pTopLayout->addItem(pTopRightLayout);
-        }
+        /* Add stretch between top and bottom: */
+        m_pMainLayout->addStretch(1);
 
         /* Prepare button-box: */
-        QIDialogButtonBox *pButtonBox = new QIDialogButtonBox(this);
+        prepareButtonBox();
+    }
+}
+
+void UIVMCloseDialog::prepareTopLayout()
+{
+    /* Create top layout: */
+    m_pTopLayout = new QHBoxLayout;
+    if (m_pTopLayout)
+    {
+        /* Configure layout: */
+#ifdef VBOX_WS_MAC
+        m_pTopLayout->setSpacing(20);
+#else
+        m_pTopLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) * 2);
+#endif
+
+        /* Prepare top-left layout: */
+        prepareTopLeftLayout();
+        /* Prepare top-right layout: */
+        prepareTopRightLayout();
+
+        /* Add into layout: */
+        m_pMainLayout->addLayout(m_pTopLayout);
+    }
+}
+
+void UIVMCloseDialog::prepareTopLeftLayout()
+{
+    /* Create top-left layout: */
+    m_pTopLeftLayout = new QVBoxLayout;
+    if (m_pTopLeftLayout)
+    {
+        /* Create icon label: */
+        m_pLabelIcon = new QLabel;
+        if (m_pLabelIcon)
         {
-            /* Configure button-box: */
-            pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Help | QDialogButtonBox::NoButton | QDialogButtonBox::Ok);
-            connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-            connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
-            connect(pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
+            /* Configure label: */
+            m_pLabelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+            /* Add into layout: */
+            m_pTopLeftLayout->addWidget(m_pLabelIcon);
+        }
+
+        /* Add vertical stretch under icon label: */
+        m_pTopLeftLayout->addStretch();
+
+        /* Add into layout: */
+        m_pTopLayout->addLayout(m_pTopLeftLayout);
+    }
+}
+
+void UIVMCloseDialog::prepareTopRightLayout()
+{
+    /* Create top-right layout: */
+    m_pTopRightLayout = new QVBoxLayout;
+    if (m_pTopRightLayout)
+    {
+        /* Configure layout: */
+#ifdef VBOX_WS_MAC
+        m_pTopRightLayout->setSpacing(10);
+#else
+        m_pTopRightLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing));
+#endif
+
+        /* Create text label: */
+        m_pLabelText = new QLabel;
+        if (m_pLabelText)
+        {
+            /* Add into layout: */
+            m_pTopRightLayout->addWidget(m_pLabelText);
+        }
+
+        /* Prepare choice layout: */
+        prepareChoiceLayout();
+
+        /* Add into layout: */
+        m_pTopLayout->addLayout(m_pTopRightLayout);
+    }
+}
+
+void UIVMCloseDialog::prepareChoiceLayout()
+{
+    /* Create 'choice' layout: */
+    m_pChoiceLayout = new QGridLayout;
+    if (m_pChoiceLayout)
+    {
+        /* Configure layout: */
+#ifdef VBOX_WS_MAC
+        m_pChoiceLayout->setSpacing(10);
+#else
+        m_pChoiceLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing));
+#endif
+
+        /* Create 'detach' icon label: */
+        m_pLabelIconDetach = new QLabel;
+        if (m_pLabelIconDetach)
+        {
+            /* Configure label: */
+            m_pLabelIconDetach->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            /* Add into layout: */
+            m_pChoiceLayout->addWidget(m_pLabelIconDetach, 0, 0);
+        }
+        /* Create 'detach' radio-button: */
+        m_pRadioButtonDetach = new QRadioButton;
+        if (m_pRadioButtonDetach)
+        {
+            /* Configure button: */
+            m_pRadioButtonDetach->installEventFilter(this);
+            connect(m_pRadioButtonDetach, &QRadioButton::toggled, this, &UIVMCloseDialog::sltUpdateWidgetAvailability);
+            /* Add into layout: */
+            m_pChoiceLayout->addWidget(m_pRadioButtonDetach, 0, 1);
+        }
+
+        /* Create 'save' icon label: */
+        m_pLabelIconSave = new QLabel;
+        if (m_pLabelIconSave)
+        {
+            /* Configure label: */
+            m_pLabelIconSave->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            /* Add into layout: */
+            m_pChoiceLayout->addWidget(m_pLabelIconSave, 1, 0);
+        }
+        /* Create 'save' radio-button: */
+        m_pRadioButtonSave = new QRadioButton;
+        if (m_pRadioButtonSave)
+        {
+            /* Configure button: */
+            m_pRadioButtonSave->installEventFilter(this);
+            connect(m_pRadioButtonSave, &QRadioButton::toggled, this, &UIVMCloseDialog::sltUpdateWidgetAvailability);
+            /* Add into layout: */
+            m_pChoiceLayout->addWidget(m_pRadioButtonSave, 1, 1);
+        }
+
+        /* Create 'shutdown' icon label: */
+        m_pLabelIconShutdown = new QLabel;
+        if (m_pLabelIconShutdown)
+        {
+            /* Configure label: */
+            m_pLabelIconShutdown->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            /* Add into layout: */
+            m_pChoiceLayout->addWidget(m_pLabelIconShutdown, 2, 0);
+        }
+        /* Create 'shutdown' radio-button: */
+        m_pRadioButtonShutdown = new QRadioButton;
+        if (m_pRadioButtonShutdown)
+        {
+            /* Configure button: */
+            m_pRadioButtonShutdown->installEventFilter(this);
+            connect(m_pRadioButtonShutdown, &QRadioButton::toggled, this, &UIVMCloseDialog::sltUpdateWidgetAvailability);
+            /* Add into layout: */
+            m_pChoiceLayout->addWidget(m_pRadioButtonShutdown, 2, 1);
+        }
+
+        /* Create 'power-off' icon label: */
+        m_pLabelIconPowerOff = new QLabel;
+        if (m_pLabelIconPowerOff)
+        {
+            /* Configure label: */
+            m_pLabelIconPowerOff->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            /* Add into layout: */
+            m_pChoiceLayout->addWidget(m_pLabelIconPowerOff, 3, 0);
+        }
+        /* Create 'shutdown' radio-button: */
+        m_pRadioButtonPowerOff = new QRadioButton;
+        if (m_pRadioButtonPowerOff)
+        {
+            /* Configure button: */
+            m_pRadioButtonPowerOff->installEventFilter(this);
+            connect(m_pRadioButtonPowerOff, &QRadioButton::toggled, this, &UIVMCloseDialog::sltUpdateWidgetAvailability);
+            /* Add into layout: */
+            m_pChoiceLayout->addWidget(m_pRadioButtonPowerOff, 3, 1);
+        }
+
+        /* Create 'discard' check-box: */
+        m_pCheckBoxDiscard = new QCheckBox;
+        if (m_pCheckBoxDiscard)
+        {
+            /* Add into layout: */
+            m_pChoiceLayout->addWidget(m_pCheckBoxDiscard, 4, 1);
         }
 
         /* Add into layout: */
-        pMainLayout->addItem(pTopLayout);
-        pMainLayout->addWidget(pButtonBox);
+        m_pTopRightLayout->addLayout(m_pChoiceLayout);
     }
-    /* Prepare size-grip token: */
-    setSizeGripEnabled(false);
+}
+
+void UIVMCloseDialog::prepareButtonBox()
+{
+    /* Create button-box: */
+    QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
+    if (pButtonBox)
+    {
+        /* Configure button-box: */
+        pButtonBox->setStandardButtons(  QDialogButtonBox::Cancel
+                                       | QDialogButtonBox::Help
+                                       | QDialogButtonBox::NoButton
+                                       | QDialogButtonBox::Ok);
+        connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIVMCloseDialog::accept);
+        connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMCloseDialog::reject);
+        connect(pButtonBox, &QIDialogButtonBox::helpRequested, &msgCenter(), &UIMessageCenter::sltShowHelpHelpDialog);
+
+        /* Add into layout: */
+        m_pMainLayout->addWidget(pButtonBox);
+    }
 }
 
 void UIVMCloseDialog::configure()
 {
     /* Get actual machine-state: */
-    KMachineState machineState = m_machine.GetState();
+    KMachineState machineState = m_comMachine.GetState();
 
     /* Check which close-actions are resticted: */
     bool fIsDetachAllowed = vboxGlobal().isSeparateProcess() && !(m_restictedCloseActions & MachineCloseAction_Detach);
@@ -349,64 +528,64 @@ void UIVMCloseDialog::configure()
     bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !(m_restictedCloseActions & MachineCloseAction_PowerOff_RestoringSnapshot);
 
     /* Make 'Detach' button visible/hidden depending on restriction: */
-    setDetachButtonVisible(fIsDetachAllowed);
+    setButtonVisibleDetach(fIsDetachAllowed);
     /* Make 'Detach' button enabled/disabled depending on machine-state: */
-    setDetachButtonEnabled(machineState != KMachineState_Stuck);
+    setButtonEnabledDetach(machineState != KMachineState_Stuck);
 
     /* Make 'Save state' button visible/hidden depending on restriction: */
-    setSaveButtonVisible(fIsStateSavingAllowed);
+    setButtonVisibleSave(fIsStateSavingAllowed);
     /* Make 'Save state' button enabled/disabled depending on machine-state: */
-    setSaveButtonEnabled(machineState != KMachineState_Stuck);
+    setButtonEnabledSave(machineState != KMachineState_Stuck);
 
     /* Make 'Shutdown' button visible/hidden depending on restriction: */
-    setShutdownButtonVisible(fIsACPIShutdownAllowed);
+    setButtonVisibleShutdown(fIsACPIShutdownAllowed);
     /* Make 'Shutdown' button enabled/disabled depending on console and machine-state: */
-    setShutdownButtonEnabled(m_fIsACPIEnabled && machineState != KMachineState_Stuck);
+    setButtonEnabledShutdown(m_fIsACPIEnabled && machineState != KMachineState_Stuck);
 
     /* Make 'Power off' button visible/hidden depending on restriction: */
-    setPowerOffButtonVisible(fIsPowerOffAllowed);
+    setButtonVisiblePowerOff(fIsPowerOffAllowed);
     /* Make the Restore Snapshot checkbox visible/hidden depending on snapshot count & restrictions: */
-    setDiscardCheckBoxVisible(fIsPowerOffAndRestoreAllowed && m_machine.GetSnapshotCount() > 0);
+    setCheckBoxVisibleDiscard(fIsPowerOffAndRestoreAllowed && m_comMachine.GetSnapshotCount() > 0);
     /* Assign Restore Snapshot checkbox text: */
-    if (!m_machine.GetCurrentSnapshot().isNull())
-        m_strDiscardCheckBoxText = m_machine.GetCurrentSnapshot().GetName();
+    if (!m_comMachine.GetCurrentSnapshot().isNull())
+        m_strDiscardCheckBoxText = m_comMachine.GetCurrentSnapshot().GetName();
 
     /* Check which radio-button should be initially chosen: */
     QRadioButton *pRadioButtonToChoose = 0;
     /* If choosing 'last choice' is possible: */
-    m_lastCloseAction = gEDataManager->lastMachineCloseAction(vboxGlobal().managedVMUuid());
-    if (m_lastCloseAction == MachineCloseAction_Detach && fIsDetachAllowed)
+    m_enmLastCloseAction = gEDataManager->lastMachineCloseAction(vboxGlobal().managedVMUuid());
+    if (m_enmLastCloseAction == MachineCloseAction_Detach && fIsDetachAllowed)
     {
-        pRadioButtonToChoose = m_pDetachRadio;
+        pRadioButtonToChoose = m_pRadioButtonDetach;
     }
-    else if (m_lastCloseAction == MachineCloseAction_SaveState && fIsStateSavingAllowed)
+    else if (m_enmLastCloseAction == MachineCloseAction_SaveState && fIsStateSavingAllowed)
     {
-        pRadioButtonToChoose = m_pSaveRadio;
+        pRadioButtonToChoose = m_pRadioButtonSave;
     }
-    else if (m_lastCloseAction == MachineCloseAction_Shutdown && fIsACPIShutdownAllowed && m_fIsACPIEnabled)
+    else if (m_enmLastCloseAction == MachineCloseAction_Shutdown && fIsACPIShutdownAllowed && m_fIsACPIEnabled)
     {
-        pRadioButtonToChoose = m_pShutdownRadio;
+        pRadioButtonToChoose = m_pRadioButtonShutdown;
     }
-    else if (m_lastCloseAction == MachineCloseAction_PowerOff && fIsPowerOffAllowed)
+    else if (m_enmLastCloseAction == MachineCloseAction_PowerOff && fIsPowerOffAllowed)
     {
-        pRadioButtonToChoose = m_pPowerOffRadio;
+        pRadioButtonToChoose = m_pRadioButtonPowerOff;
     }
-    else if (m_lastCloseAction == MachineCloseAction_PowerOff_RestoringSnapshot && fIsPowerOffAndRestoreAllowed)
+    else if (m_enmLastCloseAction == MachineCloseAction_PowerOff_RestoringSnapshot && fIsPowerOffAndRestoreAllowed)
     {
-        pRadioButtonToChoose = m_pPowerOffRadio;
-        m_pDiscardCheckBox->setChecked(true);
+        pRadioButtonToChoose = m_pRadioButtonPowerOff;
+        m_pCheckBoxDiscard->setChecked(true);
     }
     /* Else 'default choice' will be used: */
     else
     {
         if (fIsDetachAllowed)
-            pRadioButtonToChoose = m_pDetachRadio;
+            pRadioButtonToChoose = m_pRadioButtonDetach;
         else if (fIsStateSavingAllowed)
-            pRadioButtonToChoose = m_pSaveRadio;
+            pRadioButtonToChoose = m_pRadioButtonSave;
         else if (fIsACPIShutdownAllowed && m_fIsACPIEnabled)
-            pRadioButtonToChoose = m_pShutdownRadio;
+            pRadioButtonToChoose = m_pRadioButtonShutdown;
         else if (fIsPowerOffAllowed)
-            pRadioButtonToChoose = m_pPowerOffRadio;
+            pRadioButtonToChoose = m_pRadioButtonPowerOff;
     }
 
     /* If some radio-button chosen: */
@@ -420,70 +599,22 @@ void UIVMCloseDialog::configure()
     }
 }
 
-void UIVMCloseDialog::retranslateUi()
+void UIVMCloseDialog::updatePixmaps()
 {
-    /* Translate title: */
-    setWindowTitle(tr("Close Virtual Machine"));
+    /* Acquire hints: */
+    const int iMetricSmall = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    const int iMetricLarge = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
 
-    /* Translate 'text' label: */
-    m_pLabel->setText(tr("You want to:"));
+    /* Re-apply pixmap: */
+    m_pLabelIcon->setPixmap(m_icon.pixmap(windowHandle(), QSize(iMetricLarge, iMetricLarge)));
 
-    /* Translate radio-buttons: */
-    m_pDetachRadio->setText(tr("&Continue running in the background"));
-    m_pDetachRadio->setWhatsThis(tr("<p>Close the virtual machine windows but keep the virtual machine running.</p>"
-                                    "<p>You can use the VirtualBox Manager to return to running the virtual machine in a window.</p>"));
-    m_pSaveRadio->setText(tr("&Save the machine state"));
-    m_pSaveRadio->setWhatsThis(tr("<p>Saves the current execution state of the virtual machine to the physical hard disk of the host PC.</p>"
-                                  "<p>Next time this machine is started, it will be restored from the saved state and continue execution "
-                                  "from the same place you saved it at, which will let you continue your work immediately.</p>"
-                                  "<p>Note that saving the machine state may take a long time, depending on the guest operating "
-                                  "system type and the amount of memory you assigned to the virtual machine.</p>"));
-    m_pShutdownRadio->setText(tr("S&end the shutdown signal"));
-    m_pShutdownRadio->setWhatsThis(tr("<p>Sends the ACPI Power Button press event to the virtual machine.</p>"
-                                      "<p>Normally, the guest operating system running inside the virtual machine will detect this event "
-                                      "and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine "
-                                      "because all applications running inside it will get a chance to save their data and state.</p>"
-                                      "<p>If the machine doesn't respond to this action then the guest operating system may be misconfigured "
-                                      "or doesn't understand ACPI Power Button events at all. In this case you should select the "
-                                      "<b>Power off the machine</b> action to stop virtual machine execution.</p>"));
-    m_pPowerOffRadio->setText(tr("&Power off the machine"));
-    m_pPowerOffRadio->setWhatsThis(tr("<p>Turns off the virtual machine.</p>"
-                                      "<p>Note that this action will stop machine execution immediately so that the guest operating system "
-                                      "running inside it will not be able to perform a clean shutdown procedure which may result in "
-                                      "<i>data loss</i> inside the virtual machine. Selecting this action is recommended only if the "
-                                      "virtual machine does not respond to the <b>Send the shutdown signal</b> action.</p>"));
-    m_pDiscardCheckBox->setText(tr("&Restore current snapshot '%1'").arg(m_strDiscardCheckBoxText));
-    m_pDiscardCheckBox->setToolTip(tr("Restore the machine state stored in the current snapshot"));
-    m_pDiscardCheckBox->setWhatsThis(tr("<p>When checked, the machine will be returned to the state stored in the current snapshot after "
-                                        "it is turned off. This is useful if you are sure that you want to discard the results of your "
-                                        "last sessions and start again at that snapshot.</p>"));
+    QIcon icon;
+    icon = UIIconPool::iconSet(":/vm_create_shortcut_16px.png");
+    m_pLabelIconDetach->setPixmap(icon.pixmap(windowHandle(), QSize(iMetricSmall, iMetricSmall)));
+    icon = UIIconPool::iconSet(":/vm_save_state_16px.png");
+    m_pLabelIconSave->setPixmap(icon.pixmap(windowHandle(), QSize(iMetricSmall, iMetricSmall)));
+    icon = UIIconPool::iconSet(":/vm_shutdown_16px.png");
+    m_pLabelIconShutdown->setPixmap(icon.pixmap(windowHandle(), QSize(iMetricSmall, iMetricSmall)));
+    icon = UIIconPool::iconSet(":/vm_poweroff_16px.png");
+    m_pLabelIconPowerOff->setPixmap(icon.pixmap(windowHandle(), QSize(iMetricSmall, iMetricSmall)));
 }
-
-bool UIVMCloseDialog::eventFilter(QObject *pWatched, QEvent *pEvent)
-{
-    /* For now we are interested in double-click events only: */
-    if (pEvent->type() == QEvent::MouseButtonDblClick)
-    {
-        /* Make sure its one of the radio-buttons
-         * which has this event-filter installed: */
-        if (qobject_cast<QRadioButton*>(pWatched))
-        {
-            /* Since on double-click the button will be also selected
-             * we are just calling for the *accept* slot: */
-            accept();
-        }
-    }
-
-    /* Call to base-class: */
-    return QIWithRetranslateUI<QIDialog>::eventFilter(pWatched, pEvent);
-}
-
-void UIVMCloseDialog::polishEvent(QShowEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIDialog::polishEvent(pEvent);
-
-    /* Make the dialog-size fixed: */
-    setFixedSize(size());
-}
-
