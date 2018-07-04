@@ -11894,32 +11894,27 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = VINF_SUCCESS;
 
-    /* EMInterpretWrmsr() requires CR0, EFLAGS and SS segment register. FS, GS (base) can be accessed by MSR writes. */
-    rc  = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_CR0
-                                         | CPUMCTX_EXTRN_RFLAGS
-                                         | CPUMCTX_EXTRN_SS
-                                         | CPUMCTX_EXTRN_FS
-                                         | CPUMCTX_EXTRN_GS);
-    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
-        rc |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
+    /** @todo Optimize this: We currently drag in in the whole MSR state
+     * (CPUMCTX_EXTRN_ALL_MSRS) here.  We should optimize this to only get
+     * MSRs required.  That would require changes to IEM and possibly CPUM too.
+     * (Should probably do it lazy fashion from CPUMAllMsrs.cpp). */
+    uint32_t const idMsr = pMixedCtx->ecx; /* Save it. */
+    int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_ALL_MSRS);
     AssertRCReturn(rc, rc);
-    Log4Func(("ecx=%#RX32 edx:eax=%#RX32:%#RX32\n", pMixedCtx->ecx, pMixedCtx->edx, pMixedCtx->eax));
 
-    rc = EMInterpretWrmsr(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
-    AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER, ("hmR0VmxExitWrmsr: failed, invalid error code %Rrc\n", rc));
+    Log4Func(("ecx=%#RX32 edx:eax=%#RX32:%#RX32\n", idMsr, pMixedCtx->edx, pMixedCtx->eax));
+
+    VBOXSTRICTRC rcStrict = IEMExecDecodedWrmsr(pVCpu, pVmxTransient->cbInstr);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
 
-    if (RT_SUCCESS(rc))
+    if (rcStrict == VINF_SUCCESS)
     {
-        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
-
         /* If this is an X2APIC WRMSR access, update the APIC state as well. */
-        if (    pMixedCtx->ecx == MSR_IA32_APICBASE
-            || (   pMixedCtx->ecx >= MSR_IA32_X2APIC_START
-                && pMixedCtx->ecx <= MSR_IA32_X2APIC_END))
+        if (    idMsr == MSR_IA32_APICBASE
+            || (   idMsr >= MSR_IA32_X2APIC_START
+                && idMsr <= MSR_IA32_X2APIC_END))
         {
             /*
              * We've already saved the APIC related guest-state (TPR) in hmR0VmxPostRunGuest(). When full APIC register
@@ -11928,9 +11923,9 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
              */
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
         }
-        else if (pMixedCtx->ecx == MSR_IA32_TSC)        /* Windows 7 does this during bootup. See @bugref{6398}. */
+        else if (idMsr == MSR_IA32_TSC)        /* Windows 7 does this during bootup. See @bugref{6398}. */
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
-        else if (pMixedCtx->ecx == MSR_K6_EFER)
+        else if (idMsr == MSR_K6_EFER)
         {
             /*
              * If the guest touches EFER we need to update the VM-Entry and VM-Exit controls as well,
@@ -11945,7 +11940,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         /* Update MSRs that are part of the VMCS and auto-load/store area when MSR-bitmaps are not supported. */
         if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
         {
-            switch (pMixedCtx->ecx)
+            switch (idMsr)
             {
                 case MSR_IA32_SYSENTER_CS:  ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_SYSENTER_CS_MSR);   break;
                 case MSR_IA32_SYSENTER_EIP: ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_SYSENTER_EIP_MSR);  break;
@@ -11955,9 +11950,9 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 case MSR_K6_EFER:           /* Nothing to do, already handled above. */ break;
                 default:
                 {
-                    if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
+                    if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, idMsr))
                         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
-                    else if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
+                    else if (hmR0VmxIsLazyGuestMsr(pVCpu, idMsr))
                         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_VMX_GUEST_LAZY_MSRS);
                     break;
                 }
@@ -11967,7 +11962,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         else
         {
             /* Paranoia. Validate that MSRs in the MSR-bitmaps with write-passthru are not intercepted. */
-            switch (pMixedCtx->ecx)
+            switch (idMsr)
             {
                 case MSR_IA32_SYSENTER_CS:
                 case MSR_IA32_SYSENTER_EIP:
@@ -11975,33 +11970,33 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 case MSR_K8_FS_BASE:
                 case MSR_K8_GS_BASE:
                 {
-                    AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
+                    AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%#RX32\n", idMsr));
                     HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
                 }
 
                 /* Writes to MSRs in auto-load/store area/swapped MSRs, shouldn't cause VM-exits with MSR-bitmaps. */
                 default:
                 {
-                    if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx))
+                    if (hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, idMsr))
                     {
                         /* EFER writes are always intercepted, see hmR0VmxExportGuestMsrs(). */
-                        if (pMixedCtx->ecx != MSR_K6_EFER)
+                        if (idMsr != MSR_K6_EFER)
                         {
                             AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
-                                             pMixedCtx->ecx));
+                                             idMsr));
                             HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
                         }
                     }
 
-                    if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
+                    if (hmR0VmxIsLazyGuestMsr(pVCpu, idMsr))
                     {
                         VMXMSREXITREAD  enmRead;
                         VMXMSREXITWRITE enmWrite;
-                        int rc2 = hmR0VmxGetMsrPermission(pVCpu, pMixedCtx->ecx, &enmRead, &enmWrite);
+                        int rc2 = hmR0VmxGetMsrPermission(pVCpu, idMsr, &enmRead, &enmWrite);
                         AssertRCReturn(rc2, rc2);
                         if (enmWrite == VMXMSREXIT_PASSTHRU_WRITE)
                         {
-                            AssertMsgFailed(("Unexpected WRMSR for passthru, lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
+                            AssertMsgFailed(("Unexpected WRMSR for passthru, lazy-restore MSR. ecx=%#RX32\n", idMsr));
                             HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
                         }
                     }
@@ -12011,7 +12006,12 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         }
 #endif  /* VBOX_STRICT */
     }
-    return rc;
+    else
+        AssertMsg(   rcStrict == VINF_CPUM_R3_MSR_WRITE
+                  || rcStrict == VINF_IEM_RAISED_XCPT,
+                  ("Unexpected IEMExecDecodedWrmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+    return rcStrict;
 }
 
 

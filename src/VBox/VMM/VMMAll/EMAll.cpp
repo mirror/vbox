@@ -2133,39 +2133,6 @@ VMM_INT_DECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
 
 
 /**
- * Interpret WRMSR
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   The register frame.
- */
-VMM_INT_DECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
-{
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-
-    /* Check the current privilege level, this instruction is supervisor only. */
-    if (CPUMGetGuestCPL(pVCpu) != 0)
-    {
-        Log4(("EM: Refuse WRMSR: CPL != 0\n"));
-        return VERR_EM_INTERPRETER; /** @todo raise \#GP(0) */
-    }
-
-    VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pRegFrame->ecx, RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx));
-    if (rcStrict != VINF_SUCCESS)
-    {
-        Log4(("EM: Refuse WRMSR: CPUMSetGuestMsr returned %Rrc\n",  VBOXSTRICTRC_VAL(rcStrict)));
-        Assert(rcStrict == VERR_CPUM_RAISE_GP_0 || rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_CPUM_R3_MSR_WRITE);
-        return VERR_EM_INTERPRETER;
-    }
-    LogFlow(("EMInterpretWrmsr %s (%x) val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx,
-             RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx)));
-    NOREF(pVM);
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Interpret DRx write.
  *
  * @returns VBox status code.
@@ -4247,7 +4214,26 @@ static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
 static int emInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     NOREF(pDis); NOREF(pvFault); NOREF(pcbSize);
-    return EMInterpretWrmsr(pVM, pVCpu, pRegFrame);
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
+
+    /* Check the current privilege level, this instruction is supervisor only. */
+    if (CPUMGetGuestCPL(pVCpu) != 0)
+    {
+        Log4(("EM: Refuse WRMSR: CPL != 0\n"));
+        return VERR_EM_INTERPRETER; /** @todo raise \#GP(0) */
+    }
+
+    VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pRegFrame->ecx, RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx));
+    if (rcStrict != VINF_SUCCESS)
+    {
+        Log4(("EM: Refuse WRMSR: CPUMSetGuestMsr returned %Rrc\n",  VBOXSTRICTRC_VAL(rcStrict)));
+        Assert(rcStrict == VERR_CPUM_RAISE_GP_0 || rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_CPUM_R3_MSR_WRITE);
+        return VERR_EM_INTERPRETER;
+    }
+    LogFlow(("EMInterpretWrmsr %s (%x) val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx,
+             RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx)));
+    NOREF(pVM);
+    return VINF_SUCCESS;
 }
 
 

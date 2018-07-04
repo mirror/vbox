@@ -6726,20 +6726,25 @@ static int hmR0SvmExitReadMsr(PVMCPU pVCpu, PSVMVMCB pVmcb)
 static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmTransient)
 {
     PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
+    uint32_t const idMsr = pCtx->ecx;
+    /** @todo Optimize this: We don't need to get much of the MSR state here
+     * since we're only updating.  CPUMAllMsrs.cpp can ask for what it needs and
+     * clear the applicable extern flags. */
     HMSVM_CPUMCTX_IMPORT_STATE(pVCpu,   CPUMCTX_EXTRN_CR0
                                       | CPUMCTX_EXTRN_RFLAGS
                                       | CPUMCTX_EXTRN_SS
-                                      | CPUMCTX_EXTRN_ALL_MSRS);
+                                      | CPUMCTX_EXTRN_ALL_MSRS
+                                      | IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
-    Log4Func(("idMsr=%#RX32\n", pCtx->ecx));
+    Log4Func(("idMsr=%#RX32\n", idMsr));
 
     /*
      * Handle TPR patching MSR writes.
      * We utilitize the LSTAR MSR for patching.
      */
     if (   pVCpu->CTX_SUFF(pVM)->hm.s.fTPRPatchingActive
-        && pCtx->ecx == MSR_K8_LSTAR)
+        && idMsr == MSR_K8_LSTAR)
     {
         if ((pCtx->eax & 0xff) != pSvmTransient->u8GuestTpr)
         {
@@ -6758,36 +6763,34 @@ static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmT
     /*
      * Handle regular MSR writes.
      */
-    int rc;
+    VBOXSTRICTRC rcStrict;
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
     if (fSupportsNextRipSave)
     {
-        rc = EMInterpretWrmsr(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
-        if (RT_LIKELY(rc == VINF_SUCCESS))
-        {
-            pCtx->rip = pVmcb->ctrl.u64NextRIP;
-            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
-        }
+        rcStrict = IEMExecDecodedWrmsr(pVCpu, pVmcb->ctrl.u64NextRIP - pCtx->rip);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
         else
-            AssertMsg(   rc == VERR_EM_INTERPRETER
-                      || rc == VINF_CPUM_R3_MSR_WRITE, ("hmR0SvmExitMsr: EMInterpretWrmsr failed rc=%Rrc\n", rc));
+            AssertMsg(   rcStrict == VINF_IEM_RAISED_XCPT
+                      || rcStrict == VINF_CPUM_R3_MSR_WRITE,
+                      ("Unexpected IEMExecDecodedWrmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
     else
     {
-        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
-        rc = VBOXSTRICTRC_TODO(EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */));
-        if (RT_LIKELY(rc == VINF_SUCCESS))
-            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);     /* RIP updated by EMInterpretInstruction(). */
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        rcStrict = IEMExecOne(pVCpu);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);     /* RIP updated by EMInterpretInstruction(). */
         else
-            AssertMsg(   rc == VERR_EM_INTERPRETER
-                      || rc == VINF_CPUM_R3_MSR_WRITE, ("hmR0SvmExitMsr: WrMsr. EMInterpretInstruction failed rc=%Rrc\n", rc));
+            AssertMsg(   rcStrict == VINF_IEM_RAISED_XCPT
+                      || rcStrict == VINF_CPUM_R3_MSR_WRITE, ("Unexpected IEMExecOne status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
 
-    if (rc == VINF_SUCCESS)
+    if (rcStrict == VINF_SUCCESS)
     {
         /* If this is an X2APIC WRMSR access, update the APIC TPR state. */
-        if (   pCtx->ecx >= MSR_IA32_X2APIC_START
-            && pCtx->ecx <= MSR_IA32_X2APIC_END)
+        if (   idMsr >= MSR_IA32_X2APIC_START
+            && idMsr <= MSR_IA32_X2APIC_END)
         {
             /*
              * We've already saved the APIC related guest-state (TPR) in hmR0SvmPostRunGuest().
@@ -6798,7 +6801,7 @@ static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmT
         }
         else
         {
-            switch (pCtx->ecx)
+            switch (idMsr)
             {
                 case MSR_IA32_TSC:          pSvmTransient->fUpdateTscOffsetting = true;                                     break;
                 case MSR_K6_EFER:           ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_EFER_MSR);          break;
@@ -6812,7 +6815,7 @@ static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmT
     }
 
     /* RIP has been updated by above after EMInterpretWrmsr() or by EMInterpretInstruction(). */
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 

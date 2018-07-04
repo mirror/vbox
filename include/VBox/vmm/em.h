@@ -323,7 +323,6 @@ VMM_INT_DECL(int)               EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMC
 VMM_INT_DECL(int)               EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen);
 VMM_INT_DECL(int)               EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx);
 VMM_INT_DECL(int)               EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
-VMM_INT_DECL(int)               EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 /** @} */
 
 /** @name Assembly routines
