@@ -154,9 +154,9 @@ void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
 
     int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
 #ifdef VBOX_WS_MAC
-    m_pClearAllButton->setGeometry(width() - clearButtonSize - 1, deltaHeight, clearButtonSize, clearButtonSize);
+    m_pClearAllButton->setGeometry(width() - clearButtonSize - 2, deltaHeight, clearButtonSize, clearButtonSize);
 #else
-    m_pClearAllButton->setGeometry(width() - clearButtonSize, deltaHeight, clearButtonSize, clearButtonSize);
+    m_pClearAllButton->setGeometry(width() - clearButtonSize - 1, deltaHeight, clearButtonSize, clearButtonSize);
 #endif
 
     /* If we have a selected term move the m_pRemoveTermButton to the end of the
@@ -170,7 +170,7 @@ void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
 #ifdef VBOX_WS_MAC
         int buttonLeft = cursorRect().left() + 1;
 #else
-        int buttonLeft = cursorRect().right() - 0.5 * charWidth;
+        int buttonLeft = cursorRect().right() - 0.9 * charWidth;
 #endif
         /* If buttonLeft is in far right of the line edit, move the
            button to left side of the selected word: */
