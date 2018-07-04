@@ -193,7 +193,6 @@ VBoxVMM_SOURCES  = \
 	VMMAll/PGMAllPool.cpp \
 	VMMAll/SELMAll.cpp \
 	VMMAll/EMAll.cpp \
-	VMMAll/EMAllA.asm \
 	VMMAll/FTMAll.cpp \
 	VMMAll/GIMAll.cpp \
 	VMMAll/GIMAllHv.cpp \
@@ -564,7 +563,6 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/IOMAll.cpp \
  	VMMAll/IOMAllMMIO.cpp \
  	VMMAll/EMAll.cpp \
- 	VMMAll/EMAllA.asm \
  	VMMAll/FTMAll.cpp \
  	VMMAll/GIMAll.cpp \
  	VMMAll/GIMAllHv.cpp \
@@ -711,7 +709,6 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMAll/CPUMStack.cpp \
  	VMMAll/DBGFAll.cpp \
  	VMMAll/EMAll.cpp \
- 	VMMAll/EMAllA.asm \
  	VMMAll/FTMAll.cpp \
  	VMMAll/GIMAll.cpp \
  	VMMAll/GIMAllHv.cpp \

@@ -40,7 +40,6 @@ if !defined(VBOX_ONLY_EXTPACKS) \
  INSTALLS += VMMLibDTraceStructTest
 endif
 ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
- PROGRAMS  += tstInstrEmul
  if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
   PROGRAMS += tstGlobalConfigHardened
   DLL      += tstGlobalConfig
@@ -115,15 +114,10 @@ endif
 TESTING += \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
-ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
- TESTING += \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run
-endif
 
 OTHER_CLEAN += \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o.dep \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac \
@@ -268,13 +262,6 @@ endif
 tstSSM_INCS             = $(VBOX_PATH_VMM_SRC)/include
 tstSSM_SOURCES          = tstSSM.cpp
 tstSSM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
-
-#
-# Test some EM assembly routines used in instruction emulation.
-#
-tstInstrEmul_TEMPLATE   = VBOXR3EXE
-tstInstrEmul_SOURCES    = tstInstrEmul.cpp ../VMMAll/EMAllA.asm
-tstInstrEmul_LIBS       = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 #
 # VMM configuration manager tests.
@@ -499,18 +486,6 @@ endif
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
-
-#
-# Run rule for tstInstrEmul.
-#
-$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run: $$(tstInstrEmul_1_STAGE_TARGET) | $$(dir $$@)
-	$(QUIET)$(RM) -f $@
-	$(QUIET)$(REDIRECT) -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
-		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
-		-- \
-		$(tstInstrEmul_1_STAGE_TARGET)
-	$(QUIET)$(APPEND) "$@" "done"
 
 
 #
