@@ -2044,60 +2044,6 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE
 }
 
 
-#ifdef LOG_ENABLED
-static const char *emMSRtoString(uint32_t uMsr)
-{
-    switch (uMsr)
-    {
-        case MSR_IA32_APICBASE:             return "MSR_IA32_APICBASE";
-        case MSR_IA32_CR_PAT:               return "MSR_IA32_CR_PAT";
-        case MSR_IA32_SYSENTER_CS:          return "MSR_IA32_SYSENTER_CS";
-        case MSR_IA32_SYSENTER_EIP:         return "MSR_IA32_SYSENTER_EIP";
-        case MSR_IA32_SYSENTER_ESP:         return "MSR_IA32_SYSENTER_ESP";
-        case MSR_K6_EFER:                   return "MSR_K6_EFER";
-        case MSR_K8_SF_MASK:                return "MSR_K8_SF_MASK";
-        case MSR_K6_STAR:                   return "MSR_K6_STAR";
-        case MSR_K8_LSTAR:                  return "MSR_K8_LSTAR";
-        case MSR_K8_CSTAR:                  return "MSR_K8_CSTAR";
-        case MSR_K8_FS_BASE:                return "MSR_K8_FS_BASE";
-        case MSR_K8_GS_BASE:                return "MSR_K8_GS_BASE";
-        case MSR_K8_KERNEL_GS_BASE:         return "MSR_K8_KERNEL_GS_BASE";
-        case MSR_K8_TSC_AUX:                return "MSR_K8_TSC_AUX";
-        case MSR_IA32_BIOS_SIGN_ID:         return "Unsupported MSR_IA32_BIOS_SIGN_ID";
-        case MSR_IA32_PLATFORM_ID:          return "Unsupported MSR_IA32_PLATFORM_ID";
-        case MSR_IA32_BIOS_UPDT_TRIG:       return "Unsupported MSR_IA32_BIOS_UPDT_TRIG";
-        case MSR_IA32_TSC:                  return "MSR_IA32_TSC";
-        case MSR_IA32_MISC_ENABLE:          return "MSR_IA32_MISC_ENABLE";
-        case MSR_IA32_MTRR_CAP:             return "MSR_IA32_MTRR_CAP";
-        case MSR_IA32_MCG_CAP:              return "Unsupported MSR_IA32_MCG_CAP";
-        case MSR_IA32_MCG_STATUS:           return "Unsupported MSR_IA32_MCG_STATUS";
-        case MSR_IA32_MCG_CTRL:             return "Unsupported MSR_IA32_MCG_CTRL";
-        case MSR_IA32_MTRR_DEF_TYPE:        return "MSR_IA32_MTRR_DEF_TYPE";
-        case MSR_K7_EVNTSEL0:               return "Unsupported MSR_K7_EVNTSEL0";
-        case MSR_K7_EVNTSEL1:               return "Unsupported MSR_K7_EVNTSEL1";
-        case MSR_K7_EVNTSEL2:               return "Unsupported MSR_K7_EVNTSEL2";
-        case MSR_K7_EVNTSEL3:               return "Unsupported MSR_K7_EVNTSEL3";
-        case MSR_IA32_MC0_CTL:              return "Unsupported MSR_IA32_MC0_CTL";
-        case MSR_IA32_MC0_STATUS:           return "Unsupported MSR_IA32_MC0_STATUS";
-        case MSR_IA32_PERFEVTSEL0:          return "Unsupported MSR_IA32_PERFEVTSEL0";
-        case MSR_IA32_PERFEVTSEL1:          return "Unsupported MSR_IA32_PERFEVTSEL1";
-        case MSR_IA32_PERF_STATUS:          return "MSR_IA32_PERF_STATUS";
-        case MSR_IA32_PLATFORM_INFO:        return "MSR_IA32_PLATFORM_INFO";
-        case MSR_IA32_PERF_CTL:             return "Unsupported MSR_IA32_PERF_CTL";
-        case MSR_K7_PERFCTR0:               return "Unsupported MSR_K7_PERFCTR0";
-        case MSR_K7_PERFCTR1:               return "Unsupported MSR_K7_PERFCTR1";
-        case MSR_K7_PERFCTR2:               return "Unsupported MSR_K7_PERFCTR2";
-        case MSR_K7_PERFCTR3:               return "Unsupported MSR_K7_PERFCTR3";
-        case MSR_IA32_PMC0:                 return "Unsupported MSR_IA32_PMC0";
-        case MSR_IA32_PMC1:                 return "Unsupported MSR_IA32_PMC1";
-        case MSR_IA32_PMC2:                 return "Unsupported MSR_IA32_PMC2";
-        case MSR_IA32_PMC3:                 return "Unsupported MSR_IA32_PMC3";
-    }
-    return "Unknown MSR";
-}
-#endif /* LOG_ENABLED */
-
-
 /**
  * Interpret DRx write.
  *
