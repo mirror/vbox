@@ -179,8 +179,8 @@ static void tstPDMACStressTestFileVerify(PPDMACTESTFILE pTestFile, PPDMACTESTFIL
         {
             unsigned idx = 0;
 
-            while (   (pbBuf[idx] == pbTestPattern[idx])
-                   && (idx < cbCompare))
+            while (   (idx < cbCompare)
+                   && (pbBuf[idx] == pbTestPattern[idx]))
                 idx++;
 
             RTMsgError("Unexpected data for off=%RTfoff size=%u\n"
