@@ -86,12 +86,11 @@ void UIFDCreationDialog::prepare()
 {
 
 #ifndef VBOX_WS_MAC
-    setWindowIcon(QIcon(":/vm_settings_16px.png"));
+    setWindowIcon(QIcon(":/fd_add_22px.png"));
 #endif
 
     setWindowModality(Qt::WindowModal);
     setSizeGripEnabled(false);
-
 
     QGridLayout *pMainLayout = new QGridLayout;
     if (!pMainLayout)
@@ -125,7 +124,7 @@ void UIFDCreationDialog::prepare()
     m_pSizeCombo = new QComboBox;
     if (m_pSizeCombo)
     {
-        pMainLayout->addWidget(m_pSizeCombo, 1, 1, 1, 2);
+        pMainLayout->addWidget(m_pSizeCombo, 1, 1, 1, 1);
         m_pSizeCombo->insertItem(FDSize_2_88M, "2.88M", 2949120);
         m_pSizeCombo->insertItem(FDSize_1_44M, "1.44M", 1474560);
         m_pSizeCombo->insertItem(FDSize_1_2M, "1.2M", 1228800);
