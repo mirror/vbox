@@ -89,10 +89,10 @@ private slots:
 private:
 
     void          createButtons();
-    QIToolButton *m_pRemoveTermButton;
-    QIToolButton *m_pClearAllButton;
-    const int     m_iRemoveTermButtonSize;
-    int           m_iTrailingSpaceCount;
+    QToolButton   *m_pRemoveTermButton;
+    QToolButton   *m_pClearAllButton;
+    const int      m_iRemoveTermButtonSize;
+    int            m_iTrailingSpaceCount;
 };
 
 
@@ -208,22 +208,28 @@ void UIVMFilterLineEdit::createButtons()
 {
     if (!m_pRemoveTermButton)
     {
-        m_pRemoveTermButton = new QIToolButton(this);
+        m_pRemoveTermButton = new QToolButton(this);
         if (m_pRemoveTermButton)
         {
             m_pRemoveTermButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_filter_16px.png"));
             m_pRemoveTermButton->hide();
             connect(m_pRemoveTermButton, &QIToolButton::clicked, this, &UIVMFilterLineEdit::sltRemoveFilterTerm);
+            const QSize sh = m_pRemoveTermButton->sizeHint();
+            m_pRemoveTermButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+            m_pRemoveTermButton->setFixedSize(sh);
         }
     }
 
     if (!m_pClearAllButton)
     {
-        m_pClearAllButton = new QIToolButton(this);
+        m_pClearAllButton = new QToolButton(this);
         if (m_pClearAllButton)
         {
             m_pClearAllButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_all_filters_16px.png"));
             connect(m_pClearAllButton, &QIToolButton::clicked, this, &UIVMFilterLineEdit::sltClearAll);
+            const QSize sh = m_pClearAllButton->sizeHint();
+            m_pClearAllButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+            m_pClearAllButton->setFixedSize(sh);
         }
     }
     if (!m_pRemoveTermButton && !m_pClearAllButton)
