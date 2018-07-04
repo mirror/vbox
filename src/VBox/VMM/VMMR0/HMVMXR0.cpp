@@ -370,8 +370,8 @@ typedef FNVMXEXITHANDLER            FNVMXEXITHANDLERNSRC;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush);
-static void               hmR0VmxFlushVpid(PVMCPU pVCpu, VMXFLUSHVPID enmFlush, RTGCPTR GCPtr);
+static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMXTLBFLUSHEPT enmTlbFlush);
+static void               hmR0VmxFlushVpid(PVMCPU pVCpu, VMXTLBFLUSHVPID enmTlbFlush, RTGCPTR GCPtr);
 static void               hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu);
 static int                hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat);
 static VBOXSTRICTRC       hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, uint32_t cbInstr, uint32_t u32ErrCode,
@@ -1121,7 +1121,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPag
     PVMXMSRS pMsrs = (PVMXMSRS)pvMsrs;
     if (pMsrs->u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
     {
-        hmR0VmxFlushEpt(NULL /* pVCpu */, VMXFLUSHEPT_ALL_CONTEXTS);
+        hmR0VmxFlushEpt(NULL /* pVCpu */, VMXTLBFLUSHEPT_ALL_CONTEXTS);
         pHostCpu->fFlushAsidBeforeUse = false;
     }
     else
@@ -1747,19 +1747,19 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
  * Flushes the TLB using EPT.
  *
  * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure of the calling
- *                      EMT.  Can be NULL depending on @a enmFlush.
- * @param   enmFlush    Type of flush.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling
+ *                          EMT.  Can be NULL depending on @a enmTlbFlush.
+ * @param   enmTlbFlush     Type of flush.
  *
  * @remarks Caller is responsible for making sure this function is called only
- *          when NestedPaging is supported and providing @a enmFlush that is
+ *          when NestedPaging is supported and providing @a enmTlbFlush that is
  *          supported by the CPU.
  * @remarks Can be called with interrupts disabled.
  */
-static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush)
+static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMXTLBFLUSHEPT enmTlbFlush)
 {
     uint64_t au64Descriptor[2];
-    if (enmFlush == VMXFLUSHEPT_ALL_CONTEXTS)
+    if (enmTlbFlush == VMXTLBFLUSHEPT_ALL_CONTEXTS)
         au64Descriptor[0] = 0;
     else
     {
@@ -1768,14 +1768,13 @@ static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush)
     }
     au64Descriptor[1] = 0;                       /* MBZ. Intel spec. 33.3 "VMX Instructions" */
 
-    int rc = VMXR0InvEPT(enmFlush, &au64Descriptor[0]);
-    AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %#x %RGv failed with %Rrc\n", enmFlush, pVCpu ? pVCpu->hm.s.vmx.HCPhysEPTP : 0,
-                                   rc));
+    int rc = VMXR0InvEPT(enmTlbFlush, &au64Descriptor[0]);
+    AssertMsg(rc == VINF_SUCCESS,
+              ("VMXR0InvEPT %#x %RGv failed with %Rrc\n", enmTlbFlush, pVCpu ? pVCpu->hm.s.vmx.HCPhysEPTP : 0, rc));
+
     if (   RT_SUCCESS(rc)
         && pVCpu)
-    {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushNestedPaging);
-    }
 }
 
 
@@ -1783,20 +1782,20 @@ static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMXFLUSHEPT enmFlush)
  * Flushes the TLB using VPID.
  *
  * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure of the calling
- *                      EMT.  Can be NULL depending on @a enmFlush.
- * @param   enmFlush    Type of flush.
- * @param   GCPtr       Virtual address of the page to flush (can be 0 depending
- *                      on @a enmFlush).
+ * @param   pVCpu           The cross context virtual CPU structure of the calling
+ *                          EMT.  Can be NULL depending on @a enmTlbFlush.
+ * @param   enmTlbFlush     Type of flush.
+ * @param   GCPtr           Virtual address of the page to flush (can be 0 depending
+ *                          on @a enmTlbFlush).
  *
  * @remarks Can be called with interrupts disabled.
  */
-static void hmR0VmxFlushVpid(PVMCPU pVCpu, VMXFLUSHVPID enmFlush, RTGCPTR GCPtr)
+static void hmR0VmxFlushVpid(PVMCPU pVCpu, VMXTLBFLUSHVPID enmTlbFlush, RTGCPTR GCPtr)
 {
     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fVpid);
 
     uint64_t au64Descriptor[2];
-    if (enmFlush == VMXFLUSHVPID_ALL_CONTEXTS)
+    if (enmTlbFlush == VMXTLBFLUSHVPID_ALL_CONTEXTS)
     {
         au64Descriptor[0] = 0;
         au64Descriptor[1] = 0;
@@ -1810,14 +1809,13 @@ static void hmR0VmxFlushVpid(PVMCPU pVCpu, VMXFLUSHVPID enmFlush, RTGCPTR GCPtr)
         au64Descriptor[1] = GCPtr;
     }
 
-    int rc = VMXR0InvVPID(enmFlush, &au64Descriptor[0]);
-    AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvVPID %#x %u %RGv failed with %Rrc\n", enmFlush,
-                                   pVCpu ? pVCpu->hm.s.uCurrentAsid : 0, GCPtr, rc));
+    int rc = VMXR0InvVPID(enmTlbFlush, &au64Descriptor[0]);
+    AssertMsg(rc == VINF_SUCCESS,
+              ("VMXR0InvVPID %#x %u %RGv failed with %Rrc\n", enmTlbFlush, pVCpu ? pVCpu->hm.s.uCurrentAsid : 0, GCPtr, rc));
+
     if (   RT_SUCCESS(rc)
         && pVCpu)
-    {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushAsid);
-    }
     NOREF(rc);
 }
 
@@ -1862,7 +1860,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 
             if (fVpidFlush)
             {
-                hmR0VmxFlushVpid(pVCpu, VMXFLUSHVPID_INDIV_ADDR, GCVirt);
+                hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_INDIV_ADDR, GCVirt);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgVirt);
             }
             else
@@ -1960,7 +1958,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
          * Flush by EPT when we get rescheduled to a new host CPU to ensure EPT-only tagged mappings are also
          * invalidated. We don't need to flush-by-VPID here as flushing by EPT covers it. See @bugref{6568}.
          */
-        hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmTlbFlushEpt);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
         HMVMX_SET_TAGGED_TLB_FLUSHED();
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);  /* Already flushed-by-EPT, skip doing it again below. */
@@ -1978,7 +1976,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
          *
          * See Intel spec. 28.3.2 "Creating and Using Cached Translation Information".
          */
-        hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmTlbFlushEpt);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
         HMVMX_SET_TAGGED_TLB_FLUSHED();
     }
@@ -2044,7 +2042,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 
     if (pVCpu->hm.s.fForceTLBFlush)
     {
-        hmR0VmxFlushEpt(pVCpu, pVCpu->CTX_SUFF(pVM)->hm.s.vmx.enmFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVCpu->CTX_SUFF(pVM)->hm.s.vmx.enmTlbFlushEpt);
         pVCpu->hm.s.fForceTLBFlush = false;
     }
 }
@@ -2110,11 +2108,11 @@ static void hmR0VmxFlushTaggedTlbVpid(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
         pVCpu->hm.s.uCurrentAsid   = pCpu->uCurrentAsid;
         if (pCpu->fFlushAsidBeforeUse)
         {
-            if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_SINGLE_CONTEXT)
-                hmR0VmxFlushVpid(pVCpu, VMXFLUSHVPID_SINGLE_CONTEXT, 0 /* GCPtr */);
-            else if (pVM->hm.s.vmx.enmFlushVpid == VMXFLUSHVPID_ALL_CONTEXTS)
+            if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
+                hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_SINGLE_CONTEXT, 0 /* GCPtr */);
+            else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_ALL_CONTEXTS)
             {
-                hmR0VmxFlushVpid(pVCpu, VMXFLUSHVPID_ALL_CONTEXTS, 0 /* GCPtr */);
+                hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_ALL_CONTEXTS, 0 /* GCPtr */);
                 pCpu->fFlushAsidBeforeUse = false;
             }
             else
@@ -2150,12 +2148,12 @@ DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
 #endif
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    switch (pVM->hm.s.vmx.uFlushTaggedTlb)
+    switch (pVM->hm.s.vmx.enmTlbFlushType)
     {
-        case HMVMX_FLUSH_TAGGED_TLB_EPT_VPID: hmR0VmxFlushTaggedTlbBoth(pVCpu, pCpu); break;
-        case HMVMX_FLUSH_TAGGED_TLB_EPT:      hmR0VmxFlushTaggedTlbEpt(pVCpu, pCpu);  break;
-        case HMVMX_FLUSH_TAGGED_TLB_VPID:     hmR0VmxFlushTaggedTlbVpid(pVCpu, pCpu); break;
-        case HMVMX_FLUSH_TAGGED_TLB_NONE:     hmR0VmxFlushTaggedTlbNone(pVCpu, pCpu); break;
+        case VMXTLBFLUSHTYPE_EPT_VPID: hmR0VmxFlushTaggedTlbBoth(pVCpu, pCpu); break;
+        case VMXTLBFLUSHTYPE_EPT:      hmR0VmxFlushTaggedTlbEpt(pVCpu, pCpu);  break;
+        case VMXTLBFLUSHTYPE_VPID:     hmR0VmxFlushTaggedTlbVpid(pVCpu, pCpu); break;
+        case VMXTLBFLUSHTYPE_NONE:     hmR0VmxFlushTaggedTlbNone(pVCpu, pCpu); break;
         default:
             AssertMsgFailed(("Invalid flush-tag function identifier\n"));
             break;
@@ -2183,13 +2181,13 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
         if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT)
         {
             if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT)
-                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_SINGLE_CONTEXT;
+                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_SINGLE_CONTEXT;
             else if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
-                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_ALL_CONTEXTS;
+                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_ALL_CONTEXTS;
             else
             {
                 /* Shouldn't happen. EPT is supported but no suitable flush-types supported. */
-                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
+                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
                 pVM->aCpus[0].hm.s.u32HMError = VMX_UFC_EPT_FLUSH_TYPE_UNSUPPORTED;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
@@ -2197,7 +2195,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
             /* Make sure the write-back cacheable memory type for EPT is supported. */
             if (RT_UNLIKELY(!(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB)))
             {
-                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
+                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
                 pVM->aCpus[0].hm.s.u32HMError = VMX_UFC_EPT_MEM_TYPE_NOT_WB;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
@@ -2205,7 +2203,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
             /* EPT requires a page-walk length of 4. */
             if (RT_UNLIKELY(!(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4)))
             {
-                pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
+                pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
                 pVM->aCpus[0].hm.s.u32HMError = VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED;
                 return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
@@ -2213,7 +2211,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
         else
         {
             /* Shouldn't happen. EPT is supported but INVEPT instruction is not supported. */
-            pVM->hm.s.vmx.enmFlushEpt = VMXFLUSHEPT_NOT_SUPPORTED;
+            pVM->hm.s.vmx.enmTlbFlushEpt = VMXTLBFLUSHEPT_NOT_SUPPORTED;
             pVM->aCpus[0].hm.s.u32HMError = VMX_UFC_EPT_INVEPT_UNAVAILABLE;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
@@ -2227,9 +2225,9 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
         if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID)
         {
             if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT)
-                pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_SINGLE_CONTEXT;
+                pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_SINGLE_CONTEXT;
             else if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS)
-                pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_ALL_CONTEXTS;
+                pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_ALL_CONTEXTS;
             else
             {
                 /* Neither SINGLE nor ALL-context flush types for VPID is supported by the CPU. Ignore VPID capability. */
@@ -2237,7 +2235,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
                     LogRelFunc(("Only INDIV_ADDR supported. Ignoring VPID.\n"));
                 if (pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
                     LogRelFunc(("Only SINGLE_CONTEXT_RETAIN_GLOBALS supported. Ignoring VPID.\n"));
-                pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_NOT_SUPPORTED;
+                pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NOT_SUPPORTED;
                 pVM->hm.s.vmx.fVpid = false;
             }
         }
@@ -2245,7 +2243,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
         {
             /*  Shouldn't happen. VPID is supported but INVVPID is not supported by the CPU. Ignore VPID capability. */
             Log4Func(("VPID supported without INVEPT support. Ignoring VPID.\n"));
-            pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_NOT_SUPPORTED;
+            pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NOT_SUPPORTED;
             pVM->hm.s.vmx.fVpid = false;
         }
     }
@@ -2254,13 +2252,13 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
      * Setup the handler for flushing tagged-TLBs.
      */
     if (pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.uFlushTaggedTlb = HMVMX_FLUSH_TAGGED_TLB_EPT_VPID;
+        pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_EPT_VPID;
     else if (pVM->hm.s.fNestedPaging)
-        pVM->hm.s.vmx.uFlushTaggedTlb = HMVMX_FLUSH_TAGGED_TLB_EPT;
+        pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_EPT;
     else if (pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.uFlushTaggedTlb = HMVMX_FLUSH_TAGGED_TLB_VPID;
+        pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_VPID;
     else
-        pVM->hm.s.vmx.uFlushTaggedTlb = HMVMX_FLUSH_TAGGED_TLB_NONE;
+        pVM->hm.s.vmx.enmTlbFlushType = VMXTLBFLUSHTYPE_NONE;
     return VINF_SUCCESS;
 }
 
@@ -2733,8 +2731,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     }
 
     /* Initialize these always, see hmR3InitFinalizeR0().*/
-    pVM->hm.s.vmx.enmFlushEpt  = VMXFLUSHEPT_NONE;
-    pVM->hm.s.vmx.enmFlushVpid = VMXFLUSHVPID_NONE;
+    pVM->hm.s.vmx.enmTlbFlushEpt  = VMXTLBFLUSHEPT_NONE;
+    pVM->hm.s.vmx.enmTlbFlushVpid = VMXTLBFLUSHVPID_NONE;
 
     /* Setup the tagged-TLB flush handlers. */
     int rc = hmR0VmxSetupTaggedTlb(pVM);

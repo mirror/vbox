@@ -460,7 +460,7 @@ typedef struct HM
         bool                        fUnrestrictedGuest;
         /** Set if unrestricted guest execution is allowed to be used. */
         bool                        fAllowUnrestricted;
-        /** Whether we're using the preemption timer or not. */
+        /** Set if the preemption timer is in use or not. */
         bool                        fUsePreemptTimer;
         /** The shift mask employed by the VMX-Preemption timer. */
         uint8_t                     cPreemptTimerShift;
@@ -483,8 +483,12 @@ typedef struct HM
         R0PTRTYPE(uint8_t *)        pbScratch;
 #endif
 
-        /** Internal Id of which flush-handler to use for tagged-TLB entries. */
-        uint32_t                    uFlushTaggedTlb;
+        /** Tagged-TLB flush type. */
+        VMXTLBFLUSHTYPE             enmTlbFlushType;
+        /** Flush type to use for INVEPT. */
+        VMXTLBFLUSHEPT              enmTlbFlushEpt;
+        /** Flush type to use for INVVPID. */
+        VMXTLBFLUSHVPID             enmTlbFlushVpid;
 
         /** Pause-loop exiting (PLE) gap in ticks. */
         uint32_t                    cPleGapTicks;
@@ -504,10 +508,6 @@ typedef struct HM
 
         /** VMX MSR values. */
         VMXMSRS                     Msrs;
-
-        /** Flush types for invept & invvpid; they depend on capabilities. */
-        VMXFLUSHEPT                 enmFlushEpt;
-        VMXFLUSHVPID                enmFlushVpid;
 
         /** Host-physical address for a failing VMXON instruction. */
         RTHCPHYS                    HCPhysVmxEnableError;

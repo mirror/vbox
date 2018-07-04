@@ -741,19 +741,19 @@ typedef const EPTPT *PCEPTPT;
 typedef enum
 {
     /** Invalidate a specific page. */
-    VMXFLUSHVPID_INDIV_ADDR                    = 0,
+    VMXTLBFLUSHVPID_INDIV_ADDR                 = 0,
     /** Invalidate one context (specific VPID). */
-    VMXFLUSHVPID_SINGLE_CONTEXT                = 1,
+    VMXTLBFLUSHVPID_SINGLE_CONTEXT             = 1,
     /** Invalidate all contexts (all VPIDs). */
-    VMXFLUSHVPID_ALL_CONTEXTS                  = 2,
+    VMXTLBFLUSHVPID_ALL_CONTEXTS               = 2,
     /** Invalidate a single VPID context retaining global mappings. */
-    VMXFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS = 3,
+    VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS = 3,
     /** Unsupported by VirtualBox. */
-    VMXFLUSHVPID_NOT_SUPPORTED                 = 0xbad0,
+    VMXTLBFLUSHVPID_NOT_SUPPORTED              = 0xbad0,
     /** Unsupported by CPU. */
-    VMXFLUSHVPID_NONE                          = 0xbad1
-} VMXFLUSHVPID;
-AssertCompileSize(VMXFLUSHVPID, 4);
+    VMXTLBFLUSHVPID_NONE                       = 0xbad1
+} VMXTLBFLUSHVPID;
+AssertCompileSize(VMXTLBFLUSHVPID, 4);
 
 /**
  * VMX EPT flush types.
@@ -762,15 +762,15 @@ AssertCompileSize(VMXFLUSHVPID, 4);
 typedef enum
 {
     /** Invalidate one context (specific EPT). */
-    VMXFLUSHEPT_SINGLE_CONTEXT                 = 1,
+    VMXTLBFLUSHEPT_SINGLE_CONTEXT              = 1,
     /* Invalidate all contexts (all EPTs) */
-    VMXFLUSHEPT_ALL_CONTEXTS                   = 2,
+    VMXTLBFLUSHEPT_ALL_CONTEXTS                = 2,
     /** Unsupported by VirtualBox.   */
-    VMXFLUSHEPT_NOT_SUPPORTED                  = 0xbad0,
+    VMXTLBFLUSHEPT_NOT_SUPPORTED               = 0xbad0,
     /** Unsupported by CPU. */
-    VMXFLUSHEPT_NONE                           = 0xbad1
-} VMXFLUSHEPT;
-AssertCompileSize(VMXFLUSHEPT, 4);
+    VMXTLBFLUSHEPT_NONE                        = 0xbad1
+} VMXTLBFLUSHEPT;
+AssertCompileSize(VMXTLBFLUSHEPT, 4);
 
 /**
  * VMX Posted Interrupt Descriptor.
@@ -825,6 +825,21 @@ typedef union
     uint64_t            u;
 } VMXCAPABILITY;
 AssertCompileSize(VMXCAPABILITY, 8);
+
+/**
+ * VMX tagged-TLB flush types.
+ */
+typedef enum
+{
+    VMXTLBFLUSHTYPE_EPT,
+    VMXTLBFLUSHTYPE_VPID,
+    VMXTLBFLUSHTYPE_EPT_VPID,
+    VMXTLBFLUSHTYPE_NONE
+} VMXTLBFLUSHTYPE;
+/** Pointer to a VMXTLBFLUSHTYPE enum. */
+typedef VMXTLBFLUSHTYPE *PVMXTLBFLUSHTYPE;
+/** Pointer to a const VMXTLBFLUSHTYPE enum. */
+typedef const VMXTLBFLUSHTYPE *PCVMXTLBFLUSHTYPE;
 
 /**
  * VMX MSRs.
@@ -2320,7 +2335,7 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
  * @param   enmFlush        Type of flush.
  * @param   pDescriptor     Pointer to the descriptor.
  */
-DECLASM(int) VMXR0InvEPT(VMXFLUSHEPT enmFlush, uint64_t *pDescriptor);
+DECLASM(int) VMXR0InvEPT(VMXTLBFLUSHEPT enmFlush, uint64_t *pDescriptor);
 
 
 /**
@@ -2330,7 +2345,7 @@ DECLASM(int) VMXR0InvEPT(VMXFLUSHEPT enmFlush, uint64_t *pDescriptor);
  * @param   enmFlush        Type of flush.
  * @param   pDescriptor     Pointer to the descriptor.
  */
-DECLASM(int) VMXR0InvVPID(VMXFLUSHVPID enmFlush, uint64_t *pDescriptor);
+DECLASM(int) VMXR0InvVPID(VMXTLBFLUSHVPID enmFlush, uint64_t *pDescriptor);
 
 
 /**
