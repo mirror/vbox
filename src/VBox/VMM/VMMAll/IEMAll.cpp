@@ -5443,6 +5443,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
 #if defined(LOG_ENABLED) && defined(IN_RING3)
     if (LogIs3Enabled())
     {
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR_MASK);
         PVM     pVM = pVCpu->CTX_SUFF(pVM);
         char    szRegs[4096];
         DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
