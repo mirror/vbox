@@ -146,6 +146,8 @@ VMMRZDECL(void) VMMRZCallRing3Disable(PVMCPU pVCpu)
         if (pVCpu->vmm.s.pR0LoggerR0)
             pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = true;
 # endif
+        if (pVCpu->vmm.s.pR0RelLoggerR0)
+            pVCpu->vmm.s.pR0RelLoggerR0->fFlushingDisabled = true;
 #endif
     }
 
@@ -178,6 +180,8 @@ VMMRZDECL(void) VMMRZCallRing3Enable(PVMCPU pVCpu)
         if (pVCpu->vmm.s.pR0LoggerR0)
             pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
 # endif
+        if (pVCpu->vmm.s.pR0RelLoggerR0)
+            pVCpu->vmm.s.pR0RelLoggerR0->fFlushingDisabled = false;
 #endif
     }
 
