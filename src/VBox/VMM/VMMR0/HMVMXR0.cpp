@@ -152,15 +152,21 @@
 #endif
 
 /** Assert that preemption is disabled or covered by thread-context hooks. */
-#define HMVMX_ASSERT_PREEMPT_SAFE()       Assert(   VMMR0ThreadCtxHookIsEnabled(pVCpu)   \
-                                                 || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+#define HMVMX_ASSERT_PREEMPT_SAFE()             Assert(   VMMR0ThreadCtxHookIsEnabled(pVCpu)   \
+                                                       || !RTThreadPreemptIsEnabled(NIL_RTTHREAD))
 
 /** Assert that we haven't migrated CPUs when thread-context hooks are not
  *  used. */
-#define HMVMX_ASSERT_CPU_SAFE()           AssertMsg(   VMMR0ThreadCtxHookIsEnabled(pVCpu) \
-                                                    || pVCpu->hm.s.idEnteredCpu == RTMpCpuId(), \
-                                                    ("Illegal migration! Entered on CPU %u Current %u\n", \
-                                                    pVCpu->hm.s.idEnteredCpu, RTMpCpuId())); \
+#define HMVMX_ASSERT_CPU_SAFE()                 AssertMsg(   VMMR0ThreadCtxHookIsEnabled(pVCpu) \
+                                                          || pVCpu->hm.s.idEnteredCpu == RTMpCpuId(), \
+                                                          ("Illegal migration! Entered on CPU %u Current %u\n", \
+                                                          pVCpu->hm.s.idEnteredCpu, RTMpCpuId()))
+
+/** Asserts that the given CPUMCTX_EXTRN_XXX bits are present in the guest-CPU
+ *  context. */
+#define HMVMX_CPUMCTX_ASSERT(pVCpu, fExtrnMbz)  AssertMsg(!((pVCpu)->cpum.GstCtx.fExtrn & (fExtrnMbz)), \
+                                                          ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", (pVCpu)->cpum.GstCtx.fExtrn, \
+                                                          (fExtrnMbz)))
 
 /** Helper macro for VM-exit handlers called unexpectedly. */
 #define HMVMX_RETURN_UNEXPECTED_EXIT() \
@@ -3390,6 +3396,8 @@ static int hmR0VmxExportGuestApicTpr(PVMCPU pVCpu)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_APIC_TPR)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_APIC_TPR);
+
         if (   PDMHasApic(pVCpu->CTX_SUFF(pVM))
             && APICIsEnabled(pVCpu))
         {
@@ -3534,6 +3542,7 @@ static int hmR0VmxExportGuestXcptIntercepts(PVMCPU pVCpu)
         Assert(pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT_32(X86_XCPT_AC));
         Assert(pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT_32(X86_XCPT_DB));
 
+        /** @todo Optimize by checking cache before writing to VMCS. */
         int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
         AssertRCReturn(rc, rc);
 
@@ -3560,6 +3569,8 @@ static int hmR0VmxExportGuestRip(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_RIP)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RIP);
+
         rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_RIP, pMixedCtx->rip);
         AssertRCReturn(rc, rc);
 
@@ -3591,6 +3602,8 @@ static int hmR0VmxExportGuestRsp(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_RSP)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RSP);
+
         int rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_RSP, pMixedCtx->rsp);
         AssertRCReturn(rc, rc);
 
@@ -3615,6 +3628,8 @@ static int hmR0VmxExportGuestRflags(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_RFLAGS)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RFLAGS);
+
         /* Intel spec. 2.3.1 "System Flags and Fields in IA-32e Mode" claims the upper 32-bits of RFLAGS are reserved (MBZ).
            Let us assert it as such and use 32-bit VMWRITE. */
         Assert(!RT_HI_U32(pMixedCtx->rflags.u64));
@@ -3665,7 +3680,9 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CR0)
     {
         PVM pVM = pVCpu->CTX_SUFF(pVM);
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
         Assert(!RT_HI_U32(pMixedCtx->cr0));
+
         uint32_t const u32ShadowCr0 = pMixedCtx->cr0;
         uint32_t       u32GuestCr0  = pMixedCtx->cr0;
 
@@ -3845,6 +3862,8 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CR3)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
+
         RTGCPHYS GCPhysGuestCR3 = NIL_RTGCPHYS;
         if (pVM->hm.s.fNestedPaging)
         {
@@ -3941,7 +3960,9 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CR4)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
         Assert(!RT_HI_U32(pMixedCtx->cr4));
+
         uint32_t       u32GuestCr4  = pMixedCtx->cr4;
         uint32_t const u32ShadowCr4 = pMixedCtx->cr4;
 
@@ -4477,6 +4498,7 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 #endif
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CS)
         {
+            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CS);
             if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
                 pVCpu->hm.s.vmx.RealMode.AttrCS.u = pMixedCtx->cs.Attr.u;
             rc = HMVMX_EXPORT_SREG(CS, &pMixedCtx->cs);
@@ -4486,6 +4508,7 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_SS)
         {
+            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SS);
             if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
                 pVCpu->hm.s.vmx.RealMode.AttrSS.u = pMixedCtx->ss.Attr.u;
             rc = HMVMX_EXPORT_SREG(SS, &pMixedCtx->ss);
@@ -4495,6 +4518,7 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_DS)
         {
+            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DS);
             if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
                 pVCpu->hm.s.vmx.RealMode.AttrDS.u = pMixedCtx->ds.Attr.u;
             rc = HMVMX_EXPORT_SREG(DS, &pMixedCtx->ds);
@@ -4504,6 +4528,7 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_ES)
         {
+            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_ES);
             if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
                 pVCpu->hm.s.vmx.RealMode.AttrES.u = pMixedCtx->es.Attr.u;
             rc = HMVMX_EXPORT_SREG(ES, &pMixedCtx->es);
@@ -4513,6 +4538,7 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_FS)
         {
+            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_FS);
             if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
                 pVCpu->hm.s.vmx.RealMode.AttrFS.u = pMixedCtx->fs.Attr.u;
             rc = HMVMX_EXPORT_SREG(FS, &pMixedCtx->fs);
@@ -4522,6 +4548,7 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_GS)
         {
+            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_GS);
             if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
                 pVCpu->hm.s.vmx.RealMode.AttrGS.u = pMixedCtx->gs.Attr.u;
             rc = HMVMX_EXPORT_SREG(GS, &pMixedCtx->gs);
@@ -4546,6 +4573,8 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_TR)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_TR);
+
         /*
          * Real-mode emulation using virtual-8086 mode with CR4.VME. Interrupt redirection is
          * achieved using the interrupt redirection bitmap (all bits cleared to let the guest
@@ -4613,6 +4642,8 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_GDTR)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_GDTR);
+
         rc  = VMXWriteVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, pMixedCtx->gdtr.cbGdt);
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE,  pMixedCtx->gdtr.pGdt);
         AssertRCReturn(rc, rc);
@@ -4629,6 +4660,8 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_LDTR)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_LDTR);
+
         /* The unusable bit is specific to VT-x, if it's a null selector mark it as an unusable segment. */
         uint32_t u32Access = 0;
         if (!pMixedCtx->ldtr.Attr.u)
@@ -4666,6 +4699,8 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_IDTR)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_IDTR);
+
         rc  = VMXWriteVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, pMixedCtx->idtr.cbIdt);
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE,  pMixedCtx->idtr.pIdt);
         AssertRCReturn(rc, rc);
@@ -4715,6 +4750,8 @@ static int hmR0VmxExportGuestMsrs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
         if (pVM->hm.s.fAllow64BitGuests)
         {
 #if HC_ARCH_BITS == 32
+            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_KERNEL_GS_BASE);
+
             int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_LSTAR,          pMixedCtx->msrLSTAR,        false, NULL);
             rc    |= hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_STAR,           pMixedCtx->msrSTAR,         false, NULL);
             rc    |= hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK,       false, NULL);
@@ -4737,6 +4774,8 @@ static int hmR0VmxExportGuestMsrs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_SYSENTER_MSR_MASK)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SYSENTER_MSRS);
+
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_SYSENTER_CS_MSR)
         {
             int rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_SYSENTER_CS, pMixedCtx->SysEnter.cs);
@@ -4761,6 +4800,8 @@ static int hmR0VmxExportGuestMsrs(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_EFER_MSR)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_EFER);
+
         if (hmR0VmxShouldSwapEferMsr(pVCpu, pMixedCtx))
         {
             /*
