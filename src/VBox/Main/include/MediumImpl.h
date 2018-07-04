@@ -219,7 +219,7 @@ public:
                         const ComObjPtr<Medium> &aParent,
                         const ComObjPtr<Progress> &aProgress);
 
-    HRESULT i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
+    HRESULT i_cloneToEx(const ComObjPtr<Medium> &aTarget, MediumVariant_T aVariant,
                         const ComObjPtr<Medium> &aParent, IProgress **aProgress,
                         uint32_t idxSrcImageSame, uint32_t idxDstImageSame);
 

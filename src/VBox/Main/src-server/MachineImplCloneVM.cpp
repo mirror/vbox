@@ -1249,7 +1249,7 @@ HRESULT MachineCloneVM::run()
                         ComObjPtr<Medium> pLMedium = static_cast<Medium*>((IMedium*)pMedium);
                         srcLock.release();
                         rc = pLMedium->i_cloneToEx(pTarget,
-                                                   srcVar,
+                                                   (MediumVariant_T)srcVar,
                                                    pNewParent,
                                                    progress2.asOutParam(),
                                                    uSrcParentIdx,

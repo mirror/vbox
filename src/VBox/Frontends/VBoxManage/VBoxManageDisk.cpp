@@ -83,6 +83,8 @@ static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
                 uMediumVariant |= MediumVariant_VmdkStreamOptimized;
             else if (!RTStrNICmp(psz, "esx", len))
                 uMediumVariant |= MediumVariant_VmdkESX;
+            else if (!RTStrNICmp(psz, "formatted", len))
+                uMediumVariant |= MediumVariant_Formatted;
             else
                 rc = VERR_PARSE_ERROR;
         }

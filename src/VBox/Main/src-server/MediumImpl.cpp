@@ -37,6 +37,8 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/memsafer.h>
 #include <iprt/base64.h>
+#include <iprt/vfs.h>
+#include <iprt/fsvfs.h>
 
 #include <VBox/vd.h>
 
@@ -2593,6 +2595,11 @@ HRESULT Medium::createBaseStorage(LONG64 aLogicalSize,
                            tr("Medium format '%s' does not support fixed storage creation"),
                            m->strFormat.c_str());
 
+        if (    (mediumVariantFlags & MediumVariant_Formatted)
+            &&  i_getDeviceType() != DeviceType_Floppy)
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Medium variant 'formatted' applies to floppy images only"));
+
         if (m->state != MediumState_NotCreated)
             throw i_setStateError();
 
@@ -2609,7 +2616,6 @@ HRESULT Medium::createBaseStorage(LONG64 aLogicalSize,
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::CreateBaseTask(this, pProgress, aLogicalSize,
                                            (MediumVariant_T)mediumVariantFlags);
-                                           //(MediumVariant_T)aVariant);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -2746,6 +2752,13 @@ HRESULT Medium::createDiffStorage(AutoCaller &autoCaller,
     {
         for (size_t i = 0; i < aVariant.size(); i++)
             mediumVariantFlags |= (ULONG)aVariant[i];
+    }
+
+    if (mediumVariantFlags & MediumVariant_Formatted)
+    {
+        delete pMediumLockList;
+        return setError(VBOX_E_NOT_SUPPORTED,
+                        tr("Medium variant 'formatted' applies to floppy images only"));
     }
 
     rc = i_createDiffStorage(diff, (MediumVariant_T)mediumVariantFlags, pMediumLockList,
@@ -2914,6 +2927,14 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
         {
             for (size_t i = 0; i < aVariant.size(); i++)
                 mediumVariantFlags |= (ULONG)aVariant[i];
+        }
+
+        if (mediumVariantFlags & MediumVariant_Formatted)
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Medium variant 'formatted' applies to floppy images only"));
         }
 
         /* setup task object to carry out the operation asynchronously */
@@ -6226,7 +6247,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
                                          aFilename,
                                          false /* fMoveByRename */,
                                          0 /* cbSize */,
-                                         aVariant & ~MediumVariant_NoCreateDir,
+                                         aVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted),
                                          NULL /* pDstUuid */,
                                          VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_SEQUENTIAL,
                                          pProgress,
@@ -6375,7 +6396,7 @@ HRESULT Medium::i_importFile(const char *aFilename,
  *                           Use UINT32_MAX to disable this optimization.
  * @return
  */
-HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
+HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, MediumVariant_T aVariant,
                             const ComObjPtr<Medium> &aParent, IProgress **aProgress,
                             uint32_t idxSrcImageSame, uint32_t idxDstImageSame)
 {
@@ -6479,8 +6500,7 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
         }
 
         /* setup task object to carry out the operation asynchronously */
-        pTask = new Medium::CloneTask(this, pProgress, aTarget,
-                                      (MediumVariant_T)aVariant,
+        pTask = new Medium::CloneTask(this, pProgress, aTarget, aVariant,
                                       aParent, idxSrcImageSame,
                                       idxDstImageSame, pSourceMediumLockList,
                                       pTargetMediumLockList);
@@ -8186,7 +8206,7 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
                                format.c_str(),
                                location.c_str(),
                                task.mSize,
-                               task.mVariant & ~MediumVariant_NoCreateDir,
+                               task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted),
                                NULL,
                                &geo,
                                &geo,
@@ -8203,6 +8223,26 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
                 else
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not create the medium storage unit '%s'%s"),
+                                   location.c_str(), i_vdError(vrc).c_str());
+            }
+
+            if (task.mVariant & MediumVariant_Formatted)
+            {
+                RTVFSFILE hVfsFile;
+                vrc = RTVfsFileOpenNormal(location.c_str(), RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_ALL, &hVfsFile);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Opening medium storage unit '%s' failed%s"),
+                                   location.c_str(), i_vdError(vrc).c_str());
+                vrc = RTFsFatVolFormat(hVfsFile, 0 /* offVol */, 0 /* cbVol */, RTFSFATVOL_FMT_F_QUICK,
+                                       0 /* cbSector */, 0 /* cbSectorPerCluster */, RTFSFATTYPE_INVALID,
+                                       0 /* cHeads */, 0 /* cSectorsPerTrack*/, 0 /* bMedia */,
+                                       0 /* cRootDirEntries */, 0 /* cHiddenSectors */,
+                                       NULL /* pErrInfo */);
+                RTVfsFileRelease(hVfsFile);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Formatting medium storage unit '%s' failed%s"),
                                    location.c_str(), i_vdError(vrc).c_str());
             }
 
@@ -8378,7 +8418,8 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
             vrc = VDCreateDiff(hdd,
                                targetFormat.c_str(),
                                targetLocation.c_str(),
-                               (task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_VmdkESX)) | VD_IMAGE_FLAGS_DIFF,
+                                 (task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted | MediumVariant_VmdkESX))
+                               | VD_IMAGE_FLAGS_DIFF,
                                NULL,
                                targetId.raw(),
                                id.raw(),
@@ -8974,7 +9015,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                                  (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
                                  false /* fMoveByRename */,
                                  0 /* cbSize */,
-                                 task.mVariant & ~MediumVariant_NoCreateDir,
+                                 task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted),
                                  targetId.raw(),
                                  VD_OPEN_FLAGS_NORMAL | m->uOpenFlagsDef,
                                  NULL /* pVDIfsOperation */,
@@ -8992,7 +9033,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                                    0 /* cbSize */,
                                    task.midxSrcImageSame,
                                    task.midxDstImageSame,
-                                   task.mVariant & ~MediumVariant_NoCreateDir,
+                                   task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted),
                                    targetId.raw(),
                                    VD_OPEN_FLAGS_NORMAL | m->uOpenFlagsDef,
                                    NULL /* pVDIfsOperation */,
@@ -9863,7 +9904,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
                              (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
                              false /* fMoveByRename */,
                              0 /* cbSize */,
-                             task.mVariant & ~MediumVariant_NoCreateDir,
+                             task.mVariant & ~(MediumVariant_NoCreateDir | MediumVariant_Formatted),
                              targetId.raw(),
                              VD_OPEN_FLAGS_NORMAL,
                              NULL /* pVDIfsOperation */,

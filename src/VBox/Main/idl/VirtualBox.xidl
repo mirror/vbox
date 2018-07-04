@@ -14761,6 +14761,12 @@ and "VAR" for unsetting. -->
         Differencing image. Only allowed for child images.
       </desc>
     </const>
+    <const name="Formatted"             value="0x20000000">
+      <desc>
+        Special flag which requests formatting the disk image. Right now
+        supported for floppy images only.
+      </desc>
+    </const>
     <const name="NoCreateDir"           value="0x40000000">
       <desc>
         Special flag which suppresses automatic creation of the subdirectory.
@@ -15852,7 +15858,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="createBaseStorage">
       <desc>
         Starts creating a hard disk storage unit (fixed/dynamic, according
-        to the variant flags) in in the background. The previous storage unit
+        to the variant flags) in the background. The previous storage unit
         created for this object, if any, must first be deleted using
         <link to="#deleteStorage"/>, otherwise the operation will fail.
 
