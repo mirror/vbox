@@ -34,8 +34,6 @@ RT_C_DECLS_BEGIN
 #if defined(IN_RING3) || defined(IN_RC)
 
 extern DECLHIDDEN(uint64_t) g_u64ProgramStartNanoTS;
-extern DECLHIDDEN(uint64_t) g_u64ProgramStartMicroTS;
-extern DECLHIDDEN(uint64_t) g_u64ProgramStartMilliTS;
 
 #endif
 

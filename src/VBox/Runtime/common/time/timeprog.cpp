@@ -55,7 +55,7 @@ RT_EXPORT_SYMBOL(RTTimeProgramNanoTS);
  */
 RTDECL(uint64_t)  RTTimeProgramMicroTS(void)
 {
-    return RTTimeProgramNanoTS() / 1000;
+    return RTTimeProgramNanoTS() / RT_NS_1US;
 }
 RT_EXPORT_SYMBOL(RTTimeProgramMicroTS);
 
@@ -67,7 +67,7 @@ RT_EXPORT_SYMBOL(RTTimeProgramMicroTS);
  */
 RTDECL(uint64_t)  RTTimeProgramMilliTS(void)
 {
-    return RTTimeMilliTS() - g_u64ProgramStartMilliTS;
+    return RTTimeProgramNanoTS() / RT_NS_1MS;
 }
 RT_EXPORT_SYMBOL(RTTimeProgramMilliTS);
 
@@ -79,8 +79,7 @@ RT_EXPORT_SYMBOL(RTTimeProgramMilliTS);
  */
 RTDECL(uint32_t)  RTTimeProgramSecTS(void)
 {
-    AssertMsg(g_u64ProgramStartMilliTS, ("rtR3Init hasn't been called!\n"));
-    return (uint32_t)(RTTimeProgramMilliTS() / 1000);
+    return (uint32_t)(RTTimeProgramNanoTS() / RT_NS_1SEC);
 }
 RT_EXPORT_SYMBOL(RTTimeProgramSecTS);
 

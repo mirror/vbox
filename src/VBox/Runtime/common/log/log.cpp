@@ -59,7 +59,6 @@
 #ifdef IN_RING3
 # include <iprt/alloca.h>
 # include <stdio.h>
-# include "internal/time.h" /* For g_u64ProgramStartNanoTS. */
 #endif
 
 
@@ -1335,7 +1334,7 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger,
     }
     else
         pInt->pacEntriesPerGroup= NULL;
-    pInt->nsR0ProgramStart      = g_u64ProgramStartNanoTS;
+    pInt->nsR0ProgramStart      = RTTimeProgramStartNanoTS();
     RT_ZERO(pInt->szR0ThreadName);
     if (cchThreadName)
         memcpy(pInt->szR0ThreadName, pszThreadName, cchThreadName);
@@ -3710,7 +3709,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #if defined(IN_RING3) || defined(IN_RC)
                     uint64_t u64 = RTTimeProgramMilliTS();
 #else
-                    uint64_t u64 = (RTTimeNanoTS() - pLogger->pInt->nsR0ProgramStart) / 1000000;
+                    uint64_t u64 = (RTTimeNanoTS() - pLogger->pInt->nsR0ProgramStart) / RT_NS_1MS;
 #endif
                     /* 1E8 milliseconds = 27 hours */
                     psz += RTStrFormatNumber(psz, u64, 10, 9, 0, RTSTR_F_ZEROPAD);
@@ -3745,7 +3744,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #if defined(IN_RING3) || defined(IN_RC)
                     uint64_t u64 = RTTimeProgramMicroTS();
 #else
-                    uint64_t u64 = (RTTimeNanoTS() - pLogger->pInt->nsR0ProgramStart) / 1000;
+                    uint64_t u64 = (RTTimeNanoTS() - pLogger->pInt->nsR0ProgramStart) / RT_NS_1US;
 
 #endif
                     psz += RTStrFormatNumber(psz, (uint32_t)(u64 / RT_US_1HOUR), 10, 2, 0, RTSTR_F_ZEROPAD);
