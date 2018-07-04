@@ -85,9 +85,9 @@
  * needed for maintaining the VMCS consistently even when thread-context hooks
  * are used. Maybe later this can be extended (i.e. Nested Virtualization).
  */
-#define HMVMX_VMCS_STATE_CLEAR                   RT_BIT(0)
-#define HMVMX_VMCS_STATE_ACTIVE                  RT_BIT(1)
-#define HMVMX_VMCS_STATE_LAUNCHED                RT_BIT(2)
+#define HMVMX_VMCS_STATE_CLEAR       RT_BIT(0)
+#define HMVMX_VMCS_STATE_ACTIVE      RT_BIT(1)
+#define HMVMX_VMCS_STATE_LAUNCHED    RT_BIT(2)
 
 /**
  * Subset of the guest-CPU state that is kept by VMX R0 code while executing the
@@ -97,21 +97,21 @@
  * swapped and restored across the world-switch and also registers like EFER,
  * MSR which cannot be modified by the guest without causing a VM-exit.
  */
-#define HMVMX_CPUMCTX_EXTRN_ALL                  (  CPUMCTX_EXTRN_RIP             \
-                                                  | CPUMCTX_EXTRN_RFLAGS          \
-                                                  | CPUMCTX_EXTRN_RSP             \
-                                                  | CPUMCTX_EXTRN_SREG_MASK       \
-                                                  | CPUMCTX_EXTRN_TABLE_MASK      \
-                                                  | CPUMCTX_EXTRN_KERNEL_GS_BASE  \
-                                                  | CPUMCTX_EXTRN_SYSCALL_MSRS    \
-                                                  | CPUMCTX_EXTRN_SYSENTER_MSRS   \
-                                                  | CPUMCTX_EXTRN_TSC_AUX         \
-                                                  | CPUMCTX_EXTRN_OTHER_MSRS      \
-                                                  | CPUMCTX_EXTRN_CR0             \
-                                                  | CPUMCTX_EXTRN_CR3             \
-                                                  | CPUMCTX_EXTRN_CR4             \
-                                                  | CPUMCTX_EXTRN_DR7             \
-                                                  | CPUMCTX_EXTRN_HM_VMX_MASK)
+#define HMVMX_CPUMCTX_EXTRN_ALL      (  CPUMCTX_EXTRN_RIP             \
+                                      | CPUMCTX_EXTRN_RFLAGS          \
+                                      | CPUMCTX_EXTRN_RSP             \
+                                      | CPUMCTX_EXTRN_SREG_MASK       \
+                                      | CPUMCTX_EXTRN_TABLE_MASK      \
+                                      | CPUMCTX_EXTRN_KERNEL_GS_BASE  \
+                                      | CPUMCTX_EXTRN_SYSCALL_MSRS    \
+                                      | CPUMCTX_EXTRN_SYSENTER_MSRS   \
+                                      | CPUMCTX_EXTRN_TSC_AUX         \
+                                      | CPUMCTX_EXTRN_OTHER_MSRS      \
+                                      | CPUMCTX_EXTRN_CR0             \
+                                      | CPUMCTX_EXTRN_CR3             \
+                                      | CPUMCTX_EXTRN_CR4             \
+                                      | CPUMCTX_EXTRN_DR7             \
+                                      | CPUMCTX_EXTRN_HM_VMX_MASK)
 
 /**
  * Exception bitmap mask for real-mode guests (real-on-v86).
@@ -130,17 +130,8 @@
                                       | RT_BIT(X86_XCPT_MF)  /* always: | RT_BIT(X86_XCPT_AC) */ | RT_BIT(X86_XCPT_MC)    \
                                       | RT_BIT(X86_XCPT_XF))
 
-/**
- * Exception bitmap mask for all contributory exceptions.
- *
- * Page fault is deliberately excluded here as it's conditional as to whether
- * it's contributory or benign. Page faults are handled separately.
- */
-#define HMVMX_CONTRIBUTORY_XCPT_MASK  (  RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
-                                       | RT_BIT(X86_XCPT_DE))
-
 /** Maximum VM-instruction error number. */
-#define HMVMX_INSTR_ERROR_MAX     28
+#define HMVMX_INSTR_ERROR_MAX        28
 
 /** Profiling macro. */
 #ifdef HM_PROFILE_EXIT_DISPATCH
@@ -152,21 +143,22 @@
 #endif
 
 /** Assert that preemption is disabled or covered by thread-context hooks. */
-#define HMVMX_ASSERT_PREEMPT_SAFE()             Assert(   VMMR0ThreadCtxHookIsEnabled(pVCpu)   \
-                                                       || !RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+#define HMVMX_ASSERT_PREEMPT_SAFE()                 Assert(   VMMR0ThreadCtxHookIsEnabled(pVCpu)   \
+                                                           || !RTThreadPreemptIsEnabled(NIL_RTTHREAD))
 
 /** Assert that we haven't migrated CPUs when thread-context hooks are not
  *  used. */
-#define HMVMX_ASSERT_CPU_SAFE()                 AssertMsg(   VMMR0ThreadCtxHookIsEnabled(pVCpu) \
-                                                          || pVCpu->hm.s.idEnteredCpu == RTMpCpuId(), \
-                                                          ("Illegal migration! Entered on CPU %u Current %u\n", \
-                                                          pVCpu->hm.s.idEnteredCpu, RTMpCpuId()))
+#define HMVMX_ASSERT_CPU_SAFE()                     AssertMsg(   VMMR0ThreadCtxHookIsEnabled(pVCpu) \
+                                                              || pVCpu->hm.s.idEnteredCpu == RTMpCpuId(), \
+                                                              ("Illegal migration! Entered on CPU %u Current %u\n", \
+                                                              pVCpu->hm.s.idEnteredCpu, RTMpCpuId()))
 
 /** Asserts that the given CPUMCTX_EXTRN_XXX bits are present in the guest-CPU
  *  context. */
-#define HMVMX_CPUMCTX_ASSERT(pVCpu, fExtrnMbz)  AssertMsg(!((pVCpu)->cpum.GstCtx.fExtrn & (fExtrnMbz)), \
-                                                          ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", (pVCpu)->cpum.GstCtx.fExtrn, \
-                                                          (fExtrnMbz)))
+#define HMVMX_CPUMCTX_ASSERT(a_pVCpu, a_fExtrnMbz)  AssertMsg(!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnMbz)), \
+                                                              ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", \
+                                                              (a_pVCpu)->cpum.GstCtx.fExtrn, (a_fExtrnMbz)))
+
 
 /** Helper macro for VM-exit handlers called unexpectedly. */
 #define HMVMX_RETURN_UNEXPECTED_EXIT() \
