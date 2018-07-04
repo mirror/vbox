@@ -748,9 +748,8 @@ ListenerRecord::ListenerRecord(IEventListener *aListener,
                                com::SafeArray<VBoxEventType_T> &aInterested,
                                BOOL aActive,
                                EventSource *aOwner) :
-    mActive(aActive), mOwner(aOwner), mQEventBusyCnt(0), mRefCnt(0)
+    mListener(aListener), mActive(aActive), mOwner(aOwner), mQEventBusyCnt(0), mRefCnt(0)
 {
-    mListener = aListener;
     EventMap *aEvMap = &aOwner->m->mEvMap;
 
     for (size_t i = 0; i < aInterested.size(); ++i)
