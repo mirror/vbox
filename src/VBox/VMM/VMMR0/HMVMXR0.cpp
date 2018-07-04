@@ -11444,8 +11444,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    Assert(!pVM->hm.s.fNestedPaging || pVCpu->hm.s.fUsingDebugLoop);
+    Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging || pVCpu->hm.s.fUsingDebugLoop);
 
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
