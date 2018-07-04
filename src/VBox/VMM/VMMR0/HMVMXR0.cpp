@@ -3596,12 +3596,6 @@ static int hmR0VmxExportGuestRip(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
         rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_RIP, pMixedCtx->rip);
         AssertRCReturn(rc, rc);
 
-        /* Update the exit history entry with the correct CS.BASE + RIP or just RIP. */
-        if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CS)
-            EMR0HistoryUpdatePC(pVCpu, pMixedCtx->cs.u64Base + pMixedCtx->rip, true);
-        else
-            EMR0HistoryUpdatePC(pVCpu, pMixedCtx->rip, false);
-
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_RIP);
         Log4Func(("RIP=%#RX64\n", pMixedCtx->rip));
     }
@@ -6167,6 +6161,7 @@ DECLINLINE(int) hmR0VmxImportGuestRip(PVMCPU pVCpu)
         if (RT_SUCCESS(rc))
         {
             pCtx->rip = u64Val;
+            EMR0HistoryUpdatePC(pVCpu, pCtx->rip, false);
             pCtx->fExtrn &= ~CPUMCTX_EXTRN_RIP;
         }
         return rc;
@@ -6334,10 +6329,12 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
             {
                 if (fWhat & CPUMCTX_EXTRN_CS)
                 {
-                    rc = HMVMX_IMPORT_SREG(CS, &pCtx->cs);
+                    rc  = HMVMX_IMPORT_SREG(CS, &pCtx->cs);
+                    rc |= hmR0VmxImportGuestRip(pVCpu);
                     VMXLOCAL_BREAK_RC(rc);
                     if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
                         pCtx->cs.Attr.u = pVCpu->hm.s.vmx.RealMode.AttrCS.u;
+                    EMR0HistoryUpdatePC(pVCpu, pCtx->cs.u64Base + pCtx->rip, true);
                 }
                 if (fWhat & CPUMCTX_EXTRN_SS)
                 {
