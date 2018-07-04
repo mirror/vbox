@@ -2885,6 +2885,7 @@ VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImpo
                 Assert(rc == VINF_SUCCESS || RT_FAILURE_NP(rc));
                 return rc;
 #else
+                AssertLogRelMsgFailed(("TODO Fetch HM state: %#RX64 vs %#RX64\n", pVCpu->cpum.s.Guest.fExtrn, fExtrnImport));
                 return VINF_SUCCESS;
 #endif
             }
