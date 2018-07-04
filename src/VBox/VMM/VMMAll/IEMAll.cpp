@@ -14912,6 +14912,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
 /**
  * Interface for HM and EM to emulate the INVLPG instruction.
  *
+ * @returns Strict VBox status code.
+ * @retval  VINF_PGM_SYNC_CR3
+ *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cbInstr     The instruction length in bytes.
  * @param   GCPtrPage   The effective address of the page to invalidate.

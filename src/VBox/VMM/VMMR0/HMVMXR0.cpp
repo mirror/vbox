@@ -11448,15 +11448,22 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     Assert(!pVM->hm.s.fNestedPaging || pVCpu->hm.s.fUsingDebugLoop);
 
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_SREG_MASK);
+    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK | CPUMCTX_EXTRN_DS);
     AssertRCReturn(rc, rc);
 
-    VBOXSTRICTRC rcStrict = EMInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), pVmxTransient->uExitQualification);
-    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-        rcStrict = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedInvlpg(pVCpu, pVmxTransient->cbInstr, pVmxTransient->uExitQualification);
+
+    if (rcStrict == VINF_SUCCESS || rcStrict == VINF_PGM_SYNC_CR3)
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
     else
-        AssertMsg(rcStrict == VERR_EM_INTERPRETER, ("hmR0VmxExitInvlpg: EMInterpretInvlpg %#RX64 failed with %Rrc\n",
-                                                    pVmxTransient->uExitQualification, VBOXSTRICTRC_VAL(rcStrict)));
+        AssertMsgFailed(("Unexpected IEMExecDecodedInvlpg(%#RX64) sttus: %Rrc\n",
+                         pVmxTransient->uExitQualification, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
 

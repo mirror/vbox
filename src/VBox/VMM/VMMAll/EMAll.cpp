@@ -1389,37 +1389,6 @@ VMM_INT_DECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
 /* VT-x only: */
 
 /**
- * Interpret INVLPG.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   The register frame.
- * @param   pAddrGC     Operand address.
- *
- */
-VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
-{
-    /** @todo is addr always a flat linear address or ds based
-     * (in absence of segment override prefixes)????
-     */
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    NOREF(pVM); NOREF(pRegFrame);
-#ifdef IN_RC
-    LogFlow(("RC: EMULATE: invlpg %RGv\n", pAddrGC));
-#endif
-    VBOXSTRICTRC rc = PGMInvalidatePage(pVCpu, pAddrGC);
-    if (    rc == VINF_SUCCESS
-        ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
-        return VINF_SUCCESS;
-    AssertMsgReturn(rc == VINF_EM_RAW_EMULATE_INSTR,
-                    ("%Rrc addr=%RGv\n", VBOXSTRICTRC_VAL(rc), pAddrGC),
-                    VERR_EM_INTERPRETER);
-    return rc;
-}
-
-
-/**
  * Interpret DRx write.
  *
  * @returns VBox status code.
