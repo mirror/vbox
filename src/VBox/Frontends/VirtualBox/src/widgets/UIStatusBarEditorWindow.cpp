@@ -87,6 +87,9 @@ public:
 
 protected:
 
+    /** Handles any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
@@ -105,6 +108,12 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent *pEvent);
 
 private:
+
+    /** Prepares all. */
+    void prepare();
+
+    /** Updates pixmap. */
+    void updatePixmap();
 
     /** Holds the button type. */
     IndicatorType  m_enmType;
@@ -206,24 +215,7 @@ UIStatusBarEditorButton::UIStatusBarEditorButton(IndicatorType enmType)
     , m_fChecked(false)
     , m_fHovered(false)
 {
-    /* Track mouse events: */
-    setMouseTracking(true);
-
-    /* Prepare icon for assigned type: */
-    const QIcon icon = gpConverter->toIcon(m_enmType);
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-    m_pixmapSize = QSize(iIconMetric, iIconMetric);
-    m_pixmap = icon.pixmap(m_pixmapSize);
-
-    /* Cache button size-hint: */
-    QStyleOptionButton option;
-    option.initFrom(this);
-    const QRect minRect = QApplication::style()->subElementRect(QStyle::SE_CheckBoxIndicator, &option);
-    m_size = m_pixmapSize.expandedTo(minRect.size());
-
-    /* Translate finally: */
-    retranslateUi();
+    prepare();
 }
 
 bool UIStatusBarEditorButton::isChecked() const
@@ -237,6 +229,26 @@ void UIStatusBarEditorButton::setChecked(bool fChecked)
     m_fChecked = fChecked;
     /* Update: */
     update();
+}
+
+bool UIStatusBarEditorButton::event(QEvent *pEvent)
+{
+    /* Handle know event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Show:
+        case QEvent::ScreenChangeInternal:
+        {
+            /* Update pixmap: */
+            updatePixmap();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QWidget>::event(pEvent);
 }
 
 void UIStatusBarEditorButton::retranslateUi()
@@ -346,6 +358,38 @@ void UIStatusBarEditorButton::mouseMoveEvent(QMouseEvent *pEvent)
     pDrag->setMimeData(pMimeData);
     pDrag->setPixmap(m_pixmap);
     pDrag->exec();
+}
+
+void UIStatusBarEditorButton::prepare()
+{
+    /* Track mouse events: */
+    setMouseTracking(true);
+
+    /* Calculate icon size: */
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    m_pixmapSize = QSize(iIconMetric, iIconMetric);
+
+    /* Cache button size-hint: */
+    QStyleOptionButton option;
+    option.initFrom(this);
+    const QRect minRect = QApplication::style()->subElementRect(QStyle::SE_CheckBoxIndicator, &option);
+    m_size = m_pixmapSize.expandedTo(minRect.size());
+
+    /* Update pixmap: */
+    updatePixmap();
+
+    /* Translate finally: */
+    retranslateUi();
+}
+
+void UIStatusBarEditorButton::updatePixmap()
+{
+    /* Recache pixmap for assigned type: */
+    const QIcon icon = gpConverter->toIcon(m_enmType);
+    if (window())
+        m_pixmap = icon.pixmap(window()->windowHandle(), m_pixmapSize);
+    else
+        m_pixmap = icon.pixmap(m_pixmapSize);
 }
 
 
