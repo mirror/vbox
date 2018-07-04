@@ -310,6 +310,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
      * Continue according to context.
      */
     bool fDoneHyper = false;
+    bool fDoneImport = false;
     switch (rcErr)
     {
         /*
@@ -703,6 +704,9 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
         case VERR_PATM_IPE_TRAP_IN_PATCH_CODE:
         case VERR_EM_GUEST_CPU_HANG:
         {
+            CPUMImportGuestStateOnDemand(pVCpu, CPUMCTX_EXTRN_ABSOLUTELY_ALL);
+            fDoneImport = true;
+
             DBGFR3Info(pVM->pUVM, "cpumguest", NULL, pHlp);
             DBGFR3Info(pVM->pUVM, "cpumguestinstr", NULL, pHlp);
             DBGFR3Info(pVM->pUVM, "cpumguesthwvirt", NULL, pHlp);
@@ -721,6 +725,8 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
     /*
      * Generic info dumper loop.
      */
+    if (!fDoneImport)
+        CPUMImportGuestStateOnDemand(pVCpu, CPUMCTX_EXTRN_ABSOLUTELY_ALL);
     static struct
     {
         const char *pszInfo;

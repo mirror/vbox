@@ -920,6 +920,8 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
 
 /** All CPUM state bits, not including keeper specific ones. */
 #define CPUMCTX_EXTRN_ALL                       UINT64_C(0x000003fffffffffc)
+/** All CPUM state bits, including keeper specific ones. */
+#define CPUMCTX_EXTRN_ABSOLUTELY_ALL            UINT64_C(0xfffffffffffffffc)
 /** @} */
 
 
