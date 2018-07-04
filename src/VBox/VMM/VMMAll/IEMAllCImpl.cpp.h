@@ -6234,6 +6234,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
     }
 #endif
 
+    /** @todo make CPUMAllMsrs.cpp import the necessary MSR state. */
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
 
     rcStrict = CPUMQueryGuestMsr(pVCpu, pVCpu->cpum.GstCtx.ecx, &uValue.u);
@@ -6241,6 +6242,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
     {
         pVCpu->cpum.GstCtx.rax = uValue.s.Lo;
         pVCpu->cpum.GstCtx.rdx = uValue.s.Hi;
+        pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX);
 
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -6303,6 +6305,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     }
 #endif
 
+    /** @todo make CPUMAllMsrs.cpp import the necessary MSR state. */
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
 
     rcStrict = CPUMSetGuestMsr(pVCpu, pVCpu->cpum.GstCtx.ecx, uValue.u);
@@ -6802,6 +6805,7 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_CPUID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
+    /** @todo make CPUMGetGuestCpuId import any necessary MSR state. */
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
     CPUMGetGuestCpuId(pVCpu, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.eax, &pVCpu->cpum.GstCtx.ebx, &pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.edx);
     pVCpu->cpum.GstCtx.rax &= UINT32_C(0xffffffff);

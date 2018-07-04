@@ -2099,40 +2099,6 @@ static const char *emMSRtoString(uint32_t uMsr)
 
 
 /**
- * Interpret RDMSR
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   The register frame.
- */
-VMM_INT_DECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
-{
-    NOREF(pVM);
-
-    /* Get the current privilege level. */
-    if (CPUMGetGuestCPL(pVCpu) != 0)
-    {
-        Log4(("EM: Refuse RDMSR: CPL != 0\n"));
-        return VERR_EM_INTERPRETER; /* supervisor only */
-    }
-
-    uint64_t uValue;
-    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, pRegFrame->ecx, &uValue);
-    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
-    {
-        Log4(("EM: Refuse RDMSR: rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-        Assert(rcStrict == VERR_CPUM_RAISE_GP_0 || rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_CPUM_R3_MSR_READ);
-        return VERR_EM_INTERPRETER;
-    }
-    pRegFrame->rax = RT_LO_U32(uValue);
-    pRegFrame->rdx = RT_HI_U32(uValue);
-    LogFlow(("EMInterpretRdmsr %s (%x) -> %RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, uValue));
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Interpret DRx write.
  *
  * @returns VBox status code.
@@ -4204,7 +4170,26 @@ static int emInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
              different, so we play safe by completely disassembling the instruction. */
     Assert(!(pDis->fPrefix & DISPREFIX_REX));
     NOREF(pDis); NOREF(pvFault); NOREF(pcbSize);
-    return EMInterpretRdmsr(pVM, pVCpu, pRegFrame);
+
+    /* Get the current privilege level. */
+    if (CPUMGetGuestCPL(pVCpu) != 0)
+    {
+        Log4(("EM: Refuse RDMSR: CPL != 0\n"));
+        return VERR_EM_INTERPRETER; /* supervisor only */
+    }
+
+    uint64_t uValue;
+    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, pRegFrame->ecx, &uValue);
+    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+    {
+        Log4(("EM: Refuse RDMSR: rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        Assert(rcStrict == VERR_CPUM_RAISE_GP_0 || rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_CPUM_R3_MSR_READ);
+        return VERR_EM_INTERPRETER;
+    }
+    pRegFrame->rax = RT_LO_U32(uValue);
+    pRegFrame->rdx = RT_HI_U32(uValue);
+    LogFlow(("EMInterpretRdmsr %s (%x) -> %RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, uValue));
+    return VINF_SUCCESS;
 }
 
 
