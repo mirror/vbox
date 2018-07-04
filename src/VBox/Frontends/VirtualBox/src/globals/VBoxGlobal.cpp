@@ -58,6 +58,7 @@
 # include "UIPopupCenter.h"
 # include "QIMessageBox.h"
 # include "QIDialogButtonBox.h"
+# include "UIFDCreationDialog.h"
 # include "UIIconPool.h"
 # include "UIThreadPool.h"
 # include "UIShortcutPool.h"
@@ -2718,6 +2719,18 @@ QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const Q
     return QString();
 }
 
+QString VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder)
+{
+    QString strMediumID;
+    UIFDCreationDialog *pDialog = new UIFDCreationDialog(pParent, strMachineName, strMachineFolder);
+    if (pDialog->exec())
+    {
+        strMediumID = pDialog->mediumID();
+    }
+    delete pDialog;
+    return strMediumID;
+}
+
 void VBoxGlobal::prepareStorageMenu(QMenu &menu,
                                     QObject *pListener, const char *pszSlotName,
                                     const CMachine &comMachine, const QString &strControllerName, const StorageSlot &storageSlot)
@@ -2745,6 +2758,17 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose disk image...",
                                                                "This is used for hard disks, optical media and floppies"));
 
+    /* Prepare create floppy disk action: */
+    if (enmMediumType == UIMediumType_Floppy)
+    {
+        QAction *pActionCreateFloppy = menu.addAction(UIIconPool::iconSet(":/fd_add_16px.png"),
+                                                      QString(), pListener, pszSlotName);
+        pActionCreateFloppy->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
+                                                                        comCurrentAttachment.GetDevice(), enmMediumType,
+                                                                        UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)));
+        pActionCreateFloppy->setText(QApplication::translate("UIMachineSettingsStorage", "Create a new floppy disk...",
+                                                             "This is used to create a new floppy disk"));
+    }
     /* Prepare ad-hoc-viso action for DVD-ROMs: */
     if (enmMediumType == UIMediumType_DVD)
     {
@@ -2896,6 +2920,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
         /* Do we have an exact ID or do we let the user open a medium? */
         case UIMediumTarget::UIMediumTargetType_WithID:
         case UIMediumTarget::UIMediumTargetType_CreateAdHocVISO:
+        case UIMediumTarget::UIMediumTargetType_CreateFloppyDisk:
         {
             /* New mount-target attributes: */
             QString strNewID;
@@ -2914,12 +2939,14 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
                 }
                 /* Call for file-open dialog: */
                 const QString strMachineFolder(QFileInfo(comConstMachine.GetSettingsFilePath()).absolutePath());
-                const QString strMediumID = target.type != UIMediumTarget::UIMediumTargetType_CreateAdHocVISO
-                                          ? openMediumWithFileOpenDialog(target.mediumType,
-                                                                         windowManager().mainWindowShown(),
-                                                                         strMachineFolder)
-                                          : createVisoMediumWithFileOpenDialog(windowManager().mainWindowShown(),
-                                                                               strMachineFolder);
+                QString strMediumID;
+                if (target.type == UIMediumTarget::UIMediumTargetType_WithID)
+                    strMediumID = openMediumWithFileOpenDialog(target.mediumType, windowManager().mainWindowShown(), strMachineFolder);
+                else if(target.type == UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)
+                    strMediumID = createVisoMediumWithFileOpenDialog(windowManager().mainWindowShown(), strMachineFolder);
+                else if(target.type == UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)
+                    strMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), comConstMachine.GetName(), strMachineFolder);
+
                 /* Return focus back: */
                 if (pLastFocusedWidget)
                     pLastFocusedWidget->setFocus();

@@ -84,7 +84,13 @@ using namespace UIMediumDefs;
 struct UIMediumTarget
 {
     /** Medium-target types. */
-    enum UIMediumTargetType { UIMediumTargetType_WithID, UIMediumTargetType_WithLocation, UIMediumTargetType_CreateAdHocVISO };
+    enum UIMediumTargetType
+    {
+        UIMediumTargetType_WithID,
+        UIMediumTargetType_WithLocation,
+        UIMediumTargetType_CreateAdHocVISO,
+        UIMediumTargetType_CreateFloppyDisk
+    };
 
     /** Medium-target constructor. */
     UIMediumTarget(const QString &strName = QString(), LONG iPort = 0, LONG iDevice = 0,

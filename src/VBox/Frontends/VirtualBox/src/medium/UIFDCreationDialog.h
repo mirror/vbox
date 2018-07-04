@@ -42,9 +42,11 @@ public:
 
     UIFDCreationDialog(QWidget *pParent = 0,
                        const QString &strMachineName = QString(),
-                       const QString &strMachineSettingsFilePath = QString());
+                       const QString &strMachineFolder = QString());
 
     virtual void accept() /* override */;
+    /* Return the mediumID */
+    QString mediumID() const;
 
 protected:
 
@@ -66,11 +68,12 @@ private:
     QString             getDefaultFolder() const;
     UIFilePathSelector *m_pFilePathselector;
     QString             m_strMachineName;
-    QString             m_strMachineSettingsFilePath;
+    QString             m_strMachineFolder;
     QLabel             *m_pPathLabel;
     QLabel             *m_pSizeLabel;
     QComboBox          *m_pSizeCombo;
     QDialogButtonBox   *m_pButtonBox;
+    QString             m_strMediumID;
 };
 
 #endif // __UIFDCreationDialog_h__

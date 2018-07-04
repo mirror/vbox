@@ -42,11 +42,11 @@
 
 UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,
                                        const QString &strMachineName /* = QString() */,
-                                       const QString &strMachineSettingsFilePath /* = QString() */)
+                                       const QString &strMachineFolder /* = QString() */)
    : QIWithRetranslateUI<QDialog>(pParent)
     , m_pFilePathselector(0)
     , m_strMachineName(strMachineName)
-    , m_strMachineSettingsFilePath(strMachineSettingsFilePath)
+    , m_strMachineFolder(strMachineFolder)
     , m_pPathLabel(0)
     , m_pSizeLabel(0)
     , m_pSizeCombo(0)
@@ -149,7 +149,7 @@ QString UIFDCreationDialog::getDefaultFolder() const
 {
     QString strPreferredExtension = UIMediumDefs::getPreferredExtensionForMedium(KDeviceType_Floppy);
 
-    QString strInitialPath = QFileInfo(m_strMachineSettingsFilePath).absolutePath();
+    QString strInitialPath = m_strMachineFolder;
     if (strInitialPath.isEmpty())
         strInitialPath = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
 
@@ -194,8 +194,15 @@ void UIFDCreationDialog::accept()
         msgCenter().cannotCreateHardDiskStorage(progress, m_pFilePathselector->path(), this);
         return;
     }
+    /* Store the id of the newly create medium: */
+    m_strMediumID = newMedium.GetId();
 
     /* After a successful creation and initilization of the floppy disk we call base class accept
        effectively closing this dialog: */
     QDialog::accept();
+}
+
+QString UIFDCreationDialog::mediumID() const
+{
+    return m_strMediumID;
 }

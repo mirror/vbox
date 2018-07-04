@@ -507,6 +507,13 @@ public:
           * @param  strFolder  Brings the folder to browse for VISO file contents. */
         QString createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strFolder);
 
+        /** Creates and shows a dialog thru which user can create a new floppy disk a VISO using the file-open dialog.
+          * @param  parent            Passes the parent of the dialog,
+          * @param  strMachineName    Passes the name of the machine,
+          * @param  strMachineFolder  Passes the machine folder,
+          * returns the ID of the newly created medium if successful, an empty string otherwise.*/
+        QString showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder);
+
         /** Prepares storage menu according passed parameters.
           * @param  menu               Brings the #QMenu to be prepared.
           * @param  pListener          Brings the listener #QObject, this @a menu being prepared for.

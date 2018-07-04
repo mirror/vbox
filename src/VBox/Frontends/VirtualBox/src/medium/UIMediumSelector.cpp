@@ -479,8 +479,8 @@ void UIMediumSelector::sltAddMedium()
 
 void UIMediumSelector::sltCreateMedium()
 {
-
-    UIFDCreationDialog *pDialog = new UIFDCreationDialog(this, m_strMachineName, m_strMachineSettingsFilePath);
+    QString strMachineFolder = QFileInfo(m_strMachineSettingsFilePath).absolutePath();
+    UIFDCreationDialog *pDialog = new UIFDCreationDialog(this, m_strMachineName, strMachineFolder);
     if (pDialog->exec())
     {
         sltHandleRefresh();
