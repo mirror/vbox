@@ -312,5 +312,6 @@
         <file alias="os_linux_64_x3.png">images/x3/os_linux_64_x3.png</file>
         <file alias="os_linux_x3.png">images/x3/os_linux_x3.png</file>
         <file alias="os_macosx_64_x3.png">images/x3/os_macosx_64_x3.png</file>
+        <file alias="os_macosx_x3.png">images/x3/os_macosx_x3.png</file>
     </qresource>
 </RCC>

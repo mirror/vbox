@@ -664,7 +664,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorMachinePerformMove(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_move_16px.png", ":/vm_move_disabled_16px.png")
     {}
 
 protected:

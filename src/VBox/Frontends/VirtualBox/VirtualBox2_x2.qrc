@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="os_macosx_64_x2.png">images/x2/os_macosx_64_x2.png</file>
         <file alias="os_macosx_x2.png">images/x2/os_macosx_x2.png</file>
         <file alias="os_mandriva_64_x2.png">images/x2/os_mandriva_64_x2.png</file>
         <file alias="os_mandriva_x2.png">images/x2/os_mandriva_x2.png</file>
@@ -263,6 +262,8 @@
         <file alias="vm_group_name_disabled_16px_x2.png">images/x2/vm_group_name_disabled_16px_x2.png</file>
         <file alias="vm_group_remove_16px_x2.png">images/x2/vm_group_remove_16px_x2.png</file>
         <file alias="vm_group_remove_disabled_16px_x2.png">images/x2/vm_group_remove_disabled_16px_x2.png</file>
+        <file alias="vm_move_16px_x2.png">images/x2/vm_move_16px_x2.png</file>
+        <file alias="vm_move_disabled_16px_x2.png">images/x2/vm_move_disabled_16px_x2.png</file>
         <file alias="vm_new_16px_x2.png">images/x2/vm_new_16px_x2.png</file>
         <file alias="vm_new_32px_x2.png">images/x2/vm_new_32px_x2.png</file>
         <file alias="vm_open_filemanager_16px_x2.png">images/x2/vm_open_filemanager_16px_x2.png</file>
