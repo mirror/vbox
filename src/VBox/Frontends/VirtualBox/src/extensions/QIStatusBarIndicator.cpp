@@ -118,7 +118,12 @@ void QIStateStatusBarIndicator::paintEvent(QPaintEvent *)
 void QIStateStatusBarIndicator::drawContents(QPainter *pPainter)
 {
     if (m_icons.contains(m_iState))
-        pPainter->drawPixmap(contentsRect().topLeft(), m_icons.value(m_iState).pixmap(m_size));
+    {
+        if (window())
+            pPainter->drawPixmap(contentsRect().topLeft(), m_icons.value(m_iState).pixmap(window()->windowHandle(), m_size));
+        else
+            pPainter->drawPixmap(contentsRect().topLeft(), m_icons.value(m_iState).pixmap(m_size));
+    }
 }
 
 
