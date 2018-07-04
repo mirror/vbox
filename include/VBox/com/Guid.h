@@ -80,10 +80,8 @@ public:
 
     Guid(const RTUUID &that)
     {
-        mGuidState = GUID_NORMAL;
         mUuid = that;
-        if (isZero())
-            mGuidState = GUID_ZERO;
+        updateState();
         dbg_refresh();
     }
 
@@ -91,9 +89,7 @@ public:
     {
         AssertCompileSize(GUID, sizeof(RTUUID));
         ::memcpy(&mUuid, &that, sizeof(GUID));
-        mGuidState = GUID_NORMAL;
-        if (isZero())
-            mGuidState = GUID_ZERO;
+        updateState();
         dbg_refresh();
     }
 
@@ -175,9 +171,7 @@ public:
     Guid& operator=(const RTUUID &guid)
     {
         mUuid = guid;
-        mGuidState = GUID_NORMAL;
-        if (isZero())
-            mGuidState = GUID_ZERO;
+        updateState();
         dbg_refresh();
         return *this;
     }
@@ -186,9 +180,7 @@ public:
     {
         AssertCompileSize(GUID, sizeof(RTUUID));
         ::memcpy(&mUuid, &guid, sizeof(GUID));
-        mGuidState = GUID_NORMAL;
-        if (isZero())
-            mGuidState = GUID_ZERO;
+        updateState();
         dbg_refresh();
         return *this;
     }
@@ -408,6 +400,14 @@ public:
     static const Guid Empty;
 
 private:
+    void updateState()
+    {
+        if (::RTUuidIsNull(&mUuid))
+            mGuidState = GUID_ZERO;
+        else
+            mGuidState = GUID_NORMAL;
+    }
+
     void initString(const char *that)
     {
         if (!that || !*that)
@@ -417,15 +417,14 @@ private:
         }
         else
         {
-            mGuidState = GUID_NORMAL;
             int rc = ::RTUuidFromStr(&mUuid, that);
             if (RT_FAILURE(rc))
             {
                 ::RTUuidClear(&mUuid);
                 mGuidState = GUID_INVALID;
             }
-            else if (isZero())
-                mGuidState = GUID_ZERO;
+            else
+                updateState();
         }
         dbg_refresh();
     }
@@ -439,15 +438,14 @@ private:
         }
         else
         {
-            mGuidState = GUID_NORMAL;
             int rc = ::RTUuidFromUtf16(&mUuid, that);
             if (RT_FAILURE(rc))
             {
                 ::RTUuidClear(&mUuid);
                 mGuidState = GUID_INVALID;
             }
-            else if (isZero())
-                mGuidState = GUID_ZERO;
+            else
+                updateState();
         }
         dbg_refresh();
     }
