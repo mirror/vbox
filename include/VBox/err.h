@@ -2095,22 +2095,12 @@
 #define VERR_VMX_MSR_ALL_VMX_DISABLED               (-4028)
 /** VT-x features disabled by the BIOS. */
 #define VERR_VMX_MSR_VMX_DISABLED                   (-4029)
-/** VM-Entry Controls internal cache invalid. */
-#define VERR_VMX_ENTRY_CTLS_CACHE_INVALID           (-4030)
-/** VM-Exit Controls internal cache invalid. */
-#define VERR_VMX_EXIT_CTLS_CACHE_INVALID            (-4031)
-/** VM-Execution Pin-based Controls internal cache invalid. */
-#define VERR_VMX_PIN_EXEC_CTLS_CACHE_INVALID        (-4032)
-/** VM-Execution Primary Processor-based Controls internal cache
- *  invalid. */
-#define VERR_VMX_PROC_EXEC_CTLS_CACHE_INVALID       (-4033)
-/** VM-Execution Secondary Processor-based Controls internal
- *  cache invalid. */
-#define VERR_VMX_PROC_EXEC2_CTLS_CACHE_INVALID      (-4034)
+/** VT-x VMCS field cache invalid. */
+#define VERR_VMX_VMCS_FIELD_CACHE_INVALID           (-4030)
 /** Failed to set VMXON enable bit while enabling VT-x through the MSR. */
-#define VERR_VMX_MSR_VMX_ENABLE_FAILED              (-4035)
+#define VERR_VMX_MSR_VMX_ENABLE_FAILED              (-4031)
 /** Failed to enable VMXON-in-SMX bit while enabling VT-x through the MSR. */
-#define VERR_VMX_MSR_SMX_VMX_ENABLE_FAILED          (-4036)
+#define VERR_VMX_MSR_SMX_VMX_ENABLE_FAILED          (-4032)
 /** @} */
 
 

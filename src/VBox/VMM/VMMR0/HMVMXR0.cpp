@@ -1620,10 +1620,14 @@ static void hmR0VmxLazyRestoreHostMsrs(PVMCPU pVCpu)
 
 
 /**
- * Verifies that our cached values of the VMCS controls are all
- * consistent with what's actually present in the VMCS.
+ * Verifies that our cached values of the VMCS fields are all consistent with
+ * what's actually present in the VMCS.
  *
  * @returns VBox status code.
+ * @retval  VINF_SUCCESS if all our caches match their respective VMCS fields.
+ * @retval  VERR_VMX_VMCS_FIELD_CACHE_INVALID if a cache field doesn't match the
+ *                                            VMCS content. HMCPU error-field is
+ *                                            updated, see VMX_VCI_XXX.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
 static int hmR0VmxCheckVmcsCtls(PVMCPU pVCpu)
@@ -1631,32 +1635,56 @@ static int hmR0VmxCheckVmcsCtls(PVMCPU pVCpu)
     uint32_t u32Val;
     int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY, &u32Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturn(pVCpu->hm.s.vmx.u32EntryCtls == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32EntryCtls, u32Val),
-                    VERR_VMX_ENTRY_CTLS_CACHE_INVALID);
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32EntryCtls == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32EntryCtls, u32Val),
+                        pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_ENTRY,
+                        VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT, &u32Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturn(pVCpu->hm.s.vmx.u32ExitCtls == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32ExitCtls, u32Val),
-                    VERR_VMX_EXIT_CTLS_CACHE_INVALID);
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32ExitCtls == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32ExitCtls, u32Val),
+                        pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_EXIT,
+                        VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PIN_EXEC, &u32Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturn(pVCpu->hm.s.vmx.u32PinCtls == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32PinCtls, u32Val),
-                    VERR_VMX_PIN_EXEC_CTLS_CACHE_INVALID);
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32PinCtls == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32PinCtls, u32Val),
+                        pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PIN_EXEC,
+                        VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturn(pVCpu->hm.s.vmx.u32ProcCtls == u32Val, ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32ProcCtls, u32Val),
-                    VERR_VMX_PROC_EXEC_CTLS_CACHE_INVALID);
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32ProcCtls == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls, u32Val),
+                        pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PROC_EXEC,
+                        VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
     {
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, &u32Val);
         AssertRCReturn(rc, rc);
-        AssertMsgReturn(pVCpu->hm.s.vmx.u32ProcCtls2 == u32Val,
-                        ("Cache=%#RX32 VMCS=%#RX32", pVCpu->hm.s.vmx.u32ProcCtls2, u32Val),
-                        VERR_VMX_PROC_EXEC2_CTLS_CACHE_INVALID);
+        AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32ProcCtls2 == u32Val,
+                            ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls2, u32Val),
+                            pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PROC_EXEC2,
+                            VERR_VMX_VMCS_FIELD_CACHE_INVALID);
     }
+
+    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, &u32Val);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32XcptBitmap == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32XcptBitmap, u32Val),
+                        pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_XCPT_BITMAP,
+                        VERR_VMX_VMCS_FIELD_CACHE_INVALID);
+
+    uint64_t u64Val;
+    rc = VMXReadVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, &u64Val);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u64TscOffset == u64Val,
+                        ("Cache=%#RX64 VMCS=%#RX64\n", pVCpu->hm.s.vmx.u64TscOffset, u64Val),
+                        pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_TSC_OFFSET,
+                        VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     return VINF_SUCCESS;
 }
@@ -2639,26 +2667,26 @@ static int hmR0VmxInitXcptBitmap(PVMCPU pVCpu)
 {
     AssertPtr(pVCpu);
 
-    uint32_t u32XcptBitmap;
+    uint32_t uXcptBitmap;
 
     /* Must always intercept #AC to prevent the guest from hanging the CPU. */
-    u32XcptBitmap = RT_BIT_32(X86_XCPT_AC);
+    uXcptBitmap = RT_BIT_32(X86_XCPT_AC);
 
     /* Because we need to maintain the DR6 state even when intercepting DRx reads
        and writes, and because recursive #DBs can cause the CPU hang, we must always
        intercept #DB. */
-    u32XcptBitmap |= RT_BIT_32(X86_XCPT_DB);
+    uXcptBitmap |= RT_BIT_32(X86_XCPT_DB);
 
     /* Without Nested Paging, #PF must cause a VM-exit so we can sync our shadow page tables. */
     if (!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
-        u32XcptBitmap |= RT_BIT(X86_XCPT_PF);
+        uXcptBitmap |= RT_BIT(X86_XCPT_PF);
 
     /* Commit it to the VMCS. */
-    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, u32XcptBitmap);
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, uXcptBitmap);
     AssertRCReturn(rc, rc);
 
     /* Update our cache of the exception bitmap. */
-    pVCpu->hm.s.vmx.u32XcptBitmap = u32XcptBitmap;
+    pVCpu->hm.s.vmx.u32XcptBitmap = uXcptBitmap;
     return VINF_SUCCESS;
 }
 
@@ -3759,12 +3787,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
 #elif defined(HMVMX_ALWAYS_TRAP_PF)
         uXcptBitmap |= RT_BIT(X86_XCPT_PF);
 #endif
-        if (uXcptBitmap != pVCpu->hm.s.vmx.u32XcptBitmap)
-        {
-            pVCpu->hm.s.vmx.u32XcptBitmap = uXcptBitmap;
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS);
-        }
-        Assert(pVM->hm.s.fNestedPaging || (pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT(X86_XCPT_PF)));
+        Assert(pVM->hm.s.fNestedPaging || (uXcptBitmap & RT_BIT(X86_XCPT_PF)));
 
         /*
          * Set/clear the CR0 specific bits along with their exceptions (PE, PG, CD, NW).
@@ -3801,7 +3824,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             u32Cr0Mask &= ~X86_CR0_PE;
 #endif
         /*
-         * Finally, update VMCS fields with the CR0 values.
+         * Finally, update VMCS fields with the CR0 values and the exception bitmap.
          */
         int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u32GuestCr0);
         rc    |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, u32ShadowCr0);
@@ -3809,11 +3832,14 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, u32Cr0Mask);
         if (uProcCtls != pVCpu->hm.s.vmx.u32ProcCtls)
             rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
+        if (uXcptBitmap != pVCpu->hm.s.vmx.u32XcptBitmap)
+            rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, uXcptBitmap);
         AssertRCReturn(rc, rc);
 
         /* Update our caches. */
-        pVCpu->hm.s.vmx.u32Cr0Mask  = u32Cr0Mask;
-        pVCpu->hm.s.vmx.u32ProcCtls = uProcCtls;
+        pVCpu->hm.s.vmx.u32Cr0Mask    = u32Cr0Mask;
+        pVCpu->hm.s.vmx.u32ProcCtls   = uProcCtls;
+        pVCpu->hm.s.vmx.u32XcptBitmap = uXcptBitmap;
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_CR0);
 
@@ -8140,7 +8166,6 @@ static VBOXSTRICTRC hmR0VmxExportGuestState(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
     rc = hmR0VmxExportGuestApicTpr(pVCpu);
     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
 
-    /* This needs to be done after hmR0VmxExportGuestCR0() as it may alter intercepted exceptions. */
     rc = hmR0VmxExportGuestXcptIntercepts(pVCpu);
     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
 
@@ -11692,8 +11717,10 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     int rc = hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
-    rc    |= hmR0VmxCheckVmcsCtls(pVCpu);
     AssertRCReturn(rc, rc);
+    rc = hmR0VmxCheckVmcsCtls(pVCpu);
+    if (RT_FAILURE(rc))
+        return rc;
 
     uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVCpu, pMixedCtx);
     NOREF(uInvalidReason);

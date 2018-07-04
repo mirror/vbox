@@ -150,6 +150,26 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED                14
 /** @} */
 
+/** @name VMX HM-error codes for VERR_VMX_VMCS_FIELD_CACHE_INVALID.
+ *  VCI = VMCS-field Cache Invalid.
+ * @{
+ */
+/** Cache of VM-entry controls invalid. */
+#define VMX_VCI_CTRL_ENTRY                                      300
+/** Cache of VM-exit controls invalid. */
+#define VMX_VCI_CTRL_EXIT                                       301
+/** Cache of pin-based VM-execution controls invalid. */
+#define VMX_VCI_CTRL_PIN_EXEC                                   302
+/** Cache of processor-based VM-execution controls invalid. */
+#define VMX_VCI_CTRL_PROC_EXEC                                  303
+/** Cache of secondary processor-based VM-execution controls invalid. */
+#define VMX_VCI_CTRL_PROC_EXEC2                                 304
+/** Cache of exception bitmap invalid. */
+#define VMX_VCI_CTRL_XCPT_BITMAP                                305
+/** Cache of TSC offset invalid. */
+#define VMX_VCI_CTRL_TSC_OFFSET                                 306
+/** @} */
+
 /** @name VMX HM-error codes for VERR_VMX_INVALID_GUEST_STATE.
  *  IGS = Invalid Guest State.
  * @{
