@@ -75,7 +75,6 @@ int main(int argc, char *argv[])
             {
                 showusage();
                 exit(0);
-                break;
             }
             case 's':
             {
