@@ -734,7 +734,8 @@ typedef const EPTPT *PCEPTPT;
 
 /** @} */
 
-/** VMX VPID flush types.
+/**
+ * VMX VPID flush types.
  * @note Valid enum members are in accordance to the VT-x spec.
  */
 typedef enum
@@ -754,7 +755,8 @@ typedef enum
 } VMXFLUSHVPID;
 AssertCompileSize(VMXFLUSHVPID, 4);
 
-/** VMX EPT flush types.
+/**
+ * VMX EPT flush types.
  * @note Valid enums values are in accordance to the VT-x spec.
  */
 typedef enum
@@ -770,7 +772,8 @@ typedef enum
 } VMXFLUSHEPT;
 AssertCompileSize(VMXFLUSHEPT, 4);
 
-/** VMX Posted Interrupt Descriptor.
+/**
+ * VMX Posted Interrupt Descriptor.
  * In accordance to the VT-x spec.
  */
 typedef struct VMXPOSTEDINTRDESC
@@ -787,7 +790,8 @@ typedef VMXPOSTEDINTRDESC *PVMXPOSTEDINTRDESC;
 /** Pointer to a const posted interrupt descriptor. */
 typedef const VMXPOSTEDINTRDESC *PCVMXPOSTEDINTRDESC;
 
-/** VMX MSR autoload/store element.
+/**
+ * VMX MSR autoload/store element.
  * In accordance to the VT-x spec.
  */
 typedef struct VMXAUTOMSR
@@ -806,7 +810,7 @@ typedef VMXAUTOMSR *PVMXAUTOMSR;
 typedef const VMXAUTOMSR *PCVMXAUTOMSR;
 
 /**
- * VMX-capability qword
+ * VMX-capability qword.
  */
 typedef union
 {
@@ -827,34 +831,25 @@ AssertCompileSize(VMXCAPABILITY, 8);
  */
 typedef struct VMXMSRS
 {
-    uint64_t                u64FeatureCtrl;
-    uint64_t                u64BasicInfo;
-    VMXCAPABILITY           VmxPinCtls;
-    VMXCAPABILITY           VmxProcCtls;
-    VMXCAPABILITY           VmxProcCtls2;
-    VMXCAPABILITY           VmxExit;
-    VMXCAPABILITY           VmxEntry;
-    uint64_t                u64Misc;
-    uint64_t                u64Cr0Fixed0;
-    uint64_t                u64Cr0Fixed1;
-    uint64_t                u64Cr4Fixed0;
-    uint64_t                u64Cr4Fixed1;
-    uint64_t                u64VmcsEnum;
-    uint64_t                u64Vmfunc;
-    uint64_t                u64EptVpidCaps;
+    uint64_t        u64FeatureCtrl;
+    uint64_t        u64BasicInfo;
+    VMXCAPABILITY   VmxPinCtls;
+    VMXCAPABILITY   VmxProcCtls;
+    VMXCAPABILITY   VmxProcCtls2;
+    VMXCAPABILITY   VmxExit;
+    VMXCAPABILITY   VmxEntry;
+    uint64_t        u64Misc;
+    uint64_t        u64Cr0Fixed0;
+    uint64_t        u64Cr0Fixed1;
+    uint64_t        u64Cr4Fixed0;
+    uint64_t        u64Cr4Fixed1;
+    uint64_t        u64VmcsEnum;
+    uint64_t        u64Vmfunc;
+    uint64_t        u64EptVpidCaps;
 } VMXMSRS;
 AssertCompileSizeAlignment(VMXMSRS, 8);
 /** Pointer to a VMXMSRS struct. */
 typedef VMXMSRS *PVMXMSRS;
-
-/** @name VMX EFLAGS reserved bits.
- * @{
- */
-/** And-mask for setting reserved bits to zero */
-#define VMX_EFLAGS_RESERVED_0                                   (X86_EFL_1 | X86_EFL_LIVE_MASK)
-/** Or-mask for setting reserved bits to 1 */
-#define VMX_EFLAGS_RESERVED_1                                   X86_EFL_1
-/** @} */
 
 /** @name VMX Basic Exit Reasons.
  * @{
@@ -943,18 +938,23 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_ERR_MACHINE_CHECK                              41
 /** 43 TPR below threshold. Guest software executed MOV to CR8. */
 #define VMX_EXIT_TPR_BELOW_THRESHOLD                            43
-/** 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
+/** 44 APIC access. Guest software attempted to access memory at a physical
+ *  address on the APIC-access page. */
 #define VMX_EXIT_APIC_ACCESS                                    44
-/** 45 Virtualized EOI. EOI virtualization was performed for a virtual interrupt
-whose vector indexed a bit set in the EOI-exit bitmap. */
+/** 45 Virtualized EOI. EOI virtualization was performed for a virtual
+ *  interrupt whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_EXIT_VIRTUALIZED_EOI                                45
-/** 46 Access to GDTR or IDTR. Guest software attempted to execute LGDT, LIDT, SGDT, or SIDT. */
+/** 46 Access to GDTR or IDTR. Guest software attempted to execute LGDT, LIDT,
+ *  SGDT, or SIDT. */
 #define VMX_EXIT_XDTR_ACCESS                                    46
-/** 47 Access to LDTR or TR. Guest software attempted to execute LLDT, LTR, SLDT, or STR. */
+/** 47 Access to LDTR or TR. Guest software attempted to execute LLDT, LTR,
+ *  SLDT, or STR. */
 #define VMX_EXIT_TR_ACCESS                                      47
-/** 48 EPT violation. An attempt to access memory with a guest-physical address was disallowed by the configuration of the EPT paging structures. */
+/** 48 EPT violation. An attempt to access memory with a guest-physical address
+ *  was disallowed by the configuration of the EPT paging structures. */
 #define VMX_EXIT_EPT_VIOLATION                                  48
-/** 49 EPT misconfiguration. An attempt to access memory with a guest-physical address encountered a misconfigured EPT paging-structure entry. */
+/** 49 EPT misconfiguration. An attempt to access memory with a guest-physical
+ *  address encountered a misconfigured EPT paging-structure entry. */
 #define VMX_EXIT_EPT_MISCONFIG                                  49
 /** 50 INVEPT. Guest software attempted to execute INVEPT. */
 #define VMX_EXIT_INVEPT                                         50
@@ -1063,11 +1063,13 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
  *  1 -> within the first 4 GB
  */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_PHYS_WIDTH(a)              (((a) >> 48) & 1)
-/** Whether the processor supports the dual-monitor treatment of system-management interrupts and system-management code. (always 1) */
+/** Whether the processor supports the dual-monitor treatment of
+ *  system-management interrupts and system-management code. (always 1) */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(a)                (((a) >> 49) & 1)
 /** Memory type that must be used for the VMCS. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xF)
-/** Whether the processor provides additional information for exits due to INS/OUTS. */
+/** Whether the processor provides additional information for exits due to
+ *  INS/OUTS. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(a)                ((a) & RT_BIT_64(54))
 /** Whether default 1 bits in control MSRs (pin/proc/exit/entry) may be
  *  cleared to 0 and that 'true' control MSRs are supported. */
@@ -1078,7 +1080,8 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @name VMX MSRs - Misc VMX info.
  * @{
  */
-/** Relationship between the preemption timer and tsc; count down every time bit x of the tsc changes. */
+/** Relationship between the preemption timer and tsc; count down every time bit
+ *  x of the tsc changes. */
 #define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    ((a) & 0x1f)
 /** Whether VM-exit stores EFER.LMA into the "IA32e mode guest" field. */
 #define MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(a)               (((a) >> 5) & 1)
@@ -1144,7 +1147,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @} */
 
 
-/** @name VMCS field encoding - 16 bits guest fields
+/** @name VMCS field encoding: 16-bit guest fields.
  * @{
  */
 #define VMX_VMCS16_VPID                                         0x000
@@ -1161,7 +1164,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_VMCS16_GUEST_INTR_STATUS                            0x810
 /** @} */
 
-/** @name VMCS field encoding - 16 bits host fields
+/** @name VMCS field encoding: 16-bits host fields.
  * @{
  */
 #define VMX_VMCS16_HOST_ES_SEL                                  0xC00
@@ -1173,7 +1176,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_VMCS16_HOST_TR_SEL                                  0xC0C
 /** @}          */
 
-/** @name VMCS field encoding - 64 bits host fields
+/** @name VMCS field encoding: 64-bit host fields.
  * @{
  */
 #define VMX_VMCS64_HOST_PAT_FULL                                0x2C00
@@ -1185,99 +1188,61 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @}          */
 
 
-/** @name VMCS field encoding - 64 Bits control fields
+/** @name VMCS field encoding: 64-bit control fields.
  * @{
  */
 #define VMX_VMCS64_CTRL_IO_BITMAP_A_FULL                        0x2000
 #define VMX_VMCS64_CTRL_IO_BITMAP_A_HIGH                        0x2001
 #define VMX_VMCS64_CTRL_IO_BITMAP_B_FULL                        0x2002
 #define VMX_VMCS64_CTRL_IO_BITMAP_B_HIGH                        0x2003
-
-/* Optional */
 #define VMX_VMCS64_CTRL_MSR_BITMAP_FULL                         0x2004
 #define VMX_VMCS64_CTRL_MSR_BITMAP_HIGH                         0x2005
-
 #define VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL                     0x2006
 #define VMX_VMCS64_CTRL_EXIT_MSR_STORE_HIGH                     0x2007
 #define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL                      0x2008
 #define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_HIGH                      0x2009
-
 #define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL                     0x200A
 #define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_HIGH                     0x200B
-
 #define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL                      0x200C
 #define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH                      0x200D
-
 #define VMX_VMCS64_CTRL_TSC_OFFSET_FULL                         0x2010
 #define VMX_VMCS64_CTRL_TSC_OFFSET_HIGH                         0x2011
-
-/** Optional (VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW) */
 #define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL                     0x2012
 #define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_HIGH                     0x2013
-
-/** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) */
 #define VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL                    0x2014
 #define VMX_VMCS64_CTRL_APIC_ACCESSADDR_HIGH                    0x2015
-
-/** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC) */
 #define VMX_VMCS64_CTRL_POSTED_INTR_DESC_FULL                   0x2016
 #define VMX_VMCS64_CTRL_POSTED_INTR_DESC_HIGH                   0x2017
-
-/** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC) */
 #define VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL                       0x2018
 #define VMX_VMCS64_CTRL_VMFUNC_CTRLS_HIGH                       0x2019
-
-/** Extended page table pointer. */
 #define VMX_VMCS64_CTRL_EPTP_FULL                               0x201A
 #define VMX_VMCS64_CTRL_EPTP_HIGH                               0x201B
-
-/** EOI-exit bitmap 0. */
 #define VMX_VMCS64_CTRL_EOI_BITMAP_0_FULL                       0x201C
 #define VMX_VMCS64_CTRL_EOI_BITMAP_0_HIGH                       0x201D
-
-/** EOI-exit bitmap 1. */
 #define VMX_VMCS64_CTRL_EOI_BITMAP_1_FULL                       0x201E
 #define VMX_VMCS64_CTRL_EOI_BITMAP_1_HIGH                       0x201F
-
-/** EOI-exit bitmap 2. */
 #define VMX_VMCS64_CTRL_EOI_BITMAP_2_FULL                       0x2020
 #define VMX_VMCS64_CTRL_EOI_BITMAP_2_HIGH                       0x2021
-
-/** EOI-exit bitmap 3. */
 #define VMX_VMCS64_CTRL_EOI_BITMAP_3_FULL                       0x2022
 #define VMX_VMCS64_CTRL_EOI_BITMAP_3_HIGH                       0x2023
-
-/** Extended page table pointer lists. */
 #define VMX_VMCS64_CTRL_EPTP_LIST_FULL                          0x2024
 #define VMX_VMCS64_CTRL_EPTP_LIST_HIGH                          0x2025
-
-/** VM-read bitmap. */
 #define VMX_VMCS64_CTRL_VMREAD_BITMAP_FULL                      0x2026
 #define VMX_VMCS64_CTRL_VMREAD_BITMAP_HIGH                      0x2027
-
-/** VM-write bitmap. */
 #define VMX_VMCS64_CTRL_VMWRITE_BITMAP_FULL                     0x2028
 #define VMX_VMCS64_CTRL_VMWRITE_BITMAP_HIGH                     0x2029
-
-/** Virtualization-exception information address. */
 #define VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_FULL                 0x202A
 #define VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_HIGH                 0x202B
-
-/** XSS-exiting bitmap. */
 #define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_FULL                 0x202C
 #define VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH                 0x202D
-
-/** TSC multiplier. */
 #define VMX_VMCS64_CTRL_TSC_MULTIPLIER_FULL                     0x2032
 #define VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH                     0x2033
-
-/** VM-exit guest physical address. */
 #define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL                    0x2400
 #define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_HIGH                    0x2401
 /** @} */
 
 
-/** @name VMCS field encoding - 64 Bits guest fields
+/** @name VMCS field encoding: 64-bit guest fields.
  * @{
  */
 #define VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL                     0x2800
@@ -1301,7 +1266,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @} */
 
 
-/** @name VMCS field encoding - 32 Bits control fields
+/** @name VMCS field encoding: 32-bit control fields.
  * @{
  */
 #define VMX_VMCS32_CTRL_PIN_EXEC                                0x4000
@@ -1328,9 +1293,11 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @name VMX_VMCS_CTRL_PIN_EXEC
  * @{
  */
-/** External interrupts cause VM-exits if set; otherwise dispatched through the guest's IDT. */
+/** External interrupts cause VM-exits if set; otherwise dispatched through the
+ *  guest's IDT. */
 #define VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT                     RT_BIT(0)
-/** Non-maskable interrupts cause VM-exits if set; otherwise dispatched through the guest's IDT. */
+/** Non-maskable interrupts cause VM-exits if set; otherwise dispatched through
+ *  the guest's IDT. */
 #define VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT                         RT_BIT(3)
 /** Virtual NMIs. */
 #define VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI                      RT_BIT(5)
@@ -1359,9 +1326,11 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT                      RT_BIT(11)
 /** VM-exit when executing the RDTSC/RDTSCP instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT                      RT_BIT(12)
-/** VM-exit when executing the MOV to CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
+/** VM-exit when executing the MOV to CR3 instruction. (forced to 1 on the
+ *  'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT                   RT_BIT(15)
-/** VM-exit when executing the MOV from CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
+/** VM-exit when executing the MOV from CR3 instruction. (forced to 1 on the
+ *  'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT                  RT_BIT(16)
 /** VM-exit on CR8 loads. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT                   RT_BIT(19)
@@ -1385,7 +1354,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT                    RT_BIT(29)
 /** VM-exit when executing the PAUSE instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT                      RT_BIT(30)
-/** Determines whether the secondary processor based VM-execution controls are used. */
+/** Whether the secondary processor based VM-execution controls are used. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL         RT_BIT(31)
 /** @} */
 
@@ -1437,14 +1406,14 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_XSAVES_XRSTORS                 RT_BIT(20)
 /** Use TSC scaling. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_TSC_SCALING                    RT_BIT(25)
-
 /** @} */
 
 
 /** @name VMX_VMCS_CTRL_ENTRY
  * @{
  */
-/** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
+/** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the
+ *  'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG                          RT_BIT(2)
 /** 64 bits guest mode. Must be 0 for CPUs that don't support AMD64. */
 #define VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST                    RT_BIT(9)
@@ -1464,7 +1433,8 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @name VMX_VMCS_CTRL_EXIT
  * @{
  */
-/** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
+/** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the
+ *  'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_EXIT_SAVE_DEBUG                           RT_BIT(2)
 /** Return to long mode after a VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE                 RT_BIT(9)
@@ -1493,7 +1463,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @} */
 
 
-/** @name VMCS field encoding - 32 Bits read-only fields
+/** @name VMCS field encoding: 32-bits read-only fields.
  * @{
  */
 #define VMX_VMCS32_RO_VM_INSTR_ERROR                            0x4400
@@ -1534,7 +1504,8 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK_IRET(a)          ((a) & RT_BIT(12))
 #define VMX_EXIT_INTERRUPTION_INFO_VALID                        RT_BIT(31)
 #define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                  RT_BOOL((a) & RT_BIT(31))
-/** Construct an irq event injection value from the exit interruption info value (same except that bit 12 is reserved). */
+/** Construct an irq event injection value from the exit interruption info value
+ *  (same except that bit 12 is reserved). */
 #define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)      ((a) & ~RT_BIT(12))
 /** @} */
 
@@ -1576,7 +1547,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @} */
 
 
-/** @name VMCS field encoding - 32 Bits guest state fields
+/** @name VMCS field encoding: 32-bit guest-state fields.
  * @{
  */
 #define VMX_VMCS32_GUEST_ES_LIMIT                               0x4800
@@ -1628,7 +1599,7 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @} */
 
 
-/** @name VMCS field encoding - 32 Bits host state fields
+/** @name VMCS field encoding: 32-bit host-state fields.
  * @{
  */
 #define VMX_VMCS32_HOST_SYSENTER_CS                             0x4C00
@@ -1665,15 +1636,15 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
  * @{
  */
 /** 0-2:  Debug register number */
-#define VMX_EXIT_QUAL_DRX_REGISTER(a)                  ((a) & 7)
+#define VMX_EXIT_QUAL_DRX_REGISTER(a)                           ((a) & 7)
 /** 3:    Reserved; cleared to 0. */
-#define VMX_EXIT_QUAL_DRX_RES1(a)                      (((a) >> 3) & 1)
+#define VMX_EXIT_QUAL_DRX_RES1(a)                               (((a) >> 3) & 1)
 /** 4:    Direction of move (0 = write, 1 = read) */
-#define VMX_EXIT_QUAL_DRX_DIRECTION(a)                 (((a) >> 4) & 1)
+#define VMX_EXIT_QUAL_DRX_DIRECTION(a)                          (((a) >> 4) & 1)
 /** 5-7:  Reserved; cleared to 0. */
-#define VMX_EXIT_QUAL_DRX_RES2(a)                      (((a) >> 5) & 7)
+#define VMX_EXIT_QUAL_DRX_RES2(a)                               (((a) >> 5) & 7)
 /** 8-11: General purpose register number. */
-#define VMX_EXIT_QUAL_DRX_GENREG(a)                    (((a) >> 8) & 0xF)
+#define VMX_EXIT_QUAL_DRX_GENREG(a)                             (((a) >> 8) & 0xF)
 /** Rest: reserved. */
 /** @} */
 
@@ -1796,9 +1767,10 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 /** @name VMX_EXIT_APIC_ACCESS
  * @{
  */
-/** 0-11:   If the APIC-access VM-exit is due to a linear access, the offset of access within the APIC page. */
+/** 0-11: If the APIC-access VM-exit is due to a linear access, the offset of
+ *  access within the APIC page. */
 #define VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(a)            ((a) & 0xfff)
-/** 12-15:  Access type. */
+/** 12-15: Access type. */
 #define VMX_EXIT_QUAL_APIC_ACCESS_TYPE(a)              (((a) & 0xf000) >> 12)
 /* Rest reserved. */
 /** @} */
@@ -1932,7 +1904,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 /** @} */
 
 
-/** @name VMCS field encoding - Natural width guest state fields
+/** @name VMCS field encoding: Natural width guest-state fields.
  * @{
  */
 #define VMX_VMCS_GUEST_CR0                                      0x6800
@@ -1976,7 +1948,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS                      RT_BIT(14)
 /** @} */
 
-/** @name VMCS field encoding - Natural width host state fields
+
+/** @name VMCS field encoding: Natural width host-state fields.
  * @{
  */
 #define VMX_VMCS_HOST_CR0                                       0x6C00
@@ -2221,6 +2194,7 @@ success:
 }
 #endif
 
+
 /**
  * Executes VMPTRST.
  *
@@ -2229,6 +2203,7 @@ success:
  *                         VMCS.
  */
 DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pHCPhysVmcs);
+
 
 /**
  * Executes VMWRITE.
@@ -2347,6 +2322,7 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
  */
 DECLASM(int) VMXR0InvEPT(VMXFLUSHEPT enmFlush, uint64_t *pDescriptor);
 
+
 /**
  * Invalidate a page using INVVPID.
  *
@@ -2355,6 +2331,7 @@ DECLASM(int) VMXR0InvEPT(VMXFLUSHEPT enmFlush, uint64_t *pDescriptor);
  * @param   pDescriptor     Pointer to the descriptor.
  */
 DECLASM(int) VMXR0InvVPID(VMXFLUSHVPID enmFlush, uint64_t *pDescriptor);
+
 
 /**
  * Executes VMREAD.
@@ -2482,6 +2459,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
 # endif
 }
 #endif
+
 
 /**
  * Gets the last instruction error value from the current VMCS.
