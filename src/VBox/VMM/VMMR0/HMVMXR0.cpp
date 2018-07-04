@@ -7117,6 +7117,7 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
         RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
         RTThreadPreemptDisable(&PreemptState);
 
+        hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
         CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu);
         CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */);
 

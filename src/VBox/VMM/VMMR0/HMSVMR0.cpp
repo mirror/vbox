@@ -3209,6 +3209,9 @@ static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
         VMMRZCallRing3Disable(pVCpu);
         HM_DISABLE_PREEMPT();
 
+        /* Import the entire guest state. */
+        hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
+
         /* Restore host FPU state if necessary and resync on next R0 reentry. */
         CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu);
 
