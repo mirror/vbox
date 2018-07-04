@@ -112,7 +112,7 @@ PR_IMPLEMENT(PRStatus) PR_GetSystemInfo(PRSysInfo cmd, char *buf, PRUint32 bufle
          */
 #ifndef _PR_GET_HOST_ADDR_AS_NAME
         /* Return the unqualified hostname */
-            while (buf[len] && (len < buflen)) {
+            while ((len < buflen) && buf[len]) {
                 if (buf[len] == '.') {
                     buf[len] = '\0';
                     break;
