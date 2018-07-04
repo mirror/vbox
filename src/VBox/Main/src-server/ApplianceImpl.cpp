@@ -515,8 +515,7 @@ HRESULT Appliance::getDisks(std::vector<com::Utf8Str> &aDisks)
 }
 
 /**
-* Public method implementation.
- * @return
+ * Public method implementation.
  */
 HRESULT Appliance::getCertificate(ComPtr<ICertificate> &aCertificateInfo)
 {
@@ -532,8 +531,6 @@ HRESULT Appliance::getCertificate(ComPtr<ICertificate> &aCertificateInfo)
 
 /**
  * Public method implementation.
- * @param   aVirtualSystemDescriptions
- * @return
  */
 HRESULT Appliance::getVirtualSystemDescriptions(std::vector<ComPtr<IVirtualSystemDescription> > &aVirtualSystemDescriptions)
 {
@@ -547,15 +544,13 @@ HRESULT Appliance::getVirtualSystemDescriptions(std::vector<ComPtr<IVirtualSyste
     size_t i = 0;
     for (std::list< ComObjPtr<VirtualSystemDescription> >::iterator it = vsds.begin(); it != vsds.end(); ++it, ++i)
     {
-         (*it).queryInterfaceTo(aVirtualSystemDescriptions[i].asOutParam());
+        (*it).queryInterfaceTo(aVirtualSystemDescriptions[i].asOutParam());
     }
     return S_OK;
 }
 
 /**
  * Public method implementation.
- * @param aMachines
- * @return
  */
 HRESULT Appliance::getMachines(std::vector<com::Utf8Str> &aMachines)
 {
@@ -605,8 +600,7 @@ HRESULT Appliance::createVFSExplorer(const com::Utf8Str &aURI, ComPtr<IVFSExplor
 }
 
 /**
-* Public method implementation.
- * @return
+ * Public method implementation.
  */
 HRESULT Appliance::getWarnings(std::vector<com::Utf8Str> &aWarnings)
 {
@@ -691,7 +685,7 @@ HRESULT Appliance::addPasswords(const std::vector<com::Utf8Str> &aIdentifiers,
 // Appliance private methods
 //
 ////////////////////////////////////////////////////////////////////////////////
-//
+
 HRESULT Appliance::i_initSetOfSupportedStandardsURI()
 {
     HRESULT rc = S_OK;
@@ -809,7 +803,6 @@ Utf8Str Appliance::i_applianceIOName(APPLIANCEIONAME type) const
  *
  * @return ComObjPtr<MediumFormat>
  */
-
 HRESULT Appliance::i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, ComObjPtr<MediumFormat>& mf)
 {
     HRESULT rc = S_OK;
@@ -863,11 +856,8 @@ HRESULT Appliance::i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, Com
         mf = pSysProps->i_mediumFormat(strSrcFormat);
 
     if (mf.isNull())
-    {
-        rc = setError(E_FAIL,
-               tr("Internal inconsistency looking up medium format for the disk image '%s'"),
-               di.strHref.c_str());
-    }
+        rc = setError(E_FAIL, tr("Internal inconsistency looking up medium format for the disk image '%s'"),
+                      di.strHref.c_str());
 
     return rc;
 }
@@ -920,8 +910,6 @@ RTVFSIOSTREAM Appliance::i_manifestSetupDigestCalculationForGivenIoStream(RTVFSI
  * is busy. The caller should then return E_ACCESSDENIED.
  *
  * Must be called from under the object lock!
- *
- * @return
  */
 bool Appliance::i_isApplianceIdle()
 {
@@ -987,11 +975,6 @@ HRESULT Appliance::i_searchUniqueDiskImageFilePath(const Utf8Str &aMachineFolder
 /**
  * Called from Appliance::importImpl() and Appliance::writeImpl() to set up a
  * progress object with the proper weights and maximum progress values.
- *
- * @param pProgress
- * @param strDescription
- * @param mode
- * @return
  */
 HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
                                    const Utf8Str &strDescription,
@@ -1103,6 +1086,7 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
  * background disk thread's progress object with the current progress object so
  * that the user interface sees progress correctly and that cancel signals are
  * passed on to the second thread.
+ *
  * @param pProgressThis Progress object of the current thread.
  * @param pProgressAsync Progress object of asynchronous task running in background.
  */
@@ -1259,8 +1243,7 @@ void Appliance::i_parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
  *
  * @thread  pTask       The task.
  */
-/* static */
-void Appliance::i_importOrExportThreadTask(TaskOVF *pTask)
+/* static */ void Appliance::i_importOrExportThreadTask(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     AssertReturnVoid(pTask);
@@ -1324,8 +1307,7 @@ void Appliance::i_importOrExportThreadTask(TaskOVF *pTask)
     LogFlowFuncLeave();
 }
 
-/* static */
-DECLCALLBACK(int) Appliance::TaskOVF::updateProgress(unsigned uPercent, void *pvUser)
+/* static */ DECLCALLBACK(int) Appliance::TaskOVF::updateProgress(unsigned uPercent, void *pvUser)
 {
     Appliance::TaskOVF* pTask = *(Appliance::TaskOVF**)pvUser;
 
@@ -1388,12 +1370,12 @@ void i_parseURI(Utf8Str strUri, LocationInfo &locInfo)
     locInfo.strPath = strUri;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // IVirtualSystemDescription constructor / destructor
 //
 ////////////////////////////////////////////////////////////////////////////////
-
 
 /**
  * COM initializer.
@@ -1426,6 +1408,7 @@ void VirtualSystemDescription::uninit()
     m = NULL;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // IVirtualSystemDescription public methods
@@ -1434,8 +1417,6 @@ void VirtualSystemDescription::uninit()
 
 /**
  * Public method implementation.
- * @param   aCount
- * @return
  */
 HRESULT VirtualSystemDescription::getCount(ULONG *aCount)
 {
@@ -1450,7 +1431,6 @@ HRESULT VirtualSystemDescription::getCount(ULONG *aCount)
 
 /**
  * Public method implementation.
- * @return
  */
 HRESULT VirtualSystemDescription::getDescription(std::vector<VirtualSystemDescriptionType_T> &aTypes,
                                                  std::vector<com::Utf8Str> &aRefs,
@@ -1481,7 +1461,6 @@ HRESULT VirtualSystemDescription::getDescription(std::vector<VirtualSystemDescri
 
 /**
  * Public method implementation.
- * @return
  */
 HRESULT VirtualSystemDescription::getDescriptionByType(VirtualSystemDescriptionType_T aType,
                                                        std::vector<VirtualSystemDescriptionType_T> &aTypes,
@@ -1516,7 +1495,6 @@ HRESULT VirtualSystemDescription::getDescriptionByType(VirtualSystemDescriptionT
 
 /**
  * Public method implementation.
- * @return
  */
 HRESULT VirtualSystemDescription::getValuesByType(VirtualSystemDescriptionType_T aType,
                                                   VirtualSystemDescriptionValueType_T aWhich,
@@ -1550,7 +1528,6 @@ HRESULT VirtualSystemDescription::getValuesByType(VirtualSystemDescriptionType_T
 
 /**
  * Public method implementation.
- * @return
  */
 HRESULT VirtualSystemDescription::setFinalValues(const std::vector<BOOL> &aEnabled,
                                                  const std::vector<com::Utf8Str> &aVBoxValues,
@@ -1588,7 +1565,6 @@ HRESULT VirtualSystemDescription::setFinalValues(const std::vector<BOOL> &aEnabl
 
 /**
  * Public method implementation.
- * @return
  */
 HRESULT VirtualSystemDescription::addDescription(VirtualSystemDescriptionType_T aType,
                                                  const com::Utf8Str &aVBoxValue,
@@ -1637,8 +1613,6 @@ void VirtualSystemDescription::i_addEntry(VirtualSystemDescriptionType_T aType,
 /**
  * Private method; returns a list of description items containing all the items from the member
  * description items of this virtual system that match the given type.
- * @param aType
- * @return
  */
 std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::i_findByType(VirtualSystemDescriptionType_T aType)
 {
@@ -1656,8 +1630,6 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::i_findByType
 
 /* Private method; delete all records from the list
  * m->llDescriptions that match the given type.
- * @param aType
- * @return
  */
 void VirtualSystemDescription::i_removeByType(VirtualSystemDescriptionType_T aType)
 {
@@ -1675,8 +1647,6 @@ void VirtualSystemDescription::i_removeByType(VirtualSystemDescriptionType_T aTy
  * Private method; looks thru the member hardware items for the IDE, SATA, or SCSI controller with
  * the given reference ID. Useful when needing the controller for a particular
  * virtual disk.
- * @param id
- * @return
  */
 const VirtualSystemDescriptionEntry* VirtualSystemDescription::i_findControllerFromID(uint32_t id)
 {
@@ -1739,7 +1709,6 @@ void VirtualSystemDescription::i_importVBoxMachineXML(const xml::ElementNode &el
 
 /**
  * Returns the machine config created by importVBoxMachineXML() or NULL if there's none.
- * @return
  */
 const settings::MachineConfigFile* VirtualSystemDescription::i_getMachineConfig() const
 {
