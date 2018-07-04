@@ -159,11 +159,10 @@
                                                               ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", \
                                                               (a_pVCpu)->cpum.GstCtx.fExtrn, (a_fExtrnMbz)))
 
-
 /** Helper macro for VM-exit handlers called unexpectedly. */
-#define HMVMX_RETURN_UNEXPECTED_EXIT() \
+#define HMVMX_UNEXPECTED_EXIT_RET(a_pVCpu, a_pVmxTransient) \
     do { \
-        pVCpu->hm.s.u32HMError = pVmxTransient->uExitReason; \
+        (a_pVCpu)->hm.s.u32HMError = (a_pVmxTransient)->uExitReason; \
         return VERR_VMX_UNEXPECTED_EXIT; \
     } while (0)
 
@@ -11157,7 +11156,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
     if (RT_UNLIKELY(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT)))
     {
         AssertMsgFailed(("Unexpected NMI-window exit.\n"));
-        HMVMX_RETURN_UNEXPECTED_EXIT();
+        HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
     }
 
     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_BLOCK_NMIS));
@@ -11279,7 +11278,7 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         return VINF_EM_RAW_EMULATE_INSTR;
 
     AssertMsgFailed(("hmR0VmxExitGetsec: unexpected VM-exit when CR4.SMXE is 0.\n"));
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
 }
 
 
@@ -11516,7 +11515,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitRsm(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSI
      */
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected RSM VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
 }
 
 
@@ -11536,7 +11535,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSI
      */
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected SMI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
 }
 
 
@@ -11548,7 +11547,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitIoSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     /* Same treatment as VMX_EXIT_SMI. See comment in hmR0VmxExitSmi(). */
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected IO SMI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
 }
 
 
@@ -11564,7 +11563,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitSipi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
      */
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected SIPI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
 }
 
 
@@ -11744,7 +11743,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrMsrLoad(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
 {
     NOREF(pVmxTransient);
     AssertMsgFailed(("Unexpected MSR-load exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx)); NOREF(pMixedCtx);
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
 }
 
 
@@ -11756,7 +11755,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrMachineCheck(PVMCPU pVCpu, PCPUMCTX pMixedCtx
 {
     NOREF(pVmxTransient);
     AssertMsgFailed(("Unexpected machine-check event exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx)); NOREF(pMixedCtx);
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
 }
 
 
@@ -11786,7 +11785,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXdtrAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT)
         return VERR_EM_INTERPRETER;
     AssertMsgFailed(("Unexpected XDTR access. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
 }
 
 
@@ -11801,7 +11800,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdrand(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT)
         return VERR_EM_INTERPRETER;
     AssertMsgFailed(("Unexpected RDRAND exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    HMVMX_RETURN_UNEXPECTED_EXIT();
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
 }
 
 
@@ -11831,7 +11830,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         {
             AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
                              pMixedCtx->ecx));
-            HMVMX_RETURN_UNEXPECTED_EXIT();
+            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
         }
         if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
         {
@@ -11842,7 +11841,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
             if (enmRead == VMXMSREXIT_PASSTHRU_READ)
             {
                 AssertMsgFailed(("Unexpected RDMSR for a passthru lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
-                HMVMX_RETURN_UNEXPECTED_EXIT();
+                HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
             }
         }
     }
@@ -11950,7 +11949,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 case MSR_K8_GS_BASE:
                 {
                     AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
-                    HMVMX_RETURN_UNEXPECTED_EXIT();
+                    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
                 }
 
                 /* Writes to MSRs in auto-load/store area/swapped MSRs, shouldn't cause VM-exits with MSR-bitmaps. */
@@ -11963,7 +11962,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                         {
                             AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
                                              pMixedCtx->ecx));
-                            HMVMX_RETURN_UNEXPECTED_EXIT();
+                            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
                         }
                     }
 
@@ -11976,7 +11975,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                         if (enmWrite == VMXMSREXIT_PASSTHRU_WRITE)
                         {
                             AssertMsgFailed(("Unexpected WRMSR for passthru, lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
-                            HMVMX_RETURN_UNEXPECTED_EXIT();
+                            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
                         }
                     }
                     break;
@@ -12576,7 +12575,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     if (pVmxTransient->fWasGuestDebugStateActive)
     {
         AssertMsgFailed(("Unexpected MOV DRx exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-        HMVMX_RETURN_UNEXPECTED_EXIT();
+        HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
     }
 
     if (   !pVCpu->hm.s.fSingleInstruction
