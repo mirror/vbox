@@ -11242,8 +11242,7 @@ HMVMX_EXIT_DECL hmR0VmxExitCpuid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
      * Get the state we need and update the exit history entry.
      */
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_RIP
-                                            | CPUMCTX_EXTRN_CS);
+    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX);
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict;
@@ -11255,17 +11254,14 @@ HMVMX_EXIT_DECL hmR0VmxExitCpuid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         /*
          * Regular CPUID instruction execution.
          */
-        PVM pVM = pVCpu->CTX_SUFF(pVM);
-        rcStrict = EMInterpretCpuId(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
-        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        rcStrict = IEMExecDecodedCpuid(pVCpu, pVmxTransient->cbInstr);
+        if (rcStrict == VINF_SUCCESS)
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_RAX
+                                                     | HM_CHANGED_GUEST_RCX | HM_CHANGED_GUEST_RDX    | HM_CHANGED_GUEST_RBX);
+        else if (rcStrict == VINF_IEM_RAISED_XCPT)
         {
-            rcStrict = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
-            Assert(pVmxTransient->cbInstr == 2);
-        }
-        else
-        {
-            AssertMsgFailed(("hmR0VmxExitCpuid: EMInterpretCpuId failed with %Rrc\n", rc));
-            rcStrict = VERR_EM_INTERPRETER;
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+            rcStrict = VINF_SUCCESS;
         }
     }
     else
@@ -11287,7 +11283,7 @@ HMVMX_EXIT_DECL hmR0VmxExitCpuid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
               VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     }
-    return VBOXSTRICTRC_TODO(rcStrict);
+    return rcStrict;
 }
 
 
@@ -11325,13 +11321,13 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
            we must reset offsetting on VM-reentry. See @bugref{6634}. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_RIP
-                                                   | HM_CHANGED_GUEST_RFLAGS);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
+                                                 | HM_CHANGED_GUEST_RAX | HM_CHANGED_GUEST_RDX);
     }
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
-        rcStrict = VINF_SUCCESS;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
 }
@@ -11355,13 +11351,13 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
            we must reset offsetting on VM-reentry. See @bugref{6634}. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_RIP
-                                                   | HM_CHANGED_GUEST_RFLAGS);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
+                                                 | HM_CHANGED_GUEST_RAX | HM_CHANGED_GUEST_RDX | HM_CHANGED_GUEST_RCX);
     }
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
-        rcStrict = VINF_SUCCESS;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
 }
@@ -11876,10 +11872,16 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedRdmsr(pVCpu, pVmxTransient->cbInstr);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
-    AssertMsg(   rcStrict == VINF_SUCCESS
-              || rcStrict == VINF_CPUM_R3_MSR_READ
-              || rcStrict == VINF_IEM_RAISED_XCPT,
-              ("Unexpected IEMExecDecodedRdmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    if (rcStrict == VINF_SUCCESS)
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
+                                                 | HM_CHANGED_GUEST_RAX | HM_CHANGED_GUEST_RDX);
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+    else
+        AssertMsg(rcStrict == VINF_IEM_RAISED_XCPT, ("Unexpected IEMExecDecodedRdmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     return rcStrict;
 }
@@ -11908,6 +11910,8 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 
     if (rcStrict == VINF_SUCCESS)
     {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+
         /* If this is an X2APIC WRMSR access, update the APIC state as well. */
         if (    idMsr == MSR_IA32_APICBASE
             || (   idMsr >= MSR_IA32_X2APIC_START
@@ -12002,10 +12006,13 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         }
 #endif  /* VBOX_STRICT */
     }
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
     else
-        AssertMsg(   rcStrict == VINF_CPUM_R3_MSR_WRITE
-                  || rcStrict == VINF_IEM_RAISED_XCPT,
-                  ("Unexpected IEMExecDecodedWrmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        AssertMsg(rcStrict == VINF_IEM_RAISED_XCPT, ("Unexpected IEMExecDecodedWrmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     return rcStrict;
 }
@@ -12081,7 +12088,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             {
                 case 0:
                 {
-                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_CR0);
+                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
+                                     HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR0Write);
                     Log4(("CRX CR0 write rcStrict=%Rrc CR0=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr0));
                     break;
@@ -12098,7 +12106,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                 {
                     Assert(!pVM->hm.s.fNestedPaging || !CPUMIsGuestPagingEnabledEx(pMixedCtx) || pVCpu->hm.s.fUsingDebugLoop);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR3Write);
-                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_CR3);
+                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
+                                     HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR3);
                     Log4(("CRX CR3 write rcStrict=%Rrc CR3=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr3));
                     break;
                 }
@@ -12106,7 +12115,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                 case 4:
                 {
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR4Write);
-                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_CR4);
+                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
+                                     HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR4);
                     Log4(("CRX CR4 write rc=%Rrc CR4=%#RX64 fLoadSaveGuestXcr0=%u\n", VBOXSTRICTRC_VAL(rcStrict),
                           pMixedCtx->cr4, pVCpu->hm.s.fLoadSaveGuestXcr0));
                     break;
@@ -12116,7 +12126,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                 {
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR8Write);
                     Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW));
-                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
+                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
+                                     HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_APIC_TPR);
                     break;
                 }
                 default:
@@ -12154,7 +12165,9 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             Log4(("CRX CR%d Read access rcStrict=%Rrc\n", VMX_EXIT_QUAL_CRX_REGISTER(uExitQualification),
                   VBOXSTRICTRC_VAL(rcStrict)));
             if (VMX_EXIT_QUAL_CRX_GENREG(uExitQualification) == X86_GREG_xSP)
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RSP);
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_RSP);
+            else
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
             break;
         }
 
@@ -12164,7 +12177,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             AssertMsg(   rcStrict == VINF_SUCCESS
                       || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_CR0);
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
             Log4(("CRX CLTS rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
             break;
@@ -12179,7 +12192,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                       || rcStrict == VINF_PGM_CHANGE_MODE,
                       ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_CR0);
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
             Log4(("CRX LMSW rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
             break;
@@ -12190,8 +12203,14 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                                   VERR_VMX_UNEXPECTED_EXCEPTION);
     }
 
-    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, rcStrict != VINF_IEM_RAISED_XCPT ? HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
-                                                                                : HM_CHANGED_XCPT_RAISED_MASK);
+    Assert(   (pVCpu->hm.s.fCtxChanged & (HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS))
+           == (HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS));
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
     NOREF(pVM);
     return rcStrict;

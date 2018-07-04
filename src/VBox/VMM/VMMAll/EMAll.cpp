@@ -1286,35 +1286,6 @@ VMM_INT_DECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE 
 
 
 /**
- * Interpret CPUID given the parameters in the CPU context.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pRegFrame   The register frame.
- *
- */
-VMM_INT_DECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
-{
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    uint32_t iLeaf    = pRegFrame->eax;
-    uint32_t iSubLeaf = pRegFrame->ecx;
-    NOREF(pVM);
-
-    /* cpuid clears the high dwords of the affected 64 bits registers. */
-    pRegFrame->rax = 0;
-    pRegFrame->rbx = 0;
-    pRegFrame->rcx = 0;
-    pRegFrame->rdx = 0;
-
-    /* Note: operates the same in 64 and non-64 bits mode. */
-    CPUMGetGuestCpuId(pVCpu, iLeaf, iSubLeaf, &pRegFrame->eax, &pRegFrame->ebx, &pRegFrame->ecx, &pRegFrame->edx);
-    Log(("Emulate: CPUID %x/%x -> %08x %08x %08x %08x\n", iLeaf, iSubLeaf, pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx));
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Interpret RDPMC.
  *
  * @returns VBox status code.

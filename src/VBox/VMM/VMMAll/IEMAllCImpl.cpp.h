@@ -6807,11 +6807,13 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
 
     /** @todo make CPUMGetGuestCpuId import any necessary MSR state. */
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
-    CPUMGetGuestCpuId(pVCpu, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.eax, &pVCpu->cpum.GstCtx.ebx, &pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.edx);
+    CPUMGetGuestCpuId(pVCpu, pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ecx,
+                      &pVCpu->cpum.GstCtx.eax, &pVCpu->cpum.GstCtx.ebx, &pVCpu->cpum.GstCtx.ecx, &pVCpu->cpum.GstCtx.edx);
     pVCpu->cpum.GstCtx.rax &= UINT32_C(0xffffffff);
     pVCpu->cpum.GstCtx.rbx &= UINT32_C(0xffffffff);
     pVCpu->cpum.GstCtx.rcx &= UINT32_C(0xffffffff);
     pVCpu->cpum.GstCtx.rdx &= UINT32_C(0xffffffff);
+    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX | CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RBX);
 
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     pVCpu->iem.s.cPotentialExits++;

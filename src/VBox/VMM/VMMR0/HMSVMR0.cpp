@@ -6145,11 +6145,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
             }
 
             default:
-            {
-                AssertMsgFailed(("hmR0SvmExitCpuid: EMInterpretCpuId failed with %Rrc\n", rc));
-                rc = VERR_SVM_IPE_2;
-                break;
-            }
+                AssertMsgFailedBreakStmt(("Bogus enmRaise value: %d (%#x)\n", enmRaise, enmRaise), rc = VERR_SVM_IPE_2);
         }
     }
     Assert(rc == VINF_SUCCESS || rc == VINF_HM_DOUBLE_FAULT || rc == VINF_EM_RESET || rc == VERR_EM_GUEST_CPU_HANG);
@@ -6298,26 +6294,17 @@ HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu,   CPUMCTX_EXTRN_RIP
-                                      | CPUMCTX_EXTRN_CS);
+    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX);
     VBOXSTRICTRC rcStrict;
     PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
                                                             EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_CPUID),
                                                             pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
     if (!pExitRec)
     {
-        PVM pVM = pVCpu->CTX_SUFF(pVM);
-        rcStrict = EMInterpretCpuId(pVM, pVCpu, CPUMCTX2CORE(pCtx));
-        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-        {
-            hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
-            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
-        }
-        else
-        {
-            AssertMsgFailed(("hmR0SvmExitCpuid: EMInterpretCpuId failed with %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-            rcStrict = VERR_EM_INTERPRETER;
-        }
+        rcStrict = IEMExecDecodedCpuid(pVCpu, hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 2));
+        if (rcStrict == VINF_IEM_RAISED_XCPT)
+            rcStrict = VINF_SUCCESS;
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     }
     else
     {
