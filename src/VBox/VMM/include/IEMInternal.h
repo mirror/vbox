@@ -597,7 +597,12 @@ typedef struct IEMCPU
     CPUMCPUVENDOR           enmHostCpuVendor;
     /** @} */
 
-    uint32_t                au32Alignment8[HC_ARCH_BITS == 64 ? 4 + 8 : 4]; /**< Alignment padding. */
+    /** Counts RDMSR \#GP(0) LogRel(). */
+    uint8_t                 cLogRelRdMsr;
+    /** Counts WRMSR \#GP(0) LogRel(). */
+    uint8_t                 cLogRelWrMsr;
+    /** Alignment padding. */
+    uint8_t                 abAlignment8[HC_ARCH_BITS == 64 ? 46 : 14];
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */

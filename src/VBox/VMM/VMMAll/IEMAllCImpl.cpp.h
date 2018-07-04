@@ -6253,14 +6253,16 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
         Log(("IEM: rdmsr(%#x) -> ring-3\n", pVCpu->cpum.GstCtx.ecx));
         return rcStrict;
     }
-#else /* IN_RING3 */
-    /* Often a unimplemented MSR or MSR bit, so worth logging. */
-    static uint32_t s_cTimes = 0;
-    if (s_cTimes++ < 10)
-        LogRel(("IEM: rdmsr(%#x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx));
-    else
 #endif
-        Log(("IEM: rdmsr(%#x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx));
+
+    /* Often a unimplemented MSR or MSR bit, so worth logging. */
+    if (pVCpu->iem.s.cLogRelRdMsr < 32)
+    {
+        pVCpu->iem.s.cLogRelRdMsr++;
+        LogRel(("IEM: rdmsr(%#x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx));
+    }
+    else
+        Log((   "IEM: rdmsr(%#x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx));
     AssertMsgReturn(rcStrict == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IPE_UNEXPECTED_STATUS);
     return iemRaiseGeneralProtectionFault0(pVCpu);
 }
@@ -6317,14 +6319,16 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
         Log(("IEM: wrmsr(%#x) -> ring-3\n", pVCpu->cpum.GstCtx.ecx));
         return rcStrict;
     }
-#else /* IN_RING3 */
-    /* Often a unimplemented MSR or MSR bit, so worth logging. */
-    static uint32_t s_cTimes = 0;
-    if (s_cTimes++ < 10)
-        LogRel(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx, uValue.s.Hi, uValue.s.Lo));
-    else
 #endif
-        Log(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx, uValue.s.Hi, uValue.s.Lo));
+
+    /* Often a unimplemented MSR or MSR bit, so worth logging. */
+    if (pVCpu->iem.s.cLogRelWrMsr < 32)
+    {
+        pVCpu->iem.s.cLogRelWrMsr++;
+        LogRel(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx, uValue.s.Hi, uValue.s.Lo));
+    }
+    else
+        Log((   "IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx, uValue.s.Hi, uValue.s.Lo));
     AssertMsgReturn(rcStrict == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IPE_UNEXPECTED_STATUS);
     return iemRaiseGeneralProtectionFault0(pVCpu);
 }

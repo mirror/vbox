@@ -304,6 +304,8 @@
     GEN_CHECK_OFF(IEMCPU, aBounceBuffers[1]);
     GEN_CHECK_OFF(IEMCPU, aMemBbMappings);
     GEN_CHECK_OFF(IEMCPU, aMemBbMappings[1]);
+    GEN_CHECK_OFF(IEMCPU, cLogRelRdMsr);
+    GEN_CHECK_OFF(IEMCPU, cLogRelWrMsr);
     GEN_CHECK_OFF(IEMCPU, DataTlb);
     GEN_CHECK_OFF(IEMCPU, CodeTlb);
 

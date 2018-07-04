@@ -644,11 +644,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32SysEnterEip(PVMCPU pVCpu, uint32
         pVCpu->cpum.s.Guest.SysEnter.eip = uValue;
         return VINF_SUCCESS;
     }
-#ifdef IN_RING3
     LogRel(("CPUM: IA32_SYSENTER_EIP not canonical! %#llx\n", uValue));
-#else
-    Log(("CPUM: IA32_SYSENTER_EIP not canonical! %#llx\n", uValue));
-#endif
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
     return VERR_CPUM_RAISE_GP_0;
 }
