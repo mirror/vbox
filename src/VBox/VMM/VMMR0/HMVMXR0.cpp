@@ -11838,53 +11838,49 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /* EMInterpretRdmsr() requires CR0, Eflags and SS segment register. FS, GS (base) can be accessed by MSR reads. */
-    int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_CR0
-                                            | CPUMCTX_EXTRN_RFLAGS
-                                            | CPUMCTX_EXTRN_SS
-                                            | CPUMCTX_EXTRN_FS
-                                            | CPUMCTX_EXTRN_GS);
-    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
-        rc |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
+    /** @todo Optimize this: We currently drag in in the whole MSR state
+     * (CPUMCTX_EXTRN_ALL_MSRS) here.  We should optimize this to only get
+     * MSRs required.  That would require changes to IEM and possibly CPUM too.
+     * (Should probably do it lazy fashion from CPUMAllMsrs.cpp). */
+    uint32_t const idMsr = pMixedCtx->ecx;  NOREF(idMsr); /* Save it. */
+    int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_ALL_MSRS);
     AssertRCReturn(rc, rc);
-    Log4Func(("ecx=%#RX32\n", pMixedCtx->ecx));
+
+    Log4Func(("ecx=%#RX32\n", idMsr));
 
 #ifdef VBOX_STRICT
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
     {
-        if (   hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, pMixedCtx->ecx)
-            && pMixedCtx->ecx != MSR_K6_EFER)
+        if (   hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, idMsr)
+            && idMsr != MSR_K6_EFER)
         {
-            AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
-                             pMixedCtx->ecx));
+            AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n", idMsr));
             HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
         }
-        if (hmR0VmxIsLazyGuestMsr(pVCpu, pMixedCtx->ecx))
+        if (hmR0VmxIsLazyGuestMsr(pVCpu, idMsr))
         {
             VMXMSREXITREAD  enmRead;
             VMXMSREXITWRITE enmWrite;
-            int rc2 = hmR0VmxGetMsrPermission(pVCpu, pMixedCtx->ecx, &enmRead, &enmWrite);
+            int rc2 = hmR0VmxGetMsrPermission(pVCpu, idMsr, &enmRead, &enmWrite);
             AssertRCReturn(rc2, rc2);
             if (enmRead == VMXMSREXIT_PASSTHRU_READ)
             {
-                AssertMsgFailed(("Unexpected RDMSR for a passthru lazy-restore MSR. ecx=%#RX32\n", pMixedCtx->ecx));
+                AssertMsgFailed(("Unexpected RDMSR for a passthru lazy-restore MSR. ecx=%#RX32\n", idMsr));
                 HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
             }
         }
     }
 #endif
 
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    rc = EMInterpretRdmsr(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
-    AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER,
-              ("hmR0VmxExitRdmsr: failed, invalid error code %Rrc\n", rc));
+    VBOXSTRICTRC rcStrict = IEMExecDecodedRdmsr(pVCpu, pVmxTransient->cbInstr);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
-    if (RT_SUCCESS(rc))
-    {
-        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
-        Assert(pVmxTransient->cbInstr == 2);
-    }
-    return rc;
+    AssertMsg(   rcStrict == VINF_SUCCESS
+              || rcStrict == VINF_CPUM_R3_MSR_READ
+              || rcStrict == VINF_IEM_RAISED_XCPT,
+              ("Unexpected IEMExecDecodedRdmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+    return rcStrict;
 }
 
 

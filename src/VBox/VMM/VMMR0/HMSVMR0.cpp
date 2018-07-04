@@ -6671,71 +6671,57 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 /**
  * \#VMEXIT helper for read MSRs, see hmR0SvmExitMsr.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcb       Pointer to the VM control block.
  */
-static int hmR0SvmExitReadMsr(PVMCPU pVCpu, PSVMVMCB pVmcb)
+static VBOXSTRICTRC hmR0SvmExitReadMsr(PVMCPU pVCpu, PSVMVMCB pVmcb)
 {
     PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu,   CPUMCTX_EXTRN_CR0
-                                      | CPUMCTX_EXTRN_RFLAGS
-                                      | CPUMCTX_EXTRN_SS
-                                      | CPUMCTX_EXTRN_ALL_MSRS);
-
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
     Log4Func(("idMsr=%#RX32\n", pCtx->ecx));
 
+    VBOXSTRICTRC rcStrict;
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
     if (fSupportsNextRipSave)
     {
-        int rc = EMInterpretRdmsr(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
-        if (RT_LIKELY(rc == VINF_SUCCESS))
-        {
-            pCtx->rip = pVmcb->ctrl.u64NextRIP;
-            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
-            return VINF_SUCCESS;
-        }
-
-        AssertMsg(   rc == VERR_EM_INTERPRETER
-                  || rc == VINF_CPUM_R3_MSR_READ, ("EMInterpretRdmsr failed rc=%Rrc\n", rc));
-        return rc;
+        /** @todo Optimize this: Only retrieve the MSR bits we need here. CPUMAllMsrs.cpp
+         *  can ask for what it needs instead of using CPUMCTX_EXTRN_ALL_MSRS. */
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_ALL_MSRS);
+        rcStrict = IEMExecDecodedRdmsr(pVCpu, pVmcb->ctrl.u64NextRIP - pCtx->rip);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);     /* RIP updated by IEMExecDecodedRdmsr(). */
+        else
+            AssertMsg(   rcStrict == VINF_IEM_RAISED_XCPT
+                      || rcStrict == VINF_CPUM_R3_MSR_WRITE,
+                      ("Unexpected IEMExecDecodedWrmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
-
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
-    int rc = VBOXSTRICTRC_TODO(EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0));
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    else
     {
-        AssertMsg(   rc == VERR_EM_INTERPRETER
-                  || rc == VINF_CPUM_R3_MSR_READ, ("EMInterpretInstruction failed rc=%Rrc\n", rc));
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_ALL_MSRS);
+        rcStrict = IEMExecOne(pVCpu);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);     /* RIP updated by IEMExecOne(). */
+        else
+            AssertMsg(   rcStrict == VINF_IEM_RAISED_XCPT
+                      || rcStrict == VINF_CPUM_R3_MSR_READ, ("Unexpected IEMExecOne status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
-    /* RIP updated by EMInterpretInstruction(). */
-    HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
-    return rc;
+    return rcStrict;
 }
 
 
 /**
  * \#VMEXIT helper for write MSRs, see hmR0SvmExitMsr.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcb       Pointer to the VM control block.
  * @param   pSvmTransient   Pointer to the SVM-transient structure.
  */
-static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmTransient)
+static VBOXSTRICTRC  hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmTransient)
 {
     PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
     uint32_t const idMsr = pCtx->ecx;
-    /** @todo Optimize this: We don't need to get much of the MSR state here
-     * since we're only updating.  CPUMAllMsrs.cpp can ask for what it needs and
-     * clear the applicable extern flags. */
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu,   CPUMCTX_EXTRN_CR0
-                                      | CPUMCTX_EXTRN_RFLAGS
-                                      | CPUMCTX_EXTRN_SS
-                                      | CPUMCTX_EXTRN_ALL_MSRS
-                                      | IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
-
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
     Log4Func(("idMsr=%#RX32\n", idMsr));
 
@@ -6767,9 +6753,13 @@ static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmT
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu, pCtx);
     if (fSupportsNextRipSave)
     {
+        /** @todo Optimize this: We don't need to get much of the MSR state here
+         * since we're only updating.  CPUMAllMsrs.cpp can ask for what it needs and
+         * clear the applicable extern flags. */
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_ALL_MSRS);
         rcStrict = IEMExecDecodedWrmsr(pVCpu, pVmcb->ctrl.u64NextRIP - pCtx->rip);
         if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);     /* RIP updated by IEMExecDecodedWrmsr(). */
         else
             AssertMsg(   rcStrict == VINF_IEM_RAISED_XCPT
                       || rcStrict == VINF_CPUM_R3_MSR_WRITE,
@@ -6777,10 +6767,10 @@ static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmT
     }
     else
     {
-        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_ALL_MSRS);
         rcStrict = IEMExecOne(pVCpu);
         if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);     /* RIP updated by EMInterpretInstruction(). */
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);     /* RIP updated by IEMExecOne(). */
         else
             AssertMsg(   rcStrict == VINF_IEM_RAISED_XCPT
                       || rcStrict == VINF_CPUM_R3_MSR_WRITE, ("Unexpected IEMExecOne status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -6814,7 +6804,7 @@ static int hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSIENT pSvmT
         }
     }
 
-    return VBOXSTRICTRC_TODO(rcStrict);
+    return rcStrict;
 }
 
 
@@ -6828,10 +6818,10 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
 
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu, pCtx);
     if (pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_READ)
-        return hmR0SvmExitReadMsr(pVCpu, pVmcb);
+        return VBOXSTRICTRC_TODO(hmR0SvmExitReadMsr(pVCpu, pVmcb));
 
     Assert(pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_WRITE);
-    return hmR0SvmExitWriteMsr(pVCpu, pVmcb, pSvmTransient);
+    return VBOXSTRICTRC_TODO(hmR0SvmExitWriteMsr(pVCpu, pVmcb, pSvmTransient));
 }
 
 
