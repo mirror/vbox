@@ -245,7 +245,7 @@ VBoxVMM_SOURCES.x86 += \
 VBoxVMM_SOURCES.amd64 += \
 	VMMSwitcher/AMD64Stub.asm
 
-if1of ($(USERNAME),bird) # experimental.
+ifdef VBOX_WITH_NATIVE_NEM
  VBoxVMM_SOURCES.win.amd64 += VMMR3/NEMR3Native-win.cpp
  VBoxVMM_DEFS.win.amd64    += VBOX_WITH_NATIVE_NEM
  VBoxVMM_SDKS.win          += VBOX_NTDLL
@@ -772,7 +772,7 @@ ifndef VBOX_ONLY_EXTPACKS
   VMMR0_LIBS += \
   	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
  endif
- if1of ($(USERNAME),bird) # experimental.
+ ifdef VBOX_WITH_NATIVE_NEM
   VMMR0_SOURCES.win.amd64 += VMMR0/NEMR0Native-win.cpp
   VMMR0_DEFS.win.amd64    += VBOX_WITH_NATIVE_NEM VBOX_WITH_NEM_R0
   VMMR0/NEMR0Native-win.cpp_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS

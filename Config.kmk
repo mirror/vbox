@@ -419,6 +419,10 @@ ifeq ($(KBUILD_TARGET_ARCH),amd64)
   endif
  endif
 endif
+# Enable native NEM on windows.
+if "$(KBUILD_TARGET)" == win && !defined(VBOX_OSE)
+ VBOX_WITH_NATIVE_NEM = 1
+endif
 ## @}
 
 
