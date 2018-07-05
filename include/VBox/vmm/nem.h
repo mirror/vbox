@@ -104,7 +104,7 @@ VMMR0_INT_DECL(int)  NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64
  * @{
  */
 VMM_INT_DECL(bool) NEMHCIsLongModeAllowed(PVM pVM);
-VMM_INT_DECL(int)  NEMImportStateOnDemand(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fWhat);
+VMM_INT_DECL(int)  NEMImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
 
 VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
 VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,

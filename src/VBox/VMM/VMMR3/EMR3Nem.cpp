@@ -489,7 +489,7 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
      */
     if (pVCpu->cpum.GstCtx.fExtrn)
     {
-        int rcImport = NEMImportStateOnDemand(pVCpu, &pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.fExtrn);
+        int rcImport = NEMImportStateOnDemand(pVCpu, pVCpu->cpum.GstCtx.fExtrn);
         AssertReturn(RT_SUCCESS(rcImport) || RT_FAILURE_NP(rcStrict), rcImport);
     }
 #if defined(LOG_ENABLED) && defined(DEBUG)

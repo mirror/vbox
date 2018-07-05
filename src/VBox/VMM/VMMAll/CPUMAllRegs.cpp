@@ -2873,7 +2873,7 @@ VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImpo
         {
             case CPUMCTX_EXTRN_KEEPER_NEM:
             {
-                int rc = NEMImportStateOnDemand(pVCpu, &pVCpu->cpum.s.Guest, fExtrnImport);
+                int rc = NEMImportStateOnDemand(pVCpu, fExtrnImport);
                 Assert(rc == VINF_SUCCESS || RT_FAILURE_NP(rc));
                 return rc;
             }
