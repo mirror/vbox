@@ -150,12 +150,18 @@ DECLINLINE(int) nemHCWinHypercallUnmapPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhy
 
 NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu)
 {
-# ifdef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
-    int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPORT_STATE, 0, NULL);
-    AssertLogRelRCReturn(rc, rc);
-    return rc;
+# if defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS) || defined(NEM_WIN_WITH_RING0_RUNLOOP)
+#  if !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS) && defined(NEM_WIN_WITH_RING0_RUNLOOP)
+    if (pVM->nem.s.fUseRing0Runloop)
+#  endif
+    {
+        int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_EXPORT_STATE, 0, NULL);
+        AssertLogRelRCReturn(rc, rc);
+        return rc;
+    }
+# endif
+# ifndef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
 
-# else
     /*
      * The following is very similar to what nemR0WinExportState() does.
      */
@@ -479,19 +485,24 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVM pVM, PVMCPU pVCpu)
 
 NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVM pVM, PVMCPU pVCpu, uint64_t fWhat)
 {
-# ifdef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
-    /* See NEMR0ImportState */
-    int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_IMPORT_STATE, fWhat, NULL);
-    if (RT_SUCCESS(rc))
+# if defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS) || defined(NEM_WIN_WITH_RING0_RUNLOOP)
+#  if !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS) && defined(NEM_WIN_WITH_RING0_RUNLOOP)
+    if (pVM->nem.s.fUseRing0Runloop)
+#  endif
+    {
+        /* See NEMR0ImportState */
+        int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_IMPORT_STATE, fWhat, NULL);
+        if (RT_SUCCESS(rc))
+            return rc;
+        if (rc == VERR_NEM_FLUSH_TLB)
+            return PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /*fGlobal*/);
+        if (rc == VERR_NEM_CHANGE_PGM_MODE)
+            return PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
+        AssertLogRelRCReturn(rc, rc);
         return rc;
-    if (rc == VERR_NEM_FLUSH_TLB)
-        return PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /*fGlobal*/);
-    if (rc == VERR_NEM_CHANGE_PGM_MODE)
-        return PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
-    AssertLogRelRCReturn(rc, rc);
-    return rc;
-
-# else
+    }
+# endif
+# ifndef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
     WHV_REGISTER_NAME  aenmNames[128];
 
     fWhat &= pVCpu->cpum.GstCtx.fExtrn;
@@ -1121,6 +1132,7 @@ VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
     STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnDemand);
 
 #ifdef IN_RING0
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
     /** @todo improve and secure this translation */
     PGVM pGVM = GVMMR0ByHandle(pVCpu->pVMR0->hSelf);
     AssertReturn(pGVM, VERR_INVALID_VMCPU_HANDLE);
@@ -1129,6 +1141,10 @@ VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_VMCPU_HANDLE);
 
     return nemR0WinImportState(pGVM, &pGVM->aCpus[idCpu], &pVCpu->cpum.GstCtx, fWhat);
+# else
+    RT_NOREF(pVCpu, fWhat);
+    return VERR_NOT_IMPLEMENTED;
+# endif
 #else
     return nemHCWinCopyStateFromHyperV(pVCpu->pVMR3, pVCpu, fWhat);
 #endif
@@ -1152,17 +1168,22 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *p
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
     AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_NEM_IPE_9);
 
-# ifdef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
-    /* Call ring-0 and get the values. */
-    int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_QUERY_CPU_TICK, 0, NULL);
-    AssertLogRelRCReturn(rc, rc);
-    *pcTicks = pVCpu->nem.s.Hypercall.QueryCpuTick.cTicks;
-    if (puAux)
-        *puAux = pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX
-               ? pVCpu->nem.s.Hypercall.QueryCpuTick.uAux : CPUMGetGuestTscAux(pVCpu);
-    return VINF_SUCCESS;
-
-# else
+# if defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS) || defined(NEM_WIN_WITH_RING0_RUNLOOP)
+#  if !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS) && defined(NEM_WIN_WITH_RING0_RUNLOOP)
+    if (pVM->nem.s.fUseRing0Runloop)
+#  endif
+    {
+        /* Call ring-0 and get the values. */
+        int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_QUERY_CPU_TICK, 0, NULL);
+        AssertLogRelRCReturn(rc, rc);
+        *pcTicks = pVCpu->nem.s.Hypercall.QueryCpuTick.cTicks;
+        if (puAux)
+            *puAux = pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX
+                   ? pVCpu->nem.s.Hypercall.QueryCpuTick.uAux : CPUMGetGuestTscAux(pVCpu);
+        return VINF_SUCCESS;
+    }
+# endif
+# ifndef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
     /* Call the offical API. */
     WHV_REGISTER_NAME  aenmNames[2] = { WHvX64RegisterTsc, WHvX64RegisterTscAux };
     WHV_REGISTER_VALUE aValues[2]   = { {0, 0}, {0, 0} };
@@ -1176,8 +1197,9 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *p
     if (puAux)
         *pcTicks = pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX ? aValues[0].Reg64 : CPUMGetGuestTscAux(pVCpu);
     return VINF_SUCCESS;
-#endif
+# endif /* !NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 #else  /* IN_RING0 */
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
     /** @todo improve and secure this translation */
     PGVM pGVM = GVMMR0ByHandle(pVCpu->pVMR0->hSelf);
     AssertReturn(pGVM, VERR_INVALID_VMCPU_HANDLE);
@@ -1189,6 +1211,10 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *p
     if (RT_SUCCESS(rc) && puAux && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX))
         *puAux = CPUMGetGuestTscAux(pVCpu);
     return rc;
+# else
+    RT_NOREF(pVCpu, pcTicks, puAux);
+    return VERR_NOT_IMPLEMENTED;
+# endif
 #endif /* IN_RING0 */
 }
 
@@ -1206,6 +1232,7 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *p
 VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPausedTscValue)
 {
 #ifdef IN_RING0
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
     /** @todo improve and secure this translation */
     PGVM pGVM = GVMMR0ByHandle(pVM->hSelf);
     AssertReturn(pGVM, VERR_INVALID_VMCPU_HANDLE);
@@ -1214,15 +1241,24 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPause
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_VMCPU_HANDLE);
 
     return nemR0WinResumeCpuTickOnAll(pGVM, &pGVM->aCpus[idCpu], uPausedTscValue);
+# else
+    RT_NOREF(pVM, pVCpu, uPausedTscValue);
+    return VERR_NOT_IMPLEMENTED;
+# endif
 #else  /* IN_RING3 */
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
     AssertReturn(VM_IS_NEM_ENABLED(pVM), VERR_NEM_IPE_9);
 
-# ifdef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
-    /* Call ring-0 and do it all there. */
-    return VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_RESUME_CPU_TICK_ON_ALL, uPausedTscValue, NULL);
-
-# else
+# if defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS) || defined(NEM_WIN_WITH_RING0_RUNLOOP)
+#  if !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS) && defined(NEM_WIN_WITH_RING0_RUNLOOP)
+    if (pVM->nem.s.fUseRing0Runloop)
+#  endif
+    {
+        /* Call ring-0 and do it all there. */
+        return VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_NEM_RESUME_CPU_TICK_ON_ALL, uPausedTscValue, NULL);
+    }
+# endif
+# ifndef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
     /*
      * Call the offical API to do the job.
      */
@@ -1255,7 +1291,7 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPause
     }
 
     return VINF_SUCCESS;
-# endif
+# endif /* !NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 #endif /* IN_RING3 */
 }
 
@@ -1340,7 +1376,7 @@ DECLINLINE(VID_PROCESSOR_STATUS) nemHCWinCpuGetRunningStatus(PVMCPU pVCpu)
 #endif /* LOG_ENABLED */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#if defined(NEM_WIN_USE_OUR_OWN_RUN_API) || defined(NEM_WIN_WITH_RING0_RUNLOOP)
 # ifdef IN_RING3 /* hopefully not needed in ring-0, as we'd need KTHREADs and KeAlertThread. */
 /**
  * Our own WHvCancelRunVirtualProcessor that can later be moved to ring-0.
@@ -1407,7 +1443,7 @@ NEM_TMPL_STATIC int nemHCWinCancelRunVirtualProcessor(PVM pVM, PVMCPU pVCpu)
     }
 }
 # endif /* IN_RING3 */
-#endif /* NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* NEM_WIN_USE_OUR_OWN_RUN_API || NEM_WIN_WITH_RING0_RUNLOOP */
 
 
 #ifdef LOG_ENABLED
@@ -1478,7 +1514,7 @@ NEM_TMPL_STATIC void nemHCWinLogState(PVM pVM, PVMCPU pVCpu)
         } \
     while (0)
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Translates the execution stat bitfield into a short log string, VID version.
  *
@@ -1516,11 +1552,11 @@ static const char *nemR3WinExecStateToLogStr(WHV_VP_EXIT_CONTEXT const *pExitCtx
     else
         SWITCH_IT("RM");
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 #undef SWITCH_IT
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Advances the guest RIP and clear EFLAGS.RF, VID version.
  *
@@ -1571,7 +1607,7 @@ DECLINLINE(void) nemR3WinAdvanceGuestRipAndClearRF(PVMCPU pVCpu, WHV_VP_EXIT_CON
     else if (pVCpu->cpum.GstCtx.rip != EMGetInhibitInterruptsPC(pVCpu))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
 
@@ -1795,7 +1831,7 @@ nemHCWinHandleMemoryAccessPageCheckerCallback(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
 
 
 
-#if defined(IN_RING0) && defined(NEM_WIN_USE_OUR_OWN_RUN_API)
+#if defined(IN_RING0) && defined(NEM_WIN_TEMPLATE_MODE_OWN_RUN_API)
 /**
  * Wrapper around nemR0WinImportState that converts VERR_NEM_CHANGE_PGM_MODE and
  * VERR_NEM_FLUSH_TBL into informational status codes and logs+asserts statuses.
@@ -1824,9 +1860,9 @@ DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, PV
     RT_NOREF(pszCaller);
     AssertMsgFailedReturn(("%s/%u: nemR0WinImportState failed: %Rrc\n", pszCaller, pGVCpu->idCpu, rc), rc);
 }
-#endif /* IN_RING0 && NEM_WIN_USE_OUR_OWN_RUN_API*/
+#endif /* IN_RING0 && NEM_WIN_TEMPLATE_MODE_OWN_RUN_API*/
 
-#if defined(NEM_WIN_USE_OUR_OWN_RUN_API) || defined(IN_RING3)
+#if defined(NEM_WIN_TEMPLATE_MODE_OWN_RUN_API) || defined(IN_RING3)
 /**
  * Wrapper around nemR0WinImportStateStrict and nemHCWinCopyStateFromHyperV.
  *
@@ -1842,19 +1878,19 @@ DECLINLINE(VBOXSTRICTRC) nemHCWinImportStateIfNeededStrict(PVMCPU pVCpu, PGVMCPU
 {
     if (pVCpu->cpum.GstCtx.fExtrn & fWhat)
     {
-#ifdef IN_RING0
+# ifdef IN_RING0
         return nemR0WinImportStateStrict(pGVCpu->pGVM, pGVCpu, pVCpu, fWhat, pszCaller);
-#else
+# else
         RT_NOREF(pGVCpu, pszCaller);
         int rc = nemHCWinCopyStateFromHyperV(pVCpu->pVMR3, pVCpu, fWhat);
         AssertRCReturn(rc, rc);
-#endif
+# endif
     }
     return VINF_SUCCESS;
 }
-#endif /* NEM_WIN_USE_OUR_OWN_RUN_API || IN_RING3 */
+#endif /* NEM_WIN_TEMPLATE_MODE_OWN_RUN_API || IN_RING3 */
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Copies register state from the X64 intercept message header.
  *
@@ -1916,10 +1952,10 @@ DECLINLINE(void) nemR3WinCopyStateFromX64Header(PVMCPU pVCpu, WHV_VP_EXIT_CONTEX
 
     pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT);
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Deals with memory intercept message.
  *
@@ -2141,10 +2177,10 @@ nemR3WinHandleExitMemory(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *p
     }
     return rcStrict;
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Deals with I/O port intercept message.
  *
@@ -2523,10 +2559,10 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitIoPort(PVM pVM, PVMCPU pVCpu, WHV
           VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     return rcStrict;
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Deals with interrupt window message.
  *
@@ -2598,10 +2634,10 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitInterruptWindow(PVM pVM, PVMCPU p
     RT_NOREF(pVM);
     return VINF_SUCCESS;
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Deals with CPUID intercept message.
  *
@@ -2766,10 +2802,10 @@ nemR3WinHandleExitCpuId(PVM pVM, PVMCPU pVCpu, WHV_RUN_VP_EXIT_CONTEXT const *pE
           VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     return rcStrict;
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Deals with MSR intercept message.
  *
@@ -3050,7 +3086,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitMsr(PVM pVM, PVMCPU pVCpu, WHV_RU
     RT_NOREF_PV(pVM);
     return rcStrict;
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
 /**
@@ -3118,7 +3154,7 @@ DECLINLINE(bool) nemHcWinIsInterestingUndefinedOpcode(uint8_t cbOpcodes, uint8_t
 }
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Copies state included in a exception intercept message.
  *
@@ -3165,10 +3201,10 @@ DECLINLINE(void) nemR3WinCopyStateFromExceptionMessage(PVMCPU pVCpu, WHV_RUN_VP_
     if (fClearXcpt)
         pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT;
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Deals with exception intercept message (HvMessageTypeX64ExceptionIntercept).
  *
@@ -3398,10 +3434,10 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitException(PVM pVM, PVMCPU pVCpu, 
     RT_NOREF_PV(pVM);
     return rcStrict;
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Deals with unrecoverable exception (triple fault).
  *
@@ -3518,10 +3554,10 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitUnrecoverableException(PVM pVM, P
 # endif
 
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Handles messages (VM exits).
  *
@@ -3682,7 +3718,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVM pVM, PVMCPU pVCpu, WHV_RUN_V
             AssertLogRelMsgFailedReturn(("Unknown exit on CPU #%u: %#x!\n", pVCpu->idCpu, pExit->ExitReason), VERR_NEM_IPE_3);
     }
 }
-#endif /* IN_RING3 && !NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
 
 #ifdef IN_RING0
@@ -3739,7 +3775,7 @@ static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCP
 #endif /* IN_RING0 */
 
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 /**
  * Worker for nemHCWinRunGC that stops the execution on the way out.
  *
@@ -3897,9 +3933,9 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
     }
     return rcStrict;
 }
-#endif /* NEM_WIN_USE_OUR_OWN_RUN_API */
+#endif /* NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
-#if defined(NEM_WIN_USE_OUR_OWN_RUN_API) || defined(IN_RING3)
+#if defined(NEM_WIN_TEMPLATE_MODE_OWN_RUN_API) || defined(IN_RING3)
 
 /**
  * Deals with pending interrupt related force flags, may inject interrupt.
@@ -4047,7 +4083,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
      * Current approach to state updating to use the sledgehammer and sync
      * everything every time.  This will be optimized later.
      */
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
     VID_MESSAGE_MAPPING_HEADER volatile *pMappingHeader = (VID_MESSAGE_MAPPING_HEADER volatile *)pVCpu->nem.s.pvMsgSlotMapping;
     uint32_t        cMillies            = 5000; /** @todo lower this later... */
 # endif
@@ -4078,7 +4114,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC
                                      | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
         {
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
             /* Make sure the CPU isn't executing. */
             if (pVCpu->nem.s.fHandleAndGetFlags == VID_MSHAGN_F_GET_NEXT_MESSAGE)
             {
@@ -4117,7 +4153,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
             || pVCpu->nem.s.fDesiredInterruptWindows
             || pVCpu->nem.s.fCurrentInterruptWindows != pVCpu->nem.s.fDesiredInterruptWindows)
         {
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
             Assert(pVCpu->nem.s.fHandleAndGetFlags != VID_MSHAGN_F_GET_NEXT_MESSAGE /* not running */);
 # endif
 # ifdef IN_RING0
@@ -4135,7 +4171,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         if (   !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
             && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         {
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
             if (pVCpu->nem.s.fHandleAndGetFlags)
             { /* Very likely that the CPU does NOT need starting (pending msg, running). */ }
             else
@@ -4156,11 +4192,11 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
 #  endif
                 pVCpu->nem.s.fHandleAndGetFlags = VID_MSHAGN_F_GET_NEXT_MESSAGE;
             }
-# endif /* NEM_WIN_USE_OUR_OWN_RUN_API */
+# endif /* NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
             if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_WAIT, VMCPUSTATE_STARTED_EXEC_NEM))
             {
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 #  ifdef IN_RING0
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = pVCpu->nem.s.fHandleAndGetFlags;
@@ -4188,7 +4224,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                     /*
                      * Deal with the message.
                      */
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
                     rcStrict = nemHCWinHandleMessage(pVM, pVCpu, pMappingHeader, pGVCpu);
                     pVCpu->nem.s.fHandleAndGetFlags |= VID_MSHAGN_F_HANDLE_MESSAGE;
 # else
@@ -4205,7 +4241,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                 }
                 else
                 {
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
 
                     /* VID.SYS merges STATUS_ALERTED and STATUS_USER_APC into STATUS_TIMEOUT,
                        so after NtAlertThread we end up here with a STATUS_TIMEOUT.  And yeah,
@@ -4262,7 +4298,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
      * If the CPU is running, make sure to stop it before we try sync back the
      * state and return to EM.  We don't sync back the whole state if we can help it.
      */
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
     if (pVCpu->nem.s.fHandleAndGetFlags == VID_MSHAGN_F_GET_NEXT_MESSAGE)
     {
         pVCpu->nem.s.fHandleAndGetFlags = 0;
@@ -4336,7 +4372,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
     return rcStrict;
 }
 
-#endif /* defined(NEM_WIN_USE_OUR_OWN_RUN_API) || defined(IN_RING3) */
+#endif /* defined(NEM_WIN_TEMPLATE_MODE_OWN_RUN_API) || defined(IN_RING3) */
 
 /**
  * @callback_method_impl{FNPGMPHYSNEMCHECKPAGE}

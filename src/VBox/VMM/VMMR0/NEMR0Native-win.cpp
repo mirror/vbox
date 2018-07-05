@@ -81,10 +81,12 @@ static NTSTATUS (*g_pfnWinHvDepositMemory)(uintptr_t idPartition, size_t cPages,
 NEM_TMPL_STATIC int  nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
                                       uint32_t cPages, uint32_t fFlags);
 NEM_TMPL_STATIC int  nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys, uint32_t cPages);
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 NEM_TMPL_STATIC int  nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx);
 NEM_TMPL_STATIC int  nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx, uint64_t fWhat);
 NEM_TMPL_STATIC int  nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pcTicks, uint32_t *pcAux);
 NEM_TMPL_STATIC int  nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64_t uPausedTscValue);
+#endif
 DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput,
                                              void *pvOutput, uint32_t cbOutput);
 
@@ -92,7 +94,14 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void
 /*
  * Instantate the code we share with ring-0.
  */
+#ifdef NEM_WIN_WITH_RING0_RUNLOOP
+# define NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
+#else
+# undef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
+#endif
 #include "../VMMAll/NEMAllNativeTemplate-win.cpp.h"
+
+
 
 /**
  * Worker for NEMR0InitVM that allocates a hypercall page.
@@ -581,6 +590,7 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 }
 
 
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 /**
  * Worker for NEMR0ExportState.
  *
@@ -721,7 +731,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     }
 
     /* Segments */
-#define COPY_OUT_SEG(a_idx, a_enmName, a_SReg) \
+# define COPY_OUT_SEG(a_idx, a_enmName, a_SReg) \
         do { \
             HV_REGISTER_ASSOC_ZERO_PADDING(&pInput->Elements[a_idx]); \
             pInput->Elements[a_idx].Name                     = a_enmName; \
@@ -1097,12 +1107,12 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Elements[iReg].Name                 = HvX64RegisterPat;
         pInput->Elements[iReg].Value.Reg64          = pCtx->msrPAT;
         iReg++;
-#if 0 /** @todo HvX64RegisterMtrrCap is read only?  Seems it's not even readable. */
+# if 0 /** @todo HvX64RegisterMtrrCap is read only?  Seems it's not even readable. */
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterMtrrCap;
         pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestIa32MtrrCap(pVCpu);
         iReg++;
-#endif
+# endif
 
         PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
 
@@ -1162,7 +1172,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.TscAux;
         iReg++;
 
-#if 0 /** @todo Why can't we write these on Intel systems? Not that we really care... */
+# if 0 /** @todo Why can't we write these on Intel systems? Not that we really care... */
         const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
         {
@@ -1175,7 +1185,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestIa32FeatureControl(pVCpu);
             iReg++;
         }
-#endif
+# endif
     }
 
     /* event injection (clear it). */
@@ -1259,6 +1269,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     pCtx->fExtrn |= CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK | CPUMCTX_EXTRN_KEEPER_NEM;
     return VINF_SUCCESS;
 }
+#endif /* NEM_WIN_WITH_RING0_RUNLOOP || NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 
 
 /**
@@ -1272,6 +1283,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
  */
 VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
      * Validate the call.
      */
@@ -1288,9 +1300,14 @@ VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu)
         rc = nemR0WinExportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx);
     }
     return rc;
+#else
+    RT_NOREF(pGVM, pVM, idCpu);
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 /**
  * Worker for NEMR0ImportState.
  *
@@ -1469,16 +1486,16 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Names[iReg++] = HvX64RegisterSfmask;
     }
 
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
-#endif
+# endif
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         pInput->Names[iReg++] = HvX64RegisterApicBase; /// @todo APIC BASE
         pInput->Names[iReg++] = HvX64RegisterPat;
-#if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
+# if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
         pInput->Names[iReg++] = HvX64RegisterMtrrCap;
-#endif
+# endif
         pInput->Names[iReg++] = HvX64RegisterMtrrDefType;
         pInput->Names[iReg++] = HvX64RegisterMtrrFix64k00000;
         pInput->Names[iReg++] = HvX64RegisterMtrrFix16k80000;
@@ -1492,14 +1509,14 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Names[iReg++] = HvX64RegisterMtrrFix4kF0000;
         pInput->Names[iReg++] = HvX64RegisterMtrrFix4kF8000;
         pInput->Names[iReg++] = HvX64RegisterTscAux;
-#if 0 /** @todo why can't we read HvX64RegisterIa32MiscEnable? */
+# if 0 /** @todo why can't we read HvX64RegisterIa32MiscEnable? */
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
             pInput->Names[iReg++] = HvX64RegisterIa32MiscEnable;
-#endif
-#ifdef LOG_ENABLED
+# endif
+# ifdef LOG_ENABLED
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
             pInput->Names[iReg++] = HvX64RegisterIa32FeatureControl;
-#endif
+# endif
     }
 
     /* Interruptibility. */
@@ -1608,7 +1625,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     }
 
     /* Segments */
-#define COPY_BACK_SEG(a_idx, a_enmName, a_SReg) \
+# define COPY_BACK_SEG(a_idx, a_enmName, a_SReg) \
         do { \
             Assert(pInput->Names[a_idx] == a_enmName); \
             (a_SReg).u64Base  = paValues[a_idx].Segment.Base; \
@@ -1988,12 +2005,12 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pCtx->msrPAT    = paValues[iReg].Reg64;
         iReg++;
 
-#if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
+# if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrCap);
         if (paValues[iReg].Reg64 != CPUMGetGuestIa32MtrrCap(pVCpu))
             Log7(("NEM/%u: MSR MTRR_CAP changed %RX64 -> %RX64 (!!)\n", pVCpu->idCpu, CPUMGetGuestIa32MtrrCap(pVCpu), paValues[iReg].Reg64));
         iReg++;
-#endif
+# endif
 
         PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrDefType);
@@ -2076,7 +2093,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pCtxMsrs->msr.TscAux = paValues[iReg].Reg64;
         iReg++;
 
-#if 0 /** @todo why can't we even read HvX64RegisterIa32MiscEnable? */
+# if 0 /** @todo why can't we even read HvX64RegisterIa32MiscEnable? */
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
         {
             Assert(pInput->Names[iReg] == HvX64RegisterIa32MiscEnable);
@@ -2085,8 +2102,8 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             pCtxMsrs->msr.MiscEnable = paValues[iReg].Reg64;
             iReg++;
         }
-#endif
-#ifdef LOG_ENABLED
+# endif
+# ifdef LOG_ENABLED
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
         {
             Assert(pInput->Names[iReg] == HvX64RegisterIa32FeatureControl);
@@ -2094,7 +2111,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
                 Log7(("NEM/%u: MSR FEATURE_CONTROL changed %RX64 -> %RX64 (!!)\n", pVCpu->idCpu, CPUMGetGuestIa32FeatureControl(pVCpu), paValues[iReg].Reg64));
             iReg++;
         }
-#endif
+# endif
     }
 
     /* Interruptibility. */
@@ -2178,6 +2195,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 
     return rc;
 }
+#endif /* NEM_WIN_WITH_RING0_RUNLOOP || NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 
 
 /**
@@ -2193,6 +2211,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
  */
 VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t fWhat)
 {
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
      * Validate the call.
      */
@@ -2209,9 +2228,14 @@ VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t
         rc = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fWhat);
     }
     return rc;
+#else
+    RT_NOREF(pGVM, pVM, idCpu, fWhat);
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 /**
  * Worker for NEMR0QueryCpuTick and the ring-0 NEMHCQueryCpuTick.
  *
@@ -2257,6 +2281,7 @@ NEM_TMPL_STATIC int nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pc
         *pcAux = paValues[0].Reg32;
     return VINF_SUCCESS;
 }
+#endif /* NEM_WIN_WITH_RING0_RUNLOOP || NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 
 
 /**
@@ -2270,6 +2295,7 @@ NEM_TMPL_STATIC int nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pc
  */
 VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 {
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
      * Validate the call.
      */
@@ -2289,9 +2315,14 @@ VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, PVM pVM, VMCPUID idCpu)
                                   &pVCpu->nem.s.Hypercall.QueryCpuTick.uAux);
     }
     return rc;
+#else
+    RT_NOREF(pGVM, pVM, idCpu);
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 /**
  * Worker for NEMR0ResumeCpuTickOnAll and the ring-0 NEMHCResumeCpuTickOnAll.
  *
@@ -2359,6 +2390,7 @@ NEM_TMPL_STATIC int nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64
     ASMSetFlags(fSavedFlags);
     return VINF_SUCCESS;
 }
+#endif /* NEM_WIN_WITH_RING0_RUNLOOP || NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 
 
 /**
@@ -2373,6 +2405,7 @@ NEM_TMPL_STATIC int nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64
  */
 VMMR0_INT_DECL(int) NEMR0ResumeCpuTickOnAll(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t uPausedTscValue)
 {
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
      * Validate the call.
      */
@@ -2391,12 +2424,16 @@ VMMR0_INT_DECL(int) NEMR0ResumeCpuTickOnAll(PGVM pGVM, PVM pVM, VMCPUID idCpu, u
         rc = nemR0WinResumeCpuTickOnAll(pGVM, pGVCpu, uPausedTscValue);
     }
     return rc;
+#else
+    RT_NOREF(pGVM, pVM, idCpu, uPausedTscValue);
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
 {
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+#ifdef NEM_WIN_WITH_RING0_RUNLOOP
     PVM pVM = pGVM->pVM;
     return nemHCWinRunGC(pVM, &pVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
 #else

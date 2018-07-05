@@ -44,13 +44,18 @@ RT_C_DECLS_BEGIN
  * Windows: Code configuration.
  */
 # define NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-# define NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
-# define NEM_WIN_USE_OUR_OWN_RUN_API
+//# define NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS /**< Applies to ring-3 code only. Useful for testing VID API. */
+//# define NEM_WIN_USE_OUR_OWN_RUN_API          /**< Applies to ring-3 code only. Useful for testing VID API. */
+# define NEM_WIN_WITH_RING0_RUNLOOP             /**< Enables the ring-0 runloop. */
+# define NEM_WIN_USE_RING0_RUNLOOP_BY_DEFAULT   /**< For quickly testing ring-3 API without messing with CFGM. */
 # if defined(NEM_WIN_USE_OUR_OWN_RUN_API) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 #  error "NEM_WIN_USE_OUR_OWN_RUN_API requires NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS"
 # endif
 # if defined(NEM_WIN_USE_OUR_OWN_RUN_API) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
 #  error "NEM_WIN_USE_OUR_OWN_RUN_API requires NEM_WIN_USE_HYPERCALLS_FOR_PAGES"
+# endif
+# if defined(NEM_WIN_WITH_RING0_RUNLOOP) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
+#  error "NEM_WIN_WITH_RING0_RUNLOOP requires NEM_WIN_USE_HYPERCALLS_FOR_PAGES"
 # endif
 
 /**
@@ -147,6 +152,8 @@ typedef struct NEM
     bool                        fExtendedCpuIdExit : 1;
     /** WHvRunVpExitReasonException is supported. */
     bool                        fExtendedXcptExit : 1;
+    /** Set if we're using the ring-0 API to do the work. */
+    bool                        fUseRing0Runloop : 1;
     /** Set if we've started more than one CPU and cannot mess with A20. */
     bool                        fA20Fixed : 1;
     /** Set if A20 is enabled. */
@@ -227,15 +234,17 @@ typedef struct NEMCPU
     /** Pending APIC base value.
      * This is set to UINT64_MAX when not pending  */
     uint64_t                    uPendingApicBase;
-# ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
     /** Pending VINF_NEM_CHANGE_PGM_MODE, VINF_NEM_FLUSH_TLB or VINF_NEM_UPDATE_APIC_BASE. */
     int32_t                     rcPending;
+# else
+    uint32_t                    uPadding;
+# endif
     /** The VID_MSHAGN_F_XXX flags.
      * Either VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE or zero. */
     uint32_t                    fHandleAndGetFlags;
     /** What VidMessageSlotMap returns and is used for passing exit info. */
     RTR3PTR                     pvMsgSlotMapping;
-# endif
     /** The windows thread handle. */
     RTR3PTR                     hNativeThreadHandle;
     /** Parameters for making Hyper-V hypercalls. */

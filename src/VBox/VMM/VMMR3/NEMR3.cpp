@@ -77,7 +77,11 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
     int rc = CFGMR3ValidateConfig(pCfgNem,
                                   "/NEM/",
                                   "Enabled"
-                                  "|Allow64BitGuests",
+                                  "|Allow64BitGuests"
+#ifdef RT_OS_WINDOWS
+                                  "|UseRing0Runloop"
+#endif
+                                  ,
                                   "" /* pszValidNodes */, "NEM" /* pszWho */, 0 /* uInstance */);
     if (RT_FAILURE(rc))
         return rc;
@@ -89,7 +93,7 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
 
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
-    /** @cfgm{/HM/Allow64BitGuests, bool, 32-bit:false, 64-bit:true}
+    /** @cfgm{/NEM/Allow64BitGuests, bool, 32-bit:false, 64-bit:true}
      * Enables AMD64 CPU features.
      * On 32-bit hosts this isn't default and require host CPU support. 64-bit hosts
      * already have the support. */
@@ -99,6 +103,20 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
     pVM->nem.s.fAllow64BitGuests = false;
 #endif
 
+#ifdef RT_OS_WINDOWS
+    /** @cfgm{/NEM/UseRing0Runloop, bool, true}
+     * Whether to use the ring-0 runloop (if enabled in the build) or the ring-3 one.
+     * The latter is generally slower.  This option serves as a way out in case
+     * something breaks in the ring-0 loop. */
+# ifdef NEM_WIN_USE_RING0_RUNLOOP_BY_DEFAULT
+    bool fUseRing0Runloop = true;
+# else
+    bool fUseRing0Runloop = false;
+# endif
+    rc = CFGMR3QueryBoolDef(pCfgNem, "UseRing0Runloop", &fUseRing0Runloop, fUseRing0Runloop);
+    AssertLogRelRCReturn(rc, rc);
+    pVM->nem.s.fUseRing0Runloop = fUseRing0Runloop;
+#endif
 
     return VINF_SUCCESS;
 }

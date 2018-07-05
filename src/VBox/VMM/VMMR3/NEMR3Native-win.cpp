@@ -233,6 +233,11 @@ static const char * const g_apszWHvMemAccesstypes[4] = { "read", "write", "exec"
 /*
  * Instantate the code we share with ring-0.
  */
+#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
+# define NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
+#else
+# undef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
+#endif
 #include "../VMMAll/NEMAllNativeTemplate-win.cpp.h"
 
 
@@ -1387,38 +1392,49 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         pVCpu->nem.s.hNativeThreadHandle = (RTR3PTR)RTThreadGetNativeHandle(VMR3GetThreadHandle(pVCpu->pUVCpu));
         Assert((HANDLE)pVCpu->nem.s.hNativeThreadHandle != INVALID_HANDLE_VALUE);
 
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
-        VID_MAPPED_MESSAGE_SLOT MappedMsgSlot = { NULL, UINT32_MAX, UINT32_MAX };
-        if (g_pfnVidMessageSlotMap(hPartitionDevice, &MappedMsgSlot, iCpu))
+#ifndef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
+        if (!pVM->nem.s.fUseRing0Runloop)
+# endif
         {
-            AssertLogRelMsg(MappedMsgSlot.iCpu == iCpu && MappedMsgSlot.uParentAdvisory == UINT32_MAX,
-                            ("%#x %#x (iCpu=%#x)\n", MappedMsgSlot.iCpu, MappedMsgSlot.uParentAdvisory, iCpu));
-            pVCpu->nem.s.pvMsgSlotMapping = MappedMsgSlot.pMsgBlock;
-        }
-        else
-        {
-            NTSTATUS const rcNtLast  = RTNtLastStatusValue();
-            DWORD const    dwErrLast = RTNtLastErrorValue();
-            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                              "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
-        }
-#else
-        hrc = WHvCreateVirtualProcessor(hPartition, iCpu, 0 /*fFlags*/);
-        if (FAILED(hrc))
-        {
-            NTSTATUS const rcNtLast  = RTNtLastStatusValue();
-            DWORD const    dwErrLast = RTNtLastErrorValue();
-            while (iCpu-- > 0)
+            hrc = WHvCreateVirtualProcessor(hPartition, iCpu, 0 /*fFlags*/);
+            if (FAILED(hrc))
             {
-                HRESULT hrc2 = WHvDeleteVirtualProcessor(hPartition, iCpu);
-                AssertLogRelMsg(SUCCEEDED(hrc2), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
-                                                  hPartition, iCpu, hrc2, RTNtLastStatusValue(),
-                                                  RTNtLastErrorValue()));
+                NTSTATUS const rcNtLast  = RTNtLastStatusValue();
+                DWORD const    dwErrLast = RTNtLastErrorValue();
+                while (iCpu-- > 0)
+                {
+                    HRESULT hrc2 = WHvDeleteVirtualProcessor(hPartition, iCpu);
+                    AssertLogRelMsg(SUCCEEDED(hrc2), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
+                                                      hPartition, iCpu, hrc2, RTNtLastStatusValue(),
+                                                      RTNtLastErrorValue()));
+                }
+                return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                                  "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
             }
-            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                              "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
         }
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
+        else
+# endif
 #endif /* !NEM_WIN_USE_OUR_OWN_RUN_API */
+#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_OUR_OWN_RUN_API)
+        {
+            VID_MAPPED_MESSAGE_SLOT MappedMsgSlot = { NULL, UINT32_MAX, UINT32_MAX };
+            if (g_pfnVidMessageSlotMap(hPartitionDevice, &MappedMsgSlot, iCpu))
+            {
+                AssertLogRelMsg(MappedMsgSlot.iCpu == iCpu && MappedMsgSlot.uParentAdvisory == UINT32_MAX,
+                                ("%#x %#x (iCpu=%#x)\n", MappedMsgSlot.iCpu, MappedMsgSlot.uParentAdvisory, iCpu));
+                pVCpu->nem.s.pvMsgSlotMapping = MappedMsgSlot.pMsgBlock;
+            }
+            else
+            {
+                NTSTATUS const rcNtLast  = RTNtLastStatusValue();
+                DWORD const    dwErrLast = RTNtLastErrorValue();
+                return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                                  "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
+            }
+        }
+#endif
     }
     pVM->nem.s.fCreatedEmts = true;
 
@@ -1582,13 +1598,17 @@ int nemR3NativeTerm(PVM pVM)
         LogRel(("NEM: Destroying partition %p with its %u VCpus...\n", hPartition, iCpu));
         while (iCpu-- > 0)
         {
-#ifdef NEM_WIN_USE_OUR_OWN_RUN_API
             pVM->aCpus[iCpu].nem.s.pvMsgSlotMapping = NULL;
-#else
-            HRESULT hrc = WHvDeleteVirtualProcessor(hPartition, iCpu);
-            AssertLogRelMsg(SUCCEEDED(hrc), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
-                                             hPartition, iCpu, hrc, RTNtLastStatusValue(),
-                                             RTNtLastErrorValue()));
+#ifndef NEM_WIN_USE_OUR_OWN_RUN_API
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
+            if (!pVM->nem.s.fUseRing0Runloop)
+# endif
+            {
+                HRESULT hrc = WHvDeleteVirtualProcessor(hPartition, iCpu);
+                AssertLogRelMsg(SUCCEEDED(hrc), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
+                                                 hPartition, iCpu, hrc, RTNtLastStatusValue(),
+                                                 RTNtLastErrorValue()));
+            }
 #endif
         }
         WHvDeletePartition(hPartition);
@@ -1633,81 +1653,83 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
 
 VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 {
-#if !defined(NEM_WIN_USE_OUR_OWN_RUN_API) || 0
-    return nemHCWinRunGC(pVM, pVCpu, NULL /*pGVM*/, NULL /*pGVCpu*/);
-#else
-    for (;;)
+#ifdef NEM_WIN_WITH_RING0_RUNLOOP
+    if (pVM->nem.s.fUseRing0Runloop)
     {
-        VBOXSTRICTRC rcStrict = VMMR3CallR0EmtFast(pVM, pVCpu, VMMR0_DO_NEM_RUN);
-        if (RT_SUCCESS(rcStrict))
+        for (;;)
         {
-            /*
-             * We deal with VINF_NEM_CHANGE_PGM_MODE, VINF_NEM_FLUSH_TLB and
-             * VINF_NEM_UPDATE_APIC_BASE  here, since we're running the risk of
-             * getting these while we already got another RC (I/O ports).
-             *
-             * The APIC base update and a PGM update can happen at the same time, so
-             * we don't depend on the status code for that and always checks it first.
-             */
-            /* APIC base: */
-            if (pVCpu->nem.s.uPendingApicBase != UINT64_MAX)
+            VBOXSTRICTRC rcStrict = VMMR3CallR0EmtFast(pVM, pVCpu, VMMR0_DO_NEM_RUN);
+            if (RT_SUCCESS(rcStrict))
             {
-                LogFlow(("nemR3NativeRunGC: calling APICSetBaseMsr(,%RX64)...\n", pVCpu->nem.s.uPendingApicBase));
-                VBOXSTRICTRC rc2 = APICSetBaseMsr(pVCpu, pVCpu->nem.s.uPendingApicBase);
-                AssertLogRelMsg(rc2 == VINF_SUCCESS, ("rc2=%Rrc [%#RX64]\n", VBOXSTRICTRC_VAL(rc2), pVCpu->nem.s.uPendingApicBase));
-                pVCpu->nem.s.uPendingApicBase = UINT64_MAX;
-            }
+                /*
+                 * We deal with VINF_NEM_CHANGE_PGM_MODE, VINF_NEM_FLUSH_TLB and
+                 * VINF_NEM_UPDATE_APIC_BASE  here, since we're running the risk of
+                 * getting these while we already got another RC (I/O ports).
+                 *
+                 * The APIC base update and a PGM update can happen at the same time, so
+                 * we don't depend on the status code for that and always checks it first.
+                 */
+                /* APIC base: */
+                if (pVCpu->nem.s.uPendingApicBase != UINT64_MAX)
+                {
+                    LogFlow(("nemR3NativeRunGC: calling APICSetBaseMsr(,%RX64)...\n", pVCpu->nem.s.uPendingApicBase));
+                    VBOXSTRICTRC rc2 = APICSetBaseMsr(pVCpu, pVCpu->nem.s.uPendingApicBase);
+                    AssertLogRelMsg(rc2 == VINF_SUCCESS, ("rc2=%Rrc [%#RX64]\n", VBOXSTRICTRC_VAL(rc2), pVCpu->nem.s.uPendingApicBase));
+                    pVCpu->nem.s.uPendingApicBase = UINT64_MAX;
+                }
 
-            /* Status codes: */
-            VBOXSTRICTRC rcPending = pVCpu->nem.s.rcPending;
-            pVCpu->nem.s.rcPending = VINF_SUCCESS;
-            if (   rcStrict == VINF_NEM_CHANGE_PGM_MODE
-                || rcStrict == VINF_PGM_CHANGE_MODE
-                || rcPending == VINF_NEM_CHANGE_PGM_MODE )
-            {
-                LogFlow(("nemR3NativeRunGC: calling PGMChangeMode...\n"));
-                int rc = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
-                AssertRCReturn(rc, rc);
+                /* Status codes: */
+                VBOXSTRICTRC rcPending = pVCpu->nem.s.rcPending;
+                pVCpu->nem.s.rcPending = VINF_SUCCESS;
                 if (   rcStrict == VINF_NEM_CHANGE_PGM_MODE
                     || rcStrict == VINF_PGM_CHANGE_MODE
-                    || rcStrict == VINF_NEM_FLUSH_TLB)
+                    || rcPending == VINF_NEM_CHANGE_PGM_MODE )
                 {
-                    if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
-                        && !VMCPU_FF_IS_PENDING(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
-                                                       & ~VMCPU_FF_RESUME_GUEST_MASK))
+                    LogFlow(("nemR3NativeRunGC: calling PGMChangeMode...\n"));
+                    int rc = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
+                    AssertRCReturn(rc, rc);
+                    if (   rcStrict == VINF_NEM_CHANGE_PGM_MODE
+                        || rcStrict == VINF_PGM_CHANGE_MODE
+                        || rcStrict == VINF_NEM_FLUSH_TLB)
                     {
-                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
-                        continue;
+                        if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
+                            && !VMCPU_FF_IS_PENDING(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
+                                                           & ~VMCPU_FF_RESUME_GUEST_MASK))
+                        {
+                            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
+                            continue;
+                        }
+                        rcStrict = VINF_SUCCESS;
                     }
-                    rcStrict = VINF_SUCCESS;
                 }
-            }
-            else if (rcStrict == VINF_NEM_FLUSH_TLB || rcPending == VINF_NEM_FLUSH_TLB)
-            {
-                LogFlow(("nemR3NativeRunGC: calling PGMFlushTLB...\n"));
-                int rc = PGMFlushTLB(pVCpu, CPUMGetGuestCR3(pVCpu), true);
-                AssertRCReturn(rc, rc);
-                if (rcStrict == VINF_NEM_FLUSH_TLB || rcStrict == VINF_NEM_CHANGE_PGM_MODE)
+                else if (rcStrict == VINF_NEM_FLUSH_TLB || rcPending == VINF_NEM_FLUSH_TLB)
                 {
-                    if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
-                        && !VMCPU_FF_IS_PENDING(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
-                                                       & ~VMCPU_FF_RESUME_GUEST_MASK))
+                    LogFlow(("nemR3NativeRunGC: calling PGMFlushTLB...\n"));
+                    int rc = PGMFlushTLB(pVCpu, CPUMGetGuestCR3(pVCpu), true);
+                    AssertRCReturn(rc, rc);
+                    if (rcStrict == VINF_NEM_FLUSH_TLB || rcStrict == VINF_NEM_CHANGE_PGM_MODE)
                     {
-                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
-                        continue;
+                        if (   !VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
+                            && !VMCPU_FF_IS_PENDING(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
+                                                           & ~VMCPU_FF_RESUME_GUEST_MASK))
+                        {
+                            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
+                            continue;
+                        }
+                        rcStrict = VINF_SUCCESS;
                     }
-                    rcStrict = VINF_SUCCESS;
                 }
+                else if (rcStrict == VINF_NEM_UPDATE_APIC_BASE || rcPending == VERR_NEM_UPDATE_APIC_BASE)
+                    continue;
+                else
+                    AssertMsg(rcPending == VINF_SUCCESS, ("rcPending=%Rrc\n", VBOXSTRICTRC_VAL(rcPending) ));
             }
-            else if (rcStrict == VINF_NEM_UPDATE_APIC_BASE || rcPending == VERR_NEM_UPDATE_APIC_BASE)
-                continue;
-            else
-                AssertMsg(rcPending == VINF_SUCCESS, ("rcPending=%Rrc\n", VBOXSTRICTRC_VAL(rcPending) ));
+            LogFlow(("nemR3NativeRunGC: returns %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
+            return rcStrict;
         }
-        LogFlow(("nemR3NativeRunGC: returns %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
-        return rcStrict;
     }
 #endif
+    return nemHCWinRunGC(pVM, pVCpu, NULL /*pGVM*/, NULL /*pGVCpu*/);
 }
 
 
@@ -1740,10 +1762,17 @@ void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 #ifdef NEM_WIN_USE_OUR_OWN_RUN_API
     nemHCWinCancelRunVirtualProcessor(pVM, pVCpu);
 #else
-    Log8(("nemR3NativeNotifyFF: canceling %u\n", pVCpu->idCpu));
-    HRESULT hrc = WHvCancelRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, 0);
-    AssertMsg(SUCCEEDED(hrc), ("WHvCancelRunVirtualProcessor -> hrc=%Rhrc\n", hrc));
-    RT_NOREF_PV(hrc);
+# ifdef NEM_WIN_WITH_RING0_RUNLOOP
+    if (pVM->nem.s.fUseRing0Runloop)
+        nemHCWinCancelRunVirtualProcessor(pVM, pVCpu);
+    else
+# endif
+    {
+        Log8(("nemR3NativeNotifyFF: canceling %u\n", pVCpu->idCpu));
+        HRESULT hrc = WHvCancelRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, 0);
+        AssertMsg(SUCCEEDED(hrc), ("WHvCancelRunVirtualProcessor -> hrc=%Rhrc\n", hrc));
+        RT_NOREF_PV(hrc);
+    }
 #endif
     RT_NOREF_PV(fFlags);
 }
