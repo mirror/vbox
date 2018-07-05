@@ -583,7 +583,7 @@ static void hmR0VmxUpdateErrorRecord(PVMCPU pVCpu, int rc)
         AssertPtrReturnVoid(pVCpu);
         VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.LastError.u32InstrError);
     }
-    pVCpu->CTX_SUFF(pVM)->hm.s.lLastError = rc;
+    pVCpu->CTX_SUFF(pVM)->hm.s.rcInit = rc;
 }
 
 

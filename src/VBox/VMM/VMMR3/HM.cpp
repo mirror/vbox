@@ -1213,13 +1213,13 @@ static int hmR3InitFinalizeR0(PVM pVM)
      */
     if (   !pVM->hm.s.vmx.fSupported
         && !pVM->hm.s.svm.fSupported
-        &&  pVM->hm.s.lLastError == VERR_SVM_IN_USE /* implies functional AMD-V */
+        &&  pVM->hm.s.rcInit == VERR_SVM_IN_USE /* implies functional AMD-V */
         &&  RTEnvExist("VBOX_HWVIRTEX_IGNORE_SVM_IN_USE"))
     {
         LogRel(("HM: VBOX_HWVIRTEX_IGNORE_SVM_IN_USE active!\n"));
         pVM->hm.s.svm.fSupported        = true;
         pVM->hm.s.svm.fIgnoreInUseError = true;
-        pVM->hm.s.lLastError = VINF_SUCCESS;
+        pVM->hm.s.rcInit = VINF_SUCCESS;
     }
 
     /*
@@ -1228,9 +1228,9 @@ static int hmR3InitFinalizeR0(PVM pVM)
     if (   !pVM->hm.s.vmx.fSupported
         && !pVM->hm.s.svm.fSupported)
     {
-        LogRel(("HM: Failed to initialize VT-x / AMD-V: %Rrc\n", pVM->hm.s.lLastError));
+        LogRel(("HM: Failed to initialize VT-x / AMD-V: %Rrc\n", pVM->hm.s.rcInit));
         LogRel(("HM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hm.s.vmx.Msrs.u64FeatureCtrl));
-        switch (pVM->hm.s.lLastError)
+        switch (pVM->hm.s.rcInit)
         {
             case VERR_VMX_IN_VMX_ROOT_MODE:
                 return VM_SET_ERROR(pVM, VERR_VMX_IN_VMX_ROOT_MODE, "VT-x is being used by another hypervisor");
@@ -1254,7 +1254,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
             case VERR_SVM_DISABLED:
                 return VM_SET_ERROR(pVM, VERR_SVM_DISABLED, "AMD-V is disabled in the BIOS");
         }
-        return VMSetError(pVM, pVM->hm.s.lLastError, RT_SRC_POS, "HM ring-0 init failed: %Rrc", pVM->hm.s.lLastError);
+        return VMSetError(pVM, pVM->hm.s.rcInit, RT_SRC_POS, "HM ring-0 init failed: %Rrc", pVM->hm.s.rcInit);
     }
 
     /*
