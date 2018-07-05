@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes: */
+/* Qt includes: */
 # include <QVBoxLayout>
 # include <QGridLayout>
 # include <QListWidget>
@@ -30,7 +30,7 @@
 # include <QCheckBox>
 # include <QGroupBox>
 
-/* Local includes: */
+/* GUI includes: */
 # include "UIWizardExportAppPageExpert.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
@@ -41,79 +41,120 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class UIWizardExportAppPageExpert implementation.                                                                            *
+*********************************************************************************************************************************/
+
 UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &selectedVMNames)
 {
     /* Create widgets: */
     QGridLayout *pMainLayout = new QGridLayout(this);
     {
+        /* Create VM selector container: */
         m_pSelectorCnt = new QGroupBox(this);
         {
+            /* Create VM selector container layout: */
             QVBoxLayout *pSelectorCntLayout = new QVBoxLayout(m_pSelectorCnt);
             {
+                /* Create VM selector: */
                 m_pVMSelector = new QListWidget(m_pSelectorCnt);
                 {
                     m_pVMSelector->setAlternatingRowColors(true);
                     m_pVMSelector->setSelectionMode(QAbstractItemView::ExtendedSelection);
                 }
+
+                /* Add into layout: */
                 pSelectorCntLayout->addWidget(m_pVMSelector);
             }
         }
+
+        /* Create appliance widget container: */
         m_pApplianceCnt = new QGroupBox(this);
         {
+            /* Create appliance widget container layout: */
             QVBoxLayout *pApplianceCntLayout = new QVBoxLayout(m_pApplianceCnt);
             {
+                /* Create appliance widget: */
                 m_pApplianceWidget = new UIApplianceExportEditorWidget(m_pApplianceCnt);
                 {
                     m_pApplianceWidget->setMinimumHeight(250);
                     m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
                 }
+
+                /* Add into layout: */
                 pApplianceCntLayout->addWidget(m_pApplianceWidget);
             }
         }
+
+        /* Create storage type container: */
         m_pTypeCnt = new QGroupBox(this);
         {
+            /* Hide it for now: */
             m_pTypeCnt->hide();
+
+            /* Create storage type container layout: */
             QVBoxLayout *pTypeCntLayout = new QVBoxLayout(m_pTypeCnt);
             {
+                /* Create Local Filesystem radio-button: */
                 m_pTypeLocalFilesystem = new QRadioButton(m_pTypeCnt);
+                /* Create SunCloud radio-button: */
                 m_pTypeSunCloud = new QRadioButton(m_pTypeCnt);
+                /* Create Simple Storage System radio-button: */
                 m_pTypeSimpleStorageSystem = new QRadioButton(m_pTypeCnt);
+
+                /* Add into layout: */
                 pTypeCntLayout->addWidget(m_pTypeLocalFilesystem);
                 pTypeCntLayout->addWidget(m_pTypeSunCloud);
                 pTypeCntLayout->addWidget(m_pTypeSimpleStorageSystem);
             }
         }
+
+        /* Create settings widget container: */
         m_pSettingsCnt = new QGroupBox(this);
         {
+            /* Create settings widget container layout: */
             QGridLayout *pSettingsLayout = new QGridLayout(m_pSettingsCnt);
             {
+                /* Create username editor: */
                 m_pUsernameEditor = new QLineEdit(m_pSettingsCnt);
+                /* Create username label: */
                 m_pUsernameLabel = new QLabel(m_pSettingsCnt);
                 {
                     m_pUsernameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                     m_pUsernameLabel->setBuddy(m_pUsernameEditor);
                 }
+
+                /* Create password editor: */
                 m_pPasswordEditor = new QLineEdit(m_pSettingsCnt);
                 {
                     m_pPasswordEditor->setEchoMode(QLineEdit::Password);
                 }
+                /* Create password label: */
                 m_pPasswordLabel = new QLabel(m_pSettingsCnt);
                 {
                     m_pPasswordLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                     m_pPasswordLabel->setBuddy(m_pPasswordEditor);
                 }
+
+                /* Create hostname editor: */
                 m_pHostnameEditor = new QLineEdit(m_pSettingsCnt);
+                /* Create hostname label: */
                 m_pHostnameLabel = new QLabel(m_pSettingsCnt);
                 {
                     m_pHostnameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                     m_pHostnameLabel->setBuddy(m_pHostnameEditor);
                 }
+
+                /* Create bucket editor: */
                 m_pBucketEditor = new QLineEdit(m_pSettingsCnt);
+                /* Create bucket label: */
                 m_pBucketLabel = new QLabel(m_pSettingsCnt);
                 {
                     m_pBucketLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                     m_pBucketLabel->setBuddy(m_pBucketEditor);
                 }
+
+                /* Create file selector: */
                 m_pFileSelector = new UIEmptyFilePathSelector(m_pSettingsCnt);
                 {
                     m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Save);
@@ -121,11 +162,14 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                     m_pFileSelector->setDefaultSaveExt("ova");
                 }
+                /* Create file selector label: */
                 m_pFileSelectorLabel = new QLabel(m_pSettingsCnt);
                 {
                     m_pFileSelectorLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                     m_pFileSelectorLabel->setBuddy(m_pFileSelector);
                 }
+
+                /* Create format combo-box editor: */
                 m_pFormatComboBox = new QComboBox(m_pSettingsCnt);
                 {
                     const QString strFormatOVF09("ovf-0.9");
@@ -139,12 +183,17 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
                 }
+                /* Create format combo-box label: */
                 m_pFormatComboBoxLabel = new QLabel(m_pSettingsCnt);
                 {
                     m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                     m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
                 }
+
+                /* Create manifest check-box editor: */
                 m_pManifestCheckbox = new QCheckBox(m_pSettingsCnt);
+
+                /* Add into layout: */
                 pSettingsLayout->addWidget(m_pUsernameLabel, 0, 0);
                 pSettingsLayout->addWidget(m_pUsernameEditor, 0, 1);
                 pSettingsLayout->addWidget(m_pPasswordLabel, 1, 0);
@@ -160,12 +209,18 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                 pSettingsLayout->addWidget(m_pManifestCheckbox, 6, 0, 1, 2);
             }
         }
+
+        /* Add into layout: */
         pMainLayout->addWidget(m_pSelectorCnt, 0, 0);
         pMainLayout->addWidget(m_pApplianceCnt, 0, 1);
         pMainLayout->addWidget(m_pTypeCnt, 1, 0, 1, 2);
         pMainLayout->addWidget(m_pSettingsCnt, 2, 0, 1, 2);
+
+        /* Populate VM selector items: */
         populateVMSelectorItems(selectedVMNames);
+        /* Choose default storage type: */
         chooseDefaultStorageType();
+        /* Choose default settings: */
         chooseDefaultSettings();
     }
 
@@ -183,6 +238,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     /* Register classes: */
     qRegisterMetaType<StorageType>();
     qRegisterMetaType<ExportAppliancePointer>();
+
     /* Register fields: */
     registerField("machineNames", this, "machineNames");
     registerField("machineIDs", this, "machineIDs");
@@ -226,6 +282,7 @@ void UIWizardExportAppPageExpert::retranslateUi()
 {
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
+
     /* Translate widgets: */
     m_pSelectorCnt->setTitle(UIWizardExportApp::tr("Virtual &machines to export"));
     m_pApplianceCnt->setTitle(UIWizardExportApp::tr("Appliance &settings"));
@@ -333,4 +390,3 @@ bool UIWizardExportAppPageExpert::validatePage()
     /* Return result: */
     return fResult;
 }
-

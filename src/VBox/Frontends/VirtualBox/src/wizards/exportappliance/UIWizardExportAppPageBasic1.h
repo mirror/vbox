@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,38 +15,40 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardExportAppPageBasic1_h__
-#define __UIWizardExportAppPageBasic1_h__
+#ifndef ___UIWizardExportAppPageBasic1_h___
+#define ___UIWizardExportAppPageBasic1_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
 class QListWidget;
 class QIRichTextLabel;
 
-/* 1st page of the Export Appliance wizard (base part): */
+
+/** UIWizardPageBase extension for 1st page of the Export Appliance wizard. */
 class UIWizardExportAppPage1 : public UIWizardPageBase
 {
 protected:
 
-    /* Constructor: */
+    /** Constructs 1st page base. */
     UIWizardExportAppPage1();
 
-    /* Helping stuff: */
+    /** Populates VM selector items on the basis of passed @a selectedVMNames. */
     void populateVMSelectorItems(const QStringList &selectedVMNames);
 
-    /* Stuff for 'machineNames' field: */
+    /** Returns a list of selected machine names. */
     QStringList machineNames() const;
 
-    /* Stuff for 'machineIDs' field: */
+    /** Returns a list of selected machine IDs. */
     QStringList machineIDs() const;
 
-    /* Widgets: */
+    /** Holds the VM selector instance. */
     QListWidget *m_pVMSelector;
 };
 
-/* 1st page of the Export Appliance wizard (basic extension): */
+
+/** UIWizardPage extension for 1st page of the Export Appliance wizard, extends UIWizardExportAppPage1 as well. */
 class UIWizardExportAppPageBasic1 : public UIWizardPage, public UIWizardExportAppPage1
 {
     Q_OBJECT;
@@ -55,27 +57,28 @@ class UIWizardExportAppPageBasic1 : public UIWizardPage, public UIWizardExportAp
 
 public:
 
-    /* Constructor: */
+    /** Constructs 1st basic page.
+      * @param  selectedVMNames  Brings the list of selected VM names. */
     UIWizardExportAppPageBasic1(const QStringList &selectedVMNames);
 
 private:
 
-    /* Translate stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Performs page initialization. */
     void initializePage();
 
-    /* Validation stuff: */
+    /** Returns whether page is complete. */
     bool isComplete() const;
+    /** Performs page validation. */
     bool validatePage();
 
-    /* Navigation stuff: */
+    /** Returns next page ID. */
     int nextId() const;
 
-    /* Widgets: */
+    /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* __UIWizardExportAppPageBasic1_h__ */
-
+#endif /* !___UIWizardExportAppPageBasic1_h___ */

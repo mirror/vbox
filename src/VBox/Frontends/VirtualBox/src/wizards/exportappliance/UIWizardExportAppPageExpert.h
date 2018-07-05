@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,10 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardExportAppPageExpert_h__
-#define __UIWizardExportAppPageExpert_h__
+#ifndef ___UIWizardExportAppPageExpert_h___
+#define ___UIWizardExportAppPageExpert_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardExportAppPageBasic1.h"
 #include "UIWizardExportAppPageBasic2.h"
 #include "UIWizardExportAppPageBasic3.h"
@@ -27,7 +27,9 @@
 /* Forward declarations: */
 class QGroupBox;
 
-/* Expert page of the Export Appliance wizard: */
+/** UIWizardPage extension for 4th page of the Export Appliance wizard,
+  * extends UIWizardExportAppPage1, UIWizardExportAppPage2,
+  *         UIWizardExportAppPage3, UIWizardExportAppPage4 as well. */
 class UIWizardExportAppPageExpert : public UIWizardPage,
                                     public UIWizardExportAppPage1,
                                     public UIWizardExportAppPage2,
@@ -49,49 +51,52 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
 
 public:
 
-    /* Constructor: */
+    /** Constructs expert basic page.
+      * @param  selectedVMNames  Brings the list of selected VM names. */
     UIWizardExportAppPageExpert(const QStringList &selectedVMNames);
 
 protected:
 
-    /* Wrapper to access 'wizard' from base part: */
+    /** Allows access wizard from base part. */
     UIWizard* wizardImp() { return UIWizardPage::wizard(); }
-    /* Wrapper to access 'this' from base part: */
+    /** Allows access page from base part. */
     UIWizardPage* thisImp() { return this; }
-    /* Wrapper to access 'wizard-field' from base part: */
+    /** Allows access wizard-field from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private slots:
 
-    /* VM Selector selection change handler: */
+    /** Handles VM selector index change. */
     void sltVMSelectionChangeHandler();
 
-    /* Storage-type change handler: */
+    /** Handles storage type change. */
     void sltStorageTypeChangeHandler();
 
-    /* Format combo change handler: */
+    /** Handles format combo change. */
     void sltHandleFormatComboChange();
 
 private:
 
-    /* Field API: */
+    /** Wraps wizard field API, calling it with certain @a strFieldName argument. */
     QVariant field(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
-    /* Translate stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Performs page initialization. */
     void initializePage();
 
-    /* Validation stuff: */
+    /** Returns whether page is complete. */
     bool isComplete() const;
+    /** Performs page validation. */
     bool validatePage();
 
-    /* Widgets: */
+    /** Holds the VM selector container instance. */
     QGroupBox *m_pSelectorCnt;
+    /** Holds the appliance widget container reference. */
     QGroupBox *m_pApplianceCnt;
+    /** Holds the settings widget container reference. */
     QGroupBox *m_pSettingsCnt;
 };
 
-#endif /* __UIWizardExportAppPageExpert_h__ */
-
+#endif /* !___UIWizardExportAppPageExpert_h___ */

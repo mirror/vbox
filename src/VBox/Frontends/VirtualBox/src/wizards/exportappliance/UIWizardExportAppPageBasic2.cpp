@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,12 +19,12 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes: */
+/* Qt includes: */
 # include <QVBoxLayout>
 # include <QGroupBox>
 # include <QRadioButton>
 
-/* Local includes: */
+/* GUI includes: */
 # include "UIWizardExportAppPageBasic2.h"
 # include "UIWizardExportApp.h"
 # include "QIRichTextLabel.h"
@@ -32,27 +32,35 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class UIWizardExportAppPage2 implementation.                                                                                 *
+*********************************************************************************************************************************/
+
 UIWizardExportAppPage2::UIWizardExportAppPage2()
 {
 }
 
 void UIWizardExportAppPage2::chooseDefaultStorageType()
 {
-    /* Just select first of types: */
+    /* Choose Filesystem by default: */
     setStorageType(Filesystem);
 }
 
 StorageType UIWizardExportAppPage2::storageType() const
 {
+    /* Check SunCloud and S3: */
     if (m_pTypeSunCloud->isChecked())
         return SunCloud;
     else if (m_pTypeSimpleStorageSystem->isChecked())
         return S3;
+
+    /* Return Filesystem by default: */
     return Filesystem;
 }
 
 void UIWizardExportAppPage2::setStorageType(StorageType storageType)
 {
+    /* Check and focus the requested type: */
     switch (storageType)
     {
         case Filesystem:
@@ -70,27 +78,45 @@ void UIWizardExportAppPage2::setStorageType(StorageType storageType)
     }
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIWizardExportAppPageBasic2 implementation.                                                                            *
+*********************************************************************************************************************************/
+
 UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
 {
-    /* Create widgets: */
+    /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
+        /* Create label: */
         m_pLabel = new QIRichTextLabel(this);
+
+        /* Create storage type container: */
         m_pTypeCnt = new QGroupBox(this);
         {
+            /* Create storage type container layout: */
             QVBoxLayout *pTypeCntLayout = new QVBoxLayout(m_pTypeCnt);
             {
+                /* Create Local Filesystem radio-button: */
                 m_pTypeLocalFilesystem = new QRadioButton(m_pTypeCnt);
+                /* Create SunCloud radio-button: */
                 m_pTypeSunCloud = new QRadioButton(m_pTypeCnt);
+                /* Create Simple Storage System radio-button: */
                 m_pTypeSimpleStorageSystem = new QRadioButton(m_pTypeCnt);
+
+                /* Add into layout: */
                 pTypeCntLayout->addWidget(m_pTypeLocalFilesystem);
                 pTypeCntLayout->addWidget(m_pTypeSunCloud);
                 pTypeCntLayout->addWidget(m_pTypeSimpleStorageSystem);
             }
         }
+
+        /* Add into layout: */
         pMainLayout->addWidget(m_pLabel);
         pMainLayout->addWidget(m_pTypeCnt);
         pMainLayout->addStretch();
+
+        /* Choose default storage type: */
         chooseDefaultStorageType();
     }
 
@@ -101,6 +127,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
 
     /* Register classes: */
     qRegisterMetaType<StorageType>();
+
     /* Register fields: */
     registerField("storageType", this, "storageType");
 }
@@ -125,4 +152,3 @@ void UIWizardExportAppPageBasic2::initializePage()
     /* Translate page: */
     retranslateUi();
 }
-

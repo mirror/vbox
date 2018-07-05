@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,10 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
+/*********************************************************************************************************************************
+*   Class UIWizardExportAppPage4 implementation.                                                                                 *
+*********************************************************************************************************************************/
 
 UIWizardExportAppPage4::UIWizardExportAppPage4()
 {
@@ -84,22 +88,33 @@ void UIWizardExportAppPage4::refreshApplianceSettingsWidget()
         msgCenter().cannotExportAppliance(*pAppliance, thisImp());
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIWizardExportAppPageBasic4 implementation.                                                                            *
+*********************************************************************************************************************************/
+
 UIWizardExportAppPageBasic4::UIWizardExportAppPageBasic4()
 {
-    /* Create widgets: */
+    /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
+        /* Create label: */
         m_pLabel = new QIRichTextLabel(this);
+
+        /* Create appliance widget: */
         m_pApplianceWidget = new UIApplianceExportEditorWidget(this);
         {
             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
         }
+
+        /* Add into layout: */
         pMainLayout->addWidget(m_pLabel);
         pMainLayout->addWidget(m_pApplianceWidget);
     }
 
     /* Register classes: */
     qRegisterMetaType<ExportAppliancePointer>();
+
     /* Register fields: */
     registerField("applianceWidget", this, "applianceWidget");
 }
@@ -142,4 +157,3 @@ bool UIWizardExportAppPageBasic4::validatePage()
     /* Return result: */
     return fResult;
 }
-

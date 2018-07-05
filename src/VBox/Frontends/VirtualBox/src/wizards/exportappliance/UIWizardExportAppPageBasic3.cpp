@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes: */
+/* Qt includes: */
 # include <QDir>
 # include <QVBoxLayout>
 # include <QGridLayout>
@@ -28,7 +28,7 @@
 # include <QComboBox>
 # include <QCheckBox>
 
-/* Local includes: */
+/* GUI includes: */
 # include "UIWizardExportAppPageBasic3.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
@@ -39,13 +39,17 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class UIWizardExportAppPage3 implementation.                                                                                 *
+*********************************************************************************************************************************/
+
 UIWizardExportAppPage3::UIWizardExportAppPage3()
 {
 }
 
 void UIWizardExportAppPage3::chooseDefaultSettings()
 {
-    /* Choose default format: */
+    /* Choose ovf-1.0 by default: */
     setFormat("ovf-1.0");
 }
 
@@ -224,41 +228,62 @@ void UIWizardExportAppPage3::setPath(const QString &strPath)
     m_pFileSelector->setPath(strPath);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIWizardExportAppPageBasic3 implementation.                                                                            *
+*********************************************************************************************************************************/
+
 UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
 {
-    /* Create widgets: */
+    /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
+        /* Create label: */
         m_pLabel = new QIRichTextLabel(this);
+
+        /* Create settings layout: */
         QGridLayout *pSettingsLayout = new QGridLayout;
         {
+            /* Create username editor: */
             m_pUsernameEditor = new QLineEdit(this);
+            /* Create username label: */
             m_pUsernameLabel = new QLabel(this);
             {
                 m_pUsernameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pUsernameLabel->setBuddy(m_pUsernameEditor);
             }
+
+            /* Create password editor: */
             m_pPasswordEditor = new QLineEdit(this);
             {
                 m_pPasswordEditor->setEchoMode(QLineEdit::Password);
             }
+            /* Create password label: */
             m_pPasswordLabel = new QLabel(this);
             {
                 m_pPasswordLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pPasswordLabel->setBuddy(m_pPasswordEditor);
             }
+
+            /* Create hostname editor: */
             m_pHostnameEditor = new QLineEdit(this);
+            /* Create hostname label: */
             m_pHostnameLabel = new QLabel(this);
             {
                 m_pHostnameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pHostnameLabel->setBuddy(m_pHostnameEditor);
             }
+
+            /* Create bucket editor: */
             m_pBucketEditor = new QLineEdit(this);
+            /* Create bucket label: */
             m_pBucketLabel = new QLabel(this);
             {
                 m_pBucketLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pBucketLabel->setBuddy(m_pBucketEditor);
             }
+
+            /* Create file selector: */
             m_pFileSelector = new UIEmptyFilePathSelector(this);
             {
                 m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Save);
@@ -266,11 +291,14 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                 m_pFileSelector->setDefaultSaveExt("ova");
             }
+            /* Create file selector label: */
             m_pFileSelectorLabel = new QLabel(this);
             {
                 m_pFileSelectorLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pFileSelectorLabel->setBuddy(m_pFileSelector);
             }
+
+            /* Create format combo-box: */
             m_pFormatComboBox = new QComboBox(this);
             {
                 const QString strFormatOVF09("ovf-0.9");
@@ -284,11 +312,14 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                         this, &UIWizardExportAppPageBasic3::sltHandleFormatComboChange);
             }
+            /* Create format combo-box label: */
             m_pFormatComboBoxLabel = new QLabel(this);
             {
                 m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
             }
+
+            /* Add into layout: */
             pSettingsLayout->addWidget(m_pUsernameLabel, 0, 0);
             pSettingsLayout->addWidget(m_pUsernameEditor, 0, 1);
             pSettingsLayout->addWidget(m_pPasswordLabel, 1, 0);
@@ -302,11 +333,17 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 5, 0);
             pSettingsLayout->addWidget(m_pFormatComboBox, 5, 1);
         }
+
+        /* Create manifest check-box: */
         m_pManifestCheckbox = new QCheckBox(this);
+
+        /* Add into layout: */
         pMainLayout->addWidget(m_pLabel);
         pMainLayout->addLayout(pSettingsLayout);
         pMainLayout->addWidget(m_pManifestCheckbox);
         pMainLayout->addStretch();
+
+        /* Choose default settings: */
         chooseDefaultSettings();
     }
 
@@ -454,4 +491,3 @@ void UIWizardExportAppPageBasic3::refreshCurrentSettings()
         }
     }
 }
-

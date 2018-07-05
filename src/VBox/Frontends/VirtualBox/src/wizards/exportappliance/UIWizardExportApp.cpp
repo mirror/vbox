@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,6 +39,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* COM includes: */
 #include "CVFSExplorer.h"
 
 
@@ -49,32 +50,40 @@ UIWizardExportApp::UIWizardExportApp(QWidget *pParent, const QStringList &select
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/wizard_ovf_export.png");
-#else /* VBOX_WS_MAC */
+#else
     /* Assign background image: */
     assignBackground(":/wizard_ovf_export_bg.png");
-#endif /* VBOX_WS_MAC */
+#endif
 }
 
 bool UIWizardExportApp::exportAppliance()
 {
-    /* Get export appliance widget: */
+    /* We need to know every filename which will be created, so that we can ask the user for confirmation of overwriting.
+     * For that we iterating over all virtual systems & fetch all descriptions of the type HardDiskImage. Also add the
+     * manifest file to the check. In the .ova case only the target file itself get checked. */
+
+    /* Get export appliance widget & fetch all settings from the appliance editor: */
     UIApplianceExportEditorWidget *pExportApplianceWidget = field("applianceWidget").value<ExportAppliancePointer>();
-    /* Fetch all settings from the appliance editor. */
     pExportApplianceWidget->prepareExport();
-    /* Get the appliance. */
+
+    /* Get the appliance: */
     CAppliance *pAppliance = pExportApplianceWidget->appliance();
-    /* We need to know every filename which will be created, so that we can
-     * ask the user for confirmation of overwriting. For that we iterating
-     * over all virtual systems & fetch all descriptions of the type
-     * HardDiskImage. Also add the manifest file to the check. In the ova
-     * case only the target file itself get checked. */
+
+    /* Compose a list of all required files: */
     QFileInfo fi(field("path").toString());
     QVector<QString> files;
+
+    /* Add arhive itself: */
     files << fi.fileName();
+
+    /* If archive is of .ovf type: */
     if (fi.suffix().toLower() == "ovf")
     {
+        /* Add manifest file if requested: */
         if (field("manifestSelected").toBool())
             files << fi.baseName() + ".mf";
+
+        /* Add all hard disk images: */
         CVirtualSystemDescriptionVector vsds = pAppliance->GetVirtualSystemDescriptions();
         for (int i = 0; i < vsds.size(); ++ i)
         {
@@ -86,12 +95,13 @@ bool UIWizardExportApp::exportAppliance()
                 files << QString("%2").arg(s);
         }
     }
+
+    /* Initialize VFS explorer: */
     CVFSExplorer explorer = pAppliance->CreateVFSExplorer(uri(false /* fWithFile */));
     CProgress progress = explorer.Update();
     bool fResult = explorer.isOk();
     if (fResult)
     {
-        /* Show some progress, so the user know whats going on: */
         msgCenter().showModalProgressDialog(progress, QApplication::translate("UIWizardExportApp", "Checking files ..."),
                                             ":/progress_refresh_90px.png", this);
         if (progress.GetCanceled())
@@ -102,18 +112,19 @@ bool UIWizardExportApp::exportAppliance()
             return false;
         }
     }
+
+    /* Confirm overwriting for existing files: */
     QVector<QString> exists = explorer.Exists(files);
-    /* Check if the file exists already, if yes get confirmation for overwriting from the user. */
     if (!msgCenter().confirmOverridingFiles(exists, this))
         return false;
-    /* Ok all is confirmed so delete all the files which exists: */
+
+    /* DELETE all the files which exists after everything is confirmed: */
     if (!exists.isEmpty())
     {
         CProgress progress1 = explorer.Remove(exists);
         fResult = explorer.isOk();
         if (fResult)
         {
-            /* Show some progress, so the user know whats going on: */
             msgCenter().showModalProgressDialog(progress1, QApplication::translate("UIWizardExportApp", "Removing files ..."),
                                                 ":/progress_delete_90px.png", this);
             if (progress1.GetCanceled())
@@ -141,7 +152,9 @@ bool UIWizardExportApp::exportVMs(CAppliance &appliance)
     /* Ask for the disk encryption passwords if necessary: */
     if (!encryptedMediums.isEmpty())
     {
-        /* Create corresponding dialog: */
+        /* Modal dialog can be destroyed in own event-loop as a part of application
+         * termination procedure. We have to make sure that the dialog pointer is
+         * always up to date. So we are wrapping created dialog with QPointer. */
         QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
              new UIAddDiskEncryptionPasswordDialog(this,
                                                    window()->windowTitle(),
@@ -172,9 +185,6 @@ bool UIWizardExportApp::exportVMs(CAppliance &appliance)
         }
         else
         {
-            /* Any modal dialog can be destroyed in own event-loop
-             * as a part of application termination procedure..
-             * We have to check if the dialog still valid. */
             if (pDlg)
             {
                 /* Delete the dialog: */
@@ -193,7 +203,6 @@ bool UIWizardExportApp::exportVMs(CAppliance &appliance)
     bool fResult = appliance.isOk();
     if (fResult)
     {
-        /* Show some progress, so the user know whats going on: */
         msgCenter().showModalProgressDialog(progress, QApplication::translate("UIWizardExportApp", "Exporting Appliance ..."),
                                             ":/progress_export_90px.png", this);
         if (progress.GetCanceled())
@@ -215,12 +224,15 @@ QString UIWizardExportApp::uri(bool fWithFile) const
 {
     StorageType type = field("storageType").value<StorageType>();
 
+    /* Prepare stirage path: */
     QString path = field("path").toString();
     if (!fWithFile)
     {
         QFileInfo fi(path);
         path = fi.path();
     }
+
+    /* For known storage types: */
     switch (type)
     {
         case Filesystem:
@@ -252,6 +264,8 @@ QString UIWizardExportApp::uri(bool fWithFile) const
             return uri;
         }
     }
+
+    /* Return nothing by default: */
     return QString();
 }
 
@@ -259,6 +273,7 @@ void UIWizardExportApp::sltCurrentIdChanged(int iId)
 {
     /* Call to base-class: */
     UIWizard::sltCurrentIdChanged(iId);
+
     /* Enable 2nd button (Reset to Defaults) for 4th and Expert pages only! */
     setOption(QWizard::HaveCustomButton2, (mode() == WizardMode_Basic && iId == Page4) ||
                                           (mode() == WizardMode_Expert && iId == PageExpert));
@@ -272,7 +287,7 @@ void UIWizardExportApp::sltCustomButtonClicked(int iId)
     /* Handle 2nd button: */
     if (iId == CustomButton2)
     {
-        /* Get appliance widget: */
+        /* Get appliance widget and make sure it's valid: */
         ExportAppliancePointer pApplianceWidget = field("applianceWidget").value<ExportAppliancePointer>();
         AssertMsg(!pApplianceWidget.isNull(), ("Appliance Widget is not set!\n"));
         /* Reset it to default: */
@@ -318,4 +333,3 @@ void UIWizardExportApp::prepare()
     /* Call to base-class: */
     UIWizard::prepare();
 }
-

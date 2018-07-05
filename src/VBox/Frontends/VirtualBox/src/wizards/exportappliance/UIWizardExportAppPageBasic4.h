@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,13 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardExportAppPageBasic4_h__
-#define __UIWizardExportAppPageBasic4_h__
+#ifndef ___UIWizardExportAppPageBasic4_h___
+#define ___UIWizardExportAppPageBasic4_h___
 
-/* Global includes: */
+/* Qt includes: */
 #include <QVariant>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
 #include "UIWizardExportAppDefs.h"
 
@@ -29,25 +29,27 @@
 class UIWizardExportApp;
 class QIRichTextLabel;
 
-/* 4th page of the Export Appliance wizard (base part): */
+
+/** UIWizardPageBase extension for 4th page of the Export Appliance wizard. */
 class UIWizardExportAppPage4 : public UIWizardPageBase
 {
 protected:
 
-    /* Constructor: */
+    /** Constructs 4th page base. */
     UIWizardExportAppPage4();
 
-    /* Helpers: */
-    void refreshApplianceSettingsWidget(    );
+    /** Refreshes appliance settings widget. */
+    void refreshApplianceSettingsWidget();
 
-    /* Stuff for 'applianceWidget' field: */
+    /** Returns the appliance widget reference. */
     ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
 
-    /* Widgets: */
+    /** Holds the appliance widget reference. */
     UIApplianceExportEditorWidget *m_pApplianceWidget;
 };
 
-/* 4th page of the Export Appliance wizard (basic extension): */
+
+/** UIWizardPage extension for 4th page of the Export Appliance wizard, extends UIWizardExportAppPage4 as well. */
 class UIWizardExportAppPageBasic4 : public UIWizardPage, public UIWizardExportAppPage4
 {
     Q_OBJECT;
@@ -55,32 +57,31 @@ class UIWizardExportAppPageBasic4 : public UIWizardPage, public UIWizardExportAp
 
 public:
 
-    /* Constructor: */
+    /** Constructs 4th basic page. */
     UIWizardExportAppPageBasic4();
 
 protected:
 
-    /* Wrapper to access 'wizard' from base part: */
+    /** Allows access wizard from base part. */
     UIWizard* wizardImp() { return UIWizardPage::wizard(); }
-    /* Wrapper to access 'this' from base part: */
+    /** Allows access page from base part. */
     UIWizardPage* thisImp() { return this; }
-    /* Wrapper to access 'wizard-field' from base part: */
+    /** Allows access wizard-field from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private:
 
-    /* Translate stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Performs page initialization. */
     void initializePage();
 
-    /* Validation stuff: */
+    /** Performs page validation. */
     bool validatePage();
 
-    /* Widgets: */
+    /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* __UIWizardExportAppPageBasic4_h__ */
-
+#endif /* !___UIWizardExportAppPageBasic4_h___ */

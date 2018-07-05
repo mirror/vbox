@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,7 @@
 /* Qt includes: */
 # include <QVBoxLayout>
 
-/* Local includes: */
+/* GUI includes: */
 # include "UIWizardExportAppPageBasic1.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
@@ -37,13 +37,17 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class UIWizardExportAppPage1 implementation.                                                                                 *
+*********************************************************************************************************************************/
+
 UIWizardExportAppPage1::UIWizardExportAppPage1()
 {
 }
 
 void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selectedVMNames)
 {
-    /* Add all VM items into 'VM Selector': */
+    /* Add all VM items into VM selector: */
     foreach (const CMachine &machine, vboxGlobal().virtualBox().GetMachines())
     {
         QPixmap pixIcon;
@@ -113,19 +117,31 @@ QStringList UIWizardExportAppPage1::machineIDs() const
     return machineIDs;
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIWizardExportAppPageBasic1 implementation.                                                                            *
+*********************************************************************************************************************************/
+
 UIWizardExportAppPageBasic1::UIWizardExportAppPageBasic1(const QStringList &selectedVMNames)
 {
-    /* Create widgets: */
+    /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
+        /* Create label: */
         m_pLabel = new QIRichTextLabel(this);
+
+        /* Create VM selector: */
         m_pVMSelector = new QListWidget(this);
         {
             m_pVMSelector->setAlternatingRowColors(true);
             m_pVMSelector->setSelectionMode(QAbstractItemView::ExtendedSelection);
         }
+
+        /* Add into layout: */
         pMainLayout->addWidget(m_pLabel);
         pMainLayout->addWidget(m_pVMSelector);
+
+        /* Populate VM selector items: */
         populateVMSelectorItems(selectedVMNames);
     }
 
@@ -156,7 +172,7 @@ void UIWizardExportAppPageBasic1::initializePage()
 
 bool UIWizardExportAppPageBasic1::isComplete() const
 {
-    /* There should be at least one vm selected: */
+    /* There should be at least one VM selected: */
     return m_pVMSelector->selectedItems().size() > 0;
 }
 
@@ -165,7 +181,7 @@ bool UIWizardExportAppPageBasic1::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Ask user about machines which are in save state currently: */
+    /* Ask user about machines which are in Saved state currently: */
     QStringList savedMachines;
     QList<QListWidgetItem*> pItems = m_pVMSelector->selectedItems();
     for (int i=0; i < pItems.size(); ++i)
@@ -185,4 +201,3 @@ int UIWizardExportAppPageBasic1::nextId() const
     /* Skip next (2nd, storage-type) page for now! */
     return UIWizardExportApp::Page3;
 }
-

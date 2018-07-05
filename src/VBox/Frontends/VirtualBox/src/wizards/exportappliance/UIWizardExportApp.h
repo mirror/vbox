@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,23 +15,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardExportApp_h__
-#define __UIWizardExportApp_h__
+#ifndef ___UIWizardExportApp_h___
+#define ___UIWizardExportApp_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizard.h"
 
 /* Forward declarations: */
 class CAppliance;
 
-/* Export Appliance wizard: */
+/** Export Appliance wizard. */
 class UIWizardExportApp : public UIWizard
 {
     Q_OBJECT;
 
 public:
 
-    /* Page IDs: */
+    /** Basic page IDs. */
     enum
     {
         Page1,
@@ -40,22 +40,27 @@ public:
         Page4
     };
 
-    /* Page IDs: */
+    /** Expert page IDs. */
     enum
     {
         PageExpert
     };
 
-    /* Constructor: */
+    /** Constructs export appliance wizard passing @a pParent to the base-class.
+      * @param  selectedVMNames  Brings the names of VMs to be exported. */
     UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames = QStringList());
 
 protected:
 
-    /* Export appliance stuff: */
+    /** Exports full appliance. */
     bool exportAppliance();
+    /** Exports @a appliance VMs. */
     bool exportVMs(CAppliance &appliance);
+    /** Composes universal resource identifier.
+      * @param  fWithFile  Brings whether uri should include file name as well. */
     QString uri(bool fWithFile = true) const;
 
+    /** @todo remove it */
     /* Who will be able to export appliance: */
     friend class UIWizardExportAppPage4;
     friend class UIWizardExportAppPageBasic4;
@@ -63,22 +68,21 @@ protected:
 
 private slots:
 
-    /* Page change handler: */
+    /** Handles page change to @a iId. */
     void sltCurrentIdChanged(int iId);
-    /* Custom button 2 click handler: */
+    /** Handles custom button @a iId click. */
     void sltCustomButtonClicked(int iId);
 
 private:
 
-    /* Translation stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
-    /* Pages related stuff: */
+    /** Prepares all. */
     void prepare();
 
-    /* Variables: */
+    /** Holds the names of VMs to be exported. */
     QStringList m_selectedVMNames;
 };
 
-#endif /* __UIWizardExportApp_h__ */
-
+#endif /* !___UIWizardExportApp_h___ */

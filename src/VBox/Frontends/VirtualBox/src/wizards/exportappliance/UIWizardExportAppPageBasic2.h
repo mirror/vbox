@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Oracle Corporation
+ * Copyright (C) 2009-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,10 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardExportAppPageBasic2_h__
-#define __UIWizardExportAppPageBasic2_h__
+#ifndef ___UIWizardExportAppPageBasic2_h___
+#define ___UIWizardExportAppPageBasic2_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
 #include "UIWizardExportAppDefs.h"
 
@@ -27,29 +27,35 @@ class QGroupBox;
 class QRadioButton;
 class QIRichTextLabel;
 
-/* 2nd page of the Export Appliance wizard (base part): */
+
+/** UIWizardPageBase extension for 2nd page of the Export Appliance wizard. */
 class UIWizardExportAppPage2 : public UIWizardPageBase
 {
 protected:
 
-    /* Constructor: */
+    /** Constructs 2nd page base. */
     UIWizardExportAppPage2();
 
-    /* Helpers: */
+    /** Chooses default storage type. */
     void chooseDefaultStorageType();
 
-    /* Stuff for 'storageType' field: */
+    /** Returns current storage type. */
     StorageType storageType() const;
+    /** Defines current @a storageType. */
     void setStorageType(StorageType storageType);
 
-    /* Widgets: */
+    /** Holds the storage type container instance. */
     QGroupBox *m_pTypeCnt;
+    /** Holds the Local Filesystem radio-button. */
     QRadioButton *m_pTypeLocalFilesystem;
+    /** Holds the Sun Cloud radio-button. */
     QRadioButton *m_pTypeSunCloud;
+    /** Holds the Simple Storage System radio-button. */
     QRadioButton *m_pTypeSimpleStorageSystem;
 };
 
-/* 2nd page of the Export Appliance wizard (basic extension): */
+
+/** UIWizardPage extension for 2nd page of the Export Appliance wizard, extends UIWizardExportAppPage2 as well. */
 class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAppPage2
 {
     Q_OBJECT;
@@ -57,20 +63,19 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
 
 public:
 
-    /* Constructor: */
+    /** Constructs 2nd basic page. */
     UIWizardExportAppPageBasic2();
 
 private:
 
-    /* Translate stuff: */
+    /** Handles translation event. */
     void retranslateUi();
 
-    /* Prepare stuff: */
+    /** Performs page initialization. */
     void initializePage();
 
-    /* Widgets: */
+    /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* __UIWizardExportAppPageBasic2_h__ */
-
+#endif /* !___UIWizardExportAppPageBasic2_h___ */
