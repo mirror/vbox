@@ -18,20 +18,18 @@
 
 # What this script does:
 usage_msg="\
-Usage: `basename ${0}` [--no-docs]
+Usage: `basename ${0}` [--with-docs]
 
-Install the dependencies needed for building VirtualBox on a Linux
-system.  Initial support for Enterprise Linux derivatives, additional
-distributions will be added as needed.  There are no plans to add
-support for or to accept patches for distributions we do not package.
-The \`--no-docs\' parameter is used to prevent installation of TeX
-packages.  Installing TeX is not supported on EL5, so the flag is
-ignored there."
+Install the dependencies needed for building VirtualBox on an RPM-based Linux
+system.  Additional distributions will be added as needed.  There are no plans
+to add support for or to accept patches for distributions we do not package.
+The \`--docs\' parameter is to install the packages needed for building
+documentation.  It will also be implemented per distribution as needed."
 
 # To repeat: there are no plans to add support for or to accept patches
-# for distributions we do bot package.
+# for distributions we do not package.
 
-unset NODOCS
+unset WITHDOCS
 egrepignore=\
 "Setting up Install Process|already installed and latest version|Nothing to do"
 
@@ -43,8 +41,8 @@ usage()
 
 while test -n "${1}"; do
     case "${1}" in
-    --no-docs)
-        NODOCS=1
+    --with-docs)
+        WITHDOCS=1
         shift ;;
     -h|--help)
         usage 0 ;;
@@ -54,8 +52,7 @@ while test -n "${1}"; do
     esac
 done
 
-LC_ALL=C
-export LC_ALL
+export LC_ALL=C
 PATH=/sbin:/usr/sbin:$PATH
 
 if test -f /etc/redhat-release; then
@@ -73,7 +70,7 @@ if test -f /etc/redhat-release; then
       texlive-pdftex-def texlive-fancybox device-mapper-devel \
       glibc-static zlib-static glibc-devel.i686 libstdc++.i686 \
       qt5-qttools-devel qt5-qtx11extras-devel | egrep -v  "${egrepignore}"
-    if test -z "$NODOCS"; then
+    if test -n "$WITHDOCS"; then
       yum install texlive-latex texlive-latex-bin texlive-ec \
         texlive-pdftex-def texlive-fancybox device-mapper-devel |
         egrep -v  "${egrepignore}"
