@@ -1285,7 +1285,7 @@ VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu)
         /*
          * Call worker.
          */
-        rc = nemR0WinExportState(pGVM, pGVCpu, CPUMQueryGuestCtxPtr(pVCpu));
+        rc = nemR0WinExportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx);
     }
     return rc;
 }
@@ -2206,7 +2206,7 @@ VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t
         /*
          * Call worker.
          */
-        rc = nemR0WinImportState(pGVM, pGVCpu, CPUMQueryGuestCtxPtr(pVCpu), fWhat);
+        rc = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fWhat);
     }
     return rc;
 }
