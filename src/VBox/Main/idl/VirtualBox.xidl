@@ -13364,7 +13364,7 @@ and "VAR" for unsetting. -->
         </desc>
       </param>
       <param name="written" type="unsigned long" dir="return">
-        <desc>How much bytes were written.</desc>
+        <desc>How many bytes were written.</desc>
       </param>
     </method>
 
@@ -13394,7 +13394,7 @@ and "VAR" for unsetting. -->
         </desc>
       </param>
       <param name="written" type="unsigned long" dir="return">
-        <desc>How much bytes were written.</desc>
+        <desc>How may bytes were written.</desc>
       </param>
     </method>
 
@@ -13688,7 +13688,7 @@ and "VAR" for unsetting. -->
         </desc>
       </param>
       <param name="written" type="unsigned long" dir="return">
-        <desc>How much bytes were written.</desc>
+        <desc>How many bytes were written.</desc>
       </param>
     </method>
 
@@ -13716,7 +13716,7 @@ and "VAR" for unsetting. -->
         </desc>
       </param>
       <param name="written" type="unsigned long" dir="return">
-        <desc>How much bytes were written.</desc>
+        <desc>How many bytes were written.</desc>
       </param>
     </method>
 
