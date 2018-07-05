@@ -55,6 +55,18 @@ done
 export LC_ALL=C
 PATH=/sbin:/usr/sbin:$PATH
 
+# This list is valid for openSUSE 15.0
+PACKAGES_OPENSUSE="\
+bzip2 gcc-c++ glibc-devel gzip libcap-devel libcurl-devel libidl-devel \
+libxslt-devel libvpx-devel libXmu-devel make libopenssl-devel \
+pam-devel libpulse-devel python-devel rpm-build libSDL_ttf-devel \
+device-mapper-devel wget kernel-devel tar zlib-devel glibc-devel-32bit \
+libstdc++-devel-32bit libpng16-devel libqt5-qtx11extras-devel"
+
+if test -f /etc/SUSE-brand; then
+    zypper install -y ${PACKAGES_OPENSUSE}
+    exit 0
+fi
 if test -f /etc/redhat-release; then
   yum install -y bzip2 gcc-c++ glibc-devel gzip libcap-devel \
     libIDL-devel libxslt-devel libXmu-devel \
