@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes */
+# include<QCheckBox>
 # include<QDialogButtonBox>
 # include<QDir>
 # include<QGridLayout>
@@ -45,12 +46,13 @@ UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,
                                        const QString &strMachineFolder /* = QString() */)
    : QIWithRetranslateUI<QDialog>(pParent)
     , m_pFilePathselector(0)
-    , m_strMachineName(strMachineName)
-    , m_strMachineFolder(strMachineFolder)
     , m_pPathLabel(0)
     , m_pSizeLabel(0)
     , m_pSizeCombo(0)
     , m_pButtonBox(0)
+    , m_pFormatCheckBox(0)
+    , m_strMachineName(strMachineName)
+    , m_strMachineFolder(strMachineFolder)
 {
 
     prepare();
@@ -72,9 +74,11 @@ void UIFDCreationDialog::retranslateUi()
         m_pSizeLabel->setText(QApplication::translate("UIMediumManager", "Size:"));
     if (m_pButtonBox)
         m_pButtonBox->button(QDialogButtonBox::Ok)->setText("Create");
+    if (m_pFormatCheckBox)
+        m_pFormatCheckBox->setText(QApplication::translate("UIMediumManager", "Format disk as FAT12"));
     if (m_pSizeCombo)
     {
-        m_pSizeCombo->setItemText(FDSize_2_88M, QApplication::translate("UIMediumManager", "2.88M"));
+        //m_pSizeCombo->setItemText(FDSize_2_88M, QApplication::translate("UIMediumManager", "2.88M"));
         m_pSizeCombo->setItemText(FDSize_1_44M, QApplication::translate("UIMediumManager", "1.44M"));
         m_pSizeCombo->setItemText(FDSize_1_2M, QApplication::translate("UIMediumManager", "1.2M"));
         m_pSizeCombo->setItemText(FDSize_720K, QApplication::translate("UIMediumManager", "720K"));
@@ -125,7 +129,7 @@ void UIFDCreationDialog::prepare()
     if (m_pSizeCombo)
     {
         pMainLayout->addWidget(m_pSizeCombo, 1, 1, 1, 1);
-        m_pSizeCombo->insertItem(FDSize_2_88M, "2.88M", 2949120);
+        //m_pSizeCombo->insertItem(FDSize_2_88M, "2.88M", 2949120);
         m_pSizeCombo->insertItem(FDSize_1_44M, "1.44M", 1474560);
         m_pSizeCombo->insertItem(FDSize_1_2M, "1.2M", 1228800);
         m_pSizeCombo->insertItem(FDSize_720K, "720K", 737280);
@@ -134,11 +138,18 @@ void UIFDCreationDialog::prepare()
 
     }
 
+    m_pFormatCheckBox = new QCheckBox;
+    if (m_pFormatCheckBox)
+    {
+        pMainLayout->addWidget(m_pFormatCheckBox, 2, 1, 1, 1);
+        m_pFormatCheckBox->setCheckState(Qt::Checked);
+    }
+
     m_pButtonBox =
         new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
     if (m_pButtonBox)
     {
-        pMainLayout->addWidget(m_pButtonBox, 2, 0, 1, 3);
+        pMainLayout->addWidget(m_pButtonBox, 3, 0, 1, 3);
         connect(m_pButtonBox, &QDialogButtonBox::accepted, this, &UIFDCreationDialog::accept);
         connect(m_pButtonBox, &QDialogButtonBox::rejected, this, &UIFDCreationDialog::reject);
     }
@@ -176,7 +187,11 @@ void UIFDCreationDialog::accept()
         msgCenter().cannotCreateMediumStorage(vbox, m_pFilePathselector->path(), this);
         return;
     }
+
     QVector<KMediumVariant> variants(1, KMediumVariant_Fixed);
+    /* Decide if formatting the disk is required: */
+    if (m_pFormatCheckBox && m_pFormatCheckBox->checkState() == Qt::Checked)
+        variants.push_back(KMediumVariant_Formatted);
     CProgress progress = newMedium.CreateBaseStorage(m_pSizeCombo->currentData().toLongLong(), variants);
 
     if (!newMedium.isOk())
