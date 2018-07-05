@@ -48,22 +48,6 @@ ifeq ($(wildcard rpm/rules),)
 $(error call rpm/rules from src/VBox/Installer/linux)
 endif
 
-ifneq ($(wildcard /usr/lib/rpm/find-requires.ksyms),)
-# don't allow to check for kernel syms, otherwise we depend on specific kernel versions!
-$(error /usr/lib/rpm/find-requires.ksyms must not be installed)
-endif
-ifneq ($(wildcard /usr/lib/rpm/find-supplements.ksyms),)
-# same for openSUSE
-$(error /usr/lib/rpm/find-supplements.ksyms must not be installed)
-endif
-ifeq ($(shell if grep -q '^/usr/lib/virtualbox' /etc/permissions* 2>/dev/null; then echo yes; fi),yes)
-# make sure openSUSE permissions fixes don't interfere with us
-$(error Fix /etc/permissions*)
-endif
-ifeq ($(shell if grep -q '^%disttag' /usr/lib/rpm/macros.d/mandriva 2>/dev/null; then echo yes; fi),yes)
-$(error Fix /usr/lib/rpm/macros.d/mandriva)
-endif
-
 verpkg   := VirtualBox-5.2
 current  := $(shell pwd)
 vboxroot := $(shell while ! test -r configure && ! test "$PWD" = "/"; do cd ..; done; pwd)
