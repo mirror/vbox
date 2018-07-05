@@ -4465,8 +4465,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                         iStart = i;
                     }
                 }
-                if (iStart != 255)
-                    DBGCCmdHlpPrintf(pCmdHlp, "%02x-%02x %s\n", iStart, 255, fPrev ? "Protected mode" : "Redirected");
+                DBGCCmdHlpPrintf(pCmdHlp, "%02x-%02x %s\n", iStart, 255, fPrev ? "Protected mode" : "Redirected");
             }
             else
                 DBGCCmdHlpPrintf(pCmdHlp, "Invalid interrupt redirection bitmap size: %u (%#x), expected 32 bytes.\n",
@@ -4479,12 +4478,15 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
     }
 
     /*
-     * Dump the I/O permission bitmap if present. The IOPM cannot start below offset 0x64
+     * Dump the I/O permission bitmap if present. The IOPM cannot start below offset 0x68
      * (that applies to both 32-bit and 64-bit TSSs since their size is the same).
+     * Note that there is always one padding byte that is not technically part of the bitmap
+     * and "must have all bits set". It's not clear what happens when it doesn't. All ports
+     * not covered by the bitmap are considered to be not accessible.
      */
     if (enmTssType != kTss16)
     {
-        if (offIoBitmap < cbTss && offIoBitmap >= 0x64)
+        if (offIoBitmap < cbTss && offIoBitmap >= 0x68)
         {
             uint32_t        cPorts      = RT_MIN((cbTss - offIoBitmap) * 8, _64K);
             DBGCVAR         VarAddr;
@@ -4495,9 +4497,9 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
             uint32_t        iStart      = 0;
             bool            fPrev       = ASMBitTest(pbIoBitmap, 0);
             uint32_t        cLine       = 0;
-            for (uint32_t i = 1; i < cPorts; i++)
+            for (uint32_t i = 1; i < _64K; i++)
             {
-                bool fThis = ASMBitTest(pbIoBitmap, i);
+                bool fThis = i < cPorts ? ASMBitTest(pbIoBitmap, i) : true;
                 if (fThis != fPrev)
                 {
                     cLine++;
@@ -4507,8 +4509,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                     iStart = i;
                 }
             }
-            if (iStart != _64K-1)
-                DBGCCmdHlpPrintf(pCmdHlp, "%04x-%04x %s\n", iStart, _64K-1, fPrev ? "GP" : "OK");
+            DBGCCmdHlpPrintf(pCmdHlp, "%04x-%04x %s\n", iStart, _64K-1, fPrev ? "GP" : "OK");
         }
         else if (offIoBitmap > 0)
             DBGCCmdHlpPrintf(pCmdHlp, "No I/O bitmap (-%#x)\n", cbTssMin - offIoBitmap);
