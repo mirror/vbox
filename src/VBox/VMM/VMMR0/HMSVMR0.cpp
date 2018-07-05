@@ -38,7 +38,6 @@
 
 #ifdef DEBUG_ramshankar
 # define HMSVM_SYNC_FULL_GUEST_STATE
-# define HMSVM_SYNC_FULL_NESTED_GUEST_STATE
 # define HMSVM_ALWAYS_TRAP_ALL_XCPTS
 # define HMSVM_ALWAYS_TRAP_PF
 # define HMSVM_ALWAYS_TRAP_TASK_SWITCH
@@ -4366,7 +4365,7 @@ static int hmR0SvmPreRunGuestNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
         return VINF_EM_RAW_INJECT_TRPM_EVENT;
     }
 
-#ifdef HMSVM_SYNC_FULL_NESTED_GUEST_STATE
+#ifdef HMSVM_SYNC_FULL_GUEST_STATE
     Assert(!(pCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 #endif
@@ -4471,11 +4470,8 @@ static int hmR0SvmPreRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTra
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
 
 #ifdef HMSVM_SYNC_FULL_GUEST_STATE
-    if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-    {
-        Assert(!(pCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
-    }
+    Assert(!(pCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
+    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 #endif
 
     /*
@@ -4796,11 +4792,8 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     pSvmTransient->fVectoringPF       = false;                  /* Vectoring page-fault needs to be determined later. */
 
 #ifdef HMSVM_SYNC_FULL_GUEST_STATE
-    if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-        hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
-#elif defined(HMSVM_SYNC_FULL_NESTED_GUEST_STATE)
-    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-        hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
+    hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
+    Assert(!(pCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
 #else
     /*
      * Always import the following:
@@ -4825,14 +4818,6 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
                                    | HMSVM_CPUMCTX_SHARED_STATE);
 #endif
 
-#ifdef DEBUG_ramshankar
-    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-    {
-        hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
-        hmR0SvmLogState(pVCpu, pVmcb, pCtx, "hmR0SvmPostRunGuestNested", HMSVM_LOG_ALL & ~HMSVM_LOG_LBR, 0 /* uVerbose */);
-    }
-#endif
-
     if (   pSvmTransient->u64ExitCode != SVM_EXIT_INVALID
         && pVCpu->hm.s.svm.fSyncVTpr)
     {
@@ -4853,6 +4838,14 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
         }
     }
+
+#ifdef DEBUG_ramshankar
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
+        hmR0SvmLogState(pVCpu, pVmcb, pCtx, "hmR0SvmPostRunGuestNested", HMSVM_LOG_ALL & ~HMSVM_LOG_LBR, 0 /* uVerbose */);
+    }
+#endif
 
     HMSVM_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
     EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_SVM, pSvmTransient->u64ExitCode & EMEXIT_F_TYPE_MASK),
