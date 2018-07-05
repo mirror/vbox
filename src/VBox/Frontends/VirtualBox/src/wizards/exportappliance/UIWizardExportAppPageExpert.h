@@ -64,6 +64,18 @@ protected:
     /** Allows access wizard-field from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+    /** Performs page initialization. */
+    virtual void initializePage() /* override */;
+
+    /** Returns whether page is complete. */
+    virtual bool isComplete() const /* override */;
+
+    /** Performs page validation. */
+    virtual bool validatePage() /* override */;
+
 private slots:
 
     /** Handles VM selector index change. */
@@ -76,20 +88,6 @@ private slots:
     void sltHandleFormatComboChange();
 
 private:
-
-    /** Wraps wizard field API, calling it with certain @a strFieldName argument. */
-    QVariant field(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
-
-    /** Handles translation event. */
-    void retranslateUi();
-
-    /** Performs page initialization. */
-    void initializePage();
-
-    /** Returns whether page is complete. */
-    bool isComplete() const;
-    /** Performs page validation. */
-    bool validatePage();
 
     /** Holds the VM selector container instance. */
     QGroupBox *m_pSelectorCnt;

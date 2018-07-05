@@ -22,12 +22,12 @@
 #include <QVariant>
 
 /* GUI includes: */
-#include "UIWizardPage.h"
 #include "UIWizardExportAppDefs.h"
+#include "UIWizardPage.h"
 
 /* Forward declarations: */
-class UIWizardExportApp;
 class QIRichTextLabel;
+class UIWizardExportApp;
 
 
 /** UIWizardPageBase extension for 4th page of the Export Appliance wizard. */
@@ -69,16 +69,16 @@ protected:
     /** Allows access wizard-field from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
-private:
-
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
     /** Performs page initialization. */
-    void initializePage();
+    virtual void initializePage() /* override */;
 
     /** Performs page validation. */
-    bool validatePage();
+    virtual bool validatePage() /* override */;
+
+private:
 
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;

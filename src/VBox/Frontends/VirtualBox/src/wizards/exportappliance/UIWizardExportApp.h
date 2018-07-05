@@ -50,36 +50,33 @@ public:
       * @param  selectedVMNames  Brings the names of VMs to be exported. */
     UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames = QStringList());
 
-protected:
-
     /** Exports full appliance. */
     bool exportAppliance();
-    /** Exports @a appliance VMs. */
-    bool exportVMs(CAppliance &appliance);
+
     /** Composes universal resource identifier.
       * @param  fWithFile  Brings whether uri should include file name as well. */
     QString uri(bool fWithFile = true) const;
 
-    /** @todo remove it */
-    /* Who will be able to export appliance: */
-    friend class UIWizardExportAppPage4;
-    friend class UIWizardExportAppPageBasic4;
-    friend class UIWizardExportAppPageExpert;
-
-private slots:
+protected slots:
 
     /** Handles page change to @a iId. */
-    void sltCurrentIdChanged(int iId);
+    virtual void sltCurrentIdChanged(int iId) /* override */;
+
     /** Handles custom button @a iId click. */
-    void sltCustomButtonClicked(int iId);
+    virtual void sltCustomButtonClicked(int iId) /* override */;
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+    /** Prepares all. */
+    virtual void prepare() /* override */;
 
 private:
 
-    /** Handles translation event. */
-    void retranslateUi();
-
-    /** Prepares all. */
-    void prepare();
+    /** Exports @a comAppliance VMs. */
+    bool exportVMs(CAppliance &comAppliance);
 
     /** Holds the names of VMs to be exported. */
     QStringList m_selectedVMNames;

@@ -20,21 +20,21 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QCheckBox>
+# include <QComboBox>
 # include <QDir>
-# include <QVBoxLayout>
 # include <QGridLayout>
 # include <QLabel>
 # include <QLineEdit>
-# include <QComboBox>
-# include <QCheckBox>
+# include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIWizardExportAppPageBasic3.h"
-# include "UIWizardExportApp.h"
-# include "UIWizardExportAppDefs.h"
+# include "QIRichTextLabel.h"
 # include "VBoxGlobal.h"
 # include "UIEmptyFilePathSelector.h"
-# include "QIRichTextLabel.h"
+# include "UIWizardExportApp.h"
+# include "UIWizardExportAppDefs.h"
+# include "UIWizardExportAppPageBasic3.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -56,8 +56,8 @@ void UIWizardExportAppPage3::chooseDefaultSettings()
 void UIWizardExportAppPage3::refreshCurrentSettings()
 {
     /* Setup components for chosen storage-type: */
-    StorageType storageType = fieldImp("storageType").value<StorageType>();
-    switch (storageType)
+    const StorageType enmStorageType = fieldImp("storageType").value<StorageType>();
+    switch (enmStorageType)
     {
         case Filesystem:
         {
@@ -141,7 +141,7 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
     }
 
     /* Copose file-path for 'Filesystem' storage case: */
-    if (storageType == Filesystem)
+    if (enmStorageType == Filesystem)
         strName = QDir::toNativeSeparators(QString("%1/%2").arg(vboxGlobal().documentsPath()).arg(strName));
 
     /* Assign file-path: */
@@ -150,20 +150,20 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
 
 void UIWizardExportAppPage3::updateFormatComboToolTip()
 {
-    int iCurrentIndex = m_pFormatComboBox->currentIndex();
-    QString strCurrentIndexToolTip = m_pFormatComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+    const int iCurrentIndex = m_pFormatComboBox->currentIndex();
+    const QString strCurrentIndexToolTip = m_pFormatComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
     m_pFormatComboBox->setToolTip(strCurrentIndexToolTip);
 }
 
 QString UIWizardExportAppPage3::format() const
 {
-    int iIndex = m_pFormatComboBox->currentIndex();
+    const int iIndex = m_pFormatComboBox->currentIndex();
     return m_pFormatComboBox->itemData(iIndex).toString();
 }
 
 void UIWizardExportAppPage3::setFormat(const QString &strFormat)
 {
-    int iIndex = m_pFormatComboBox->findData(strFormat);
+    const int iIndex = m_pFormatComboBox->findData(strFormat);
     AssertMsg(iIndex != -1, ("Field not found!"));
     m_pFormatComboBox->setCurrentIndex(iIndex);
 }
@@ -237,69 +237,120 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    if (pMainLayout)
     {
         /* Create label: */
-        m_pLabel = new QIRichTextLabel(this);
+        m_pLabel = new QIRichTextLabel;
+        if (m_pLabel)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabel);
+        }
 
         /* Create settings layout: */
         QGridLayout *pSettingsLayout = new QGridLayout;
+        if (pSettingsLayout)
         {
             /* Create username editor: */
-            m_pUsernameEditor = new QLineEdit(this);
+            m_pUsernameEditor = new QLineEdit;
+            if (m_pUsernameEditor)
+            {
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pUsernameEditor, 0, 1);
+            }
             /* Create username label: */
-            m_pUsernameLabel = new QLabel(this);
+            m_pUsernameLabel = new QLabel;
+            if (m_pUsernameLabel)
             {
                 m_pUsernameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pUsernameLabel->setBuddy(m_pUsernameEditor);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pUsernameLabel, 0, 0);
             }
 
             /* Create password editor: */
-            m_pPasswordEditor = new QLineEdit(this);
+            m_pPasswordEditor = new QLineEdit;
+            if (m_pPasswordEditor)
             {
                 m_pPasswordEditor->setEchoMode(QLineEdit::Password);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pPasswordEditor, 1, 1);
             }
             /* Create password label: */
-            m_pPasswordLabel = new QLabel(this);
+            m_pPasswordLabel = new QLabel;
+            if (m_pPasswordLabel)
             {
                 m_pPasswordLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pPasswordLabel->setBuddy(m_pPasswordEditor);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pPasswordLabel, 1, 0);
             }
 
             /* Create hostname editor: */
-            m_pHostnameEditor = new QLineEdit(this);
+            m_pHostnameEditor = new QLineEdit;
+            if (m_pHostnameEditor)
+            {
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pHostnameEditor, 2, 1);
+            }
             /* Create hostname label: */
-            m_pHostnameLabel = new QLabel(this);
+            m_pHostnameLabel = new QLabel;
+            if (m_pHostnameLabel)
             {
                 m_pHostnameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pHostnameLabel->setBuddy(m_pHostnameEditor);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pHostnameLabel, 2, 0);
             }
 
             /* Create bucket editor: */
-            m_pBucketEditor = new QLineEdit(this);
+            m_pBucketEditor = new QLineEdit;
+            if (m_pBucketEditor)
+            {
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pBucketEditor, 3, 1);
+            }
             /* Create bucket label: */
-            m_pBucketLabel = new QLabel(this);
+            m_pBucketLabel = new QLabel;
+            if (m_pBucketLabel)
             {
                 m_pBucketLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pBucketLabel->setBuddy(m_pBucketEditor);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pBucketLabel, 3, 0);
             }
 
             /* Create file selector: */
-            m_pFileSelector = new UIEmptyFilePathSelector(this);
+            m_pFileSelector = new UIEmptyFilePathSelector;
+            if (m_pFileSelector)
             {
                 m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Save);
                 m_pFileSelector->setEditable(true);
                 m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                 m_pFileSelector->setDefaultSaveExt("ova");
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pFileSelector, 4, 1);
             }
             /* Create file selector label: */
-            m_pFileSelectorLabel = new QLabel(this);
+            m_pFileSelectorLabel = new QLabel;
+            if (m_pFileSelectorLabel)
             {
                 m_pFileSelectorLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pFileSelectorLabel->setBuddy(m_pFileSelector);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pFileSelectorLabel, 4, 0);
             }
 
             /* Create format combo-box: */
-            m_pFormatComboBox = new QComboBox(this);
+            m_pFormatComboBox = new QComboBox;
+            if (m_pFormatComboBox)
             {
                 const QString strFormatOVF09("ovf-0.9");
                 const QString strFormatOVF10("ovf-1.0");
@@ -309,43 +360,39 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pFormatComboBox->addItem(strFormatOVF10, strFormatOVF10);
                 m_pFormatComboBox->addItem(strFormatOVF20, strFormatOVF20);
                 m_pFormatComboBox->addItem(strFormatOPC10, strFormatOPC10);
-                connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-                        this, &UIWizardExportAppPageBasic3::sltHandleFormatComboChange);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pFormatComboBox, 5, 1);
             }
             /* Create format combo-box label: */
-            m_pFormatComboBoxLabel = new QLabel(this);
+            m_pFormatComboBoxLabel = new QLabel;
+            if (m_pFormatComboBoxLabel)
             {
                 m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 5, 0);
             }
 
             /* Add into layout: */
-            pSettingsLayout->addWidget(m_pUsernameLabel, 0, 0);
-            pSettingsLayout->addWidget(m_pUsernameEditor, 0, 1);
-            pSettingsLayout->addWidget(m_pPasswordLabel, 1, 0);
-            pSettingsLayout->addWidget(m_pPasswordEditor, 1, 1);
-            pSettingsLayout->addWidget(m_pHostnameLabel, 2, 0);
-            pSettingsLayout->addWidget(m_pHostnameEditor, 2, 1);
-            pSettingsLayout->addWidget(m_pBucketLabel, 3, 0);
-            pSettingsLayout->addWidget(m_pBucketEditor, 3, 1);
-            pSettingsLayout->addWidget(m_pFileSelectorLabel, 4, 0);
-            pSettingsLayout->addWidget(m_pFileSelector, 4, 1);
-            pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 5, 0);
-            pSettingsLayout->addWidget(m_pFormatComboBox, 5, 1);
+            pMainLayout->addLayout(pSettingsLayout);
         }
 
         /* Create manifest check-box: */
-        m_pManifestCheckbox = new QCheckBox(this);
+        m_pManifestCheckbox = new QCheckBox;
+        if (m_pManifestCheckbox)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pManifestCheckbox);
+        }
 
-        /* Add into layout: */
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addLayout(pSettingsLayout);
-        pMainLayout->addWidget(m_pManifestCheckbox);
+        /* Add vertical stretch: */
         pMainLayout->addStretch();
-
-        /* Choose default settings: */
-        chooseDefaultSettings();
     }
+
+    /* Choose default settings: */
+    chooseDefaultSettings();
 
     /* Setup connections: */
     connect(m_pUsernameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageBasic3::completeChanged);
@@ -353,6 +400,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     connect(m_pHostnameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageBasic3::completeChanged);
     connect(m_pBucketEditor, &QLineEdit::textChanged,               this, &UIWizardExportAppPageBasic3::completeChanged);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic3::completeChanged);
+    connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardExportAppPageBasic3::sltHandleFormatComboChange);
 
     /* Register fields: */
     registerField("format", this, "format");
@@ -362,12 +411,6 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     registerField("hostname", this, "hostname");
     registerField("bucket", this, "bucket");
     registerField("path", this, "path");
-}
-
-void UIWizardExportAppPageBasic3::sltHandleFormatComboChange()
-{
-    refreshCurrentSettings();
-    updateFormatComboToolTip();
 }
 
 void UIWizardExportAppPageBasic3::retranslateUi()
@@ -418,18 +461,18 @@ bool UIWizardExportAppPageBasic3::isComplete() const
     if (fResult)
     {
         const QString &strFile = m_pFileSelector->path().toLower();
-        bool fOVF =    field("format").toString() == "ovf-0.9"
-                    || field("format").toString() == "ovf-1.0"
-                    || field("format").toString() == "ovf-2.0";
-        bool fOPC =    field("format").toString() == "opc-1.0";
+        const bool fOVF =    field("format").toString() == "ovf-0.9"
+                          || field("format").toString() == "ovf-1.0"
+                          || field("format").toString() == "ovf-2.0";
+        const bool fOPC =    field("format").toString() == "opc-1.0";
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
                   || (   fOPC
                       && VBoxGlobal::hasAllowedExtension(strFile, OPCFileExts));
         if (fResult)
         {
-            StorageType storageType = field("storageType").value<StorageType>();
-            switch (storageType)
+            const StorageType enmStorageType = field("storageType").value<StorageType>();
+            switch (enmStorageType)
             {
                 case Filesystem:
                     break;
@@ -458,8 +501,8 @@ void UIWizardExportAppPageBasic3::refreshCurrentSettings()
     UIWizardExportAppPage3::refreshCurrentSettings();
 
     /* Setup components for chosen storage-type: */
-    StorageType storageType = field("storageType").value<StorageType>();
-    switch (storageType)
+    const StorageType enmStorageType = field("storageType").value<StorageType>();
+    switch (enmStorageType)
     {
         case Filesystem:
         {
@@ -490,4 +533,10 @@ void UIWizardExportAppPageBasic3::refreshCurrentSettings()
             break;
         }
     }
+}
+
+void UIWizardExportAppPageBasic3::sltHandleFormatComboChange()
+{
+    refreshCurrentSettings();
+    updateFormatComboToolTip();
 }

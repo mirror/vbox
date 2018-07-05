@@ -23,13 +23,13 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIWizardExportAppPageBasic1.h"
-# include "UIWizardExportApp.h"
-# include "UIWizardExportAppDefs.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
 # include "QILabelSeparator.h"
 # include "QIRichTextLabel.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIWizardExportApp.h"
+# include "UIWizardExportAppDefs.h"
+# include "UIWizardExportAppPageBasic1.h"
 
 /* COM includes: */
 # include "CMachine.h"
@@ -74,7 +74,7 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
             strName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
             pixIcon = QPixmap(":/os_other.png").scaled(iIconMetric, iIconMetric, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
-        QListWidgetItem *pItem = new VMListWidgetItem(pixIcon, strName, strUuid, fInSaveState, m_pVMSelector);
+        QListWidgetItem *pItem = new UIVMListWidgetItem(pixIcon, strName, strUuid, fInSaveState, m_pVMSelector);
         if (!fEnabled)
             pItem->setFlags(0);
         m_pVMSelector->addItem(pItem);
@@ -112,7 +112,7 @@ QStringList UIWizardExportAppPage1::machineIDs() const
     QStringList machineIDs;
     /* Iterate over all the selected items: */
     foreach (QListWidgetItem *pItem, m_pVMSelector->selectedItems())
-        machineIDs << static_cast<VMListWidgetItem*>(pItem)->uuid();
+        machineIDs << static_cast<UIVMListWidgetItem*>(pItem)->uuid();
     /* Return result list: */
     return machineIDs;
 }
@@ -126,24 +126,30 @@ UIWizardExportAppPageBasic1::UIWizardExportAppPageBasic1(const QStringList &sele
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    if (pMainLayout)
     {
         /* Create label: */
-        m_pLabel = new QIRichTextLabel(this);
+        m_pLabel = new QIRichTextLabel;
+        if (m_pLabel)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabel);
+        }
 
         /* Create VM selector: */
-        m_pVMSelector = new QListWidget(this);
+        m_pVMSelector = new QListWidget;
+        if (m_pVMSelector)
         {
             m_pVMSelector->setAlternatingRowColors(true);
             m_pVMSelector->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pVMSelector);
         }
-
-        /* Add into layout: */
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pVMSelector);
-
-        /* Populate VM selector items: */
-        populateVMSelectorItems(selectedVMNames);
     }
+
+    /* Populate VM selector items: */
+    populateVMSelectorItems(selectedVMNames);
 
     /* Setup connections: */
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged, this, &UIWizardExportAppPageBasic1::completeChanged);
@@ -183,11 +189,11 @@ bool UIWizardExportAppPageBasic1::validatePage()
 
     /* Ask user about machines which are in Saved state currently: */
     QStringList savedMachines;
-    QList<QListWidgetItem*> pItems = m_pVMSelector->selectedItems();
-    for (int i=0; i < pItems.size(); ++i)
+    QList<QListWidgetItem*> items = m_pVMSelector->selectedItems();
+    for (int i=0; i < items.size(); ++i)
     {
-        if (static_cast<VMListWidgetItem*>(pItems.at(i))->isInSaveState())
-            savedMachines << pItems.at(i)->text();
+        if (static_cast<UIVMListWidgetItem*>(items.at(i))->isInSaveState())
+            savedMachines << items.at(i)->text();
     }
     if (!savedMachines.isEmpty())
         fResult = msgCenter().confirmExportMachinesInSaveState(savedMachines, this);

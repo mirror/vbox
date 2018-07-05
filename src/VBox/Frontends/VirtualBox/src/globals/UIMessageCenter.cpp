@@ -74,6 +74,7 @@
 # include "CExtPackManager.h"
 # include "CExtPackFile.h"
 # include "CHostNetworkInterface.h"
+# include "CVFSExplorer.h"
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include "CGuest.h"
 #  include "CDnDSource.h"
@@ -1747,18 +1748,44 @@ void UIMessageCenter::cannotImportAppliance(const CProgress &progress, const QSt
           UIErrorString::formatErrorInfo(progress));
 }
 
-void UIMessageCenter::cannotCheckFiles(const CProgress &progress, QWidget *pParent /* = 0*/) const
+bool UIMessageCenter::cannotCheckFiles(const CAppliance &comAppliance, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to check files."),
-          UIErrorString::formatErrorInfo(progress));
+          UIErrorString::formatErrorInfo(comAppliance));
+    return false;
 }
 
-void UIMessageCenter::cannotRemoveFiles(const CProgress &progress, QWidget *pParent /* = 0*/) const
+bool UIMessageCenter::cannotCheckFiles(const CVFSExplorer &comVFSExplorer, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to check files."),
+          UIErrorString::formatErrorInfo(comVFSExplorer));
+    return false;
+}
+
+bool UIMessageCenter::cannotCheckFiles(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to check files."),
+          UIErrorString::formatErrorInfo(comProgress));
+    return false;
+}
+
+bool UIMessageCenter::cannotRemoveFiles(const CVFSExplorer &comVFSExplorer, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to remove file."),
-          UIErrorString::formatErrorInfo(progress));
+          UIErrorString::formatErrorInfo(comVFSExplorer));
+    return false;
+}
+
+bool UIMessageCenter::cannotRemoveFiles(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to remove file."),
+          UIErrorString::formatErrorInfo(comProgress));
+    return false;
 }
 
 bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent /* = 0*/) const
@@ -1775,15 +1802,16 @@ bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machin
                           tr("Continue"));
 }
 
-void UIMessageCenter::cannotExportAppliance(const CAppliance &appliance, QWidget *pParent /* = 0*/) const
+bool UIMessageCenter::cannotExportAppliance(const CAppliance &comAppliance, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to prepare the export of the appliance <b>%1</b>.")
-             .arg(CAppliance(appliance).GetPath()),
-          UIErrorString::formatErrorInfo(appliance));
+             .arg(CAppliance(comAppliance).GetPath()),
+          UIErrorString::formatErrorInfo(comAppliance));
+    return false;
 }
 
-void UIMessageCenter::cannotExportAppliance(const CMachine &machine, const QString &strPath, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotExportAppliance(const CMachine &machine, const QString &strPath, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to prepare the export of the appliance <b>%1</b>.")
@@ -1791,19 +1819,21 @@ void UIMessageCenter::cannotExportAppliance(const CMachine &machine, const QStri
           UIErrorString::formatErrorInfo(machine));
 }
 
-void UIMessageCenter::cannotExportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent /* = 0*/) const
+bool UIMessageCenter::cannotExportAppliance(const CProgress &comProgress, const QString &strPath, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to export appliance <b>%1</b>.")
              .arg(strPath),
-          UIErrorString::formatErrorInfo(progress));
+          UIErrorString::formatErrorInfo(comProgress));
+    return false;
 }
 
-void UIMessageCenter::cannotAddDiskEncryptionPassword(const CAppliance &appliance, QWidget *pParent /* = 0 */)
+bool UIMessageCenter::cannotAddDiskEncryptionPassword(const CAppliance &comAppliance, QWidget *pParent /* = 0 */)
 {
     error(pParent, MessageType_Error,
           tr("Bad password or authentication failure."),
-          UIErrorString::formatErrorInfo(appliance));
+          UIErrorString::formatErrorInfo(comAppliance));
+    return false;
 }
 
 void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const

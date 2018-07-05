@@ -23,12 +23,12 @@
 # include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIWizardExportAppPageBasic4.h"
-# include "UIWizardExportApp.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
 # include "QILabelSeparator.h"
 # include "QIRichTextLabel.h"
+# include "VBoxGlobal.h"
+# include "UIMessageCenter.h"
+# include "UIWizardExportApp.h"
+# include "UIWizardExportAppPageBasic4.h"
 
 /* COM includes: */
 # include "CAppliance.h"
@@ -48,44 +48,39 @@ UIWizardExportAppPage4::UIWizardExportAppPage4()
 void UIWizardExportAppPage4::refreshApplianceSettingsWidget()
 {
     /* Refresh settings widget: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox comVBox = vboxGlobal().virtualBox();
     CAppliance *pAppliance = m_pApplianceWidget->init();
-    bool fResult = pAppliance->isOk();
-    if (fResult)
+    if (pAppliance->isOk())
     {
         /* Iterate over all the selected machine ids: */
         QStringList uuids = fieldImp("machineIDs").toStringList();
         foreach (const QString &uuid, uuids)
         {
             /* Get the machine with the uuid: */
-            CMachine machine = vbox.FindMachine(uuid);
-            fResult = machine.isOk();
-            if (fResult)
+            CMachine comMachine = comVBox.FindMachine(uuid);
+            if (comVBox.isOk() && comMachine.isNotNull())
             {
                 /* Add the export description to our appliance object: */
-                CVirtualSystemDescription vsd = machine.ExportTo(*pAppliance, qobject_cast<UIWizardExportApp*>(wizardImp())->uri());
-                fResult = machine.isOk();
-                if (!fResult)
+                CVirtualSystemDescription comVsd = comMachine.ExportTo(*pAppliance, qobject_cast<UIWizardExportApp*>(wizardImp())->uri());
+                if (comMachine.isOk() && comVsd.isNotNull())
                 {
-                    msgCenter().cannotExportAppliance(machine, pAppliance->GetPath(), thisImp());
-                    return;
+                    /* Now add some new fields the user may change: */
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_Product, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_ProductUrl, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_Vendor, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_VendorUrl, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_Version, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_License, "", "");
                 }
-                /* Now add some new fields the user may change: */
-                vsd.AddDescription(KVirtualSystemDescriptionType_Product, "", "");
-                vsd.AddDescription(KVirtualSystemDescriptionType_ProductUrl, "", "");
-                vsd.AddDescription(KVirtualSystemDescriptionType_Vendor, "", "");
-                vsd.AddDescription(KVirtualSystemDescriptionType_VendorUrl, "", "");
-                vsd.AddDescription(KVirtualSystemDescriptionType_Version, "", "");
-                vsd.AddDescription(KVirtualSystemDescriptionType_License, "", "");
+                else
+                    return msgCenter().cannotExportAppliance(comMachine, pAppliance->GetPath(), thisImp());
             }
             else
-                break;
+                return msgCenter().cannotFindMachineById(comVBox, uuid);
         }
         /* Make sure the settings widget get the new descriptions: */
         m_pApplianceWidget->populate();
     }
-    if (!fResult)
-        msgCenter().cannotExportAppliance(*pAppliance, thisImp());
 }
 
 
@@ -97,19 +92,25 @@ UIWizardExportAppPageBasic4::UIWizardExportAppPageBasic4()
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    if (pMainLayout)
     {
         /* Create label: */
-        m_pLabel = new QIRichTextLabel(this);
-
-        /* Create appliance widget: */
-        m_pApplianceWidget = new UIApplianceExportEditorWidget(this);
+        m_pLabel = new QIRichTextLabel;
+        if (m_pLabel)
         {
-            m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabel);
         }
 
-        /* Add into layout: */
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pApplianceWidget);
+        /* Create appliance widget: */
+        m_pApplianceWidget = new UIApplianceExportEditorWidget;
+        if (m_pApplianceWidget)
+        {
+            m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pApplianceWidget);
+        }
     }
 
     /* Register classes: */

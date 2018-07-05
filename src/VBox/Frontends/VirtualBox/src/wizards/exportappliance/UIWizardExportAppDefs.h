@@ -35,14 +35,14 @@ typedef QPointer<UIApplianceExportEditorWidget> ExportAppliancePointer;
 Q_DECLARE_METATYPE(ExportAppliancePointer);
 
 /** QListWidgetItem subclass for Export Appliance wizard VM list. */
-class VMListWidgetItem : public QListWidgetItem
+class UIVMListWidgetItem : public QListWidgetItem
 {
 public:
 
     /** Constructs VM list item passing @a pixIcon, @a strText and @a pParent to the base-class.
       * @param  strUuid       Brings the machine ID.
       * @param  fInSaveState  Brings whether machine is in Saved state. */
-    VMListWidgetItem(QPixmap &pixIcon, QString &strText, QString strUuid, bool fInSaveState, QListWidget *pParent)
+    UIVMListWidgetItem(QPixmap &pixIcon, QString &strText, QString strUuid, bool fInSaveState, QListWidget *pParent)
         : QListWidgetItem(pixIcon, strText, pParent)
         , m_strUuid(strUuid)
         , m_fInSaveState(fInSaveState)
@@ -55,9 +55,9 @@ public:
     }
 
     /** Returns the machine ID. */
-    QString uuid() { return m_strUuid; }
+    QString uuid() const { return m_strUuid; }
     /** Returns whether machine is in Saved state. */
-    bool isInSaveState() { return m_fInSaveState; }
+    bool isInSaveState() const { return m_fInSaveState; }
 
 private:
 

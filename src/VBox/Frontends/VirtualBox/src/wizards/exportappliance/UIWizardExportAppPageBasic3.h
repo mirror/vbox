@@ -25,12 +25,12 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
+class QCheckBox;
+class QComboBox;
 class QLabel;
 class QLineEdit;
-class UIEmptyFilePathSelector;
-class QComboBox;
-class QCheckBox;
 class QIRichTextLabel;
+class UIEmptyFilePathSelector;
 
 
 /** UIWizardPageBase extension for 3rd page of the Export Appliance wizard. */
@@ -43,6 +43,7 @@ protected:
 
     /** Chooses default settings. */
     void chooseDefaultSettings();
+
     /** Refreshes current settings. */
     virtual void refreshCurrentSettings();
     /** Updates format combo tool-tips. */
@@ -84,35 +85,35 @@ protected:
     void setPath(const QString &strPath);
 
     /** Holds the default appliance name. */
-    QString m_strDefaultApplianceName;
+    QString  m_strDefaultApplianceName;
 
     /** Holds the username label instance. */
-    QLabel *m_pUsernameLabel;
+    QLabel    *m_pUsernameLabel;
     /** Holds the username editor instance. */
     QLineEdit *m_pUsernameEditor;
 
     /** Holds the password label instance. */
-    QLabel *m_pPasswordLabel;
+    QLabel    *m_pPasswordLabel;
     /** Holds the password editor instance. */
     QLineEdit *m_pPasswordEditor;
 
     /** Holds the hostname label instance. */
-    QLabel *m_pHostnameLabel;
+    QLabel    *m_pHostnameLabel;
     /** Holds the hostname editor instance. */
     QLineEdit *m_pHostnameEditor;
 
     /** Holds the bucket label instance. */
-    QLabel *m_pBucketLabel;
+    QLabel    *m_pBucketLabel;
     /** Holds the bucket editor instance. */
     QLineEdit *m_pBucketEditor;
 
     /** Holds the file selector label instance. */
-    QLabel *m_pFileSelectorLabel;
+    QLabel    *m_pFileSelectorLabel;
     /** Holds the file selector instance. */
     UIEmptyFilePathSelector *m_pFileSelector;
 
     /** Holds the format combo-box label instance. */
-    QLabel *m_pFormatComboBoxLabel;
+    QLabel    *m_pFormatComboBoxLabel;
     /** Holds the format combo-box instance. */
     QComboBox *m_pFormatComboBox;
 
@@ -143,24 +144,24 @@ protected:
     /** Allows access wizard-field from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+    /** Performs page initialization. */
+    virtual void initializePage() /* override */;
+
+    /** Returns whether page is complete. */
+    virtual bool isComplete() const /* override */;
+
+    /** Refreshes current settings. */
+    virtual void refreshCurrentSettings() /* override */;
+
 private slots:
 
     /** Handles change in format combo-box. */
     void sltHandleFormatComboChange();
 
 private:
-
-    /** Handles translation event. */
-    void retranslateUi();
-
-    /** Performs page initialization. */
-    void initializePage();
-
-    /** Returns whether page is complete. */
-    bool isComplete() const;
-
-    /** Refreshes current settings. */
-    void refreshCurrentSettings();
 
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;

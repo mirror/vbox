@@ -19,8 +19,8 @@
 #define ___UIWizardExportAppPageBasic2_h___
 
 /* GUI includes: */
-#include "UIWizardPage.h"
 #include "UIWizardExportAppDefs.h"
+#include "UIWizardPage.h"
 
 /* Forward declarations: */
 class QGroupBox;
@@ -41,11 +41,11 @@ protected:
 
     /** Returns current storage type. */
     StorageType storageType() const;
-    /** Defines current @a storageType. */
-    void setStorageType(StorageType storageType);
+    /** Defines current @a enmStorageType. */
+    void setStorageType(StorageType enmStorageType);
 
     /** Holds the storage type container instance. */
-    QGroupBox *m_pTypeCnt;
+    QGroupBox    *m_pTypeCnt;
     /** Holds the Local Filesystem radio-button. */
     QRadioButton *m_pTypeLocalFilesystem;
     /** Holds the Sun Cloud radio-button. */
@@ -66,13 +66,15 @@ public:
     /** Constructs 2nd basic page. */
     UIWizardExportAppPageBasic2();
 
-private:
+protected:
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
     /** Performs page initialization. */
-    void initializePage();
+    virtual void initializePage() /* override */;
+
+private:
 
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
