@@ -288,10 +288,10 @@ HRESULT Appliance::interpret()
                                      vsysThis.strLicenseText,
                                      vsysThis.strLicenseText);
 
-            /* Now that we know the OS type, get our internal defaults based on that. */
+            /* Now that we know the OS type, get our internal defaults based on
+             * that, if it is known (otherwise pGuestOSType will be NULL). */
             ComPtr<IGuestOSType> pGuestOSType;
-            rc = mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox).raw(), pGuestOSType.asOutParam());
-            if (FAILED(rc)) throw rc;
+            mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox).raw(), pGuestOSType.asOutParam());
 
             /* CPU count */
             ULONG cpuCountVBox;
@@ -340,8 +340,13 @@ HRESULT Appliance::interpret()
             {
                 /* If the RAM of the OVF is zero, use our predefined values */
                 ULONG memSizeVBox2;
-                rc = pGuestOSType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
-                if (FAILED(rc)) throw rc;
+                if (!pGuestOSType.isNull())
+                {
+                    rc = pGuestOSType->COMGETTER(RecommendedRAM)(&memSizeVBox2);
+                    if (FAILED(rc)) throw rc;
+                }
+                else
+                    memSizeVBox2 = 1024;
                 /* VBox stores that in MByte */
                 ullMemSizeVBox = (uint64_t)memSizeVBox2;
             }
@@ -427,8 +432,19 @@ HRESULT Appliance::interpret()
 
                 /* Get the default network adapter type for the selected guest OS */
                 NetworkAdapterType_T defaultAdapterVBox = NetworkAdapterType_Am79C970A;
-                rc = pGuestOSType->COMGETTER(AdapterType)(&defaultAdapterVBox);
-                if (FAILED(rc)) throw rc;
+                if (!pGuestOSType.isNull())
+                {
+                    rc = pGuestOSType->COMGETTER(AdapterType)(&defaultAdapterVBox);
+                    if (FAILED(rc)) throw rc;
+                }
+                else
+                {
+#ifdef VBOX_WITH_E1000
+                    defaultAdapterVBox = NetworkAdapterType_I82540EM;
+#else
+                    defaultAdapterVBox = NetworkAdapterType_Am79C973A;
+#endif
+                }
 
                 ovf::EthernetAdaptersList::const_iterator itEA;
                 /* Iterate through all abstract networks. Ignore network cards

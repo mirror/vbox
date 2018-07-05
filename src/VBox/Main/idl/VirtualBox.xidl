@@ -2639,6 +2639,10 @@
         <link to="IGuestOSType::id"/> attribute which contains an identifier of
         the guest OS this object describes.
 
+        While this function returns an error for unknown guest OS types, they
+        can be still used without serious problems (if one accepts the fact
+        that there is no default VM config information).
+
         <result name="E_INVALIDARG">
           @a id is not a valid Guest OS type.
         </result>
@@ -5025,7 +5029,8 @@
         User-defined identifier of the Guest OS type.
         You may use <link to="IVirtualBox::getGuestOSType"/> to obtain
         an IGuestOSType object representing details about the given
-        Guest OS type.
+        Guest OS type. All Guest OS types are considered valid, even those
+        which are not known to <link to="IVirtualBox::getGuestOSType"/>.
         <note>
           This value may differ from the value returned by
           <link to="IGuest::OSTypeId"/> if Guest Additions are

@@ -1516,7 +1516,6 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aSettingsFile=\"%s\", aName=\"%s\", aOsTypeId =\"%s\", aCreateFlags=\"%s\"\n",
                      aSettingsFile.c_str(), aName.c_str(), aOsTypeId.c_str(), aFlags.c_str()));
-    /** @todo tighten checks on aId? */
 
     StringsList llGroups;
     HRESULT rc = i_convertMachineGroups(aGroups, &llGroups);
@@ -1595,16 +1594,14 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
 
     ComObjPtr<GuestOSType> osType;
     if (!aOsTypeId.isEmpty())
-    {
-        rc = i_findGuestOSType(aOsTypeId, osType);
-        if (FAILED(rc)) return rc;
-    }
+        i_findGuestOSType(aOsTypeId, osType);
 
     /* initialize the machine object */
     rc = machine->init(this,
                        strSettingsFile,
-                       Utf8Str(aName),
+                       aName,
                        llGroups,
+                       aOsTypeId,
                        osType,
                        id,
                        fForceOverwrite,

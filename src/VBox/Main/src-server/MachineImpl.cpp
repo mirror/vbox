@@ -277,6 +277,7 @@ void Machine::FinalRelease()
  *                      be relative to the VirtualBox config directory).
  *  @param strName      name for the machine
  *  @param llGroups     list of groups for the machine
+ *  @param strOsType    OS Type string (stored as is if aOsType is NULL).
  *  @param aOsType      OS Type of this machine or NULL.
  *  @param aId          UUID for the new machine.
  *  @param fForceOverwrite Whether to overwrite an existing machine settings file.
@@ -289,6 +290,7 @@ HRESULT Machine::init(VirtualBox *aParent,
                       const Utf8Str &strConfigFile,
                       const Utf8Str &strName,
                       const StringsList &llGroups,
+                      const Utf8Str &strOsType,
                       GuestOSType *aOsType,
                       const Guid &aId,
                       bool fForceOverwrite,
@@ -342,9 +344,6 @@ HRESULT Machine::init(VirtualBox *aParent,
             /* Store OS type */
             mUserData->s.strOsType = aOsType->i_id();
 
-            /* Apply BIOS defaults */
-            mBIOSSettings->i_applyDefaults(aOsType);
-
             /* Let the OS type select 64-bit ness. */
             mHWData->mLongMode = aOsType->i_is64Bit()
                                ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
@@ -352,6 +351,19 @@ HRESULT Machine::init(VirtualBox *aParent,
             /* Let the OS type enable the X2APIC */
             mHWData->mX2APIC = aOsType->i_recommendedX2APIC();
         }
+        else if (!strOsType.isEmpty())
+        {
+            /* Store OS type */
+            mUserData->s.strOsType = strOsType;
+
+            /* No guest OS type object. Pick some plausible defaults which the
+             * host can handle. There's no way to know or validate anything. */
+            mHWData->mLongMode = HC_ARCH_BITS == 64 ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
+            mHWData->mX2APIC = false;
+        }
+
+        /* Apply BIOS defaults */
+        mBIOSSettings->i_applyDefaults(aOsType);
 
         /* Apply network adapters defaults */
         for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
@@ -1086,17 +1098,15 @@ HRESULT Machine::setOSTypeId(const com::Utf8Str &aOSTypeId)
 {
     /* look up the object by Id to check it is valid */
     ComObjPtr<GuestOSType> pGuestOSType;
-    HRESULT rc = mParent->i_findGuestOSType(aOSTypeId,
-                                            pGuestOSType);
-    if (FAILED(rc)) return rc;
+    mParent->i_findGuestOSType(aOSTypeId, pGuestOSType);
 
     /* when setting, always use the "etalon" value for consistency -- lookup
      * by ID is case-insensitive and the input value may have different case */
-    Utf8Str osTypeId = pGuestOSType->i_id();
+    Utf8Str osTypeId = !pGuestOSType.isNull() ? pGuestOSType->i_id() : aOSTypeId;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -1287,7 +1297,11 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
             ComObjPtr<GuestOSType> pGuestOSType;
             HRESULT hrc2 = mParent->i_findGuestOSType(mUserData->s.strOsType,
                                                       pGuestOSType);
-            AssertMsgReturn(SUCCEEDED(hrc2), ("Failed to get guest OS type. hrc2=%Rhrc\n", hrc2), hrc2);
+            if (FAILED(hrc2) || pGuestOSType.isNull())
+            {
+                *aParavirtProvider = ParavirtProvider_None;
+                break;
+            }
 
             Utf8Str guestTypeFamilyId = pGuestOSType->i_familyId();
             bool fOsXGuest = guestTypeFamilyId == "MacOS";
@@ -2227,7 +2241,7 @@ HRESULT Machine::getCPUProperty(CPUPropertyType_T aProperty, BOOL *aValue)
                 ComObjPtr<GuestOSType> pGuestOSType;
                 HRESULT hrc2 = mParent->i_findGuestOSType(mUserData->s.strOsType,
                                                           pGuestOSType);
-                if (SUCCEEDED(hrc2))
+                if (SUCCEEDED(hrc2) && !pGuestOSType.isNull())
                 {
                     if (pGuestOSType->i_is64Bit())
                     {
@@ -8829,10 +8843,9 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
 
     // look up the object by Id to check it is valid
     ComObjPtr<GuestOSType> pGuestOSType;
-    HRESULT rc = mParent->i_findGuestOSType(mUserData->s.strOsType,
-                                            pGuestOSType);
-    if (FAILED(rc)) return rc;
-    mUserData->s.strOsType = pGuestOSType->i_id();
+    mParent->i_findGuestOSType(mUserData->s.strOsType, pGuestOSType);
+    if (!pGuestOSType.isNull())
+        mUserData->s.strOsType = pGuestOSType->i_id();
 
     // stateFile (optional)
     if (config.strStateFile.isEmpty())
@@ -8850,7 +8863,7 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
     }
 
     // snapshot folder needs special processing so set it again
-    rc = COMSETTER(SnapshotFolder)(Bstr(config.machineUserData.strSnapshotFolder).raw());
+    HRESULT rc = COMSETTER(SnapshotFolder)(Bstr(config.machineUserData.strSnapshotFolder).raw());
     if (FAILED(rc)) return rc;
 
     /* Copy the extra data items (config may or may not be the same as
@@ -9031,10 +9044,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
     try
     {
         ComObjPtr<GuestOSType> pGuestOSType;
-        rc = mParent->i_findGuestOSType(Bstr(mUserData->s.strOsType).raw(),
-                                        pGuestOSType);
-        if (FAILED(rc))
-            return rc;
+        mParent->i_findGuestOSType(mUserData->s.strOsType, pGuestOSType);
 
         /* The hardware version attribute (optional). */
         mHWData->mHWVersion = data.strVersion;

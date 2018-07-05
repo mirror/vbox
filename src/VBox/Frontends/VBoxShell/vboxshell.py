@@ -961,12 +961,15 @@ def infoCmd(ctx, args):
     mach = argsToMach(ctx, args)
     if mach == None:
         return 0
-    vmos = ctx['vb'].getGuestOSType(mach.OSTypeId)
+    try:
+        vmos = ctx['vb'].getGuestOSType(mach.OSTypeId)
+    except:
+        vmos = None
     print(" One can use setvar <mach> <var> <value> to change variable, using name in [].")
     print("  Name [name]: %s" % (colVm(ctx, mach.name)))
     print("  Description [description]: %s" % (mach.description))
     print("  ID [n/a]: %s" % (mach.id))
-    print("  OS Type [via OSTypeId]: %s" % (vmos.description))
+    print("  OS Type [via OSTypeId]: %s" % (vmos.description if vmos is not None else mach.OSTypeId))
     print("  Firmware [firmwareType]: %s (%s)" % (asEnumElem(ctx, "FirmwareType", mach.firmwareType), mach.firmwareType))
     print()
     print("  CPUs [CPUCount]: %d" % (mach.CPUCount))

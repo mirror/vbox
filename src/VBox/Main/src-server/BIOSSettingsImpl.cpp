@@ -58,7 +58,7 @@ HRESULT BIOSSettings::FinalConstruct()
 
 void BIOSSettings::FinalRelease()
 {
-    uninit ();
+    uninit();
     BaseFinalRelease();
 }
 
@@ -561,17 +561,17 @@ void BIOSSettings::i_commit()
     }
 }
 
-void BIOSSettings::i_copyFrom (BIOSSettings *aThat)
+void BIOSSettings::i_copyFrom(BIOSSettings *aThat)
 {
-    AssertReturnVoid (aThat != NULL);
+    AssertReturnVoid(aThat != NULL);
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* sanity too */
-    AutoCaller thatCaller (aThat);
-    AssertComRCReturnVoid (thatCaller.rc());
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnVoid(thatCaller.rc());
 
     /* peer is not modified, lock it for reading (aThat is "master" so locked
      * first) */
@@ -582,18 +582,19 @@ void BIOSSettings::i_copyFrom (BIOSSettings *aThat)
     m->bd.assignCopy(aThat->m->bd);
 }
 
-void BIOSSettings::i_applyDefaults (GuestOSType *aOsType)
+void BIOSSettings::i_applyDefaults(GuestOSType *aOsType)
 {
-    AssertReturnVoid (aOsType != NULL);
-
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Initialize default BIOS settings here */
-    m->bd->fIOAPICEnabled = aOsType->i_recommendedIOAPIC();
+    if (aOsType)
+        m->bd->fIOAPICEnabled = aOsType->i_recommendedIOAPIC();
+    else
+        m->bd->fIOAPICEnabled = true;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

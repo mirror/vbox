@@ -563,18 +563,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             }
             case MODIFYVM_OSTYPE:
             {
-                ComPtr<IGuestOSType> guestOSType;
-                CHECK_ERROR(a->virtualBox, GetGuestOSType(Bstr(ValueUnion.psz).raw(),
-                                                          guestOSType.asOutParam()));
-                if (SUCCEEDED(rc) && guestOSType)
-                {
-                    CHECK_ERROR(sessionMachine, COMSETTER(OSTypeId)(Bstr(ValueUnion.psz).raw()));
-                }
-                else
-                {
-                    errorArgument("Invalid guest OS type '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
+                CHECK_ERROR(sessionMachine, COMSETTER(OSTypeId)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
 

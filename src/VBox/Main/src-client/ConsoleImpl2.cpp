@@ -819,12 +819,16 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             break;
     }
 
-    ComPtr<IGuestOSType> guestOSType;
-    hrc = virtualBox->GetGuestOSType(osTypeId.raw(), guestOSType.asOutParam());             H();
+    ComPtr<IGuestOSType> pGuestOSType;
+    virtualBox->GetGuestOSType(osTypeId.raw(), pGuestOSType.asOutParam());
 
-    Bstr guestTypeFamilyId;
-    hrc = guestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());                 H();
-    BOOL fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
+    BOOL fOsXGuest = FALSE;
+    if (!pGuestOSType.isNull())
+    {
+        Bstr guestTypeFamilyId;
+        hrc = pGuestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());            H();
+        fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
+    }
 
     ULONG maxNetworkAdapters;
     hrc = systemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);        H();

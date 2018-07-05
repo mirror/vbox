@@ -350,6 +350,7 @@ public:
                  const Utf8Str &strConfigFile,
                  const Utf8Str &strName,
                  const StringsList &llGroups,
+                 const Utf8Str &strOsTypeId,
                  GuestOSType *aOsType,
                  const Guid &aId,
                  bool fForceOverwrite,

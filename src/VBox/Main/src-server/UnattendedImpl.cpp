@@ -1036,7 +1036,10 @@ HRESULT Unattended::reconfigureVM()
         ComPtr<IGuestOSType> ptrGuestOSType;
         HRESULT hrc = mParent->GetGuestOSType(bstrGuestOsTypeId.raw(), ptrGuestOSType.asOutParam());
         if (SUCCEEDED(hrc))
-            hrc = ptrGuestOSType->COMGETTER(RecommendedDVDStorageBus)(&enmRecommendedStorageBus);
+        {
+            if (!ptrGuestOSType.isNull())
+                hrc = ptrGuestOSType->COMGETTER(RecommendedDVDStorageBus)(&enmRecommendedStorageBus);
+        }
         if (FAILED(hrc))
             return hrc;
     }
@@ -2336,7 +2339,8 @@ bool Unattended::i_isGuestOSArchX64(Utf8Str const &rStrGuestOsTypeId)
     if (SUCCEEDED(hrc))
     {
         BOOL fIs64Bit = FALSE;
-        hrc = pGuestOSType->COMGETTER(Is64Bit)(&fIs64Bit);
+        if (!pGuestOSType.isNull())
+            hrc = pGuestOSType->COMGETTER(Is64Bit)(&fIs64Bit);
         if (SUCCEEDED(hrc))
             return fIs64Bit != FALSE;
     }
