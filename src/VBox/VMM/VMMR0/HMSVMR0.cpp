@@ -4477,13 +4477,6 @@ static int hmR0SvmPreRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTra
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
     }
 #endif
-#ifdef HMSVM_SYNC_FULL_NESTED_GUEST_STATE
-    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-    {
-        Assert(!(pCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
-    }
-#endif
 
     /*
      * Export the guest state bits that are not shared with the host in any way as we can
