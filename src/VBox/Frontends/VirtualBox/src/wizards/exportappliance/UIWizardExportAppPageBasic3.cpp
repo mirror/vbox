@@ -361,16 +361,25 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 5, 0);
             }
 
+            /* Create advanced label: */
+            m_pAdditionalLabel = new QLabel;
+            if (m_pAdditionalLabel)
+            {
+                m_pAdditionalLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pAdditionalLabel, 6, 0);
+            }
+            /* Create manifest check-box: */
+            m_pManifestCheckbox = new QCheckBox;
+            if (m_pManifestCheckbox)
+            {
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pManifestCheckbox, 6, 1);
+            }
+
             /* Add into layout: */
             pMainLayout->addLayout(pSettingsLayout);
-        }
-
-        /* Create manifest check-box: */
-        m_pManifestCheckbox = new QCheckBox;
-        if (m_pManifestCheckbox)
-        {
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pManifestCheckbox);
         }
 
         /* Add vertical stretch: */
@@ -424,6 +433,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
+    m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
 

@@ -117,6 +117,8 @@ protected:
     /** Holds the format combo-box instance. */
     QComboBox *m_pFormatComboBox;
 
+    /** Holds the additional label instance. */
+    QLabel    *m_pAdditionalLabel;
     /** Holds the manifest check-box instance. */
     QCheckBox *m_pManifestCheckbox;
 };
