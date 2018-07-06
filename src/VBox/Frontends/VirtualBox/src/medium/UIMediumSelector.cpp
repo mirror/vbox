@@ -483,7 +483,7 @@ void UIMediumSelector::sltCreateMedium()
     UIFDCreationDialog *pDialog = new UIFDCreationDialog(this, m_strMachineName, strMachineFolder);
     if (pDialog->exec())
     {
-        sltHandleRefresh();
+        repopulateTreeWidget();
     }
     delete pDialog;
 }

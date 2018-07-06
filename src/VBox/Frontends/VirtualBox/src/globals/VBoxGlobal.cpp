@@ -2721,14 +2721,13 @@ QString VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const Q
 
 QString VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder)
 {
-    QString strMediumID;
     UIFDCreationDialog *pDialog = new UIFDCreationDialog(pParent, strMachineName, strMachineFolder);
     if (pDialog->exec())
     {
-        strMediumID = pDialog->mediumID();
+        return pDialog->mediumID();
     }
     delete pDialog;
-    return strMediumID;
+    return QString();
 }
 
 void VBoxGlobal::prepareStorageMenu(QMenu &menu,
