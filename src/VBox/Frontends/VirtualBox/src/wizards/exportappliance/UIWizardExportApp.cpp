@@ -159,25 +159,13 @@ QString UIWizardExportApp::uri(bool fWithFile) const
     StorageType enmType = field("storageType").value<StorageType>();
     switch (enmType)
     {
-        case Filesystem:
+        case LocalFilesystem:
         {
             return strPath;
         }
-        case SunCloud:
+        case CloudProvider:
         {
-            QString strUri("SunCloud://");
-            if (!field("username").toString().isEmpty())
-                strUri = QString("%1%2").arg(strUri).arg(field("username").toString());
-            if (!field("password").toString().isEmpty())
-                strUri = QString("%1:%2").arg(strUri).arg(field("password").toString());
-            if (!field("username").toString().isEmpty() || !field("password").toString().isEmpty())
-                strUri = QString("%1@").arg(strUri);
-            strUri = QString("%1%2/%3/%4").arg(strUri).arg("object.storage.network.com").arg(field("bucket").toString()).arg(strPath);
-            return strUri;
-        }
-        case S3:
-        {
-            QString strUri("S3://");
+            QString strUri("OCI://");
             if (!field("username").toString().isEmpty())
                 strUri = QString("%1%2").arg(strUri).arg(field("username").toString());
             if (!field("password").toString().isEmpty())

@@ -27,7 +27,7 @@
 #include "UIApplianceExportEditorWidget.h"
 
 /** Storage types. */
-enum StorageType { Filesystem, SunCloud, S3 };
+enum StorageType { LocalFilesystem, CloudProvider };
 Q_DECLARE_METATYPE(StorageType);
 
 /* Typedefs: */

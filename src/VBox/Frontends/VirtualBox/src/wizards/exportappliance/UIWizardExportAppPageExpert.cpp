@@ -109,26 +109,19 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             QVBoxLayout *pTypeCntLayout = new QVBoxLayout(m_pTypeCnt);
             if (pTypeCntLayout)
             {
-                /* Create Local Filesystem radio-button: */
+                /* Create Local LocalFilesystem radio-button: */
                 m_pTypeLocalFilesystem = new QRadioButton;
                 if (m_pTypeLocalFilesystem)
                 {
                     /* Add into layout: */
                     pTypeCntLayout->addWidget(m_pTypeLocalFilesystem);
                 }
-                /* Create SunCloud radio-button: */
-                m_pTypeSunCloud = new QRadioButton;
-                if (m_pTypeSunCloud)
+                /* Create CloudProvider radio-button: */
+                m_pTypeCloudServiceProvider = new QRadioButton;
+                if (m_pTypeCloudServiceProvider)
                 {
                     /* Add into layout: */
-                    pTypeCntLayout->addWidget(m_pTypeSunCloud);
-                }
-                /* Create Simple Storage System radio-button: */
-                m_pTypeSimpleStorageSystem = new QRadioButton;
-                if (m_pTypeSimpleStorageSystem)
-                {
-                    /* Add into layout: */
-                    pTypeCntLayout->addWidget(m_pTypeSimpleStorageSystem);
+                    pTypeCntLayout->addWidget(m_pTypeCloudServiceProvider);
                 }
             }
 
@@ -292,8 +285,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     /* Setup connections: */
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
     connect(m_pTypeLocalFilesystem, &QRadioButton::clicked,         this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
-    connect(m_pTypeSunCloud, &QRadioButton::clicked,                this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
-    connect(m_pTypeSimpleStorageSystem, &QRadioButton::clicked,     this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
+    connect(m_pTypeCloudServiceProvider, &QRadioButton::clicked,    this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
     connect(m_pUsernameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageExpert::completeChanged);
     connect(m_pPasswordEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageExpert::completeChanged);
     connect(m_pHostnameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageExpert::completeChanged);
@@ -330,9 +322,8 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pApplianceCnt->setTitle(UIWizardExportApp::tr("Appliance &settings"));
     m_pTypeCnt->setTitle(UIWizardExportApp::tr("&Destination"));
     m_pSettingsCnt->setTitle(UIWizardExportApp::tr("&Storage settings"));
-    m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&Local Filesystem "));
-    m_pTypeSunCloud->setText(UIWizardExportApp::tr("Sun &Cloud"));
-    m_pTypeSimpleStorageSystem->setText(UIWizardExportApp::tr("&Simple Storage System (S3)"));
+    m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&Local Filesystem"));
+    m_pTypeCloudServiceProvider->setText(UIWizardExportApp::tr("&Cloud Service Provider"));
     m_pUsernameLabel->setText(UIWizardExportApp::tr("&Username:"));
     m_pPasswordLabel->setText(UIWizardExportApp::tr("&Password:"));
     m_pHostnameLabel->setText(UIWizardExportApp::tr("&Hostname:"));
@@ -394,14 +385,9 @@ bool UIWizardExportAppPageExpert::isComplete() const
             const StorageType enmStorageType = storageType();
             switch (enmStorageType)
             {
-                case Filesystem:
+                case LocalFilesystem:
                     break;
-                case SunCloud:
-                    fResult &= !m_pUsernameEditor->text().isEmpty() &&
-                               !m_pPasswordEditor->text().isEmpty() &&
-                               !m_pBucketEditor->text().isEmpty();
-                    break;
-                case S3:
+                case CloudProvider:
                     fResult &= !m_pUsernameEditor->text().isEmpty() &&
                                !m_pPasswordEditor->text().isEmpty() &&
                                !m_pHostnameEditor->text().isEmpty() &&

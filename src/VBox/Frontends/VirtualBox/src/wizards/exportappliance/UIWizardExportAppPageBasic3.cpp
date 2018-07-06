@@ -59,7 +59,7 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
     const StorageType enmStorageType = fieldImp("storageType").value<StorageType>();
     switch (enmStorageType)
     {
-        case Filesystem:
+        case LocalFilesystem:
         {
             m_pUsernameLabel->setVisible(false);
             m_pUsernameEditor->setVisible(false);
@@ -73,21 +73,7 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
             m_pFileSelector->setChooserVisible(true);
             break;
         }
-        case SunCloud:
-        {
-            m_pUsernameLabel->setVisible(true);
-            m_pUsernameEditor->setVisible(true);
-            m_pPasswordLabel->setVisible(true);
-            m_pPasswordEditor->setVisible(true);
-            m_pHostnameLabel->setVisible(false);
-            m_pHostnameEditor->setVisible(false);
-            m_pBucketLabel->setVisible(true);
-            m_pBucketEditor->setVisible(true);
-            m_pFormatComboBox->setVisible(false);
-            m_pFileSelector->setChooserVisible(false);
-            break;
-        }
-        case S3:
+        case CloudProvider:
         {
             m_pUsernameLabel->setVisible(true);
             m_pUsernameEditor->setVisible(true);
@@ -140,8 +126,8 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
         m_pManifestCheckbox->setEnabled(true);
     }
 
-    /* Copose file-path for 'Filesystem' storage case: */
-    if (enmStorageType == Filesystem)
+    /* Copose file-path for 'LocalFilesystem' storage case: */
+    if (enmStorageType == LocalFilesystem)
         strName = QDir::toNativeSeparators(QString("%1/%2").arg(vboxGlobal().documentsPath()).arg(strName));
 
     /* Assign file-path: */
@@ -474,14 +460,9 @@ bool UIWizardExportAppPageBasic3::isComplete() const
             const StorageType enmStorageType = field("storageType").value<StorageType>();
             switch (enmStorageType)
             {
-                case Filesystem:
+                case LocalFilesystem:
                     break;
-                case SunCloud:
-                    fResult &= !m_pUsernameEditor->text().isEmpty() &&
-                               !m_pPasswordEditor->text().isEmpty() &&
-                               !m_pBucketEditor->text().isEmpty();
-                    break;
-                case S3:
+                case CloudProvider:
                     fResult &= !m_pUsernameEditor->text().isEmpty() &&
                                !m_pPasswordEditor->text().isEmpty() &&
                                !m_pHostnameEditor->text().isEmpty() &&
@@ -504,7 +485,7 @@ void UIWizardExportAppPageBasic3::refreshCurrentSettings()
     const StorageType enmStorageType = field("storageType").value<StorageType>();
     switch (enmStorageType)
     {
-        case Filesystem:
+        case LocalFilesystem:
         {
             m_pLabel->setText(tr("<p>Please choose a filename to export the virtual appliance to.</p>"
                                  "<p>The <b>Open Virtualization Format</b> supports only "
@@ -518,14 +499,7 @@ void UIWizardExportAppPageBasic3::refreshCurrentSettings()
             m_pFileSelector->setFocus();
             break;
         }
-        case SunCloud:
-        {
-            m_pLabel->setText(tr("Please complete the additional fields like the username, password "
-                                 "and the bucket, and provide a filename for the OVF target."));
-            m_pUsernameEditor->setFocus();
-            break;
-        }
-        case S3:
+        case CloudProvider:
         {
             m_pLabel->setText(tr("Please complete the additional fields like the username, password, "
                                  "hostname and the bucket, and provide a filename for the OVF target."));

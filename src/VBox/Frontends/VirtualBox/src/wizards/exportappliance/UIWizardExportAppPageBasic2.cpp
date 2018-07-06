@@ -42,20 +42,18 @@ UIWizardExportAppPage2::UIWizardExportAppPage2()
 
 void UIWizardExportAppPage2::chooseDefaultStorageType()
 {
-    /* Choose Filesystem by default: */
-    setStorageType(Filesystem);
+    /* Choose LocalFilesystem by default: */
+    setStorageType(LocalFilesystem);
 }
 
 StorageType UIWizardExportAppPage2::storageType() const
 {
-    /* Check SunCloud and S3: */
-    if (m_pTypeSunCloud->isChecked())
-        return SunCloud;
-    else if (m_pTypeSimpleStorageSystem->isChecked())
-        return S3;
+    /* Check Cloud Service Provider: */
+    if (m_pTypeCloudServiceProvider->isChecked())
+        return CloudProvider;
 
-    /* Return Filesystem by default: */
-    return Filesystem;
+    /* Return LocalFilesystem by default: */
+    return LocalFilesystem;
 }
 
 void UIWizardExportAppPage2::setStorageType(StorageType enmStorageType)
@@ -63,17 +61,13 @@ void UIWizardExportAppPage2::setStorageType(StorageType enmStorageType)
     /* Check and focus the requested type: */
     switch (enmStorageType)
     {
-        case Filesystem:
+        case LocalFilesystem:
             m_pTypeLocalFilesystem->setChecked(true);
             m_pTypeLocalFilesystem->setFocus();
             break;
-        case SunCloud:
-            m_pTypeSunCloud->setChecked(true);
-            m_pTypeSunCloud->setFocus();
-            break;
-        case S3:
-            m_pTypeSimpleStorageSystem->setChecked(true);
-            m_pTypeSimpleStorageSystem->setFocus();
+        case CloudProvider:
+            m_pTypeCloudServiceProvider->setChecked(true);
+            m_pTypeCloudServiceProvider->setFocus();
             break;
     }
 }
@@ -105,26 +99,19 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
             QVBoxLayout *pTypeCntLayout = new QVBoxLayout(m_pTypeCnt);
             if (pTypeCntLayout)
             {
-                /* Create Local Filesystem radio-button: */
+                /* Create Local LocalFilesystem radio-button: */
                 m_pTypeLocalFilesystem = new QRadioButton;
                 if (m_pTypeLocalFilesystem)
                 {
                     /* Add into layout: */
                     pTypeCntLayout->addWidget(m_pTypeLocalFilesystem);
                 }
-                /* Create SunCloud radio-button: */
-                m_pTypeSunCloud = new QRadioButton;
-                if (m_pTypeSunCloud)
+                /* Create CloudProvider radio-button: */
+                m_pTypeCloudServiceProvider = new QRadioButton;
+                if (m_pTypeCloudServiceProvider)
                 {
                     /* Add into layout: */
-                    pTypeCntLayout->addWidget(m_pTypeSunCloud);
-                }
-                /* Create Simple Storage System radio-button: */
-                m_pTypeSimpleStorageSystem = new QRadioButton;
-                if (m_pTypeSimpleStorageSystem)
-                {
-                    /* Add into layout: */
-                    pTypeCntLayout->addWidget(m_pTypeSimpleStorageSystem);
+                    pTypeCntLayout->addWidget(m_pTypeCloudServiceProvider);
                 }
             }
 
@@ -140,9 +127,8 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
     chooseDefaultStorageType();
 
     /* Setup connections: */
-    connect(m_pTypeLocalFilesystem, &QRadioButton::clicked,     this, &UIWizardExportAppPageBasic2::completeChanged);
-    connect(m_pTypeSunCloud, &QRadioButton::clicked,            this, &UIWizardExportAppPageBasic2::completeChanged);
-    connect(m_pTypeSimpleStorageSystem, &QRadioButton::clicked, this, &UIWizardExportAppPageBasic2::completeChanged);
+    connect(m_pTypeLocalFilesystem, &QRadioButton::clicked,      this, &UIWizardExportAppPageBasic2::completeChanged);
+    connect(m_pTypeCloudServiceProvider, &QRadioButton::clicked, this, &UIWizardExportAppPageBasic2::completeChanged);
 
     /* Register classes: */
     qRegisterMetaType<StorageType>();
@@ -158,12 +144,11 @@ void UIWizardExportAppPageBasic2::retranslateUi()
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardExportApp::tr("Please choose where to create the virtual appliance. "
-                                            "You can create it on your own computer, "
-                                            "on the Sun Cloud service or on an S3 storage server."));
+                                            "You can create it on your own computer "
+                                            "or on one of cloud servers you have registered."));
     m_pTypeCnt->setTitle(UIWizardExportApp::tr("Create on"));
     m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&This computer"));
-    m_pTypeSunCloud->setText(UIWizardExportApp::tr("Sun &Cloud"));
-    m_pTypeSimpleStorageSystem->setText(UIWizardExportApp::tr("&Simple Storage System (S3)"));
+    m_pTypeCloudServiceProvider->setText(UIWizardExportApp::tr("&Cloud Service Provider"));
 }
 
 void UIWizardExportAppPageBasic2::initializePage()

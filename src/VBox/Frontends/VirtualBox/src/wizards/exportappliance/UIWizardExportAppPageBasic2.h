@@ -48,10 +48,8 @@ protected:
     QGroupBox    *m_pTypeCnt;
     /** Holds the Local Filesystem radio-button. */
     QRadioButton *m_pTypeLocalFilesystem;
-    /** Holds the Sun Cloud radio-button. */
-    QRadioButton *m_pTypeSunCloud;
-    /** Holds the Simple Storage System radio-button. */
-    QRadioButton *m_pTypeSimpleStorageSystem;
+    /** Holds the Cloud Service Provider radio-button. */
+    QRadioButton *m_pTypeCloudServiceProvider;
 };
 
 
