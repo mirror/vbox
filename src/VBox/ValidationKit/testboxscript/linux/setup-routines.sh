@@ -138,3 +138,25 @@ test_unattended_updates_disabled() {
         return 1
     fi
 }
+
+os_final_message() {
+    cat <<EOF
+
+Additional things to do:"
+    1. Check if the proxy settings are appropriate for reaching the test
+       manager host. Python does not support domain matches starting with ".".
+
+       For Debian and Ubuntu: check /etc/environment.
+       For EL: check /etc/profile and/or the files in /etc/profile.d/.
+
+    2. If the system should be doing RAM disk based testing, add the following
+       (or something similar, adapted to the system) to /etc/fstab:
+
+         tmpfs /var/tmp/testbox-1000 tmpfs defaults,size=16G 0 0
+
+After making such adjustments, it's the easiest solution to reboot the testbox.
+
+Enjoy!
+EOF
+}
+
