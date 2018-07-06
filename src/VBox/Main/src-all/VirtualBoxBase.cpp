@@ -335,6 +335,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
             case VBOX_E_XML_ERROR:             aText = "Invalid XML found"; break;
             case VBOX_E_INVALID_SESSION_STATE: aText = "Current session state prohibits operation"; break;
             case VBOX_E_OBJECT_IN_USE:         aText = "Object being in use prohibits operation"; break;
+            case VBOX_E_PASSWORD_INCORRECT:    aText = "Incorrect password provided"; break;
             default:                           aText = "Unknown error"; break;
         }
     }
