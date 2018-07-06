@@ -137,80 +137,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             QGridLayout *pSettingsLayout = new QGridLayout(m_pSettingsCnt);
             if (pSettingsLayout)
             {
-                /* Create username editor: */
-                m_pUsernameEditor = new QLineEdit;
-                if (m_pUsernameEditor)
-                {
-                    /* Add into layout: */
-                    pSettingsLayout->addWidget(m_pUsernameEditor, 0, 1);
-                }
-                /* Create username label: */
-                m_pUsernameLabel = new QLabel;
-                if (m_pUsernameLabel)
-                {
-                    m_pUsernameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                    m_pUsernameLabel->setBuddy(m_pUsernameEditor);
-
-                    /* Add into layout: */
-                    pSettingsLayout->addWidget(m_pUsernameLabel, 0, 0);
-                }
-
-                /* Create password editor: */
-                m_pPasswordEditor = new QLineEdit;
-                if (m_pPasswordEditor)
-                {
-                    m_pPasswordEditor->setEchoMode(QLineEdit::Password);
-
-                    /* Add into layout: */
-                    pSettingsLayout->addWidget(m_pPasswordEditor, 1, 1);
-                }
-                /* Create password label: */
-                m_pPasswordLabel = new QLabel;
-                if (m_pPasswordLabel)
-                {
-                    m_pPasswordLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                    m_pPasswordLabel->setBuddy(m_pPasswordEditor);
-
-                    /* Add into layout: */
-                    pSettingsLayout->addWidget(m_pPasswordLabel, 1, 0);
-                }
-
-                /* Create hostname editor: */
-                m_pHostnameEditor = new QLineEdit;
-                if (m_pHostnameEditor)
-                {
-                    /* Add into layout: */
-                    pSettingsLayout->addWidget(m_pHostnameEditor, 2, 1);
-                }
-                /* Create hostname label: */
-                m_pHostnameLabel = new QLabel;
-                if (m_pHostnameLabel)
-                {
-                    m_pHostnameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                    m_pHostnameLabel->setBuddy(m_pHostnameEditor);
-
-                    /* Add into layout: */
-                    pSettingsLayout->addWidget(m_pHostnameLabel, 2, 0);
-                }
-
-                /* Create bucket editor: */
-                m_pBucketEditor = new QLineEdit;
-                if (m_pBucketEditor)
-                {
-                    /* Add into layout: */
-                    pSettingsLayout->addWidget(m_pBucketEditor, 3, 1);
-                }
-                /* Create bucket label: */
-                m_pBucketLabel = new QLabel;
-                if (m_pBucketLabel)
-                {
-                    m_pBucketLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                    m_pBucketLabel->setBuddy(m_pBucketEditor);
-
-                    /* Add into layout: */
-                    pSettingsLayout->addWidget(m_pBucketLabel, 3, 0);
-                }
-
                 /* Create file selector: */
                 m_pFileSelector = new UIEmptyFilePathSelector;
                 if (m_pFileSelector)
@@ -286,10 +212,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
     connect(m_pTypeLocalFilesystem, &QRadioButton::clicked,         this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
     connect(m_pTypeCloudServiceProvider, &QRadioButton::clicked,    this, &UIWizardExportAppPageExpert::sltStorageTypeChangeHandler);
-    connect(m_pUsernameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageExpert::completeChanged);
-    connect(m_pPasswordEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageExpert::completeChanged);
-    connect(m_pHostnameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageExpert::completeChanged);
-    connect(m_pBucketEditor, &QLineEdit::textChanged,               this, &UIWizardExportAppPageExpert::completeChanged);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageExpert::completeChanged);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
@@ -302,13 +224,9 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("machineNames", this, "machineNames");
     registerField("machineIDs", this, "machineIDs");
     registerField("storageType", this, "storageType");
+    registerField("path", this, "path");
     registerField("format", this, "format");
     registerField("manifestSelected", this, "manifestSelected");
-    registerField("username", this, "username");
-    registerField("password", this, "password");
-    registerField("hostname", this, "hostname");
-    registerField("bucket", this, "bucket");
-    registerField("path", this, "path");
     registerField("applianceWidget", this, "applianceWidget");
 }
 
@@ -324,10 +242,6 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pSettingsCnt->setTitle(UIWizardExportApp::tr("&Storage settings"));
     m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&Local Filesystem"));
     m_pTypeCloudServiceProvider->setText(UIWizardExportApp::tr("&Cloud Service Provider"));
-    m_pUsernameLabel->setText(UIWizardExportApp::tr("&Username:"));
-    m_pPasswordLabel->setText(UIWizardExportApp::tr("&Password:"));
-    m_pHostnameLabel->setText(UIWizardExportApp::tr("&Hostname:"));
-    m_pBucketLabel->setText(UIWizardExportApp::tr("&Bucket:"));
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
     m_pFileSelector->setChooseButtonToolTip(tr("Choose a file to export the virtual appliance to..."));
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
@@ -388,10 +302,6 @@ bool UIWizardExportAppPageExpert::isComplete() const
                 case LocalFilesystem:
                     break;
                 case CloudProvider:
-                    fResult &= !m_pUsernameEditor->text().isEmpty() &&
-                               !m_pPasswordEditor->text().isEmpty() &&
-                               !m_pHostnameEditor->text().isEmpty() &&
-                               !m_pBucketEditor->text().isEmpty();
                     break;
             }
         }

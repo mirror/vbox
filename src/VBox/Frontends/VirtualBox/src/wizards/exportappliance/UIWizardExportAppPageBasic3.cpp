@@ -61,30 +61,18 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
     {
         case LocalFilesystem:
         {
-            m_pUsernameLabel->setVisible(false);
-            m_pUsernameEditor->setVisible(false);
-            m_pPasswordLabel->setVisible(false);
-            m_pPasswordEditor->setVisible(false);
-            m_pHostnameLabel->setVisible(false);
-            m_pHostnameEditor->setVisible(false);
-            m_pBucketLabel->setVisible(false);
-            m_pBucketEditor->setVisible(false);
-            m_pFormatComboBox->setVisible(true);
             m_pFileSelector->setChooserVisible(true);
+            m_pFormatComboBox->setVisible(true);
+            m_pAdditionalLabel->setVisible(true);
+            m_pManifestCheckbox->setVisible(true);
             break;
         }
         case CloudProvider:
         {
-            m_pUsernameLabel->setVisible(true);
-            m_pUsernameEditor->setVisible(true);
-            m_pPasswordLabel->setVisible(true);
-            m_pPasswordEditor->setVisible(true);
-            m_pHostnameLabel->setVisible(true);
-            m_pHostnameEditor->setVisible(true);
-            m_pBucketLabel->setVisible(true);
-            m_pBucketEditor->setVisible(true);
-            m_pFormatComboBox->setVisible(true);
             m_pFileSelector->setChooserVisible(false);
+            m_pFormatComboBox->setVisible(true);
+            m_pAdditionalLabel->setVisible(false);
+            m_pManifestCheckbox->setVisible(false);
             break;
         }
     }
@@ -141,6 +129,16 @@ void UIWizardExportAppPage3::updateFormatComboToolTip()
     m_pFormatComboBox->setToolTip(strCurrentIndexToolTip);
 }
 
+QString UIWizardExportAppPage3::path() const
+{
+    return m_pFileSelector->path();
+}
+
+void UIWizardExportAppPage3::setPath(const QString &strPath)
+{
+    m_pFileSelector->setPath(strPath);
+}
+
 QString UIWizardExportAppPage3::format() const
 {
     const int iIndex = m_pFormatComboBox->currentIndex();
@@ -162,56 +160,6 @@ bool UIWizardExportAppPage3::isManifestSelected() const
 void UIWizardExportAppPage3::setManifestSelected(bool fChecked)
 {
     m_pManifestCheckbox->setChecked(fChecked);
-}
-
-QString UIWizardExportAppPage3::username() const
-{
-    return m_pUsernameEditor->text();
-}
-
-void UIWizardExportAppPage3::setUserName(const QString &strUserName)
-{
-    m_pUsernameEditor->setText(strUserName);
-}
-
-QString UIWizardExportAppPage3::password() const
-{
-    return m_pPasswordEditor->text();
-}
-
-void UIWizardExportAppPage3::setPassword(const QString &strPassword)
-{
-    m_pPasswordEditor->setText(strPassword);
-}
-
-QString UIWizardExportAppPage3::hostname() const
-{
-    return m_pHostnameEditor->text();
-}
-
-void UIWizardExportAppPage3::setHostname(const QString &strHostname)
-{
-    m_pHostnameEditor->setText(strHostname);
-}
-
-QString UIWizardExportAppPage3::bucket() const
-{
-    return m_pBucketEditor->text();
-}
-
-void UIWizardExportAppPage3::setBucket(const QString &strBucket)
-{
-    m_pBucketEditor->setText(strBucket);
-}
-
-QString UIWizardExportAppPage3::path() const
-{
-    return m_pFileSelector->path();
-}
-
-void UIWizardExportAppPage3::setPath(const QString &strPath)
-{
-    m_pFileSelector->setPath(strPath);
 }
 
 
@@ -237,80 +185,6 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
         QGridLayout *pSettingsLayout = new QGridLayout;
         if (pSettingsLayout)
         {
-            /* Create username editor: */
-            m_pUsernameEditor = new QLineEdit;
-            if (m_pUsernameEditor)
-            {
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pUsernameEditor, 0, 1);
-            }
-            /* Create username label: */
-            m_pUsernameLabel = new QLabel;
-            if (m_pUsernameLabel)
-            {
-                m_pUsernameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                m_pUsernameLabel->setBuddy(m_pUsernameEditor);
-
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pUsernameLabel, 0, 0);
-            }
-
-            /* Create password editor: */
-            m_pPasswordEditor = new QLineEdit;
-            if (m_pPasswordEditor)
-            {
-                m_pPasswordEditor->setEchoMode(QLineEdit::Password);
-
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pPasswordEditor, 1, 1);
-            }
-            /* Create password label: */
-            m_pPasswordLabel = new QLabel;
-            if (m_pPasswordLabel)
-            {
-                m_pPasswordLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                m_pPasswordLabel->setBuddy(m_pPasswordEditor);
-
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pPasswordLabel, 1, 0);
-            }
-
-            /* Create hostname editor: */
-            m_pHostnameEditor = new QLineEdit;
-            if (m_pHostnameEditor)
-            {
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pHostnameEditor, 2, 1);
-            }
-            /* Create hostname label: */
-            m_pHostnameLabel = new QLabel;
-            if (m_pHostnameLabel)
-            {
-                m_pHostnameLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                m_pHostnameLabel->setBuddy(m_pHostnameEditor);
-
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pHostnameLabel, 2, 0);
-            }
-
-            /* Create bucket editor: */
-            m_pBucketEditor = new QLineEdit;
-            if (m_pBucketEditor)
-            {
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pBucketEditor, 3, 1);
-            }
-            /* Create bucket label: */
-            m_pBucketLabel = new QLabel;
-            if (m_pBucketLabel)
-            {
-                m_pBucketLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                m_pBucketLabel->setBuddy(m_pBucketEditor);
-
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pBucketLabel, 3, 0);
-            }
-
             /* Create file selector: */
             m_pFileSelector = new UIEmptyFilePathSelector;
             if (m_pFileSelector)
@@ -390,22 +264,14 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     chooseDefaultSettings();
 
     /* Setup connections: */
-    connect(m_pUsernameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageBasic3::completeChanged);
-    connect(m_pPasswordEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageBasic3::completeChanged);
-    connect(m_pHostnameEditor, &QLineEdit::textChanged,             this, &UIWizardExportAppPageBasic3::completeChanged);
-    connect(m_pBucketEditor, &QLineEdit::textChanged,               this, &UIWizardExportAppPageBasic3::completeChanged);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic3::completeChanged);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic3::sltHandleFormatComboChange);
 
     /* Register fields: */
+    registerField("path", this, "path");
     registerField("format", this, "format");
     registerField("manifestSelected", this, "manifestSelected");
-    registerField("username", this, "username");
-    registerField("password", this, "password");
-    registerField("hostname", this, "hostname");
-    registerField("bucket", this, "bucket");
-    registerField("path", this, "path");
 }
 
 void UIWizardExportAppPageBasic3::retranslateUi()
@@ -416,10 +282,6 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
     /* Translate widgets: */
-    m_pUsernameLabel->setText(UIWizardExportApp::tr("&Username:"));
-    m_pPasswordLabel->setText(UIWizardExportApp::tr("&Password:"));
-    m_pHostnameLabel->setText(UIWizardExportApp::tr("&Hostname:"));
-    m_pBucketLabel->setText(UIWizardExportApp::tr("&Bucket:"));
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
     m_pFileSelector->setChooseButtonToolTip(tr("Choose a file to export the virtual appliance to..."));
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
@@ -473,10 +335,6 @@ bool UIWizardExportAppPageBasic3::isComplete() const
                 case LocalFilesystem:
                     break;
                 case CloudProvider:
-                    fResult &= !m_pUsernameEditor->text().isEmpty() &&
-                               !m_pPasswordEditor->text().isEmpty() &&
-                               !m_pHostnameEditor->text().isEmpty() &&
-                               !m_pBucketEditor->text().isEmpty();
                     break;
             }
         }
@@ -511,9 +369,9 @@ void UIWizardExportAppPageBasic3::refreshCurrentSettings()
         }
         case CloudProvider:
         {
-            m_pLabel->setText(tr("Please complete the additional fields like the username, password, "
-                                 "hostname and the bucket, and provide a filename for the OVF target."));
-            m_pUsernameEditor->setFocus();
+            m_pLabel->setText(tr("Please complete the additional fields and provide a filename for "
+                                 "the OVF target."));
+            m_pLabel->setFocus(); /// @todo fix it!
             break;
         }
     }

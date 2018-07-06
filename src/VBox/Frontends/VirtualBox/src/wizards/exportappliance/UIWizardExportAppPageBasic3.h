@@ -49,6 +49,11 @@ protected:
     /** Updates format combo tool-tips. */
     virtual void updateFormatComboToolTip();
 
+    /** Returns path. */
+    QString path() const;
+    /** Defines @a strPath. */
+    void setPath(const QString &strPath);
+
     /** Returns format. */
     QString format() const;
     /** Defines @a strFormat. */
@@ -59,53 +64,8 @@ protected:
     /** Defines whether manifest @a fSelected. */
     void setManifestSelected(bool fChecked);
 
-    /** Returns user name. */
-    QString username() const;
-    /** Defines @a strUserName. */
-    void setUserName(const QString &strUserName);
-
-    /** Returns password. */
-    QString password() const;
-    /** Defines @a strPassword. */
-    void setPassword(const QString &strPassword);
-
-    /** Returns hostname. */
-    QString hostname() const;
-    /** Defines @a strHostname. */
-    void setHostname(const QString &strHostname);
-
-    /** Returns bucket. */
-    QString bucket() const;
-    /** Defines @a strBucket. */
-    void setBucket(const QString &strBucket);
-
-    /** Returns path. */
-    QString path() const;
-    /** Defines @a strPath. */
-    void setPath(const QString &strPath);
-
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
-
-    /** Holds the username label instance. */
-    QLabel    *m_pUsernameLabel;
-    /** Holds the username editor instance. */
-    QLineEdit *m_pUsernameEditor;
-
-    /** Holds the password label instance. */
-    QLabel    *m_pPasswordLabel;
-    /** Holds the password editor instance. */
-    QLineEdit *m_pPasswordEditor;
-
-    /** Holds the hostname label instance. */
-    QLabel    *m_pHostnameLabel;
-    /** Holds the hostname editor instance. */
-    QLineEdit *m_pHostnameEditor;
-
-    /** Holds the bucket label instance. */
-    QLabel    *m_pBucketLabel;
-    /** Holds the bucket editor instance. */
-    QLineEdit *m_pBucketEditor;
 
     /** Holds the file selector label instance. */
     QLabel    *m_pFileSelectorLabel;
@@ -128,13 +88,9 @@ protected:
 class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAppPage3
 {
     Q_OBJECT;
+    Q_PROPERTY(QString path READ path WRITE setPath);
     Q_PROPERTY(QString format READ format WRITE setFormat);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
-    Q_PROPERTY(QString username READ username WRITE setUserName);
-    Q_PROPERTY(QString password READ password WRITE setPassword);
-    Q_PROPERTY(QString hostname READ hostname WRITE setHostname);
-    Q_PROPERTY(QString bucket READ bucket WRITE setBucket);
-    Q_PROPERTY(QString path READ path WRITE setPath);
 
 public:
 

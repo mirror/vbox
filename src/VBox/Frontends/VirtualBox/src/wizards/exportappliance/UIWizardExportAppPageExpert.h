@@ -40,13 +40,9 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(QStringList machineNames READ machineNames);
     Q_PROPERTY(QStringList machineIDs READ machineIDs);
     Q_PROPERTY(StorageType storageType READ storageType WRITE setStorageType);
+    Q_PROPERTY(QString path READ path WRITE setPath);
     Q_PROPERTY(QString format READ format WRITE setFormat);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
-    Q_PROPERTY(QString username READ username WRITE setUserName);
-    Q_PROPERTY(QString password READ password WRITE setPassword);
-    Q_PROPERTY(QString hostname READ hostname WRITE setHostname);
-    Q_PROPERTY(QString bucket READ bucket WRITE setBucket);
-    Q_PROPERTY(QString path READ path WRITE setPath);
     Q_PROPERTY(ExportAppliancePointer applianceWidget READ applianceWidget);
 
 public:

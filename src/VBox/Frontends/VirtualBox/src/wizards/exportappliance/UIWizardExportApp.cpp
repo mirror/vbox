@@ -165,15 +165,8 @@ QString UIWizardExportApp::uri(bool fWithFile) const
         }
         case CloudProvider:
         {
-            QString strUri("OCI://");
-            if (!field("username").toString().isEmpty())
-                strUri = QString("%1%2").arg(strUri).arg(field("username").toString());
-            if (!field("password").toString().isEmpty())
-                strUri = QString("%1:%2").arg(strUri).arg(field("password").toString());
-            if (!field("username").toString().isEmpty() || !field("password").toString().isEmpty())
-                strUri = QString("%1@").arg(strUri);
-            strUri = QString("%1%2/%3/%4").arg(strUri).arg(field("hostname").toString()).arg(field("bucket").toString()).arg(strPath);
-            return strUri;
+            const QString strUri("OCI://");
+            return QString("%1%2").arg(strUri).arg(strPath);
         }
     }
 
