@@ -698,9 +698,9 @@ UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const
                 return mediumItem;
             }
         }
-        UIMediumItem *result = searchItem(pChild, mediumId);
-        if (result)
-            return result;
+        UIMediumItem *pResult = searchItem(pChild, mediumId);
+        if (pResult)
+            return pResult;
     }
     return 0;
 }
