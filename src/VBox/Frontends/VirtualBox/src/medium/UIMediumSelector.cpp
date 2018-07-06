@@ -476,7 +476,6 @@ void UIMediumSelector::sltAddMedium()
     vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, strDefaultMachineFolder);
 }
 
-
 void UIMediumSelector::sltCreateMedium()
 {
     QString strMachineFolder = QFileInfo(m_strMachineSettingsFilePath).absolutePath();
@@ -484,6 +483,12 @@ void UIMediumSelector::sltCreateMedium()
     if (pDialog->exec())
     {
         repopulateTreeWidget();
+        UIMediumItem *pMediumItem = searchItem(0, pDialog->mediumID());
+        if (pMediumItem)
+        {
+            m_pTreeWidget->setCurrentItem(pMediumItem);
+
+        }
     }
     delete pDialog;
 }
@@ -689,9 +694,13 @@ UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const
         if (mediumItem)
         {
             if (mediumItem->id() == mediumId)
+            {
                 return mediumItem;
+            }
         }
-        searchItem(pChild, mediumId);
+        UIMediumItem *result = searchItem(pChild, mediumId);
+        if (result)
+            return result;
     }
     return 0;
 }
