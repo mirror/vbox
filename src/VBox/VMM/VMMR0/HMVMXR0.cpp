@@ -11887,7 +11887,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         rcStrict = VINF_SUCCESS;
     }
     else
-        AssertMsg(rcStrict == VINF_IEM_RAISED_XCPT, ("Unexpected IEMExecDecodedRdmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_READ, ("Unexpected IEMExecDecodedRdmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     return rcStrict;
 }
@@ -12018,7 +12018,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         rcStrict = VINF_SUCCESS;
     }
     else
-        AssertMsg(rcStrict == VINF_IEM_RAISED_XCPT, ("Unexpected IEMExecDecodedWrmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_WRITE, ("Unexpected IEMExecDecodedWrmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     return rcStrict;
 }
