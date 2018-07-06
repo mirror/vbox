@@ -93,6 +93,8 @@ private:
     QGroupBox *m_pSelectorCnt;
     /** Holds the appliance widget container reference. */
     QGroupBox *m_pApplianceCnt;
+    /** Holds the storage type container instance. */
+    QGroupBox *m_pTypeCnt;
     /** Holds the settings widget container reference. */
     QGroupBox *m_pSettingsCnt;
 };

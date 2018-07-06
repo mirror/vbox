@@ -91,32 +91,19 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
             pMainLayout->addWidget(m_pLabel);
         }
 
-        /* Create storage type container: */
-        m_pTypeCnt = new QGroupBox;
-        if (m_pTypeCnt)
+        /* Create Local LocalFilesystem radio-button: */
+        m_pTypeLocalFilesystem = new QRadioButton;
+        if (m_pTypeLocalFilesystem)
         {
-            /* Create storage type container layout: */
-            QVBoxLayout *pTypeCntLayout = new QVBoxLayout(m_pTypeCnt);
-            if (pTypeCntLayout)
-            {
-                /* Create Local LocalFilesystem radio-button: */
-                m_pTypeLocalFilesystem = new QRadioButton;
-                if (m_pTypeLocalFilesystem)
-                {
-                    /* Add into layout: */
-                    pTypeCntLayout->addWidget(m_pTypeLocalFilesystem);
-                }
-                /* Create CloudProvider radio-button: */
-                m_pTypeCloudServiceProvider = new QRadioButton;
-                if (m_pTypeCloudServiceProvider)
-                {
-                    /* Add into layout: */
-                    pTypeCntLayout->addWidget(m_pTypeCloudServiceProvider);
-                }
-            }
-
             /* Add into layout: */
-            pMainLayout->addWidget(m_pTypeCnt);
+            pMainLayout->addWidget(m_pTypeLocalFilesystem);
+        }
+        /* Create CloudProvider radio-button: */
+        m_pTypeCloudServiceProvider = new QRadioButton;
+        if (m_pTypeCloudServiceProvider)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pTypeCloudServiceProvider);
         }
 
         /* Add vertical stretch: */
@@ -140,13 +127,12 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
 void UIWizardExportAppPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Appliance settings"));
+    setTitle(UIWizardExportApp::tr("Create on"));
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardExportApp::tr("Please choose where to create the virtual appliance. "
                                             "You can create it on your own computer "
                                             "or on one of cloud servers you have registered."));
-    m_pTypeCnt->setTitle(UIWizardExportApp::tr("Create on"));
     m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&This computer"));
     m_pTypeCloudServiceProvider->setText(UIWizardExportApp::tr("&Cloud Service Provider"));
 }

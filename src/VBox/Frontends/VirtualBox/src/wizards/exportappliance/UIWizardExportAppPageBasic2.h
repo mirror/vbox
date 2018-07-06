@@ -44,8 +44,6 @@ protected:
     /** Defines current @a enmStorageType. */
     void setStorageType(StorageType enmStorageType);
 
-    /** Holds the storage type container instance. */
-    QGroupBox    *m_pTypeCnt;
     /** Holds the Local Filesystem radio-button. */
     QRadioButton *m_pTypeLocalFilesystem;
     /** Holds the Cloud Service Provider radio-button. */
