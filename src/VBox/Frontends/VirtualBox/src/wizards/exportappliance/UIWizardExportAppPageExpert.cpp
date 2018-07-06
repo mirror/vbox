@@ -187,12 +187,21 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 5, 0);
                 }
 
+                /* Create advanced label: */
+                m_pAdditionalLabel = new QLabel;
+                if (m_pAdditionalLabel)
+                {
+                    m_pAdditionalLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+                    /* Add into layout: */
+                    pSettingsLayout->addWidget(m_pAdditionalLabel, 6, 0);
+                }
                 /* Create manifest check-box editor: */
                 m_pManifestCheckbox = new QCheckBox;
                 if (m_pManifestCheckbox)
                 {
                     /* Add into layout: */
-                    pSettingsLayout->addWidget(m_pManifestCheckbox, 6, 0, 1, 2);
+                    pSettingsLayout->addWidget(m_pManifestCheckbox, 6, 1);
                 }
             }
 
