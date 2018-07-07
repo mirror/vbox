@@ -171,15 +171,16 @@ static int rtIsoFsUpdatePathCache(PRTISOFSFILE pFile)
     RTISOFSPATHTABLEHEADER header;
     while ((cbLeft > 0) && RT_SUCCESS(rc))
     {
+        AssertReturn(cbLeft >= sizeof(RTISOFSPATHTABLEHEADER), VERR_INVALID_PARAMETER);
         size_t cbRead;
         rc = RTFileRead(pFile->file, (RTISOFSPATHTABLEHEADER*)&header, sizeof(RTISOFSPATHTABLEHEADER), &cbRead);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(rc) || cbRead == 0)
             break;
         cbLeft -= cbRead;
         if (header.length)
         {
-            Assert(cbLeft >= header.length);
-            Assert(header.length <= 31);
+            AssertReturn(cbLeft >= header.length, VERR_INVALID_PARAMETER);
+            AssertReturn(header.length <= 31, VERR_INVALID_PARAMETER);
             /* Allocate and read in the actual path name. */
             char *pszName = RTStrAlloc(header.length + 1);
             rc = RTFileRead(pFile->file, (char*)pszName, header.length, &cbRead);
@@ -200,16 +201,19 @@ static int rtIsoFsUpdatePathCache(PRTISOFSFILE pFile)
         }
     }
 
-    /* Transform path names into full paths. This is a bit ugly right now. */
-    PRTISOFSPATHTABLEENTRY pNode = RTListGetLast(&pFile->listPaths, RTISOFSPATHTABLEENTRY, Node);
-    while (   pNode
-           && !RTListNodeIsFirst(&pFile->listPaths, &pNode->Node)
-           && RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
-        rc = rtIsoFsGetParentPathSub(&pFile->listPaths, pNode,
-                                     pNode->path, &pNode->path_full);
-        if (RT_SUCCESS(rc))
-            pNode = RTListNodeGetPrev(&pNode->Node, RTISOFSPATHTABLEENTRY, Node);
+        /* Transform path names into full paths. This is a bit ugly right now. */
+        PRTISOFSPATHTABLEENTRY pNode = RTListGetLast(&pFile->listPaths, RTISOFSPATHTABLEENTRY, Node);
+        while (   pNode
+               && !RTListNodeIsFirst(&pFile->listPaths, &pNode->Node)
+               && RT_SUCCESS(rc))
+        {
+            rc = rtIsoFsGetParentPathSub(&pFile->listPaths, pNode,
+                                         pNode->path, &pNode->path_full);
+            if (RT_SUCCESS(rc))
+                pNode = RTListNodeGetPrev(&pNode->Node, RTISOFSPATHTABLEENTRY, Node);
+        }
     }
 
     return rc;
