@@ -2243,7 +2243,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
                 if (cbReturned)
                 {
                     BYTE const *pbBuf = SafeArrayBuf.raw();
-                    int vrc;
+                    int vrc = VINF_SUCCESS;
                     if (!fHex)
                         vrc = RTStrmWrite(pOut, pbBuf, cbReturned);
                     else
