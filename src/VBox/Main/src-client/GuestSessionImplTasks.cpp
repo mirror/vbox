@@ -599,7 +599,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSource, const Utf8Str 
  * Main function for copying a file from host to the guest.
  *
  * @return VBox status code.
- * @param  hVfsFIle           The VFS file handle to read from.
+ * @param  hVfsFile           The VFS file handle to read from.
  * @param  dstFile            Guest file (destination) to copy to the guest. Must be in opened and ready state already.
  * @param  fFileCopyFlags     File copy flags.
  * @param  offCopy            Offset (in bytes) where to start copying the source file.
