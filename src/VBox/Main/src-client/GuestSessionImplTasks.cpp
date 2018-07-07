@@ -41,6 +41,7 @@
 #include <iprt/file.h> /* For CopyTo/From. */
 #include <iprt/dir.h>
 #include <iprt/path.h>
+#include <iprt/fsvfs.h>
 
 
 /*********************************************************************************************************************************
@@ -598,13 +599,13 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSource, const Utf8Str 
  * Main function for copying a file from host to the guest.
  *
  * @return VBox status code.
- * @param  phSrcFile          Pointer to host file handle (source) to copy from. Must be in opened and ready state already.
+ * @param  hVfsFIle           The VFS file handle to read from.
  * @param  dstFile            Guest file (destination) to copy to the guest. Must be in opened and ready state already.
  * @param  fFileCopyFlags     File copy flags.
  * @param  offCopy            Offset (in bytes) where to start copying the source file.
  * @param  cbSize             Size (in bytes) to copy from the source file.
  */
-int GuestSessionTask::fileCopyToGuestInner(PRTFILE phSrcFile, ComObjPtr<GuestFile> &dstFile, FileCopyFlag_T fFileCopyFlags,
+int GuestSessionTask::fileCopyToGuestInner(RTVFSFILE hVfsFile, ComObjPtr<GuestFile> &dstFile, FileCopyFlag_T fFileCopyFlags,
                                            uint64_t offCopy, uint64_t cbSize)
 {
     RT_NOREF(fFileCopyFlags);
@@ -620,7 +621,7 @@ int GuestSessionTask::fileCopyToGuestInner(PRTFILE phSrcFile, ComObjPtr<GuestFil
     if (offCopy)
     {
         uint64_t offActual;
-        rc = RTFileSeek(*phSrcFile, offCopy, RTFILE_SEEK_END, &offActual);
+        rc = RTVfsFileSeek(hVfsFile, offCopy, RTFILE_SEEK_END, &offActual);
         if (RT_FAILURE(rc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -634,7 +635,7 @@ int GuestSessionTask::fileCopyToGuestInner(PRTFILE phSrcFile, ComObjPtr<GuestFil
     {
         size_t cbRead;
         const uint32_t cbChunk = RT_MIN(cbToRead, sizeof(byBuf));
-        rc = RTFileRead(*phSrcFile, byBuf, cbChunk, &cbRead);
+        rc = RTVfsFileRead(hVfsFile, byBuf, cbChunk, &cbRead);
         if (RT_FAILURE(rc))
         {
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
@@ -867,17 +868,16 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
 
     if (RT_SUCCESS(rc))
     {
-        RTFILE hSrcFile;
-        rc = RTFileOpen(&hSrcFile, szSrcReal,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE); /** @todo Use the correct open modes! */
+        RTVFSFILE hSrcFile;
+        rc = RTVfsFileOpenNormal(szSrcReal, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hSrcFile); /** @todo Use the correct open modes! */
         if (RT_SUCCESS(rc))
         {
             LogFlowThisFunc(("Copying '%s' to '%s' (%RI64 bytes) ...\n",
                              szSrcReal, strDestFinal.c_str(), srcObjInfo.cbObject));
 
-            rc = fileCopyToGuestInner(&hSrcFile, dstFile, fFileCopyFlags, 0 /* Offset, unused */, srcObjInfo.cbObject);
+            rc = fileCopyToGuestInner(hSrcFile, dstFile, fFileCopyFlags, 0 /* Offset, unused */, srcObjInfo.cbObject);
 
-            int rc2 = RTFileClose(hSrcFile);
+            int rc2 = RTVfsFileRelease(hSrcFile);
             AssertRC(rc2);
         }
         else
@@ -1889,67 +1889,67 @@ int GuestSessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArgu
     return rc;
 }
 
-int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO,
+int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTVFS hVfsIso,
                                                 Utf8Str const &strFileSource, const Utf8Str &strFileDest,
                                                 bool fOptional)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    AssertPtrReturn(pISO, VERR_INVALID_POINTER);
+    AssertReturn(hVfsIso != NIL_RTVFS, VERR_INVALID_POINTER);
 
-    uint32_t cbSrcOffset;
-    size_t cbSrcSize;
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+    int rc = RTVfsFileOpen(hVfsIso, strFileSource.c_str(), RTFILE_O_OPEN | RTFILE_O_READ, &hVfsFile);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cbSrcSize = 0;
+        rc = RTVfsFileGetSize(hVfsFile, &cbSrcSize);
+        if (RT_SUCCESS(rc))
+        {
+            LogRel(("Copying Guest Additions installer file \"%s\" to \"%s\" on guest ...\n",
+                    strFileSource.c_str(), strFileDest.c_str()));
 
-    int rc = RTIsoFsGetFileInfo(pISO, strFileSource.c_str(), &cbSrcOffset, &cbSrcSize);
-    if (RT_FAILURE(rc))
+            GuestFileOpenInfo dstOpenInfo;
+            RT_ZERO(dstOpenInfo);
+            dstOpenInfo.mFileName    = strFileDest;
+            dstOpenInfo.mOpenAction  = FileOpenAction_CreateOrReplace;
+            dstOpenInfo.mAccessMode  = FileAccessMode_WriteOnly;
+            dstOpenInfo.mSharingMode = FileSharingMode_All; /** @todo Use _Read when implemented. */
+
+            ComObjPtr<GuestFile> dstFile; int rcGuest;
+            rc = mSession->i_fileOpen(dstOpenInfo, dstFile, &rcGuest);
+            if (RT_FAILURE(rc))
+            {
+                switch (rc)
+                {
+                    case VERR_GSTCTL_GUEST_ERROR:
+                        setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestFile::i_guestErrorToString(rcGuest));
+                        break;
+
+                    default:
+                        setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                            Utf8StrFmt(GuestSession::tr("Destination file \"%s\" could not be opened: %Rrc"),
+                                                       strFileDest.c_str(), rc));
+                        break;
+                }
+            }
+            else
+            {
+                rc = fileCopyToGuestInner(hVfsFile, dstFile, FileCopyFlag_None, 0 /*cbOffset*/, cbSrcSize);
+
+                int rc2 = dstFile->i_closeFile(&rcGuest);
+                AssertRC(rc2);
+            }
+        }
+
+        RTVfsFileRelease(hVfsFile);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    else
     {
         if (fOptional)
             return VINF_SUCCESS;
 
         return rc;
-    }
-
-    Assert(cbSrcOffset);
-    Assert(cbSrcSize);
-    rc = RTFileSeek(pISO->file, cbSrcOffset, RTFILE_SEEK_BEGIN, NULL);
-    if (RT_SUCCESS(rc))
-    {
-        LogRel(("Copying Guest Additions installer file \"%s\" to \"%s\" on guest ...\n",
-                strFileSource.c_str(), strFileDest.c_str()));
-
-        GuestFileOpenInfo dstOpenInfo;
-        RT_ZERO(dstOpenInfo);
-        dstOpenInfo.mFileName    = strFileDest;
-        dstOpenInfo.mOpenAction  = FileOpenAction_CreateOrReplace;
-        dstOpenInfo.mAccessMode  = FileAccessMode_WriteOnly;
-        dstOpenInfo.mSharingMode = FileSharingMode_All; /** @todo Use _Read when implemented. */
-
-        ComObjPtr<GuestFile> dstFile; int rcGuest;
-        rc = mSession->i_fileOpen(dstOpenInfo, dstFile, &rcGuest);
-        if (RT_FAILURE(rc))
-        {
-            switch (rc)
-            {
-                case VERR_GSTCTL_GUEST_ERROR:
-                    setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestFile::i_guestErrorToString(rcGuest));
-                    break;
-
-                default:
-                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(GuestSession::tr("Destination file \"%s\" could not be opened: %Rrc"),
-                                                   strFileDest.c_str(), rc));
-                    break;
-            }
-        }
-        else
-        {
-            rc = fileCopyToGuestInner(&pISO->file, dstFile, FileCopyFlag_None, cbSrcOffset, cbSrcSize);
-
-            int rc2 = dstFile->i_closeFile(&rcGuest);
-            AssertRC(rc2);
-        }
-
-        if (RT_FAILURE(rc))
-            return rc;
     }
 
     return rc;
@@ -2159,284 +2159,291 @@ int GuestSessionTaskUpdateAdditions::Run(void)
         }
     }
 
-    RTISOFSFILE iso;
     if (RT_SUCCESS(rc))
     {
         /*
          * Try to open the .ISO file to extract all needed files.
          */
-        rc = RTIsoFsOpen(&iso, mSource.c_str());
-        if (RT_FAILURE(rc))
+        RTVFSFILE hVfsFileIso;
+        rc = RTVfsFileOpenNormal(mSource.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hVfsFileIso);
+        if (RT_SUCCESS(rc))
         {
-            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                     Utf8StrFmt(GuestSession::tr("Unable to open Guest Additions .ISO file \"%s\": %Rrc"),
-                                     mSource.c_str(), rc));
-        }
-        else
-        {
-            /* Set default installation directories. */
-            Utf8Str strUpdateDir = "/tmp/";
-            if (osType == eOSType_Windows)
-                 strUpdateDir = "C:\\Temp\\";
-
-            rc = setProgress(5);
-
-            /* Try looking up the Guest Additions installation directory. */
-            if (RT_SUCCESS(rc))
-            {
-                /* Try getting the installed Guest Additions version to know whether we
-                 * can install our temporary Guest Addition data into the original installation
-                 * directory.
-                 *
-                 * Because versions prior to 4.2 had bugs wrt spaces in paths we have to choose
-                 * a different location then.
-                 */
-                bool fUseInstallDir = false;
-
-                Utf8Str strAddsVer;
-                rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/Version", strAddsVer);
-                if (   RT_SUCCESS(rc)
-                    && RTStrVersionCompare(strAddsVer.c_str(), "4.2r80329") > 0)
-                {
-                    fUseInstallDir = true;
-                }
-
-                if (fUseInstallDir)
-                {
-                    if (RT_SUCCESS(rc))
-                        rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/InstallDir", strUpdateDir);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (osType == eOSType_Windows)
-                        {
-                            strUpdateDir.findReplace('/', '\\');
-                            strUpdateDir.append("\\Update\\");
-                        }
-                        else
-                            strUpdateDir.append("/update/");
-                    }
-                }
-            }
-
-            if (RT_SUCCESS(rc))
-                LogRel(("Guest Additions update directory is: %s\n",
-                        strUpdateDir.c_str()));
-
-            /* Create the installation directory. */
-            int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-            rc = pSession->i_directoryCreate(strUpdateDir, 755 /* Mode */, DirectoryCreateFlag_Parents, &rcGuest);
+            RTVFS hVfsIso;
+            rc = RTFsIso9660VolOpen(hVfsFileIso, 0 /*fFlags*/, &hVfsIso, NULL);
             if (RT_FAILURE(rc))
             {
-                switch (rc)
-                {
-                    case VERR_GSTCTL_GUEST_ERROR:
-                        hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestProcess::i_guestErrorToString(rcGuest));
-                        break;
-
-                    default:
-                        hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                 Utf8StrFmt(GuestSession::tr("Error creating installation directory \"%s\" on the guest: %Rrc"),
-                                                            strUpdateDir.c_str(), rc));
-                        break;
-                }
+                hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                         Utf8StrFmt(GuestSession::tr("Unable to open Guest Additions .ISO file \"%s\": %Rrc"),
+                                         mSource.c_str(), rc));
             }
-            if (RT_SUCCESS(rc))
-                rc = setProgress(10);
-
-            if (RT_SUCCESS(rc))
+            else
             {
-                /* Prepare the file(s) we want to copy over to the guest and
-                 * (maybe) want to run. */
-                switch (osType)
+                /* Set default installation directories. */
+                Utf8Str strUpdateDir = "/tmp/";
+                if (osType == eOSType_Windows)
+                     strUpdateDir = "C:\\Temp\\";
+
+                rc = setProgress(5);
+
+                /* Try looking up the Guest Additions installation directory. */
+                if (RT_SUCCESS(rc))
                 {
-                    case eOSType_Windows:
+                    /* Try getting the installed Guest Additions version to know whether we
+                     * can install our temporary Guest Addition data into the original installation
+                     * directory.
+                     *
+                     * Because versions prior to 4.2 had bugs wrt spaces in paths we have to choose
+                     * a different location then.
+                     */
+                    bool fUseInstallDir = false;
+
+                    Utf8Str strAddsVer;
+                    rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/Version", strAddsVer);
+                    if (   RT_SUCCESS(rc)
+                        && RTStrVersionCompare(strAddsVer.c_str(), "4.2r80329") > 0)
                     {
-                        /* Do we need to install our certificates? We do this for W2K and up. */
-                        bool fInstallCert = false;
+                        fUseInstallDir = true;
+                    }
 
-                        /* Only Windows 2000 and up need certificates to be installed. */
-                        if (RTStrVersionCompare(strOSVer.c_str(), "5.0") >= 0)
+                    if (fUseInstallDir)
+                    {
+                        if (RT_SUCCESS(rc))
+                            rc = getGuestProperty(pGuest, "/VirtualBox/GuestAdd/InstallDir", strUpdateDir);
+                        if (RT_SUCCESS(rc))
                         {
-                            fInstallCert = true;
-                            LogRel(("Certificates for auto updating WHQL drivers will be installed\n"));
+                            if (osType == eOSType_Windows)
+                            {
+                                strUpdateDir.findReplace('/', '\\');
+                                strUpdateDir.append("\\Update\\");
+                            }
+                            else
+                                strUpdateDir.append("/update/");
                         }
-                        else
-                            LogRel(("Skipping installation of certificates for WHQL drivers\n"));
+                    }
+                }
 
-                        if (fInstallCert)
+                if (RT_SUCCESS(rc))
+                    LogRel(("Guest Additions update directory is: %s\n",
+                            strUpdateDir.c_str()));
+
+                /* Create the installation directory. */
+                int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+                rc = pSession->i_directoryCreate(strUpdateDir, 755 /* Mode */, DirectoryCreateFlag_Parents, &rcGuest);
+                if (RT_FAILURE(rc))
+                {
+                    switch (rc)
+                    {
+                        case VERR_GSTCTL_GUEST_ERROR:
+                            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestProcess::i_guestErrorToString(rcGuest));
+                            break;
+
+                        default:
+                            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                     Utf8StrFmt(GuestSession::tr("Error creating installation directory \"%s\" on the guest: %Rrc"),
+                                                                strUpdateDir.c_str(), rc));
+                            break;
+                    }
+                }
+                if (RT_SUCCESS(rc))
+                    rc = setProgress(10);
+
+                if (RT_SUCCESS(rc))
+                {
+                    /* Prepare the file(s) we want to copy over to the guest and
+                     * (maybe) want to run. */
+                    switch (osType)
+                    {
+                        case eOSType_Windows:
                         {
-                            static struct { const char *pszDst, *pszIso; } const s_aCertFiles[] =
-                            {
-                                { "vbox.cer",           "CERT/VBOX.CER" },
-                                { "vbox-sha1.cer",      "CERT/VBOX_SHA1.CER" },
-                                { "vbox-sha256.cer",    "CERT/VBOX_SHA256.CER" },
-                                { "vbox-sha256-r3.cer", "CERT/VBOX_SHA256_R3.CER" },
-                                { "oracle-vbox.cer",    "CERT/ORACLE_VBOX.CER" },
-                            };
-                            uint32_t fCopyCertUtil = ISOFILE_FLAG_COPY_FROM_ISO;
-                            for (uint32_t i = 0; i < RT_ELEMENTS(s_aCertFiles); i++)
-                            {
-                                /* Skip if not present on the ISO. */
-                                uint32_t offIgn;
-                                size_t   cbIgn;
-                                rc = RTIsoFsGetFileInfo(&iso, s_aCertFiles[i].pszIso, &offIgn, &cbIgn);
-                                if (RT_FAILURE(rc))
-                                    continue;
+                            /* Do we need to install our certificates? We do this for W2K and up. */
+                            bool fInstallCert = false;
 
-                                /* Copy the certificate certificate. */
-                                Utf8Str const strDstCert(strUpdateDir + s_aCertFiles[i].pszDst);
-                                mFiles.push_back(ISOFile(s_aCertFiles[i].pszIso,
-                                                         strDstCert,
-                                                         ISOFILE_FLAG_COPY_FROM_ISO | ISOFILE_FLAG_OPTIONAL));
+                            /* Only Windows 2000 and up need certificates to be installed. */
+                            if (RTStrVersionCompare(strOSVer.c_str(), "5.0") >= 0)
+                            {
+                                fInstallCert = true;
+                                LogRel(("Certificates for auto updating WHQL drivers will be installed\n"));
+                            }
+                            else
+                                LogRel(("Skipping installation of certificates for WHQL drivers\n"));
 
-                                /* Out certificate installation utility. */
-                                /* First pass: Copy over the file (first time only) + execute it to remove any
-                                 *             existing VBox certificates. */
-                                GuestProcessStartupInfo siCertUtilRem;
-                                siCertUtilRem.mName = "VirtualBox Certificate Utility, removing old VirtualBox certificates";
-                                siCertUtilRem.mArguments.push_back(Utf8Str("remove-trusted-publisher"));
-                                siCertUtilRem.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
-                                siCertUtilRem.mArguments.push_back(strDstCert);
-                                siCertUtilRem.mArguments.push_back(strDstCert);
-                                mFiles.push_back(ISOFile("CERT/VBOXCERTUTIL.EXE",
-                                                         strUpdateDir + "VBoxCertUtil.exe",
-                                                         fCopyCertUtil | ISOFILE_FLAG_EXECUTE | ISOFILE_FLAG_OPTIONAL,
-                                                         siCertUtilRem));
-                                fCopyCertUtil = 0;
-                                /* Second pass: Only execute (but don't copy) again, this time installng the
-                                 *              recent certificates just copied over. */
-                                GuestProcessStartupInfo siCertUtilAdd;
-                                siCertUtilAdd.mName = "VirtualBox Certificate Utility, installing VirtualBox certificates";
-                                siCertUtilAdd.mArguments.push_back(Utf8Str("add-trusted-publisher"));
-                                siCertUtilAdd.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
-                                siCertUtilAdd.mArguments.push_back(strDstCert);
-                                siCertUtilAdd.mArguments.push_back(strDstCert);
-                                mFiles.push_back(ISOFile("CERT/VBOXCERTUTIL.EXE",
-                                                         strUpdateDir + "VBoxCertUtil.exe",
-                                                         ISOFILE_FLAG_EXECUTE | ISOFILE_FLAG_OPTIONAL,
-                                                         siCertUtilAdd));
+                            if (fInstallCert)
+                            {
+                                static struct { const char *pszDst, *pszIso; } const s_aCertFiles[] =
+                                {
+                                    { "vbox.cer",           "CERT/VBOX.CER" },
+                                    { "vbox-sha1.cer",      "CERT/VBOX_SHA1.CER" },
+                                    { "vbox-sha256.cer",    "CERT/VBOX_SHA256.CER" },
+                                    { "vbox-sha256-r3.cer", "CERT/VBOX_SHA256_R3.CER" },
+                                    { "oracle-vbox.cer",    "CERT/ORACLE_VBOX.CER" },
+                                };
+                                uint32_t fCopyCertUtil = ISOFILE_FLAG_COPY_FROM_ISO;
+                                for (uint32_t i = 0; i < RT_ELEMENTS(s_aCertFiles); i++)
+                                {
+                                    /* Skip if not present on the ISO. */
+                                    RTFSOBJINFO ObjInfo;
+                                    rc = RTVfsQueryPathInfo(hVfsIso, s_aCertFiles[i].pszIso, &ObjInfo, RTFSOBJATTRADD_NOTHING,
+                                                            RTPATH_F_ON_LINK);
+                                    if (RT_FAILURE(rc))
+                                        continue;
+
+                                    /* Copy the certificate certificate. */
+                                    Utf8Str const strDstCert(strUpdateDir + s_aCertFiles[i].pszDst);
+                                    mFiles.push_back(ISOFile(s_aCertFiles[i].pszIso,
+                                                             strDstCert,
+                                                             ISOFILE_FLAG_COPY_FROM_ISO | ISOFILE_FLAG_OPTIONAL));
+
+                                    /* Out certificate installation utility. */
+                                    /* First pass: Copy over the file (first time only) + execute it to remove any
+                                     *             existing VBox certificates. */
+                                    GuestProcessStartupInfo siCertUtilRem;
+                                    siCertUtilRem.mName = "VirtualBox Certificate Utility, removing old VirtualBox certificates";
+                                    siCertUtilRem.mArguments.push_back(Utf8Str("remove-trusted-publisher"));
+                                    siCertUtilRem.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
+                                    siCertUtilRem.mArguments.push_back(strDstCert);
+                                    siCertUtilRem.mArguments.push_back(strDstCert);
+                                    mFiles.push_back(ISOFile("CERT/VBOXCERTUTIL.EXE",
+                                                             strUpdateDir + "VBoxCertUtil.exe",
+                                                             fCopyCertUtil | ISOFILE_FLAG_EXECUTE | ISOFILE_FLAG_OPTIONAL,
+                                                             siCertUtilRem));
+                                    fCopyCertUtil = 0;
+                                    /* Second pass: Only execute (but don't copy) again, this time installng the
+                                     *              recent certificates just copied over. */
+                                    GuestProcessStartupInfo siCertUtilAdd;
+                                    siCertUtilAdd.mName = "VirtualBox Certificate Utility, installing VirtualBox certificates";
+                                    siCertUtilAdd.mArguments.push_back(Utf8Str("add-trusted-publisher"));
+                                    siCertUtilAdd.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
+                                    siCertUtilAdd.mArguments.push_back(strDstCert);
+                                    siCertUtilAdd.mArguments.push_back(strDstCert);
+                                    mFiles.push_back(ISOFile("CERT/VBOXCERTUTIL.EXE",
+                                                             strUpdateDir + "VBoxCertUtil.exe",
+                                                             ISOFILE_FLAG_EXECUTE | ISOFILE_FLAG_OPTIONAL,
+                                                             siCertUtilAdd));
+                                }
+                            }
+                            /* The installers in different flavors, as we don't know (and can't assume)
+                             * the guest's bitness. */
+                            mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS_X86.EXE",
+                                                     strUpdateDir + "VBoxWindowsAdditions-x86.exe",
+                                                     ISOFILE_FLAG_COPY_FROM_ISO));
+                            mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS_AMD64.EXE",
+                                                     strUpdateDir + "VBoxWindowsAdditions-amd64.exe",
+                                                     ISOFILE_FLAG_COPY_FROM_ISO));
+                            /* The stub loader which decides which flavor to run. */
+                            GuestProcessStartupInfo siInstaller;
+                            siInstaller.mName = "VirtualBox Windows Guest Additions Installer";
+                            /* Set a running timeout of 5 minutes -- the Windows Guest Additions
+                             * setup can take quite a while, so be on the safe side. */
+                            siInstaller.mTimeoutMS = 5 * 60 * 1000;
+                            siInstaller.mArguments.push_back(Utf8Str("/S")); /* We want to install in silent mode. */
+                            siInstaller.mArguments.push_back(Utf8Str("/l")); /* ... and logging enabled. */
+                            /* Don't quit VBoxService during upgrade because it still is used for this
+                             * piece of code we're in right now (that is, here!) ... */
+                            siInstaller.mArguments.push_back(Utf8Str("/no_vboxservice_exit"));
+                            /* Tell the installer to report its current installation status
+                             * using a running VBoxTray instance via balloon messages in the
+                             * Windows taskbar. */
+                            siInstaller.mArguments.push_back(Utf8Str("/post_installstatus"));
+                            /* Add optional installer command line arguments from the API to the
+                             * installer's startup info. */
+                            rc = addProcessArguments(siInstaller.mArguments, mArguments);
+                            AssertRC(rc);
+                            /* If the caller does not want to wait for out guest update process to end,
+                             * complete the progress object now so that the caller can do other work. */
+                            if (mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly)
+                                siInstaller.mFlags |= ProcessCreateFlag_WaitForProcessStartOnly;
+                            mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS.EXE",
+                                                     strUpdateDir + "VBoxWindowsAdditions.exe",
+                                                     ISOFILE_FLAG_COPY_FROM_ISO | ISOFILE_FLAG_EXECUTE, siInstaller));
+                            break;
+                        }
+                        case eOSType_Linux:
+                            /** @todo Add Linux support. */
+                            break;
+                        case eOSType_Solaris:
+                            /** @todo Add Solaris support. */
+                            break;
+                        default:
+                            AssertReleaseMsgFailed(("Unsupported guest type: %d\n", osType));
+                            break;
+                    }
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    /* We want to spend 40% total for all copying operations. So roughly
+                     * calculate the specific percentage step of each copied file. */
+                    uint8_t uOffset = 20; /* Start at 20%. */
+                    uint8_t uStep = 40 / (uint8_t)mFiles.size(); Assert(mFiles.size() <= 10);
+
+                    LogRel(("Copying over Guest Additions update files to the guest ...\n"));
+
+                    std::vector<ISOFile>::const_iterator itFiles = mFiles.begin();
+                    while (itFiles != mFiles.end())
+                    {
+                        if (itFiles->fFlags & ISOFILE_FLAG_COPY_FROM_ISO)
+                        {
+                            bool fOptional = false;
+                            if (itFiles->fFlags & ISOFILE_FLAG_OPTIONAL)
+                                fOptional = true;
+                            rc = copyFileToGuest(pSession, hVfsIso, itFiles->strSource, itFiles->strDest, fOptional);
+                            if (RT_FAILURE(rc))
+                            {
+                                hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                                         Utf8StrFmt(GuestSession::tr("Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
+                                                                    itFiles->strSource.c_str(), itFiles->strDest.c_str(), rc));
+                                break;
                             }
                         }
-                        /* The installers in different flavors, as we don't know (and can't assume)
-                         * the guest's bitness. */
-                        mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS_X86.EXE",
-                                                 strUpdateDir + "VBoxWindowsAdditions-x86.exe",
-                                                 ISOFILE_FLAG_COPY_FROM_ISO));
-                        mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS_AMD64.EXE",
-                                                 strUpdateDir + "VBoxWindowsAdditions-amd64.exe",
-                                                 ISOFILE_FLAG_COPY_FROM_ISO));
-                        /* The stub loader which decides which flavor to run. */
-                        GuestProcessStartupInfo siInstaller;
-                        siInstaller.mName = "VirtualBox Windows Guest Additions Installer";
-                        /* Set a running timeout of 5 minutes -- the Windows Guest Additions
-                         * setup can take quite a while, so be on the safe side. */
-                        siInstaller.mTimeoutMS = 5 * 60 * 1000;
-                        siInstaller.mArguments.push_back(Utf8Str("/S")); /* We want to install in silent mode. */
-                        siInstaller.mArguments.push_back(Utf8Str("/l")); /* ... and logging enabled. */
-                        /* Don't quit VBoxService during upgrade because it still is used for this
-                         * piece of code we're in right now (that is, here!) ... */
-                        siInstaller.mArguments.push_back(Utf8Str("/no_vboxservice_exit"));
-                        /* Tell the installer to report its current installation status
-                         * using a running VBoxTray instance via balloon messages in the
-                         * Windows taskbar. */
-                        siInstaller.mArguments.push_back(Utf8Str("/post_installstatus"));
-                        /* Add optional installer command line arguments from the API to the
-                         * installer's startup info. */
-                        rc = addProcessArguments(siInstaller.mArguments, mArguments);
-                        AssertRC(rc);
-                        /* If the caller does not want to wait for out guest update process to end,
-                         * complete the progress object now so that the caller can do other work. */
-                        if (mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly)
-                            siInstaller.mFlags |= ProcessCreateFlag_WaitForProcessStartOnly;
-                        mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS.EXE",
-                                                 strUpdateDir + "VBoxWindowsAdditions.exe",
-                                                 ISOFILE_FLAG_COPY_FROM_ISO | ISOFILE_FLAG_EXECUTE, siInstaller));
-                        break;
-                    }
-                    case eOSType_Linux:
-                        /** @todo Add Linux support. */
-                        break;
-                    case eOSType_Solaris:
-                        /** @todo Add Solaris support. */
-                        break;
-                    default:
-                        AssertReleaseMsgFailed(("Unsupported guest type: %d\n", osType));
-                        break;
-                }
-            }
 
-            if (RT_SUCCESS(rc))
-            {
-                /* We want to spend 40% total for all copying operations. So roughly
-                 * calculate the specific percentage step of each copied file. */
-                uint8_t uOffset = 20; /* Start at 20%. */
-                uint8_t uStep = 40 / (uint8_t)mFiles.size(); Assert(mFiles.size() <= 10);
-
-                LogRel(("Copying over Guest Additions update files to the guest ...\n"));
-
-                std::vector<ISOFile>::const_iterator itFiles = mFiles.begin();
-                while (itFiles != mFiles.end())
-                {
-                    if (itFiles->fFlags & ISOFILE_FLAG_COPY_FROM_ISO)
-                    {
-                        bool fOptional = false;
-                        if (itFiles->fFlags & ISOFILE_FLAG_OPTIONAL)
-                            fOptional = true;
-                        rc = copyFileToGuest(pSession, &iso, itFiles->strSource, itFiles->strDest, fOptional);
+                        rc = setProgress(uOffset);
                         if (RT_FAILURE(rc))
+                            break;
+                        uOffset += uStep;
+
+                        ++itFiles;
+                    }
+                }
+
+                /* Done copying, close .ISO file. */
+                RTVfsRelease(hVfsIso);
+
+                if (RT_SUCCESS(rc))
+                {
+                    /* We want to spend 35% total for all copying operations. So roughly
+                     * calculate the specific percentage step of each copied file. */
+                    uint8_t uOffset = 60; /* Start at 60%. */
+                    uint8_t uStep = 35 / (uint8_t)mFiles.size(); Assert(mFiles.size() <= 10);
+
+                    LogRel(("Executing Guest Additions update files ...\n"));
+
+                    std::vector<ISOFile>::iterator itFiles = mFiles.begin();
+                    while (itFiles != mFiles.end())
+                    {
+                        if (itFiles->fFlags & ISOFILE_FLAG_EXECUTE)
                         {
-                            hr = setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                     Utf8StrFmt(GuestSession::tr("Error while copying file \"%s\" to \"%s\" on the guest: %Rrc"),
-                                                                itFiles->strSource.c_str(), itFiles->strDest.c_str(), rc));
-                            break;
+                            rc = runFileOnGuest(pSession, itFiles->mProcInfo);
+                            if (RT_FAILURE(rc))
+                                break;
                         }
-                    }
 
-                    rc = setProgress(uOffset);
-                    if (RT_FAILURE(rc))
-                        break;
-                    uOffset += uStep;
-
-                    ++itFiles;
-                }
-            }
-
-            /* Done copying, close .ISO file. */
-            RTIsoFsClose(&iso);
-
-            if (RT_SUCCESS(rc))
-            {
-                /* We want to spend 35% total for all copying operations. So roughly
-                 * calculate the specific percentage step of each copied file. */
-                uint8_t uOffset = 60; /* Start at 60%. */
-                uint8_t uStep = 35 / (uint8_t)mFiles.size(); Assert(mFiles.size() <= 10);
-
-                LogRel(("Executing Guest Additions update files ...\n"));
-
-                std::vector<ISOFile>::iterator itFiles = mFiles.begin();
-                while (itFiles != mFiles.end())
-                {
-                    if (itFiles->fFlags & ISOFILE_FLAG_EXECUTE)
-                    {
-                        rc = runFileOnGuest(pSession, itFiles->mProcInfo);
+                        rc = setProgress(uOffset);
                         if (RT_FAILURE(rc))
                             break;
+                        uOffset += uStep;
+
+                        ++itFiles;
                     }
+                }
 
-                    rc = setProgress(uOffset);
-                    if (RT_FAILURE(rc))
-                        break;
-                    uOffset += uStep;
-
-                    ++itFiles;
+                if (RT_SUCCESS(rc))
+                {
+                    LogRel(("Automatic update of Guest Additions succeeded\n"));
+                    rc = setProgressSuccess();
                 }
             }
 
-            if (RT_SUCCESS(rc))
-            {
-                LogRel(("Automatic update of Guest Additions succeeded\n"));
-                rc = setProgressSuccess();
-            }
+            RTVfsFileRelease(hVfsFileIso);
         }
     }
 

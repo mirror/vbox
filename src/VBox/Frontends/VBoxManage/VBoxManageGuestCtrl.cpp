@@ -39,7 +39,6 @@
 #include <iprt/asm.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
-#include <iprt/isofs.h>
 #include <iprt/getopt.h>
 #include <iprt/list.h>
 #include <iprt/path.h>

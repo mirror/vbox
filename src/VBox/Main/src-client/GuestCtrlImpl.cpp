@@ -41,7 +41,6 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
-#include <iprt/isofs.h>
 #include <iprt/list.h>
 #include <iprt/path.h>
 #include <VBox/vmm/pgm.h>

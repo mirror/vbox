@@ -25,8 +25,7 @@
 #include "GuestSessionImpl.h"
 #include "ThreadTask.h"
 
-#include <iprt/isofs.h> /* For UpdateAdditions. */
-#include <iprt/fs.h> /* For PCRTFSOBJINFO. */
+#include <iprt/vfs.h>
 
 #include <vector>
 
@@ -195,7 +194,7 @@ protected:
     int fileCopyFromGuestInner(ComObjPtr<GuestFile> &srcFile, PRTFILE phDstFile, FileCopyFlag_T fFileCopyFlags,
                                uint64_t offCopy, uint64_t cbSize);
     int fileCopyFromGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
-    int fileCopyToGuestInner(PRTFILE phSrcFile, ComObjPtr<GuestFile> &dstFile, FileCopyFlag_T fFileCopyFlags,
+    int fileCopyToGuestInner(RTVFSFILE hSrcFile, ComObjPtr<GuestFile> &dstFile, FileCopyFlag_T fFileCopyFlags,
                              uint64_t offCopy, uint64_t cbSize);
 
     int fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &strDest, FileCopyFlag_T fFileCopyFlags);
@@ -363,7 +362,7 @@ protected:
     };
 
     int addProcessArguments(ProcessArguments &aArgumentsDest, const ProcessArguments &aArgumentsSource);
-    int copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO, Utf8Str const &strFileSource, const Utf8Str &strFileDest, bool fOptional);
+    int copyFileToGuest(GuestSession *pSession, RTVFS hVfsIso, Utf8Str const &strFileSource, const Utf8Str &strFileDest, bool fOptional);
     int runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo);
 
     /** Files to handle. */
