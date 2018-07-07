@@ -5819,6 +5819,7 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
   </sect1>
 
 
+  <xi:include href="user_man_VBoxManage-mediumio.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-debugvm.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-extpack.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-unattended.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />

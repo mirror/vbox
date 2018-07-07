@@ -217,6 +217,17 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
  * @sa CHECK_ERROR2_BREAK, CHECK_ERROR2_EX
  */
 #define CHECK_ERROR2I_BREAK(iface, method)          CHECK_ERROR2_EX(HRESULT, hrcCheck, iface, method, break)
+/**
+ * Simplified version of CHECK_ERROR2_EX that executes the |stmt;break|
+ * statements after error reporting and that uses an internal variable
+ * |hrcCheck| for holding the result.
+ *
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @param   stmt        Statement to be executed after reporting failures.
+ * @sa CHECK_ERROR2_BREAK, CHECK_ERROR2_EX
+ */
+#define CHECK_ERROR2I_BREAK_STMT(iface, method, stmt) CHECK_ERROR2_EX(HRESULT, hrcCheck, iface, method, stmt; break)
 
 
 /**

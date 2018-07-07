@@ -74,6 +74,8 @@
 #define USAGE_SHAREDFOLDER          (RT_BIT_64(25) | RT_BIT_64(26))
 #define USAGE_SHAREDFOLDER_ADD      RT_BIT_64(25)
 #define USAGE_SHAREDFOLDER_REMOVE   RT_BIT_64(26)
+#define USAGE_UNATTENDED            RT_BIT_64(27)
+#define USAGE_MEDIUMIO              RT_BIT_64(28)
 #define USAGE_LOADSYMS              RT_BIT_64(29)
 #define USAGE_LOADMAP               RT_BIT_64(30)
 #define USAGE_SETHDUUID             RT_BIT_64(31)
@@ -134,7 +136,6 @@
 # define USAGE_GSTCTRL_WATCH        RT_BIT(14)
 #endif
 
-#define USAGE_UNATTENDEDINSTALL     RT_BIT(27)
 
 typedef uint64_t USAGECATEGORY;
 
@@ -297,6 +298,7 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                        bool fOptLong);
 RTEXITCODE handleShowMediumInfo(HandlerArg *a);
 RTEXITCODE handleCloseMedium(HandlerArg *a);
+RTEXITCODE handleMediumIO(HandlerArg *a);
 int parseMediumType(const char *psz, MediumType_T *penmMediumType);
 int parseBool(const char *psz, bool *pb);
 

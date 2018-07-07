@@ -41,6 +41,16 @@
 #include "VBoxManage.h"
 using namespace com;
 
+/** Medium category. */
+typedef enum MEDIUMCATEGORY
+{
+    MEDIUMCATEGORY_NONE = 0,
+    MEDIUMCATEGORY_DISK,
+    MEDIUMCATEGORY_DVD,
+    MEDIUMCATEGORY_FLOPPY
+} MEDIUMCATEGORY;
+
+
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -1939,6 +1949,439 @@ RTEXITCODE handleCheckMediumPassword(HandlerArg *a)
     if (SUCCEEDED(rc))
         RTPrintf("The given password is correct\n");
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/*********************************************************************************************************************************
+*   The mediumio command                                                                                                         *
+*********************************************************************************************************************************/
+
+/**
+ * Common MediumIO options.
+ */
+typedef struct MEDIUMIOCOMMONOPT
+{
+    const char     *pszFilenameOrUuid;
+    DeviceType_T    enmDeviceType;
+    const char     *pszPasswordFile;
+} MEDIUMIOCOMMONOPT;
+typedef MEDIUMIOCOMMONOPT *PMEDIUMIOCOMMONOPT;
+typedef MEDIUMIOCOMMONOPT const *PCMEDIUMIOCOMMONOPT;
+
+/* For RTGETOPTDEF array initializer. */
+#define MEDIUMIOCOMMONOPT_DEFS() \
+    { "--disk",          'd', RTGETOPT_REQ_STRING }, \
+    { "--harddisk",      'd', RTGETOPT_REQ_STRING }, \
+    { "disk",            'd', RTGETOPT_REQ_STRING }, \
+    { "harddisk",        'd', RTGETOPT_REQ_STRING }, \
+    { "--dvd",           'D', RTGETOPT_REQ_STRING }, \
+    { "--iso",           'D', RTGETOPT_REQ_STRING }, \
+    { "dvd",             'D', RTGETOPT_REQ_STRING }, \
+    { "iso",             'D', RTGETOPT_REQ_STRING }, \
+    { "--floppy",        'f', RTGETOPT_REQ_STRING }, \
+    { "floppy",          'f', RTGETOPT_REQ_STRING }, \
+    { "--password-file", 'P', RTGETOPT_REQ_STRING }
+
+/* For option switch. */
+#define MEDIUMIOCOMMONOPT_CASES(a_pCommonOpts) \
+    case 'd': \
+        (a_pCommonOpts)->enmDeviceType     = DeviceType_HardDisk; \
+        (a_pCommonOpts)->pszFilenameOrUuid = ValueUnion.psz; \
+        break; \
+    case 'D': \
+        (a_pCommonOpts)->enmDeviceType     = DeviceType_DVD; \
+        (a_pCommonOpts)->pszFilenameOrUuid = ValueUnion.psz; \
+        break; \
+    case 'f': \
+        (a_pCommonOpts)->enmDeviceType     = DeviceType_Floppy; \
+        (a_pCommonOpts)->pszFilenameOrUuid = ValueUnion.psz; \
+        break; \
+    case 'P': \
+        (a_pCommonOpts)->pszPasswordFile = ValueUnion.psz; \
+        break
+
+
+/**
+ * Worker for mediumio operations that returns a IMediumIO for the specified
+ * medium.
+ *
+ * @returns Exit code.
+ * @param   pHandler        The handler state structure (for IVirtualBox).
+ * @param   pCommonOpts     Common mediumio options.
+ * @param   fWritable       Whether to open writable (true) or read only
+ *                          (false).
+ * @param   rPtrMediumIO    Where to return the IMediumIO pointer.
+ * @param   pcbMedium       Where to return the meidum size. Optional.
+ */
+static RTEXITCODE mediumIOOpenMediumForIO(HandlerArg *pHandler, PCMEDIUMIOCOMMONOPT pCommonOpts, bool fWritable,
+                                          ComPtr<IMediumIO> &rPtrMediumIO, uint64_t *pcbMedium = NULL)
+{
+    /* Clear returns. */
+    if (pcbMedium)
+        *pcbMedium = 0;
+    rPtrMediumIO.setNull();
+
+    /*
+     * Make sure a medium was specified already.
+     */
+    if (pCommonOpts->enmDeviceType == MEDIUMCATEGORY_NONE)
+        return errorSyntax("No medium specified!");
+
+    /*
+     * Read the password.
+     */
+    Bstr bstrPassword;
+    if (pCommonOpts->pszPasswordFile)
+    {
+        Utf8Str strPassword;
+        RTEXITCODE rcExit;
+        if (pCommonOpts->pszPasswordFile[0] == '-' && pCommonOpts->pszPasswordFile[1] == '\0')
+            rcExit = readPasswordFromConsole(&strPassword, "Enter encryption password:");
+        else
+            rcExit = readPasswordFile(pCommonOpts->pszPasswordFile, &strPassword);
+        if (rcExit != RTEXITCODE_SUCCESS)
+            return rcExit;
+        bstrPassword = strPassword;
+        strPassword.assign(strPassword.length(), '*');
+    }
+
+    /*
+     * Open the medium and then get I/O access to it.
+     */
+    ComPtr<IMedium> ptrMedium;
+    HRESULT hrc = openMedium(pHandler, pCommonOpts->pszFilenameOrUuid, pCommonOpts->enmDeviceType,
+                             fWritable ? AccessMode_ReadWrite : AccessMode_ReadOnly,
+                             ptrMedium, false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    if (SUCCEEDED(hrc))
+        CHECK_ERROR2I_STMT(ptrMedium, OpenForIO(fWritable, bstrPassword.raw(), rPtrMediumIO.asOutParam()), hrc = hrcCheck);
+
+    /*
+     * If the size is requested get it after we've opened it.
+     */
+    if (pcbMedium && SUCCEEDED(hrc))
+    {
+        LONG64 cbLogical = 0;
+        CHECK_ERROR2I_STMT(ptrMedium, COMGETTER(LogicalSize)(&cbLogical), hrc = hrcCheck);
+        *pcbMedium = cbLogical;
+        if (!SUCCEEDED(hrc))
+            rPtrMediumIO.setNull();
+    }
+
+    memset(bstrPassword.mutableRaw(), '*', bstrPassword.length() * sizeof(RTUTF16));
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/**
+ * mediumio formatfat
+ */
+static RTEXITCODE handleMediumIOFormatFat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOPT pCommonOpts)
+{
+    /*
+     * Parse the options.
+     */
+    bool fQuick = false;
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        MEDIUMIOCOMMONOPT_DEFS(),
+        { "--quick",  'q', RTGETOPT_REQ_NOTHING },
+    };
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRC(rc);
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            MEDIUMIOCOMMONOPT_CASES(pCommonOpts);
+
+            case 'q':
+                fQuick = true;
+                break;
+
+            default:
+                return errorGetOpt(rc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Open the medium for I/O and format it.
+     */
+    ComPtr<IMediumIO> ptrMediumIO;
+    RTEXITCODE rcExit = mediumIOOpenMediumForIO(a, pCommonOpts, true /*fWritable*/, ptrMediumIO);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+    CHECK_ERROR2I_RET(ptrMediumIO, FormatFAT(fQuick), RTEXITCODE_FAILURE);
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * mediumio cat
+ */
+static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOPT pCommonOpts)
+{
+    /*
+     * Parse the options.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        MEDIUMIOCOMMONOPT_DEFS(),
+        { "--hex",      'H', RTGETOPT_REQ_NOTHING },
+        { "--offset",   'o', RTGETOPT_REQ_UINT64  },
+        { "--output",   'O', RTGETOPT_REQ_UINT64  },
+        { "--size",     's', RTGETOPT_REQ_UINT64  },
+    };
+    bool        fHex      = false;
+    uint64_t    off       = 0;
+    const char *pszOutput = NULL;
+    uint64_t    cb        = UINT64_MAX;
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRC(rc);
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            MEDIUMIOCOMMONOPT_CASES(pCommonOpts);
+
+            case 'H':
+                fHex = true;
+                break;
+
+            case 'o':
+                off = ValueUnion.u64;
+                break;
+
+            case 'O':
+                pszOutput = ValueUnion.psz;
+                break;
+
+            case 's':
+                cb = ValueUnion.u64;
+                break;
+
+            default:
+                return errorGetOpt(rc, &ValueUnion);
+        }
+    }
+
+    /*
+     * Open the medium for I/O.
+     */
+    ComPtr<IMediumIO>   ptrMediumIO;
+    uint64_t            cbMedium;
+    RTEXITCODE rcExit = mediumIOOpenMediumForIO(a, pCommonOpts, false /*fWritable*/, ptrMediumIO, &cbMedium);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /*
+         * Do we have an output file or do we write to stdout?
+         */
+        PRTSTREAM pOut = NULL;
+        if (pszOutput && (pszOutput[0] != '-' || pszOutput[1] != '\0'))
+        {
+            int vrc = RTStrmOpen(pszOutput, fHex ? "wt" : "wb", &pOut);
+            if (RT_FAILURE(vrc))
+                rcExit = RTMsgErrorExitFailure("Error opening '%s' for writing: %Rrc", pszOutput, vrc);
+        }
+        else
+        {
+            pOut = g_pStdOut;
+            if (!fHex)
+                RTStrmSetMode(pOut, true, -1);
+        }
+
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            /*
+             * Adjust 'cb' now that we've got the medium size.
+             */
+            if (off >= cbMedium)
+            {
+                RTMsgWarning("Specified offset (%#RX64) is beyond the end of the medium (%#RX64)", off, cbMedium);
+                cb = 0;
+            }
+            else if (   cb > cbMedium
+                     || cb + off > cbMedium)
+                cb = cbMedium - off;
+
+            /*
+             * Hex dump preps.  (The duplication detection is making ASSUMPTIONS about
+             * all the reads being a multiple of cchWidth, except for the final one.)
+             */
+            char           abHexBuf[16]   = { 0 };
+            size_t         cbHexBuf       = 0;
+            unsigned const cchWidth       = RT_ELEMENTS(abHexBuf);
+            uint64_t const offEndDupCheck = cb - cchWidth;
+            uint64_t       cDuplicates    = 0;
+
+            /*
+             * Do the reading.
+             */
+            while (cb > 0)
+            {
+                char szLine[32 + cchWidth * 4 + 32];
+
+                /* Do the reading. */
+                uint32_t const  cbToRead = (uint32_t)RT_MIN(cb, _128K);
+                SafeArray<BYTE> SafeArrayBuf;
+                HRESULT hrc = ptrMediumIO->Read(off, cbToRead, ComSafeArrayAsOutParam(SafeArrayBuf));
+                if (FAILED(hrc))
+                {
+                    RTStrPrintf(szLine, sizeof(szLine), "Read(%zu bytes at %#RX64)", cbToRead, off);
+                    com::GlueHandleComError(ptrMediumIO, szLine, hrc, __FILE__, __LINE__);
+                    break;
+                }
+
+                /* Output the data. */
+                size_t const cbReturned = SafeArrayBuf.size();
+                if (cbReturned)
+                {
+                    BYTE const *pbBuf = SafeArrayBuf.raw();
+                    int vrc;
+                    if (!fHex)
+                        vrc = RTStrmWrite(pOut, pbBuf, cbReturned);
+                    else
+                    {
+                        /* hexdump -C */
+                        uint64_t        offHex    = off;
+                        uint64_t const  offHexEnd = off + cb;
+                        while (offHex < offHexEnd)
+                        {
+                            if (   offHex >= offEndDupCheck
+                                || cbHexBuf == 0
+                                || memcmp(pbBuf, abHexBuf, cchWidth) != 0
+                                || (   cDuplicates == 0
+                                    && (   offHex + cchWidth >= offEndDupCheck
+                                        || memcmp(pbBuf + cchWidth, pbBuf, cchWidth) != 0)) )
+                            {
+                                if (cDuplicates > 0)
+                                {
+                                    RTStrmPrintf(pOut, "**********  <ditto x %RU64>\n", cDuplicates);
+                                    cDuplicates = 0;
+                                }
+
+                                size_t   cch = RTStrPrintf(szLine, sizeof(szLine), "%012RX64:", offHex);
+                                unsigned i;
+                                for (i = 0; i < cchWidth && offHex + i < offHexEnd; i++)
+                                {
+                                    static const char s_szHexDigits[17] = "0123456789abcdef";
+                                    szLine[cch++] = (i & 7) || i == 0 ? ' ' : '-';
+                                    uint8_t const u8 = pbBuf[i];
+                                    szLine[cch++] = s_szHexDigits[u8 >> 4];
+                                    szLine[cch++] = s_szHexDigits[u8 & 0xf];
+                                }
+                                while (i++ < cchWidth)
+                                {
+                                    szLine[cch++] = ' ';
+                                    szLine[cch++] = ' ';
+                                    szLine[cch++] = ' ';
+                                }
+                                szLine[cch++] = ' ';
+
+                                for (i = 0; i < cchWidth && offHex + i < offHexEnd; i++)
+                                {
+                                    uint8_t const u8 = pbBuf[i];
+                                    szLine[cch++] = u8 < 127 && u8 >= 32 ? u8 : '.';
+                                }
+                                szLine[cch++] = '\n';
+                                szLine[cch]   = '\0';
+
+                                vrc = RTStrmWrite(pOut, szLine, cch);
+                                if (RT_FAILURE(vrc))
+                                    break;
+
+
+                                /* copy bytes over to the duplication detection buffer. */
+                                cbHexBuf = (size_t)RT_MIN(cchWidth, offHexEnd - offHex);
+                                memcpy(abHexBuf, pbBuf, cbHexBuf);
+                            }
+                            else
+                                cDuplicates++;
+
+                            /* Advance to next line. */
+                            pbBuf  += cchWidth;
+                            offHex += cchWidth;
+                        }
+                    }
+                    if (RT_FAILURE(vrc))
+                    {
+                        rcExit = RTMsgErrorExitFailure("Error writing to '%s': %Rrc", pszOutput, vrc);
+                        break;
+                    }
+                }
+
+                /* Advance. */
+                if (cbReturned != cbToRead)
+                {
+                    rcExit = RTMsgErrorExitFailure("Expected read() at offset %RU64 (%#RX64) to return %#zx bytes, only got %#zx!\n",
+                                                   off, off, cbReturned, cbToRead);
+                    break;
+                }
+                off += cbReturned;
+                cb  -= cbReturned;
+            }
+
+            /*
+             * Close output.
+             */
+            if (pOut != g_pStdOut)
+            {
+                int vrc = RTStrmClose(pOut);
+                if (RT_FAILURE(vrc))
+                    rcExit = RTMsgErrorExitFailure("Error closing '%s': %Rrc", pszOutput, vrc);
+            }
+            else if (!fHex)
+                RTStrmSetMode(pOut, false, -1);
+        }
+    }
+    return rcExit;
+}
+
+
+RTEXITCODE handleMediumIO(HandlerArg *a)
+{
+    /*
+     * Parse image-option and sub-command.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        MEDIUMIOCOMMONOPT_DEFS(),
+        /* sub-commands */
+        { "formatfat",  1000, RTGETOPT_REQ_NOTHING },
+        { "cat",        1001, RTGETOPT_REQ_NOTHING },
+    };
+    MEDIUMIOCOMMONOPT   CommonOpts = { NULL, DeviceType_Null, NULL };
+
+    RTGETOPTSTATE       GetState;
+    int rc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    AssertRC(rc);
+    RTGETOPTUNION       ValueUnion;
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            MEDIUMIOCOMMONOPT_CASES(&CommonOpts);
+
+            /* Sub-commands: */
+            case 1000:
+                setCurrentSubcommand(HELP_SCOPE_MEDIUMIO_FORMATFAT);
+                return handleMediumIOFormatFat(a, GetState.iNext, &CommonOpts);
+            case 1001:
+                setCurrentSubcommand(HELP_SCOPE_MEDIUMIO_CAT);
+                return handleMediumIOCat(a, GetState.iNext, &CommonOpts);
+
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+
+            default:
+                return errorGetOpt(rc, &ValueUnion);
+        }
+    }
+    return errorNoSubcommand();
 }
 
 #endif /* !VBOX_ONLY_DOCS */
