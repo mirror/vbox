@@ -30,6 +30,7 @@
 
 #include <iprt/fsvfs.h>
 #include <iprt/dvm.h>
+#include <iprt/cpp/utils.h>
 
 
 /*********************************************************************************************************************************
@@ -40,11 +41,11 @@
  */
 struct MediumIO::Data
 {
-    Data(Medium * const a_pMedium = NULL, bool a_fWritable = false, uint32_t a_cbSector = 512)
+    Data(Medium * const a_pMedium, bool a_fWritable, uint32_t a_cbSector = 512)
         : ptrMedium(a_pMedium)
         , fWritable(a_fWritable)
         , cbSector(a_cbSector)
-        , SecretKeyStore(false /*fKeyBufNonPageable*/)
+        , PasswordStore(false /*fKeyBufNonPageable*/)
         , pHdd(NULL)
         , hVfsFile(NIL_RTVFSFILE)
     {
@@ -57,7 +58,7 @@ struct MediumIO::Data
     /** The sector size. */
     uint32_t                        cbSector;
     /** Secret key store used to hold the passwords for encrypted medium. */
-    SecretKeyStore                  SecretKeyStore;
+    SecretKeyStore                  PasswordStore;
     /** Crypto filter settings. */
     MediumCryptoFilterSettings      CryptoSettings;
     /** Medium lock list.  */
@@ -66,6 +67,9 @@ struct MediumIO::Data
     PVDISK                          pHdd;
     /** VFS file for the HDD instance. */
     RTVFSFILE                       hVfsFile;
+
+private:
+    Data() : PasswordStore(false) { }
 };
 
 
@@ -128,8 +132,8 @@ HRESULT MediumIO::initForMedium(Medium *pMedium, bool fWritable, com::Utf8Str co
          */
         if (rStrKeyId.isNotEmpty())
         {
-            int vrc = m->SecretKeyStore.addSecretKey(rStrKeyId, (const uint8_t *)rStrPassword.c_str(),
-                                                     rStrPassword.length() + 1 /*including the Schwarzenegger character*/);
+            int vrc = m->PasswordStore.addSecretKey(rStrKeyId, (const uint8_t *)rStrPassword.c_str(),
+                                                    rStrPassword.length() + 1 /*including the Schwarzenegger character*/);
             if (vrc == VERR_NO_MEMORY)
                 hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate enough secure memory for the key/password"));
             else if (RT_FAILURE(vrc))
@@ -141,7 +145,7 @@ HRESULT MediumIO::initForMedium(Medium *pMedium, bool fWritable, com::Utf8Str co
          */
         if (SUCCEEDED(hrc))
         {
-            hrc = pMedium->i_openHddForIO(fWritable, &m->SecretKeyStore, &m->pHdd, &m->LockList, &m->CryptoSettings);
+            hrc = pMedium->i_openHddForIO(fWritable, &m->PasswordStore, &m->pHdd, &m->LockList, &m->CryptoSettings);
             if (SUCCEEDED(hrc))
             {
                 int vrc = VDCreateVfsFileFromDisk(m->pHdd, 0 /*fFlags*/, &m->hVfsFile);
@@ -325,8 +329,8 @@ HRESULT MediumIO::formatFAT(BOOL a_fQuick)
      */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     RTERRINFOSTATIC ErrInfo;
-    int vrc = RTFsFatVolFormat(m->hVfsFile, 0, 0, a_fQuick ? RTFSFATVOL_FMT_F_QUICK : RTFSFATVOL_FMT_F_FULL, m->cbSector, 0,
-                               RTFSFATTYPE_INVALID, 0, 0, 0, 0, 0, RTErrInfoInitStatic(&ErrInfo));
+    int vrc = RTFsFatVolFormat(m->hVfsFile, 0, 0, a_fQuick ? RTFSFATVOL_FMT_F_QUICK : RTFSFATVOL_FMT_F_FULL,
+                               (uint16_t)m->cbSector, 0, RTFSFATTYPE_INVALID, 0, 0, 0, 0, 0, RTErrInfoInitStatic(&ErrInfo));
     alock.release();
 
     /*
@@ -429,6 +433,6 @@ void MediumIO::i_close()
 
     m->LockList.Clear();
     m->ptrMedium.setNull();
-    m->SecretKeyStore.deleteAllSecretKeys(false /* fSuspend */, true /* fForce */);
+    m->PasswordStore.deleteAllSecretKeys(false /* fSuspend */, true /* fForce */);
 }
 
