@@ -44,39 +44,47 @@ void GluePrintErrorInfo(const com::ErrorInfo &info)
     bool haveInterfaceID = info.isFullAvailable();
 #endif
 
-    Utf8Str str;
-    RTCList<Utf8Str> comp;
-
-    Bstr bstrDetailsText = info.getText();
-    if (!bstrDetailsText.isEmpty())
-        str = Utf8StrFmt("%ls\n",
-                         bstrDetailsText.raw());
-    if (haveResultCode)
-        comp.append(Utf8StrFmt("code %Rhrc (0x%RX32)",
-                               info.getResultCode(),
-                               info.getResultCode()));
-    if (haveComponent)
-        comp.append(Utf8StrFmt("component %ls",
-                               info.getComponent().raw()));
-    if (haveInterfaceID)
-        comp.append(Utf8StrFmt("interface %ls",
-                               info.getInterfaceName().raw()));
-    if (!info.getCalleeName().isEmpty())
-        comp.append(Utf8StrFmt("callee %ls",
-                               info.getCalleeName().raw()));
-
-    if (comp.size() > 0)
+    try
     {
-        str += "Details: ";
-        for (size_t i = 0; i < comp.size() - 1; ++i)
-            str += comp.at(i) + ", ";
-        str += comp.last();
-        str += "\n";
-    }
+        Utf8Str str;
+        RTCList<Utf8Str> comp;
 
-    // print and log
-    RTMsgError("%s", str.c_str());
-    Log(("ERROR: %s", str.c_str()));
+        Bstr bstrDetailsText = info.getText();
+        if (!bstrDetailsText.isEmpty())
+            str = Utf8StrFmt("%ls\n",
+                             bstrDetailsText.raw());
+        if (haveResultCode)
+            comp.append(Utf8StrFmt("code %Rhrc (0x%RX32)",
+                                   info.getResultCode(),
+                                   info.getResultCode()));
+        if (haveComponent)
+            comp.append(Utf8StrFmt("component %ls",
+                                   info.getComponent().raw()));
+        if (haveInterfaceID)
+            comp.append(Utf8StrFmt("interface %ls",
+                                   info.getInterfaceName().raw()));
+        if (!info.getCalleeName().isEmpty())
+            comp.append(Utf8StrFmt("callee %ls",
+                                   info.getCalleeName().raw()));
+
+        if (comp.size() > 0)
+        {
+            str += "Details: ";
+            for (size_t i = 0; i < comp.size() - 1; ++i)
+                str += comp.at(i) + ", ";
+            str += comp.last();
+            str += "\n";
+        }
+
+        // print and log
+        RTMsgError("%s", str.c_str());
+        Log(("ERROR: %s", str.c_str()));
+    }
+    catch (std::bad_alloc)
+    {
+        RTMsgError("std::bad_alloc in GluePrintErrorInfo!");
+        Log(("ERROR: std::bad_alloc in GluePrintErrorInfo!\n"));
+    }
 }
 
 void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, uint32_t ulLine)
@@ -91,10 +99,9 @@ void GluePrintErrorContext(const char *pcszContext, const char *pcszSourceFile, 
 
 void GluePrintRCMessage(HRESULT rc)
 {
-    Utf8Str str = Utf8StrFmt("Code %Rhra (extended info not available)\n", rc);
     // print and log
-    RTMsgError("%s", str.c_str());
-    Log(("ERROR: %s", str.c_str()));
+    RTMsgError("Code %Rhra (extended info not available)\n", rc);
+    Log(("ERROR: Code %Rhra (extended info not available)\n", rc));
 }
 
 static void glueHandleComErrorInternal(com::ErrorInfo &info,
