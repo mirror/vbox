@@ -27,6 +27,7 @@
 class Progress;
 class MediumFormat;
 class MediumLockList;
+struct MediumCryptoFilterSettings;
 
 namespace settings
 {
@@ -225,6 +226,9 @@ public:
 
     const Utf8Str& i_getKeyId();
 
+    HRESULT i_openHddForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
+                           struct MediumCryptoFilterSettings *pCryptoSettingsRead);
+
 private:
 
     // wrapped IMedium properties
@@ -304,6 +308,7 @@ private:
                              ComPtr<IProgress> &aProgress);
     HRESULT getEncryptionSettings(AutoCaller &autoCaller, com::Utf8Str &aCipher, com::Utf8Str &aPasswordId);
     HRESULT checkEncryptionPassword(const com::Utf8Str &aPassword);
+    HRESULT openForIO(BOOL aWritable, com::Utf8Str const &aPassword, ComPtr<IMediumIO> &aMediumIO);
 
     // Private internal nmethods
     HRESULT i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &autoCaller);
@@ -365,9 +370,8 @@ private:
     static DECLCALLBACK(int) i_vdCryptoKeyStoreReturnParameters(void *pvUser, const char *pszCipher,
                                                                 const uint8_t *pbDek, size_t cbDek);
 
-    struct CryptoFilterSettings;
     HRESULT i_openHddForReading(SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
-                                struct CryptoFilterSettings *pCryptoSettingsRead);
+                                struct MediumCryptoFilterSettings *pCryptoSettingsRead);
 
     class Task;
     class CreateBaseTask;
@@ -406,13 +410,50 @@ private:
     HRESULT i_taskImportHandler(Medium::ImportTask &task);
     HRESULT i_taskEncryptHandler(Medium::EncryptTask &task);
 
-    void i_taskEncryptSettingsSetup(CryptoFilterSettings *pSettings, const char *pszCipher,
+    void i_taskEncryptSettingsSetup(struct MediumCryptoFilterSettings *pSettings, const char *pszCipher,
                                     const char *pszKeyStore,  const char *pszPassword,
                                     bool fCreateKeyStore);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;
 };
+
+
+/**
+ * Settings for a crypto filter instance.
+ */
+struct MediumCryptoFilterSettings
+{
+    MediumCryptoFilterSettings()
+        : fCreateKeyStore(false),
+          pszPassword(NULL),
+          pszKeyStore(NULL),
+          pszKeyStoreLoad(NULL),
+          pbDek(NULL),
+          cbDek(0),
+          pszCipher(NULL),
+          pszCipherReturned(NULL)
+    { }
+
+    bool              fCreateKeyStore;
+    const char        *pszPassword;
+    char              *pszKeyStore;
+    const char        *pszKeyStoreLoad;
+
+    const uint8_t     *pbDek;
+    size_t            cbDek;
+    const char        *pszCipher;
+
+    /** The cipher returned by the crypto filter. */
+    char              *pszCipherReturned;
+
+    PVDINTERFACE      vdFilterIfaces;
+
+    VDINTERFACECONFIG vdIfCfg;
+    VDINTERFACECRYPTO vdIfCrypto;
+};
+
+
 
 #endif /* !____H_MEDIUMIMPL */
 

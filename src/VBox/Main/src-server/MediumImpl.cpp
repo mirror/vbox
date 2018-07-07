@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #include "MediumImpl.h"
+#include "MediumIOImpl.h"
 #include "TokenImpl.h"
 #include "ProgressImpl.h"
 #include "SystemPropertiesImpl.h"
@@ -767,40 +768,6 @@ public:
 private:
     HRESULT executeTask();
     AutoCaller mParentCaller;
-};
-
-/**
- * Settings for a crypto filter instance.
- */
-struct Medium::CryptoFilterSettings
-{
-    CryptoFilterSettings()
-        : fCreateKeyStore(false),
-          pszPassword(NULL),
-          pszKeyStore(NULL),
-          pszKeyStoreLoad(NULL),
-          pbDek(NULL),
-          cbDek(0),
-          pszCipher(NULL),
-          pszCipherReturned(NULL)
-    { }
-
-    bool              fCreateKeyStore;
-    const char        *pszPassword;
-    char              *pszKeyStore;
-    const char        *pszKeyStoreLoad;
-
-    const uint8_t     *pbDek;
-    size_t            cbDek;
-    const char        *pszCipher;
-
-    /** The cipher returned by the crypto filter. */
-    char              *pszCipherReturned;
-
-    PVDINTERFACE      vdFilterIfaces;
-
-    VDINTERFACECONFIG vdIfCfg;
-    VDINTERFACECRYPTO vdIfCrypto;
 };
 
 /**
@@ -3660,7 +3627,7 @@ HRESULT Medium::getEncryptionSettings(AutoCaller &autoCaller, com::Utf8Str &aCip
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
         ComAssertRCThrow(vrc, E_FAIL);
 
-        Medium::CryptoFilterSettings CryptoSettings;
+        MediumCryptoFilterSettings CryptoSettings;
 
         i_taskEncryptSettingsSetup(&CryptoSettings, NULL, it->second.c_str(), NULL, false /* fCreateKeyStore */);
         vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_READ | VD_FILTER_FLAGS_INFO, CryptoSettings.vdFilterIfaces);
@@ -3736,7 +3703,7 @@ HRESULT Medium::checkEncryptionPassword(const com::Utf8Str &aPassword)
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
         ComAssertRCThrow(vrc, E_FAIL);
 
-        Medium::CryptoFilterSettings CryptoSettings;
+        MediumCryptoFilterSettings CryptoSettings;
 
         i_taskEncryptSettingsSetup(&CryptoSettings, NULL, it->second.c_str(), aPassword.c_str(),
                                    false /* fCreateKeyStore */);
@@ -3759,6 +3726,35 @@ HRESULT Medium::checkEncryptionPassword(const com::Utf8Str &aPassword)
 
     return rc;
 }
+
+HRESULT Medium::openForIO(BOOL aWritable, com::Utf8Str const &aPassword, ComPtr<IMediumIO> &aMediumIO)
+{
+    /*
+     * Input validation.
+     */
+    if (aWritable && i_isReadOnly())
+        return setError(E_ACCESSDENIED, tr("Write access denied: read-only"));
+
+    com::Utf8Str const strKeyId = i_getKeyId();
+    if (strKeyId.isEmpty() && aPassword.isNotEmpty())
+        return setError(E_INVALIDARG, tr("Password given for unencrypted medium"));
+    if (strKeyId.isNotEmpty() && aPassword.isEmpty())
+        return setError(E_INVALIDARG, tr("Password needed for encrypted medium"));
+
+    /*
+     * Create IO object and return it.
+     */
+    ComObjPtr<MediumIO> ptrIO;
+    HRESULT hrc = ptrIO.createObject();
+    if (SUCCEEDED(hrc))
+    {
+        hrc = ptrIO->initForMedium(this, aWritable != FALSE, strKeyId, aPassword);
+        if (SUCCEEDED(hrc))
+            ptrIO.queryInterfaceTo(aMediumIO.asOutParam());
+    }
+    return hrc;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -6115,7 +6111,7 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
         /*
          * Get a readonly hdd for this medium.
          */
-        Medium::CryptoFilterSettings    CryptoSettingsRead;
+        MediumCryptoFilterSettings      CryptoSettingsRead;
         MediumLockList                  SourceMediumLockList;
         PVDISK                          pHdd;
         hrc = i_openHddForReading(pKeyStore, &pHdd, &SourceMediumLockList, &CryptoSettingsRead);
@@ -6203,7 +6199,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
                 /*
                  * Get a readonly hdd for this medium (source).
                  */
-                Medium::CryptoFilterSettings    CryptoSettingsRead;
+                MediumCryptoFilterSettings      CryptoSettingsRead;
                 MediumLockList                  SourceMediumLockList;
                 PVDISK                          pSrcHdd;
                 hrc = i_openHddForReading(pKeyStore, &pSrcHdd, &SourceMediumLockList, &CryptoSettingsRead);
@@ -6544,6 +6540,39 @@ const Utf8Str& Medium::i_getKeyId()
 
     return it->second;
 }
+
+/**
+ * This method is intended for MediumIO::initForMedium().
+ *
+ * @note    Caller should not hold any medium related locks as this method will
+ *          acquire the medium lock for writing and others (VirtualBox).
+ *
+ * @returns COM status code.
+ * @param   pKeyStore               Keystore containing the KeyId+password for
+ *                                  an encrypted medium.
+ * @param   ppHdd                   Where to return the pointer to the VDISK on
+ *                                  success.
+ * @param   pMediumLockList         The lock list to populate and lock.  Caller
+ *                                  is responsible for calling the destructor or
+ *                                  MediumLockList::Clear() after destroying
+ *                                  @a *ppHdd
+ * @param   pCryptoSettings         The crypto settings to use for setting up
+ *                                  decryption of the VDISK.  This object must
+ *                                  be alive until the VDISK is destroyed!
+ *
+ * @note    Using a keystore here for the KeyId+password so we can share code
+ *          with appliance.  Not quite sure if that's a great idea or not...
+ */
+HRESULT Medium::i_openHddForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
+                               MediumCryptoFilterSettings *pCryptoSettings)
+{
+    *ppHdd = NULL;
+    if (!fWritable)
+        return i_openHddForReading(pKeyStore, ppHdd, pMediumLockList, pCryptoSettings);
+    /** @todo implement opening for writing. */
+    return E_NOTIMPL;
+}
+
 
 /**
  * Returns all filter related properties.
@@ -7858,7 +7887,7 @@ DECLCALLBACK(bool) Medium::i_vdCryptoConfigAreKeysValid(void *pvUser, const char
 
 DECLCALLBACK(int) Medium::i_vdCryptoConfigQuerySize(void *pvUser, const char *pszName, size_t *pcbValue)
 {
-    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    MediumCryptoFilterSettings *pSettings = (MediumCryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
     AssertReturn(VALID_PTR(pcbValue), VERR_INVALID_POINTER);
 
@@ -7886,7 +7915,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoConfigQuerySize(void *pvUser, const char *ps
 DECLCALLBACK(int) Medium::i_vdCryptoConfigQuery(void *pvUser, const char *pszName,
                                                 char *pszValue, size_t cchValue)
 {
-    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    MediumCryptoFilterSettings *pSettings = (MediumCryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
     AssertReturn(VALID_PTR(pszValue), VERR_INVALID_POINTER);
 
@@ -7918,7 +7947,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoConfigQuery(void *pvUser, const char *pszNam
 DECLCALLBACK(int) Medium::i_vdCryptoKeyRetain(void *pvUser, const char *pszId,
                                               const uint8_t **ppbKey, size_t *pcbKey)
 {
-    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    MediumCryptoFilterSettings *pSettings = (MediumCryptoFilterSettings *)pvUser;
     NOREF(pszId);
     NOREF(ppbKey);
     NOREF(pcbKey);
@@ -7928,7 +7957,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyRetain(void *pvUser, const char *pszId,
 
 DECLCALLBACK(int) Medium::i_vdCryptoKeyRelease(void *pvUser, const char *pszId)
 {
-    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    MediumCryptoFilterSettings *pSettings = (MediumCryptoFilterSettings *)pvUser;
     NOREF(pszId);
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
     AssertMsgFailedReturn(("This method should not be called here!\n"), VERR_INVALID_STATE);
@@ -7936,7 +7965,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyRelease(void *pvUser, const char *pszId)
 
 DECLCALLBACK(int) Medium::i_vdCryptoKeyStorePasswordRetain(void *pvUser, const char *pszId, const char **ppszPassword)
 {
-    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    MediumCryptoFilterSettings *pSettings = (MediumCryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
 
     NOREF(pszId);
@@ -7946,7 +7975,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStorePasswordRetain(void *pvUser, const c
 
 DECLCALLBACK(int) Medium::i_vdCryptoKeyStorePasswordRelease(void *pvUser, const char *pszId)
 {
-    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    MediumCryptoFilterSettings *pSettings = (MediumCryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
     NOREF(pszId);
     return VINF_SUCCESS;
@@ -7954,7 +7983,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStorePasswordRelease(void *pvUser, const 
 
 DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreSave(void *pvUser, const void *pvKeyStore, size_t cbKeyStore)
 {
-    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    MediumCryptoFilterSettings *pSettings = (MediumCryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
 
     pSettings->pszKeyStore = (char *)RTMemAllocZ(cbKeyStore);
@@ -7968,7 +7997,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreSave(void *pvUser, const void *pvKey
 DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreReturnParameters(void *pvUser, const char *pszCipher,
                                                              const uint8_t *pbDek, size_t cbDek)
 {
-    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    MediumCryptoFilterSettings *pSettings = (MediumCryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
 
     pSettings->pszCipherReturned = RTStrDup(pszCipher);
@@ -7997,7 +8026,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreReturnParameters(void *pvUser, const
  *                                  must be alive until the VDISK is destroyed!
  */
 HRESULT Medium::i_openHddForReading(SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
-                                    Medium::CryptoFilterSettings *pCryptoSettingsRead)
+                                    MediumCryptoFilterSettings *pCryptoSettingsRead)
 {
     /*
      * Create the media lock list and lock the media.
@@ -8078,9 +8107,9 @@ HRESULT Medium::i_openHddForReading(SecretKeyStore *pKeyStore, PVDISK *ppHdd, Me
             SecretKey *pKey = NULL;
             vrc = pKeyStore->retainSecretKey(itKeyId->second, &pKey);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                               tr("Failed to retrieve the secret key with ID \"%s\" from the store (%Rrc)"),
-                               itKeyId->second.c_str(), vrc);
+                throw setErrorBoth(VBOX_E_INVALID_OBJECT_STATE, vrc,
+                                   tr("Failed to retrieve the secret key with ID \"%s\" from the store (%Rrc)"),
+                                   itKeyId->second.c_str(), vrc);
 
             i_taskEncryptSettingsSetup(pCryptoSettingsRead, NULL, itKeyStore->second.c_str(), (const char *)pKey->getKeyBuffer(),
                                        false /* fCreateKeyStore */);
@@ -10020,7 +10049,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
 /**
  * Sets up the encryption settings for a filter.
  */
-void Medium::i_taskEncryptSettingsSetup(CryptoFilterSettings *pSettings, const char *pszCipher,
+void Medium::i_taskEncryptSettingsSetup(MediumCryptoFilterSettings *pSettings, const char *pszCipher,
                                         const char *pszKeyStore, const char *pszPassword,
                                         bool fCreateKeyStore)
 {
@@ -10107,8 +10136,8 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
         ComAssertRCThrow(vrc, E_FAIL);
 
-        Medium::CryptoFilterSettings CryptoSettingsRead;
-        Medium::CryptoFilterSettings CryptoSettingsWrite;
+        MediumCryptoFilterSettings CryptoSettingsRead;
+        MediumCryptoFilterSettings CryptoSettingsWrite;
 
         void *pvBuf = NULL;
         const char *pszPasswordNew = NULL;

@@ -525,6 +525,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_MEDIUMCONFIGCHANGEDEVENT,
     /** Main group, IMediumFormat. */
     LOG_GROUP_MAIN_MEDIUMFORMAT,
+    /** Main group, IMediumIO. */
+    LOG_GROUP_MAIN_MEDIUMIO,
     /** Main group, IMediumRegisteredEvent. */
     LOG_GROUP_MAIN_MEDIUMREGISTEREDEVENT,
     /** Main group, IMouse. */
@@ -1071,6 +1073,7 @@ typedef enum LOGGROUP
     "MAIN_MEDIUMCHANGEDEVENT", \
     "MAIN_MEDIUMCONFIGCHANGEDEVENT", \
     "MAIN_MEDIUMFORMAT", \
+    "MAIN_MEDIUMIO", \
     "MAIN_MEDIUMREGISTEREDEVENT", \
     "MAIN_MOUSE",   \
     "MAIN_MOUSECAPABILITYCHANGEDEVENT", \

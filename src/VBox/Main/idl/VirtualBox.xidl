@@ -15025,7 +15025,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="4afe423b-43e0-e9d0-82e8-ceb307940dda"
+    uuid="c3a390cd-4efa-458d-2afb-d07eb4e105bb"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -16349,6 +16349,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="openForIO">
+      <desc>
+        Open the medium for I/O.
+      </desc>
+      <param name="writable" type="boolean" dir="in">
+       <desc>Set this to open the medium for both reading and writing.  When
+             not set the medium is opened readonly.</desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>Password for accessing an encrypted medium. Must be empty if not encrypted.</desc>
+      </param>
+      <param name="mediumIO" type="IMediumIO" dir="return">
+        <desc>Medium I/O object.</desc>
+      </param>
+    </method>
+
   </interface>
 
 
@@ -16578,6 +16594,136 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="defaults" type="wstring" safearray="yes" dir="out">
         <desc>Array of default property values.</desc>
       </param>
+    </method>
+
+  </interface>
+
+  <!--
+  // IMediumIO
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <enum
+    name="PartitionTableType"
+    uuid="360066eb-d19e-4fa1-57ef-fed434fbe2a9"
+    >
+    <desc>
+      Partition table types.
+    </desc>
+
+    <const name="MBR" value="1"/>
+    <const name="GPT" value="2"/>
+  </enum>
+
+
+  <interface
+    name="IMediumIO" extends="$unknown"
+    uuid="43b03a91-ea1a-4bdb-506f-8c418b72d6a3"
+    wsmap="managed"
+    reservedMethods="4" reservedAttributes="8"
+    >
+    <desc>
+      The IMediumIO interface is used to access and modify the content of a
+      medium.  It is returned by <link to="IMedium::openForIO"/>.
+    </desc>
+
+    <attribute name="medium" type="IMedium" readonly="yes">
+      <desc>The open medium.</desc>
+    </attribute>
+
+    <attribute name="writable" type="boolean" readonly="yes">
+      <desc>Whether the medium can be written to. (It can always be read from.)</desc>
+    </attribute>
+
+    <attribute name="explorer" type="IVFSExplorer" readonly="yes">
+      <desc>
+        Returns the virtual file system explorer for the medium.
+
+        This will attempt to recognize the format of the medium content and
+        present it as a virtual directory structure to the API user.
+
+        A FAT floppy image will be represented will a single root subdir 'fat12'
+        that gives access to the file system content.
+
+        A ISO-9660 image will have one subdir in the root for each format present
+        in the image, so the API user can select which data view to access (iso9660,
+        rockridge, jolie, udf, hfs, ...).
+
+        A partitioned harddisk image will have subdirs for each partition.  The
+        the filesystem content of each partition can be accessed thru the subdirs
+        if we have a file system interpreter for it.  There will also be raw files
+        for each subdirectory, to provide a simple way of accessing raw partition
+        data from an API client.
+
+        Please note that the explorer may show inconsistent information if
+        the API user modifies the raw image content after it was opened.
+      </desc>
+    </attribute>
+
+    <method name="read">
+      <desc>
+        Read data from the medium.
+      </desc>
+      <param name="offset" type="long long" dir="in">
+        <desc>The byte offset into the medium to start reading at.</desc>
+      </param>
+      <param name="size" type="unsigned long" dir="in">
+        <desc>How many bytes to try read.</desc>
+      </param>
+      <param name="data" type="octet" dir="return" safearray="yes">
+        <desc>Array of data read. This may be shorter than the specified size.</desc>
+      </param>
+    </method>
+
+    <method name="write">
+      <desc>
+        Write data to the medium.
+      </desc>
+      <param name="offset" type="long long" dir="in">
+        <desc>The byte offset into the medium to start reading at.</desc>
+      </param>
+      <param name="data" type="octet" dir="in" safearray="yes">
+        <desc>Array of data to write.</desc>
+      </param>
+      <param name="written" type="unsigned long" dir="return">
+        <desc>How many bytes were actually written.</desc>
+      </param>
+    </method>
+
+    <method name="formatFAT">
+      <desc>
+        Formats the medium as FAT.  Generally only useful for floppy images as
+        no partition table will be created.
+      </desc>
+      <param name="quick" type="boolean" dir="in">
+        <desc>Quick format it when set.</desc>
+      </param>
+    </method>
+
+    <method name="initializePartitionTable">
+      <desc>
+        Writes an empty partition table to the disk.
+      </desc>
+      <param name="format" type="PartitionTableType" dir="in">
+        <desc>The partition table format.</desc>
+      </param>
+      <param name="wholeDiskInOneEntry" type="boolean" dir="in">
+        <desc>
+           When @c true a partition table entry for the whole disk is created.
+           Otherwise the partition table is empty.
+        </desc>
+      </param>
+    </method>
+
+    <method name="close">
+      <desc>
+        Explictly close the medium I/O rather than waiting for garbage
+        collection and the destructor.
+
+        This will wait for any pending reads and writes to complete and then
+        close down the I/O access without regard for open explorer instances or
+        anything like that.
+      </desc>
     </method>
 
   </interface>

@@ -471,6 +471,7 @@ VBoxSVC_SOURCES = \
 	src-server/MediumFormatImpl.cpp \
 	src-server/MediumImpl.cpp \
 	src-server/MediumLock.cpp \
+	src-server/MediumIOImpl.cpp \
 	src-server/NATEngineImpl.cpp \
 	src-server/NetworkAdapterImpl.cpp \
 	src-server/ParallelPortImpl.cpp \
