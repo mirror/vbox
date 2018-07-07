@@ -79,7 +79,6 @@ PROGRAMS += \
 	tstRTInlineAsm \
 	tstIprtList \
 	tstIprtMiniString \
-	tstRTIsoFs \
 	tstLdr \
 	tstLdrLoad \
 	tstRTLocalIpc \
@@ -400,9 +399,6 @@ tstIprtList_SOURCES = tstIprtList.cpp
 
 tstIprtMiniString_TEMPLATE = VBOXR3TSTEXE
 tstIprtMiniString_SOURCES = tstIprtMiniString.cpp
-
-tstRTIsoFs_TEMPLATE = VBOXR3TSTEXE
-tstRTIsoFs_SOURCES = tstRTIsoFs.cpp
 
 tstLdr_TEMPLATE = VBOXR3TSTEXE
 tstLdr_SOURCES = tstLdr.cpp

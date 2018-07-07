@@ -679,7 +679,6 @@ RuntimeR3_SOURCES       = \
 	r3/fileio.cpp \
 	r3/fs.cpp \
 	r3/init.cpp \
-	r3/isofs.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
 	r3/poll.cpp \
