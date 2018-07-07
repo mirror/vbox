@@ -176,7 +176,6 @@ static int rtFuzzCmdMasterFuzzRunProcessCfgBool(bool *pfVal, const char *pszCfgI
 
     return rc;
 }
-#endif
 
 
 /**
@@ -202,6 +201,7 @@ static int rtFuzzCmdMasterFuzzRunProcessCfgBoolDef(bool *pfVal, const char *pszC
 
     return rc;
 }
+#endif
 
 
 /**
