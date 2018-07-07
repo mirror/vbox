@@ -166,6 +166,8 @@ typedef struct RTJSONTOKENIZER
     PRTJSONTOKEN            pTokenCurr;
     /** The next token in the input stream (used for peeking). */
     PRTJSONTOKEN            pTokenNext;
+    /** The tokenizer error state. */
+    int                     rcTok;
 } RTJSONTOKENIZER;
 /** Pointer to a JSON tokenizer. */
 typedef RTJSONTOKENIZER *PRTJSONTOKENIZER;
@@ -704,6 +706,9 @@ static int rtJsonTokenizerReadNextToken(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKE
         rc = VERR_JSON_MALFORMED;
     }
 
+    if (RT_FAILURE(rc))
+        pTokenizer->rcTok = rc;
+
     return rc;
 }
 
@@ -727,6 +732,7 @@ static int rtJsonTokenizerInit(PRTJSONTOKENIZER pTokenizer, PFNRTJSONTOKENIZERRE
     pTokenizer->Pos.iChEnd   = 1;
     pTokenizer->pTokenCurr   = &pTokenizer->Token1;
     pTokenizer->pTokenNext   = &pTokenizer->Token2;
+    pTokenizer->rcTok        = VINF_SUCCESS;
 
     RT_ZERO(pTokenizer->achBuf);
 
@@ -762,8 +768,13 @@ static void rtJsonTokenizerDestroy(PRTJSONTOKENIZER pTokenizer)
  */
 DECLINLINE(int) rtJsonTokenizerGetToken(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN *ppToken)
 {
-    *ppToken = pTokenizer->pTokenCurr;
-    return VINF_SUCCESS;
+    if (RT_SUCCESS(pTokenizer->rcTok))
+    {
+        *ppToken = pTokenizer->pTokenCurr;
+        return VINF_SUCCESS;
+    }
+
+    return pTokenizer->rcTok;
 }
 
 /**
@@ -794,12 +805,13 @@ static bool rtJsonTokenizerConsumeIfMatched(PRTJSONTOKENIZER pTokenizer, RTJSONT
 {
     PRTJSONTOKEN pToken = NULL;
     int rc = rtJsonTokenizerGetToken(pTokenizer, &pToken);
-    AssertRC(rc);
-
-    if (pToken->enmClass == enmClass)
+    if (RT_SUCCESS(rc))
     {
-        rtJsonTokenizerConsume(pTokenizer);
-        return true;
+        if (pToken->enmClass == enmClass)
+        {
+            rtJsonTokenizerConsume(pTokenizer);
+            return true;
+        }
     }
 
     return false;
@@ -957,7 +969,7 @@ static int rtJsonParseObject(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal
     while (   RT_SUCCESS(rc)
            && pToken->enmClass == RTJSONTOKENCLASS_STRING)
     {
-        char *pszName = pToken->Class.String.pszStr;
+        char *pszName = pToken->Class.String.pszStr; /* We can consume this string as it was allocated. */
 
         rtJsonTokenizerConsume(pTokenizer);
         if (rtJsonTokenizerConsumeIfMatched(pTokenizer, RTJSONTOKENCLASS_NAME_SEPARATOR))
