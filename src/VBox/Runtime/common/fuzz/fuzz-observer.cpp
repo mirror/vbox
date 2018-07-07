@@ -713,7 +713,7 @@ static int rtFuzzObsExecCtxClientRunFuzzingAware(PRTFUZZOBSINT pThis, PRTFUZZOBS
                                             cFuzzedInputs++;
                                         else if (achBuf[i] == 'A')
                                         {
-                                            /** @todo: Advance our fuzzer to get the added input. */
+                                            /** @todo Advance our fuzzer to get the added input. */
                                         }
                                     }
                                 }
