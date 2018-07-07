@@ -2050,21 +2050,23 @@ static RTEXITCODE mediumIOOpenMediumForIO(HandlerArg *pHandler, PCMEDIUMIOCOMMON
      */
     ComPtr<IMedium> ptrMedium;
     HRESULT hrc = openMedium(pHandler, pCommonOpts->pszFilenameOrUuid, pCommonOpts->enmDeviceType,
-                             fWritable ? AccessMode_ReadWrite : AccessMode_ReadOnly,
+                             (AccessMode_T)(fWritable ? AccessMode_ReadWrite : AccessMode_ReadOnly),
                              ptrMedium, false /* fForceNewUuidOnOpen */, false /* fSilent */);
     if (SUCCEEDED(hrc))
+    {
         CHECK_ERROR2I_STMT(ptrMedium, OpenForIO(fWritable, bstrPassword.raw(), rPtrMediumIO.asOutParam()), hrc = hrcCheck);
 
-    /*
-     * If the size is requested get it after we've opened it.
-     */
-    if (pcbMedium && SUCCEEDED(hrc))
-    {
-        LONG64 cbLogical = 0;
-        CHECK_ERROR2I_STMT(ptrMedium, COMGETTER(LogicalSize)(&cbLogical), hrc = hrcCheck);
-        *pcbMedium = cbLogical;
-        if (!SUCCEEDED(hrc))
-            rPtrMediumIO.setNull();
+        /*
+         * If the size is requested get it after we've opened it.
+         */
+        if (pcbMedium && SUCCEEDED(hrc))
+        {
+            LONG64 cbLogical = 0;
+            CHECK_ERROR2I_STMT(ptrMedium, COMGETTER(LogicalSize)(&cbLogical), hrc = hrcCheck);
+            *pcbMedium = cbLogical;
+            if (!SUCCEEDED(hrc))
+                rPtrMediumIO.setNull();
+        }
     }
 
     memset(bstrPassword.mutableRaw(), '*', bstrPassword.length() * sizeof(RTUTF16));
