@@ -529,8 +529,12 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
 {
     int rc = VINF_SUCCESS;
     size_t cchStr = 0;
-    char szTmp[_4K];
-    RT_ZERO(szTmp);
+    size_t cchStrMax = _4K;
+    char *pszTmp = (char *)RTMemAllocZ(cchStrMax * sizeof(char));
+    if (RT_UNLIKELY(!pszTmp))
+        return VERR_NO_STR_MEMORY;
+
+    RT_BZERO(pszTmp, cchStrMax);
 
     Assert(rtJsonTokenizerGetCh(pTokenizer) == '\"');
     rtJsonTokenizerSkipCh(pTokenizer); /* Skip " */
@@ -541,7 +545,7 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
     char ch = rtJsonTokenizerGetCh(pTokenizer);
     while (   ch != '\"'
            && ch != '\0'
-           && cchStr < sizeof(szTmp) - 1)
+           && RT_SUCCESS(rc))
     {
         if (ch == '\\')
         {
@@ -551,28 +555,28 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
             switch (chNext)
             {
                 case '\"':
-                    szTmp[cchStr] = '\"';
+                    pszTmp[cchStr] = '\"';
                     break;
                 case '\\':
-                    szTmp[cchStr] = '\\';
+                    pszTmp[cchStr] = '\\';
                     break;
                 case '/':
-                    szTmp[cchStr] = '/';
+                    pszTmp[cchStr] = '/';
                     break;
                 case '\b':
-                    szTmp[cchStr] = '\b';
+                    pszTmp[cchStr] = '\b';
                     break;
                 case '\n':
-                    szTmp[cchStr] = '\n';
+                    pszTmp[cchStr] = '\n';
                     break;
                 case '\f':
-                    szTmp[cchStr] = '\f';
+                    pszTmp[cchStr] = '\f';
                     break;
                 case '\r':
-                    szTmp[cchStr] = '\r';
+                    pszTmp[cchStr] = '\r';
                     break;
                 case '\t':
-                    szTmp[cchStr] = '\t';
+                    pszTmp[cchStr] = '\t';
                     break;
                 case 'u':
                     rc = VERR_NOT_SUPPORTED;
@@ -582,20 +586,46 @@ static int rtJsonTokenizerGetString(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pT
             }
         }
         else
-            szTmp[cchStr] = ch;
+            pszTmp[cchStr] = ch;
+
+        if (RT_FAILURE(rc))
+            break;
+
         cchStr++;
         rtJsonTokenizerSkipCh(pTokenizer);
+        if (cchStr == cchStrMax - 1)
+        {
+            /* Increase string space. */
+            size_t cchStrMaxNew = cchStrMax + _4K;
+            char *pszTmpNew = (char *)RTMemRealloc(pszTmp, cchStrMaxNew * sizeof(char));
+            if (RT_UNLIKELY(!pszTmpNew))
+            {
+                rc = VERR_NO_STR_MEMORY;
+                break;
+            }
+
+            RT_BZERO(&pszTmpNew[cchStr], _4K);
+            pszTmp = pszTmpNew;
+            cchStrMax = cchStrMaxNew;
+        }
         ch = rtJsonTokenizerGetCh(pTokenizer);
     }
 
-    if (rtJsonTokenizerGetCh(pTokenizer) == '\"')
-        rtJsonTokenizerSkipCh(pTokenizer); /* Skip closing " */
+    if (RT_SUCCESS(rc))
+    {
+        if (rtJsonTokenizerGetCh(pTokenizer) == '\"')
+            rtJsonTokenizerSkipCh(pTokenizer); /* Skip closing " */
 
-    pToken->Class.String.pszStr = RTStrDupN(&szTmp[0], cchStr);
-    if (pToken->Class.String.pszStr)
-        pToken->Pos.iChEnd += cchStr;
-    else
-        rc = VERR_NO_STR_MEMORY;
+        pToken->Class.String.pszStr = RTStrDupN(pszTmp, cchStr);
+        if (pToken->Class.String.pszStr)
+            pToken->Pos.iChEnd += cchStr;
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+
+    if (pszTmp)
+        RTMemFree(pszTmp);
+
     return rc;
 }
 
@@ -942,7 +972,7 @@ static int rtJsonParseObject(PRTJSONTOKENIZER pTokenizer, PRTJSONVALINT pJsonVal
                 {
                     cMembersMax += 10;
                     PRTJSONVALINT *papValuesNew = (PRTJSONVALINT *)RTMemRealloc(papValues, cMembersMax * sizeof(PRTJSONVALINT));
-                    char **papszNamesNew =  (char **)RTMemRealloc(papValues, cMembersMax * sizeof(char *));
+                    char **papszNamesNew =  (char **)RTMemRealloc(papszNames, cMembersMax * sizeof(char *));
                     if (RT_UNLIKELY(!papValuesNew || !papszNamesNew))
                     {
                         if (papValuesNew)
