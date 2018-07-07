@@ -221,6 +221,15 @@ RTDECL(int) RTFuzzCtxCfgSetTmpDirectory(RTFUZZCTX hFuzzCtx, const char *pszPathT
 RTDECL(const char *) RTFuzzCtxCfgGetTmpDirectory(RTFUZZCTX hFuzzCtx);
 
 /**
+ * Reseeds the PRNG of the given fuzzing context.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   uSeed               The new seed.
+ */
+RTDECL(int) RTFuzzCtxReseed(RTFUZZCTX hFuzzCtx, uint64_t uSeed);
+
+/**
  * Generates a new input from the given fuzzing context and returns it.
  *
  * @returns IPRT status code.
@@ -229,6 +238,17 @@ RTDECL(const char *) RTFuzzCtxCfgGetTmpDirectory(RTFUZZCTX hFuzzCtx);
  */
 RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput);
 
+/**
+ * Mutates a raw buffer.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context handle.
+ * @param   pvBuf               Pointer to the buffer to mutate.
+ * @param   cbBuf               Size of the buffer iny bytes to mutate.
+ * @param   phFuzzInput         Where to store the handle to the fuzzed input on success.
+ */
+RTDECL(int) RTFuzzCtxMutateBuffer(RTFUZZCTX hFuzzCtx, void *pvBuf, size_t cbBuf,
+                                  PRTFUZZINPUT phFuzzInput);
 
 
 /**
@@ -297,6 +317,32 @@ RTDECL(int) RTFuzzInputRemoveFromCtxCorpus(RTFUZZINPUT hFuzzInput);
 
 
 /**
+ * Fuzzed binary input channel.
+ */
+typedef enum RTFUZZOBSINPUTCHAN
+{
+    /** Invalid. */
+    RTFUZZOBSINPUTCHAN_INVALID = 0,
+    /** File input. */
+    RTFUZZOBSINPUTCHAN_FILE,
+    /** Input over stdin. */
+    RTFUZZOBSINPUTCHAN_STDIN,
+    /** The binary is a fuzzing aware client using the
+     * specified protocol over stdin/stdout. */
+    RTFUZZOBSINPUTCHAN_FUZZING_AWARE_CLIENT,
+    /** TCP server. */
+    RTFUZZOBSINPUTCHAN_TCP_SERVER,
+    /** TCP client. */
+    RTFUZZOBSINPUTCHAN_TCP_CLIENT,
+    /** UDP server. */
+    RTFUZZOBSINPUTCHAN_UDP_SERVER,
+    /** UDP client. */
+    RTFUZZOBSINPUTCHAN_UDP_CLIENT,
+    /** 32bit hack. */
+    RTFUZZOBSINPUTCHAN_32BIT_HACK = 0x7fffffff
+} RTFUZZOBSINPUTCHAN;
+
+/**
  * Fuzzing observer statistics.
  */
 typedef struct RTFUZZOBSSTATS
@@ -358,7 +404,6 @@ RTDECL(int) RTFuzzObsQueryStats(RTFUZZOBS hFuzzObs, PRTFUZZOBSSTATS pStats);
  */
 RTDECL(int) RTFuzzObsSetTmpDirectory(RTFUZZOBS hFuzzObs, const char *pszTmp);
 
-
 /**
  * Sets the directory to store results to.
  *
@@ -368,22 +413,15 @@ RTDECL(int) RTFuzzObsSetTmpDirectory(RTFUZZOBS hFuzzObs, const char *pszTmp);
  */
 RTDECL(int) RTFuzzObsSetResultDirectory(RTFUZZOBS hFuzzObs, const char *pszResults);
 
-
 /**
  * Sets the binary to run for each fuzzed input.
  *
  * @returns IPRT status code.
  * @param   hFuzzObs            The fuzzing observer handle.
  * @param   pszBinary           The binary path.
- * @param   fFlags              Flags controlling execution of the binary, RTFUZZ_OBS_BINARY_F_XXX.
+ * @param   enmInputChan        The input channel to use.
  */
-RTDECL(int) RTFuzzObsSetTestBinary(RTFUZZOBS hFuzzObs, const char *pszBinary, uint32_t fFlags);
-
-/** @name RTFUZZ_OBS_BINARY_F_XXX
- * @{ */
-/** The tested binary requires a real file to read from and doesn't support stdin. */
-#define RTFUZZ_OBS_BINARY_F_INPUT_FILE  RT_BIT_32(0)
-/** @} */
+RTDECL(int) RTFuzzObsSetTestBinary(RTFUZZOBS hFuzzObs, const char *pszBinary, RTFUZZOBSINPUTCHAN enmInputChan);
 
 /**
  * Sets additional arguments to run the binary with.
@@ -425,6 +463,33 @@ RTDECL(int) RTFuzzObsExecStop(RTFUZZOBS hFuzzObs);
  */
 RTR3DECL(RTEXITCODE) RTFuzzCmdMaster(unsigned cArgs, char **papszArgs);
 
+
+/**
+ * Client input consumption callback.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS the fuzzed code accepted the input.
+ * @retval  VERR_* the client rejected the input while parsing it.
+ * @param   pvBuf               The buffer containing the input data.
+ * @param   cbBuf               Size of the buffer in bytes.
+ * @param   pvUser              Opaque user data.
+ */
+typedef DECLCALLBACK(int) FNFUZZCLIENTCONSUME(const void *pvBuf, size_t cbBuf, void *pvUser);
+/** Pointer to a client consumption callback. */
+typedef FNFUZZCLIENTCONSUME *PFNFUZZCLIENTCONSUME;
+
+/**
+ * A fuzzing client program for more efficient fuzzing.
+ *
+ * @returns Program exit code.
+ *
+ * @param   cArgs               The number of arguments.
+ * @param   papszArgs           The argument vector.  (Note that this may be
+ *                              reordered, so the memory must be writable.)
+ * @param   pfnConsume          Input data consumption callback.
+ * @param   pvUser              Opaque user data to pass to the callback.
+ */
+RTR3DECL(RTEXITCODE) RTFuzzCmdFuzzingClient(unsigned cArgs, char **papszArgs, PFNFUZZCLIENTCONSUME pfnConsume, void *pvUser);
 /** @} */
 
 RT_C_DECLS_END

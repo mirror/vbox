@@ -1632,6 +1632,7 @@ VBoxRT_SOURCES                := \
 	common/fuzz/fuzz.cpp \
 	common/fuzz/fuzz-observer.cpp \
 	common/fuzz/fuzzmastercmd.cpp \
+	common/fuzz/fuzzclientcmd.cpp \
 	common/misc/aiomgr.cpp
 ifneq ($(KBUILD_TARGET),win)
 VBox/VBoxRTDeps.cpp_CXXFLAGS = -Wno-deprecated-declarations

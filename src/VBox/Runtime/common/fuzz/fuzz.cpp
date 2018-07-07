@@ -38,6 +38,7 @@
 #include <iprt/dir.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/list.h>
 #include <iprt/md5.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
@@ -46,6 +47,8 @@
 #include <iprt/time.h>
 #include <iprt/vfs.h>
 
+
+#define RTFUZZCTX_MAGIC UINT32_C(0xdeadc0de) /** @todo */
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -60,6 +63,8 @@ typedef struct RTFUZZINPUTINT
 {
     /** The AVL tree core. */
     AVLU64NODECORE              Core;
+    /** Node for the global list. */
+    RTLISTNODE                  NdInputs;
     /** Reference counter. */
     volatile uint32_t           cRefs;
 /** @todo add magic here (unused padding space on 64-bit hosts). */
@@ -106,6 +111,10 @@ typedef struct RTFUZZCTXINT
     RTRAND                      hRand;
     /** The AVL tree for indexing the input seeds (keyed by the upper half of the MD5). */
     AVLU64TREE                  TreeSeedsHigh;
+    /** Sequential list of all inputs. */
+    RTLISTANCHOR                LstInputs;
+    /** Number of inputs currently in the tree. */
+    uint32_t                    cInputs;
     /** The maximum size of one input seed to generate. */
     size_t                      cbInputMax;
     /** Behavioral flags. */
@@ -142,13 +151,35 @@ typedef RTFUZZCTXMUTATOR *PRTFUZZCTXMUTATOR;
 
 
 /**
+ * The fuzzer state to be exported - all members are stored in little endian form.
+ */
+typedef struct RTFUZZCTXSTATE
+{
+    /** Magic value for identification. */
+    uint32_t                    u32Magic;
+    /** Size of the PRNG state following in bytes. */
+    uint32_t                    cbPrng;
+    /** Number of input descriptors following. */
+    uint32_t                    cInputs;
+    /** Behavioral flags. */
+    uint32_t                    fFlagsBehavioral;
+    /** Maximum input size to generate. */
+    uint64_t                    cbInputMax;
+} RTFUZZCTXSTATE;
+/** Pointer to a fuzzing context state. */
+typedef RTFUZZCTXSTATE *PRTFUZZCTXSTATE;
+
+
+/**
  * Mutator callback.
  *
  * @returns IPRT status code.
  * @param   pThis               The fuzzer context instance.
+ * @param   pvBuf               The input buffer to mutate.
+ * @param   cbBuf               Size of the buffer in bytes.
  * @param   ppInputMutated      Where to store the pointer to the mutated input success.
  */
-typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOR(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
+typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOR(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated);
 /** Pointer to a mutator callback. */
 typedef FNRTFUZZCTXMUTATOR *PFNRTFUZZCTXMUTATOR;
 
@@ -157,12 +188,18 @@ typedef FNRTFUZZCTXMUTATOR *PFNRTFUZZCTXMUTATOR;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlip(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplace(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsert(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceAppend(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteDelete(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDelete(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated);
+static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlip(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
+                                                 PPRTFUZZINPUTINT ppInputMutated);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplace(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
+                                                     PPRTFUZZINPUTINT ppInputMutated);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsert(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
+                                                            PPRTFUZZINPUTINT ppInputMutated);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceAppend(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
+                                                            PPRTFUZZINPUTINT ppInputMutated);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteDelete(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
+                                                    PPRTFUZZINPUTINT ppInputMutated);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDelete(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
+                                                            PPRTFUZZINPUTINT ppInputMutated);
 
 
 /*********************************************************************************************************************************
@@ -258,7 +295,11 @@ static int rtFuzzCtxInputAdd(PRTFUZZCTXINT pThis, PRTFUZZINPUTINT pInput)
         if (!fIns)
             rc = VERR_ALREADY_EXISTS;
         else
+        {
+            RTListAppend(&pThis->LstInputs, &pInput->NdInputs);
+            pThis->cInputs++;
             RTFuzzInputRetain(pInput);
+        }
     }
 
     return rc;
@@ -285,15 +326,19 @@ static PRTFUZZINPUTINT rtFuzzCtxInputPickRnd(PRTFUZZCTXINT pThis)
  * Clones a given input.
  *
  * @returns Pointer to the cloned input or NULL if out of memory.
- * @param   pInput              The input to clone.
+ * @param   pThis               The fuzzer context instance.
+ * @param   pvBuf               The buffer to clone.
+ * @param   cbBuf               Size of the buffer in bytes.
  */
-static PRTFUZZINPUTINT rtFuzzCtxInputClone(PRTFUZZINPUTINT pInput)
+static PRTFUZZINPUTINT rtFuzzCtxInputClone(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf)
 {
-    PRTFUZZINPUTINT pInpClone = (PRTFUZZINPUTINT)RTMemDup(pInput, RT_OFFSETOF(RTFUZZINPUTINT, abInput[pInput->cbInput]));
+    PRTFUZZINPUTINT pInpClone = (PRTFUZZINPUTINT)RTMemAllocZ(RT_OFFSETOF(RTFUZZINPUTINT, abInput[cbBuf]));
     if (RT_LIKELY(pInpClone))
     {
-        pInpClone->cRefs = 1;
-        pInpClone->Core.Key = 0;
+        pInpClone->cRefs    = 1;
+        pInpClone->pFuzzer  = pThis,
+        pInpClone->cbInput  = cbBuf;
+        memcpy(&pInpClone->abInput[0], pvBuf, cbBuf);
     }
 
     return pInpClone;
@@ -348,14 +393,13 @@ static void rtFuzzCtxDestroy(PRTFUZZCTXINT pThis)
 /**
  * Mutator callback - flips a single bit in the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlip(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlip(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZINPUTINT pInput = rtFuzzCtxInputPickRnd(pThis);
-    PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputClone(pInput);
+    PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputClone(pThis, pvBuf, cbBuf);
     if (RT_LIKELY(pInputMutated))
     {
-        int32_t iBit = RTRandAdvS32Ex(pThis->hRand, 0, (uint32_t)pInput->cbInput * 8 - 1);
+        int32_t iBit = RTRandAdvS32Ex(pThis->hRand, 0, (uint32_t)cbBuf * 8 - 1);
         ASMBitToggle(&pInputMutated->abInput[0], iBit);
         RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
         *ppInputMutated = pInputMutated;
@@ -370,16 +414,16 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlip(PRTFUZZCTXINT pThis, PPRTFUZZIN
 /**
  * Mutator callback - replaces a single byte in the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplace(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplace(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZINPUTINT pInput = rtFuzzCtxInputPickRnd(pThis);
-    PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputClone(pInput);
+    PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputClone(pThis, pvBuf, cbBuf);
     if (RT_LIKELY(pInputMutated))
     {
-        uint32_t offByte = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)pInput->cbInput - 1);
+        uint8_t *pbBuf = (uint8_t *)pvBuf;
+        uint32_t offByte = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)cbBuf - 1);
         RTRandAdvBytes(pThis->hRand, &pInputMutated->abInput[offByte], 1);
-        if (pInput->abInput[offByte] != pInputMutated->abInput[offByte])
+        if (pbBuf[offByte] != pInputMutated->abInput[offByte])
         {
             RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
             *ppInputMutated = pInputMutated;
@@ -397,22 +441,22 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplace(PRTFUZZCTXINT pThis, PPRTFU
 /**
  * Mutator callback - inserts a byte sequence into the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsert(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsert(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZINPUTINT pInput = rtFuzzCtxInputPickRnd(pThis);
-    if (pInput->cbInput < pThis->cbInputMax)
+    if (cbBuf < pThis->cbInputMax)
     {
-        size_t cbInputMutated = RTRandAdvU32Ex(pThis->hRand, (uint32_t)pInput->cbInput + 1, (uint32_t)pThis->cbInputMax);
-        size_t cbInsert = cbInputMutated - pInput->cbInput;
-        uint32_t offInsert = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)pInput->cbInput);
+        size_t cbInputMutated = RTRandAdvU32Ex(pThis->hRand, (uint32_t)cbBuf + 1, (uint32_t)pThis->cbInputMax);
+        size_t cbInsert = cbInputMutated - cbBuf;
+        uint32_t offInsert = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)cbBuf);
+        uint8_t *pbBuf = (uint8_t *)pvBuf;
         PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputCreate(pThis, cbInputMutated);
         if (RT_LIKELY(pInputMutated))
         {
             if (offInsert)
-                memcpy(&pInputMutated->abInput[0], &pInput->abInput[0], offInsert);
+                memcpy(&pInputMutated->abInput[0], pbBuf, offInsert);
             RTRandAdvBytes(pThis->hRand, &pInputMutated->abInput[offInsert], cbInsert);
-            memcpy(&pInputMutated->abInput[offInsert + cbInsert], &pInput->abInput[offInsert], pInput->cbInput - offInsert);
+            memcpy(&pInputMutated->abInput[offInsert + cbInsert], &pbBuf[offInsert], cbBuf - offInsert);
             RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
             *ppInputMutated = pInputMutated;
         }
@@ -427,19 +471,18 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsert(PRTFUZZCTXINT pThis,
 /**
  * Mutator callback - appends a byte sequence to the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceAppend(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceAppend(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZINPUTINT pInput = rtFuzzCtxInputPickRnd(pThis);
-    if (pInput->cbInput < pThis->cbInputMax)
+    if (cbBuf < pThis->cbInputMax)
     {
-        size_t cbInputMutated = RTRandAdvU32Ex(pThis->hRand, (uint32_t)pInput->cbInput + 1, (uint32_t)pThis->cbInputMax);
-        size_t cbInsert = cbInputMutated - pInput->cbInput;
+        size_t cbInputMutated = RTRandAdvU32Ex(pThis->hRand, (uint32_t)cbBuf + 1, (uint32_t)pThis->cbInputMax);
+        size_t cbInsert = cbInputMutated - cbBuf;
         PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputCreate(pThis, cbInputMutated);
         if (RT_LIKELY(pInputMutated))
         {
-            memcpy(&pInputMutated->abInput[0], &pInput->abInput[0], pInput->cbInput);
-            RTRandAdvBytes(pThis->hRand, &pInputMutated->abInput[pInput->cbInput], cbInsert);
+            memcpy(&pInputMutated->abInput[0], pvBuf, cbBuf);
+            RTRandAdvBytes(pThis->hRand, &pInputMutated->abInput[cbBuf], cbInsert);
             RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
             *ppInputMutated = pInputMutated;
         }
@@ -454,20 +497,20 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceAppend(PRTFUZZCTXINT pThis,
 /**
  * Mutator callback - deletes a single byte in the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteDelete(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteDelete(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZINPUTINT pInput = rtFuzzCtxInputPickRnd(pThis);
-    if (pInput->cbInput > 1)
+    if (cbBuf > 1)
     {
-        uint32_t offDelete = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)pInput->cbInput - 1);
-        PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputCreate(pThis, pInput->cbInput - 1);
+        uint32_t offDelete = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)cbBuf - 1);
+        uint8_t *pbBuf = (uint8_t *)pvBuf;
+        PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputCreate(pThis, cbBuf - 1);
         if (RT_LIKELY(pInputMutated))
         {
             if (offDelete)
-                memcpy(&pInputMutated->abInput[0], &pInput->abInput[0], offDelete);
-            if (offDelete < pInput->cbInput - 1)
-                memcpy(&pInputMutated->abInput[offDelete], &pInput->abInput[offDelete + 1], pInput->cbInput - offDelete - 1);
+                memcpy(&pInputMutated->abInput[0], pbBuf, offDelete);
+            if (offDelete < cbBuf - 1)
+                memcpy(&pInputMutated->abInput[offDelete], &pbBuf[offDelete + 1], cbBuf - offDelete - 1);
             RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
             *ppInputMutated = pInputMutated;
         }
@@ -482,10 +525,57 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteDelete(PRTFUZZCTXINT pThis, PPRTFUZ
 /**
  * Mutator callback - deletes a byte sequence in the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDelete(PRTFUZZCTXINT pThis, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDelete(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
 {
-    RT_NOREF(pThis, ppInputMutated);
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    if (cbBuf > 1)
+    {
+        size_t cbInputMutated = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)cbBuf - 1);
+        size_t cbDel = cbBuf - cbInputMutated;
+        uint32_t offDel = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)(cbBuf - cbDel));
+        uint8_t *pbBuf = (uint8_t *)pvBuf;
+
+        PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputCreate(pThis, cbInputMutated);
+        if (RT_LIKELY(pInputMutated))
+        {
+            if (offDel)
+                memcpy(&pInputMutated->abInput[0], pbBuf, offDel);
+            memcpy(&pInputMutated->abInput[offDel], &pbBuf[offDel + cbDel], cbBuf - offDel - cbDel);
+            RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
+            *ppInputMutated = pInputMutated;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
+static PRTFUZZCTXINT rtFuzzCtxCreateEmpty(void)
+{
+    PRTFUZZCTXINT pThis = (PRTFUZZCTXINT)RTMemAllocZ(sizeof(*pThis));
+    if (RT_LIKELY(pThis))
+    {
+        pThis->u32Magic         = RTFUZZCTX_MAGIC;
+        pThis->cRefs            = 1;
+        pThis->TreeSeedsHigh    = NULL;
+        pThis->cbInputMax       = UINT32_MAX;
+        pThis->cInputs          = 0;
+        pThis->fFlagsBehavioral = 0;
+        RTListInit(&pThis->LstInputs);
+
+        int rc = RTRandAdvCreateParkMiller(&pThis->hRand);
+        if (RT_SUCCESS(rc))
+        {
+            RTRandAdvSeed(pThis->hRand, RTTimeSystemNanoTS());
+            return pThis;
+        }
+
+        RTMemFree(pThis);
+    }
+
+    return NULL;
 }
 
 
@@ -494,23 +584,11 @@ RTDECL(int) RTFuzzCtxCreate(PRTFUZZCTX phFuzzCtx)
     AssertPtrReturn(phFuzzCtx, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
-    PRTFUZZCTXINT pThis = (PRTFUZZCTXINT)RTMemAllocZ(sizeof(*pThis));
+    PRTFUZZCTXINT pThis = rtFuzzCtxCreateEmpty();
     if (RT_LIKELY(pThis))
     {
-        pThis->u32Magic         = 0xdeadc0de; /** @todo */
-        pThis->cRefs            = 1;
-        pThis->TreeSeedsHigh    = NULL;
-        pThis->cbInputMax       = UINT32_MAX;
-        pThis->fFlagsBehavioral = 0;
-        rc = RTRandAdvCreateParkMiller(&pThis->hRand);
-        if (RT_SUCCESS(rc))
-        {
-            RTRandAdvSeed(pThis->hRand, RTTimeSystemNanoTS()); /** @todo */
-            *phFuzzCtx = pThis;
-            return VINF_SUCCESS;
-        }
-
-        RTMemFree(pThis);
+        *phFuzzCtx = pThis;
+        return VINF_SUCCESS;
     }
     else
         rc = VERR_NO_MEMORY;
@@ -525,7 +603,81 @@ RTDECL(int) RTFuzzCtxCreateFromState(PRTFUZZCTX phFuzzCtx, const void *pvState, 
     AssertPtrReturn(pvState, VERR_INVALID_POINTER);
     AssertReturn(cbState > 0, VERR_INVALID_PARAMETER);
 
-    return VERR_NOT_IMPLEMENTED;
+    int rc = VINF_SUCCESS;
+    if (cbState >= sizeof(RTFUZZCTXSTATE))
+    {
+        RTFUZZCTXSTATE StateImport;
+
+        memcpy(&StateImport, pvState, sizeof(RTFUZZCTXSTATE));
+        if (   RT_LE2H_U32(StateImport.u32Magic) == RTFUZZCTX_MAGIC
+            && RT_LE2H_U32(StateImport.cbPrng) <= cbState - sizeof(RTFUZZCTXSTATE))
+        {
+            PRTFUZZCTXINT pThis = rtFuzzCtxCreateEmpty();
+            if (RT_LIKELY(pThis))
+            {
+                pThis->cbInputMax       = (size_t)RT_LE2H_U64(StateImport.cbInputMax);
+                pThis->fFlagsBehavioral = RT_LE2H_U32(StateImport.fFlagsBehavioral);
+
+                uint8_t *pbState = (uint8_t *)pvState;
+                uint32_t cInputs = RT_LE2H_U32(StateImport.cInputs);
+                rc = RTRandAdvRestoreState(pThis->hRand, (const char *)&pbState[sizeof(RTFUZZCTXSTATE)]);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Go through the inputs and add them. */
+                    pbState += sizeof(RTFUZZCTXSTATE) + RT_LE2H_U32(StateImport.cbPrng);
+                    cbState -= sizeof(RTFUZZCTXSTATE) + RT_LE2H_U32(StateImport.cbPrng);
+
+                    uint32_t idx = 0;
+                    while (   idx < cInputs
+                           && RT_SUCCESS(rc))
+                    {
+                        size_t cbInput = 0;
+                        if (cbState >= sizeof(uint32_t))
+                        {
+                            memcpy(&cbInput, pbState, sizeof(uint32_t));
+                            cbInput = RT_LE2H_U32(cbInput);
+                            pbState += sizeof(uint32_t);
+                        }
+
+                        if (   cbInput
+                            && cbInput <= cbState)
+                        {
+                            PRTFUZZINPUTINT pInput = rtFuzzCtxInputCreate(pThis, cbInput);
+                            if (RT_LIKELY(pInput))
+                            {
+                                memcpy(&pInput->abInput[0], pbState, cbInput);
+                                RTMd5(&pInput->abInput[0], pInput->cbInput, &pInput->abMd5Hash[0]);
+                                rc = rtFuzzCtxInputAdd(pThis, pInput);
+                                if (RT_FAILURE(rc))
+                                    RTMemFree(pInput);
+                                pbState += cbInput;
+                            }
+                        }
+                        else
+                            rc = VERR_INVALID_STATE;
+
+                        idx++;
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phFuzzCtx = pThis;
+                        return VINF_SUCCESS;
+                    }
+                }
+
+                rtFuzzCtxDestroy(pThis);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_INVALID_MAGIC;
+    }
+    else
+        rc = VERR_INVALID_MAGIC;
+
+    return rc;
 }
 
 
@@ -534,7 +686,16 @@ RTDECL(int) RTFuzzCtxCreateFromStateFile(PRTFUZZCTX phFuzzCtx, const char *pszFi
     AssertPtrReturn(phFuzzCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
 
-    return VERR_NOT_IMPLEMENTED;
+    void *pv = NULL;
+    size_t cb = 0;
+    int rc = RTFileReadAll(pszFilename, &pv, &cb);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFuzzCtxCreateFromState(phFuzzCtx, pv, cb);
+        RTFileReadAllFree(pv, cb);
+    }
+
+    return rc;
 }
 
 
@@ -572,7 +733,71 @@ RTDECL(int) RTFuzzCtxStateExport(RTFUZZCTX hFuzzCtx, void **ppvState, size_t *pc
     AssertPtrReturn(ppvState, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbState, VERR_INVALID_POINTER);
 
-    return VERR_NOT_IMPLEMENTED;
+    char aszPrngExport[_4K]; /* Should be plenty of room here. */
+    size_t cbPrng = sizeof(aszPrngExport);
+    int rc = RTRandAdvSaveState(pThis->hRand, &aszPrngExport[0], &cbPrng);
+    if (RT_SUCCESS(rc))
+    {
+        RTFUZZCTXSTATE StateExport;
+
+        StateExport.u32Magic         = RT_H2LE_U32(RTFUZZCTX_MAGIC);
+        StateExport.cbPrng           = RT_H2LE_U32((uint32_t)cbPrng);
+        StateExport.cInputs          = RT_H2LE_U32(pThis->cInputs);
+        StateExport.fFlagsBehavioral = RT_H2LE_U32(pThis->fFlagsBehavioral);
+        StateExport.cbInputMax       = RT_H2LE_U64(pThis->cbInputMax);
+
+        /* Estimate the size of the required state. */
+        size_t cbState =   sizeof(StateExport)
+                         + cbPrng
+                         + pThis->cInputs * ((pThis->cbInputMax < _1M ? pThis->cbInputMax : _64K) + sizeof(uint32_t)); /* For the size indicator before each input. */
+        uint8_t *pbState = (uint8_t *)RTMemAllocZ(cbState);
+        if (RT_LIKELY(pbState))
+        {
+            size_t offState = 0;
+            memcpy(pbState, &StateExport, sizeof(StateExport));
+            offState += sizeof(StateExport);
+            memcpy(&pbState[offState], &aszPrngExport[0], cbPrng);
+            offState += cbPrng;
+
+            /* Export each input. */
+            PRTFUZZINPUTINT pIt;
+            RTListForEach(&pThis->LstInputs, pIt, RTFUZZINPUTINT, NdInputs)
+            {
+                /* Ensure buffer size. */
+                if (offState + pIt->cbInput + sizeof(uint32_t) > cbState)
+                {
+                    uint8_t *pbStateNew = (uint8_t *)RTMemRealloc(pbState, cbState + pIt->cbInput + sizeof(uint32_t));
+                    if (RT_LIKELY(pbStateNew))
+                    {
+                        pbState = pbStateNew;
+                        cbState += pIt->cbInput + sizeof(uint32_t);
+                    }
+                    else
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                }
+
+                *(uint32_t *)&pbState[offState] = RT_H2LE_U32((uint32_t)pIt->cbInput);
+                offState += sizeof(uint32_t);
+                memcpy(&pbState[offState], &pIt->abInput[0], pIt->cbInput);
+                offState += pIt->cbInput;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                *ppvState = pbState;
+                *pcbState = offState;
+            }
+            else
+                RTMemFree(pbState);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
 }
 
 
@@ -582,7 +807,26 @@ RTDECL(int) RTFuzzCtxStateExportToFile(RTFUZZCTX hFuzzCtx, const char *pszFilena
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
 
-    return VERR_NOT_IMPLEMENTED;
+    void *pvState = NULL;
+    size_t cbState = 0;
+    int rc = RTFuzzCtxStateExport(hFuzzCtx, &pvState, &cbState);
+    if (RT_SUCCESS(rc))
+    {
+        RTFILE hFile;
+
+        rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileWrite(hFile, pvState, cbState, NULL);
+            RTFileClose(hFile);
+            if (RT_FAILURE(rc))
+                RTFileDelete(pszFilename);
+        }
+
+        RTMemFree(pvState);
+    }
+
+    return rc;
 }
 
 
@@ -796,7 +1040,48 @@ RTDECL(const char *) RTFuzzCtxCfgGetTmpDirectory(RTFUZZCTX hFuzzCtx)
 }
 
 
+RTDECL(int) RTFuzzCtxReseed(RTFUZZCTX hFuzzCtx, uint64_t uSeed)
+{
+    PRTFUZZCTXINT pThis = hFuzzCtx;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    RTRandAdvSeed(pThis->hRand, uSeed);
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput)
+{
+    int rc = VINF_SUCCESS;
+    PRTFUZZCTXINT pThis = hFuzzCtx;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(phFuzzInput, VERR_INVALID_POINTER);
+
+    uint32_t cTries = 0;
+    PRTFUZZINPUTINT pSrc = rtFuzzCtxInputPickRnd(pThis);
+    do
+    {
+        RTFUZZCTXMUTATOR enmMutator = (RTFUZZCTXMUTATOR)RTRandAdvU32Ex(pThis->hRand, 1, RTFUZZCTXMUTATOR_LAST);
+        PRTFUZZINPUTINT pInput = NULL;
+        rc = g_apfnMutators[enmMutator](pThis, &pSrc->abInput[0], pSrc->cbInput, &pInput);
+        if (   RT_SUCCESS(rc)
+            && VALID_PTR(pInput))
+        {
+            if (pThis->fFlagsBehavioral & RTFUZZCTX_F_BEHAVIORAL_ADD_INPUT_AUTOMATICALLY_TO_CORPUS)
+                rtFuzzCtxInputAdd(pThis, pInput);
+            *phFuzzInput = pInput;
+            return rc;
+        }
+    } while (++cTries <= 50);
+
+    if (RT_SUCCESS(rc))
+        rc = VERR_INVALID_STATE;
+
+    return rc;
+}
+
+
+RTDECL(int) RTFuzzCtxMutateBuffer(RTFUZZCTX hFuzzCtx, void *pvBuf, size_t cbBuf, PRTFUZZINPUT phFuzzInput)
 {
     int rc = VINF_SUCCESS;
     PRTFUZZCTXINT pThis = hFuzzCtx;
@@ -808,12 +1093,10 @@ RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput)
     {
         RTFUZZCTXMUTATOR enmMutator = (RTFUZZCTXMUTATOR)RTRandAdvU32Ex(pThis->hRand, 1, RTFUZZCTXMUTATOR_LAST);
         PRTFUZZINPUTINT pInput = NULL;
-        rc = g_apfnMutators[enmMutator](pThis, &pInput);
+        rc = g_apfnMutators[enmMutator](pThis, pvBuf, cbBuf, &pInput);
         if (   RT_SUCCESS(rc)
             && VALID_PTR(pInput))
         {
-            if (pThis->fFlagsBehavioral & RTFUZZCTX_F_BEHAVIORAL_ADD_INPUT_AUTOMATICALLY_TO_CORPUS)
-                rtFuzzCtxInputAdd(pThis, pInput);
             *phFuzzInput = pInput;
             return rc;
         }

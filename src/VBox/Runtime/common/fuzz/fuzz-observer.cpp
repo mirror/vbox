@@ -110,8 +110,8 @@ typedef struct RTFUZZOBSINT
     uint32_t                    cArgs;
     /** Maximum time to wait for the client to terminate until it is considered hung and killed. */
     RTMSINTERVAL                msWaitMax;
-    /** Flags controlling how the binary is executed. */
-    uint32_t                    fFlags;
+    /** The channel the binary expects the input. */
+    RTFUZZOBSINPUTCHAN          enmInputChan;
     /** Flag whether to shutdown the master and all workers. */
     volatile bool               fShutdown;
     /** Global observer thread handle. */
@@ -473,7 +473,7 @@ static int rtFuzzObsExecCtxCreate(PPRTFUZZOBSEXECCTX ppExecCtx, PRTFUZZOBSINT pT
                     AssertRC(rc);
 
                     /* Create the stdin pipe handles if not a file input. */
-                    if (!(pThis->fFlags & RTFUZZ_OBS_BINARY_F_INPUT_FILE))
+                    if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_STDIN || pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FUZZING_AWARE_CLIENT)
                     {
                         rc = RTPipeCreate(&pExecCtx->hPipeStdinR, &pExecCtx->hPipeStdinW, RTPIPE_C_INHERIT_READ);
                         if (RT_SUCCESS(rc))
@@ -536,7 +536,8 @@ static void rtFuzzObsExecCtxDestroy(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExec
     RTPipeClose(pExecCtx->hPipeStderrR);
     RTPipeClose(pExecCtx->hPipeStderrW);
 
-    if (!(pThis->fFlags & RTFUZZ_OBS_BINARY_F_INPUT_FILE))
+    if (   pThis->enmInputChan == RTFUZZOBSINPUTCHAN_STDIN
+        || pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FUZZING_AWARE_CLIENT)
     {
         RTPipeClose(pExecCtx->hPipeStdinR);
         RTPipeClose(pExecCtx->hPipeStdinW);
@@ -648,6 +649,128 @@ static int rtFuzzObsExecCtxClientRun(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExe
 
 
 /**
+ * Runs the fuzzing aware client binary pumping all data back and forth waiting for the client to crash.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_TIMEOUT if the client didn't finish in the given deadline and was killed.
+ * @param   pThis               The internal fuzzing observer state.
+ * @param   pExecCtx            The execution context.
+ * @param   pProcStat           Where to store the process exit status on success.
+ */
+static int rtFuzzObsExecCtxClientRunFuzzingAware(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExecCtx, PRTPROCSTATUS pProcStat)
+{
+    rtFuzzObsStdOutErrBufClear(&pExecCtx->StdOutBuf);
+    rtFuzzObsStdOutErrBufClear(&pExecCtx->StdErrBuf);
+
+    int rc = RTProcCreateEx(pThis->pszBinary, &pExecCtx->apszArgs[0], RTENV_DEFAULT, 0 /*fFlags*/, &pExecCtx->StdinHandle,
+                            &pExecCtx->StdoutHandle, &pExecCtx->StderrHandle, NULL, NULL, &pExecCtx->hProc);
+    if (RT_SUCCESS(rc))
+    {
+        /* Send the initial fuzzing context state over to the client. */
+        void *pvState = NULL;
+        size_t cbState = 0;
+        rc = RTFuzzCtxStateExport(pThis->hFuzzCtx, &pvState, &cbState);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cbStateWr = (uint32_t)cbState;
+            rc = RTPipeWriteBlocking(pExecCtx->hPipeStdinW, &cbStateWr, sizeof(cbStateWr), NULL);
+            rc = RTPipeWriteBlocking(pExecCtx->hPipeStdinW, pvState, cbState, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTPollSetRemove(pExecCtx->hPollSet, RTFUZZOBS_EXEC_CTX_POLL_ID_STDIN);
+                AssertRC(rc);
+
+                uint64_t tsMilliesLastSignal = RTTimeSystemMilliTS();
+                uint32_t cFuzzedInputs = 0;
+                for (;;)
+                {
+                    /* Wait a bit for something to happen on one of the pipes. */
+                    uint32_t fEvtsRecv = 0;
+                    uint32_t idEvt = 0;
+                    rc = RTPoll(pExecCtx->hPollSet, 10 /*cMillies*/, &fEvtsRecv, &idEvt);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (idEvt == RTFUZZOBS_EXEC_CTX_POLL_ID_STDOUT)
+                        {
+                            Assert(fEvtsRecv & RTPOLL_EVT_READ);
+                            for (;;)
+                            {
+                                char achBuf[512];
+                                size_t cbRead = 0;
+                                rc = RTPipeRead(pExecCtx->hPipeStdoutR, &achBuf[0], sizeof(achBuf), &cbRead);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    if (!cbRead)
+                                        break;
+
+                                    tsMilliesLastSignal = RTTimeMilliTS();
+                                    for (unsigned i = 0; i < cbRead; i++)
+                                    {
+                                        ASMAtomicIncU32(&pThis->Stats.cFuzzedInputs);
+                                        ASMAtomicIncU32(&pThis->Stats.cFuzzedInputsPerSec);
+
+                                        if (achBuf[i] == '.')
+                                            cFuzzedInputs++;
+                                        else if (achBuf[i] == 'A')
+                                        {
+                                            /** @todo: Advance our fuzzer to get the added input. */
+                                        }
+                                    }
+                                }
+                                else
+                                    break;
+                            }
+                            AssertRC(rc);
+                        }
+                        else if (idEvt == RTFUZZOBS_EXEC_CTX_POLL_ID_STDERR)
+                        {
+                            Assert(fEvtsRecv & RTPOLL_EVT_READ);
+                            rc = rtFuzzObsStdOutErrBufFill(&pExecCtx->StdErrBuf, pExecCtx->hPipeStderrR);
+                            AssertRC(rc);
+                        }
+                        else
+                            AssertMsgFailed(("Invalid poll ID returned: %u!\n", idEvt));
+                    }
+                    else
+                        Assert(rc == VERR_TIMEOUT);
+
+                    /* Check the process status. */
+                    rc = RTProcWait(pExecCtx->hProc, RTPROCWAIT_FLAGS_NOBLOCK, pProcStat);
+                    if (RT_SUCCESS(rc))
+                        break;
+                    else
+                    {
+                        Assert(rc == VERR_PROCESS_RUNNING);
+                        /* Check when the last response from the client was. */
+                        if (RTTimeSystemMilliTS() - tsMilliesLastSignal > pThis->msWaitMax)
+                        {
+                            rc = VERR_TIMEOUT;
+                            break;
+                        }
+                    }
+                } /* for (;;) */
+
+                /* Kill the process on a timeout. */
+                if (rc == VERR_TIMEOUT)
+                {
+                    int rc2 = RTProcTerminate(pExecCtx->hProc);
+                    AssertRC(rc2);
+                }
+            }
+        }
+    }
+
+    RTHANDLE Handle;
+    Handle.enmType = RTHANDLETYPE_PIPE;
+    Handle.u.hPipe = pExecCtx->hPipeStdinW;
+    rc = RTPollSetAdd(pExecCtx->hPollSet, &Handle, RTPOLL_EVT_WRITE, RTFUZZOBS_EXEC_CTX_POLL_ID_STDIN);
+    AssertRC(rc);
+
+    return rc;
+}
+
+
+/**
  * Adds the input to the results directory.
  *
  * @returns IPRT status code.
@@ -728,7 +851,7 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
 
         AssertPtr(pObsThrd->hFuzzInput);
 
-        if (pThis->fFlags & RTFUZZ_OBS_BINARY_F_INPUT_FILE)
+        if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FILE)
         {
             char szFilename[32];
 
@@ -749,7 +872,7 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
                 rc = rtFuzzObsExecCtxArgvPrepare(pThis, pExecCtx, &aVar[0]);
             }
         }
-        else
+        else if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_STDIN)
         {
             rc = RTFuzzInputQueryData(pObsThrd->hFuzzInput, (void **)&pExecCtx->pbInputCur, &pExecCtx->cbInputLeft);
             if (RT_SUCCESS(rc))
@@ -759,9 +882,14 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
         if (RT_SUCCESS(rc))
         {
             RTPROCSTATUS ProcSts;
-            rc = rtFuzzObsExecCtxClientRun(pThis, pExecCtx, &ProcSts);
-            ASMAtomicIncU32(&pThis->Stats.cFuzzedInputs);
-            ASMAtomicIncU32(&pThis->Stats.cFuzzedInputsPerSec);
+            if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FUZZING_AWARE_CLIENT)
+                rc = rtFuzzObsExecCtxClientRunFuzzingAware(pThis, pExecCtx, &ProcSts);
+            else
+            {
+                rc = rtFuzzObsExecCtxClientRun(pThis, pExecCtx, &ProcSts);
+                ASMAtomicIncU32(&pThis->Stats.cFuzzedInputs);
+                ASMAtomicIncU32(&pThis->Stats.cFuzzedInputsPerSec);
+            }
 
             if (RT_SUCCESS(rc))
             {
@@ -779,7 +907,7 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
             else
                 AssertFailed();
 
-            if (pThis->fFlags & RTFUZZ_OBS_BINARY_F_INPUT_FILE)
+            if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FILE)
                 RTFileDelete(&szInput[0]);
         }
 
@@ -947,7 +1075,6 @@ RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs)
     {
         pThis->pszBinary     = NULL;
         pThis->papszArgs     = NULL;
-        pThis->fFlags        = 0;
         pThis->msWaitMax     = 1000;
         pThis->hThreadGlobal = NIL_RTTHREAD;
         pThis->hEvtGlobal    = NIL_RTSEMEVENT;
@@ -1068,15 +1195,15 @@ RTDECL(int) RTFuzzObsSetResultDirectory(RTFUZZOBS hFuzzObs, const char *pszResul
 }
 
 
-RTDECL(int) RTFuzzObsSetTestBinary(RTFUZZOBS hFuzzObs, const char *pszBinary, uint32_t fFlags)
+RTDECL(int) RTFuzzObsSetTestBinary(RTFUZZOBS hFuzzObs, const char *pszBinary, RTFUZZOBSINPUTCHAN enmInputChan)
 {
     PRTFUZZOBSINT pThis = hFuzzObs;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(pszBinary, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
-    pThis->fFlags    = fFlags;
-    pThis->pszBinary = RTStrDup(pszBinary);
+    pThis->enmInputChan = enmInputChan;
+    pThis->pszBinary    = RTStrDup(pszBinary);
     if (RT_UNLIKELY(!pThis->pszBinary))
         rc = VERR_NO_STR_MEMORY;
     return rc;
@@ -1145,7 +1272,7 @@ RTDECL(int) RTFuzzObsExecStart(RTFUZZOBS hFuzzObs, uint32_t cProcs)
     PRTFUZZOBSINT pThis = hFuzzObs;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(cProcs <= sizeof(uint64_t) * 8, VERR_INVALID_PARAMETER);
-    AssertReturn(   (pThis->fFlags & RTFUZZ_OBS_BINARY_F_INPUT_FILE)
+    AssertReturn(   pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FILE
                  || pThis->pszTmpDir != NULL,
                  VERR_INVALID_STATE);
 

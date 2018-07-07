@@ -64,10 +64,10 @@ typedef struct RTFUZZRUN
     char                        *pszId;
     /** Number of processes. */
     uint32_t                    cProcs;
-    /** Maximum input size to generate. */
-    size_t                      cbInputMax;
     /** The fuzzing observer state handle. */
     RTFUZZOBS                   hFuzzObs;
+    /** Flag whether fuzzing was started. */
+    bool                        fStarted;
 } RTFUZZRUN;
 /** Pointer to a running fuzzer state. */
 typedef RTFUZZRUN *PRTFUZZRUN;
@@ -90,10 +90,8 @@ typedef struct RTFUZZCMDMASTER
     const char                  *pszResultsDir;
     /** Flag whether to shutdown. */
     bool                        fShutdown;
-    /** Flag whether to send a response along with the ACK. */
-    bool                        fAckResponse;
     /** The response message. */
-    char                        aszResponse[_1K];
+    char                        *pszResponse;
 } RTFUZZCMDMASTER;
 /** Pointer to a fuzzing master command state. */
 typedef RTFUZZCMDMASTER *PRTFUZZCMDMASTER;
@@ -266,6 +264,49 @@ static int rtFuzzCmdMasterFuzzRunProcessCfgU32Def(uint32_t *pu32Val, const char 
 
 
 /**
+ * Returns the configured input channel for the binary under test.
+ *
+ * @returns Selected input channel or RTFUZZOBSINPUTCHAN_INVALID if an error occurred.
+ * @param   pszCfgItem          The config item to resolve.
+ * @param   hJsonCfg            The JSON object containing the item.
+ * @param   enmChanDef          Default value if the item wasn't found.
+ * @param   pErrInfo            Where to store the error information on failure, optional.
+ */
+static RTFUZZOBSINPUTCHAN rtFuzzCmdMasterFuzzRunProcessCfgGetInputChan(const char *pszCfgItem, RTJSONVAL hJsonCfg, RTFUZZOBSINPUTCHAN enmChanDef, PRTERRINFO pErrInfo)
+{
+    RTFUZZOBSINPUTCHAN enmInputChan = RTFUZZOBSINPUTCHAN_INVALID;
+
+    RTJSONVAL hJsonVal;
+    int rc = RTJsonValueQueryByName(hJsonCfg, pszCfgItem, &hJsonVal);
+    if (rc == VERR_NOT_FOUND)
+        enmInputChan = enmChanDef;
+    else if (RT_SUCCESS(rc))
+    {
+        const char *pszBinary = RTJsonValueGetString(hJsonVal);
+        if (pszBinary)
+        {
+            if (!RTStrCmp(pszBinary, "File"))
+                enmInputChan = RTFUZZOBSINPUTCHAN_FILE;
+            else if (!RTStrCmp(pszBinary, "Stdin"))
+                enmInputChan = RTFUZZOBSINPUTCHAN_STDIN;
+            else if (!RTStrCmp(pszBinary, "FuzzingAware"))
+                enmInputChan = RTFUZZOBSINPUTCHAN_FUZZING_AWARE_CLIENT;
+            else
+                rtFuzzCmdMasterErrorRc(pErrInfo, VERR_INVALID_PARAMETER, "JSON request malformed: \"%s\" for \"%s\" is not known", pszCfgItem, pszBinary);
+        }
+        else
+            rtFuzzCmdMasterErrorRc(pErrInfo, VERR_INVALID_STATE, "JSON request malformed: \"%s\" is not a string", pszCfgItem);
+
+        RTJsonValueRelease(hJsonVal);
+    }
+    else
+        rtFuzzCmdMasterErrorRc(pErrInfo, rc, "JSON request malformed: Failed to query \"%s\"", pszCfgItem);
+
+    return enmInputChan;
+}
+
+
+/**
  * Processes binary related configs for the given fuzzing run.
  *
  * @returns IPRT status code.
@@ -282,14 +323,10 @@ static int rtFuzzCmdMasterFuzzRunProcessBinaryCfg(PRTFUZZRUN pFuzzRun, RTJSONVAL
         const char *pszBinary = RTJsonValueGetString(hJsonVal);
         if (RT_LIKELY(pszBinary))
         {
-            bool fFileInput = false;
-            rc = rtFuzzCmdMasterFuzzRunProcessCfgBoolDef(&fFileInput, "FileInput", hJsonRoot, false, pErrInfo);
-            if (RT_SUCCESS(rc))
+            RTFUZZOBSINPUTCHAN enmInputChan = rtFuzzCmdMasterFuzzRunProcessCfgGetInputChan("InputChannel", hJsonRoot, RTFUZZOBSINPUTCHAN_STDIN, pErrInfo);
+            if (enmInputChan != RTFUZZOBSINPUTCHAN_INVALID)
             {
-                uint32_t fFlags = 0;
-                if (fFileInput)
-                    fFlags |= RTFUZZ_OBS_BINARY_F_INPUT_FILE;
-                rc = RTFuzzObsSetTestBinary(pFuzzRun->hFuzzObs, pszBinary, fFlags);
+                rc = RTFuzzObsSetTestBinary(pFuzzRun->hFuzzObs, pszBinary, enmInputChan);
                 if (RT_FAILURE(rc))
                     rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Failed to add the binary path for the fuzzing run");
             }
@@ -634,7 +671,9 @@ static int rtFuzzCmdMasterCreateFuzzRunWithId(PRTFUZZCMDMASTER pThis, const char
                                     /* Start fuzzing. */
                                     RTListAppend(&pThis->LstFuzzed, &pFuzzRun->NdFuzzed);
                                     rc = RTFuzzObsExecStart(pFuzzRun->hFuzzObs, pFuzzRun->cProcs);
-                                    if (RT_FAILURE(rc))
+                                    if (RT_SUCCESS(rc))
+                                        pFuzzRun->fStarted = true;
+                                    else
                                         rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Failed to start fuzzing with %Rrc", rc);
                                 }
                                 else
@@ -770,9 +809,14 @@ static int rtFuzzCmdMasterProcessJsonReqSuspend(PRTFUZZCMDMASTER pThis, RTJSONVA
     int rc = rtFuzzCmdMasterQueryFuzzRunFromJson(pThis, hJsonRoot, "Id", pErrInfo, &pFuzzRun);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFuzzObsExecStop(pFuzzRun->hFuzzObs);
-        if (RT_FAILURE(rc))
-            rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Suspending the fuzzing process failed");
+        if (pFuzzRun->fStarted)
+        {
+            rc = RTFuzzObsExecStop(pFuzzRun->hFuzzObs);
+            if (RT_SUCCESS(rc))
+                pFuzzRun->fStarted = false;
+            else
+                rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Suspending the fuzzing process failed");
+        }
     }
 
     return rc;
@@ -793,12 +837,106 @@ static int rtFuzzCmdMasterProcessJsonReqResume(PRTFUZZCMDMASTER pThis, RTJSONVAL
     int rc = rtFuzzCmdMasterQueryFuzzRunFromJson(pThis, hJsonRoot, "Id", pErrInfo, &pFuzzRun);
     if (RT_SUCCESS(rc))
     {
-        rc = rtFuzzCmdMasterFuzzRunProcessCfgU32Def(&pFuzzRun->cProcs, "FuzzingProcs", hJsonRoot, pFuzzRun->cProcs, pErrInfo);
+        if (!pFuzzRun->fStarted)
+        {
+            rc = rtFuzzCmdMasterFuzzRunProcessCfgU32Def(&pFuzzRun->cProcs, "FuzzingProcs", hJsonRoot, pFuzzRun->cProcs, pErrInfo);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTFuzzObsExecStart(pFuzzRun->hFuzzObs, pFuzzRun->cProcs);
+                if (RT_SUCCESS(rc))
+                    pFuzzRun->fStarted = true;
+                else
+                    rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Resuming the fuzzing process failed");
+            }
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Processes the "SaveFuzzingState" request.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The fuzzing master command state.
+ * @param   hJsonValRoot        The root node of the JSON request.
+ * @param   pErrInfo            Where to store the error information on failure, optional.
+ */
+static int rtFuzzCmdMasterProcessJsonReqSaveState(PRTFUZZCMDMASTER pThis, RTJSONVAL hJsonRoot, PRTERRINFO pErrInfo)
+{
+    PRTFUZZRUN pFuzzRun;
+    int rc = rtFuzzCmdMasterQueryFuzzRunFromJson(pThis, hJsonRoot, "Id", pErrInfo, &pFuzzRun);
+    if (RT_SUCCESS(rc))
+    {
+        /* Suspend fuzzing, save and resume if not stopped. */
+        if (pFuzzRun->fStarted)
+        {
+            rc = RTFuzzObsExecStop(pFuzzRun->hFuzzObs);
+            if (RT_FAILURE(rc))
+                rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Suspending the fuzzing process failed");
+        }
+
         if (RT_SUCCESS(rc))
         {
-            rc = RTFuzzObsExecStart(pFuzzRun->hFuzzObs, pFuzzRun->cProcs);
-            if (RT_FAILURE(rc))
-                rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Resuming the fuzzing process failed");
+            RTFUZZCTX hFuzzCtx;
+            rc = RTFuzzObsQueryCtx(pFuzzRun->hFuzzObs, &hFuzzCtx);
+            AssertRC(rc);
+
+            void *pvState = NULL;
+            size_t cbState = 0;
+            rc = RTFuzzCtxStateExport(hFuzzCtx, &pvState, &cbState);
+            if (RT_SUCCESS(rc))
+            {
+                /* Encode to base64. */
+                size_t cbStateStr = RTBase64EncodedLength(cbState) + 1;
+                char *pszState = (char *)RTMemAllocZ(cbStateStr);
+                if (pszState)
+                {
+                    rc = RTBase64Encode(pvState, cbState, pszState, cbStateStr, &cbStateStr);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Strip all new lines from the srting. */
+                        size_t offStr = 0;
+                        while (offStr < cbStateStr)
+                        {
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+                            char *pszEol = strchr(&pszState[offStr], '\r');
+#else
+                            char *pszEol = strchr(&pszState[offStr], '\n');
+#endif
+                            if (pszEol)
+                            {
+                                offStr += pszEol - &pszState[offStr];
+                                memmove(pszEol, &pszEol[RTBASE64_EOL_SIZE], cbStateStr - offStr - RTBASE64_EOL_SIZE);
+                                cbStateStr -= RTBASE64_EOL_SIZE;
+                            }
+                            else
+                                break;
+                        }
+
+                        const char s_szState[] = "{ \"State\": %s }";
+                        pThis->pszResponse = RTStrAPrintf2(s_szState, pszState);
+                        if (RT_UNLIKELY(!pThis->pszResponse))
+                            rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_BUFFER_OVERFLOW, "Request error: Response data buffer overflow", rc);
+                    }
+                    else
+                        rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Failed to encode the state as a base64 string");
+                    RTMemFree(pszState);
+                }
+                else
+                    rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_NO_STR_MEMORY, "Request error: Failed to allocate a state string for the response");
+                RTMemFree(pvState);
+            }
+            else
+                rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Exporting the state failed");
+        }
+
+        if (pFuzzRun->fStarted)
+        {
+            int rc2 = RTFuzzObsExecStart(pFuzzRun->hFuzzObs, pFuzzRun->cProcs);
+            if (RT_FAILURE(rc2))
+                rtFuzzCmdMasterErrorRc(pErrInfo, rc2, "Request error: Resuming the fuzzing process failed");
         }
     }
 
@@ -828,11 +966,9 @@ static int rtFuzzCmdMasterProcessJsonReqQueryStats(PRTFUZZCMDMASTER pThis, RTJSO
                                      "  \"FuzzedInputs\":       %u\n"
                                      "  \"FuzzedInputsHang\":   %u\n"
                                      "  \"FuzzedInputsCrash\":   %u\n}";
-            ssize_t cch = RTStrPrintf2(&pThis->aszResponse[0], sizeof(pThis->aszResponse), s_szStats, Stats.cFuzzedInputsPerSec,
-                                       Stats.cFuzzedInputs, Stats.cFuzzedInputsHang, Stats.cFuzzedInputsCrash);
-            if (cch > 0)
-                pThis->fAckResponse = true;
-            else
+            pThis->pszResponse = RTStrAPrintf2(s_szStats, Stats.cFuzzedInputsPerSec,
+                                               Stats.cFuzzedInputs, Stats.cFuzzedInputsHang, Stats.cFuzzedInputsCrash);
+            if (RT_UNLIKELY(!pThis->pszResponse))
                 rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_BUFFER_OVERFLOW, "Request error: Response data buffer overflow", rc);
         }
         else
@@ -868,6 +1004,8 @@ static int rtFuzzCmdMasterProcessJsonReq(PRTFUZZCMDMASTER pThis, RTJSONVAL hJson
                 rc = rtFuzzCmdMasterProcessJsonReqSuspend(pThis, hJsonRoot, pErrInfo);
             else if (!RTStrCmp(pszReq, "ResumeFuzzing"))
                 rc = rtFuzzCmdMasterProcessJsonReqResume(pThis, hJsonRoot, pErrInfo);
+            else if (!RTStrCmp(pszReq, "SaveFuzzingState"))
+                rc = rtFuzzCmdMasterProcessJsonReqSaveState(pThis, hJsonRoot, pErrInfo);
             else if (!RTStrCmp(pszReq, "QueryStats"))
                 rc = rtFuzzCmdMasterProcessJsonReqQueryStats(pThis, hJsonRoot, pErrInfo);
             else if (!RTStrCmp(pszReq, "Shutdown"))
@@ -932,15 +1070,21 @@ static void rtFuzzCmdMasterDestroy(PRTFUZZCMDMASTER pThis)
 static void rtFuzzCmdMasterTcpSendAck(RTSOCKET hSocket, const char *pszResponse)
 {
     const char s_szSucc[] = "{ \"Status\": \"ACK\" }\n";
-    const char s_szSuccResp[] = "{ \"Status\": \"ACK\"\n  \"Response\":\n    %s\n }\n";
+    const char s_szSuccResp[] = "{ \"Status\": \"ACK\"\n  \"Response\":\n";
+    const char s_szSuccRespClose[] = "\n }\n";
     if (pszResponse)
     {
-        char szTmp[_1K];
-        ssize_t cchResp = RTStrPrintf2(szTmp, sizeof(szTmp), s_szSuccResp, pszResponse);
-        if (cchResp > 0)
-            RTTcpWrite(hSocket, szTmp, cchResp);
-        else
-            RTTcpWrite(hSocket, s_szSucc, strlen(s_szSucc));
+        RTSGSEG aSegs[3];
+        RTSGBUF SgBuf;
+        aSegs[0].pvSeg = (void *)s_szSuccResp;
+        aSegs[0].cbSeg = sizeof(s_szSuccResp) - 1;
+        aSegs[1].pvSeg = (void *)pszResponse;
+        aSegs[1].cbSeg = strlen(pszResponse);
+        aSegs[2].pvSeg = (void *)s_szSuccRespClose;
+        aSegs[2].cbSeg = sizeof(s_szSuccRespClose) - 1;
+
+        RTSgBufInit(&SgBuf, &aSegs[0], RT_ELEMENTS(aSegs));
+        RTTcpSgWrite(hSocket, &SgBuf);
     }
     else
         RTTcpWrite(hSocket, s_szSucc, sizeof(s_szSucc));
@@ -1010,20 +1154,24 @@ static DECLCALLBACK(int) rtFuzzCmdMasterTcpServe(RTSOCKET hSocket, void *pvUser)
                     RTERRINFOSTATIC ErrInfo;
                     RTErrInfoInitStatic(&ErrInfo);
 
-                    pThis->fAckResponse = false;
-                    RT_ZERO(pThis->aszResponse);
                     rc = RTJsonParseFromBuf(&hJsonReq, pbReq, cbReq, &ErrInfo.Core);
                     if (RT_SUCCESS(rc))
                     {
                         rc = rtFuzzCmdMasterProcessJsonReq(pThis, hJsonReq, &ErrInfo.Core);
                         if (RT_SUCCESS(rc))
-                            rtFuzzCmdMasterTcpSendAck(hSocket, pThis->fAckResponse ? pThis->aszResponse : NULL);
+                            rtFuzzCmdMasterTcpSendAck(hSocket, pThis->pszResponse);
                         else
                             rtFuzzCmdMasterTcpSendNAck(hSocket, &ErrInfo.Core);
                         RTJsonValueRelease(hJsonReq);
                     }
                     else
                         rtFuzzCmdMasterTcpSendNAck(hSocket, &ErrInfo.Core);
+
+                    if (pThis->pszResponse)
+                    {
+                        RTStrFree(pThis->pszResponse);
+                        pThis->pszResponse = NULL;
+                    }
                     break;
                 }
                 else if (cbReq == cbReqMax)
@@ -1123,6 +1271,7 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdMaster(unsigned cArgs, char **papszArgs)
         This.pszTmpDir     = NULL;
         This.pszResultsDir = NULL;
         This.fShutdown     = false;
+        This.pszResponse   = NULL;
 
         /* Argument parsing loop. */
         bool fContinue = true;
