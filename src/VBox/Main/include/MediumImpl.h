@@ -227,7 +227,7 @@ public:
     const Utf8Str& i_getKeyId();
 
     HRESULT i_openHddForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
-                           struct MediumCryptoFilterSettings *pCryptoSettingsRead);
+                           struct MediumCryptoFilterSettings *pCryptoSettings);
 
 private:
 
