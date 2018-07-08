@@ -55,7 +55,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include <nsIGenericFactory.h>
-#include <VirtualBox_XPCOM.h>
+#include <VBox/com/VirtualBox.h>
 
 #include "VBox/com/NativeEventQueue.h"
 

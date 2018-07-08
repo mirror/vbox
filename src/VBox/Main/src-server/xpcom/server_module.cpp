@@ -42,7 +42,7 @@
     "@mozilla.org/ipc/dconnect-service;1"
 
 // generated file
-#include <VirtualBox_XPCOM.h>
+#include <VBox/com/VirtualBox.h>
 
 #include "server.h"
 #include "Logging.h"

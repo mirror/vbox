@@ -27,7 +27,7 @@
 #include <nsIGenericFactory.h>
 
 // generated file
-#include "VirtualBox_XPCOM.h"
+#include <VBox/com/VirtualBox.h>
 
 #include "SessionImpl.h"
 #include "VirtualBoxClientImpl.h"
