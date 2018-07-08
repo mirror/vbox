@@ -1132,8 +1132,7 @@ bool NetworkAdapter::i_isModified()
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool fChanged = mData.isBackedUp();
-    if (!fChanged && mData->mode == NetworkAttachmentType_NAT)
-        fChanged = mNATEngine->i_isModified();
+    fChanged     |= mNATEngine->i_isModified();
     return fChanged;
 }
 
