@@ -41,6 +41,7 @@
 # if !defined(VBOX_WITH_XPCOM)
 #  include <VirtualBox.h>
 # else
+#  define VBOX_WITH_XPCOM_CPP_ENUM_HACK
 #  include <VirtualBox_XPCOM.h>
 # endif
 #endif
