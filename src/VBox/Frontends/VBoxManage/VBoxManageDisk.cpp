@@ -2056,7 +2056,7 @@ static RTEXITCODE mediumIOOpenMediumForIO(HandlerArg *pHandler, PCMEDIUMIOCOMMON
      */
     ComPtr<IMedium> ptrMedium;
     HRESULT hrc = openMedium(pHandler, pCommonOpts->pszFilenameOrUuid, pCommonOpts->enmDeviceType,
-                             fWritable ? (AccessMode_T)AccessMode_ReadWrite : (AccessMode_T)AccessMode_ReadOnly,
+                             fWritable ? AccessMode_ReadWrite : AccessMode_ReadOnly,
                              ptrMedium, false /* fForceNewUuidOnOpen */, false /* fSilent */);
     if (SUCCEEDED(hrc))
     {
