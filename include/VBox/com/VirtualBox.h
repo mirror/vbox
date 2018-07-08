@@ -37,7 +37,7 @@
 #define ___VBox_com_VirtualBox_h
 
 /* For XPCOM/C++ enum hack checks. */
-#include <iprt/AssertCompile.h>
+#include <iprt/assertcompile.h>
 
 /* Generated VirtualBox COM library definition file. */
 #if !defined(VBOXCOM_NOINCLUDE)
