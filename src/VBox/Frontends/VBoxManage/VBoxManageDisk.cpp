@@ -910,7 +910,7 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
         return errorSyntax(USAGE_CLONEMEDIUM, "Mandatory UUID or input file parameter missing");
     if (!pszDst)
         return errorSyntax(USAGE_CLONEMEDIUM, "Mandatory output file parameter missing");
-    if (fExisting && (!format.isEmpty() || enmMediumVariant != MediumType_Normal))
+    if (fExisting && (!format.isEmpty() || enmMediumVariant != MediumVariant_Standard))
         return errorSyntax(USAGE_CLONEMEDIUM, "Specified options which cannot be used with --existing");
 
     ComPtr<IMedium> pSrcMedium;
@@ -1236,6 +1236,9 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
             case MediumState_Deleting:
                 pszState = "deleting";
                 break;
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+            case MediumState_32BitHack: break; /* Shut up compiler warnings. */
+#endif
         }
         RTPrintf("State:          %s\n", pszState);
 
@@ -1280,6 +1283,9 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
             case MediumType_MultiAttach:
                 typeStr = "multiattach";
                 break;
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+            case MediumType_32BitHack: break; /* Shut up compiler warnings. */
+#endif
         }
         RTPrintf("Type:           %s\n", typeStr);
 
@@ -2024,7 +2030,7 @@ static RTEXITCODE mediumIOOpenMediumForIO(HandlerArg *pHandler, PCMEDIUMIOCOMMON
     /*
      * Make sure a medium was specified already.
      */
-    if (pCommonOpts->enmDeviceType == MEDIUMCATEGORY_NONE)
+    if (pCommonOpts->enmDeviceType == DeviceType_Null)
         return errorSyntax("No medium specified!");
 
     /*

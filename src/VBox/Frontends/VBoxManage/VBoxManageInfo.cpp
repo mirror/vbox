@@ -270,13 +270,16 @@ static void outputMachineReadableString(const char *pszName, Bstr const *pbstrVa
  * @returns String representation.
  * @param   enmType         Bandwidth control group type.
  */
-inline const char * bwGroupTypeToString(BandwidthGroupType_T enmType)
+static const char * bwGroupTypeToString(BandwidthGroupType_T enmType)
 {
     switch (enmType)
     {
         case BandwidthGroupType_Null:    return "Null";
         case BandwidthGroupType_Disk:    return "Disk";
         case BandwidthGroupType_Network: return "Network";
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case BandwidthGroupType_32BitHack: break; /* Shut up compiler warnings. */
+#endif
     }
     return "unknown";
 }

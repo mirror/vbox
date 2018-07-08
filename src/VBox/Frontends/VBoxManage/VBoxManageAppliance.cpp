@@ -913,6 +913,9 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
                         case VirtualSystemDescriptionType_Ignore:
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+                        case VirtualSystemDescriptionType_32BitHack:
+#endif
                             break;
                     }
 

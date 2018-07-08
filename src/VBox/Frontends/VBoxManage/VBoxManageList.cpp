@@ -52,6 +52,9 @@ static const char *getHostIfMediumTypeText(HostNetworkInterfaceMediumType_T enmT
         case HostNetworkInterfaceMediumType_PPP: return "PPP";
         case HostNetworkInterfaceMediumType_SLIP: return "SLIP";
         case HostNetworkInterfaceMediumType_Unknown: return "Unknown";
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case HostNetworkInterfaceMediumType_32BitHack: break; /* Shut up compiler warnings. */
+#endif
     }
     return "unknown";
 }
@@ -63,6 +66,9 @@ static const char *getHostIfStatusText(HostNetworkInterfaceStatus_T enmStatus)
         case HostNetworkInterfaceStatus_Up: return "Up";
         case HostNetworkInterfaceStatus_Down: return "Down";
         case HostNetworkInterfaceStatus_Unknown: return "Unknown";
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case HostNetworkInterfaceStatus_32BitHack: break; /* Shut up compiler warnings. */
+#endif
     }
     return "unknown";
 }
@@ -81,6 +87,9 @@ static const char*getDeviceTypeText(DeviceType_T enmType)
         case DeviceType_USB:            return "USB";
         case DeviceType_SharedFolder:   return "SharedFolder";
         case DeviceType_Graphics3D:     return "Graphics3D";
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case DeviceType_32BitHack: break; /* Shut up compiler warnings. */
+#endif
     }
     return "Unknown";
 }
@@ -380,6 +389,9 @@ static HRESULT listHddBackends(const ComPtr<IVirtualBox> pVirtualBox)
                     case DataType_Int32: RTPrintf("int"); break;
                     case DataType_Int8: RTPrintf("byte"); break;
                     case DataType_String: RTPrintf("string"); break;
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+                    case DataType_32BitHack: break; /* Shut up compiler warnings. */
+#endif
                 }
                 RTPrintf(" flags=%#04x", propertyFlags[j]);
                 RTPrintf(" default='%ls'", Bstr(propertyDefaults[j]).raw());
