@@ -115,9 +115,34 @@
     } while (0)
 
 /** Assert that the required state bits are fetched. */
-#define HMSVM_CPUMCTX_ASSERT(a_pVCpu, a_fExtrnMbz)          AssertMsg(!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnMbz)), \
-                                                                      ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", \
-                                                                      (a_pVCpu)->cpum.GstCtx.fExtrn, (a_fExtrnMbz)))
+#define HMSVM_CPUMCTX_ASSERT(a_pVCpu, a_fExtrnMbz)      AssertMsg(!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnMbz)), \
+                                                                  ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", \
+                                                                  (a_pVCpu)->cpum.GstCtx.fExtrn, (a_fExtrnMbz)))
+
+/** Assert that preemption is disabled or covered by thread-context hooks. */
+#define HMSVM_ASSERT_PREEMPT_SAFE(a_pVCpu)              Assert(   VMMR0ThreadCtxHookIsEnabled((a_pVCpu)) \
+                                                               || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+/** Assert that we haven't migrated CPUs when thread-context hooks are not
+ *  used. */
+#define HMSVM_ASSERT_CPU_SAFE(a_pVCpu)                  AssertMsg(   VMMR0ThreadCtxHookIsEnabled((a_pVCpu)) \
+                                                                  || (a_pVCpu)->hm.s.idEnteredCpu == RTMpCpuId(), \
+                                                                  ("Illegal migration! Entered on CPU %u Current %u\n", \
+                                                                   (a_pVCpu)->hm.s.idEnteredCpu, RTMpCpuId()));
+
+/** Assert that we're not executing a nested-guest. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+# define HMSVM_ASSERT_NOT_IN_NESTED_GUEST(a_pCtx)       Assert(!CPUMIsGuestInSvmNestedHwVirtMode((a_pCtx)))
+#else
+# define HMSVM_ASSERT_NOT_IN_NESTED_GUEST(a_pCtx)       do { NOREF((a_pCtx)); } while (0)
+#endif
+
+/** Assert that we're executing a nested-guest. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+# define HMSVM_ASSERT_IN_NESTED_GUEST(a_pCtx)           Assert(CPUMIsGuestInSvmNestedHwVirtMode((a_pCtx)))
+#else
+# define HMSVM_ASSERT_IN_NESTED_GUEST(a_pCtx)           do { NOREF((a_pCtx)); } while (0)
+#endif
 
 /** Macro for checking and returning from the using function for
  * \#VMEXIT intercepts that maybe caused during delivering of another
@@ -166,31 +191,6 @@
         if ((a_pVCpu)->hm.s.fSingleInstruction && (a_rc) == VINF_SUCCESS) \
             (a_rc) = VINF_EM_DBG_STEPPED; \
     } while (0)
-
-/** Assert that preemption is disabled or covered by thread-context hooks. */
-#define HMSVM_ASSERT_PREEMPT_SAFE()           Assert(   VMMR0ThreadCtxHookIsEnabled(pVCpu) \
-                                                     || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-
-/** Assert that we haven't migrated CPUs when thread-context hooks are not
- *  used. */
-#define HMSVM_ASSERT_CPU_SAFE()               AssertMsg(   VMMR0ThreadCtxHookIsEnabled(pVCpu) \
-                                                        || pVCpu->hm.s.idEnteredCpu == RTMpCpuId(), \
-                                                        ("Illegal migration! Entered on CPU %u Current %u\n", \
-                                                        pVCpu->hm.s.idEnteredCpu, RTMpCpuId()));
-
-/** Assert that we're not executing a nested-guest. */
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-# define HMSVM_ASSERT_NOT_IN_NESTED_GUEST(a_pCtx)       Assert(!CPUMIsGuestInSvmNestedHwVirtMode((a_pCtx)))
-#else
-# define HMSVM_ASSERT_NOT_IN_NESTED_GUEST(a_pCtx)       do { NOREF((a_pCtx)); } while (0)
-#endif
-
-/** Assert that we're executing a nested-guest. */
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-# define HMSVM_ASSERT_IN_NESTED_GUEST(a_pCtx)           Assert(CPUMIsGuestInSvmNestedHwVirtMode((a_pCtx)))
-#else
-# define HMSVM_ASSERT_IN_NESTED_GUEST(a_pCtx)           do { NOREF((a_pCtx)); } while (0)
-#endif
 
 /** Validate segment descriptor granularity bit. */
 #ifdef VBOX_STRICT
@@ -815,8 +815,8 @@ DECLINLINE(bool) hmR0SvmSupportsVmcbCleanBits(PVMCPU pVCpu, PCCPUMCTX pCtx)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
-        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN)
-               && pVM->cpum.ro.GuestFeatures.fSvmVmcbClean;
+        return (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN)
+            &&  pVM->cpum.ro.GuestFeatures.fSvmVmcbClean;
     }
 #else
     RT_NOREF(pCtx);
@@ -838,8 +838,8 @@ DECLINLINE(bool) hmR0SvmSupportsDecodeAssists(PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
-        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS)
-               &&  pVM->cpum.ro.GuestFeatures.fSvmDecodeAssists;
+        return (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS)
+            &&  pVM->cpum.ro.GuestFeatures.fSvmDecodeAssists;
     }
 #else
     RT_NOREF(pCtx);
@@ -861,8 +861,8 @@ DECLINLINE(bool) hmR0SvmSupportsNextRipSave(PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
-        return    (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
-               &&  pVM->cpum.ro.GuestFeatures.fSvmNextRipSave;
+        return (pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+            &&  pVM->cpum.ro.GuestFeatures.fSvmNextRipSave;
     }
 #else
     RT_NOREF(pCtx);
@@ -3231,7 +3231,7 @@ static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
     Assert(pVCpu);
     Assert(pvUser);
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    HMSVM_ASSERT_PREEMPT_SAFE();
+    HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
 
     VMMRZCallRing3Disable(pVCpu);
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
@@ -3262,7 +3262,7 @@ static int hmR0SvmExitToRing3(PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
 {
     Assert(pVCpu);
     Assert(pCtx);
-    HMSVM_ASSERT_PREEMPT_SAFE();
+    HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
 
     /* Please, no longjumps here (any logging shouldn't flush jump back to ring-3). NO LOGGING BEFORE THIS POINT! */
     VMMRZCallRing3Disable(pVCpu);
@@ -4083,7 +4083,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCCPUMCTX pCtx, PSVMVMCB pVm
  */
 static void hmR0SvmReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PCPUMCTX pCtx)
 {
-    HMSVM_ASSERT_PREEMPT_SAFE();
+    HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
     HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
     HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
 
@@ -4327,7 +4327,7 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 static int hmR0SvmPreRunGuestNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
-    HMSVM_ASSERT_PREEMPT_SAFE();
+    HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
     HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM_ONLY_IN_IEM
@@ -4446,7 +4446,7 @@ static int hmR0SvmPreRunGuestNested(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
  */
 static int hmR0SvmPreRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
-    HMSVM_ASSERT_PREEMPT_SAFE();
+    HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
     HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
 
     /* Check force flag actions that might require us to go back to ring-3. */
@@ -4876,7 +4876,7 @@ static int hmR0SvmRunGuestCodeNormal(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t *pcLo
     for (;;)
     {
         Assert(!HMR0SuspendPending());
-        HMSVM_ASSERT_CPU_SAFE();
+        HMSVM_ASSERT_CPU_SAFE(pVCpu);
 
         /* Preparatory work for running nested-guest code, this may force us to return to
            ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
@@ -5060,7 +5060,7 @@ static int hmR0SvmRunGuestCodeNested(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t *pcLo
     for (;;)
     {
         Assert(!HMR0SuspendPending());
-        HMSVM_ASSERT_CPU_SAFE();
+        HMSVM_ASSERT_CPU_SAFE(pVCpu);
 
         /* Preparatory work for running nested-guest code, this may force us to return to
            ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
@@ -5137,7 +5137,7 @@ static int hmR0SvmRunGuestCodeNested(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t *pcLo
 VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    HMSVM_ASSERT_PREEMPT_SAFE();
+    HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
     VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pCtx);
 
     uint32_t cLoops = 0;
@@ -5842,10 +5842,10 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTran
         AssertPtr(pCtx); \
         AssertPtr(pSvmTransient); \
         Assert(ASMIntAreEnabled()); \
-        HMSVM_ASSERT_PREEMPT_SAFE(); \
+        HMSVM_ASSERT_PREEMPT_SAFE(pVCpu); \
         HMSVM_ASSERT_PREEMPT_CPUID_VAR(); \
         Log4Func(("vcpu[%u] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (uint32_t)pVCpu->idCpu)); \
-        HMSVM_ASSERT_PREEMPT_SAFE(); \
+        HMSVM_ASSERT_PREEMPT_SAFE(pVCpu); \
         if (VMMR0IsLogFlushDisabled(pVCpu)) \
             HMSVM_ASSERT_PREEMPT_CPUID(); \
     } while (0)

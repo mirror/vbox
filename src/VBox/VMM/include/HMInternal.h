@@ -265,7 +265,7 @@ typedef struct HMGLOBALCPUINFO
     /** Set if the VBOX_HWVIRTEX_IGNORE_SVM_IN_USE hack is active. */
     bool                fIgnoreAMDVInUseError;
     /** In use by our code. (for power suspend) */
-    volatile bool       fInUse;
+    bool volatile       fInUse;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /** Nested-guest union (put data common to SVM/VMX outside the union). */
     union

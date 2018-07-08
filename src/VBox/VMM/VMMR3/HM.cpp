@@ -1188,7 +1188,6 @@ static void hmR3DisableRawMode(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-
         PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
     }
 }
