@@ -288,6 +288,10 @@ HRESULT SerialPort::setHostMode(PortMode_T aHostMode)
                 break;
             case PortMode_Disconnected:
                 break;
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+            case PortMode_32BitHack: /* (compiler warnings) */
+                AssertFailedBreak();
+#endif
         }
 
         m->bd.backup();

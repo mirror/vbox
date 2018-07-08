@@ -933,15 +933,19 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         bool fAttachLinked = d->options.contains(CloneOptions_Link); /* Linked clones requested? */
         switch (d->mode)
         {
-            case CloneMode_MachineState:          d->queryMediasForMachineState(machineList, fAttachLinked,
-                                                                                uCount, uTotalWeight);
-                                                  break;
-            case CloneMode_MachineAndChildStates: d->queryMediasForMachineAndChildStates(machineList, fAttachLinked,
-                                                                                         uCount, uTotalWeight);
-                                                  break;
-            case CloneMode_AllStates:             d->queryMediasForAllStates(machineList, fAttachLinked, uCount,
-                                                                             uTotalWeight);
-                                                  break;
+            case CloneMode_MachineState:
+                d->queryMediasForMachineState(machineList, fAttachLinked, uCount, uTotalWeight);
+                break;
+            case CloneMode_MachineAndChildStates:
+                d->queryMediasForMachineAndChildStates(machineList, fAttachLinked, uCount, uTotalWeight);
+                break;
+            case CloneMode_AllStates:
+                d->queryMediasForAllStates(machineList, fAttachLinked, uCount, uTotalWeight);
+                break;
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+            case CloneMode_32BitHack: /* (compiler warnings) */
+                AssertFailedBreak();
+#endif
         }
 
         /* Now create the progress project, so the user knows whats going on. */

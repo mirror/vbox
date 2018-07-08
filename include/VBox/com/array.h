@@ -235,7 +235,7 @@ struct SafeArrayTraits
 protected:
 
     /** Initializes memory for aElem. */
-    static void Init(T &aElem) { aElem = 0; }
+    static void Init(T &aElem) { aElem = (T)0; }
 
     /** Initializes memory occupied by aElem. */
     static void Uninit(T &aElem) { RT_NOREF(aElem); }

@@ -164,6 +164,9 @@ HRESULT StorageController::init(Machine *aParent,
             m->bd->controllerType = StorageControllerType_NVMe;
             break;
         case StorageBus_Null: break; /* Shut up MSC. */
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case StorageBus_32BitHack: break; /* Shut up GCC. */
+#endif
     }
 
     /* Confirm a successful initialization */

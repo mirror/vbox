@@ -302,22 +302,30 @@
 
     <xsl:choose>
       <xsl:when test="@safearray='yes'">
-         <xsl:variable name="elemtype">
-           <xsl:call-template name="typeIdl2Back">
-             <xsl:with-param name="type" select="@type" />
-             <xsl:with-param name="safearray" select="''" />
-             <xsl:with-param name="dir" select="'in'" />
-           </xsl:call-template>
-         </xsl:variable>
-         <xsl:value-of select="       '#ifdef RT_OS_WINDOWS&#10;'"/>
-         <xsl:value-of select="concat('              SAFEARRAY *aPtr_', @name, ' = va_arg(args, SAFEARRAY *);&#10;')"/>
-         <xsl:value-of select="concat('              com::SafeArray&lt;', $elemtype,'&gt;   aArr_', @name, '(aPtr_', @name, ');&#10;')"/>
-         <xsl:value-of select="       '#else&#10;'"/>
-         <xsl:value-of select="concat('              PRUint32 aArrSize_', @name, ' = va_arg(args, PRUint32);&#10;')"/>
-         <xsl:value-of select="concat('              void*    aPtr_', @name, ' = va_arg(args, void*);&#10;')"/>
-         <xsl:value-of select="concat('              com::SafeArray&lt;', $elemtype,'&gt;   aArr_', @name, '(aArrSize_', @name, ', (', $elemtype,'*)aPtr_', @name, ');&#10;')"/>
-         <xsl:value-of select="       '#endif&#10;'"/>
-         <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(ComSafeArrayAsInParam(aArr_', @name, '));&#10;')"/>
+        <xsl:variable name="elemtype">
+          <xsl:call-template name="typeIdl2Back">
+            <xsl:with-param name="type" select="@type" />
+            <xsl:with-param name="safearray" select="''" />
+            <xsl:with-param name="dir" select="'in'" />
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:value-of select="       '#ifdef RT_OS_WINDOWS&#10;'"/>
+        <xsl:value-of select="concat('              SAFEARRAY *aPtr_', @name, ' = va_arg(args, SAFEARRAY *);&#10;')"/>
+        <xsl:value-of select="concat('              com::SafeArray&lt;', $elemtype,'&gt;   aArr_', @name, '(aPtr_', @name, ');&#10;')"/>
+        <xsl:value-of select="       '#else&#10;'"/>
+        <xsl:value-of select="concat('              PRUint32 aArrSize_', @name, ' = va_arg(args, PRUint32);&#10;')"/>
+        <xsl:value-of select="concat('              void*    aPtr_', @name, ' = va_arg(args, void*);&#10;')"/>
+        <xsl:value-of select="concat('              com::SafeArray&lt;', $elemtype,'&gt;   aArr_', @name, '(aArrSize_', @name, ', (', $elemtype,'*)aPtr_', @name, ');&#10;')"/>
+        <xsl:value-of select="       '#endif&#10;'"/>
+        <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(ComSafeArrayAsInParam(aArr_', @name, '));&#10;')"/>
+      </xsl:when>
+      <xsl:when test="substring($aType, string-length($aType) - 1) = '_T'"> <!-- To avoid pedantic gcc warnings/errors. -->
+        <xsl:value-of select="       '#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK&#10;'"/>
+        <xsl:value-of select="concat('              ',$aTypeName, ' = (',$aType,')va_arg(args, int);&#10;')"/>
+        <xsl:value-of select="       '#else&#10;'"/>
+        <xsl:value-of select="concat('              ',$aTypeName, ' = va_arg(args, ',$aType,');&#10;')"/>
+        <xsl:value-of select="       '#endif&#10;'"/>
+        <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
       </xsl:when>
       <xsl:otherwise>
         <xsl:value-of select="concat('              ',$aTypeName, ' = va_arg(args, ',$aType,');&#10;')"/>

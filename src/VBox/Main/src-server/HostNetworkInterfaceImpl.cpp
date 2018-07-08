@@ -174,13 +174,10 @@ HRESULT HostNetworkInterface::updateConfig()
         RTNetMaskToPrefixIPv6(&info.IPv6NetMask, &iPrefixIPv6);
         m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = iPrefixIPv6;
         m.hardwareAddress = Bstr(Utf8StrFmt("%RTmac", &info.MACAddress));
-#ifdef RT_OS_WINDOWS
-        m.mediumType = (HostNetworkInterfaceMediumType)info.enmMediumType;
-        m.status = (HostNetworkInterfaceStatus)info.enmStatus;
-#else /* !RT_OS_WINDOWS */
-        m.mediumType = info.enmMediumType;
-        m.status = info.enmStatus;
-#endif /* !RT_OS_WINDOWS */
+        AssertCompile((unsigned)NETIF_T_UNKNOWN == (unsigned)HostNetworkInterfaceMediumType_Unknown);
+        m.mediumType = (HostNetworkInterfaceMediumType_T)info.enmMediumType;
+        AssertCompile((unsigned)NETIF_S_UNKNOWN == (unsigned)HostNetworkInterfaceStatus_Unknown);
+        m.status = (HostNetworkInterfaceStatus_T)info.enmStatus;
         m.speedMbits = info.uSpeedMbits;
         m.wireless = info.fWireless;
         return S_OK;
@@ -238,13 +235,10 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, HostNetworkInterfaceType
     m.realIPV6PrefixLength = m.IPV6NetworkMaskPrefixLength = iPrefixIPv6;
     m.dhcpEnabled = pIf->fDhcpEnabled;
     m.hardwareAddress = Bstr(Utf8StrFmt("%RTmac", &pIf->MACAddress));
-#ifdef RT_OS_WINDOWS
-    m.mediumType = (HostNetworkInterfaceMediumType)pIf->enmMediumType;
-    m.status = (HostNetworkInterfaceStatus)pIf->enmStatus;
-#else /* !RT_OS_WINDOWS */
-    m.mediumType = pIf->enmMediumType;
-    m.status = pIf->enmStatus;
-#endif /* !RT_OS_WINDOWS */
+    AssertCompile((unsigned)NETIF_T_UNKNOWN == (unsigned)HostNetworkInterfaceMediumType_Unknown);
+    m.mediumType = (HostNetworkInterfaceMediumType_T)pIf->enmMediumType;
+    AssertCompile((unsigned)NETIF_S_UNKNOWN == (unsigned)HostNetworkInterfaceStatus_Unknown);
+    m.status = (HostNetworkInterfaceStatus_T)pIf->enmStatus;
     m.speedMbits = pIf->uSpeedMbits;
     m.wireless = pIf->fWireless;
 

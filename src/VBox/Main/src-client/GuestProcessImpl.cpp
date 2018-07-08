@@ -1331,6 +1331,9 @@ ProcessWaitResult_T GuestProcess::i_waitFlagsToResultEx(uint32_t fWaitFlags,
             /* No result available yet, leave wait
              * flags untouched. */
             break;
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case ProcessStatus_32BitHack: AssertFailedBreak(); /* (compiler warnings) */
+#endif
     }
 
     if (newStatus == ProcessStatus_Started)

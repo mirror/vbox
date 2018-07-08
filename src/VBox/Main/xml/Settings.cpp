@@ -6832,15 +6832,19 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         xml::ElementNode *pelmFaultTolerance = elmMachine.createChild("FaultTolerance");
         switch (machineUserData.enmFaultToleranceState)
         {
-        case FaultToleranceState_Inactive:
-            pelmFaultTolerance->setAttribute("state", "inactive");
-            break;
-        case FaultToleranceState_Master:
-            pelmFaultTolerance->setAttribute("state", "master");
-            break;
-        case FaultToleranceState_Standby:
-            pelmFaultTolerance->setAttribute("state", "standby");
-            break;
+            case FaultToleranceState_Inactive:
+                pelmFaultTolerance->setAttribute("state", "inactive");
+                break;
+            case FaultToleranceState_Master:
+                pelmFaultTolerance->setAttribute("state", "master");
+                break;
+            case FaultToleranceState_Standby:
+                pelmFaultTolerance->setAttribute("state", "standby");
+                break;
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+            case FaultToleranceState_32BitHack: /* (compiler warnings) */
+                AssertFailedBreak();
+#endif
         }
 
         pelmFaultTolerance->setAttribute("port", machineUserData.uFaultTolerancePort);
@@ -6920,26 +6924,26 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
 #elif defined(RT_OS_LINUX)
     /* On Linux, we need to check at runtime what's actually supported. */
     static RTCLockMtx s_mtx;
-    static AudioDriverType_T s_linuxDriver = -1;
+    static AudioDriverType_T s_enmLinuxDriver = AudioDriverType_Null;
     RTCLock lock(s_mtx);
-    if (s_linuxDriver == (AudioDriverType_T)-1)
+    if (s_enmLinuxDriver == AudioDriverType_Null)
     {
 # ifdef VBOX_WITH_AUDIO_PULSE
         /* Check for the pulse library & that the pulse audio daemon is running. */
         if (RTProcIsRunningByName("pulseaudio") &&
             RTLdrIsLoadable("libpulse.so.0"))
-            s_linuxDriver = AudioDriverType_Pulse;
+            s_enmLinuxDriver = AudioDriverType_Pulse;
         else
 # endif /* VBOX_WITH_AUDIO_PULSE */
 # ifdef VBOX_WITH_AUDIO_ALSA
             /* Check if we can load the ALSA library */
              if (RTLdrIsLoadable("libasound.so.2"))
-                s_linuxDriver = AudioDriverType_ALSA;
+                s_enmLinuxDriver = AudioDriverType_ALSA;
         else
 # endif /* VBOX_WITH_AUDIO_ALSA */
-            s_linuxDriver = AudioDriverType_OSS;
+            s_enmLinuxDriver = AudioDriverType_OSS;
     }
-    return s_linuxDriver;
+    return s_enmLinuxDriver;
 
 #elif defined(RT_OS_DARWIN)
     return AudioDriverType_CoreAudio;
