@@ -1127,12 +1127,13 @@ HRESULT NetworkAdapter::i_saveSettings(settings::NetworkAdapter &data)
  * Returns true if any setter method has modified settings of this instance.
  * @return
  */
-bool NetworkAdapter::i_isModified() {
-
+bool NetworkAdapter::i_isModified()
+{
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     bool fChanged = mData.isBackedUp();
-    fChanged |= (mData->type == NetworkAttachmentType_NAT? mNATEngine->i_isModified() : false);
+    if (!fChanged && mData->mode == NetworkAttachmentType_NAT)
+        fChanged = mNATEngine->i_isModified();
     return fChanged;
 }
 
