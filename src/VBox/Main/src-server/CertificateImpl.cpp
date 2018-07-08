@@ -144,10 +144,10 @@ HRESULT Certificate::getVersionNumber(CertificateVersion_T *aVersionNumber)
     Assert(m->fValidX509);
     switch (m->X509.TbsCertificate.T0.Version.uValue.u)
     {
-        case RTCRX509TBSCERTIFICATE_V1: *aVersionNumber = (CertificateVersion_T)CertificateVersion_V1; break;
-        case RTCRX509TBSCERTIFICATE_V2: *aVersionNumber = (CertificateVersion_T)CertificateVersion_V2; break;
-        case RTCRX509TBSCERTIFICATE_V3: *aVersionNumber = (CertificateVersion_T)CertificateVersion_V3; break;
-        default: AssertFailed();        *aVersionNumber = (CertificateVersion_T)CertificateVersion_Unknown; break;
+        case RTCRX509TBSCERTIFICATE_V1: *aVersionNumber = CertificateVersion_V1; break;
+        case RTCRX509TBSCERTIFICATE_V2: *aVersionNumber = CertificateVersion_V2; break;
+        case RTCRX509TBSCERTIFICATE_V3: *aVersionNumber = CertificateVersion_V3; break;
+        default: AssertFailed();        *aVersionNumber = CertificateVersion_Unknown; break;
     }
     return S_OK;
 }

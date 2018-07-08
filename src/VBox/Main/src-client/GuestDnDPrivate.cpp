@@ -734,9 +734,9 @@ DnDAction_T GuestDnD::toMainAction(uint32_t uAction)
 {
     /* For now it doesn't seems useful to allow a
      * link action between host & guest. Maybe later! */
-    return (isDnDCopyAction(uAction) ? (DnDAction_T)DnDAction_Copy :
-            isDnDMoveAction(uAction) ? (DnDAction_T)DnDAction_Move :
-            (DnDAction_T)DnDAction_Ignore);
+    return isDnDCopyAction(uAction) ? DnDAction_Copy
+         : isDnDMoveAction(uAction) ? DnDAction_Move
+         :                            DnDAction_Ignore;
 }
 
 /* static */

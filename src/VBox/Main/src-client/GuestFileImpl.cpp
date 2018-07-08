@@ -649,12 +649,12 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
     const char *pszOpenAction = NULL;
     switch (mData.mOpenInfo.mOpenAction)
     {
-        case (FileOpenAction_T)FileOpenAction_OpenExisting:          pszOpenAction = "oe"; break;
-        case (FileOpenAction_T)FileOpenAction_OpenOrCreate:          pszOpenAction = "oc"; break;
-        case (FileOpenAction_T)FileOpenAction_CreateNew:             pszOpenAction = "ce"; break;
-        case (FileOpenAction_T)FileOpenAction_CreateOrReplace:       pszOpenAction = "ca"; break;
-        case (FileOpenAction_T)FileOpenAction_OpenExistingTruncated: pszOpenAction = "ot"; break;
-        case (FileOpenAction_T)FileOpenAction_AppendOrCreate:
+        case FileOpenAction_OpenExisting:          pszOpenAction = "oe"; break;
+        case FileOpenAction_OpenOrCreate:          pszOpenAction = "oc"; break;
+        case FileOpenAction_CreateNew:             pszOpenAction = "ce"; break;
+        case FileOpenAction_CreateOrReplace:       pszOpenAction = "ca"; break;
+        case FileOpenAction_OpenExistingTruncated: pszOpenAction = "ot"; break;
+        case FileOpenAction_AppendOrCreate:
             pszOpenAction = "oa"; /** @todo get rid of this one and implement AppendOnly/AppendRead. */
             break;
         default:
@@ -665,36 +665,26 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
     const char *pszAccessMode = NULL;
     switch (mData.mOpenInfo.mAccessMode)
     {
-        case (FileAccessMode_T)FileAccessMode_ReadOnly:  pszAccessMode = "r";  break;
-        case (FileAccessMode_T)FileAccessMode_WriteOnly: pszAccessMode = "w";  break;
-        case (FileAccessMode_T)FileAccessMode_ReadWrite: pszAccessMode = "r+"; break;
-        case (FileAccessMode_T)FileAccessMode_AppendOnly:
-            RT_FALL_THRU();
-        case (FileAccessMode_T)FileAccessMode_AppendRead:
-            return VERR_NOT_IMPLEMENTED;
-        default:
-            return VERR_INVALID_PARAMETER;
+        case FileAccessMode_ReadOnly:   pszAccessMode = "r";  break;
+        case FileAccessMode_WriteOnly:  pszAccessMode = "w";  break;
+        case FileAccessMode_ReadWrite:  pszAccessMode = "r+"; break;
+        case FileAccessMode_AppendOnly: RT_FALL_THRU();
+        case FileAccessMode_AppendRead: return VERR_NOT_IMPLEMENTED;
+        default:                        return VERR_INVALID_PARAMETER;
     }
 
     /* Validate and translate sharing mode. */
     const char *pszSharingMode = NULL;
     switch (mData.mOpenInfo.mSharingMode)
     {
-        case (FileSharingMode_T)FileSharingMode_All:       pszSharingMode = ""; break;
-        case (FileSharingMode_T)FileSharingMode_Read:
-            RT_FALL_THRU();
-        case (FileSharingMode_T)FileSharingMode_Write:
-            RT_FALL_THRU();
-        case (FileSharingMode_T)FileSharingMode_ReadWrite:
-            RT_FALL_THRU();
-        case (FileSharingMode_T)FileSharingMode_Delete:
-            RT_FALL_THRU();
-        case (FileSharingMode_T)FileSharingMode_ReadDelete:
-            RT_FALL_THRU();
-        case (FileSharingMode_T)FileSharingMode_WriteDelete:
-            return VERR_NOT_IMPLEMENTED;
-        default:
-            return VERR_INVALID_PARAMETER;
+        case FileSharingMode_All:           pszSharingMode = ""; break;
+        case FileSharingMode_Read:          RT_FALL_THRU();
+        case FileSharingMode_Write:         RT_FALL_THRU();
+        case FileSharingMode_ReadWrite:     RT_FALL_THRU();
+        case FileSharingMode_Delete:        RT_FALL_THRU();
+        case FileSharingMode_ReadDelete:    RT_FALL_THRU();
+        case FileSharingMode_WriteDelete:   return VERR_NOT_IMPLEMENTED;
+        default:                            return VERR_INVALID_PARAMETER;
     }
 
     int vrc;

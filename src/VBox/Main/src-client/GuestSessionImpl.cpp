@@ -3589,16 +3589,16 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     /* Validate aAccessMode. */
     switch (aAccessMode)
     {
-        case (FileAccessMode_T)FileAccessMode_ReadOnly:
+        case FileAccessMode_ReadOnly:
             RT_FALL_THRU();
-        case (FileAccessMode_T)FileAccessMode_WriteOnly:
+        case FileAccessMode_WriteOnly:
             RT_FALL_THRU();
-        case (FileAccessMode_T)FileAccessMode_ReadWrite:
+        case FileAccessMode_ReadWrite:
             openInfo.mAccessMode = aAccessMode;
             break;
-        case (FileAccessMode_T)FileAccessMode_AppendOnly:
+        case FileAccessMode_AppendOnly:
             RT_FALL_THRU();
-        case (FileAccessMode_T)FileAccessMode_AppendRead:
+        case FileAccessMode_AppendRead:
             return setError(E_NOTIMPL, tr("Append access modes are not yet implemented"));
         default:
             return setError(E_INVALIDARG, tr("Unknown FileAccessMode value %u (%#x)"), aAccessMode, aAccessMode);
@@ -3607,17 +3607,17 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     /* Validate aOpenAction to the old format. */
     switch (aOpenAction)
     {
-        case (FileOpenAction_T)FileOpenAction_OpenExisting:
+        case FileOpenAction_OpenExisting:
             RT_FALL_THRU();
-        case (FileOpenAction_T)FileOpenAction_OpenOrCreate:
+        case FileOpenAction_OpenOrCreate:
             RT_FALL_THRU();
-        case (FileOpenAction_T)FileOpenAction_CreateNew:
+        case FileOpenAction_CreateNew:
             RT_FALL_THRU();
-        case (FileOpenAction_T)FileOpenAction_CreateOrReplace:
+        case FileOpenAction_CreateOrReplace:
             RT_FALL_THRU();
-        case (FileOpenAction_T)FileOpenAction_OpenExistingTruncated:
+        case FileOpenAction_OpenExistingTruncated:
             RT_FALL_THRU();
-        case (FileOpenAction_T)FileOpenAction_AppendOrCreate:
+        case FileOpenAction_AppendOrCreate:
             openInfo.mOpenAction = aOpenAction;
             break;
         default:
@@ -3627,15 +3627,15 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     /* Validate aSharingMode. */
     switch (aSharingMode)
     {
-        case (FileSharingMode_T)FileSharingMode_All:
+        case FileSharingMode_All:
             openInfo.mSharingMode = aSharingMode;
             break;
-        case (FileSharingMode_T)FileSharingMode_Read:
-        case (FileSharingMode_T)FileSharingMode_Write:
-        case (FileSharingMode_T)FileSharingMode_ReadWrite:
-        case (FileSharingMode_T)FileSharingMode_Delete:
-        case (FileSharingMode_T)FileSharingMode_ReadDelete:
-        case (FileSharingMode_T)FileSharingMode_WriteDelete:
+        case FileSharingMode_Read:
+        case FileSharingMode_Write:
+        case FileSharingMode_ReadWrite:
+        case FileSharingMode_Delete:
+        case FileSharingMode_ReadDelete:
+        case FileSharingMode_WriteDelete:
             return setError(E_NOTIMPL, tr("Only FileSharingMode_All is currently implemented"));
 
         default:

@@ -1175,7 +1175,7 @@ HRESULT Unattended::i_innerReconfigureVM(AutoMultiWriteLock2 &rAutoLock, Storage
         hrc = rPtrSessionMachine->SetBootOrder(2, mpInstaller->getBootableDeviceType());
     if (SUCCEEDED(hrc))
         hrc = rPtrSessionMachine->SetBootOrder(3, mpInstaller->getBootableDeviceType() == DeviceType_DVD
-                                                  ? (DeviceType_T)DeviceType_Floppy : (DeviceType_T)DeviceType_DVD);
+                                                  ? DeviceType_Floppy : DeviceType_DVD);
     if (FAILED(hrc))
         return hrc;
 

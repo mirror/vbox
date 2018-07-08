@@ -2544,9 +2544,7 @@ USBDeviceState_T HostUSBDevice::i_canonicalState() const
         case kHostUSBDeviceState_Capturing:
             Assert(   mPendingUniState == kHostUSBDeviceState_UsedByVM
                    || mPendingUniState == kHostUSBDeviceState_HeldByProxy);
-            return mPendingUniState == kHostUSBDeviceState_UsedByVM
-                ? (USBDeviceState_T)USBDeviceState_Captured
-                : (USBDeviceState_T)USBDeviceState_Held;
+            return mPendingUniState == kHostUSBDeviceState_UsedByVM ? USBDeviceState_Captured : USBDeviceState_Held;
             /* The cast ^^^^ is because xidl is using different enums for
                each of the values. *Very* nice idea... :-) */
 
@@ -2559,9 +2557,7 @@ USBDeviceState_T HostUSBDevice::i_canonicalState() const
         case kHostUSBDeviceState_ReleasingToHost:
             Assert(   mPrevUniState == kHostUSBDeviceState_UsedByVM
                    || mPrevUniState == kHostUSBDeviceState_HeldByProxy);
-            return mPrevUniState == kHostUSBDeviceState_UsedByVM
-                ? (USBDeviceState_T)USBDeviceState_Captured
-                : (USBDeviceState_T)USBDeviceState_Held;
+            return mPrevUniState == kHostUSBDeviceState_UsedByVM ? USBDeviceState_Captured : USBDeviceState_Held;
             /* The cast ^^^^ is because xidl is using different enums for
                each of the values. *Very* nice idea... :-) */
 

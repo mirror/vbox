@@ -1757,11 +1757,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         {
             /* Autodetect firmware type, basing on guest type */
             if (eFwType == FirmwareType_EFI)
-            {
-                eFwType = fIsGuest64Bit
-                        ? (FirmwareType_T)FirmwareType_EFI64
-                        : (FirmwareType_T)FirmwareType_EFI32;
-            }
+                eFwType = fIsGuest64Bit ? FirmwareType_EFI64 : FirmwareType_EFI32;
             bool const f64BitEntry = eFwType == FirmwareType_EFI64;
 
             Utf8Str efiRomFile;

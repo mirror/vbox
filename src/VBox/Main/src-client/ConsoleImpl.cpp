@@ -5734,7 +5734,7 @@ HRESULT Console::i_onSharedFolderChange(BOOL aGlobal)
     if (SUCCEEDED(rc))
     {
         alock.release();
-        fireSharedFolderChangedEvent(mEventSource, aGlobal ? (Scope_T)Scope_Global : (Scope_T)Scope_Machine);
+        fireSharedFolderChangedEvent(mEventSource, aGlobal ? Scope_Global : Scope_Machine);
     }
 
     return rc;
