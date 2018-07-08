@@ -9174,6 +9174,7 @@ and "VAR" for unsetting. -->
     name="HostNetworkInterfaceMediumType"
     uuid="1aa54aaf-2497-45a2-bfb1-8eb225e93d5b"
     >
+    <!-- Must match NETIFTYPE in netif.h exactly. -->
     <desc>
       Type of encapsulation. Ethernet encapsulation includes both wired and
       wireless Ethernet connections.
@@ -9206,6 +9207,7 @@ and "VAR" for unsetting. -->
     name="HostNetworkInterfaceStatus"
     uuid="CC474A69-2710-434B-8D99-C38E5D5A6F41"
     >
+    <!-- Must match NETIFSTATUS in netif.h exactly. -->
     <desc>
       Current status of the interface.
       <see><link to="IHostNetworkInterface"/></see>

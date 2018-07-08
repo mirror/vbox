@@ -38,6 +38,8 @@
 #if 1
 /**
  * Encapsulation type.
+ * @note Must match HostNetworkInterfaceMediumType_T exactly.
+ * @todo r=bird: Why are we duplicating HostNetworkInterfaceMediumType_T here?!?
  */
 typedef enum NETIFTYPE
 {
@@ -49,6 +51,8 @@ typedef enum NETIFTYPE
 
 /**
  * Current state of the interface.
+ * @note Must match HostNetworkInterfaceStatus_T exactly.
+ * @todo r=bird: Why are we duplicating HostNetworkInterfaceStatus_T here?!?
  */
 typedef enum NETIFSTATUS
 {
