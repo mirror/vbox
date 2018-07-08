@@ -36,9 +36,6 @@
 #include "HMSVMR0.h"
 #include "dtrace/VBoxVMM.h"
 
-/* Temporarily enable full guest state sync for diagnosing nested SVM breakage. */
-#define HMSVM_SYNC_FULL_GUEST_STATE
-
 #ifdef DEBUG_ramshankar
 # define HMSVM_SYNC_FULL_GUEST_STATE
 # define HMSVM_ALWAYS_TRAP_ALL_XCPTS
