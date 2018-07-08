@@ -4207,7 +4207,6 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu)
  * Strict function to validate segment registers.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks Will import guest CR0 on strict builds during validation of
  *          segments.
