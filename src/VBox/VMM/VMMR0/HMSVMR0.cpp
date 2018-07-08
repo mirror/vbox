@@ -7785,6 +7785,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     {
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_FS              | HM_CHANGED_GUEST_GS
                                                  | HM_CHANGED_GUEST_TR              | HM_CHANGED_GUEST_LDTR
+                                                 | HM_CHANGED_GUEST_KERNEL_GS_BASE  | HM_CHANGED_GUEST_SYSCALL_MSRS
                                                  | HM_CHANGED_GUEST_SYSENTER_MSR_MASK);
     }
     return VBOXSTRICTRC_VAL(rcStrict);
