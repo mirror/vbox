@@ -7033,12 +7033,11 @@ static int hmR0VmxExitToRing3(PVMCPU pVCpu, VBOXSTRICTRC rcExit)
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   enmOperation    The operation causing the ring-3 longjump.
- * @param   pvUser          Opaque pointer to the guest-CPU context. The data
- *                          may be out-of-sync. Make sure to update the required
- *                          fields before using them.
+ * @param   pvUser          User argument, currently unused, NULL.
  */
 static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
 {
+    RT_NOREF(pvUser);
     if (enmOperation == VMMCALLRING3_VM_R0_ASSERTION)
     {
         /*
@@ -11901,7 +11900,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     VBOXSTRICTRC rcStrict;
     PVM      pVM  = pVCpu->CTX_SUFF(pVM);
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     RTGCUINTPTR const uExitQualification = pVmxTransient->uExitQualification;
     uint32_t const uAccessType           = VMX_EXIT_QUAL_CRX_ACCESS(uExitQualification);
     switch (uAccessType)
@@ -11923,7 +11921,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
                                      HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR0Write);
-                    Log4(("CRX CR0 write rcStrict=%Rrc CR0=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pCtx->cr0));
+                    Log4(("CRX CR0 write rcStrict=%Rrc CR0=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr0));
                     break;
                 }
 
@@ -11936,11 +11934,13 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
                 case 3:
                 {
-                    Assert(!pVM->hm.s.fNestedPaging || !CPUMIsGuestPagingEnabledEx(pCtx) || pVCpu->hm.s.fUsingDebugLoop);
+                    Assert(   !pVM->hm.s.fNestedPaging
+                           || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
+                           || pVCpu->hm.s.fUsingDebugLoop);
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR3Write);
                     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
                                      HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR3);
-                    Log4(("CRX CR3 write rcStrict=%Rrc CR3=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pCtx->cr3));
+                    Log4(("CRX CR3 write rcStrict=%Rrc CR3=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr3));
                     break;
                 }
 
@@ -11949,8 +11949,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR4Write);
                     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
                                      HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR4);
-                    Log4(("CRX CR4 write rc=%Rrc CR4=%#RX64 fLoadSaveGuestXcr0=%u\n", VBOXSTRICTRC_VAL(rcStrict), pCtx->cr4,
-                          pVCpu->hm.s.fLoadSaveGuestXcr0));
+                    Log4(("CRX CR4 write rc=%Rrc CR4=%#RX64 fLoadSaveGuestXcr0=%u\n", VBOXSTRICTRC_VAL(rcStrict),
+                          pVCpu->cpum.GstCtx.cr4, pVCpu->hm.s.fLoadSaveGuestXcr0));
                     break;
                 }
 
@@ -11972,7 +11972,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         case VMX_EXIT_QUAL_CRX_ACCESS_READ:        /* MOV from CRx */
         {
             Assert(   !pVM->hm.s.fNestedPaging
-                   || !CPUMIsGuestPagingEnabledEx(pCtx)
+                   || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
                    || pVCpu->hm.s.fUsingDebugLoop
                    || VMX_EXIT_QUAL_CRX_REGISTER(uExitQualification) != 3);
             /* CR8 reads only cause a VM-exit when the TPR shadow feature isn't enabled. */
