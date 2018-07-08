@@ -35,7 +35,7 @@
      doesn't do enums.  It boils down to the gcc short-enum option and similar
      portability concerns.
  -->
-<xsl:param name="g_fHackEnumsOntoCppEnums" select="'no'"/>
+<xsl:param name="g_fHackEnumsOntoCppEnums" select="'yes'"/>
 
 
 <!--
@@ -716,13 +716,20 @@
   </xsl:for-each>
   <xsl:text>};&#x0A;&#x0A;</xsl:text>
   <xsl:choose>
+
     <xsl:when test="$g_fHackEnumsOntoCppEnums = 'yes'">
       <xsl:text>
-/* IDL typedef for enum ', @name, ' */
-typedef PRUint32 </xsl:text><xsl:value-of select="concat(@name, '_EnumT')" /><xsl:text>;
-
-/* C++ enum type name for ', @name, ' */
+/* IDL typedef for enum </xsl:text><xsl:value-of select="@name" /><xsl:text> and C++ mappings. */
 %{C++
+#ifndef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+%}
+typedef PRUint32 </xsl:text><xsl:value-of select="concat(@name, '_T')" /><xsl:text>;
+%{C++
+</xsl:text>
+      <xsl:for-each select="const">
+        <xsl:value-of select="concat('# define ', ../@name, '_', @name, ' ', ../@name, '::', @name, '&#x0A;')"/>
+      </xsl:for-each>
+      <xsl:text>#else /* VBOX_WITH_XPCOM_CPP_ENUM_HACK */
 typedef enum </xsl:text>
       <xsl:value-of select="concat(@name, '_T')" />
       <xsl:text> {
@@ -732,15 +739,10 @@ typedef enum </xsl:text>
       </xsl:for-each>
       <xsl:value-of select="concat('    ', @name, '_32BitHack = 0x7fffffff', '&#x0A;')"/>
       <xsl:text>} </xsl:text><xsl:value-of select="concat(@name, '_T')"/><xsl:text>;
-#ifdef AssertCompileSize
+# ifdef AssertCompileSize
 AssertCompileSize(</xsl:text><xsl:value-of select="concat(@name, '_T')"/><xsl:text>, sizeof(PRUint32));
-#endif
-/* Use the preprocessor to replace the IDL enum typedef with our C++ enum so it will
-   behave just like we had real enum support in xpidl or if were using msidl. */
-#define </xsl:text><xsl:value-of select="concat(@name, '_EnumT ', @name, '_T')" /><xsl:text>
-#ifndef VBOX_WITH_XPCOM_CPP_ENUM_HACK
-# define VBOX_WITH_XPCOM_CPP_ENUM_HACK 1
-#endif
+# endif
+#endif /* VBOX_WITH_XPCOM_CPP_ENUM_HACK */
 %}
 
 </xsl:text>
@@ -952,7 +954,7 @@ AssertCompileSize(</xsl:text><xsl:value-of select="concat(@name, '_T')"/><xsl:te
             ">
               <xsl:choose>
                 <xsl:when test="$g_fHackEnumsOntoCppEnums = 'yes'">
-                  <xsl:value-of select="concat(., '_EnumT')" />
+                  <xsl:value-of select="concat(., '_T')" />
                 </xsl:when>
                 <xsl:otherwise>
                   <xsl:text>PRUint32</xsl:text>
