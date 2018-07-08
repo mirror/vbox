@@ -260,7 +260,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
             break;
 
         case VINF_EM_HM_PATCH_TPR_INSTR:
-            rc = HMR3PatchTprInstr(pVM, pVCpu, &pVCpu->cpum.GstCtx);
+            rc = HMR3PatchTprInstr(pVM, pVCpu);
             break;
 #endif
 

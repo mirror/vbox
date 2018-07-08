@@ -1116,7 +1116,7 @@ VMMR0_INT_DECL(PHMGLOBALCPUINFO) hmR0GetCurrentCpu(void);
 VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPU pVCpu);
 
 # ifdef VBOX_STRICT
-VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu);
 VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
 # endif
 

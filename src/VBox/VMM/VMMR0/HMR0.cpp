@@ -164,7 +164,7 @@ static struct
     /** Indicates whether the host is suspending or not.  We'll refuse a few
      *  actions when the host is being suspended to speed up the suspending and
      *  avoid trouble. */
-    volatile bool                   fSuspended;
+    bool volatile                   fSuspended;
 
     /** Whether we've already initialized all CPUs.
      * @remarks We could check the EnableAllCpusOnce state, but this is
@@ -1960,9 +1960,8 @@ VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char
  * Formats a full register dump.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the CPU context.
  */
-VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu)
 {
     /*
      * Format the flags.
@@ -1990,6 +1989,7 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
     };
     char szEFlags[80];
     char *psz = szEFlags;
+    PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     uint32_t uEFlags = pCtx->eflags.u32;
     for (unsigned i = 0; i < RT_ELEMENTS(s_aFlags); i++)
     {

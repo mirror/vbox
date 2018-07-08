@@ -2624,11 +2624,9 @@ static DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void 
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR3_INT_DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR3_INT_DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu)
 {
-    NOREF(pCtx);
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE,
                                 pVM->hm.s.pGuestPatchMem ? hmR3PatchTprInstr : hmR3ReplaceTprInstr,
                                 (void *)(uintptr_t)pVCpu->idCpu);
@@ -3033,9 +3031,9 @@ VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
      * The VMM device heap is a requirement for emulating real-mode or protected-mode without paging
      * when the unrestricted guest execution feature is missing (VT-x only).
      */
-    if (   pVM->hm.s.vmx.fEnabled
+    if (    pVM->hm.s.vmx.fEnabled
         && !pVM->hm.s.vmx.fUnrestrictedGuest
-        && CPUMIsGuestInRealModeEx(pCtx)
+        &&  CPUMIsGuestInRealModeEx(pCtx)
         && !PDMVmmDevHeapIsEnabled(pVM))
     {
         return true;
