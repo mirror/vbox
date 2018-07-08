@@ -2307,7 +2307,7 @@ static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
     uint32_t const fZap = pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1;      /* Bits cleared here must always be cleared. */
 
     fVal |= VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT              /* External interrupts cause a VM-exit. */
-         |  VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT;                 /* Non-maskable interrupts (NMIs) cause a VM-exit. */
+          | VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT;                 /* Non-maskable interrupts (NMIs) cause a VM-exit. */
 
     if (pVM->hm.s.vmx.Msrs.VmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI)
         fVal |= VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI;         /* Use virtual NMIs and virtual-NMI blocking features. */
@@ -2459,12 +2459,12 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
     uint32_t const fZap = pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
     fVal |= VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT                      /* HLT causes a VM-exit. */
-         |  VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING            /* Use TSC-offsetting. */
-         |  VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT                   /* MOV DRx causes a VM-exit. */
-         |  VMX_VMCS_CTRL_PROC_EXEC_UNCOND_IO_EXIT                /* All IO instructions cause a VM-exit. */
-         |  VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT                    /* RDPMC causes a VM-exit. */
-         |  VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT                  /* MONITOR causes a VM-exit. */
-         |  VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT;                   /* MWAIT causes a VM-exit. */
+          | VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING            /* Use TSC-offsetting. */
+          | VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT                   /* MOV DRx causes a VM-exit. */
+          | VMX_VMCS_CTRL_PROC_EXEC_UNCOND_IO_EXIT                /* All IO instructions cause a VM-exit. */
+          | VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT                    /* RDPMC causes a VM-exit. */
+          | VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT                  /* MONITOR causes a VM-exit. */
+          | VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT;                   /* MWAIT causes a VM-exit. */
 
     /* We toggle VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT later, check if it's not -always- needed to be set or clear. */
     if (   !(pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT)
@@ -2480,8 +2480,8 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
     {
         Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);                /* Paranoia. */
         fVal |= VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT
-             |  VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT
-             |  VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT;
+              | VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT
+              | VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT;
     }
 
     /* Use TPR shadowing if supported by the CPU. */
@@ -2508,7 +2508,7 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
         if (pVM->hm.s.fAllow64BitGuests)
         {
             fVal |= VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT        /* CR8 reads cause a VM-exit. */
-                 |  VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT;        /* CR8 writes cause a VM-exit. */
+                  | VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT;        /* CR8 writes cause a VM-exit. */
         }
     }
 
@@ -3348,7 +3348,7 @@ static int hmR0VmxExportGuestExitCtls(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             && hmR0VmxShouldSwapEferMsr(pVCpu, pMixedCtx))
         {
             fVal |= VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR
-                 |  VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR;
+                  | VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR;
             Log4Func(("VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR and VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR\n"));
         }
 
@@ -3719,7 +3719,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             {
                 /* The guest doesn't have paging enabled, make CR3 access cause a VM-exit to update our shadow. */
                 uProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT
-                          |  VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT;
+                           | VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT;
             }
 
             /* If we have unrestricted guest execution, we never have to intercept CR3 reads. */
@@ -3767,17 +3767,17 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
         /* Additional intercepts for debugging, define these yourself explicitly. */
 #ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         uXcptBitmap |= 0
-                    | RT_BIT(X86_XCPT_BP)
-                    | RT_BIT(X86_XCPT_DE)
-                    | RT_BIT(X86_XCPT_NM)
-                    | RT_BIT(X86_XCPT_TS)
-                    | RT_BIT(X86_XCPT_UD)
-                    | RT_BIT(X86_XCPT_NP)
-                    | RT_BIT(X86_XCPT_SS)
-                    | RT_BIT(X86_XCPT_GP)
-                    | RT_BIT(X86_XCPT_PF)
-                    | RT_BIT(X86_XCPT_MF)
-                    ;
+                     | RT_BIT(X86_XCPT_BP)
+                     | RT_BIT(X86_XCPT_DE)
+                     | RT_BIT(X86_XCPT_NM)
+                     | RT_BIT(X86_XCPT_TS)
+                     | RT_BIT(X86_XCPT_UD)
+                     | RT_BIT(X86_XCPT_NP)
+                     | RT_BIT(X86_XCPT_SS)
+                     | RT_BIT(X86_XCPT_GP)
+                     | RT_BIT(X86_XCPT_PF)
+                     | RT_BIT(X86_XCPT_MF)
+                     ;
 #elif defined(HMVMX_ALWAYS_TRAP_PF)
         uXcptBitmap |= RT_BIT(X86_XCPT_PF);
 #endif
@@ -3889,8 +3889,8 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PCCPUMCTX pMixedCt
             Assert(!(pVCpu->hm.s.vmx.HCPhysEPTP & 0xfff));
 
             /* VMX_EPT_MEMTYPE_WB support is already checked in hmR0VmxSetupTaggedTlb(). */
-            pVCpu->hm.s.vmx.HCPhysEPTP |=   VMX_EPT_MEMTYPE_WB
-                                          | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
+            pVCpu->hm.s.vmx.HCPhysEPTP |= VMX_EPT_MEMTYPE_WB
+                                        | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
 
             /* Validate. See Intel spec. 26.2.1 "Checks on VMX Controls" */
             AssertMsg(   ((pVCpu->hm.s.vmx.HCPhysEPTP >> 3) & 0x07) == 3      /* Bits 3:5 (EPT page walk length - 1) must be 3. */
@@ -4969,10 +4969,10 @@ static int hmR0VmxSelectVMRunHandler(PVMCPU pVCpu, PCCPUMCTX pMixedCtx)
             {
                 pVCpu->hm.s.vmx.fSwitchedTo64on32 = false;
                 pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_EFER_MSR
-                                                           | HM_CHANGED_VMX_ENTRY_CTLS
-                                                           | HM_CHANGED_VMX_EXIT_CTLS
-                                                           | HM_CHANGED_HOST_CONTEXT);
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_EFER_MSR
+                                                         | HM_CHANGED_VMX_ENTRY_CTLS
+                                                         | HM_CHANGED_VMX_EXIT_CTLS
+                                                         | HM_CHANGED_HOST_CONTEXT);
                 Log4Func(("Selected 32-bit switcher (safe)\n"));
             }
         }
@@ -6893,8 +6893,7 @@ static int hmR0VmxLeave(PVMCPU pVCpu, bool fImportState)
         /* We shouldn't restore the host MSRs without saving the guest MSRs first. */
         if (!fImportState)
         {
-            int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_KERNEL_GS_BASE
-                                                    | CPUMCTX_EXTRN_SYSCALL_MSRS);
+            int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS);
             AssertRCReturn(rc, rc);
         }
         hmR0VmxLazyRestoreHostMsrs(pVCpu);
@@ -7061,12 +7060,12 @@ static int hmR0VmxExitToRing3(PVMCPU pVCpu, PCPUMCTX pMixedCtx, VBOXSTRICTRC rcE
 
     /* Sync recompiler state. */
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
-    CPUMSetChangedFlags(pVCpu,  CPUM_CHANGED_SYSENTER_MSR
-                              | CPUM_CHANGED_LDTR
-                              | CPUM_CHANGED_GDTR
-                              | CPUM_CHANGED_IDTR
-                              | CPUM_CHANGED_TR
-                              | CPUM_CHANGED_HIDDEN_SEL_REGS);
+    CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_SYSENTER_MSR
+                             | CPUM_CHANGED_LDTR
+                             | CPUM_CHANGED_GDTR
+                             | CPUM_CHANGED_IDTR
+                             | CPUM_CHANGED_TR
+                             | CPUM_CHANGED_HIDDEN_SEL_REGS);
     if (   pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging
         && CPUMIsGuestPagingEnabledEx(pMixedCtx))
     {
@@ -7752,11 +7751,8 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
             Assert(pVM->hm.s.vmx.pRealModeTSS);
 
             /* We require RIP, RSP, RFLAGS, CS, IDTR, import them. */
-            int rc2 = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_SREG_MASK
-                                                     | CPUMCTX_EXTRN_TABLE_MASK
-                                                     | CPUMCTX_EXTRN_RIP
-                                                     | CPUMCTX_EXTRN_RSP
-                                                     | CPUMCTX_EXTRN_RFLAGS);
+            int rc2 = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_RIP
+                                                   | CPUMCTX_EXTRN_RSP       | CPUMCTX_EXTRN_RFLAGS);
             AssertRCReturn(rc2, rc2);
 
             /* Check if the interrupt handler is present in the IVT (real-mode IDT). IDT limit is (4N - 1). */
@@ -7820,11 +7816,9 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
 
                 /* If any other guest-state bits are changed here, make sure to update
                    hmR0VmxPreRunGuestCommitted() when thread-context hooks are used. */
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_CS
-                                                           | HM_CHANGED_GUEST_CR2
-                                                           | HM_CHANGED_GUEST_RIP
-                                                           | HM_CHANGED_GUEST_RFLAGS
-                                                           | HM_CHANGED_GUEST_RSP);
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_CS     | HM_CHANGED_GUEST_CR2
+                                                         | HM_CHANGED_GUEST_RIP    | HM_CHANGED_GUEST_RFLAGS
+                                                         | HM_CHANGED_GUEST_RSP);
 
                 /* We're clearing interrupts, which means no block-by-STI interrupt-inhibition. */
                 if (*pfIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI)
@@ -9202,9 +9196,7 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVMCPU pVCpu, PVMXRUNDBGSTATE pDb
     if (   IS_EITHER_ENABLED(pVM, INSTR_CRX_READ)
         || IS_EITHER_ENABLED(pVM, INSTR_CRX_WRITE))
     {
-        int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_CR0
-                                               | CPUMCTX_EXTRN_CR4
-                                               | CPUMCTX_EXTRN_APIC_TPR);
+        int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_APIC_TPR);
         AssertRC(rc);
 
 #if 0 /** @todo fix me */
@@ -9829,8 +9821,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugHandleExit(PVMCPU pVCpu, PCPUMCTX pMixed
             case VMX_EXIT_XSAVES:
             case VMX_EXIT_XRSTORS:
             {
-                int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_RIP
-                                                        | CPUMCTX_EXTRN_CS);
+                int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
                 AssertRCReturn(rc, rc);
                 if (   pMixedCtx->rip    != pDbgState->uRipStart
                     || pMixedCtx->cs.Sel != pDbgState->uCsStart)
@@ -9977,8 +9968,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPU pVCpu, PCPUMCTX pCtx)
          */
         if (fStepping)
         {
-            int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_RIP
-                                                    | CPUMCTX_EXTRN_CS);
+            int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
             AssertRC(rc);
             if (   pCtx->rip    != DbgState.uRipStart
                 || pCtx->cs.Sel != DbgState.uCsStart)
@@ -10377,8 +10367,7 @@ DECLINLINE(void) hmR0VmxAdvanceGuestRipBy(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint
 static int hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_RIP
-                                            | CPUMCTX_EXTRN_RFLAGS);
+    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS);
     AssertRCReturn(rc, rc);
 
     hmR0VmxAdvanceGuestRipBy(pVCpu, pMixedCtx, pVmxTransient->cbInstr);
@@ -11339,8 +11328,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxImportGuestState(pVCpu,   IEM_CPUMCTX_EXTRN_MUST_MASK
-                                            | CPUMCTX_EXTRN_TSC_AUX);
+    int rc = hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_TSC_AUX);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
@@ -11369,10 +11357,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 HMVMX_EXIT_DECL hmR0VmxExitRdpmc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_CR4
-                                            | CPUMCTX_EXTRN_CR0
-                                            | CPUMCTX_EXTRN_RFLAGS
-                                            | CPUMCTX_EXTRN_SS);
+    int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS);
     AssertRCReturn(rc, rc);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -11401,12 +11386,8 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     VBOXSTRICTRC rcStrict = VERR_VMX_IPE_3;
     if (EMAreHypercallInstructionsEnabled(pVCpu))
     {
-        int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_RIP
-                                                | CPUMCTX_EXTRN_RFLAGS
-                                                | CPUMCTX_EXTRN_CR0
-                                                | CPUMCTX_EXTRN_SS
-                                                | CPUMCTX_EXTRN_CS
-                                                | CPUMCTX_EXTRN_EFER);
+        int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_SS
+                                              | CPUMCTX_EXTRN_CS  | CPUMCTX_EXTRN_EFER);
         AssertRCReturn(rc, rc);
 
         /* Perform the hypercall. */
@@ -11473,9 +11454,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 HMVMX_EXIT_DECL hmR0VmxExitMonitor(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_CR0
-                                            | CPUMCTX_EXTRN_RFLAGS
-                                            | CPUMCTX_EXTRN_SS);
+    int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS);
     AssertRCReturn(rc, rc);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -11498,9 +11477,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMonitor(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 HMVMX_EXIT_DECL hmR0VmxExitMwait(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_CR0
-                                            | CPUMCTX_EXTRN_RFLAGS
-                                            | CPUMCTX_EXTRN_SS);
+    int rc = hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS);
     AssertRCReturn(rc, rc);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -11685,8 +11662,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu,   IEM_CPUMCTX_EXTRN_MUST_MASK
-                                            | CPUMCTX_EXTRN_CR4);
+    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_CR4);
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedXsetbv(pVCpu, pVmxTransient->cbInstr);
@@ -11938,9 +11914,8 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
              * even if it is -not- touching bits that cause paging mode changes (LMA/LME). We care about
              * the other bits as well, SCE and NXE. See @bugref{7368}.
              */
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_EFER_MSR
-                                                       | HM_CHANGED_VMX_ENTRY_CTLS
-                                                       | HM_CHANGED_VMX_EXIT_CTLS);
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_EFER_MSR | HM_CHANGED_VMX_ENTRY_CTLS
+                                                     | HM_CHANGED_VMX_EXIT_CTLS);
         }
 
         /* Update MSRs that are part of the VMCS and auto-load/store area when MSR-bitmaps are not supported. */
@@ -12235,9 +12210,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu,   IEM_CPUMCTX_EXTRN_MUST_MASK
-                                            | CPUMCTX_EXTRN_SREG_MASK
-                                            | CPUMCTX_EXTRN_EFER);
+    rc    |= hmR0VmxImportGuestState(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_EFER);
     /* EFER also required for longmode checks in EMInterpretDisasCurrent(), but it's always up-to-date. */
     AssertRCReturn(rc, rc);
 
@@ -12590,10 +12563,8 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
                 || rcStrict2 == VERR_PAGE_TABLE_NOT_PRESENT
                 || rcStrict2 == VERR_PAGE_NOT_PRESENT)
             {
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_RIP
-                                                           | HM_CHANGED_GUEST_RSP
-                                                           | HM_CHANGED_GUEST_RFLAGS
-                                                           | HM_CHANGED_GUEST_APIC_TPR);
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS
+                                                         | HM_CHANGED_GUEST_APIC_TPR);
                 rcStrict2 = VINF_SUCCESS;
             }
             break;
@@ -12665,8 +12636,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
      * Update the segment registers and DR7 from the CPU.
      */
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu,   CPUMCTX_EXTRN_SREG_MASK
-                                            | CPUMCTX_EXTRN_DR7);
+    rc    |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_DR7);
     AssertRCReturn(rc, rc);
     Log4Func(("CS:RIP=%04x:%08RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
 
@@ -12756,10 +12726,8 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
             || rcStrict == VERR_PAGE_NOT_PRESENT)
         {
             /* Successfully handled MMIO operation. */
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_RIP
-                                                       | HM_CHANGED_GUEST_RSP
-                                                       | HM_CHANGED_GUEST_RFLAGS
-                                                       | HM_CHANGED_GUEST_APIC_TPR);
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS
+                                                     | HM_CHANGED_GUEST_APIC_TPR);
             rcStrict = VINF_SUCCESS;
         }
     }
@@ -12844,9 +12812,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     {
         /* Successfully synced our nested page tables. */
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf);
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_RIP
-                                                   | HM_CHANGED_GUEST_RSP
-                                                   | HM_CHANGED_GUEST_RFLAGS);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS);
         return VINF_SUCCESS;
     }
 
@@ -13165,9 +13131,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pMixedCtx->esp += cbParm;
                 pMixedCtx->esp &= uMask;
                 pMixedCtx->rip += pDis->cbInstr;
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_RIP
-                                                           | HM_CHANGED_GUEST_RSP
-                                                           | HM_CHANGED_GUEST_RFLAGS);
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS);
                 /* Generate a pending-debug exception when the guest stepping over POPF regardless of how
                    POPF restores EFLAGS.TF. */
                 if (  !fDbgStepping
@@ -13221,9 +13185,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pMixedCtx->esp &= uMask;
                 pMixedCtx->rip += pDis->cbInstr;
                 pMixedCtx->eflags.Bits.u1RF = 0;
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_RIP
-                                                           | HM_CHANGED_GUEST_RSP
-                                                           | HM_CHANGED_GUEST_RFLAGS);
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS);
                 if (  !fDbgStepping
                     && pMixedCtx->eflags.Bits.u1TF)
                 {
@@ -13268,10 +13230,8 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pMixedCtx->eflags.u32         = (pMixedCtx->eflags.u32 & ((UINT32_C(0xffff0000) | X86_EFL_1) & ~X86_EFL_RF))
                                               | (aIretFrame[2] & X86_EFL_POPF_BITS & uMask);
                 pMixedCtx->sp                += sizeof(aIretFrame);
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_RIP
-                                                           | HM_CHANGED_GUEST_CS
-                                                           | HM_CHANGED_GUEST_RSP
-                                                           | HM_CHANGED_GUEST_RFLAGS);
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS
+                                                         | HM_CHANGED_GUEST_CS);
                 /* Generate a pending-debug exception when stepping over IRET regardless of how IRET modifies EFLAGS.TF. */
                 if (   !fDbgStepping
                     && fGstStepping)
@@ -13357,8 +13317,7 @@ static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     Assert(ASMAtomicUoReadU32(&pVmxTransient->fVmcsFieldsRead) & HMVMX_READ_EXIT_INTERRUPTION_INFO);
 
 #ifdef DEBUG_ramshankar
-    rc |= hmR0VmxImportGuestState(pVCpu,  CPUMCTX_EXTRN_CS
-                                        | CPUMCTX_EXTRN_RIP);
+    rc |= hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
     uint8_t uVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntInfo);
     Log(("hmR0VmxExitXcptGeneric: Reinjecting Xcpt. uVector=%#x cs:rip=%#04x:%#RX64\n", uVector, pCtx->cs.Sel, pCtx->rip));
 #endif

@@ -100,9 +100,9 @@ int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx)
                 AssertRC(rc2);
                 pCtx->rip += pPatch->cbOp;
                 pCtx->eflags.Bits.u1RF = 0;
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,   HM_CHANGED_GUEST_APIC_TPR
-                                                           | HM_CHANGED_GUEST_RIP
-                                                           | HM_CHANGED_GUEST_RFLAGS);
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR
+                                                         | HM_CHANGED_GUEST_RIP
+                                                         | HM_CHANGED_GUEST_RFLAGS);
                 break;
             }
 
