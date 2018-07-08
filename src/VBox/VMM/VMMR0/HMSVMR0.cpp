@@ -1495,6 +1495,8 @@ static bool hmR0SvmClearCtrlIntercept(PVMCPU pVCpu, PSVMVMCB pVmcb, uint64_t fCt
             PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = hmR0SvmGetNestedVmcbCache(pVCpu);
             fRemove = !(pVmcbNstGstCache->u64InterceptCtrl & fCtrlIntercept);
         }
+#else
+        RT_NOREF(pVCpu);
 #endif
         if (fRemove)
         {
