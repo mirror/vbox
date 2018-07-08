@@ -3678,6 +3678,7 @@ static void hmR0SvmSetIntWindowExiting(PVMCPU pVCpu, PSVMVMCB pVmcb)
     }
 #else
     bool const fEnableIntWindow = true;
+    RT_NOREF(pVCpu);
 #endif
     if (fEnableIntWindow)
     {
