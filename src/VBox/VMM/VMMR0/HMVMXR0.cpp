@@ -364,21 +364,21 @@ typedef FNVMXEXITHANDLER            FNVMXEXITHANDLERNSRC;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMXTLBFLUSHEPT enmTlbFlush);
-static void               hmR0VmxFlushVpid(PVMCPU pVCpu, VMXTLBFLUSHVPID enmTlbFlush, RTGCPTR GCPtr);
-static void               hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu);
-static int                hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat);
-static VBOXSTRICTRC       hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, uint32_t cbInstr, uint32_t u32ErrCode,
-                                                 RTGCUINTREG GCPtrFaultAddress, bool fStepping, uint32_t *pfIntrState);
+static void         hmR0VmxFlushEpt(PVMCPU pVCpu, VMXTLBFLUSHEPT enmTlbFlush);
+static void         hmR0VmxFlushVpid(PVMCPU pVCpu, VMXTLBFLUSHVPID enmTlbFlush, RTGCPTR GCPtr);
+static void         hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu);
+static int          hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat);
+static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, uint32_t cbInstr, uint32_t u32ErrCode,
+                                           RTGCUINTREG GCPtrFaultAddress, bool fStepping, uint32_t *pfIntrState);
 #if HC_ARCH_BITS == 32
-static int                hmR0VmxInitVmcsReadCache(PVMCPU pVCpu);
+static int          hmR0VmxInitVmcsReadCache(PVMCPU pVCpu);
 #endif
 #ifndef HMVMX_USE_FUNCTION_TABLE
-DECLINLINE(VBOXSTRICTRC)  hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t rcReason);
-# define HMVMX_EXIT_DECL  DECLINLINE(VBOXSTRICTRC)
+DECLINLINE(VBOXSTRICTRC)      hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t rcReason);
+# define HMVMX_EXIT_DECL      DECLINLINE(VBOXSTRICTRC)
 # define HMVMX_EXIT_NSRC_DECL DECLINLINE(int)
 #else
-# define HMVMX_EXIT_DECL  static DECLCALLBACK(VBOXSTRICTRC)
+# define HMVMX_EXIT_DECL      static DECLCALLBACK(VBOXSTRICTRC)
 # define HMVMX_EXIT_NSRC_DECL HMVMX_EXIT_DECL
 #endif
 
