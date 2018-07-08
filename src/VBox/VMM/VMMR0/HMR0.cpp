@@ -90,7 +90,7 @@ static struct
     DECLR0CALLBACKMEMBER(int,  pfnEnterSession, (PVMCPU pVCpu, PHMGLOBALCPUINFO pHostCpu));
     DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback, (RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit));
     DECLR0CALLBACKMEMBER(int,  pfnExportHostState, (PVMCPU pVCpu));
-    DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVMCPU pVCpu, PCPUMCTX pCtx));
+    DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVMCPU pVCpu));
     DECLR0CALLBACKMEMBER(int,  pfnEnableCpu, (PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                               bool fEnabledByHost, void *pvArg));
     DECLR0CALLBACKMEMBER(int,  pfnDisableCpu, (PHMGLOBALCPUINFO pHostCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
@@ -275,9 +275,9 @@ static DECLCALLBACK(int) hmR0DummySetupVM(PVM pVM)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(VBOXSTRICTRC) hmR0DummyRunGuestCode(PVMCPU pVCpu, PCPUMCTX pCtx)
+static DECLCALLBACK(VBOXSTRICTRC) hmR0DummyRunGuestCode(PVMCPU pVCpu)
 {
-    RT_NOREF2(pVCpu, pCtx);
+    RT_NOREF(pVCpu);
     return VINF_SUCCESS;
 }
 
@@ -1554,7 +1554,7 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     PGMRZDynMapStartAutoSet(pVCpu);
 #endif
 
-    VBOXSTRICTRC rcStrict = g_HmR0.pfnRunGuestCode(pVCpu, &pVCpu->cpum.GstCtx);
+    VBOXSTRICTRC rcStrict = g_HmR0.pfnRunGuestCode(pVCpu);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PGMRZDynMapReleaseAutoSet(pVCpu);

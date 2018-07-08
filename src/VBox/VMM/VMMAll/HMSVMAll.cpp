@@ -50,8 +50,9 @@
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pCtx                Pointer to the guest-CPU context.
  */
-int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx)
+int hmSvmEmulateMovTpr(PVMCPU pVCpu)
 {
+    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Log4(("Emulated VMMCall TPR access replacement at RIP=%RGv\n", pCtx->rip));
 
     /*
@@ -228,14 +229,13 @@ VMM_INT_DECL(uint64_t) HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks)
  * @retval  VERR_SVM_UNEXPECTED_PATCH_TYPE on IPE.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
- * @param   pCtx                Pointer to the guest-CPU context.
  */
-VMM_INT_DECL(int) HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(int) HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->hm.s.fTprPatchingAllowed)
     {
-        int rc = hmSvmEmulateMovTpr(pVCpu, pCtx);
+        int rc = hmSvmEmulateMovTpr(pVCpu);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
         return rc;

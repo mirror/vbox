@@ -47,7 +47,7 @@ VMMR0DECL(int)          SVMR0DisableCpu(PHMGLOBALCPUINFO pHostCpu, void *pvPageC
 VMMR0DECL(int)          SVMR0InitVM(PVM pVM);
 VMMR0DECL(int)          SVMR0TermVM(PVM pVM);
 VMMR0DECL(int)          SVMR0SetupVM(PVM pVM);
-VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPU pVCpu);
 VMMR0DECL(int)          SVMR0ExportHostState(PVMCPU pVCpu);
 VMMR0DECL(int)          SVMR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
 VMMR0DECL(int)          SVMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
