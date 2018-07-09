@@ -26,6 +26,7 @@
 # include <QGridLayout>
 # include <QLabel>
 # include <QLineEdit>
+# include <QStackedWidget>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -44,7 +45,8 @@
 *********************************************************************************************************************************/
 
 UIWizardExportAppPage3::UIWizardExportAppPage3()
-    : m_pFileSelectorLabel(0)
+    : m_pSettingsWidget(0)
+    , m_pFileSelectorLabel(0)
     , m_pFileSelector(0)
     , m_pFormatComboBoxLabel(0)
     , m_pFormatComboBox(0)
@@ -83,33 +85,7 @@ void UIWizardExportAppPage3::updatePageAppearance()
 {
     /* Update page appearance according to chosen storage-type: */
     const StorageType enmStorageType = fieldImp("storageType").value<StorageType>();
-    switch (enmStorageType)
-    {
-        case LocalFilesystem:
-        {
-            m_pFileSelectorLabel->setVisible(true);
-            m_pFileSelector->setVisible(true);
-            m_pFormatComboBoxLabel->setVisible(true);
-            m_pFormatComboBox->setVisible(true);
-            m_pAdditionalLabel->setVisible(true);
-            m_pManifestCheckbox->setVisible(true);
-            m_pProviderComboBoxLabel->setVisible(false);
-            m_pProviderComboBox->setVisible(false);
-            break;
-        }
-        case CloudProvider:
-        {
-            m_pFileSelectorLabel->setVisible(false);
-            m_pFileSelector->setVisible(false);
-            m_pFormatComboBoxLabel->setVisible(false);
-            m_pFormatComboBox->setVisible(false);
-            m_pAdditionalLabel->setVisible(false);
-            m_pManifestCheckbox->setVisible(false);
-            m_pProviderComboBoxLabel->setVisible(true);
-            m_pProviderComboBox->setVisible(true);
-            break;
-        }
-    }
+    m_pSettingsWidget->setCurrentIndex((int)enmStorageType);
 }
 
 void UIWizardExportAppPage3::refreshCurrentSettings()
@@ -242,100 +218,146 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
         }
 
         /* Create settings layout: */
-        QGridLayout *pSettingsLayout = new QGridLayout;
-        if (pSettingsLayout)
+        m_pSettingsWidget = new QStackedWidget;
+        if (m_pSettingsWidget)
         {
-            pSettingsLayout->setContentsMargins(0, 0, 0, 0);
-            pSettingsLayout->setColumnStretch(0, 0);
-            pSettingsLayout->setColumnStretch(1, 1);
-
-            /* Create file selector: */
-            m_pFileSelector = new UIEmptyFilePathSelector;
-            if (m_pFileSelector)
+            /* Create settings pane 1: */
+            QWidget *pSettingsPane1 = new QWidget;
+            if (pSettingsPane1)
             {
-                m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Save);
-                m_pFileSelector->setEditable(true);
-                m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
-                m_pFileSelector->setDefaultSaveExt("ova");
+                /* Create settings layout 1: */
+                QGridLayout *pSettingsLayout1 = new QGridLayout(pSettingsPane1);
+                if (pSettingsLayout1)
+                {
+                    pSettingsLayout1->setContentsMargins(0, 0, 0, 0);
+                    pSettingsLayout1->setColumnStretch(0, 0);
+                    pSettingsLayout1->setColumnStretch(1, 1);
+
+                    /* Create file selector: */
+                    m_pFileSelector = new UIEmptyFilePathSelector;
+                    if (m_pFileSelector)
+                    {
+                        m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Save);
+                        m_pFileSelector->setEditable(true);
+                        m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
+                        m_pFileSelector->setDefaultSaveExt("ova");
+
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(m_pFileSelector, 0, 1);
+                    }
+                    /* Create file selector label: */
+                    m_pFileSelectorLabel = new QLabel;
+                    if (m_pFileSelectorLabel)
+                    {
+                        m_pFileSelectorLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                        m_pFileSelectorLabel->setBuddy(m_pFileSelector);
+
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(m_pFileSelectorLabel, 0, 0);
+                    }
+
+                    /* Create format combo-box: */
+                    m_pFormatComboBox = new QComboBox;
+                    if (m_pFormatComboBox)
+                    {
+                        const QString strFormatOVF09("ovf-0.9");
+                        const QString strFormatOVF10("ovf-1.0");
+                        const QString strFormatOVF20("ovf-2.0");
+                        const QString strFormatOPC10("opc-1.0");
+                        m_pFormatComboBox->addItem(strFormatOVF09, strFormatOVF09);
+                        m_pFormatComboBox->addItem(strFormatOVF10, strFormatOVF10);
+                        m_pFormatComboBox->addItem(strFormatOVF20, strFormatOVF20);
+                        m_pFormatComboBox->addItem(strFormatOPC10, strFormatOPC10);
+
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(m_pFormatComboBox, 1, 1);
+                    }
+                    /* Create format combo-box label: */
+                    m_pFormatComboBoxLabel = new QLabel;
+                    if (m_pFormatComboBoxLabel)
+                    {
+                        m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                        m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
+
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(m_pFormatComboBoxLabel, 1, 0);
+                    }
+
+                    /* Create advanced label: */
+                    m_pAdditionalLabel = new QLabel;
+                    if (m_pAdditionalLabel)
+                    {
+                        m_pAdditionalLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(m_pAdditionalLabel, 2, 0);
+                    }
+                    /* Create manifest check-box: */
+                    m_pManifestCheckbox = new QCheckBox;
+                    if (m_pManifestCheckbox)
+                    {
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(m_pManifestCheckbox, 2, 1);
+                    }
+
+                    /* Create placeholder: */
+                    QWidget *pPlaceholder = new QWidget;
+                    if (pPlaceholder)
+                    {
+                        /* Add into layout: */
+                        pSettingsLayout1->addWidget(pPlaceholder, 3, 0, 1, 2);
+                    }
+                }
 
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pFileSelector, 0, 1);
+                m_pSettingsWidget->addWidget(pSettingsPane1);
             }
-            /* Create file selector label: */
-            m_pFileSelectorLabel = new QLabel;
-            if (m_pFileSelectorLabel)
+
+            /* Create settings pane 2: */
+            QWidget *pSettingsPane2 = new QWidget;;
+            if (pSettingsPane2)
             {
-                m_pFileSelectorLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                m_pFileSelectorLabel->setBuddy(m_pFileSelector);
+                /* Create settings layout 2: */
+                QGridLayout *pSettingsLayout2 = new QGridLayout(pSettingsPane2);
+                if (pSettingsLayout2)
+                {
+                    pSettingsLayout2->setContentsMargins(0, 0, 0, 0);
+                    pSettingsLayout2->setColumnStretch(0, 0);
+                    pSettingsLayout2->setColumnStretch(1, 1);
+
+                    /* Create provider combo-box: */
+                    m_pProviderComboBox = new QComboBox;
+                    if (m_pProviderComboBox)
+                    {
+                        /* Add into layout: */
+                        pSettingsLayout2->addWidget(m_pProviderComboBox, 0, 1);
+                    }
+                    /* Create provider label: */
+                    m_pProviderComboBoxLabel = new QLabel;
+                    if (m_pProviderComboBoxLabel)
+                    {
+                        m_pProviderComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                        m_pProviderComboBoxLabel->setBuddy(m_pProviderComboBox);
+
+                        /* Add into layout: */
+                        pSettingsLayout2->addWidget(m_pProviderComboBoxLabel, 0, 0);
+                    }
+
+                    /* Create placeholder: */
+                    QWidget *pPlaceholder = new QWidget;
+                    if (pPlaceholder)
+                    {
+                        /* Add into layout: */
+                        pSettingsLayout2->addWidget(pPlaceholder, 1, 0, 1, 2);
+                    }
+                }
 
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pFileSelectorLabel, 0, 0);
-            }
-
-            /* Create format combo-box: */
-            m_pFormatComboBox = new QComboBox;
-            if (m_pFormatComboBox)
-            {
-                const QString strFormatOVF09("ovf-0.9");
-                const QString strFormatOVF10("ovf-1.0");
-                const QString strFormatOVF20("ovf-2.0");
-                const QString strFormatOPC10("opc-1.0");
-                m_pFormatComboBox->addItem(strFormatOVF09, strFormatOVF09);
-                m_pFormatComboBox->addItem(strFormatOVF10, strFormatOVF10);
-                m_pFormatComboBox->addItem(strFormatOVF20, strFormatOVF20);
-                m_pFormatComboBox->addItem(strFormatOPC10, strFormatOPC10);
-
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pFormatComboBox, 1, 1);
-            }
-            /* Create format combo-box label: */
-            m_pFormatComboBoxLabel = new QLabel;
-            if (m_pFormatComboBoxLabel)
-            {
-                m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
-
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 1, 0);
-            }
-
-            /* Create advanced label: */
-            m_pAdditionalLabel = new QLabel;
-            if (m_pAdditionalLabel)
-            {
-                m_pAdditionalLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pAdditionalLabel, 2, 0);
-            }
-            /* Create manifest check-box: */
-            m_pManifestCheckbox = new QCheckBox;
-            if (m_pManifestCheckbox)
-            {
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pManifestCheckbox, 2, 1);
-            }
-
-            /* Create provider combo-box: */
-            m_pProviderComboBox = new QComboBox;
-            if (m_pProviderComboBox)
-            {
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pProviderComboBox, 3, 1);
-            }
-            /* Create provider label: */
-            m_pProviderComboBoxLabel = new QLabel;
-            if (m_pProviderComboBoxLabel)
-            {
-                m_pProviderComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                m_pProviderComboBoxLabel->setBuddy(m_pProviderComboBox);
-
-                /* Add into layout: */
-                pSettingsLayout->addWidget(m_pProviderComboBoxLabel, 3, 0);
+                m_pSettingsWidget->addWidget(pSettingsPane2);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(pSettingsLayout);
+            pMainLayout->addWidget(m_pSettingsWidget);
         }
 
         /* Add vertical stretch: */

@@ -29,6 +29,7 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 class QLineEdit;
+class QStackedWidget;
 class QIRichTextLabel;
 class UIEmptyFilePathSelector;
 
@@ -80,6 +81,9 @@ protected:
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
+
+    /** Holds the settings widget instance. */
+    QStackedWidget *m_pSettingsWidget;
 
     /** Holds the file selector label instance. */
     QLabel    *m_pFileSelectorLabel;
