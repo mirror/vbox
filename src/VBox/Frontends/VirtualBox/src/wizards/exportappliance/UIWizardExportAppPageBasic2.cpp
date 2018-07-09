@@ -134,7 +134,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
                                             "You can create it on your own computer "
                                             "or on one of cloud servers you have registered."));
     m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&This computer"));
-    m_pTypeCloudServiceProvider->setText(UIWizardExportApp::tr("&Cloud Service Provider"));
+    m_pTypeCloudServiceProvider->setText(UIWizardExportApp::tr("&Cloud service provider"));
 }
 
 void UIWizardExportAppPageBasic2::initializePage()

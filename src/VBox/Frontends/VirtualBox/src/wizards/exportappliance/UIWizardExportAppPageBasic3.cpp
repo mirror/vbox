@@ -47,10 +47,28 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
 {
 }
 
+void UIWizardExportAppPage3::populateProviders()
+{
+    /* Acquire provider list: */
+    // Here goes the experiamental list with
+    // arbitrary contents for testing purposes.
+    QStringList providers;
+    providers << "OCI";
+    providers << "Amazon";
+    providers << "Google";
+    providers << "Microsoft";
+    m_pProviderComboBox->addItems(providers);
+
+    /* Duplicate non-translated names to data fields: */
+    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+        m_pProviderComboBox->setItemData(i, m_pProviderComboBox->itemText(i));
+}
+
 void UIWizardExportAppPage3::chooseDefaultSettings()
 {
     /* Choose defaults: */
     setFormat("ovf-1.0");
+    setProvider("OCI");
 }
 
 void UIWizardExportAppPage3::refreshCurrentSettings()
@@ -67,6 +85,8 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
             m_pFormatComboBox->setVisible(true);
             m_pAdditionalLabel->setVisible(true);
             m_pManifestCheckbox->setVisible(true);
+            m_pProviderComboBoxLabel->setVisible(false);
+            m_pProviderComboBox->setVisible(false);
             break;
         }
         case CloudProvider:
@@ -77,6 +97,8 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
             m_pFormatComboBox->setVisible(false);
             m_pAdditionalLabel->setVisible(false);
             m_pManifestCheckbox->setVisible(false);
+            m_pProviderComboBoxLabel->setVisible(true);
+            m_pProviderComboBox->setVisible(true);
             break;
         }
     }
@@ -134,6 +156,14 @@ void UIWizardExportAppPage3::updateFormatComboToolTip()
     m_pFormatComboBox->setToolTip(strCurrentToolTip);
 }
 
+void UIWizardExportAppPage3::updateProviderComboToolTip()
+{
+    const int iCurrentIndex = m_pProviderComboBox->currentIndex();
+    const QString strCurrentToolTip = m_pProviderComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    m_pProviderComboBox->setToolTip(strCurrentToolTip);
+}
+
 QString UIWizardExportAppPage3::path() const
 {
     return m_pFileSelector->path();
@@ -165,6 +195,19 @@ bool UIWizardExportAppPage3::isManifestSelected() const
 void UIWizardExportAppPage3::setManifestSelected(bool fChecked)
 {
     m_pManifestCheckbox->setChecked(fChecked);
+}
+
+QString UIWizardExportAppPage3::provider() const
+{
+    const int iIndex = m_pProviderComboBox->currentIndex();
+    return m_pProviderComboBox->itemData(iIndex).toString();
+}
+
+void UIWizardExportAppPage3::setProvider(const QString &strProvider)
+{
+    const int iIndex = m_pProviderComboBox->findData(strProvider);
+    AssertMsg(iIndex != -1, ("Field not found!"));
+    m_pProviderComboBox->setCurrentIndex(iIndex);
 }
 
 
@@ -260,6 +303,24 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 pSettingsLayout->addWidget(m_pManifestCheckbox, 6, 1);
             }
 
+            /* Create provider combo-box: */
+            m_pProviderComboBox = new QComboBox;
+            if (m_pProviderComboBox)
+            {
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pProviderComboBox, 7, 1);
+            }
+            /* Create provider label: */
+            m_pProviderComboBoxLabel = new QLabel;
+            if (m_pProviderComboBoxLabel)
+            {
+                m_pProviderComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                m_pProviderComboBoxLabel->setBuddy(m_pProviderComboBox);
+
+                /* Add into layout: */
+                pSettingsLayout->addWidget(m_pProviderComboBoxLabel, 7, 0);
+            }
+
             /* Add into layout: */
             pMainLayout->addLayout(pSettingsLayout);
         }
@@ -268,6 +329,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
         pMainLayout->addStretch();
     }
 
+    /* Populate providers: */
+    populateProviders();
     /* Choose default settings: */
     chooseDefaultSettings();
 
@@ -275,6 +338,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic3::completeChanged);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic3::sltHandleFormatComboChange);
+    connect(m_pProviderComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardExportAppPageBasic3::sltHandleProviderComboChange);
 
     /* Register fields: */
     registerField("path", this, "path");
@@ -312,9 +377,21 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
 
+    /* Translate Provider combo-box: */
+    m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Cloud Service Provider:"));
+    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+    {
+        if (m_pProviderComboBox->itemText(i) == "OCI")
+        {
+            m_pProviderComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure"));
+            m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to Oracle Cloud Infrastructure"), Qt::ToolTipRole);
+        }
+    }
+
     /* Refresh current settings: */
     refreshCurrentSettings();
     updateFormatComboToolTip();
+    updateProviderComboToolTip();
 }
 
 void UIWizardExportAppPageBasic3::initializePage()
@@ -384,7 +461,7 @@ void UIWizardExportAppPageBasic3::refreshCurrentSettings()
         {
             m_pLabel->setText(tr("Please complete the additional fields and provide a filename for "
                                  "the OVF target."));
-            m_pLabel->setFocus(); /// @todo fix it!
+            m_pProviderComboBox->setFocus();
             break;
         }
     }
@@ -394,4 +471,10 @@ void UIWizardExportAppPageBasic3::sltHandleFormatComboChange()
 {
     refreshCurrentSettings();
     updateFormatComboToolTip();
+}
+
+void UIWizardExportAppPageBasic3::sltHandleProviderComboChange()
+{
+    refreshCurrentSettings();
+    updateProviderComboToolTip();
 }

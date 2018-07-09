@@ -270,6 +270,7 @@ void UIWizardExportAppPageExpert::retranslateUi()
     /* Refresh current settings: */
     refreshCurrentSettings();
     updateFormatComboToolTip();
+    updateProviderComboToolTip();
 }
 
 void UIWizardExportAppPageExpert::initializePage()
