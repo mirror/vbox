@@ -6221,8 +6221,6 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
     if (RT_FAILURE(a_rc))       \
         break
 
-    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatImportGuestState, x);
-
     int      rc   = VINF_SUCCESS;
     PVM      pVM  = pVCpu->CTX_SUFF(pVM);
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
@@ -6230,6 +6228,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
     uint32_t u32Val;
 
     Log4Func(("fExtrn=%#RX64 fWhat=%#RX64\n", pCtx->fExtrn, fWhat));
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatImportGuestState, x);
 
     /*
      * We disable interrupts to make the updating of the state and in particular
@@ -6846,7 +6845,6 @@ static int hmR0VmxLeave(PVMCPU pVCpu, bool fImportState)
     pVCpu->hm.s.vmx.fUpdatedHostMsrs = false;
 
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatImportGuestState);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExportGuestState);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatPreExit);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitHandling);

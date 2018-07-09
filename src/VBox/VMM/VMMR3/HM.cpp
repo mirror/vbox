@@ -867,23 +867,23 @@ static int hmR3InitCPU(PVM pVM)
 
 #ifdef VBOX_WITH_STATISTICS
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatPoke, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of RTMpPokeCpu",
+                             "Profiling of RTMpPokeCpu.",
                              "/PROF/CPU%d/HM/Poke", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatSpinPoke, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of poke wait",
+                             "Profiling of poke wait.",
                              "/PROF/CPU%d/HM/PokeWait", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatSpinPokeFailed, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of poke wait when RTMpPokeCpu fails",
+                             "Profiling of poke wait when RTMpPokeCpu fails.",
                              "/PROF/CPU%d/HM/PokeWaitFailed", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatEntry, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of VMXR0RunGuestCode entry",
-                             "/PROF/CPU%d/HM/StatEntry", i);
+                             "Profiling of entry until entering GC.",
+                             "/PROF/CPU%d/HM/Entry", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatPreExit, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of pre-exit processing after returning from GC",
+                             "Profiling of pre-exit processing after returning from GC.",
                              "/PROF/CPU%d/HM/SwitchFromGC_1", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitHandling, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
@@ -892,32 +892,32 @@ static int hmR3InitCPU(PVM pVM)
         AssertRC(rc);
 
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitIO, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "I/O",
+                             "I/O.",
                              "/PROF/CPU%d/HM/SwitchFromGC_2/IO", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitMovCRx, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "MOV CRx",
+                             "MOV CRx.",
                              "/PROF/CPU%d/HM/SwitchFromGC_2/MovCRx", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitXcptNmi, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Exceptions, NMIs",
+                             "Exceptions, NMIs.",
                              "/PROF/CPU%d/HM/SwitchFromGC_2/XcptNmi", i);
         AssertRC(rc);
 
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatImportGuestState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of hmR0VmxImportGuestState or hmR0SvmImportGuestState",
-                             "/PROF/CPU%d/HM/StatImportGuestState", i);
+                             "Profiling of importing guest state from hardware after VM-exit.",
+                             "/PROF/CPU%d/HM/ImportGuestState", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExportGuestState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of hmR0VmxExportGuestState or hmR0SvmExportGuestState",
-                             "/PROF/CPU%d/HM/StatExportGuestState", i);
+                             "Profiling of exporting guest state to hardware before VM-entry.",
+                             "/PROF/CPU%d/HM/ExportGuestState", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatLoadGuestFpuState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of CPUMR0LoadGuestFPU",
-                             "/PROF/CPU%d/HM/StatLoadGuestFpuState", i);
+                             "Profiling of CPUMR0LoadGuestFPU.",
+                             "/PROF/CPU%d/HM/LoadGuestFpuState", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatInGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of VMLAUNCH/VMRESUME.",
+                             "Profiling of execution of guest-code in hardware.",
                              "/PROF/CPU%d/HM/InGC", i);
         AssertRC(rc);
 
