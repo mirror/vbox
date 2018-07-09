@@ -2864,6 +2864,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                         InsertConfigInteger(pCfg, "DebugEnabled", fDebugEnabled);
                         InsertConfigString (pCfg, "DebugPathOut", strDebugPathOut);
+                    break;
                 }
                 default: AssertFailedBreak();
             }
