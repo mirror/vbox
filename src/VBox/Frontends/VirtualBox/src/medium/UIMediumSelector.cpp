@@ -227,7 +227,6 @@ void UIMediumSelector::configure()
     prepareActions();
     prepareWidgets();
     prepareConnections();
-
 }
 
 void UIMediumSelector::prepareActions()
@@ -304,7 +303,10 @@ void UIMediumSelector::prepareConnections()
         connect(m_pActionRefresh, &QAction::triggered, this, &UIMediumSelector::sltHandleRefresh);
 
     if (m_pTreeWidget)
+    {
         connect(m_pTreeWidget, &QITreeWidget::itemSelectionChanged, this, &UIMediumSelector::sltHandleItemSelectionChanged);
+        connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked, this, &UIMediumSelector::sltHandleTreeWidgetDoubleClick);
+    }
 
     if (m_pButtonBox)
     {
@@ -497,6 +499,15 @@ void UIMediumSelector::sltHandleItemSelectionChanged()
 {
     updateOkButton();
 }
+
+void UIMediumSelector::sltHandleTreeWidgetDoubleClick(QTreeWidgetItem * item, int column)
+{
+    Q_UNUSED(column);
+    if (!dynamic_cast<UIMediumItem*>(item))
+        return;
+    accept();
+}
+
 
 void UIMediumSelector::sltHandleMediumEnumerationStart()
 {

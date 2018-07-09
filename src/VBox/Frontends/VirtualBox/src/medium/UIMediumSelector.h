@@ -60,6 +60,7 @@ private slots:
     void sltAddMedium();
     void sltCreateMedium();
     void sltHandleItemSelectionChanged();
+    void sltHandleTreeWidgetDoubleClick(QTreeWidgetItem * item, int column);
     void sltHandleMediumEnumerationStart();
     void sltHandleMediumEnumerated();
     void sltHandleMediumEnumerationFinish();
