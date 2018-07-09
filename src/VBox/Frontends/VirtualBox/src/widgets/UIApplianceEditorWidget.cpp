@@ -1397,6 +1397,7 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pAppliance(0)
     , m_pModel(0)
+    , m_pCheckBoxReinitMACs(0)
 {
     /* Make sure all static content is properly initialized */
     initSystemSettings();
@@ -1439,6 +1440,13 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
                     /* Add tree-view into information layout: */
                     m_pLayoutInformation->addWidget(m_pCheckBoxReinitMACs);
                 }
+
+                m_pImportHDsAsVDI = new QCheckBox;
+                {
+                    m_pImportHDsAsVDI->setHidden(true);
+                    m_pLayoutInformation->addWidget(m_pImportHDsAsVDI);
+                }
+
             }
 
             /* Add information pane into layout: */
@@ -1502,6 +1510,9 @@ void UIApplianceEditorWidget::retranslateUi()
     /* Translate information pane check-box: */
     m_pCheckBoxReinitMACs->setText(tr("&Reinitialize the MAC address of all network cards"));
     m_pCheckBoxReinitMACs->setToolTip(tr("When checked a new unique MAC address will assigned to all configured network cards."));
+
+    m_pImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
+    m_pImportHDsAsVDI->setToolTip(tr("When checked a all the hard drives that belong to this appliance will be imported in VDI format"));
 
     /* Translate warning pane label: */
     m_pLabelWarning->setText(tr("Warnings:"));

@@ -59,9 +59,10 @@ public:
 UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
     : UIApplianceEditorWidget(pParent)
 {
-    /* Show the MAC check box */
+    /* Show the MAC and import as VDI check boxes */
     m_pCheckBoxReinitMACs->setHidden(false);
-
+    m_pImportHDsAsVDI->setHidden(false);
+    m_pImportHDsAsVDI->setCheckState(Qt::Checked);
     m_pPathSelectorLabel = new QIRichTextLabel(this);
     if (m_pPathSelectorLabel)
     {
@@ -180,6 +181,8 @@ bool UIApplianceImportEditorWidget::import()
         QVector<KImportOptions> options;
         if (!m_pCheckBoxReinitMACs->isChecked())
             options.append(KImportOptions_KeepAllMACs);
+        if (m_pImportHDsAsVDI->isChecked())
+            options.append(KImportOptions_ImportToVDI);
         progress = m_pAppliance->ImportMachines(options);
         bool fResult = m_pAppliance->isOk();
         if (fResult)
