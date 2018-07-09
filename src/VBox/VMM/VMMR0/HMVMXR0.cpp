@@ -7690,8 +7690,8 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
 
                 /* If any other guest-state bits are changed here, make sure to update
                    hmR0VmxPreRunGuestCommitted() when thread-context hooks are used. */
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_CS     | HM_CHANGED_GUEST_CR2
-                                                         | HM_CHANGED_GUEST_RIP    | HM_CHANGED_GUEST_RFLAGS
+                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_CS  | HM_CHANGED_GUEST_CR2
+                                                         | HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
                                                          | HM_CHANGED_GUEST_RSP);
 
                 /* We're clearing interrupts, which means no block-by-STI interrupt-inhibition. */
@@ -8621,9 +8621,7 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
         }
     }
     else
-    {
         Log4Func(("VM-entry failure: rcVMRun=%Rrc fVMEntryFailed=%RTbool\n", rcVMRun, pVmxTransient->fVMEntryFailed));
-    }
 
     VMMRZCallRing3Enable(pVCpu);
 }
@@ -8821,7 +8819,7 @@ static void hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE pDbg
         pVCpu->hm.s.vmx.u32ProcCtls   |= pDbgState->fCpe1Extra;
         pVCpu->hm.s.vmx.u32ProcCtls   &= ~pDbgState->fCpe1Unwanted;
         VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
-        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS32_CTRL_PROC_EXEC: %#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls));
+        Log6Func(("VMX_VMCS32_CTRL_PROC_EXEC: %#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls));
         pDbgState->fModifiedProcCtls   = true;
     }
 
@@ -8829,7 +8827,7 @@ static void hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE pDbg
     {
         pVCpu->hm.s.vmx.u32ProcCtls2  |= pDbgState->fCpe2Extra;
         VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, pVCpu->hm.s.vmx.u32ProcCtls2);
-        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS32_CTRL_PROC_EXEC2: %#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls2));
+        Log6Func(("VMX_VMCS32_CTRL_PROC_EXEC2: %#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls2));
         pDbgState->fModifiedProcCtls2  = true;
     }
 
@@ -8837,7 +8835,7 @@ static void hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE pDbg
     {
         pVCpu->hm.s.vmx.u32XcptBitmap |= pDbgState->bmXcptExtra;
         VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
-        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS32_CTRL_EXCEPTION_BITMAP: %#RX32\n", pVCpu->hm.s.vmx.u32XcptBitmap));
+        Log6Func(("VMX_VMCS32_CTRL_EXCEPTION_BITMAP: %#RX32\n", pVCpu->hm.s.vmx.u32XcptBitmap));
         pDbgState->fModifiedXcptBitmap = true;
     }
 
@@ -8845,18 +8843,28 @@ static void hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE pDbg
     {
         pVCpu->hm.s.vmx.u32Cr0Mask = 0;
         VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, 0);
-        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS_CTRL_CR0_MASK: 0\n"));
+        Log6Func(("VMX_VMCS_CTRL_CR0_MASK: 0\n"));
     }
 
     if (pDbgState->fClearCr4Mask && pVCpu->hm.s.vmx.u32Cr4Mask != 0)
     {
         pVCpu->hm.s.vmx.u32Cr4Mask = 0;
         VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, 0);
-        Log6(("hmR0VmxRunDebugStateRevert: VMX_VMCS_CTRL_CR4_MASK: 0\n"));
+        Log6Func(("VMX_VMCS_CTRL_CR4_MASK: 0\n"));
     }
 }
 
 
+/**
+ * Restores VMCS fields that were changed by hmR0VmxPreRunGuestDebugStateApply for
+ * re-entry next time around.
+ *
+ * @returns Strict VBox status code (i.e. informational status codes too).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pDbgState   The debug state.
+ * @param   rcStrict    The return code from executing the guest using single
+ *                      stepping.
+ */
 static VBOXSTRICTRC hmR0VmxRunDebugStateRevert(PVMCPU pVCpu, PVMXRUNDBGSTATE pDbgState, VBOXSTRICTRC rcStrict)
 {
     /*
