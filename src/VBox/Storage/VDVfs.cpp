@@ -361,7 +361,7 @@ static DECLCALLBACK(int) vdVfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSg
     }
 
     size_t cbLeftToWrite;
-    if (offUnsigned + pSgBuf->paSegs[0].cbSeg < cbImage)
+    if (offUnsigned + pSgBuf->paSegs[0].cbSeg <= cbImage)
     {
         cbLeftToWrite = pSgBuf->paSegs[0].cbSeg;
         if (pcbWritten)
