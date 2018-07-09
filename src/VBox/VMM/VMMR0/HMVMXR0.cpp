@@ -1979,11 +1979,9 @@ static void hmR0VmxFlushTaggedTlbBoth(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
         hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmTlbFlushEpt);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
         HMVMX_SET_TAGGED_TLB_FLUSHED();
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);  /* Already flushed-by-EPT, skip doing it again below. */
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
     }
-
-    /* Check for explicit TLB flushes. */
-    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
+    else if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))    /* Check for explicit TLB flushes. */
     {
         /*
          * Changes to the EPT paging structure by VMM requires flushing-by-EPT as the CPU
@@ -5649,8 +5647,6 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
     else
         fOffsettedTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &uTscOffset, &fParavirtTsc);
 
-    /** @todo later optimize this to be done elsewhere and not before every
-     *        VM-entry. */
     if (fParavirtTsc)
     {
         /* Currently neither Hyper-V nor KVM need to update their paravirt. TSC
@@ -6908,8 +6904,8 @@ static int hmR0VmxLeaveSession(PVMCPU pVCpu)
 
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
     /** @todo Deregistering here means we need to VMCLEAR always
-     *        (longjmp/exit-to-r3) in VT-x which is not efficient. */
-    /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
+     *        (longjmp/exit-to-r3) in VT-x which is not efficient, eliminate need
+     *        for calling VMMR0ThreadCtxHookDisable here! */
     VMMR0ThreadCtxHookDisable(pVCpu);
 
     /* Leave HM context. This takes care of local init (term). */
@@ -7293,8 +7289,8 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, uint32_t fIntrState,
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
-    bool fBlockMovSS    = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
-    bool fBlockSti      = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+    bool fBlockMovSS = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
+    bool fBlockSti   = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
 
     Assert(!fBlockSti || !(ASMAtomicUoReadU64(&pVCpu->cpum.GstCtx.fExtrn) & CPUMCTX_EXTRN_RFLAGS));
     Assert(!(fIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI));         /* We don't support block-by-SMI yet.*/
