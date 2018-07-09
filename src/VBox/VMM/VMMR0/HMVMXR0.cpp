@@ -4536,10 +4536,6 @@ static int hmR0VmxExportGuestSegmentRegs(PVMCPU pVCpu)
         hmR0VmxValidateSegmentRegs(pVCpu);
 #endif
 
-        /* Update the exit history entry with the correct CS.BASE + RIP. */
-        if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_RIP)
-            EMR0HistoryUpdatePC(pVCpu, pCtx->cs.u64Base + pCtx->rip, true);
-
         Log4Func(("CS=%#RX16 Base=%#RX64 Limit=%#RX32 Attr=%#RX32\n", pCtx->cs.Sel, pCtx->cs.u64Base,
                   pCtx->cs.u32Limit, pCtx->cs.Attr.u));
     }
