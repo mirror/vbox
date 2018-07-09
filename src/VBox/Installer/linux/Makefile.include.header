@@ -136,7 +136,9 @@ else # neq($(KERNELRELEASE),)
 endif # neq($(KERNELRELEASE),)
 
 # Kernel build folder
-KERN_DIR := /lib/modules/$(KERN_VER)/build
+ifeq ($(KERN_DIR),)
+ KERN_DIR := /lib/modules/$(KERN_VER)/build
+endif
 ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
  $(error Error: unable to find the headers of the Linux kernel to build against. \
           Specify KERN_VER=<version> (currently $(KERN_VER)) and run Make again)
