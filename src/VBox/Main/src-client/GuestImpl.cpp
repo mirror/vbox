@@ -808,36 +808,33 @@ HRESULT Guest::setCredentials(const com::Utf8Str &aUserName, const com::Utf8Str 
     /* Check for magic domain names which are used to pass encryption keys to the disk. */
     if (Utf8Str(aDomain) == "@@disk")
         return mParent->i_setDiskEncryptionKeys(aPassword);
-    else if (Utf8Str(aDomain) == "@@mem")
+    if (Utf8Str(aDomain) == "@@mem")
     {
         /** @todo */
         return E_NOTIMPL;
     }
-    else
-    {
-        /* forward the information to the VMM device */
-        VMMDev *pVMMDev = mParent->i_getVMMDev();
-        if (pVMMDev)
-        {
-            PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
-            if (pVMMDevPort)
-            {
-                uint32_t u32Flags = VMMDEV_SETCREDENTIALS_GUESTLOGON;
-                if (!aAllowInteractiveLogon)
-                    u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
 
-                pVMMDevPort->pfnSetCredentials(pVMMDevPort,
-                                               aUserName.c_str(),
-                                               aPassword.c_str(),
-                                               aDomain.c_str(),
-                                               u32Flags);
-                return S_OK;
-            }
+    /* forward the information to the VMM device */
+    VMMDev *pVMMDev = mParent->i_getVMMDev();
+    if (pVMMDev)
+    {
+        PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
+        if (pVMMDevPort)
+        {
+            uint32_t u32Flags = VMMDEV_SETCREDENTIALS_GUESTLOGON;
+            if (!aAllowInteractiveLogon)
+                u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
+
+            pVMMDevPort->pfnSetCredentials(pVMMDevPort,
+                                           aUserName.c_str(),
+                                           aPassword.c_str(),
+                                           aDomain.c_str(),
+                                           u32Flags);
+            return S_OK;
         }
     }
 
-    return setError(VBOX_E_VM_ERROR,
-                    tr("VMM device is not available (is the VM running?)"));
+    return setError(VBOX_E_VM_ERROR, tr("VMM device is not available (is the VM running?)"));
 }
 
 // public methods only for internal purposes

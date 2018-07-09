@@ -183,16 +183,16 @@ static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList 
     {
         PFNVBOXHOSTWEBCAMLIST pfn = NULL;
         RTLDRMOD hmod = NIL_RTLDRMOD;
-        int rc = loadHostWebcamLibrary(strLibrary.c_str(), &hmod, &pfn);
+        int vrc = loadHostWebcamLibrary(strLibrary.c_str(), &hmod, &pfn);
 
-        LogRel(("Load [%s] rc %Rrc\n", strLibrary.c_str(), rc));
+        LogRel(("Load [%s] vrc=%Rrc\n", strLibrary.c_str(), vrc));
 
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
         {
             uint64_t u64Result = S_OK;
-            rc = pfn(hostWebcamAdd, pList, &u64Result);
-            Log(("VBoxHostWebcamList rc %Rrc, result 0x%08X\n", rc, u64Result));
-            if (RT_FAILURE(rc))
+            vrc = pfn(hostWebcamAdd, pList, &u64Result);
+            Log(("VBoxHostWebcamList vrc %Rrc, result 0x%08X\n", vrc, u64Result));
+            if (RT_FAILURE(vrc))
             {
                 hr = (HRESULT)u64Result;
             }
@@ -203,9 +203,8 @@ static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList 
 
         if (SUCCEEDED(hr))
         {
-            if (RT_FAILURE(rc))
-                hr = pVirtualBox->setError(VBOX_E_IPRT_ERROR,
-                         "Failed to get webcam list: %Rrc", rc);
+            if (RT_FAILURE(vrc))
+                hr = pVirtualBox->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, "Failed to get webcam list: %Rrc", vrc);
         }
     }
 

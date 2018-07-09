@@ -351,10 +351,9 @@ private:
                                  com::Utf8Str &aFile,
                                  BOOL *aResult);
 
-    static HRESULT i_setErrorStatic(HRESULT aResultCode,
-                                    const Utf8Str &aText)
+    static HRESULT i_setErrorStaticBoth(HRESULT aResultCode, int vrc, const Utf8Str &aText)
     {
-        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
+        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true, vrc);
     }
 
     HRESULT i_registerMachine(Machine *aMachine);

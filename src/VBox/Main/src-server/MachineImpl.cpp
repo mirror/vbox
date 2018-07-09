@@ -640,10 +640,10 @@ HRESULT Machine::initImpl(VirtualBox *aParent,
     /* get the full file name */
     int vrc1 = mParent->i_calculateFullPath(strConfigFile, mData->m_strConfigFileFull);
     if (RT_FAILURE(vrc1))
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Invalid machine settings file name '%s' (%Rrc)"),
-                        strConfigFile.c_str(),
-                        vrc1);
+        return setErrorBoth(VBOX_E_FILE_ERROR, vrc1,
+                            tr("Invalid machine settings file name '%s' (%Rrc)"),
+                            strConfigFile.c_str(),
+                            vrc1);
 
     LogFlowThisFuncLeave();
 
@@ -679,18 +679,18 @@ HRESULT Machine::i_tryCreateMachineConfigFile(bool fForceOverwrite)
              * of a new settings file will fail. */
             int vrc2 = RTFileDelete(mData->m_strConfigFileFull.c_str());
             if (RT_FAILURE(vrc2))
-                rc = setError(VBOX_E_FILE_ERROR,
-                              tr("Could not delete the existing settings file '%s' (%Rrc)"),
-                              mData->m_strConfigFileFull.c_str(), vrc2);
+                rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc2,
+                                  tr("Could not delete the existing settings file '%s' (%Rrc)"),
+                                  mData->m_strConfigFileFull.c_str(), vrc2);
         }
     }
     else if (    vrc != VERR_FILE_NOT_FOUND
               && vrc != VERR_PATH_NOT_FOUND
             )
-        rc = setError(VBOX_E_FILE_ERROR,
-                      tr("Invalid machine settings file name '%s' (%Rrc)"),
-                      mData->m_strConfigFileFull.c_str(),
-                      vrc);
+        rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                          tr("Invalid machine settings file name '%s' (%Rrc)"),
+                          mData->m_strConfigFileFull.c_str(),
+                          vrc);
     return rc;
 }
 
@@ -2663,9 +2663,9 @@ HRESULT Machine::setSnapshotFolder(const com::Utf8Str &aSnapshotFolder)
     int vrc = i_calculateFullPath(strSnapshotFolder,
                                 strSnapshotFolder);
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL,
-                        tr("Invalid snapshot folder '%s' (%Rrc)"),
-                        strSnapshotFolder.c_str(), vrc);
+        return setErrorBoth(E_FAIL, vrc,
+                            tr("Invalid snapshot folder '%s' (%Rrc)"),
+                            strSnapshotFolder.c_str(), vrc);
 
     i_setModified(IsModified_MachineData);
     mUserData.backup();
@@ -4865,7 +4865,7 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
         {
             case DeviceType_DVD:
             case DeviceType_Floppy:
-            break;
+                break;
 
             default:
                 return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -5492,8 +5492,8 @@ void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
 
             int vrc = RTFileDelete(strFile.c_str());
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_IPRT_ERROR,
-                               tr("Could not delete file '%s' (%Rrc)"), strFile.c_str(), vrc);
+                throw setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                   tr("Could not delete file '%s' (%Rrc)"), strFile.c_str(), vrc);
         }
 
         rc = task.m_pProgress->SetNextOperation(Bstr(tr("Cleaning up machine directory")).raw(), 1);
@@ -6519,9 +6519,9 @@ HRESULT Machine::querySavedGuestScreenInfo(ULONG aScreenId,
          */
         *aEnabled = TRUE;
 #endif
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Saved guest size is not available (%Rrc)"),
-                        vrc);
+        return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                            tr("Saved guest size is not available (%Rrc)"),
+                            vrc);
     }
 
     *aOriginX = u32OriginX;
@@ -6556,9 +6556,9 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitm
     int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Saved thumbnail data is not available (%Rrc)"),
-                        vrc);
+        return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                            tr("Saved thumbnail data is not available (%Rrc)"),
+                            vrc);
 
     HRESULT hr = S_OK;
 
@@ -6614,9 +6614,9 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitm
                     memcpy(&aData.front(), pu8PNG, cbPNG);
             }
             else
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Could not convert saved thumbnail to PNG (%Rrc)"),
-                              vrc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                  tr("Could not convert saved thumbnail to PNG (%Rrc)"),
+                                  vrc);
 
             RTMemFree(pu8PNG);
         }
@@ -6645,9 +6645,9 @@ HRESULT Machine::querySavedScreenshotInfo(ULONG aScreenId,
     int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Saved screenshot data is not available (%Rrc)"),
-                        vrc);
+        return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                            tr("Saved screenshot data is not available (%Rrc)"),
+                            vrc);
 
     *aWidth = u32Width;
     *aHeight = u32Height;
@@ -6681,9 +6681,9 @@ HRESULT Machine::readSavedScreenshotToArray(ULONG aScreenId,
     int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Saved screenshot thumbnail data is not available (%Rrc)"),
-                        vrc);
+        return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                            tr("Saved screenshot thumbnail data is not available (%Rrc)"),
+                            vrc);
 
     *aWidth = u32Width;
     *aHeight = u32Height;
@@ -6827,15 +6827,15 @@ HRESULT Machine::readLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, std::vector<B
         if (RT_SUCCESS(vrc))
             aData.resize(cbData);
         else
-            rc = setError(VBOX_E_IPRT_ERROR,
-                          tr("Could not read log file '%s' (%Rrc)"),
-                          log.c_str(), vrc);
+            rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                              tr("Could not read log file '%s' (%Rrc)"),
+                              log.c_str(), vrc);
         RTFileClose(LogFile);
     }
     else
-        rc = setError(VBOX_E_IPRT_ERROR,
-                      tr("Could not open log file '%s' (%Rrc)"),
-                      log.c_str(), vrc);
+        rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                          tr("Could not open log file '%s' (%Rrc)"),
+                          log.c_str(), vrc);
 
     if (FAILED(rc))
         aData.resize(0);
@@ -7949,9 +7949,9 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
     RTEnvDestroy(env);
 
     if (RT_FAILURE(vrc))
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Could not launch a process for the machine '%s' (%Rrc)"),
-                        mUserData->s.strName.c_str(), vrc);
+        return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                            tr("Could not launch a process for the machine '%s' (%Rrc)"),
+                            mUserData->s.strName.c_str(), vrc);
 
     LogFlowThisFunc(("launched.pid=%d(0x%x)\n", pid, pid));
 
@@ -8149,9 +8149,9 @@ bool Machine::i_checkForSpawnFailure()
                           tr("The virtual machine '%s' has terminated abnormally (iStatus=%#x)%s"),
                           i_getName().c_str(), status.iStatus, strExtraInfo.c_str());
         else
-            rc = setError(E_FAIL,
-                          tr("The virtual machine '%s' has terminated unexpectedly during startup (%Rrc)%s"),
-                          i_getName().c_str(), vrc, strExtraInfo.c_str());
+            rc = setErrorBoth(E_FAIL, vrc,
+                              tr("The virtual machine '%s' has terminated unexpectedly during startup (%Rrc)%s"),
+                              i_getName().c_str(), vrc, strExtraInfo.c_str());
     }
 
     if (FAILED(rc))
@@ -8855,10 +8855,10 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
         Utf8Str stateFilePathFull(config.strStateFile);
         int vrc = i_calculateFullPath(stateFilePathFull, stateFilePathFull);
         if (RT_FAILURE(vrc))
-            return setError(E_FAIL,
-                            tr("Invalid saved state file path '%s' (%Rrc)"),
-                            config.strStateFile.c_str(),
-                            vrc);
+            return setErrorBoth(E_FAIL, vrc,
+                                tr("Invalid saved state file path '%s' (%Rrc)"),
+                                config.strStateFile.c_str(),
+                                vrc);
         mSSData->strStateFilePath = stateFilePathFull;
     }
 
@@ -8965,10 +8965,10 @@ HRESULT Machine::i_loadSnapshot(const settings::Snapshot &data,
         strStateFile = data.strStateFile;
         int vrc = i_calculateFullPath(strStateFile, strStateFile);
         if (RT_FAILURE(vrc))
-            return setError(E_FAIL,
-                            tr("Invalid saved state file path '%s' (%Rrc)"),
-                            strStateFile.c_str(),
-                            vrc);
+            return setErrorBoth(E_FAIL, vrc,
+                                tr("Invalid saved state file path '%s' (%Rrc)"),
+                                strStateFile.c_str(),
+                                vrc);
     }
 
     /* create a snapshot machine object */
@@ -9950,11 +9950,11 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                     }
                     if (RT_FAILURE(vrc))
                     {
-                        rc = setError(E_FAIL,
-                                      tr("Could not rename the directory '%s' to '%s' to save the settings file (%Rrc)"),
-                                      configDir.c_str(),
-                                      newConfigDir.c_str(),
-                                      vrc);
+                        rc = setErrorBoth(E_FAIL, vrc,
+                                          tr("Could not rename the directory '%s' to '%s' to save the settings file (%Rrc)"),
+                                          configDir.c_str(),
+                                          newConfigDir.c_str(),
+                                          vrc);
                         break;
                     }
                     /* delete subdirectories which are no longer needed */
@@ -9988,11 +9988,11 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                     vrc = RTFileRename(configFile.c_str(), newConfigFile.c_str(), 0);
                     if (RT_FAILURE(vrc))
                     {
-                        rc = setError(E_FAIL,
-                                      tr("Could not rename the settings file '%s' to '%s' (%Rrc)"),
-                                      configFile.c_str(),
-                                      newConfigFile.c_str(),
-                                      vrc);
+                        rc = setErrorBoth(E_FAIL, vrc,
+                                          tr("Could not rename the settings file '%s' to '%s' (%Rrc)"),
+                                          configFile.c_str(),
+                                          newConfigFile.c_str(),
+                                          vrc);
                         break;
                     }
                     fileRenamed = true;
@@ -10062,10 +10062,10 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             vrc = RTDirCreateFullPath(path.c_str(), 0700);
             if (RT_FAILURE(vrc))
             {
-                return setError(E_FAIL,
-                                tr("Could not create a directory '%s' to save the settings file (%Rrc)"),
-                                path.c_str(),
-                                vrc);
+                return setErrorBoth(E_FAIL, vrc,
+                                    tr("Could not create a directory '%s' to save the settings file (%Rrc)"),
+                                    path.c_str(),
+                                    vrc);
             }
         }
 
@@ -10075,10 +10075,10 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
         vrc = RTFileOpen(&f, path.c_str(),
                          RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
         if (RT_FAILURE(vrc))
-            return setError(E_FAIL,
-                            tr("Could not create the settings file '%s' (%Rrc)"),
-                            path.c_str(),
-                            vrc);
+            return setErrorBoth(E_FAIL, vrc,
+                                tr("Could not create the settings file '%s' (%Rrc)"),
+                                path.c_str(),
+                                vrc);
         RTFileClose(f);
     }
 
@@ -13273,10 +13273,10 @@ HRESULT SessionMachine::adoptSavedState(const com::Utf8Str &aSavedStateFile)
     com::Utf8Str stateFilePathFull;
     int vrc = i_calculateFullPath(aSavedStateFile, stateFilePathFull);
     if (RT_FAILURE(vrc))
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Invalid saved state file path '%s' (%Rrc)"),
-                        aSavedStateFile.c_str(),
-                        vrc);
+        return setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                            tr("Invalid saved state file path '%s' (%Rrc)"),
+                            aSavedStateFile.c_str(),
+                            vrc);
 
     mSSData->strStateFilePath = stateFilePathFull;
 
@@ -13926,13 +13926,11 @@ HRESULT SessionMachine::authenticateExternal(const std::vector<com::Utf8Str> &aA
 
         Utf8Str filename = authLibrary;
 
-        int rc = AuthLibLoad(&mAuthLibCtx, filename.c_str());
-        if (RT_FAILURE(rc))
-        {
-            hr = setError(E_FAIL,
-                          tr("Could not load the external authentication library '%s' (%Rrc)"),
-                          filename.c_str(), rc);
-        }
+        int vrc = AuthLibLoad(&mAuthLibCtx, filename.c_str());
+        if (RT_FAILURE(vrc))
+            hr = setErrorBoth(E_FAIL, vrc,
+                              tr("Could not load the external authentication library '%s' (%Rrc)"),
+                              filename.c_str(), vrc);
     }
 
     /* The auth library might need the machine lock. */

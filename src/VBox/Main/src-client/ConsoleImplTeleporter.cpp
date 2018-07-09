@@ -237,7 +237,7 @@ Console::i_teleporterSrcReadACK(TeleporterStateSrc *pState, const char *pszWhich
     char szMsg[256];
     int vrc = teleporterTcpReadLine(pState, szMsg, sizeof(szMsg));
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("Failed reading ACK(%s): %Rrc"), pszWhich, vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Failed reading ACK(%s): %Rrc"), pszWhich, vrc);
 
     if (!strcmp(szMsg, "ACK"))
         return S_OK;
@@ -299,7 +299,7 @@ HRESULT Console::i_teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const 
 {
     int vrc = RTTcpSgWriteL(pState->mhSocket, 2, pszCommand, strlen(pszCommand), "\n", sizeof("\n") - 1);
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("Failed writing command '%s': %Rrc"), pszCommand, vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Failed writing command '%s': %Rrc"), pszCommand, vrc);
     if (!fWaitForAck)
         return S_OK;
     return i_teleporterSrcReadACK(pState, pszCommand);
@@ -654,8 +654,8 @@ HRESULT Console::i_teleporterSrc(TeleporterStateSrc *pState)
      */
     int vrc = RTTcpClientConnect(pState->mstrHostname.c_str(), pState->muPort, &pState->mhSocket);
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("Failed to connect to port %u on '%s': %Rrc"),
-                        pState->muPort, pState->mstrHostname.c_str(), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Failed to connect to port %u on '%s': %Rrc"),
+                            pState->muPort, pState->mstrHostname.c_str(), vrc);
     vrc = RTTcpSetSendCoalescing(pState->mhSocket, false /*fEnable*/);
     AssertRC(vrc);
 
@@ -664,7 +664,7 @@ HRESULT Console::i_teleporterSrc(TeleporterStateSrc *pState)
     RT_ZERO(szLine);
     vrc = RTTcpRead(pState->mhSocket, szLine, sizeof(g_szWelcome) - 1, NULL);
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("Failed to read welcome message: %Rrc"), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Failed to read welcome message: %Rrc"), vrc);
     if (strcmp(szLine, g_szWelcome))
         return setError(E_FAIL, tr("Unexpected welcome %.*Rhxs"), sizeof(g_szWelcome) - 1, szLine);
 
@@ -672,7 +672,7 @@ HRESULT Console::i_teleporterSrc(TeleporterStateSrc *pState)
     pState->mstrPassword.append('\n');
     vrc = RTTcpWrite(pState->mhSocket, pState->mstrPassword.c_str(), pState->mstrPassword.length());
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("Failed to send password: %Rrc"), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Failed to send password: %Rrc"), vrc);
 
     /* ACK */
     hrc = i_teleporterSrcReadACK(pState, "password", tr("Invalid password"));
@@ -707,7 +707,7 @@ HRESULT Console::i_teleporterSrc(TeleporterStateSrc *pState)
             if (FAILED(hrc))
                 return hrc;
         }
-        return setError(E_FAIL, tr("VMR3Teleport -> %Rrc"), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("VMR3Teleport -> %Rrc"), vrc);
     }
 
     hrc = i_teleporterSrcReadACK(pState, "load-complete");
@@ -967,9 +967,8 @@ HRESULT Console::teleport(const com::Utf8Str &aHostname, ULONG aTcpport, const c
             break;
 
         default:
-            return setError(VBOX_E_INVALID_VM_STATE,
-                tr("Invalid machine state: %s (must be Running or Paused)"),
-                Global::stringifyMachineState(mMachineState));
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Invalid machine state: %s (must be Running or Paused)"),
+                            Global::stringifyMachineState(mMachineState));
     }
 
 
@@ -1017,7 +1016,7 @@ HRESULT Console::teleport(const com::Utf8Str &aHostname, ULONG aTcpport, const c
     {
         ptrProgress->i_setCancelCallback(NULL, NULL);
         delete pState;
-        hrc = setError(E_FAIL, tr("RTThreadCreate -> %Rrc"), vrc);
+        hrc = setErrorBoth(E_FAIL, vrc, tr("RTThreadCreate -> %Rrc"), vrc);
     }
 
     return hrc;
@@ -1098,7 +1097,7 @@ HRESULT Console::i_teleporterTrg(PUVM pUVM, IMachine *pMachine, Utf8Str *pErrorM
         }
     }
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("RTTcpServerCreateEx failed with status %Rrc"), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("RTTcpServerCreateEx failed with status %Rrc"), vrc);
 
     /*
      * Create a one-shot timer for timing out after 5 mins.
@@ -1161,7 +1160,7 @@ HRESULT Console::i_teleporterTrg(PUVM pUVM, IMachine *pMachine, Utf8Str *pErrorM
                     }
                     else
                     {
-                        hrc = setError(E_FAIL, tr("Unexpected RTTcpServerListen status code %Rrc"), vrc);
+                        hrc = setErrorBoth(E_FAIL, vrc, tr("Unexpected RTTcpServerListen status code %Rrc"), vrc);
                         LogRel(("Teleporter: Unexpected RTTcpServerListen rc: %Rrc\n", vrc));
                     }
                 }
@@ -1175,12 +1174,12 @@ HRESULT Console::i_teleporterTrg(PUVM pUVM, IMachine *pMachine, Utf8Str *pErrorM
             }
         }
         else
-            hrc = setError(E_FAIL, "RTTimerLRStart -> %Rrc", vrc);
+            hrc = setErrorBoth(E_FAIL, vrc, "RTTimerLRStart -> %Rrc", vrc);
 
         RTTimerLRDestroy(hTimerLR);
     }
     else
-        hrc = setError(E_FAIL, "RTTimerLRCreate -> %Rrc", vrc);
+        hrc = setErrorBoth(E_FAIL, vrc, "RTTimerLRCreate -> %Rrc", vrc);
     RTTcpServerDestroy(hServer);
 
     /*

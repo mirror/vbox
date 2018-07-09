@@ -184,7 +184,7 @@ HRESULT MachineMoveVM::init()
             Utf8StrFmt errorDesc("Unable to move machine. Can't get the destination storage size (%s)",
                                  strTargetFolder.c_str());
             errorsList.push_back(ErrorInfoItem(E_FAIL, errorDesc.c_str()));
-            rc = m_pMachine->setError(E_FAIL, m_pMachine->tr(errorDesc.c_str()));
+            rc = m_pMachine->setErrorBoth(E_FAIL, vrc, m_pMachine->tr(errorDesc.c_str()));
             throw rc;
         }
 
@@ -203,8 +203,7 @@ HRESULT MachineMoveVM::init()
                 Utf8StrFmt errorDesc("Can't create a test file test.txt in the %s. Check the access rights of "
                                      "the destination folder.", strTargetFolder.c_str());
                 errorsList.push_back(ErrorInfoItem(HRESULT(vrc), errorDesc.c_str()));
-                rc = m_pMachine->setError(vrc, m_pMachine->tr(errorDesc.c_str()));
-
+                rc = m_pMachine->setErrorBoth(VBOX_E_FILE_ERROR, vrc, m_pMachine->tr(errorDesc.c_str()));
             }
 
             RTFileClose(hFile);
@@ -492,7 +491,7 @@ HRESULT MachineMoveVM::init()
                 Utf8StrFmt errorDesc("Couldn't correctly setup the progress object for moving VM operation (%Rrc)", rc);
                 errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-                throw m_pMachine->setError(VBOX_E_IPRT_ERROR,m_pMachine->tr(errorDesc.c_str()));
+                throw m_pMachine->setError(VBOX_E_IPRT_ERROR, m_pMachine->tr(errorDesc.c_str()));
             }
         }
 
@@ -657,7 +656,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                     Utf8StrFmt errorDesc("Could not create snapshots folder '%s' (%Rrc)", strTrgSnapshotFolder.c_str(), vrc);
                     taskMoveVM->errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-                    throw machine->setError(VBOX_E_IPRT_ERROR,machine->tr(errorDesc.c_str()));
+                    throw machine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, machine->tr(errorDesc.c_str()));
                 }
             }
 
@@ -681,7 +680,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                                          sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
                     taskMoveVM->errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-                    throw machine->setError(VBOX_E_IPRT_ERROR,machine->tr(errorDesc.c_str()));
+                    throw machine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, machine->tr(errorDesc.c_str()));
                 }
 
                 /* save new file in case of restoring */
@@ -730,7 +729,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                                          strTargetSettingsFilePath.c_str(), vrc);
                     taskMoveVM->errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-                    throw machine->setError(VBOX_E_IPRT_ERROR,machine->tr(errorDesc.c_str()));
+                    throw machine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, machine->tr(errorDesc.c_str()));
                 }
                 LogRelFunc(("Created a home machine folder %s\n", strTargetSettingsFilePath.c_str()));
             }
@@ -754,7 +753,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                                      strSettingsFilePath.c_str(), strTargetSettingsFilePath.stripFilename().c_str(), vrc);
                 taskMoveVM->errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-                throw machine->setError(VBOX_E_IPRT_ERROR, machine->tr(errorDesc.c_str()));
+                throw machine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, machine->tr(errorDesc.c_str()));
             }
 
             LogRelFunc(("The setting file %s has been copied into the folder %s\n", strSettingsFilePath.c_str(),
@@ -788,7 +787,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                                                  strTargetLogFolderPath.c_str(), vrc);
                             taskMoveVM->errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-                            throw machine->setError(VBOX_E_IPRT_ERROR,machine->tr(errorDesc.c_str()));
+                            throw machine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, machine->tr(errorDesc.c_str()));
                         }
                         LogRelFunc(("Created a log machine folder %s\n", strTargetLogFolderPath.c_str()));
                     }
@@ -806,11 +805,12 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
 
                         /* Move to next sub-operation. */
                         rc = taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(machine->tr("Copying the log file '%s' ..."),
-                                                                RTPathFilename(strFullSourceFilePath.c_str())).raw(), 1);
+                                                                               RTPathFilename(strFullSourceFilePath.c_str())).raw(),
+                                                                       1);
                         if (FAILED(rc)) throw rc;
 
                         int vrc = RTFileCopyEx(strFullSourceFilePath.c_str(), strFullTargetFilePath.c_str(), 0,
-                                       MachineMoveVM::copyFileProgress, &taskMoveVM->m_pProgress);
+                                               MachineMoveVM::copyFileProgress, &taskMoveVM->m_pProgress);
                         if (RT_FAILURE(vrc))
                         {
                             Utf8StrFmt errorDesc("Could not copy the log file '%s' to '%s' (%Rrc)",
@@ -819,11 +819,11 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                                                  vrc);
                             taskMoveVM->errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-                            throw machine->setError(VBOX_E_IPRT_ERROR,machine->tr(errorDesc.c_str()));
+                            throw machine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, machine->tr(errorDesc.c_str()));
                         }
 
                         LogRelFunc(("The log file %s has been copied into the folder %s\n", strFullSourceFilePath.c_str(),
-                                         strFullTargetFilePath.stripFilename().c_str()));
+                                    strFullTargetFilePath.stripFilename().c_str()));
 
                         /* save new file in case of restoring */
                         newFiles.append(strFullTargetFilePath);
@@ -1231,21 +1231,23 @@ HRESULT MachineMoveVM::getFilesList(const Utf8Str& strRootFolder, fileList_t &fi
         }
 
         vrc = RTDirClose(hDir);
+        AssertRC(vrc);
     }
     else if (vrc == VERR_FILE_NOT_FOUND)
     {
         Utf8StrFmt errorDesc("Folder '%s' doesn't exist (%Rrc)", strRootFolder.c_str(), vrc);
         errorsList.push_back(ErrorInfoItem(VERR_FILE_NOT_FOUND, errorDesc.c_str()));
 
-        m_pMachine->setError(VBOX_E_IPRT_ERROR, m_pMachine->tr(errorDesc.c_str()));
-        rc = vrc;
+        rc = m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, m_pMachine->tr(errorDesc.c_str()));
     }
     else
     {
         Utf8StrFmt errorDesc("Could not open folder '%s' (%Rrc)", strRootFolder.c_str(), vrc);
         errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-        throw m_pMachine->setError(VBOX_E_IPRT_ERROR, m_pMachine->tr(errorDesc.c_str()));
+/** @todo r=bird: document this throwing business, please!  Error handling is
+ *        a bit fishy here.  See also */
+        throw m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, m_pMachine->tr(errorDesc.c_str()));
     }
 
     return rc;
@@ -1269,7 +1271,7 @@ HRESULT MachineMoveVM::deleteFiles(const RTCList<Utf8Str>& listOfFiles)
                 Utf8StrFmt errorDesc("Could not delete file '%s' (%Rrc)", listOfFiles.at(i).c_str(), rc);
                 errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-                rc = m_pMachine->setError(VBOX_E_IPRT_ERROR, m_pMachine->tr(errorDesc.c_str()));
+                rc = m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, m_pMachine->tr(errorDesc.c_str()));
             }
             else
                 LogRelFunc(("File %s has been deleted\n", listOfFiles.at(i).c_str()));
@@ -1316,7 +1318,7 @@ HRESULT MachineMoveVM::getFolderSize(const Utf8Str& strRootFolder, uint64_t& siz
                     Utf8StrFmt errorDesc("Could not get the size of file '%s' (%Rrc)", fullPath.c_str(), vrc);
                     errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-                    throw m_pMachine->setError(VBOX_E_IPRT_ERROR, m_pMachine->tr(errorDesc.c_str()));
+                    throw m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, m_pMachine->tr(errorDesc.c_str()));
                 }
                 ++it;
             }
@@ -1325,7 +1327,9 @@ HRESULT MachineMoveVM::getFolderSize(const Utf8Str& strRootFolder, uint64_t& siz
         }
         else
         {
-            Utf8StrFmt errorDesc("Could not calculate the size of folder '%s' (%Rrc)", strRootFolder.c_str(), vrc);
+/** @todo r=bird: This only happens if RTDirOpen fails.  So, I'm not sure
+ * what you're going for here... See not about throwing in getFilesList(). */
+            Utf8StrFmt errorDesc("Could not calculate the size of folder '%s'", strRootFolder.c_str());
             errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
             m_pMachine->setError(VBOX_E_IPRT_ERROR, m_pMachine->tr(errorDesc.c_str()));
@@ -1501,7 +1505,7 @@ HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine)
             Utf8StrFmt errorDesc("Could not get file size of '%s' (%Rrc)", sst.strSaveStateFile.c_str(), vrc);
             errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
 
-            return m_pMachine->setError(VBOX_E_IPRT_ERROR, m_pMachine->tr(errorDesc.c_str()));
+            return m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, m_pMachine->tr(errorDesc.c_str()));
         }
         /* same rule as above: count both the data which needs to
          * be read and written */

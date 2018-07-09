@@ -257,36 +257,30 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
                                      const com::Utf8Str &aUpperIP)
 {
     RTNETADDRIPV4 IPAddress, NetworkMask, LowerIP, UpperIP;
-    int rc;
 
-    rc = RTNetStrToIPv4Addr(aIPAddress.c_str(), &IPAddress);
-    if (RT_FAILURE(rc))
-        return mVirtualBox->setErrorBoth(E_INVALIDARG, rc,
-                   "Invalid server address");
+    int vrc = RTNetStrToIPv4Addr(aIPAddress.c_str(), &IPAddress);
+    if (RT_FAILURE(vrc))
+        return mVirtualBox->setErrorBoth(E_INVALIDARG, vrc, "Invalid server address");
 
-    rc = RTNetStrToIPv4Addr(aNetworkMask.c_str(), &NetworkMask);
-    if (RT_FAILURE(rc))
-        return mVirtualBox->setErrorBoth(E_INVALIDARG, rc,
-                   "Invalid netmask");
+    vrc = RTNetStrToIPv4Addr(aNetworkMask.c_str(), &NetworkMask);
+    if (RT_FAILURE(vrc))
+        return mVirtualBox->setErrorBoth(E_INVALIDARG, vrc, "Invalid netmask");
 
-    rc = RTNetStrToIPv4Addr(aLowerIP.c_str(), &LowerIP);
-    if (RT_FAILURE(rc))
-        return mVirtualBox->setErrorBoth(E_INVALIDARG, rc,
-                   "Invalid range lower address");
+    vrc = RTNetStrToIPv4Addr(aLowerIP.c_str(), &LowerIP);
+    if (RT_FAILURE(vrc))
+        return mVirtualBox->setErrorBoth(E_INVALIDARG, vrc, "Invalid range lower address");
 
-    rc = RTNetStrToIPv4Addr(aUpperIP.c_str(), &UpperIP);
-    if (RT_FAILURE(rc))
-        return mVirtualBox->setErrorBoth(E_INVALIDARG, rc,
-                   "Invalid range upper address");
+    vrc = RTNetStrToIPv4Addr(aUpperIP.c_str(), &UpperIP);
+    if (RT_FAILURE(vrc))
+        return mVirtualBox->setErrorBoth(E_INVALIDARG, vrc, "Invalid range upper address");
 
     /*
      * Insist on continuous mask.  May be also accept prefix length
      * here or address/prefix for aIPAddress?
      */
-    rc = RTNetMaskToPrefixIPv4(&NetworkMask, NULL);
-    if (RT_FAILURE(rc))
-        return mVirtualBox->setErrorBoth(E_INVALIDARG, rc,
-                   "Invalid netmask");
+    vrc = RTNetMaskToPrefixIPv4(&NetworkMask, NULL);
+    if (RT_FAILURE(vrc))
+        return mVirtualBox->setErrorBoth(E_INVALIDARG, vrc, "Invalid netmask");
 
     /* It's more convenient to convert to host order once */
     IPAddress.u = RT_N2H_U32(IPAddress.u);
@@ -300,38 +294,27 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
     if (   (IPAddress.u & UINT32_C(0xe0000000)) == UINT32_C(0xe0000000)
         || (IPAddress.u & ~NetworkMask.u) == 0
         || ((IPAddress.u & ~NetworkMask.u) | NetworkMask.u) == UINT32_C(0xffffffff))
-    {
-        return mVirtualBox->setError(E_INVALIDARG,
-                   "Invalid server address");
-    }
+        return mVirtualBox->setError(E_INVALIDARG, "Invalid server address");
 
     if (   (LowerIP.u & UINT32_C(0xe0000000)) == UINT32_C(0xe0000000)
         || (LowerIP.u & NetworkMask.u) != (IPAddress.u &NetworkMask.u)
         || (LowerIP.u & ~NetworkMask.u) == 0
         || ((LowerIP.u & ~NetworkMask.u) | NetworkMask.u) == UINT32_C(0xffffffff))
-    {
-        return mVirtualBox->setError(E_INVALIDARG,
-                   "Invalid range lower address");
-    }
+        return mVirtualBox->setError(E_INVALIDARG, "Invalid range lower address");
 
     if (   (UpperIP.u & UINT32_C(0xe0000000)) == UINT32_C(0xe0000000)
         || (UpperIP.u & NetworkMask.u) != (IPAddress.u &NetworkMask.u)
         || (UpperIP.u & ~NetworkMask.u) == 0
         || ((UpperIP.u & ~NetworkMask.u) | NetworkMask.u) == UINT32_C(0xffffffff))
-    {
-        return mVirtualBox->setError(E_INVALIDARG,
-                   "Invalid range upper address");
-    }
+        return mVirtualBox->setError(E_INVALIDARG, "Invalid range upper address");
 
     /* The range should be valid ... */
     if (LowerIP.u > UpperIP.u)
-        return mVirtualBox->setError(E_INVALIDARG,
-                   "Invalid range bounds");
+        return mVirtualBox->setError(E_INVALIDARG, "Invalid range bounds");
 
     /* ... and shouldn't contain the server's address */
     if (LowerIP.u <= IPAddress.u && IPAddress.u <= UpperIP.u)
-        return mVirtualBox->setError(E_INVALIDARG,
-                   "Server address within range bounds");
+        return mVirtualBox->setError(E_INVALIDARG, "Server address within range bounds");
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->IPAddress = aIPAddress;
@@ -415,14 +398,12 @@ int DHCPServer::addOption(settings::DhcpOptionMap &aMap,
     else
     {
         uint8_t u8Code;
-        uint32_t u32Enc;
-        char *pszNext;
-        int rc;
-
-        rc = RTStrToUInt8Ex(aValue.c_str(), &pszNext, 10, &u8Code);
-        if (!RT_SUCCESS(rc))
+        char    *pszNext;
+        int vrc = RTStrToUInt8Ex(aValue.c_str(), &pszNext, 10, &u8Code);
+        if (!RT_SUCCESS(vrc))
             return VERR_PARSE_ERROR;
 
+        uint32_t u32Enc;
         switch (*pszNext)
         {
             case ':':           /* support legacy format too */
@@ -439,8 +420,8 @@ int DHCPServer::addOption(settings::DhcpOptionMap &aMap,
 
             case '@':
             {
-                rc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 10, &u32Enc);
-                if (!RT_SUCCESS(rc))
+                vrc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 10, &u32Enc);
+                if (!RT_SUCCESS(vrc))
                     return VERR_PARSE_ERROR;
                 if (*pszNext != '=')
                     return VERR_PARSE_ERROR;

@@ -3609,9 +3609,9 @@ HRESULT Medium::getEncryptionSettings(AutoCaller &autoCaller, com::Utf8Str &aCip
             {
                 int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_NOT_SUPPORTED, vrc,
+                                       tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
+                                       i_vdError(vrc).c_str());
             }
             else
                 throw setError(VBOX_E_NOT_SUPPORTED,
@@ -3632,9 +3632,9 @@ HRESULT Medium::getEncryptionSettings(AutoCaller &autoCaller, com::Utf8Str &aCip
         i_taskEncryptSettingsSetup(&CryptoSettings, NULL, it->second.c_str(), NULL, false /* fCreateKeyStore */);
         vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_READ | VD_FILTER_FLAGS_INFO, CryptoSettings.vdFilterIfaces);
         if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                           tr("Failed to load the encryption filter: %s"),
-                           i_vdError(vrc).c_str());
+            throw setErrorBoth(VBOX_E_INVALID_OBJECT_STATE, vrc,
+                               tr("Failed to load the encryption filter: %s"),
+                               i_vdError(vrc).c_str());
 
         it = pBase->m->mapProperties.find("CRYPT/KeyId");
         if (it == pBase->m->mapProperties.end())
@@ -3685,9 +3685,9 @@ HRESULT Medium::checkEncryptionPassword(const com::Utf8Str &aPassword)
             {
                 int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_NOT_SUPPORTED, vrc,
+                                       tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
+                                       i_vdError(vrc).c_str());
             }
             else
                 throw setError(VBOX_E_NOT_SUPPORTED,
@@ -3712,9 +3712,9 @@ HRESULT Medium::checkEncryptionPassword(const com::Utf8Str &aPassword)
             throw setError(VBOX_E_PASSWORD_INCORRECT,
                            tr("The given password is incorrect"));
         else if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                           tr("Failed to load the encryption filter: %s"),
-                           i_vdError(vrc).c_str());
+            throw setErrorBoth(VBOX_E_INVALID_OBJECT_STATE, vrc,
+                               tr("Failed to load the encryption filter: %s"),
+                               i_vdError(vrc).c_str());
 
         VDDestroy(pDisk);
 # else
@@ -6084,10 +6084,10 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
         catch (HRESULT aRC) { rc = aRC; }
         catch (int aVRC)
         {
-            rc = setError(E_FAIL,
-                          tr("Could not update medium UUID references to parent '%s' (%s)"),
-                          m->strLocationFull.c_str(),
-                          i_vdError(aVRC).c_str());
+            rc = setErrorBoth(E_FAIL, aVRC,
+                              tr("Could not update medium UUID references to parent '%s' (%s)"),
+                              m->strLocationFull.c_str(),
+                              i_vdError(aVRC).c_str());
         }
 
         VDDestroy(hdd);
@@ -7424,17 +7424,17 @@ HRESULT Medium::i_setLocation(const Utf8Str &aLocation,
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_ACCESS_DENIED)
-                    return setError(VBOX_E_FILE_ERROR,
-                                    tr("Permission problem accessing the file for the medium '%s' (%Rrc)"),
-                                    locationFull.c_str(), vrc);
+                    return setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                        tr("Permission problem accessing the file for the medium '%s' (%Rrc)"),
+                                        locationFull.c_str(), vrc);
                 else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
-                    return setError(VBOX_E_FILE_ERROR,
-                                    tr("Could not find file for the medium '%s' (%Rrc)"),
-                                    locationFull.c_str(), vrc);
+                    return setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                        tr("Could not find file for the medium '%s' (%Rrc)"),
+                                        locationFull.c_str(), vrc);
                 else if (aFormat.isEmpty())
-                    return setError(VBOX_E_IPRT_ERROR,
-                                    tr("Could not get the storage format of the medium '%s' (%Rrc)"),
-                                    locationFull.c_str(), vrc);
+                    return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                        tr("Could not get the storage format of the medium '%s' (%Rrc)"),
+                                        locationFull.c_str(), vrc);
                 else
                 {
                     HRESULT rc = i_setFormat(aFormat);
@@ -8045,9 +8045,9 @@ HRESULT Medium::i_openForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *p
                 {
                     vrc = VDPluginLoadFromFilename(strPlugin.c_str());
                     if (RT_FAILURE(vrc))
-                        throw setError(VBOX_E_NOT_SUPPORTED,
-                                       tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
-                                       i_vdError(vrc).c_str());
+                        throw setErrorBoth(VBOX_E_NOT_SUPPORTED, vrc,
+                                           tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
+                                           i_vdError(vrc).c_str());
                 }
                 else
                     throw setError(VBOX_E_NOT_SUPPORTED,
@@ -8086,10 +8086,10 @@ HRESULT Medium::i_openForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *p
             vrc = VDFilterAdd(pHdd, "CRYPT", VD_FILTER_FLAGS_READ, pCryptoSettingsRead->vdFilterIfaces);
             pKeyStore->releaseSecretKey(itKeyId->second);
             if (vrc == VERR_VD_PASSWORD_INCORRECT)
-                throw setError(VBOX_E_PASSWORD_INCORRECT, tr("The password to decrypt the image is incorrect"));
+                throw setErrorBoth(VBOX_E_PASSWORD_INCORRECT, vrc, tr("The password to decrypt the image is incorrect"));
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_INVALID_OBJECT_STATE, tr("Failed to load the decryption filter: %s"),
-                               i_vdError(vrc).c_str());
+                throw setErrorBoth(VBOX_E_INVALID_OBJECT_STATE, vrc, tr("Failed to load the decryption filter: %s"),
+                                   i_vdError(vrc).c_str());
         }
 
         /*
@@ -8116,10 +8116,10 @@ HRESULT Medium::i_openForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *p
                          m->uOpenFlagsDef | (fWritable && it == mediumListLast ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY),
                          pMedium->m->vdImageIfaces);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not open the medium storage unit '%s'%s"),
-                               pMedium->m->strLocationFull.c_str(),
-                               i_vdError(vrc).c_str());
+                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                   tr("Could not open the medium storage unit '%s'%s"),
+                                   pMedium->m->strLocationFull.c_str(),
+                                   i_vdError(vrc).c_str());
         }
 
         Assert(m->state == (fWritable ? MediumState_LockedWrite : MediumState_LockedRead));
@@ -8404,10 +8404,10 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
                              VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | m->uOpenFlagsDef,
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.c_str(),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not open the medium storage unit '%s'%s"),
+                                       pMedium->m->strLocationFull.c_str(),
+                                       i_vdError(vrc).c_str());
             }
 
             /* ensure the target directory exists */
@@ -8433,13 +8433,13 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_VD_INVALID_TYPE)
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Parameters for creating the differencing medium storage unit '%s' are invalid%s"),
-                                   targetLocation.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Parameters for creating the differencing medium storage unit '%s' are invalid%s"),
+                                       targetLocation.c_str(), i_vdError(vrc).c_str());
                 else
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not create the differencing medium storage unit '%s'%s"),
-                                   targetLocation.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not create the differencing medium storage unit '%s'%s"),
+                                       targetLocation.c_str(), i_vdError(vrc).c_str());
             }
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
@@ -8686,11 +8686,11 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
         catch (HRESULT aRC) { rcTmp = aRC; }
         catch (int aVRC)
         {
-            rcTmp = setError(VBOX_E_FILE_ERROR,
-                             tr("Could not merge the medium '%s' to '%s'%s"),
-                             m->strLocationFull.c_str(),
-                             pTarget->m->strLocationFull.c_str(),
-                             i_vdError(aVRC).c_str());
+            rcTmp = setErrorBoth(VBOX_E_FILE_ERROR, aVRC,
+                                 tr("Could not merge the medium '%s' to '%s'%s"),
+                                 m->strLocationFull.c_str(),
+                                 pTarget->m->strLocationFull.c_str(),
+                                 i_vdError(aVRC).c_str());
         }
 
         VDDestroy(hdd);
@@ -8933,10 +8933,10 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                              VD_OPEN_FLAGS_READONLY | m->uOpenFlagsDef,
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.c_str(),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not open the medium storage unit '%s'%s"),
+                                       pMedium->m->strLocationFull.c_str(),
+                                       i_vdError(vrc).c_str());
             }
 
             Utf8Str targetFormat(pTarget->m->strFormat);
@@ -9003,10 +9003,10 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                                  uOpenFlags | m->uOpenFlagsDef,
                                  pMedium->m->vdImageIfaces);
                     if (RT_FAILURE(vrc))
-                        throw setError(VBOX_E_FILE_ERROR,
-                                       tr("Could not open the medium storage unit '%s'%s"),
-                                       pMedium->m->strLocationFull.c_str(),
-                                       i_vdError(vrc).c_str());
+                        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                           tr("Could not open the medium storage unit '%s'%s"),
+                                           pMedium->m->strLocationFull.c_str(),
+                                           i_vdError(vrc).c_str());
                 }
 
                 /* target isn't locked, but no changing data is accessed */
@@ -9045,9 +9045,9 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                                    task.mVDOperationIfaces);
                 }
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not create the clone medium '%s'%s"),
-                                   targetLocation.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not create the clone medium '%s'%s"),
+                                       targetLocation.c_str(), i_vdError(vrc).c_str());
 
                 size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
                 logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE);
@@ -9244,10 +9244,10 @@ HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
                              VD_OPEN_FLAGS_NORMAL,
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.c_str(),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not open the medium storage unit '%s'%s"),
+                                       pMedium->m->strLocationFull.c_str(),
+                                       i_vdError(vrc).c_str());
             }
 
             /* we can directly use pTarget->m->"variables" but for better reading we use local copies */
@@ -9290,9 +9290,9 @@ HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
                              NULL,
                              NULL);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not move medium '%s'%s"),
-                                   targetLocation.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not move medium '%s'%s"),
+                                       targetLocation.c_str(), i_vdError(vrc).c_str());
                 size = VDGetFileSize(hdd, VD_LAST_IMAGE);
                 logicalSize = VDGetSize(hdd, VD_LAST_IMAGE);
                 unsigned uImageFlags;
@@ -9382,9 +9382,9 @@ HRESULT Medium::i_taskDeleteHandler(Medium::DeleteTask &task)
                 vrc = VDClose(hdd, true /* fDelete */);
 
             if (RT_FAILURE(vrc) && vrc != VERR_FILE_NOT_FOUND)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not delete the medium storage unit '%s'%s"),
-                               location.c_str(), i_vdError(vrc).c_str());
+                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                   tr("Could not delete the medium storage unit '%s'%s"),
+                                   location.c_str(), i_vdError(vrc).c_str());
 
         }
         catch (HRESULT aRC) { rc = aRC; }
@@ -9477,10 +9477,10 @@ HRESULT Medium::i_taskResetHandler(Medium::ResetTask &task)
                              VD_OPEN_FLAGS_READONLY | m->uOpenFlagsDef,
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.c_str(),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not open the medium storage unit '%s'%s"),
+                                       pMedium->m->strLocationFull.c_str(),
+                                       i_vdError(vrc).c_str());
 
                 /* Done when we hit the media which should be reset */
                 if (pMedium == this)
@@ -9490,9 +9490,9 @@ HRESULT Medium::i_taskResetHandler(Medium::ResetTask &task)
             /* first, delete the storage unit */
             vrc = VDClose(hdd, true /* fDelete */);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not delete the medium storage unit '%s'%s"),
-                               location.c_str(), i_vdError(vrc).c_str());
+                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                   tr("Could not delete the medium storage unit '%s'%s"),
+                                   location.c_str(), i_vdError(vrc).c_str());
 
             /* next, create it again */
             vrc = VDOpen(hdd,
@@ -9501,9 +9501,9 @@ HRESULT Medium::i_taskResetHandler(Medium::ResetTask &task)
                          VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | m->uOpenFlagsDef,
                          m->vdImageIfaces);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not open the medium storage unit '%s'%s"),
-                               parentLocation.c_str(), i_vdError(vrc).c_str());
+                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                   tr("Could not open the medium storage unit '%s'%s"),
+                                   parentLocation.c_str(), i_vdError(vrc).c_str());
 
             vrc = VDCreateDiff(hdd,
                                format.c_str(),
@@ -9519,13 +9519,13 @@ HRESULT Medium::i_taskResetHandler(Medium::ResetTask &task)
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_VD_INVALID_TYPE)
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Parameters for creating the differencing medium storage unit '%s' are invalid%s"),
-                                   location.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Parameters for creating the differencing medium storage unit '%s' are invalid%s"),
+                                       location.c_str(), i_vdError(vrc).c_str());
                 else
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not create the differencing medium storage unit '%s'%s"),
-                                   location.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not create the differencing medium storage unit '%s'%s"),
+                                       location.c_str(), i_vdError(vrc).c_str());
             }
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
@@ -9607,10 +9607,10 @@ HRESULT Medium::i_taskCompactHandler(Medium::CompactTask &task)
                              m->uOpenFlagsDef | (it == mediumListLast ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY),
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.c_str(),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not open the medium storage unit '%s'%s"),
+                                       pMedium->m->strLocationFull.c_str(),
+                                       i_vdError(vrc).c_str());
             }
 
             Assert(m->state == MediumState_LockedWrite);
@@ -9624,18 +9624,18 @@ HRESULT Medium::i_taskCompactHandler(Medium::CompactTask &task)
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_NOT_SUPPORTED)
-                    throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Compacting is not yet supported for medium '%s'"),
-                                   location.c_str());
+                    throw setErrorBoth(VBOX_E_NOT_SUPPORTED, vrc,
+                                       tr("Compacting is not yet supported for medium '%s'"),
+                                       location.c_str());
                 else if (vrc == VERR_NOT_IMPLEMENTED)
-                    throw setError(E_NOTIMPL,
-                                   tr("Compacting is not implemented, medium '%s'"),
-                                   location.c_str());
+                    throw setErrorBoth(E_NOTIMPL, vrc,
+                                       tr("Compacting is not implemented, medium '%s'"),
+                                       location.c_str());
                 else
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not compact medium '%s'%s"),
-                                   location.c_str(),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not compact medium '%s'%s"),
+                                       location.c_str(),
+                                       i_vdError(vrc).c_str());
             }
         }
         catch (HRESULT aRC) { rc = aRC; }
@@ -9705,10 +9705,10 @@ HRESULT Medium::i_taskResizeHandler(Medium::ResizeTask &task)
                              m->uOpenFlagsDef | (it == mediumListLast ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY),
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.c_str(),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not open the medium storage unit '%s'%s"),
+                                       pMedium->m->strLocationFull.c_str(),
+                                       i_vdError(vrc).c_str());
             }
 
             Assert(m->state == MediumState_LockedWrite);
@@ -9723,18 +9723,18 @@ HRESULT Medium::i_taskResizeHandler(Medium::ResizeTask &task)
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_NOT_SUPPORTED)
-                    throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Resizing to new size %llu is not yet supported for medium '%s'"),
-                                   task.mSize, location.c_str());
+                    throw setErrorBoth(VBOX_E_NOT_SUPPORTED, vrc,
+                                       tr("Resizing to new size %llu is not yet supported for medium '%s'"),
+                                       task.mSize, location.c_str());
                 else if (vrc == VERR_NOT_IMPLEMENTED)
-                    throw setError(E_NOTIMPL,
-                                   tr("Resiting is not implemented, medium '%s'"),
-                                   location.c_str());
+                    throw setErrorBoth(E_NOTIMPL, vrc,
+                                       tr("Resiting is not implemented, medium '%s'"),
+                                       location.c_str());
                 else
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not resize medium '%s'%s"),
-                                   location.c_str(),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not resize medium '%s'%s"),
+                                       location.c_str(),
+                                       i_vdError(vrc).c_str());
             }
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
             logicalSize = VDGetSize(hdd, VD_LAST_IMAGE);
@@ -9827,10 +9827,10 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
                          VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SEQUENTIAL | m->uOpenFlagsDef,
                          task.mVDImageIfaces);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not open the medium storage unit '%s'%s"),
-                               task.mFilename.c_str(),
-                               i_vdError(vrc).c_str());
+                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                   tr("Could not open the medium storage unit '%s'%s"),
+                                   task.mFilename.c_str(),
+                                   i_vdError(vrc).c_str());
 
             Utf8Str targetFormat(m->strFormat);
             Utf8Str targetLocation(m->strLocationFull);
@@ -9895,10 +9895,10 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
                                  uOpenFlags | m->uOpenFlagsDef,
                                  pMedium->m->vdImageIfaces);
                     if (RT_FAILURE(vrc))
-                        throw setError(VBOX_E_FILE_ERROR,
-                                       tr("Could not open the medium storage unit '%s'%s"),
-                                       pMedium->m->strLocationFull.c_str(),
-                                       i_vdError(vrc).c_str());
+                        throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                           tr("Could not open the medium storage unit '%s'%s"),
+                                           pMedium->m->strLocationFull.c_str(),
+                                           i_vdError(vrc).c_str());
                 }
 
                 vrc = VDCopy(hdd,
@@ -9915,9 +9915,9 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
                              m->vdImageIfaces,
                              task.mVDOperationIfaces);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not create the imported medium '%s'%s"),
-                                   targetLocation.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not create the imported medium '%s'%s"),
+                                       targetLocation.c_str(), i_vdError(vrc).c_str());
 
                 size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
                 logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE);
@@ -10093,9 +10093,9 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
             {
                 int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Encrypting the image failed because the encryption plugin could not be loaded (%s)"),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_NOT_SUPPORTED, vrc,
+                                       tr("Encrypting the image failed because the encryption plugin could not be loaded (%s)"),
+                                       i_vdError(vrc).c_str());
             }
             else
                 throw setError(VBOX_E_NOT_SUPPORTED,
@@ -10171,9 +10171,9 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                                            pszPasswordNew, true /* fCreateKeyStore */);
                 vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_WRITE, CryptoSettingsWrite.vdFilterIfaces);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Failed to load the encryption filter: %s"),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_INVALID_OBJECT_STATE, vrc,
+                                       tr("Failed to load the encryption filter: %s"),
+                                       i_vdError(vrc).c_str());
             }
             else if (task.mstrNewPasswordId.isNotEmpty() || task.mstrNewPassword.isNotEmpty())
                 throw setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -10206,10 +10206,10 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                              m->uOpenFlagsDef | (it == mediumListLast ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY),
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not open the medium storage unit '%s'%s"),
-                                   pMedium->m->strLocationFull.c_str(),
-                                   i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not open the medium storage unit '%s'%s"),
+                                       pMedium->m->strLocationFull.c_str(),
+                                       i_vdError(vrc).c_str());
             }
 
             Assert(m->state == MediumState_LockedWrite);
@@ -10221,9 +10221,9 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
 
             vrc = VDPrepareWithFilters(pDisk, task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not prepare disk images for encryption (%Rrc): %s"),
-                               vrc, i_vdError(vrc).c_str());
+                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                   tr("Could not prepare disk images for encryption (%Rrc): %s"),
+                                   vrc, i_vdError(vrc).c_str());
 
             thisLock.acquire();
             /* If everything went well set the new key store. */

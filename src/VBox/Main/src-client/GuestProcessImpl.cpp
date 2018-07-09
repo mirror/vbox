@@ -999,7 +999,7 @@ HRESULT GuestProcess::i_setErrorExternal(VirtualBoxBase *pInterface, int rcGuest
     AssertPtr(pInterface);
     AssertMsg(RT_FAILURE(rcGuest), ("Guest rc does not indicate a failure when setting error\n"));
 
-    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestProcess::i_guestErrorToString(rcGuest).c_str());
+    return pInterface->setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, GuestProcess::i_guestErrorToString(rcGuest).c_str());
 }
 
 int GuestProcess::i_startProcess(uint32_t cMsTimeout, int *prcGuest)
@@ -1790,9 +1790,8 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Reading from process \"%s\" (PID %RU32) failed: %Rrc"),
-                              mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading from process \"%s\" (PID %RU32) failed: %Rrc"),
+                                  mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
                 break;
         }
     }
@@ -1823,15 +1822,14 @@ HRESULT GuestProcess::terminate()
                 break;
 
             case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Terminating process \"%s\" (PID %RU32) not supported by installed Guest Additions"),
-                              mData.mProcess.mExecutable.c_str(), mData.mPID);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                  tr("Terminating process \"%s\" (PID %RU32) not supported by installed Guest Additions"),
+                                  mData.mProcess.mExecutable.c_str(), mData.mPID);
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Terminating process \"%s\" (PID %RU32) failed: %Rrc"),
-                              mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Terminating process \"%s\" (PID %RU32) failed: %Rrc"),
+                                  mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
                 break;
         }
     }
@@ -1879,9 +1877,8 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, ProcessWaitResul
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Waiting for process \"%s\" (PID %RU32) failed: %Rrc"),
-                              mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Waiting for process \"%s\" (PID %RU32) failed: %Rrc"),
+                                  mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
                 break;
         }
     }
@@ -1923,9 +1920,8 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Writing to process \"%s\" (PID %RU32) failed: %Rrc"),
-                              mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Writing to process \"%s\" (PID %RU32) failed: %Rrc"),
+                                  mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
                 break;
         }
     }

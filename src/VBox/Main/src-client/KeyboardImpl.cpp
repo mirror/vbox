@@ -214,9 +214,9 @@ HRESULT Keyboard::putScancodes(const std::vector<LONG> &aScancodes,
     evDesc.fire(0);
 
     if (RT_FAILURE(vrc))
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Could not send all scan codes to the virtual keyboard (%Rrc)"),
-                        vrc);
+        return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                            tr("Could not send all scan codes to the virtual keyboard (%Rrc)"),
+                            vrc);
 
     return S_OK;
 }

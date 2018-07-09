@@ -571,9 +571,9 @@ HRESULT ExtPackFile::queryLicense(const com::Utf8Str &aPreferredLocale, const co
                     if (RT_FAILURE(vrc))
                     {
                         if (vrc != VERR_EOF)
-                            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsFsStrmNext failed: %Rrc"), vrc);
+                            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("RTVfsFsStrmNext failed: %Rrc"), vrc);
                         else
-                            hrc = setError(E_UNEXPECTED, tr("'%s' was found in the manifest but not in the tarball"), szName);
+                            hrc = setErrorBoth(E_UNEXPECTED, vrc, tr("'%s' was found in the manifest but not in the tarball"), szName);
                         break;
                     }
 
@@ -607,21 +607,21 @@ HRESULT ExtPackFile::queryLicense(const com::Utf8Str &aPreferredLocale, const co
                                         hrc = S_OK;
                                     }
                                     else
-                                        hrc = setError(VBOX_E_IPRT_ERROR,
-                                                       tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
-                                                       szName);
+                                        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                                           tr("The license file '%s' is empty or contains invalid UTF-8 encoding"),
+                                                           szName);
                                 }
                                 else
-                                    hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to read '%s': %Rrc"), szName, vrc);
+                                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Failed to read '%s': %Rrc"), szName, vrc);
                                 RTMemFree(pvFile);
                             }
                             else
                                 hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate %zu bytes for '%s'"), cbFile, szName);
                         }
                         else
-                            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTVfsIoStrmQueryInfo on '%s': %Rrc"), szName, vrc);
+                            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("RTVfsIoStrmQueryInfo on '%s': %Rrc"), szName, vrc);
                         RTVfsIoStrmRelease(hVfsIos);
-                            break;
+                        break;
                     }
 
                     /* Release current. */
@@ -633,9 +633,9 @@ HRESULT ExtPackFile::queryLicense(const com::Utf8Str &aPreferredLocale, const co
             else
                 hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("%s"), szError);
         }
-            else
+        else
             hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in '%s'"),
-                               szName, m->strExtPackFile.c_str());
+                           szName, m->strExtPackFile.c_str());
     }
     return hrc;
 }
@@ -871,7 +871,7 @@ HRESULT ExtPack::i_callUninstallHookAndClose(IVirtualBox *a_pVirtualBox, bool a_
             {
                 LogRel(("ExtPack pfnUninstall returned %Rrc for %s\n", vrc, m->Desc.strName.c_str()));
                 if (!a_fForcedRemoval)
-                    hrc = setError(E_FAIL, tr("pfnUninstall returned %Rrc"), vrc);
+                    hrc = setErrorBoth(E_FAIL, vrc, tr("pfnUninstall returned %Rrc"), vrc);
             }
         }
         if (SUCCEEDED(hrc))
@@ -1869,13 +1869,13 @@ HRESULT ExtPack::queryLicense(const com::Utf8Str &aPreferredLocale, const com::U
                 RTFileReadAllFree(pvFile, cbFile);
             }
             else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
-                hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("The license file '%s' was not found in extension pack '%s'"),
-                               szName, m->Desc.strName.c_str());
+                hrc = setErrorBoth(VBOX_E_OBJECT_NOT_FOUND, vrc, tr("The license file '%s' was not found in extension pack '%s'"),
+                                   szName, m->Desc.strName.c_str());
             else
-                hrc = setError(VBOX_E_FILE_ERROR, tr("Failed to open the license file '%s': %Rrc"), szPath, vrc);
+                hrc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to open the license file '%s': %Rrc"), szPath, vrc);
         }
         else
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("RTPathJoin failed: %Rrc"), vrc);
+            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("RTPathJoin failed: %Rrc"), vrc);
     }
     return hrc;
 }
@@ -2131,11 +2131,10 @@ HRESULT ExtPackManager::uninstall(const com::Utf8Str &aName, BOOL aForcedRemoval
                 hrc = ptrProgress.queryInterfaceTo(aProgress.asOutParam());
             else
                 hrc = setError(VBOX_E_IPRT_ERROR,
-                              tr("Starting thread for an extension pack uninstallation failed with %Rrc"), hrc);
+                               tr("Starting thread for an extension pack uninstallation failed with %Rrc"), hrc);
         }
         else
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                          tr("Looks like creating a progress object for ExtraPackUninstallTask object failed"));
+            hrc = setError(hrc, tr("Looks like creating a progress object for ExtraPackUninstallTask object failed"));
     }
     catch (std::bad_alloc &)
     {
@@ -2414,7 +2413,7 @@ HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo
         RTMemFree(pszStdErrBuf);
     }
     else
-        hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to launch the helper application '%s' (%Rrc)"), szExecName, vrc);
+        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Failed to launch the helper application '%s' (%Rrc)"), szExecName, vrc);
 
     RTPipeClose(hPipeR);
     RTPipeClose(hStdErrPipe.u.hPipe);
@@ -2740,8 +2739,8 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
                                                     "--name",     pStrName->c_str(),
                                                     "--forced",
                                                     (const char *)NULL);
-                        hrc = setError(E_FAIL, tr("The installation hook failed: %Rrc - %s"),
-                                       ErrInfo.Core.rc, ErrInfo.Core.pszMsg);
+                        hrc = setErrorBoth(E_FAIL, ErrInfo.Core.rc, tr("The installation hook failed: %Rrc - %s"),
+                                           ErrInfo.Core.rc, ErrInfo.Core.pszMsg);
                     }
                 }
                 else if (SUCCEEDED(hrc))

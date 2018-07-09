@@ -473,16 +473,16 @@ HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSet
     mMaskedIfs = aMaskedIfs;
     mCaptureFilename = aCaptureFilename;
     alock.release();
-    int rc = mUSBProxyBackend->captureDevice(this);
-    if (RT_FAILURE(rc))
+    int vrc = mUSBProxyBackend->captureDevice(this);
+    if (RT_FAILURE(vrc))
     {
         alock.acquire();
         i_failTransition(kHostUSBDeviceState_Invalid);
         mMachine.setNull();
-        if (rc == VERR_SHARING_VIOLATION)
-            return setError(E_FAIL,
-                            tr("USB device '%s' with UUID {%RTuuid} is in use by someone else"),
-                            mName, mId.raw());
+        if (vrc == VERR_SHARING_VIOLATION)
+            return setErrorBoth(E_FAIL, vrc,
+                                tr("USB device '%s' with UUID {%RTuuid} is in use by someone else"),
+                                mName, mId.raw());
         return E_FAIL;
     }
 

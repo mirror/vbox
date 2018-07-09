@@ -707,8 +707,7 @@ HRESULT Progress::getResultCode(LONG *aResultCode)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCompleted)
-        return setError(E_FAIL,
-                        tr("Result code is not available, operation is still in progress"));
+        return setError(E_FAIL, tr("Result code is not available, operation is still in progress"));
 
     *aResultCode = mResultCode;
 
@@ -720,8 +719,7 @@ HRESULT Progress::getErrorInfo(ComPtr<IVirtualBoxErrorInfo> &aErrorInfo)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCompleted)
-        return setError(E_FAIL,
-                        tr("Error info is not available, operation is still in progress"));
+        return setError(E_FAIL, tr("Error info is not available, operation is still in progress"));
 
     mErrorInfo.queryInterfaceTo(aErrorInfo.asOutParam());
 
@@ -790,8 +788,7 @@ HRESULT Progress::setTimeout(ULONG aTimeout)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCancelable)
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Operation cannot be canceled"));
+        return setError(VBOX_E_INVALID_OBJECT_STATE, tr("Operation cannot be canceled"));
     m_cMsTimeout = aTimeout;
 
     return S_OK;
@@ -914,9 +911,7 @@ HRESULT Progress::waitForCompletion(LONG aTimeout)
         }
 
         if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
-            return setError(VBOX_E_IPRT_ERROR,
-                            tr("Failed to wait for the task completion (%Rrc)"),
-                            vrc);
+            return setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Failed to wait for the task completion (%Rrc)"), vrc);
     }
 
     LogFlowThisFuncLeave();
@@ -976,9 +971,7 @@ HRESULT Progress::waitForOperationCompletion(ULONG aOperation, LONG aTimeout)
         }
 
         if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
-            return setError(E_FAIL,
-                            tr("Failed to wait for the operation completion (%Rrc)"),
-                            vrc);
+            return setErrorBoth(E_FAIL, vrc, tr("Failed to wait for the operation completion (%Rrc)"), vrc);
     }
 
     LogFlowThisFuncLeave();
@@ -1075,8 +1068,7 @@ HRESULT Progress::cancel()
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCancelable)
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Operation cannot be canceled"));
+        return setError(VBOX_E_INVALID_OBJECT_STATE, tr("Operation cannot be canceled"));
 
     if (!mCanceled)
     {

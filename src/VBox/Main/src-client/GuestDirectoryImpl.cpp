@@ -341,10 +341,10 @@ HRESULT GuestDirectory::close()
     HRESULT hr = S_OK;
 
     int rcGuest;
-    int rc = i_closeInternal(&rcGuest);
-    if (RT_FAILURE(rc))
+    int vrc = i_closeInternal(&rcGuest);
+    if (RT_FAILURE(vrc))
     {
-        switch (rc)
+        switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestDirectory::i_setErrorExternal(this, rcGuest);
@@ -356,9 +356,8 @@ HRESULT GuestDirectory::close()
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Terminating open guest directory \"%s\" failed: %Rrc"),
-                              mData.mOpenInfo.mPath.c_str(), rc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                  tr("Terminating open guest directory \"%s\" failed: %Rrc"), mData.mOpenInfo.mPath.c_str(), vrc);
                 break;
         }
     }
@@ -376,44 +375,49 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
     HRESULT hr = S_OK;
 
     ComObjPtr<GuestFsObjInfo> fsObjInfo; int rcGuest;
-    int rc = i_readInternal(fsObjInfo, &rcGuest);
-    if (RT_SUCCESS(rc))
+    int vrc = i_readInternal(fsObjInfo, &rcGuest);
+    if (RT_SUCCESS(vrc))
     {
+AssertMsg(vrc != VWRN_GSTCTL_PROCESS_EXIT_CODE, ("Buggy status code handling! See futher down...\n"));
         /* Return info object to the caller. */
         hr = fsObjInfo.queryInterfaceTo(aObjInfo.asOutParam());
     }
     else
     {
-        switch (rc)
+        switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestDirectory::i_setErrorExternal(this, rcGuest);
                 break;
 
+/** @todo r=bird: VWRN_GSTCTL_PROCESS_EXIT_CODE won't ever get here because
+ *        RT_SUCCESS(VWRN_GSTCTL_PROCESS_EXIT_CODE) -> true.
+ *
+ */
             case VWRN_GSTCTL_PROCESS_EXIT_CODE:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: %Rrc"),
-                              mData.mOpenInfo.mPath.c_str(), mData.mProcessTool.getRc());
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading directory \"%s\" failed: %Rrc"),
+                                  mData.mOpenInfo.mPath.c_str(), mData.mProcessTool.getRc());
                 break;
 
             case VERR_PATH_NOT_FOUND:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: Path not found"),
-                              mData.mOpenInfo.mPath.c_str());
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading directory \"%s\" failed: Path not found"),
+                                  mData.mOpenInfo.mPath.c_str());
                 break;
 
             case VERR_NO_MORE_FILES:
                 /* See SDK reference. */
-                hr = setError(VBOX_E_OBJECT_NOT_FOUND, tr("Reading directory \"%s\" failed: No more entries"),
-                              mData.mOpenInfo.mPath.c_str());
+                hr = setErrorBoth(VBOX_E_OBJECT_NOT_FOUND, vrc, tr("Reading directory \"%s\" failed: No more entries"),
+                                  mData.mOpenInfo.mPath.c_str());
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" returned error: %Rrc\n"),
-                              mData.mOpenInfo.mPath.c_str(), rc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading directory \"%s\" returned error: %Rrc\n"),
+                                  mData.mOpenInfo.mPath.c_str(), vrc);
                 break;
         }
     }
 
-    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
+    LogFlowThisFunc(("Returning hr=%Rhrc / vrc=%Rrc\n", hr, vrc));
     return hr;
 }
 

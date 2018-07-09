@@ -374,35 +374,35 @@ HRESULT Guest::createSession(const com::Utf8Str &aUser, const com::Utf8Str &aPas
     guestCreds.mDomain = aDomain;
 
     ComObjPtr<GuestSession> pSession;
-    int rc = i_sessionCreate(startupInfo, guestCreds, pSession);
-    if (RT_SUCCESS(rc))
+    int vrc = i_sessionCreate(startupInfo, guestCreds, pSession);
+    if (RT_SUCCESS(vrc))
     {
         /* Return guest session to the caller. */
         HRESULT hr2 = pSession.queryInterfaceTo(aGuestSession.asOutParam());
         if (FAILED(hr2))
-            rc = VERR_COM_OBJECT_NOT_FOUND;
+            vrc = VERR_COM_OBJECT_NOT_FOUND;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
         /* Start (fork) the session asynchronously
          * on the guest. */
-        rc = pSession->i_startSessionAsync();
+        vrc = pSession->i_startSessionAsync();
 
     HRESULT hr = S_OK;
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
-        switch (rc)
+        switch (vrc)
         {
             case VERR_MAX_PROCS_REACHED:
-                hr = setError(VBOX_E_MAXIMUM_REACHED, tr("Maximum number of concurrent guest sessions (%ld) reached"),
-                              VBOX_GUESTCTRL_MAX_SESSIONS);
+                hr = setErrorBoth(VBOX_E_MAXIMUM_REACHED, vrc, tr("Maximum number of concurrent guest sessions (%d) reached"),
+                                  VBOX_GUESTCTRL_MAX_SESSIONS);
                 break;
 
             /** @todo Add more errors here. */
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session: %Rrc"), rc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not create guest session: %Rrc"), vrc);
                 break;
         }
     }
@@ -469,7 +469,7 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
     if (fFlags && !(fFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
         return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), fFlags);
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     ProcessArguments aArgs;
     aArgs.resize(0);
@@ -483,7 +483,7 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
         }
         catch(std::bad_alloc &)
         {
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
         }
     }
 
@@ -500,21 +500,21 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
     RT_ZERO(guestCreds);
 
     ComObjPtr<GuestSession> pSession;
-    if (RT_SUCCESS(rc))
-        rc = i_sessionCreate(startupInfo, guestCreds, pSession);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(vrc))
+        vrc = i_sessionCreate(startupInfo, guestCreds, pSession);
+    if (RT_FAILURE(vrc))
     {
-        switch (rc)
+        switch (vrc)
         {
             case VERR_MAX_PROCS_REACHED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of concurrent guest sessions (%ld) reached"),
-                              VBOX_GUESTCTRL_MAX_SESSIONS);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Maximum number of concurrent guest sessions (%d) reached"),
+                                  VBOX_GUESTCTRL_MAX_SESSIONS);
                 break;
 
             /** @todo Add more errors here. */
 
            default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session: %Rrc"), rc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not create guest session: %Rrc"), vrc);
                 break;
         }
     }
@@ -522,12 +522,12 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
     {
         Assert(!pSession.isNull());
         int rcGuest;
-        rc = pSession->i_startSession(&rcGuest);
-        if (RT_FAILURE(rc))
+        vrc = pSession->i_startSession(&rcGuest);
+        if (RT_FAILURE(vrc))
         {
             /** @todo Handle rcGuest! */
 
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Could not open guest session: %Rrc"), rc);
+            hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not open guest session: %Rrc"), vrc);
         }
         else
         {
@@ -542,7 +542,7 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
                 }
                 catch(...)
                 {
-                    hr = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskUpdateAdditions object "));
+                    hr = setError(E_OUTOFMEMORY, tr("Failed to create SessionTaskUpdateAdditions object "));
                     throw;
                 }
 
@@ -551,8 +551,7 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
                 if (FAILED(hr))
                 {
                     delete pTask;
-                    hr = setError(VBOX_E_IPRT_ERROR,
-                                  tr("Creating progress object for SessionTaskUpdateAdditions object failed"));
+                    hr = setError(hr, tr("Creating progress object for SessionTaskUpdateAdditions object failed"));
                     throw hr;
                 }
 
@@ -565,8 +564,7 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
                     hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
                 }
                 else
-                    hr = setError(VBOX_E_IPRT_ERROR,
-                                  tr("Starting thread for updating Guest Additions on the guest failed "));
+                    hr = setError(hr, tr("Starting thread for updating Guest Additions on the guest failed "));
             }
             catch(std::bad_alloc &)
             {

@@ -144,7 +144,7 @@ HRESULT VirtualBoxClient::init()
         if (RT_FAILURE(vrc))
         {
             mData.m_SemEvWatcher = NIL_RTSEMEVENT;
-            AssertRCStmt(vrc, throw setError(VBOX_E_IPRT_ERROR, tr("Failed to create semaphore (rc=%Rrc)"), vrc));
+            AssertRCStmt(vrc, throw setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Failed to create semaphore (rc=%Rrc)"), vrc));
         }
 
         vrc = RTThreadCreate(&mData.m_ThreadWatcher, SVCWatcherThread, this, 0,
@@ -153,7 +153,7 @@ HRESULT VirtualBoxClient::init()
         {
             RTSemEventDestroy(mData.m_SemEvWatcher);
             mData.m_SemEvWatcher = NIL_RTSEMEVENT;
-            AssertRCStmt(vrc, throw setError(VBOX_E_IPRT_ERROR,  tr("Failed to create watcher thread (rc=%Rrc)"), vrc));
+            AssertRCStmt(vrc, throw setErrorBoth(VBOX_E_IPRT_ERROR, vrc,  tr("Failed to create watcher thread (rc=%Rrc)"), vrc));
         }
     }
     catch (HRESULT err)

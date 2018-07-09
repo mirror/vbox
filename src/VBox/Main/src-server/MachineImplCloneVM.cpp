@@ -220,9 +220,9 @@ HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, b
         uint64_t cbSize;
         int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &cbSize);
         if (RT_FAILURE(vrc))
-            return p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not query file size of '%s' (%Rrc)"),
-                               sst.strSaveStateFile.c_str(), vrc);
-        /* same rule as above: count both the data which needs to
+            return p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, p->tr("Could not query file size of '%s' (%Rrc)"),
+                                   sst.strSaveStateFile.c_str(), vrc);
+        /*  same rule as above: count both the data which needs to
          * be read and written */
         sst.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
         llSaveStateFiles.append(sst);
@@ -964,7 +964,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         int vrc = d->startWorker();
 
         if (RT_FAILURE(vrc))
-            p->setError(VBOX_E_IPRT_ERROR, "Could not create machine clone thread (%Rrc)", vrc);
+            p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, "Could not create machine clone thread (%Rrc)", vrc);
     }
     catch (HRESULT rc2)
     {
@@ -1392,9 +1392,9 @@ HRESULT MachineCloneVM::run()
         {
             int vrc = RTDirCreateFullPath(strTrgSnapshotFolder.c_str(), 0700);
             if (RT_FAILURE(vrc))
-                throw p->setError(VBOX_E_IPRT_ERROR,
-                                  p->tr("Could not create snapshots folder '%s' (%Rrc)"),
-                                        strTrgSnapshotFolder.c_str(), vrc);
+                throw p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                      p->tr("Could not create snapshots folder '%s' (%Rrc)"),
+                                            strTrgSnapshotFolder.c_str(), vrc);
         }
         /* Clone all save state files. */
         for (size_t i = 0; i < d->llSaveStateFiles.size(); ++i)
@@ -1413,9 +1413,9 @@ HRESULT MachineCloneVM::run()
                 int vrc = RTFileCopyEx(sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), 0,
                                        MachineCloneVMPrivate::copyStateFileProgress, &d->pProgress);
                 if (RT_FAILURE(vrc))
-                    throw p->setError(VBOX_E_IPRT_ERROR,
-                                      p->tr("Could not copy state file '%s' to '%s' (%Rrc)"),
-                                            sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
+                    throw p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                          p->tr("Could not copy state file '%s' to '%s' (%Rrc)"),
+                                          sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
                 newFiles.append(strTrgSaveState);
             }
             /* Update the path in the configuration either for the current
@@ -1506,7 +1506,8 @@ HRESULT MachineCloneVM::run()
         {
             vrc = RTFileDelete(newFiles.at(i).c_str());
             if (RT_FAILURE(vrc))
-                mrc = p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not delete file '%s' (%Rrc)"), newFiles.at(i).c_str(), vrc);
+                mrc = p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                      p->tr("Could not delete file '%s' (%Rrc)"), newFiles.at(i).c_str(), vrc);
         }
         /* Delete all already created medias. (Reverse, cause there could be
          * parent->child relations.) */

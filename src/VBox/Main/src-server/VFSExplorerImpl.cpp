@@ -318,7 +318,7 @@ HRESULT VFSExplorer::i_updateFS(TaskVFSExplorer *aTask)
         RTDirClose(hDir);
     }
     else
-        rc = setError(VBOX_E_FILE_ERROR, tr ("Can't open directory '%s' (%Rrc)"), m->strPath.c_str(), vrc);
+        rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr ("Can't open directory '%s' (%Rrc)"), m->strPath.c_str(), vrc);
 
     if (aTask->m_ptrProgress)
         aTask->m_ptrProgress->SetCurrentOperationProgress(99);
@@ -361,10 +361,10 @@ HRESULT VFSExplorer::i_deleteFS(TaskVFSExplorer *aTask)
         {
             int vrc = RTPathJoin(szPath, sizeof(szPath), m->strPath.c_str(), (*it).c_str());
             if (RT_FAILURE(vrc))
-                throw setError(E_FAIL, tr("Internal Error (%Rrc)"), vrc);
+                throw setErrorBoth(E_FAIL, vrc, tr("Internal Error (%Rrc)"), vrc);
             vrc = RTFileDelete(szPath);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR, tr("Can't delete file '%s' (%Rrc)"), szPath, vrc);
+                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Can't delete file '%s' (%Rrc)"), szPath, vrc);
             if (aTask->m_ptrProgress)
                 aTask->m_ptrProgress->SetCurrentOperationProgress((ULONG)(fPercentStep * (float)i));
         }

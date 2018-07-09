@@ -513,14 +513,14 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextPointer((void*)strFormats.c_str(), cbFormats);
         Msg.setNextUInt32(cbFormats);
 
-        int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
-        if (RT_SUCCESS(rc))
+        int vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        if (RT_SUCCESS(vrc))
         {
             GuestDnDResponse *pResp = GuestDnDInst()->response();
             AssertPtr(pResp);
 
-            rc = pResp->waitForGuestResponse();
-            if (RT_SUCCESS(rc))
+            vrc = pResp->waitForGuestResponse();
+            if (RT_SUCCESS(vrc))
             {
                 resAction = GuestDnD::toMainAction(pResp->defAction());
 
@@ -531,13 +531,14 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
                     LogFlowFunc(("resFormat=%s, resAction=%RU32\n", aFormat.c_str(), pResp->defAction()));
                 }
                 else
+                    /** @todo r=bird: This isn't an IPRT error, is it?   */
                     hr = setError(VBOX_E_IPRT_ERROR, tr("Guest returned invalid drop formats (%zu formats)"), lstFormats.size());
             }
             else
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Waiting for response of dropped event failed (%Rrc)"), rc);
+                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Waiting for response of dropped event failed (%Rrc)"), vrc);
         }
         else
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Sending dropped event to guest failed (%Rrc)"), rc);
+            hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Sending dropped event to guest failed (%Rrc)"), vrc);
     }
     else
         hr = setError(hr, tr("Retrieving drop coordinates failed"));
@@ -673,7 +674,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         /* Note: pTask is now owned by the worker thread. */
     }
     else
-        hr = setError(VBOX_E_IPRT_ERROR, tr("Starting thread for GuestDnDTarget::i_sendDataThread (%Rhrc)"), hr);
+        hr = setError(hr, tr("Starting thread for GuestDnDTarget::i_sendDataThread (%Rhrc)"), hr);
 
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;

@@ -1585,9 +1585,9 @@ HRESULT Console::i_loadDataFromSavedState()
     }
 
     if (RT_FAILURE(vrc))
-        rc = setError(VBOX_E_FILE_ERROR,
-                      tr("The saved state file '%ls' is invalid (%Rrc). Delete the saved state and try again"),
-                      savedStateFile.raw(), vrc);
+        rc = setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                          tr("The saved state file '%ls' is invalid (%Rrc). Delete the saved state and try again"),
+                          savedStateFile.raw(), vrc);
 
     mSavedStateDataLoaded = true;
 
@@ -1836,12 +1836,11 @@ HRESULT Console::i_doEnumerateGuestProperties(const Utf8Str &aPatterns,
         vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_ENUM_PROPS, 3, &parm[0]);
         Utf8Buf.jolt();
         if (parm[2].type != VBOX_HGCM_SVC_PARM_32BIT)
-            return setError(E_FAIL, tr("Internal application error"));
+            return setErrorBoth(E_FAIL, vrc, tr("Internal application error"));
         cchBuf = parm[2].u.uint32;
     }
-    if (VERR_BUFFER_OVERFLOW == vrc)
-        return setError(E_UNEXPECTED,
-                        tr("Temporary failure due to guest activity, please retry"));
+    if (vrc == VERR_BUFFER_OVERFLOW)
+        return setError(E_UNEXPECTED, tr("Temporary failure due to guest activity, please retry"));
 
     /*
      * Finally we have to unpack the data returned by the service into the safe
@@ -2213,7 +2212,7 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
         catch(...)
         {
             delete task;
-            rc = setError(E_FAIL, "Could not create VMPowerDownTask object \n");
+            rc = setError(E_FAIL, "Could not create VMPowerDownTask object\n");
             break;
         }
 
@@ -2271,10 +2270,7 @@ HRESULT Console::reset()
 
     int vrc = VMR3Reset(ptrVM.rawUVM());
 
-    HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
-        setError(VBOX_E_VM_ERROR,
-                 tr("Could not reset the machine (%Rrc)"),
-                 vrc);
+    HRESULT rc = RT_SUCCESS(vrc) ? S_OK : setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not reset the machine (%Rrc)"), vrc);
 
     LogFlowThisFunc(("mMachineState=%d, rc=%Rhrc\n", mMachineState, rc));
     LogFlowThisFuncLeave();
@@ -2387,12 +2383,11 @@ HRESULT Console::i_doCPURemove(ULONG aCpu, PUVM pUVM)
             AssertRC(vrc);
         }
         else
-           rc = setError(VBOX_E_VM_ERROR,
-                         tr("Hot-Remove failed (rc=%Rrc)"), vrc);
+           rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Hot-Remove failed (rc=%Rrc)"), vrc);
     }
     else
-        rc = setError(VBOX_E_VM_ERROR,
-                      tr("Hot-Remove was aborted because the CPU may still be used by the guest"), VERR_RESOURCE_BUSY);
+        rc = setErrorBoth(VBOX_E_VM_ERROR, VERR_RESOURCE_BUSY,
+                          tr("Hot-Remove was aborted because the CPU may still be used by the guest"), VERR_RESOURCE_BUSY);
 
     LogFlowThisFunc(("mMachineState=%d, rc=%Rhrc\n", mMachineState, rc));
     LogFlowThisFuncLeave();
@@ -2498,9 +2493,7 @@ HRESULT Console::i_doCPUAdd(ULONG aCpu, PUVM pUVM)
         /** @todo warning if the guest doesn't support it */
     }
     else
-        rc = setError(VBOX_E_VM_ERROR,
-                      tr("Could not add CPU to the machine (%Rrc)"),
-                      vrc);
+        rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not add CPU to the machine (%Rrc)"), vrc);
 
     LogFlowThisFunc(("mMachineState=%d, rc=%Rhrc\n", mMachineState, rc));
     LogFlowThisFuncLeave();
@@ -2568,10 +2561,7 @@ HRESULT Console::powerButton()
             vrc = VERR_PDM_MISSING_INTERFACE;
     }
 
-    HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
-        setError(VBOX_E_PDM_ERROR,
-                 tr("Controlled power off failed (%Rrc)"),
-                 vrc);
+    HRESULT rc = RT_SUCCESS(vrc) ? S_OK : setErrorBoth(VBOX_E_PDM_ERROR, vrc, tr("Controlled power off failed (%Rrc)"), vrc);
 
     LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
@@ -2617,10 +2607,9 @@ HRESULT Console::getPowerButtonHandled(BOOL *aHandled)
             vrc = VERR_PDM_MISSING_INTERFACE;
     }
 
-    HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
-        setError(VBOX_E_PDM_ERROR,
-            tr("Checking if the ACPI Power Button event was handled by the guest OS failed (%Rrc)"),
-            vrc);
+    HRESULT rc = RT_SUCCESS(vrc) ? S_OK
+               : setErrorBoth(VBOX_E_PDM_ERROR, vrc,
+                              tr("Checking if the ACPI Power Button event was handled by the guest OS failed (%Rrc)"), vrc);
 
     LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
@@ -2640,8 +2629,8 @@ HRESULT Console::getGuestEnteredACPIMode(BOOL *aEntered)
         && mMachineState != MachineState_LiveSnapshotting
        )
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state %s when checking if the guest entered the ACPI mode)"),
-            Global::stringifyMachineState(mMachineState));
+                        tr("Invalid machine state %s when checking if the guest entered the ACPI mode)"),
+                        Global::stringifyMachineState(mMachineState));
 
     /* get the VM handle. */
     SafeVMPtr ptrVM(this);
@@ -2703,10 +2692,7 @@ HRESULT Console::sleepButton()
             vrc = VERR_PDM_MISSING_INTERFACE;
     }
 
-    HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
-        setError(VBOX_E_PDM_ERROR,
-            tr("Sending sleep button event failed (%Rrc)"),
-            vrc);
+    HRESULT rc = RT_SUCCESS(vrc) ? S_OK : setErrorBoth(VBOX_E_PDM_ERROR, vrc, tr("Sending sleep button event failed (%Rrc)"), vrc);
 
     LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
@@ -2777,9 +2763,7 @@ HRESULT Console::getDeviceActivity(const std::vector<DeviceType_T> &aType,
             }
 
             default:
-                return setError(E_INVALIDARG,
-                    tr("Invalid device type: %d"),
-                    aType[iType]);
+                return setError(E_INVALIDARG, tr("Invalid device type: %d"), aType[iType]);
         }
 
         /* Compose the result */
@@ -2809,8 +2793,8 @@ HRESULT Console::attachUSBDevice(const com::Guid &aId, const com::Utf8Str &aCapt
     if (   mMachineState != MachineState_Running
         && mMachineState != MachineState_Paused)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot attach a USB device to the machine which is not running or paused (machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
+                        tr("Cannot attach a USB device to the machine which is not running or paused (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
 
     /* Get the VM handle. */
     SafeVMPtr ptrVM(this);
@@ -2819,8 +2803,7 @@ HRESULT Console::attachUSBDevice(const com::Guid &aId, const com::Utf8Str &aCapt
 
     /* Don't proceed unless we have a USB controller. */
     if (!mfVMHasUsbController)
-        return setError(VBOX_E_PDM_ERROR,
-            tr("The virtual machine does not have a USB controller"));
+        return setError(VBOX_E_PDM_ERROR, tr("The virtual machine does not have a USB controller"));
 
     /* release the lock because the USB Proxy service may call us back
      * (via onUSBDeviceAttach()) */
@@ -2830,8 +2813,7 @@ HRESULT Console::attachUSBDevice(const com::Guid &aId, const com::Utf8Str &aCapt
     return mControl->CaptureUSBDevice(Bstr(aId.toString()).raw(), Bstr(aCaptureFilename).raw());
 
 #else   /* !VBOX_WITH_USB */
-    return setError(VBOX_E_PDM_ERROR,
-        tr("The virtual machine does not have a USB controller"));
+    return setError(VBOX_E_PDM_ERROR, tr("The virtual machine does not have a USB controller"));
 #endif  /* !VBOX_WITH_USB */
 }
 
@@ -2856,9 +2838,7 @@ HRESULT Console::detachUSBDevice(const com::Guid &aId, ComPtr<IUSBDevice> &aDevi
     }
 
     if (!pUSBDevice)
-        return setError(E_INVALIDARG,
-            tr("USB device with UUID {%RTuuid} is not attached to this machine"),
-            aId.raw());
+        return setError(E_INVALIDARG, tr("USB device with UUID {%RTuuid} is not attached to this machine"), aId.raw());
 
     /* Remove the device from the collection, it is re-added below for failures */
     mUSBDevices.erase(it);
@@ -2895,8 +2875,7 @@ HRESULT Console::detachUSBDevice(const com::Guid &aId, ComPtr<IUSBDevice> &aDevi
 
 
 #else   /* !VBOX_WITH_USB */
-    return setError(VBOX_E_PDM_ERROR,
-        tr("The virtual machine does not have a USB controller"));
+    return setError(VBOX_E_PDM_ERROR, tr("The virtual machine does not have a USB controller"));
 #endif  /* !VBOX_WITH_USB */
 }
 
@@ -2925,9 +2904,7 @@ HRESULT Console::findUSBDeviceByAddress(const com::Utf8Str &aName, ComPtr<IUSBDe
         }
     }
 
-    return setErrorNoLog(VBOX_E_OBJECT_NOT_FOUND,
-        tr("Could not find a USB device with address '%s'"),
-        aName.c_str());
+    return setErrorNoLog(VBOX_E_OBJECT_NOT_FOUND, tr("Could not find a USB device with address '%s'"), aName.c_str());
 
 #else   /* !VBOX_WITH_USB */
     return E_NOTIMPL;
@@ -2959,9 +2936,7 @@ HRESULT Console::findUSBDeviceById(const com::Guid &aId, ComPtr<IUSBDevice> &aDe
         }
     }
 
-    return setErrorNoLog(VBOX_E_OBJECT_NOT_FOUND,
-        tr("Could not find a USB device with uuid {%RTuuid}"),
-        Guid(aId).raw());
+    return setErrorNoLog(VBOX_E_OBJECT_NOT_FOUND, tr("Could not find a USB device with uuid {%RTuuid}"), Guid(aId).raw());
 
 #else   /* !VBOX_WITH_USB */
     return E_NOTIMPL;
@@ -2977,7 +2952,7 @@ HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
     /// @todo see @todo in AttachUSBDevice() about the Paused state
     if (mMachineState == MachineState_Saved)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot create a transient shared folder on the machine in the saved state"));
+                        tr("Cannot create a transient shared folder on the machine in the saved state"));
     if (   mMachineState != MachineState_PoweredOff
         && mMachineState != MachineState_Teleported
         && mMachineState != MachineState_Aborted
@@ -2985,8 +2960,8 @@ HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
         && mMachineState != MachineState_Paused
        )
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot create a transient shared folder on the machine while it is changing the state (machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
+                        tr("Cannot create a transient shared folder on the machine while it is changing the state (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
 
     ComObjPtr<SharedFolder> pSharedFolder;
     HRESULT rc = i_findSharedFolder(aName, pSharedFolder, false /* aSetError */);
@@ -3047,7 +3022,7 @@ HRESULT Console::removeSharedFolder(const com::Utf8Str &aName)
     /// @todo see @todo in AttachUSBDevice() about the Paused state
     if (mMachineState == MachineState_Saved)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot remove a transient shared folder from the machine in the saved state"));
+                        tr("Cannot remove a transient shared folder from the machine in the saved state"));
     if (   mMachineState != MachineState_PoweredOff
         && mMachineState != MachineState_Teleported
         && mMachineState != MachineState_Aborted
@@ -3110,8 +3085,8 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
     size_t cbKey = aPassword.length() + 1; /* Include terminator */
     const uint8_t *pbKey = (const uint8_t *)aPassword.c_str();
 
-    int rc = m_pKeyStore->addSecretKey(aId, pbKey, cbKey);
-    if (RT_SUCCESS(rc))
+    int vrc = m_pKeyStore->addSecretKey(aId, pbKey, cbKey);
+    if (RT_SUCCESS(vrc))
     {
         unsigned cDisksConfigured = 0;
 
@@ -3119,8 +3094,8 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
         if (SUCCEEDED(hrc))
         {
             SecretKey *pKey = NULL;
-            rc = m_pKeyStore->retainSecretKey(aId, &pKey);
-            AssertRCReturn(rc, E_FAIL);
+            vrc = m_pKeyStore->retainSecretKey(aId, &pKey);
+            AssertRCReturn(vrc, E_FAIL);
 
             pKey->setUsers(cDisksConfigured);
             pKey->setRemoveOnSuspend(!!aClearOnSuspend);
@@ -3136,21 +3111,19 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
                     return ptrVM.rc();
 
                 alock.release();
-                int vrc = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_RECONFIG);
+                vrc = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_RECONFIG);
 
-                hrc = RT_SUCCESS(vrc) ? S_OK :
-                    setError(VBOX_E_VM_ERROR,
-                             tr("Could not resume the machine execution (%Rrc)"),
-                             vrc);
+                hrc = RT_SUCCESS(vrc) ? S_OK
+                    : setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not resume the machine execution (%Rrc)"), vrc);
             }
         }
     }
-    else if (rc == VERR_ALREADY_EXISTS)
-        hrc = setError(VBOX_E_OBJECT_IN_USE, tr("A password with the given ID already exists"));
-    else if (rc == VERR_NO_MEMORY)
-        hrc = setError(E_FAIL, tr("Failed to allocate enough secure memory for the key"));
+    else if (vrc == VERR_ALREADY_EXISTS)
+        hrc = setErrorBoth(VBOX_E_OBJECT_IN_USE, vrc, tr("A password with the given ID already exists"));
+    else if (vrc == VERR_NO_MEMORY)
+        hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to allocate enough secure memory for the key"));
     else
-        hrc = setError(E_FAIL, tr("Unknown error happened while adding a password (%Rrc)"), rc);
+        hrc = setErrorBoth(E_FAIL, vrc, tr("Unknown error happened while adding a password (%Rrc)"), vrc);
 
     return hrc;
 }
@@ -3173,8 +3146,8 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
     for (unsigned i = 0; i < aIds.size(); i++)
     {
         SecretKey *pKey = NULL;
-        int rc = m_pKeyStore->retainSecretKey(aIds[i], &pKey);
-        if (rc != VERR_NOT_FOUND)
+        int vrc = m_pKeyStore->retainSecretKey(aIds[i], &pKey);
+        if (vrc != VERR_NOT_FOUND)
         {
             AssertPtr(pKey);
             if (pKey)
@@ -3214,20 +3187,18 @@ HRESULT Console::removeDiskEncryptionPassword(const com::Utf8Str &aId)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     SecretKey *pKey = NULL;
-    int rc = m_pKeyStore->retainSecretKey(aId, &pKey);
-    if (RT_SUCCESS(rc))
+    int vrc = m_pKeyStore->retainSecretKey(aId, &pKey);
+    if (RT_SUCCESS(vrc))
     {
         m_cDisksPwProvided -= pKey->getUsers();
         m_pKeyStore->releaseSecretKey(aId);
-        rc = m_pKeyStore->deleteSecretKey(aId);
-        AssertRCReturn(rc, E_FAIL);
+        vrc = m_pKeyStore->deleteSecretKey(aId);
+        AssertRCReturn(vrc, E_FAIL);
     }
-    else if (rc == VERR_NOT_FOUND)
-        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("A password with the ID \"%s\" does not exist"),
-                                                 aId.c_str());
+    else if (vrc == VERR_NOT_FOUND)
+        return setErrorBoth(VBOX_E_OBJECT_NOT_FOUND, vrc, tr("A password with the ID \"%s\" does not exist"), aId.c_str());
     else
-        return setError(E_FAIL, tr("Failed to remove password with ID \"%s\" (%Rrc)"),
-                                aId.c_str(), rc);
+        return setErrorBoth(E_FAIL, vrc, tr("Failed to remove password with ID \"%s\" (%Rrc)"), aId.c_str(), vrc);
 
     return S_OK;
 }
@@ -3236,11 +3207,11 @@ HRESULT Console::clearAllDiskEncryptionPasswords()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = m_pKeyStore->deleteAllSecretKeys(false /* fSuspend */, false /* fForce */);
-    if (rc == VERR_RESOURCE_IN_USE)
-        return setError(VBOX_E_OBJECT_IN_USE, tr("A password is still in use by the VM"));
-    else if (RT_FAILURE(rc))
-        return setError(E_FAIL, tr("Deleting all passwords failed (%Rrc)"));
+    int vrc = m_pKeyStore->deleteAllSecretKeys(false /* fSuspend */, false /* fForce */);
+    if (vrc == VERR_RESOURCE_IN_USE)
+        return setErrorBoth(VBOX_E_OBJECT_IN_USE, vrc, tr("A password is still in use by the VM"));
+    else if (RT_FAILURE(vrc))
+        return setErrorBoth(E_FAIL, vrc, tr("Deleting all passwords failed (%Rrc)"));
 
     m_cDisksPwProvided = 0;
     return S_OK;
@@ -3260,6 +3231,22 @@ HRESULT Console::i_setErrorStatic(HRESULT aResultCode, const char *pcsz, ...)
                                   Utf8Str(pcsz, args),
                                   false /* aWarning */,
                                   true /* aLogIt */);
+    va_end(args);
+    return rc;
+}
+
+/*static*/
+HRESULT Console::i_setErrorStaticBoth(HRESULT aResultCode, int vrc, const char *pcsz, ...)
+{
+    va_list args;
+    va_start(args, pcsz);
+    HRESULT rc = setErrorInternal(aResultCode,
+                                  getStaticClassIID(),
+                                  getStaticComponentName(),
+                                  Utf8Str(pcsz, args),
+                                  false /* aWarning */,
+                                  true /* aLogIt */,
+                                  vrc);
     va_end(args);
     return rc;
 }
@@ -3362,17 +3349,18 @@ HRESULT Console::i_suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, b
             mVMStateChangeCallbackDisabled = true;
             if (pAlock)
                 pAlock->release();
-            int rc = VMR3Suspend(pUVM, VMSUSPENDREASON_RECONFIG);
+            int vrc = VMR3Suspend(pUVM, VMSUSPENDREASON_RECONFIG);
             if (pAlock)
                 pAlock->acquire();
             mVMStateChangeCallbackDisabled = false;
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(vrc))
                 return setErrorInternal(VBOX_E_INVALID_VM_STATE,
                                         COM_IIDOF(IConsole),
                                         getStaticComponentName(),
-                                        Utf8StrFmt("Could suspend VM for medium change (%Rrc)", rc),
+                                        Utf8StrFmt("Could suspend VM for medium change (%Rrc)", vrc),
                                         false /*aWarning*/,
-                                        true /*aLogIt*/);
+                                        true /*aLogIt*/,
+                                        vrc);
             *pfResume = true;
             break;
         }
@@ -3522,13 +3510,8 @@ HRESULT Console::i_doMediumChange(IMediumAttachment *aMediumAttachment, bool fFo
     }
 
     if (pMedium)
-        return setError(E_FAIL,
-                        tr("Could not mount the media/drive '%ls' (%Rrc)"),
-                        mediumLocation.raw(), vrc);
-
-    return setError(E_FAIL,
-                    tr("Could not unmount the currently mounted media/drive (%Rrc)"),
-                    vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Could not mount the media/drive '%ls' (%Rrc)"), mediumLocation.raw(), vrc);
+    return setErrorBoth(E_FAIL, vrc, tr("Could not unmount the currently mounted media/drive (%Rrc)"), vrc);
 }
 
 /**
@@ -3700,13 +3683,8 @@ HRESULT Console::i_doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, P
     }
 
     if (!pMedium)
-        return setError(E_FAIL,
-                        tr("Could not mount the media/drive '%ls' (%Rrc)"),
-                        mediumLocation.raw(), vrc);
-
-    return setError(E_FAIL,
-                    tr("Could not unmount the currently mounted media/drive (%Rrc)"),
-                    vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Could not mount the media/drive '%ls' (%Rrc)"), mediumLocation.raw(), vrc);
+    return setErrorBoth(E_FAIL, vrc, tr("Could not unmount the currently mounted media/drive (%Rrc)"), vrc);
 }
 
 
@@ -3875,13 +3853,8 @@ HRESULT Console::i_doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, P
     }
 
     if (!pMedium)
-        return setError(E_FAIL,
-                        tr("Could not mount the media/drive '%ls' (%Rrc)"),
-                        mediumLocation.raw(), vrc);
-
-    return setError(E_FAIL,
-                    tr("Could not unmount the currently mounted media/drive (%Rrc)"),
-                    vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Could not mount the media/drive '%ls' (%Rrc)"), mediumLocation.raw(), vrc);
+    return setErrorBoth(E_FAIL, vrc, tr("Could not unmount the currently mounted media/drive (%Rrc)"), vrc);
 }
 
 /**
@@ -4080,8 +4053,7 @@ HRESULT Console::i_onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL
                         }
                     }
                     else if (vrc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND)
-                        return setError(E_FAIL,
-                                tr("The network adapter #%u is not enabled"), ulInstance);
+                        return setErrorBoth(E_FAIL, vrc, tr("The network adapter #%u is not enabled"), ulInstance);
                     else
                         ComAssertRC(vrc);
 
@@ -4666,32 +4638,30 @@ HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId, unsigne
 
             PPDMIBASE pIBase = NULL;
             PPDMIMEDIA pIMedium = NULL;
-            int rc = PDMR3QueryDriverOnLun(ptrVM.rawUVM(), pcszDevice, ulStorageCtrlInst, uLUN, "VD", &pIBase);
-            if (RT_SUCCESS(rc))
+            int vrc = PDMR3QueryDriverOnLun(ptrVM.rawUVM(), pcszDevice, ulStorageCtrlInst, uLUN, "VD", &pIBase);
+            if (RT_SUCCESS(vrc))
             {
                 if (pIBase)
                 {
                     pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
                     if (!pIMedium)
                         return setError(E_FAIL, tr("could not query medium interface of controller"));
-                    else
+                    vrc = pIMedium->pfnSetSecKeyIf(pIMedium, mpIfSecKey, mpIfSecKeyHlp);
+                    if (vrc == VERR_VD_PASSWORD_INCORRECT)
                     {
-                        rc = pIMedium->pfnSetSecKeyIf(pIMedium, mpIfSecKey, mpIfSecKeyHlp);
-                        if (rc == VERR_VD_PASSWORD_INCORRECT)
-                        {
-                            hrc = setError(VBOX_E_PASSWORD_INCORRECT, tr("The provided password for ID \"%s\" is not correct for at least one disk using this ID"),
-                                           strId.c_str());
-                            break;
-                        }
-                        else if (RT_FAILURE(rc))
-                        {
-                            hrc = setError(E_FAIL, tr("Failed to set the encryption key (%Rrc)"), rc);
-                            break;
-                        }
-
-                        if (RT_SUCCESS(rc))
-                           cDisksConfigured++;
+                        hrc = setError(VBOX_E_PASSWORD_INCORRECT,
+                                       tr("The provided password for ID \"%s\" is not correct for at least one disk using this ID"),
+                                       strId.c_str());
+                        break;
                     }
+                    else if (RT_FAILURE(vrc))
+                    {
+                        hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to set the encryption key (%Rrc)"), vrc);
+                        break;
+                    }
+
+                    if (RT_SUCCESS(vrc))
+                       cDisksConfigured++;
                 }
                 else
                     return setError(E_FAIL, tr("could not query base interface of controller"));
@@ -4794,15 +4764,12 @@ HRESULT Console::i_consoleParseDiskEncryption(const char *psz, const char **ppsz
                     }
                 }
                 else
-                    hrc = setError(E_FAIL,
-                                   tr("Failed to decode the key (%Rrc)"),
-                                   rc);
+                    hrc = setErrorBoth(E_FAIL, rc, tr("Failed to decode the key (%Rrc)"), rc);
 
                 RTMemSaferFree(pbKey, cbKey);
             }
             else
-                hrc = setError(E_FAIL,
-                               tr("Failed to allocate secure memory for the key (%Rrc)"), rc);
+                hrc = setErrorBoth(E_FAIL, rc, tr("Failed to allocate secure memory for the key (%Rrc)"), rc);
         }
         else
             hrc = setError(E_FAIL,
@@ -4895,8 +4862,7 @@ HRESULT Console::i_doNetworkAdapterChange(PUVM pUVM,
     if (RT_SUCCESS(rc))
         return S_OK;
 
-    return setError(E_FAIL,
-                    tr("Could not change the network adaptor attachement type (%Rrc)"), rc);
+    return setErrorBoth(E_FAIL, rc,  tr("Could not change the network adaptor attachement type (%Rrc)"), rc);
 }
 
 
@@ -5221,8 +5187,7 @@ HRESULT Console::i_onSerialPortChange(ISerialPort *aSerialPort)
                 if (RT_SUCCESS(rc))
                     m_aeSerialPortMode[ulSlot] = eHostMode;
                 else
-                    hrc = setError(E_FAIL,
-                                   tr("Failed to change the serial port attachment (%Rrc)"), rc);
+                    hrc = setErrorBoth(E_FAIL, rc, tr("Failed to change the serial port attachment (%Rrc)"), rc);
             }
         }
     }
@@ -5548,7 +5513,7 @@ HRESULT Console::i_onVRDEServerChange(BOOL aRestart)
                             if (vrc != VINF_SUCCESS)
                             {
                                 Utf8Str errMsg = VRDPServerErrorToMsg(vrc);
-                                rc = setError(E_FAIL, errMsg.c_str());
+                                rc = setErrorBoth(E_FAIL, vrc, errMsg.c_str());
                             }
                             else
                             {
@@ -5628,10 +5593,8 @@ HRESULT Console::i_sendACPIMonitorHotPlugEvent()
             vrc = VERR_PDM_MISSING_INTERFACE;
     }
 
-    HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
-        setError(VBOX_E_PDM_ERROR,
-            tr("Sending monitor hot-plug event failed (%Rrc)"),
-            vrc);
+    HRESULT rc = RT_SUCCESS(vrc) ? S_OK
+               : setErrorBoth(VBOX_E_PDM_ERROR, vrc, tr("Sending monitor hot-plug event failed (%Rrc)"), vrc);
 
     LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
@@ -5674,7 +5637,7 @@ HRESULT Console::i_onVideoCaptureChange()
 # endif
                 vrc = mDisplay->i_videoRecStart();
                 if (RT_FAILURE(vrc))
-                    rc = setError(E_FAIL, tr("Unable to start video capturing (%Rrc)"), vrc);
+                    rc = setErrorBoth(E_FAIL, vrc, tr("Unable to start video capturing (%Rrc)"), vrc);
             }
             else
             {
@@ -6119,9 +6082,7 @@ HRESULT Console::i_getGuestProperty(const Utf8Str &aName, Utf8Str *aValue, LONG6
             rc = S_OK;
         }
         else
-            rc = setError(VBOX_E_IPRT_ERROR,
-                          tr("The VBoxGuestPropSvc service call failed with the error %Rrc"),
-                          vrc);
+            rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("The VBoxGuestPropSvc service call failed with the error %Rrc"), vrc);
     }
     catch(std::bad_alloc & /*e*/)
     {
@@ -6178,7 +6139,7 @@ HRESULT Console::i_setGuestProperty(const Utf8Str &aName, const Utf8Str &aValue,
 
     HRESULT hrc = S_OK;
     if (RT_FAILURE(vrc))
-        hrc = setError(VBOX_E_IPRT_ERROR, tr("The VBoxGuestPropSvc service call failed with the error %Rrc"), vrc);
+        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("The VBoxGuestPropSvc service call failed with the error %Rrc"), vrc);
     return hrc;
 #endif /* VBOX_WITH_GUEST_PROPS */
 }
@@ -6209,7 +6170,7 @@ HRESULT Console::i_deleteGuestProperty(const Utf8Str &aName)
 
     HRESULT hrc = S_OK;
     if (RT_FAILURE(vrc))
-        hrc = setError(VBOX_E_IPRT_ERROR, tr("The VBoxGuestPropSvc service call failed with the error %Rrc"), vrc);
+        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("The VBoxGuestPropSvc service call failed with the error %Rrc"), vrc);
     return hrc;
 #endif /* VBOX_WITH_GUEST_PROPS */
 }
@@ -6378,7 +6339,7 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         i_resumeAfterConfigChange(ptrVM.rawUVM());
 
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("%Rrc"), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("%Rrc"), vrc);
     if (FAILED(rc))
         return rc;
 
@@ -6400,7 +6361,7 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     /* Finally trigger the merge. */
     vrc = pIMedium->pfnMerge(pIMedium, onlineMergeMediumProgress, aProgress);
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("Failed to perform an online medium merge (%Rrc)"), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Failed to perform an online medium merge (%Rrc)"), vrc);
 
     alock.acquire();
     /* Pause the VM, as it might have pending IO on this drive */
@@ -6424,7 +6385,7 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         i_resumeAfterConfigChange(ptrVM.rawUVM());
 
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("%Rrc"), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("%Rrc"), vrc);
     if (FAILED(rc))
         return rc;
 
@@ -6506,7 +6467,7 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
                                    false /* fSetupMerge */, 0 /* uMergeSource */, 0 /* uMergeTarget */,
                                    pAttachment, mMachineState, &rc);
         if (RT_FAILURE(vrc))
-            throw setError(E_FAIL, tr("%Rrc"), vrc);
+            throw setErrorBoth(E_FAIL, vrc, tr("%Rrc"), vrc);
         if (FAILED(rc))
             throw rc;
 
@@ -6601,7 +6562,7 @@ HRESULT Console::i_pause(Reason_T aReason)
 
     HRESULT hrc = S_OK;
     if (RT_FAILURE(vrc))
-        hrc = setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
+        hrc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not suspend the machine execution (%Rrc)"), vrc);
     else if (   aReason == Reason_HostSuspend
              || aReason == Reason_HostBatteryLow)
     {
@@ -6694,10 +6655,8 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
             mVMStateChangeCallbackDisabled = false;
     }
 
-    HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
-        setError(VBOX_E_VM_ERROR,
-                 tr("Could not resume the machine execution (%Rrc)"),
-                 vrc);
+    HRESULT rc = RT_SUCCESS(vrc) ? S_OK
+               : setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not resume the machine execution (%Rrc)"), vrc);
 
     LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
@@ -6738,8 +6697,8 @@ HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgres
         && mMachineState != MachineState_TeleportingPausedVM)
     {
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot save the execution state as the machine is not running or paused (machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
+                        tr("Cannot save the execution state as the machine is not running or paused (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
     }
     bool fContinueAfterwards = mMachineState != MachineState_Saving;
 
@@ -6760,9 +6719,8 @@ HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgres
         {
             int vrc = RTDirCreateFullPath(dir.c_str(), 0700);
             if (RT_FAILURE(vrc))
-                return setError(VBOX_E_FILE_ERROR,
-                                tr("Could not create a directory '%s' to save the state to (%Rrc)"),
-                                dir.c_str(), vrc);
+                return setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Could not create a directory '%s' to save the state to (%Rrc)"),
+                                    dir.c_str(), vrc);
         }
     }
 
@@ -6785,7 +6743,7 @@ HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgres
         alock.acquire();
 
         if (RT_FAILURE(vrc))
-            return setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
+            return setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not suspend the machine execution (%Rrc)"), vrc);
         fPaused = true;
     }
 
@@ -6811,8 +6769,7 @@ HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgres
             VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_STATE_RESTORED);
             alock.acquire();
         }
-        return setError(E_FAIL, tr("Failed to save the machine state to '%s' (%Rrc)"),
-                        aStateFilePath.c_str(), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Failed to save the machine state to '%s' (%Rrc)"), aStateFilePath.c_str(), vrc);
     }
     Assert(fContinueAfterwards || !aLeftPaused);
 
@@ -7203,8 +7160,7 @@ HRESULT Console::i_addVMCaller(bool aQuiet /* = false */,
     if (mVMDestroying)
     {
         /* powerDown() is waiting for all callers to finish */
-        return aQuiet ? E_ACCESSDENIED : setError(E_ACCESSDENIED,
-            tr("The virtual machine is being powered down"));
+        return aQuiet ? E_ACCESSDENIED : setError(E_ACCESSDENIED, tr("The virtual machine is being powered down"));
     }
 
     if (mpUVM == NULL)
@@ -7212,8 +7168,7 @@ HRESULT Console::i_addVMCaller(bool aQuiet /* = false */,
         Assert(aAllowNullVM == true);
 
         /* The machine is not powered up */
-        return aQuiet ? E_ACCESSDENIED : setError(E_ACCESSDENIED,
-            tr("The virtual machine is not powered up"));
+        return aQuiet ? E_ACCESSDENIED : setError(E_ACCESSDENIED, tr("The virtual machine is not powered up"));
     }
 
     ++mVMCallers;
@@ -7363,7 +7318,7 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
                                     0 /* cHistory */, 0 /* uHistoryFileTime */,
                                     0 /* uHistoryFileSize */, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(vrc))
-        hrc = setError(E_FAIL, tr("Failed to open release log (%s, %Rrc)"), ErrInfo.Core.pszMsg, vrc);
+        hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to open release log (%s, %Rrc)"), ErrInfo.Core.pszMsg, vrc);
 
     /* If we've made any directory changes, flush the directory to increase
        the likelihood that the log file will be usable after a system panic.
@@ -7407,9 +7362,8 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
     try
     {
         if (Global::IsOnlineOrTransient(mMachineState))
-            throw setError(VBOX_E_INVALID_VM_STATE,
-                tr("The virtual machine is already running or busy (machine state: %s)"),
-                Global::stringifyMachineState(mMachineState));
+            throw setError(VBOX_E_INVALID_VM_STATE, tr("The virtual machine is already running or busy (machine state: %s)"),
+                           Global::stringifyMachineState(mMachineState));
 
         /* Set up release logging as early as possible after the check if
          * there is already a running VM which we shouldn't disturb. */
@@ -7471,9 +7425,9 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             ComAssertRet(!savedStateFile.isEmpty(), E_FAIL);
             int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
-                               savedStateFile.raw(), vrc);
+                throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                   tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
+                                   savedStateFile.raw(), vrc);
         }
 
         /* Read console data, including console shared folders, stored in the
@@ -7652,15 +7606,14 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                  */
                 vrc = RTDirCreateFullPath(pszDumpDir, 0700);
                 if (RT_FAILURE(vrc))
-                    throw setError(E_FAIL, "Failed to setup CoreDumper. Couldn't create dump directory '%s' (%Rrc)\n",
-                                   pszDumpDir, vrc);
+                    throw setErrorBoth(E_FAIL, vrc, "Failed to setup CoreDumper. Couldn't create dump directory '%s' (%Rrc)\n",
+                                       pszDumpDir, vrc);
             }
 
             vrc = RTCoreDumperSetup(pszDumpDir, fCoreFlags);
             if (RT_FAILURE(vrc))
-                throw setError(E_FAIL, "Failed to setup CoreDumper (%Rrc)", vrc);
-            else
-                LogRel(("CoreDumper setup successful. pszDumpDir=%s fFlags=%#x\n", pszDumpDir ? pszDumpDir : ".", fCoreFlags));
+                throw setErrorBoth(E_FAIL, vrc, "Failed to setup CoreDumper (%Rrc)", vrc);
+            LogRel(("CoreDumper setup successful. pszDumpDir=%s fFlags=%#x\n", pszDumpDir ? pszDumpDir : ".", fCoreFlags));
         }
 #endif
 
@@ -7770,7 +7723,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                     if (hostif.isEmpty())
                     {
                         throw setError(VBOX_E_HOST_ERROR,
-                            tr("VM cannot start because host interface networking requires a host interface name to be set"));
+                                       tr("VM cannot start because host interface networking requires a host interface name to be set"));
                     }
                     ComPtr<IVirtualBox> pVirtualBox;
                     mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
@@ -7781,8 +7734,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                                                                          pHostInterface.asOutParam())))
                     {
                         throw setError(VBOX_E_HOST_ERROR,
-                            tr("VM cannot start because the host interface '%ls' does not exist"),
-                            hostif.raw());
+                                       tr("VM cannot start because the host interface '%ls' does not exist"), hostif.raw());
                     }
                     break;
                 }
@@ -8102,9 +8054,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
             /* bad bad bad, but what to do? (Give Console our UVM ref.) */
             mpUVM = pUVM;
             pUVM = NULL;
-            rc = setError(VBOX_E_VM_ERROR,
-                tr("Could not destroy the machine. (Error: %Rrc)"),
-                vrc);
+            rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not destroy the machine. (Error: %Rrc)"), vrc);
         }
 
         /* Complete the detaching of the USB devices. */
@@ -8120,11 +8070,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
             aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount);
     }
     else
-    {
-        rc = setError(VBOX_E_VM_ERROR,
-            tr("Could not power off the machine. (Error: %Rrc)"),
-            vrc);
-    }
+        rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not power off the machine. (Error: %Rrc)"), vrc);
 
     /*
      * Finished with the destruction.
@@ -8226,9 +8172,7 @@ HRESULT Console::i_findSharedFolder(const Utf8Str &strName,
     }
 
     if (aSetError)
-        setError(VBOX_E_FILE_ERROR,
-            tr("Could not find a shared folder named '%s'."),
-            strName.c_str());
+        setError(VBOX_E_FILE_ERROR, tr("Could not find a shared folder named '%s'."), strName.c_str());
 
     return VBOX_E_FILE_ERROR;
 }
@@ -8443,9 +8387,7 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
 
     bool fMissing = false;
     if (RT_FAILURE(vrc))
-        return setError(E_INVALIDARG,
-                        tr("Invalid shared folder path: '%s' (%Rrc)"),
-                        aData.m_strHostPath.c_str(), vrc);
+        return setErrorBoth(E_INVALIDARG, vrc, tr("Invalid shared folder path: '%s' (%Rrc)"), aData.m_strHostPath.c_str(), vrc);
     if (!RTPathExists(hostPathFull))
         fMissing = true;
 
@@ -8505,9 +8447,8 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
     RTMemFree(pMapName);
 
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL,
-            tr("Could not create a shared folder '%s' mapped to '%s' (%Rrc)"),
-            strName.c_str(), aData.m_strHostPath.c_str(), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Could not create a shared folder '%s' mapped to '%s' (%Rrc)"),
+                            strName.c_str(), aData.m_strHostPath.c_str(), vrc);
 
     if (fMissing)
         return setError(E_INVALIDARG,
@@ -8559,9 +8500,7 @@ HRESULT Console::i_removeSharedFolder(const Utf8Str &strName)
                                       1, &parms);
     RTMemFree(pMapName);
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL,
-                        tr("Could not remove the shared folder '%s' (%Rrc)"),
-                        strName.c_str(), vrc);
+        return setErrorBoth(E_FAIL, vrc, tr("Could not remove the shared folder '%s' (%Rrc)"), strName.c_str(), vrc);
 
     return S_OK;
 }
@@ -9101,13 +9040,13 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs,
         switch (vrc)
         {
             case VERR_VUSB_NO_PORTS:
-                hrc = setError(E_FAIL, tr("Failed to attach the USB device. (No available ports on the USB controller)."));
+                hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to attach the USB device. (No available ports on the USB controller)."));
                 break;
             case VERR_VUSB_USBFS_PERMISSION:
-                hrc = setError(E_FAIL, tr("Not permitted to open the USB device, check usbfs options"));
+                hrc = setErrorBoth(E_FAIL, vrc, tr("Not permitted to open the USB device, check usbfs options"));
                 break;
             default:
-                hrc = setError(E_FAIL, tr("Failed to create a proxy device for the USB device. (Error: %Rrc)"), vrc);
+                hrc = setErrorBoth(E_FAIL, vrc, tr("Failed to create a proxy device for the USB device. (Error: %Rrc)"), vrc);
                 break;
         }
     }
@@ -9276,9 +9215,9 @@ HRESULT Console::i_attachToTapInterface(INetworkAdapter *networkAdapter)
     /*
      * Allocate a host interface device
      */
-    int rcVBox = RTFileOpen(&maTapFD[slot], "/dev/net/tun",
-                            RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT);
-    if (RT_SUCCESS(rcVBox))
+    int vrc = RTFileOpen(&maTapFD[slot], "/dev/net/tun",
+                         RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT);
+    if (RT_SUCCESS(vrc))
     {
         /*
          * Set/obtain the tap interface.
@@ -9302,13 +9241,11 @@ HRESULT Console::i_attachToTapInterface(INetworkAdapter *networkAdapter)
             Utf8Str str(tapDeviceName);
             RTStrCopy(IfReq.ifr_name, sizeof(IfReq.ifr_name), str.c_str()); /** @todo bitch about names which are too long... */
             IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
-            rcVBox = ioctl(RTFileToNative(maTapFD[slot]), TUNSETIFF, &IfReq);
-            if (rcVBox != 0)
+            vrc = ioctl(RTFileToNative(maTapFD[slot]), TUNSETIFF, &IfReq);
+            if (vrc != 0)
             {
                 LogRel(("Failed to open the host network interface %ls\n", tapDeviceName.raw()));
-                rc = setError(E_FAIL,
-                    tr("Failed to open the host network interface %ls"),
-                    tapDeviceName.raw());
+                rc = setErrorBoth(E_FAIL, vrc, tr("Failed to open the host network interface %ls"), tapDeviceName.raw());
             }
         }
         if (SUCCEEDED(rc))
@@ -9325,33 +9262,30 @@ HRESULT Console::i_attachToTapInterface(INetworkAdapter *networkAdapter)
                  * necessary.
                  */
                 maTAPDeviceName[slot] = tapDeviceName;
-                rcVBox = VINF_SUCCESS;
+                vrc = VINF_SUCCESS;
             }
             else
             {
                 int iErr = errno;
 
                 LogRel(("Configuration error: Failed to configure /dev/net/tun non blocking. Error: %s\n", strerror(iErr)));
-                rcVBox = VERR_HOSTIF_BLOCKING;
-                rc = setError(E_FAIL,
-                    tr("could not set up the host networking device for non blocking access: %s"),
-                    strerror(errno));
+                vrc = VERR_HOSTIF_BLOCKING;
+                rc = setErrorBoth(E_FAIL, vrc, tr("could not set up the host networking device for non blocking access: %s"),
+                                  strerror(errno));
             }
         }
     }
     else
     {
-        LogRel(("Configuration error: Failed to open /dev/net/tun rc=%Rrc\n", rcVBox));
-        switch (rcVBox)
+        LogRel(("Configuration error: Failed to open /dev/net/tun rc=%Rrc\n", vrc));
+        switch (vrc)
         {
             case VERR_ACCESS_DENIED:
                 /* will be handled by our caller */
-                rc = rcVBox;
+                rc = vrc;
                 break;
             default:
-                rc = setError(E_FAIL,
-                    tr("Could not set up the host networking device: %Rrc"),
-                    rcVBox);
+                rc = setErrorBoth(E_FAIL, vrc, tr("Could not set up the host networking device: %Rrc"), vrc);
                 break;
         }
     }
@@ -9378,23 +9312,21 @@ HRESULT Console::i_attachToTapInterface(INetworkAdapter *networkAdapter)
     else
         memcpy(szTapdev + strlen(szTapdev), str.c_str(),
                sizeof(szTapdev) - strlen(szTapdev) - 1); /** @todo bitch about names which are too long... */
-    int rcVBox = RTFileOpen(&maTapFD[slot], szTapdev,
-                            RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT | RTFILE_O_NON_BLOCK);
+    int vrc = RTFileOpen(&maTapFD[slot], szTapdev,
+                         RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT | RTFILE_O_NON_BLOCK);
 
-    if (RT_SUCCESS(rcVBox))
+    if (RT_SUCCESS(vrc))
         maTAPDeviceName[slot] = tapDeviceName;
     else
     {
-        switch (rcVBox)
+        switch (vrc)
         {
             case VERR_ACCESS_DENIED:
                 /* will be handled by our caller */
-                rc = rcVBox;
+                rc = vrc;
                 break;
             default:
-                rc = setError(E_FAIL,
-                    tr("Failed to open the host network interface %ls"),
-                    tapDeviceName.raw());
+                rc = setErrorBoth(E_FAIL, vrc, tr("Failed to open the host network interface %ls"), tapDeviceName.raw());
                 break;
         }
     }
@@ -9402,11 +9334,10 @@ HRESULT Console::i_attachToTapInterface(INetworkAdapter *networkAdapter)
 #  error "huh?"
 # endif
     /* in case of failure, cleanup. */
-    if (RT_FAILURE(rcVBox) && SUCCEEDED(rc))
+    if (RT_FAILURE(vrc) && SUCCEEDED(rc))
     {
         LogRel(("General failure attaching to host interface\n"));
-        rc = setError(E_FAIL,
-            tr("General failure attaching to host interface"));
+        rc = setError(E_FAIL, vrc, tr("General failure attaching to host interface"));
     }
     LogFlowThisFunc(("rc=%Rhrc\n", rc));
     return rc;
@@ -9949,7 +9880,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
             Utf8Str errMsg = pConsole->VRDPServerErrorToMsg(vrc);
             if (   RT_FAILURE(vrc)
                 && vrc != VERR_NET_ADDRESS_IN_USE) /* not fatal */
-                throw i_setErrorStatic(E_FAIL, errMsg.c_str());
+                throw i_setErrorStaticBoth(E_FAIL, vrc, errMsg.c_str());
         }
 
         ComPtr<IMachine> pMachine = pConsole->i_machine();
@@ -10277,7 +10208,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
 
             /* Set the error message as the COM error.
              * Progress::notifyComplete() will pick it up later. */
-            throw i_setErrorStatic(E_FAIL, pTask->mErrorMsg.c_str());
+            throw i_setErrorStaticBoth(E_FAIL, vrc, pTask->mErrorMsg.c_str());
         }
     }
     catch (HRESULT aRC) { rc = aRC; }

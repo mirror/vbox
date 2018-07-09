@@ -400,9 +400,9 @@ HRESULT VirtualBox::init()
             char szHomeDir[RTPATH_MAX];
             int vrc = com::GetVBoxUserHomeDirectory(szHomeDir, sizeof(szHomeDir));
             if (RT_FAILURE(vrc))
-                throw setError(E_FAIL,
-                               tr("Could not create the VirtualBox home directory '%s' (%Rrc)"),
-                               szHomeDir, vrc);
+                throw setErrorBoth(E_FAIL, vrc,
+                                   tr("Could not create the VirtualBox home directory '%s' (%Rrc)"),
+                                   szHomeDir, vrc);
 
             unconst(m->strHomeDir) = szHomeDir;
         }
@@ -2627,7 +2627,7 @@ void VirtualBox::i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask)
                                        id.raw()).c_str());
         if (RT_FAILURE(vrc))
         {
-            rc = pTask->that->setError(E_FAIL, tr("Could not create the communication channel (%Rrc)"), vrc);
+            rc = pTask->that->setErrorBoth(E_FAIL, vrc, tr("Could not create the communication channel (%Rrc)"), vrc);
             break;
         }
 
@@ -2672,9 +2672,9 @@ void VirtualBox::i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask)
                 /* hide excessive details in case of a frequent error
                  * (pressing the Cancel button to close the Run As dialog) */
                 if (vrc2 == VERR_CANCELLED)
-                    rc = pTask->that->setError(E_FAIL, tr("Operation canceled by the user"));
+                    rc = pTask->that->setErrorBoth(E_FAIL, vrc, tr("Operation canceled by the user"));
                 else
-                    rc = pTask->that->setError(E_FAIL, tr("Could not launch a privileged process '%s' (%Rrc)"), exePath, vrc2);
+                    rc = pTask->that->setErrorBoth(E_FAIL, vrc, tr("Could not launch a privileged process '%s' (%Rrc)"), exePath, vrc2);
                 break;
             }
         }
@@ -2684,7 +2684,7 @@ void VirtualBox::i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask)
             vrc = RTProcCreate(exePath, args, RTENV_DEFAULT, 0, &pid);
             if (RT_FAILURE(vrc))
             {
-                rc = pTask->that->setError(E_FAIL, tr("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
+                rc = pTask->that->setErrorBoth(E_FAIL, vrc, tr("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
                 break;
             }
         }
@@ -2707,7 +2707,7 @@ void VirtualBox::i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask)
 
         if (SUCCEEDED(rc) && RT_FAILURE(vrc))
         {
-            rc = pTask->that->setError(E_FAIL, tr("Could not operate the communication channel (%Rrc)"), vrc);
+            rc = pTask->that->setErrorBoth(E_FAIL, vrc, tr("Could not operate the communication channel (%Rrc)"), vrc);
             break;
         }
     }
@@ -4855,15 +4855,14 @@ HRESULT VirtualBox::i_ensureFilePathExists(const Utf8Str &strFileName, bool fCre
         {
             int vrc = RTDirCreateFullPath(strDir.c_str(), 0700);
             if (RT_FAILURE(vrc))
-                return i_setErrorStatic(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(tr("Could not create the directory '%s' (%Rrc)"),
-                                                   strDir.c_str(),
-                                                   vrc));
+                return i_setErrorStaticBoth(VBOX_E_IPRT_ERROR, vrc,
+                                            Utf8StrFmt(tr("Could not create the directory '%s' (%Rrc)"),
+                                                       strDir.c_str(),
+                                                       vrc));
         }
         else
-            return i_setErrorStatic(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(tr("Directory '%s' does not exist"),
-                                               strDir.c_str()));
+            return i_setErrorStaticBoth(VBOX_E_IPRT_ERROR, VERR_FILE_NOT_FOUND,
+                                        Utf8StrFmt(tr("Directory '%s' does not exist"), strDir.c_str()));
     }
 
     return S_OK;

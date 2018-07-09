@@ -256,6 +256,7 @@ public:
     static const PDMDRVREG DrvStatusReg;
 
     static HRESULT i_setErrorStatic(HRESULT aResultCode, const char *pcsz, ...);
+    static HRESULT i_setErrorStaticBoth(HRESULT aResultCode, int vrc, const char *pcsz, ...);
     HRESULT i_setInvalidMachineStateError();
 
     static const char *i_storageControllerTypeToStr(StorageControllerType_T enmCtrlType);

@@ -2343,19 +2343,14 @@ HRESULT Display::takeScreenShotWorker(ULONG aScreenId,
                 }
             }
             else
-            {
-                rc = setError(VBOX_E_IPRT_ERROR,
-                              tr("Could not convert screenshot to PNG (%Rrc)"), vrc);
-            }
+                rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not convert screenshot to PNG (%Rrc)"), vrc);
             RTMemFree(pu8PNG);
         }
     }
     else if (vrc == VERR_TRY_AGAIN)
-        rc = setError(E_UNEXPECTED,
-                      tr("Screenshot is not available at this time"));
+        rc = setErrorBoth(E_UNEXPECTED, vrc, tr("Screenshot is not available at this time"));
     else if (RT_FAILURE(vrc))
-        rc = setError(VBOX_E_IPRT_ERROR,
-                      tr("Could not take a screenshot (%Rrc)"), vrc);
+        rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not take a screenshot (%Rrc)"), vrc);
 
     return rc;
 }
@@ -2816,22 +2811,21 @@ HRESULT Display::drawToScreen(ULONG aScreenId, BYTE *aAddress, ULONG aX, ULONG a
      * Again we're lazy and make the graphics device do all the
      * dirty conversion work.
      */
-    int rcVBox = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_drawToScreenEMT, 7,
-                                  this, aScreenId, aAddress, aX, aY, aWidth, aHeight);
+    int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_drawToScreenEMT, 7,
+                               this, aScreenId, aAddress, aX, aY, aWidth, aHeight);
 
     /*
      * If the function returns not supported, we'll have to do all the
      * work ourselves using the framebuffer.
      */
     HRESULT rc = S_OK;
-    if (rcVBox == VERR_NOT_SUPPORTED || rcVBox == VERR_NOT_IMPLEMENTED)
+    if (vrc == VERR_NOT_SUPPORTED || vrc == VERR_NOT_IMPLEMENTED)
     {
         /** @todo implement generic fallback for screen blitting. */
         rc = E_NOTIMPL;
     }
-    else if (RT_FAILURE(rcVBox))
-        rc = setError(VBOX_E_IPRT_ERROR,
-                      tr("Could not draw to the screen (%Rrc)"), rcVBox);
+    else if (RT_FAILURE(vrc))
+        rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not draw to the screen (%Rrc)"), vrc);
 /// @todo
 //    else
 //    {
@@ -2957,13 +2951,12 @@ HRESULT Display::invalidateAndUpdate()
     /* Have to release the lock when calling EMT.  */
     alock.release();
 
-    int rcVBox = VMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
-                                    3, this, 0, true);
+    int vrc = VMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
+                                 3, this, 0, true);
     alock.acquire();
 
-    if (RT_FAILURE(rcVBox))
-        rc = setError(VBOX_E_IPRT_ERROR,
-                      tr("Could not invalidate and update the screen (%Rrc)"), rcVBox);
+    if (RT_FAILURE(vrc))
+        rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not invalidate and update the screen (%Rrc)"), vrc);
 
     LogRelFlowFunc(("rc=%Rhrc\n", rc));
     return rc;
@@ -2979,11 +2972,10 @@ HRESULT Display::invalidateAndUpdateScreen(ULONG aScreenId)
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-    int rcVBox = VMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
-                                    3, this, aScreenId, false);
-    if (RT_FAILURE(rcVBox))
-        rc = setError(VBOX_E_IPRT_ERROR,
-                      tr("Could not invalidate and update the screen %d (%Rrc)"), aScreenId, rcVBox);
+    int vrc = VMR3ReqCallNoWaitU(ptrVM.rawUVM(), VMCPUID_ANY, (PFNRT)Display::i_InvalidateAndUpdateEMT,
+                                 3, this, aScreenId, false);
+    if (RT_FAILURE(vrc))
+        rc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not invalidate and update the screen %d (%Rrc)"), aScreenId, vrc);
 
     LogRelFlowFunc(("rc=%Rhrc\n", rc));
     return rc;

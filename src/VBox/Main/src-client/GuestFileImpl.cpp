@@ -1259,25 +1259,23 @@ HRESULT GuestFile::close()
 
     /* Close file on guest. */
     int rcGuest;
-    int rc = i_closeFile(&rcGuest);
+    int vrc = i_closeFile(&rcGuest);
     /* On failure don't return here, instead do all the cleanup
      * work first and then return an error. */
 
     AssertPtr(mSession);
-    int rc2 = mSession->i_fileUnregister(this);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    int vrc2 = mSession->i_fileUnregister(this);
+    if (RT_SUCCESS(vrc))
+        vrc = vrc2;
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
-        if (rc == VERR_GSTCTL_GUEST_ERROR)
+        if (vrc == VERR_GSTCTL_GUEST_ERROR)
             return GuestFile::i_setErrorExternal(this, rcGuest);
-
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Closing guest file failed with %Rrc\n"), rc);
+        return setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Closing guest file failed with %Rrc\n"), vrc);
     }
 
-    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
+    LogFlowThisFunc(("Returning S_OK / vrc=%Rrc\n", vrc));
     return S_OK;
 }
 
@@ -1308,9 +1306,7 @@ HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
     else
     {
         if (GuestProcess::i_isGuestError(vrc))
-        {
             hr = GuestProcess::i_setErrorExternal(this, rcGuest);
-        }
         else
             hr = setErrorVrc(vrc, tr("Querying file information failed: %Rrc"), vrc);
     }
@@ -1337,9 +1333,7 @@ HRESULT GuestFile::querySize(LONG64 *aSize)
     else
     {
         if (GuestProcess::i_isGuestError(vrc))
-        {
             hr = GuestProcess::i_setErrorExternal(this, rcGuest);
-        }
         else
             hr = setErrorVrc(vrc, tr("Querying file size failed: %Rrc"), vrc);
     }
@@ -1375,14 +1369,8 @@ HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aDat
     {
         aData.resize(0);
 
-        switch (vrc)
-        {
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Reading from file \"%s\" failed: %Rrc"),
-                              mData.mOpenInfo.mFileName.c_str(), vrc);
-                break;
-        }
+        hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading from file \"%s\" failed: %Rrc"),
+                          mData.mOpenInfo.mFileName.c_str(), vrc);
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -1415,14 +1403,8 @@ HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::
     {
         aData.resize(0);
 
-        switch (vrc)
-        {
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Reading from file \"%s\" (at offset %RU64) failed: %Rrc"),
-                              mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
-                break;
-        }
+        hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading from file \"%s\" (at offset %RU64) failed: %Rrc"),
+                          mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -1453,7 +1435,6 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOf
 
         default:
             return setError(E_INVALIDARG, tr("Invalid seek type specified"));
-            break; /* Never reached. */
     }
 
     LogFlowThisFuncEnter();
@@ -1464,16 +1445,8 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOf
     if (RT_SUCCESS(vrc))
         *aNewOffset = RT_MIN(uNewOffset, (uint64_t)INT64_MAX);
     else
-    {
-        switch (vrc)
-        {
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Seeking file \"%s\" (to offset %RI64) failed: %Rrc"),
-                              mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
-                break;
-        }
-    }
+        hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Seeking file \"%s\" (to offset %RI64) failed: %Rrc"),
+                          mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
@@ -1504,16 +1477,8 @@ HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG
     void *pvData = cbData > 0? (void *)&aData.front(): NULL;
     int vrc = i_writeData(aTimeoutMS, pvData, cbData, (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
-    {
-        switch (vrc)
-        {
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Writing %zubytes to file \"%s\" failed: %Rrc"),
-                              aData.size(), mData.mOpenInfo.mFileName.c_str(), vrc);
-                break;
-        }
-    }
+        hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Writing %zubytes to file \"%s\" failed: %Rrc"),
+                          aData.size(), mData.mOpenInfo.mFileName.c_str(), vrc);
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
@@ -1532,16 +1497,8 @@ HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG
     void *pvData = cbData > 0? (void *)&aData.front(): NULL;
     int vrc = i_writeData(aTimeoutMS, pvData, cbData, (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
-    {
-        switch (vrc)
-        {
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Writing %zubytes to file \"%s\" (at offset %RU64) failed: %Rrc"),
-                              aData.size(), mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
-                break;
-        }
-    }
+        hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Writing %zubytes to file \"%s\" (at offset %RU64) failed: %Rrc"),
+                          aData.size(), mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
 
     LogFlowFuncLeaveRC(vrc);
     return hr;

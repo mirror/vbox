@@ -948,11 +948,11 @@ HRESULT USBProxyService::setError(HRESULT aResultCode, const char *aText, ...)
     va_list va;
     va_start(va, aText);
     HRESULT rc = VirtualBoxBase::setErrorInternal(aResultCode,
-                                                    COM_IIDOF(IHost),
-                                                    "USBProxyService",
-                                                    Utf8Str(aText, va),
-                                                    false /* aWarning*/,
-                                                    true /* aLogIt*/);
+                                                  COM_IIDOF(IHost),
+                                                  "USBProxyService",
+                                                  Utf8Str(aText, va),
+                                                  false /* aWarning*/,
+                                                  true /* aLogIt*/);
     va_end(va);
     return rc;
 }

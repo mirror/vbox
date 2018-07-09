@@ -489,29 +489,28 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                     else
                         throw setError(VBOX_E_NOT_SUPPORTED,
                                        tr("Cannot handle medium attachment: channel is %d, device is %d"), lChannel, lDevice);
-                break;
+                    break;
 
                 case StorageBus_SATA:
                     lChannelVsys = lChannel;        // should be between 0 and 29
                     lControllerVsys = lSATAControllerIndex;
-                break;
+                    break;
 
                 case StorageBus_SCSI:
                 case StorageBus_SAS:
                     lChannelVsys = lChannel;        // should be between 0 and 15
                     lControllerVsys = lSCSIControllerIndex;
-                break;
+                    break;
 
                 case StorageBus_Floppy:
                     lChannelVsys = 0;
                     lControllerVsys = 0;
-                break;
+                    break;
 
                 default:
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                    tr("Cannot handle medium attachment: storageBus is %d, channel is %d, device is %d"),
                                    storageBus, lChannel, lDevice);
-                break;
             }
 
             Utf8StrFmt strExtra("controller=%RI32;channel=%RI32", lControllerVsys, lChannelVsys);

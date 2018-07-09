@@ -1170,9 +1170,9 @@ HRESULT SystemProperties::i_getUserHomeDirectory(Utf8Str &strPath)
     char szHome[RTPATH_MAX];
     int vrc = RTPathUserHome(szHome, sizeof(szHome));
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL,
-                        tr("Cannot determine user home directory (%Rrc)"),
-                        vrc);
+        return setErrorBoth(E_FAIL, vrc,
+                            tr("Cannot determine user home directory (%Rrc)"),
+                            vrc);
     strPath = szHome;
     return S_OK;
 }
@@ -1286,9 +1286,9 @@ HRESULT SystemProperties::i_setAutostartDatabasePath(const com::Utf8Str &aPath)
         if (RT_SUCCESS(vrc))
             m->strAutostartDatabasePath = aPath;
         else
-            rc = setError(E_FAIL,
-                          tr("Cannot set the autostart database path (%Rrc)"),
-                          vrc);
+            rc = setErrorBoth(E_FAIL, vrc,
+                              tr("Cannot set the autostart database path (%Rrc)"),
+                              vrc);
     }
     else
     {
@@ -1296,9 +1296,9 @@ HRESULT SystemProperties::i_setAutostartDatabasePath(const com::Utf8Str &aPath)
         if (RT_SUCCESS(vrc) || vrc == VERR_NOT_SUPPORTED)
             m->strAutostartDatabasePath = "";
         else
-            rc = setError(E_FAIL,
-                          tr("Deleting the autostart database path failed (%Rrc)"),
-                          vrc);
+            rc = setErrorBoth(E_FAIL, vrc,
+                              tr("Deleting the autostart database path failed (%Rrc)"),
+                              vrc);
     }
 
     return rc;

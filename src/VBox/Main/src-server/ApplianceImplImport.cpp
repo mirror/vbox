@@ -1842,13 +1842,13 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
                 {
                     vrc = RTCrX509CertPathsSetTrustedStore(hCertPaths, hTrustedCerts);
                     if (RT_FAILURE(vrc))
-                        hrc2 = setError(E_FAIL, tr("RTCrX509CertPathsSetTrustedStore failed (%Rrc)"), vrc);
+                        hrc2 = setErrorBoth(E_FAIL, vrc, tr("RTCrX509CertPathsSetTrustedStore failed (%Rrc)"), vrc);
                     RTCrStoreRelease(hTrustedCerts);
                 }
                 else
-                    hrc2 = setError(E_FAIL,
-                                    tr("Failed to query trusted CAs and Certificates from the system and for the current user (%Rrc, %s)"),
-                                    vrc, StaticErrInfo.Core.pszMsg);
+                    hrc2 = setErrorBoth(E_FAIL, vrc,
+                                        tr("Failed to query trusted CAs and Certificates from the system and for the current user (%Rrc, %s)"),
+                                        vrc, StaticErrInfo.Core.pszMsg);
 
                 /* Add untrusted intermediate certificates. */
                 if (RT_SUCCESS(vrc))
@@ -1912,12 +1912,12 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
                                              pTask->locInfo.strPath.c_str());
                         }
                         else
-                            hrc2 = setError(E_FAIL, tr("Certificate path validation failed (%Rrc, %s)"),
-                                            vrc, StaticErrInfo.Core.pszMsg);
+                            hrc2 = setErrorBoth(E_FAIL, vrc, tr("Certificate path validation failed (%Rrc, %s)"),
+                                                vrc, StaticErrInfo.Core.pszMsg);
                     }
                     else
-                        hrc2 = setError(E_FAIL, tr("Certificate path building failed (%Rrc, %s)"),
-                                        vrc, StaticErrInfo.Core.pszMsg);
+                        hrc2 = setErrorBoth(E_FAIL, vrc, tr("Certificate path building failed (%Rrc, %s)"),
+                                            vrc, StaticErrInfo.Core.pszMsg);
                 }
                 RTCrX509CertPathsRelease(hCertPaths);
             }
@@ -2238,7 +2238,7 @@ HRESULT Appliance::i_verifyManifestFile(ImportStack &stack)
                 vrc = RTManifestEntrySetAttr(m->hTheirManifest, m->strOvfManifestEntry.c_str(),
                                              NULL /*pszAttr*/, szDigest, fType);
             if (RT_FAILURE(vrc))
-                return setError(VBOX_E_IPRT_ERROR, tr("Error fudging missing OVF digest in manifest: %Rrc"), vrc);
+                return setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Error fudging missing OVF digest in manifest: %Rrc"), vrc);
         }
 
         /*
