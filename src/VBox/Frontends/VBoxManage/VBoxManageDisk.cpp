@@ -2256,7 +2256,7 @@ static RTEXITCODE handleMediumIOCat(HandlerArg *a, int iFirst, PMEDIUMIOCOMMONOP
                     {
                         /* hexdump -C */
                         uint64_t        offHex    = off;
-                        uint64_t const  offHexEnd = off + cb;
+                        uint64_t const  offHexEnd = off + cbReturned;
                         while (offHex < offHexEnd)
                         {
                             if (   offHex >= offEndDupCheck
