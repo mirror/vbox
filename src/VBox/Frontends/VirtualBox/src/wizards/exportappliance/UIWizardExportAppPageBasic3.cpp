@@ -44,6 +44,14 @@
 *********************************************************************************************************************************/
 
 UIWizardExportAppPage3::UIWizardExportAppPage3()
+    : m_pFileSelectorLabel(0)
+    , m_pFileSelector(0)
+    , m_pFormatComboBoxLabel(0)
+    , m_pFormatComboBox(0)
+    , m_pAdditionalLabel(0)
+    , m_pManifestCheckbox(0)
+    , m_pProviderComboBoxLabel(0)
+    , m_pProviderComboBox(0)
 {
 }
 
@@ -237,6 +245,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
         QGridLayout *pSettingsLayout = new QGridLayout;
         if (pSettingsLayout)
         {
+            pSettingsLayout->setContentsMargins(0, 0, 0, 0);
             pSettingsLayout->setColumnStretch(0, 0);
             pSettingsLayout->setColumnStretch(1, 1);
 
@@ -250,7 +259,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pFileSelector->setDefaultSaveExt("ova");
 
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pFileSelector, 4, 1);
+                pSettingsLayout->addWidget(m_pFileSelector, 0, 1);
             }
             /* Create file selector label: */
             m_pFileSelectorLabel = new QLabel;
@@ -260,7 +269,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pFileSelectorLabel->setBuddy(m_pFileSelector);
 
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pFileSelectorLabel, 4, 0);
+                pSettingsLayout->addWidget(m_pFileSelectorLabel, 0, 0);
             }
 
             /* Create format combo-box: */
@@ -277,7 +286,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pFormatComboBox->addItem(strFormatOPC10, strFormatOPC10);
 
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pFormatComboBox, 5, 1);
+                pSettingsLayout->addWidget(m_pFormatComboBox, 1, 1);
             }
             /* Create format combo-box label: */
             m_pFormatComboBoxLabel = new QLabel;
@@ -287,7 +296,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
 
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 5, 0);
+                pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 1, 0);
             }
 
             /* Create advanced label: */
@@ -297,14 +306,14 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pAdditionalLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pAdditionalLabel, 6, 0);
+                pSettingsLayout->addWidget(m_pAdditionalLabel, 2, 0);
             }
             /* Create manifest check-box: */
             m_pManifestCheckbox = new QCheckBox;
             if (m_pManifestCheckbox)
             {
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pManifestCheckbox, 6, 1);
+                pSettingsLayout->addWidget(m_pManifestCheckbox, 2, 1);
             }
 
             /* Create provider combo-box: */
@@ -312,7 +321,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             if (m_pProviderComboBox)
             {
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pProviderComboBox, 7, 1);
+                pSettingsLayout->addWidget(m_pProviderComboBox, 3, 1);
             }
             /* Create provider label: */
             m_pProviderComboBoxLabel = new QLabel;
@@ -322,7 +331,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pProviderComboBoxLabel->setBuddy(m_pProviderComboBox);
 
                 /* Add into layout: */
-                pSettingsLayout->addWidget(m_pProviderComboBoxLabel, 7, 0);
+                pSettingsLayout->addWidget(m_pProviderComboBoxLabel, 3, 0);
             }
 
             /* Add into layout: */
