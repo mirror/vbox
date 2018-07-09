@@ -10178,7 +10178,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 # define HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient) \
     do { \
         HMVMX_STOP_EXIT_DISPATCH_PROF(); \
-        RT_NOREF2((a_pVCpu), (a_pVmxTransient)); \
     } while (0)
 # define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient) do { } while (0)
 #endif
