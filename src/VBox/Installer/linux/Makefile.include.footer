@@ -39,7 +39,10 @@ KFLAGS   := -D__KERNEL__ -DMODULE $(MOD_DEFS)
 ifeq ($(BUILD_TYPE),debug)
 # The -Wno-array-bounds is because of a bug in gcc 4.something, see
 # https://sourceware.org/bugzilla/show_bug.cgi?id=10001
- KFLAGS  += -DDEBUG -DDEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) -DDEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME)) -Werror -Wall -Wno-array-bounds
+ KFLAGS  += -DDEBUG -DDEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) -DDEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME))
+ ifeq ($(shell expr $(KERN_VER) : '[23]\.'),0)
+  KFLAGS  += -Werror -Wall -Wno-array-bounds
+ endif
 endif
 
 ifeq ($(KERN_VERSION), 24)
