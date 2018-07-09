@@ -3115,7 +3115,7 @@ static void hmR0SvmLeave(PVMCPU pVCpu, bool fImportState)
  */
 static int hmR0SvmLeaveSession(PVMCPU pVCpu)
 {
-    HM_DISABLE_PREEMPT();
+    HM_DISABLE_PREEMPT(pVCpu);
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -3180,7 +3180,7 @@ static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
          */
         VMMRZCallRing3RemoveNotification(pVCpu);
         VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT();
+        HM_DISABLE_PREEMPT(pVCpu);
 
         /* Import the entire guest state. */
         hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
@@ -6724,7 +6724,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 
             /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
             VMMRZCallRing3Disable(pVCpu);
-            HM_DISABLE_PREEMPT();
+            HM_DISABLE_PREEMPT(pVCpu);
 
             /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
             CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
@@ -6955,7 +6955,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
             {
                 /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
                 VMMRZCallRing3Disable(pVCpu);
-                HM_DISABLE_PREEMPT();
+                HM_DISABLE_PREEMPT(pVCpu);
 
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
                 CPUMR0DebugStateMaybeSaveGuest(pVCpu, false /*fDr6*/);

@@ -216,12 +216,12 @@ RT_C_DECLS_BEGIN
  * preemption has already been disabled when there is no context hook.
  * @{ */
 #ifdef VBOX_STRICT
-# define HM_DISABLE_PREEMPT() \
+# define HM_DISABLE_PREEMPT(a_pVCpu) \
     RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD) || VMMR0ThreadCtxHookIsEnabled(pVCpu)); \
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD) || VMMR0ThreadCtxHookIsEnabled((a_pVCpu))); \
     RTThreadPreemptDisable(&PreemptStateInternal)
 #else
-# define HM_DISABLE_PREEMPT() \
+# define HM_DISABLE_PREEMPT(a_pVCpu) \
     RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
     RTThreadPreemptDisable(&PreemptStateInternal)
 #endif /* VBOX_STRICT */
