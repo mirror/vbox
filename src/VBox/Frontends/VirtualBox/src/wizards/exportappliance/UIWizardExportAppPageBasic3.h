@@ -46,6 +46,7 @@ protected:
 
     /** Refreshes current settings. */
     virtual void refreshCurrentSettings();
+
     /** Updates format combo tool-tips. */
     virtual void updateFormatComboToolTip();
 

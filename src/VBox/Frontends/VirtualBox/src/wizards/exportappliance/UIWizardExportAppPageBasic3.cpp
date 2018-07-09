@@ -49,7 +49,7 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
 
 void UIWizardExportAppPage3::chooseDefaultSettings()
 {
-    /* Choose ovf-1.0 by default: */
+    /* Choose defaults: */
     setFormat("ovf-1.0");
 }
 
@@ -61,7 +61,9 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
     {
         case LocalFilesystem:
         {
-            m_pFileSelector->setChooserVisible(true);
+            m_pFileSelectorLabel->setVisible(true);
+            m_pFileSelector->setVisible(true);
+            m_pFormatComboBoxLabel->setVisible(true);
             m_pFormatComboBox->setVisible(true);
             m_pAdditionalLabel->setVisible(true);
             m_pManifestCheckbox->setVisible(true);
@@ -69,8 +71,10 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
         }
         case CloudProvider:
         {
-            m_pFileSelector->setChooserVisible(false);
-            m_pFormatComboBox->setVisible(true);
+            m_pFileSelectorLabel->setVisible(false);
+            m_pFileSelector->setVisible(false);
+            m_pFormatComboBoxLabel->setVisible(false);
+            m_pFormatComboBox->setVisible(false);
             m_pAdditionalLabel->setVisible(false);
             m_pManifestCheckbox->setVisible(false);
             break;
@@ -125,8 +129,9 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
 void UIWizardExportAppPage3::updateFormatComboToolTip()
 {
     const int iCurrentIndex = m_pFormatComboBox->currentIndex();
-    const QString strCurrentIndexToolTip = m_pFormatComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
-    m_pFormatComboBox->setToolTip(strCurrentIndexToolTip);
+    const QString strCurrentToolTip = m_pFormatComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    m_pFormatComboBox->setToolTip(strCurrentToolTip);
 }
 
 QString UIWizardExportAppPage3::path() const
@@ -185,6 +190,9 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
         QGridLayout *pSettingsLayout = new QGridLayout;
         if (pSettingsLayout)
         {
+            pSettingsLayout->setColumnStretch(0, 0);
+            pSettingsLayout->setColumnStretch(1, 1);
+
             /* Create file selector: */
             m_pFileSelector = new UIEmptyFilePathSelector;
             if (m_pFileSelector)
@@ -281,10 +289,13 @@ void UIWizardExportAppPageBasic3::retranslateUi()
 
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
-    /* Translate widgets: */
+
+    /* Translate File selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
     m_pFileSelector->setChooseButtonToolTip(tr("Choose a file to export the virtual appliance to..."));
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
+
+    /* Translate Format combo-box: */
     m_pFormatComboBoxLabel->setText(UIWizardExportApp::tr("F&ormat:"));
     m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("Open Virtualization Format 0.9"));
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
@@ -295,6 +306,8 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
+
+    /* Translate addtional stuff: */
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
