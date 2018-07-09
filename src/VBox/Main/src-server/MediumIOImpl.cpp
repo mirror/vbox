@@ -145,7 +145,7 @@ HRESULT MediumIO::initForMedium(Medium *pMedium, bool fWritable, com::Utf8Str co
          */
         if (SUCCEEDED(hrc))
         {
-            hrc = pMedium->i_openHddForIO(fWritable, &m->PasswordStore, &m->pHdd, &m->LockList, &m->CryptoSettings);
+            hrc = pMedium->i_openForIO(fWritable, &m->PasswordStore, &m->pHdd, &m->LockList, &m->CryptoSettings);
             if (SUCCEEDED(hrc))
             {
                 int vrc = VDCreateVfsFileFromDisk(m->pHdd, 0 /*fFlags*/, &m->hVfsFile);

@@ -6114,7 +6114,7 @@ HRESULT Medium::i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, 
         MediumCryptoFilterSettings      CryptoSettingsRead;
         MediumLockList                  SourceMediumLockList;
         PVDISK                          pHdd;
-        hrc = i_openHddForReading(pKeyStore, &pHdd, &SourceMediumLockList, &CryptoSettingsRead);
+        hrc = i_openForIO(false /*fWritable*/, pKeyStore, &pHdd, &SourceMediumLockList, &CryptoSettingsRead);
         if (SUCCEEDED(hrc))
         {
             /*
@@ -6202,7 +6202,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
                 MediumCryptoFilterSettings      CryptoSettingsRead;
                 MediumLockList                  SourceMediumLockList;
                 PVDISK                          pSrcHdd;
-                hrc = i_openHddForReading(pKeyStore, &pSrcHdd, &SourceMediumLockList, &CryptoSettingsRead);
+                hrc = i_openForIO(false /*fWritable*/, pKeyStore, &pSrcHdd, &SourceMediumLockList, &CryptoSettingsRead);
                 if (SUCCEEDED(hrc))
                 {
                     /*
@@ -6539,39 +6539,6 @@ const Utf8Str& Medium::i_getKeyId()
         return Utf8Str::Empty;
 
     return it->second;
-}
-
-/**
- * This method is intended for MediumIO::initForMedium().
- *
- * @note    Caller should not hold any medium related locks as this method will
- *          acquire the medium lock for writing and others (VirtualBox).
- *
- * @returns COM status code.
- * @param   fWritable               Flag whether the medium should be opened for writing.
- * @param   pKeyStore               Keystore containing the KeyId+password for
- *                                  an encrypted medium.
- * @param   ppHdd                   Where to return the pointer to the VDISK on
- *                                  success.
- * @param   pMediumLockList         The lock list to populate and lock.  Caller
- *                                  is responsible for calling the destructor or
- *                                  MediumLockList::Clear() after destroying
- *                                  @a *ppHdd
- * @param   pCryptoSettings         The crypto settings to use for setting up
- *                                  decryption of the VDISK.  This object must
- *                                  be alive until the VDISK is destroyed!
- *
- * @note    Using a keystore here for the KeyId+password so we can share code
- *          with appliance.  Not quite sure if that's a great idea or not...
- */
-HRESULT Medium::i_openHddForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
-                               MediumCryptoFilterSettings *pCryptoSettings)
-{
-    *ppHdd = NULL;
-    if (!fWritable)
-        return i_openHddForReading(pKeyStore, ppHdd, pMediumLockList, pCryptoSettings);
-    /** @todo implement opening for writing. */
-    return E_NOTIMPL;
 }
 
 
@@ -8009,12 +7976,14 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreReturnParameters(void *pvUser, const
 }
 
 /**
- * Creates a read-only VDISK instance for this medium.
+ * Creates a VDISK instance for this medium.
  *
  * @note    Caller should not hold any medium related locks as this method will
  *          acquire the medium lock for writing and others (VirtualBox).
  *
  * @returns COM status code.
+ * @param   fWritable               Whether to return a writable VDISK instance
+ *                                  (true) or a read-only one (false).
  * @param   pKeyStore               The key store.
  * @param   ppHdd                   Where to return the pointer to the VDISK on
  *                                  success.
@@ -8026,14 +7995,14 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreReturnParameters(void *pvUser, const
  *                                  up decryption of the VDISK.  This object
  *                                  must be alive until the VDISK is destroyed!
  */
-HRESULT Medium::i_openHddForReading(SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
-                                    MediumCryptoFilterSettings *pCryptoSettingsRead)
+HRESULT Medium::i_openForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *ppHdd, MediumLockList *pMediumLockList,
+                            MediumCryptoFilterSettings *pCryptoSettingsRead)
 {
     /*
      * Create the media lock list and lock the media.
      */
     HRESULT hrc = i_createMediumLockList(true /* fFailIfInaccessible */,
-                                         NULL /* pToLockWrite */,
+                                         fWritable ? this : NULL /* pToLockWrite */,
                                          false /* fMediumLockWriteAll */,
                                          NULL,
                                          *pMediumLockList);
@@ -8127,7 +8096,10 @@ HRESULT Medium::i_openHddForReading(SecretKeyStore *pKeyStore, PVDISK *ppHdd, Me
          * Open all media in the source chain.
          */
         MediumLockList::Base::const_iterator sourceListBegin = pMediumLockList->GetBegin();
-        MediumLockList::Base::const_iterator sourceListEnd = pMediumLockList->GetEnd();
+        MediumLockList::Base::const_iterator sourceListEnd   = pMediumLockList->GetEnd();
+        MediumLockList::Base::const_iterator mediumListLast  = sourceListEnd;
+        --mediumListLast;
+
         for (MediumLockList::Base::const_iterator it = sourceListBegin; it != sourceListEnd; ++it)
         {
             const MediumLock &mediumLock = *it;
@@ -8135,13 +8107,13 @@ HRESULT Medium::i_openHddForReading(SecretKeyStore *pKeyStore, PVDISK *ppHdd, Me
             AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
 
             /* sanity check */
-            Assert(pMedium->m->state == MediumState_LockedRead);
+            Assert(pMedium->m->state == (fWritable && it == mediumListLast ? MediumState_LockedWrite : MediumState_LockedRead));
 
             /* Open all media in read-only mode. */
             vrc = VDOpen(pHdd,
                          pMedium->m->strFormat.c_str(),
                          pMedium->m->strLocationFull.c_str(),
-                         VD_OPEN_FLAGS_READONLY | m->uOpenFlagsDef,
+                         m->uOpenFlagsDef | (fWritable && it == mediumListLast ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY),
                          pMedium->m->vdImageIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
@@ -8150,7 +8122,7 @@ HRESULT Medium::i_openHddForReading(SecretKeyStore *pKeyStore, PVDISK *ppHdd, Me
                                i_vdError(vrc).c_str());
         }
 
-        Assert(m->state == MediumState_LockedRead);
+        Assert(m->state == (fWritable ? MediumState_LockedWrite : MediumState_LockedRead));
 
         /*
          * Done!
@@ -8247,33 +8219,35 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_VD_INVALID_TYPE)
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Parameters for creating the medium storage unit '%s' are invalid%s"),
-                                   location.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Parameters for creating the medium storage unit '%s' are invalid%s"),
+                                       location.c_str(), i_vdError(vrc).c_str());
                 else
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Could not create the medium storage unit '%s'%s"),
-                                   location.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                       tr("Could not create the medium storage unit '%s'%s"),
+                                       location.c_str(), i_vdError(vrc).c_str());
             }
 
             if (task.mVariant & MediumVariant_Formatted)
             {
                 RTVFSFILE hVfsFile;
-                vrc = RTVfsFileOpenNormal(location.c_str(), RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_ALL, &hVfsFile);
+                vrc = VDCreateVfsFileFromDisk(hdd, 0 /*fFlags*/, &hVfsFile);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Opening medium storage unit '%s' failed%s"),
-                                   location.c_str(), i_vdError(vrc).c_str());
-                vrc = RTFsFatVolFormat(hVfsFile, 0 /* offVol */, 0 /* cbVol */, RTFSFATVOL_FMT_F_QUICK,
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Opening medium storage unit '%s' failed%s"),
+                                       location.c_str(), i_vdError(vrc).c_str());
+                RTERRINFOSTATIC ErrInfo;
+                vrc = RTFsFatVolFormat(hVfsFile, 0 /* offVol */, 0 /* cbVol */, RTFSFATVOL_FMT_F_FULL,
                                        0 /* cbSector */, 0 /* cbSectorPerCluster */, RTFSFATTYPE_INVALID,
                                        0 /* cHeads */, 0 /* cSectorsPerTrack*/, 0 /* bMedia */,
                                        0 /* cRootDirEntries */, 0 /* cHiddenSectors */,
-                                       NULL /* pErrInfo */);
+                                       RTErrInfoInitStatic(&ErrInfo));
                 RTVfsFileRelease(hVfsFile);
+                if (RT_FAILURE(vrc) && RTErrInfoIsSet(&ErrInfo.Core))
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Formatting medium storage unit '%s' failed: %s"),
+                                       location.c_str(), ErrInfo.Core.pszMsg);
                 if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Formatting medium storage unit '%s' failed%s"),
-                                   location.c_str(), i_vdError(vrc).c_str());
+                    throw setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Formatting medium storage unit '%s' failed%s"),
+                                       location.c_str(), i_vdError(vrc).c_str());
             }
 
             size = VDGetFileSize(hdd, 0);
