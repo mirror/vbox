@@ -4346,77 +4346,81 @@ void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR)
 }
 
 /**
- * Copy from a GMR to host memory or vice versa
+ * Copy between a GMR and a host memory buffer.
  *
  * @returns VBox status code.
  * @param   pThis           VGA device instance data.
  * @param   enmTransferType Transfer type (read/write)
- * @param   pbDst           Host destination pointer
- * @param   cbDestPitch     Destination buffer pitch
- * @param   src             GMR description
- * @param   offSrc          Source buffer offset
- * @param   cbSrcPitch      Source buffer pitch
- * @param   cbWidth         Source width in bytes
- * @param   cHeight         Source height
+ * @param   pbHst           Host destination pointer
+ * @param   cbHstPitch      Destination buffer pitch
+ * @param   gstPtr          GMR description
+ * @param   offGst          Guest buffer offset
+ * @param   cbGstPitch      Guest buffer pitch
+ * @param   cbWidth         Width in bytes to copy
+ * @param   cHeight         Number of scanllines to copy
  */
-int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType, uint8_t *pbDst, int32_t cbDestPitch,
-                      SVGAGuestPtr src, uint32_t offSrc, int32_t cbSrcPitch, uint32_t cbWidth, uint32_t cHeight)
+int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType, uint8_t *pbHst, int32_t cbHstPitch,
+                      SVGAGuestPtr gstPtr, uint32_t offGst, int32_t cbGstPitch, uint32_t cbWidth, uint32_t cHeight)
 {
-    PVMSVGAR3STATE          pSVGAState = pThis->svga.pSvgaR3State;
-    PGMR                    pGMR;
-    int                     rc;
-    PVMSVGAGMRDESCRIPTOR    pDesc;
-    unsigned                offDesc = 0;
+    PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
+    int            rc;
 
-    Log(("vmsvgaGMRTransfer: gmr=%x offset=%x pitch=%d cbWidth=%d cHeight=%d; src offset=%d src pitch=%d\n",
-         src.gmrId, src.offset, cbDestPitch, cbWidth, cHeight, offSrc, cbSrcPitch));
-    Assert(cbWidth && cHeight);
+    LogFunc(("%s host %p pitch=%d; guest gmr=%#x:%#x offset=%d pitch=%d cbWidth=%d cHeight=%d\n",
+             enmTransferType == SVGA3D_READ_HOST_VRAM ? "READ" : "WRITE", pbHst, cbHstPitch,
+             gstPtr.gmrId, gstPtr.offset, offGst, cbGstPitch, cbWidth, cHeight));
+    AssertReturn(cbWidth && cHeight, VERR_INVALID_PARAMETER);
 
-    const uint32_t cbGmrScanline = cbSrcPitch > 0 ? cbSrcPitch : -cbSrcPitch;
-
+    PGMR pGMR;
     uint32_t cbGmrTotal; /* The GMR size in bytes. */
-    if (src.gmrId == SVGA_GMR_FRAMEBUFFER)
+    if (gstPtr.gmrId == SVGA_GMR_FRAMEBUFFER)
     {
         pGMR = NULL;
         cbGmrTotal = pThis->vram_size;
     }
     else
     {
-        AssertReturn(src.gmrId < pThis->svga.cGMR, VERR_INVALID_PARAMETER);
+        AssertReturn(gstPtr.gmrId < pThis->svga.cGMR, VERR_INVALID_PARAMETER);
         RT_UNTRUSTED_VALIDATED_FENCE();
-        pGMR = &pSVGAState->paGMR[src.gmrId];
+        pGMR = &pSVGAState->paGMR[gstPtr.gmrId];
         cbGmrTotal = pGMR->cbTotal;
     }
 
-    /* Check GMR parameters */
-    AssertMsgReturn(src.offset < cbGmrTotal,
-                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
-                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+    /* Calculate GMR offset of the data to be copied. */
+    AssertMsgReturn(gstPtr.offset < cbGmrTotal,
+                    ("gmr=%#x:%#x offGst=%#x cbGstPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     gstPtr.gmrId, gstPtr.offset, offGst, cbGstPitch, cHeight, cbWidth, cbGmrTotal),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn(offSrc < cbGmrTotal - src.offset,
-                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
-                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+    RT_UNTRUSTED_VALIDATED_FENCE();
+    AssertMsgReturn(offGst < cbGmrTotal - gstPtr.offset,
+                    ("gmr=%#x:%#x offGst=%#x cbGstPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     gstPtr.gmrId, gstPtr.offset, offGst, cbGstPitch, cHeight, cbWidth, cbGmrTotal),
                     VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+    uint32_t const offGmr = offGst + gstPtr.offset; /* Offset in the GMR, where the first scanline is located. */
+
+    /* Verify that cbWidth is less that scanline and fits into the GMR. */
+    uint32_t const cbGmrScanline = cbGstPitch > 0 ? cbGstPitch : -cbGstPitch;
     AssertMsgReturn(cbGmrScanline != 0,
-                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
-                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+                    ("gmr=%#x:%#x offGst=%#x cbGstPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     gstPtr.gmrId, gstPtr.offset, offGst, cbGstPitch, cHeight, cbWidth, cbGmrTotal),
                     VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
     AssertMsgReturn(cbWidth <= cbGmrScanline,
-                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
-                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+                    ("gmr=%#x:%#x offGst=%#x cbGstPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     gstPtr.gmrId, gstPtr.offset, offGst, cbGstPitch, cHeight, cbWidth, cbGmrTotal),
                     VERR_INVALID_PARAMETER);
-
-    offSrc += src.offset; /* Actual offset in the GMR, where the first scanline will be copied. */
-
-    AssertMsgReturn(cbWidth <= cbGmrTotal - offSrc,
-                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
-                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+    AssertMsgReturn(cbWidth <= cbGmrTotal - offGmr,
+                    ("gmr=%#x:%#x offGst=%#x cbGstPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     gstPtr.gmrId, gstPtr.offset, offGst, cbGstPitch, cHeight, cbWidth, cbGmrTotal),
                     VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
 
-    uint32_t cbGmrLeft = cbSrcPitch > 0 ? cbGmrTotal - offSrc : offSrc + cbWidth;
+    /* How many bytes are available for the data in the GMR. */
+    uint32_t const cbGmrLeft = cbGstPitch > 0 ? cbGmrTotal - offGmr : offGmr + cbWidth;
 
+    /* How many scanlines would fit into the available data. */
     uint32_t cGmrScanlines = cbGmrLeft / cbGmrScanline;
-    uint32_t cbLastScanline = cbGmrLeft - cGmrScanlines * cbGmrScanline; /* Slack space. */
+    uint32_t const cbLastScanline = cbGmrLeft - cGmrScanlines * cbGmrScanline; /* Slack space. */
     if (cbWidth <= cbLastScanline)
         ++cGmrScanlines;
 
@@ -4424,102 +4428,118 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
         cHeight = cGmrScanlines;
 
     AssertMsgReturn(cHeight > 0,
-                    ("src.gmrId=%#x src.offset=%#x offSrc=%#x cbSrcPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
-                     src.gmrId, src.offset, offSrc, cbSrcPitch, cHeight, cbWidth, cbGmrTotal),
+                    ("gmr=%#x:%#x offGst=%#x cbGstPitch=%#x cHeight=%#x cbWidth=%#x cbGmrTotal=%#x\n",
+                     gstPtr.gmrId, gstPtr.offset, offGst, cbGstPitch, cHeight, cbWidth, cbGmrTotal),
                     VERR_INVALID_PARAMETER);
-
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     /* Shortcut for the framebuffer. */
-    if (src.gmrId == SVGA_GMR_FRAMEBUFFER)
+    if (gstPtr.gmrId == SVGA_GMR_FRAMEBUFFER)
     {
-        uint8_t *pSrc  = pThis->CTX_SUFF(vram_ptr) + offSrc;
+        uint8_t *pbGst = pThis->CTX_SUFF(vram_ptr) + offGmr;
+
+        uint8_t const *pbSrc;
+        int32_t cbSrcPitch;
+        uint8_t *pbDst;
+        int32_t cbDstPitch;
 
         if (enmTransferType == SVGA3D_READ_HOST_VRAM)
         {
-            /* switch src & dest */
-            uint8_t *pTemp      = pbDst;
-            int32_t cbTempPitch = cbDestPitch;
-
-            pbDst = pSrc;
-            pSrc  = pTemp;
-
-            cbDestPitch = cbSrcPitch;
-            cbSrcPitch  = cbTempPitch;
-        }
-
-        if (   pThis->svga.cbScanline == (uint32_t)cbDestPitch
-            && cbWidth                == (uint32_t)cbDestPitch
-            && cbSrcPitch             == cbDestPitch)
-        {
-            memcpy(pbDst, pSrc, cbWidth * cHeight);
+            pbSrc      = pbHst;
+            cbSrcPitch = cbHstPitch;
+            pbDst      = pbGst;
+            cbDstPitch = cbGstPitch;
         }
         else
         {
-            for(uint32_t i = 0; i < cHeight; i++)
-            {
-                memcpy(pbDst, pSrc, cbWidth);
+            pbSrc      = pbGst;
+            cbSrcPitch = cbGstPitch;
+            pbDst      = pbHst;
+            cbDstPitch = cbHstPitch;
+        }
 
-                pbDst += cbDestPitch;
-                pSrc  += cbSrcPitch;
+        if (   cbWidth == (uint32_t)cbGstPitch
+            && cbGstPitch == cbHstPitch)
+        {
+            /* Entire scanlines, positive pitch. */
+            memcpy(pbDst, pbSrc, cbWidth * cHeight);
+        }
+        else
+        {
+            for (uint32_t i = 0; i < cHeight; ++i)
+            {
+                memcpy(pbDst, pbSrc, cbWidth);
+
+                pbDst += cbDstPitch;
+                pbSrc += cbSrcPitch;
             }
         }
         return VINF_SUCCESS;
     }
 
     AssertPtrReturn(pGMR, VERR_INVALID_PARAMETER);
-    pDesc = pGMR->paDesc;
+    AssertReturn(pGMR->numDescriptors > 0, VERR_INVALID_PARAMETER);
 
-    for (uint32_t i = 0; i < cHeight; i++)
+    PVMSVGAGMRDESCRIPTOR const paDesc = pGMR->paDesc; /* Local copy of the pointer. */
+    uint32_t iDesc = 0;                               /* Index in the descriptor array. */
+    uint32_t offDesc = 0;                             /* GMR offset of the current descriptor. */
+    uint32_t offGmrScanline = offGmr;                 /* GMR offset of the scanline which is being copied. */
+    uint8_t *pbHstScanline = pbHst;                   /* Host address of the scanline which is being copied. */
+    for (uint32_t i = 0; i < cHeight; ++i)
     {
         uint32_t cbCurrentWidth = cbWidth;
-        uint32_t offCurrent     = offSrc;
-        uint8_t *pCurrentDest   = pbDst;
+        uint32_t offGmrCurrent  = offGmrScanline;
+        uint8_t *pbCurrentHost  = pbHstScanline;
 
         /* Find the right descriptor */
-        while (offDesc + pDesc->numPages * PAGE_SIZE <= offCurrent)
+        while (offDesc + paDesc[iDesc].numPages * PAGE_SIZE <= offGmrCurrent)
         {
-            offDesc += pDesc->numPages * PAGE_SIZE;
+            offDesc += paDesc[iDesc].numPages * PAGE_SIZE;
             AssertReturn(offDesc < pGMR->cbTotal, VERR_INTERNAL_ERROR); /* overflow protection */
-            pDesc++;
+            ++iDesc;
+            AssertReturn(iDesc < pGMR->numDescriptors, VERR_INTERNAL_ERROR);
         }
 
         while (cbCurrentWidth)
         {
             uint32_t cbToCopy;
 
-            if (offCurrent + cbCurrentWidth <= offDesc + pDesc->numPages * PAGE_SIZE)
+            if (offGmrCurrent + cbCurrentWidth <= offDesc + paDesc[iDesc].numPages * PAGE_SIZE)
             {
                 cbToCopy = cbCurrentWidth;
             }
             else
             {
-                cbToCopy = (offDesc + pDesc->numPages * PAGE_SIZE - offCurrent);
+                cbToCopy = (offDesc + paDesc[iDesc].numPages * PAGE_SIZE - offGmrCurrent);
                 AssertReturn(cbToCopy <= cbCurrentWidth, VERR_INVALID_PARAMETER);
             }
 
-            LogFlow(("vmsvgaGMRTransfer: %s phys=%RGp\n", (enmTransferType == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", pDesc->GCPhys + offCurrent - offDesc));
+            RTGCPHYS const GCPhys = paDesc[iDesc].GCPhys + offGmrCurrent - offDesc;
+
+            LogFlowFunc(("%s phys=%RGp\n", (enmTransferType == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", GCPhys));
 
             if (enmTransferType == SVGA3D_WRITE_HOST_VRAM)
-                rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), pDesc->GCPhys + offCurrent - offDesc, pCurrentDest, cbToCopy);
+                rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, pbCurrentHost, cbToCopy);
             else
-                rc = PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), pDesc->GCPhys + offCurrent - offDesc, pCurrentDest, cbToCopy);
+                rc = PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhys, pbCurrentHost, cbToCopy);
             AssertRCBreak(rc);
 
             cbCurrentWidth -= cbToCopy;
-            offCurrent     += cbToCopy;
-            pCurrentDest   += cbToCopy;
+            offGmrCurrent  += cbToCopy;
+            pbCurrentHost  += cbToCopy;
 
             /* Go to the next descriptor if there's anything left. */
             if (cbCurrentWidth)
             {
-                offDesc += pDesc->numPages * PAGE_SIZE;
-                pDesc++;
+                offDesc += paDesc[iDesc].numPages * PAGE_SIZE;
+                AssertReturn(offDesc < pGMR->cbTotal, VERR_INTERNAL_ERROR);
+                ++iDesc;
+                AssertReturn(iDesc < pGMR->numDescriptors, VERR_INTERNAL_ERROR);
             }
         }
 
-        offSrc  += cbSrcPitch;
-        pbDst   += cbDestPitch;
+        offGmrScanline += cbGstPitch;
+        pbHstScanline  += cbHstPitch;
     }
 
     return VINF_SUCCESS;
