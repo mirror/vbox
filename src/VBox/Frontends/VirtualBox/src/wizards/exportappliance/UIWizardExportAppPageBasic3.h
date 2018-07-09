@@ -47,13 +47,16 @@ protected:
     /** Chooses default settings. */
     void chooseDefaultSettings();
 
+    /** Updates page appearance. */
+    virtual void updatePageAppearance();
+
     /** Refreshes current settings. */
-    virtual void refreshCurrentSettings();
+    void refreshCurrentSettings();
 
     /** Updates format combo tool-tips. */
-    virtual void updateFormatComboToolTip();
+    void updateFormatComboToolTip();
     /** Updates provider combo tool-tips. */
-    virtual void updateProviderComboToolTip();
+    void updateProviderComboToolTip();
 
     /** Returns path. */
     QString path() const;
@@ -128,8 +131,8 @@ protected:
     /** Returns whether page is complete. */
     virtual bool isComplete() const /* override */;
 
-    /** Refreshes current settings. */
-    virtual void refreshCurrentSettings() /* override */;
+    /** Updates page appearance. */
+    virtual void updatePageAppearance() /* override */;
 
 private slots:
 

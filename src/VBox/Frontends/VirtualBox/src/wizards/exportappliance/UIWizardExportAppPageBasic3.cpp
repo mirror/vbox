@@ -71,9 +71,9 @@ void UIWizardExportAppPage3::chooseDefaultSettings()
     setProvider("OCI");
 }
 
-void UIWizardExportAppPage3::refreshCurrentSettings()
+void UIWizardExportAppPage3::updatePageAppearance()
 {
-    /* Setup components for chosen storage-type: */
+    /* Update page appearance according to chosen storage-type: */
     const StorageType enmStorageType = fieldImp("storageType").value<StorageType>();
     switch (enmStorageType)
     {
@@ -102,7 +102,10 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
             break;
         }
     }
+}
 
+void UIWizardExportAppPage3::refreshCurrentSettings()
+{
     /* Compose file-name: */
     QString strName;
 
@@ -141,6 +144,7 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
     }
 
     /* Copose file-path for 'LocalFilesystem' storage case: */
+    const StorageType enmStorageType = fieldImp("storageType").value<StorageType>();
     if (enmStorageType == LocalFilesystem)
         strName = QDir::toNativeSeparators(QString("%1/%2").arg(vboxGlobal().documentsPath()).arg(strName));
 
@@ -390,6 +394,11 @@ void UIWizardExportAppPageBasic3::retranslateUi()
 
     /* Refresh current settings: */
     refreshCurrentSettings();
+
+    /* Update page appearance: */
+    updatePageAppearance();
+
+    /* Update tool-tips: */
     updateFormatComboToolTip();
     updateProviderComboToolTip();
 }
@@ -434,12 +443,12 @@ bool UIWizardExportAppPageBasic3::isComplete() const
     return fResult;
 }
 
-void UIWizardExportAppPageBasic3::refreshCurrentSettings()
+void UIWizardExportAppPageBasic3::updatePageAppearance()
 {
-    /* Refresh base-class settings: */
-    UIWizardExportAppPage3::refreshCurrentSettings();
+    /* Call to base-class: */
+    UIWizardExportAppPage3::updatePageAppearance();
 
-    /* Setup components for chosen storage-type: */
+    /* Update page appearance according to chosen storage-type: */
     const StorageType enmStorageType = field("storageType").value<StorageType>();
     switch (enmStorageType)
     {
