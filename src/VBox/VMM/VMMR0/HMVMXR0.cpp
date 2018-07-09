@@ -8263,7 +8263,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
 
     /*
      * A longjump might result in importing CR3 even for VM-exits that don't necessarily
-     * import CR3 themselves. We will need to update them here as even as late as the above
+     * import CR3 themselves. We will need to update them here, as even as late as the above
      * hmR0VmxInjectPendingEvent() call may lazily import guest-CPU state on demand causing
      * the below force flags to be set.
      */
