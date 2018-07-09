@@ -58,7 +58,6 @@ ifneq ($(KBUILD_TARGET),win)
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
  endif
  VBOX_MAIN_DEFS += VBOX_WITH_GENERIC_SESSION_WATCHER
- #VBOX_MAIN_DEFS += VBOX_WITH_XPCOM_CPP_ENUM_HACK - make global
 endif
 VBOX_MAIN_DEFS += \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,) \
