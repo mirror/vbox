@@ -83,6 +83,9 @@ private slots:
     /** Handles format combo change. */
     void sltHandleFormatComboChange();
 
+    /** Handles change in provider combo-box. */
+    void sltHandleProviderComboChange();
+
 private:
 
     /** Holds the VM selector container instance. */

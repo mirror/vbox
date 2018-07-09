@@ -203,6 +203,30 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     /* Add into layout: */
                     pSettingsLayout->addWidget(m_pManifestCheckbox, 6, 1);
                 }
+
+                /* Create provider combo-box: */
+                m_pProviderComboBox = new QComboBox;
+                if (m_pProviderComboBox)
+                {
+                    /* Hide it for now: */
+                    m_pProviderComboBox->hide();
+
+                    /* Add into layout: */
+                    pSettingsLayout->addWidget(m_pProviderComboBox, 7, 1);
+                }
+                /* Create provider label: */
+                m_pProviderComboBoxLabel = new QLabel;
+                if (m_pProviderComboBoxLabel)
+                {
+                    /* Hide it for now: */
+                    m_pProviderComboBoxLabel->hide();
+
+                    m_pProviderComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                    m_pProviderComboBoxLabel->setBuddy(m_pProviderComboBox);
+
+                    /* Add into layout: */
+                    pSettingsLayout->addWidget(m_pProviderComboBoxLabel, 7, 0);
+                }
             }
 
             /* Add into layout: */
@@ -214,6 +238,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     populateVMSelectorItems(selectedVMNames);
     /* Choose default storage type: */
     chooseDefaultStorageType();
+    /* Populate providers: */
+    populateProviders();
     /* Choose default settings: */
     chooseDefaultSettings();
 
@@ -224,6 +250,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageExpert::completeChanged);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
+    connect(m_pProviderComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardExportAppPageExpert::sltHandleProviderComboChange);
 
     /* Register classes: */
     qRegisterMetaType<StorageType>();
@@ -266,6 +294,21 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Public Cloud 1.0 format."), Qt::ToolTipRole);
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
+
+    /* Translate Provider combo-box: */
+    m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Cloud Service Provider:"));
+    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+    {
+        if (m_pProviderComboBox->itemText(i) == "OCI")
+        {
+            m_pProviderComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure"));
+            m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to Oracle Cloud Infrastructure"), Qt::ToolTipRole);
+        }
+        else
+        {
+            m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to %1").arg(m_pProviderComboBox->itemText(i)), Qt::ToolTipRole);
+        }
+    }
 
     /* Refresh current settings: */
     refreshCurrentSettings();
@@ -363,4 +406,11 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     /* Refresh current settings: */
     refreshCurrentSettings();
     updateFormatComboToolTip();
+}
+
+void UIWizardExportAppPageExpert::sltHandleProviderComboChange()
+{
+    /* Refresh current settings: */
+    refreshCurrentSettings();
+    updateProviderComboToolTip();
 }

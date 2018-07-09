@@ -59,6 +59,8 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
 
 void UIWizardExportAppPage3::populateProviders()
 {
+    AssertReturnVoid(m_pProviderComboBox->count() == 0);
+
     /* Acquire provider list: */
     // Here goes the experiamental list with
     // arbitrary contents for testing purposes.
@@ -390,7 +392,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
 
-    /* Translate File selector: */
+    /* Translate file selector: */
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
     m_pFileSelector->setChooseButtonToolTip(tr("Choose a file to export the virtual appliance to..."));
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export the virtual appliance to"));
@@ -420,6 +422,10 @@ void UIWizardExportAppPageBasic3::retranslateUi()
         {
             m_pProviderComboBox->setItemText(i, UIWizardExportApp::tr("Oracle Cloud Infrastructure"));
             m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to Oracle Cloud Infrastructure"), Qt::ToolTipRole);
+        }
+        else
+        {
+            m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to %1").arg(m_pProviderComboBox->itemText(i)), Qt::ToolTipRole);
         }
     }
 
