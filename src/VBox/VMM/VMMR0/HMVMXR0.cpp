@@ -6845,6 +6845,7 @@ static int hmR0VmxLeave(PVMCPU pVCpu, bool fImportState)
     pVCpu->hm.s.vmx.fUpdatedHostMsrs = false;
 
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatImportGuestState);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExportGuestState);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatPreExit);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitHandling);
