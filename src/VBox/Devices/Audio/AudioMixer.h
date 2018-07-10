@@ -191,6 +191,12 @@ typedef struct AUDMIXSINK
     PDMAUDIOVOLUME          VolumeCombined;
     /** Timestamp (in ms) since last update. */
     uint64_t                tsLastUpdatedMS;
+#ifdef VBOX_AUDIO_MIXER_DEBUG
+    struct
+    {
+        PPDMAUDIOFILE       pFile;
+    } Dbg;
+#endif
 } AUDMIXSINK, *PAUDMIXSINK;
 
 /**

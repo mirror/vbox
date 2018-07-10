@@ -810,6 +810,11 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
         audioMixerStreamDestroyInternal(pStreamToRemove);
     }
 
+#ifdef VBOX_AUDIO_MIXER_DEBUG
+    DrvAudioHlpFileDestroy(pSink->Dbg.pFile);
+    pSink->Dbg.pFile = NULL;
+#endif
+
     if (pSink->pszName)
     {
         RTStrFree(pSink->pszName);
@@ -1156,8 +1161,14 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
 #ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
 # error "Implement me!"
 #else
+        Assert(cbRead <= cbBuf);
         if (cbRead)
             memcpy(pvBuf, pvMixBuf, cbRead);
+#endif
+
+#ifdef VBOX_AUDIO_MIXER_DEBUG
+        int rc2 = DrvAudioHlpFileWrite(pSink->Dbg.pFile, pvBuf, cbRead, 0 /* fFlags */);
+        AssertRC(rc2);
 #endif
         if (pcbRead)
             *pcbRead = cbRead;
@@ -1166,7 +1177,6 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
 #ifndef VBOX_AUDIO_MIXER_WITH_MIXBUF
     RTMemFree(pvMixBuf);
 #endif
-
 
 #ifdef LOG_ENABLED
     char *pszStatus = dbgAudioMixerSinkStatusToStr(pSink->fStatus);
@@ -1400,6 +1410,34 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
         }
     }
 #endif /* VBOX_AUDIO_MIXER_WITH_MIXBUF */
+
+#ifdef VBOX_AUDIO_MIXER_DEBUG
+    if (RT_SUCCESS(rc))
+    {
+        DrvAudioHlpFileClose(pSink->Dbg.pFile);
+
+        char szTemp[RTPATH_MAX];
+        int rc2 = RTPathTemp(szTemp, sizeof(szTemp));
+        if (RT_SUCCESS(rc2))
+        {
+            /** @todo Sanitize sink name. */
+
+            char szName[64];
+            RTStrPrintf(szName, sizeof(szName), "MixerSink-%s", pSink->pszName);
+
+            char szFile[RTPATH_MAX + 1];
+            rc2 = DrvAudioHlpGetFileName(szFile, RT_ELEMENTS(szFile), szTemp, szName,
+                                         0 /* Instance */, PDMAUDIOFILETYPE_WAV, PDMAUDIOFILENAME_FLAG_NONE);
+            if (RT_SUCCESS(rc2))
+            {
+                rc2 = DrvAudioHlpFileCreate(PDMAUDIOFILETYPE_WAV, szFile, PDMAUDIOFILE_FLAG_NONE,
+                                            &pSink->Dbg.pFile);
+                if (RT_SUCCESS(rc2))
+                    rc2 = DrvAudioHlpFileOpen(pSink->Dbg.pFile, PDMAUDIOFILE_DEFAULT_OPEN_FLAGS, &pSink->PCMProps);
+            }
+        }
+    }
+#endif
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
