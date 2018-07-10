@@ -2510,36 +2510,7 @@ QString VBoxGlobal::openMedium(UIMediumType enmMediumType, QString strMediumLoca
     /* Initialize variables: */
     CVirtualBox comVBox = virtualBox();
 
-    /* Remember the path of the last chosen medium: */
-    switch (enmMediumType)
-    {
-        case UIMediumType_HardDisk: gEDataManager->setRecentFolderForHardDrives(QFileInfo(strMediumLocation).absolutePath()); break;
-        case UIMediumType_DVD:      gEDataManager->setRecentFolderForOpticalDisks(QFileInfo(strMediumLocation).absolutePath()); break;
-        case UIMediumType_Floppy:   gEDataManager->setRecentFolderForFloppyDisks(QFileInfo(strMediumLocation).absolutePath()); break;
-        default: break;
-    }
-
-    /* Update recently used list: */
-    QStringList recentMediumList;
-    switch (enmMediumType)
-    {
-        case UIMediumType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
-        case UIMediumType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
-        case UIMediumType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
-        default: break;
-    }
-    if (recentMediumList.contains(strMediumLocation))
-        recentMediumList.removeAll(strMediumLocation);
-    recentMediumList.prepend(strMediumLocation);
-    while(recentMediumList.size() > 5)
-        recentMediumList.removeLast();
-    switch (enmMediumType)
-    {
-        case UIMediumType_HardDisk: gEDataManager->setRecentListOfHardDrives(recentMediumList); break;
-        case UIMediumType_DVD:      gEDataManager->setRecentListOfOpticalDisks(recentMediumList); break;
-        case UIMediumType_Floppy:   gEDataManager->setRecentListOfFloppyDisks(recentMediumList); break;
-        default: break;
-    }
+    updateRecentlyUsedMediumListAndFolder(enmMediumType, strMediumLocation);
 
     /* Open corresponding medium: */
     CMedium comMedium = comVBox.OpenMedium(strMediumLocation, mediumTypeToGlobal(enmMediumType), KAccessMode_ReadWrite, false);
@@ -3100,6 +3071,40 @@ QString VBoxGlobal::details(const CMedium &comMedium, bool fPredictDiff, bool fU
     /* Return UI medium details: */
     return fUseHtml ? guiMedium.detailsHTML(true /* no diffs? */, fPredictDiff) :
                       guiMedium.details(true /* no diffs? */, fPredictDiff);
+}
+
+void VBoxGlobal::updateRecentlyUsedMediumListAndFolder(UIMediumType enmMediumType, QString strMediumLocation)
+{
+       /* Remember the path of the last chosen medium: */
+    switch (enmMediumType)
+    {
+        case UIMediumType_HardDisk: gEDataManager->setRecentFolderForHardDrives(QFileInfo(strMediumLocation).absolutePath()); break;
+        case UIMediumType_DVD:      gEDataManager->setRecentFolderForOpticalDisks(QFileInfo(strMediumLocation).absolutePath()); break;
+        case UIMediumType_Floppy:   gEDataManager->setRecentFolderForFloppyDisks(QFileInfo(strMediumLocation).absolutePath()); break;
+        default: break;
+    }
+
+    /* Update recently used list: */
+    QStringList recentMediumList;
+    switch (enmMediumType)
+    {
+        case UIMediumType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
+        case UIMediumType_DVD:      recentMediumList = gEDataManager->recentListOfOpticalDisks(); break;
+        case UIMediumType_Floppy:   recentMediumList = gEDataManager->recentListOfFloppyDisks(); break;
+        default: break;
+    }
+    if (recentMediumList.contains(strMediumLocation))
+        recentMediumList.removeAll(strMediumLocation);
+    recentMediumList.prepend(strMediumLocation);
+    while(recentMediumList.size() > 5)
+        recentMediumList.removeLast();
+    switch (enmMediumType)
+    {
+        case UIMediumType_HardDisk: gEDataManager->setRecentListOfHardDrives(recentMediumList); break;
+        case UIMediumType_DVD:      gEDataManager->setRecentListOfOpticalDisks(recentMediumList); break;
+        case UIMediumType_Floppy:   gEDataManager->setRecentListOfFloppyDisks(recentMediumList); break;
+        default: break;
+    }
 }
 
 #ifdef RT_OS_LINUX
