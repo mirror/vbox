@@ -188,15 +188,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pFormatComboBox = new QComboBox;
                             if (m_pFormatComboBox)
                             {
-                                const QString strFormatOVF09("ovf-0.9");
-                                const QString strFormatOVF10("ovf-1.0");
-                                const QString strFormatOVF20("ovf-2.0");
-                                const QString strFormatOPC10("opc-1.0");
-                                m_pFormatComboBox->addItem(strFormatOVF09, strFormatOVF09);
-                                m_pFormatComboBox->addItem(strFormatOVF10, strFormatOVF10);
-                                m_pFormatComboBox->addItem(strFormatOVF20, strFormatOVF20);
-                                m_pFormatComboBox->addItem(strFormatOPC10, strFormatOPC10);
-
                                 /* Add into layout: */
                                 pSettingsLayout1->addWidget(m_pFormatComboBox, 1, 1);
                             }
@@ -303,10 +294,10 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     populateVMSelectorItems(selectedVMNames);
     /* Choose default storage type: */
     chooseDefaultStorageType();
+    /* Populate formats: */
+    populateFormats();
     /* Populate providers: */
     populateProviders();
-    /* Choose default settings: */
-    chooseDefaultSettings();
 
     /* Setup connections: */
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
@@ -386,6 +377,8 @@ void UIWizardExportAppPageExpert::retranslateUi()
 
     /* Refresh current settings: */
     refreshCurrentSettings();
+
+    /* Update tool-tips: */
     updateFormatComboToolTip();
     updateProviderComboToolTip();
 }
@@ -397,6 +390,7 @@ void UIWizardExportAppPageExpert::initializePage()
 
     /* Refresh current settings: */
     refreshCurrentSettings();
+    /* Refresh appliance settings: */
     refreshApplianceSettingsWidget();
 }
 
@@ -477,14 +471,18 @@ void UIWizardExportAppPageExpert::sltStorageTypeChangeHandler()
 
 void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
 {
+    /* Update tool-tip: */
+    updateFormatComboToolTip();
+
     /* Refresh current settings: */
     refreshCurrentSettings();
-    updateFormatComboToolTip();
 }
 
 void UIWizardExportAppPageExpert::sltHandleProviderComboChange()
 {
+    /* Update tool-tip: */
+    updateProviderComboToolTip();
+
     /* Refresh current settings: */
     refreshCurrentSettings();
-    updateProviderComboToolTip();
 }

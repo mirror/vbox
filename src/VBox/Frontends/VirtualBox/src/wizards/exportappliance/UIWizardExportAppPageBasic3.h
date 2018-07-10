@@ -42,11 +42,10 @@ protected:
     /** Constructs 3rd page base. */
     UIWizardExportAppPage3();
 
+    /** Populates formats. */
+    void populateFormats();
     /** Populates providers. */
     void populateProviders();
-
-    /** Chooses default settings. */
-    void chooseDefaultSettings();
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();

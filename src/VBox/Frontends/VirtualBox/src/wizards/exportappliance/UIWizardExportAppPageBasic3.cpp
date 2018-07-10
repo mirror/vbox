@@ -57,6 +57,26 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
 {
 }
 
+void UIWizardExportAppPage3::populateFormats()
+{
+    AssertReturnVoid(m_pFormatComboBox->count() == 0);
+
+    /* Apply hardcoded format list: */
+    QStringList formats;
+    formats << "ovf-0.9";
+    formats << "ovf-1.0";
+    formats << "ovf-2.0";
+    formats << "opc-1.0";
+    m_pFormatComboBox->addItems(formats);
+
+    /* Duplicate non-translated names to data fields: */
+    for (int i = 0; i < m_pFormatComboBox->count(); ++i)
+        m_pFormatComboBox->setItemData(i, m_pFormatComboBox->itemText(i));
+
+    /* Set default: */
+    setFormat("ovf-1.0");
+}
+
 void UIWizardExportAppPage3::populateProviders()
 {
     AssertReturnVoid(m_pProviderComboBox->count() == 0);
@@ -74,12 +94,8 @@ void UIWizardExportAppPage3::populateProviders()
     /* Duplicate non-translated names to data fields: */
     for (int i = 0; i < m_pProviderComboBox->count(); ++i)
         m_pProviderComboBox->setItemData(i, m_pProviderComboBox->itemText(i));
-}
 
-void UIWizardExportAppPage3::chooseDefaultSettings()
-{
-    /* Choose defaults: */
-    setFormat("ovf-1.0");
+    /* Set default: */
     setProvider("OCI");
 }
 
@@ -262,15 +278,6 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     m_pFormatComboBox = new QComboBox;
                     if (m_pFormatComboBox)
                     {
-                        const QString strFormatOVF09("ovf-0.9");
-                        const QString strFormatOVF10("ovf-1.0");
-                        const QString strFormatOVF20("ovf-2.0");
-                        const QString strFormatOPC10("opc-1.0");
-                        m_pFormatComboBox->addItem(strFormatOVF09, strFormatOVF09);
-                        m_pFormatComboBox->addItem(strFormatOVF10, strFormatOVF10);
-                        m_pFormatComboBox->addItem(strFormatOVF20, strFormatOVF20);
-                        m_pFormatComboBox->addItem(strFormatOPC10, strFormatOPC10);
-
                         /* Add into layout: */
                         pSettingsLayout1->addWidget(m_pFormatComboBox, 1, 1);
                     }
@@ -366,10 +373,10 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
         pMainLayout->addStretch();
     }
 
+    /* Populate formats: */
+    populateFormats();
     /* Populate providers: */
     populateProviders();
-    /* Choose default settings: */
-    chooseDefaultSettings();
 
     /* Setup connections: */
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic3::completeChanged);
@@ -515,12 +522,18 @@ void UIWizardExportAppPageBasic3::updatePageAppearance()
 
 void UIWizardExportAppPageBasic3::sltHandleFormatComboChange()
 {
-    refreshCurrentSettings();
+    /* Update tool-tip: */
     updateFormatComboToolTip();
+
+    /* Refresh current settings: */
+    refreshCurrentSettings();
 }
 
 void UIWizardExportAppPageBasic3::sltHandleProviderComboChange()
 {
-    refreshCurrentSettings();
+    /* Update tool-tip: */
     updateProviderComboToolTip();
+
+    /* Refresh current settings: */
+    refreshCurrentSettings();
 }
