@@ -2978,7 +2978,8 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
         if (source.enmType == FsObjType_Directory)
         {
             hrc = GuestSession::i_directoryCopyFlagFromStr(*itFlags, &source.Type.Dir.fCopyFlags);
-            source.Type.Dir.fRecursive = true; /* Implicit. */
+            source.Type.Dir.fFollowSymlinks = true; /** @todo Add a flag for that in DirectoryCopyFlag_T. Later. */
+            source.Type.Dir.fRecursive      = true; /* Implicit. */
         }
         else if (source.enmType == FsObjType_File)
             hrc = GuestSession::i_fileCopyFlagFromStr(*itFlags, &source.Type.File.fCopyFlags);
@@ -3052,7 +3053,8 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
     source.enmType             = FsObjType_Directory;
     source.enmPathStyle        = i_getPathStyle();
     source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)fFlags;
-    source.Type.Dir.fRecursive = true; /* Implicit. */
+    source.Type.Dir.fFollowSymlinks = true; /** @todo Add a flag for that in DirectoryCopyFlag_T. Later. */
+    source.Type.Dir.fRecursive      = true; /* Implicit. */
 
     SourceSet.push_back(source);
 

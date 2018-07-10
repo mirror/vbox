@@ -1109,10 +1109,12 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
 
                 case FsObjType_Symlink:
                 {
-                    if (mSourceSpec.fFollowSymlinks)
+                    if (mSourceSpec.Type.Dir.fFollowSymlinks)
                     {
                         /** @todo Symlink handling from guest is not imlemented yet.
                          *        See IGuestSession::symlinkRead(). */
+                        LogRel2(("Guest Control: Warning: Symlink support on guest side not available, skipping \"%s\"",
+                                 strEntry.c_str()));
                     }
                     break;
                 }
@@ -1218,7 +1220,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
 
                             case RTFS_TYPE_SYMLINK:
                             {
-                                if (mSourceSpec.fFollowSymlinks)
+                                if (mSourceSpec.Type.Dir.fFollowSymlinks)
                                 {
                                     Utf8Str strEntryAbs = strPathAbs + Utf8Str(Entry.szName);
 
@@ -1375,6 +1377,8 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         Utf8Str strSrc = itSrc->strSource;
         Utf8Str strDst = mDest;
 
+        bool    fFollowSymlinks;
+
         if (itSrc->enmType == FsObjType_Directory)
         {
             /* If the source does not end with a slash, copy over the entire directory
@@ -1388,13 +1392,18 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
                 strDst += Utf8StrFmt("%s", RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
             }
+
+            fFollowSymlinks = itSrc->Type.Dir.fFollowSymlinks;
+        }
+        else
+        {
+            fFollowSymlinks = itSrc->Type.File.fCopyFlags & FileCopyFlag_FollowLinks;
         }
 
-        LogFlowFunc(("strSrc=%s, strDst=%s\n", strSrc.c_str(), strDst.c_str()));
+        LogFlowFunc(("strSrc=%s, strDst=%s, fFollowSymlinks=%RTbool\n", strSrc.c_str(), strDst.c_str(), fFollowSymlinks));
 
         GuestFsObjData srcObjData; int rcGuest;
-        rc = mSession->i_fsQueryInfo(strSrc, itSrc->fFollowSymlinks ? TRUE : FALSE,
-                                     srcObjData, &rcGuest);
+        rc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &rcGuest);
         if (RT_FAILURE(rc))
         {
             strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
@@ -1751,22 +1760,33 @@ int GuestSessionTaskCopyTo::Run(void)
         FsList *pList = *itList;
         AssertPtr(pList);
 
-        const bool     fFollowSymlinks   = pList->mSourceSpec.fFollowSymlinks;
-        const bool     fCopyIntoExisting = pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting;
-        const uint32_t fDirMode          = 0700; /** @todo Play safe by default; implement ACLs. */
+        bool     fCopyIntoExisting;
+        bool     fFollowSymlinks;
+        uint32_t fDirMode = 0700; /** @todo Play safe by default; implement ACLs. */
 
         LogFlowFunc(("List: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
 
         /* Create the root directory. */
         if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
-            rc = directoryCreate(pList->mDstRootAbs.c_str(), DirectoryCreateFlag_None, fDirMode, fFollowSymlinks);
+            fCopyIntoExisting = pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting;
+            fFollowSymlinks   = pList->mSourceSpec.Type.Dir.fFollowSymlinks;
+
+            rc = directoryCreate(pList->mDstRootAbs.c_str(), DirectoryCreateFlag_None, fDirMode,
+                                 pList->mSourceSpec.Type.Dir.fFollowSymlinks);
             if (   rc == VWRN_ALREADY_EXISTS
                 && !fCopyIntoExisting)
             {
                 break;
             }
         }
+        else if (pList->mSourceSpec.enmType == FsObjType_File)
+        {
+            fCopyIntoExisting = !(pList->mSourceSpec.Type.File.fCopyFlags & FileCopyFlag_NoReplace);
+            fFollowSymlinks   = pList->mSourceSpec.Type.File.fCopyFlags & FileCopyFlag_FollowLinks;
+        }
+        else
+            AssertFailed();
 
         FsEntries::const_iterator itEntry = pList->mVecEntries.begin();
         while (itEntry != pList->mVecEntries.end())
@@ -1803,7 +1823,7 @@ int GuestSessionTaskCopyTo::Run(void)
                 case RTFS_TYPE_FILE:
                     LogFlowFunc(("File '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
-                        rc = fileCopyToGuest(strSrcAbs, strDstAbs, FileCopyFlag_None);
+                        rc = fileCopyToGuest(strSrcAbs, strDstAbs, pList->mSourceSpec.Type.File.fCopyFlags);
                     break;
 
                 default:
