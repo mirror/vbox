@@ -6181,7 +6181,7 @@ HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         if (rcStrict == VINF_IEM_RAISED_XCPT)
         {
             rcStrict = VINF_SUCCESS;
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
         }
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     }
@@ -6228,7 +6228,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -6258,7 +6258,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -6318,7 +6318,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_VAL(rcStrict);
@@ -6604,7 +6604,7 @@ static VBOXSTRICTRC hmR0SvmExitReadMsr(PVMCPU pVCpu, PSVMVMCB pVmcb)
     if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return rcStrict;
@@ -6701,7 +6701,7 @@ static VBOXSTRICTRC hmR0SvmExitWriteMsr(PVMCPU pVCpu, PSVMVMCB pVmcb, PSVMTRANSI
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return rcStrict;
@@ -6830,7 +6830,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXsetbv(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -7756,7 +7756,7 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -7794,7 +7794,7 @@ HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -7839,7 +7839,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -7873,7 +7873,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmsave(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -7901,7 +7901,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpga(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -7934,7 +7934,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         rcStrict = VINF_SUCCESS;
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_XCPT_RAISED_MASK);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
 
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
