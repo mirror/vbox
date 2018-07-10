@@ -1399,6 +1399,10 @@ IEM_CIMPL_DEF_0(iemCImpl_skinit)
     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 
+
+/**
+ * Implements SVM's implementation of PAUSE.
+ */
 IEM_CIMPL_DEF_0(iemCImpl_svm_pause)
 {
     bool fCheckIntercept = true;
