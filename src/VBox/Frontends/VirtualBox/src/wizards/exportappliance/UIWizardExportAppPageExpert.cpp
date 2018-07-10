@@ -267,12 +267,30 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 pSettingsLayout2->addWidget(m_pProviderComboBoxLabel, 0, 0);
                             }
 
+                            /* Create profile combo-box: */
+                            m_pProfileComboBox = new QComboBox;
+                            if (m_pProfileComboBox)
+                            {
+                                /* Add into layout: */
+                                pSettingsLayout2->addWidget(m_pProfileComboBox, 1, 1);
+                            }
+                            /* Create profile label: */
+                            m_pProfileComboBoxLabel = new QLabel;
+                            if (m_pProfileComboBoxLabel)
+                            {
+                                m_pProfileComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                                m_pProfileComboBoxLabel->setBuddy(m_pProviderComboBox);
+
+                                /* Add into layout: */
+                                pSettingsLayout2->addWidget(m_pProfileComboBoxLabel, 1, 0);
+                            }
+
                             /* Create placeholder: */
                             QWidget *pPlaceholder = new QWidget;
                             if (pPlaceholder)
                             {
                                 /* Add into layout: */
-                                pSettingsLayout2->addWidget(pPlaceholder, 1, 0, 1, 2);
+                                pSettingsLayout2->addWidget(pPlaceholder, 2, 0, 1, 2);
                             }
                         }
 
@@ -298,6 +316,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     populateFormats();
     /* Populate providers: */
     populateProviders();
+    /* Populate profiles: */
+    populateProfiles();
 
     /* Setup connections: */
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
@@ -308,6 +328,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
     connect(m_pProviderComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleProviderComboChange);
+    connect(m_pProfileComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardExportAppPageExpert::sltHandleProfileComboChange);
 
     /* Register classes: */
     qRegisterMetaType<StorageType>();
@@ -374,6 +396,9 @@ void UIWizardExportAppPageExpert::retranslateUi()
             m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to %1").arg(m_pProviderComboBox->itemText(i)), Qt::ToolTipRole);
         }
     }
+
+    /* Translate Profile combo-box: */
+    m_pProfileComboBoxLabel->setText(UIWizardExportApp::tr("&Profile:"));
 
     /* Refresh file selector name: */
     refreshFileSelectorName();
@@ -488,4 +513,11 @@ void UIWizardExportAppPageExpert::sltHandleProviderComboChange()
 {
     /* Update tool-tip: */
     updateProviderComboToolTip();
+
+    /* Refresh required settings: */
+    populateProfiles();
+}
+
+void UIWizardExportAppPageExpert::sltHandleProfileComboChange()
+{
 }

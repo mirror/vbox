@@ -54,6 +54,8 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
     , m_pManifestCheckbox(0)
     , m_pProviderComboBoxLabel(0)
     , m_pProviderComboBox(0)
+    , m_pProfileComboBoxLabel(0)
+    , m_pProfileComboBox(0)
 {
 }
 
@@ -97,6 +99,24 @@ void UIWizardExportAppPage3::populateProviders()
 
     /* Set default: */
     setProvider("OCI");
+}
+
+void UIWizardExportAppPage3::populateProfiles()
+{
+    /* Acquire profile list: */
+    // Here goes the experiamental list with
+    // arbitrary contents for testing purposes.
+    QStringList profiles;
+    profiles << "Profile 1";
+    profiles << "Profile 2";
+    profiles << "Profile 3";
+    profiles << "Profile 4";
+    m_pProfileComboBox->clear();
+    m_pProfileComboBox->addItems(profiles);
+
+    /* Duplicate non-translated names to data fields: */
+    for (int i = 0; i < m_pProfileComboBox->count(); ++i)
+        m_pProfileComboBox->setItemData(i, m_pProfileComboBox->itemText(i));
 }
 
 void UIWizardExportAppPage3::updatePageAppearance()
@@ -235,6 +255,19 @@ void UIWizardExportAppPage3::setProvider(const QString &strProvider)
     m_pProviderComboBox->setCurrentIndex(iIndex);
 }
 
+QString UIWizardExportAppPage3::profile() const
+{
+    const int iIndex = m_pProfileComboBox->currentIndex();
+    return m_pProfileComboBox->itemData(iIndex).toString();
+}
+
+void UIWizardExportAppPage3::setProfile(const QString &strProfile)
+{
+    const int iIndex = m_pProfileComboBox->findData(strProfile);
+    AssertMsg(iIndex != -1, ("Field not found!"));
+    m_pProfileComboBox->setCurrentIndex(iIndex);
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIWizardExportAppPageBasic3 implementation.                                                                            *
@@ -371,12 +404,30 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         pSettingsLayout2->addWidget(m_pProviderComboBoxLabel, 0, 0);
                     }
 
+                    /* Create profile combo-box: */
+                    m_pProfileComboBox = new QComboBox;
+                    if (m_pProfileComboBox)
+                    {
+                        /* Add into layout: */
+                        pSettingsLayout2->addWidget(m_pProfileComboBox, 1, 1);
+                    }
+                    /* Create profile label: */
+                    m_pProfileComboBoxLabel = new QLabel;
+                    if (m_pProfileComboBoxLabel)
+                    {
+                        m_pProfileComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                        m_pProfileComboBoxLabel->setBuddy(m_pProviderComboBox);
+
+                        /* Add into layout: */
+                        pSettingsLayout2->addWidget(m_pProfileComboBoxLabel, 1, 0);
+                    }
+
                     /* Create placeholder: */
                     QWidget *pPlaceholder = new QWidget;
                     if (pPlaceholder)
                     {
                         /* Add into layout: */
-                        pSettingsLayout2->addWidget(pPlaceholder, 1, 0, 1, 2);
+                        pSettingsLayout2->addWidget(pPlaceholder, 2, 0, 1, 2);
                     }
                 }
 
@@ -396,6 +447,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     populateFormats();
     /* Populate providers: */
     populateProviders();
+    /* Populate profiles: */
+    populateProfiles();
 
     /* Setup connections: */
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic3::completeChanged);
@@ -403,6 +456,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             this, &UIWizardExportAppPageBasic3::sltHandleFormatComboChange);
     connect(m_pProviderComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic3::sltHandleProviderComboChange);
+    connect(m_pProfileComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardExportAppPageBasic3::sltHandleProfileComboChange);
 
     /* Register fields: */
     registerField("path", this, "path");
@@ -454,6 +509,9 @@ void UIWizardExportAppPageBasic3::retranslateUi()
             m_pProviderComboBox->setItemData(i, UIWizardExportApp::tr("Write to %1").arg(m_pProviderComboBox->itemText(i)), Qt::ToolTipRole);
         }
     }
+
+    /* Translate Profile combo-box: */
+    m_pProfileComboBoxLabel->setText(UIWizardExportApp::tr("&Profile:"));
 
     /* Refresh file selector name: */
     refreshFileSelectorName();
@@ -560,4 +618,11 @@ void UIWizardExportAppPageBasic3::sltHandleProviderComboChange()
 {
     /* Update tool-tip: */
     updateProviderComboToolTip();
+
+    /* Refresh required settings: */
+    populateProfiles();
+}
+
+void UIWizardExportAppPageBasic3::sltHandleProfileComboChange()
+{
 }

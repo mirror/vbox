@@ -46,6 +46,8 @@ protected:
     void populateFormats();
     /** Populates providers. */
     void populateProviders();
+    /** Populates profiles. */
+    void populateProfiles();
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();
@@ -84,6 +86,11 @@ protected:
     /** Defines @a strProvider. */
     void setProvider(const QString &strProvider);
 
+    /** Returns profile. */
+    QString profile() const;
+    /** Defines @a strProfile. */
+    void setProfile(const QString &strProfile);
+
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
 
@@ -114,6 +121,11 @@ protected:
     QLabel    *m_pProviderComboBoxLabel;
     /** Holds the provider combo-box instance. */
     QComboBox *m_pProviderComboBox;
+
+    /** Holds the profile combo-box label instance. */
+    QLabel    *m_pProfileComboBoxLabel;
+    /** Holds the profile combo-box instance. */
+    QComboBox *m_pProfileComboBox;
 };
 
 
@@ -155,6 +167,9 @@ private slots:
 
     /** Handles change in provider combo-box. */
     void sltHandleProviderComboChange();
+
+    /** Handles change in profile combo-box. */
+    void sltHandleProfileComboChange();
 
 private:
 
