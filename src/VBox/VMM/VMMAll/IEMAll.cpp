@@ -14837,6 +14837,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxWrite(PVMCPU pVCpu, uint8_t cbIns
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxRead(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
 {
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 2);
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4
+                        | CPUMCTX_EXTRN_APIC_TPR);
     Assert(iCrReg < 16);
     Assert(iGReg < 16);
 
