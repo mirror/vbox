@@ -566,7 +566,7 @@ Utf8Str GuestProcess::i_guestErrorToString(int rcGuest)
 bool GuestProcess::i_isGuestError(int rc)
 {
     return (   rc == VERR_GSTCTL_GUEST_ERROR
-            || rc == VWRN_GSTCTL_PROCESS_EXIT_CODE);
+            || rc == VERR_GSTCTL_PROCESS_EXIT_CODE);
 }
 
 inline bool GuestProcess::i_isAlive(void)
@@ -2066,6 +2066,18 @@ bool GuestProcessTool::isRunning(void)
 }
 
 /**
+ * Returns whether the tool has been run correctly or not, based on it's internal process
+ * status and reported exit status.
+ *
+ * @return @c true if the tool has been run correctly (exit status 0), or @c false if some error
+ *         occurred (exit status <> 0 or wrong process state).
+ */
+bool GuestProcessTool::isTerminatedOk(void)
+{
+    return getTerminationStatus() == VINF_SUCCESS ? true : false;
+}
+
+/**
  * Static helper function to start and wait for a certain toolbox tool.
  *
  * This function most likely is the one you want to use in the first place if you
@@ -2092,7 +2104,7 @@ int GuestProcessTool::run(      GuestSession              *pGuestSession,
         /* Make sure to check the error information we got from the guest tool. */
         if (GuestProcess::i_isGuestError(errorInfo.rcGuest))
         {
-            if (errorInfo.rcGuest == VWRN_GSTCTL_PROCESS_EXIT_CODE) /* Translate exit code to a meaningful error code. */
+            if (errorInfo.rcGuest == VERR_GSTCTL_PROCESS_EXIT_CODE) /* Translate exit code to a meaningful error code. */
                 rcGuest = GuestProcessTool::exitCodeToRc(startupInfo, errorInfo.iExitCode);
             else /* At least return something. */
                 rcGuest = errorInfo.rcGuest;
@@ -2153,7 +2165,7 @@ int GuestProcessTool::runEx(      GuestSession              *pGuestSession,
         /* Make sure to check the error information we got from the guest tool. */
         if (GuestProcess::i_isGuestError(errorInfo.rcGuest))
         {
-            if (errorInfo.rcGuest == VWRN_GSTCTL_PROCESS_EXIT_CODE) /* Translate exit code to a meaningful error code. */
+            if (errorInfo.rcGuest == VERR_GSTCTL_PROCESS_EXIT_CODE) /* Translate exit code to a meaningful error code. */
                 rcGuest = GuestProcessTool::exitCodeToRc(startupInfo, errorInfo.iExitCode);
             else /* At least return something. */
                 rcGuest = errorInfo.rcGuest;
@@ -2223,7 +2235,7 @@ int GuestProcessTool::runExErrorInfo(      GuestSession              *pGuestSess
         /* Make sure the process runs until completion. */
         vrc = procTool.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &errorInfo.rcGuest);
         if (RT_SUCCESS(vrc))
-            errorInfo.rcGuest = procTool.terminatedOk(&errorInfo.iExitCode);
+            errorInfo.rcGuest = procTool.getTerminationStatus(&errorInfo.iExitCode);
     }
 
     LogFlowFunc(("Returned rc=%Rrc, rcGuest=%Rrc, iExitCode=%d\n", vrc, errorInfo.rcGuest, errorInfo.iExitCode));
@@ -2233,13 +2245,13 @@ int GuestProcessTool::runExErrorInfo(      GuestSession              *pGuestSess
 /**
  * Reports if the tool has been run correctly.
  *
- * @return  Will return VWRN_GSTCTL_PROCESS_EXIT_CODE if the tool process returned an exit code <> 0,
+ * @return  Will return VERR_GSTCTL_PROCESS_EXIT_CODE if the tool process returned an exit code <> 0,
  *          VERR_GSTCTL_PROCESS_WRONG_STATE if the tool process is in a wrong state (e.g. still running),
  *          or VINF_SUCCESS otherwise.
  *
  * @param   piExitCode      Exit code of the tool. Optional.
  */
-int GuestProcessTool::terminatedOk(int32_t *piExitCode /* = NULL */)
+int GuestProcessTool::getTerminationStatus(int32_t *piExitCode /* = NULL */)
 {
     Assert(!pProcess.isNull());
     /* pExitCode is optional. */
@@ -2254,7 +2266,7 @@ int GuestProcessTool::terminatedOk(int32_t *piExitCode /* = NULL */)
         if (piExitCode)
             *piExitCode = iExitCode;
 
-        vrc = iExitCode != 0 ? VWRN_GSTCTL_PROCESS_EXIT_CODE : VINF_SUCCESS;
+        vrc = iExitCode != 0 ? VERR_GSTCTL_PROCESS_EXIT_CODE : VINF_SUCCESS;
     }
     else
         vrc = VERR_GSTCTL_PROCESS_WRONG_STATE;

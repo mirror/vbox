@@ -284,18 +284,14 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pr
         return VERR_COM_UNEXPECTED;
 
     GuestProcessStreamBlock curBlock;
-    int rc = mData.mProcessTool.waitEx(GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK,
-                                         &curBlock, prcGuest);
+    int rc = mData.mProcessTool.waitEx(GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK, &curBlock, prcGuest);
     if (RT_SUCCESS(rc))
     {
         /*
          * Note: The guest process can still be around to serve the next
          *       upcoming stream block next time.
          */
-        if (!mData.mProcessTool.isRunning())
-            rc = mData.mProcessTool.terminatedOk();
-
-        if (RT_SUCCESS(rc))
+        if (mData.mProcessTool.isRunning())
         {
             if (curBlock.GetCount()) /* Did we get content? */
             {
@@ -314,6 +310,8 @@ int GuestDirectory::i_readInternal(ComObjPtr<GuestFsObjInfo> &fsObjInfo, int *pr
                 rc = VERR_NO_MORE_FILES;
             }
         }
+        else /* Tool process is not running anymore. Return status. */
+            rc = mData.mProcessTool.getTerminationStatus();
     }
 
     LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
@@ -378,7 +376,6 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
     int vrc = i_readInternal(fsObjInfo, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
-AssertMsg(vrc != VWRN_GSTCTL_PROCESS_EXIT_CODE, ("Buggy status code handling! See futher down...\n"));
         /* Return info object to the caller. */
         hr = fsObjInfo.queryInterfaceTo(aObjInfo.asOutParam());
     }
@@ -390,11 +387,7 @@ AssertMsg(vrc != VWRN_GSTCTL_PROCESS_EXIT_CODE, ("Buggy status code handling! Se
                 hr = GuestDirectory::i_setErrorExternal(this, rcGuest);
                 break;
 
-/** @todo r=bird: VWRN_GSTCTL_PROCESS_EXIT_CODE won't ever get here because
- *        RT_SUCCESS(VWRN_GSTCTL_PROCESS_EXIT_CODE) -> true.
- *
- */
-            case VWRN_GSTCTL_PROCESS_EXIT_CODE:
+            case VERR_GSTCTL_PROCESS_EXIT_CODE:
                 hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading directory \"%s\" failed: %Rrc"),
                                   mData.mOpenInfo.mPath.c_str(), mData.mProcessTool.getRc());
                 break;

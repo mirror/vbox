@@ -1969,14 +1969,14 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
         if (RT_SUCCESS(rcGuest))
             vrc = procTool.wait(GUESTPROCESSTOOL_WAIT_FLAG_NONE, &rcGuest);
         if (RT_SUCCESS(vrc))
-            vrc = procTool.terminatedOk();
+            vrc = procTool.getTerminationStatus();
     }
 
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
         {
-            case VWRN_GSTCTL_PROCESS_EXIT_CODE:
+            case VERR_GSTCTL_PROCESS_EXIT_CODE:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Running update file \"%s\" on guest failed: %Rrc"),
                                                procInfo.mExecutable.c_str(), procTool.getRc()));

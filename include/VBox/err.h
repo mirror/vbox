@@ -2704,10 +2704,10 @@
 #define VWRN_GSTCTL_OBJECTSTATE_CHANGED             6220
 /** Guest process is in a wrong state. */
 #define VERR_GSTCTL_PROCESS_WRONG_STATE             (-6221)
-/** Started guest process terminated with an exit code <> 0. */
-#define VWRN_GSTCTL_PROCESS_EXIT_CODE               6221
 /** Maximum objects has been reached. */
 #define VERR_GSTCTL_MAX_OBJECTS_REACHED             (-6222)
+/** Started guest process terminated with an exit code <> 0. */
+#define VERR_GSTCTL_PROCESS_EXIT_CODE               (-6223)
 /** @} */
 
 

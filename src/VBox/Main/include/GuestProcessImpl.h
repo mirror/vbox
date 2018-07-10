@@ -231,7 +231,9 @@ public:
 
     bool isRunning(void);
 
-    int terminatedOk(int32_t *piExitCode = NULL);
+    bool isTerminatedOk(void);
+
+    int getTerminationStatus(int32_t *piExitCode = NULL);
 
     int terminate(uint32_t uTimeoutMS, int *pGuestRc);
 
