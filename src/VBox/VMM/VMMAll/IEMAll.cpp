@@ -15197,7 +15197,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMwait(PVMCPU pVCpu, uint8_t cbInstr)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedHlt(PVMCPU pVCpu, uint8_t cbInstr)
 {
-    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 1);
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_hlt);
