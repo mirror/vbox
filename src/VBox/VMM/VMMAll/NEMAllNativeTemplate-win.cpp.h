@@ -4085,7 +4085,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
      */
 # ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
     VID_MESSAGE_MAPPING_HEADER volatile *pMappingHeader = (VID_MESSAGE_MAPPING_HEADER volatile *)pVCpu->nem.s.pvMsgSlotMapping;
-    uint32_t        cMillies            = 5000; /** @todo lower this later... */
 # endif
     const bool      fSingleStepping     = DBGFIsStepping(pVCpu);
 //    const uint32_t  fCheckVmFFs         = !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK
@@ -4166,8 +4165,16 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
         }
 
         /*
-         * Run a bit.
+         * Poll timers and run for a bit.
+         *
+         * With the VID approach (ring-0 or ring-3) we can specify a timeout here,
+         * so we take the time of the next timer event and uses that as a deadline.
+         * The rounding heuristics are "tuned" so that rhel5 (1K timer) will boot fine.
          */
+        /** @todo See if we cannot optimize this TMTimerPollGIP by only redoing
+         *        the whole polling job when timers have changed... */
+        uint64_t       offDeltaIgnored;
+        uint64_t const nsNextTimerEvt = TMTimerPollGIP(pVM, pVCpu, &offDeltaIgnored); NOREF(nsNextTimerEvt);
         if (   !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
             && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         {
@@ -4197,10 +4204,24 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
             if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_WAIT, VMCPUSTATE_STARTED_EXEC_NEM))
             {
 # ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
+                uint64_t const  nsNow           = RTTimeNanoTS();
+                int64_t const   cNsNextTimerEvt = nsNow - nsNextTimerEvt;
+                uint32_t        cMsWait;
+                if (cNsNextTimerEvt < 100000 /* ns */)
+                    cMsWait = 0;
+                else if ((uint64_t)cNsNextTimerEvt < RT_NS_1SEC)
+                {
+                    if ((uint32_t)cNsNextTimerEvt < 2*RT_NS_1MS)
+                        cMsWait = 1;
+                    else
+                        cMsWait = ((uint32_t)cNsNextTimerEvt - 100000 /*ns*/) / RT_NS_1MS;
+                }
+                else
+                    cMsWait = RT_MS_1SEC;
 #  ifdef IN_RING0
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = pVCpu->nem.s.fHandleAndGetFlags;
-                pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
+                pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMsWait;
                 NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
                                                         &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
                                                         sizeof(pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext),
@@ -4209,7 +4230,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                 if (rcNt == STATUS_SUCCESS)
 #  else
                 BOOL fRet = VidMessageSlotHandleAndGetNext(pVM->nem.s.hPartitionDevice, pVCpu->idCpu,
-                                                           pVCpu->nem.s.fHandleAndGetFlags, cMillies);
+                                                           pVCpu->nem.s.fHandleAndGetFlags, cMsWait);
                 VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
                 if (fRet)
 #  endif

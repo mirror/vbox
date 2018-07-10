@@ -41,6 +41,7 @@
 #include <iprt/dbg.h>
 #include <iprt/memobj.h>
 #include <iprt/string.h>
+#include <iprt/time.h>
 
 
 /* Assert compile context sanity. */
