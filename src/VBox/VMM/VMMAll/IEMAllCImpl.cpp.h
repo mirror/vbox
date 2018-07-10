@@ -6195,10 +6195,15 @@ IEM_CIMPL_DEF_0(iemCImpl_rdpmc)
         IEM_RETURN_SVM_VMEXIT(pVCpu, SVM_EXIT_RDPMC, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    /** @todo Implement RDPMC for the regular guest execution case (the above only
-     *        handles nested-guest intercepts). */
-    RT_NOREF(cbInstr);
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    /** @todo Emulate performance counters, for now just return 0. */
+    pVCpu->cpum.GstCtx.rax = 0;
+    pVCpu->cpum.GstCtx.rdx = 0;
+    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RDX);
+    /** @todo We should trigger a \#GP here if the CPU doesn't support the index in
+     *        ecx but see @bugref{3472}! */
+
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
