@@ -1760,9 +1760,9 @@ int GuestSessionTaskCopyTo::Run(void)
         FsList *pList = *itList;
         AssertPtr(pList);
 
-        bool     fCopyIntoExisting;
-        bool     fFollowSymlinks;
-        uint32_t fDirMode = 0700; /** @todo Play safe by default; implement ACLs. */
+        bool     fCopyIntoExisting = false;
+        bool     fFollowSymlinks   = false;
+        uint32_t fDirMode          = 0700; /** @todo Play safe by default; implement ACLs. */
 
         LogFlowFunc(("List: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
 
