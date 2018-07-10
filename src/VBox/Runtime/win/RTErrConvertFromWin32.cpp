@@ -204,6 +204,7 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case ERROR_ACCOUNT_DISABLED:        return VERR_ACCOUNT_RESTRICTED;
 
         case ERROR_INVALID_IMAGE_HASH:      return VERR_LDR_IMAGE_HASH;
+        case ERROR_UNRECOGNIZED_VOLUME:     return VERR_MEDIA_NOT_RECOGNIZED;
 
 
         /*
