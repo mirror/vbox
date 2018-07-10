@@ -475,7 +475,12 @@ void UIMediumSelector::prepareWidgets()
 void UIMediumSelector::sltAddMedium()
 {
     QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-    vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, strDefaultMachineFolder);
+    QString strMediumID = vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, strDefaultMachineFolder);
+    if (strMediumID.isEmpty())
+        return;
+    repopulateTreeWidget();
+    selectMedium(strMediumID);
+
 }
 
 void UIMediumSelector::sltCreateMedium()
@@ -485,12 +490,7 @@ void UIMediumSelector::sltCreateMedium()
     if (pDialog->exec())
     {
         repopulateTreeWidget();
-        UIMediumItem *pMediumItem = searchItem(0, pDialog->mediumID());
-        if (pMediumItem)
-        {
-            m_pTreeWidget->setCurrentItem(pMediumItem);
-
-        }
+        selectMedium(pDialog->mediumID());
     }
     delete pDialog;
 }
@@ -543,6 +543,18 @@ void UIMediumSelector::sltHandleSearchTermChange(QString searchTerm)
 {
     Q_UNUSED(searchTerm);
     performMediumSearch();
+}
+
+void UIMediumSelector::selectMedium(const QString &strMediumID)
+{
+    if (!m_pTreeWidget)
+        return;
+    UIMediumItem *pMediumItem = searchItem(0, strMediumID);
+    if (pMediumItem)
+    {
+        m_pTreeWidget->setCurrentItem(pMediumItem);
+
+    }
 }
 
 void UIMediumSelector::updateOkButton()
