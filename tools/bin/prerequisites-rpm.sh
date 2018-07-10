@@ -58,7 +58,7 @@ PATH=/sbin:/usr/sbin:$PATH
 # This list is valid for openSUSE 15.0
 PACKAGES_OPENSUSE="\
 bzip2 gcc-c++ glibc-devel gzip libcap-devel libcurl-devel libidl-devel \
-libxslt-devel libvpx-devel libXmu-devel make libopenssl-devel  zlib-devel\
+libxslt-devel libvpx-devel libXmu-devel make libopenssl-devel  zlib-devel \
 pam-devel libpulse-devel python-devel rpm-build libSDL_ttf-devel \
 device-mapper-devel wget kernel-default-devel tar glibc-devel-32bit \
 libstdc++-devel-32bit libpng16-devel libqt5-qtx11extras-devel \
