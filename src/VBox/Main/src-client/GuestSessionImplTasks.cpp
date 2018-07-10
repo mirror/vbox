@@ -1397,7 +1397,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         }
         else
         {
-            fFollowSymlinks = itSrc->Type.File.fCopyFlags & FileCopyFlag_FollowLinks;
+            fFollowSymlinks = RT_BOOL(itSrc->Type.File.fCopyFlags & FileCopyFlag_FollowLinks);
         }
 
         LogFlowFunc(("strSrc=%s, strDst=%s, fFollowSymlinks=%RTbool\n", strSrc.c_str(), strDst.c_str(), fFollowSymlinks));
@@ -1782,8 +1782,8 @@ int GuestSessionTaskCopyTo::Run(void)
         }
         else if (pList->mSourceSpec.enmType == FsObjType_File)
         {
-            fCopyIntoExisting = !(pList->mSourceSpec.Type.File.fCopyFlags & FileCopyFlag_NoReplace);
-            fFollowSymlinks   = pList->mSourceSpec.Type.File.fCopyFlags & FileCopyFlag_FollowLinks;
+            fCopyIntoExisting = !RT_BOOL(pList->mSourceSpec.Type.File.fCopyFlags & FileCopyFlag_NoReplace);
+            fFollowSymlinks   = RT_BOOL(pList->mSourceSpec.Type.File.fCopyFlags & FileCopyFlag_FollowLinks);
         }
         else
             AssertFailed();
