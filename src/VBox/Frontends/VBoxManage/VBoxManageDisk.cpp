@@ -2075,7 +2075,8 @@ static RTEXITCODE mediumIOOpenMediumForIO(HandlerArg *pHandler, PCMEDIUMIOCOMMON
         }
     }
 
-    memset(bstrPassword.mutableRaw(), '*', bstrPassword.length() * sizeof(RTUTF16));
+    if (bstrPassword.isNotEmpty())
+        memset(bstrPassword.mutableRaw(), '*', bstrPassword.length() * sizeof(RTUTF16));
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
