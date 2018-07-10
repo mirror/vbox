@@ -52,6 +52,8 @@ UIEmptyFilePathSelector::UIEmptyFilePathSelector (QWidget *aParent /* = NULL */)
     , mHomeDir (QDir::current().absolutePath())
     , mIsModified (false)
 {
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+
     mMainLayout = new QHBoxLayout (this);
     mMainLayout->setMargin (0);
 
