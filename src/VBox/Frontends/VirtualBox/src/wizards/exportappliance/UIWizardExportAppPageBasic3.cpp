@@ -106,52 +106,71 @@ void UIWizardExportAppPage3::updatePageAppearance()
     m_pSettingsWidget->setCurrentIndex((int)enmStorageType);
 }
 
-void UIWizardExportAppPage3::refreshCurrentSettings()
+void UIWizardExportAppPage3::refreshFileSelectorName()
 {
-    /* Compose file-name: */
-    QString strName;
-
     /* If it's one VM only, we use the VM name as file-name: */
     if (fieldImp("machineNames").toStringList().size() == 1)
-        strName = fieldImp("machineNames").toStringList()[0];
+        m_strFileSelectorName = fieldImp("machineNames").toStringList()[0];
     /* Otherwise => we use the default file-name: */
     else
-        strName = m_strDefaultApplianceName;
+        m_strFileSelectorName = m_strDefaultApplianceName;
 
+    /* Cascade update for file selector path: */
+    refreshFileSelectorPath();
+}
+
+void UIWizardExportAppPage3::refreshFileSelectorExtension()
+{
     /* If the format is set to OPC: */
     if (fieldImp("format").toString() == "opc-1.0")
     {
         /* We use .tar.gz extension: */
-        strName += ".tar.gz";
+        m_strFileSelectorExt = ".tar.gz";
 
         /* Update file chooser accordingly: */
         m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Oracle Public Cloud Format Archive (%1)").arg("*.tar.gz"));
+    }
+    /* Otherwise: */
+    else
+    {
+        /* We use the default (.ova) extension: */
+        m_strFileSelectorExt = ".ova";
 
-        /* Disable manifest file creation: */
+        /* Update file chooser accordingly: */
+        m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
+                                        UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
+    }
+
+    /* Cascade update for file selector path: */
+    refreshFileSelectorPath();
+}
+
+void UIWizardExportAppPage3::refreshFileSelectorPath()
+{
+    /* Compose file selector path: */
+    const QString strPath = QDir::toNativeSeparators(QString("%1/%2")
+                                                     .arg(vboxGlobal().documentsPath())
+                                                     .arg(m_strFileSelectorName + m_strFileSelectorExt));
+
+    /* Assign the path: */
+    m_pFileSelector->setPath(strPath);
+}
+
+void UIWizardExportAppPage3::refreshManifestCheckBoxAccess()
+{
+    /* If the format is set to OPC: */
+    if (fieldImp("format").toString() == "opc-1.0")
+    {
+        /* Disable manifest check-box: */
         m_pManifestCheckbox->setChecked(false);
         m_pManifestCheckbox->setEnabled(false);
     }
     /* Otherwise: */
     else
     {
-        /* We use the default (.ova) extension: */
-        strName += ".ova";
-
-        /* Update file chooser accordingly: */
-        m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
-                                        UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
-
-        /* Enable manifest file creation: */
+        /* Enable manifest check-box: */
         m_pManifestCheckbox->setEnabled(true);
     }
-
-    /* Copose file-path for 'LocalFilesystem' storage case: */
-    const StorageType enmStorageType = fieldImp("storageType").value<StorageType>();
-    if (enmStorageType == LocalFilesystem)
-        strName = QDir::toNativeSeparators(QString("%1/%2").arg(vboxGlobal().documentsPath()).arg(strName));
-
-    /* Assign file-path: */
-    m_pFileSelector->setPath(strName);
 }
 
 void UIWizardExportAppPage3::updateFormatComboToolTip()
@@ -436,8 +455,8 @@ void UIWizardExportAppPageBasic3::retranslateUi()
         }
     }
 
-    /* Refresh current settings: */
-    refreshCurrentSettings();
+    /* Refresh file selector name: */
+    refreshFileSelectorName();
 
     /* Update page appearance: */
     updatePageAppearance();
@@ -451,6 +470,13 @@ void UIWizardExportAppPageBasic3::initializePage()
 {
     /* Translate page: */
     retranslateUi();
+
+    /* Refresh file selector name: */
+    // refreshFileSelectorName(); alreeady called from retranslateUi();
+    /* Refresh file selector extension: */
+    refreshFileSelectorExtension();
+    /* Refresh manifest check-box access: */
+    refreshManifestCheckBoxAccess();
 }
 
 bool UIWizardExportAppPageBasic3::isComplete() const
@@ -525,15 +551,13 @@ void UIWizardExportAppPageBasic3::sltHandleFormatComboChange()
     /* Update tool-tip: */
     updateFormatComboToolTip();
 
-    /* Refresh current settings: */
-    refreshCurrentSettings();
+    /* Refresh required settings: */
+    refreshFileSelectorExtension();
+    refreshManifestCheckBoxAccess();
 }
 
 void UIWizardExportAppPageBasic3::sltHandleProviderComboChange()
 {
     /* Update tool-tip: */
     updateProviderComboToolTip();
-
-    /* Refresh current settings: */
-    refreshCurrentSettings();
 }

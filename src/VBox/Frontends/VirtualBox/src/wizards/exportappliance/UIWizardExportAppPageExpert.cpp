@@ -375,8 +375,8 @@ void UIWizardExportAppPageExpert::retranslateUi()
         }
     }
 
-    /* Refresh current settings: */
-    refreshCurrentSettings();
+    /* Refresh file selector name: */
+    refreshFileSelectorName();
 
     /* Update tool-tips: */
     updateFormatComboToolTip();
@@ -388,8 +388,13 @@ void UIWizardExportAppPageExpert::initializePage()
     /* Translate page: */
     retranslateUi();
 
-    /* Refresh current settings: */
-    refreshCurrentSettings();
+    /* Refresh file selector name: */
+    // refreshFileSelectorName(); already called from retranslateUi();
+    /* Refresh file selector extension: */
+    refreshFileSelectorExtension();
+    /* Refresh manifest check-box access: */
+    refreshManifestCheckBoxAccess();
+
     /* Refresh appliance settings: */
     refreshApplianceSettingsWidget();
 }
@@ -452,8 +457,8 @@ bool UIWizardExportAppPageExpert::validatePage()
 
 void UIWizardExportAppPageExpert::sltVMSelectionChangeHandler()
 {
-    /* Refresh current settings: */
-    refreshCurrentSettings();
+    /* Refresh required settings: */
+    refreshFileSelectorName();
     refreshApplianceSettingsWidget();
 
     /* Broadcast complete-change: */
@@ -474,15 +479,13 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     /* Update tool-tip: */
     updateFormatComboToolTip();
 
-    /* Refresh current settings: */
-    refreshCurrentSettings();
+    /* Refresh required settings: */
+    refreshFileSelectorExtension();
+    refreshManifestCheckBoxAccess();
 }
 
 void UIWizardExportAppPageExpert::sltHandleProviderComboChange()
 {
     /* Update tool-tip: */
     updateProviderComboToolTip();
-
-    /* Refresh current settings: */
-    refreshCurrentSettings();
 }

@@ -50,8 +50,14 @@ protected:
     /** Updates page appearance. */
     virtual void updatePageAppearance();
 
-    /** Refreshes current settings. */
-    void refreshCurrentSettings();
+    /** Refresh file selector name. */
+    void refreshFileSelectorName();
+    /** Refresh file selector extension. */
+    void refreshFileSelectorExtension();
+    /** Refresh file selector path. */
+    void refreshFileSelectorPath();
+    /** Refresh Manifest check-box access. */
+    void refreshManifestCheckBoxAccess();
 
     /** Updates format combo tool-tips. */
     void updateFormatComboToolTip();
@@ -80,6 +86,11 @@ protected:
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
+
+    /** Holds the file selector name. */
+    QString  m_strFileSelectorName;
+    /** Holds the file selector ext. */
+    QString  m_strFileSelectorExt;
 
     /** Holds the settings widget instance. */
     QStackedWidget *m_pSettingsWidget;
