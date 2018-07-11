@@ -1121,7 +1121,7 @@ uint32_t DrvAudioHlpMsToFrames(const PPDMAUDIOPCMPROPS pProps, uint32_t uMs)
 {
     AssertPtrReturn(pProps, 0);
 
-    const size_t cbFrame = (pProps->cBits / 8) * pProps->cChannels;
+    const uint32_t cbFrame = (pProps->cBits / 8) * pProps->cChannels;
     if (!cbFrame) /* Prevent division by zero. */
         return 0;
 
