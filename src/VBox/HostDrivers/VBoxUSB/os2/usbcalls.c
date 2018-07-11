@@ -1049,7 +1049,7 @@ APIEXPORT APIRET APIENTRY
 UsbIsoStop( ISOHANDLE hIso)
 {
 
-  APIRET rc;
+  APIRET rc = 0;
   if(!g_cInit)
     return USB_NOT_INIT;
 
