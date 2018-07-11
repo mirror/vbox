@@ -7832,7 +7832,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient
 HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_HWVIRT);
 
 #ifdef VBOX_STRICT
     PCSVMVMCB pVmcbTmp = hmR0SvmGetCurrentVmcb(pVCpu);
@@ -7841,15 +7840,20 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     RT_NOREF(pVmcbTmp);
 #endif
 
-    VBOXSTRICTRC rcStrict;
-    bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    VBOXSTRICTRC   rcStrict;
+    bool const     fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    uint64_t const fImport = CPUMCTX_EXTRN_HWVIRT;
     if (fSupportsNextRipSave)
     {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | fImport);
         uint8_t const cbInstr = hmR0SvmGetInstrLength(pVCpu);
         rcStrict = IEMExecDecodedClgi(pVCpu, cbInstr);
     }
     else
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | fImport);
         rcStrict = IEMExecOne(pVCpu);
+    }
 
     if (rcStrict == VINF_SUCCESS)
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_HWVIRT);
@@ -7869,7 +7873,6 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_HWVIRT);
 
     /*
      * When VGIF is not used we always intercept STGI instructions. When VGIF is used,
@@ -7879,15 +7882,20 @@ HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable)
         hmR0SvmClearCtrlIntercept(pVCpu, pVmcb, SVM_CTRL_INTERCEPT_STGI);
 
-    VBOXSTRICTRC rcStrict;
-    bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    VBOXSTRICTRC   rcStrict;
+    bool const     fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    uint64_t const fImport = CPUMCTX_EXTRN_HWVIRT;
     if (fSupportsNextRipSave)
     {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | fImport);
         uint8_t const cbInstr = hmR0SvmGetInstrLength(pVCpu);
         rcStrict = IEMExecDecodedStgi(pVCpu, cbInstr);
     }
     else
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | fImport);
         rcStrict = IEMExecOne(pVCpu);
+    }
 
     if (rcStrict == VINF_SUCCESS)
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_HWVIRT);
@@ -7907,10 +7915,6 @@ HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK
-                                    | CPUMCTX_EXTRN_FS   | CPUMCTX_EXTRN_GS             | CPUMCTX_EXTRN_TR
-                                    | CPUMCTX_EXTRN_LDTR | CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS
-                                    | CPUMCTX_EXTRN_SYSENTER_MSRS);
 
 #ifdef VBOX_STRICT
     PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
@@ -7919,15 +7923,22 @@ HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     RT_NOREF(pVmcb);
 #endif
 
-    VBOXSTRICTRC rcStrict;
-    bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    VBOXSTRICTRC   rcStrict;
+    bool const     fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    uint64_t const fImport = CPUMCTX_EXTRN_FS   | CPUMCTX_EXTRN_GS   | CPUMCTX_EXTRN_KERNEL_GS_BASE
+                           | CPUMCTX_EXTRN_TR   | CPUMCTX_EXTRN_LDTR | CPUMCTX_EXTRN_SYSCALL_MSRS
+                           | CPUMCTX_EXTRN_SYSENTER_MSRS;
     if (fSupportsNextRipSave)
     {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | fImport);
         uint8_t const cbInstr = hmR0SvmGetInstrLength(pVCpu);
         rcStrict = IEMExecDecodedVmload(pVCpu, cbInstr);
     }
     else
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | fImport);
         rcStrict = IEMExecOne(pVCpu);
+    }
 
     if (rcStrict == VINF_SUCCESS)
     {
@@ -7952,7 +7963,6 @@ HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 HMSVM_EXIT_DECL hmR0SvmExitVmsave(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
 
 #ifdef VBOX_STRICT
     PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
@@ -7964,11 +7974,15 @@ HMSVM_EXIT_DECL hmR0SvmExitVmsave(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
     if (fSupportsNextRipSave)
     {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
         uint8_t const cbInstr = hmR0SvmGetInstrLength(pVCpu);
         rcStrict = IEMExecDecodedVmsave(pVCpu, cbInstr);
     }
     else
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
         rcStrict = IEMExecOne(pVCpu);
+    }
 
     if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
@@ -7986,17 +8000,20 @@ HMSVM_EXIT_DECL hmR0SvmExitVmsave(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 HMSVM_EXIT_DECL hmR0SvmExitInvlpga(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
 
     VBOXSTRICTRC rcStrict;
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
     if (fSupportsNextRipSave)
     {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
         uint8_t const cbInstr = hmR0SvmGetInstrLength(pVCpu);
         rcStrict = IEMExecDecodedInvlpga(pVCpu, cbInstr);
     }
     else
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
         rcStrict = IEMExecOne(pVCpu);
+    }
 
     if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
@@ -8014,7 +8031,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpga(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | IEM_CPUMCTX_EXTRN_SVM_VMRUN_MASK);
+    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMRUN_MASK);
 
     VBOXSTRICTRC rcStrict;
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
@@ -8024,7 +8041,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         rcStrict = IEMExecDecodedVmrun(pVCpu, cbInstr);
     }
     else
-        rcStrict = IEMExecOne(pVCpu);
+        rcStrict = IEMExecOneBypassEx(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), NULL /* pcbWritten */);
 
     if (rcStrict == VINF_SUCCESS)
     {
