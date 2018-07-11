@@ -21,6 +21,13 @@
 #include "Db.h"
 
 
+Db::Db()
+  : m_pConfig(NULL)
+{
+    return;
+}
+
+
 Db::~Db()
 {
     /** @todo free bindings */

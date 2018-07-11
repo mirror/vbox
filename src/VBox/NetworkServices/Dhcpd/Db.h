@@ -126,7 +126,7 @@ private:
     IPv4Pool m_pool;
 
 public:
-    Db() {}
+    Db();
     ~Db();
 
     int init(const Config *pConfig);
