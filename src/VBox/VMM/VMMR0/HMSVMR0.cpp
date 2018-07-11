@@ -6544,7 +6544,8 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         bool const fMovCRx = RT_BOOL(pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_MASK);
         if (fMovCRx)
         {
-            HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+            HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4
+                                            | CPUMCTX_EXTRN_APIC_TPR);
             uint8_t const cbInstr = pVmcb->ctrl.u64NextRIP - pCtx->rip;
             uint8_t const iCrReg  = pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0;
             uint8_t const iGReg   = pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_GPR_NUMBER;
@@ -6555,14 +6556,21 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         /* else: SMSW instruction, fall back below to IEM for this. */
     }
 
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
-    VBOXSTRICTRC rc2 = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
-    int rc = VBOXSTRICTRC_VAL(rc2);
-    AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3,
-              ("hmR0SvmExitReadCRx: EMInterpretInstruction failed rc=%Rrc\n", rc));
+    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+    VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
+    AssertMsg(   rcStrict == VINF_SUCCESS
+              || rcStrict == VINF_PGM_CHANGE_MODE
+              || rcStrict == VINF_PGM_SYNC_CR3
+              || rcStrict == VINF_IEM_RAISED_XCPT,
+              ("hmR0SvmExitReadCRx: IEMExecOne failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     Assert((pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0) <= 15);
-    HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
-    return rc;
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        rcStrict = VINF_SUCCESS;
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+    }
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
