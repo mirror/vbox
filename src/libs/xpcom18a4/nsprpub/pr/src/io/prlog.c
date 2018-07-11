@@ -526,17 +526,19 @@ PR_IMPLEMENT(void) PR_LogPrint(const char *fmt, ...)
 #endif
 
     nb += PR_vsnprintf(line+nb, sizeof(line)-nb-1, fmt, ap);
-    if (nb && (line[nb-1] != '\n')) {
+    if (nb > 0) {
+        if (line[nb-1] != '\n') {
 #ifndef XP_MAC
-        line[nb++] = '\n';
+            line[nb++] = '\n';
 #else
-        line[nb++] = '\015';
+            line[nb++] = '\015';
 #endif
-        line[nb] = '\0';
-    } else {
+            line[nb] = '\0';
+        } else {
 #ifdef XP_MAC
-        line[nb-1] = '\015';
+            line[nb-1] = '\015';
 #endif
+        }
     }
     va_end(ap);
 
