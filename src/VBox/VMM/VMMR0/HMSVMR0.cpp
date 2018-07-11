@@ -6382,14 +6382,34 @@ HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
 
-    hmR0SvmAdvanceRipHwAssist(pVCpu, 1);
-    int rc = EMShouldContinueAfterHalt(pVCpu, &pVCpu->cpum.GstCtx) ? VINF_SUCCESS : VINF_EM_HALT;
-    HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+    VBOXSTRICTRC rcStrict;
+    bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    if (fSupportsNextRipSave)
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
+        uint8_t const cbInstr = hmR0SvmGetInstrLength(pVCpu);
+        rcStrict = IEMExecDecodedHlt(pVCpu, cbInstr);
+    }
+    else
+    {
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        rcStrict = IEMExecOne(pVCpu);
+    }
 
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
-    if (rc != VINF_SUCCESS)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHltToR3);
-    return rc;
+    if (   rcStrict == VINF_EM_HALT
+        || rcStrict == VINF_SUCCESS)
+    {
+        rcStrict = EMShouldContinueAfterHalt(pVCpu, &pVCpu->cpum.GstCtx) ? VINF_SUCCESS : VINF_EM_HALT;
+    }
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        rcStrict = VINF_SUCCESS;
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+    }
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+    if (rcStrict != VINF_SUCCESS)
+         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHltToR3);
+    return VBOXSTRICTRC_VAL(rcStrict);;
 }
 
 
