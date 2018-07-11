@@ -225,10 +225,6 @@ protected:
     QWidget   *m_pPaneInformation;
     /** Holds the settings tree-view instance. */
     QITreeView *m_pTreeViewSettings;
-    /** Holds the 'reinit MACs' check-box instance. */
-    QCheckBox *m_pCheckBoxReinitMACs;
-    /** Holds the checkbox that controls 'imprt HDs as VDI' behaviour. */
-    QCheckBox *m_pImportHDsAsVDI;
 
     /** Holds the warning pane instance. */
     QWidget   *m_pPaneWarning;

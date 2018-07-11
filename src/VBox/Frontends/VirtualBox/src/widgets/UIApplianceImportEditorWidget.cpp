@@ -21,11 +21,11 @@
 
 /* Qt includes: */
 # include <QCheckBox>
+# include <QLabel>
 # include <QTextEdit>
 # include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIRichTextLabel.h"
 # include "QITreeView.h"
 # include "UIApplianceImportEditorWidget.h"
 # include "UIFilePathSelector.h"
@@ -58,12 +58,19 @@ public:
 
 UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
     : UIApplianceEditorWidget(pParent)
+    , m_pPathSelectorLabel(0)
+    , m_pPathSelector(0)
+    , m_pCheckBoxReinitMACs(0)
+    , m_pImportHDsAsVDI(0)
+
 {
-    /* Show the MAC and import as VDI check boxes */
-    m_pCheckBoxReinitMACs->setHidden(false);
-    m_pImportHDsAsVDI->setHidden(false);
-    m_pImportHDsAsVDI->setCheckState(Qt::Checked);
-    m_pPathSelectorLabel = new QIRichTextLabel(this);
+    prepareWidgets();
+}
+
+void UIApplianceImportEditorWidget::prepareWidgets()
+{
+
+    m_pPathSelectorLabel = new QLabel(this);
     if (m_pPathSelectorLabel)
     {
         m_pLayout->addWidget(m_pPathSelectorLabel);
@@ -77,7 +84,16 @@ UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
         connect(m_pPathSelector, &UIFilePathSelector::pathChanged, this, &UIApplianceImportEditorWidget::sltHandlePathChanged);
         m_pLayout->addWidget(m_pPathSelector);
     }
-    m_pLayout->addStretch();
+    m_pCheckBoxReinitMACs = new QCheckBox;
+    {
+        m_pLayout->addWidget(m_pCheckBoxReinitMACs);
+    }
+
+    m_pImportHDsAsVDI = new QCheckBox;
+    {
+        m_pLayout->addWidget(m_pImportHDsAsVDI);
+        m_pImportHDsAsVDI->setCheckState(Qt::Checked);
+    }
     retranslateUi();
 }
 
@@ -230,10 +246,21 @@ QList<QPair<QString, QString> > UIApplianceImportEditorWidget::licenseAgreements
 void UIApplianceImportEditorWidget::retranslateUi()
 {
     UIApplianceEditorWidget::retranslateUi();
-    m_pPathSelectorLabel->setText(UIWizardImportApp::tr("You can modify the base folder which will host "
-                                                        "all the virtual machines. Virtual home folders "
-                                                        "can also be individually modified."));
+    if (m_pPathSelectorLabel)
+        m_pPathSelectorLabel->setText(UIWizardImportApp::tr("You can modify the base folder which will host "
+                                                            "all the virtual machines. Virtual home folders "
+                                                            "can also be individually modified."));
+    if (m_pCheckBoxReinitMACs)
+    {
+        m_pCheckBoxReinitMACs->setText(tr("&Reinitialize the MAC address of all network cards"));
+        m_pCheckBoxReinitMACs->setToolTip(tr("When checked a new unique MAC address will assigned to all configured network cards."));
+    }
 
+    if (m_pImportHDsAsVDI)
+    {
+        m_pImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
+        m_pImportHDsAsVDI->setToolTip(tr("When checked a all the hard drives that belong to this appliance will be imported in VDI format"));
+    }
 }
 
 void UIApplianceImportEditorWidget::sltHandlePathChanged(const QString &newPath)

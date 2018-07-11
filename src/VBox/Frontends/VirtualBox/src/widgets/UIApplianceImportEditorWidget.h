@@ -23,7 +23,6 @@
 
 /* Forward declarations: */
 class UIFilePathSelector;
-class QIRichTextLabel;
 
 class UIApplianceImportEditorWidget: public UIApplianceEditorWidget
 {
@@ -48,8 +47,15 @@ private slots:
 
 private:
 
-    QIRichTextLabel    *m_pPathSelectorLabel;
+    void      prepareWidgets();
+    QLabel    *m_pPathSelectorLabel;
     UIFilePathSelector *m_pPathSelector;
+
+    /** Holds the 'reinit MACs' check-box instance. */
+    QCheckBox *m_pCheckBoxReinitMACs;
+    /** Holds the checkbox that controls 'imprt HDs as VDI' behaviour. */
+    QCheckBox *m_pImportHDsAsVDI;
+
 };
 
 #endif /* __UIApplianceImportEditorWidget_h__ */
