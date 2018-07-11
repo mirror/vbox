@@ -417,7 +417,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                     if (m_pProfileComboBoxLabel)
                     {
                         m_pProfileComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-                        m_pProfileComboBoxLabel->setBuddy(m_pProviderComboBox);
+                        m_pProfileComboBoxLabel->setBuddy(m_pProfileComboBox);
 
                         /* Add into layout: */
                         pSettingsLayout2->addWidget(m_pProfileComboBoxLabel, 1, 0);
@@ -439,9 +439,6 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             /* Add into layout: */
             pMainLayout->addWidget(m_pSettingsWidget);
         }
-
-        /* Add vertical stretch: */
-        pMainLayout->addStretch();
     }
 
     /* Populate formats: */
@@ -497,7 +494,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
 
     /* Translate Provider combo-box: */
-    m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Cloud Service Provider:"));
+    m_pProviderComboBoxLabel->setText(UIWizardExportApp::tr("&Provider:"));
     for (int i = 0; i < m_pProviderComboBox->count(); ++i)
     {
         if (m_pProviderComboBox->itemText(i) == "OCI")
@@ -512,7 +509,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     }
 
     /* Translate Profile combo-box: */
-    m_pProfileComboBoxLabel->setText(UIWizardExportApp::tr("&Profile:"));
+    m_pProfileComboBoxLabel->setText(UIWizardExportApp::tr("P&rofile:"));
 
     /* Refresh file selector name: */
     refreshFileSelectorName();

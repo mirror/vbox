@@ -132,9 +132,9 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     /* Translate widgets: */
     m_pLabel->setText(UIWizardExportApp::tr("Please choose where to create the virtual appliance. "
                                             "You can create it on your own computer "
-                                            "or on one of cloud servers you have registered."));
+                                            "or on one of cloud services you have registered."));
     m_pTypeLocalFilesystem->setText(UIWizardExportApp::tr("&This computer"));
-    m_pTypeCloudServiceProvider->setText(UIWizardExportApp::tr("&Cloud service provider"));
+    m_pTypeCloudServiceProvider->setText(UIWizardExportApp::tr("&Cloud service"));
 }
 
 void UIWizardExportAppPageBasic2::initializePage()
