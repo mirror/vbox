@@ -371,10 +371,13 @@ const DBGCCMD    g_aCmdsCodeView[] =
                                                                                                                                                  "Sets a breakpoint (int 3)." },
     { "br",         1,        4,        &g_aArgBrkREM[0],   RT_ELEMENTS(g_aArgBrkREM),      0,       dbgcCmdBrkREM,      "<address> [passes [max passes]] [cmds]",
                                                                                                                                                  "Sets a recompiler specific breakpoint." },
-    { "d",          0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory using last element size." },
+    { "d",          0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory using last element size and type." },
+    { "dF",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory as far 16:16." },
+    { "dFs",        0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory as far 16:16 with near symbols." },
     { "da",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory as ascii string." },
     { "db",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in bytes." },
     { "dd",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in double words." },
+    { "dds",        0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory as double words with near symbols." },
     { "da",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory as ascii string." },
     { "dg",         0,       ~0U,       &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT)." },
     { "dga",        0,       ~0U,       &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT) including not-present entries." },
@@ -390,18 +393,22 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "dph",        0,        3,        &g_aArgDumpPH[0],   RT_ELEMENTS(g_aArgDumpPH),      0, dbgcCmdDumpPageHierarchy, "[addr [cr3 [mode]]",   "Dumps the paging hierarchy at for specfied address range. Default context." },
     { "dphg",       0,        3,        &g_aArgDumpPH[0],   RT_ELEMENTS(g_aArgDumpPH),      0, dbgcCmdDumpPageHierarchy, "[addr [cr3 [mode]]",   "Dumps the paging hierarchy at for specfied address range. Guest context." },
     { "dphh",       0,        3,        &g_aArgDumpPH[0],   RT_ELEMENTS(g_aArgDumpPH),      0, dbgcCmdDumpPageHierarchy, "[addr [cr3 [mode]]",   "Dumps the paging hierarchy at for specfied address range. Hypervisor context." },
+    { "dp",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in mode sized words." },
+    { "dps",        0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in mode sized words with near symbols." },
     { "dpt",        1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),      0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the default context." },
     { "dpta",       1,        1,        &g_aArgDumpPTAddr[0],RT_ELEMENTS(g_aArgDumpPTAddr), 0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps memory at given address as a page table." },
     { "dptb",       1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),      0,       dbgcCmdDumpPageTableBoth,"<addr>",          "Dumps page table entries of the guest and the hypervisor." },
     { "dptg",       1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),      0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the guest." },
     { "dpth",       1,        1,        &g_aArgDumpPT[0],   RT_ELEMENTS(g_aArgDumpPT),      0,       dbgcCmdDumpPageTable,"<addr>",              "Dumps page table entries of the hypervisor." },
     { "dq",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in quad words." },
+    { "dqs",        0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory as quad words with near symbols." },
     { "dt",         0,        1,        &g_aArgDumpTSS[0],  RT_ELEMENTS(g_aArgDumpTSS),     0,       dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the task state segment (TSS)." },
     { "dt16",       0,        1,        &g_aArgDumpTSS[0],  RT_ELEMENTS(g_aArgDumpTSS),     0,       dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the 16-bit task state segment (TSS)." },
     { "dt32",       0,        1,        &g_aArgDumpTSS[0],  RT_ELEMENTS(g_aArgDumpTSS),     0,       dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the 32-bit task state segment (TSS)." },
     { "dt64",       0,        1,        &g_aArgDumpTSS[0],  RT_ELEMENTS(g_aArgDumpTSS),     0,       dbgcCmdDumpTSS,     "[tss|tss:ign|addr]",   "Dump the 64-bit task state segment (TSS)." },
     { "dti",        1,        2,        &g_aArgDumpTypeInfo[0],RT_ELEMENTS(g_aArgDumpTypeInfo), 0,   dbgcCmdDumpTypeInfo,"<type> [levels]",      "Dump type information." },
     { "dtv",        2,        3,        &g_aArgDumpTypedVal[0],RT_ELEMENTS(g_aArgDumpTypedVal), 0,   dbgcCmdDumpTypedVal,"<type> <addr> [levels]", "Dump a memory buffer using the information in the given type." },
+    { "du",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory as unicode string (little endian)." },
     { "dw",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in words." },
     /** @todo add 'e', 'ea str', 'eza str', 'eu str' and 'ezu str'. See also
      *        dbgcCmdSearchMem and its dbgcVarsToBytes usage. */
@@ -3314,7 +3321,8 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
 
 /**
  * @callback_method_impl{FNDBGCCMD,
- *      The 'da'\, 'dq'\, 'dd'\, 'dw' and 'db' commands.}
+ *      The 'da'\, 'dq'\, 'dqs'\, 'dd'\, 'dds'\, 'dw'\, 'db'\, 'dp'\, 'dps'\,
+ *      and 'du' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -3328,11 +3336,20 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
         DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, DBGCVAR_ISPOINTER(paArgs[0].enmType));
     DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
 
+#define DBGC_DUMP_MEM_F_ASCII    RT_BIT_32(31)
+#define DBGC_DUMP_MEM_F_UNICODE  RT_BIT_32(30)
+#define DBGC_DUMP_MEM_F_FAR      RT_BIT_32(29)
+#define DBGC_DUMP_MEM_F_SYMBOLS  RT_BIT_32(28)
+#define DBGC_DUMP_MEM_F_SIZE     UINT32_C(0x0000ffff)
+
     /*
      * Figure out the element size.
      */
     unsigned    cbElement;
-    bool        fAscii = false;
+    bool        fAscii   = false;
+    bool        fUnicode = false;
+    bool        fFar     = false;
+    bool        fSymbols = pCmd->pszCmd[1] && pCmd->pszCmd[2] == 's';
     switch (pCmd->pszCmd[1])
     {
         default:
@@ -3344,13 +3361,33 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
             cbElement = 1;
             fAscii = true;
             break;
+        case 'F':
+            cbElement = 4;
+            fFar = true;
+            break;
+        case 'p':
+            cbElement = DBGFR3CpuIsIn64BitCode(pUVM, pDbgc->idCpu) ? 8 : 4;
+            break;
+        case 'u':
+            cbElement = 2;
+            fUnicode = true;
+            break;
         case '\0':
-            fAscii = !!(pDbgc->cbDumpElement & 0x80000000);
-            cbElement = pDbgc->cbDumpElement & 0x7fffffff;
+            fAscii    = RT_BOOL(pDbgc->cbDumpElement & DBGC_DUMP_MEM_F_ASCII);
+            fSymbols  = RT_BOOL(pDbgc->cbDumpElement & DBGC_DUMP_MEM_F_SYMBOLS);
+            fUnicode  = RT_BOOL(pDbgc->cbDumpElement & DBGC_DUMP_MEM_F_UNICODE);
+            fFar      = RT_BOOL(pDbgc->cbDumpElement & DBGC_DUMP_MEM_F_FAR);
+            cbElement = pDbgc->cbDumpElement & DBGC_DUMP_MEM_F_SIZE;
             if (!cbElement)
                 cbElement = 1;
             break;
     }
+    uint32_t const cbDumpElement = cbElement
+                                 | (fSymbols ? DBGC_DUMP_MEM_F_SYMBOLS : 0)
+                                 | (fFar     ? DBGC_DUMP_MEM_F_FAR     : 0)
+                                 | (fUnicode ? DBGC_DUMP_MEM_F_UNICODE : 0)
+                                 | (fAscii   ? DBGC_DUMP_MEM_F_ASCII   : 0);
+    pDbgc->cbDumpElement = cbDumpElement;
 
     /*
      * Find address.
@@ -3391,9 +3428,8 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
     /*
      * Do the dumping.
      */
-    pDbgc->cbDumpElement = cbElement | (fAscii << 31);
     int     cbLeft = (int)pDbgc->DumpPos.u64Range;
-    uint8_t u8Prev = '\0';
+    uint8_t u16Prev = '\0';
     for (;;)
     {
         /*
@@ -3405,7 +3441,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
         int rc = pCmdHlp->pfnMemRead(pCmdHlp, &achBuffer, cbReq, &pDbgc->DumpPos, &cb);
         if (RT_FAILURE(rc))
         {
-            if (u8Prev && u8Prev != '\n')
+            if (u16Prev && u16Prev != '\n')
                 DBGCCmdHlpPrintf(pCmdHlp, "\n");
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Reading memory at %DV.\n", &pDbgc->DumpPos);
         }
@@ -3414,26 +3450,79 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
          * Display it.
          */
         memset(&achBuffer[cb], 0, sizeof(achBuffer) - cb);
-        if (!fAscii)
+        if (!fAscii && !fUnicode)
         {
             DBGCCmdHlpPrintf(pCmdHlp, "%DV:", &pDbgc->DumpPos);
             unsigned i;
             for (i = 0; i < cb; i += cbElement)
             {
                 const char *pszSpace = " ";
-                if (cbElement <= 2 && i == 8 && !fAscii)
+                if (cbElement <= 2 && i == 8)
                     pszSpace = "-";
                 switch (cbElement)
                 {
-                    case 1: DBGCCmdHlpPrintf(pCmdHlp, "%s%02x",    pszSpace, *(uint8_t *)&achBuffer[i]); break;
-                    case 2: DBGCCmdHlpPrintf(pCmdHlp, "%s%04x",    pszSpace, *(uint16_t *)&achBuffer[i]); break;
-                    case 4: DBGCCmdHlpPrintf(pCmdHlp, "%s%08x",    pszSpace, *(uint32_t *)&achBuffer[i]); break;
-                    case 8: DBGCCmdHlpPrintf(pCmdHlp, "%s%016llx", pszSpace, *(uint64_t *)&achBuffer[i]); break;
+                    case 1:
+                        DBGCCmdHlpPrintf(pCmdHlp, "%s%02x",     pszSpace, *(uint8_t *)&achBuffer[i]);
+                        break;
+                    case 2:
+                        DBGCCmdHlpPrintf(pCmdHlp, "%s%04x",     pszSpace, *(uint16_t *)&achBuffer[i]);
+                        break;
+                    case 4:
+                        if (!fFar)
+                            DBGCCmdHlpPrintf(pCmdHlp, "%s%08x", pszSpace, *(uint32_t *)&achBuffer[i]);
+                        else
+                            DBGCCmdHlpPrintf(pCmdHlp, "%s%04x:%04x:",
+                                             pszSpace, *(uint16_t *)&achBuffer[i + 2], *(uint16_t *)&achBuffer[i]);
+                        break;
+                    case 8:
+                        DBGCCmdHlpPrintf(pCmdHlp, "%s%016llx",  pszSpace, *(uint64_t *)&achBuffer[i]);
+                        break;
+                }
+
+                if (fSymbols)
+                {
+                    /* Try lookup symbol for the above address. */
+                    DBGFADDRESS Addr;
+                    int         rc = VINF_SUCCESS;
+                    if (cbElement == 8)
+                        DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, *(uint64_t *)&achBuffer[i]);
+                    else if (!fFar)
+                        DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, *(uint32_t *)&achBuffer[i]);
+                    else
+                        rc = DBGFR3AddrFromSelOff(pDbgc->pUVM, pDbgc->idCpu, &Addr,
+                                                  *(uint16_t *)&achBuffer[i + 2], *(uint16_t *)&achBuffer[i]);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTINTPTR    offDisp;
+                        RTDBGSYMBOL Symbol;
+                        rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, &Addr, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
+                                                  &offDisp, &Symbol, NULL);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (!offDisp)
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, " %s", Symbol.szName);
+                            else if (offDisp > 0)
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, " %s + %RGv", Symbol.szName, offDisp);
+                            else
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, " %s - %RGv", Symbol.szName, -offDisp);
+                            if (Symbol.cb > 0)
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, " (LB %RGv)", Symbol.cb);
+                        }
+                    }
+
+                    /* Next line prefix. */
+                    unsigned iNext = i + cbElement;
+                    if (iNext < cb)
+                    {
+                        DBGCVAR TmpPos = pDbgc->DumpPos;
+                        DBGCCmdHlpEval(pCmdHlp, &TmpPos, "(%Dv) + %x", &pDbgc->DumpPos, iNext);
+                        DBGCCmdHlpPrintf(pCmdHlp, "\n%DV:", &pDbgc->DumpPos);
+                    }
                 }
             }
 
-            /* chars column */
-            if (pDbgc->cbDumpElement == 1)
+            /* Chars column. */
+            if (cbElement == 1)
             {
                 while (i++ < sizeof(achBuffer))
                     DBGCCmdHlpPrintf(pCmdHlp, "   ");
@@ -3455,27 +3544,30 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
              * We print up to the first zero and stop there.
              * Only printables + '\t' and '\n' are printed.
              */
-            if (!u8Prev)
+            if (!u16Prev)
                 DBGCCmdHlpPrintf(pCmdHlp, "%DV:\n", &pDbgc->DumpPos);
-            uint8_t u8 = '\0';
+            uint16_t u16 = '\0';
             unsigned i;
-            for (i = 0; i < cb; i++)
+            for (i = 0; i < cb; i += cbElement)
             {
-                u8Prev = u8;
-                u8 = *(uint8_t *)&achBuffer[i];
-                if (    u8 < 127
-                    && (    (RT_C_IS_PRINT(u8) && u8 >= 32)
-                        ||  u8 == '\t'
-                        ||  u8 == '\n'))
-                    DBGCCmdHlpPrintf(pCmdHlp, "%c", u8);
-                else if (!u8)
+                u16Prev = u16;
+                if (cbElement == 1)
+                    u16 = *(uint8_t *)&achBuffer[i];
+                else
+                    u16 = *(uint16_t *)&achBuffer[i];
+                if (    u16 < 127
+                    && (    (RT_C_IS_PRINT(u16) && u16 >= 32)
+                        ||  u16 == '\t'
+                        ||  u16 == '\n'))
+                    DBGCCmdHlpPrintf(pCmdHlp, "%c", (int)u16);
+                else if (!u16)
                     break;
                 else
-                    DBGCCmdHlpPrintf(pCmdHlp, "\\x%x", u8);
+                    DBGCCmdHlpPrintf(pCmdHlp, "\\x%0*x", cbElement * 2, u16);
             }
-            if (u8 == '\0')
+            if (u16 == '\0')
                 cb = cbLeft = i + 1;
-            if (cbLeft - cb <= 0 && u8Prev != '\n')
+            if (cbLeft - cb <= 0 && u16Prev != '\n')
                 DBGCCmdHlpPrintf(pCmdHlp, "\n");
         }
 
