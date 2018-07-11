@@ -2212,7 +2212,7 @@ static size_t findTodoCommentStart(char const *pchLine, size_t cchLineBeforeTodo
     /* Skip one '@' or  '\\'. */
     char ch;
     if (   cchLineBeforeTodo > 2
-        && (   (ch = pchLine[cchLineBeforeTodo - 1] == '@')
+        && (   ((ch = pchLine[cchLineBeforeTodo - 1]) == '@')
             || ch == '\\' ) )
         cchLineBeforeTodo--;
 
