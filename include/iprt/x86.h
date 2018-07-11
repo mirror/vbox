@@ -1696,6 +1696,15 @@ typedef X86PGPAEUINT const *PCX86PGPAEUINT;
 /** The 4MB page base mask for virtual addresses - 32bit version. */
 #define X86_PAGE_4M_BASE_MASK_32            0xffc00000U
 
+/** The size of a 1GB page. */
+#define X86_PAGE_1G_SIZE                    _1G
+/** The page shift of a 1GB page. */
+#define X86_PAGE_1G_SHIFT                   30
+/** The 1GB page offset mask. */
+#define X86_PAGE_1G_OFFSET_MASK             0x3fffffff
+/** The 1GB page base mask for virtual addresses. */
+#define X86_PAGE_1G_BASE_MASK               UINT64_C(0xffffffffc0000000)
+
 /**
  * Check if the given address is canonical.
  */

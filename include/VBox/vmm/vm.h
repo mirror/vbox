@@ -846,9 +846,18 @@ typedef struct VMCPU
                RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu))
 #endif
 
+/** @def VMSTATE_IS_RUNNING
+ * Checks if the given state indicates a running VM.
+ */
+#define VMSTATE_IS_RUNNING(a_enmVMState) \
+    (   (enmVMState) == VMSTATE_RUNNING \
+     || (enmVMState) == VMSTATE_RUNNING_LS \
+     || (enmVMState) == VMSTATE_RUNNING_FT )
+
 /** @def VM_IS_RUNNING_FOR_ASSERTIONS_ONLY
- * Checks if the the VM is running.
- * @note Thie is only for pure debug assertions.  No AssertReturn or similar!
+ * Checks if the VM is running.
+ * @note This is only for pure debug assertions.  No AssertReturn or similar!
+ * @sa  VMSTATE_IS_RUNNING
  */
 #define VM_IS_RUNNING_FOR_ASSERTIONS_ONLY(pVM) \
     (   (pVM)->enmVMState == VMSTATE_RUNNING \

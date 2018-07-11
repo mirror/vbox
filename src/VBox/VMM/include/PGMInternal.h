@@ -4322,6 +4322,7 @@ int             pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt);
 int             pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd);
 int             pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4);
 int             pgmGstPtWalk(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk);
+int             pgmGstPtWalkNext(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk);
 
 # if defined(VBOX_STRICT) && HC_ARCH_BITS == 64 && defined(IN_RING3)
 FNDBGCCMD       pgmR3CmdCheckDuplicatePages;

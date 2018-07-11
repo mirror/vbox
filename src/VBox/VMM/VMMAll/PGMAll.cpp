@@ -1430,7 +1430,7 @@ VMMDECL(int) PGMGstGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtr       The guest virtual address to walk by.
- * @param   pWalk       Where to return the walk result. This is valid on some
+ * @param   pWalk       Where to return the walk result. This is valid for some
  *                      error codes as well.
  */
 int pgmGstPtWalk(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
@@ -1470,6 +1470,127 @@ int pgmGstPtWalk(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
             pWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
             return VERR_PGM_NOT_USED_IN_MODE;
     }
+}
+
+
+/**
+ * Tries to continue the previous walk.
+ *
+ * @note    Requires the caller to hold the PGM lock from the first
+ *          pgmGstPtWalk() call to the last pgmGstPtWalkNext() call.  Otherwise
+ *          we cannot use the pointers.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PAGE_TABLE_NOT_PRESENT on failure.  Check pWalk for details.
+ * @retval  VERR_PGM_NOT_USED_IN_MODE if not paging isn't enabled. @a pWalk is
+ *          not valid, except enmType is PGMPTWALKGSTTYPE_INVALID.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPtr       The guest virtual address to walk by.
+ * @param   pWalk       Pointer to the previous walk result and where to return
+ *                      the result of this walk.  This is valid for some error
+ *                      codes as well.
+ */
+int pgmGstPtWalkNext(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
+{
+    /*
+     * We can only handle successfully walks.
+     * We also limit ourselves to the next page.
+     */
+    if (   pWalk->u.Core.fSucceeded
+        && GCPtr - pWalk->u.Core.GCPtr == PAGE_SIZE)
+    {
+        Assert(pWalk->u.Core.uLevel == 0);
+        if (pWalk->enmType == PGMPTWALKGSTTYPE_AMD64)
+        {
+            /*
+             * AMD64
+             */
+            if (!pWalk->u.Core.fGigantPage && !pWalk->u.Core.fBigPage)
+            {
+                /*
+                 * We fall back to full walk if the PDE table changes, if any
+                 * reserved bits are set, or if the effective page access changes.
+                 */
+                const uint64_t fPteSame = X86_PTE_P   | X86_PTE_RW | X86_PTE_US     | X86_PTE_PWT
+                                        | X86_PTE_PCD | X86_PTE_A  | X86_PTE_PAE_NX;
+                const uint64_t fPdeSame = X86_PDE_P   | X86_PDE_RW | X86_PDE_US     | X86_PDE_PWT
+                                        | X86_PDE_PCD | X86_PDE_A  | X86_PDE_PAE_NX | X86_PDE_PS;
+
+                if ((GCPtr >> X86_PD_PAE_SHIFT) == (pWalk->u.Core.GCPtr >> X86_PD_PAE_SHIFT))
+                {
+                    if (pWalk->u.Amd64.pPte)
+                    {
+                        X86PTEPAE Pte;
+                        Pte.u = pWalk->u.Amd64.pPte[1].u;
+                        if (   (Pte.u & fPteSame) == (pWalk->u.Amd64.Pte.u & fPteSame)
+                            && !(Pte.u & (pVCpu)->pgm.s.fGstAmd64MbzPteMask))
+                        {
+
+                            pWalk->u.Core.GCPtr  = GCPtr;
+                            pWalk->u.Core.GCPhys = Pte.u & X86_PTE_PAE_PG_MASK;
+                            pWalk->u.Amd64.Pte.u = Pte.u;
+                            pWalk->u.Amd64.pPte++;
+                            return VINF_SUCCESS;
+                        }
+                    }
+                }
+                else if ((GCPtr >> X86_PDPT_SHIFT) == (pWalk->u.Core.GCPtr >> X86_PDPT_SHIFT))
+                {
+                    Assert(!((GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK)); /* Must be first PT entry. */
+                    if (pWalk->u.Amd64.pPde)
+                    {
+                        X86PDEPAE Pde;
+                        Pde.u = pWalk->u.Amd64.pPde[1].u;
+                        if (   (Pde.u & fPdeSame) == (Pde.u & fPdeSame)
+                            && !(Pde.u & (pVCpu)->pgm.s.fGstAmd64MbzPdeMask))
+                        {
+                            /* Get the new PTE and check out the first entry. */
+                            int rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, PGM_A20_APPLY(pVCpu, (Pde.u & X86_PDE_PAE_PG_MASK)),
+                                                               &pWalk->u.Amd64.pPt);
+                            if (RT_SUCCESS(rc))
+                            {
+                                pWalk->u.Amd64.pPte = &pWalk->u.Amd64.pPt->a[0];
+                                X86PTEPAE Pte;
+                                Pte.u = pWalk->u.Amd64.pPte->u;
+                                if (   (Pte.u & fPteSame) == (pWalk->u.Amd64.Pte.u & fPteSame)
+                                    && !(Pte.u & (pVCpu)->pgm.s.fGstAmd64MbzPteMask))
+                                {
+                                    pWalk->u.Core.GCPtr  = GCPtr;
+                                    pWalk->u.Core.GCPhys = Pte.u & X86_PTE_PAE_PG_MASK;
+                                    pWalk->u.Amd64.Pte.u = Pte.u;
+                                    pWalk->u.Amd64.Pde.u = Pde.u;
+                                    pWalk->u.Amd64.pPde++;
+                                    return VINF_SUCCESS;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else if (!pWalk->u.Core.fGigantPage)
+            {
+                if ((GCPtr & X86_PAGE_2M_BASE_MASK) == (pWalk->u.Core.GCPtr & X86_PAGE_2M_BASE_MASK))
+                {
+                    pWalk->u.Core.GCPtr   = GCPtr;
+                    pWalk->u.Core.GCPhys += PAGE_SIZE;
+                    return VINF_SUCCESS;
+                }
+            }
+            else
+            {
+                if ((GCPtr & X86_PAGE_1G_BASE_MASK) == (pWalk->u.Core.GCPtr & X86_PAGE_1G_BASE_MASK))
+                {
+                    pWalk->u.Core.GCPtr   = GCPtr;
+                    pWalk->u.Core.GCPhys += PAGE_SIZE;
+                    return VINF_SUCCESS;
+                }
+            }
+        }
+    }
+    /* Case we don't handle.  Do full walk. */
+    return pgmGstPtWalk(pVCpu, GCPtr, pWalk);
 }
 
 
