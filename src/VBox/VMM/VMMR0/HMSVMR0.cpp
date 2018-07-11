@@ -6459,32 +6459,32 @@ HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_SS);
 
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    VBOXSTRICTRC rc2 = EMInterpretMWait(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
-    int rc = VBOXSTRICTRC_VAL(rc2);
-    if (    rc == VINF_EM_HALT
-        ||  rc == VINF_SUCCESS)
+    VBOXSTRICTRC rcStrict;
+    bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    if (fSupportsNextRipSave)
     {
-        hmR0SvmAdvanceRipHwAssist(pVCpu, 3);
-
-        if (   rc == VINF_EM_HALT
-            && EMMonitorWaitShouldContinue(pVCpu, pCtx))
-        {
-            rc = VINF_SUCCESS;
-        }
-        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
+        uint8_t const cbInstr = hmR0SvmGetInstrLength(pVCpu);
+        rcStrict = IEMExecDecodedMwait(pVCpu, cbInstr);
     }
     else
     {
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMwait: EMInterpretMWait failed with %Rrc\n", rc));
-        rc = VERR_EM_INTERPRETER;
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        rcStrict = IEMExecOne(pVCpu);
     }
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_EM_HALT || rc == VERR_EM_INTERPRETER,
-              ("hmR0SvmExitMwait: EMInterpretMWait failed rc=%Rrc\n", rc));
+
+    if (   rcStrict == VINF_EM_HALT
+        && EMMonitorWaitShouldContinue(pVCpu, &pVCpu->cpum.GstCtx))
+        rcStrict = VINF_SUCCESS;
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        rcStrict = VINF_SUCCESS;
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+    }
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMwait);
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
