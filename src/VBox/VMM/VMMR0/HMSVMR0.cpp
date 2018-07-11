@@ -6032,11 +6032,8 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PSVMTRANSIENT pSvmTr
  * @a cb.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   cb          RIP increment value in bytes.
- *
- * @remarks Use this function only from \#VMEXIT's where the NRIP value is valid
- *          when NRIP_SAVE is supported by the CPU, otherwise use
- *          hmR0SvmAdvanceRipDumb!
+ * @param   cb          RIP increment value in bytes when the CPU doesn't support
+ *                      NRIP_SAVE.
  */
 DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, uint32_t cb)
 {
@@ -6046,9 +6043,8 @@ DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, uint32_t cb)
     {
         PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
         Assert(pVmcb);
-        Assert(pVmcb->ctrl.u64NextRIP);
         Assert(!(pCtx->fExtrn & CPUMCTX_EXTRN_RIP));
-        AssertRelease(pVmcb->ctrl.u64NextRIP - pCtx->rip == cb);    /* temporary, remove later */
+        Assert(pVmcb->ctrl.u64NextRIP - pCtx->rip == cb);
         pCtx->rip = pVmcb->ctrl.u64NextRIP;
     }
     else
