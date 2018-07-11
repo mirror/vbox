@@ -420,6 +420,7 @@ UsbRegisterChangeNotification( PUSBNOTIFY pNotifyID,
 
   ulSize = sizeof(EventSet);
   EventSet.ulSize = ulSize;
+  EventSet.ulCaps = 0;
 
   if(hDeviceAdded!=0)
   {
@@ -427,7 +428,7 @@ UsbRegisterChangeNotification( PUSBNOTIFY pNotifyID,
     rc = DosQueryEventSem(hDeviceAdded,&ulCnt);
     if(rc)
       return rc;
-    EventSet.ulCaps         = DEV_SEM_ADD;
+    EventSet.ulCaps         |= DEV_SEM_ADD;
     EventSet.ulSemDeviceAdd = hDeviceAdded;
   }
 
