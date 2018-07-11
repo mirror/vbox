@@ -615,6 +615,9 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPD
     else
         LogRel(("OSS: No devices found, audio is not available\n"));
 
+    if (hFile != -1)
+        close(hFile);
+
     return VINF_SUCCESS;
 }
 
