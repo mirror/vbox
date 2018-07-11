@@ -30,6 +30,7 @@ class QComboBox;
 class QLabel;
 class QLineEdit;
 class QStackedWidget;
+class QTableWidget;
 class QIRichTextLabel;
 class UIEmptyFilePathSelector;
 
@@ -48,6 +49,8 @@ protected:
     void populateProviders();
     /** Populates profiles. */
     void populateProfiles();
+    /** Populates profile settings. */
+    void populateProfileSettings();
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();
@@ -65,6 +68,9 @@ protected:
     void updateFormatComboToolTip();
     /** Updates provider combo tool-tips. */
     void updateProviderComboToolTip();
+
+    /** Adjusts profile settings table. */
+    void adjustProfileSettingsTable();
 
     /** Returns path. */
     QString path() const;
@@ -123,9 +129,11 @@ protected:
     QComboBox *m_pProviderComboBox;
 
     /** Holds the profile combo-box label instance. */
-    QLabel    *m_pProfileComboBoxLabel;
+    QLabel       *m_pProfileComboBoxLabel;
     /** Holds the profile combo-box instance. */
-    QComboBox *m_pProfileComboBox;
+    QComboBox    *m_pProfileComboBox;
+    /** Holds the profile settings table-widget instance. */
+    QTableWidget *m_pProfileSettingsTable;
 };
 
 
@@ -144,6 +152,9 @@ public:
     UIWizardExportAppPageBasic3();
 
 protected:
+
+    /** Handle any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
 
     /** Allows access wizard-field from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }

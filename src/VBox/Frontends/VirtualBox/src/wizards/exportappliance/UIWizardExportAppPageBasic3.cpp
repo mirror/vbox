@@ -24,9 +24,11 @@
 # include <QComboBox>
 # include <QDir>
 # include <QGridLayout>
+# include <QHeaderView>
 # include <QLabel>
 # include <QLineEdit>
 # include <QStackedWidget>
+# include <QTableWidget>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -56,6 +58,7 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
     , m_pProviderComboBox(0)
     , m_pProfileComboBoxLabel(0)
     , m_pProfileComboBox(0)
+    , m_pProfileSettingsTable(0)
 {
 }
 
@@ -117,6 +120,40 @@ void UIWizardExportAppPage3::populateProfiles()
     /* Duplicate non-translated names to data fields: */
     for (int i = 0; i < m_pProfileComboBox->count(); ++i)
         m_pProfileComboBox->setItemData(i, m_pProfileComboBox->itemText(i));
+}
+
+void UIWizardExportAppPage3::populateProfileSettings()
+{
+    /* Acquire current profile table: */
+    // Here goes the experiamental lists with
+    // arbitrary contents for testing purposes.
+    QStringList keys;
+    QStringList values;
+    keys << "Key 1";
+    keys << "Key 2";
+    keys << "Key 3";
+    keys << "Key 4";
+    values << "Value 1";
+    values << "Value 2";
+    values << "Value 3";
+    values << "Value 4";
+    m_pProfileSettingsTable->clear();
+    m_pProfileSettingsTable->setRowCount(4);
+    m_pProfileSettingsTable->setColumnCount(2);
+
+    /* Push acquired keys/values to data fields: */
+    for (int i = 0; i < m_pProfileSettingsTable->rowCount(); ++i)
+    {
+        QTableWidgetItem *pItem1 = new QTableWidgetItem(keys.at(i));
+        pItem1->setFlags(pItem1->flags() & ~Qt::ItemIsEditable);
+        QTableWidgetItem *pItem2 = new QTableWidgetItem(values.at(i));
+        pItem2->setFlags(pItem2->flags() & ~Qt::ItemIsEditable);
+        m_pProfileSettingsTable->setItem(i, 0, pItem1);
+        m_pProfileSettingsTable->setItem(i, 1, pItem2);
+    }
+
+    /* Adjust the table: */
+    adjustProfileSettingsTable();
 }
 
 void UIWizardExportAppPage3::updatePageAppearance()
@@ -208,6 +245,23 @@ void UIWizardExportAppPage3::updateProviderComboToolTip()
     const QString strCurrentToolTip = m_pProviderComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
     AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
     m_pProviderComboBox->setToolTip(strCurrentToolTip);
+}
+
+void UIWizardExportAppPage3::adjustProfileSettingsTable()
+{
+    /* Disable last column stretching temporary: */
+    m_pProfileSettingsTable->horizontalHeader()->setStretchLastSection(false);
+
+    /* Resize both columns to contents: */
+    m_pProfileSettingsTable->resizeColumnsToContents();
+    /* Then acquire full available width: */
+    const int iFullWidth = m_pProfileSettingsTable->viewport()->width();
+    /* First column should not be less than it's minimum size, last gets the rest: */
+    const int iMinimumWidth0 = qMin(m_pProfileSettingsTable->horizontalHeader()->sectionSize(0), iFullWidth / 2);
+    m_pProfileSettingsTable->horizontalHeader()->resizeSection(0, iMinimumWidth0);
+
+    /* Enable last column stretching again: */
+    m_pProfileSettingsTable->horizontalHeader()->setStretchLastSection(true);
 }
 
 QString UIWizardExportAppPage3::path() const
@@ -422,13 +476,24 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                         /* Add into layout: */
                         pSettingsLayout2->addWidget(m_pProfileComboBoxLabel, 1, 0);
                     }
-
-                    /* Create placeholder: */
-                    QWidget *pPlaceholder = new QWidget;
-                    if (pPlaceholder)
+                    /* Create profile settings table: */
+                    m_pProfileSettingsTable = new QTableWidget;
+                    if (m_pProfileSettingsTable)
                     {
+                        const QFontMetrics fm(m_pProfileSettingsTable->font());
+                        const int iFontWidth = fm.width('x');
+                        const int iTotalWidth = 50 * iFontWidth;
+                        const int iFontHeight = fm.height();
+                        const int iTotalHeight = 4 * iFontHeight;
+                        m_pProfileSettingsTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                        m_pProfileSettingsTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                        m_pProfileSettingsTable->setAlternatingRowColors(true);
+                        m_pProfileSettingsTable->horizontalHeader()->setVisible(false);
+                        m_pProfileSettingsTable->verticalHeader()->setVisible(false);
+                        m_pProfileSettingsTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
                         /* Add into layout: */
-                        pSettingsLayout2->addWidget(pPlaceholder, 2, 0, 1, 2);
+                        pSettingsLayout2->addWidget(m_pProfileSettingsTable, 2, 1);
                     }
                 }
 
@@ -447,6 +512,8 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     populateProviders();
     /* Populate profiles: */
     populateProfiles();
+    /* Populate profile settings: */
+    populateProfileSettings();
 
     /* Setup connections: */
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic3::completeChanged);
@@ -461,6 +528,26 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     registerField("path", this, "path");
     registerField("format", this, "format");
     registerField("manifestSelected", this, "manifestSelected");
+}
+
+bool UIWizardExportAppPageBasic3::event(QEvent *pEvent)
+{
+    /* Handle known event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Show:
+        case QEvent::Resize:
+        {
+            /* Adjust profile settings table: */
+            adjustProfileSettingsTable();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return UIWizardPage::event(pEvent);
 }
 
 void UIWizardExportAppPageBasic3::retranslateUi()
@@ -623,4 +710,6 @@ void UIWizardExportAppPageBasic3::sltHandleProviderComboChange()
 
 void UIWizardExportAppPageBasic3::sltHandleProfileComboChange()
 {
+    /* Refresh required settings: */
+    populateProfileSettings();
 }

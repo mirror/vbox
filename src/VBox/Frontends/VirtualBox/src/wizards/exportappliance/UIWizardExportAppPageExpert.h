@@ -53,6 +53,9 @@ public:
 
 protected:
 
+    /** Handle any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
+
     /** Allows access wizard from base part. */
     UIWizard* wizardImp() { return UIWizardPage::wizard(); }
     /** Allows access page from base part. */

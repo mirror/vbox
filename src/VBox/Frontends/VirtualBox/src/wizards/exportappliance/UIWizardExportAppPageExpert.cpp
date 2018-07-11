@@ -23,11 +23,13 @@
 # include <QCheckBox>
 # include <QGridLayout>
 # include <QGroupBox>
+# include <QHeaderView>
 # include <QLabel>
 # include <QLineEdit>
 # include <QListWidget>
 # include <QRadioButton>
 # include <QStackedWidget>
+# include <QTableWidget>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -284,13 +286,24 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 /* Add into layout: */
                                 pSettingsLayout2->addWidget(m_pProfileComboBoxLabel, 1, 0);
                             }
-
-                            /* Create placeholder: */
-                            QWidget *pPlaceholder = new QWidget;
-                            if (pPlaceholder)
+                            /* Create profile settings table: */
+                            m_pProfileSettingsTable = new QTableWidget;
+                            if (m_pProfileSettingsTable)
                             {
-                                /* Add into layout: */
-                                pSettingsLayout2->addWidget(pPlaceholder, 2, 0, 1, 2);
+                                const QFontMetrics fm(m_pProfileSettingsTable->font());
+                                const int iFontWidth = fm.width('x');
+                                const int iTotalWidth = 50 * iFontWidth;
+                                const int iFontHeight = fm.height();
+                                const int iTotalHeight = 4 * iFontHeight;
+                                m_pProfileSettingsTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                                m_pProfileSettingsTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                                m_pProfileSettingsTable->setAlternatingRowColors(true);
+                                m_pProfileSettingsTable->horizontalHeader()->setVisible(false);
+                                m_pProfileSettingsTable->verticalHeader()->setVisible(false);
+                                m_pProfileSettingsTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+                                    /* Add into layout: */
+                                pSettingsLayout2->addWidget(m_pProfileSettingsTable, 2, 1);
                             }
                         }
 
@@ -318,6 +331,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     populateProviders();
     /* Populate profiles: */
     populateProfiles();
+    /* Populate profile settings: */
+    populateProfileSettings();
 
     /* Setup connections: */
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
@@ -343,6 +358,26 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("format", this, "format");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("applianceWidget", this, "applianceWidget");
+}
+
+bool UIWizardExportAppPageExpert::event(QEvent *pEvent)
+{
+    /* Handle known event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Show:
+        case QEvent::Resize:
+        {
+            /* Adjust profile settings table: */
+            adjustProfileSettingsTable();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return UIWizardPage::event(pEvent);
 }
 
 void UIWizardExportAppPageExpert::retranslateUi()
@@ -520,4 +555,6 @@ void UIWizardExportAppPageExpert::sltHandleProviderComboChange()
 
 void UIWizardExportAppPageExpert::sltHandleProfileComboChange()
 {
+    /* Refresh required settings: */
+    populateProfileSettings();
 }
