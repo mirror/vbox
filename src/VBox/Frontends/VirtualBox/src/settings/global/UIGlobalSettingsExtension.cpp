@@ -22,6 +22,9 @@
 /* Qt includes: */
 # include <QHeaderView>
 # include <QMenu>
+# ifdef VBOX_WS_WIN
+#  include <QTextStream>
+# endif
 
 /* GUI includes: */
 # include "QIFileDialog.h"
@@ -371,8 +374,12 @@ void UIGlobalSettingsExtension::sltRemovePackage()
             /** @todo Refuse this if any VMs are running. */
             QString displayInfo;
 #ifdef VBOX_WS_WIN
-            displayInfo.sprintf("hwnd=%#llx", (uint64_t)(uintptr_t)this->winId());
-#endif /* VBOX_WS_WIN */
+            QTextStream stream(&displayInfo);
+            stream.setNumberFlags(QTextStream::ShowBase);
+            stream.setIntegerBase(16);
+            stream << "hwnd=" << winId();
+#endif
+
             /* Prepare uninstallation progress: */
             CProgress progress = manager.Uninstall(strSelectedPackageName, false /* forced removal? */, displayInfo);
             if (manager.isOk())
