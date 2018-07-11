@@ -6597,7 +6597,8 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         bool const fMovCRx = RT_BOOL(pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_MASK);
         if (fMovCRx)
         {
-            HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+            HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4
+                                            | CPUMCTX_EXTRN_APIC_TPR);
             uint8_t const cbInstr = pVmcb->ctrl.u64NextRIP - pCtx->rip;
             uint8_t const iGReg   = pVmcb->ctrl.u64ExitInfo1 & SVM_EXIT1_MOV_CRX_GPR_NUMBER;
             Log4Func(("Mov CR%u w/ iGReg=%#x\n", iCrReg, iGReg));
@@ -6611,7 +6612,7 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     {
         HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
         Log4Func(("iCrReg=%#x\n", iCrReg));
-        rcStrict = IEMExecOneBypassEx(pVCpu, CPUMCTX2CORE(pCtx), NULL);
+        rcStrict = IEMExecOne(pVCpu);
         if (RT_UNLIKELY(   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                         || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED))
             rcStrict = VERR_EM_INTERPRETER;
@@ -6653,6 +6654,12 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
                 break;
             }
         }
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+    }
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        rcStrict = VINF_SUCCESS;
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     }
     else
