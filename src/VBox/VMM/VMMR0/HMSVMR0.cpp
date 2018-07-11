@@ -6419,22 +6419,37 @@ HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_SS);
 
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    int rc = EMInterpretMonitor(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    /*
+     * SVM unfortunately does not provide us with any segment override prefix information.
+     *
+     * If the instruction length supplied by the CPU is 3 bytes, we can be certain that no
+     * segment override prefix is present (and thus use the default segment DS). Otherwise, a
+     * segment override prefix or other prefixes might be used, in which case we fallback to
+     * IEMExecOne() to handle it.
+     */
+    VBOXSTRICTRC  rcStrict;
+    bool const    fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    uint8_t const cbInstr              = fSupportsNextRipSave ? hmR0SvmGetInstrLength(pVCpu) : 0;
+    if (cbInstr == 3)
     {
-        hmR0SvmAdvanceRipHwAssist(pVCpu, 3);
-        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK | CPUMCTX_EXTRN_DS);
+        rcStrict = IEMExecDecodedMonitor(pVCpu, cbInstr);
     }
     else
     {
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMonitor: EMInterpretMonitor failed with %Rrc\n", rc));
-        rc = VERR_EM_INTERPRETER;
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        rcStrict = IEMExecOne(pVCpu);
     }
+
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        rcStrict = VINF_SUCCESS;
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+    }
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMonitor);
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
