@@ -189,6 +189,7 @@ void UIWizardExportAppPage3::refreshManifestCheckBoxAccess()
     else
     {
         /* Enable manifest check-box: */
+        m_pManifestCheckbox->setChecked(true);
         m_pManifestCheckbox->setEnabled(true);
     }
 }
