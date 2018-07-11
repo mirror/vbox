@@ -6314,21 +6314,28 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 HMSVM_EXIT_DECL hmR0SvmExitRdpmc(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
-    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_SS);
 
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    int rc = EMInterpretRdpmc(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
-    if (RT_LIKELY(rc == VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict;
+    bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    if (fSupportsNextRipSave)
     {
-        hmR0SvmAdvanceRipHwAssist(pVCpu, 2);
-        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_CR4);
+        uint8_t const cbInstr = hmR0SvmGetInstrLength(pVCpu);
+        rcStrict = IEMExecDecodedRdpmc(pVCpu, cbInstr);
     }
     else
     {
-        AssertMsgFailed(("hmR0SvmExitRdpmc: EMInterpretRdpmc failed with %Rrc\n", rc));
-        rc = VERR_EM_INTERPRETER;
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
+        rcStrict = IEMExecOne(pVCpu);
     }
-    return rc;
+
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        rcStrict = VINF_SUCCESS;
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+    }
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
