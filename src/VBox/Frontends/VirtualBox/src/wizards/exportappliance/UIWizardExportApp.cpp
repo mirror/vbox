@@ -289,6 +289,8 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
     QVector<KExportOptions> options;
     if (field("manifestSelected").toBool())
         options.append(KExportOptions_CreateManifest);
+    if (field("includeISOsSelected").toBool())
+        options.append(KExportOptions_ExportDVDImages);
     CProgress comProgress = comAppliance.Write(field("format").toString(), options, uri());
     if (comAppliance.isOk() && comProgress.isNotNull())
     {
