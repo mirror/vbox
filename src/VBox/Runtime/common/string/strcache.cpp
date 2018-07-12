@@ -682,8 +682,11 @@ static PRTSTRCACHEENTRY rtStrCacheAllocHeapEntry(PRTSTRCACHEINT pThis, uint32_t 
     pBigEntry->Core.cRefs       = 1;
     pBigEntry->Core.uHash       = (uint16_t)uHash;
     pBigEntry->Core.cchString   = RTSTRCACHEENTRY_BIG_LEN;
-    memcpy(pBigEntry->Core.szString, pchString, cchString);
-    pBigEntry->Core.szString[cchString] = '\0';
+    /* The following is to try avoid gcc warnings/errors regarding array bounds: */
+    char *pszDst = pBigEntry->Core.szString;
+    memcpy(pszDst, pchString, cchString);
+    pszDst[cchString] = '\0';
+    ASMCompilerBarrier();
 
     return &pBigEntry->Core;
 }
