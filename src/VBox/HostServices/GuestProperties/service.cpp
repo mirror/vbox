@@ -1628,7 +1628,7 @@ int Service::initialize()
 static DECLCALLBACK(int) destroyProperty(PRTSTRSPACECORE pStr, void *pvUser)
 {
     RT_NOREF(pvUser);
-    Property *pProp = RT_FROM_MEMBER(pStr, struct Property, mStrCore);
+    Property *pProp = RT_FROM_CPP_MEMBER(pStr, struct Property, mStrCore); /* clang objects to offsetof on non-POD.*/
     delete pProp;
     return 0;
 }
