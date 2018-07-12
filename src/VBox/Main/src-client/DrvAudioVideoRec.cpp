@@ -263,7 +263,7 @@ typedef struct DRVAUDIOVIDEOREC
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO        IHostAudio;
     /** Pointer to the console object. */
-    ComObjPtr<Console>   pConsole;
+    ComPtr<Console>      pConsole;
     /** Pointer to the DrvAudio port interface that is above us. */
     PPDMIAUDIOCONNECTOR  pDrvAudio;
     /** The driver's sink for writing output to. */
@@ -271,8 +271,8 @@ typedef struct DRVAUDIOVIDEOREC
 } DRVAUDIOVIDEOREC, *PDRVAUDIOVIDEOREC;
 
 /** Makes DRVAUDIOVIDEOREC out of PDMIHOSTAUDIO. */
-#define PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface) \
-    ( (PDRVAUDIOVIDEOREC)((uintptr_t)pInterface - RT_UOFFSETOF(DRVAUDIOVIDEOREC, IHostAudio)) )
+#define PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface) /* (clang doesn't think it is a POD, thus _DYN.) */ \
+    ( (PDRVAUDIOVIDEOREC)((uintptr_t)pInterface - RT_UOFFSETOF_DYN(DRVAUDIOVIDEOREC, IHostAudio)) )
 
 /**
  * Initializes a recording sink.

@@ -3423,7 +3423,7 @@ int Display::i_crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, 
     if (!pVMMDev)
         return VERR_INVALID_STATE;
 
-    size_t cbData = RT_UOFFSETOF(VBOXCRCMDCTL_HGCM, aParms[5]);
+    size_t cbData = RT_UOFFSETOF_DYN(VBOXCRCMDCTL_HGCM, aParms[5]); /* (clang doesn't think this is a POD, thus _DYN.) */
     VBOXCRCMDCTL_HGCM *pData = (VBOXCRCMDCTL_HGCM *)alloca(cbData);
 
     pData->Hdr.enmType = VBOXCRCMDCTL_TYPE_HGCM;
